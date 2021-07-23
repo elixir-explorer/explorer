@@ -1,5 +1,8 @@
 # Explorer
 
+> :warning: Explorer is still very much a work in progress. It is incomplete and poorly documented. Use
+> at your own risk.
+
 Explorer is a dataframe library for Elixir. First and foremost, Explorer is an API for data
 manipulation. Its high-level features are:
 
