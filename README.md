@@ -68,6 +68,8 @@ While it has mostly been rewritten and expanded, key parts of the code are taken
 [treebee's fork of ex_polars](https://github.com/treebee/ex_polars). Many thanks to @tyrchen and 
 @treebee!
 
+@jsonbecker has been a source of constant encouragement and a tireless duck. Thanks for quacking.
+
 And of course, thanks to @ritchie46 for the wonderful `polars` library.
 
 Finally, the initial development of this library took place on the lands of the Wurundjeri people 
