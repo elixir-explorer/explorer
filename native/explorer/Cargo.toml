@@ -1,0 +1,36 @@
+[package]
+name = "explorer"
+version = "0.1.0"
+authors = []
+edition = "2018"
+
+[lib]
+name = "explorer"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.22.0"
+thiserror = "1"
+anyhow = "1"
+mimalloc = { version = "*", default-features = false }
+
+[dependencies.polars]
+git = "https://github.com/ritchie46/polars"
+rev = "7153d74e28242a1ef6749764e34351838bc9e2ab"
+default-features = false
+features = [
+  "dtype-date32",
+  "dtype-date64",
+  "is_in",
+  "json",
+  "parquet",
+  "pivot",
+  "plain_fmt",
+  "random",
+  "rows",
+  "simd",
+  "sort_multiple",
+  "strings",
+  "temporal",
+]
