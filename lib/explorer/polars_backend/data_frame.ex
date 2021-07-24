@@ -135,22 +135,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def tail(df, rows), do: Shared.apply_native(df, :df_tail, [rows])
 
   @impl true
-  def select(df, colnames, keep_or_drop) when is_list(colnames) do
+  def select(df, columns, keep_or_drop) when is_list(columns) do
     func =
       case keep_or_drop do
         :keep -> &Native.df_select/2
         :drop -> &drop/2
       end
 
-    df |> Shared.to_polars_df() |> func.(colnames) |> Shared.unwrap()
+    df |> Shared.to_polars_df() |> func.(columns) |> Shared.unwrap()
   end
-
-  def select(df, callback, keep_or_drop) when is_function(callback),
-    do:
-      df
-      |> names()
-      |> Enum.filter(callback)
-      |> then(&select(df, &1, keep_or_drop))
 
   defp drop(polars_df, colnames),
     do: Enum.reduce(colnames, polars_df, fn name, df -> Native.df_drop(df, name) end)
