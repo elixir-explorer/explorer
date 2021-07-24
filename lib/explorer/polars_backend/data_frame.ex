@@ -209,34 +209,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> select(columns, :keep)
 
   @impl true
-  def rename(df, names) when is_list(names) do
-    case Keyword.keyword?(names) do
-      false ->
-        Shared.apply_native(df, :df_set_column_names, [names])
-
-      true ->
-        new_names =
-          df
-          |> names()
-          |> Enum.reduce([], fn name, acc ->
-            name =
-              if Keyword.has_key?(names, String.to_atom(name)),
-                do:
-                  Keyword.get(
-                    names,
-                    String.to_atom(name)
-                  ),
-                else: name
-
-            [name | acc] |> Enum.reverse()
-          end)
-
-        rename(df, new_names)
-    end
-  end
-
-  def rename(df, fun) when is_function(fun),
-    do: rename(df, df |> names() |> Enum.map(fun))
+  def rename(df, names) when is_list(names),
+    do: Shared.apply_native(df, :df_set_column_names, [names])
 
   @impl true
   def dummies(df, names),

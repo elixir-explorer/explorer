@@ -404,6 +404,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Renames columns.
 
+  To apply a function to a subset of columns, see `rename_with/3`.
+
   ## Examples
 
     You can pass in a list of new names:
@@ -416,24 +418,6 @@ defmodule Explorer.DataFrame do
         d integer [1, 3, 1]
       >
 
-    Or you can pass in a callback, which will be applied as `Enum.map(names, callback)`:
-
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
-      iex> Explorer.DataFrame.rename(df, &String.upcase/1)
-      #Explorer.DataFrame<
-        [rows: 3, columns: 2]
-        A string ["a", "b", "a"]
-        B integer [1, 3, 1]
-      >
-
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
-      iex> Explorer.DataFrame.rename(df, & &1 <> "_var")
-      #Explorer.DataFrame<
-        [rows: 3, columns: 2]
-        a_var string ["a", "b", "a"]
-        b_var integer [1, 3, 1]
-      >
-
     Or you can rename individual columns using keyword args:
 
       iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
@@ -443,8 +427,157 @@ defmodule Explorer.DataFrame do
         first string ["a", "b", "a"]
         b integer [1, 3, 1]
       >
+
+    Or you can rename individual columns using a map:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
+      iex> Explorer.DataFrame.rename(df, %{"a" => "first"})
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        first string ["a", "b", "a"]
+        b integer [1, 3, 1]
+      >
   """
-  def rename(df, names), do: apply_impl(df, :rename, [names])
+  def rename(df, names) when is_list(names) do
+    case Keyword.keyword?(names) do
+      false ->
+        names =
+          Enum.map(names, fn
+            name when is_atom(name) -> Atom.to_string(name)
+            name -> name
+          end)
+
+        width = n_cols(df)
+        n_new_names = length(names)
+
+        if width != n_new_names,
+          do:
+            raise(ArgumentError,
+              message:
+                "List of new names must match the number of columns in the dataframe. " <>
+                  "Found #{n_new_names} new name(s), but the supplied dataframe has #{width} " <>
+                  "column(s)."
+            )
+
+        apply_impl(df, :rename, [names])
+
+      true ->
+        names
+        |> Enum.reduce(%{}, &rename_reducer/2)
+        |> then(&rename(df, &1))
+    end
+  end
+
+  def rename(df, names) when is_map(names) do
+    names = Enum.reduce(names, %{}, &rename_reducer/2)
+    name_keys = Map.keys(names)
+    old_names = names(df)
+
+    Enum.each(name_keys, fn name ->
+      maybe_raise_column_not_found(old_names, name)
+    end)
+
+    old_names
+    |> Enum.map(fn name -> if name in name_keys, do: Map.get(names, name), else: name end)
+    |> then(&rename(df, &1))
+  end
+
+  defp rename_reducer({k, v}, acc) when is_atom(k) and is_binary(v),
+    do: Map.put(acc, Atom.to_string(k), v)
+
+  defp rename_reducer({k, v}, acc) when is_binary(k) and is_binary(v), do: Map.put(acc, k, v)
+
+  defp rename_reducer({k, v}, acc) when is_atom(k) and is_atom(v),
+    do: Map.put(acc, Atom.to_string(k), Atom.to_string(v))
+
+  defp rename_reducer({k, v}, acc) when is_binary(k) and is_atom(v),
+    do: Map.put(acc, k, Atom.to_string(v))
+
+  @doc """
+  Renames columns with a function.
+
+  ## Examples
+
+    If no columns are specified, it will apply the function to all column names:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.rename_with(df, &String.upcase/1)
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10]
+        YEAR integer [2010, 2010, 2010, 2010, 2010, "..."]
+        COUNTRY string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        TOTAL integer [2308, 1254, 32500, 141, 7924, "..."]
+        SOLID_FUEL integer [627, 117, 332, 0, 0, "..."]
+        LIQUID_FUEL integer [1601, 953, 12381, 141, 3649, "..."]
+        GAS_FUEL integer [74, 7, 14565, 0, 374, "..."]
+        CEMENT integer [5, 177, 2598, 0, 204, "..."]
+        GAS_FLARING integer [0, 0, 2623, 0, 3697, "..."]
+        PER_CAPITA float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        BUNKER_FUELS integer [9, 7, 663, 0, 321, "..."]
+      >
+
+    A callback can be used to filter the column names that will be renamed, similarly to `select/3`:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.rename_with(df, &String.trim_trailing(&1, "_fuel"), &String.ends_with?(&1, "_fuel"))
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        total integer [2308, 1254, 32500, 141, 7924, "..."]
+        solid integer [627, 117, 332, 0, 0, "..."]
+        liquid integer [1601, 953, 12381, 141, 3649, "..."]
+        gas integer [74, 7, 14565, 0, 374, "..."]
+        cement integer [5, 177, 2598, 0, 204, "..."]
+        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+      >
+
+    Or you can just pass in the list of column names you'd like to apply the function to:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.rename_with(df, &String.upcase/1, ["total", "cement"])
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        TOTAL integer [2308, 1254, 32500, 141, 7924, "..."]
+        solid_fuel integer [627, 117, 332, 0, 0, "..."]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
+        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
+        CEMENT integer [5, 177, 2598, 0, 204, "..."]
+        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+      >
+  """
+  def rename_with(df, callback, columns \\ [])
+
+  def rename_with(df, callback, []) when is_function(callback),
+    do: df |> names() |> Enum.map(callback) |> then(&rename(df, &1))
+
+  def rename_with(df, callback, columns) when is_function(callback) and is_list(columns) do
+    old_names = names(df)
+
+    Enum.each(columns, fn name ->
+      maybe_raise_column_not_found(old_names, name)
+    end)
+
+    old_names
+    |> Enum.map(fn name -> if name in columns, do: callback.(name), else: name end)
+    |> then(&rename(df, &1))
+  end
+
+  def rename_with(df, callback, columns) when is_function(callback) and is_function(columns) do
+    case df |> names() |> Enum.filter(columns) do
+      [_ | _] = columns ->
+        rename_with(df, callback, columns)
+
+      [] ->
+        raise ArgumentError, message: "Function to select column names did not return any names."
+    end
+  end
 
   @doc """
   Turns a set of columns to dummy variables.
@@ -494,5 +627,39 @@ defmodule Explorer.DataFrame do
     left_cols = left |> names() |> MapSet.new()
     right_cols = right |> names() |> MapSet.new()
     left_cols |> MapSet.intersection(right_cols) |> MapSet.to_list()
+  end
+
+  defp maybe_raise_column_not_found(names, name) do
+    if name not in names,
+      do:
+        raise(ArgumentError,
+          message:
+            List.to_string(
+              ["Could not find column name \"#{name}\""] ++ did_you_mean(name, names)
+            )
+        )
+  end
+
+  @threshold 0.77
+  @max_suggestions 5
+  defp did_you_mean(missing_key, available_keys) do
+    suggestions =
+      for key <- available_keys,
+          distance = String.jaro_distance(missing_key, key),
+          distance >= @threshold,
+          do: {distance, key}
+
+    case suggestions do
+      [] -> []
+      suggestions -> [". Did you mean:\n\n" | format_suggestions(suggestions)]
+    end
+  end
+
+  defp format_suggestions(suggestions) do
+    suggestions
+    |> Enum.sort(&(elem(&1, 0) >= elem(&2, 0)))
+    |> Enum.take(@max_suggestions)
+    |> Enum.sort(&(elem(&1, 1) <= elem(&2, 1)))
+    |> Enum.map(fn {_, key} -> ["      * ", inspect(key), ?\n] end)
   end
 end

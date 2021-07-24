@@ -49,7 +49,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback mutate(df, with_columns :: Keyword.t()) :: df
   @callback arrange(df, columns :: [colname], direction :: :asc | :desc) :: df
   @callback distinct(df, columns :: [colname], keep_all? :: boolean()) :: df
-  @callback rename(df, list(colname) | map() | function()) :: df
+  @callback rename(df, [colname]) :: df
   @callback dummies(df, columns :: [colname]) :: df
   @callback sample(df, integer() | float(), with_replacement? :: boolean()) :: df
   @callback pull(df, column :: String.t()) :: series
