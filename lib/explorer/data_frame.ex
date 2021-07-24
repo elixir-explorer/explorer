@@ -416,28 +416,81 @@ defmodule Explorer.DataFrame do
         d integer [1, 3, 1]
       >
 
-    Or you can pass in a callback, which will be applied as `Enum.map(names, callback)`:
-
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
-      iex> Explorer.DataFrame.rename(df, &String.upcase/1)
-      #Explorer.DataFrame<
-        [rows: 3, columns: 2]
-        A string ["a", "b", "a"]
-        B integer [1, 3, 1]
-      >
-
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
-      iex> Explorer.DataFrame.rename(df, & &1 <> "_var")
-      #Explorer.DataFrame<
-        [rows: 3, columns: 2]
-        a_var string ["a", "b", "a"]
-        b_var integer [1, 3, 1]
-      >
-
     Or you can rename individual columns using keyword args:
 
       iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
       iex> Explorer.DataFrame.rename(df, a: "first")
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        first string ["a", "b", "a"]
+        b integer [1, 3, 1]
+      >
+
+    Or you can rename individual columns using a map:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
+      iex> Explorer.DataFrame.rename(df, %{"a" => "first"})
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        first string ["a", "b", "a"]
+        b integer [1, 3, 1]
+      >
+  """
+  def rename(df, names) when is_list(names) do
+    case Keyword.keyword?(names) do
+      false ->
+        names =
+          Enum.map(names, fn
+            name when is_atom(name) -> Atom.to_string(name)
+            name -> name
+          end)
+
+        width = n_cols(df)
+        n_new_names = length(names)
+
+        if width != n_new_names,
+          do:
+            raise(ArgumentError,
+              message:
+                "List of new names must match the number of columns in the dataframe. " <>
+                  "Found #{n_new_names} new name(s), but the supplied dataframe has #{width} " <>
+                  "column(s)."
+            )
+
+        apply_impl(df, :rename, [names])
+
+      true ->
+        names
+        |> Enum.reduce(%{}, &rename_reducer/2)
+        |> then(&rename(df, &1))
+    end
+  end
+
+  def rename(df, names) when is_map(names) do
+    names = Enum.reduce(names, %{}, &rename_reducer/2)
+    name_keys = Map.keys(names)
+    old_names = names(df)
+
+    Enum.each(name_keys, fn name ->
+      maybe_raise_column_not_found(old_names, name)
+    end)
+
+    old_names
+    |> Enum.map(fn name -> if name in name_keys, do: Map.get(names, name), else: name end)
+    |> then(&rename(df, &1))
+  end
+
+  defp rename_reducer({k, v}, acc) when is_atom(k) and is_binary(v),
+    do: Map.put(acc, Atom.to_string(k), v)
+
+  defp rename_reducer({k, v}, acc) when is_binary(k) and is_binary(v), do: Map.put(acc, k, v)
+
+  defp rename_reducer({k, v}, acc) when is_atom(k) and is_atom(v),
+    do: Map.put(acc, Atom.to_string(k), Atom.to_string(v))
+
+  defp rename_reducer({k, v}, acc) when is_binary(k) and is_atom(v),
+    do: Map.put(acc, k, Atom.to_string(v))
+
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
         first string ["a", "b", "a"]
