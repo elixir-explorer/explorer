@@ -17,7 +17,7 @@ mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
 git = "https://github.com/ritchie46/polars"
-rev = "7153d74e28242a1ef6749764e34351838bc9e2ab"
+rev = "7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7"
 default-features = false
 features = [
   "dtype-date32",
