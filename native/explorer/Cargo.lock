@@ -754,8 +754,8 @@ dependencies = [
 
 [[package]]
 name = "polars"
-version = "0.14.7"
-source = "git+https://github.com/ritchie46/polars?rev=7153d74e28242a1ef6749764e34351838bc9e2ab#7153d74e28242a1ef6749764e34351838bc9e2ab"
+version = "0.14.8"
+source = "git+https://github.com/ritchie46/polars?rev=7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7#7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7"
 dependencies = [
  "polars-core",
  "polars-io",
@@ -764,8 +764,8 @@ dependencies = [
 
 [[package]]
 name = "polars-arrow"
-version = "0.14.7"
-source = "git+https://github.com/ritchie46/polars?rev=7153d74e28242a1ef6749764e34351838bc9e2ab#7153d74e28242a1ef6749764e34351838bc9e2ab"
+version = "0.14.8"
+source = "git+https://github.com/ritchie46/polars?rev=7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7#7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7"
 dependencies = [
  "arrow",
  "num",
@@ -774,8 +774,8 @@ dependencies = [
 
 [[package]]
 name = "polars-core"
-version = "0.14.7"
-source = "git+https://github.com/ritchie46/polars?rev=7153d74e28242a1ef6749764e34351838bc9e2ab#7153d74e28242a1ef6749764e34351838bc9e2ab"
+version = "0.14.8"
+source = "git+https://github.com/ritchie46/polars?rev=7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7#7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7"
 dependencies = [
  "ahash",
  "anyhow",
@@ -799,8 +799,8 @@ dependencies = [
 
 [[package]]
 name = "polars-io"
-version = "0.14.7"
-source = "git+https://github.com/ritchie46/polars?rev=7153d74e28242a1ef6749764e34351838bc9e2ab#7153d74e28242a1ef6749764e34351838bc9e2ab"
+version = "0.14.8"
+source = "git+https://github.com/ritchie46/polars?rev=7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7#7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7"
 dependencies = [
  "ahash",
  "anyhow",
@@ -823,8 +823,8 @@ dependencies = [
 
 [[package]]
 name = "polars-lazy"
-version = "0.14.7"
-source = "git+https://github.com/ritchie46/polars?rev=7153d74e28242a1ef6749764e34351838bc9e2ab#7153d74e28242a1ef6749764e34351838bc9e2ab"
+version = "0.14.8"
+source = "git+https://github.com/ritchie46/polars?rev=7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7#7ba7d02139bbc9c8a15b28fe4038fe5c99e3fcd7"
 dependencies = [
  "ahash",
  "itertools",
