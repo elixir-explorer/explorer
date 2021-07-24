@@ -46,6 +46,7 @@ jobs:
         with:
           otp-version: "${{ env.OTP_VERSION }}"
           elixir-version: "${{ env.ELIXIR_VERSION }}"
+      - run: mix deps.get
       - run: mix docs
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@4.1.1
