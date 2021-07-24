@@ -1,13 +1,24 @@
-on: push
+name: Docs on GitHub pages
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.ref }}-docs
+  cancel-in-progress: true
 
 env:
   ELIXIR_VERSION: 1.12
   OTP_VERSION: 24.0
+  MIX_ENV: test
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
-    name: test
+    env:
+      MIX_ENV: test
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
@@ -35,6 +46,9 @@ jobs:
         with:
           otp-version: "${{ env.OTP_VERSION }}"
           elixir-version: "${{ env.ELIXIR_VERSION }}"
-      - run: mix deps.get
-      - run: mix compile --warnings-as-errors
-      - run: mix test --warnings-as-errors 
+      - run: mix docs
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@4.1.1
+        with:
+          branch: gh-pages
+          folder: doc
