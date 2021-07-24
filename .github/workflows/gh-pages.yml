@@ -17,8 +17,6 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      MIX_ENV: test
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
