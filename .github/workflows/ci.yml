@@ -3,6 +3,7 @@ on: pull_request
 env:
   ELIXIR_VERSION: 1.12
   OTP_VERSION: 24.0
+  MIX_ENV: test
 
 jobs:
   test:
