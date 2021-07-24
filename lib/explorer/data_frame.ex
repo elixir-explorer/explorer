@@ -322,12 +322,30 @@ defmodule Explorer.DataFrame do
   """
   @spec select(
           df :: DataFrame.t(),
-          cols_or_callback :: [String.t()] | function(),
+          columns :: [String.t()],
           keep_or_drop ::
             :keep | :drop
         ) :: DataFrame.t()
-  def select(df, cols_or_callback, keep_or_drop \\ :keep),
-    do: apply_impl(df, :select, [cols_or_callback, keep_or_drop])
+  def select(df, columns, keep_or_drop \\ :keep)
+
+  def select(df, columns, keep_or_drop) when is_list(columns) do
+    column_names = names(df)
+
+    Enum.each(columns, fn name ->
+      maybe_raise_column_not_found(column_names, name)
+    end)
+
+    apply_impl(df, :select, [columns, keep_or_drop])
+  end
+
+  @spec select(
+          df :: DataFrame.t(),
+          callback :: function(),
+          keep_or_drop ::
+            :keep | :drop
+        ) :: DataFrame.t()
+  def select(df, callback, keep_or_drop) when is_function(callback),
+    do: df |> names() |> Enum.filter(callback) |> then(&select(df, &1, keep_or_drop))
 
   @doc """
   Subset rows using column values.
