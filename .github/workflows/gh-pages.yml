@@ -1,0 +1,54 @@
+name: Docs on GitHub pages
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.ref }}-docs
+  cancel-in-progress: true
+
+env:
+  ELIXIR_VERSION: 1.12
+  OTP_VERSION: 24.0
+  MIX_ENV: test
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            native/explorer/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "${{ env.OTP_VERSION }}"
+          elixir-version: "${{ env.ELIXIR_VERSION }}"
+      - run: mix docs
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@4.1.1
+        with:
+          branch: gh-pages
+          folder: doc
