@@ -152,13 +152,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def filter(df, %Series{} = mask),
     do: Shared.apply_native(df, :df_filter, [Shared.to_polars_s(mask)])
 
-  def filter(df, mask) when is_list(mask), do: mask |> Series.from_list() |> then(&filter(df, &1))
-
-  def filter(df, fun) when is_function(fun) do
-    mask = fun.(df)
-    filter(df, mask)
-  end
-
   @impl true
   def mutate(df, columns \\ []) do
     columns |> Enum.reduce(df, &mutate_reducer/2) |> Shared.to_dataframe()
