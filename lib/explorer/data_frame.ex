@@ -4,6 +4,7 @@ defmodule Explorer.DataFrame do
   """
 
   alias __MODULE__, as: DataFrame
+  alias Explorer.Series
 
   import Explorer.Shared, only: [impl!: 1]
   import Nx.Defn.Kernel, only: [keyword!: 2]
@@ -362,6 +363,16 @@ defmodule Explorer.DataFrame do
         b integer [2, 3]
       >
 
+    Including a list:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> Explorer.DataFrame.filter(df, [false, true, false])
+      #Explorer.DataFrame<
+        [rows: 1, columns: 2]
+        a string ["b"]
+        b integer [2]
+      >
+
     Or you can invoke a callback on the dataframe:
 
       iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
@@ -372,7 +383,34 @@ defmodule Explorer.DataFrame do
         b integer [2, 3]
       >
   """
-  def filter(df, mask), do: apply_impl(df, :filter, [mask])
+  def filter(df, %Series{} = mask) do
+    s_len = Series.length(mask)
+    df_len = n_rows(df)
+
+    case s_len == df_len do
+      false ->
+        raise(ArgumentError,
+          message: "Length of the mask (#{s_len}) must be equal to the number of
+      rows in the dataframe (#{df_len})."
+        )
+
+      true ->
+        apply_impl(df, :filter, [mask])
+    end
+  end
+
+  def filter(df, mask) when is_list(mask), do: mask |> Series.from_list() |> then(&filter(df, &1))
+
+  def filter(df, callback) when is_function(callback),
+    do:
+      df
+      |> callback.()
+      |> then(
+        &filter(
+          df,
+          &1
+        )
+      )
 
   @doc """
   Creates and modifies columns.
