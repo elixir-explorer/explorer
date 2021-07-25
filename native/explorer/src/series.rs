@@ -182,7 +182,7 @@ pub fn s_value_counts(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
 pub fn s_take(data: ExSeries, indices: Vec<u32>) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let idx = UInt32Chunked::new_from_slice("idx", indices.as_slice());
-    let s1 = s.take(&idx);
+    let s1 = s.take(&idx)?;
     Ok(ExSeries::new(s1))
 }
 

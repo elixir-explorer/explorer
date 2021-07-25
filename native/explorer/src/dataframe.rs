@@ -296,7 +296,7 @@ pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, Explo
 pub fn df_take(data: ExDataFrame, indices: Vec<u32>) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
         let idx = UInt32Chunked::new_from_slice("idx", indices.as_slice());
-        let new_df = df.take(&idx);
+        let new_df = df.take(&idx)?;
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -308,7 +308,7 @@ pub fn df_take_with_series(
 ) -> Result<ExDataFrame, ExplorerError> {
     let idx = indices.resource.0.u32()?;
     df_read!(data, df, {
-        let new_df = df.take(&idx);
+        let new_df = df.take(&idx)?;
         Ok(ExDataFrame::new(new_df))
     })
 }
