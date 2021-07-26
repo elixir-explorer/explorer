@@ -960,8 +960,31 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Subset rows with a list of indices.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> Explorer.DataFrame.take(df, [0, 2])
+      #Explorer.DataFrame<
+        [rows: 2, columns: 2]
+        a integer [1, 3]
+        b string ["a", "c"]
+      >
   """
-  def take(df, row_indices), do: apply_impl(df, :take, [row_indices])
+  def take(df, row_indices) when is_list(row_indices) do
+    n_rows = n_rows(df)
+
+    Enum.each(row_indices, fn idx ->
+      if idx > n_rows or idx < -n_rows,
+        do:
+          raise(
+            ArgumentError,
+            "Requested row index (#{idx}) out of bounds (-#{n_rows}:#{n_rows})."
+          )
+    end)
+
+    apply_impl(df, :take, [row_indices])
+  end
 
   # Two table verbs
 
