@@ -39,4 +39,23 @@ defmodule Explorer.DataFrameTest do
                    fn -> DF.take(df, [1, 2, 3, 2000]) end
     end
   end
+
+  describe "join/3" do
+    test "raises if no overlapping columns" do
+      assert_raise ArgumentError,
+                   "Could not find any overlapping columns.",
+                   fn ->
+                     left = DF.from_map(%{a: [1, 2, 3]})
+                     right = DF.from_map(%{b: [1, 2, 3]})
+                     DF.join(left, right)
+                   end
+    end
+
+    test "doesn't raise if no overlapping columns on cross join" do
+      left = DF.from_map(%{a: [1, 2, 3]})
+      right = DF.from_map(%{b: [1, 2, 3]})
+      joined = DF.join(left, right, how: :cross)
+      assert %DF{} = joined
+    end
+  end
 end
