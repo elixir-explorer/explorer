@@ -46,7 +46,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback tail(df, rows :: integer()) :: df
   @callback select(df, columns :: [colname], :keep | :drop) :: df
   @callback filter(df, mask :: series) :: df
-  @callback mutate(df, with_columns :: Keyword.t()) :: df
+  @callback mutate(df, with_columns :: map()) :: df
   @callback arrange(df, columns :: [colname], direction :: :asc | :desc) :: df
   @callback distinct(df, columns :: [colname], keep_all? :: boolean()) :: df
   @callback rename(df, [colname]) :: df

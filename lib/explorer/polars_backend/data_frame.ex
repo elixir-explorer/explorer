@@ -162,21 +162,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_native(df, :df_with_column, [series])
   end
 
-  defp mutate_reducer({colname, arg}, %DataFrame{} = df) when is_atom(colname),
-    do: mutate_reducer({Atom.to_string(colname), arg}, df)
-
-  defp mutate_reducer({colname, callback}, df) when is_function(callback) do
-    series = callback.(df)
-    mutate_reducer({colname, series}, df)
-  end
-
-  defp mutate_reducer({colname, values}, %DataFrame{} = df) when is_list(values) do
-    series = Series.from_list(values)
-    mutate_reducer({colname, series}, df)
-  end
-
-  defp mutate_reducer({_colname, _values}, error), do: {:error, error}
-
   @impl true
   def arrange(df, columns, direction \\ :asc),
     do:
