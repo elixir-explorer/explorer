@@ -31,4 +31,12 @@ defmodule Explorer.DataFrameTest do
                    fn -> DF.arrange(df, ["test"]) end
     end
   end
+
+  describe "take/2" do
+    test "raises with index out of bounds", %{df: df} do
+      assert_raise ArgumentError,
+                   "Requested row index (2000) out of bounds (-1094:1094).",
+                   fn -> DF.take(df, [1, 2, 3, 2000]) end
+    end
+  end
 end
