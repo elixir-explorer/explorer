@@ -262,6 +262,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321]
       >
   """
+  @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
   def head(df, nrows \\ 5), do: apply_impl(df, :head, [nrows])
 
   @doc """
@@ -285,6 +286,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [761, 1, 153, 33, 9]
       >
   """
+  @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
   def tail(df, nrows \\ 5), do: apply_impl(df, :tail, [nrows])
 
   @doc """
@@ -383,6 +385,7 @@ defmodule Explorer.DataFrame do
         b integer [2, 3]
       >
   """
+  @spec filter(df :: DataFrame.t(), mask :: Series.t() | [boolean()]) :: DataFrame.t()
   def filter(df, %Series{} = mask) do
     s_len = Series.length(mask)
     df_len = n_rows(df)
@@ -401,6 +404,7 @@ defmodule Explorer.DataFrame do
 
   def filter(df, mask) when is_list(mask), do: mask |> Series.from_list() |> then(&filter(df, &1))
 
+  @spec filter(df :: DataFrame.t(), callback :: function()) :: DataFrame.t()
   def filter(df, callback) when is_function(callback),
     do:
       df
@@ -475,6 +479,7 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
   """
+  @spec mutate(df :: DataFrame.t(), with_columns :: map() | Keyword.t()) :: DataFrame.t()
   def mutate(df, with_columns) when is_map(with_columns) do
     with_columns = Enum.reduce(with_columns, %{}, &mutate_reducer(&1, &2, df))
 
@@ -590,6 +595,12 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [7, 9, 8, 9, 9, "..."]
       >
   """
+  @spec arrange(
+          df :: DataFrame.t(),
+          columns ::
+            [String.t() | {String.t(), :asc | :desc}]
+            | Keyword.t()
+        ) :: DataFrame.t()
   def arrange(df, columns) when is_list(columns) do
     columns = columns |> Enum.reduce([], &arrange_reducer/2) |> Enum.reverse()
 
@@ -720,6 +731,7 @@ defmodule Explorer.DataFrame do
         b integer [1, 3, 1]
       >
   """
+  @spec rename(df :: DataFrame.t(), names :: [String.t() | atom()] | map()) :: DataFrame.t()
   def rename(df, names) when is_list(names) do
     case Keyword.keyword?(names) do
       false ->
@@ -729,17 +741,7 @@ defmodule Explorer.DataFrame do
             name -> name
           end)
 
-        width = n_cols(df)
-        n_new_names = length(names)
-
-        if width != n_new_names,
-          do:
-            raise(ArgumentError,
-              message:
-                "List of new names must match the number of columns in the dataframe. " <>
-                  "Found #{n_new_names} new name(s), but the supplied dataframe has #{width} " <>
-                  "column(s)."
-            )
+        check_new_names_length(df, names)
 
         apply_impl(df, :rename, [names])
 
@@ -774,6 +776,20 @@ defmodule Explorer.DataFrame do
 
   defp rename_reducer({k, v}, acc) when is_binary(k) and is_atom(v),
     do: Map.put(acc, k, Atom.to_string(v))
+
+  defp check_new_names_length(df, names) do
+    width = n_cols(df)
+    n_new_names = length(names)
+
+    if width != n_new_names,
+      do:
+        raise(ArgumentError,
+          message:
+            "List of new names must match the number of columns in the dataframe. " <>
+              "Found #{n_new_names} new name(s), but the supplied dataframe has #{width} " <>
+              "column(s)."
+        )
+  end
 
   @doc """
   Renames columns with a function.
@@ -834,6 +850,8 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321, "..."]
       >
   """
+  @spec rename_with(df :: DataFrame.t(), callback :: function(), columns :: list() | function()) ::
+          DataFrame.t()
   def rename_with(df, callback, columns \\ [])
 
   def rename_with(df, callback, []) when is_function(callback),
@@ -868,7 +886,17 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Extracts a single column as a series.
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.pull(df, "total")
+      #Explorer.Series<
+        integer[1094]
+        [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
+      >
   """
+  @spec pull(df :: DataFrame.t(), column :: String.t()) :: Series.t()
   def pull(df, column), do: apply_impl(df, :pull, [column])
 
   @doc """
