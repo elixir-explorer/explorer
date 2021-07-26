@@ -209,13 +209,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Two table verbs
 
   @impl true
-  def join(left, right, how, :right), do: join(right, left, how, :left)
+  def join(left, right, on, :right), do: join(right, left, on, :left)
 
-  def join(left, right, how, on) do
+  def join(left, right, on, how) do
     how = Atom.to_string(how)
     {left_on, right_on} = Enum.reduce(on, {[], []}, &join_on_reducer/2)
 
-    Native.df_join(left, right, left_on, right_on, how)
+    Shared.apply_native(left, :df_join, [Shared.to_polars_df(right), left_on, right_on, how])
   end
 
   defp join_on_reducer(colname, {left, right}) when is_binary(colname),
