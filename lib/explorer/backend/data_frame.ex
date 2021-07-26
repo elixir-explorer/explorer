@@ -61,7 +61,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback join(
               left :: df,
               right :: df,
-              how :: :left | :inner | :outer | :right,
+              how :: :left | :inner | :outer | :right | :cross,
               on ::
                 list(String.t())
             ) :: df
