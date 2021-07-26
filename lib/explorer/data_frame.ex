@@ -390,8 +390,8 @@ defmodule Explorer.DataFrame do
     case s_len == df_len do
       false ->
         raise(ArgumentError,
-          message: "Length of the mask (#{s_len}) must be equal to the number of
-      rows in the dataframe (#{df_len})."
+          message:
+            "Length of the mask (#{s_len}) must match number of rows in the dataframe (#{df_len})."
         )
 
       true ->
@@ -463,8 +463,63 @@ defmodule Explorer.DataFrame do
         a integer [4, 5, 6]
         b integer [1, 2, 3]
       >
+
+    Alternatively, all of the above works with a map instead of a keyword list:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> Explorer.DataFrame.mutate(df, %{"c" => [4, 5, 6]})
+      #Explorer.DataFrame<
+        [rows: 3, columns: 3]
+        a string ["a", "b", "c"]
+        b integer [1, 2, 3]
+        c integer [4, 5, 6]
+      >
   """
-  def mutate(df, with_columns), do: apply_impl(df, :mutate, [with_columns])
+  def mutate(df, with_columns) when is_map(with_columns) do
+    with_columns = Enum.reduce(with_columns, %{}, &mutate_reducer(&1, &2, df))
+
+    df_len = n_rows(df)
+
+    Enum.each(with_columns, fn {colname, series} ->
+      s_len = Series.length(series)
+
+      if s_len != df_len,
+        do:
+          raise(ArgumentError,
+            message:
+              "Length of new column #{colname} (#{s_len}) must match number of rows in the " <>
+                "dataframe (#{df_len})."
+          )
+    end)
+
+    apply_impl(df, :mutate, [with_columns])
+  end
+
+  def mutate(df, with_columns) when is_list(with_columns) do
+    if not Keyword.keyword?(with_columns), do: raise(ArgumentError, message: "Expected second
+      argument to be a keyword list.")
+
+    with_columns
+    |> Enum.reduce(%{}, fn {colname, value}, acc ->
+      Map.put(acc, Atom.to_string(colname), value)
+    end)
+    |> then(&mutate(df, &1))
+  end
+
+  defp mutate_reducer({colname, %Series{} = series}, acc, %DataFrame{} = _df)
+       when is_binary(colname) and is_map(acc),
+       do: Map.put(acc, colname, series)
+
+  defp mutate_reducer({colname, value}, acc, %DataFrame{} = df)
+       when is_atom(colname) and is_map(acc),
+       do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
+
+  defp mutate_reducer({colname, callback}, acc, %DataFrame{} = df)
+       when is_function(callback) and is_map(acc),
+       do: mutate_reducer({colname, callback.(df)}, acc, df)
+
+  defp mutate_reducer({colname, values}, acc, df) when is_list(values) and is_map(acc),
+    do: mutate_reducer({colname, Series.from_list(values)}, acc, df)
 
   @doc """
   Arranges/sorts rows by columns.
