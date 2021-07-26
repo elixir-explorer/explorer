@@ -990,10 +990,113 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Join two tables.
+
+  ## Join types
+
+    * `inner` - Returns all rows from `left` where there are matching values in `right`, and all columns from `left` and `right`.
+    * `left` - Returns all rows from `left` and all columns from `left` and `right`. Rows in `left` with no match in `right` will have `nil` values in the new columns.
+    * `right` - Returns all rows from `right` and all columns from `left` and `right`. Rows in `right` with no match in `left` will have `nil` values in the new columns.
+    * `outer` - Returns all rows and all columns from both `left` and `right`. Where there are not matching values, returns `nil` for the one missing.
+    * `cross` - Also known as a cartesian join. Returns all combinations of `left` and `right`. Can be very computationally expensive.
+
+  ## Options
+
+    * `on` - The columns to join on. Defaults to overlapping columns. Does not apply to cross join.
+    * `how` - One of the join types (as an atom) described above. Defaults to `:inner`.
+
+  ## Examples
+
+    Inner join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 2], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 3]
+        a integer [1, 2, 2]
+        b string ["a", "b", "b"]
+        c string ["d", "e", "f"]
+      >
+
+    Left join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 2], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right, how: :left)
+      #Explorer.DataFrame<
+        [rows: 4, columns: 3]
+        a integer [1, 2, 2, 3]
+        b string ["a", "b", "b", "c"]
+        c string ["d", "e", "f", nil]
+      >
+
+    Right join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 4], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right, how: :right)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 3]
+        a integer [1, 2, 4]
+        c string ["d", "e", "f"]
+        b string ["a", "b", nil]
+      >
+
+    Outer join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 4], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right, how: :outer)
+      #Explorer.DataFrame<
+        [rows: 4, columns: 3]
+        b string ["a", "b", nil, "c"]
+        a integer [1, 2, 4, 3]
+        c string ["d", "e", "f", nil]
+      >
+
+    Cross join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 4], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right, how: :cross)
+      #Explorer.DataFrame<
+        [rows: 9, columns: 4]
+        a integer [1, 1, 1, 2, 2, "..."]
+        b string ["a", "a", "a", "b", "b", "..."]
+        a_right integer [1, 2, 4, 1, 2, "..."]
+        c string ["d", "e", "f", "d", "e", "..."]
+      >
   """
-  def join(left, right, opts \\ []) do
-    opts = keyword!(opts, on: find_overlapping_cols(left, right), how: :inner)
+  def join(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
+    left_cols = names(left)
+    right_cols = names(right)
+
+    opts = keyword!(opts, on: find_overlapping_cols(left_cols, right_cols), how: :inner)
+
+    case {opts[:on], opts[:how]} do
+      {_, :cross} ->
+        nil
+
+      {[], _} ->
+        raise(ArgumentError, message: "Could not find any overlapping columns.")
+
+      {[_ | _] = on, _} ->
+        Enum.each(on, fn name ->
+          maybe_raise_column_not_found(left_cols, name)
+          maybe_raise_column_not_found(right_cols, name)
+        end)
+
+      _ ->
+        nil
+    end
+
     apply_impl(left, :join, [right, opts[:on], opts[:how]])
+  end
+
+  defp find_overlapping_cols(left_cols, right_cols) do
+    left_cols = MapSet.new(left_cols)
+    right_cols = MapSet.new(right_cols)
+    left_cols |> MapSet.intersection(right_cols) |> MapSet.to_list()
   end
 
   # Helpers
@@ -1006,12 +1109,6 @@ defmodule Explorer.DataFrame do
   defp apply_impl(df, fun, args \\ []) do
     impl = impl!(df)
     apply(impl, fun, [df | args])
-  end
-
-  defp find_overlapping_cols(left, right) do
-    left_cols = left |> names() |> MapSet.new()
-    right_cols = right |> names() |> MapSet.new()
-    left_cols |> MapSet.intersection(right_cols) |> MapSet.to_list()
   end
 
   defp maybe_raise_column_not_found(names, name) do
