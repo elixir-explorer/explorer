@@ -623,6 +623,8 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
+    By default will return unique values of the requested columns:
+
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.distinct(df, ["year", "country"])
       #Explorer.DataFrame<
@@ -630,9 +632,56 @@ defmodule Explorer.DataFrame do
         year integer [2010, 2010, 2010, 2010, 2010, "..."]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
       >
+
+    If `keep_all?` is set to `true`, then the first value of each column not in the requested
+    columns will be returned:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.distinct(df, ["year", "country"], true)
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        total integer [2308, 1254, 32500, 141, 7924, "..."]
+        solid_fuel integer [627, 117, 332, 0, 0, "..."]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
+        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
+        cement integer [5, 177, 2598, 0, 204, "..."]
+        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+      >
+
+    A callback on the dataframe's names can be passed instead of a list (like `select/3`):
+
+      iex> df = Explorer.DataFrame.from_map(%{x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3]})
+      iex> Explorer.DataFrame.distinct(df, &String.starts_with?(&1, "x"))
+      #Explorer.DataFrame<
+        [rows: 2, columns: 2]
+        x1 integer [1, 3]
+        x2 string ["a", "c"]
+      >
   """
-  def distinct(df, columns, keep_all? \\ false),
-    do: apply_impl(df, :distinct, [columns, keep_all?])
+  @spec distinct(df :: DataFrame.t(), columns :: [String.t()], keep_all? :: boolean()) ::
+          DataFrame.t()
+  def distinct(df, columns, keep_all? \\ false)
+
+  def distinct(df, columns, keep_all?) when is_list(columns) do
+    column_names = names(df)
+
+    Enum.each(columns, fn name ->
+      maybe_raise_column_not_found(column_names, name)
+    end)
+
+    apply_impl(df, :distinct, [columns, keep_all?])
+  end
+
+  @spec distinct(df :: DataFrame.t(), callback :: function(), keep_all? :: boolean()) ::
+          DataFrame.t()
+  def distinct(df, callback, keep_all?) when is_function(callback) do
+    columns = df |> names() |> Enum.filter(callback)
+    distinct(df, columns, keep_all?)
+  end
 
   @doc """
   Renames columns.
