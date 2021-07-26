@@ -170,6 +170,7 @@ pub fn df_join(
         "left" => JoinType::Left,
         "inner" => JoinType::Inner,
         "outer" => JoinType::Outer,
+        "cross" => JoinType::Cross,
         _ => return Err(ExplorerError::Other(format!("Join method {} not supported", how)).into()),
     };
 

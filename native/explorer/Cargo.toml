@@ -20,6 +20,7 @@ git = "https://github.com/ritchie46/polars"
 rev = "451ab7baea22955284eb407bb9c9281f79935ab3"
 default-features = false
 features = [
+  "cross_join",
   "dtype-date32",
   "dtype-date64",
   "is_in",
