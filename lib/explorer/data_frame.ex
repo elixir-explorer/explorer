@@ -902,23 +902,201 @@ defmodule Explorer.DataFrame do
   @doc """
   Subset a continuous set of rows.
 
-  Negative offset will be counted from the end of the dataframe.
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.slice(df, 1, 2) 
+      #Explorer.DataFrame<
+        [rows: 2, columns: 10]
+        year integer [2010, 2010]
+        country string ["ALBANIA", "ALGERIA"]
+        total integer [1254, 32500]
+        solid_fuel integer [117, 332]
+        liquid_fuel integer [953, 12381]
+        gas_fuel integer [7, 14565]
+        cement integer [177, 2598]
+        gas_flaring integer [0, 2623]
+        per_capita float [0.43, 0.9]
+        bunker_fuels integer [7, 663]
+      >
+
+    Negative offsets count from the end of the series:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.slice(df, -10, 2) 
+      #Explorer.DataFrame<
+        [rows: 2, columns: 10]
+        year integer [2014, 2014]
+        country string ["UNITED STATES OF AMERICA", "URUGUAY"]
+        total integer [1432855, 1840]
+        solid_fuel integer [450047, 2]
+        liquid_fuel integer [576531, 1700]
+        gas_fuel integer [390719, 25]
+        cement integer [11314, 112]
+        gas_flaring integer [4244, 0]
+        per_capita float [4.43, 0.54]
+        bunker_fuels integer [30722, 251]
+      >
+
+    If the length would run past the end of the dataframe, the result may be shorter than the length:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.slice(df, -10, 20) 
+      #Explorer.DataFrame<
+        [rows: 10, columns: 10]
+        year integer [2014, 2014, 2014, 2014, 2014, "..."]
+        country string ["UNITED STATES OF AMERICA", "URUGUAY", "UZBEKISTAN", "VANUATU", "VENEZUELA", "..."]
+        total integer [1432855, 1840, 28692, 42, 50510, "..."]
+        solid_fuel integer [450047, 2, 1677, 0, 204, "..."]
+        liquid_fuel integer [576531, 1700, 2086, 42, 28445, "..."]
+        gas_fuel integer [390719, 25, 23929, 0, 12731, "..."]
+        cement integer [11314, 112, 1000, 0, 1088, "..."]
+        gas_flaring integer [4244, 0, 0, 0, 8042, "..."]
+        per_capita float [4.43, 0.54, 0.97, 0.16, 1.65, "..."]
+        bunker_fuels integer [30722, 251, 0, 10, 1256, "..."]
+      >
   """
   def slice(df, offset, length), do: apply_impl(df, :slice, [offset, length])
 
   @doc """
   Subset rows with a list of indices.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> Explorer.DataFrame.take(df, [0, 2])
+      #Explorer.DataFrame<
+        [rows: 2, columns: 2]
+        a integer [1, 3]
+        b string ["a", "c"]
+      >
   """
-  def take(df, row_indices), do: apply_impl(df, :take, [row_indices])
+  def take(df, row_indices) when is_list(row_indices) do
+    n_rows = n_rows(df)
+
+    Enum.each(row_indices, fn idx ->
+      if idx > n_rows or idx < -n_rows,
+        do:
+          raise(
+            ArgumentError,
+            "Requested row index (#{idx}) out of bounds (-#{n_rows}:#{n_rows})."
+          )
+    end)
+
+    apply_impl(df, :take, [row_indices])
+  end
 
   # Two table verbs
 
   @doc """
   Join two tables.
+
+  ## Join types
+
+    * `inner` - Returns all rows from `left` where there are matching values in `right`, and all columns from `left` and `right`.
+    * `left` - Returns all rows from `left` and all columns from `left` and `right`. Rows in `left` with no match in `right` will have `nil` values in the new columns.
+    * `right` - Returns all rows from `right` and all columns from `left` and `right`. Rows in `right` with no match in `left` will have `nil` values in the new columns.
+    * `outer` - Returns all rows and all columns from both `left` and `right`. Where there are not matching values, returns `nil` for the one missing.
+    * `cross` - Also known as a cartesian join. Returns all combinations of `left` and `right`. Can be very computationally expensive.
+
+  ## Options
+
+    * `on` - The columns to join on. Defaults to overlapping columns. Does not apply to cross join.
+    * `how` - One of the join types (as an atom) described above. Defaults to `:inner`.
+
+  ## Examples
+
+    Inner join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 2], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 3]
+        a integer [1, 2, 2]
+        b string ["a", "b", "b"]
+        c string ["d", "e", "f"]
+      >
+
+    Left join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 2], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right, how: :left)
+      #Explorer.DataFrame<
+        [rows: 4, columns: 3]
+        a integer [1, 2, 2, 3]
+        b string ["a", "b", "b", "c"]
+        c string ["d", "e", "f", nil]
+      >
+
+    Right join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 4], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right, how: :right)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 3]
+        a integer [1, 2, 4]
+        c string ["d", "e", "f"]
+        b string ["a", "b", nil]
+      >
+
+    Outer join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 4], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right, how: :outer)
+      #Explorer.DataFrame<
+        [rows: 4, columns: 3]
+        b string ["a", "b", nil, "c"]
+        a integer [1, 2, 4, 3]
+        c string ["d", "e", "f", nil]
+      >
+
+    Cross join:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 4], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right, how: :cross)
+      #Explorer.DataFrame<
+        [rows: 9, columns: 4]
+        a integer [1, 1, 1, 2, 2, "..."]
+        b string ["a", "a", "a", "b", "b", "..."]
+        a_right integer [1, 2, 4, 1, 2, "..."]
+        c string ["d", "e", "f", "d", "e", "..."]
+      >
   """
-  def join(left, right, opts \\ []) do
-    opts = keyword!(opts, on: find_overlapping_cols(left, right), how: :inner)
+  def join(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
+    left_cols = names(left)
+    right_cols = names(right)
+
+    opts = keyword!(opts, on: find_overlapping_cols(left_cols, right_cols), how: :inner)
+
+    case {opts[:on], opts[:how]} do
+      {_, :cross} ->
+        nil
+
+      {[], _} ->
+        raise(ArgumentError, message: "Could not find any overlapping columns.")
+
+      {[_ | _] = on, _} ->
+        Enum.each(on, fn name ->
+          maybe_raise_column_not_found(left_cols, name)
+          maybe_raise_column_not_found(right_cols, name)
+        end)
+
+      _ ->
+        nil
+    end
+
     apply_impl(left, :join, [right, opts[:on], opts[:how]])
+  end
+
+  defp find_overlapping_cols(left_cols, right_cols) do
+    left_cols = MapSet.new(left_cols)
+    right_cols = MapSet.new(right_cols)
+    left_cols |> MapSet.intersection(right_cols) |> MapSet.to_list()
   end
 
   # Helpers
@@ -931,12 +1109,6 @@ defmodule Explorer.DataFrame do
   defp apply_impl(df, fun, args \\ []) do
     impl = impl!(df)
     apply(impl, fun, [df | args])
-  end
-
-  defp find_overlapping_cols(left, right) do
-    left_cols = left |> names() |> MapSet.new()
-    right_cols = right |> names() |> MapSet.new()
-    left_cols |> MapSet.intersection(right_cols) |> MapSet.to_list()
   end
 
   defp maybe_raise_column_not_found(names, name) do
