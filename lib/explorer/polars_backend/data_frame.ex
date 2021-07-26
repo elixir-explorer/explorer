@@ -163,9 +163,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def arrange(df, columns, direction \\ :asc),
+  def arrange(df, columns),
     do:
-      Enum.reduce(columns, df, fn column, df ->
+      Enum.reduce(columns, df, fn {column, direction}, df ->
         Shared.apply_native(df, :df_sort, [column, direction == :desc])
       end)
 

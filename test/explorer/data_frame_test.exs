@@ -23,4 +23,12 @@ defmodule Explorer.DataFrameTest do
                    fn -> DF.mutate(df, test: [1, 2, 3]) end
     end
   end
+
+  describe "arrange/3" do
+    test "raises with invalid column names", %{df: df} do
+      assert_raise ArgumentError,
+                   "Could not find column name \"test\"",
+                   fn -> DF.arrange(df, ["test"]) end
+    end
+  end
 end

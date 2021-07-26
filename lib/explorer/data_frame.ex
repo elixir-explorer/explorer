@@ -526,6 +526,8 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
+    A single column name will sort ascending by that column:
+
       iex> df = Explorer.DataFrame.from_map(%{a: ["b", "c", "a"], b: [1, 2, 3]})
       iex> Explorer.DataFrame.arrange(df, ["a"])
       #Explorer.DataFrame<
@@ -534,15 +536,87 @@ defmodule Explorer.DataFrame do
         b integer [3, 1, 2]
       >
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 2]})
-      iex> Explorer.DataFrame.arrange(df, ["a", "b"])
+    You can also sort descending:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["b", "c", "a"], b: [1, 2, 3]})
+      iex> Explorer.DataFrame.arrange(df, [{"a", :desc}])
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
-        a string ["a", "a", "b"]
-        b integer [1, 2, 3]
+        a string ["c", "b", "a"]
+        b integer [2, 1, 3]
+      >
+
+    Atoms will be converted to the string column name:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["b", "c", "a"], b: [1, 2, 3]})
+      iex> Explorer.DataFrame.arrange(df, a: :desc)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        a string ["c", "b", "a"]
+        b integer [2, 1, 3]
+      >
+
+    Sorting by two columns sorts them in the order they are entered:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.arrange(df, ["total", "country"])
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10]
+        year integer [2010, 2014, 2013, 2012, 2011, "..."]
+        country string ["AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", "..."]
+        total integer [2308, 2675, 2731, 2933, 3338, "..."]
+        solid_fuel integer [627, 1194, 1075, 1000, 1174, "..."]
+        liquid_fuel integer [1601, 1393, 1568, 1844, 2075, "..."]
+        gas_fuel integer [74, 74, 81, 84, 84, "..."]
+        cement integer [5, 14, 7, 5, 5, "..."]
+        gas_flaring integer [0, 0, 0, 0, 0, "..."]
+        per_capita float [0.08, 0.08, 0.09, 0.1, 0.12, "..."]
+        bunker_fuels integer [9, 9, 9, 9, 9, "..."]
+      >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.arrange(df, total: :asc, country: :desc)
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10]
+        year integer [2010, 2012, 2011, 2013, 2014, "..."]
+        country string ["ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "..."]
+        total integer [2121, 2125, 2608, 3184, 3278, "..."]
+        solid_fuel integer [1531, 917, 1584, 1902, 2097, "..."]
+        liquid_fuel integer [481, 1006, 888, 1119, 1005, "..."]
+        gas_fuel integer [0, 0, 0, 0, 0, "..."]
+        cement integer [109, 201, 136, 162, 177, "..."]
+        gas_flaring integer [0, 0, 0, 0, 0, "..."]
+        per_capita float [0.15, 0.15, 0.18, 0.21, 0.22, "..."]
+        bunker_fuels integer [7, 9, 8, 9, 9, "..."]
       >
   """
-  def arrange(df, column, direction \\ :asc), do: apply_impl(df, :arrange, [column, direction])
+  def arrange(df, columns) when is_list(columns) do
+    columns = columns |> Enum.reduce([], &arrange_reducer/2) |> Enum.reverse()
+
+    column_names = names(df)
+
+    Enum.each(columns, fn {name, _dir} ->
+      maybe_raise_column_not_found(column_names, name)
+    end)
+
+    apply_impl(df, :arrange, [columns])
+  end
+
+  defp arrange_reducer({name, dir}, acc)
+       when is_binary(name) and is_list(acc) and dir in [:asc, :desc],
+       do: [{name, dir} | acc]
+
+  defp arrange_reducer({name, dir}, acc)
+       when is_atom(name) and is_list(acc) and dir in [:asc, :desc],
+       do: arrange_reducer({Atom.to_string(name), dir}, acc)
+
+  defp arrange_reducer(name, acc)
+       when is_binary(name) and is_list(acc),
+       do: arrange_reducer({name, :asc}, acc)
+
+  defp arrange_reducer(name, acc)
+       when is_atom(name) and is_list(acc),
+       do: arrange_reducer(Atom.to_string(name), acc)
 
   @doc """
   Takes distinct rows by a selection of columns.
