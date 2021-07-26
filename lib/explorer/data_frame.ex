@@ -902,7 +902,59 @@ defmodule Explorer.DataFrame do
   @doc """
   Subset a continuous set of rows.
 
-  Negative offset will be counted from the end of the dataframe.
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.slice(df, 1, 2) 
+      #Explorer.DataFrame<
+        [rows: 2, columns: 10]
+        year integer [2010, 2010]
+        country string ["ALBANIA", "ALGERIA"]
+        total integer [1254, 32500]
+        solid_fuel integer [117, 332]
+        liquid_fuel integer [953, 12381]
+        gas_fuel integer [7, 14565]
+        cement integer [177, 2598]
+        gas_flaring integer [0, 2623]
+        per_capita float [0.43, 0.9]
+        bunker_fuels integer [7, 663]
+      >
+
+    Negative offsets count from the end of the series:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.slice(df, -10, 2) 
+      #Explorer.DataFrame<
+        [rows: 2, columns: 10]
+        year integer [2014, 2014]
+        country string ["UNITED STATES OF AMERICA", "URUGUAY"]
+        total integer [1432855, 1840]
+        solid_fuel integer [450047, 2]
+        liquid_fuel integer [576531, 1700]
+        gas_fuel integer [390719, 25]
+        cement integer [11314, 112]
+        gas_flaring integer [4244, 0]
+        per_capita float [4.43, 0.54]
+        bunker_fuels integer [30722, 251]
+      >
+
+    If the length would run past the end of the dataframe, the result may be shorter than the length:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.slice(df, -10, 20) 
+      #Explorer.DataFrame<
+        [rows: 10, columns: 10]
+        year integer [2014, 2014, 2014, 2014, 2014, "..."]
+        country string ["UNITED STATES OF AMERICA", "URUGUAY", "UZBEKISTAN", "VANUATU", "VENEZUELA", "..."]
+        total integer [1432855, 1840, 28692, 42, 50510, "..."]
+        solid_fuel integer [450047, 2, 1677, 0, 204, "..."]
+        liquid_fuel integer [576531, 1700, 2086, 42, 28445, "..."]
+        gas_fuel integer [390719, 25, 23929, 0, 12731, "..."]
+        cement integer [11314, 112, 1000, 0, 1088, "..."]
+        gas_flaring integer [4244, 0, 0, 0, 8042, "..."]
+        per_capita float [4.43, 0.54, 0.97, 0.16, 1.65, "..."]
+        bunker_fuels integer [30722, 251, 0, 10, 1256, "..."]
+      >
   """
   def slice(df, offset, length), do: apply_impl(df, :slice, [offset, length])
 
