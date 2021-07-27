@@ -22,6 +22,7 @@ defmodule Explorer.Series do
   alias __MODULE__, as: Series
 
   import Explorer.Shared, only: [impl!: 1]
+  import Nx.Defn.Kernel, only: [keyword!: 2]
   import Kernel, except: [length: 1]
 
   @type data :: Explorer.Backend.Series.t()
@@ -271,16 +272,50 @@ defmodule Explorer.Series do
   return that proportion of the series.
 
   Can sample with or without replacement.
+
+  ## Examples
+
+      iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.sample(s, 10, seed: 100)
+      #Explorer.Series<
+        integer[10]
+        [72, 33, 15, 4, 16, 49, 23, 96, 45, 47]
+      >
+
+      iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.sample(s, 0.05, seed: 100)
+      #Explorer.Series<
+        integer[5]
+        [68, 24, 6, 8, 36]
+      >
   """
-  @spec sample(series :: Series.t(), n_or_frac :: number(), with_replacement? :: boolean()) ::
+  @spec sample(series :: Series.t(), n_or_frac :: number(), opts :: Keyword.t()) ::
           Series.t()
-  def sample(series, n_or_frac, with_replacement? \\ false)
+  def sample(series, n_or_frac, opts \\ [])
 
-  def sample(series, n, with_replacement?) when is_integer(n),
-    do: apply_impl(series, :sample, [n, with_replacement?])
+  def sample(series, n, opts) when is_integer(n) do
+    opts = keyword!(opts, with_replacement?: false, seed: Enum.random(1..1_000_000_000_000))
+    length = length(series)
 
-  def sample(series, frac, with_replacement?) when is_float(frac),
-    do: apply_impl(series, :sample, [frac, with_replacement?])
+    case {n > length, opts[:with_replacement?]} do
+      {true, false} ->
+        raise ArgumentError,
+          message:
+            "In order to sample more elements than are in the series (#{length}), sampling " <>
+              "`with_replacement?` must be true."
+
+      _ ->
+        :ok
+    end
+
+    apply_impl(series, :sample, [n, opts[:with_replacement?], opts[:seed]])
+  end
+
+  def sample(series, frac, opts) when is_float(frac) do
+    length = length(series)
+    n = round(frac * length)
+    sample(series, n, opts)
+  end
 
   @doc """
   Takes every *n*th value in this series, returned as a new series.

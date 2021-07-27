@@ -15,14 +15,10 @@ defmodule Explorer.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
-    [
-      extra_applications: [:logger]
-    ]
+    [extra_applications: [:logger]]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
@@ -35,7 +31,19 @@ defmodule Explorer.MixProject do
     [
       main: "Explorer",
       source_ref: "v#{@version}",
-      source_url: @source_url
+      source_url: @source_url,
+      groups_for_modules: [
+        # Explorer,
+        # Explorer.DataFrame,
+        # Explorer.Datasets,
+        # Explorer.Series,
+        Backends: [
+          Explorer.Backend,
+          Explorer.Backend.DataFrame,
+          Explorer.Backend.Series,
+          Explorer.PolarsBackend
+        ]
+      ]
     ]
   end
 end

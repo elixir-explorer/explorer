@@ -986,6 +986,85 @@ defmodule Explorer.DataFrame do
     apply_impl(df, :take, [row_indices])
   end
 
+  @doc """
+  Sample rows from a dataframe.
+
+  If given an integer as the second argument, it will return N samples. If given a float, it will
+  return that proportion of the series.
+
+  Can sample with or without replacement.
+
+  ## Options
+
+    * `with_replacement?` - If set to `true`, each sample will be independent and therefore values may repeat. Required to be `true` for `n` greater then the number of rows in the dataframe or `frac` > 1.0. (default: `false`)
+    * `seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
+
+  ## Examples
+
+    You can sample N rows:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.sample(df, 3, seed: 100)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 10]
+        year integer [2012, 2012, 2013]
+        country string ["ZIMBABWE", "NICARAGUA", "NIGER"]
+        total integer [2125, 1260, 529]
+        solid_fuel integer [917, 0, 93]
+        liquid_fuel integer [1006, 1176, 432]
+        gas_fuel integer [0, 0, 0]
+        cement integer [201, 84, 4]
+        gas_flaring integer [0, 0, 0]
+        per_capita float [0.15, 0.21, 0.03]
+        bunker_fuels integer [9, 18, 19]
+      >
+
+    Or you can sample a proportion of rows:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.sample(df, 0.03, seed: 100)
+      #Explorer.DataFrame<
+        [rows: 33, columns: 10]
+        year integer [2013, 2012, 2013, 2012, 2010, "..."]
+        country string ["BAHAMAS", "POLAND", "SLOVAKIA", "MOZAMBIQUE", "OMAN", "..."]
+        total integer [764, 81792, 9024, 851, 12931, "..."]
+        solid_fuel integer [1, 53724, 3657, 11, 0, "..."]
+        liquid_fuel integer [763, 17353, 2090, 632, 2331, "..."]
+        gas_fuel integer [0, 8544, 2847, 47, 9309, "..."]
+        cement integer [0, 2165, 424, 161, 612, "..."]
+        gas_flaring integer [0, 6, 7, 0, 679, "..."]
+        per_capita float [2.02, 2.12, 1.67, 0.03, 4.39, "..."]
+        bunker_fuels integer [167, 573, 34, 56, 1342, "..."]
+      >
+
+  """
+  @spec sample(df :: DataFrame.t(), n_or_frac :: number(), opts :: Keyword.t()) :: DataFrame.t()
+  def sample(df, n_or_frac, opts \\ [])
+
+  def sample(df, n, opts) when is_integer(n) do
+    opts = keyword!(opts, with_replacement?: false, seed: Enum.random(1..1_000_000_000_000))
+    n_rows = n_rows(df)
+
+    case {n > n_rows, opts[:with_replacement?]} do
+      {true, false} ->
+        raise ArgumentError,
+          message:
+            "In order to sample more rows than are in the dataframe (#{n_rows}), sampling " <>
+              "`with_replacement?` must be true."
+
+      _ ->
+        :ok
+    end
+
+    apply_impl(df, :sample, [n, opts[:with_replacement?], opts[:seed]])
+  end
+
+  def sample(df, frac, opts) when is_float(frac) do
+    n_rows = n_rows(df)
+    n = round(frac * n_rows)
+    sample(df, n, opts)
+  end
+
   # Two table verbs
 
   @doc """

@@ -14,6 +14,8 @@ rustler = "0.22.0"
 thiserror = "1"
 anyhow = "1"
 mimalloc = { version = "*", default-features = false }
+rand = { version = "0.8.4", features = ["alloc"] }
+rand_pcg = "0.3.1"
 
 [dependencies.polars]
 git = "https://github.com/ritchie46/polars"
