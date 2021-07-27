@@ -1,7 +1,7 @@
 defmodule Explorer.PolarsBackend.Series do
-  @moduledoc """
-  Polars backend for `Explorer.Series`.
-  """
+  @moduledoc false
+
+  import Kernel, except: [length: 1]
 
   alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Native
@@ -80,11 +80,14 @@ defmodule Explorer.PolarsBackend.Series do
   def tail(series, n_elements), do: Shared.apply_native(series, :s_tail, [n_elements])
 
   @impl true
-  def sample(series, n, with_replacement) when is_integer(n),
-    do: Shared.apply_native(series, :s_sample_n, [n, with_replacement])
+  def sample(series, n, with_replacement?, seed) when is_integer(n) do
+    indices =
+      series
+      |> length()
+      |> Native.s_seedable_random_indices(n, with_replacement?, seed)
 
-  def sample(series, frac, with_replacement) when is_float(frac),
-    do: Shared.apply_native(series, :s_sample_frac, [frac, with_replacement])
+    take(series, indices)
+  end
 
   @impl true
   def take_every(series, every_n),

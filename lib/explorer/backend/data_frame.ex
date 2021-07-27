@@ -51,7 +51,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback distinct(df, columns :: [colname], keep_all? :: boolean()) :: df
   @callback rename(df, [colname]) :: df
   @callback dummies(df, columns :: [colname]) :: df
-  @callback sample(df, integer() | float(), with_replacement? :: boolean()) :: df
+  @callback sample(df, n :: integer(), with_replacement? :: boolean(), seed :: integer()) :: df
   @callback pull(df, column :: String.t()) :: series
   @callback slice(df, offset :: integer(), length :: integer()) :: df
   @callback take(df, indices :: list(integer())) :: df

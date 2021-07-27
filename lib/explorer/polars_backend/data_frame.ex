@@ -1,7 +1,5 @@
 defmodule Explorer.PolarsBackend.DataFrame do
-  @moduledoc """
-  Polars backend for `Explorer.DataFrame`.
-  """
+  @moduledoc false
 
   alias Explorer.DataFrame, as: DataFrame
   alias Explorer.PolarsBackend.Native
@@ -191,11 +189,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Shared.apply_native(:df_to_dummies)
 
   @impl true
-  def sample(df, n, with_replacement?) when is_integer(n),
-    do: Shared.apply_native(df, :df_sample_n, [n, with_replacement?])
+  def sample(df, n, with_replacement?, seed) when is_integer(n) do
+    indices =
+      df
+      |> n_rows()
+      |> Native.s_seedable_random_indices(n, with_replacement?, seed)
 
-  def sample(df, frac, with_replacement?) when is_float(frac),
-    do: Shared.apply_native(df, :df_sample_n, [frac, with_replacement?])
+    take(df, indices)
+  end
 
   @impl true
   def pull(df, column), do: Shared.apply_native(df, :df_column, [column])

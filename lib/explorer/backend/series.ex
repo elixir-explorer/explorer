@@ -23,7 +23,7 @@ defmodule Explorer.Backend.Series do
   # Slice and dice
   @callback head(s, n :: integer()) :: s
   @callback tail(s, n :: integer()) :: s
-  @callback sample(s, number(), with_replacement :: boolean()) :: s
+  @callback sample(s, n :: integer(), with_replacement :: boolean(), seed :: integer()) :: s
   @callback take_every(s, integer()) :: s
   @callback filter(s, mask :: s) :: s
   @callback filter(s, function()) :: s
