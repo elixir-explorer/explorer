@@ -1,4 +1,7 @@
 use polars::prelude::*;
+use rand::seq::IteratorRandom;
+use rand::{Rng, SeedableRng};
+use rand_pcg::Pcg64;
 use rustler::{Encoder, Env, Term};
 use std::result::Result;
 
@@ -216,28 +219,6 @@ pub fn s_arg_true(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let ca = s.arg_true()?;
     Ok(ExSeries::new(ca.into_series()))
-}
-
-#[rustler::nif]
-pub fn s_sample_n(
-    data: ExSeries,
-    n: usize,
-    with_replacement: bool,
-) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let s1 = s.sample_n(n, with_replacement)?;
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif]
-pub fn s_sample_frac(
-    data: ExSeries,
-    frac: f64,
-    with_replacement: bool,
-) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let s1 = s.sample_frac(frac, with_replacement)?;
-    Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif]
@@ -697,5 +678,26 @@ pub fn cast(s: &Series, to_type: &str) -> Result<Series, PolarsError> {
         "boolean" => Ok(s.cast::<BooleanType>()?),
         "string" => Ok(s.cast::<Utf8Type>()?),
         _ => panic!("Cannot cast to type"),
+    }
+}
+
+#[rustler::nif]
+pub fn s_seedable_random_indices(
+    length: usize,
+    n_samples: usize,
+    with_replacement: bool,
+    seed: u64,
+) -> Vec<usize> {
+    let mut rng: Pcg64 = SeedableRng::seed_from_u64(seed);
+    let range: Vec<usize> = (0..length).collect();
+    if with_replacement {
+        (0..n_samples).map(|_| rng.gen_range(0..length)).collect()
+    } else {
+        range
+            .iter()
+            .choose_multiple(&mut rng, n_samples)
+            .iter()
+            .map(|x| **x)
+            .collect()
     }
 }
