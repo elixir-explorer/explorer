@@ -15,16 +15,20 @@ defmodule Explorer.PolarsBackend.Shared do
     unwrap(result)
   end
 
-  def apply_native(%DataFrame{} = df, fun, args) do
-    df = to_polars_df(df)
+  def apply_native(%DataFrame{data: df, groups: groups}, fun, args) do
     result = apply(Native, fun, [df | args])
-    unwrap(result)
+    unwrap(result, groups)
   end
 
   def to_polars_df(%DataFrame{data: %PolarsDataFrame{} = polars_df}), do: polars_df
   def to_polars_df(%PolarsDataFrame{} = polars_df), do: polars_df
-  def to_dataframe(%DataFrame{} = df), do: df
-  def to_dataframe(%PolarsDataFrame{} = polars_df), do: %DataFrame{data: polars_df, groups: []}
+
+  def to_dataframe(df, groups \\ [])
+  def to_dataframe(%DataFrame{} = df, _groups), do: df
+
+  def to_dataframe(%PolarsDataFrame{} = polars_df, groups),
+    do: %DataFrame{data: polars_df, groups: groups}
+
   def to_polars_s(%Series{data: %PolarsSeries{} = polars_s}), do: polars_s
   def to_polars_s(%PolarsSeries{} = polars_s), do: polars_s
 
@@ -36,10 +40,11 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def to_series(%Series{} = series), do: series
 
-  def unwrap({:ok, %PolarsSeries{} = series}), do: to_series(series)
-  def unwrap({:ok, %PolarsDataFrame{} = df}), do: to_dataframe(df)
-  def unwrap({:ok, value}), do: value
-  def unwrap({:error, error}), do: raise("#{error}")
+  def unwrap(df_or_s, groups \\ [])
+  def unwrap({:ok, %PolarsSeries{} = series}, _), do: to_series(series)
+  def unwrap({:ok, %PolarsDataFrame{} = df}, groups), do: to_dataframe(df, groups)
+  def unwrap({:ok, value}, _), do: value
+  def unwrap({:error, error}, _), do: raise("#{error}")
 
   def normalise_dtype("u32"), do: :integer
   def normalise_dtype("i32"), do: :integer
@@ -49,4 +54,5 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("str"), do: :string
   def normalise_dtype("date32(days)"), do: :date
   def normalise_dtype("date64(ms)"), do: :datetime
+  def normalise_dtype("list [u32]"), do: :list
 end
