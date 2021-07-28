@@ -152,7 +152,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         :drop -> &drop/2
       end
 
-    df |> Shared.to_polars_df() |> func.(columns) |> Shared.unwrap()
+    df |> Shared.to_polars_df() |> func.(columns) |> Shared.unwrap(df.groups)
   end
 
   defp drop(polars_df, colnames),
