@@ -528,3 +528,15 @@ pub fn df_groups(data: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, Ex
         Ok(ExDataFrame::new(groups))
     })
 }
+
+#[rustler::nif]
+pub fn df_groupby_agg(
+    data: ExDataFrame,
+    groups: Vec<&str>,
+    aggs: Vec<(&str, Vec<&str>)>,
+) -> Result<ExDataFrame, ExplorerError> {
+    df_read!(data, df, {
+        let new_df = df.groupby(groups)?.agg(&aggs)?;
+        Ok(ExDataFrame::new(new_df))
+    })
+}

@@ -39,6 +39,7 @@ rustler::init!(
         df_frame_equal,
         df_get_columns,
         df_groups,
+        df_groupby_agg,
         df_head,
         df_height,
         df_hstack,

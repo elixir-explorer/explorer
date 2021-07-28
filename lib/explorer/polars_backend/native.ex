@@ -47,6 +47,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_frame_equal(_df, _other, _null_equal), do: err()
   def df_get_columns(_df), do: err()
   def df_groups(_df, _colnames), do: err()
+  def df_groupby_agg(_df, _groups, _aggs), do: err()
   def df_head(_df, _length), do: err()
   def df_height(_df), do: err()
   def df_hstack(_df, _cols), do: err()
