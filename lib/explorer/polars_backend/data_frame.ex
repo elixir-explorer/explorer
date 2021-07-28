@@ -208,11 +208,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def arrange(df, columns),
+  def arrange(%DataFrame{groups: []} = df, columns),
     do:
       Enum.reduce(columns, df, fn {column, direction}, df ->
         Shared.apply_native(df, :df_sort, [column, direction == :desc])
       end)
+
+  def arrange(%DataFrame{groups: groups} = df, columns) do
+    df
+    |> Shared.apply_native(:df_groups, [groups])
+    |> pull("groups")
+    |> Series.to_list()
+    |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> arrange(columns) end)
+    |> Enum.reduce(fn df, acc -> Shared.apply_native(acc, :df_vstack, [df.data]) end)
+    |> group_by(groups)
+  end
 
   @impl true
   def distinct(df, columns, true),
