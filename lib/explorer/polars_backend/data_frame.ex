@@ -225,14 +225,26 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def distinct(df, columns, true),
+  def distinct(%DataFrame{groups: []} = df, columns, true),
     do: Shared.apply_native(df, :df_drop_duplicates, [true, columns])
 
-  def distinct(df, columns, false),
+  def distinct(%DataFrame{groups: []} = df, columns, false),
     do:
       df
       |> Shared.apply_native(:df_drop_duplicates, [true, columns])
       |> select(columns, :keep)
+
+  def distinct(%DataFrame{groups: groups} = df, columns, keep_all?) do
+    df
+    |> Shared.apply_native(:df_groups, [groups])
+    |> pull("groups")
+    |> Series.to_list()
+    |> Enum.map(fn indices ->
+      df |> ungroup([]) |> take(indices) |> distinct(columns, keep_all?)
+    end)
+    |> Enum.reduce(fn df, acc -> Shared.apply_native(acc, :df_vstack, [df.data]) end)
+    |> group_by(groups)
+  end
 
   @impl true
   def rename(df, names) when is_list(names),
