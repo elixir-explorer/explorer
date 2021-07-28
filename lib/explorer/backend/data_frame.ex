@@ -55,6 +55,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback pull(df, column :: String.t()) :: series
   @callback slice(df, offset :: integer(), length :: integer()) :: df
   @callback take(df, indices :: list(integer())) :: df
+  @callback drop_nil(df, columns :: [colname]) :: df
 
   # Two table verbs
 

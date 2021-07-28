@@ -688,10 +688,40 @@ defmodule Explorer.DataFrame do
   end
 
   @spec distinct(df :: DataFrame.t(), callback :: function(), keep_all? :: boolean()) ::
+  @doc """
+  Drop nil values.
+
+  Optionally accepts a subset of columns.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.from_map(%{a: [1, 2, nil], b: [1, nil, 3]})
+      iex> Explorer.DataFrame.drop_nil(df)
+      #Explorer.DataFrame<
+        [rows: 1, columns: 2]
+        a integer [1]
+        b integer [1]
+      >
+  """
+  @spec drop_nil(df :: DataFrame.t(), columns_or_column :: [String.t()] | String.t()) ::
           DataFrame.t()
   def distinct(df, callback, keep_all?) when is_function(callback) do
     columns = df |> names() |> Enum.filter(callback)
     distinct(df, columns, keep_all?)
+  def drop_nil(df, columns_or_column \\ [])
+
+  def drop_nil(df, []), do: drop_nil(df, names(df))
+
+  def drop_nil(df, column) when is_binary(column), do: drop_nil(df, [column])
+
+  def drop_nil(df, columns) when is_list(columns) do
+    column_names = names(df)
+
+    Enum.each(columns, fn name ->
+      maybe_raise_column_not_found(column_names, name)
+    end)
+
+    apply_impl(df, :drop_nil, [columns])
   end
 
   @doc """

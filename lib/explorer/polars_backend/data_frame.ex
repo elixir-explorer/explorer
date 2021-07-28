@@ -207,6 +207,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def take(df, row_indices), do: Shared.apply_native(df, :df_take, [row_indices])
 
+  @impl true
+  def drop_nil(df, columns), do: Shared.apply_native(df, :df_drop_nulls, [columns])
+
   # Two table verbs
 
   @impl true
