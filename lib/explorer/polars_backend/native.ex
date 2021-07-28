@@ -46,6 +46,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_find_idx_by_name(_df, _name), do: err()
   def df_frame_equal(_df, _other, _null_equal), do: err()
   def df_get_columns(_df), do: err()
+  def df_groups(_df, _colnames), do: err()
   def df_head(_df, _length), do: err()
   def df_height(_df), do: err()
   def df_hstack(_df, _cols), do: err()

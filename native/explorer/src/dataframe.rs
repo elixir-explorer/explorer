@@ -419,10 +419,10 @@ pub fn df_shift(data: ExDataFrame, periods: i64) -> Result<ExDataFrame, Explorer
 pub fn df_drop_duplicates(
     data: ExDataFrame,
     maintain_order: bool,
-    subset: Option<Vec<String>>,
+    subset: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.drop_duplicates(maintain_order, subset.as_ref().map(|v| v.as_ref()))?;
+        let new_df = df.drop_duplicates(maintain_order, Some(&subset))?;
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -518,5 +518,13 @@ pub fn df_cast(
             .may_apply(column, |s: &Series| cast(s, to_type))?
             .clone();
         Ok(ExDataFrame::new(new_df))
+    })
+}
+
+#[rustler::nif]
+pub fn df_groups(data: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
+    df_read!(data, df, {
+        let groups = df.groupby(groups)?.groups()?;
+        Ok(ExDataFrame::new(groups))
     })
 }

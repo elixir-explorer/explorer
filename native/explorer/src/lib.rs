@@ -38,6 +38,7 @@ rustler::init!(
         df_find_idx_by_name,
         df_frame_equal,
         df_get_columns,
+        df_groups,
         df_head,
         df_height,
         df_hstack,

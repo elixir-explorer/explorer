@@ -67,6 +67,28 @@ macro_rules! encode {
     };
 }
 
+macro_rules! encode_list {
+    ($s:ident, $env:ident, $convert_function:ident, $out_type:ty) => {
+        $s.list()
+            .unwrap()
+            .into_iter()
+            .map(|item| item)
+            .collect::<Vec<Option<Series>>>()
+            .iter()
+            .map(|item| {
+                item.clone()
+                    .unwrap()
+                    .$convert_function()
+                    .unwrap()
+                    .into_iter()
+                    .map(|item| item)
+                    .collect::<Vec<Option<$out_type>>>()
+            })
+            .collect::<Vec<Vec<Option<$out_type>>>>()
+            .encode($env)
+    };
+}
+
 impl<'a> Encoder for ExSeriesRef {
     fn encode<'b>(&self, env: Env<'b>) -> Term<'b> {
         let s = &self.0;
@@ -79,6 +101,7 @@ impl<'a> Encoder for ExSeriesRef {
             DataType::Float64 => encode!(s, env, f64),
             DataType::Date32 => encode!(s, env, date32, i32),
             DataType::Date64 => encode!(s, env, date64, i64),
+            DataType::List(ArrowDataType::UInt32) => encode_list!(s, env, u32, u32),
             dt => panic!("to_list/1 not implemented for {:?}", dt),
         }
     }
