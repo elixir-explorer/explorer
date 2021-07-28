@@ -293,7 +293,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [761, 1, 153, 33, 9]
       >
   """
-  @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
+  @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
   def tail(df, nrows \\ 5), do: apply_impl(df, :tail, [nrows])
 
   @doc """
