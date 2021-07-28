@@ -110,19 +110,16 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_native(series, :s_take, [indices])
 
   @impl true
-  def get(%Series{dtype: :date} = series, idx),
-    do:
-      series
-      |> Shared.apply_native(:s_get, [idx])
-      |> decode_date()
+  def get(%Series{dtype: dtype} = series, idx) do
+    idx = if idx < 0, do: length(series) + idx, else: idx
+    value = Shared.apply_native(series, :s_get, [idx])
 
-  def get(%Series{dtype: :datetime} = series, idx),
-    do:
-      series
-      |> Shared.apply_native(:s_get, [idx])
-      |> decode_datetime()
-
-  def get(series, idx), do: Shared.apply_native(series, :s_get, [idx])
+    case dtype do
+      :date -> decode_date(value)
+      :datetime -> decode_datetime(value)
+      _ -> value
+    end
+  end
 
   # Aggregation
 

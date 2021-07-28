@@ -399,7 +399,15 @@ defmodule Explorer.Series do
       "c"
   """
   @spec get(series :: Series.t(), idx :: integer()) :: any()
-  def get(series, idx), do: apply_impl(series, :get, [idx])
+  def get(series, idx) do
+    s_len = length(series)
+
+    if idx > s_len - 1 || idx < -s_len,
+      do:
+        raise(ArgumentError, message: "Index #{idx} out of bounds for series of length #{s_len}")
+
+    apply_impl(series, :get, [idx])
+  end
 
   # Aggregation
 
