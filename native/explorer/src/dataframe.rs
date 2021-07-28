@@ -119,30 +119,6 @@ pub fn df_as_str(data: ExDataFrame) -> Result<String, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn df_sample_n(
-    data: ExDataFrame,
-    n: usize,
-    with_replacement: bool,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.sample_n(n, with_replacement)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
-pub fn df_sample_frac(
-    data: ExDataFrame,
-    frac: f64,
-    with_replacement: bool,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.sample_frac(frac, with_replacement)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
 pub fn df_fill_none(data: ExDataFrame, strategy: &str) -> Result<ExDataFrame, ExplorerError> {
     let strat = match strategy {
         "backward" => FillNoneStrategy::Backward,
