@@ -297,6 +297,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def ungroup(df, groups),
     do: %DataFrame{df | groups: Enum.filter(df.groups, &(&1 not in groups))}
 
+  @impl true
+  def summarise(%DataFrame{groups: groups} = df, with_columns) do
+    with_columns =
+      Enum.map(with_columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
+
+    df |> Shared.apply_native(:df_groupby_agg, [groups, with_columns]) |> ungroup([])
+  end
 end
 
 defimpl Enumerable, for: Explorer.PolarsBackend.DataFrame do

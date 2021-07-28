@@ -71,4 +71,5 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback group_by(df, columns :: [colname]) :: df
   @callback ungroup(df, columns :: [colname]) :: df
+  @callback summarise(df, aggregations :: map()) :: df
 end

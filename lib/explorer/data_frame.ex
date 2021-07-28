@@ -1316,6 +1316,81 @@ defmodule Explorer.DataFrame do
 
   def ungroup(df, group) when is_binary(group), do: ungroup(df, [group])
 
+  @supported_aggs ~w[min max sum mean median first last count n_unique]a
+
+  @doc """
+  Summarise each group to a single row.
+
+  Implicitly ungroups.
+
+  ## Supported operations
+
+    The following aggregations may be performed:
+
+      * `:min` - Take the minimum value within the group. See `Explorer.Series.min/1`.
+      * `:max` - Take the maximum value within the group. See `Explorer.Series.max/1`.
+      * `:sum` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
+      * `:mean` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
+      * `:median` - Take the median of the series within the group. See `Explorer.Series.median/1`.
+      * `:first` - Take the first value within the group. See `Explorer.Series.first/1`.
+      * `:last` - Take the last value within the group. See `Explorer.Series.last/1`.
+      * `:count` - Count the number of rows per group.
+      * `:n_unique` - Count the number of unique rows per group.
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df |> Explorer.DataFrame.group_by("year") |> Explorer.DataFrame.summarise(total: [:max, :min], country: [:n_unique])
+      #Explorer.DataFrame<
+        [rows: 5, columns: 4]
+        year integer [2010, 2011, 2012, 2013, 2014]
+        country_n_unique integer [217, 217, 220, 220, 220]
+        total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
+        total_min integer [1, 2, 2, 2, 3]
+      >
+  """
+  @spec summarise(df :: DataFrame.t(), with_columns :: Keyword.t() | map()) :: DataFrame.t()
+  def summarise(%DataFrame{groups: []}, _),
+    do:
+      raise(ArgumentError,
+        message: "Dataframe must be grouped in order to perform summarisation."
+      )
+
+  def summarise(df, with_columns) when is_map(with_columns) do
+    with_columns = Enum.reduce(with_columns, %{}, &summarise_reducer(&1, &2, df))
+    columns = names(df)
+
+    Enum.each(with_columns, fn {name, values} ->
+      maybe_raise_column_not_found(columns, name)
+
+      unless values |> MapSet.new() |> MapSet.subset?(MapSet.new(@supported_aggs)) do
+        unsupported = values |> MapSet.difference(@supported_aggs) |> MapSet.to_list()
+        raise ArgumentError, message: "Found unsupported aggregations #{inspect(unsupported)}."
+      end
+    end)
+
+    apply_impl(df, :summarise, [with_columns])
+  end
+
+  def summarise(df, with_columns) when is_list(with_columns) do
+    if not Keyword.keyword?(with_columns), do: raise(ArgumentError, message: "Expected second
+      argument to be a keyword list.")
+
+    with_columns
+    |> Enum.reduce(%{}, fn {colname, value}, acc ->
+      Map.put(acc, Atom.to_string(colname), value)
+    end)
+    |> then(&summarise(df, &1))
+  end
+
+  defp summarise_reducer({colname, value}, acc, %DataFrame{} = _df)
+       when is_binary(colname) and is_map(acc) and is_list(value),
+       do: Map.put(acc, colname, value)
+
+  defp summarise_reducer({colname, value}, acc, %DataFrame{} = df)
+       when is_atom(colname) and is_map(acc) and is_list(value),
+       do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
+
   # Helpers
 
   defp backend_from_options!(opts) do
