@@ -271,6 +271,11 @@ defmodule Explorer.Series do
   def first(series), do: series[0]
 
   @doc """
+  Returns the last element of the series.
+  """
+  def last(series), do: series[-1]
+
+  @doc """
   Returns a random sample of the series.
 
   If given an integer as the second argument, it will return N samples. If given a float, it will
