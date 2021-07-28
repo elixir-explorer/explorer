@@ -46,6 +46,8 @@ defmodule Explorer.PolarsBackend.Native do
   def df_find_idx_by_name(_df, _name), do: err()
   def df_frame_equal(_df, _other, _null_equal), do: err()
   def df_get_columns(_df), do: err()
+  def df_groups(_df, _colnames), do: err()
+  def df_groupby_agg(_df, _groups, _aggs), do: err()
   def df_head(_df, _length), do: err()
   def df_height(_df), do: err()
   def df_hstack(_df, _cols), do: err()
@@ -77,6 +79,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_take_with_series(_df, _indices), do: err()
   def df_to_dummies(_df), do: err()
   def df_var(_df), do: err()
+  def df_vstack(_df, _other), do: err()
   def df_width(_df), do: err()
   def df_with_column(_df, _col), do: err()
 

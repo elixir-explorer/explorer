@@ -38,6 +38,8 @@ rustler::init!(
         df_find_idx_by_name,
         df_frame_equal,
         df_get_columns,
+        df_groups,
+        df_groupby_agg,
         df_head,
         df_height,
         df_hstack,
@@ -70,6 +72,7 @@ rustler::init!(
         df_to_csv_file,
         df_to_dummies,
         df_var,
+        df_vstack,
         df_width,
         df_with_column,
         // series

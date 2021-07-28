@@ -119,30 +119,6 @@ pub fn df_as_str(data: ExDataFrame) -> Result<String, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn df_sample_n(
-    data: ExDataFrame,
-    n: usize,
-    with_replacement: bool,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.sample_n(n, with_replacement)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
-pub fn df_sample_frac(
-    data: ExDataFrame,
-    frac: f64,
-    with_replacement: bool,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.sample_frac(frac, with_replacement)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
 pub fn df_fill_none(data: ExDataFrame, strategy: &str) -> Result<ExDataFrame, ExplorerError> {
     let strat = match strategy {
         "backward" => FillNoneStrategy::Backward,
@@ -229,6 +205,13 @@ pub fn df_hstack(data: ExDataFrame, cols: Vec<ExSeries>) -> Result<ExDataFrame, 
     df_read!(data, df, {
         let new_df = df.hstack(&cols)?;
         Ok(ExDataFrame::new(new_df))
+    })
+}
+
+#[rustler::nif]
+pub fn df_vstack(data: ExDataFrame, other: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
+    df_read_read!(data, other, df, df1, {
+        Ok(ExDataFrame::new(df.vstack(&df1.clone())?))
     })
 }
 
@@ -436,10 +419,10 @@ pub fn df_shift(data: ExDataFrame, periods: i64) -> Result<ExDataFrame, Explorer
 pub fn df_drop_duplicates(
     data: ExDataFrame,
     maintain_order: bool,
-    subset: Option<Vec<String>>,
+    subset: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.drop_duplicates(maintain_order, subset.as_ref().map(|v| v.as_ref()))?;
+        let new_df = df.drop_duplicates(maintain_order, Some(&subset))?;
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -534,6 +517,26 @@ pub fn df_cast(
             .clone()
             .may_apply(column, |s: &Series| cast(s, to_type))?
             .clone();
+        Ok(ExDataFrame::new(new_df))
+    })
+}
+
+#[rustler::nif]
+pub fn df_groups(data: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
+    df_read!(data, df, {
+        let groups = df.groupby(groups)?.groups()?;
+        Ok(ExDataFrame::new(groups))
+    })
+}
+
+#[rustler::nif]
+pub fn df_groupby_agg(
+    data: ExDataFrame,
+    groups: Vec<&str>,
+    aggs: Vec<(&str, Vec<&str>)>,
+) -> Result<ExDataFrame, ExplorerError> {
+    df_read!(data, df, {
+        let new_df = df.groupby(groups)?.agg(&aggs)?;
         Ok(ExDataFrame::new(new_df))
     })
 }

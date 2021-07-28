@@ -757,7 +757,7 @@ dependencies = [
 [[package]]
 name = "polars"
 version = "0.14.8"
-source = "git+https://github.com/ritchie46/polars?rev=451ab7baea22955284eb407bb9c9281f79935ab3#451ab7baea22955284eb407bb9c9281f79935ab3"
+source = "git+https://github.com/ritchie46/polars?rev=4af944380df6ae4408f0e77316e18ae3e3ae6a0c#4af944380df6ae4408f0e77316e18ae3e3ae6a0c"
 dependencies = [
  "polars-core",
  "polars-io",
@@ -767,7 +767,7 @@ dependencies = [
 [[package]]
 name = "polars-arrow"
 version = "0.14.8"
-source = "git+https://github.com/ritchie46/polars?rev=451ab7baea22955284eb407bb9c9281f79935ab3#451ab7baea22955284eb407bb9c9281f79935ab3"
+source = "git+https://github.com/ritchie46/polars?rev=4af944380df6ae4408f0e77316e18ae3e3ae6a0c#4af944380df6ae4408f0e77316e18ae3e3ae6a0c"
 dependencies = [
  "arrow",
  "num",
@@ -777,7 +777,7 @@ dependencies = [
 [[package]]
 name = "polars-core"
 version = "0.14.8"
-source = "git+https://github.com/ritchie46/polars?rev=451ab7baea22955284eb407bb9c9281f79935ab3#451ab7baea22955284eb407bb9c9281f79935ab3"
+source = "git+https://github.com/ritchie46/polars?rev=4af944380df6ae4408f0e77316e18ae3e3ae6a0c#4af944380df6ae4408f0e77316e18ae3e3ae6a0c"
 dependencies = [
  "ahash",
  "anyhow",
@@ -802,7 +802,7 @@ dependencies = [
 [[package]]
 name = "polars-io"
 version = "0.14.8"
-source = "git+https://github.com/ritchie46/polars?rev=451ab7baea22955284eb407bb9c9281f79935ab3#451ab7baea22955284eb407bb9c9281f79935ab3"
+source = "git+https://github.com/ritchie46/polars?rev=4af944380df6ae4408f0e77316e18ae3e3ae6a0c#4af944380df6ae4408f0e77316e18ae3e3ae6a0c"
 dependencies = [
  "ahash",
  "anyhow",
@@ -826,7 +826,7 @@ dependencies = [
 [[package]]
 name = "polars-lazy"
 version = "0.14.8"
-source = "git+https://github.com/ritchie46/polars?rev=451ab7baea22955284eb407bb9c9281f79935ab3#451ab7baea22955284eb407bb9c9281f79935ab3"
+source = "git+https://github.com/ritchie46/polars?rev=4af944380df6ae4408f0e77316e18ae3e3ae6a0c#4af944380df6ae4408f0e77316e18ae3e3ae6a0c"
 dependencies = [
  "ahash",
  "itertools",

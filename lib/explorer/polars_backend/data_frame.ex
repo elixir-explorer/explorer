@@ -116,9 +116,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def shape(df), do: Shared.apply_native(df, :df_shape)
 
   @impl true
-  def n_rows(df) do
+  def n_rows(%DataFrame{groups: []} = df) do
     {rows, _cols} = shape(df)
     rows
+  end
+
+  def n_rows(%DataFrame{groups: groups} = df) do
+    groupby = Shared.apply_native(df, :df_groups, [groups])
+
+    n =
+      groupby
+      |> pull("groups")
+      |> Series.to_list()
+      |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> n_rows() end)
+
+    groupby |> select(["groups"], :drop) |> mutate(n: n) |> group_by(groups)
   end
 
   @impl true
@@ -140,7 +152,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         :drop -> &drop/2
       end
 
-    df |> Shared.to_polars_df() |> func.(columns) |> Shared.unwrap()
+    df |> Shared.to_polars_df() |> func.(columns) |> Shared.unwrap(df.groups)
   end
 
   defp drop(polars_df, colnames),
@@ -151,31 +163,88 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_native(df, :df_filter, [Shared.to_polars_s(mask)])
 
   @impl true
-  def mutate(df, columns \\ []) do
+  def mutate(%DataFrame{groups: []} = df, columns) do
     columns |> Enum.reduce(df, &mutate_reducer/2) |> Shared.to_dataframe()
   end
 
+  def mutate(%DataFrame{groups: groups} = df, columns) do
+    df
+    |> Shared.apply_native(:df_groups, [groups])
+    |> pull("groups")
+    |> Series.to_list()
+    |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> mutate(columns) end)
+    |> Enum.reduce(fn df, acc -> Shared.apply_native(acc, :df_vstack, [df.data]) end)
+    |> group_by(groups)
+  end
+
   defp mutate_reducer({colname, %Series{} = series}, %DataFrame{} = df) when is_binary(colname) do
+    check_series_length(df, series, colname)
     series = series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
     Shared.apply_native(df, :df_with_column, [series])
   end
 
+  defp mutate_reducer({colname, callback}, %DataFrame{} = df)
+       when is_function(callback),
+       do: mutate_reducer({colname, callback.(df)}, df)
+
+  defp mutate_reducer({colname, values}, df) when is_list(values),
+    do: mutate_reducer({colname, Series.from_list(values)}, df)
+
+  defp mutate_reducer({colname, value}, %DataFrame{} = df)
+       when is_binary(colname),
+       do: mutate_reducer({colname, value |> List.duplicate(n_rows(df))}, df)
+
+  defp check_series_length(df, series, colname) do
+    df_len = n_rows(df)
+    s_len = Series.length(series)
+
+    if s_len != df_len,
+      do:
+        raise(ArgumentError,
+          message:
+            "Length of new column #{colname} (#{s_len}) must match number of rows in the " <>
+              "dataframe (#{df_len})."
+        )
+  end
+
   @impl true
-  def arrange(df, columns),
+  def arrange(%DataFrame{groups: []} = df, columns),
     do:
       Enum.reduce(columns, df, fn {column, direction}, df ->
         Shared.apply_native(df, :df_sort, [column, direction == :desc])
       end)
 
+  def arrange(%DataFrame{groups: groups} = df, columns) do
+    df
+    |> Shared.apply_native(:df_groups, [groups])
+    |> pull("groups")
+    |> Series.to_list()
+    |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> arrange(columns) end)
+    |> Enum.reduce(fn df, acc -> Shared.apply_native(acc, :df_vstack, [df.data]) end)
+    |> group_by(groups)
+  end
+
   @impl true
-  def distinct(df, columns, true),
+  def distinct(%DataFrame{groups: []} = df, columns, true),
     do: Shared.apply_native(df, :df_drop_duplicates, [true, columns])
 
-  def distinct(df, columns, false),
+  def distinct(%DataFrame{groups: []} = df, columns, false),
     do:
       df
       |> Shared.apply_native(:df_drop_duplicates, [true, columns])
       |> select(columns, :keep)
+
+  def distinct(%DataFrame{groups: groups} = df, columns, keep_all?) do
+    df
+    |> Shared.apply_native(:df_groups, [groups])
+    |> pull("groups")
+    |> Series.to_list()
+    |> Enum.map(fn indices ->
+      df |> ungroup([]) |> take(indices) |> distinct(columns, keep_all?)
+    end)
+    |> Enum.reduce(fn df, acc -> Shared.apply_native(acc, :df_vstack, [df.data]) end)
+    |> group_by(groups)
+  end
 
   @impl true
   def rename(df, names) when is_list(names),
@@ -207,6 +276,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def take(df, row_indices), do: Shared.apply_native(df, :df_take, [row_indices])
 
+  @impl true
+  def drop_nil(df, columns), do: Shared.apply_native(df, :df_drop_nulls, [columns])
+
   # Two table verbs
 
   @impl true
@@ -224,6 +296,29 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defp join_on_reducer({new_left, new_right}, {left, right}),
     do: {[new_left | left], [new_right | right]}
+
+  # Groups
+
+  @impl true
+  def group_by(%DataFrame{groups: groups} = df, new_groups),
+    do: %DataFrame{df | groups: groups ++ new_groups}
+
+  @impl true
+  def ungroup(df, []), do: %DataFrame{df | groups: []}
+
+  def ungroup(df, groups),
+    do: %DataFrame{df | groups: Enum.filter(df.groups, &(&1 not in groups))}
+
+  @impl true
+  def summarise(%DataFrame{groups: groups} = df, with_columns) do
+    with_columns =
+      Enum.map(with_columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
+
+    df
+    |> Shared.apply_native(:df_groupby_agg, [groups, with_columns])
+    |> ungroup([])
+    |> DataFrame.arrange(groups)
+  end
 end
 
 defimpl Enumerable, for: Explorer.PolarsBackend.DataFrame do

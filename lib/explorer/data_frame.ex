@@ -235,6 +235,13 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Returns the groups of a dataframe.
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df = Explorer.DataFrame.group_by(df, "country")
+      iex> Explorer.DataFrame.groups(df)
+      ["country"]
   """
   @spec groups(df :: DataFrame.t()) :: list(String.t())
   def groups(%DataFrame{groups: groups}), do: groups
@@ -286,7 +293,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [761, 1, 153, 33, 9]
       >
   """
-  @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
+  @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
   def tail(df, nrows \\ 5), do: apply_impl(df, :tail, [nrows])
 
   @doc """
@@ -468,6 +475,26 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
+    Scalar values are repeated to fill the series:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> Explorer.DataFrame.mutate(df, a: 4)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        a integer [4, 4, 4]
+        b integer [1, 2, 3]
+      >
+
+    Including when a callback returns a scalar:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> Explorer.DataFrame.mutate(df, a: &Explorer.Series.max(&1["b"]))
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        a integer [3, 3, 3]
+        b integer [1, 2, 3]
+      >
+
     Alternatively, all of the above works with a map instead of a keyword list:
 
       iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
@@ -483,20 +510,6 @@ defmodule Explorer.DataFrame do
   def mutate(df, with_columns) when is_map(with_columns) do
     with_columns = Enum.reduce(with_columns, %{}, &mutate_reducer(&1, &2, df))
 
-    df_len = n_rows(df)
-
-    Enum.each(with_columns, fn {colname, series} ->
-      s_len = Series.length(series)
-
-      if s_len != df_len,
-        do:
-          raise(ArgumentError,
-            message:
-              "Length of new column #{colname} (#{s_len}) must match number of rows in the " <>
-                "dataframe (#{df_len})."
-          )
-    end)
-
     apply_impl(df, :mutate, [with_columns])
   end
 
@@ -511,20 +524,13 @@ defmodule Explorer.DataFrame do
     |> then(&mutate(df, &1))
   end
 
-  defp mutate_reducer({colname, %Series{} = series}, acc, %DataFrame{} = _df)
+  defp mutate_reducer({colname, value}, acc, %DataFrame{} = _df)
        when is_binary(colname) and is_map(acc),
-       do: Map.put(acc, colname, series)
+       do: Map.put(acc, colname, value)
 
   defp mutate_reducer({colname, value}, acc, %DataFrame{} = df)
        when is_atom(colname) and is_map(acc),
        do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
-
-  defp mutate_reducer({colname, callback}, acc, %DataFrame{} = df)
-       when is_function(callback) and is_map(acc),
-       do: mutate_reducer({colname, callback.(df)}, acc, df)
-
-  defp mutate_reducer({colname, values}, acc, df) when is_list(values) and is_map(acc),
-    do: mutate_reducer({colname, Series.from_list(values)}, acc, df)
 
   @doc """
   Arranges/sorts rows by columns.
@@ -637,7 +643,7 @@ defmodule Explorer.DataFrame do
     By default will return unique values of the requested columns:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.distinct(df, ["year", "country"])
+      iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"])
       #Explorer.DataFrame<
         [rows: 1094, columns: 2]
         year integer [2010, 2010, 2010, 2010, 2010, "..."]
@@ -648,7 +654,7 @@ defmodule Explorer.DataFrame do
     columns will be returned:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.distinct(df, ["year", "country"], true)
+      iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"], keep_all?: true)
       #Explorer.DataFrame<
         [rows: 1094, columns: 10]
         year integer [2010, 2010, 2010, 2010, 2010, "..."]
@@ -666,32 +672,66 @@ defmodule Explorer.DataFrame do
     A callback on the dataframe's names can be passed instead of a list (like `select/3`):
 
       iex> df = Explorer.DataFrame.from_map(%{x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3]})
-      iex> Explorer.DataFrame.distinct(df, &String.starts_with?(&1, "x"))
+      iex> Explorer.DataFrame.distinct(df, columns: &String.starts_with?(&1, "x"))
       #Explorer.DataFrame<
         [rows: 2, columns: 2]
         x1 integer [1, 3]
         x2 string ["a", "c"]
       >
   """
-  @spec distinct(df :: DataFrame.t(), columns :: [String.t()], keep_all? :: boolean()) ::
-          DataFrame.t()
-  def distinct(df, columns, keep_all? \\ false)
+  @spec distinct(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def distinct(df, opts \\ [])
 
-  def distinct(df, columns, keep_all?) when is_list(columns) do
+  def distinct(df, opts) do
+    opts = keyword!(opts, columns: [], keep_all?: false)
+
+    column_names = names(df)
+
+    columns =
+      case opts[:columns] do
+        [] -> column_names
+        callback when is_function(callback) -> Enum.filter(column_names, callback)
+        columns -> columns
+      end
+
+    Enum.each(columns, fn name ->
+      maybe_raise_column_not_found(column_names, name)
+    end)
+
+    apply_impl(df, :distinct, [columns, opts[:keep_all?]])
+  end
+
+  @doc """
+  Drop nil values.
+
+  Optionally accepts a subset of columns.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.from_map(%{a: [1, 2, nil], b: [1, nil, 3]})
+      iex> Explorer.DataFrame.drop_nil(df)
+      #Explorer.DataFrame<
+        [rows: 1, columns: 2]
+        a integer [1]
+        b integer [1]
+      >
+  """
+  @spec drop_nil(df :: DataFrame.t(), columns_or_column :: [String.t()] | String.t()) ::
+          DataFrame.t()
+  def drop_nil(df, columns_or_column \\ [])
+
+  def drop_nil(df, []), do: drop_nil(df, names(df))
+
+  def drop_nil(df, column) when is_binary(column), do: drop_nil(df, [column])
+
+  def drop_nil(df, columns) when is_list(columns) do
     column_names = names(df)
 
     Enum.each(columns, fn name ->
       maybe_raise_column_not_found(column_names, name)
     end)
 
-    apply_impl(df, :distinct, [columns, keep_all?])
-  end
-
-  @spec distinct(df :: DataFrame.t(), callback :: function(), keep_all? :: boolean()) ::
-          DataFrame.t()
-  def distinct(df, callback, keep_all?) when is_function(callback) do
-    columns = df |> names() |> Enum.filter(callback)
-    distinct(df, columns, keep_all?)
+    apply_impl(df, :drop_nil, [columns])
   end
 
   @doc """
@@ -1177,6 +1217,179 @@ defmodule Explorer.DataFrame do
     right_cols = MapSet.new(right_cols)
     left_cols |> MapSet.intersection(right_cols) |> MapSet.to_list()
   end
+
+  # Groups
+  @doc """
+  Group the dataframe by one or more variables.
+
+  When the dataframe has grouping variables, operations are performed per group. 
+  `Explorer.DataFrame.ungroup/2` removes grouping.
+
+  ## Examples
+
+    You can group by a single variable:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.group_by(df, "country")
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10, groups: ["country"]]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        total integer [2308, 1254, 32500, 141, 7924, "..."]
+        solid_fuel integer [627, 117, 332, 0, 0, "..."]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
+        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
+        cement integer [5, 177, 2598, 0, 204, "..."]
+        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+      >
+
+    Or you can group by multiple:
+    
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.group_by(df, ["country", "year"])
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10, groups: ["country", "year"]]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        total integer [2308, 1254, 32500, 141, 7924, "..."]
+        solid_fuel integer [627, 117, 332, 0, 0, "..."]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
+        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
+        cement integer [5, 177, 2598, 0, 204, "..."]
+        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+      >
+  """
+  @spec group_by(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
+          DataFrame.t()
+  def group_by(df, groups) when is_list(groups) do
+    names = names(df)
+    Enum.each(groups, fn name -> maybe_raise_column_not_found(names, name) end)
+
+    apply_impl(df, :group_by, [groups])
+  end
+
+  def group_by(df, group) when is_binary(group), do: group_by(df, [group])
+
+  @doc """
+  Removes grouping variables.
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df = Explorer.DataFrame.group_by(df, ["country", "year"])
+      iex> Explorer.DataFrame.ungroup(df, ["country"])
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10, groups: ["year"]]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        total integer [2308, 1254, 32500, 141, 7924, "..."]
+        solid_fuel integer [627, 117, 332, 0, 0, "..."]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
+        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
+        cement integer [5, 177, 2598, 0, 204, "..."]
+        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+      >
+  """
+  @spec ungroup(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
+          DataFrame.t()
+  def ungroup(df, groups \\ [])
+
+  def ungroup(df, groups) when is_list(groups) do
+    current_groups = groups(df)
+
+    Enum.each(groups, fn group ->
+      if group not in current_groups,
+        do:
+          raise(ArgumentError,
+            message: "Could not find #{group} in current groups (#{current_groups})."
+          )
+    end)
+
+    apply_impl(df, :ungroup, [groups])
+  end
+
+  def ungroup(df, group) when is_binary(group), do: ungroup(df, [group])
+
+  @supported_aggs ~w[min max sum mean median first last count n_unique]a
+
+  @doc """
+  Summarise each group to a single row.
+
+  Implicitly ungroups.
+
+  ## Supported operations
+
+    The following aggregations may be performed:
+
+      * `:min` - Take the minimum value within the group. See `Explorer.Series.min/1`.
+      * `:max` - Take the maximum value within the group. See `Explorer.Series.max/1`.
+      * `:sum` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
+      * `:mean` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
+      * `:median` - Take the median of the series within the group. See `Explorer.Series.median/1`.
+      * `:first` - Take the first value within the group. See `Explorer.Series.first/1`.
+      * `:last` - Take the last value within the group. See `Explorer.Series.last/1`.
+      * `:count` - Count the number of rows per group.
+      * `:n_unique` - Count the number of unique rows per group.
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df |> Explorer.DataFrame.group_by("year") |> Explorer.DataFrame.summarise(total: [:max, :min], country: [:n_unique])
+      #Explorer.DataFrame<
+        [rows: 5, columns: 4]
+        year integer [2010, 2011, 2012, 2013, 2014]
+        country_n_unique integer [217, 217, 220, 220, 220]
+        total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
+        total_min integer [1, 2, 2, 2, 3]
+      >
+  """
+  @spec summarise(df :: DataFrame.t(), with_columns :: Keyword.t() | map()) :: DataFrame.t()
+  def summarise(%DataFrame{groups: []}, _),
+    do:
+      raise(ArgumentError,
+        message: "Dataframe must be grouped in order to perform summarisation."
+      )
+
+  def summarise(df, with_columns) when is_map(with_columns) do
+    with_columns = Enum.reduce(with_columns, %{}, &summarise_reducer(&1, &2, df))
+    columns = names(df)
+
+    Enum.each(with_columns, fn {name, values} ->
+      maybe_raise_column_not_found(columns, name)
+
+      unless values |> MapSet.new() |> MapSet.subset?(MapSet.new(@supported_aggs)) do
+        unsupported = values |> MapSet.difference(@supported_aggs) |> MapSet.to_list()
+        raise ArgumentError, message: "Found unsupported aggregations #{inspect(unsupported)}."
+      end
+    end)
+
+    apply_impl(df, :summarise, [with_columns])
+  end
+
+  def summarise(df, with_columns) when is_list(with_columns) do
+    if not Keyword.keyword?(with_columns), do: raise(ArgumentError, message: "Expected second
+      argument to be a keyword list.")
+
+    with_columns
+    |> Enum.reduce(%{}, fn {colname, value}, acc ->
+      Map.put(acc, Atom.to_string(colname), value)
+    end)
+    |> then(&summarise(df, &1))
+  end
+
+  defp summarise_reducer({colname, value}, acc, %DataFrame{} = _df)
+       when is_binary(colname) and is_map(acc) and is_list(value),
+       do: Map.put(acc, colname, value)
+
+  defp summarise_reducer({colname, value}, acc, %DataFrame{} = df)
+       when is_atom(colname) and is_map(acc) and is_list(value),
+       do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
 
   # Helpers
 
