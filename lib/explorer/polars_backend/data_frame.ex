@@ -167,6 +167,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
     columns |> Enum.reduce(df, &mutate_reducer/2) |> Shared.to_dataframe()
   end
 
+  def mutate(%DataFrame{groups: groups} = df, columns) do
+    df
+    |> Shared.apply_native(:df_groups, [groups])
+    |> pull("groups")
+    |> Series.to_list()
+    |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> mutate(columns) end)
+    |> Enum.reduce(fn df, acc -> Shared.apply_native(acc, :df_vstack, [df.data]) end)
+    |> group_by(groups)
+  end
+
   defp mutate_reducer({colname, %Series{} = series}, %DataFrame{} = df) when is_binary(colname) do
     check_series_length(df, series, colname)
     series = series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
