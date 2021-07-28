@@ -116,9 +116,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def shape(df), do: Shared.apply_native(df, :df_shape)
 
   @impl true
-  def n_rows(df) do
+  def n_rows(%DataFrame{groups: []} = df) do
     {rows, _cols} = shape(df)
     rows
+  end
+
+  def n_rows(%DataFrame{groups: groups} = df) do
+    groupby = Shared.apply_native(df, :df_groups, [groups])
+
+    n =
+      groupby
+      |> pull("groups")
+      |> Series.to_list()
+      |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> n_rows() end)
+
+    groupby |> select(["groups"], :drop) |> mutate(n: n) |> group_by(groups)
   end
 
   @impl true
