@@ -916,6 +916,22 @@ defmodule Explorer.Series do
   def eq(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
     do: apply_impl(left, :eq, [right])
 
+  def eq(%Series{dtype: dtype} = left, right)
+      when dtype in [:integer, :float] and is_number(right),
+      do: apply_impl(left, :eq, [right])
+
+  def eq(%Series{dtype: :date} = left, %Date{} = right),
+    do: apply_impl(left, :eq, [right])
+
+  def eq(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
+    do: apply_impl(left, :eq, [right])
+
+  def eq(%Series{dtype: :string} = left, right) when is_binary(right),
+    do: apply_impl(left, :eq, [right])
+
+  def eq(%Series{dtype: :boolean} = left, right) when is_boolean(right),
+    do: apply_impl(left, :eq, [right])
+
   @doc """
   Returns boolean mask of `left != right`, element-wise.
 
@@ -934,6 +950,22 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
   def neq(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
+    do: apply_impl(left, :neq, [right])
+
+  def neq(%Series{dtype: dtype} = left, right)
+      when dtype in [:integer, :float] and is_number(right),
+      do: apply_impl(left, :neq, [right])
+
+  def neq(%Series{dtype: :date} = left, %Date{} = right),
+    do: apply_impl(left, :neq, [right])
+
+  def neq(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
+    do: apply_impl(left, :neq, [right])
+
+  def neq(%Series{dtype: :string} = left, right) when is_binary(right),
+    do: apply_impl(left, :neq, [right])
+
+  def neq(%Series{dtype: :boolean} = left, right) when is_boolean(right),
     do: apply_impl(left, :neq, [right])
 
   @doc """
