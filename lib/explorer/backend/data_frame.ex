@@ -66,4 +66,9 @@ defmodule Explorer.Backend.DataFrame do
               on ::
                 list(String.t())
             ) :: df
+
+  # Groups
+
+  @callback group_by(df, columns :: [colname]) :: df
+  @callback ungroup(df, columns :: [colname]) :: df
 end

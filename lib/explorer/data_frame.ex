@@ -235,6 +235,13 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Returns the groups of a dataframe.
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df = Explorer.DataFrame.group_by(df, "country")
+      iex> Explorer.DataFrame.groups(df)
+      ["country"]
   """
   @spec groups(df :: DataFrame.t()) :: list(String.t())
   def groups(%DataFrame{groups: groups}), do: groups
@@ -1210,6 +1217,104 @@ defmodule Explorer.DataFrame do
     right_cols = MapSet.new(right_cols)
     left_cols |> MapSet.intersection(right_cols) |> MapSet.to_list()
   end
+
+  # Groups
+  @doc """
+  Group the dataframe by one or more variables.
+
+  When the dataframe has grouping variables, operations are performed per group. 
+  `Explorer.DataFrame.ungroup/2` removes grouping.
+
+  ## Examples
+
+    You can group by a single variable:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.group_by(df, "country")
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10, groups: ["country"]]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        total integer [2308, 1254, 32500, 141, 7924, "..."]
+        solid_fuel integer [627, 117, 332, 0, 0, "..."]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
+        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
+        cement integer [5, 177, 2598, 0, 204, "..."]
+        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+      >
+
+    Or you can group by multiple:
+    
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.group_by(df, ["country", "year"])
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10, groups: ["country", "year"]]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        total integer [2308, 1254, 32500, 141, 7924, "..."]
+        solid_fuel integer [627, 117, 332, 0, 0, "..."]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
+        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
+        cement integer [5, 177, 2598, 0, 204, "..."]
+        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+      >
+  """
+  @spec group_by(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
+          DataFrame.t()
+  def group_by(df, groups) when is_list(groups) do
+    names = names(df)
+    Enum.each(groups, fn name -> maybe_raise_column_not_found(names, name) end)
+
+    apply_impl(df, :group_by, [groups])
+  end
+
+  def group_by(df, group) when is_binary(group), do: group_by(df, [group])
+
+  @doc """
+  Removes grouping variables.
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df = Explorer.DataFrame.group_by(df, ["country", "year"])
+      iex> Explorer.DataFrame.ungroup(df, ["country"])
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 10, groups: ["year"]]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        total integer [2308, 1254, 32500, 141, 7924, "..."]
+        solid_fuel integer [627, 117, 332, 0, 0, "..."]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
+        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
+        cement integer [5, 177, 2598, 0, 204, "..."]
+        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
+        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+      >
+  """
+  @spec ungroup(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
+          DataFrame.t()
+  def ungroup(df, groups \\ [])
+
+  def ungroup(df, groups) when is_list(groups) do
+    current_groups = groups(df)
+
+    Enum.each(groups, fn group ->
+      if group not in current_groups,
+        do:
+          raise(ArgumentError,
+            message: "Could not find #{group} in current groups (#{current_groups})."
+          )
+    end)
+
+    apply_impl(df, :ungroup, [groups])
+  end
+
+  def ungroup(df, group) when is_binary(group), do: ungroup(df, [group])
 
   # Helpers
 

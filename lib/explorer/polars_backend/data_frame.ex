@@ -252,6 +252,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defp join_on_reducer({new_left, new_right}, {left, right}),
     do: {[new_left | left], [new_right | right]}
+
+  # Groups
+
+  @impl true
+  def group_by(%DataFrame{groups: groups} = df, new_groups),
+    do: %DataFrame{df | groups: groups ++ new_groups}
+
+  @impl true
+  def ungroup(df, []), do: %DataFrame{df | groups: []}
+
+  def ungroup(df, groups),
+    do: %DataFrame{df | groups: Enum.filter(df.groups, &(&1 not in groups))}
+
 end
 
 defimpl Enumerable, for: Explorer.PolarsBackend.DataFrame do
