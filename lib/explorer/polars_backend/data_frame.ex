@@ -314,7 +314,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
     with_columns =
       Enum.map(with_columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
 
-    df |> Shared.apply_native(:df_groupby_agg, [groups, with_columns]) |> ungroup([])
+    df
+    |> Shared.apply_native(:df_groupby_agg, [groups, with_columns])
+    |> ungroup([])
+    |> DataFrame.arrange(groups)
   end
 end
 
