@@ -209,6 +209,13 @@ pub fn df_hstack(data: ExDataFrame, cols: Vec<ExSeries>) -> Result<ExDataFrame, 
 }
 
 #[rustler::nif]
+pub fn df_vstack(data: ExDataFrame, other: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
+    df_read_read!(data, other, df, df1, {
+        Ok(ExDataFrame::new(df.vstack(&df1.clone())?))
+    })
+}
+
+#[rustler::nif]
 pub fn df_drop_nulls(
     data: ExDataFrame,
     subset: Option<Vec<String>>,

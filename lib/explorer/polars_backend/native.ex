@@ -77,6 +77,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_take_with_series(_df, _indices), do: err()
   def df_to_dummies(_df), do: err()
   def df_var(_df), do: err()
+  def df_vstack(_df, _other), do: err()
   def df_width(_df), do: err()
   def df_with_column(_df, _col), do: err()
 

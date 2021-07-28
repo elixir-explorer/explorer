@@ -70,6 +70,7 @@ rustler::init!(
         df_to_csv_file,
         df_to_dummies,
         df_var,
+        df_vstack,
         df_width,
         df_with_column,
         // series
