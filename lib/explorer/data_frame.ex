@@ -468,6 +468,26 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
+    Scalar values are repeated to fill the series:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> Explorer.DataFrame.mutate(df, a: 4)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        a integer [4, 4, 4]
+        b integer [1, 2, 3]
+      >
+
+    Including when a callback returns a scalar:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> Explorer.DataFrame.mutate(df, a: &Explorer.Series.max(&1["b"]))
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        a integer [3, 3, 3]
+        b integer [1, 2, 3]
+      >
+
     Alternatively, all of the above works with a map instead of a keyword list:
 
       iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
@@ -483,20 +503,6 @@ defmodule Explorer.DataFrame do
   def mutate(df, with_columns) when is_map(with_columns) do
     with_columns = Enum.reduce(with_columns, %{}, &mutate_reducer(&1, &2, df))
 
-    df_len = n_rows(df)
-
-    Enum.each(with_columns, fn {colname, series} ->
-      s_len = Series.length(series)
-
-      if s_len != df_len,
-        do:
-          raise(ArgumentError,
-            message:
-              "Length of new column #{colname} (#{s_len}) must match number of rows in the " <>
-                "dataframe (#{df_len})."
-          )
-    end)
-
     apply_impl(df, :mutate, [with_columns])
   end
 
@@ -511,20 +517,13 @@ defmodule Explorer.DataFrame do
     |> then(&mutate(df, &1))
   end
 
-  defp mutate_reducer({colname, %Series{} = series}, acc, %DataFrame{} = _df)
+  defp mutate_reducer({colname, value}, acc, %DataFrame{} = _df)
        when is_binary(colname) and is_map(acc),
-       do: Map.put(acc, colname, series)
+       do: Map.put(acc, colname, value)
 
   defp mutate_reducer({colname, value}, acc, %DataFrame{} = df)
        when is_atom(colname) and is_map(acc),
        do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
-
-  defp mutate_reducer({colname, callback}, acc, %DataFrame{} = df)
-       when is_function(callback) and is_map(acc),
-       do: mutate_reducer({colname, callback.(df)}, acc, df)
-
-  defp mutate_reducer({colname, values}, acc, df) when is_list(values) and is_map(acc),
-    do: mutate_reducer({colname, Series.from_list(values)}, acc, df)
 
   @doc """
   Arranges/sorts rows by columns.

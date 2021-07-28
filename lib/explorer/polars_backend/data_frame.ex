@@ -151,13 +151,38 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_native(df, :df_filter, [Shared.to_polars_s(mask)])
 
   @impl true
-  def mutate(df, columns \\ []) do
+  def mutate(%DataFrame{groups: []} = df, columns) do
     columns |> Enum.reduce(df, &mutate_reducer/2) |> Shared.to_dataframe()
   end
 
   defp mutate_reducer({colname, %Series{} = series}, %DataFrame{} = df) when is_binary(colname) do
+    check_series_length(df, series, colname)
     series = series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
     Shared.apply_native(df, :df_with_column, [series])
+  end
+
+  defp mutate_reducer({colname, callback}, %DataFrame{} = df)
+       when is_function(callback),
+       do: mutate_reducer({colname, callback.(df)}, df)
+
+  defp mutate_reducer({colname, values}, df) when is_list(values),
+    do: mutate_reducer({colname, Series.from_list(values)}, df)
+
+  defp mutate_reducer({colname, value}, %DataFrame{} = df)
+       when is_binary(colname),
+       do: mutate_reducer({colname, value |> List.duplicate(n_rows(df))}, df)
+
+  defp check_series_length(df, series, colname) do
+    df_len = n_rows(df)
+    s_len = Series.length(series)
+
+    if s_len != df_len,
+      do:
+        raise(ArgumentError,
+          message:
+            "Length of new column #{colname} (#{s_len}) must match number of rows in the " <>
+              "dataframe (#{df_len})."
+        )
   end
 
   @impl true
