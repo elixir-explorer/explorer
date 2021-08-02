@@ -1105,6 +1105,99 @@ defmodule Explorer.DataFrame do
     sample(df, n, opts)
   end
 
+  @doc """
+  Pivot data from wide to long.
+
+  `Explorer.DataFrame.pivot_longer/3` "lengthens" data, increasing the number of rows and 
+  decreasing the number of columns. The inverse transformation is 
+  `Explorer.DataFrame.pivot_wider/3`.
+
+  The second argument (`columns`) can be either an array of column names to use or a filter callback on
+  the dataframe's names.
+
+  `value_cols` must all have the same dtype.
+
+  ## Options
+
+    * `value_cols` - Columns to use for values. May be a filter callback on the dataframe's column names. Defaults to an empty list, using all variables except the columns to pivot.
+    * `names_to` - A string specifying the name of the column to create from the data stored in the column names of the dataframe. Defaults to `"variable"`.
+    * `values_to` - A string specifying the name of the column to create from the data stored in series element values. Defaults to `"value"`.
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_cols: &String.ends_with?(&1, "fuel"))
+      #Explorer.DataFrame<
+        [rows: 3282, columns: 4]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "..."]
+        value integer [627, 117, 332, 0, 0, "..."]
+      >
+  """
+  @spec pivot_longer(
+          df :: DataFrame.t(),
+          columns :: [String.t()] | function(),
+          opts :: Keyword.t()
+        ) :: DataFrame.t()
+  def pivot_longer(df, columns, opts \\ [])
+
+  def pivot_longer(df, columns, opts) when is_list(columns) do
+    opts = keyword!(opts, value_cols: [], names_to: "variable", values_to: "value")
+
+    names = names(df)
+    dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
+
+    Enum.each(columns, fn name -> maybe_raise_column_not_found(names, name) end)
+
+    value_cols =
+      case opts[:value_cols] do
+        [] ->
+          Enum.filter(names, fn name -> name not in columns end)
+
+        [_ | _] = cols ->
+          Enum.each(cols, fn col ->
+            if col in columns,
+              do:
+                raise(ArgumentError,
+                  message: "Value columns may not also be ID columns. Found #{col} in both."
+                )
+          end)
+
+          cols
+
+        callback when is_function(callback) ->
+          names
+          |> Enum.filter(fn name -> name not in columns end)
+          |> Enum.filter(callback)
+      end
+
+    Enum.each(value_cols, fn name -> maybe_raise_column_not_found(names, name) end)
+
+    dtypes
+    |> Map.take(value_cols)
+    |> Map.values()
+    |> Enum.uniq()
+    |> length()
+    |> case do
+      1 ->
+        :ok
+
+      _ ->
+        raise ArgumentError,
+          message: "Value columns may only include one dtype. Found multiple dtypes."
+    end
+
+    apply_impl(df, :pivot_longer, [columns, value_cols, opts[:names_to], opts[:values_to]])
+  end
+
+  def pivot_longer(df, columns, opts) when is_function(columns),
+    do:
+      df
+      |> names()
+      |> columns.()
+      |> then(&pivot_longer(df, &1, opts))
+
   # Two table verbs
 
   @doc """
