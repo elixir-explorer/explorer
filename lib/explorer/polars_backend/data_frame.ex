@@ -7,7 +7,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series, as: Series
 
-  @type t :: %__MODULE__{resource: binary()}
+  @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
   defstruct resource: nil, reference: nil
 
@@ -278,6 +278,20 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def drop_nil(df, columns), do: Shared.apply_native(df, :df_drop_nulls, [columns])
+
+  @impl true
+  def pivot_longer(df, id_cols, value_cols, names_to, values_to) do
+    df = Shared.apply_native(df, :df_melt, [id_cols, value_cols])
+
+    df
+    |> names()
+    |> Enum.map(fn
+      "variable" -> names_to
+      "value" -> values_to
+      name -> name
+    end)
+    |> then(&rename(df, &1))
+  end
 
   # Two table verbs
 
