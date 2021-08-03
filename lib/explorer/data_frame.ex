@@ -1110,7 +1110,7 @@ defmodule Explorer.DataFrame do
 
   `Explorer.DataFrame.pivot_longer/3` "lengthens" data, increasing the number of rows and 
   decreasing the number of columns. The inverse transformation is 
-  `Explorer.DataFrame.pivot_wider/3`.
+  `Explorer.DataFrame.pivot_wider/4`.
 
   The second argument (`columns`) can be either an array of column names to use or a filter callback on
   the dataframe's names.
@@ -1197,6 +1197,69 @@ defmodule Explorer.DataFrame do
       |> names()
       |> columns.()
       |> then(&pivot_longer(df, &1, opts))
+
+  @doc """
+  Pivot data from long to wide.
+
+  `Explorer.DataFrame.pivot_wider/4` "widens" data, increasing the number of columns and 
+  decreasing the number of rows. The inverse transformation is 
+  `Explorer.DataFrame.pivot_longer/3`.
+
+  Due to a restriction upstream, `values_from` must be a numeric type.
+
+  ## Options
+
+    * `id_cols` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
+    * `names_prefix` - String added to the start of every variable name. This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
+  """
+  @spec pivot_wider(
+          df :: DataFrame.t(),
+          names_from :: String.t(),
+          values_from :: String.t(),
+          opts ::
+            Keyword.t()
+        ) :: DataFrame.t()
+  def pivot_wider(df, names_from, values_from, opts \\ []) do
+    opts = keyword!(opts, id_cols: [], names_prefix: "")
+
+    names = names(df)
+    dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
+
+    case Map.get(dtypes, values_from) do
+      :integer ->
+        :ok
+
+      :float ->
+        :ok
+
+      :date ->
+        :ok
+
+      :datetime ->
+        :ok
+
+      dtype ->
+        raise ArgumentError, message: "The values_from column must be numeric. Found #{dtype}."
+    end
+
+    id_cols =
+      case opts[:id_cols] do
+        [] ->
+          Enum.filter(names, &(&1 not in [names_from, values_from]))
+
+        [_ | _] = names ->
+          Enum.filter(names, &(&1 not in [names_from, values_from]))
+
+        fun when is_function(fun) ->
+          names |> Enum.filter(fun) |> Enum.filter(&(&1 not in [names_from, values_from]))
+      end
+
+    Enum.each(id_cols ++ [names_from, values_from], fn name ->
+      maybe_raise_column_not_found(names, name)
+    end)
+
+    apply_impl(df, :pivot_wider, [id_cols, names_from, values_from, opts[:names_prefix]])
+  end
 
   # Two table verbs
 

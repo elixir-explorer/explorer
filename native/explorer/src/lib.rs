@@ -53,6 +53,7 @@ rustler::init!(
         df_min,
         df_n_chunks,
         df_new,
+        df_pivot_wider,
         df_quantile,
         df_read_csv,
         df_read_parquet,

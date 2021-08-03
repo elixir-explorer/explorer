@@ -540,3 +540,19 @@ pub fn df_groupby_agg(
         Ok(ExDataFrame::new(new_df))
     })
 }
+
+#[rustler::nif]
+pub fn df_pivot_wider(
+    data: ExDataFrame,
+    id_cols: Vec<&str>,
+    pivot_column: &str,
+    values_column: &str,
+) -> Result<ExDataFrame, ExplorerError> {
+    df_read!(data, df, {
+        let new_df = df
+            .groupby(id_cols)?
+            .pivot(pivot_column, values_column)
+            .first()?;
+        Ok(ExDataFrame::new(new_df))
+    })
+}
