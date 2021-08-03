@@ -293,6 +293,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> then(&rename(df, &1))
   end
 
+  @impl true
+  def pivot_wider(df, id_cols, names_from, values_from, names_prefix) do
+    df = Shared.apply_native(df, :df_pivot_wider, [id_cols, names_from, values_from])
+
+    df =
+      df
+      |> names()
+      |> Enum.map(fn name ->
+        if name in id_cols, do: name, else: names_prefix <> name
+      end)
+      |> then(&rename(df, &1))
+
+    df
+  end
+
   # Two table verbs
 
   @impl true

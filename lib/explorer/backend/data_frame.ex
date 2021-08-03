@@ -56,6 +56,14 @@ defmodule Explorer.Backend.DataFrame do
   @callback slice(df, offset :: integer(), length :: integer()) :: df
   @callback take(df, indices :: list(integer())) :: df
   @callback drop_nil(df, columns :: [colname]) :: df
+  @callback pivot_wider(
+              df,
+              id_cols :: [colname],
+              names_from :: [colname],
+              values_from ::
+                [colname],
+              names_prefix :: String.t()
+            ) :: df
   @callback pivot_longer(
               df,
               id_cols :: [colname],
