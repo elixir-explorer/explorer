@@ -97,6 +97,24 @@ pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif]
+pub fn df_to_csv(
+    data: ExDataFrame,
+    has_headers: bool,
+    delimiter: u8,
+) -> Result<String, ExplorerError> {
+    df_read!(data, df, {
+        let mut buf: Vec<u8> = Vec::with_capacity(81920);
+        CsvWriter::new(&mut buf)
+            .has_headers(has_headers)
+            .with_delimiter(delimiter)
+            .finish(&df)?;
+
+        let s = String::from_utf8(buf)?;
+        Ok(s)
+    })
+}
+
+#[rustler::nif]
 pub fn df_to_csv_file(
     data: ExDataFrame,
     filename: &str,

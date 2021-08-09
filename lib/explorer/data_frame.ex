@@ -171,6 +171,26 @@ defmodule Explorer.DataFrame do
   @spec to_map(df :: DataFrame.t(), convert_series? :: boolean()) :: map()
   def to_map(df, convert_series? \\ true), do: apply_impl(df, :to_map, [convert_series?])
 
+  @doc """
+  Writes a dataframe to a binary representation of a delimited file.
+
+  ## Options
+
+    * `header?` - Should the column names be written as the first line of the file? (default: `true`)
+    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df |> Explorer.DataFrame.head() |> Explorer.DataFrame.to_binary()
+      "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n2010,ALGERIA,32500,332,12381,14565,2598,2623,0.9,663\\n2010,ANDORRA,141,0,141,0,0,0,1.68,0\\n2010,ANGOLA,7924,0,3649,374,204,3697,0.37,321\\n"
+  """
+  @spec to_binary(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  def to_binary(df, opts \\ []) do
+    opts = keyword!(opts, header?: true, delimiter: ",")
+    apply_impl(df, :to_binary, [opts[:header?], opts[:delimiter]])
+  end
+
   # Introspection
 
   @doc """

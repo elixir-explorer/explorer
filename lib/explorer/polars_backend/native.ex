@@ -23,6 +23,13 @@ defmodule Explorer.PolarsBackend.Native do
       ),
       do: err()
 
+  def df_to_csv(
+        _df,
+        _has_headers,
+        _delimiter
+      ),
+      do: err()
+
   def df_to_csv_file(
         _df,
         _filename,
