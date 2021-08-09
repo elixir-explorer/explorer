@@ -31,6 +31,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback from_map(map()) :: df
   @callback to_map(df, convert_series? :: boolean()) :: map()
+  @callback to_binary(df, header? :: boolean(), delimiter :: String.t()) :: String.t()
 
   # Introspection
 

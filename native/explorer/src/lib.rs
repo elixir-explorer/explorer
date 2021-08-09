@@ -70,6 +70,7 @@ rustler::init!(
         df_tail,
         df_take,
         df_take_with_series,
+        df_to_csv,
         df_to_csv_file,
         df_to_dummies,
         df_var,

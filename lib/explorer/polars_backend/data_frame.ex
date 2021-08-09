@@ -62,6 +62,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
+  @impl true
+  def to_binary(%DataFrame{} = df, header?, delimiter) do
+    <<delimiter::utf8>> = delimiter
+    Shared.apply_native(df, :df_to_csv, [header?, delimiter])
+  end
+
   # Conversion
 
   @impl true
