@@ -295,23 +295,19 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def rolling_max(series, window_size, weight, ignore_nil?),
-    do:
-      Shared.apply_native(series, :s_rolling_max, [window_size, weight, ignore_nil?, window_size])
+    do: Shared.apply_native(series, :s_rolling_max, [window_size, weight, ignore_nil?, nil])
 
   @impl true
   def rolling_mean(series, window_size, weight, ignore_nil?),
-    do:
-      Shared.apply_native(series, :s_rolling_mean, [window_size, weight, ignore_nil?, window_size])
+    do: Shared.apply_native(series, :s_rolling_mean, [window_size, weight, ignore_nil?, nil])
 
   @impl true
   def rolling_min(series, window_size, weight, ignore_nil?),
-    do:
-      Shared.apply_native(series, :s_rolling_min, [window_size, weight, ignore_nil?, window_size])
+    do: Shared.apply_native(series, :s_rolling_min, [window_size, weight, ignore_nil?, nil])
 
   @impl true
   def rolling_sum(series, window_size, weight, ignore_nil?),
-    do:
-      Shared.apply_native(series, :s_rolling_sum, [window_size, weight, ignore_nil?, window_size])
+    do: Shared.apply_native(series, :s_rolling_sum, [window_size, weight, ignore_nil?, nil])
 
   # Missing values
 
