@@ -151,18 +151,18 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def tail(df, rows), do: Shared.apply_native(df, :df_tail, [rows])
 
   @impl true
-  def select(df, columns, keep_or_drop) when is_list(columns) do
-    func =
-      case keep_or_drop do
-        :keep -> &Native.df_select/2
-        :drop -> &drop/2
-      end
+  def select(df, columns, :keep) when is_list(columns),
+    do: Shared.apply_native(df, :df_select, [columns])
 
-    df |> Shared.to_polars_df() |> func.(columns) |> Shared.unwrap(df.groups)
-  end
+  def select(%{groups: groups} = df, columns, :drop) when is_list(columns),
+    do: df |> Shared.to_polars_df() |> drop(columns) |> Shared.to_dataframe(groups)
 
   defp drop(polars_df, colnames),
-    do: Enum.reduce(colnames, polars_df, fn name, df -> Native.df_drop(df, name) end)
+    do:
+      Enum.reduce(colnames, polars_df, fn name, df ->
+        {:ok, df} = Native.df_drop(df, name)
+        df
+      end)
 
   @impl true
   def filter(df, %Series{} = mask),

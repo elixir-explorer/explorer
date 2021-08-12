@@ -349,6 +349,13 @@ defmodule Explorer.DataFrame do
         [rows: 3, columns: 1]
         a string ["a", "b", "c"]
       >
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6]})
+      iex> Explorer.DataFrame.select(df, ["a", "b"], :drop)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 1]
+        c integer [4, 5, 6]
+      >
   """
   @spec select(
           df :: DataFrame.t(),
