@@ -1210,34 +1210,108 @@ defmodule Explorer.Series do
 
   @doc """
   Creates a new dataframe with unique values and the count of each.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["a", "a", "b", "c", "c", "c"])
+      iex> Explorer.Series.count(s)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        values string ["c", "a", "b"]
+        counts integer [3, 2, 1]
+      >
   """
   def count(series), do: apply_impl(series, :count)
 
   # Rolling
 
   @doc """
-  Calculate the rolling sum, given a window size and optional weight.
+  Calculate the rolling sum, given a window size and optional list of weights.
+
+  ## Examples
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.rolling_sum(s, 4)
+      #Explorer.Series<
+        integer[10]
+        [nil, nil, nil, 10, 14, 18, 22, 26, 30, 34]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.rolling_sum(s, 2, [1.0, 2.0])
+      #Explorer.Series<
+        integer[10]
+        [nil, 5, 7, 11, 13, 17, 19, 23, 25, 29]
+      >
   """
-  def rolling_sum(series, window_size, weight, ignore_nil?),
-    do: apply_impl(series, :rolling_sum, [window_size, weight, ignore_nil?])
+  def rolling_sum(series, window_size, weights \\ nil, ignore_nil? \\ true),
+    do: apply_impl(series, :rolling_sum, [window_size, weights, ignore_nil?])
 
   @doc """
-  Calculate the rolling mean, given a window size and optional weight.
+  Calculate the rolling mean, given a window size and optional list of weights.
+
+  ## Examples
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.rolling_mean(s, 4)
+      #Explorer.Series<
+        integer[10]
+        [nil, nil, nil, 2, 3, 4, 5, 6, 7, 8]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.rolling_mean(s, 2, [1.0, 2.0])
+      #Explorer.Series<
+        integer[10]
+        [nil, 2, 3, 5, 6, 8, 9, 11, 12, 14]
+      >
   """
-  def rolling_mean(series, window_size, weight, ignore_nil?),
-    do: apply_impl(series, :rolling_mean, [window_size, weight, ignore_nil?])
+  def rolling_mean(series, window_size, weights \\ nil, ignore_nil? \\ true),
+    do: apply_impl(series, :rolling_mean, [window_size, weights, ignore_nil?])
 
   @doc """
-  Calculate the rolling min, given a window size and optional weight.
+  Calculate the rolling min, given a window size and optional list of weights.
+
+  ## Examples
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.rolling_min(s, 4)
+      #Explorer.Series<
+        integer[10]
+        [nil, nil, nil, 1, 2, 3, 4, 5, 6, 7]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.rolling_min(s, 2, [1.0, 2.0])
+      #Explorer.Series<
+        integer[10]
+        [nil, 1, 3, 3, 5, 5, 7, 7, 9, 9]
+      >
   """
-  def rolling_min(series, window_size, weight, ignore_nil?),
-    do: apply_impl(series, :rolling_min, [window_size, weight, ignore_nil?])
+  def rolling_min(series, window_size, weights \\ nil, ignore_nil? \\ true),
+    do: apply_impl(series, :rolling_min, [window_size, weights, ignore_nil?])
 
   @doc """
-  Calculate the rolling max, given a window size and optional weight.
+  Calculate the rolling max, given a window size and optional list of weights.
+
+  ## Examples
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.rolling_max(s, 4)
+      #Explorer.Series<
+        integer[10]
+        [nil, nil, nil, 4, 5, 6, 7, 8, 9, 10]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.rolling_max(s, 2, [1.0, 2.0])
+      #Explorer.Series<
+        integer[10]
+        [nil, 4, 4, 8, 8, 12, 12, 16, 16, 20]
+      >
   """
-  def rolling_max(series, window_size, weight, ignore_nil?),
-    do: apply_impl(series, :rolling_max, [window_size, weight, ignore_nil?])
+  def rolling_max(series, window_size, weights \\ nil, ignore_nil? \\ true),
+    do: apply_impl(series, :rolling_max, [window_size, weights, ignore_nil?])
 
   # Missing values
 

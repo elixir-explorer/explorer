@@ -185,7 +185,7 @@ pub fn df_get_columns(data: ExDataFrame) -> Result<Vec<ExSeries>, ExplorerError>
 pub fn df_columns(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
     df_read!(data, df, {
         let cols = df.get_column_names();
-        Ok(cols.into_iter().map(|s| s.to_owned()).collect())
+        Ok(cols.into_iter().map(|s| s.to_string()).collect())
     })
 }
 
