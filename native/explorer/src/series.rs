@@ -55,7 +55,7 @@ pub fn s_rechunk(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif]
 pub fn s_name(data: ExSeries) -> Result<String, ExplorerError> {
-    Ok(data.resource.0.name().to_owned())
+    Ok(data.resource.0.name().to_string())
 }
 
 #[rustler::nif]
