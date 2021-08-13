@@ -35,7 +35,7 @@ That means you can expect the guiding principles to be 'Elixir-ish'. For example
 the underlying data mutated, even if that's the most efficient implementation. Explorer functions 
 will always return a new dataframe or series.
 
-## Installation
+## Getting started
 
 In order to use `Explorer`, you will need Elixir and Rust (nightly) installed. Then create an 
 Elixir project via the `mix` build tool:
@@ -60,6 +60,9 @@ Alternatively, inside a script or Livebook:
 ```elixir
 Mix.install([{:explorer, "~> 0.1.0-dev", github: "amplifiedai/explorer", branch: "main"}])
 ```
+
+The [notebooks](./notebooks) directory has [an introductory
+Livebook](./notebooks/exploring_explorer.livemd) to give you a feel for the API.
 
 ## Acknowledgements
 
