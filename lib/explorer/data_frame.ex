@@ -797,6 +797,17 @@ defmodule Explorer.DataFrame do
         first string ["a", "b", "a"]
         b integer [1, 3, 1]
       >
+
+    Or if you want to use a function:
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
+      iex> Explorer.DataFrame.rename(df, &(&1 <> "_test"))
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        a_test string ["a", "b", "a"]
+        b_test integer [1, 3, 1]
+      >
+
   """
   @spec rename(df :: DataFrame.t(), names :: [String.t() | atom()] | map()) :: DataFrame.t()
   def rename(df, names) when is_list(names) do
@@ -832,6 +843,9 @@ defmodule Explorer.DataFrame do
     |> Enum.map(fn name -> if name in name_keys, do: Map.get(names, name), else: name end)
     |> then(&rename(df, &1))
   end
+
+  def rename(df, names) when is_function(names),
+    do: df |> names() |> Enum.map(names) |> then(&rename(df, &1))
 
   defp rename_reducer({k, v}, acc) when is_atom(k) and is_binary(v),
     do: Map.put(acc, Atom.to_string(k), v)
