@@ -964,7 +964,11 @@ defmodule Explorer.DataFrame do
       >
   """
   @spec pull(df :: DataFrame.t(), column :: String.t()) :: Series.t()
-  def pull(df, column), do: apply_impl(df, :pull, [column])
+  def pull(df, column) do
+    names = names(df)
+    maybe_raise_column_not_found(names, column)
+    apply_impl(df, :pull, [column])
+  end
 
   @doc """
   Subset a continuous set of rows.
