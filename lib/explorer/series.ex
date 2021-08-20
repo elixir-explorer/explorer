@@ -903,33 +903,33 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
-      iex> Explorer.Series.eq(s1, s2)
+      iex> Explorer.Series.equal(s1, s2)
       #Explorer.Series<
         boolean[3]
         [true, true, false]
       >
   """
-  @spec eq(
+  @spec equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
-  def eq(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
+  def equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
     do: apply_impl(left, :eq, [right])
 
-  def eq(%Series{dtype: dtype} = left, right)
+  def equal(%Series{dtype: dtype} = left, right)
       when dtype in [:integer, :float] and is_number(right),
       do: apply_impl(left, :eq, [right])
 
-  def eq(%Series{dtype: :date} = left, %Date{} = right),
+  def equal(%Series{dtype: :date} = left, %Date{} = right),
     do: apply_impl(left, :eq, [right])
 
-  def eq(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
+  def equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
     do: apply_impl(left, :eq, [right])
 
-  def eq(%Series{dtype: :string} = left, right) when is_binary(right),
+  def equal(%Series{dtype: :string} = left, right) when is_binary(right),
     do: apply_impl(left, :eq, [right])
 
-  def eq(%Series{dtype: :boolean} = left, right) when is_boolean(right),
+  def equal(%Series{dtype: :boolean} = left, right) when is_boolean(right),
     do: apply_impl(left, :eq, [right])
 
   @doc """
@@ -939,33 +939,33 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
-      iex> Explorer.Series.neq(s1, s2)
+      iex> Explorer.Series.not_equal(s1, s2)
       #Explorer.Series<
         boolean[3]
         [false, false, true]
       >
   """
-  @spec neq(
+  @spec not_equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
-  def neq(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
+  def not_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
     do: apply_impl(left, :neq, [right])
 
-  def neq(%Series{dtype: dtype} = left, right)
+  def not_equal(%Series{dtype: dtype} = left, right)
       when dtype in [:integer, :float] and is_number(right),
       do: apply_impl(left, :neq, [right])
 
-  def neq(%Series{dtype: :date} = left, %Date{} = right),
+  def not_equal(%Series{dtype: :date} = left, %Date{} = right),
     do: apply_impl(left, :neq, [right])
 
-  def neq(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
+  def not_equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
     do: apply_impl(left, :neq, [right])
 
-  def neq(%Series{dtype: :string} = left, right) when is_binary(right),
+  def not_equal(%Series{dtype: :string} = left, right) when is_binary(right),
     do: apply_impl(left, :neq, [right])
 
-  def neq(%Series{dtype: :boolean} = left, right) when is_boolean(right),
+  def not_equal(%Series{dtype: :boolean} = left, right) when is_boolean(right),
     do: apply_impl(left, :neq, [right])
 
   @doc """
@@ -982,36 +982,36 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
-      iex> Explorer.Series.gt(s1, s2)
+      iex> Explorer.Series.greater(s1, s2)
       #Explorer.Series<
         boolean[3]
         [false, false, false]
       >
   """
-  @spec gt(
+  @spec greater(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def gt(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
+  def greater(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
       when dtype in [:integer, :float, :date, :datetime],
       do: apply_impl(left, :gt, [right])
 
-  def gt(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
+  def greater(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when left_dtype in [:integer, :float] and right_dtype in [:integer, :float],
       do: apply_impl(left, :gt, [right])
 
-  def gt(%Series{dtype: dtype} = left, right)
+  def greater(%Series{dtype: dtype} = left, right)
       when dtype in [:integer, :float] and is_number(right),
       do: apply_impl(left, :gt, [right])
 
-  def gt(%Series{dtype: :date} = left, %Date{} = right),
+  def greater(%Series{dtype: :date} = left, %Date{} = right),
     do: apply_impl(left, :gt, [right])
 
-  def gt(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
+  def greater(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
     do: apply_impl(left, :gt, [right])
 
-  def gt(%Series{dtype: dtype}, _),
-    do: dtype_error("gt/2", dtype, [:integer, :float, :date, :datetime])
+  def greater(%Series{dtype: dtype}, _),
+    do: dtype_error("greater/2", dtype, [:integer, :float, :date, :datetime])
 
   @doc """
   Returns boolean mask of `left >= right`, element-wise.
@@ -1027,36 +1027,36 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
-      iex> Explorer.Series.gt_eq(s1, s2)
+      iex> Explorer.Series.greater_equal(s1, s2)
       #Explorer.Series<
         boolean[3]
         [true, true, false]
       >
   """
-  @spec gt_eq(
+  @spec greater_equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def gt_eq(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
+  def greater_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
       when dtype in [:integer, :float, :date, :datetime],
       do: apply_impl(left, :gt_eq, [right])
 
-  def gt_eq(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
+  def greater_equal(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when left_dtype in [:integer, :float] and right_dtype in [:integer, :float],
       do: apply_impl(left, :gt_eq, [right])
 
-  def gt_eq(%Series{dtype: dtype} = left, right)
+  def greater_equal(%Series{dtype: dtype} = left, right)
       when dtype in [:integer, :float] and is_number(right),
       do: apply_impl(left, :gt_eq, [right])
 
-  def gt_eq(%Series{dtype: :date} = left, %Date{} = right),
+  def greater_equal(%Series{dtype: :date} = left, %Date{} = right),
     do: apply_impl(left, :gt_eq, [right])
 
-  def gt_eq(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
+  def greater_equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
     do: apply_impl(left, :gt_eq, [right])
 
-  def gt_eq(%Series{dtype: dtype}, _),
-    do: dtype_error("gt_eq/2", dtype, [:integer, :float, :date, :datetime])
+  def greater_equal(%Series{dtype: dtype}, _),
+    do: dtype_error("greater_equal/2", dtype, [:integer, :float, :date, :datetime])
 
   @doc """
   Returns boolean mask of `left < right`, element-wise.
@@ -1072,36 +1072,36 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
-      iex> Explorer.Series.lt(s1, s2)
+      iex> Explorer.Series.less(s1, s2)
       #Explorer.Series<
         boolean[3]
         [false, false, true]
       >
   """
-  @spec lt(
+  @spec less(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def lt(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
+  def less(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
       when dtype in [:integer, :float, :date, :datetime],
       do: apply_impl(left, :lt, [right])
 
-  def lt(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
+  def less(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when left_dtype in [:integer, :float] and right_dtype in [:integer, :float],
       do: apply_impl(left, :lt, [right])
 
-  def lt(%Series{dtype: dtype} = left, right)
+  def less(%Series{dtype: dtype} = left, right)
       when dtype in [:integer, :float] and is_number(right),
       do: apply_impl(left, :lt, [right])
 
-  def lt(%Series{dtype: :date} = left, %Date{} = right),
+  def less(%Series{dtype: :date} = left, %Date{} = right),
     do: apply_impl(left, :lt, [right])
 
-  def lt(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
+  def less(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
     do: apply_impl(left, :lt, [right])
 
-  def lt(%Series{dtype: dtype}, _),
-    do: dtype_error("lt/2", dtype, [:integer, :float, :date, :datetime])
+  def less(%Series{dtype: dtype}, _),
+    do: dtype_error("less/2", dtype, [:integer, :float, :date, :datetime])
 
   @doc """
   Returns boolean mask of `left <= right`, element-wise.
@@ -1117,36 +1117,36 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
-      iex> Explorer.Series.lt_eq(s1, s2)
+      iex> Explorer.Series.less_equal(s1, s2)
       #Explorer.Series<
         boolean[3]
         [true, true, true]
       >
   """
-  @spec lt_eq(
+  @spec less_equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def lt_eq(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
+  def less_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
       when dtype in [:integer, :float, :date, :datetime],
       do: apply_impl(left, :lt_eq, [right])
 
-  def lt_eq(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
+  def less_equal(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when left_dtype in [:integer, :float] and right_dtype in [:integer, :float],
       do: apply_impl(left, :lt_eq, [right])
 
-  def lt_eq(%Series{dtype: dtype} = left, right)
+  def less_equal(%Series{dtype: dtype} = left, right)
       when dtype in [:integer, :float] and is_number(right),
       do: apply_impl(left, :lt_eq, [right])
 
-  def lt_eq(%Series{dtype: :date} = left, %Date{} = right),
+  def less_equal(%Series{dtype: :date} = left, %Date{} = right),
     do: apply_impl(left, :lt_eq, [right])
 
-  def lt_eq(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
+  def less_equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
     do: apply_impl(left, :lt_eq, [right])
 
-  def lt_eq(%Series{dtype: dtype}, _),
-    do: dtype_error("lt_eq/2", dtype, [:integer, :float, :date, :datetime])
+  def less_equal(%Series{dtype: dtype}, _),
+    do: dtype_error("less_equal/2", dtype, [:integer, :float, :date, :datetime])
 
   @doc """
   Checks equality between two entire series.

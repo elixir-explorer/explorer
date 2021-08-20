@@ -392,7 +392,7 @@ defmodule Explorer.DataFrame do
     You can pass a mask directly:
 
       iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
-      iex> Explorer.DataFrame.filter(df, Explorer.Series.gt(df["b"], 1))
+      iex> Explorer.DataFrame.filter(df, Explorer.Series.greater(df["b"], 1))
       #Explorer.DataFrame<
         [rows: 2, columns: 2]
         a string ["b", "c"]
@@ -412,7 +412,7 @@ defmodule Explorer.DataFrame do
     Or you can invoke a callback on the dataframe:
 
       iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
-      iex> Explorer.DataFrame.filter(df, &Explorer.Series.gt(&1["b"], 1))
+      iex> Explorer.DataFrame.filter(df, &Explorer.Series.greater(&1["b"], 1))
       #Explorer.DataFrame<
         [rows: 2, columns: 2]
         a string ["b", "c"]
