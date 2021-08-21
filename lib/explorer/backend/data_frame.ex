@@ -48,7 +48,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback select(df, columns :: [colname], :keep | :drop) :: df
   @callback filter(df, mask :: series) :: df
   @callback mutate(df, with_columns :: map()) :: df
-  @callback arrange(df, columns :: [colname | {colname, :asc | :desc}]) :: df
+  @callback arrange(df, columns :: [colname | {:asc | :desc, colname}]) :: df
   @callback distinct(df, columns :: [colname], keep_all? :: boolean()) :: df
   @callback rename(df, [colname]) :: df
   @callback dummies(df, columns :: [colname]) :: df
