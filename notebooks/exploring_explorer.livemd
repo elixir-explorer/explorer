@@ -2,10 +2,13 @@
 
 ## Installation
 
+Connect to a `Mix` project with `Explorer` installed or:
+
+<!-- livebook:{"force_markdown":true} -->
+
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.1.0-dev",
-   github: "amplifiedai/explorer", ref: "9b95d08679ecc97fcd4b5a9eedaaade95954bdfb"}
+  {:explorer, "~> 0.1.0-dev", github: "amplifiedai/explorer"}
 ])
 ```
 
@@ -174,19 +177,19 @@ s1 = 11..1 |> Enum.to_list() |> Series.from_list()
 ```
 
 ```elixir
-Series.eq(s, s1)
+Series.equal(s, s1)
 ```
 
 ```elixir
-Series.eq(s, 5)
+Series.equal(s, 5)
 ```
 
 ```elixir
-Series.neq(s, 10)
+Series.not_equal(s, 10)
 ```
 
 ```elixir
-Series.gt_eq(s, 4)
+Series.greater_equal(s, 4)
 ```
 
 And arithmetic.
@@ -344,14 +347,14 @@ DataFrame.select(df, &String.ends_with?(&1, "fuel"), :drop)
 The next verb we'll look at is `filter`. You can pass in a boolean mask series of the same length as the dataframe, but I find it's more handy to use callbacks on the dataframe to generate those masks.
 
 ```elixir
-DataFrame.filter(df, &Series.eq(&1["country"], "AFGHANISTAN"))
+DataFrame.filter(df, &Series.equal(&1["country"], "AFGHANISTAN"))
 ```
 
 ```elixir
 filtered_df =
   df
-  |> DataFrame.filter(&Series.eq(&1["country"], "ALGERIA"))
-  |> DataFrame.filter(&Series.gt(&1["year"], 2012))
+  |> DataFrame.filter(&Series.equal(&1["country"], "ALGERIA"))
+  |> DataFrame.filter(&Series.greater(&1["year"], 2012))
 ```
 
 ```elixir
@@ -361,7 +364,7 @@ DataFrame.filter(filtered_df, [true, false])
 Remember those helpful error messages?
 
 ```elixir
-DataFrame.filter(df, &Series.eq(&1["cuontry"], "AFGHANISTAN"))
+DataFrame.filter(df, &Series.equal(&1["cuontry"], "AFGHANISTAN"))
 ```
 
 ### Mutate
@@ -394,13 +397,13 @@ DataFrame.mutate(df, %{"gas_fuel" => &Series.subtract(&1["gas_fuel"], 10)})
 Sorting the dataframe is pretty straightforward.
 
 ```elixir
-DataFrame.arrange(df, ["year"])
+DataFrame.arrange(df, "year")
 ```
 
 But it comes with some tricks up its sleeve.
 
 ```elixir
-DataFrame.arrange(df, total: :asc, year: :desc)
+DataFrame.arrange(df, asc: "total", desc: "year")
 ```
 
 Sort operations happen left to right. And keyword list args permit specifying the direction.
