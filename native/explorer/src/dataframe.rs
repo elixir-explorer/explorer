@@ -139,15 +139,15 @@ pub fn df_as_str(data: ExDataFrame) -> Result<String, ExplorerError> {
 #[rustler::nif]
 pub fn df_fill_none(data: ExDataFrame, strategy: &str) -> Result<ExDataFrame, ExplorerError> {
     let strat = match strategy {
-        "backward" => FillNoneStrategy::Backward,
-        "forward" => FillNoneStrategy::Forward,
-        "min" => FillNoneStrategy::Min,
-        "max" => FillNoneStrategy::Max,
-        "mean" => FillNoneStrategy::Mean,
+        "backward" => FillNullStrategy::Backward,
+        "forward" => FillNullStrategy::Forward,
+        "min" => FillNullStrategy::Min,
+        "max" => FillNullStrategy::Max,
+        "mean" => FillNullStrategy::Mean,
         s => return Err(ExplorerError::Other(format!("Strategy {} not supported", s)).into()),
     };
     df_read!(data, df, {
-        let new_df = df.fill_none(strat)?;
+        let new_df = df.fill_null(strat)?;
         Ok(ExDataFrame::new(new_df))
     })
 }

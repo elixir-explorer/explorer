@@ -19,7 +19,7 @@ rand_pcg = "0.3.1"
 
 [dependencies.polars]
 git = "https://github.com/ritchie46/polars"
-rev = "b079985ce1bb0b2a5bc099fbb3c2acf82ddbbc28"
+rev = "2055cf205e992c5eb0809ada55e067ef4c293b0d"
 default-features = false
 features = [
   "cross_join",

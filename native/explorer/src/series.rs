@@ -322,16 +322,16 @@ pub fn s_drop_nulls(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif]
 pub fn s_fill_none(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerError> {
     let strat = match strategy {
-        "backward" => FillNoneStrategy::Backward,
-        "forward" => FillNoneStrategy::Forward,
-        "min" => FillNoneStrategy::Min,
-        "max" => FillNoneStrategy::Max,
-        "mean" => FillNoneStrategy::Mean,
+        "backward" => FillNullStrategy::Backward,
+        "forward" => FillNullStrategy::Forward,
+        "min" => FillNullStrategy::Min,
+        "max" => FillNullStrategy::Max,
+        "mean" => FillNullStrategy::Mean,
         s => return Err(ExplorerError::Other(format!("Strategy {} not supported", s)).into()),
     };
 
     let s = &data.resource.0;
-    let s1 = s.fill_none(strat)?;
+    let s1 = s.fill_null(strat)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -612,19 +612,19 @@ pub fn s_get(env: Env, data: ExSeries, idx: usize) -> Result<Term, ExplorerError
 #[rustler::nif]
 pub fn s_cum_sum(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
-    Ok(ExSeries::new(s.cum_sum(reverse)))
+    Ok(ExSeries::new(s.cumsum(reverse)))
 }
 
 #[rustler::nif]
 pub fn s_cum_max(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
-    Ok(ExSeries::new(s.cum_max(reverse)))
+    Ok(ExSeries::new(s.cummax(reverse)))
 }
 
 #[rustler::nif]
 pub fn s_cum_min(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
-    Ok(ExSeries::new(s.cum_min(reverse)))
+    Ok(ExSeries::new(s.cummin(reverse)))
 }
 
 #[rustler::nif]
