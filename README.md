@@ -1,4 +1,4 @@
-# Explorer
+<h1><img src="explorer.png" alt="Explorer"></h1>
 
 > :warning: Explorer is still very much a work in progress. It is incomplete and poorly documented. Use
 > at your own risk.
