@@ -79,3 +79,6 @@ Finally, the initial development of this library took place on the lands of the 
 and we wish to acknowledge them as Traditional Owners and thank them as Traditional Custodians of 
 Country. We would also like to pay our respects to their Elders, past and present. Their 
 sovereignty has never been ceded.
+
+## Sponsors
+<a href="https://amplified.ai"><img src="sponsors/amplified.png" width=100 alt="Explorer"></a>
