@@ -37,7 +37,7 @@ will always return a new dataframe or series.
 
 ## Getting started
 
-In order to use `Explorer`, you will need Elixir and Rust (nightly) installed. Then create an 
+In order to use `Explorer`, you will need Elixir and Rust (stable) installed. Then create an 
 Elixir project via the `mix` build tool:
 
 ```

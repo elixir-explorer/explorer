@@ -32,7 +32,6 @@ features = [
   "plain_fmt",
   "random",
   "rows",
-  "simd",
   "sort_multiple",
   "strings",
   "temporal",

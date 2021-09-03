@@ -30,7 +30,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: nightly
+            toolchain: stable
             override: true
       - uses: erlef/setup-beam@v1
         with:
