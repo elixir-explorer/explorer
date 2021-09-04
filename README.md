@@ -50,7 +50,7 @@ Git dependency while we work on our first release:
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.1.0-dev", github: "amplifiedai/explorer", branch: "main"}
+    {:explorer, "~> 0.1.0-dev", github: "elixir-nx/explorer", branch: "main"}
   ]
 end
 ```
@@ -58,7 +58,7 @@ end
 Alternatively, inside a script or Livebook:
 
 ```elixir
-Mix.install([{:explorer, "~> 0.1.0-dev", github: "amplifiedai/explorer", branch: "main"}])
+Mix.install([{:explorer, "~> 0.1.0-dev", github: "elixir-nx/explorer", branch: "main"}])
 ```
 
 The [notebooks](./notebooks) directory has [an introductory
