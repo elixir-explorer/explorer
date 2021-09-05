@@ -564,7 +564,7 @@ DataFrame.ungroup(grouped)
 But what we care about the most is aggregating! Let's see which country has the max `per_capita` value.
 
 ```elixir
-grouped |> DataFrame.summarise(per_capita: [:max]) |> DataFrame.arrange(per_capita_max: :desc)
+grouped |> DataFrame.summarise(per_capita: [:max]) |> DataFrame.arrange(desc: :per_capita_max)
 ```
 
 Qatar it is. You can use the following aggregations:
@@ -590,7 +590,7 @@ grouped |> DataFrame.summarise(per_capita: [:max, :min], total: [:min])
 Speaking of `mutate`, it's 'group-aware'. As are `arrange`, `distinct`, and `n_rows`.
 
 ```elixir
-DataFrame.arrange(grouped, total: :desc)
+DataFrame.arrange(grouped, desc: :total)
 ```
 
 ### That's it!
