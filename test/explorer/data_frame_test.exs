@@ -8,6 +8,19 @@ defmodule Explorer.DataFrameTest do
     {:ok, df: Explorer.Datasets.fossil_fuels()}
   end
 
+  setup do
+    :ok = File.touch!("tmp_test.csv")
+
+    on_exit(fn ->
+      File.rm!("tmp_test.csv")
+    end)
+  end
+
+  def tmp_csv(contents) do
+    :ok = File.write!("tmp_test.csv", contents)
+    "tmp_test.csv"
+  end
+
   describe "filter/2" do
     test "raises with mask of invalid length", %{df: df} do
       assert_raise ArgumentError,
@@ -56,6 +69,120 @@ defmodule Explorer.DataFrameTest do
       right = DF.from_map(%{b: [1, 2, 3]})
       joined = DF.join(left, right, how: :cross)
       assert %DF{} = joined
+    end
+  end
+
+  describe "read_csv/2 options" do
+    test "delimiter" do
+      csv =
+        tmp_csv("""
+        a*b
+        c*d
+        e*f
+        """)
+
+      df = DF.read_csv!(csv, delimiter: "*")
+
+      assert DF.to_map(df) == %{
+               a: ["c", "e"],
+               b: ["d", "f"]
+             }
+    end
+
+    test "dtypes" do
+      csv =
+        tmp_csv("""
+        a,b
+        1,2
+        3,4
+        """)
+
+      df = DF.read_csv!(csv, dtypes: [{"a", "str"}])
+
+      assert DF.to_map(df) == %{
+               a: ["1", "3"],
+               b: [2, 4]
+             }
+    end
+
+    test "header?" do
+      csv =
+        tmp_csv("""
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, header?: false)
+
+      assert DF.to_map(df) == %{
+               column_1: ["a", "c", "e"],
+               column_2: ["b", "d", "f"]
+             }
+    end
+
+    test "max_rows" do
+      csv =
+        tmp_csv("""
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, max_rows: 1)
+
+      assert DF.to_map(df) == %{
+               a: ["c"],
+               b: ["d"]
+             }
+    end
+
+    test "null_character" do
+      csv =
+        tmp_csv("""
+        a,b
+        n/a,NA
+        nil,
+        c,d
+        """)
+
+      df = DF.read_csv!(csv, null_character: "n/a")
+
+      assert DF.to_map(df) == %{
+               a: [nil, "nil", "c"],
+               b: ["NA", "", "d"]
+             }
+    end
+
+    test "skip_rows" do
+      csv =
+        tmp_csv("""
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, skip_rows: 1)
+
+      assert DF.to_map(df) == %{
+               c: ["e"],
+               d: ["f"]
+             }
+    end
+
+    test "with_columns" do
+      csv =
+        tmp_csv("""
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, with_columns: ["b"])
+
+      assert DF.to_map(df) == %{
+               b: ["d", "f"]
+             }
     end
   end
 end

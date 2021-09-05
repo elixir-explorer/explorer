@@ -42,8 +42,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         true,
         with_columns,
         dtypes,
-        null_character,
-        encoding
+        encoding,
+        null_character
       )
 
     case df do
