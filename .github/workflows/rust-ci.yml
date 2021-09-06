@@ -3,11 +3,15 @@ on:
     branches:
       - main
     paths:
-      - 'native/**'
+      - 'native/explorer/**'
   pull_request:
     paths:
       - 'native/**'
   workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: './native/explorer'
 
 jobs:
   lint-rust:
