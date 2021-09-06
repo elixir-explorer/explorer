@@ -43,4 +43,4 @@ jobs:
           elixir-version: "${{ env.ELIXIR_VERSION }}"
       - run: mix deps.get
       - run: mix compile --warnings-as-errors
-      - run: mix test --warnings-as-errors 
+      - run: mix test --warnings-as-errors

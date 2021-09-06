@@ -12,7 +12,7 @@ pub(crate) fn to_series_collection(s: Vec<ExSeries>) -> Vec<Series> {
 }
 
 pub(crate) fn to_ex_series_collection(s: Vec<Series>) -> Vec<ExSeries> {
-    s.into_iter().map(|c| ExSeries::new(c)).collect()
+    s.into_iter().map(ExSeries::new).collect()
 }
 
 #[rustler::nif]
@@ -327,7 +327,12 @@ pub fn s_fill_none(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerE
         "min" => FillNullStrategy::Min,
         "max" => FillNullStrategy::Max,
         "mean" => FillNullStrategy::Mean,
-        s => return Err(ExplorerError::Other(format!("Strategy {} not supported", s)).into()),
+        s => {
+            return Err(ExplorerError::Other(format!(
+                "Strategy {} not supported",
+                s
+            )))
+        }
     };
 
     let s = &data.resource.0;
@@ -417,7 +422,9 @@ pub fn s_str_parse_date32(data: ExSeries, fmt: Option<&str>) -> Result<ExSeries,
         let ca = ca.as_date32(fmt)?;
         Ok(ExSeries::new(ca.into_series()))
     } else {
-        Err(ExplorerError::Other("cannot parse date32 expected utf8 type".into()).into())
+        Err(ExplorerError::Other(
+            "cannot parse date32 expected utf8 type".into(),
+        ))
     }
 }
 
@@ -428,7 +435,9 @@ pub fn s_str_parse_date64(data: ExSeries, fmt: Option<&str>) -> Result<ExSeries,
         let ca = ca.as_date64(fmt)?;
         Ok(ExSeries::new(ca.into_series()))
     } else {
-        Err(ExplorerError::Other("cannot parse date64 expected utf8 type".into()).into())
+        Err(ExplorerError::Other(
+            "cannot parse date64 expected utf8 type".into(),
+        ))
     }
 }
 

@@ -30,6 +30,7 @@ macro_rules! df_read_read {
 }
 
 #[rustler::nif]
+#[allow(clippy::too_many_arguments)]
 pub fn df_read_csv(
     filename: &str,
     infer_schema_length: Option<usize>,
@@ -49,16 +50,14 @@ pub fn df_read_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let schema: Option<Schema> = if let Some(dtypes) = dtypes {
-        Some(Schema::new(
+    let schema: Option<Schema> = dtypes.map(|dtypes| {
+        Schema::new(
             dtypes
                 .iter()
                 .map(|x| Field::new(x.0, dtype_from_str(x.1).unwrap()))
                 .collect(),
-        ))
-    } else {
-        None
-    };
+        )
+    });
 
     let df = CsvReader::from_path(filename)?
         .infer_schema(infer_schema_length)
@@ -144,7 +143,12 @@ pub fn df_fill_none(data: ExDataFrame, strategy: &str) -> Result<ExDataFrame, Ex
         "min" => FillNullStrategy::Min,
         "max" => FillNullStrategy::Max,
         "mean" => FillNullStrategy::Mean,
-        s => return Err(ExplorerError::Other(format!("Strategy {} not supported", s)).into()),
+        s => {
+            return Err(ExplorerError::Other(format!(
+                "Strategy {} not supported",
+                s
+            )))
+        }
     };
     df_read!(data, df, {
         let new_df = df.fill_null(strat)?;
@@ -165,7 +169,12 @@ pub fn df_join(
         "inner" => JoinType::Inner,
         "outer" => JoinType::Outer,
         "cross" => JoinType::Cross,
-        _ => return Err(ExplorerError::Other(format!("Join method {} not supported", how)).into()),
+        _ => {
+            return Err(ExplorerError::Other(format!(
+                "Join method {} not supported",
+                how
+            )))
+        }
     };
 
     df_read_read!(data, other, df, df1, {
@@ -310,7 +319,7 @@ pub fn df_take_with_series(
 ) -> Result<ExDataFrame, ExplorerError> {
     let idx = indices.resource.0.u32()?;
     df_read!(data, df, {
-        let new_df = df.take(&idx)?;
+        let new_df = df.take(idx)?;
         Ok(ExDataFrame::new(new_df))
     })
 }
