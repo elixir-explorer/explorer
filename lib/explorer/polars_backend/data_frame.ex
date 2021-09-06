@@ -30,6 +30,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
       ) do
     max_rows = if max_rows == Inf, do: nil, else: max_rows
 
+    dtypes =
+      if dtypes do
+        Enum.map(dtypes, fn {colname, dtype} ->
+          {Atom.to_string(colname), Shared.internal_from_dtype(dtype)}
+        end)
+      end
+
     df =
       Native.df_read_csv(
         filename,

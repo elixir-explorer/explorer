@@ -54,7 +54,7 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `delimiter` - A single character used to separate fields within a record. (default: `","`)
-    * `dtypes` - A list of `{"column_name", dtype}`, where dtype is str, f64, i64, bool, date32(days), or date64(ms). If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
+    * `dtypes` - A keyword list of `[column_name: dtype]`. If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
     * `header?` - Does the file have a header of column names as the first row or not? (default: `true`)
     * `max_rows` - Maximum number of lines to read. (default: `Inf`)
     * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
