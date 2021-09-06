@@ -1,0 +1,33 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'native/**'
+  pull_request:
+    paths:
+      - 'native/**'
+  workflow_dispatch:
+
+jobs:
+  lint-rust:
+    runs-on: ubuntu-latest
+    name: test
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+            profile: minimal
+            toolchain: stable
+            components: rustfmt
+            override: true
+      - name: run rustfmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+      - name: run clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -Dwarnings
