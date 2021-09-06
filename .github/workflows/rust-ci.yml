@@ -3,7 +3,7 @@ on:
     branches:
       - main
     paths:
-      - 'native/explorer/**'
+      - 'native/**'
   pull_request:
     paths:
       - 'native/**'

@@ -319,7 +319,7 @@ pub fn df_take_with_series(
 ) -> Result<ExDataFrame, ExplorerError> {
     let idx = indices.resource.0.u32()?;
     df_read!(data, df, {
-        let new_df = df.take(&idx)?;
+        let new_df = df.take(idx)?;
         Ok(ExDataFrame::new(new_df))
     })
 }
