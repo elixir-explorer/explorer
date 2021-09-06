@@ -1,4 +1,9 @@
-on: pull_request
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
 
 env:
   ELIXIR_VERSION: 1.12
