@@ -9,14 +9,15 @@ on:
       - 'native/**'
   workflow_dispatch:
 
-defaults:
-  run:
-    working-directory: './native/explorer'
-
 jobs:
   lint-rust:
+    name: Lint Rust
     runs-on: ubuntu-latest
-    name: test
+    strategy:
+      matrix:
+        manifest:
+          - native/explorer/Cargo.toml
+
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -29,9 +30,9 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --all -- --check
+          args: --manifest-path=${{ matrix.manifest }} --all -- --check
       - name: run clippy
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-          args: -- -Dwarnings
+          args: --manifest-path=${{ matrix.manifest }} -- -Dwarnings
