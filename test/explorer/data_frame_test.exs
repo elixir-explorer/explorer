@@ -8,17 +8,10 @@ defmodule Explorer.DataFrameTest do
     {:ok, df: Explorer.Datasets.fossil_fuels()}
   end
 
-  setup do
-    :ok = File.touch!("tmp_test.csv")
-
-    on_exit(fn ->
-      File.rm!("tmp_test.csv")
-    end)
-  end
-
-  def tmp_csv(contents) do
-    :ok = File.write!("tmp_test.csv", contents)
-    "tmp_test.csv"
+  defp tmp_csv(tmp_dir, contents) do
+    path = Path.join(tmp_dir, "tmp.csv")
+    :ok = File.write!(path, contents)
+    path
   end
 
   describe "filter/2" do
@@ -73,9 +66,10 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "read_csv/2 options" do
-    test "delimiter" do
+    @tag :tmp_dir
+    test "delimiter", config do
       csv =
-        tmp_csv("""
+        tmp_csv(config.tmp_dir, """
         a*b
         c*d
         e*f
@@ -89,9 +83,10 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "dtypes" do
+    @tag :tmp_dir
+    test "dtypes", config do
       csv =
-        tmp_csv("""
+        tmp_csv(config.tmp_dir, """
         a,b
         1,2
         3,4
@@ -105,9 +100,10 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "header?" do
+    @tag :tmp_dir
+    test "header?", config do
       csv =
-        tmp_csv("""
+        tmp_csv(config.tmp_dir, """
         a,b
         c,d
         e,f
@@ -121,9 +117,10 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "max_rows" do
+    @tag :tmp_dir
+    test "max_rows", config do
       csv =
-        tmp_csv("""
+        tmp_csv(config.tmp_dir, """
         a,b
         c,d
         e,f
@@ -137,9 +134,10 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "null_character" do
+    @tag :tmp_dir
+    test "null_character", config do
       csv =
-        tmp_csv("""
+        tmp_csv(config.tmp_dir, """
         a,b
         n/a,NA
         nil,
@@ -154,9 +152,10 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "skip_rows" do
+    @tag :tmp_dir
+    test "skip_rows", config do
       csv =
-        tmp_csv("""
+        tmp_csv(config.tmp_dir, """
         a,b
         c,d
         e,f
@@ -170,9 +169,10 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "with_columns" do
+    @tag :tmp_dir
+    test "with_columns", config do
       csv =
-        tmp_csv("""
+        tmp_csv(config.tmp_dir, """
         a,b
         c,d
         e,f
