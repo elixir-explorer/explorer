@@ -308,6 +308,22 @@ pub fn s_not(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif]
+pub fn s_and(lhs: ExSeries, rhs:ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &lhs.resource.0;
+    let s1 = &rhs.resource.0;
+    let and = s.bool()? & s1.bool()?;
+    Ok(ExSeries::new(and.into_series()))
+}
+
+#[rustler::nif]
+pub fn s_or(lhs: ExSeries, rhs:ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &lhs.resource.0;
+    let s1 = &rhs.resource.0;
+    let or = s.bool()? | s1.bool()?;
+    Ok(ExSeries::new(or.into_series()))
+}
+
+#[rustler::nif]
 pub fn s_len(data: ExSeries) -> Result<usize, ExplorerError> {
     let s = &data.resource.0;
     Ok(s.len())

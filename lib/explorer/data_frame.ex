@@ -399,6 +399,17 @@ defmodule Explorer.DataFrame do
         b integer [2, 3]
       >
 
+    You can combine masks using `Explorer.Series.and_/2` or `Explorer.Series.or_/2`:
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> b_gt = Explorer.Series.greater(df["b"], 1)
+      iex> a_eq = Explorer.Series.equal(df["a"], "b")
+      iex> Explorer.DataFrame.filter(df, Explorer.Series.and_(a_eq, b_gt))
+      #Explorer.DataFrame<
+        [rows: 1, columns: 2]
+        a string ["b"]
+        b integer [2]
+      >
+
     Including a list:
 
       iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
@@ -453,7 +464,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates and modifies columns.
 
-  Columns are added as keyword list arguments. New variables overwrite existing variables of the 
+  Columns are added as keyword list arguments. New variables overwrite existing variables of the
   same name. Column names are coerced from atoms to strings.
 
   ## Examples
@@ -965,7 +976,7 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.slice(df, 1, 2) 
+      iex> Explorer.DataFrame.slice(df, 1, 2)
       #Explorer.DataFrame<
         [rows: 2, columns: 10]
         year integer [2010, 2010]
@@ -983,7 +994,7 @@ defmodule Explorer.DataFrame do
     Negative offsets count from the end of the series:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.slice(df, -10, 2) 
+      iex> Explorer.DataFrame.slice(df, -10, 2)
       #Explorer.DataFrame<
         [rows: 2, columns: 10]
         year integer [2014, 2014]
@@ -1001,7 +1012,7 @@ defmodule Explorer.DataFrame do
     If the length would run past the end of the dataframe, the result may be shorter than the length:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.slice(df, -10, 20) 
+      iex> Explorer.DataFrame.slice(df, -10, 20)
       #Explorer.DataFrame<
         [rows: 10, columns: 10]
         year integer [2014, 2014, 2014, 2014, 2014, "..."]
@@ -1128,8 +1139,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Pivot data from wide to long.
 
-  `Explorer.DataFrame.pivot_longer/3` "lengthens" data, increasing the number of rows and 
-  decreasing the number of columns. The inverse transformation is 
+  `Explorer.DataFrame.pivot_longer/3` "lengthens" data, increasing the number of rows and
+  decreasing the number of columns. The inverse transformation is
   `Explorer.DataFrame.pivot_wider/4`.
 
   The second argument (`columns`) can be either an array of column names to use or a filter callback on
@@ -1221,8 +1232,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Pivot data from long to wide.
 
-  `Explorer.DataFrame.pivot_wider/4` "widens" data, increasing the number of columns and 
-  decreasing the number of rows. The inverse transformation is 
+  `Explorer.DataFrame.pivot_wider/4` "widens" data, increasing the number of columns and
+  decreasing the number of rows. The inverse transformation is
   `Explorer.DataFrame.pivot_longer/3`.
 
   Due to a restriction upstream, `values_from` must be a numeric type.
@@ -1398,7 +1409,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Group the dataframe by one or more variables.
 
-  When the dataframe has grouping variables, operations are performed per group. 
+  When the dataframe has grouping variables, operations are performed per group.
   `Explorer.DataFrame.ungroup/2` removes grouping.
 
   ## Examples
@@ -1422,7 +1433,7 @@ defmodule Explorer.DataFrame do
       >
 
     Or you can group by multiple:
-    
+
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.group_by(df, ["country", "year"])
       #Explorer.DataFrame<

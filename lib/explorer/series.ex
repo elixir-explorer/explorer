@@ -79,7 +79,7 @@ defmodule Explorer.Series do
 
   ## Options
 
-    * `:backend` - The backend to allocate the series on. 
+    * `:backend` - The backend to allocate the series on.
 
   ## Examples
 
@@ -375,10 +375,10 @@ defmodule Explorer.Series do
   def slice(series, offset, length), do: apply_impl(series, :slice, [offset, length])
 
   @doc """
-  Returns the elements at the given indices as a new series. 
+  Returns the elements at the given indices as a new series.
 
   ## Examples
-    
+
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.take(s, [0, 2])
       #Explorer.Series<
@@ -418,7 +418,7 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
-    * `:boolean` 
+    * `:boolean`
 
   ## Examples
 
@@ -1148,6 +1148,38 @@ defmodule Explorer.Series do
   def less_equal(%Series{dtype: dtype}, _),
     do: dtype_error("less_equal/2", dtype, [:integer, :float, :date, :datetime])
 
+  @doc """
+  Returns a boolean mask of `left and right`, element-wise
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> mask1 = Explorer.Series.greater(s1, 1)
+      iex> mask2 = Explorer.Series.less(s1, 3)
+      iex> Explorer.Series.and_(mask1, mask2)
+      #Explorer.Series<
+        boolean[3]
+        [false, true, false]
+      >
+
+  """
+  def and_(%Series{} = left, %Series{} = right), do: apply_impl(left, :and_, [right])
+  @doc """
+  Returns a boolean mask of `left or right`, element-wise
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> mask1 = Explorer.Series.less(s1, 2)
+      iex> mask2 = Explorer.Series.greater(s1, 2)
+      iex> Explorer.Series.or_(mask1, mask2)
+      #Explorer.Series<
+        boolean[3]
+        [true, false, true]
+      >
+
+  """
+  def or_(%Series{} = left, %Series{} = right), do: apply_impl(left, :or_, [right])
   @doc """
   Checks equality between two entire series.
 

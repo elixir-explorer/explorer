@@ -93,6 +93,7 @@ defmodule Explorer.PolarsBackend.Native do
 
   # Series
   def s_add(_s, _other), do: err()
+  def s_and(_s, _s2), do: err()
   def s_append(_s, _other), do: err()
   def s_arg_true(_s), do: err()
   def s_argsort(_s, _reverse), do: err()
@@ -138,6 +139,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_new_u64(_name, _val), do: err()
   def s_not(_s), do: err()
   def s_null_count(_s), do: err()
+  def s_or(_s, _s2), do: err()
   def s_peak_max(_s), do: err()
   def s_peak_min(_s), do: err()
   def s_pow(_s, _exponent), do: err()
