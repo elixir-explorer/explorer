@@ -308,7 +308,7 @@ pub fn s_not(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn s_and(lhs: ExSeries, rhs:ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_and(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &lhs.resource.0;
     let s1 = &rhs.resource.0;
     let and = s.bool()? & s1.bool()?;
@@ -316,7 +316,7 @@ pub fn s_and(lhs: ExSeries, rhs:ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn s_or(lhs: ExSeries, rhs:ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_or(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &lhs.resource.0;
     let s1 = &rhs.resource.0;
     let or = s.bool()? | s1.bool()?;
