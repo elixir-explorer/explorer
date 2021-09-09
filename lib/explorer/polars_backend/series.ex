@@ -262,10 +262,10 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_native(left, :s_series_equal, [Shared.to_polars_s(right), true])
 
   @impl true
-  def and_(left, %Series{} = right), do: Shared.apply_native(left, :s_and, [Shared.to_polars_s(right)])
+  def left and right, do: Shared.apply_native(left, :s_and, [Shared.to_polars_s(right)])
 
   @impl true
-  def or_(left, %Series{} = right), do: Shared.apply_native(left, :s_or, [Shared.to_polars_s(right)])
+  def left or right, do: Shared.apply_native(left, :s_or, [Shared.to_polars_s(right)])
   # Sort
 
   @impl true

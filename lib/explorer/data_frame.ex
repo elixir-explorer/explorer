@@ -399,11 +399,11 @@ defmodule Explorer.DataFrame do
         b integer [2, 3]
       >
 
-    You can combine masks using `Explorer.Series.and_/2` or `Explorer.Series.or_/2`:
+    You can combine masks using `Explorer.Series.and/2` or `Explorer.Series.or/2`:
       iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
       iex> b_gt = Explorer.Series.greater(df["b"], 1)
       iex> a_eq = Explorer.Series.equal(df["a"], "b")
-      iex> Explorer.DataFrame.filter(df, Explorer.Series.and_(a_eq, b_gt))
+      iex> Explorer.DataFrame.filter(df, Explorer.Series.and(a_eq, b_gt))
       #Explorer.DataFrame<
         [rows: 1, columns: 2]
         a string ["b"]
