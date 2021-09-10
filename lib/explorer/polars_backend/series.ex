@@ -261,6 +261,11 @@ defmodule Explorer.PolarsBackend.Series do
   def all_equal?(left, right),
     do: Shared.apply_native(left, :s_series_equal, [Shared.to_polars_s(right), true])
 
+  @impl true
+  def binary_and(left, right), do: Shared.apply_native(left, :s_and, [Shared.to_polars_s(right)])
+
+  @impl true
+  def binary_or(left, right), do: Shared.apply_native(left, :s_or, [Shared.to_polars_s(right)])
   # Sort
 
   @impl true

@@ -20,10 +20,11 @@ defmodule Explorer.Series do
   """
 
   alias __MODULE__, as: Series
+  alias Kernel, as: K
 
   import Explorer.Shared, only: [impl!: 1]
   import Nx.Defn.Kernel, only: [keyword!: 2]
-  import Kernel, except: [length: 1]
+  import Kernel, except: [length: 1, and: 2]
 
   @type data :: Explorer.Backend.Series.t()
   @type dtype :: :float | :integer | :boolean | :string | :date | :datetime
@@ -79,7 +80,7 @@ defmodule Explorer.Series do
 
   ## Options
 
-    * `:backend` - The backend to allocate the series on. 
+    * `:backend` - The backend to allocate the series on.
 
   ## Examples
 
@@ -99,10 +100,10 @@ defmodule Explorer.Series do
         [1.0, nil, 2.5, 3.1]
       >
 
-    Mixing data types will raise an ArgumentError.
+  Mixing data types will raise an ArgumentError.
 
-      iex> Explorer.Series.from_list([1, 2.9])
-      ** (ArgumentError) Cannot make a series from mismatched types. Type of 2.9 does not match inferred dtype integer.
+    iex> Explorer.Series.from_list([1, 2.9])
+    ** (ArgumentError) Cannot make a series from mismatched types. Type of 2.9 does not match inferred dtype integer.
   """
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
@@ -375,10 +376,10 @@ defmodule Explorer.Series do
   def slice(series, offset, length), do: apply_impl(series, :slice, [offset, length])
 
   @doc """
-  Returns the elements at the given indices as a new series. 
+  Returns the elements at the given indices as a new series.
 
   ## Examples
-    
+
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.take(s, [0, 2])
       #Explorer.Series<
@@ -418,7 +419,7 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
-    * `:boolean` 
+    * `:boolean`
 
   ## Examples
 
@@ -792,15 +793,14 @@ defmodule Explorer.Series do
   """
   @spec add(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def add(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when left_dtype in [:integer, :float] and
-             right_dtype in [:integer, :float],
+      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
       do: apply_impl(left, :add, [right])
 
   def add(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("add/2", left_dtype, right_dtype)
 
   def add(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :add, [right])
 
   def add(%Series{dtype: dtype}, _), do: dtype_error("add/2", dtype, [:integer, :float])
@@ -817,15 +817,14 @@ defmodule Explorer.Series do
   """
   @spec subtract(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def subtract(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when left_dtype in [:integer, :float] and
-             right_dtype in [:integer, :float],
+      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
       do: apply_impl(left, :subtract, [right])
 
   def subtract(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("subtract/2", left_dtype, right_dtype)
 
   def subtract(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :subtract, [right])
 
   def subtract(%Series{dtype: dtype}, _), do: dtype_error("subtract/2", dtype, [:integer, :float])
@@ -842,15 +841,14 @@ defmodule Explorer.Series do
   """
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def multiply(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when left_dtype in [:integer, :float] and
-             right_dtype in [:integer, :float],
+      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
       do: apply_impl(left, :multiply, [right])
 
   def multiply(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("multiply/2", left_dtype, right_dtype)
 
   def multiply(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :multiply, [right])
 
   def multiply(%Series{dtype: dtype}, _), do: dtype_error("multiply/2", dtype, [:integer, :float])
@@ -867,15 +865,14 @@ defmodule Explorer.Series do
   """
   @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def divide(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when left_dtype in [:integer, :float] and
-             right_dtype in [:integer, :float],
+      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
       do: apply_impl(left, :divide, [right])
 
   def divide(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("divide/2", left_dtype, right_dtype)
 
   def divide(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :divide, [right])
 
   def divide(%Series{dtype: dtype}, _), do: dtype_error("divide/2", dtype, [:integer, :float])
@@ -917,7 +914,7 @@ defmodule Explorer.Series do
     do: apply_impl(left, :eq, [right])
 
   def equal(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :eq, [right])
 
   def equal(%Series{dtype: :date} = left, %Date{} = right),
@@ -953,7 +950,7 @@ defmodule Explorer.Series do
     do: apply_impl(left, :neq, [right])
 
   def not_equal(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :neq, [right])
 
   def not_equal(%Series{dtype: :date} = left, %Date{} = right),
@@ -997,11 +994,11 @@ defmodule Explorer.Series do
       do: apply_impl(left, :gt, [right])
 
   def greater(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when left_dtype in [:integer, :float] and right_dtype in [:integer, :float],
+      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
       do: apply_impl(left, :gt, [right])
 
   def greater(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :gt, [right])
 
   def greater(%Series{dtype: :date} = left, %Date{} = right),
@@ -1042,11 +1039,11 @@ defmodule Explorer.Series do
       do: apply_impl(left, :gt_eq, [right])
 
   def greater_equal(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when left_dtype in [:integer, :float] and right_dtype in [:integer, :float],
+      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
       do: apply_impl(left, :gt_eq, [right])
 
   def greater_equal(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :gt_eq, [right])
 
   def greater_equal(%Series{dtype: :date} = left, %Date{} = right),
@@ -1087,11 +1084,11 @@ defmodule Explorer.Series do
       do: apply_impl(left, :lt, [right])
 
   def less(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when left_dtype in [:integer, :float] and right_dtype in [:integer, :float],
+      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
       do: apply_impl(left, :lt, [right])
 
   def less(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :lt, [right])
 
   def less(%Series{dtype: :date} = left, %Date{} = right),
@@ -1132,11 +1129,11 @@ defmodule Explorer.Series do
       do: apply_impl(left, :lt_eq, [right])
 
   def less_equal(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when left_dtype in [:integer, :float] and right_dtype in [:integer, :float],
+      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
       do: apply_impl(left, :lt_eq, [right])
 
   def less_equal(%Series{dtype: dtype} = left, right)
-      when dtype in [:integer, :float] and is_number(right),
+      when K.and(dtype in [:integer, :float], is_number(right)),
       do: apply_impl(left, :lt_eq, [right])
 
   def less_equal(%Series{dtype: :date} = left, %Date{} = right),
@@ -1147,6 +1144,42 @@ defmodule Explorer.Series do
 
   def less_equal(%Series{dtype: dtype}, _),
     do: dtype_error("less_equal/2", dtype, [:integer, :float, :date, :datetime])
+
+  @doc """
+  Returns a boolean mask of `left and right`, element-wise
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> mask1 = Explorer.Series.greater(s1, 1)
+      iex> mask2 = Explorer.Series.less(s1, 3)
+      iex> Explorer.Series.and(mask1, mask2)
+      #Explorer.Series<
+        boolean[3]
+        [false, true, false]
+      >
+
+  """
+  def (%Series{} = left) and (%Series{} = right),
+    do: apply_impl(left, :binary_and, [right])
+
+  @doc """
+  Returns a boolean mask of `left or right`, element-wise
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> mask1 = Explorer.Series.less(s1, 2)
+      iex> mask2 = Explorer.Series.greater(s1, 2)
+      iex> Explorer.Series.or(mask1, mask2)
+      #Explorer.Series<
+        boolean[3]
+        [true, false, true]
+      >
+
+  """
+  def (%Series{} = left) or (%Series{} = right),
+    do: apply_impl(left, :binary_or, [right])
 
   @doc """
   Checks equality between two entire series.
@@ -1407,7 +1440,7 @@ defmodule Explorer.Series do
   defp check_types_reducer(item, {_prev, type, _types_match?}) do
     new_type = type(item) || type
 
-    if new_type != type and !is_nil(type),
+    if K.and(new_type != type, !is_nil(type)),
       do: {:halt, {item, type, false}},
       else: {:cont, {item, new_type, true}}
   end

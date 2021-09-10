@@ -70,6 +70,9 @@ defmodule Explorer.Backend.Series do
   @callback lt_eq(s, s | number()) :: s
   @callback all_equal?(s, s) :: boolean()
 
+  @callback binary_and(s, s) :: s
+  @callback binary_or(s, s) :: s
+
   # Coercion
 
   # Sort

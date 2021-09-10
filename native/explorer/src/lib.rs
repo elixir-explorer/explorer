@@ -79,6 +79,7 @@ rustler::init!(
         df_with_column,
         // series
         s_add,
+        s_and,
         s_append,
         s_arg_true,
         s_argsort,
@@ -124,6 +125,7 @@ rustler::init!(
         s_new_str,
         s_not,
         s_null_count,
+        s_or,
         s_peak_max,
         s_peak_min,
         s_pow,
