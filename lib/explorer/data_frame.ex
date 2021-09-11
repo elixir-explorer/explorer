@@ -57,6 +57,7 @@ defmodule Explorer.DataFrame do
     * `dtypes` - A keyword list of `[column_name: dtype]`. If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
     * `header?` - Does the file have a header of column names as the first row or not? (default: `true`)
     * `max_rows` - Maximum number of lines to read. (default: `Inf`)
+    * `names` - A list of column names. Must match the width of the dataframe. (default: nil)
     * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
     * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
     * `with_columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)

@@ -184,5 +184,54 @@ defmodule Explorer.DataFrameTest do
                b: ["d", "f"]
              }
     end
+
+    @tag :tmp_dir
+    test "names", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, names: ["a2", "b2"])
+
+      assert DF.to_map(df) == %{
+               a2: ["c", "e"],
+               b2: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "names raises exception on invalid length", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        """)
+
+      assert_raise(
+        ArgumentError,
+        "Expected length of provided names (1) to match number of columns in dataframe (2).",
+        fn -> DF.read_csv(csv, names: ["a2"]) end
+      )
+    end
+
+    @tag :tmp_dir
+    test "names and dtypes options work together", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        1,2
+        3,4
+        """)
+
+      df = DF.read_csv!(csv, dtypes: [a: :string], names: ["a2", "b2"])
+
+      assert DF.to_map(df) == %{
+               a2: ["1", "3"],
+               b2: [2, 4]
+             }
+    end
   end
 end
