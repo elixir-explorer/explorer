@@ -18,7 +18,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def read_csv(
         filename,
-        _names,
+        names,
         dtypes,
         delimiter,
         null_character,
@@ -29,6 +29,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
         with_columns
       ) do
     max_rows = if max_rows == Inf, do: nil, else: max_rows
+
+    dtypes =
+      if dtypes do
+        Enum.map(dtypes, fn {colname, dtype} ->
+          {Atom.to_string(colname), Shared.internal_from_dtype(dtype)}
+        end)
+      end
 
     df =
       Native.df_read_csv(
@@ -42,14 +49,26 @@ defmodule Explorer.PolarsBackend.DataFrame do
         true,
         with_columns,
         dtypes,
-        null_character,
-        encoding
+        encoding,
+        null_character
       )
 
-    case df do
-      {:ok, df} -> {:ok, Shared.to_dataframe(df)}
-      {:error, error} -> {:error, error}
+    case {df, names} do
+      {{:ok, df}, nil} -> {:ok, Shared.to_dataframe(df)}
+      {{:ok, df}, names} -> checked_rename(Shared.to_dataframe(df), names)
+      {{:error, error}, _} -> {:error, error}
     end
+  end
+
+  defp checked_rename(df, names) do
+    if n_cols(df) != length(names) do
+      raise(
+        ArgumentError,
+        "Expected length of provided names (#{length(names)}) to match number of columns in dataframe (#{n_cols(df)})."
+      )
+    end
+
+    {:ok, rename(df, names)}
   end
 
   @impl true

@@ -60,8 +60,7 @@ defmodule Explorer.DataFrame do
     * `names` - A list of column names. Must match the width of the dataframe. (default: nil)
     * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
     * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-    * `with_columns` - A list of column names to keep. If present, only these columns are read
-    * into the dataframe. (default: `nil`)
+    * `with_columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
   """
   @spec read_csv(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}

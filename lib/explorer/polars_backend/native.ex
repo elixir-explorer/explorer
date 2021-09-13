@@ -18,8 +18,8 @@ defmodule Explorer.PolarsBackend.Native do
         _rechunk,
         _with_columns,
         _dtypes,
-        _null_char,
-        _encoding
+        _encoding,
+        _null_char
       ),
       do: err()
 

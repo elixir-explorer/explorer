@@ -8,6 +8,12 @@ defmodule Explorer.DataFrameTest do
     {:ok, df: Explorer.Datasets.fossil_fuels()}
   end
 
+  defp tmp_csv(tmp_dir, contents) do
+    path = Path.join(tmp_dir, "tmp.csv")
+    :ok = File.write!(path, contents)
+    path
+  end
+
   describe "filter/2" do
     test "raises with mask of invalid length", %{df: df} do
       assert_raise ArgumentError,
@@ -56,6 +62,176 @@ defmodule Explorer.DataFrameTest do
       right = DF.from_map(%{b: [1, 2, 3]})
       joined = DF.join(left, right, how: :cross)
       assert %DF{} = joined
+    end
+  end
+
+  describe "read_csv/2 options" do
+    @tag :tmp_dir
+    test "delimiter", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a*b
+        c*d
+        e*f
+        """)
+
+      df = DF.read_csv!(csv, delimiter: "*")
+
+      assert DF.to_map(df) == %{
+               a: ["c", "e"],
+               b: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "dtypes", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        1,2
+        3,4
+        """)
+
+      df = DF.read_csv!(csv, dtypes: [a: :string])
+
+      assert DF.to_map(df) == %{
+               a: ["1", "3"],
+               b: [2, 4]
+             }
+    end
+
+    @tag :tmp_dir
+    test "header?", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, header?: false)
+
+      assert DF.to_map(df) == %{
+               column_1: ["a", "c", "e"],
+               column_2: ["b", "d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "max_rows", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, max_rows: 1)
+
+      assert DF.to_map(df) == %{
+               a: ["c"],
+               b: ["d"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "null_character", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        n/a,NA
+        nil,
+        c,d
+        """)
+
+      df = DF.read_csv!(csv, null_character: "n/a")
+
+      assert DF.to_map(df) == %{
+               a: [nil, "nil", "c"],
+               b: ["NA", "", "d"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "skip_rows", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, skip_rows: 1)
+
+      assert DF.to_map(df) == %{
+               c: ["e"],
+               d: ["f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "with_columns", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, with_columns: ["b"])
+
+      assert DF.to_map(df) == %{
+               b: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "names", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.read_csv!(csv, names: ["a2", "b2"])
+
+      assert DF.to_map(df) == %{
+               a2: ["c", "e"],
+               b2: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "names raises exception on invalid length", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        """)
+
+      assert_raise(
+        ArgumentError,
+        "Expected length of provided names (1) to match number of columns in dataframe (2).",
+        fn -> DF.read_csv(csv, names: ["a2"]) end
+      )
+    end
+
+    @tag :tmp_dir
+    test "names and dtypes options work together", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        1,2
+        3,4
+        """)
+
+      df = DF.read_csv!(csv, dtypes: [a: :string], names: ["a2", "b2"])
+
+      assert DF.to_map(df) == %{
+               a2: ["1", "3"],
+               b2: [2, 4]
+             }
     end
   end
 end
