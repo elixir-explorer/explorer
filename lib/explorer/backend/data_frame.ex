@@ -80,7 +80,7 @@ defmodule Explorer.Backend.DataFrame do
               right :: df,
               how :: :left | :inner | :outer | :right | :cross,
               on ::
-                list(String.t())
+                list(String.t() | {String.t(), String.t()})
             ) :: df
 
   # Groups
