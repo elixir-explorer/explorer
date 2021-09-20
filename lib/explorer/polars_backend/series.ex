@@ -320,6 +320,12 @@ defmodule Explorer.PolarsBackend.Series do
   def fill_missing(series, strategy),
     do: Shared.apply_native(series, :s_fill_none, [Atom.to_string(strategy)])
 
+  @impl true
+  def nil?(series), do: Shared.apply_native(series, :s_is_null)
+
+  @impl true
+  def not_nil?(series), do: Shared.apply_native(series, :s_is_not_null)
+
   # Escape hatch
   @impl true
   def map(series, fun), do: series |> to_list() |> Enum.map(fun) |> from_list(dtype(series))
