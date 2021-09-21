@@ -33,7 +33,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     dtypes =
       if dtypes do
         Enum.map(dtypes, fn {colname, dtype} ->
-          {Atom.to_string(colname), Shared.internal_from_dtype(dtype)}
+          {colname, Shared.internal_from_dtype(dtype)}
         end)
       end
 

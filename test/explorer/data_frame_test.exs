@@ -92,7 +92,7 @@ defmodule Explorer.DataFrameTest do
         3,4
         """)
 
-      df = DF.read_csv!(csv, dtypes: [a: :string])
+      df = DF.read_csv!(csv, dtypes: [{"a", :string}])
 
       assert DF.to_map(df) == %{
                a: ["1", "3"],
@@ -226,7 +226,7 @@ defmodule Explorer.DataFrameTest do
         3,4
         """)
 
-      df = DF.read_csv!(csv, dtypes: [a: :string], names: ["a2", "b2"])
+      df = DF.read_csv!(csv, dtypes: [{"a", :string}], names: ["a2", "b2"])
 
       assert DF.to_map(df) == %{
                a2: ["1", "3"],
