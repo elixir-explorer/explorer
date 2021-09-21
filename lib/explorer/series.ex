@@ -1396,7 +1396,38 @@ defmodule Explorer.Series do
         [1, 2, 2, 4]
       >
   """
+  @spec fill_missing(Series.t(), atom()) :: Series.t()
   def fill_missing(series, strategy), do: apply_impl(series, :fill_missing, [strategy])
+
+  @doc """
+  Returns a mask of nil values.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, nil, 4])
+      iex> Explorer.Series.nil?(s)
+      #Explorer.Series<
+        boolean[4]
+        [false, false, true, false]
+      >
+  """
+  @spec nil?(Series.t()) :: Series.t()
+  def nil?(series), do: apply_impl(series, :nil?)
+
+  @doc """
+  Returns a mask of not nil values.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, nil, 4])
+      iex> Explorer.Series.not_nil?(s)
+      #Explorer.Series<
+        boolean[4]
+        [true, true, false, true]
+      >
+  """
+  @spec not_nil?(Series.t()) :: Series.t()
+  def not_nil?(series), do: apply_impl(series, :not_nil?)
 
   # Helpers
 
