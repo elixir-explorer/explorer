@@ -15,7 +15,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback read_csv(
               filename :: String.t(),
               names :: list(String.t()) | nil,
-              dtypes :: list(atom()) | nil,
+              dtypes :: list({String.t(), atom()}) | nil,
               delimiter :: String.t(),
               null_character :: String.t(),
               skip_rows :: Integer.t(),

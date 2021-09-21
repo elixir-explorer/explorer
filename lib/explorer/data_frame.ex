@@ -54,7 +54,7 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `delimiter` - A single character used to separate fields within a record. (default: `","`)
-    * `dtypes` - A keyword list of `[column_name: dtype]`. If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
+    * `dtypes` - A list of `{"column_name", dtype}` tuples. Uses column names as read, not as defined in options. If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
     * `header?` - Does the file have a header of column names as the first row or not? (default: `true`)
     * `max_rows` - Maximum number of lines to read. (default: `Inf`)
     * `names` - A list of column names. Must match the width of the dataframe. (default: nil)
