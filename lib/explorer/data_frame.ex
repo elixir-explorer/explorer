@@ -1371,10 +1371,25 @@ defmodule Explorer.DataFrame do
         a_right integer [1, 2, 4, 1, 2, "..."]
         c string ["d", "e", "f", "d", "e", "..."]
       >
+
+    Inner join with different names:
+
+      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> right = Explorer.DataFrame.from_map(%{d: [1, 2, 2], c: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.join(left, right, on: [{"a", "d"}])
+      #Explorer.DataFrame<
+        [rows: 3, columns: 3]
+        a integer [1, 2, 2]
+        b string ["a", "b", "b"]
+        c string ["d", "e", "f"]
+      >
+
   """
+  @spec join(left :: DataFrame.t(), right :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
   def join(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
     left_cols = names(left)
     right_cols = names(right)
+    cols = left_cols ++ right_cols
 
     opts = keyword!(opts, on: find_overlapping_cols(left_cols, right_cols), how: :inner)
 
@@ -1386,9 +1401,9 @@ defmodule Explorer.DataFrame do
         raise(ArgumentError, message: "Could not find any overlapping columns.")
 
       {[_ | _] = on, _} ->
-        Enum.each(on, fn name ->
-          maybe_raise_column_not_found(left_cols, name)
-          maybe_raise_column_not_found(right_cols, name)
+        Enum.each(on, fn
+          {l_name, r_name} -> Enum.each([l_name, r_name], &maybe_raise_column_not_found(cols, &1))
+          name -> maybe_raise_column_not_found(cols, name)
         end)
 
       _ ->
