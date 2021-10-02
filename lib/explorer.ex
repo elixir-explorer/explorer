@@ -5,14 +5,17 @@ defmodule Explorer do
   The `Explorer` library is a set of functions and data types to work with tabular data in Elixir.
 
   Most of the functionality in `Explorer` is in `Explorer.DataFrame` and `Explorer.Series`. This
-  module handles the default backend for `Explorer`. As there is currently only one backend for
-  `Explorer`, you should not use the functions in this module.
+  module handles the default backend for `Explorer`. The default backend is read from the application
+  environment. When alternatives are available, you can use them by configuring your runtime:
+
+      # config/runtime.exs
+      import Config
+      config :explorer, default_backend: Lib.CustomBackend
   """
 
   ## Backend API
 
   @backend_key {Explorer, :default_backend}
-  @backend_default Explorer.PolarsBackend
 
   @doc """
   Sets the current process default backend to `backend`.
@@ -27,14 +30,15 @@ defmodule Explorer do
       Lib.CustomBackend
   """
   def default_backend(backend) do
-    Process.put(@backend_key, backend!(backend)) || @backend_default
+    Process.put(@backend_key, backend!(backend)) ||
+      backend!(Application.fetch_env!(:explorer, :default_backend))
   end
 
   @doc """
   Gets the default backend for the current process.
   """
   def default_backend do
-    Process.get(@backend_key) || @backend_default
+    Process.get(@backend_key) || backend!(Application.fetch_env!(:explorer, :default_backend))
   end
 
   ## Helpers
