@@ -16,7 +16,10 @@ defmodule Explorer.MixProject do
   end
 
   def application do
-    [extra_applications: [:logger]]
+    [
+      extra_applications: [:logger],
+      env: [default_backend: Explorer.PolarsBackend]
+    ]
   end
 
   defp deps do
