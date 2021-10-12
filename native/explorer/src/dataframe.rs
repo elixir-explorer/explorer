@@ -96,6 +96,15 @@ pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif]
+pub fn df_write_parquet(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+    df_read!(data, df, {
+        let file = File::create(filename).expect("could not create file");
+        ParquetWriter::new(file).finish(&df)?;
+        Ok(())
+    })
+}
+
+#[rustler::nif]
 pub fn df_to_csv(
     data: ExDataFrame,
     has_headers: bool,

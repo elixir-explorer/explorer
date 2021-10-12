@@ -27,6 +27,9 @@ defmodule Explorer.Backend.DataFrame do
   @callback write_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
               result(String.t())
 
+  @callback read_parquet(filename :: String.t()) :: result(df)
+  @callback write_parquet(df, filename :: String.t()) :: result(String.t())
+
   # Conversion
 
   @callback from_map(map()) :: df

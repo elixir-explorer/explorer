@@ -106,6 +106,21 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Reads a parquet file into a dataframe.
+  """
+  @spec read_parquet(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
+  def read_parquet(filename), do: Explorer.PolarsBackend.DataFrame.read_parquet(filename)
+
+  @doc """
+  Writes a dataframe to a parquet file.
+  """
+  @spec write_parquet(df :: DataFrame.t(), filename :: String.t()) ::
+          {:ok, String.t()} | {:error, term()}
+  def write_parquet(df, filename) do
+    apply_impl(df, :write_parquet, [filename])
+  end
+
+  @doc """
   Writes a dataframe to a delimited file.
 
   ## Options

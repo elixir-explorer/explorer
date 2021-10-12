@@ -90,6 +90,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_vstack(_df, _other), do: err()
   def df_width(_df), do: err()
   def df_with_column(_df, _col), do: err()
+  def df_write_parquet(_df, _filename), do: err()
 
   # Series
   def s_add(_s, _other), do: err()
