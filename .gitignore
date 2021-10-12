@@ -39,3 +39,8 @@ explorer-*.tar
 
 # For the Mac users
 .DS_Store
+
+# Accommodate Nix folks
+.nix-mix
+.nix-hex
+.direnv
