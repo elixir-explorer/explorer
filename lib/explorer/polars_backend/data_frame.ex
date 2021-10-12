@@ -87,6 +87,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_native(df, :df_to_csv, [header?, delimiter])
   end
 
+  @impl true
+  def read_parquet(filename) do
+    case Native.df_read_parquet(filename) do
+      {:ok, df} -> {:ok, Shared.to_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   # Conversion
 
   @impl true
