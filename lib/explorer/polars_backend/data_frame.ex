@@ -95,6 +95,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
+  @impl true
+  def write_parquet(%DataFrame{data: df}, filename) do
+    case Native.df_write_parquet(df, filename) do
+      {:ok, _} -> {:ok, filename}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   # Conversion
 
   @impl true

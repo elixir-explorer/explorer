@@ -77,6 +77,7 @@ rustler::init!(
         df_vstack,
         df_width,
         df_with_column,
+        df_write_parquet,
         // series
         s_add,
         s_and,

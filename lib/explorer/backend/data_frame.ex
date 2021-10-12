@@ -28,6 +28,7 @@ defmodule Explorer.Backend.DataFrame do
               result(String.t())
 
   @callback read_parquet(filename :: String.t()) :: result(df)
+  @callback write_parquet(df, filename :: String.t()) :: result(String.t())
 
   # Conversion
 
