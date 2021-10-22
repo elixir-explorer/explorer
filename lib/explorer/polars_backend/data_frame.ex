@@ -349,7 +349,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
   end
 
-  # Two table verbs
+  # Two or more table verbs
 
   @impl true
   def join(left, right, on, :right), do: join(right, left, on, :left)
@@ -366,6 +366,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defp join_on_reducer({new_left, new_right}, {left, right}),
     do: {[new_left | left], [new_right | right]}
+
+  @impl true
+  def bind_rows(dfs) do
+    Enum.reduce(dfs, fn x, acc ->
+      # Polars requires the _order_ of columns to be the same
+      x = DataFrame.select(x, DataFrame.names(acc))
+      Shared.apply_native(acc, :df_vstack, [Shared.to_polars_df(x)])
+    end)
+  end
 
   # Groups
 

@@ -1434,6 +1434,38 @@ defmodule Explorer.DataFrame do
     left_cols |> MapSet.intersection(right_cols) |> MapSet.to_list()
   end
 
+  @doc """
+  Combine two or more dataframes row-wise (stack).
+
+  Column names and dtypes must match exactly.
+
+  ## Examples
+
+      iex> df1 = Explorer.DataFrame.from_map(%{x: [1, 2, 3], y: ["a", "b", "c"]})
+      iex> df2 = Explorer.DataFrame.from_map(%{x: [4, 5, 6], y: ["d", "e", "f"]})
+      iex> Explorer.DataFrame.bind_rows(df1, df2)
+      #Explorer.DataFrame<
+        [rows: 6, columns: 2]
+        x integer [1, 2, 3, 4, 5, "..."]
+        y string ["a", "b", "c", "d", "e", "..."]
+      >
+  """
+  def bind_rows(dfs) when is_list(dfs) do
+    dfs
+    |> Enum.map(&Enum.zip(names(&1), dtypes(&1)))
+    |> Enum.map(&MapSet.new/1)
+    |> then(fn [first | rest] ->
+      unless Enum.all?(rest, &MapSet.equal?(&1, first)),
+        do:
+          raise(ArgumentError, message: "Columns and dtypes must be identical for all dataframes")
+    end)
+
+    apply_impl(dfs, :bind_rows)
+  end
+
+  def bind_rows(%DataFrame{} = df1, %DataFrame{} = df2), do: bind_rows([df1, df2])
+  def bind_rows(%DataFrame{} = df, dfs) when is_list(dfs), do: bind_rows([df | dfs])
+
   # Groups
   @doc """
   Group the dataframe by one or more variables.
