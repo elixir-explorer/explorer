@@ -451,9 +451,9 @@ defmodule Explorer.DataFrame do
 
     case s_len == df_len do
       false ->
-        raise(ArgumentError,
-          message:
-            "Length of the mask (#{s_len}) must match number of rows in the dataframe (#{df_len})."
+        raise(
+          ArgumentError,
+          "length of the mask (#{s_len}) must match number of rows in the dataframe (#{df_len})"
         )
 
       true ->
@@ -566,8 +566,8 @@ defmodule Explorer.DataFrame do
   end
 
   def mutate(df, with_columns) when is_list(with_columns) do
-    if not Keyword.keyword?(with_columns), do: raise(ArgumentError, message: "Expected second
-      argument to be a keyword list.")
+    if not Keyword.keyword?(with_columns),
+      do: raise(ArgumentError, "expected second argument to be a keyword list")
 
     with_columns
     |> Enum.reduce(%{}, fn {colname, value}, acc ->
@@ -864,11 +864,10 @@ defmodule Explorer.DataFrame do
 
     if width != n_new_names,
       do:
-        raise(ArgumentError,
-          message:
-            "List of new names must match the number of columns in the dataframe. " <>
-              "Found #{n_new_names} new name(s), but the supplied dataframe has #{width} " <>
-              "column(s)."
+        raise(
+          ArgumentError,
+          "list of new names must match the number of columns in the dataframe; found " <>
+            "#{n_new_names} new name(s), but the supplied dataframe has #{width} column(s)"
         )
   end
 
@@ -956,7 +955,7 @@ defmodule Explorer.DataFrame do
         rename_with(df, callback, columns)
 
       [] ->
-        raise ArgumentError, message: "Function to select column names did not return any names."
+        raise ArgumentError, "function to select column names did not return any names"
     end
   end
 
@@ -1064,7 +1063,7 @@ defmodule Explorer.DataFrame do
         do:
           raise(
             ArgumentError,
-            "Requested row index (#{idx}) out of bounds (-#{n_rows}:#{n_rows})."
+            "requested row index (#{idx}) out of bounds (-#{n_rows}:#{n_rows})"
           )
     end)
 
@@ -1133,9 +1132,8 @@ defmodule Explorer.DataFrame do
     case {n > n_rows, opts[:with_replacement?]} do
       {true, false} ->
         raise ArgumentError,
-          message:
-            "In order to sample more rows than are in the dataframe (#{n_rows}), sampling " <>
-              "`with_replacement?` must be true."
+              "in order to sample more rows than are in the dataframe (#{n_rows}), sampling " <>
+                "`with_replacement?` must be true"
 
       _ ->
         :ok
@@ -1204,8 +1202,9 @@ defmodule Explorer.DataFrame do
           Enum.each(cols, fn col ->
             if col in columns,
               do:
-                raise(ArgumentError,
-                  message: "Value columns may not also be ID columns. Found #{col} in both."
+                raise(
+                  ArgumentError,
+                  "value columns may not also be ID columns but found #{col} in both"
                 )
           end)
 
@@ -1230,7 +1229,7 @@ defmodule Explorer.DataFrame do
 
       _ ->
         raise ArgumentError,
-          message: "Value columns may only include one dtype. Found multiple dtypes."
+              "value columns may only include one dtype but found multiple dtypes"
     end
 
     apply_impl(df, :pivot_longer, [columns, value_cols, opts[:names_to], opts[:values_to]])
@@ -1284,7 +1283,7 @@ defmodule Explorer.DataFrame do
         :ok
 
       dtype ->
-        raise ArgumentError, message: "The values_from column must be numeric. Found #{dtype}."
+        raise ArgumentError, "the values_from column must be numeric, but found #{dtype}"
     end
 
     id_cols =
@@ -1413,7 +1412,7 @@ defmodule Explorer.DataFrame do
         nil
 
       {[], _} ->
-        raise(ArgumentError, message: "Could not find any overlapping columns.")
+        raise(ArgumentError, "could not find any overlapping columns")
 
       {[_ | _] = on, _} ->
         Enum.each(on, fn
@@ -1456,8 +1455,7 @@ defmodule Explorer.DataFrame do
     |> Enum.map(&MapSet.new/1)
     |> then(fn [first | rest] ->
       unless Enum.all?(rest, &MapSet.equal?(&1, first)),
-        do:
-          raise(ArgumentError, message: "Columns and dtypes must be identical for all dataframes")
+        do: raise(ArgumentError, "columns and dtypes must be identical for all dataframes")
     end)
 
     apply_impl(dfs, :concat_rows)
@@ -1554,8 +1552,9 @@ defmodule Explorer.DataFrame do
     Enum.each(groups, fn group ->
       if group not in current_groups,
         do:
-          raise(ArgumentError,
-            message: "Could not find #{group} in current groups (#{current_groups})."
+          raise(
+            ArgumentError,
+            "could not find #{group} in current groups (#{current_groups})"
           )
     end)
 
@@ -1600,8 +1599,9 @@ defmodule Explorer.DataFrame do
   @spec summarise(df :: DataFrame.t(), with_columns :: Keyword.t() | map()) :: DataFrame.t()
   def summarise(%DataFrame{groups: []}, _),
     do:
-      raise(ArgumentError,
-        message: "Dataframe must be grouped in order to perform summarisation."
+      raise(
+        ArgumentError,
+        "dataframe must be grouped in order to perform summarisation"
       )
 
   def summarise(df, with_columns) when is_map(with_columns) do
@@ -1613,7 +1613,7 @@ defmodule Explorer.DataFrame do
 
       unless values |> MapSet.new() |> MapSet.subset?(MapSet.new(@supported_aggs)) do
         unsupported = values |> MapSet.difference(@supported_aggs) |> MapSet.to_list()
-        raise ArgumentError, message: "Found unsupported aggregations #{inspect(unsupported)}."
+        raise ArgumentError, "found unsupported aggregations #{inspect(unsupported)}"
       end
     end)
 
@@ -1621,8 +1621,8 @@ defmodule Explorer.DataFrame do
   end
 
   def summarise(df, with_columns) when is_list(with_columns) do
-    if not Keyword.keyword?(with_columns), do: raise(ArgumentError, message: "Expected second
-      argument to be a keyword list.")
+    if not Keyword.keyword?(with_columns),
+      do: raise(ArgumentError, "expected second argument to be a keyword list")
 
     with_columns
     |> Enum.reduce(%{}, fn {colname, value}, acc ->
@@ -1654,11 +1654,9 @@ defmodule Explorer.DataFrame do
   defp maybe_raise_column_not_found(names, name) do
     if name not in names,
       do:
-        raise(ArgumentError,
-          message:
-            List.to_string(
-              ["Could not find column name \"#{name}\""] ++ did_you_mean(name, names)
-            )
+        raise(
+          ArgumentError,
+          List.to_string(["could not find column name \"#{name}\""] ++ did_you_mean(name, names))
         )
   end
 

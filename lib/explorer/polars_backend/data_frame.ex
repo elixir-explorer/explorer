@@ -241,10 +241,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     if s_len != df_len,
       do:
-        raise(ArgumentError,
-          message:
-            "Length of new column #{colname} (#{s_len}) must match number of rows in the " <>
-              "dataframe (#{df_len})."
+        raise(
+          ArgumentError,
+          "length of new column #{colname} (#{s_len}) must match number of rows in the " <>
+            "dataframe (#{df_len})"
         )
   end
 
