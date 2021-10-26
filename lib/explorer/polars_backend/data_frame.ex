@@ -368,7 +368,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: {[new_left | left], [new_right | right]}
 
   @impl true
-  def bind_rows(dfs) do
+  def concat_rows(dfs) do
     Enum.reduce(dfs, fn x, acc ->
       # Polars requires the _order_ of columns to be the same
       x = DataFrame.select(x, DataFrame.names(acc))

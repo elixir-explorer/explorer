@@ -86,7 +86,7 @@ defmodule Explorer.Backend.DataFrame do
                 list(String.t() | {String.t(), String.t()})
             ) :: df
 
-  @callback bind_rows([df]) :: df
+  @callback concat_rows([df]) :: df
 
   # Groups
 

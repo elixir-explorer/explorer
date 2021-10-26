@@ -1443,14 +1443,14 @@ defmodule Explorer.DataFrame do
 
       iex> df1 = Explorer.DataFrame.from_map(%{x: [1, 2, 3], y: ["a", "b", "c"]})
       iex> df2 = Explorer.DataFrame.from_map(%{x: [4, 5, 6], y: ["d", "e", "f"]})
-      iex> Explorer.DataFrame.bind_rows(df1, df2)
+      iex> Explorer.DataFrame.concat_rows(df1, df2)
       #Explorer.DataFrame<
         [rows: 6, columns: 2]
         x integer [1, 2, 3, 4, 5, "..."]
         y string ["a", "b", "c", "d", "e", "..."]
       >
   """
-  def bind_rows(dfs) when is_list(dfs) do
+  def concat_rows([%DataFrame{} | [%DataFrame{} | _]] = dfs) do
     dfs
     |> Enum.map(&Enum.zip(names(&1), dtypes(&1)))
     |> Enum.map(&MapSet.new/1)
@@ -1460,11 +1460,11 @@ defmodule Explorer.DataFrame do
           raise(ArgumentError, message: "Columns and dtypes must be identical for all dataframes")
     end)
 
-    apply_impl(dfs, :bind_rows)
+    apply_impl(dfs, :concat_rows)
   end
 
-  def bind_rows(%DataFrame{} = df1, %DataFrame{} = df2), do: bind_rows([df1, df2])
-  def bind_rows(%DataFrame{} = df, dfs) when is_list(dfs), do: bind_rows([df | dfs])
+  def concat_rows(%DataFrame{} = df1, %DataFrame{} = df2), do: concat_rows([df1, df2])
+  def concat_rows(%DataFrame{} = df, dfs) when is_list(dfs), do: concat_rows([df | dfs])
 
   # Groups
   @doc """
