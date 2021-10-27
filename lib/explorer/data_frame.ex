@@ -1449,8 +1449,7 @@ defmodule Explorer.DataFrame do
         y string ["a", "b", "c", "d", "e", "..."]
       >
   """
-  def concat_rows([%DataFrame{} | [%DataFrame{} | _]] = dfs) do
-    [h | t] = dfs
+  def concat_rows([%DataFrame{} = h | t] = dfs) do
     key = Map.new(Enum.zip(names(h), dtypes(h)))
 
     for df <- t, key != Map.new(Enum.zip(names(df), dtypes(df))) do
