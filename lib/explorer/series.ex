@@ -103,7 +103,7 @@ defmodule Explorer.Series do
   Mixing data types will raise an ArgumentError.
 
     iex> Explorer.Series.from_list([1, 2.9])
-    ** (ArgumentError) Cannot make a series from mismatched types. Type of 2.9 does not match inferred dtype integer.
+    ** (ArgumentError) cannot make a series from mismatched types: type of 2.9 does not match inferred dtype integer
   """
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
@@ -311,9 +311,8 @@ defmodule Explorer.Series do
     case {n > length, opts[:with_replacement?]} do
       {true, false} ->
         raise ArgumentError,
-          message:
-            "In order to sample more elements than are in the series (#{length}), sampling " <>
-              "`with_replacement?` must be true."
+              "in order to sample more elements than are in the series (#{length}), sampling " <>
+                "`with_replacement?` must be true"
 
       _ ->
         :ok
@@ -404,8 +403,7 @@ defmodule Explorer.Series do
     s_len = length(series)
 
     if idx > s_len - 1 || idx < -s_len,
-      do:
-        raise(ArgumentError, message: "Index #{idx} out of bounds for series of length #{s_len}")
+      do: raise(ArgumentError, "index #{idx} out of bounds for series of length #{s_len}")
 
     apply_impl(series, :get, [idx])
   end
@@ -1447,14 +1445,14 @@ defmodule Explorer.Series do
 
     if not types_match?,
       do:
-        raise(ArgumentError,
-          message:
-            "Cannot make a series from mismatched types. Type of #{inspect(last_item)} " <>
-              "does not match inferred dtype #{type}."
+        raise(
+          ArgumentError,
+          "cannot make a series from mismatched types: type of #{inspect(last_item)} does not " <>
+            "match inferred dtype #{type}"
         )
 
     if is_nil(type),
-      do: raise(ArgumentError, message: "cannot make a series from a list of all nils")
+      do: raise(ArgumentError, "cannot make a series from a list of all nils")
 
     type
   end
@@ -1480,14 +1478,15 @@ defmodule Explorer.Series do
     do:
       raise(
         ArgumentError,
-        message:
-          "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. Valid dtypes are #{inspect(valid_dtypes)}."
+        "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. Valid " <>
+          "dtypes are #{inspect(valid_dtypes)}."
       )
 
   defp dtype_mismatch_error(function, left_dtype, right_dtype),
     do:
-      raise(ArgumentError,
-        message: "Cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{left_dtype}
-      and #{right_dtype}."
+      raise(
+        ArgumentError,
+        "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{left_dtype} and " <>
+          "#{right_dtype}."
       )
 end

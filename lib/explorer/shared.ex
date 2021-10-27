@@ -21,6 +21,9 @@ defmodule Explorer.Shared do
   """
   def impl!(%{data: %struct{}}), do: struct
 
+  def impl!([%{data: %first_struct{}} | _] = dfs) when is_list(dfs),
+    do: Enum.reduce(dfs, first_struct, fn %{data: %struct{}}, acc -> pick_struct(acc, struct) end)
+
   def impl!(%{data: %struct1{}}, %{data: %struct2{}}),
     do: pick_struct(struct1, struct2)
 

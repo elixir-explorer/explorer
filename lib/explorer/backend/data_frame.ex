@@ -76,7 +76,7 @@ defmodule Explorer.Backend.DataFrame do
               values_to :: colname
             ) :: df
 
-  # Two table verbs
+  # Two or more table verbs
 
   @callback join(
               left :: df,
@@ -85,6 +85,8 @@ defmodule Explorer.Backend.DataFrame do
               on ::
                 list(String.t() | {String.t(), String.t()})
             ) :: df
+
+  @callback concat_rows([df]) :: df
 
   # Groups
 

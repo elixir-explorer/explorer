@@ -17,7 +17,7 @@ defmodule Explorer.DataFrameTest do
   describe "filter/2" do
     test "raises with mask of invalid length", %{df: df} do
       assert_raise ArgumentError,
-                   "Length of the mask (3) must match number of rows in the dataframe (1094).",
+                   "length of the mask (3) must match number of rows in the dataframe (1094)",
                    fn -> DF.filter(df, [true, false, true]) end
     end
   end
@@ -25,7 +25,7 @@ defmodule Explorer.DataFrameTest do
   describe "mutate/2" do
     test "raises with series of invalid length", %{df: df} do
       assert_raise ArgumentError,
-                   "Length of new column test (3) must match number of rows in the dataframe (1094).",
+                   "length of new column test (3) must match number of rows in the dataframe (1094)",
                    fn -> DF.mutate(df, test: [1, 2, 3]) end
     end
   end
@@ -33,7 +33,7 @@ defmodule Explorer.DataFrameTest do
   describe "arrange/3" do
     test "raises with invalid column names", %{df: df} do
       assert_raise ArgumentError,
-                   "Could not find column name \"test\"",
+                   "could not find column name \"test\"",
                    fn -> DF.arrange(df, ["test"]) end
     end
   end
@@ -41,7 +41,7 @@ defmodule Explorer.DataFrameTest do
   describe "take/2" do
     test "raises with index out of bounds", %{df: df} do
       assert_raise ArgumentError,
-                   "Requested row index (2000) out of bounds (-1094:1094).",
+                   "requested row index (2000) out of bounds (-1094:1094)",
                    fn -> DF.take(df, [1, 2, 3, 2000]) end
     end
   end
@@ -49,7 +49,7 @@ defmodule Explorer.DataFrameTest do
   describe "join/3" do
     test "raises if no overlapping columns" do
       assert_raise ArgumentError,
-                   "Could not find any overlapping columns.",
+                   "could not find any overlapping columns",
                    fn ->
                      left = DF.from_map(%{a: [1, 2, 3]})
                      right = DF.from_map(%{b: [1, 2, 3]})
