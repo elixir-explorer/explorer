@@ -100,10 +100,18 @@ defmodule Explorer.Series do
         [1.0, nil, 2.5, 3.1]
       >
 
-  Mixing data types will raise an ArgumentError.
+   A mix of integers and floats will be downcasted to a float.
 
-    iex> Explorer.Series.from_list([1, 2.9])
-    ** (ArgumentError) cannot make a series from mismatched types: type of 2.9 does not match inferred dtype integer
+   iex> Explorer.Series.from_list([1, 2.0])
+   #Explorer.Series<
+     float[2]
+     [1.0, 2.0]
+   >
+
+  Mixing data non-numeric types will raise an ArgumentError.
+
+    iex> Explorer.Series.from_list([1, "a"])
+    ** (ArgumentError) cannot make a series from mismatched types: type of "a" does not match inferred dtype integer
   """
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
