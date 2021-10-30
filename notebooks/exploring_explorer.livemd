@@ -126,15 +126,21 @@ And you can fill in those missing values using one of the following strategies:
 Series.fill_missing(s, :forward)
 ```
 
+In the case of mixed numeric types (i.e. integers and floats), `Series` will downcast to a float:
+
+```elixir
+Series.from_list([1, 2.0])
+```
+
 However, `Series` must all be of the same `dtype` or else you'll get an `ArgumentError`.
 
 ```elixir
-Series.from_list([1, 2, 3, 4.0])
+Series.from_list([1, 2, 3, "a"])
 ```
 
 One of the goals of `Explorer` is *useful error messages*. If you look at the error above, you get:
 
-> Cannot make a series from mismatched types. Type of 4.0 does not match inferred dtype integer.
+> Cannot make a series from mismatched types. Type of "a" does not match inferred dtype integer.
 
 Hopefully this makes abundantly clear what's going on.
 
