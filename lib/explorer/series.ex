@@ -108,7 +108,7 @@ defmodule Explorer.Series do
      [1.0, 2.0]
    >
 
-  Mixing data non-numeric types will raise an ArgumentError.
+  Mixing non-numeric data types will raise an ArgumentError.
 
     iex> Explorer.Series.from_list([1, "a"])
     ** (ArgumentError) cannot make a series from mismatched types: type of "a" does not match inferred dtype integer
