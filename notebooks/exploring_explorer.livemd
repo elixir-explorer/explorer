@@ -132,7 +132,7 @@ In the case of mixed numeric types (i.e. integers and floats), `Series` will dow
 Series.from_list([1, 2.0])
 ```
 
-However, `Series` must all be of the same `dtype` or else you'll get an `ArgumentError`.
+In all other cases, `Series` must all be of the same `dtype` or else you'll get an `ArgumentError`.
 
 ```elixir
 Series.from_list([1, 2, 3, "a"])
