@@ -100,15 +100,24 @@ defmodule Explorer.Series do
         [1.0, nil, 2.5, 3.1]
       >
 
-  Mixing data types will raise an ArgumentError.
+   A mix of integers and floats will be downcasted to a float.
 
-    iex> Explorer.Series.from_list([1, 2.9])
-    ** (ArgumentError) cannot make a series from mismatched types: type of 2.9 does not match inferred dtype integer
+   iex> Explorer.Series.from_list([1, 2.0])
+   #Explorer.Series<
+     float[2]
+     [1.0, 2.0]
+   >
+
+  Mixing non-numeric data types will raise an ArgumentError.
+
+    iex> Explorer.Series.from_list([1, "a"])
+    ** (ArgumentError) cannot make a series from mismatched types: type of "a" does not match inferred dtype integer
   """
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
     backend = backend_from_options!(opts)
     type = check_types(list)
+    {list, type} = cast_numerics(list, type)
     backend.from_list(list, type)
   end
 
@@ -1457,22 +1466,42 @@ defmodule Explorer.Series do
     type
   end
 
-  defp type(item) when is_integer(item), do: :integer
-  defp type(item) when is_float(item), do: :float
-  defp type(item) when is_boolean(item), do: :boolean
-  defp type(item) when is_binary(item), do: :string
-  defp type(%Date{} = _item), do: :date
-  defp type(%NaiveDateTime{} = _item), do: :datetime
-  defp type(item) when is_nil(item), do: nil
-  defp type(item), do: raise("Unsupported datatype: #{inspect(item)}")
+  defp type(item, type) when K.and(is_integer(item), type == :float), do: :numeric
+  defp type(item, type) when K.and(is_float(item), type == :integer), do: :numeric
+
+  defp type(item, type) when K.and(type == :numeric, K.or(is_integer(item), is_float(item))),
+    do: :numeric
+
+  defp type(item, _type) when is_integer(item), do: :integer
+  defp type(item, _type) when is_float(item), do: :float
+  defp type(item, _type) when is_boolean(item), do: :boolean
+  defp type(item, _type) when is_binary(item), do: :string
+  defp type(%Date{} = _item, _type), do: :date
+  defp type(%NaiveDateTime{} = _item, _type), do: :datetime
+  defp type(item, _type) when is_nil(item), do: nil
+  defp type(item, _type), do: raise("Unsupported datatype: #{inspect(item)}")
 
   defp check_types_reducer(item, {_prev, type, _types_match?}) do
-    new_type = type(item) || type
+    new_type = type(item, type) || type
 
-    if K.and(new_type != type, !is_nil(type)),
-      do: {:halt, {item, type, false}},
-      else: {:cont, {item, new_type, true}}
+    cond do
+      K.and(new_type == :numeric, type in [:float, :integer]) -> {:cont, {item, new_type, true}}
+      K.and(new_type != type, !is_nil(type)) -> {:halt, {item, type, false}}
+      true -> {:cont, {item, new_type, true}}
+    end
   end
+
+  defp cast_numerics(list, type) when type == :numeric do
+    data =
+      Enum.map(list, fn 
+        nil -> nil
+        item -> item / 1
+      end)
+
+    {data, :float}
+  end
+
+  defp cast_numerics(list, type), do: {list, type}
 
   defp dtype_error(function, dtype, valid_dtypes),
     do:
