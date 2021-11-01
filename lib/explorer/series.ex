@@ -1493,11 +1493,9 @@ defmodule Explorer.Series do
 
   defp cast_numerics(list, type) when type == :numeric do
     data =
-      Enum.map(list, fn item ->
-        case item do
-          nil -> nil
-          _ -> item / 1
-        end
+      Enum.map(list, fn 
+        nil -> nil
+        item -> item / 1
       end)
 
     {data, :float}
