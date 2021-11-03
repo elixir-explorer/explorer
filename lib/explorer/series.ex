@@ -1510,7 +1510,7 @@ defmodule Explorer.Series do
 
   defp cast_numerics(list, type) when type == :numeric do
     data =
-      Enum.map(list, fn 
+      Enum.map(list, fn
         nil -> nil
         item -> item / 1
       end)
