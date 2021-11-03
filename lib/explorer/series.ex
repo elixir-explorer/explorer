@@ -1436,6 +1436,23 @@ defmodule Explorer.Series do
   @spec not_nil?(Series.t()) :: Series.t()
   def not_nil?(series), do: apply_impl(series, :not_nil?)
 
+  # Escape hatch
+
+  @doc """
+  Returns an `Explorer.Series` where each element is the result of invoking `fun` on each 
+  corresponding element of `series`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["this ", " is", "great   "])
+      iex> Explorer.Series.map(s, &String.trim/1)
+      #Explorer.Series<
+        string[3]
+        ["this", "is", "great"]
+      >
+  """
+  def map(series, fun), do: apply_impl(series, :map, [fun])
+
   # Helpers
 
   defp backend_from_options!(opts) do
