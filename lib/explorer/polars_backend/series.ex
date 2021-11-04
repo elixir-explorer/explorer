@@ -328,7 +328,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Escape hatch
   @impl true
-  def map(series, fun), do: series |> to_list() |> Enum.map(fun) |> from_list(dtype(series))
+  def transform(series, fun), do: series |> to_list() |> Enum.map(fun) |> from_list(dtype(series))
 
   # Polars specific functions
 
