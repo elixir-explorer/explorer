@@ -106,5 +106,5 @@ defmodule Explorer.Backend.Series do
 
   # Escape hatch
 
-  @callback map(s, fun) :: s
+  @callback transform(s, fun) :: s
 end

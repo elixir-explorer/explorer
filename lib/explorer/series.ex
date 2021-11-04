@@ -1436,6 +1436,28 @@ defmodule Explorer.Series do
   @spec not_nil?(Series.t()) :: Series.t()
   def not_nil?(series), do: apply_impl(series, :not_nil?)
 
+  # Escape hatch
+
+  @doc """
+  Returns an `Explorer.Series` where each element is the result of invoking `fun` on each 
+  corresponding element of `series`.
+
+  This is an expensive operation meant to enable the use of arbitrary Elixir functions against 
+  any backend. The implementation will vary by backend but in most (all?) cases will require 
+  converting to an `Elixir.List`, applying `Enum.map/2`, and then converting back to an
+  `Explorer.Series`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["this ", " is", "great   "])
+      iex> Explorer.Series.transform(s, &String.trim/1)
+      #Explorer.Series<
+        string[3]
+        ["this", "is", "great"]
+      >
+  """
+  def transform(series, fun), do: apply_impl(series, :transform, [fun])
+
   # Helpers
 
   defp backend_from_options!(opts) do
@@ -1493,7 +1515,7 @@ defmodule Explorer.Series do
 
   defp cast_numerics(list, type) when type == :numeric do
     data =
-      Enum.map(list, fn 
+      Enum.map(list, fn
         nil -> nil
         item -> item / 1
       end)
