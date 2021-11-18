@@ -1,6 +1,8 @@
 defmodule Explorer.Datasets do
   alias Explorer.DataFrame
 
+  @datasets_dir Path.join(File.cwd!(), "datasets")
+
   @doc """
   CO2 emissions from fossil fuels since 2010, by country
 
@@ -11,5 +13,5 @@ defmodule Explorer.Datasets do
     Department of Energy, Oak Ridge, Tenn., U.S.A. doi 10.3334/CDIAC/00001_V2013
   """
   def fossil_fuels,
-    do: DataFrame.read_csv!("#{:code.priv_dir(:explorer)}/datasets/fossil_fuels.csv")
+    do: @datasets_dir |> Path.join("fossil_fuels.csv") |> DataFrame.read_csv!()
 end
