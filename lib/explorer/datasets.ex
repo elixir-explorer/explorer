@@ -33,5 +33,5 @@ defmodule Explorer.Datasets do
     Wine. (1991). UCI Machine Learning Repository.
   """
   def wine,
-    do: @datasets_dir |> Path.join("wine_data.csv") |> DataFrame.read_csv!()
+    do: @datasets_dir |> Path.join("wine.csv") |> DataFrame.read_csv!()
 end
