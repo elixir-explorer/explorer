@@ -12,8 +12,7 @@ defmodule Explorer.Datasets do
     Emissions. Carbon Dioxide Information Analysis Center, Oak Ridge National Laboratory, U.S.
     Department of Energy, Oak Ridge, Tenn., U.S.A. doi 10.3334/CDIAC/00001_V2013
   """
-  def fossil_fuels,
-    do: @datasets_dir |> Path.join("fossil_fuels.csv") |> DataFrame.read_csv!()
+  def fossil_fuels, do: read_dataset!("fossil_fuels")
 
   @doc """
   Wine Dataset - The data is the result of a chemical analysis of wines grown in the same
@@ -32,6 +31,11 @@ defmodule Explorer.Datasets do
 
     Wine. (1991). UCI Machine Learning Repository.
   """
-  def wine,
-    do: @datasets_dir |> Path.join("wine.csv") |> DataFrame.read_csv!()
+  def wine, do: read_dataset!("wine")
+
+  defp read_dataset!(name) do
+    @datasets_dir
+    |> Path.join("#{name}.csv")
+    |> DataFrame.read_csv!()
+  end
 end
