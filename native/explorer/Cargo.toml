@@ -36,5 +36,6 @@ features = [
   "strings",
   "temporal",
   "cum_agg",
-  "rolling_window"
+  "rolling_window",
+  "decompress"
 ]

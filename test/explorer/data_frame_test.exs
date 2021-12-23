@@ -233,6 +233,28 @@ defmodule Explorer.DataFrameTest do
                b2: [2, 4]
              }
     end
+
+    @tag :tmp_dir
+    test "automatically detects gz and uncompresses", config do
+      csv = Path.join(config.tmp_dir, "tmp.csv.gz")
+
+      :ok =
+        File.write!(
+          csv,
+          :zlib.gzip("""
+          a,b
+          1,2
+          3,4
+          """)
+        )
+
+      df = DF.read_csv!(csv)
+
+      assert DF.to_map(df) == %{
+               a: [1, 3],
+               b: [2, 4]
+             }
+    end
   end
 
   describe "parquet read and write" do
