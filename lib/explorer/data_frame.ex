@@ -1577,15 +1577,15 @@ defmodule Explorer.DataFrame do
 
     The following aggregations may be performed:
 
-      * `:min` - Take the minimum value within the group. See `Explorer.Series.min/1`.
-      * `:max` - Take the maximum value within the group. See `Explorer.Series.max/1`.
-      * `:sum` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
-      * `:mean` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
-      * `:median` - Take the median of the series within the group. See `Explorer.Series.median/1`.
-      * `:first` - Take the first value within the group. See `Explorer.Series.first/1`.
-      * `:last` - Take the last value within the group. See `Explorer.Series.last/1`.
-      * `:count` - Count the number of rows per group.
-      * `:n_unique` - Count the number of unique rows per group.
+    * `:min` - Take the minimum value within the group. See `Explorer.Series.min/1`.
+    * `:max` - Take the maximum value within the group. See `Explorer.Series.max/1`.
+    * `:sum` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
+    * `:mean` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
+    * `:median` - Take the median of the series within the group. See `Explorer.Series.median/1`.
+    * `:first` - Take the first value within the group. See `Explorer.Series.first/1`.
+    * `:last` - Take the last value within the group. See `Explorer.Series.last/1`.
+    * `:count` - Count the number of rows per group.
+    * `:n_unique` - Count the number of unique rows per group.
 
   ## Examples
 
