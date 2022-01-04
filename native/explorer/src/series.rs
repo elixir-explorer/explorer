@@ -41,8 +41,8 @@ macro_rules! init_method {
 
 init_method!(s_new_i64, i64);
 init_method!(s_new_bool, bool);
-init_method!(s_new_date32, &str, Date32Type);
-init_method!(s_new_date64, &str, Date64Type);
+init_method!(s_new_date32, i32, Date32Type);
+init_method!(s_new_date64, i64, Date64Type);
 init_method!(s_new_f64, f64);
 init_method!(s_new_str, String);
 

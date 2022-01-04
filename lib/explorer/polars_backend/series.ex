@@ -15,6 +15,9 @@ defmodule Explorer.PolarsBackend.Series do
 
   @behaviour Explorer.Backend.Series
 
+  @unix_epoch_in_gregorian_days 719_528
+  @unix_epoch_in_gregorian_secs 62_167_219_200
+
   # Conversion
 
   @impl true
@@ -39,7 +42,9 @@ defmodule Explorer.PolarsBackend.Series do
           |> then(&Native.s_new_date32(name, &1))
 
         :datetime ->
-          data |> Enum.map(&encode_datetime/1) |> then(&Native.s_new_date64(name, &1))
+          data
+          |> Enum.map(&encode_datetime/1)
+          |> then(&Native.s_new_date64(name, &1))
       end
 
     %Series{data: series, dtype: type}
@@ -343,18 +348,27 @@ defmodule Explorer.PolarsBackend.Series do
       |> List.duplicate(PolarsSeries.length(lhs))
       |> Series.from_list()
 
-  defp encode_date(%Date{} = date), do: Date.to_iso8601(date)
+  defp encode_date(%Date{} = date) do
+    Date.to_gregorian_days(date) - @unix_epoch_in_gregorian_days
+  end
+
   defp encode_date(date) when is_nil(date), do: nil
 
-  defp encode_datetime(%NaiveDateTime{} = datetime), do: NaiveDateTime.to_iso8601(datetime)
-  defp encode_datetime(%DateTime{} = datetime), do: DateTime.to_iso8601(datetime)
+  defp encode_datetime(%module{} = datetime) when module in [NaiveDateTime, DateTime] do
+    {secs, microsecs} = module.to_gregorian_seconds(datetime)
+
+    (secs - @unix_epoch_in_gregorian_secs) * 1_000 + div(microsecs, 1000)
+  end
+
   defp encode_datetime(datetime) when is_nil(datetime), do: nil
 
   defp decode_date(date) when is_integer(date), do: Date.add(~D[1970-01-01], date)
   defp decode_date(date) when is_nil(date), do: nil
 
-  defp decode_datetime(date) when is_integer(date),
-    do: NaiveDateTime.add(~N[1970-01-01 00:00:00], date, :millisecond)
+  # Note that we lost microseconds in the conversion, since Polars only works with milliseconds.
+  defp decode_datetime(epoch_date_in_ms) when is_integer(epoch_date_in_ms) do
+    DateTime.from_unix!(epoch_date_in_ms, :millisecond) |> DateTime.to_naive()
+  end
 
   defp decode_datetime(date) when is_nil(date), do: nil
 end

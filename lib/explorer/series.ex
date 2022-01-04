@@ -478,7 +478,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.min(s)
-      ~N[1999-12-31 00:00:00]
+      ~N[1999-12-31 00:00:00.000]
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.min(s)
@@ -517,7 +517,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.max(s)
-      ~N[2021-01-01 00:00:00]
+      ~N[2021-01-01 00:00:00.000]
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.max(s)
@@ -668,7 +668,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.quantile(s, 0.5)
-      ~N[2021-01-01 00:00:00]
+      ~N[2021-01-01 00:00:00.000]
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)
