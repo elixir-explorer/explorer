@@ -1,7 +1,7 @@
 defmodule Explorer.MixProject do
   use Mix.Project
 
-  @source_url "https://github.com/amplifiedai/explorer"
+  @source_url "https://github.com/elixir-nx/explorer"
   @version "0.1.0-dev"
 
   def project do
@@ -25,8 +25,8 @@ defmodule Explorer.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
-      {:nx, "~> 0.1.0-dev", github: "elixir-nx/nx", branch: "main", sparse: "nx"},
-      {:rustler, "~> 0.22.0"}
+      {:nx, "~> 0.1.0"},
+      {:rustler, "~> 0.23.0"}
     ]
   end
 
