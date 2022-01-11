@@ -37,6 +37,9 @@ explorer-*.tar
 # Allow folks to use their own .iex.exs
 .iex.exs
 
+# Allow folks to use their local .tool-versions for asdf
+.tool-versions
+
 # For the Mac users
 .DS_Store
 
