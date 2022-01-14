@@ -259,9 +259,12 @@ defmodule Explorer.DataFrameTest do
 
   describe "parquet read and write" do
     @tag :tmp_dir
-    test "can write parquet to file", %{df: df} do
-      {:ok, "test.parquet"} = DF.write_parquet(df, "test.parquet")
-      {:ok, parquet_df} = DF.read_parquet("test.parquet")
+    test "can write parquet to file", %{df: df, tmp_dir: tmp_dir} do
+      parquet_path = Path.join(tmp_dir, "test.parquet")
+
+      assert {:ok, ^parquet_path} = DF.write_parquet(df, parquet_path)
+      assert {:ok, parquet_df} = DF.read_parquet(parquet_path)
+
       assert DF.names(df) == DF.names(parquet_df)
       assert DF.dtypes(df) == DF.dtypes(parquet_df)
       assert DF.to_map(df) == DF.to_map(parquet_df)
