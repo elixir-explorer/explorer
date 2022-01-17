@@ -1268,6 +1268,16 @@ defmodule Explorer.Series do
   @doc """
   Calculate the rolling sum, given a window size and optional list of weights.
 
+  ## Options
+
+    * `:weights` - An optional list of weights with the same length as the window
+      that will be multiplied elementwise with the values in the window. Defaults to `nil`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. If `nil`, it will be set equal to window size. Defaults to `1`.
+
+    * `:center` - Set the labels at the center of the window. Defaults to `false`.
+
   ## Examples
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
@@ -1278,17 +1288,27 @@ defmodule Explorer.Series do
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_sum(s, 2, [1.0, 2.0])
+      iex> Explorer.Series.rolling_sum(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
         [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
       >
   """
-  def rolling_sum(series, window_size, weights \\ nil, min_periods \\ 1, center \\ false),
-    do: apply_impl(series, :rolling_sum, [window_size, weights, min_periods, center])
+  def rolling_sum(series, window_size, opts \\ []),
+    do: apply_impl(series, :rolling_sum, [window_size, rolling_opts_with_defaults(opts)])
 
   @doc """
   Calculate the rolling mean, given a window size and optional list of weights.
+
+  ## Options
+
+    * `:weights` - An optional list of weights with the same length as the window
+      that will be multiplied elementwise with the values in the window. Defaults to `nil`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. If `nil`, it will be set equal to window size. Defaults to `1`.
+
+    * `:center` - Set the labels at the center of the window. Defaults to `false`.
 
   ## Examples
 
@@ -1300,17 +1320,27 @@ defmodule Explorer.Series do
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_mean(s, 2, [1.0, 2.0])
+      iex> Explorer.Series.rolling_mean(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
         [0.5, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5]
       >
   """
-  def rolling_mean(series, window_size, weights \\ nil, min_periods \\ 1, center \\ false),
-    do: apply_impl(series, :rolling_mean, [window_size, weights, min_periods, center])
+  def rolling_mean(series, window_size, opts \\ []),
+    do: apply_impl(series, :rolling_mean, [window_size, rolling_opts_with_defaults(opts)])
 
   @doc """
   Calculate the rolling min, given a window size and optional list of weights.
+
+  ## Options
+
+    * `:weights` - An optional list of weights with the same length as the window
+      that will be multiplied elementwise with the values in the window. Defaults to `nil`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. If `nil`, it will be set equal to window size. Defaults to `1`.
+
+    * `:center` - Set the labels at the center of the window. Defaults to `false`.
 
   ## Examples
 
@@ -1322,17 +1352,27 @@ defmodule Explorer.Series do
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_min(s, 2, [1.0, 2.0])
+      iex> Explorer.Series.rolling_min(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
         [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
       >
   """
-  def rolling_min(series, window_size, weights \\ nil, min_periods \\ 1, center \\ false),
-    do: apply_impl(series, :rolling_min, [window_size, weights, min_periods, center])
+  def rolling_min(series, window_size, opts \\ []),
+    do: apply_impl(series, :rolling_min, [window_size, rolling_opts_with_defaults(opts)])
 
   @doc """
   Calculate the rolling max, given a window size and optional list of weights.
+
+  ## Options
+
+    * `:weights` - An optional list of weights with the same length as the window
+      that will be multiplied elementwise with the values in the window. Defaults to `nil`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. If `nil`, it will be set equal to window size. Defaults to `1`.
+
+    * `:center` - Set the labels at the center of the window. Defaults to `false`.
 
   ## Examples
 
@@ -1344,14 +1384,20 @@ defmodule Explorer.Series do
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_max(s, 2, [1.0, 2.0])
+      iex> Explorer.Series.rolling_max(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
         [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
       >
   """
-  def rolling_max(series, window_size, weights \\ nil, min_periods \\ 1, center \\ false),
-    do: apply_impl(series, :rolling_max, [window_size, weights, min_periods, center])
+  def rolling_max(series, window_size, opts \\ []),
+    do: apply_impl(series, :rolling_max, [window_size, rolling_opts_with_defaults(opts)])
+
+  defp rolling_opts_with_defaults(opts) do
+    defaults = [weights: nil, min_periods: 1, center: false]
+
+    Keyword.merge(defaults, opts, fn _key, _left, right -> right end)
+  end
 
   # Missing values
 
