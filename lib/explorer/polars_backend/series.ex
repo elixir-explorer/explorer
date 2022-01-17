@@ -318,20 +318,40 @@ defmodule Explorer.PolarsBackend.Series do
   # Rolling
 
   @impl true
-  def rolling_max(series, window_size, weights, min_periods, center),
-    do: Shared.apply_native(series, :s_rolling_max, [window_size, weights, min_periods, center])
+  def rolling_max(series, window_size, opts) do
+    weights = Keyword.fetch!(opts, :weights)
+    min_periods = Keyword.fetch!(opts, :min_periods)
+    center = Keyword.fetch!(opts, :center)
+
+    Shared.apply_native(series, :s_rolling_max, [window_size, weights, min_periods, center])
+  end
 
   @impl true
-  def rolling_mean(series, window_size, weights, min_periods, center),
-    do: Shared.apply_native(series, :s_rolling_mean, [window_size, weights, min_periods, center])
+  def rolling_mean(series, window_size, opts) do
+    weights = Keyword.fetch!(opts, :weights)
+    min_periods = Keyword.fetch!(opts, :min_periods)
+    center = Keyword.fetch!(opts, :center)
+
+    Shared.apply_native(series, :s_rolling_mean, [window_size, weights, min_periods, center])
+  end
 
   @impl true
-  def rolling_min(series, window_size, weights, min_periods, center),
-    do: Shared.apply_native(series, :s_rolling_min, [window_size, weights, min_periods, center])
+  def rolling_min(series, window_size, opts) do
+    weights = Keyword.fetch!(opts, :weights)
+    min_periods = Keyword.fetch!(opts, :min_periods)
+    center = Keyword.fetch!(opts, :center)
+
+    Shared.apply_native(series, :s_rolling_min, [window_size, weights, min_periods, center])
+  end
 
   @impl true
-  def rolling_sum(series, window_size, weights, min_periods, center),
-    do: Shared.apply_native(series, :s_rolling_sum, [window_size, weights, min_periods, center])
+  def rolling_sum(series, window_size, opts) do
+    weights = Keyword.fetch!(opts, :weights)
+    min_periods = Keyword.fetch!(opts, :min_periods)
+    center = Keyword.fetch!(opts, :center)
+
+    Shared.apply_native(series, :s_rolling_sum, [window_size, weights, min_periods, center])
+  end
 
   # Missing values
 
