@@ -89,13 +89,37 @@ defmodule Explorer.Backend.Series do
 
   # Rolling
 
-  @callback rolling_sum(s, window_size :: integer(), weight :: float(), ignore_nil? :: boolean()) ::
+  @callback rolling_sum(
+              s,
+              window_size :: integer(),
+              weights :: [float()],
+              min_periods :: integer(),
+              center :: boolean()
+            ) ::
               s
-  @callback rolling_mean(s, window_size :: integer(), weight :: float(), ignore_nil? :: boolean()) ::
+  @callback rolling_mean(
+              s,
+              window_size :: integer(),
+              weights :: [float()],
+              min_periods :: integer(),
+              center :: boolean()
+            ) ::
               s
-  @callback rolling_min(s, window_size :: integer(), weight :: float(), ignore_nil? :: boolean()) ::
+  @callback rolling_min(
+              s,
+              window_size :: integer(),
+              weights :: [float()],
+              min_periods :: integer(),
+              center :: boolean()
+            ) ::
               s
-  @callback rolling_max(s, window_size :: integer(), weight :: float(), ignore_nil? :: boolean()) ::
+  @callback rolling_max(
+              s,
+              window_size :: integer(),
+              weights :: [float()],
+              min_periods :: integer(),
+              center :: boolean()
+            ) ::
               s
 
   # Nulls

@@ -99,9 +99,11 @@ impl<'a> Encoder for ExSeriesRef {
             DataType::Int64 => encode!(s, env, i64),
             DataType::UInt32 => encode!(s, env, u32),
             DataType::Float64 => encode!(s, env, f64),
-            DataType::Date32 => encode!(s, env, date32, i32),
-            DataType::Date64 => encode!(s, env, date64, i64),
-            DataType::List(ArrowDataType::UInt32) => encode_list!(s, env, u32, u32),
+            DataType::Date => encode!(s, env, date, i32),
+            DataType::Datetime => encode!(s, env, datetime, i64),
+            DataType::List(t) if t as &DataType == &DataType::UInt32 => {
+                encode_list!(s, env, u32, u32)
+            }
             dt => panic!("to_list/1 not implemented for {:?}", dt),
         }
     }

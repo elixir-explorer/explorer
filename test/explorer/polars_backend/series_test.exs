@@ -23,7 +23,11 @@ defmodule Explorer.PolarsBackend.SeriesTest do
   end
 
   test "from_list/2 of naive datetime" do
-    dates = [~N[1022-01-04 21:18:31.224], ~N[1988-11-23 06:36:16.158], ~N[2353-03-07 00:39:35.702]]
+    dates = [
+      ~N[1022-01-04 21:18:31.224],
+      ~N[1988-11-23 06:36:16.158],
+      ~N[2353-03-07 00:39:35.702]
+    ]
 
     assert Series.from_list(dates, :datetime) |> Series.to_list() == dates
 

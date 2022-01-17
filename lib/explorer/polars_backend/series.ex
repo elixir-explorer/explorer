@@ -174,8 +174,22 @@ defmodule Explorer.PolarsBackend.Series do
   def std(series), do: Shared.apply_native(series, :s_std)
 
   @impl true
-  def quantile(series, quantile),
-    do: series |> Shared.apply_native(:s_quantile, [quantile]) |> get(0)
+  def quantile(%{dtype: dtype} = series, quantile) when dtype in [:date, :datetime] do
+    series
+    |> cast(:integer)
+    |> Shared.apply_native(:s_quantile, [quantile])
+    |> get(0)
+    |> then(fn value ->
+      case dtype do
+        :date -> decode_date(value)
+        :datetime -> decode_datetime(value)
+      end
+    end)
+  end
+
+  def quantile(series, quantile) do
+    series |> Shared.apply_native(:s_quantile, [quantile]) |> get(0)
+  end
 
   # Cumulative
 
@@ -304,20 +318,20 @@ defmodule Explorer.PolarsBackend.Series do
   # Rolling
 
   @impl true
-  def rolling_max(series, window_size, weight, ignore_nil?),
-    do: Shared.apply_native(series, :s_rolling_max, [window_size, weight, ignore_nil?, nil])
+  def rolling_max(series, window_size, weights, min_periods, center),
+    do: Shared.apply_native(series, :s_rolling_max, [window_size, weights, min_periods, center])
 
   @impl true
-  def rolling_mean(series, window_size, weight, ignore_nil?),
-    do: Shared.apply_native(series, :s_rolling_mean, [window_size, weight, ignore_nil?, nil])
+  def rolling_mean(series, window_size, weights, min_periods, center),
+    do: Shared.apply_native(series, :s_rolling_mean, [window_size, weights, min_periods, center])
 
   @impl true
-  def rolling_min(series, window_size, weight, ignore_nil?),
-    do: Shared.apply_native(series, :s_rolling_min, [window_size, weight, ignore_nil?, nil])
+  def rolling_min(series, window_size, weights, min_periods, center),
+    do: Shared.apply_native(series, :s_rolling_min, [window_size, weights, min_periods, center])
 
   @impl true
-  def rolling_sum(series, window_size, weight, ignore_nil?),
-    do: Shared.apply_native(series, :s_rolling_sum, [window_size, weight, ignore_nil?, nil])
+  def rolling_sum(series, window_size, weights, min_periods, center),
+    do: Shared.apply_native(series, :s_rolling_sum, [window_size, weights, min_periods, center])
 
   # Missing values
 

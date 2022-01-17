@@ -1274,18 +1274,18 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rolling_sum(s, 4)
       #Explorer.Series<
         integer[10]
-        [nil, nil, nil, 10, 14, 18, 22, 26, 30, 34]
+        [1, 3, 6, 10, 14, 18, 22, 26, 30, 34]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.rolling_sum(s, 2, [1.0, 2.0])
       #Explorer.Series<
-        integer[10]
-        [nil, 5, 7, 11, 13, 17, 19, 23, 25, 29]
+        float[10]
+        [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
       >
   """
-  def rolling_sum(series, window_size, weights \\ nil, ignore_nil? \\ true),
-    do: apply_impl(series, :rolling_sum, [window_size, weights, ignore_nil?])
+  def rolling_sum(series, window_size, weights \\ nil, min_periods \\ 1, center \\ false),
+    do: apply_impl(series, :rolling_sum, [window_size, weights, min_periods, center])
 
   @doc """
   Calculate the rolling mean, given a window size and optional list of weights.
@@ -1295,19 +1295,19 @@ defmodule Explorer.Series do
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.rolling_mean(s, 4)
       #Explorer.Series<
-        integer[10]
-        [nil, nil, nil, 2, 3, 4, 5, 6, 7, 8]
+        float[10]
+        [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.rolling_mean(s, 2, [1.0, 2.0])
       #Explorer.Series<
-        integer[10]
-        [nil, 2, 3, 5, 6, 8, 9, 11, 12, 14]
+        float[10]
+        [0.5, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5]
       >
   """
-  def rolling_mean(series, window_size, weights \\ nil, ignore_nil? \\ true),
-    do: apply_impl(series, :rolling_mean, [window_size, weights, ignore_nil?])
+  def rolling_mean(series, window_size, weights \\ nil, min_periods \\ 1, center \\ false),
+    do: apply_impl(series, :rolling_mean, [window_size, weights, min_periods, center])
 
   @doc """
   Calculate the rolling min, given a window size and optional list of weights.
@@ -1318,18 +1318,18 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rolling_min(s, 4)
       #Explorer.Series<
         integer[10]
-        [nil, nil, nil, 1, 2, 3, 4, 5, 6, 7]
+        [1, 1, 1, 1, 2, 3, 4, 5, 6, 7]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.rolling_min(s, 2, [1.0, 2.0])
       #Explorer.Series<
-        integer[10]
-        [nil, 1, 3, 3, 5, 5, 7, 7, 9, 9]
+        float[10]
+        [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
       >
   """
-  def rolling_min(series, window_size, weights \\ nil, ignore_nil? \\ true),
-    do: apply_impl(series, :rolling_min, [window_size, weights, ignore_nil?])
+  def rolling_min(series, window_size, weights \\ nil, min_periods \\ 1, center \\ false),
+    do: apply_impl(series, :rolling_min, [window_size, weights, min_periods, center])
 
   @doc """
   Calculate the rolling max, given a window size and optional list of weights.
@@ -1340,18 +1340,18 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rolling_max(s, 4)
       #Explorer.Series<
         integer[10]
-        [nil, nil, nil, 4, 5, 6, 7, 8, 9, 10]
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.rolling_max(s, 2, [1.0, 2.0])
       #Explorer.Series<
-        integer[10]
-        [nil, 4, 4, 8, 8, 12, 12, 16, 16, 20]
+        float[10]
+        [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
       >
   """
-  def rolling_max(series, window_size, weights \\ nil, ignore_nil? \\ true),
-    do: apply_impl(series, :rolling_max, [window_size, weights, ignore_nil?])
+  def rolling_max(series, window_size, weights \\ nil, min_periods \\ 1, center \\ false),
+    do: apply_impl(series, :rolling_max, [window_size, weights, min_periods, center])
 
   # Missing values
 

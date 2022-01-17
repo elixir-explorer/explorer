@@ -76,14 +76,15 @@ pub fn df_read_csv(
     Ok(ExDataFrame::new(df))
 }
 
+// TODO: consider adding "datetime[ns]"
 fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
     match dtype {
         "str" => Ok(DataType::Utf8),
         "f64" => Ok(DataType::Float64),
         "i64" => Ok(DataType::Int64),
         "bool" => Ok(DataType::Boolean),
-        "date32(days)" => Ok(DataType::Date32),
-        "date64(ms)" => Ok(DataType::Date64),
+        "date" => Ok(DataType::Date),
+        "datetime[ms]" => Ok(DataType::Datetime),
         _ => Err(ExplorerError::Internal("Unrecognised datatype".into())),
     }
 }
@@ -113,7 +114,7 @@ pub fn df_to_csv(
     df_read!(data, df, {
         let mut buf: Vec<u8> = Vec::with_capacity(81920);
         CsvWriter::new(&mut buf)
-            .has_headers(has_headers)
+            .has_header(has_headers)
             .with_delimiter(delimiter)
             .finish(&df)?;
 
@@ -132,7 +133,7 @@ pub fn df_to_csv_file(
     df_read!(data, df, {
         let mut f = File::create(filename)?;
         CsvWriter::new(&mut f)
-            .has_headers(has_headers)
+            .has_header(has_headers)
             .with_delimiter(delimiter)
             .finish(&df)?;
         Ok(())
@@ -187,7 +188,7 @@ pub fn df_join(
     };
 
     df_read_read!(data, other, df, df1, {
-        let new_df = df.join(&*df1, left_on, right_on, how)?;
+        let new_df = df.join(&*df1, left_on, right_on, how, None)?;
         Ok(ExDataFrame::new(new_df))
     })
 }
