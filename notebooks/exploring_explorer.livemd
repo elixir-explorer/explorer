@@ -4,11 +4,10 @@
 
 Connect to a `Mix` project with `Explorer` installed or:
 
-<!-- livebook:{"force_markdown":true} -->
-
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.1.0-dev", github: "elixir-nx/explorer"}
+  {:explorer, "~> 0.1.0-dev", github: "elixir-nx/explorer"},
+  {:kino, "~> 0.4.1"}
 ])
 ```
 
@@ -16,7 +15,6 @@ Mix.install([
 
 Currently, data can only be read in from delimited files. Support for JSON and Parquet is forthcoming. Your 'usual suspects' of options are available:
 
-```
 * `delimiter` - A single character used to separate fields within a record. (default: `","`)
 * `dtypes` - A keyword list of `[column_name: dtype]`. If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
 * `header?` - Does the file have a header of column names as the first row or not? (default: `true`)
@@ -26,7 +24,6 @@ Currently, data can only be read in from delimited files. Support for JSON and P
 * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
 * `with_columns` - A list of column names to keep. If present, only these columns are read
 * into the dataframe. (default: `nil`)
-```
 
 `Explorer` also has a dataset built in [with more to come](https://github.com/amplifiedai/explorer/issues/16). Let's use that.
 
@@ -36,14 +33,12 @@ df = Explorer.Datasets.fossil_fuels()
 
 You'll notice that the output looks slightly different than many dataframe libraries. `Explorer` takes inspiration on this front from [`glimpse`](https://pillar.r-lib.org/reference/glimpse.html) in R. A benefit to this approach is that you will rarely need to elide columns.
 
-I have an [open issue](https://github.com/amplifiedai/explorer/issues/21) for implementing the `Kino.Render` protocol and would love help on that front.
+There is an [open PR](https://github.com/livebook-dev/kino/pull/42) implementing the `Kino.Render` protocol and it should be available soon.
 
 Writing delimited files is very similar. The options are a little more limited:
 
-```
 * `header?` - Should the column names be written as the first line of the file? (default: `true`)
 * `delimiter` - A single character used to separate fields within a record. (default: `","`)
-```
 
 First, let's add some useful aliases:
 
@@ -54,10 +49,12 @@ alias Explorer.Series
 
 And then write to a file of your choosing:
 
-<!-- livebook:{"livebook_object":"cell_input","name":"filename","type":"text","value":"test.csv"} -->
+```elixir
+input = Kino.Input.text("Filename")
+```
 
 ```elixir
-filename = "filename" |> IO.gets() |> String.trim()
+filename = Kino.Input.read(input)
 DataFrame.write_csv(df, filename)
 ```
 
@@ -67,14 +64,12 @@ DataFrame.write_csv(df, filename)
 
 For simplicity, `Explorer` uses the following `Series` `dtypes`:
 
-```
 * `:float` - 64-bit floating point number
 * `:integer` - 64-bit signed integer
 * `:boolean` - Boolean
 * `:string` - UTF-8 encoded binary
 * `:date` - Date type that unwraps to `Elixir.Date`
 * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
-```
 
 `Series` can be constructed from `Elixir` basic types. For example:
 
@@ -114,13 +109,11 @@ s = Series.from_list([1.0, 2.0, nil, nil, 5.0])
 
 And you can fill in those missing values using one of the following strategies:
 
-```
 * `:forward` - replace nil with the previous value
 * `:backward` - replace nil with the next value
 * `:max` - replace nil with the series maximum
 * `:min` - replace nil with the series minimum
 * `:mean` - replace nil with the series mean
-```
 
 ```elixir
 Series.fill_missing(s, :forward)
@@ -575,17 +568,15 @@ grouped |> DataFrame.summarise(per_capita: [:max]) |> DataFrame.arrange(desc: :p
 
 Qatar it is. You can use the following aggregations:
 
-```
-  * `:min` - Take the minimum value within the group. See `Explorer.Series.min/1`.
-  * `:max` - Take the maximum value within the group. See `Explorer.Series.max/1`.
-  * `:sum` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
-  * `:mean` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
-  * `:median` - Take the median of the series within the group. See `Explorer.Series.median/1`.
-  * `:first` - Take the first value within the group. See `Explorer.Series.first/1`.
-  * `:last` - Take the last value within the group. See `Explorer.Series.last/1`.
-  * `:count` - Count the number of rows per group.
-  * `:n_unique` - Count the number of unique rows per group.
-```
+* `:min` - Take the minimum value within the group. See `Explorer.Series.min/1`.
+* `:max` - Take the maximum value within the group. See `Explorer.Series.max/1`.
+* `:sum` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
+* `:mean` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
+* `:median` - Take the median of the series within the group. See `Explorer.Series.median/1`.
+* `:first` - Take the first value within the group. See `Explorer.Series.first/1`.
+* `:last` - Take the last value within the group. See `Explorer.Series.last/1`.
+* `:count` - Count the number of rows per group.
+* `:n_unique` - Count the number of unique rows per group.
 
 The API is similar to `mutate`: you can use keyword args or a map and specify aggregations to use.
 
