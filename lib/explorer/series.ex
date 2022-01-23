@@ -848,10 +848,10 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> s2 = Explorer.Series.from_list([4, 5, 6])
-      iex> Explorer.Series.add(s1, s2)
+      iex> Explorer.Series.subtract(s1, s2)
       #Explorer.Series<
         integer[3]
-        [5, 7, 9]
+        [-3, -3, -3]
       >
   """
   @spec subtract(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
