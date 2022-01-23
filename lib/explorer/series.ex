@@ -877,6 +877,15 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Examples
+      iex> s1 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s2 = 11..20 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.multiply(s1, s2)
+      #Explorer.Series<
+        integer[10]
+        [11, 24, 39, 56, 75, 96, 119, 144, 171, 200]
+      >
   """
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def multiply(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
