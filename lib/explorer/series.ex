@@ -277,12 +277,24 @@ defmodule Explorer.Series do
 
   @doc """
   Returns the first element of the series.
+
+    ## Examples
+      iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.first(s)
+      1
   """
+  @spec first(series :: Series.t()) :: any()
   def first(series), do: series[0]
 
   @doc """
   Returns the last element of the series.
+
+  ## Examples
+      iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.last(s)
+      100
   """
+  @spec last(series :: Series.t()) :: any()
   def last(series), do: series[-1]
 
   @doc """
@@ -797,6 +809,16 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([4, 5, 6])
+      iex> Explorer.Series.add(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [5, 7, 9]
+      >
   """
   @spec add(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def add(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -821,6 +843,16 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([4, 5, 6])
+      iex> Explorer.Series.subtract(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [-3, -3, -3]
+      >
   """
   @spec subtract(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def subtract(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -845,6 +877,15 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Examples
+      iex> s1 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s2 = 11..20 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.multiply(s1, s2)
+      #Explorer.Series<
+        integer[10]
+        [11, 24, 39, 56, 75, 96, 119, 144, 171, 200]
+      >
   """
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def multiply(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -1234,6 +1275,11 @@ defmodule Explorer.Series do
   Returns the unique values of the series.
 
   **NB**: Does not maintain order.
+
+  ## Examples
+
+      iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.distinct()
   """
   def distinct(series), do: apply_impl(series, :distinct)
 
@@ -1485,11 +1531,11 @@ defmodule Explorer.Series do
   # Escape hatch
 
   @doc """
-  Returns an `Explorer.Series` where each element is the result of invoking `fun` on each 
+  Returns an `Explorer.Series` where each element is the result of invoking `fun` on each
   corresponding element of `series`.
 
-  This is an expensive operation meant to enable the use of arbitrary Elixir functions against 
-  any backend. The implementation will vary by backend but in most (all?) cases will require 
+  This is an expensive operation meant to enable the use of arbitrary Elixir functions against
+  any backend. The implementation will vary by backend but in most (all?) cases will require
   converting to an `Elixir.List`, applying `Enum.map/2`, and then converting back to an
   `Explorer.Series`.
 
