@@ -1278,8 +1278,8 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.distinct()
+      s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
+      s |> Explorer.Series.distinct()
       #Explorer.Series<
       integer[3]
       [2, 3, 1]
