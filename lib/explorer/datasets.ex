@@ -33,6 +33,23 @@ defmodule Explorer.Datasets do
   """
   def wine, do: read_dataset!("wine")
 
+  @doc """
+  Iris Dataset - This classic dataset was collected by Edgar Anderson in 1936 and made famous by R. A. Fisher's 1936 paper.
+  It consists of several measurements of three species of Iris (Iris setosa, Iris virginica and Iris versicolor).
+
+  Downloaded and modified from: https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data
+
+  ## Citation
+
+    Original Owners:
+    R. A. Fisher (1936)
+    The use of multiple measurements in taxonomic problems.
+    Annals of Eugenics. 7 (2): 179–188. doi:10.1111/j.1469-1809.1936.tb02137.x
+
+    Iris. (1936). UCI Machine Learning Repository.
+  """
+  def iris, do: read_dataset!("iris")
+
   defp read_dataset!(name) do
     @datasets_dir
     |> Path.join("#{name}.csv")
