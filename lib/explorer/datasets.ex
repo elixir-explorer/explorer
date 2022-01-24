@@ -33,6 +33,8 @@ defmodule Explorer.Datasets do
   """
   def wine, do: read_dataset!("wine")
 
+  def iris, do: read_dataset!("iris")
+
   defp read_dataset!(name) do
     @datasets_dir
     |> Path.join("#{name}.csv")
