@@ -341,8 +341,8 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s1 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> s1 |> Explorer.Series.take_every(2)
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.take_every(2)
       #Explorer.Series<
         integer[5]
         [1, 3, 5, 7, 9]
@@ -350,8 +350,8 @@ defmodule Explorer.Series do
 
     If *n* is bigger than the length of the series, the result is a new Series with only the first value of supplied one.
 
-      iex> s2 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> s2 |> Explorer.Series.take_every(20)
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.take_every(20)
       #Explorer.Series<
         integer[1]
         [1]
