@@ -762,6 +762,22 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:boolean`
+
+  ## Examples
+
+      iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_sum(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 3, 6, 10]
+      >
+
+      iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_sum(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 3, nil, 7]
+      >
   """
   @spec cum_sum(series :: Series.t(), reverse? :: boolean()) :: Series.t()
   def cum_sum(series, reverse? \\ false)
