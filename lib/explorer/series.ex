@@ -338,6 +338,24 @@ defmodule Explorer.Series do
 
   @doc """
   Takes every *n*th value in this series, returned as a new series.
+
+  ## Examples
+
+      iex> s1 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s1 |> Explorer.Series.take_every(2)
+      #Explorer.Series<
+        integer[5]
+        [1, 3, 5, 7, 9]
+      >
+
+    If *n* is bigger than the length of the series, the result is a new Series with only the first value of supplied one.
+
+      iex> s2 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s2 |> Explorer.Series.take_every(20)
+      #Explorer.Series<
+        integer[1]
+        [1]
+      >
   """
   @spec take_every(series :: Series.t(), every_n :: integer()) :: Series.t()
   def take_every(series, every_n), do: apply_impl(series, :take_every, [every_n])
