@@ -873,6 +873,7 @@ defmodule Explorer.Series do
   ## Examples
       iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
       iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
         integer[3]
         [5, 5, 5]
@@ -900,6 +901,14 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Example
+      iex> s1 = [8, 16, 32] |> Explorer.Series.from_list()
+      iex> Explorer.Series.pow(s1, 2.0)
+      #Explorer.Series<
+        float[3]
+        [64.0, 256.0, 1024.0]
+      >
   """
   @spec pow(series :: Series.t(), exponent :: number()) :: Series.t()
   def pow(%Series{dtype: dtype} = series, exponent) when dtype in [:integer, :float],
@@ -1224,6 +1233,16 @@ defmodule Explorer.Series do
 
   @doc """
   Sorts the series.
+
+  ## Example
+
+      iex> s = Explorer.Series.from_list([9, 3, 7, 1])
+      iex> s |> Explorer.Series.sort()
+      #Explorer.Series<
+        integer[4]
+        [1, 3, 7, 9]
+      >
+
   """
   def sort(series, reverse? \\ false), do: apply_impl(series, :sort, [reverse?])
 
@@ -1233,7 +1252,16 @@ defmodule Explorer.Series do
   def argsort(series, reverse? \\ false), do: apply_impl(series, :argsort, [reverse?])
 
   @doc """
-  Reverses the series.
+  Reverses the series order.
+
+  ## Example
+
+      iex> s = [1, 2, 3] |> Explorer.Series.from_list()
+      iex> Explorer.Series.reverse(s)
+      #Explorer.Series<
+        integer[3]
+        [3, 2, 1]
+      >
   """
   def reverse(series), do: apply_impl(series, :reverse)
 
