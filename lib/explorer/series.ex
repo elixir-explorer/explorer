@@ -905,6 +905,7 @@ defmodule Explorer.Series do
     * `:float`
 
   ## Examples
+
       iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
       iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, s2)
@@ -936,7 +937,8 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
 
-  ## Example
+  ## Examples
+
       iex> s1 = [8, 16, 32] |> Explorer.Series.from_list()
       iex> Explorer.Series.pow(s1, 2.0)
       #Explorer.Series<
@@ -1268,7 +1270,7 @@ defmodule Explorer.Series do
   @doc """
   Sorts the series.
 
-  ## Example
+  ## Examples
 
       iex> s = Explorer.Series.from_list([9, 3, 7, 1])
       iex> s |> Explorer.Series.sort()
