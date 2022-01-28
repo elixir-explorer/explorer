@@ -238,7 +238,7 @@ defmodule Explorer.PolarsBackend.Series do
   def pow(left, exponent) when is_float(exponent),
     do: Shared.apply_native(left, :s_pow, [exponent])
 
-  def pow(left, exponent) when is_integer(exponent),
+  def pow(left, exponent) when is_integer(exponent) and exponent >= 0,
     do: Shared.apply_native(left, :s_int_pow, [exponent])
   # Comparisons
 
