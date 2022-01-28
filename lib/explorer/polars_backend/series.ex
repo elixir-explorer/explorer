@@ -235,9 +235,11 @@ defmodule Explorer.PolarsBackend.Series do
   def divide(left, right) when is_number(right), do: divide(left, scalar_rhs(right, left))
 
   @impl true
-  def pow(left, exponent) when is_number(exponent),
+  def pow(left, exponent) when is_float(exponent),
     do: Shared.apply_native(left, :s_pow, [exponent])
 
+  def pow(left, exponent) when is_integer(exponent),
+    do: Shared.apply_native(left, :s_int_pow, [exponent])
   # Comparisons
 
   @impl true

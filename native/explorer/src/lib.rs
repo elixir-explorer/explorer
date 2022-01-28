@@ -130,6 +130,7 @@ rustler::init!(
         s_peak_max,
         s_peak_min,
         s_pow,
+        s_int_pow,
         s_quantile,
         s_rechunk,
         s_rename,

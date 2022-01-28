@@ -144,6 +144,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_peak_max(_s), do: err()
   def s_peak_min(_s), do: err()
   def s_pow(_s, _exponent), do: err()
+  def s_int_pow(_s, _exponent), do: err()
   def s_quantile(_s, _quantile), do: err()
   def s_rechunk(_s), do: err()
   def s_rename(_s, _name), do: err()

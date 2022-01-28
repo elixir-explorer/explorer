@@ -1485,11 +1485,11 @@ defmodule Explorer.Series do
   # Escape hatch
 
   @doc """
-  Returns an `Explorer.Series` where each element is the result of invoking `fun` on each 
+  Returns an `Explorer.Series` where each element is the result of invoking `fun` on each
   corresponding element of `series`.
 
-  This is an expensive operation meant to enable the use of arbitrary Elixir functions against 
-  any backend. The implementation will vary by backend but in most (all?) cases will require 
+  This is an expensive operation meant to enable the use of arbitrary Elixir functions against
+  any backend. The implementation will vary by backend but in most (all?) cases will require
   converting to an `Elixir.List`, applying `Enum.map/2`, and then converting back to an
   `Explorer.Series`.
 
