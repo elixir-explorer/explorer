@@ -980,11 +980,18 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s1 = [8, 16, 32] |> Explorer.Series.from_list()
-      iex> Explorer.Series.pow(s1, 2.0)
+      iex> s = [8, 16, 32] |> Explorer.Series.from_list()
+      iex> Explorer.Series.pow(s, 2.0)
       #Explorer.Series<
         float[3]
         [64.0, 256.0, 1024.0]
+      >
+
+      iex> s = [2, 4, 6] |> Explorer.Series.from_list()
+      iex> Explorer.Series.pow(s, 3)
+      #Explorer.Series<
+        integer[3]
+        [8, 64, 216]
       >
   """
   @spec pow(series :: Series.t(), exponent :: number()) :: Series.t()
