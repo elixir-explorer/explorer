@@ -998,7 +998,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.pow(s, -3.0)
       #Explorer.Series<
         float[3]
-        [1.0, 0.125, 0.037037037037037035]
+        [0.125, 0.015625, 0.004629629629629629]
       >
   """
   @spec pow(series :: Series.t(), exponent :: number()) :: Series.t()
