@@ -348,7 +348,7 @@ defmodule Explorer.Series do
         [1, 3, 5, 7, 9]
       >
 
-    If *n* is bigger than the length of the series, the result is a new Series with only the first value of supplied one.
+    If *n* is bigger than the length of the series, the result is a new series with only the first value of the supplied series.
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.take_every(20)
