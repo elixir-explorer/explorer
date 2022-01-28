@@ -277,12 +277,24 @@ defmodule Explorer.Series do
 
   @doc """
   Returns the first element of the series.
+
+    ## Examples
+      iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.first(s)
+      1
   """
+  @spec first(series :: Series.t()) :: any()
   def first(series), do: series[0]
 
   @doc """
   Returns the last element of the series.
+
+  ## Examples
+      iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.last(s)
+      100
   """
+  @spec last(series :: Series.t()) :: any()
   def last(series), do: series[-1]
 
   @doc """
@@ -338,6 +350,24 @@ defmodule Explorer.Series do
 
   @doc """
   Takes every *n*th value in this series, returned as a new series.
+
+  ## Examples
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.take_every(2)
+      #Explorer.Series<
+        integer[5]
+        [1, 3, 5, 7, 9]
+      >
+
+    If *n* is bigger than the length of the series, the result is a new series with only the first value of the supplied series.
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.take_every(20)
+      #Explorer.Series<
+        integer[1]
+        [1]
+      >
   """
   @spec take_every(series :: Series.t(), every_n :: integer()) :: Series.t()
   def take_every(series, every_n), do: apply_impl(series, :take_every, [every_n])
@@ -744,6 +774,22 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:boolean`
+
+  ## Examples
+
+      iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_sum(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 3, 6, 10]
+      >
+
+      iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_sum(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 3, nil, 7]
+      >
   """
   @spec cum_sum(series :: Series.t(), reverse? :: boolean()) :: Series.t()
   def cum_sum(series, reverse? \\ false)
@@ -797,6 +843,16 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([4, 5, 6])
+      iex> Explorer.Series.add(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [5, 7, 9]
+      >
   """
   @spec add(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def add(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -821,6 +877,16 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([4, 5, 6])
+      iex> Explorer.Series.subtract(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [-3, -3, -3]
+      >
   """
   @spec subtract(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def subtract(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -845,6 +911,15 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Examples
+      iex> s1 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s2 = 11..20 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.multiply(s1, s2)
+      #Explorer.Series<
+        integer[10]
+        [11, 24, 39, 56, 75, 96, 119, 144, 171, 200]
+      >
   """
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def multiply(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -869,6 +944,17 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Examples
+
+      iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.divide(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [5, 5, 5]
+      >
+
   """
   @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def divide(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -891,6 +977,15 @@ defmodule Explorer.Series do
 
     * `:integer`
     * `:float`
+
+  ## Examples
+
+      iex> s1 = [8, 16, 32] |> Explorer.Series.from_list()
+      iex> Explorer.Series.pow(s1, 2.0)
+      #Explorer.Series<
+        float[3]
+        [64.0, 256.0, 1024.0]
+      >
   """
   @spec pow(series :: Series.t(), exponent :: number()) :: Series.t()
   def pow(%Series{dtype: dtype} = series, exponent) when dtype in [:integer, :float],
@@ -1215,6 +1310,16 @@ defmodule Explorer.Series do
 
   @doc """
   Sorts the series.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([9, 3, 7, 1])
+      iex> s |> Explorer.Series.sort()
+      #Explorer.Series<
+        integer[4]
+        [1, 3, 7, 9]
+      >
+
   """
   def sort(series, reverse? \\ false), do: apply_impl(series, :sort, [reverse?])
 
@@ -1224,7 +1329,16 @@ defmodule Explorer.Series do
   def argsort(series, reverse? \\ false), do: apply_impl(series, :argsort, [reverse?])
 
   @doc """
-  Reverses the series.
+  Reverses the series order.
+
+  ## Example
+
+      iex> s = [1, 2, 3] |> Explorer.Series.from_list()
+      iex> Explorer.Series.reverse(s)
+      #Explorer.Series<
+        integer[3]
+        [3, 2, 1]
+      >
   """
   def reverse(series), do: apply_impl(series, :reverse)
 
@@ -1234,6 +1348,11 @@ defmodule Explorer.Series do
   Returns the unique values of the series.
 
   **NB**: Does not maintain order.
+
+  ## Examples
+
+      iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.distinct()
   """
   def distinct(series), do: apply_impl(series, :distinct)
 
