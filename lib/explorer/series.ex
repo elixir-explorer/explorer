@@ -1007,6 +1007,13 @@ defmodule Explorer.Series do
         float[3]
         [1.0, 8.0, 27.0]
       >
+
+      iex> s = [2.0, 4.0, 6.0] |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.pow(2)
+      #Explorer.Series<
+        float[3]
+        [4.0, 16.0, 36.0]
+      >
   """
   @spec pow(series :: Series.t(), exponent :: number()) :: Series.t()
   def pow(%Series{dtype: dtype} = series, exponent) when dtype in [:integer, :float],
