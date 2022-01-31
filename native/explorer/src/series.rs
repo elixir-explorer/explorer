@@ -705,7 +705,18 @@ pub fn s_n_unique(data: ExSeries) -> Result<usize, ExplorerError> {
 #[rustler::nif]
 pub fn s_pow(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
-    Ok(ExSeries::new(s.pow(exponent)?))
+    let s = cast(s, "float")?
+        .f64()?
+        .apply(|v| v.powf(exponent))
+        .into_series();
+    Ok(ExSeries::new(s))
+}
+
+#[rustler::nif]
+pub fn s_int_pow(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let s = s.i64()?.apply(|v| v.pow(exponent)).into_series();
+    Ok(ExSeries::new(s))
 }
 
 #[rustler::nif]
