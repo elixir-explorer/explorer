@@ -96,6 +96,7 @@ rustler::init!(
         s_eq,
         s_explode,
         s_fill_none,
+        s_fill_none_with_values,
         s_filter,
         s_get,
         s_gt,

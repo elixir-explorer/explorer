@@ -363,8 +363,11 @@ defmodule Explorer.PolarsBackend.Series do
   # Missing values
 
   @impl true
-  def fill_missing(series, strategy),
+  def fill_missing(series, strategy) when is_atom(strategy),
     do: Shared.apply_native(series, :s_fill_none, [Atom.to_string(strategy)])
+
+  def fill_missing(series, strategy),
+    do: Shared.apply_native(series, :s_fill_none_with_val, [strategy])
 
   @impl true
   def nil?(series), do: Shared.apply_native(series, :s_is_null)
