@@ -1602,6 +1602,13 @@ defmodule Explorer.Series do
         integer[4]
         [1, 2, 3, 4]
       >
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
+      iex> Explorer.Series.fill_missing(s, 3.0)
+      #Explorer.Series<
+        float[4]
+        [1.0, 2.0, 3.0, 4.0]
+      >
   """
   @spec fill_missing(Series.t(), atom()) :: Series.t()
   def fill_missing(series, strategy), do: apply_impl(series, :fill_missing, [strategy])

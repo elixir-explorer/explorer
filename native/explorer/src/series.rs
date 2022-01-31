@@ -353,6 +353,24 @@ pub fn s_fill_none(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerE
 }
 
 #[rustler::nif]
+pub fn s_fill_none_with_int(data: ExSeries, strategy: i64) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let s = s.i64()?
+        .fill_null_with_values(strategy)?
+        .into_series();
+    Ok(ExSeries::new(s))
+}
+
+#[rustler::nif]
+pub fn s_fill_none_with_float(data:ExSeries, strategy: f64) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let s = s.f64()?
+        .fill_null_with_values(strategy)?
+        .into_series();
+    Ok(ExSeries::new(s))
+}
+
+#[rustler::nif]
 pub fn s_clone(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     Ok(ExSeries::new(s.clone()))
