@@ -370,6 +370,7 @@ defmodule Explorer.PolarsBackend.Series do
     cond do
       is_float(strategy) -> Shared.apply_native(series, :s_fill_none_with_float, [strategy])
       is_integer(strategy) -> Shared.apply_native(series, :s_fill_none_with_int, [strategy])
+      is_binary(strategy) -> Shared.apply_native(series, :s_fill_none_with_bin, [strategy])
     end
   end
 
