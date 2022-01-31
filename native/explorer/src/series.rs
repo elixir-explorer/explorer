@@ -370,7 +370,6 @@ pub fn s_fill_none_with_float(data: ExSeries, strategy: f64) -> Result<ExSeries,
 pub fn s_fill_none_with_bin(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s.utf8()?.fill_null_with_values(strategy)?.into_series();
-
     Ok(ExSeries::new(s))
 }
 
