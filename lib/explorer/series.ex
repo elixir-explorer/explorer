@@ -1549,7 +1549,8 @@ defmodule Explorer.Series do
   # Missing values
 
   @doc """
-  Fill missing values with the given strategy.
+  Fill missing values with the given strategy. If a scalar value is provided instead of a strategy
+  atom, `nil` will be replaced with that value. It must be of the same `dtype` as the series.
 
   ## Strategies
 
