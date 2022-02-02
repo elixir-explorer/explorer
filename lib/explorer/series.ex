@@ -1549,7 +1549,8 @@ defmodule Explorer.Series do
   # Missing values
 
   @doc """
-  Fill missing values with the given strategy.
+  Fill missing values with the given strategy. If a scalar value is provided instead of a strategy
+  atom, `nil` will be replaced with that value. It must be of the same `dtype` as the series.
 
   ## Strategies
 
@@ -1594,6 +1595,27 @@ defmodule Explorer.Series do
       #Explorer.Series<
         integer[4]
         [1, 2, 2, 4]
+      >
+
+      iex> s = Explorer.Series.from_list([1, 2, nil, 4])
+      iex> Explorer.Series.fill_missing(s, 3)
+      #Explorer.Series<
+        integer[4]
+        [1, 2, 3, 4]
+      >
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
+      iex> Explorer.Series.fill_missing(s, 3.0)
+      #Explorer.Series<
+        float[4]
+        [1.0, 2.0, 3.0, 4.0]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", nil, "d"])
+      iex> Explorer.Series.fill_missing(s, "c")
+      #Explorer.Series<
+        string[4]
+        ["a", "b", "c", "d"]
       >
   """
   @spec fill_missing(Series.t(), atom()) :: Series.t()
