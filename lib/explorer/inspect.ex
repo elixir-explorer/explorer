@@ -60,30 +60,32 @@ defmodule Explorer.Inspect do
       )
 
   def df_pretty_inspect(df, nrow \\ 5) do
-
     df = Explorer.DataFrame.slice(df, 0, nrow)
 
-    types = df
+    types =
+      df
       |> Explorer.DataFrame.dtypes()
       |> Enum.map(&Atom.to_string(&1))
       |> Enum.map(fn x -> "<" <> x <> ">" end)
 
     headers = Explorer.DataFrame.names(df)
 
-    values = headers
+    values =
+      headers
       |> Enum.map(&Explorer.DataFrame.pull(df, &1))
       |> Enum.map(&Explorer.Series.to_list(&1))
       |> Enum.zip()
       |> Enum.map(&Tuple.to_list(&1))
 
     TableRex.Table.new()
-      |> TableRex.Table.put_header(headers)
-      |> TableRex.Table.add_row(types)
-      |> TableRex.Table.add_rows(values)
-      |> TableRex.Table.render!(
-          header_separator_symbol: "=",
-          horizontal_style: :all)
-      |> IO.puts
+    |> TableRex.Table.put_header(headers)
+    |> TableRex.Table.add_row(types)
+    |> TableRex.Table.add_rows(values)
+    |> TableRex.Table.render!(
+      header_separator_symbol: "=",
+      horizontal_style: :all
+    )
+    |> IO.puts()
   end
 
   def s_inner(dtype, length, values, opts) do

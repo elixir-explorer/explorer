@@ -69,7 +69,6 @@ defmodule Explorer.PolarsBackend.Native do
   def df_n_chunks(_df), do: err()
   def df_new(_cols), do: err()
   def df_pivot_wider(_df, _id_cols, _pivot_column, _values_columns), do: err()
-  def df_pretty_inspect(_df, _nrow), do: err()
   def df_quantile(_df, _quant), do: err()
   def df_read_json(_filename, _type), do: err()
   def df_read_parquet(_filename), do: err()
