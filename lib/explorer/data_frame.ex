@@ -961,6 +961,29 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Turns a set of columns to dummy variables.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"]})
+      iex> Explorer.DataFrame.dummies(df, ["a"])
+      #Explorer.DataFrame<
+        [rows: 4, columns: 3]
+        a_a integer [1, 0, 1, 0]
+        a_b integer [0, 1, 0, 0]
+        a_c integer [0, 0, 0, 1]
+      >
+
+      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"]})
+      iex> Explorer.DataFrame.dummies(df, ["a", "b"])
+      #Explorer.DataFrame<
+        [rows: 4, columns: 6]
+        a_a integer [1, 0, 1, 0]
+        a_b integer [0, 1, 0, 0]
+        a_c integer [0, 0, 0, 1]
+        b_a integer [0, 1, 0, 0]
+        b_b integer [1, 0, 1, 0]
+        b_d integer [0, 0, 0, 1]
+      >
   """
   def dummies(df, columns), do: apply_impl(df, :dummies, [columns])
 
