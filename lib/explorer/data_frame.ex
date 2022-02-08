@@ -1200,6 +1200,16 @@ defmodule Explorer.DataFrame do
         variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "..."]
         value integer [627, 117, 332, 0, 0, "..."]
       >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_cols: ["total"])
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 4]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        variable string ["total", "total", "total", "total", "total", "..."]
+        value integer [2308, 1254, 32500, 141, 7924, "..."]
+      >
   """
   @spec pivot_longer(
           df :: DataFrame.t(),
@@ -1234,9 +1244,7 @@ defmodule Explorer.DataFrame do
           cols
 
         callback when is_function(callback) ->
-          names
-          |> Enum.filter(fn name -> name not in columns end)
-          |> Enum.filter(callback)
+          Enum.filter(names, fn name -> name not in columns && callback.(name) end)
       end
 
     Enum.each(value_cols, fn name -> maybe_raise_column_not_found(names, name) end)
@@ -1276,8 +1284,8 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `id_cols` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
-    * `names_prefix` - String added to the start of every variable name. This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
+  * `id_cols` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
+  * `names_prefix` - String added to the start of every variable name. This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
   """
   @spec pivot_wider(
           df :: DataFrame.t(),
@@ -1318,7 +1326,7 @@ defmodule Explorer.DataFrame do
           Enum.filter(names, &(&1 not in [names_from, values_from]))
 
         fun when is_function(fun) ->
-          names |> Enum.filter(fun) |> Enum.filter(&(&1 not in [names_from, values_from]))
+          Enum.filter(names, fn name -> fun.(name) && name not in [names_from, values_from] end)
       end
 
     Enum.each(id_cols ++ [names_from, values_from], fn name ->
@@ -1638,7 +1646,7 @@ defmodule Explorer.DataFrame do
       maybe_raise_column_not_found(columns, name)
 
       unless values |> MapSet.new() |> MapSet.subset?(MapSet.new(@supported_aggs)) do
-        unsupported = values |> MapSet.difference(@supported_aggs) |> MapSet.to_list()
+        unsupported = values |> MapSet.difference(MapSet.new(@supported_aggs)) |> MapSet.to_list()
         raise ArgumentError, "found unsupported aggregations #{inspect(unsupported)}"
       end
     end)
