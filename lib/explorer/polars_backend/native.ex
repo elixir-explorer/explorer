@@ -19,7 +19,8 @@ defmodule Explorer.PolarsBackend.Native do
         _with_columns,
         _dtypes,
         _encoding,
-        _null_char
+        _null_char,
+        _parse_dates
       ),
       do: err()
 

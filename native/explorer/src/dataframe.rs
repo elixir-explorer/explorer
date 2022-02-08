@@ -44,6 +44,7 @@ pub fn df_read_csv(
     dtypes: Option<Vec<(&str, &str)>>,
     encoding: &str,
     null_char: String,
+    parse_dates: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
@@ -62,6 +63,7 @@ pub fn df_read_csv(
     let df = CsvReader::from_path(filename)?
         .infer_schema(infer_schema_length)
         .has_header(has_header)
+        .with_parse_dates(parse_dates)
         .with_stop_after_n_rows(stop_after_n_rows)
         .with_delimiter(sep.as_bytes()[0])
         .with_skip_rows(skip_rows)

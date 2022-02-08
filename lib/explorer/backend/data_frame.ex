@@ -22,7 +22,9 @@ defmodule Explorer.Backend.DataFrame do
               header? :: boolean(),
               encoding :: String.t(),
               max_rows :: Integer.t() | Inf,
-              with_columns :: list(String.t()) | nil
+              with_columns :: list(String.t()) | nil,
+              infer_schema_length :: Integer.t() | nil,
+              parse_dates :: boolean()
             ) :: result(df)
   @callback write_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
               result(String.t())
