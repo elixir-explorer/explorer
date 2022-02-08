@@ -144,6 +144,13 @@ defmodule Explorer.Series do
         integer[3]
         [1, 2, 3]
       >
+
+      iex> tensor = Nx.tensor([1.0, 2.0, 3.0])
+      iex> Explorer.Series.from_tensor(tensor)
+      #Explorer.Series<
+        float[3]
+        [1.0, 2.0, 3.0]
+      >
   """
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
   def from_tensor(tensor, opts \\ []) do
@@ -374,6 +381,23 @@ defmodule Explorer.Series do
 
   @doc """
   Filters a series with a mask or callback.
+
+  ## Examples
+      iex> s1 = Explorer.Series.from_list([1,2,3])
+      iex> s2 = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.filter(s1, s2)
+      #Explorer.Series<
+        integer[2]
+        [1, 3]
+      >
+
+      iex> s1 = Explorer.Series.from_list([1,2,1])
+      iex> s2 = Explorer.Series.from_list([1])
+      iex> Explorer.Series.filter(s1, &Explorer.Series.equal(&1, s2))
+      #Explorer.Series<
+        integer[2]
+        [1, 1]
+      >
   """
   @spec filter(series :: Series.t(), mask :: Series.t()) :: Series.t()
   def filter(series, %Series{} = mask), do: apply_impl(series, :filter, [mask])
@@ -436,6 +460,10 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.get(s, 2)
       "c"
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.get(s, 4)
+      ** (ArgumentError) index 4 out of bounds for series of length 3
   """
   @spec get(series :: Series.t(), idx :: integer()) :: any()
   def get(series, idx) do
@@ -727,6 +755,22 @@ defmodule Explorer.Series do
     * `:float`
     * `:date`
     * `:datetime`
+
+  ## Examples
+
+    iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
+    iex> Explorer.Series.cum_max(s)
+    #Explorer.Series<
+      integer[4]
+      [1, 2, 3, 4]
+    >
+
+    iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
+    iex> Explorer.Series.cum_max(s)
+    #Explorer.Series<
+      integer[4]
+      [1, 2, nil, 4]
+    >
   """
   @spec cum_max(series :: Series.t(), reverse? :: boolean()) :: Series.t()
   def cum_max(series, reverse? \\ false)
@@ -751,6 +795,22 @@ defmodule Explorer.Series do
     * `:float`
     * `:date`
     * `:datetime`
+
+  ## Examples
+
+      iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_min(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 1, 1, 1]
+      >
+
+      iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_min(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 1, nil, 1]
+      >
   """
   @spec cum_min(series :: Series.t(), reverse? :: boolean()) :: Series.t()
   def cum_min(series, reverse? \\ false)
@@ -920,6 +980,13 @@ defmodule Explorer.Series do
         integer[10]
         [11, 24, 39, 56, 75, 96, 119, 144, 171, 200]
       >
+
+      iex> s1 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.multiply(s1, 2)
+      #Explorer.Series<
+        integer[10]
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+      >
   """
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def multiply(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -950,6 +1017,13 @@ defmodule Explorer.Series do
       iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
       iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [5, 5, 5]
+      >
+
+      iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
+      iex> Explorer.Series.divide(s1, 2)
       #Explorer.Series<
         integer[3]
         [5, 5, 5]
@@ -1035,6 +1109,41 @@ defmodule Explorer.Series do
         boolean[3]
         [true, true, false]
       >
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.equal(s, 1)
+      #Explorer.Series<
+        boolean[3]
+        [true, false, false]
+      >
+
+      iex> s = Explorer.Series.from_list([true, true, false])
+      iex> Explorer.Series.equal(s, true)
+      #Explorer.Series<
+        boolean[3]
+        [true, true, false]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.equal(s, "a")
+      #Explorer.Series<
+        boolean[3]
+        [true, false, false]
+      >
+
+      iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
+      iex> Explorer.Series.equal(s, ~D[1999-12-31])
+      #Explorer.Series<
+        boolean[2]
+        [false, true]
+      >
+
+      iex> s = Explorer.Series.from_list([~N[2022-01-01 00:00:00], ~N[2022-01-01 23:00:00]])
+      iex> Explorer.Series.equal(s, ~N[2022-01-01 00:00:00])
+      #Explorer.Series<
+        boolean[2]
+        [true, false]
+      >
   """
   @spec equal(
           left :: Series.t(),
@@ -1070,6 +1179,41 @@ defmodule Explorer.Series do
       #Explorer.Series<
         boolean[3]
         [false, false, true]
+      >
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.not_equal(s, 1)
+      #Explorer.Series<
+        boolean[3]
+        [false, true, true]
+      >
+
+      iex> s = Explorer.Series.from_list([true, true, false])
+      iex> Explorer.Series.not_equal(s, true)
+      #Explorer.Series<
+        boolean[3]
+        [false, false, true]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.not_equal(s, "a")
+      #Explorer.Series<
+        boolean[3]
+        [false, true, true]
+      >
+
+      iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
+      iex> Explorer.Series.not_equal(s, ~D[1999-12-31])
+      #Explorer.Series<
+        boolean[2]
+        [true, false]
+      >
+
+      iex> s = Explorer.Series.from_list([~N[2022-01-01 00:00:00], ~N[2022-01-01 23:00:00]])
+      iex> Explorer.Series.not_equal(s, ~N[2022-01-01 00:00:00])
+      #Explorer.Series<
+        boolean[2]
+        [false, true]
       >
   """
   @spec not_equal(
@@ -1323,6 +1467,11 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list(["a", "b"])
       iex> s2 = Explorer.Series.from_list(["a", "c"])
+      iex> Explorer.Series.all_equal?(s1, s2)
+      false
+
+      iex> s1 = Explorer.Series.from_list(["a", "b"])
+      iex> s2 = Explorer.Series.from_list([1, 2])
       iex> Explorer.Series.all_equal?(s1, s2)
       false
   """

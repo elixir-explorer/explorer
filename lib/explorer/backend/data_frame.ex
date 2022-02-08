@@ -81,9 +81,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback join(
               left :: df,
               right :: df,
-              how :: :left | :inner | :outer | :right | :cross,
-              on ::
-                list(String.t() | {String.t(), String.t()})
+              on :: list(String.t() | {String.t(), String.t()}),
+              how :: :left | :inner | :outer | :right | :cross
             ) :: df
 
   @callback concat_rows([df]) :: df
