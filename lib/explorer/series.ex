@@ -758,19 +758,19 @@ defmodule Explorer.Series do
 
   ## Examples
 
-    iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
-    iex> Explorer.Series.cum_max(s)
-    #Explorer.Series<
-      integer[4]
-      [1, 2, 3, 4]
-    >
+      iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_max(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 2, 3, 4]
+      >
 
-    iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
-    iex> Explorer.Series.cum_max(s)
-    #Explorer.Series<
-      integer[4]
-      [1, 2, nil, 4]
-    >
+      iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_max(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 2, nil, 4]
+      >
   """
   @spec cum_max(series :: Series.t(), reverse? :: boolean()) :: Series.t()
   def cum_max(series, reverse? \\ false)
@@ -981,11 +981,11 @@ defmodule Explorer.Series do
         [11, 24, 39, 56, 75, 96, 119, 144, 171, 200]
       >
 
-      iex> s1 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s1 = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.multiply(s1, 2)
       #Explorer.Series<
-        integer[10]
-        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+        integer[5]
+        [2, 4, 6, 8, 10]
       >
   """
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
@@ -1028,7 +1028,6 @@ defmodule Explorer.Series do
         integer[3]
         [5, 5, 5]
       >
-
   """
   @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def divide(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
