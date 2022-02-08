@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-  ELIXIR_VERSION: 1.12
-  OTP_VERSION: 24.0
+  ELIXIR_VERSION: 1.13
+  OTP_VERSION: 24.2
   MIX_ENV: test
 
 jobs:
