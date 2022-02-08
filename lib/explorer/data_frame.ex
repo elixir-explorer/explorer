@@ -13,6 +13,7 @@ defmodule Explorer.DataFrame do
   @type t :: %DataFrame{data: data}
 
   @enforce_keys [:data, :groups]
+  @default_infer_schema_length 1000
   defstruct [:data, :groups]
 
   # Access
@@ -61,6 +62,8 @@ defmodule Explorer.DataFrame do
     * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
     * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
     * `with_columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
+    * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
+    * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `[DataType::Utf8]
   """
   @spec read_csv(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
@@ -75,7 +78,9 @@ defmodule Explorer.DataFrame do
         names: nil,
         null_character: "NA",
         skip_rows: 0,
-        with_columns: nil
+        with_columns: nil,
+        infer_schema_length: @default_infer_schema_length,
+        parse_dates: false
       )
 
     backend = backend_from_options!(opts)
@@ -90,7 +95,9 @@ defmodule Explorer.DataFrame do
       opts[:header?],
       opts[:encoding],
       opts[:max_rows],
-      opts[:with_columns]
+      opts[:with_columns],
+      opts[:infer_schema_length],
+      opts[:parse_dates]
     )
   end
 

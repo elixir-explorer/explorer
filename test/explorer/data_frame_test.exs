@@ -102,6 +102,44 @@ defmodule Explorer.DataFrameTest do
     end
 
     @tag :tmp_dir
+    test "dtypes - parse datetime", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b,c
+        1,2,"2020-10-15 00:00:01",
+        3,4,2020-10-15 00:00:18
+        """)
+
+      df = DF.read_csv!(csv, parse_dates: true)
+      assert [:datetime] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
+
+      assert DF.to_map(df) == %{
+               a: [1, 3],
+               b: [2, 4],
+               c: [~N[2020-10-15 00:00:01.000], ~N[2020-10-15 00:00:18.000]]
+             }
+    end
+
+    @tag :tmp_dir
+    test "dtypes - do not parse datetime(default)", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b,c
+        1,2,"2020-10-15 00:00:01",
+        3,4,2020-10-15 00:00:18
+        """)
+
+      df = DF.read_csv!(csv, parse_dates: false)
+      assert [:string] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
+
+      assert DF.to_map(df) == %{
+               a: [1, 3],
+               b: [2, 4],
+               c: ["2020-10-15 00:00:01", "2020-10-15 00:00:18"]
+             }
+    end
+
+    @tag :tmp_dir
     test "header?", config do
       csv =
         tmp_csv(config.tmp_dir, """

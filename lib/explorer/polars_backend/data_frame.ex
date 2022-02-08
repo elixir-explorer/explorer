@@ -13,6 +13,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @behaviour Explorer.Backend.DataFrame
 
+  @default_infer_schema_length 1000
+
   # IO
 
   @impl true
@@ -26,9 +28,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
         header?,
         encoding,
         max_rows,
-        with_columns
+        with_columns,
+        infer_schema_length,
+        parse_dates
       ) do
     max_rows = if max_rows == Inf, do: nil, else: max_rows
+
+    infer_schema_length =
+      if infer_schema_length == nil,
+        do: max_rows || @default_infer_schema_length,
+        else: infer_schema_length
 
     dtypes =
       if dtypes do
@@ -40,7 +49,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df =
       Native.df_read_csv(
         filename,
-        1000,
+        infer_schema_length,
         header?,
         max_rows,
         skip_rows,
@@ -50,7 +59,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         with_columns,
         dtypes,
         encoding,
-        null_character
+        null_character,
+        parse_dates
       )
 
     case {df, names} do
