@@ -44,3 +44,13 @@ jobs:
       - run: mix deps.get
       - run: mix compile --warnings-as-errors
       - run: mix test --warnings-as-errors
+  format:
+    runs-on: ubuntu-latest
+    name: mix format
+    steps:
+      - uses: actions/checkout@v2
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "${{ env.OTP_VERSION }}"
+          elixir-version: "${{ env.ELIXIR_VERSION }}"
+      - run: mix format --check-formatted
