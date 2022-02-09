@@ -1642,6 +1642,14 @@ defmodule Explorer.DataFrame do
        when is_atom(colname) and is_map(acc) and is_list(value),
        do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
 
+  @doc """
+  Display the DataFrame in a tabular fashion.
+
+  ## Examples
+
+      df = Explorer.Datasets.fossil_fuels()
+      Explorer.DataFrame.table(df)
+ """
   def table(df, nrow \\ 5) when nrow >= 0 do
     df = Explorer.DataFrame.slice(df, 0, nrow)
 
