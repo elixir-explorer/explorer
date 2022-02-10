@@ -1659,8 +1659,7 @@ defmodule Explorer.DataFrame do
     types =
       df
       |> dtypes()
-      |> Enum.map(&Atom.to_string(&1))
-      |> Enum.map(fn x -> "<" <> x <> ">" end)
+      |> Enum.map(&"<#{Atom.to_string(&1)}>")
 
     values =
       headers
