@@ -1658,7 +1658,7 @@ defmodule Explorer.DataFrame do
 
     types =
       df
-      |> Explorer.DataFrame.dtypes()
+      |> dtypes()
       |> Enum.map(&Atom.to_string(&1))
       |> Enum.map(fn x -> "<" <> x <> ">" end)
 
