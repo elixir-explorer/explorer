@@ -17,7 +17,7 @@ defmodule Explorer.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :inets],
       env: [default_backend: Explorer.PolarsBackend]
     ]
   end
@@ -26,7 +26,8 @@ defmodule Explorer.MixProject do
     [
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
       {:nx, "~> 0.1.0"},
-      {:rustler, "~> 0.23.0"}
+      {:rustler, "~> 0.23.0"},
+      {:bypass, "~> 2.1", only: :test}
     ]
   end
 

@@ -65,9 +65,9 @@ defmodule Explorer.DataFrame do
     * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
     * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `[DataType::Utf8]
   """
-  @spec read_csv(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec read_csv(filename_or_url :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
-  def read_csv(filename, opts \\ []) do
+  def read_csv(filename_or_url, opts \\ []) do
     opts =
       keyword!(opts,
         delimiter: ",",
@@ -83,10 +83,7 @@ defmodule Explorer.DataFrame do
         parse_dates: false
       )
 
-    backend = backend_from_options!(opts)
-
-    backend.read_csv(
-      filename,
+    args = [
       opts[:names],
       opts[:dtypes],
       opts[:delimiter],
@@ -98,7 +95,34 @@ defmodule Explorer.DataFrame do
       opts[:with_columns],
       opts[:infer_schema_length],
       opts[:parse_dates]
-    )
+    ]
+
+    backend = backend_from_options!(opts)
+
+    case URI.parse(filename_or_url) do
+      %URI{scheme: scheme} when scheme in ["http", "https"] ->
+        read_csv_from_url(filename_or_url, backend, args)
+
+      _ ->
+        read_csv_from_file(filename_or_url, backend, args)
+    end
+  end
+
+  defp read_csv_from_url(url, backend, args) do
+    case :httpc.request(:get, {url, []}, [], body_format: :binary) do
+      {:ok, {{_, status, _}, _headers, body}} when status >= 400 ->
+        {:error, "failed to retrieve data - HTTP #{status}: #{body}"}
+
+      {:ok, {{_, _, _}, _headers, body}} ->
+        apply(backend, :read_csv_from_memory, [body | args])
+
+      {:error, reason} ->
+        {:error, inspect(reason)}
+    end
+  end
+
+  defp read_csv_from_file(filename, backend, args) do
+    apply(backend, :read_csv_from_file, [filename | args])
   end
 
   @doc """

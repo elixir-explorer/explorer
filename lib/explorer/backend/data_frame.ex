@@ -12,8 +12,22 @@ defmodule Explorer.Backend.DataFrame do
 
   # IO
 
-  @callback read_csv(
+  @callback read_csv_from_file(
               filename :: String.t(),
+              names :: list(String.t()) | nil,
+              dtypes :: list({String.t(), atom()}) | nil,
+              delimiter :: String.t(),
+              null_character :: String.t(),
+              skip_rows :: Integer.t(),
+              header? :: boolean(),
+              encoding :: String.t(),
+              max_rows :: Integer.t() | Inf,
+              with_columns :: list(String.t()) | nil,
+              infer_schema_length :: Integer.t() | nil,
+              parse_dates :: boolean()
+            ) :: result(df)
+  @callback read_csv_from_memory(
+              data :: String.t(),
               names :: list(String.t()) | nil,
               dtypes :: list({String.t(), atom()}) | nil,
               delimiter :: String.t(),

@@ -31,7 +31,7 @@ macro_rules! df_read_read {
 
 #[rustler::nif]
 #[allow(clippy::too_many_arguments)]
-pub fn df_read_csv(
+pub fn df_read_csv_from_file(
     filename: &str,
     infer_schema_length: Option<usize>,
     has_header: bool,
@@ -61,6 +61,56 @@ pub fn df_read_csv(
     });
 
     let df = CsvReader::from_path(filename)?
+        .infer_schema(infer_schema_length)
+        .has_header(has_header)
+        .with_parse_dates(parse_dates)
+        .with_stop_after_n_rows(stop_after_n_rows)
+        .with_delimiter(sep.as_bytes()[0])
+        .with_skip_rows(skip_rows)
+        .with_projection(projection)
+        .with_rechunk(do_rechunk)
+        .with_encoding(encoding)
+        .with_columns(column_names)
+        .with_dtypes(schema.as_ref())
+        .with_null_values(Some(NullValues::AllColumns(null_char)))
+        .finish()?;
+
+    Ok(ExDataFrame::new(df))
+}
+
+#[rustler::nif]
+#[allow(clippy::too_many_arguments)]
+pub fn df_read_csv_from_memory(
+    data: &str,
+    infer_schema_length: Option<usize>,
+    has_header: bool,
+    stop_after_n_rows: Option<usize>,
+    skip_rows: usize,
+    projection: Option<Vec<usize>>,
+    sep: &str,
+    do_rechunk: bool,
+    column_names: Option<Vec<String>>,
+    dtypes: Option<Vec<(&str, &str)>>,
+    encoding: &str,
+    null_char: String,
+    parse_dates: bool,
+) -> Result<ExDataFrame, ExplorerError> {
+    let encoding = match encoding {
+        "utf8-lossy" => CsvEncoding::LossyUtf8,
+        _ => CsvEncoding::Utf8,
+    };
+
+    let schema: Option<Schema> = dtypes.map(|dtypes| {
+        Schema::new(
+            dtypes
+                .iter()
+                .map(|x| Field::new(x.0, dtype_from_str(x.1).unwrap()))
+                .collect(),
+        )
+    });
+
+    let cursor = std::io::Cursor::new(data);
+    let df = CsvReader::new(cursor)
         .infer_schema(infer_schema_length)
         .has_header(has_header)
         .with_parse_dates(parse_dates)

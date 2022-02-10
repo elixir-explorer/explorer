@@ -7,8 +7,25 @@ defmodule Explorer.PolarsBackend.Native do
 
   defstruct [:inner]
 
-  def df_read_csv(
+  def df_read_csv_from_file(
         _filename,
+        _infer_schema_length,
+        _has_header,
+        _stop_after_n_rows,
+        _skip_rows,
+        _projection,
+        _sep,
+        _rechunk,
+        _with_columns,
+        _dtypes,
+        _encoding,
+        _null_char,
+        _parse_dates
+      ),
+      do: err()
+
+  def df_read_csv_from_memory(
+        _data,
         _infer_schema_length,
         _has_header,
         _stop_after_n_rows,

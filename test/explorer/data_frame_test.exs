@@ -296,6 +296,52 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  test "from url" do
+    bypass = Bypass.open()
+    url = "http://localhost:#{bypass.port}/data.csv"
+
+    csv = """
+    a,b
+    1,2
+    3,4
+    """
+
+    Bypass.expect(bypass, "GET", "/data.csv", fn conn ->
+      Plug.Conn.send_resp(conn, 200, csv)
+    end)
+
+    df = DF.read_csv!(url)
+
+    assert DF.to_map(df) == %{
+             a: [1, 3],
+             b: [2, 4]
+           }
+  end
+
+  test "from url - HTTP error" do
+    bypass = Bypass.open()
+    url = "http://localhost:#{bypass.port}/data.csv"
+
+    Bypass.expect(bypass, "GET", "/data.csv", fn conn ->
+      Plug.Conn.send_resp(conn, 500, "server down")
+    end)
+
+    assert_raise RuntimeError, "failed to retrieve data - HTTP 500: server down", fn ->
+      DF.read_csv!(url)
+    end
+  end
+
+  @tag :only
+  test "from url - server down" do
+    bypass = Bypass.open()
+    url = "http://localhost:#{bypass.port}/data.csv"
+    Bypass.down(bypass)
+
+    assert_raise RuntimeError,
+                 "{:failed_connect, [{:to_address, {'localhost', #{bypass.port}}}, {:inet, [:inet], :econnrefused}]}",
+                 fn -> DF.read_csv!(url) end
+  end
+
   describe "parquet read and write" do
     @tag :tmp_dir
     test "can write parquet to file", %{df: df, tmp_dir: tmp_dir} do

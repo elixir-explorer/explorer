@@ -18,7 +18,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # IO
 
   @impl true
-  def read_csv(
+  def read_csv_from_file(
         filename,
         names,
         dtypes,
@@ -47,8 +47,61 @@ defmodule Explorer.PolarsBackend.DataFrame do
       end
 
     df =
-      Native.df_read_csv(
+      Native.df_read_csv_from_file(
         filename,
+        infer_schema_length,
+        header?,
+        max_rows,
+        skip_rows,
+        nil,
+        delimiter,
+        true,
+        with_columns,
+        dtypes,
+        encoding,
+        null_character,
+        parse_dates
+      )
+
+    case {df, names} do
+      {{:ok, df}, nil} -> {:ok, Shared.to_dataframe(df)}
+      {{:ok, df}, names} -> checked_rename(Shared.to_dataframe(df), names)
+      {{:error, error}, _} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def read_csv_from_memory(
+        data,
+        names,
+        dtypes,
+        delimiter,
+        null_character,
+        skip_rows,
+        header?,
+        encoding,
+        max_rows,
+        with_columns,
+        infer_schema_length,
+        parse_dates
+      ) do
+    max_rows = if max_rows == Inf, do: nil, else: max_rows
+
+    infer_schema_length =
+      if infer_schema_length == nil,
+        do: max_rows || @default_infer_schema_length,
+        else: infer_schema_length
+
+    dtypes =
+      if dtypes do
+        Enum.map(dtypes, fn {colname, dtype} ->
+          {colname, Shared.internal_from_dtype(dtype)}
+        end)
+      end
+
+    df =
+      Native.df_read_csv_from_memory(
+        data,
         infer_schema_length,
         header?,
         max_rows,
