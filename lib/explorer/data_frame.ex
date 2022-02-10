@@ -1666,7 +1666,7 @@ defmodule Explorer.DataFrame do
       |> Enum.map(&Series.to_list(df[&1]))
       |> Enum.zip_with(& &1)
 
-    name_type = Enum.zip_with(headers, types, fn x, y -> x<>y end)
+    name_type = Enum.zip_with(headers, types, fn x, y -> x <> y end)
 
     TableRex.Table.new()
     |> TableRex.Table.put_title("Explorer DataFrame: [rows: #{rows}, columns: #{cols}]")
