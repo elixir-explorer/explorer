@@ -1651,7 +1651,6 @@ defmodule Explorer.DataFrame do
        Explorer.DataFrame.table(df)
   """
   def table(df, nrow \\ 5) when nrow >= 0 do
-
     {rows, cols} = Explorer.DataFrame.shape(df)
     headers = Explorer.DataFrame.names(df)
 
