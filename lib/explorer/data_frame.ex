@@ -1659,17 +1659,19 @@ defmodule Explorer.DataFrame do
     types =
       df
       |> dtypes()
-      |> Enum.map(&"<#{Atom.to_string(&1)}>")
+      |> Enum.map(&"\n<#{Atom.to_string(&1)}>")
 
     values =
       headers
       |> Enum.map(&Series.to_list(df[&1]))
       |> Enum.zip_with(& &1)
 
+    name_type = Enum.zip_with(headers, types, fn x, y -> x<>y end)
+
     TableRex.Table.new()
     |> TableRex.Table.put_title("Explorer DataFrame: [rows: #{rows}, columns: #{cols}]")
-    |> TableRex.Table.put_header(headers)
-    |> TableRex.Table.add_row(types)
+    |> TableRex.Table.put_header(name_type)
+    |> TableRex.Table.put_header_meta(0..cols, align: :center)
     |> TableRex.Table.add_rows(values)
     |> TableRex.Table.render!(
       header_separator_symbol: "=",
