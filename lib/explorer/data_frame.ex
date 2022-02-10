@@ -1664,10 +1664,8 @@ defmodule Explorer.DataFrame do
 
     values =
       headers
-      |> Enum.map(&Explorer.DataFrame.pull(df, &1))
-      |> Enum.map(&Explorer.Series.to_list(&1))
-      |> Enum.zip()
-      |> Enum.map(&Tuple.to_list(&1))
+      |> Enum.map(&Series.to_list(df[&1]))
+      |> Enum.zip_with(& &1)
 
     TableRex.Table.new()
     |> TableRex.Table.put_title("Explorer DataFrame: [rows: #{rows}, columns: #{cols}]")
