@@ -1654,7 +1654,7 @@ defmodule Explorer.DataFrame do
     {rows, cols} = Explorer.DataFrame.shape(df)
     headers = Explorer.DataFrame.names(df)
 
-    df = Explorer.DataFrame.slice(df, 0, nrow)
+    df = slice(df, 0, nrow)
 
     types =
       df
