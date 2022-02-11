@@ -299,6 +299,8 @@ defmodule Explorer.DataFrameTest do
 
              """
     end
+  end
+
   test "fetch/2" do
     df = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
     assert Series.to_list(df["a"]) == [1, 2, 3]
