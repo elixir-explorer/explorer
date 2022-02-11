@@ -1647,8 +1647,8 @@ defmodule Explorer.DataFrame do
 
    ## Examples
 
-      iex> df = Explorer.Datasets.iris()
-      iex> Explorer.DataFrame.table(df)
+      df = Explorer.Datasets.iris()
+      Explorer.DataFrame.table(df)
   """
   def table(df, nrow \\ 5) when nrow >= 0 do
     {rows, cols} = shape(df)

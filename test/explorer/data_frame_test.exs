@@ -1,11 +1,14 @@
 defmodule Explorer.DataFrameTest do
   use ExUnit.Case, async: true
+  import ExUnit.CaptureIO
+
   doctest Explorer.DataFrame
 
   alias Explorer.DataFrame, as: DF
+  alias Explorer.Datasets
 
   setup do
-    {:ok, df: Explorer.Datasets.fossil_fuels()}
+    {:ok, df: Datasets.fossil_fuels()}
   end
 
   defp tmp_csv(tmp_dir, contents) do
@@ -268,6 +271,32 @@ defmodule Explorer.DataFrameTest do
       assert DF.names(df) == DF.names(parquet_df)
       assert DF.dtypes(df) == DF.dtypes(parquet_df)
       assert DF.to_map(df) == DF.to_map(parquet_df)
+    end
+  end
+
+  describe "table/1" do
+    test "prints what we expect" do
+      df = Datasets.iris()
+
+      assert capture_io(fn -> DF.table(df) end) == """
+             +-----------------------------------------------------------------------+
+             |              Explorer DataFrame: [rows: 150, columns: 5]              |
+             +--------------+-------------+--------------+-------------+-------------+
+             | sepal_length | sepal_width | petal_length | petal_width |   species   |
+             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
+             +==============+=============+==============+=============+=============+
+             | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 4.9          | 3.0         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 4.7          | 3.2         | 1.3          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 4.6          | 3.1         | 1.5          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 5.0          | 3.6         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+
+             """
     end
   end
 end
