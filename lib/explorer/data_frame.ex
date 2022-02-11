@@ -1680,6 +1680,44 @@ defmodule Explorer.DataFrame do
        when is_atom(colname) and is_map(acc) and is_list(value),
        do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
 
+  @doc """
+   Display the DataFrame in a tabular fashion.
+
+   ## Examples
+
+      df = Explorer.Datasets.iris()
+      Explorer.DataFrame.table(df)
+  """
+  def table(df, nrow \\ 5) when nrow >= 0 do
+    {rows, cols} = shape(df)
+    headers = names(df)
+
+    df = slice(df, 0, nrow)
+
+    types =
+      df
+      |> dtypes()
+      |> Enum.map(&"\n<#{Atom.to_string(&1)}>")
+
+    values =
+      headers
+      |> Enum.map(&Series.to_list(df[&1]))
+      |> Enum.zip_with(& &1)
+
+    name_type = Enum.zip_with(headers, types, fn x, y -> x <> y end)
+
+    TableRex.Table.new()
+    |> TableRex.Table.put_title("Explorer DataFrame: [rows: #{rows}, columns: #{cols}]")
+    |> TableRex.Table.put_header(name_type)
+    |> TableRex.Table.put_header_meta(0..cols, align: :center)
+    |> TableRex.Table.add_rows(values)
+    |> TableRex.Table.render!(
+      header_separator_symbol: "=",
+      horizontal_style: :all
+    )
+    |> IO.puts()
+  end
+
   # Helpers
 
   defp backend_from_options!(opts) do
