@@ -435,8 +435,11 @@ defimpl Enumerable, for: Explorer.PolarsBackend.DataFrame do
 
   def member?(df, %PolarsSeries{} = series) do
     {:ok, columns} = Native.df_get_columns(df)
-    Enum.any?(columns, &Native.s_series_equal(&1, series, false))
+
+    {:ok, Enum.any?(columns, &Native.s_series_equal(&1, series, false))}
   end
+
+  def member?(_, _), do: {:error, __MODULE__}
 end
 
 defimpl Inspect, for: Explorer.PolarsBackend.DataFrame do

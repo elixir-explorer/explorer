@@ -6,6 +6,7 @@ defmodule Explorer.DataFrameTest do
 
   alias Explorer.DataFrame, as: DF
   alias Explorer.Datasets
+  alias Explorer.Series
 
   setup do
     {:ok, df: Datasets.fossil_fuels()}
@@ -298,5 +299,47 @@ defmodule Explorer.DataFrameTest do
 
              """
     end
+  test "fetch/2" do
+    df = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+    assert Series.to_list(df["a"]) == [1, 2, 3]
+    assert DF.to_map(df[["a"]]) == %{a: [1, 2, 3]}
+  end
+
+  test "pop/2" do
+    df1 = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+
+    {s1, df2} = Access.pop(df1, "a")
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_map(df2) == %{b: ["a", "b", "c"]}
+
+    {df3, df4} = Access.pop(df1, ["a"])
+    assert DF.to_map(df3) == %{a: [1, 2, 3]}
+    assert DF.to_map(df4) == %{b: ["a", "b", "c"]}
+  end
+
+  test "get_and_update/3" do
+    df1 = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+
+    {s, df2} =
+      Access.get_and_update(df1, "a", fn current_value ->
+        {current_value, [0, 0, 0]}
+      end)
+
+    assert Series.to_list(s) == [1, 2, 3]
+    assert DF.to_map(df2) == %{a: [0, 0, 0], b: ["a", "b", "c"]}
+  end
+
+  test "pivot_wider/2" do
+    df1 = DF.from_map(%{id: [1, 1], variable: ["a", "b"], value: [1, 2]})
+    assert DF.to_map(DF.pivot_wider(df1, "variable", "value")) == %{id: [1], a: [1], b: [2]}
+
+    df2 = DF.from_map(%{id: [1, 1], variable: ["a", "b"], value: [1.0, 2.0]})
+
+    assert DF.to_map(
+             DF.pivot_wider(df2, "variable", "value",
+               id_cols: ["id"],
+               names_prefix: "col"
+             )
+           ) == %{id: [1], cola: [1.0], colb: [2.0]}
   end
 end
