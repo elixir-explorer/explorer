@@ -63,7 +63,7 @@ defmodule Explorer.DataFrame do
     * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
     * `with_columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
     * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
-    * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `[DataType::Utf8]
+    * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `[DataType::Utf8]`
   """
   @spec read_csv(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
