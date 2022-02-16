@@ -20,6 +20,14 @@ fn on_load(env: Env, _info: Term) -> bool {
     true
 }
 
+mod atoms {
+    rustler::atoms! {
+        date = "Elixir.Date",
+        datetime = "Elixir.NaiveDateTime",
+        calendar = "Elixir.Calendar.ISO"
+    }
+}
+
 rustler::init!(
     "Elixir.Explorer.PolarsBackend.Native",
     [
