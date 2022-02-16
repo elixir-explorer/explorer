@@ -208,7 +208,7 @@ defmodule Explorer.Series do
         ["1", "2", "3"]
       >
 
-    `cast/2` will return the series as a no-op if you try to cast to the same dtype.
+  `cast/2` will return the series as a no-op if you try to cast to the same dtype.
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.cast(s, :integer)
