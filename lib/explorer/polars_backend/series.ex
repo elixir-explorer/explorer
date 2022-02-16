@@ -2,6 +2,7 @@ defmodule Explorer.PolarsBackend.Series do
   @moduledoc false
 
   import Kernel, except: [length: 1]
+  import Explorer.Shared, only: [check_types: 1, cast_numerics: 2]
 
   alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Native
@@ -15,53 +16,28 @@ defmodule Explorer.PolarsBackend.Series do
 
   @behaviour Explorer.Backend.Series
 
-  @unix_epoch_in_gregorian_days 719_528
-  @unix_epoch_in_gregorian_secs 62_167_219_200
-
   # Conversion
 
   @impl true
   def from_list(data, type, name \\ "") when is_list(data) do
     series =
       case type do
-        :integer ->
-          Native.s_new_i64(name, data)
-
-        :float ->
-          Native.s_new_f64(name, data)
-
-        :boolean ->
-          Native.s_new_bool(name, data)
-
-        :string ->
-          Native.s_new_str(name, data)
-
-        :date ->
-          data
-          |> Enum.map(&encode_date/1)
-          |> then(&Native.s_new_date32(name, &1))
-
-        :datetime ->
-          data
-          |> Enum.map(&encode_datetime/1)
-          |> then(&Native.s_new_date64(name, &1))
+        :integer -> Native.s_new_i64(name, data)
+        :float -> Native.s_new_f64(name, data)
+        :boolean -> Native.s_new_bool(name, data)
+        :string -> Native.s_new_str(name, data)
+        :date -> Native.s_new_date32(name, data)
+        :datetime -> Native.s_new_date64(name, data)
       end
 
     %Series{data: series, dtype: type}
   end
 
   @impl true
-  def to_list(%Series{data: series, dtype: dtype}) do
-    list =
-      case Native.s_to_list(series) do
-        {:ok, list} -> list
-        {:error, e} -> raise "#{e}"
-      end
-
-    case dtype do
-      :date -> Enum.map(list, &decode_date/1)
-      :datetime -> Enum.map(list, &decode_datetime/1)
-      _ -> list
+  def to_list(%Series{data: series}) do
+    case Native.s_to_list(series) do
+      {:ok, list} -> list
+      {:error, e} -> raise "#{e}"
     end
   end
 
@@ -115,16 +91,13 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_native(series, :s_take, [indices])
 
   @impl true
-  def get(%Series{dtype: dtype} = series, idx) do
+  def get(series, idx) do
     idx = if idx < 0, do: length(series) + idx, else: idx
-    value = Shared.apply_native(series, :s_get, [idx])
-
-    case dtype do
-      :date -> decode_date(value)
-      :datetime -> decode_datetime(value)
-      _ -> value
-    end
+    Shared.apply_native(series, :s_get, [idx])
   end
+
+  @impl true
+  def concat(s1, s2), do: Shared.apply_native(s1, :s_append, [Shared.to_polars_s(s2)])
 
   # Aggregation
 
@@ -132,33 +105,9 @@ defmodule Explorer.PolarsBackend.Series do
   def sum(series), do: Shared.apply_native(series, :s_sum)
 
   @impl true
-  def min(%Series{dtype: :date} = series),
-    do:
-      series
-      |> Shared.apply_native(:s_min)
-      |> decode_date()
-
-  def min(%Series{dtype: :datetime} = series),
-    do:
-      series
-      |> Shared.apply_native(:s_min)
-      |> decode_datetime()
-
   def min(series), do: Shared.apply_native(series, :s_min)
 
   @impl true
-  def max(%Series{dtype: :date} = series),
-    do:
-      series
-      |> Shared.apply_native(:s_max)
-      |> decode_date()
-
-  def max(%Series{dtype: :datetime} = series),
-    do:
-      series
-      |> Shared.apply_native(:s_max)
-      |> decode_datetime()
-
   def max(series), do: Shared.apply_native(series, :s_max)
 
   @impl true
@@ -174,22 +123,7 @@ defmodule Explorer.PolarsBackend.Series do
   def std(series), do: Shared.apply_native(series, :s_std)
 
   @impl true
-  def quantile(%{dtype: dtype} = series, quantile) when dtype in [:date, :datetime] do
-    series
-    |> cast(:integer)
-    |> Shared.apply_native(:s_quantile, [quantile])
-    |> get(0)
-    |> then(fn value ->
-      case dtype do
-        :date -> decode_date(value)
-        :datetime -> decode_datetime(value)
-      end
-    end)
-  end
-
-  def quantile(series, quantile) do
-    series |> Shared.apply_native(:s_quantile, [quantile]) |> get(0)
-  end
+  def quantile(series, quantile), do: Shared.apply_native(series, :s_quantile, [quantile])
 
   # Cumulative
 
@@ -235,15 +169,15 @@ defmodule Explorer.PolarsBackend.Series do
   def divide(left, right) when is_number(right), do: divide(left, scalar_rhs(right, left))
 
   @impl true
-  def pow(left, exponent) when is_float(exponent), do: Shared.apply_native(left, :s_pow, [exponent])
+  def pow(left, exponent) when is_float(exponent),
+    do: Shared.apply_native(left, :s_pow, [exponent])
 
   def pow(left, exponent) when is_integer(exponent) and exponent >= 0 do
     cond do
-     Series.dtype(left) == :integer -> Shared.apply_native(left, :s_int_pow, [exponent])
-     Series.dtype(left) == :float -> Shared.apply_native(left, :s_pow, [exponent/1])
+      Series.dtype(left) == :integer -> Shared.apply_native(left, :s_int_pow, [exponent])
+      Series.dtype(left) == :float -> Shared.apply_native(left, :s_pow, [exponent / 1])
     end
   end
-
 
   # Comparisons
 
@@ -306,7 +240,10 @@ defmodule Explorer.PolarsBackend.Series do
   # Distinct
 
   @impl true
-  def distinct(series), do: Shared.apply_native(series, :s_unique)
+  def distinct(series), do: Shared.apply_native(series, :s_distinct)
+
+  @impl true
+  def unordered_distinct(series), do: Shared.apply_native(series, :s_unordered_distinct)
 
   @impl true
   def n_distinct(series), do: Shared.apply_native(series, :s_n_unique)
@@ -382,7 +319,13 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Escape hatch
   @impl true
-  def transform(series, fun), do: series |> to_list() |> Enum.map(fun) |> from_list(dtype(series))
+  def transform(series, fun) do
+    list = series |> Series.to_list() |> Enum.map(fun)
+    type = check_types(list)
+    {list, type} = cast_numerics(list, type)
+
+    from_list(list, type)
+  end
 
   # Polars specific functions
 
@@ -396,30 +339,6 @@ defmodule Explorer.PolarsBackend.Series do
       scalar
       |> List.duplicate(PolarsSeries.length(lhs))
       |> Series.from_list()
-
-  defp encode_date(%Date{} = date) do
-    Date.to_gregorian_days(date) - @unix_epoch_in_gregorian_days
-  end
-
-  defp encode_date(date) when is_nil(date), do: nil
-
-  defp encode_datetime(%module{} = datetime) when module in [NaiveDateTime, DateTime] do
-    {secs, microsecs} = module.to_gregorian_seconds(datetime)
-
-    (secs - @unix_epoch_in_gregorian_secs) * 1_000 + div(microsecs, 1000)
-  end
-
-  defp encode_datetime(datetime) when is_nil(datetime), do: nil
-
-  defp decode_date(date) when is_integer(date), do: Date.add(~D[1970-01-01], date)
-  defp decode_date(date) when is_nil(date), do: nil
-
-  # Note that we lost microseconds in the conversion, since Polars only works with milliseconds.
-  defp decode_datetime(epoch_date_in_ms) when is_integer(epoch_date_in_ms) do
-    DateTime.from_unix!(epoch_date_in_ms, :millisecond) |> DateTime.to_naive()
-  end
-
-  defp decode_datetime(date) when is_nil(date), do: nil
 end
 
 defimpl Inspect, for: Explorer.PolarsBackend.Series do

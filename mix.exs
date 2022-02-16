@@ -26,7 +26,8 @@ defmodule Explorer.MixProject do
     [
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
       {:nx, "~> 0.1.0"},
-      {:rustler, "~> 0.23.0"}
+      {:rustler, "~> 0.23.0"},
+      {:table_rex, "~> 3.1.1"}
     ]
   end
 

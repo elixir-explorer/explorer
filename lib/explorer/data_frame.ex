@@ -13,6 +13,7 @@ defmodule Explorer.DataFrame do
   @type t :: %DataFrame{data: data}
 
   @enforce_keys [:data, :groups]
+  @default_infer_schema_length 1000
   defstruct [:data, :groups]
 
   # Access
@@ -61,6 +62,8 @@ defmodule Explorer.DataFrame do
     * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
     * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
     * `with_columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
+    * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
+    * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `[DataType::Utf8]`
   """
   @spec read_csv(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
@@ -75,7 +78,9 @@ defmodule Explorer.DataFrame do
         names: nil,
         null_character: "NA",
         skip_rows: 0,
-        with_columns: nil
+        with_columns: nil,
+        infer_schema_length: @default_infer_schema_length,
+        parse_dates: false
       )
 
     backend = backend_from_options!(opts)
@@ -90,7 +95,9 @@ defmodule Explorer.DataFrame do
       opts[:header?],
       opts[:encoding],
       opts[:max_rows],
-      opts[:with_columns]
+      opts[:with_columns],
+      opts[:infer_schema_length],
+      opts[:parse_dates]
     )
   end
 
@@ -1200,6 +1207,16 @@ defmodule Explorer.DataFrame do
         variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "..."]
         value integer [627, 117, 332, 0, 0, "..."]
       >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_cols: ["total"])
+      #Explorer.DataFrame<
+        [rows: 1094, columns: 4]
+        year integer [2010, 2010, 2010, 2010, 2010, "..."]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        variable string ["total", "total", "total", "total", "total", "..."]
+        value integer [2308, 1254, 32500, 141, 7924, "..."]
+      >
   """
   @spec pivot_longer(
           df :: DataFrame.t(),
@@ -1234,9 +1251,7 @@ defmodule Explorer.DataFrame do
           cols
 
         callback when is_function(callback) ->
-          names
-          |> Enum.filter(fn name -> name not in columns end)
-          |> Enum.filter(callback)
+          Enum.filter(names, fn name -> name not in columns && callback.(name) end)
       end
 
     Enum.each(value_cols, fn name -> maybe_raise_column_not_found(names, name) end)
@@ -1276,8 +1291,8 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `id_cols` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
-    * `names_prefix` - String added to the start of every variable name. This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
+  * `id_cols` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
+  * `names_prefix` - String added to the start of every variable name. This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
   """
   @spec pivot_wider(
           df :: DataFrame.t(),
@@ -1318,7 +1333,7 @@ defmodule Explorer.DataFrame do
           Enum.filter(names, &(&1 not in [names_from, values_from]))
 
         fun when is_function(fun) ->
-          names |> Enum.filter(fun) |> Enum.filter(&(&1 not in [names_from, values_from]))
+          Enum.filter(names, fn name -> fun.(name) && name not in [names_from, values_from] end)
       end
 
     Enum.each(id_cols ++ [names_from, values_from], fn name ->
@@ -1638,7 +1653,7 @@ defmodule Explorer.DataFrame do
       maybe_raise_column_not_found(columns, name)
 
       unless values |> MapSet.new() |> MapSet.subset?(MapSet.new(@supported_aggs)) do
-        unsupported = values |> MapSet.difference(@supported_aggs) |> MapSet.to_list()
+        unsupported = values |> MapSet.difference(MapSet.new(@supported_aggs)) |> MapSet.to_list()
         raise ArgumentError, "found unsupported aggregations #{inspect(unsupported)}"
       end
     end)
@@ -1664,6 +1679,44 @@ defmodule Explorer.DataFrame do
   defp summarise_reducer({colname, value}, acc, %DataFrame{} = df)
        when is_atom(colname) and is_map(acc) and is_list(value),
        do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
+
+  @doc """
+   Display the DataFrame in a tabular fashion.
+
+   ## Examples
+
+      df = Explorer.Datasets.iris()
+      Explorer.DataFrame.table(df)
+  """
+  def table(df, nrow \\ 5) when nrow >= 0 do
+    {rows, cols} = shape(df)
+    headers = names(df)
+
+    df = slice(df, 0, nrow)
+
+    types =
+      df
+      |> dtypes()
+      |> Enum.map(&"\n<#{Atom.to_string(&1)}>")
+
+    values =
+      headers
+      |> Enum.map(&Series.to_list(df[&1]))
+      |> Enum.zip_with(& &1)
+
+    name_type = Enum.zip_with(headers, types, fn x, y -> x <> y end)
+
+    TableRex.Table.new()
+    |> TableRex.Table.put_title("Explorer DataFrame: [rows: #{rows}, columns: #{cols}]")
+    |> TableRex.Table.put_header(name_type)
+    |> TableRex.Table.put_header_meta(0..cols, align: :center)
+    |> TableRex.Table.add_rows(values)
+    |> TableRex.Table.render!(
+      header_separator_symbol: "=",
+      horizontal_style: :all
+    )
+    |> IO.puts()
+  end
 
   # Helpers
 

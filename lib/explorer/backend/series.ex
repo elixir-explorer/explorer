@@ -21,6 +21,7 @@ defmodule Explorer.Backend.Series do
   @callback length(s) :: integer()
 
   # Slice and dice
+
   @callback head(s, n :: integer()) :: s
   @callback tail(s, n :: integer()) :: s
   @callback sample(s, n :: integer(), with_replacement :: boolean(), seed :: integer()) :: s
@@ -30,6 +31,7 @@ defmodule Explorer.Backend.Series do
   @callback slice(s, offset :: integer(), length :: integer()) :: s
   @callback take(s, indices :: list()) :: s
   @callback get(s, idx :: integer()) :: s
+  @callback concat(s, s) :: s
 
   # Aggregation
 
@@ -84,6 +86,7 @@ defmodule Explorer.Backend.Series do
   # Distinct
 
   @callback distinct(s) :: s
+  @callback unordered_distinct(s) :: s
   @callback n_distinct(s) :: integer()
   @callback count(s) :: df
 

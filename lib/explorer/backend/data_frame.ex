@@ -18,11 +18,13 @@ defmodule Explorer.Backend.DataFrame do
               dtypes :: list({String.t(), atom()}) | nil,
               delimiter :: String.t(),
               null_character :: String.t(),
-              skip_rows :: Integer.t(),
+              skip_rows :: integer(),
               header? :: boolean(),
               encoding :: String.t(),
-              max_rows :: Integer.t() | Inf,
-              with_columns :: list(String.t()) | nil
+              max_rows :: integer() | Inf,
+              with_columns :: list(String.t()) | nil,
+              infer_schema_length :: integer() | nil,
+              parse_dates :: boolean()
             ) :: result(df)
   @callback write_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
               result(String.t())
@@ -81,9 +83,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback join(
               left :: df,
               right :: df,
-              how :: :left | :inner | :outer | :right | :cross,
-              on ::
-                list(String.t() | {String.t(), String.t()})
+              on :: list(String.t() | {String.t(), String.t()}),
+              how :: :left | :inner | :outer | :right | :cross
             ) :: df
 
   @callback concat_rows([df]) :: df

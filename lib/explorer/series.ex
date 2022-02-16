@@ -22,7 +22,7 @@ defmodule Explorer.Series do
   alias __MODULE__, as: Series
   alias Kernel, as: K
 
-  import Explorer.Shared, only: [impl!: 1]
+  import Explorer.Shared, only: [impl!: 1, check_types: 1, cast_numerics: 2]
   import Nx.Defn.Kernel, only: [keyword!: 2]
   import Kernel, except: [length: 1, and: 2]
 
@@ -144,6 +144,13 @@ defmodule Explorer.Series do
         integer[3]
         [1, 2, 3]
       >
+
+      iex> tensor = Nx.tensor([1.0, 2.0, 3.0])
+      iex> Explorer.Series.from_tensor(tensor)
+      #Explorer.Series<
+        float[3]
+        [1.0, 2.0, 3.0]
+      >
   """
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
   def from_tensor(tensor, opts \\ []) do
@@ -200,8 +207,18 @@ defmodule Explorer.Series do
         string[3]
         ["1", "2", "3"]
       >
+
+  `cast/2` will return the series as a no-op if you try to cast to the same dtype.
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.cast(s, :integer)
+      #Explorer.Series<
+        integer[3]
+        [1, 2, 3]
+      >
   """
   @spec cast(series :: Series.t(), dtype :: dtype()) :: Series.t()
+  def cast(%Series{dtype: dtype} = series, dtype), do: series
   def cast(series, dtype), do: apply_impl(series, :cast, [dtype])
 
   # Introspection
@@ -374,6 +391,23 @@ defmodule Explorer.Series do
 
   @doc """
   Filters a series with a mask or callback.
+
+  ## Examples
+      iex> s1 = Explorer.Series.from_list([1,2,3])
+      iex> s2 = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.filter(s1, s2)
+      #Explorer.Series<
+        integer[2]
+        [1, 3]
+      >
+
+      iex> s1 = Explorer.Series.from_list([1,2,1])
+      iex> s2 = Explorer.Series.from_list([1])
+      iex> Explorer.Series.filter(s1, &Explorer.Series.equal(&1, s2))
+      #Explorer.Series<
+        integer[2]
+        [1, 1]
+      >
   """
   @spec filter(series :: Series.t(), mask :: Series.t()) :: Series.t()
   def filter(series, %Series{} = mask), do: apply_impl(series, :filter, [mask])
@@ -436,6 +470,10 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.get(s, 2)
       "c"
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.get(s, 4)
+      ** (ArgumentError) index 4 out of bounds for series of length 3
   """
   @spec get(series :: Series.t(), idx :: integer()) :: any()
   def get(series, idx) do
@@ -446,6 +484,58 @@ defmodule Explorer.Series do
 
     apply_impl(series, :get, [idx])
   end
+
+  @doc """
+  Concatenate one or more series.
+
+  The dtypes must match unless all are numeric, in which case all series will be downcast to float.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([4, 5, 6])
+      iex> Explorer.Series.concat([s1, s2])
+      #Explorer.Series<
+        integer[6]
+        [1, 2, 3, 4, 5, 6]
+      >
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([4.0, 5.0, 6.4])
+      iex> Explorer.Series.concat(s1, s2)
+      #Explorer.Series<
+        float[6]
+        [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
+      >
+  """
+  def concat([%Series{} = h | t] = _series) do
+    Enum.reduce(t, h, &concat_reducer/2)
+  end
+
+  @doc """
+  Concatenate one or more series.
+
+  `concat(s1, s2)` is equivalent to `concat([s1, s2])`.
+  """
+  def concat(%Series{} = s1, %Series{} = s2),
+    do: concat([s1, s2])
+
+  def concat(%Series{} = s1, [%Series{} | _] = series),
+    do: concat([s1 | series])
+
+  defp concat_reducer(%Series{dtype: dtype} = s, %Series{dtype: dtype} = acc),
+    do: apply_impl(acc, :concat, [s])
+
+  defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
+       when K.and(s_dtype == :float, acc_dtype == :integer),
+       do: acc |> cast(:float) |> apply_impl(:concat, [s])
+
+  defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
+       when K.and(s_dtype == :integer, acc_dtype == :float),
+       do: apply_impl(acc, :concat, [cast(s, :float)])
+
+  defp concat_reducer(%Series{dtype: dtype1}, %Series{dtype: dtype2}),
+    do: raise(ArgumentError, "dtypes must match, found #{dtype1} and #{dtype2}")
 
   # Aggregation
 
@@ -727,6 +817,22 @@ defmodule Explorer.Series do
     * `:float`
     * `:date`
     * `:datetime`
+
+  ## Examples
+
+      iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_max(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 2, 3, 4]
+      >
+
+      iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_max(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 2, nil, 4]
+      >
   """
   @spec cum_max(series :: Series.t(), reverse? :: boolean()) :: Series.t()
   def cum_max(series, reverse? \\ false)
@@ -751,6 +857,22 @@ defmodule Explorer.Series do
     * `:float`
     * `:date`
     * `:datetime`
+
+  ## Examples
+
+      iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_min(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 1, 1, 1]
+      >
+
+      iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cum_min(s)
+      #Explorer.Series<
+        integer[4]
+        [1, 1, nil, 1]
+      >
   """
   @spec cum_min(series :: Series.t(), reverse? :: boolean()) :: Series.t()
   def cum_min(series, reverse? \\ false)
@@ -920,6 +1042,13 @@ defmodule Explorer.Series do
         integer[10]
         [11, 24, 39, 56, 75, 96, 119, 144, 171, 200]
       >
+
+      iex> s1 = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.multiply(s1, 2)
+      #Explorer.Series<
+        integer[5]
+        [2, 4, 6, 8, 10]
+      >
   """
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def multiply(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -955,6 +1084,12 @@ defmodule Explorer.Series do
         [5, 5, 5]
       >
 
+      iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
+      iex> Explorer.Series.divide(s1, 2)
+      #Explorer.Series<
+        integer[3]
+        [5, 5, 5]
+      >
   """
   @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def divide(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
@@ -1035,6 +1170,41 @@ defmodule Explorer.Series do
         boolean[3]
         [true, true, false]
       >
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.equal(s, 1)
+      #Explorer.Series<
+        boolean[3]
+        [true, false, false]
+      >
+
+      iex> s = Explorer.Series.from_list([true, true, false])
+      iex> Explorer.Series.equal(s, true)
+      #Explorer.Series<
+        boolean[3]
+        [true, true, false]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.equal(s, "a")
+      #Explorer.Series<
+        boolean[3]
+        [true, false, false]
+      >
+
+      iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
+      iex> Explorer.Series.equal(s, ~D[1999-12-31])
+      #Explorer.Series<
+        boolean[2]
+        [false, true]
+      >
+
+      iex> s = Explorer.Series.from_list([~N[2022-01-01 00:00:00], ~N[2022-01-01 23:00:00]])
+      iex> Explorer.Series.equal(s, ~N[2022-01-01 00:00:00])
+      #Explorer.Series<
+        boolean[2]
+        [true, false]
+      >
   """
   @spec equal(
           left :: Series.t(),
@@ -1070,6 +1240,41 @@ defmodule Explorer.Series do
       #Explorer.Series<
         boolean[3]
         [false, false, true]
+      >
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.not_equal(s, 1)
+      #Explorer.Series<
+        boolean[3]
+        [false, true, true]
+      >
+
+      iex> s = Explorer.Series.from_list([true, true, false])
+      iex> Explorer.Series.not_equal(s, true)
+      #Explorer.Series<
+        boolean[3]
+        [false, false, true]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.not_equal(s, "a")
+      #Explorer.Series<
+        boolean[3]
+        [false, true, true]
+      >
+
+      iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
+      iex> Explorer.Series.not_equal(s, ~D[1999-12-31])
+      #Explorer.Series<
+        boolean[2]
+        [true, false]
+      >
+
+      iex> s = Explorer.Series.from_list([~N[2022-01-01 00:00:00], ~N[2022-01-01 23:00:00]])
+      iex> Explorer.Series.not_equal(s, ~N[2022-01-01 00:00:00])
+      #Explorer.Series<
+        boolean[2]
+        [false, true]
       >
   """
   @spec not_equal(
@@ -1325,6 +1530,11 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list(["a", "c"])
       iex> Explorer.Series.all_equal?(s1, s2)
       false
+
+      iex> s1 = Explorer.Series.from_list(["a", "b"])
+      iex> s2 = Explorer.Series.from_list([1, 2])
+      iex> Explorer.Series.all_equal?(s1, s2)
+      false
   """
   def all_equal?(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
     do: apply_impl(left, :all_equal?, [right])
@@ -1375,14 +1585,28 @@ defmodule Explorer.Series do
   @doc """
   Returns the unique values of the series.
 
-  **NB**: Does not maintain order.
-
   ## Examples
 
       iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.distinct()
+      #Explorer.Series<
+        integer[3]
+        [1, 2, 3]
+      >
   """
   def distinct(series), do: apply_impl(series, :distinct)
+
+  @doc """
+  Returns the unique values of the series, but does not maintain order.
+
+  Faster than `distinct/1`.
+
+  ## Examples
+
+      iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.unordered_distinct()
+  """
+  def unordered_distinct(series), do: apply_impl(series, :unordered_distinct)
 
   @doc """
   Returns the number of unique values in the series.
@@ -1670,6 +1894,13 @@ defmodule Explorer.Series do
         string[3]
         ["this", "is", "great"]
       >
+
+      iex> s = Explorer.Series.from_list(["this", "is", "great"])
+      iex> Explorer.Series.transform(s, &String.length/1)
+      #Explorer.Series<
+        integer[3]
+        [4, 2, 5]
+      >
   """
   def transform(series, fun), do: apply_impl(series, :transform, [fun])
 
@@ -1684,61 +1915,6 @@ defmodule Explorer.Series do
     impl = impl!(series)
     apply(impl, fun, [series | args])
   end
-
-  defp check_types(list) do
-    {last_item, type, types_match?} =
-      Enum.reduce_while(list, {nil, nil, true}, &check_types_reducer/2)
-
-    if not types_match?,
-      do:
-        raise(
-          ArgumentError,
-          "cannot make a series from mismatched types: type of #{inspect(last_item)} does not " <>
-            "match inferred dtype #{type}"
-        )
-
-    if is_nil(type),
-      do: raise(ArgumentError, "cannot make a series from a list of all nils")
-
-    type
-  end
-
-  defp type(item, type) when K.and(is_integer(item), type == :float), do: :numeric
-  defp type(item, type) when K.and(is_float(item), type == :integer), do: :numeric
-
-  defp type(item, type) when K.and(type == :numeric, K.or(is_integer(item), is_float(item))),
-    do: :numeric
-
-  defp type(item, _type) when is_integer(item), do: :integer
-  defp type(item, _type) when is_float(item), do: :float
-  defp type(item, _type) when is_boolean(item), do: :boolean
-  defp type(item, _type) when is_binary(item), do: :string
-  defp type(%Date{} = _item, _type), do: :date
-  defp type(%NaiveDateTime{} = _item, _type), do: :datetime
-  defp type(item, _type) when is_nil(item), do: nil
-  defp type(item, _type), do: raise("Unsupported datatype: #{inspect(item)}")
-
-  defp check_types_reducer(item, {_prev, type, _types_match?}) do
-    new_type = type(item, type) || type
-
-    cond do
-      K.and(new_type == :numeric, type in [:float, :integer]) -> {:cont, {item, new_type, true}}
-      K.and(new_type != type, !is_nil(type)) -> {:halt, {item, type, false}}
-      true -> {:cont, {item, new_type, true}}
-    end
-  end
-
-  defp cast_numerics(list, type) when type == :numeric do
-    data =
-      Enum.map(list, fn
-        nil -> nil
-        item -> item / 1
-      end)
-
-    {data, :float}
-  end
-
-  defp cast_numerics(list, type), do: {list, type}
 
   defp dtype_error(function, dtype, valid_dtypes),
     do:

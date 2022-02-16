@@ -10,12 +10,13 @@ path = "src/lib.rs"
 crate-type = ["cdylib"]
 
 [dependencies]
-rustler = "0.22.0"
-thiserror = "1"
 anyhow = "1"
+chrono = "0.4"
 mimalloc = { version = "*", default-features = false }
 rand = { version = "0.8.4", features = ["alloc"] }
 rand_pcg = "0.3.1"
+rustler = "0.23.0"
+thiserror = "1"
 
 [dependencies.polars]
 version = "0.18.0"

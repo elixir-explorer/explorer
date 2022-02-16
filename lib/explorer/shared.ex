@@ -44,4 +44,62 @@ defmodule Explorer.Shared do
             "#{inspect(struct1)} and #{inspect(struct2)}. You may need to call Explorer.backend_transfer/1 " <>
             "(or Explorer.backend_copy/1) on one or both of them to transfer them to a common implementation"
   end
+
+  @doc """
+  Gets the `dtype` of a list.
+  """
+  def check_types(list) do
+    type =
+      for el <- list, reduce: nil do
+        type ->
+          new_type = type(el, type) || type
+
+          cond do
+            new_type == :numeric and type in [:float, :integer] ->
+              new_type
+
+            new_type != type and !is_nil(type) ->
+              raise ArgumentError,
+                    "cannot make a series from mismatched types: type of #{inspect(el)} does not match inferred dtype #{type}"
+
+            true ->
+              new_type
+          end
+      end
+
+    if is_nil(type),
+      do: raise(ArgumentError, "cannot make a series from a list of all nils")
+
+    type
+  end
+
+  defp type(item, type) when is_integer(item) and type == :float, do: :numeric
+  defp type(item, type) when is_float(item) and type == :integer, do: :numeric
+
+  defp type(item, type) when type == :numeri and (is_integer(item) or is_float(item)),
+    do: :numeric
+
+  defp type(item, _type) when is_integer(item), do: :integer
+  defp type(item, _type) when is_float(item), do: :float
+  defp type(item, _type) when is_boolean(item), do: :boolean
+  defp type(item, _type) when is_binary(item), do: :string
+  defp type(%Date{} = _item, _type), do: :date
+  defp type(%NaiveDateTime{} = _item, _type), do: :datetime
+  defp type(item, _type) when is_nil(item), do: nil
+  defp type(item, _type), do: raise("Unsupported datatype: #{inspect(item)}")
+
+  @doc """
+  Downcasts lists of mixed numeric types (float and int) to float.
+  """
+  def cast_numerics(list, type) when type == :numeric do
+    data =
+      Enum.map(list, fn
+        nil -> nil
+        item -> item / 1
+      end)
+
+    {data, :float}
+  end
+
+  def cast_numerics(list, type), do: {list, type}
 end

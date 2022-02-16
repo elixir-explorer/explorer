@@ -1,11 +1,15 @@
 defmodule Explorer.DataFrameTest do
   use ExUnit.Case, async: true
+  import ExUnit.CaptureIO
+
   doctest Explorer.DataFrame
 
   alias Explorer.DataFrame, as: DF
+  alias Explorer.Datasets
+  alias Explorer.Series
 
   setup do
-    {:ok, df: Explorer.Datasets.fossil_fuels()}
+    {:ok, df: Datasets.fossil_fuels()}
   end
 
   defp tmp_csv(tmp_dir, contents) do
@@ -97,6 +101,44 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_map(df) == %{
                a: ["1", "3"],
                b: [2, 4]
+             }
+    end
+
+    @tag :tmp_dir
+    test "dtypes - parse datetime", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b,c
+        1,2,"2020-10-15 00:00:01",
+        3,4,2020-10-15 00:00:18
+        """)
+
+      df = DF.read_csv!(csv, parse_dates: true)
+      assert [:datetime] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
+
+      assert DF.to_map(df) == %{
+               a: [1, 3],
+               b: [2, 4],
+               c: [~N[2020-10-15 00:00:01.000], ~N[2020-10-15 00:00:18.000]]
+             }
+    end
+
+    @tag :tmp_dir
+    test "dtypes - do not parse datetime(default)", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b,c
+        1,2,"2020-10-15 00:00:01",
+        3,4,2020-10-15 00:00:18
+        """)
+
+      df = DF.read_csv!(csv, parse_dates: false)
+      assert [:string] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
+
+      assert DF.to_map(df) == %{
+               a: [1, 3],
+               b: [2, 4],
+               c: ["2020-10-15 00:00:01", "2020-10-15 00:00:18"]
              }
     end
 
@@ -269,5 +311,75 @@ defmodule Explorer.DataFrameTest do
       assert DF.dtypes(df) == DF.dtypes(parquet_df)
       assert DF.to_map(df) == DF.to_map(parquet_df)
     end
+  end
+
+  describe "table/1" do
+    test "prints what we expect" do
+      df = Datasets.iris()
+
+      assert capture_io(fn -> DF.table(df) end) == """
+             +-----------------------------------------------------------------------+
+             |              Explorer DataFrame: [rows: 150, columns: 5]              |
+             +--------------+-------------+--------------+-------------+-------------+
+             | sepal_length | sepal_width | petal_length | petal_width |   species   |
+             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
+             +==============+=============+==============+=============+=============+
+             | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 4.9          | 3.0         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 4.7          | 3.2         | 1.3          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 4.6          | 3.1         | 1.5          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 5.0          | 3.6         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+
+             """
+    end
+  end
+
+  test "fetch/2" do
+    df = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+    assert Series.to_list(df["a"]) == [1, 2, 3]
+    assert DF.to_map(df[["a"]]) == %{a: [1, 2, 3]}
+  end
+
+  test "pop/2" do
+    df1 = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+
+    {s1, df2} = Access.pop(df1, "a")
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_map(df2) == %{b: ["a", "b", "c"]}
+
+    {df3, df4} = Access.pop(df1, ["a"])
+    assert DF.to_map(df3) == %{a: [1, 2, 3]}
+    assert DF.to_map(df4) == %{b: ["a", "b", "c"]}
+  end
+
+  test "get_and_update/3" do
+    df1 = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+
+    {s, df2} =
+      Access.get_and_update(df1, "a", fn current_value ->
+        {current_value, [0, 0, 0]}
+      end)
+
+    assert Series.to_list(s) == [1, 2, 3]
+    assert DF.to_map(df2) == %{a: [0, 0, 0], b: ["a", "b", "c"]}
+  end
+
+  test "pivot_wider/2" do
+    df1 = DF.from_map(%{id: [1, 1], variable: ["a", "b"], value: [1, 2]})
+    assert DF.to_map(DF.pivot_wider(df1, "variable", "value")) == %{id: [1], a: [1], b: [2]}
+
+    df2 = DF.from_map(%{id: [1, 1], variable: ["a", "b"], value: [1.0, 2.0]})
+
+    assert DF.to_map(
+             DF.pivot_wider(df2, "variable", "value",
+               id_cols: ["id"],
+               names_prefix: "col"
+             )
+           ) == %{id: [1], cola: [1.0], colb: [2.0]}
   end
 end
