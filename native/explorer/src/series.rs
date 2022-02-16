@@ -161,7 +161,14 @@ pub fn s_argsort(data: ExSeries, reverse: bool) -> Result<Vec<Option<u32>>, Expl
 }
 
 #[rustler::nif]
-pub fn s_unique(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_distinct(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let unique = s.take(&s.arg_unique()?)?;
+    Ok(ExSeries::new(unique))
+}
+
+#[rustler::nif]
+pub fn s_unordered_distinct(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let unique = s.unique()?;
     Ok(ExSeries::new(unique))

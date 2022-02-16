@@ -306,7 +306,10 @@ defmodule Explorer.PolarsBackend.Series do
   # Distinct
 
   @impl true
-  def distinct(series), do: Shared.apply_native(series, :s_unique)
+  def distinct(series), do: Shared.apply_native(series, :s_distinct)
+
+  @impl true
+  def unordered_distinct(series), do: Shared.apply_native(series, :s_unordered_distinct)
 
   @impl true
   def n_distinct(series), do: Shared.apply_native(series, :s_n_unique)
