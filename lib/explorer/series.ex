@@ -1841,16 +1841,23 @@ defmodule Explorer.Series do
   end
 
   def check_types(list) do
-    {last_item, type, types_match?} =
-      Enum.reduce_while(list, {nil, nil, true}, &check_types_reducer/2)
+    type =
+      for el <- list, reduce: nil do
+        type ->
+          new_type = type(el, type) || type
 
-    if not types_match?,
-      do:
-        raise(
-          ArgumentError,
-          "cannot make a series from mismatched types: type of #{inspect(last_item)} does not " <>
-            "match inferred dtype #{type}"
-        )
+          cond do
+            K.and(new_type == :numeric, type in [:float, :integer]) ->
+              new_type
+
+            K.and(new_type != type, !is_nil(type)) ->
+              raise ArgumentError,
+                    "cannot make a series from mismatched types: type of #{inspect(el)} does not match inferred dtype #{type}"
+
+            true ->
+              new_type
+          end
+      end
 
     if is_nil(type),
       do: raise(ArgumentError, "cannot make a series from a list of all nils")
@@ -1872,16 +1879,6 @@ defmodule Explorer.Series do
   defp type(%NaiveDateTime{} = _item, _type), do: :datetime
   defp type(item, _type) when is_nil(item), do: nil
   defp type(item, _type), do: raise("Unsupported datatype: #{inspect(item)}")
-
-  defp check_types_reducer(item, {_prev, type, _types_match?}) do
-    new_type = type(item, type) || type
-
-    cond do
-      K.and(new_type == :numeric, type in [:float, :integer]) -> {:cont, {item, new_type, true}}
-      K.and(new_type != type, !is_nil(type)) -> {:halt, {item, type, false}}
-      true -> {:cont, {item, new_type, true}}
-    end
-  end
 
   def cast_numerics(list, type) when type == :numeric do
     data =
