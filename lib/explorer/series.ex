@@ -22,7 +22,7 @@ defmodule Explorer.Series do
   alias __MODULE__, as: Series
   alias Kernel, as: K
 
-  import Explorer.Shared, only: [impl!: 1]
+  import Explorer.Shared, only: [impl!: 1, check_types: 1, cast_numerics: 2]
   import Nx.Defn.Kernel, only: [keyword!: 2]
   import Kernel, except: [length: 1, and: 2]
 
@@ -1839,58 +1839,6 @@ defmodule Explorer.Series do
     impl = impl!(series)
     apply(impl, fun, [series | args])
   end
-
-  def check_types(list) do
-    type =
-      for el <- list, reduce: nil do
-        type ->
-          new_type = type(el, type) || type
-
-          cond do
-            K.and(new_type == :numeric, type in [:float, :integer]) ->
-              new_type
-
-            K.and(new_type != type, !is_nil(type)) ->
-              raise ArgumentError,
-                    "cannot make a series from mismatched types: type of #{inspect(el)} does not match inferred dtype #{type}"
-
-            true ->
-              new_type
-          end
-      end
-
-    if is_nil(type),
-      do: raise(ArgumentError, "cannot make a series from a list of all nils")
-
-    type
-  end
-
-  defp type(item, type) when K.and(is_integer(item), type == :float), do: :numeric
-  defp type(item, type) when K.and(is_float(item), type == :integer), do: :numeric
-
-  defp type(item, type) when K.and(type == :numeric, K.or(is_integer(item), is_float(item))),
-    do: :numeric
-
-  defp type(item, _type) when is_integer(item), do: :integer
-  defp type(item, _type) when is_float(item), do: :float
-  defp type(item, _type) when is_boolean(item), do: :boolean
-  defp type(item, _type) when is_binary(item), do: :string
-  defp type(%Date{} = _item, _type), do: :date
-  defp type(%NaiveDateTime{} = _item, _type), do: :datetime
-  defp type(item, _type) when is_nil(item), do: nil
-  defp type(item, _type), do: raise("Unsupported datatype: #{inspect(item)}")
-
-  def cast_numerics(list, type) when type == :numeric do
-    data =
-      Enum.map(list, fn
-        nil -> nil
-        item -> item / 1
-      end)
-
-    {data, :float}
-  end
-
-  def cast_numerics(list, type), do: {list, type}
 
   defp dtype_error(function, dtype, valid_dtypes),
     do:
