@@ -12,11 +12,15 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1"
 chrono = "0.4"
-mimalloc = { version = "*", default-features = false }
 rand = { version = "0.8.4", features = ["alloc"] }
 rand_pcg = "0.3.1"
-rustler = "0.23.0"
+# We are using `rustler` from GitHub until a new version of `rustler-sys` arrives.
+# rustler = "0.23.0"
+rustler = { git = "https://github.com/rusterlium/rustler" }
 thiserror = "1"
+
+[target.'cfg(not(all(windows, target_env = "gnu")))'.dependencies]
+mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
 version = "0.18.0"
