@@ -1523,14 +1523,28 @@ defmodule Explorer.Series do
   @doc """
   Returns the unique values of the series.
 
-  **NB**: Does not maintain order.
-
   ## Examples
 
       iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.distinct()
+      #Explorer.Series<
+        integer[3]
+        [1, 2, 3]
+      >
   """
   def distinct(series), do: apply_impl(series, :distinct)
+
+  @doc """
+  Returns the unique values of the series, but does not maintain order.
+
+  Faster than `distinct/1`.
+
+  ## Examples
+
+      iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.unordered_distinct()
+  """
+  def unordered_distinct(series), do: apply_impl(series, :unordered_distinct)
 
   @doc """
   Returns the number of unique values in the series.
