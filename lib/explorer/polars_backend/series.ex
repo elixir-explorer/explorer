@@ -126,6 +126,9 @@ defmodule Explorer.PolarsBackend.Series do
     end
   end
 
+  @impl true
+  def concat(s1, s2), do: Shared.apply_native(s1, :s_append, [Shared.to_polars_s(s2)])
+
   # Aggregation
 
   @impl true

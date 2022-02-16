@@ -207,8 +207,18 @@ defmodule Explorer.Series do
         string[3]
         ["1", "2", "3"]
       >
+
+  `cast/2` will return the series as a no-op if you try to cast to the same dtype.
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.cast(s, :integer)
+      #Explorer.Series<
+        integer[3]
+        [1, 2, 3]
+      >
   """
   @spec cast(series :: Series.t(), dtype :: dtype()) :: Series.t()
+  def cast(%Series{dtype: dtype} = series, dtype), do: series
   def cast(series, dtype), do: apply_impl(series, :cast, [dtype])
 
   # Introspection
@@ -474,6 +484,58 @@ defmodule Explorer.Series do
 
     apply_impl(series, :get, [idx])
   end
+
+  @doc """
+  Concatenate one or more series.
+
+  The dtypes must match unless all are numeric, in which case all series will be downcast to float.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([4, 5, 6])
+      iex> Explorer.Series.concat([s1, s2])
+      #Explorer.Series<
+        integer[6]
+        [1, 2, 3, 4, 5, 6]
+      >
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([4.0, 5.0, 6.4])
+      iex> Explorer.Series.concat(s1, s2)
+      #Explorer.Series<
+        float[6]
+        [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
+      >
+  """
+  def concat([%Series{} = h | t] = _series) do
+    Enum.reduce(t, h, &concat_reducer/2)
+  end
+
+  @doc """
+  Concatenate one or more series.
+
+  `concat(s1, s2)` is equivalent to `concat([s1, s2])`.
+  """
+  def concat(%Series{} = s1, %Series{} = s2),
+    do: concat([s1, s2])
+
+  def concat(%Series{} = s1, [%Series{} | _] = series),
+    do: concat([s1 | series])
+
+  defp concat_reducer(%Series{dtype: dtype} = s, %Series{dtype: dtype} = acc),
+    do: apply_impl(acc, :concat, [s])
+
+  defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
+       when K.and(s_dtype == :float, acc_dtype == :integer),
+       do: acc |> cast(:float) |> apply_impl(:concat, [s])
+
+  defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
+       when K.and(s_dtype == :integer, acc_dtype == :float),
+       do: apply_impl(acc, :concat, [cast(s, :float)])
+
+  defp concat_reducer(%Series{dtype: dtype1}, %Series{dtype: dtype2}),
+    do: raise(ArgumentError, "dtypes must match, found #{dtype1} and #{dtype2}")
 
   # Aggregation
 
