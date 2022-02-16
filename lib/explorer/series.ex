@@ -1818,6 +1818,13 @@ defmodule Explorer.Series do
         string[3]
         ["this", "is", "great"]
       >
+
+      iex> s = Explorer.Series.from_list(["this", "is", "great"])
+      iex> Explorer.Series.transform(s, &String.length/1)
+      #Explorer.Series<
+        integer[3]
+        [4, 2, 5]
+      >
   """
   def transform(series, fun), do: apply_impl(series, :transform, [fun])
 
@@ -1833,7 +1840,7 @@ defmodule Explorer.Series do
     apply(impl, fun, [series | args])
   end
 
-  defp check_types(list) do
+  def check_types(list) do
     {last_item, type, types_match?} =
       Enum.reduce_while(list, {nil, nil, true}, &check_types_reducer/2)
 
@@ -1876,7 +1883,7 @@ defmodule Explorer.Series do
     end
   end
 
-  defp cast_numerics(list, type) when type == :numeric do
+  def cast_numerics(list, type) when type == :numeric do
     data =
       Enum.map(list, fn
         nil -> nil
@@ -1886,7 +1893,7 @@ defmodule Explorer.Series do
     {data, :float}
   end
 
-  defp cast_numerics(list, type), do: {list, type}
+  def cast_numerics(list, type), do: {list, type}
 
   defp dtype_error(function, dtype, valid_dtypes),
     do:
