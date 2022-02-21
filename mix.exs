@@ -58,11 +58,10 @@ defmodule Explorer.MixProject do
         "lib",
         "native",
         "datasets",
-        # "notebooks", should we include this one?
         "checksum-*.exs",
         "mix.exs",
         "README.md",
-        # "CHANGELOG.md",
+        "CHANGELOG.md",
         "LICENSE"
       ],
       licenses: ["MIT"],
