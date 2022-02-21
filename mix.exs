@@ -60,8 +60,6 @@ defmodule Explorer.MixProject do
         "datasets",
         "checksum-*.exs",
         "mix.exs",
-        "README.md",
-        "CHANGELOG.md",
         "LICENSE"
       ],
       licenses: ["MIT"],
