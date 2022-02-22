@@ -550,12 +550,9 @@ dependencies = [
 
 [[package]]
 name = "heck"
-version = "0.3.2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87cbf45460356b7deeb5e3415b5563308c0a9b057c85e12b06ad551f98d0a6ac"
-dependencies = [
- "unicode-segmentation",
-]
+checksum = "2540771e65fc8cb83cd6e8a237f70c319bd5c29f78ed1084ba5d50eeac86f7f9"
 
 [[package]]
 name = "hermit-abi"
@@ -1220,8 +1217,7 @@ dependencies = [
 [[package]]
 name = "rustler"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ac79e5fcfae809c16ff8da548daa291933b7ec8d66eadc197cdccec46891625"
+source = "git+https://github.com/rusterlium/rustler#c5800b584799960993ab705b0f113a711c72b87e"
 dependencies = [
  "lazy_static",
  "rustler_codegen",
@@ -1231,8 +1227,7 @@ dependencies = [
 [[package]]
 name = "rustler_codegen"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10d303c303a145c1f3d2a2993527128badb9500101070c55e36ef9bb2417666a"
+source = "git+https://github.com/rusterlium/rustler#c5800b584799960993ab705b0f113a711c72b87e"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -1243,9 +1238,9 @@ dependencies = [
 [[package]]
 name = "rustler_sys"
 version = "2.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cb382fde4f421c51555919e9920b058c0286f6bf59e53d02eb4d281eae6758b"
+source = "git+https://github.com/rusterlium/rustler#c5800b584799960993ab705b0f113a711c72b87e"
 dependencies = [
+ "regex",
  "unreachable",
 ]
 
@@ -1381,12 +1376,6 @@ dependencies = [
  "libc",
  "winapi",
 ]
-
-[[package]]
-name = "unicode-segmentation"
-version = "1.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb0d2e7be6ae3a5fa87eed5fb451aff96f2573d2694942e40543ae0bbe19c796"
 
 [[package]]
 name = "unicode-width"

@@ -10,6 +10,7 @@ defmodule Explorer.MixProject do
       name: "Explorer",
       version: @version,
       elixir: "~> 1.12",
+      package: package(),
       deps: deps(),
       docs: docs()
     ]
@@ -26,7 +27,7 @@ defmodule Explorer.MixProject do
     [
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
       {:nx, "~> 0.1.0"},
-      {:rustler, "~> 0.23.0"},
+      {:rustler_precompiled, "~> 0.2"},
       {:table_rex, "~> 3.1.1"}
     ]
   end
@@ -48,6 +49,21 @@ defmodule Explorer.MixProject do
           Explorer.PolarsBackend
         ]
       ]
+    ]
+  end
+
+  defp package do
+    [
+      files: [
+        "lib",
+        "native",
+        "datasets",
+        "checksum-*.exs",
+        "mix.exs",
+        "LICENSE"
+      ],
+      licenses: ["MIT"],
+      links: %{"GitHub" => @source_url}
     ]
   end
 end
