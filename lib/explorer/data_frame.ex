@@ -1681,12 +1681,12 @@ defmodule Explorer.DataFrame do
        do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
 
   @doc """
-   Display the DataFrame in a tabular fashion.
+  Display the DataFrame in a tabular fashion.
 
-   ## Examples
+  ## Examples
 
-      df = Explorer.Datasets.iris()
-      Explorer.DataFrame.table(df)
+     df = Explorer.Datasets.iris()
+     Explorer.DataFrame.table(df)
   """
   def table(df, nrow \\ 5) when nrow >= 0 do
     {rows, cols} = shape(df)
