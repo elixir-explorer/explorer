@@ -213,7 +213,7 @@ defmodule Explorer.DataFrame do
     end)
   end
 
-  defp wrap_values(map) do
+  defp wrap_values(map) when is_map(map) do
     Map.new(map, fn {key, value} -> {key, List.wrap(value)} end)
   end
 
