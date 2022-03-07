@@ -198,14 +198,14 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> l = [%{id: 1, name: "José"}, %{id: 2, name: "Christopher"}, %{id: 3, name: "Cristine"}]
-      iex> Explorer.DataFrame.from_list_of_maps(l)
+      iex> Explorer.DataFrame.from_list(l)
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
         id integer [1, 2, 3]
         name string ["José", "Christopher", "Cristine"]
       >
   """
-  def from_list_of_maps([head | tail]) do
+  def from_list([head | tail]) do
     Enum.reduce(tail, record_to_df(head), fn record, acc ->
       record
       |> record_to_df()
