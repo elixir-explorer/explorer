@@ -205,14 +205,19 @@ defmodule Explorer.DataFrame do
         name string ["José", "Christopher", "Cristine"]
       >
   """
-  def from_list([h | t]) do
-    for _record <- t, reduce: record_to_df(h) do
-      acc -> t |> record_to_df() |> then(&DataFrame.concat_rows(acc, &1))
-    end
+  def from_list([head | tail]) do
+    Enum.reduce(tail, record_to_df(head), fn record, acc ->
+      record
+      |> record_to_df()
+      |> then(&DataFrame.concat_rows(acc, &1))
+    end)
   end
 
-  defp wrap_values(map), do: Map.new(map, fn {k, v} -> {k, List.wrap(v)} end) # OK
-  defp record_to_df(map), do: map |> wrap_values() |> DataFrame.from_map() # OK
+  defp wrap_values(map) do
+    Map.new(map, fn {k, v} -> {k, List.wrap(v)} end)
+  end
+  # OK
+  defp record_to_df(map), do: map |> wrap_values() |> DataFrame.from_map()
 
   @doc """
   Writes a dataframe to a binary representation of a delimited file.
