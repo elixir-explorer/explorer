@@ -193,6 +193,28 @@ defmodule Explorer.DataFrame do
   def to_map(df, convert_series? \\ true), do: apply_impl(df, :to_map, [convert_series?])
 
   @doc """
+  Converts a list of maps to a dataframe.
+
+  ## Examples
+
+      iex> l = [%{id: 1, name: "José"}, %{id: 2, name: "Christopher"}, %{id: 3, name: "Cristine"}]
+      iex> Explorer.DataFrame.from_list(l)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        id integer [1, 2, 3]
+        name string ["José", "Christopher", "Cristine"]
+      >
+  """
+  def from_list([h | t]) do
+    for _record <- t, reduce: record_to_df(h) do
+      acc -> t |> record_to_df() |> then(&DataFrame.concat_rows(acc, &1))
+    end
+  end
+
+  defp wrap_values(map), do: Map.new(map, fn {k, v} -> {k, List.wrap(v)} end) # OK
+  defp record_to_df(map), do: map |> wrap_values() |> DataFrame.from_map() # OK
+
+  @doc """
   Writes a dataframe to a binary representation of a delimited file.
 
   ## Options
