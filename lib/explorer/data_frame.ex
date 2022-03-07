@@ -205,7 +205,7 @@ defmodule Explorer.DataFrame do
         name string ["José", "Christopher", "Cristine"]
       >
   """
-  def from_list([head | tail]) do
+  def from_list([head | tail]) when is_map(head) do
     Enum.reduce(tail, record_to_df(head), fn record, acc ->
       record
       |> record_to_df()
