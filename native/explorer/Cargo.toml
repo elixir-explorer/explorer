@@ -24,7 +24,7 @@ thiserror = "1"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.18.0"
+version = "0.20.0"
 default-features = false
 features = [
   "cross_join",
@@ -33,8 +33,6 @@ features = [
   "is_in",
   "json",
   "parquet",
-  "pivot",
-  "plain_fmt",
   "random",
   "rows",
   "sort_multiple",

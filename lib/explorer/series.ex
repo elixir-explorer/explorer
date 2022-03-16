@@ -1694,7 +1694,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rolling_mean(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
-        [0.5, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5]
+        [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5]
       >
   """
   def rolling_mean(series, window_size, opts \\ []),
@@ -1726,7 +1726,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rolling_min(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
-        [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+        [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
       >
   """
   def rolling_min(series, window_size, opts \\ []),

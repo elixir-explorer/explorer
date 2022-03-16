@@ -1406,8 +1406,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.join(left, right, how: :outer)
       #Explorer.DataFrame<
         [rows: 4, columns: 3]
-        b string ["a", "b", nil, "c"]
         a integer [1, 2, 4, 3]
+        b string ["a", "b", nil, "c"]
         c string ["d", "e", "f", nil]
       >
 
