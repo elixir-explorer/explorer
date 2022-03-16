@@ -190,7 +190,7 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_map(df) == %{
                a: [nil, "nil", "c"],
-               b: ["NA", "", "d"]
+               b: ["NA", nil, "d"]
              }
     end
 

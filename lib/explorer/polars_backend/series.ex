@@ -123,7 +123,8 @@ defmodule Explorer.PolarsBackend.Series do
   def std(series), do: Shared.apply_native(series, :s_std)
 
   @impl true
-  def quantile(series, quantile), do: Shared.apply_native(series, :s_quantile, [quantile])
+  def quantile(series, quantile),
+    do: Shared.apply_native(series, :s_quantile, [quantile, "nearest"])
 
   # Cumulative
 

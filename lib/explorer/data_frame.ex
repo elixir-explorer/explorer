@@ -1293,6 +1293,17 @@ defmodule Explorer.DataFrame do
 
   * `id_cols` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
   * `names_prefix` - String added to the start of every variable name. This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.from_map(%{id: [1, 1], variable: ["a", "b"], value: [1, 2]})
+      iex> Explorer.DataFrame.pivot_wider(df, "variable", "value")
+      #Explorer.DataFrame<
+        [rows: 1, columns: 3]
+        id integer [1]
+        a integer [1]
+        b integer [2]
+      >
   """
   @spec pivot_wider(
           df :: DataFrame.t(),
@@ -1406,8 +1417,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.join(left, right, how: :outer)
       #Explorer.DataFrame<
         [rows: 4, columns: 3]
-        b string ["a", "b", nil, "c"]
         a integer [1, 2, 4, 3]
+        b string ["a", "b", nil, "c"]
         c string ["d", "e", "f", nil]
       >
 

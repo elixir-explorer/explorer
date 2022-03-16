@@ -210,7 +210,7 @@ impl<'a> Encoder for ExSeriesRef {
             DataType::UInt32 => encode!(s, env, u32),
             DataType::Float64 => encode!(s, env, f64),
             DataType::Date => encode_date(s, env),
-            DataType::Datetime => encode_datetime(s, env),
+            DataType::Datetime(TimeUnit::Milliseconds, None) => encode_datetime(s, env),
             DataType::List(t) if t as &DataType == &DataType::UInt32 => {
                 encode_list!(s, env, u32, u32)
             }

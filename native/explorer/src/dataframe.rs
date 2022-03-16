@@ -3,7 +3,9 @@ use polars::prelude::*;
 use std::fs::File;
 use std::result::Result;
 
-use crate::series::{cast, to_ex_series_collection, to_series_collection};
+use crate::series::{
+    cast, parse_quantile_interpol_options, to_ex_series_collection, to_series_collection,
+};
 
 use crate::{ExDataFrame, ExSeries, ExplorerError};
 
@@ -51,20 +53,22 @@ pub fn df_read_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let schema: Option<Schema> = dtypes.map(|dtypes| {
-        Schema::new(
-            dtypes
-                .iter()
-                .map(|x| Field::new(x.0, dtype_from_str(x.1).unwrap()))
-                .collect(),
-        )
-    });
+    let schema: Option<Schema> = match dtypes {
+        Some(dtypes) => {
+            let mut schema = Schema::new();
+            for (name, dtype) in dtypes {
+                schema.with_column(name.to_string(), dtype_from_str(dtype)?)
+            }
+            Some(schema)
+        }
+        None => None,
+    };
 
     let df = CsvReader::from_path(filename)?
         .infer_schema(infer_schema_length)
         .has_header(has_header)
         .with_parse_dates(parse_dates)
-        .with_stop_after_n_rows(stop_after_n_rows)
+        .with_n_rows(stop_after_n_rows)
         .with_delimiter(sep.as_bytes()[0])
         .with_skip_rows(skip_rows)
         .with_projection(projection)
@@ -86,7 +90,7 @@ fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
         "i64" => Ok(DataType::Int64),
         "bool" => Ok(DataType::Boolean),
         "date" => Ok(DataType::Date),
-        "datetime[ms]" => Ok(DataType::Datetime),
+        "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
         _ => Err(ExplorerError::Internal("Unrecognised datatype".into())),
     }
 }
@@ -102,7 +106,7 @@ pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 pub fn df_write_parquet(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
     df_read!(data, df, {
         let file = File::create(filename).expect("could not create file");
-        ParquetWriter::new(file).finish(&df)?;
+        ParquetWriter::new(file).finish(&mut df.clone())?;
         Ok(())
     })
 }
@@ -118,7 +122,7 @@ pub fn df_to_csv(
         CsvWriter::new(&mut buf)
             .has_header(has_headers)
             .with_delimiter(delimiter)
-            .finish(&df)?;
+            .finish(&mut df.clone())?;
 
         let s = String::from_utf8(buf)?;
         Ok(s)
@@ -137,7 +141,7 @@ pub fn df_to_csv_file(
         CsvWriter::new(&mut f)
             .has_header(has_headers)
             .with_delimiter(delimiter)
-            .finish(&df)?;
+            .finish(&mut df.clone())?;
         Ok(())
     })
 }
@@ -318,7 +322,7 @@ pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, Explo
 #[rustler::nif]
 pub fn df_take(data: ExDataFrame, indices: Vec<u32>) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
-        let idx = UInt32Chunked::new_from_slice("idx", indices.as_slice());
+        let idx = UInt32Chunked::from_vec("idx", indices);
         let new_df = df.take(&idx)?;
         Ok(ExDataFrame::new(new_df))
     })
@@ -343,7 +347,7 @@ pub fn df_sort(
     reverse: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.sort(by_column, reverse)?;
+        let new_df = df.sort([by_column], reverse)?;
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -461,7 +465,10 @@ pub fn df_drop_duplicates(
     subset: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.drop_duplicates(maintain_order, Some(&subset))?;
+        let new_df = match maintain_order {
+            false => df.distinct(Some(&subset), DistinctKeepStrategy::First)?,
+            true => df.distinct_stable(Some(&subset), DistinctKeepStrategy::First)?,
+        };
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -502,9 +509,13 @@ pub fn df_median(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn df_quantile(data: ExDataFrame, quant: f64) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_quantile(
+    data: ExDataFrame,
+    quantile: f64,
+    strategy: &str,
+) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.quantile(quant)?;
+        let new_df = df.quantile(quantile, parse_quantile_interpol_options(strategy))?;
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -554,7 +565,7 @@ pub fn df_cast(
     df_read!(data, df, {
         let new_df = df
             .clone()
-            .may_apply(column, |s: &Series| cast(s, to_type))?
+            .try_apply(column, |s: &Series| cast(s, to_type))?
             .clone();
         Ok(ExDataFrame::new(new_df))
     })
@@ -590,7 +601,7 @@ pub fn df_pivot_wider(
     df_read!(data, df, {
         let new_df = df
             .groupby(id_cols)?
-            .pivot(pivot_column, values_column)
+            .pivot([pivot_column], [values_column])
             .first()?;
         Ok(ExDataFrame::new(new_df))
     })
