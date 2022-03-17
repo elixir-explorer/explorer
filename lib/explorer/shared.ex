@@ -76,7 +76,7 @@ defmodule Explorer.Shared do
   defp type(item, type) when is_integer(item) and type == :float, do: :numeric
   defp type(item, type) when is_float(item) and type == :integer, do: :numeric
 
-  defp type(item, type) when type == :numeri and (is_integer(item) or is_float(item)),
+  defp type(item, type) when type == :numeric and (is_integer(item) or is_float(item)),
     do: :numeric
 
   defp type(item, _type) when is_integer(item), do: :integer
