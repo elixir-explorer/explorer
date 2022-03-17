@@ -116,24 +116,24 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Conversion
 
   @impl true
-  def from_map(map) do
-    series_list = Enum.map(map, &from_map_handler/1)
+  def from_columns(map) do
+    series_list = Enum.map(map, &from_columns_handler/1)
 
     {:ok, df} = Native.df_new(series_list)
     Shared.to_dataframe(df)
   end
 
-  defp from_map_handler({key, value}) when is_atom(key) do
+  defp from_columns_handler({key, value}) when is_atom(key) do
     colname = Atom.to_string(key)
-    from_map_handler({colname, value})
+    from_columns_handler({colname, value})
   end
 
-  defp from_map_handler({colname, value}) when is_list(value) do
+  defp from_columns_handler({colname, value}) when is_list(value) do
     series = Series.from_list(value)
-    from_map_handler({colname, series})
+    from_columns_handler({colname, series})
   end
 
-  defp from_map_handler({colname, %Series{} = series}) when is_binary(colname) do
+  defp from_columns_handler({colname, %Series{} = series}) when is_binary(colname) do
     series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
   end
 
