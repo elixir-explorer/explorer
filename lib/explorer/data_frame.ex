@@ -1546,7 +1546,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Combine two or more dataframes row-wise (stack).
 
-  Column names and dtypes must match exactly.
+  Column names and dtypes must match. The only exception is for numeric
+  columns that can be mixed together, and casted automatically to float columns.
 
   ## Examples
 
@@ -1558,15 +1559,78 @@ defmodule Explorer.DataFrame do
         x integer [1, 2, 3, 4, 5, "..."]
         y string ["a", "b", "c", "d", "e", "..."]
       >
+
+      iex> df1 = Explorer.DataFrame.from_columns(x: [1, 2, 3], y: ["a", "b", "c"])
+      iex> df2 = Explorer.DataFrame.from_columns(x: [4.2, 5.3, 6.4], y: ["d", "e", "f"])
+      iex> Explorer.DataFrame.concat_rows([df1, df2])
+      #Explorer.DataFrame<
+        [rows: 6, columns: 2]
+        x float [1.0, 2.0, 3.0, 4.2, 5.3, "..."]
+        y string ["a", "b", "c", "d", "e", "..."]
+      >
   """
-  def concat_rows([%DataFrame{} = h | t] = dfs) do
-    key = Map.new(Enum.zip(names(h), dtypes(h)))
+  def concat_rows([%DataFrame{} | _t] = dfs) do
+    changed_types = compute_changed_types_concat_rows(dfs)
 
-    for df <- t, key != Map.new(Enum.zip(names(df), dtypes(df))) do
-      raise ArgumentError, "columns and dtypes must be identical for all dataframes"
+    if Enum.empty?(changed_types) do
+      apply_impl(dfs, :concat_rows)
+    else
+      dfs
+      |> cast_numeric_cols_to_float(changed_types)
+      |> apply_impl(:concat_rows)
     end
+  end
 
-    apply_impl(dfs, :concat_rows)
+  defp compute_changed_types_concat_rows([head | tail]) do
+    types = Map.new(Enum.zip(names(head), dtypes(head)))
+
+    Enum.reduce(tail, %{}, fn df, changed_types ->
+      if n_cols(df) != map_size(types) do
+        raise ArgumentError,
+              "dataframes must have the same columns"
+      end
+
+      Enum.reduce(Enum.zip(names(df), dtypes(df)), changed_types, fn {name, type},
+                                                                     changed_types ->
+        cond do
+          not Map.has_key?(types, name) ->
+            raise ArgumentError,
+                  "dataframes must have the same columns"
+
+          types[name] == type ->
+            changed_types
+
+          types_are_numeric_compatible?(types, name, type) ->
+            Map.put(changed_types, name, :float)
+
+          true ->
+            raise ArgumentError,
+                  "columns and dtypes must be identical for all dataframes"
+        end
+      end)
+    end)
+  end
+
+  defp types_are_numeric_compatible?(types, name, type) do
+    numeric_types = [:float, :integer]
+    types[name] != type and types[name] in numeric_types and type in numeric_types
+  end
+
+  defp cast_numeric_cols_to_float(dfs, changed_types) do
+    for df <- dfs do
+      cols =
+        for {name, :integer} <- Enum.zip(names(df), dtypes(df)),
+            changed_types[name] == :float,
+            do: name
+
+      if Enum.empty?(cols) do
+        df
+      else
+        changes = for col <- cols, into: %{}, do: {col, Series.cast(df[col], :float)}
+
+        mutate(df, changes)
+      end
+    end
   end
 
   @doc """
