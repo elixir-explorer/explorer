@@ -382,4 +382,24 @@ defmodule Explorer.DataFrameTest do
              )
            ) == %{id: [1], cola: [1.0], colb: [2.0]}
   end
+
+  test "concat_rows/2" do
+    df1 = DF.from_columns(x: [1, 2, 3], y: ["a", "b", "c"])
+    df2 = DF.from_columns(x: [4, 5, 6], y: ["d", "e", "f"])
+    df3 = DF.concat_rows(df1, df2)
+
+    assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
+    assert Series.to_list(df3["y"]) == ~w(a b c d e f)
+
+    df2 = DF.from_columns(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
+    df3 = DF.concat_rows(df1, df2)
+
+    assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+
+    df4 = DF.from_columns(x: [7, 8, 9], y: ["g", "h", nil])
+    df5 = DF.concat_rows(df3, df4)
+
+    assert Series.to_list(df5["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+    assert Series.to_list(df5["y"]) == ~w(a b c d e f g h) ++ [nil]
+  end
 end

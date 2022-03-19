@@ -1500,6 +1500,9 @@ defmodule Explorer.DataFrame do
   Combine two or more dataframes row-wise (stack).
 
   Column names and dtypes must match exactly.
+  The only exception is for numeric columns that can combine integers
+  and floats across dataframes.
+  In case they are mixed, the column will be casted to float.
 
   ## Examples
 
@@ -1512,12 +1515,51 @@ defmodule Explorer.DataFrame do
         y string ["a", "b", "c", "d", "e", "..."]
       >
   """
-  def concat_rows([%DataFrame{} = h | t] = dfs) do
-    key = Map.new(Enum.zip(names(h), dtypes(h)))
+  def concat_rows([%DataFrame{} = _h | _t] = dfs) do
+    {_, uniq_types} =
+      Enum.reduce(dfs, {nil, MapSet.new()}, fn df, {previous_key, existing_types} ->
+        names = names(df)
+        types = dtypes(df)
 
-    for df <- t, key != Map.new(Enum.zip(names(df), dtypes(df))) do
-      raise ArgumentError, "columns and dtypes must be identical for all dataframes"
-    end
+        types_with_numerics =
+          Enum.map(types, fn
+            type when type in [:integer, :float] -> :numeric
+            type -> type
+          end)
+
+        key = Map.new(Enum.zip(names, types_with_numerics))
+
+        if not is_nil(previous_key) and key != previous_key do
+          raise ArgumentError, "columns and dtypes must be identical for all dataframes"
+        end
+
+        uniq_types = MapSet.new(Enum.zip(names, types))
+
+        {key, MapSet.union(existing_types, uniq_types)}
+      end)
+
+    columns_to_cast =
+      uniq_types
+      |> Enum.group_by(fn {name, _type} -> name end, fn {_name, type} -> type end)
+      |> Enum.filter(fn {_name, types} -> not match?([_a], types) end)
+
+    dfs =
+      if Enum.empty?(columns_to_cast) do
+        dfs
+      else
+        Enum.map(dfs, fn original_df ->
+          Enum.reduce(columns_to_cast, original_df, fn {col_name, _}, df ->
+            series = df[col_name]
+            dtype = Series.dtype(series)
+
+            if dtype == :integer do
+              mutate(df, %{col_name => Series.cast(series, :float)})
+            else
+              df
+            end
+          end)
+        end)
+      end
 
     apply_impl(dfs, :concat_rows)
   end
