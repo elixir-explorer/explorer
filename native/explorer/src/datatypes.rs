@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use polars::prelude::*;
 use rustler::resource::ResourceArc;
-use rustler::{Atom, Encoder, Env, NifMap, NifStruct, Term};
+use rustler::{Atom, Encoder, Env, NifMap, NifStruct, NifUntaggedEnum, Term};
 use std::convert::TryInto;
 use std::sync::RwLock;
 
@@ -216,5 +216,35 @@ impl<'a> Encoder for ExSeriesRef {
             }
             dt => panic!("to_list/1 not implemented for {:?}", dt),
         }
+    }
+}
+
+#[derive(NifUntaggedEnum)]
+pub enum ExAnyValue {
+    Boolean(bool),
+    Utf8(String),
+    Int32(i32),
+    Int64(i64),
+    UInt32(u32),
+    Float64(f64),
+    Datetime(ExDateTime),
+    Date(ExDate),
+}
+
+impl ExAnyValue {
+    pub fn to_polars(&self) -> AnyValue {
+        let value = match self {
+            ExAnyValue::Boolean(x) => AnyValue::Boolean(*x),
+            ExAnyValue::Utf8(x) => AnyValue::Utf8(x),
+            ExAnyValue::Int32(x) => AnyValue::Int32(*x),
+            ExAnyValue::Int64(x) => AnyValue::Int64(*x),
+            ExAnyValue::UInt32(x) => AnyValue::UInt32(*x),
+            ExAnyValue::Float64(x) => AnyValue::Float64(*x),
+            ExAnyValue::Datetime(x) => {
+                AnyValue::Datetime(x.to_milliseconds(), TimeUnit::Milliseconds, &None)
+            }
+            ExAnyValue::Date(x) => AnyValue::Date(x.to_days()),
+        };
+        value
     }
 }
