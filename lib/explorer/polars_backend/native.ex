@@ -59,6 +59,8 @@ defmodule Explorer.PolarsBackend.Native do
   def df_filter(_df, _mask), do: err()
   def df_find_idx_by_name(_df, _name), do: err()
   def df_frame_equal(_df, _other, _null_equal), do: err()
+  def df_from_map_rows(_rows), do: err()
+  def df_from_keyword_rows(_rows), do: err()
   def df_get_columns(_df), do: err()
   def df_groups(_df, _colnames), do: err()
   def df_groupby_agg(_df, _groups, _aggs), do: err()

@@ -193,6 +193,53 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Creates a new dataframe from a list of maps or keyword lists.
+
+  Each map in the list should have the same keys, but missing keys will yield a null value for
+  that row. All values for a given key should be of the same dtype.
+
+  Keyword lists should all be in the same order.
+
+  ## Options
+
+    * `backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.default_backend/0`.
+
+  ## Examples
+
+      iex> rows = [%{id: 1, name: "José"}, %{id: 2, name: "Christopher"}, %{id: 3, name: "Cristine"}]
+      iex> Explorer.DataFrame.from_rows(rows)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        id integer [1, 2, 3]
+        name string ["José", "Christopher", "Cristine"]
+      >
+
+      iex> rows = [[id: 1, name: "José"], [id: 2, name: "Christopher"], [id: 3, name: "Cristine"]]
+      iex> Explorer.DataFrame.from_rows(rows)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        id integer [1, 2, 3]
+        name string ["José", "Christopher", "Cristine"]
+      >
+
+    With a list of maps, missing keys will yield a null value.
+
+      iex> rows = [%{id: 1, name: "José", date: ~D[2001-01-01]}, %{id: 2, date: ~D[1993-01-01]}, %{id: 3, name: "Cristine"}]
+      iex> Explorer.DataFrame.from_rows(rows)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 3]
+        date date [2001-01-01, 1993-01-01, nil]
+        id integer [1, 2, 3]
+        name string ["José", nil, "Cristine"]
+      >
+  """
+  @spec from_rows(rows :: list(map()) | Keyword.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def from_rows(rows, opts \\ []) do
+    backend = backend_from_options!(opts)
+    backend.from_rows(rows)
+  end
+
+  @doc """
   Converts a dataframe to a map.
 
   By default, the constituent series of the dataframe are converted to Elixir lists.
