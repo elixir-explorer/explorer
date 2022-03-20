@@ -1,5 +1,7 @@
 use polars::prelude::*;
+use rustler::{Term, TermType};
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::result::Result;
 
@@ -7,7 +9,7 @@ use crate::series::{
     cast, parse_quantile_interpol_options, to_ex_series_collection, to_series_collection,
 };
 
-use crate::{ExDataFrame, ExSeries, ExplorerError};
+use crate::{ExAnyValue, ExDataFrame, ExSeries, ExplorerError};
 
 macro_rules! df_read {
     ($data: ident, $df: ident, $body: block) => {
@@ -149,6 +151,102 @@ pub fn df_to_csv_file(
 #[rustler::nif]
 pub fn df_as_str(data: ExDataFrame) -> Result<String, ExplorerError> {
     df_read!(data, df, { Ok(format!("{:?}", df)) })
+}
+
+#[rustler::nif]
+pub fn df_from_map_rows(
+    rows: Vec<HashMap<Term, Option<ExAnyValue>>>,
+) -> Result<ExDataFrame, ExplorerError> {
+    // Coerce the keys from `Term` (atom or binary) to `String`
+    let rows: Vec<HashMap<String, &Option<ExAnyValue>>> = rows
+        .iter()
+        .map(|row| {
+            row.iter()
+                .map(|(key, val)| (atom_or_binary_to_string(key), val))
+                .collect()
+        })
+        .collect();
+
+    // Get the map keys and sort them
+    let mut keys = rows
+        .first()
+        .unwrap()
+        .keys()
+        .cloned()
+        .collect::<Vec<String>>();
+
+    case_insensitive_sort(&mut keys);
+
+    // Coerce the vec of hashmaps to polars Rows
+    let rows = rows
+        .iter()
+        .map(|row| row::Row::new(get_vals_in_order(row, &keys)))
+        .collect::<Vec<row::Row>>();
+
+    // Create the dataframe and assign the column names
+    let mut df = DataFrame::from_rows(&rows)?;
+    df.set_column_names(&keys)?;
+    Ok(ExDataFrame::new(df))
+}
+
+fn atom_or_binary_to_string(val: &Term) -> String {
+    match val.get_type() {
+        TermType::Atom => val.atom_to_string().unwrap(),
+        TermType::Binary => {
+            String::from_utf8_lossy(val.into_binary().unwrap().as_slice()).to_string()
+        }
+        _ => panic!("Unsupported key value"),
+    }
+}
+
+fn get_vals_in_order<'a>(
+    map: &'a HashMap<String, &Option<ExAnyValue>>,
+    keys: &'a [String],
+) -> Vec<AnyValue<'a>> {
+    keys.iter()
+        .map(|key| match map.get(key) {
+            None => AnyValue::Null,
+            Some(None) => AnyValue::Null,
+            Some(Some(val)) => val.to_polars(),
+        })
+        .collect()
+}
+
+fn case_insensitive_sort(strings: &mut Vec<String>) {
+    strings.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()))
+}
+
+#[rustler::nif]
+pub fn df_from_keyword_rows(
+    rows: Vec<Vec<(Term, Option<ExAnyValue>)>>,
+) -> Result<ExDataFrame, ExplorerError> {
+    // Get the keys and coerce them from `Term` (atom or binary) to `String`
+    let keys = rows
+        .first()
+        .unwrap()
+        .iter()
+        .map(|(key, _)| atom_or_binary_to_string(key))
+        .collect::<Vec<String>>();
+
+    // Coerce the vec of tuples to polars Rows
+    let rows = rows
+        .iter()
+        .map(|row| {
+            let row = row
+                .iter()
+                .map(|(_, val)| match val {
+                    Some(val) => val.to_polars(),
+                    None => AnyValue::Null,
+                })
+                .collect();
+            row::Row::new(row)
+        })
+        .collect::<Vec<row::Row>>();
+
+    // Create the dataframe and assign the column names
+    let mut df = DataFrame::from_rows(&rows)?;
+    df.set_column_names(&keys)?;
+    Ok(ExDataFrame::new(df))
 }
 
 #[rustler::nif]
