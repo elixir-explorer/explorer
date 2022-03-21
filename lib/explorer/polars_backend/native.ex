@@ -81,6 +81,12 @@ defmodule Explorer.PolarsBackend.Native do
   def df_with_column(_df, _col), do: err()
   def df_write_parquet(_df, _filename), do: err()
 
+  # LazyFrame
+  def lf_collect(_lf), do: err()
+  def lf_describe_plan(_lf), do: err()
+  def lf_fetch(_lf, _length), do: err()
+  def lf_select(_lf, _selection), do: err()
+
   # Series
   def s_add(_s, _other), do: err()
   def s_and(_s, _s2), do: err()

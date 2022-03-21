@@ -39,6 +39,7 @@ mod atoms {
 rustler::init!(
     "Elixir.Explorer.PolarsBackend.Native",
     [
+        // dataframe
         df_as_str,
         df_column,
         df_columns,
@@ -77,6 +78,12 @@ rustler::init!(
         df_width,
         df_with_column,
         df_write_parquet,
+        // lazyframe
+        lf_collect,
+        lf_describe_plan,
+        lf_drop,
+        lf_fetch,
+        lf_select,
         // series
         s_add,
         s_and,
