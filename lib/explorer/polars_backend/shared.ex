@@ -4,6 +4,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
   alias Explorer.DataFrame, as: DataFrame
   alias Explorer.PolarsBackend.DataFrame, as: PolarsDataFrame
+  alias Explorer.PolarsBackend.LazyFrame, as: PolarsLazyFrame
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.Series, as: Series
@@ -20,13 +21,16 @@ defmodule Explorer.PolarsBackend.Shared do
     unwrap(result, groups)
   end
 
+  def to_polars_lf(%DataFrame{data: %PolarsLazyFrame{} = polars_df}), do: polars_df
+  def to_polars_lf(%PolarsLazyFrame{} = polars_df), do: polars_df
+
   def to_polars_df(%DataFrame{data: %PolarsDataFrame{} = polars_df}), do: polars_df
   def to_polars_df(%PolarsDataFrame{} = polars_df), do: polars_df
 
   def to_dataframe(df, groups \\ [])
   def to_dataframe(%DataFrame{} = df, _groups), do: df
 
-  def to_dataframe(%PolarsDataFrame{} = polars_df, groups),
+  def to_dataframe(%mod{} = polars_df, groups) when mod in [PolarsDataFrame, PolarsLazyFrame],
     do: %DataFrame{data: polars_df, groups: groups}
 
   def to_polars_s(%Series{data: %PolarsSeries{} = polars_s}), do: polars_s
@@ -42,7 +46,10 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def unwrap(df_or_s, groups \\ [])
   def unwrap({:ok, %PolarsSeries{} = series}, _), do: to_series(series)
-  def unwrap({:ok, %PolarsDataFrame{} = df}, groups), do: to_dataframe(df, groups)
+
+  def unwrap({:ok, %mod{} = df}, groups) when mod in [PolarsDataFrame, PolarsLazyFrame],
+    do: to_dataframe(df, groups)
+
   def unwrap({:ok, value}, _), do: value
   def unwrap({:error, error}, _), do: raise("#{error}")
 
