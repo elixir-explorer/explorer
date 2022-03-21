@@ -820,7 +820,7 @@ pub fn s_cast(data: ExSeries, to_type: &str) -> Result<ExSeries, ExplorerError> 
     Ok(ExSeries::new(cast(s, to_type)?))
 }
 
-pub fn cast(s: &Series, to_type: &str) -> Result<Series, PolarsError> {
+pub fn cast(s: &Series, to_type: &str) -> Result<Series, ExplorerError> {
     match to_type {
         "float" => Ok(s.cast(&DataType::Float64)?),
         "integer" => Ok(s.cast(&DataType::Int64)?),
@@ -828,7 +828,7 @@ pub fn cast(s: &Series, to_type: &str) -> Result<Series, PolarsError> {
         "datetime" => Ok(s.cast(&DataType::Datetime(TimeUnit::Milliseconds, None))?),
         "boolean" => Ok(s.cast(&DataType::Boolean)?),
         "string" => Ok(s.cast(&DataType::Utf8)?),
-        _ => panic!("Cannot cast to type"),
+        _ => Err(ExplorerError::Other(String::from("Cannot cast to type"))),
     }
 }
 
