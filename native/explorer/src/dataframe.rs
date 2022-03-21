@@ -459,11 +459,6 @@ pub fn df_tail(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, 
 }
 
 #[rustler::nif]
-pub fn df_clone(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.clone())) })
-}
-
-#[rustler::nif]
 pub fn df_melt(
     data: ExDataFrame,
     id_vars: Vec<&str>,
