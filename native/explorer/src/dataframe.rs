@@ -5,9 +5,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::result::Result;
 
-use crate::series::{
-    cast, parse_quantile_interpol_options, to_ex_series_collection, to_series_collection,
-};
+use crate::series::{to_ex_series_collection, to_series_collection};
 
 use crate::{ExAnyValue, ExDataFrame, ExSeries, ExplorerError};
 
@@ -207,7 +205,9 @@ fn get_vals_in_order<'a>(
         .map(|key| match map.get(key) {
             None => AnyValue::Null,
             Some(None) => AnyValue::Null,
-            Some(Some(val)) => val.to_polars(),
+            // NOTE: This special case is necessary until/unless `DataFrame::from_rows` handles `AnyValue::Utf8Owned`. See: https://github.com/pola-rs/polars/issues/2941
+            Some(Some(ExAnyValue::Utf8(val))) => AnyValue::Utf8(val),
+            Some(Some(val)) => AnyValue::from(Some(val.clone())),
         })
         .collect()
 }
@@ -235,7 +235,9 @@ pub fn df_from_keyword_rows(
             let row = row
                 .iter()
                 .map(|(_, val)| match val {
-                    Some(val) => val.to_polars(),
+                    // NOTE: This special case is necessary until/unless `DataFrame::from_rows` handles `AnyValue::Utf8Owned`. See: https://github.com/pola-rs/polars/issues/2941
+                    Some(ExAnyValue::Utf8(val)) => AnyValue::Utf8(val),
+                    Some(val) => AnyValue::from(Some(val.clone())),
                     None => AnyValue::Null,
                 })
                 .collect();
@@ -321,11 +323,6 @@ pub fn df_dtypes(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn df_n_chunks(data: ExDataFrame) -> Result<usize, ExplorerError> {
-    df_read!(data, df, { Ok(df.n_chunks()?) })
-}
-
-#[rustler::nif]
 pub fn df_shape(data: ExDataFrame) -> Result<(usize, usize), ExplorerError> {
     df_read!(data, df, { Ok(df.shape()) })
 }
@@ -384,11 +381,6 @@ pub fn df_select_at_idx(data: ExDataFrame, idx: usize) -> Result<Option<ExSeries
 }
 
 #[rustler::nif]
-pub fn df_find_idx_by_name(data: ExDataFrame, name: &str) -> Result<Option<usize>, ExplorerError> {
-    df_read!(data, df, { Ok(df.find_idx_by_name(name)) })
-}
-
-#[rustler::nif]
 pub fn df_column(data: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerError> {
     df_read!(data, df, {
         let series = df.column(name).map(|s| ExSeries::new(s.clone()))?;
@@ -427,18 +419,6 @@ pub fn df_take(data: ExDataFrame, indices: Vec<u32>) -> Result<ExDataFrame, Expl
 }
 
 #[rustler::nif]
-pub fn df_take_with_series(
-    data: ExDataFrame,
-    indices: ExSeries,
-) -> Result<ExDataFrame, ExplorerError> {
-    let idx = indices.resource.0.u32()?;
-    df_read!(data, df, {
-        let new_df = df.take(idx)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
 pub fn df_sort(
     data: ExDataFrame,
     by_column: &str,
@@ -446,19 +426,6 @@ pub fn df_sort(
 ) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
         let new_df = df.sort([by_column], reverse)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
-pub fn df_replace(
-    data: ExDataFrame,
-    col: &str,
-    new_col: ExSeries,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let mut new_df = df.clone();
-        new_df.replace(col, new_col.resource.0.clone())?;
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -492,48 +459,8 @@ pub fn df_tail(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, 
 }
 
 #[rustler::nif]
-pub fn df_is_unique(data: ExDataFrame) -> Result<ExSeries, ExplorerError> {
-    df_read!(data, df, {
-        let mask = df.is_unique()?;
-        Ok(ExSeries::new(mask.into_series()))
-    })
-}
-
-#[rustler::nif]
-pub fn df_is_duplicated(data: ExDataFrame) -> Result<ExSeries, ExplorerError> {
-    df_read!(data, df, {
-        let mask = df.is_unique()?;
-        Ok(ExSeries::new(mask.into_series()))
-    })
-}
-
-#[rustler::nif]
-pub fn df_frame_equal(
-    data: ExDataFrame,
-    other: ExDataFrame,
-    null_equal: bool,
-) -> Result<bool, ExplorerError> {
-    df_read_read!(data, other, df, df1, {
-        let result = if null_equal {
-            df.frame_equal_missing(&*df1)
-        } else {
-            df.frame_equal(&*df1)
-        };
-        Ok(result)
-    })
-}
-
-#[rustler::nif]
 pub fn df_clone(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, { Ok(ExDataFrame::new(df.clone())) })
-}
-
-#[rustler::nif]
-pub fn df_explode(data: ExDataFrame, cols: Vec<String>) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.explode(&cols)?;
-        Ok(ExDataFrame::new(new_df))
-    })
 }
 
 #[rustler::nif]
@@ -549,14 +476,6 @@ pub fn df_melt(
 }
 
 #[rustler::nif]
-pub fn df_shift(data: ExDataFrame, periods: i64) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.shift(periods);
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
 pub fn df_drop_duplicates(
     data: ExDataFrame,
     maintain_order: bool,
@@ -567,53 +486,6 @@ pub fn df_drop_duplicates(
             false => df.distinct(Some(&subset), DistinctKeepStrategy::First)?,
             true => df.distinct_stable(Some(&subset), DistinctKeepStrategy::First)?,
         };
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
-pub fn df_max(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.max())) })
-}
-
-#[rustler::nif]
-pub fn df_min(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.min())) })
-}
-
-#[rustler::nif]
-pub fn df_sum(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.sum())) })
-}
-
-#[rustler::nif]
-pub fn df_mean(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.mean())) })
-}
-
-#[rustler::nif]
-pub fn df_stdev(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.std())) })
-}
-
-#[rustler::nif]
-pub fn df_var(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.var())) })
-}
-
-#[rustler::nif]
-pub fn df_median(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.median())) })
-}
-
-#[rustler::nif]
-pub fn df_quantile(
-    data: ExDataFrame,
-    quantile: f64,
-    strategy: &str,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.quantile(quantile, parse_quantile_interpol_options(strategy))?;
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -650,21 +522,6 @@ pub fn df_set_column_names(
     df_read!(data, df, {
         let mut new_df = df.clone();
         new_df.set_column_names(&names)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
-pub fn df_cast(
-    data: ExDataFrame,
-    column: &str,
-    to_type: &str,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df
-            .clone()
-            .try_apply(column, |s: &Series| cast(s, to_type))?
-            .clone();
         Ok(ExDataFrame::new(new_df))
     })
 }
