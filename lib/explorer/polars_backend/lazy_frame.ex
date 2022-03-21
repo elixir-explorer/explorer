@@ -4,6 +4,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
   defstruct resource: nil, reference: nil
+
+  @behaviour Explorer.Backend.DataFrame
+
+  @impl true
+  def select(df, columns, :keep) when is_list(columns),
+    do: Shared.apply_native(df, :df_select, [columns])
+
+  def collect(lf), do: Shared.apply_native(lf, :lf_collect)
 end
 
 defimpl Inspect, for: Explorer.PolarsBackend.LazyFrame do

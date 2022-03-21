@@ -7,7 +7,7 @@ use std::result::Result;
 
 use crate::series::{to_ex_series_collection, to_series_collection};
 
-use crate::{ExAnyValue, ExDataFrame, ExSeries, ExplorerError};
+use crate::{ExAnyValue, ExDataFrame, ExLazyFrame, ExSeries, ExplorerError};
 
 macro_rules! df_read {
     ($data: ident, $df: ident, $body: block) => {
@@ -96,10 +96,9 @@ fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
-    let f = File::open(filename)?;
-    let df = ParquetReader::new(f).finish()?;
-    Ok(ExDataFrame::new(df))
+pub fn df_read_parquet(filename: String) -> Result<ExLazyFrame, ExplorerError> {
+    let lf = LazyFrame::scan_parquet(filename, ScanArgsParquet::default())?;
+    Ok(ExLazyFrame::new(lf))
 }
 
 #[rustler::nif]
@@ -365,10 +364,11 @@ pub fn df_drop_nulls(
 }
 
 #[rustler::nif]
-pub fn df_drop(data: ExDataFrame, name: &str) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_drop(data: ExDataFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = (&*df).drop(name)?;
-        Ok(ExDataFrame::new(new_df))
+        Ok(ExLazyFrame::new(
+            df.clone().lazy().select(&[col("*").exclude(columns)]),
+        ))
     })
 }
 
@@ -389,10 +389,11 @@ pub fn df_column(data: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerErro
 }
 
 #[rustler::nif]
-pub fn df_select(data: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_select(data: ExDataFrame, selection: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.select(&selection)?;
-        Ok(ExDataFrame::new(new_df))
+        let col_exprs: Vec<Expr> = selection.iter().map(|el| col(*el)).collect();
+        let new_lf = df.clone().lazy().select(col_exprs);
+        Ok(ExLazyFrame::new(new_lf))
     })
 }
 
@@ -451,22 +452,21 @@ pub fn df_head(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, 
 }
 
 #[rustler::nif]
-pub fn df_tail(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_tail(data: ExDataFrame, length: u32) -> Result<ExLazyFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.tail(length);
-        Ok(ExDataFrame::new(new_df))
+        Ok(ExLazyFrame::new(df.clone().lazy().tail(length)))
     })
 }
 
 #[rustler::nif]
 pub fn df_melt(
     data: ExDataFrame,
-    id_vars: Vec<&str>,
-    value_vars: Vec<&str>,
-) -> Result<ExDataFrame, ExplorerError> {
+    id_vars: Vec<String>,
+    value_vars: Vec<String>,
+) -> Result<ExLazyFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.melt(id_vars, value_vars)?;
-        Ok(ExDataFrame::new(new_df))
+        let new_lf = df.clone().lazy().melt(id_vars, value_vars);
+        Ok(ExLazyFrame::new(new_lf))
     })
 }
 
@@ -475,13 +475,19 @@ pub fn df_drop_duplicates(
     data: ExDataFrame,
     maintain_order: bool,
     subset: Vec<String>,
-) -> Result<ExDataFrame, ExplorerError> {
+) -> Result<ExLazyFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = match maintain_order {
-            false => df.distinct(Some(&subset), DistinctKeepStrategy::First)?,
-            true => df.distinct_stable(Some(&subset), DistinctKeepStrategy::First)?,
+        let new_lf = match maintain_order {
+            false => df
+                .clone()
+                .lazy()
+                .distinct(Some(subset), DistinctKeepStrategy::First),
+            true => df
+                .clone()
+                .lazy()
+                .distinct_stable(Some(subset), DistinctKeepStrategy::First),
         };
-        Ok(ExDataFrame::new(new_df))
+        Ok(ExLazyFrame::new(new_lf))
     })
 }
 

@@ -10,7 +10,7 @@ use std::result::Result;
 use crate::atoms;
 
 pub struct ExDataFrameRef(pub RwLock<DataFrame>);
-pub struct ExLazyFrameRef(pub LazyFrame);
+pub struct ExLazyFrameRef(pub RwLock<LazyFrame>);
 pub struct ExSeriesRef(pub Series);
 
 #[derive(NifStruct)]
@@ -39,7 +39,7 @@ impl ExDataFrameRef {
 
 impl ExLazyFrameRef {
     pub fn new(df: LazyFrame) -> Self {
-        Self(df)
+        Self(RwLock::new(df))
     }
 }
 

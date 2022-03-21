@@ -84,6 +84,7 @@ rustler::init!(
         lf_drop,
         lf_fetch,
         lf_select,
+        lf_tail,
         // series
         s_add,
         s_and,

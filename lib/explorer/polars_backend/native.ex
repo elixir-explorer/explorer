@@ -47,7 +47,7 @@ defmodule Explorer.PolarsBackend.Native do
 
   def df_as_str(_df), do: err()
   def df_column(_df, _name), do: err()
-  def df_columns(_def), do: err()
+  def df_columns(_df), do: err()
   def df_drop(_df, _name), do: err()
   def df_drop_duplicates(_df, _maintain_order, _subset), do: err()
   def df_drop_nulls(_df, _subset), do: err()
@@ -84,8 +84,10 @@ defmodule Explorer.PolarsBackend.Native do
   # LazyFrame
   def lf_collect(_lf), do: err()
   def lf_describe_plan(_lf), do: err()
+  def lf_drop(_lf, _selection), do: err()
   def lf_fetch(_lf, _length), do: err()
   def lf_select(_lf, _selection), do: err()
+  def lf_tail(_lf, _length), do: err()
 
   # Series
   def s_add(_s, _other), do: err()

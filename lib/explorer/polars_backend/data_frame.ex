@@ -1,8 +1,10 @@
 defmodule Explorer.PolarsBackend.DataFrame do
   @moduledoc false
 
+  alias __MODULE__, as: PolarsDF
   alias Explorer.DataFrame, as: DataFrame
   alias Explorer.PolarsBackend.Native
+  alias Explorer.PolarsBackend.LazyFrame
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series, as: Series
@@ -202,14 +204,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Single table verbs
 
   @impl true
-  def head(df, rows), do: Shared.apply_native(df, :df_head, [rows])
+  def head(%DataFrame{data: %PolarsDF{}} = df, rows),
+    do: Shared.apply_native(df, :df_head, [rows])
+
+  def head(%DataFrame{data: %LazyFrame{}} = df, rows),
+    do: Shared.apply_native(df, :lf_head, [rows])
 
   @impl true
   def tail(df, rows), do: Shared.apply_native(df, :df_tail, [rows])
 
   @impl true
-  def select(df, columns, :keep) when is_list(columns),
+  def select(%{data: %PolarsDF{}} = df, columns, :keep) when is_list(columns),
     do: Shared.apply_native(df, :df_select, [columns])
+
+  def select(%{data: %LazyFrame{}} = df, columns, :keep) when is_list(columns),
+    do: Shared.apply_native(df, :lf_select, [columns])
 
   def select(%{groups: groups} = df, columns, :drop) when is_list(columns),
     do: df |> Shared.to_polars_df() |> drop(columns) |> Shared.to_dataframe(groups)
