@@ -207,7 +207,9 @@ fn get_vals_in_order<'a>(
         .map(|key| match map.get(key) {
             None => AnyValue::Null,
             Some(None) => AnyValue::Null,
-            Some(Some(val)) => val.to_polars(),
+            // NOTE: This special case is necessary until/unless `DataFrame::from_rows` handles `AnyValue::Utf8Owned`. See: https://github.com/pola-rs/polars/issues/2941
+            Some(Some(ExAnyValue::Utf8(val))) => AnyValue::Utf8(val),
+            Some(Some(val)) => AnyValue::from(Some(val.clone())),
         })
         .collect()
 }
@@ -235,7 +237,9 @@ pub fn df_from_keyword_rows(
             let row = row
                 .iter()
                 .map(|(_, val)| match val {
-                    Some(val) => val.to_polars(),
+                    // NOTE: This special case is necessary until/unless `DataFrame::from_rows` handles `AnyValue::Utf8Owned`. See: https://github.com/pola-rs/polars/issues/2941
+                    Some(ExAnyValue::Utf8(val)) => AnyValue::Utf8(val),
+                    Some(val) => AnyValue::from(Some(val.clone())),
                     None => AnyValue::Null,
                 })
                 .collect();
