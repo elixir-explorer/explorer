@@ -17,6 +17,7 @@
             clippy
             elixir
             erlang
+            gdb
             openssl
             pkg-config
             rustc
