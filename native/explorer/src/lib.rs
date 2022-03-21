@@ -10,15 +10,20 @@ static GLOBAL: MiMalloc = MiMalloc;
 mod dataframe;
 mod datatypes;
 mod error;
+mod lazyframe;
 mod series;
 
 use dataframe::*;
-pub use datatypes::{ExAnyValue, ExDataFrame, ExDataFrameRef, ExSeries, ExSeriesRef};
+pub use datatypes::{
+    ExAnyValue, ExDataFrame, ExDataFrameRef, ExLazyFrame, ExLazyFrameRef, ExSeries, ExSeriesRef,
+};
 pub use error::ExplorerError;
+use lazyframe::*;
 use series::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExDataFrameRef, env);
+    rustler::resource!(ExLazyFrameRef, env);
     rustler::resource!(ExSeriesRef, env);
     true
 }

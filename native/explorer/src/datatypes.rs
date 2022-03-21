@@ -10,12 +10,19 @@ use std::result::Result;
 use crate::atoms;
 
 pub struct ExDataFrameRef(pub RwLock<DataFrame>);
+pub struct ExLazyFrameRef(pub LazyFrame);
 pub struct ExSeriesRef(pub Series);
 
 #[derive(NifStruct)]
 #[module = "Explorer.PolarsBackend.DataFrame"]
 pub struct ExDataFrame {
     pub resource: ResourceArc<ExDataFrameRef>,
+}
+
+#[derive(NifStruct)]
+#[module = "Explorer.PolarsBackend.LazyFrame"]
+pub struct ExLazyFrame {
+    pub resource: ResourceArc<ExLazyFrameRef>,
 }
 
 #[derive(NifStruct)]
@@ -30,6 +37,12 @@ impl ExDataFrameRef {
     }
 }
 
+impl ExLazyFrameRef {
+    pub fn new(df: LazyFrame) -> Self {
+        Self(df)
+    }
+}
+
 impl ExSeriesRef {
     pub fn new(s: Series) -> Self {
         Self(s)
@@ -40,6 +53,14 @@ impl ExDataFrame {
     pub fn new(df: DataFrame) -> Self {
         Self {
             resource: ResourceArc::new(ExDataFrameRef::new(df)),
+        }
+    }
+}
+
+impl ExLazyFrame {
+    pub fn new(df: LazyFrame) -> Self {
+        Self {
+            resource: ResourceArc::new(ExLazyFrameRef::new(df)),
         }
     }
 }

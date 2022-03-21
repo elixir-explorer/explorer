@@ -26,15 +26,17 @@ version = "0.20.0"
 default-features = false
 features = [
   "cross_join",
+  "cum_agg",
+  "decompress",
   "dtype-date",
   "dtype-datetime",
+  "dtype-struct",
   "json",
+  "lazy",
   "parquet",
+  "rolling_window",
   "rows",
   "sort_multiple",
   "strings",
   "temporal",
-  "cum_agg",
-  "rolling_window",
-  "decompress"
 ]
