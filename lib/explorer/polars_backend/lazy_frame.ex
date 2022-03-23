@@ -1,6 +1,8 @@
 defmodule Explorer.PolarsBackend.LazyFrame do
   @moduledoc false
 
+  alias Explorer.PolarsBackend.Shared
+
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
   defstruct resource: nil, reference: nil

@@ -105,10 +105,15 @@ end
 
 defimpl Inspect, for: Explorer.DataFrame do
   alias Explorer.DataFrame
+  alias Explorer.PolarsBackend.LazyFrame
   alias Explorer.Series
+
   import Inspect.Algebra
 
   @printable_limit 5
+
+  def inspect(%DataFrame{data: %LazyFrame{}} = lf, opts),
+    do: lf |> LazyFrame.collect() |> __MODULE__.inspect(opts)
 
   def inspect(df, opts) do
     {rows, cols} = DataFrame.shape(df)
