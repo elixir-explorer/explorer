@@ -151,7 +151,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   defp from_columns_handler({colname, %Series{} = series}) when is_binary(colname) do
-    series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
+    series |> PolarsSeries.rename(colname) |> Shared.to_polars()
   end
 
   @impl true
@@ -232,7 +232,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def filter(df, %Series{} = mask),
-    do: Shared.apply_native(df, :df_filter, [Shared.to_polars_s(mask)])
+    do: Shared.apply_native(df, :df_filter, [Shared.to_polars(mask)])
 
   @impl true
   def mutate(%DataFrame{groups: []} = df, columns) do
@@ -251,7 +251,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defp mutate_reducer({colname, %Series{} = series}, %DataFrame{} = df) when is_binary(colname) do
     check_series_length(df, series, colname)
-    series = series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
+    series = series |> PolarsSeries.rename(colname) |> Shared.to_polars()
     Shared.apply_native(df, :df_with_column, [series])
   end
 
@@ -389,7 +389,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     how = Atom.to_string(how)
     {left_on, right_on} = Enum.reduce(on, {[], []}, &join_on_reducer/2)
 
-    Shared.apply_native(left, :df_join, [Shared.to_polars_df(right), left_on, right_on, how])
+    Shared.apply_native(left, :df_join, [Shared.to_polars(right), left_on, right_on, how])
   end
 
   defp join_on_reducer(colname, {left, right}) when is_binary(colname),
@@ -403,7 +403,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Enum.reduce(dfs, fn x, acc ->
       # Polars requires the _order_ of columns to be the same
       x = DataFrame.select(x, DataFrame.names(acc))
-      Shared.apply_native(acc, :df_vstack, [Shared.to_polars_df(x)])
+      Shared.apply_native(acc, :df_vstack, [Shared.to_polars(x)])
     end)
   end
 

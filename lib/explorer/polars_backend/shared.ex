@@ -21,20 +21,18 @@ defmodule Explorer.PolarsBackend.Shared do
     unwrap(result, groups)
   end
 
-  def to_polars_lf(%DataFrame{data: %PolarsLazyFrame{} = polars_df}), do: polars_df
-  def to_polars_lf(%PolarsLazyFrame{} = polars_df), do: polars_df
-
-  def to_polars_df(%DataFrame{data: %PolarsDataFrame{} = polars_df}), do: polars_df
-  def to_polars_df(%PolarsDataFrame{} = polars_df), do: polars_df
+  def to_polars(%DataFrame{data: %PolarsLazyFrame{} = polars_df}), do: polars_df
+  def to_polars(%PolarsLazyFrame{} = polars_df), do: polars_df
+  def to_polars(%DataFrame{data: %PolarsDataFrame{} = polars_df}), do: polars_df
+  def to_polars(%PolarsDataFrame{} = polars_df), do: polars_df
+  def to_polars(%Series{data: %PolarsSeries{} = polars_s}), do: polars_s
+  def to_polars(%PolarsSeries{} = polars_s), do: polars_s
 
   def to_dataframe(df, groups \\ [])
   def to_dataframe(%DataFrame{} = df, _groups), do: df
 
   def to_dataframe(%mod{} = polars_df, groups) when mod in [PolarsDataFrame, PolarsLazyFrame],
     do: %DataFrame{data: polars_df, groups: groups}
-
-  def to_polars_s(%Series{data: %PolarsSeries{} = polars_s}), do: polars_s
-  def to_polars_s(%PolarsSeries{} = polars_s), do: polars_s
 
   def to_series(%PolarsSeries{} = polars_s) do
     {:ok, dtype} = Native.s_dtype(polars_s)
