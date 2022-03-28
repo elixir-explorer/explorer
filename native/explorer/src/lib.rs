@@ -25,8 +25,6 @@ fn on_load(env: Env, _info: Term) -> bool {
 
 mod atoms {
     rustler::atoms! {
-        date = "Elixir.Date",
-        datetime = "Elixir.NaiveDateTime",
         calendar = "Elixir.Calendar.ISO"
     }
 }

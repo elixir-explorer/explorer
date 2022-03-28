@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use polars::prelude::*;
 use rustler::resource::ResourceArc;
-use rustler::{Atom, Encoder, Env, NifMap, NifStruct, NifUntaggedEnum, Term};
+use rustler::{Atom, Encoder, Env, NifStruct, NifUntaggedEnum, Term};
 use std::convert::TryInto;
 use std::sync::RwLock;
 
@@ -52,9 +52,9 @@ impl ExSeries {
     }
 }
 
-#[derive(NifMap, Copy, Clone, Debug)]
+#[derive(NifStruct, Copy, Clone, Debug)]
+#[module = "Date"]
 pub struct ExDate {
-    pub __struct__: Atom,
     pub calendar: Atom,
     pub day: u32,
     pub month: u32,
@@ -88,7 +88,6 @@ impl From<ExDate> for NaiveDate {
 impl From<NaiveDate> for ExDate {
     fn from(d: NaiveDate) -> ExDate {
         ExDate {
-            __struct__: atoms::date(),
             calendar: atoms::calendar(),
             day: d.day(),
             month: d.month(),
@@ -97,9 +96,9 @@ impl From<NaiveDate> for ExDate {
     }
 }
 
-#[derive(NifMap, Copy, Clone, Debug)]
+#[derive(NifStruct, Copy, Clone, Debug)]
+#[module = "NaiveDateTime"]
 pub struct ExDateTime {
-    pub __struct__: Atom,
     pub calendar: Atom,
     pub day: u32,
     pub month: u32,
@@ -152,7 +151,6 @@ impl From<ExDateTime> for NaiveDateTime {
 impl From<NaiveDateTime> for ExDateTime {
     fn from(dt: NaiveDateTime) -> Self {
         ExDateTime {
-            __struct__: atoms::datetime(),
             calendar: atoms::calendar(),
             day: dt.day(),
             month: dt.month(),
