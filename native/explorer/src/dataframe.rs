@@ -3,6 +3,7 @@ use rustler::{Term, TermType};
 
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::BufReader;
 use std::result::Result;
 
 use crate::series::{to_ex_series_collection, to_series_collection};
@@ -158,6 +159,32 @@ pub fn df_write_ipc(data: ExDataFrame, filename: &str) -> Result<(), ExplorerErr
     df_read!(data, df, {
         let mut file = File::create(filename).expect("could not create file");
         IpcWriter::new(&mut file).finish(&mut df.clone())?;
+        Ok(())
+    })
+}
+
+#[rustler::nif]
+pub fn df_read_ndjson(
+    filename: &str,
+    infer_schema_length: Option<usize>,
+    with_batch_size: usize,
+) -> Result<ExDataFrame, ExplorerError> {
+    let file = File::open(filename)?;
+    let buf_reader = BufReader::new(file);
+    let df = JsonReader::new(buf_reader)
+        .with_json_format(JsonFormat::JsonLines)
+        .with_batch_size(with_batch_size)
+        .infer_schema_len(infer_schema_length)
+        .finish()?;
+
+    Ok(ExDataFrame::new(df))
+}
+
+#[rustler::nif]
+pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+    df_read!(data, df, {
+        let file = File::create(filename).expect("could not create file");
+        JsonWriter::new(file).finish(&mut df.clone())?;
         Ok(())
     })
 }

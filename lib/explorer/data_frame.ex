@@ -169,6 +169,44 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Read a file of JSON objects or lists separated by new lines
+
+  ## Options
+
+    * `with_batch_size` - Sets the batch size for reading rows.
+    This value may have significant impact in performance, so adjust it for your needs (default: `1000`).
+
+    * `infer_schema_length` - Maximum number of rows read for schema inference.
+    Setting this to nil will do a full table scan and will be slow (default: `1000`).
+  """
+  @spec read_ndjson(filename :: String.t(), opts :: Keyword.t()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
+  def read_ndjson(filename, opts \\ []) do
+    opts =
+      keyword!(opts,
+        with_batch_size: 1000,
+        infer_schema_length: @default_infer_schema_length
+      )
+
+    backend = backend_from_options!(opts)
+
+    backend.read_ndjson(
+      filename,
+      opts[:infer_schema_length],
+      opts[:with_batch_size]
+    )
+  end
+
+  @doc """
+  Writes a dataframe to a ndjson file.
+  """
+  @spec write_ndjson(df :: DataFrame.t(), filename :: String.t()) ::
+          {:ok, String.t()} | {:error, term()}
+  def write_ndjson(df, filename) do
+    apply_impl(df, :write_ndjson, [filename])
+  end
+
+  @doc """
   Creates a new dataframe from a map or keyword of lists or series.
 
   Lists and series must be the same length. This function has the same validations from 

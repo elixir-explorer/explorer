@@ -35,6 +35,13 @@ defmodule Explorer.Backend.DataFrame do
   @callback read_ipc(filename :: String.t()) :: result(df)
   @callback write_ipc(df, filename :: String.t()) :: result(String.t())
 
+  @callback read_ndjson(
+              filename :: String.t(),
+              infer_schema_length :: integer(),
+              with_batch_size :: integer()
+            ) :: result(df)
+  @callback write_ndjson(df, filename :: String.t()) :: result(String.t())
+
   # Conversion
 
   @callback from_columns(map() | Keyword.t()) :: df
