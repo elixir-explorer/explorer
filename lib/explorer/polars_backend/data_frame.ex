@@ -141,6 +141,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       {:error, error} -> {:error, error}
     end
   end
+
   # Conversion
 
   @impl true
