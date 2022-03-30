@@ -32,6 +32,9 @@ defmodule Explorer.Backend.DataFrame do
   @callback read_parquet(filename :: String.t()) :: result(df)
   @callback write_parquet(df, filename :: String.t()) :: result(String.t())
 
+  @callback read_ipc(filename :: String.t()) :: result(df)
+  @callback write_ipc(df, filename :: String.t()) :: result(String.t())
+
   # Conversion
 
   @callback from_columns(map() | Keyword.t()) :: df
