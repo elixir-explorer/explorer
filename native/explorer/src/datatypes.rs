@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use polars::prelude::*;
 use rustler::resource::ResourceArc;
-use rustler::{Atom, Encoder, Env, NifMap, NifStruct, Term};
+use rustler::{Atom, Encoder, Env, NifStruct, NifUntaggedEnum, Term};
 use std::convert::TryInto;
 use std::sync::RwLock;
 
@@ -52,34 +52,26 @@ impl ExSeries {
     }
 }
 
-#[derive(NifMap)]
+#[derive(NifStruct, Copy, Clone, Debug)]
+#[module = "Date"]
 pub struct ExDate {
-    pub __struct__: Atom,
     pub calendar: Atom,
     pub day: u32,
     pub month: u32,
     pub year: i32,
 }
 
-impl ExDate {
-    fn new_from_chrono(d: NaiveDate) -> Self {
-        ExDate {
-            __struct__: atoms::date(),
-            calendar: atoms::calendar(),
-            day: d.day(),
-            month: d.month(),
-            year: d.year(),
-        }
-    }
-
-    pub fn new_from_days(ts: i32) -> Self {
+impl From<i32> for ExDate {
+    fn from(ts: i32) -> Self {
         let seconds = ts * 86_400;
         let dt = NaiveDateTime::from_timestamp(seconds.into(), 0);
-        ExDate::new_from_chrono(NaiveDate::from_yo(dt.year(), dt.ordinal()))
+        ExDate::from(NaiveDate::from_yo(dt.year(), dt.ordinal()))
     }
+}
 
-    pub fn to_days(&self) -> i32 {
-        NaiveDate::from_ymd(self.year, self.month, self.day)
+impl From<ExDate> for i32 {
+    fn from(d: ExDate) -> i32 {
+        NaiveDate::from_ymd(d.year, d.month, d.day)
             .signed_duration_since(NaiveDate::from_ymd(1970, 1, 1))
             .num_days()
             .try_into()
@@ -87,18 +79,26 @@ impl ExDate {
     }
 }
 
-fn encode_date<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
-    s.date()
-        .unwrap()
-        .as_date_iter()
-        .map(|d| d.map(ExDate::new_from_chrono))
-        .collect::<Vec<Option<ExDate>>>()
-        .encode(env)
+impl From<ExDate> for NaiveDate {
+    fn from(d: ExDate) -> NaiveDate {
+        NaiveDate::from_ymd(d.year, d.month, d.day)
+    }
 }
 
-#[derive(NifMap)]
+impl From<NaiveDate> for ExDate {
+    fn from(d: NaiveDate) -> ExDate {
+        ExDate {
+            calendar: atoms::calendar(),
+            day: d.day(),
+            month: d.month(),
+            year: d.year(),
+        }
+    }
+}
+
+#[derive(NifStruct, Copy, Clone, Debug)]
+#[module = "NaiveDateTime"]
 pub struct ExDateTime {
-    pub __struct__: Atom,
     pub calendar: Atom,
     pub day: u32,
     pub month: u32,
@@ -109,22 +109,8 @@ pub struct ExDateTime {
     pub microsecond: (u32, u32),
 }
 
-impl ExDateTime {
-    fn new_from_chrono(dt: NaiveDateTime) -> Self {
-        ExDateTime {
-            __struct__: atoms::datetime(),
-            calendar: atoms::calendar(),
-            day: dt.day(),
-            month: dt.month(),
-            year: dt.year(),
-            hour: dt.hour(),
-            minute: dt.minute(),
-            second: dt.second(),
-            microsecond: (dt.timestamp_subsec_micros(), 3),
-        }
-    }
-
-    pub fn new_from_milliseconds(ms: i64) -> Self {
+impl From<i64> for ExDateTime {
+    fn from(ms: i64) -> Self {
         let sign = ms.signum();
         let seconds = match sign {
             -1 => ms / 1_000 - 1,
@@ -135,25 +121,62 @@ impl ExDateTime {
             _ => ms % 1_000,
         };
         let nanoseconds = remainder.abs() * 1_000_000;
-        ExDateTime::new_from_chrono(NaiveDateTime::from_timestamp(
+        ExDateTime::from(NaiveDateTime::from_timestamp(
             seconds,
             nanoseconds.try_into().unwrap(),
         ))
     }
+}
 
-    pub fn to_milliseconds(&self) -> i64 {
-        NaiveDate::from_ymd(self.year, self.month, self.day)
-            .and_hms_micro(self.hour, self.minute, self.second, self.microsecond.0)
+impl From<ExDateTime> for i64 {
+    fn from(dt: ExDateTime) -> i64 {
+        NaiveDate::from_ymd(dt.year, dt.month, dt.day)
+            .and_hms_micro(dt.hour, dt.minute, dt.second, dt.microsecond.0)
             .signed_duration_since(NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0))
             .num_milliseconds()
     }
 }
 
-fn encode_datetime<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+impl From<ExDateTime> for NaiveDateTime {
+    fn from(dt: ExDateTime) -> NaiveDateTime {
+        NaiveDate::from_ymd(dt.year, dt.month, dt.day).and_hms_micro(
+            dt.hour,
+            dt.minute,
+            dt.second,
+            dt.microsecond.0,
+        )
+    }
+}
+
+impl From<NaiveDateTime> for ExDateTime {
+    fn from(dt: NaiveDateTime) -> Self {
+        ExDateTime {
+            calendar: atoms::calendar(),
+            day: dt.day(),
+            month: dt.month(),
+            year: dt.year(),
+            hour: dt.hour(),
+            minute: dt.minute(),
+            second: dt.second(),
+            microsecond: (dt.timestamp_subsec_micros(), 3),
+        }
+    }
+}
+
+fn encode_date_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+    s.date()
+        .unwrap()
+        .as_date_iter()
+        .map(|d| d.map(ExDate::from))
+        .collect::<Vec<Option<ExDate>>>()
+        .encode(env)
+}
+
+fn encode_datetime_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     s.datetime()
         .unwrap()
         .into_iter()
-        .map(|d| d.map(ExDateTime::new_from_milliseconds))
+        .map(|d| d.map(ExDateTime::from))
         .collect::<Vec<Option<ExDateTime>>>()
         .encode(env)
 }
@@ -209,12 +232,59 @@ impl<'a> Encoder for ExSeriesRef {
             DataType::Int64 => encode!(s, env, i64),
             DataType::UInt32 => encode!(s, env, u32),
             DataType::Float64 => encode!(s, env, f64),
-            DataType::Date => encode_date(s, env),
-            DataType::Datetime => encode_datetime(s, env),
+            DataType::Date => encode_date_series(s, env),
+            DataType::Datetime(TimeUnit::Milliseconds, None) => encode_datetime_series(s, env),
             DataType::List(t) if t as &DataType == &DataType::UInt32 => {
                 encode_list!(s, env, u32, u32)
             }
             dt => panic!("to_list/1 not implemented for {:?}", dt),
+        }
+    }
+}
+
+#[derive(NifUntaggedEnum, Clone, Debug)]
+pub enum ExAnyValue {
+    Boolean(bool),
+    Utf8(String),
+    Int32(i32),
+    Int64(i64),
+    UInt32(u32),
+    Float64(f64),
+    Datetime(ExDateTime),
+    Date(ExDate),
+}
+
+impl From<ExAnyValue> for AnyValue<'_> {
+    fn from(val: ExAnyValue) -> Self {
+        let value = match val {
+            ExAnyValue::Boolean(x) => AnyValue::Boolean(x),
+            ExAnyValue::Utf8(x) => AnyValue::Utf8Owned(x),
+            ExAnyValue::Int32(x) => AnyValue::Int32(x),
+            ExAnyValue::Int64(x) => AnyValue::Int64(x),
+            ExAnyValue::UInt32(x) => AnyValue::UInt32(x),
+            ExAnyValue::Float64(x) => AnyValue::Float64(x),
+            ExAnyValue::Datetime(x) => {
+                AnyValue::Datetime(i64::from(x), TimeUnit::Milliseconds, &None)
+            }
+            ExAnyValue::Date(x) => AnyValue::Date(i32::from(x)),
+        };
+        value
+    }
+}
+
+impl From<AnyValue<'_>> for ExAnyValue {
+    fn from(val: AnyValue) -> Self {
+        match val {
+            AnyValue::Boolean(x) => ExAnyValue::Boolean(x),
+            AnyValue::Utf8(x) => ExAnyValue::Utf8(x.to_string()),
+            AnyValue::Utf8Owned(x) => ExAnyValue::Utf8(x),
+            AnyValue::Int32(x) => ExAnyValue::Int32(x),
+            AnyValue::Int64(x) => ExAnyValue::Int64(x),
+            AnyValue::UInt32(x) => ExAnyValue::UInt32(x),
+            AnyValue::Float64(x) => ExAnyValue::Float64(x),
+            AnyValue::Datetime(x, ..) => ExAnyValue::Datetime(ExDateTime::from(x)),
+            AnyValue::Date(x) => ExAnyValue::Date(ExDate::from(x)),
+            _ => panic!("unsupported datatype for {:?}", val),
         }
     }
 }

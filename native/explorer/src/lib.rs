@@ -13,7 +13,7 @@ mod error;
 mod series;
 
 use dataframe::*;
-pub use datatypes::{ExDataFrame, ExDataFrameRef, ExSeries, ExSeriesRef};
+pub use datatypes::{ExAnyValue, ExDataFrame, ExDataFrameRef, ExSeries, ExSeriesRef};
 pub use error::ExplorerError;
 use series::*;
 
@@ -25,8 +25,6 @@ fn on_load(env: Env, _info: Term) -> bool {
 
 mod atoms {
     rustler::atoms! {
-        date = "Elixir.Date",
-        datetime = "Elixir.NaiveDateTime",
         calendar = "Elixir.Calendar.ISO"
     }
 }
@@ -35,7 +33,6 @@ rustler::init!(
     "Elixir.Explorer.PolarsBackend.Native",
     [
         df_as_str,
-        df_cast,
         df_clone,
         df_column,
         df_columns,
@@ -43,48 +40,33 @@ rustler::init!(
         df_drop_duplicates,
         df_drop_nulls,
         df_dtypes,
-        df_explode,
         df_fill_none,
         df_filter,
-        df_find_idx_by_name,
-        df_frame_equal,
+        df_from_map_rows,
+        df_from_keyword_rows,
         df_get_columns,
         df_groups,
         df_groupby_agg,
         df_head,
         df_height,
         df_hstack,
-        df_is_duplicated,
-        df_is_unique,
         df_join,
-        df_max,
-        df_mean,
-        df_median,
         df_melt,
-        df_min,
-        df_n_chunks,
         df_new,
         df_pivot_wider,
-        df_quantile,
         df_read_csv,
         df_read_parquet,
-        df_replace,
         df_select,
         df_select_at_idx,
         df_set_column_names,
         df_shape,
-        df_shift,
         df_slice,
         df_sort,
-        df_stdev,
-        df_sum,
         df_tail,
         df_take,
-        df_take_with_series,
         df_to_csv,
         df_to_csv_file,
         df_to_dummies,
-        df_var,
         df_vstack,
         df_width,
         df_with_column,

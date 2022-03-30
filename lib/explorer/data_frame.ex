@@ -154,10 +154,10 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Creates a new dataframe from a map of lists.
+  Creates a new dataframe from a map or keyword of lists or series.
 
-  Lists must be the same length. This function calls `Explorer.Series.from_list/2` so lists must
-  conform to the requirements for making a series.
+  Lists and series must be the same length. This function calls `Explorer.Series.from_list/2`
+  for lists, so they must conform to the requirements for making a series.
 
   ## Options
 
@@ -165,17 +165,78 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> Explorer.DataFrame.from_map(%{floats: [1.0, 2.0], ints: [1, nil]})
+      iex> Explorer.DataFrame.from_columns(%{floats: [1.0, 2.0], ints: [1, nil]})
+      #Explorer.DataFrame<
+        [rows: 2, columns: 2]
+        floats float [1.0, 2.0]
+        ints integer [1, nil]
+      >
+
+      iex> Explorer.DataFrame.from_columns([floats: [1.0, 2.0], ints: [1, nil]])
+      #Explorer.DataFrame<
+        [rows: 2, columns: 2]
+        floats float [1.0, 2.0]
+        ints integer [1, nil]
+      >
+
+      iex> Explorer.DataFrame.from_columns(floats: Explorer.Series.from_list([1.0, 2.0]), ints: Explorer.Series.from_list([1, nil]))
       #Explorer.DataFrame<
         [rows: 2, columns: 2]
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
   """
-  @spec from_map(map :: map(), opts :: Keyword.t()) :: DataFrame.t()
-  def from_map(map, opts \\ []) do
+  @spec from_columns(series :: map() | Keyword.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def from_columns(series, opts \\ []) do
     backend = backend_from_options!(opts)
-    backend.from_map(map)
+    backend.from_columns(series)
+  end
+
+  @doc """
+  Creates a new dataframe from a list of maps or keyword lists.
+
+  Each map in the list should have the same keys, but missing keys will yield a null value for
+  that row. All values for a given key should be of the same dtype.
+
+  Keyword lists should all be in the same order.
+
+  ## Options
+
+    * `backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.default_backend/0`.
+
+  ## Examples
+
+      iex> rows = [%{id: 1, name: "José"}, %{id: 2, name: "Christopher"}, %{id: 3, name: "Cristine"}]
+      iex> Explorer.DataFrame.from_rows(rows)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        id integer [1, 2, 3]
+        name string ["José", "Christopher", "Cristine"]
+      >
+
+      iex> rows = [[id: 1, name: "José"], [id: 2, name: "Christopher"], [id: 3, name: "Cristine"]]
+      iex> Explorer.DataFrame.from_rows(rows)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        id integer [1, 2, 3]
+        name string ["José", "Christopher", "Cristine"]
+      >
+
+    With a list of maps, missing keys will yield a null value.
+
+      iex> rows = [%{id: 1, name: "José", date: ~D[2001-01-01]}, %{id: 2, date: ~D[1993-01-01]}, %{id: 3, name: "Cristine"}]
+      iex> Explorer.DataFrame.from_rows(rows)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 3]
+        date date [2001-01-01, 1993-01-01, nil]
+        id integer [1, 2, 3]
+        name string ["José", nil, "Cristine"]
+      >
+  """
+  @spec from_rows(rows :: list(map()) | Keyword.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def from_rows(rows, opts \\ []) do
+    backend = backend_from_options!(opts)
+    backend.from_rows(rows)
   end
 
   @doc """
@@ -185,7 +246,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = Explorer.DataFrame.from_map(%{floats: [1.0, 2.0], ints: [1, nil]})
+      iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, nil])
       iex> Explorer.DataFrame.to_map(df)
       %{floats: [1.0, 2.0], ints: [1, nil]}
   """
@@ -219,7 +280,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = Explorer.DataFrame.from_map(%{floats: [1.0, 2.0], ints: [1, 2]})
+      iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, 2])
       iex> Explorer.DataFrame.names(df)
       ["floats", "ints"]
   """
@@ -231,7 +292,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = Explorer.DataFrame.from_map(%{floats: [1.0, 2.0], ints: [1, 2]})
+      iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, 2])
       iex> Explorer.DataFrame.dtypes(df)
       [:float, :integer]
   """
@@ -243,7 +304,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = Explorer.DataFrame.from_map(%{floats: [1.0, 2.0, 3.0], ints: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0, 3.0], ints: [1, 2, 3])
       iex> Explorer.DataFrame.shape(df)
       {3, 2}
   """
@@ -346,7 +407,7 @@ defmodule Explorer.DataFrame do
 
     You can select columns with a list of names:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, ["a"])
       #Explorer.DataFrame<
         [rows: 3, columns: 1]
@@ -355,7 +416,7 @@ defmodule Explorer.DataFrame do
 
     Or you can use a callback function that takes the dataframe's names as its first argument:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, &String.starts_with?(&1, "b"))
       #Explorer.DataFrame<
         [rows: 3, columns: 1]
@@ -364,14 +425,14 @@ defmodule Explorer.DataFrame do
 
     If you pass `:drop` as the third argument, it will return all but the named columns:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, ["b"], :drop)
       #Explorer.DataFrame<
         [rows: 3, columns: 1]
         a string ["a", "b", "c"]
       >
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
       iex> Explorer.DataFrame.select(df, ["a", "b"], :drop)
       #Explorer.DataFrame<
         [rows: 3, columns: 1]
@@ -412,7 +473,7 @@ defmodule Explorer.DataFrame do
 
     You can pass a mask directly:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, Explorer.Series.greater(df["b"], 1))
       #Explorer.DataFrame<
         [rows: 2, columns: 2]
@@ -421,7 +482,7 @@ defmodule Explorer.DataFrame do
       >
 
     You can combine masks using `Explorer.Series.and/2` or `Explorer.Series.or/2`:
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> b_gt = Explorer.Series.greater(df["b"], 1)
       iex> a_eq = Explorer.Series.equal(df["a"], "b")
       iex> Explorer.DataFrame.filter(df, Explorer.Series.and(a_eq, b_gt))
@@ -433,7 +494,7 @@ defmodule Explorer.DataFrame do
 
     Including a list:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, [false, true, false])
       #Explorer.DataFrame<
         [rows: 1, columns: 2]
@@ -443,7 +504,7 @@ defmodule Explorer.DataFrame do
 
     Or you can invoke a callback on the dataframe:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, &Explorer.Series.greater(&1["b"], 1))
       #Explorer.DataFrame<
         [rows: 2, columns: 2]
@@ -492,7 +553,7 @@ defmodule Explorer.DataFrame do
 
     You can pass in a list directly as a new column:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, c: [4, 5, 6])
       #Explorer.DataFrame<
         [rows: 3, columns: 3]
@@ -503,7 +564,7 @@ defmodule Explorer.DataFrame do
 
     Or you can pass in a series:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> s = Explorer.Series.from_list([4, 5, 6])
       iex> Explorer.DataFrame.mutate(df, c: s)
       #Explorer.DataFrame<
@@ -515,7 +576,7 @@ defmodule Explorer.DataFrame do
 
     Or you can invoke a callback on the dataframe:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: [4, 5, 6], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: [4, 5, 6], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, c: &Explorer.Series.add(&1["a"], &1["b"]))
       #Explorer.DataFrame<
         [rows: 3, columns: 3]
@@ -526,7 +587,7 @@ defmodule Explorer.DataFrame do
 
     You can overwrite existing columns:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: [4, 5, 6])
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
@@ -536,7 +597,7 @@ defmodule Explorer.DataFrame do
 
     Scalar values are repeated to fill the series:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: 4)
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
@@ -546,7 +607,7 @@ defmodule Explorer.DataFrame do
 
     Including when a callback returns a scalar:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: &Explorer.Series.max(&1["b"]))
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
@@ -556,7 +617,7 @@ defmodule Explorer.DataFrame do
 
     Alternatively, all of the above works with a map instead of a keyword list:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "c"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, %{"c" => [4, 5, 6]})
       #Explorer.DataFrame<
         [rows: 3, columns: 3]
@@ -598,7 +659,7 @@ defmodule Explorer.DataFrame do
 
     A single column name will sort ascending by that column:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["b", "c", "a"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["b", "c", "a"], b: [1, 2, 3])
       iex> Explorer.DataFrame.arrange(df, "a")
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
@@ -608,7 +669,7 @@ defmodule Explorer.DataFrame do
 
     You can also sort descending:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["b", "c", "a"], b: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["b", "c", "a"], b: [1, 2, 3])
       iex> Explorer.DataFrame.arrange(df, desc: "a")
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
@@ -705,7 +766,7 @@ defmodule Explorer.DataFrame do
 
     A callback on the dataframe's names can be passed instead of a list (like `select/3`):
 
-      iex> df = Explorer.DataFrame.from_map(%{x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3]})
+      iex> df = Explorer.DataFrame.from_columns(x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3])
       iex> Explorer.DataFrame.distinct(df, columns: &String.starts_with?(&1, "x"))
       #Explorer.DataFrame<
         [rows: 2, columns: 2]
@@ -742,7 +803,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = Explorer.DataFrame.from_map(%{a: [1, 2, nil], b: [1, nil, 3]})
+      iex> df = Explorer.DataFrame.from_columns(a: [1, 2, nil], b: [1, nil, 3])
       iex> Explorer.DataFrame.drop_nil(df)
       #Explorer.DataFrame<
         [rows: 1, columns: 2]
@@ -777,7 +838,7 @@ defmodule Explorer.DataFrame do
 
     You can pass in a list of new names:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, ["c", "d"])
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
@@ -787,7 +848,7 @@ defmodule Explorer.DataFrame do
 
     Or you can rename individual columns using keyword args:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, a: "first")
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
@@ -797,7 +858,7 @@ defmodule Explorer.DataFrame do
 
     Or you can rename individual columns using a map:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, %{"a" => "first"})
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
@@ -807,7 +868,7 @@ defmodule Explorer.DataFrame do
 
     Or if you want to use a function:
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a"], b: [1, 3, 1]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, &(&1 <> "_test"))
       #Explorer.DataFrame<
         [rows: 3, columns: 2]
@@ -971,7 +1032,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
       iex> Explorer.DataFrame.dummies(df, ["a"])
       #Explorer.DataFrame<
         [rows: 4, columns: 3]
@@ -980,7 +1041,7 @@ defmodule Explorer.DataFrame do
         a_c integer [0, 0, 0, 1]
       >
 
-      iex> df = Explorer.DataFrame.from_map(%{a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"]})
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
       iex> Explorer.DataFrame.dummies(df, ["a", "b"])
       #Explorer.DataFrame<
         [rows: 4, columns: 6]
@@ -1077,7 +1138,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+      iex> df = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> Explorer.DataFrame.take(df, [0, 2])
       #Explorer.DataFrame<
         [rows: 2, columns: 2]
@@ -1293,6 +1354,17 @@ defmodule Explorer.DataFrame do
 
   * `id_cols` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
   * `names_prefix` - String added to the start of every variable name. This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.from_columns(id: [1, 1], variable: ["a", "b"], value: [1, 2])
+      iex> Explorer.DataFrame.pivot_wider(df, "variable", "value")
+      #Explorer.DataFrame<
+        [rows: 1, columns: 3]
+        id integer [1]
+        a integer [1]
+        b integer [2]
+      >
   """
   @spec pivot_wider(
           df :: DataFrame.t(),
@@ -1365,8 +1437,8 @@ defmodule Explorer.DataFrame do
 
     Inner join:
 
-      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
-      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 2], c: ["d", "e", "f"]})
+      iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 2], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right)
       #Explorer.DataFrame<
         [rows: 3, columns: 3]
@@ -1377,8 +1449,8 @@ defmodule Explorer.DataFrame do
 
     Left join:
 
-      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
-      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 2], c: ["d", "e", "f"]})
+      iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 2], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :left)
       #Explorer.DataFrame<
         [rows: 4, columns: 3]
@@ -1389,8 +1461,8 @@ defmodule Explorer.DataFrame do
 
     Right join:
 
-      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
-      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 4], c: ["d", "e", "f"]})
+      iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :right)
       #Explorer.DataFrame<
         [rows: 3, columns: 3]
@@ -1401,20 +1473,20 @@ defmodule Explorer.DataFrame do
 
     Outer join:
 
-      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
-      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 4], c: ["d", "e", "f"]})
+      iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :outer)
       #Explorer.DataFrame<
         [rows: 4, columns: 3]
-        b string ["a", "b", nil, "c"]
         a integer [1, 2, 4, 3]
+        b string ["a", "b", nil, "c"]
         c string ["d", "e", "f", nil]
       >
 
     Cross join:
 
-      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
-      iex> right = Explorer.DataFrame.from_map(%{a: [1, 2, 4], c: ["d", "e", "f"]})
+      iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :cross)
       #Explorer.DataFrame<
         [rows: 9, columns: 4]
@@ -1426,8 +1498,8 @@ defmodule Explorer.DataFrame do
 
     Inner join with different names:
 
-      iex> left = Explorer.DataFrame.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
-      iex> right = Explorer.DataFrame.from_map(%{d: [1, 2, 2], c: ["d", "e", "f"]})
+      iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.from_columns(d: [1, 2, 2], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, on: [{"a", "d"}])
       #Explorer.DataFrame<
         [rows: 3, columns: 3]
@@ -1474,27 +1546,91 @@ defmodule Explorer.DataFrame do
   @doc """
   Combine two or more dataframes row-wise (stack).
 
-  Column names and dtypes must match exactly.
+  Column names and dtypes must match. The only exception is for numeric
+  columns that can be mixed together, and casted automatically to float columns.
 
   ## Examples
 
-      iex> df1 = Explorer.DataFrame.from_map(%{x: [1, 2, 3], y: ["a", "b", "c"]})
-      iex> df2 = Explorer.DataFrame.from_map(%{x: [4, 5, 6], y: ["d", "e", "f"]})
+      iex> df1 = Explorer.DataFrame.from_columns(x: [1, 2, 3], y: ["a", "b", "c"])
+      iex> df2 = Explorer.DataFrame.from_columns(x: [4, 5, 6], y: ["d", "e", "f"])
       iex> Explorer.DataFrame.concat_rows([df1, df2])
       #Explorer.DataFrame<
         [rows: 6, columns: 2]
         x integer [1, 2, 3, 4, 5, "..."]
         y string ["a", "b", "c", "d", "e", "..."]
       >
+
+      iex> df1 = Explorer.DataFrame.from_columns(x: [1, 2, 3], y: ["a", "b", "c"])
+      iex> df2 = Explorer.DataFrame.from_columns(x: [4.2, 5.3, 6.4], y: ["d", "e", "f"])
+      iex> Explorer.DataFrame.concat_rows([df1, df2])
+      #Explorer.DataFrame<
+        [rows: 6, columns: 2]
+        x float [1.0, 2.0, 3.0, 4.2, 5.3, "..."]
+        y string ["a", "b", "c", "d", "e", "..."]
+      >
   """
-  def concat_rows([%DataFrame{} = h | t] = dfs) do
-    key = Map.new(Enum.zip(names(h), dtypes(h)))
+  def concat_rows([%DataFrame{} | _t] = dfs) do
+    changed_types = compute_changed_types_concat_rows(dfs)
 
-    for df <- t, key != Map.new(Enum.zip(names(df), dtypes(df))) do
-      raise ArgumentError, "columns and dtypes must be identical for all dataframes"
+    if Enum.empty?(changed_types) do
+      apply_impl(dfs, :concat_rows)
+    else
+      dfs
+      |> cast_numeric_cols_to_float(changed_types)
+      |> apply_impl(:concat_rows)
     end
+  end
 
-    apply_impl(dfs, :concat_rows)
+  defp compute_changed_types_concat_rows([head | tail]) do
+    types = Map.new(Enum.zip(names(head), dtypes(head)))
+
+    Enum.reduce(tail, %{}, fn df, changed_types ->
+      if n_cols(df) != map_size(types) do
+        raise ArgumentError,
+              "dataframes must have the same columns"
+      end
+
+      Enum.reduce(Enum.zip(names(df), dtypes(df)), changed_types, fn {name, type},
+                                                                     changed_types ->
+        cond do
+          not Map.has_key?(types, name) ->
+            raise ArgumentError,
+                  "dataframes must have the same columns"
+
+          types[name] == type ->
+            changed_types
+
+          types_are_numeric_compatible?(types, name, type) ->
+            Map.put(changed_types, name, :float)
+
+          true ->
+            raise ArgumentError,
+                  "columns and dtypes must be identical for all dataframes"
+        end
+      end)
+    end)
+  end
+
+  defp types_are_numeric_compatible?(types, name, type) do
+    numeric_types = [:float, :integer]
+    types[name] != type and types[name] in numeric_types and type in numeric_types
+  end
+
+  defp cast_numeric_cols_to_float(dfs, changed_types) do
+    for df <- dfs do
+      cols =
+        for {name, :integer} <- Enum.zip(names(df), dtypes(df)),
+            changed_types[name] == :float,
+            do: name
+
+      if Enum.empty?(cols) do
+        df
+      else
+        changes = for col <- cols, into: %{}, do: {col, Series.cast(df[col], :float)}
+
+        mutate(df, changes)
+      end
+    end
   end
 
   @doc """

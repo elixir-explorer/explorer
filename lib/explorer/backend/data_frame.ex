@@ -34,7 +34,8 @@ defmodule Explorer.Backend.DataFrame do
 
   # Conversion
 
-  @callback from_map(map()) :: df
+  @callback from_columns(map() | Keyword.t()) :: df
+  @callback from_rows(list(map() | Keyword.t())) :: df
   @callback to_map(df, convert_series? :: boolean()) :: map()
   @callback to_binary(df, header? :: boolean(), delimiter :: String.t()) :: String.t()
 

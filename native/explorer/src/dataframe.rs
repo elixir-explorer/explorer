@@ -1,11 +1,13 @@
 use polars::prelude::*;
+use rustler::{Term, TermType};
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::result::Result;
 
-use crate::series::{cast, to_ex_series_collection, to_series_collection};
+use crate::series::{to_ex_series_collection, to_series_collection};
 
-use crate::{ExDataFrame, ExSeries, ExplorerError};
+use crate::{ExAnyValue, ExDataFrame, ExSeries, ExplorerError};
 
 macro_rules! df_read {
     ($data: ident, $df: ident, $body: block) => {
@@ -51,20 +53,22 @@ pub fn df_read_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let schema: Option<Schema> = dtypes.map(|dtypes| {
-        Schema::new(
-            dtypes
-                .iter()
-                .map(|x| Field::new(x.0, dtype_from_str(x.1).unwrap()))
-                .collect(),
-        )
-    });
+    let schema: Option<Schema> = match dtypes {
+        Some(dtypes) => {
+            let mut schema = Schema::new();
+            for (name, dtype) in dtypes {
+                schema.with_column(name.to_string(), dtype_from_str(dtype)?)
+            }
+            Some(schema)
+        }
+        None => None,
+    };
 
     let df = CsvReader::from_path(filename)?
         .infer_schema(infer_schema_length)
         .has_header(has_header)
         .with_parse_dates(parse_dates)
-        .with_stop_after_n_rows(stop_after_n_rows)
+        .with_n_rows(stop_after_n_rows)
         .with_delimiter(sep.as_bytes()[0])
         .with_skip_rows(skip_rows)
         .with_projection(projection)
@@ -86,7 +90,7 @@ fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
         "i64" => Ok(DataType::Int64),
         "bool" => Ok(DataType::Boolean),
         "date" => Ok(DataType::Date),
-        "datetime[ms]" => Ok(DataType::Datetime),
+        "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
         _ => Err(ExplorerError::Internal("Unrecognised datatype".into())),
     }
 }
@@ -102,7 +106,7 @@ pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 pub fn df_write_parquet(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
     df_read!(data, df, {
         let file = File::create(filename).expect("could not create file");
-        ParquetWriter::new(file).finish(&df)?;
+        ParquetWriter::new(file).finish(&mut df.clone())?;
         Ok(())
     })
 }
@@ -118,7 +122,7 @@ pub fn df_to_csv(
         CsvWriter::new(&mut buf)
             .has_header(has_headers)
             .with_delimiter(delimiter)
-            .finish(&df)?;
+            .finish(&mut df.clone())?;
 
         let s = String::from_utf8(buf)?;
         Ok(s)
@@ -137,7 +141,7 @@ pub fn df_to_csv_file(
         CsvWriter::new(&mut f)
             .has_header(has_headers)
             .with_delimiter(delimiter)
-            .finish(&df)?;
+            .finish(&mut df.clone())?;
         Ok(())
     })
 }
@@ -145,6 +149,106 @@ pub fn df_to_csv_file(
 #[rustler::nif]
 pub fn df_as_str(data: ExDataFrame) -> Result<String, ExplorerError> {
     df_read!(data, df, { Ok(format!("{:?}", df)) })
+}
+
+#[rustler::nif]
+pub fn df_from_map_rows(
+    rows: Vec<HashMap<Term, Option<ExAnyValue>>>,
+) -> Result<ExDataFrame, ExplorerError> {
+    // Coerce the keys from `Term` (atom or binary) to `String`
+    let rows: Vec<HashMap<String, &Option<ExAnyValue>>> = rows
+        .iter()
+        .map(|row| {
+            row.iter()
+                .map(|(key, val)| (atom_or_binary_to_string(key), val))
+                .collect()
+        })
+        .collect();
+
+    // Get the map keys and sort them
+    let mut keys = rows
+        .first()
+        .unwrap()
+        .keys()
+        .cloned()
+        .collect::<Vec<String>>();
+
+    case_insensitive_sort(&mut keys);
+
+    // Coerce the vec of hashmaps to polars Rows
+    let rows = rows
+        .iter()
+        .map(|row| row::Row::new(get_vals_in_order(row, &keys)))
+        .collect::<Vec<row::Row>>();
+
+    // Create the dataframe and assign the column names
+    let mut df = DataFrame::from_rows(&rows)?;
+    df.set_column_names(&keys)?;
+    Ok(ExDataFrame::new(df))
+}
+
+fn atom_or_binary_to_string(val: &Term) -> String {
+    match val.get_type() {
+        TermType::Atom => val.atom_to_string().unwrap(),
+        TermType::Binary => {
+            String::from_utf8_lossy(val.into_binary().unwrap().as_slice()).to_string()
+        }
+        _ => panic!("Unsupported key value"),
+    }
+}
+
+fn get_vals_in_order<'a>(
+    map: &'a HashMap<String, &Option<ExAnyValue>>,
+    keys: &'a [String],
+) -> Vec<AnyValue<'a>> {
+    keys.iter()
+        .map(|key| match map.get(key) {
+            None => AnyValue::Null,
+            Some(None) => AnyValue::Null,
+            // NOTE: This special case is necessary until/unless `DataFrame::from_rows` handles `AnyValue::Utf8Owned`. See: https://github.com/pola-rs/polars/issues/2941
+            Some(Some(ExAnyValue::Utf8(val))) => AnyValue::Utf8(val),
+            Some(Some(val)) => AnyValue::from(Some(val.clone())),
+        })
+        .collect()
+}
+
+fn case_insensitive_sort(strings: &mut Vec<String>) {
+    strings.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()))
+}
+
+#[rustler::nif]
+pub fn df_from_keyword_rows(
+    rows: Vec<Vec<(Term, Option<ExAnyValue>)>>,
+) -> Result<ExDataFrame, ExplorerError> {
+    // Get the keys and coerce them from `Term` (atom or binary) to `String`
+    let keys = rows
+        .first()
+        .unwrap()
+        .iter()
+        .map(|(key, _)| atom_or_binary_to_string(key))
+        .collect::<Vec<String>>();
+
+    // Coerce the vec of tuples to polars Rows
+    let rows = rows
+        .iter()
+        .map(|row| {
+            let row = row
+                .iter()
+                .map(|(_, val)| match val {
+                    // NOTE: This special case is necessary until/unless `DataFrame::from_rows` handles `AnyValue::Utf8Owned`. See: https://github.com/pola-rs/polars/issues/2941
+                    Some(ExAnyValue::Utf8(val)) => AnyValue::Utf8(val),
+                    Some(val) => AnyValue::from(Some(val.clone())),
+                    None => AnyValue::Null,
+                })
+                .collect();
+            row::Row::new(row)
+        })
+        .collect::<Vec<row::Row>>();
+
+    // Create the dataframe and assign the column names
+    let mut df = DataFrame::from_rows(&rows)?;
+    df.set_column_names(&keys)?;
+    Ok(ExDataFrame::new(df))
 }
 
 #[rustler::nif]
@@ -219,11 +323,6 @@ pub fn df_dtypes(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn df_n_chunks(data: ExDataFrame) -> Result<usize, ExplorerError> {
-    df_read!(data, df, { Ok(df.n_chunks()?) })
-}
-
-#[rustler::nif]
 pub fn df_shape(data: ExDataFrame) -> Result<(usize, usize), ExplorerError> {
     df_read!(data, df, { Ok(df.shape()) })
 }
@@ -282,11 +381,6 @@ pub fn df_select_at_idx(data: ExDataFrame, idx: usize) -> Result<Option<ExSeries
 }
 
 #[rustler::nif]
-pub fn df_find_idx_by_name(data: ExDataFrame, name: &str) -> Result<Option<usize>, ExplorerError> {
-    df_read!(data, df, { Ok(df.find_idx_by_name(name)) })
-}
-
-#[rustler::nif]
 pub fn df_column(data: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerError> {
     df_read!(data, df, {
         let series = df.column(name).map(|s| ExSeries::new(s.clone()))?;
@@ -318,20 +412,8 @@ pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, Explo
 #[rustler::nif]
 pub fn df_take(data: ExDataFrame, indices: Vec<u32>) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
-        let idx = UInt32Chunked::new_from_slice("idx", indices.as_slice());
+        let idx = UInt32Chunked::from_vec("idx", indices);
         let new_df = df.take(&idx)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
-pub fn df_take_with_series(
-    data: ExDataFrame,
-    indices: ExSeries,
-) -> Result<ExDataFrame, ExplorerError> {
-    let idx = indices.resource.0.u32()?;
-    df_read!(data, df, {
-        let new_df = df.take(idx)?;
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -343,20 +425,7 @@ pub fn df_sort(
     reverse: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.sort(by_column, reverse)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
-pub fn df_replace(
-    data: ExDataFrame,
-    col: &str,
-    new_col: ExSeries,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let mut new_df = df.clone();
-        new_df.replace(col, new_col.resource.0.clone())?;
+        let new_df = df.sort([by_column], reverse)?;
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -390,48 +459,8 @@ pub fn df_tail(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, 
 }
 
 #[rustler::nif]
-pub fn df_is_unique(data: ExDataFrame) -> Result<ExSeries, ExplorerError> {
-    df_read!(data, df, {
-        let mask = df.is_unique()?;
-        Ok(ExSeries::new(mask.into_series()))
-    })
-}
-
-#[rustler::nif]
-pub fn df_is_duplicated(data: ExDataFrame) -> Result<ExSeries, ExplorerError> {
-    df_read!(data, df, {
-        let mask = df.is_unique()?;
-        Ok(ExSeries::new(mask.into_series()))
-    })
-}
-
-#[rustler::nif]
-pub fn df_frame_equal(
-    data: ExDataFrame,
-    other: ExDataFrame,
-    null_equal: bool,
-) -> Result<bool, ExplorerError> {
-    df_read_read!(data, other, df, df1, {
-        let result = if null_equal {
-            df.frame_equal_missing(&*df1)
-        } else {
-            df.frame_equal(&*df1)
-        };
-        Ok(result)
-    })
-}
-
-#[rustler::nif]
 pub fn df_clone(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, { Ok(ExDataFrame::new(df.clone())) })
-}
-
-#[rustler::nif]
-pub fn df_explode(data: ExDataFrame, cols: Vec<String>) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.explode(&cols)?;
-        Ok(ExDataFrame::new(new_df))
-    })
 }
 
 #[rustler::nif]
@@ -447,64 +476,16 @@ pub fn df_melt(
 }
 
 #[rustler::nif]
-pub fn df_shift(data: ExDataFrame, periods: i64) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.shift(periods);
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
 pub fn df_drop_duplicates(
     data: ExDataFrame,
     maintain_order: bool,
     subset: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
-        let new_df = df.drop_duplicates(maintain_order, Some(&subset))?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
-pub fn df_max(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.max())) })
-}
-
-#[rustler::nif]
-pub fn df_min(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.min())) })
-}
-
-#[rustler::nif]
-pub fn df_sum(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.sum())) })
-}
-
-#[rustler::nif]
-pub fn df_mean(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.mean())) })
-}
-
-#[rustler::nif]
-pub fn df_stdev(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.std())) })
-}
-
-#[rustler::nif]
-pub fn df_var(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.var())) })
-}
-
-#[rustler::nif]
-pub fn df_median(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.median())) })
-}
-
-#[rustler::nif]
-pub fn df_quantile(data: ExDataFrame, quant: f64) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.quantile(quant)?;
+        let new_df = match maintain_order {
+            false => df.distinct(Some(&subset), DistinctKeepStrategy::First)?,
+            true => df.distinct_stable(Some(&subset), DistinctKeepStrategy::First)?,
+        };
         Ok(ExDataFrame::new(new_df))
     })
 }
@@ -546,21 +527,6 @@ pub fn df_set_column_names(
 }
 
 #[rustler::nif]
-pub fn df_cast(
-    data: ExDataFrame,
-    column: &str,
-    to_type: &str,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df
-            .clone()
-            .may_apply(column, |s: &Series| cast(s, to_type))?
-            .clone();
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
-#[rustler::nif]
 pub fn df_groups(data: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
     df_read!(data, df, {
         let groups = df.groupby(groups)?.groups()?;
@@ -590,7 +556,7 @@ pub fn df_pivot_wider(
     df_read!(data, df, {
         let new_df = df
             .groupby(id_cols)?
-            .pivot(pivot_column, values_column)
+            .pivot([pivot_column], [values_column])
             .first()?;
         Ok(ExDataFrame::new(new_df))
     })

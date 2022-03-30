@@ -55,15 +55,15 @@ defmodule Explorer.DataFrameTest do
       assert_raise ArgumentError,
                    "could not find any overlapping columns",
                    fn ->
-                     left = DF.from_map(%{a: [1, 2, 3]})
-                     right = DF.from_map(%{b: [1, 2, 3]})
+                     left = DF.from_columns(a: [1, 2, 3])
+                     right = DF.from_columns(b: [1, 2, 3])
                      DF.join(left, right)
                    end
     end
 
     test "doesn't raise if no overlapping columns on cross join" do
-      left = DF.from_map(%{a: [1, 2, 3]})
-      right = DF.from_map(%{b: [1, 2, 3]})
+      left = DF.from_columns(a: [1, 2, 3])
+      right = DF.from_columns(b: [1, 2, 3])
       joined = DF.join(left, right, how: :cross)
       assert %DF{} = joined
     end
@@ -190,7 +190,7 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_map(df) == %{
                a: [nil, "nil", "c"],
-               b: ["NA", "", "d"]
+               b: ["NA", nil, "d"]
              }
     end
 
@@ -340,13 +340,13 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "fetch/2" do
-    df = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+    df = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
     assert Series.to_list(df["a"]) == [1, 2, 3]
     assert DF.to_map(df[["a"]]) == %{a: [1, 2, 3]}
   end
 
   test "pop/2" do
-    df1 = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+    df1 = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
 
     {s1, df2} = Access.pop(df1, "a")
     assert Series.to_list(s1) == [1, 2, 3]
@@ -358,7 +358,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "get_and_update/3" do
-    df1 = DF.from_map(%{a: [1, 2, 3], b: ["a", "b", "c"]})
+    df1 = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
 
     {s, df2} =
       Access.get_and_update(df1, "a", fn current_value ->
@@ -370,10 +370,10 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "pivot_wider/2" do
-    df1 = DF.from_map(%{id: [1, 1], variable: ["a", "b"], value: [1, 2]})
+    df1 = DF.from_columns(id: [1, 1], variable: ["a", "b"], value: [1, 2])
     assert DF.to_map(DF.pivot_wider(df1, "variable", "value")) == %{id: [1], a: [1], b: [2]}
 
-    df2 = DF.from_map(%{id: [1, 1], variable: ["a", "b"], value: [1.0, 2.0]})
+    df2 = DF.from_columns(id: [1, 1], variable: ["a", "b"], value: [1.0, 2.0])
 
     assert DF.to_map(
              DF.pivot_wider(df2, "variable", "value",
@@ -381,5 +381,42 @@ defmodule Explorer.DataFrameTest do
                names_prefix: "col"
              )
            ) == %{id: [1], cola: [1.0], colb: [2.0]}
+  end
+
+  test "concat_rows/2" do
+    df1 = DF.from_columns(x: [1, 2, 3], y: ["a", "b", "c"])
+    df2 = DF.from_columns(x: [4, 5, 6], y: ["d", "e", "f"])
+    df3 = DF.concat_rows(df1, df2)
+
+    assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
+    assert Series.to_list(df3["y"]) == ~w(a b c d e f)
+
+    df2 = DF.from_columns(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
+    df3 = DF.concat_rows(df1, df2)
+
+    assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+
+    df4 = DF.from_columns(x: [7, 8, 9], y: ["g", "h", nil])
+    df5 = DF.concat_rows(df3, df4)
+
+    assert Series.to_list(df5["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+    assert Series.to_list(df5["y"]) == ~w(a b c d e f g h) ++ [nil]
+
+    df6 = DF.concat_rows([df1, df2, df4])
+
+    assert Series.to_list(df6["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+    assert Series.to_list(df6["y"]) == ~w(a b c d e f g h) ++ [nil]
+
+    assert_raise ArgumentError,
+                 "dataframes must have the same columns",
+                 fn -> DF.concat_rows(df1, DF.from_columns(z: [7, 8, 9])) end
+
+    assert_raise ArgumentError,
+                 "dataframes must have the same columns",
+                 fn -> DF.concat_rows(df1, DF.from_columns(x: [7, 8, 9], z: [7, 8, 9])) end
+
+    assert_raise ArgumentError,
+                 "columns and dtypes must be identical for all dataframes",
+                 fn -> DF.concat_rows(df1, DF.from_columns(x: [7, 8, 9], y: [10, 11, 12])) end
   end
 end
