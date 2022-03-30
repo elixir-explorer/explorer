@@ -128,6 +128,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
+  @impl true
   def read_ipc(filename) do
     case Native.df_read_ipc(filename) do
       {:ok, df} -> {:ok, Shared.to_dataframe(df)}
@@ -135,6 +136,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
+  @impl true
   def write_ipc(%DataFrame{data: df}, filename) do
     case Native.df_write_ipc(df, filename) do
       {:ok, _} -> {:ok, filename}
