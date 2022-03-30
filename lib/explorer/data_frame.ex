@@ -156,8 +156,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates a new dataframe from a map or keyword of lists or series.
 
-  Lists and series must be the same length. This function calls `Explorer.Series.from_list/2`
-  for lists, so they must conform to the requirements for making a series.
+  Lists and series must be the same length. This function has the same validations from 
+  `Explorer.Series.from_list/2` for lists, so they must conform to the requirements for making a series.
 
   ## Options
 
@@ -185,6 +185,9 @@ defmodule Explorer.DataFrame do
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
+
+      iex> Explorer.DataFrame.from_columns(%{floats: [1.0, 2.0], ints: [1, "wrong"]})
+      ** (ArgumentError) cannot create series "ints": cannot make a series from mismatched types - the value "wrong" does not match inferred dtype integer
   """
   @spec from_columns(series :: map() | Keyword.t(), opts :: Keyword.t()) :: DataFrame.t()
   def from_columns(series, opts \\ []) do

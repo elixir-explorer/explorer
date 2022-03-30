@@ -22,7 +22,7 @@ defmodule Explorer.Series do
   alias __MODULE__, as: Series
   alias Kernel, as: K
 
-  import Explorer.Shared, only: [impl!: 1, check_types: 1, cast_numerics: 2]
+  import Explorer.Shared, only: [impl!: 1, check_types!: 1, cast_numerics: 2]
   import Nx.Defn.Kernel, only: [keyword!: 2]
   import Kernel, except: [length: 1, and: 2]
 
@@ -111,12 +111,17 @@ defmodule Explorer.Series do
   Mixing non-numeric data types will raise an ArgumentError.
 
       iex> Explorer.Series.from_list([1, "a"])
-      ** (ArgumentError) cannot make a series from mismatched types: type of "a" does not match inferred dtype integer
+      ** (ArgumentError) cannot make a series from mismatched types - the value "a" does not match inferred dtype integer
+
+  Trying to create a "nil" series will result in an ArgumentError exception.
+
+      iex> Explorer.Series.from_list([nil, nil])
+      ** (ArgumentError) cannot make a series from a list of all nils
   """
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
     backend = backend_from_options!(opts)
-    type = check_types(list)
+    type = check_types!(list)
     {list, type} = cast_numerics(list, type)
     backend.from_list(list, type)
   end
