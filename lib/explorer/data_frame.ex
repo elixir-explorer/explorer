@@ -130,11 +130,14 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a IPC file into a dataframe.
   """
+  @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def read_ipc(filename), do: Explorer.PolarsBackend.DataFrame.read_ipc(filename)
 
   @doc """
   Writes a dataframe to a IPC file.
   """
+  @spec write_ipc(df :: DataFrame.t(), filename :: String.t()) ::
+          {:ok, String.t()} | {:error, term()}
   def write_ipc(df, filename) do
     apply_impl(df, :write_ipc, [filename])
   end
