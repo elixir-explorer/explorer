@@ -9,7 +9,6 @@ use crate::series::{to_ex_series_collection, to_series_collection};
 
 use crate::{ExAnyValue, ExDataFrame, ExSeries, ExplorerError};
 
-
 macro_rules! df_read {
     ($data: ident, $df: ident, $body: block) => {
         match $data.resource.0.read() {
