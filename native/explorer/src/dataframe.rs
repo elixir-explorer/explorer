@@ -9,6 +9,7 @@ use crate::series::{to_ex_series_collection, to_series_collection};
 
 use crate::{ExAnyValue, ExDataFrame, ExSeries, ExplorerError};
 
+
 macro_rules! df_read {
     ($data: ident, $df: ident, $body: block) => {
         match $data.resource.0.read() {
@@ -142,6 +143,22 @@ pub fn df_to_csv_file(
             .has_header(has_headers)
             .with_delimiter(delimiter)
             .finish(&mut df.clone())?;
+        Ok(())
+    })
+}
+
+#[rustler::nif]
+pub fn df_read_ipc(filename: &str) -> Result<ExDataFrame, ExplorerError> {
+    let f = File::open(filename)?;
+    let df = IpcReader::new(f).finish()?;
+    Ok(ExDataFrame::new(df))
+}
+
+#[rustler::nif]
+pub fn df_write_ipc(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+    df_read!(data, df, {
+        let mut file = File::create(filename).expect("could not create file");
+        IpcWriter::new(&mut file).finish(&mut df.clone())?;
         Ok(())
     })
 }

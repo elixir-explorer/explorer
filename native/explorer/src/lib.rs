@@ -55,6 +55,7 @@ rustler::init!(
         df_new,
         df_pivot_wider,
         df_read_csv,
+        df_read_ipc,
         df_read_parquet,
         df_select,
         df_select_at_idx,
@@ -70,6 +71,7 @@ rustler::init!(
         df_vstack,
         df_width,
         df_with_column,
+        df_write_ipc,
         df_write_parquet,
         // series
         s_add,

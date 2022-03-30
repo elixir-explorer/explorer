@@ -128,6 +128,18 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Reads a IPC file into a dataframe.
+  """
+  def read_ipc(filename), do: Explorer.PolarsBackend.DataFrame.read_ipc(filename)
+
+  @doc """
+  Writes a dataframe to a IPC file.
+  """
+  def write_ipc(df, filename) do
+    apply_impl(df, :write_ipc, [filename])
+  end
+
+  @doc """
   Writes a dataframe to a delimited file.
 
   ## Options

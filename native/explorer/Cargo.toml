@@ -36,5 +36,6 @@ features = [
   "temporal",
   "cum_agg",
   "rolling_window",
-  "decompress"
+  "decompress",
+  "ipc"
 ]
