@@ -50,27 +50,38 @@ defmodule Explorer.Shared do
   """
   def check_types(list) do
     type =
-      for el <- list, reduce: nil do
-        type ->
-          new_type = type(el, type) || type
+      Enum.reduce_while(list, nil, fn el, type ->
+        new_type = type(el, type) || type
 
-          cond do
-            new_type == :numeric and type in [:float, :integer] ->
-              new_type
+        cond do
+          new_type == :numeric and type in [:float, :integer] ->
+            {:cont, new_type}
 
-            new_type != type and !is_nil(type) ->
-              raise ArgumentError,
-                    "cannot make a series from mismatched types: type of #{inspect(el)} does not match inferred dtype #{type}"
+          new_type != type and !is_nil(type) ->
+            {:halt,
+             {:error,
+              "cannot make a series from mismatched types - the value #{inspect(el)} does not match inferred dtype #{type}"}}
 
-            true ->
-              new_type
-          end
-      end
+          true ->
+            {:cont, new_type}
+        end
+      end)
 
-    if is_nil(type),
-      do: raise(ArgumentError, "cannot make a series from a list of all nils")
+    case type do
+      nil -> {:error, "cannot make a series from a list of all nils"}
+      {:error, _} = error -> error
+      valid -> {:ok, valid}
+    end
+  end
 
-    type
+  @doc """
+  Gets the `dtype` of a list or raise error if not possible.
+  """
+  def check_types!(list) do
+    case check_types(list) do
+      {:ok, dtype} -> dtype
+      {:error, error} -> raise ArgumentError, error
+    end
   end
 
   defp type(item, type) when is_integer(item) and type == :float, do: :numeric
