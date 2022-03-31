@@ -313,6 +313,83 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "read_ndjson/2" do
+    @tag :tmp_dir
+    test "reads from file with default options", %{tmp_dir: tmp_dir} do
+      ndjson_path = write_ndjson(tmp_dir)
+
+      assert {:ok, df} = DF.read_ndjson(ndjson_path)
+
+      assert DF.names(df) == ~w[a b c d]
+      assert DF.dtypes(df) == [:integer, :float, :boolean, :string]
+
+      assert take_five(df["a"]) == [1, -10, 2, 1, 7]
+      assert take_five(df["b"]) == [2.0, -3.5, 0.6, 2.0, -3.5]
+      assert take_five(df["c"]) == [false, true, false, false, true]
+      assert take_five(df["d"]) == ["4", "4", "text", "4", "4"]
+
+      assert {:error, _message} = DF.read_ndjson(Path.join(tmp_dir, "idontexist.ndjson"))
+    end
+
+    @tag :tmp_dir
+    test "reads from file with options", %{tmp_dir: tmp_dir} do
+      ndjson_path = write_ndjson(tmp_dir)
+
+      assert {:ok, df} = DF.read_ndjson(ndjson_path, infer_schema_length: 3, with_batch_size: 3)
+
+      assert DF.names(df) == ~w[a b c d]
+      assert DF.dtypes(df) == [:integer, :float, :boolean, :string]
+    end
+
+    defp write_ndjson(tmp_dir) do
+      ndjson_path = Path.join(tmp_dir, "test.ndjson")
+
+      contents = """
+      {"a":1, "b":2.0, "c":false, "d":"4"}
+      {"a":-10, "b":-3.5, "c":true, "d":"4"}
+      {"a":2, "b":0.6, "c":false, "d":"text"}
+      {"a":1, "b":2.0, "c":false, "d":"4"}
+      {"a":7, "b":-3.5, "c":true, "d":"4"}
+      {"a":1, "b":0.6, "c":false, "d":"text"}
+      {"a":1, "b":2.0, "c":false, "d":"4"}
+      {"a":5, "b":-3.5, "c":true, "d":"4"}
+      {"a":1, "b":0.6, "c":false, "d":"text"}
+      {"a":1, "b":2.0, "c":false, "d":"4"}
+      {"a":1, "b":-3.5, "c":true, "d":"4"}
+      {"a":100000000000000, "b":0.6, "c":false, "d":"text"}
+      """
+
+      :ok = File.write!(ndjson_path, contents)
+      ndjson_path
+    end
+
+    defp take_five(series) do
+      series |> Series.to_list() |> Enum.take(5)
+    end
+  end
+
+  describe "write_ndjson" do
+    @tag :tmp_dir
+    test "writes to a file", %{tmp_dir: tmp_dir} do
+      df =
+        DF.from_columns(
+          a: [1, -10, 2, 1, 7, 1, 1, 5, 1, 1, 1, 100_000_000_000_000],
+          b: [2.0, -3.5, 0.6, 2.0, -3.5, 0.6, 2.0, -3.5, 0.6, 2.0, -3.5, 0.6],
+          c: [false, true, false, false, true, false, false, true, false, false, true, false],
+          d: ["4", "4", "text", "4", "4", "text", "4", "4", "text", "4", "4", "text"]
+        )
+
+      ndjson_path = Path.join(tmp_dir, "test-write.ndjson")
+
+      assert {:ok, ^ndjson_path} = DF.write_ndjson(df, ndjson_path)
+      assert {:ok, ndjson_df} = DF.read_ndjson(ndjson_path)
+
+      assert DF.names(df) == DF.names(ndjson_df)
+      assert DF.dtypes(df) == DF.dtypes(ndjson_df)
+      assert DF.to_map(df) == DF.to_map(ndjson_df)
+    end
+  end
+
   describe "table/1" do
     test "prints what we expect" do
       df = Datasets.iris()

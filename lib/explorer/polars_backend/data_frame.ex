@@ -92,6 +92,20 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def read_ndjson(filename, infer_schema_length, with_batch_size) do
+    with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, with_batch_size) do
+      {:ok, Shared.to_dataframe(df)}
+    end
+  end
+
+  @impl true
+  def write_ndjson(%DataFrame{data: df}, filename) do
+    with {:ok, _} <- Native.df_write_ndjson(df, filename) do
+      {:ok, filename}
+    end
+  end
+
+  @impl true
   def to_binary(%DataFrame{} = df, header?, delimiter) do
     <<delimiter::utf8>> = delimiter
     Shared.apply_native(df, :df_to_csv, [header?, delimiter])
@@ -128,14 +142,32 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
+  @impl true
+  def read_ipc(filename) do
+    case Native.df_read_ipc(filename) do
+      {:ok, df} -> {:ok, Shared.to_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def write_ipc(%DataFrame{data: df}, filename) do
+    case Native.df_write_ipc(df, filename) do
+      {:ok, _} -> {:ok, filename}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   # Conversion
 
   @impl true
   def from_columns(map) do
     series_list = Enum.map(map, &from_columns_handler/1)
 
-    {:ok, df} = Native.df_new(series_list)
-    Shared.to_dataframe(df)
+    case Native.df_new(series_list) do
+      {:ok, df} -> Shared.to_dataframe(df)
+      {:error, error} -> raise ArgumentError, error
+    end
   end
 
   defp from_columns_handler({key, value}) when is_atom(key) do
@@ -144,12 +176,25 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   defp from_columns_handler({colname, value}) when is_list(value) do
-    series = Series.from_list(value)
+    series = series_from_list!(colname, value)
     from_columns_handler({colname, series})
   end
 
   defp from_columns_handler({colname, %Series{} = series}) when is_binary(colname) do
     series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
+  end
+
+  # Like `Explorer.Series.from_list/2`, but gives a better error message with the series name.
+  defp series_from_list!(name, list) do
+    case Explorer.Shared.check_types(list) do
+      {:ok, type} ->
+        {list, type} = Explorer.Shared.cast_numerics(list, type)
+        PolarsSeries.from_list(list, type, name)
+
+      {:error, error} ->
+        message = "cannot create series #{inspect(name)}: " <> error
+        raise ArgumentError, message
+    end
   end
 
   @impl true
@@ -251,7 +296,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
        do: mutate_reducer({colname, callback.(df)}, df)
 
   defp mutate_reducer({colname, values}, df) when is_list(values),
-    do: mutate_reducer({colname, Series.from_list(values)}, df)
+    do: mutate_reducer({colname, series_from_list!(colname, values)}, df)
 
   defp mutate_reducer({colname, value}, %DataFrame{} = df)
        when is_binary(colname),
