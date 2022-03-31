@@ -45,6 +45,19 @@ defmodule Explorer.PolarsBackend.Native do
       ),
       do: err()
 
+  def df_read_ndjson(
+        _filename,
+        _infer_schema_length,
+        _with_batch_size
+      ),
+      do: err()
+
+  def df_write_ndjson(
+        _df,
+        _filename
+      ),
+      do: err()
+
   def df_as_str(_df), do: err()
   def df_clone(_df), do: err()
   def df_column(_df, _name), do: err()

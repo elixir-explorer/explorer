@@ -92,6 +92,20 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def read_ndjson(filename, infer_schema_length, with_batch_size) do
+    with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, with_batch_size) do
+      {:ok, Shared.to_dataframe(df)}
+    end
+  end
+
+  @impl true
+  def write_ndjson(%DataFrame{data: df}, filename) do
+    with {:ok, _} <- Native.df_write_ndjson(df, filename) do
+      {:ok, filename}
+    end
+  end
+
+  @impl true
   def to_binary(%DataFrame{} = df, header?, delimiter) do
     <<delimiter::utf8>> = delimiter
     Shared.apply_native(df, :df_to_csv, [header?, delimiter])

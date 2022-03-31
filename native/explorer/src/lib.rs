@@ -57,6 +57,8 @@ rustler::init!(
         df_read_csv,
         df_read_ipc,
         df_read_parquet,
+        df_read_ndjson,
+        df_write_ndjson,
         df_select,
         df_select_at_idx,
         df_set_column_names,
