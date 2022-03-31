@@ -67,6 +67,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_melt(_df, _id_vars, _value_vars), do: err()
   def df_new(_cols), do: err()
   def df_pivot_wider(_df, _id_cols, _pivot_column, _values_columns), do: err()
+  def df_read_ipc(_filename), do: err()
   def df_read_parquet(_filename), do: err()
   def df_select(_df, _selection), do: err()
   def df_select_at_idx(_df, _idx), do: err()
@@ -80,6 +81,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_vstack(_df, _other), do: err()
   def df_width(_df), do: err()
   def df_with_column(_df, _col), do: err()
+  def df_write_ipc(_df, _filename), do: err()
   def df_write_parquet(_df, _filename), do: err()
 
   # Series

@@ -147,6 +147,22 @@ pub fn df_to_csv_file(
 }
 
 #[rustler::nif]
+pub fn df_read_ipc(filename: &str) -> Result<ExDataFrame, ExplorerError> {
+    let f = File::open(filename)?;
+    let df = IpcReader::new(f).finish()?;
+    Ok(ExDataFrame::new(df))
+}
+
+#[rustler::nif]
+pub fn df_write_ipc(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+    df_read!(data, df, {
+        let mut file = File::create(filename).expect("could not create file");
+        IpcWriter::new(&mut file).finish(&mut df.clone())?;
+        Ok(())
+    })
+}
+
+#[rustler::nif]
 pub fn df_as_str(data: ExDataFrame) -> Result<String, ExplorerError> {
     df_read!(data, df, { Ok(format!("{:?}", df)) })
 }
