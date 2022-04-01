@@ -148,14 +148,23 @@ pub fn df_to_csv_file(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_ipc(filename: &str) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_read_ipc(
+    filename: &str,
+    with_n_rows: Option<usize>,
+    with_columns: Option<Vec<String>>
+) -> Result<ExDataFrame, ExplorerError> {
     let f = File::open(filename)?;
-    let df = IpcReader::new(f).finish()?;
+    let df = IpcReader::new(f)
+        .with_n_rows(with_n_rows)
+        .with_columns(with_columns)
+        .finish()?;
     Ok(ExDataFrame::new(df))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_ipc(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+pub fn df_write_ipc(
+    data: ExDataFrame, 
+    filename: &str) -> Result<(), ExplorerError> {
     df_read!(data, df, {
         let mut file = File::create(filename).expect("could not create file");
         IpcWriter::new(&mut file).finish(&mut df.clone())?;
