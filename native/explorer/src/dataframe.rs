@@ -151,12 +151,14 @@ pub fn df_to_csv_file(
 pub fn df_read_ipc(
     filename: &str,
     with_n_rows: Option<usize>,
-    with_columns: Option<Vec<String>>
+    with_columns: Option<Vec<String>>,
+    with_projection: Option<Vec<usize>>
 ) -> Result<ExDataFrame, ExplorerError> {
     let f = File::open(filename)?;
     let df = IpcReader::new(f)
         .with_n_rows(with_n_rows)
         .with_columns(with_columns)
+        .with_projection(with_projection)
         .finish()?;
     Ok(ExDataFrame::new(df))
 }
