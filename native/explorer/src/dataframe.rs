@@ -294,27 +294,6 @@ pub fn df_from_keyword_rows(
     Ok(ExDataFrame::new(df))
 }
 
-#[rustler::nif]
-pub fn df_fill_none(data: ExDataFrame, strategy: &str) -> Result<ExDataFrame, ExplorerError> {
-    let strat = match strategy {
-        "backward" => FillNullStrategy::Backward,
-        "forward" => FillNullStrategy::Forward,
-        "min" => FillNullStrategy::Min,
-        "max" => FillNullStrategy::Max,
-        "mean" => FillNullStrategy::Mean,
-        s => {
-            return Err(ExplorerError::Other(format!(
-                "Strategy {} not supported",
-                s
-            )))
-        }
-    };
-    df_read!(data, df, {
-        let new_df = df.fill_null(strat)?;
-        Ok(ExDataFrame::new(new_df))
-    })
-}
-
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_join(
     data: ExDataFrame,
@@ -378,15 +357,6 @@ pub fn df_height(data: ExDataFrame) -> Result<usize, ExplorerError> {
 #[rustler::nif]
 pub fn df_width(data: ExDataFrame) -> Result<usize, ExplorerError> {
     df_read!(data, df, { Ok(df.width()) })
-}
-
-#[rustler::nif]
-pub fn df_hstack(data: ExDataFrame, cols: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
-    let cols = to_series_collection(cols);
-    df_read!(data, df, {
-        let new_df = df.hstack(&cols)?;
-        Ok(ExDataFrame::new(new_df))
-    })
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -499,11 +469,6 @@ pub fn df_tail(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, 
         let new_df = df.tail(length);
         Ok(ExDataFrame::new(new_df))
     })
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_clone(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, { Ok(ExDataFrame::new(df.clone())) })
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
