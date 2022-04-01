@@ -131,8 +131,23 @@ defmodule Explorer.DataFrame do
   Reads a IPC file into a dataframe.
   """
   @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
-  def read_ipc(filename), do: Explorer.PolarsBackend.DataFrame.read_ipc(filename)
+  def read_ipc(filename, opts \\ []) do
 
+    opts =
+      keyword!(opts,
+        with_n_rows: nil,
+        with_columns: nil,
+        with_projection: nil
+      )
+
+    backend = backend_from_options!(opts)
+
+    backend.read_ipc(
+      filename,
+      opts[:with_n_rows],
+      opts[:with_columns],
+      opts[:with_projection])
+  end
   @doc """
   Writes a dataframe to a IPC file.
   """
@@ -209,7 +224,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates a new dataframe from a map or keyword of lists or series.
 
-  Lists and series must be the same length. This function has the same validations from 
+  Lists and series must be the same length. This function has the same validations from
   `Explorer.Series.from_list/2` for lists, so they must conform to the requirements for making a series.
 
   ## Options

@@ -143,8 +143,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def read_ipc(filename) do
-    case Native.df_read_ipc(filename) do
+  def read_ipc(filename, with_n_rows, with_columns, with_projection) do
+    case Native.df_read_ipc(filename, with_n_rows, with_columns, with_projection) do
       {:ok, df} -> {:ok, Shared.to_dataframe(df)}
       {:error, error} -> {:error, error}
     end

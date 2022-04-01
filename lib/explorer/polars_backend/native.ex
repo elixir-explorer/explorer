@@ -80,7 +80,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_melt(_df, _id_vars, _value_vars), do: err()
   def df_new(_cols), do: err()
   def df_pivot_wider(_df, _id_cols, _pivot_column, _values_columns), do: err()
-  def df_read_ipc(_filename), do: err()
+  def df_read_ipc(_filename,  _with_n_rows, _with_columns, _with_projection), do: err()
   def df_read_parquet(_filename), do: err()
   def df_select(_df, _selection), do: err()
   def df_select_at_idx(_df, _idx), do: err()
