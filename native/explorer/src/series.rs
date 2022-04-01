@@ -72,13 +72,6 @@ pub fn s_new_date64(name: &str, val: Vec<Option<ExDateTime>>) -> ExSeries {
 }
 
 #[rustler::nif]
-pub fn s_rechunk(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let series = s.rechunk();
-    Ok(ExSeries::new(series))
-}
-
-#[rustler::nif]
 pub fn s_name(data: ExSeries) -> Result<String, ExplorerError> {
     Ok(data.resource.0.name().to_string())
 }
@@ -95,19 +88,6 @@ pub fn s_dtype(data: ExSeries) -> Result<String, ExplorerError> {
     let s = &data.resource.0;
     let dt = s.dtype().to_string();
     Ok(dt)
-}
-
-#[rustler::nif]
-pub fn s_n_chunks(data: ExSeries) -> Result<usize, ExplorerError> {
-    let s = &data.resource.0;
-    Ok(s.n_chunks())
-}
-
-#[rustler::nif]
-pub fn s_limit(data: ExSeries, num_elements: usize) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let series = s.limit(num_elements);
-    Ok(ExSeries::new(series))
 }
 
 #[rustler::nif]
@@ -227,12 +207,6 @@ pub fn s_take(data: ExSeries, indices: Vec<u32>) -> Result<ExSeries, ExplorerErr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_null_count(data: ExSeries) -> Result<usize, ExplorerError> {
-    let s = &data.resource.0;
-    Ok(s.null_count())
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_is_null(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     Ok(ExSeries::new(s.is_null().into_series()))
@@ -242,34 +216,6 @@ pub fn s_is_null(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_is_not_null(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     Ok(ExSeries::new(s.is_not_null().into_series()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_is_unique(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let ca = s.is_unique()?;
-    Ok(ExSeries::new(ca.into_series()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_arg_true(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let ca = s.arg_true()?;
-    Ok(ExSeries::new(ca.into_series()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_is_duplicated(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let ca = s.is_duplicated()?;
-    Ok(ExSeries::new(ca.into_series()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_explode(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let s1 = s.explode()?;
-    Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -338,13 +284,6 @@ pub fn s_lt_eq(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError>
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_not(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let bool = s.bool()?;
-    Ok(ExSeries::new((!bool).into_series()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_and(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &lhs.resource.0;
     let s1 = &rhs.resource.0;
@@ -364,12 +303,6 @@ pub fn s_or(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_len(data: ExSeries) -> Result<usize, ExplorerError> {
     let s = &data.resource.0;
     Ok(s.len())
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_drop_nulls(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    Ok(ExSeries::new(s.drop_nulls()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -412,114 +345,6 @@ pub fn s_fill_none_with_bin(data: ExSeries, strategy: &str) -> Result<ExSeries, 
     let s = &data.resource.0;
     let s = s.utf8()?.fill_null_with_values(strategy)?.into_series();
     Ok(ExSeries::new(s))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_clone(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    Ok(ExSeries::new(s.clone()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_shift(data: ExSeries, periods: i64) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let s1 = s.shift(periods);
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_zip_with(
-    data: ExSeries,
-    mask: ExSeries,
-    other: ExSeries,
-) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let m = &mask.resource.0;
-    let s1 = &other.resource.0;
-    let msk = m.bool()?;
-    let s2 = s.zip_with(msk, s1)?;
-    Ok(ExSeries::new(s2))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_str_lengths(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let ca = s.utf8()?;
-    let s1 = ca.str_lengths().into_series();
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_str_contains(data: ExSeries, pat: &str) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let ca = s.utf8()?;
-    let s1 = ca.contains(pat)?.into_series();
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_str_replace(data: ExSeries, pat: &str, val: &str) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let ca = s.utf8()?;
-    let s1 = ca.replace(pat, val)?.into_series();
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_str_replace_all(data: ExSeries, pat: &str, val: &str) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let ca = s.utf8()?;
-    let s1 = ca.replace_all(pat, val)?.into_series();
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_str_to_uppercase(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let ca = s.utf8()?;
-    let s1 = ca.to_uppercase().into_series();
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_str_to_lowercase(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    let ca = s.utf8()?;
-    let s1 = ca.to_lowercase().into_series();
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_str_parse_date32(data: ExSeries, fmt: Option<&str>) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    if let Ok(ca) = s.utf8() {
-        let ca = ca.as_date(fmt)?;
-        Ok(ExSeries::new(ca.into_series()))
-    } else {
-        Err(ExplorerError::Other(
-            "cannot parse date32 expected utf8 type".into(),
-        ))
-    }
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_str_parse_date64(data: ExSeries, fmt: Option<&str>) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    if let Ok(ca) = s.utf8() {
-        let ca = ca.as_datetime(fmt, TimeUnit::Milliseconds)?;
-        Ok(ExSeries::new(ca.into_series()))
-    } else {
-        Err(ExplorerError::Other(
-            "cannot parse date64 expected utf8 type".into(),
-        ))
-    }
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_to_dummies(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let s = &data.resource.0;
-    let df = s.to_dummies()?;
-    Ok(ExDataFrame::new(df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
