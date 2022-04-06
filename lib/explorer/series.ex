@@ -30,6 +30,8 @@ defmodule Explorer.Series do
   @type dtype :: :float | :integer | :boolean | :string | :date | :datetime
   @type t :: %Series{data: data, dtype: dtype}
 
+  @valid_dtypes [:float, :integer, :boolean, :string, :date, :datetime]
+
   @enforce_keys [:data, :dtype]
   defstruct [:data, :dtype]
 
@@ -75,12 +77,14 @@ defmodule Explorer.Series do
   @doc """
   Creates a new series from a list.
 
-  The list must consist of a single data type and nils only; however, the list may not only
-  consist of nils.
+  The list must consist of a single data type and nils. It is possible to have
+  a list of only nil values. In this case, the list will have the `:dtype` of float.
 
   ## Options
 
     * `:backend` - The backend to allocate the series on.
+    * `:dtype` - Cast the series to a given `:dtype`. By default this is `nil`, which means
+    that Explorer will infer the type from the values in the list.
 
   ## Examples
 
@@ -108,22 +112,52 @@ defmodule Explorer.Series do
         [1.0, 2.0]
       >
 
+  Trying to create a "nil" series will, by default, result in a series of floats.
+
+      iex> Explorer.Series.from_list([nil, nil])
+      #Explorer.Series<
+        float[2]
+        [nil, nil]
+      >
+
+  You can specify the desired `dtype` for a series with the `:dtype` option.
+
+      iex> Explorer.Series.from_list([nil, nil], dtype: :integer)
+      #Explorer.Series<
+        integer[2]
+        [nil, nil]
+      >
+
+      iex> Explorer.Series.from_list([1, nil], dtype: :string)
+      #Explorer.Series<
+        string[2]
+        ["1", nil]
+      >
+
   Mixing non-numeric data types will raise an ArgumentError.
 
       iex> Explorer.Series.from_list([1, "a"])
       ** (ArgumentError) cannot make a series from mismatched types - the value "a" does not match inferred dtype integer
-
-  Trying to create a "nil" series will result in an ArgumentError exception.
-
-      iex> Explorer.Series.from_list([nil, nil])
-      ** (ArgumentError) cannot make a series from a list of all nils
   """
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
     backend = backend_from_options!(opts)
     type = check_types!(list)
     {list, type} = cast_numerics(list, type)
-    backend.from_list(list, type)
+    series = backend.from_list(list, type)
+
+    case {type, validate_optional_dtype(opts[:dtype])} do
+      {t, t} -> series
+      {_t, nil} -> series
+      {_, other} -> cast(series, other)
+    end
+  end
+
+  defp validate_optional_dtype(nil), do: nil
+  defp validate_optional_dtype(dtype) when dtype in @valid_dtypes, do: dtype
+
+  defp validate_optional_dtype(dtype) do
+    raise ArgumentError, "Unsupported datatype: #{inspect(dtype)}"
   end
 
   @doc """
