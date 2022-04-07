@@ -84,7 +84,7 @@ defmodule Explorer.Series do
 
   ## Examples
 
-    Explorer will infer the type from the values in the list.
+  Explorer will infer the type from the values in the list.
 
       iex> Explorer.Series.from_list([1, 2, 3])
       #Explorer.Series<
@@ -92,7 +92,7 @@ defmodule Explorer.Series do
         [1, 2, 3]
       >
 
-    Series are nullable, so you may also include nils.
+  Series are nullable, so you may also include nils.
 
       iex> Explorer.Series.from_list([1.0, nil, 2.5, 3.1])
       #Explorer.Series<
@@ -100,7 +100,7 @@ defmodule Explorer.Series do
         [1.0, nil, 2.5, 3.1]
       >
 
-   A mix of integers and floats will be downcasted to a float.
+  A mix of integers and floats will be downcasted to a float.
 
       iex> Explorer.Series.from_list([1, 2.0])
       #Explorer.Series<
@@ -189,7 +189,7 @@ defmodule Explorer.Series do
         [1, 2, 3]
       >
 
-    Tensor options can be passed directly to `to_tensor/2`.
+  Tensor options can be passed directly to `to_tensor/2`.
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.to_tensor(s, names: [:y], type: {:f, 64})
@@ -300,7 +300,8 @@ defmodule Explorer.Series do
   @doc """
   Returns the first element of the series.
 
-    ## Examples
+  ## Examples
+
       iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.first(s)
       1
@@ -312,6 +313,7 @@ defmodule Explorer.Series do
   Returns the last element of the series.
 
   ## Examples
+
       iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.last(s)
       100
@@ -382,7 +384,7 @@ defmodule Explorer.Series do
         [1, 3, 5, 7, 9]
       >
 
-    If *n* is bigger than the length of the series, the result is a new series with only the first value of the supplied series.
+  If *n* is bigger than the length of the series, the result is a new series with only the first value of the supplied series.
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.take_every(20)
@@ -398,6 +400,7 @@ defmodule Explorer.Series do
   Filters a series with a mask or callback.
 
   ## Examples
+
       iex> s1 = Explorer.Series.from_list([1,2,3])
       iex> s2 = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.filter(s1, s2)
@@ -431,7 +434,7 @@ defmodule Explorer.Series do
         [2, 3]
       >
 
-    Negative offsets count from the end of the series.
+  Negative offsets count from the end of the series.
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5])
       iex> Explorer.Series.slice(s, -3, 2)
@@ -440,7 +443,7 @@ defmodule Explorer.Series do
         [3, 4]
       >
 
-    If the length would run past the end of the series, the result may be shorter than the length.
+  If the length would run past the end of the series, the result may be shorter than the length.
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5])
       iex> Explorer.Series.slice(s, -3, 4)
@@ -1040,6 +1043,7 @@ defmodule Explorer.Series do
     * `:float`
 
   ## Examples
+
       iex> s1 = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> s2 = 11..20 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.multiply(s1, s2)

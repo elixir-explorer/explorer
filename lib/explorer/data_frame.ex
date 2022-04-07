@@ -278,7 +278,7 @@ defmodule Explorer.DataFrame do
         name string ["José", "Christopher", "Cristine"]
       >
 
-    With a list of maps, missing keys will yield a null value.
+  With a list of maps, missing keys will yield a null value.
 
       iex> rows = [%{id: 1, name: "José", date: ~D[2001-01-01]}, %{id: 2, date: ~D[1993-01-01]}, %{id: 3, name: "Cristine"}]
       iex> Explorer.DataFrame.from_rows(rows)
@@ -461,7 +461,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    You can select columns with a list of names:
+  You can select columns with a list of names:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, ["a"])
@@ -470,7 +470,7 @@ defmodule Explorer.DataFrame do
         a string ["a", "b", "c"]
       >
 
-    Or you can use a callback function that takes the dataframe's names as its first argument:
+  Or you can use a callback function that takes the dataframe's names as its first argument:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, &String.starts_with?(&1, "b"))
@@ -479,7 +479,7 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
-    If you pass `:drop` as the third argument, it will return all but the named columns:
+  If you pass `:drop` as the third argument, it will return all but the named columns:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, ["b"], :drop)
@@ -527,7 +527,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    You can pass a mask directly:
+  You can pass a mask directly:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, Explorer.Series.greater(df["b"], 1))
@@ -537,7 +537,8 @@ defmodule Explorer.DataFrame do
         b integer [2, 3]
       >
 
-    You can combine masks using `Explorer.Series.and/2` or `Explorer.Series.or/2`:
+  You can combine masks using `Explorer.Series.and/2` or `Explorer.Series.or/2`:
+
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> b_gt = Explorer.Series.greater(df["b"], 1)
       iex> a_eq = Explorer.Series.equal(df["a"], "b")
@@ -548,7 +549,7 @@ defmodule Explorer.DataFrame do
         b integer [2]
       >
 
-    Including a list:
+  Including a list:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, [false, true, false])
@@ -558,7 +559,7 @@ defmodule Explorer.DataFrame do
         b integer [2]
       >
 
-    Or you can invoke a callback on the dataframe:
+  Or you can invoke a callback on the dataframe:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, &Explorer.Series.greater(&1["b"], 1))
@@ -607,7 +608,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    You can pass in a list directly as a new column:
+  You can pass in a list directly as a new column:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, c: [4, 5, 6])
@@ -618,7 +619,7 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
 
-    Or you can pass in a series:
+  Or you can pass in a series:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> s = Explorer.Series.from_list([4, 5, 6])
@@ -630,7 +631,7 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
 
-    Or you can invoke a callback on the dataframe:
+  Or you can invoke a callback on the dataframe:
 
       iex> df = Explorer.DataFrame.from_columns(a: [4, 5, 6], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, c: &Explorer.Series.add(&1["a"], &1["b"]))
@@ -641,7 +642,7 @@ defmodule Explorer.DataFrame do
         c integer [5, 7, 9]
       >
 
-    You can overwrite existing columns:
+  You can overwrite existing columns:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: [4, 5, 6])
@@ -651,7 +652,7 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
-    Scalar values are repeated to fill the series:
+  Scalar values are repeated to fill the series:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: 4)
@@ -661,7 +662,7 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
-    Including when a callback returns a scalar:
+  Including when a callback returns a scalar:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: &Explorer.Series.max(&1["b"]))
@@ -671,7 +672,7 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
-    Alternatively, all of the above works with a map instead of a keyword list:
+  Alternatively, all of the above works with a map instead of a keyword list:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, %{"c" => [4, 5, 6]})
@@ -713,7 +714,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    A single column name will sort ascending by that column:
+  A single column name will sort ascending by that column:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["b", "c", "a"], b: [1, 2, 3])
       iex> Explorer.DataFrame.arrange(df, "a")
@@ -723,7 +724,7 @@ defmodule Explorer.DataFrame do
         b integer [3, 1, 2]
       >
 
-    You can also sort descending:
+  You can also sort descending:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["b", "c", "a"], b: [1, 2, 3])
       iex> Explorer.DataFrame.arrange(df, desc: "a")
@@ -733,7 +734,7 @@ defmodule Explorer.DataFrame do
         b integer [2, 1, 3]
       >
 
-    Sorting by more than one column sorts them in the order they are entered:
+  Sorting by more than one column sorts them in the order they are entered:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.arrange(df, asc: "total", desc: "country")
@@ -791,7 +792,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    By default will return unique values of the requested columns:
+  By default will return unique values of the requested columns:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"])
@@ -801,8 +802,8 @@ defmodule Explorer.DataFrame do
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
       >
 
-    If `keep_all?` is set to `true`, then the first value of each column not in the requested
-    columns will be returned:
+  If `keep_all?` is set to `true`, then the first value of each column not in the requested
+  columns will be returned:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"], keep_all?: true)
@@ -820,7 +821,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321, "..."]
       >
 
-    A callback on the dataframe's names can be passed instead of a list (like `select/3`):
+  A callback on the dataframe's names can be passed instead of a list (like `select/3`):
 
       iex> df = Explorer.DataFrame.from_columns(x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3])
       iex> Explorer.DataFrame.distinct(df, columns: &String.starts_with?(&1, "x"))
@@ -892,7 +893,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    You can pass in a list of new names:
+  You can pass in a list of new names:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, ["c", "d"])
@@ -902,7 +903,7 @@ defmodule Explorer.DataFrame do
         d integer [1, 3, 1]
       >
 
-    Or you can rename individual columns using keyword args:
+  Or you can rename individual columns using keyword args:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, a: "first")
@@ -912,7 +913,7 @@ defmodule Explorer.DataFrame do
         b integer [1, 3, 1]
       >
 
-    Or you can rename individual columns using a map:
+  Or you can rename individual columns using a map:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, %{"a" => "first"})
@@ -922,7 +923,7 @@ defmodule Explorer.DataFrame do
         b integer [1, 3, 1]
       >
 
-    Or if you want to use a function:
+  Or if you want to use a function:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, &(&1 <> "_test"))
@@ -1000,7 +1001,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    If no columns are specified, it will apply the function to all column names:
+  If no columns are specified, it will apply the function to all column names:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, &String.upcase/1)
@@ -1018,7 +1019,7 @@ defmodule Explorer.DataFrame do
         BUNKER_FUELS integer [9, 7, 663, 0, 321, "..."]
       >
 
-    A callback can be used to filter the column names that will be renamed, similarly to `select/3`:
+  A callback can be used to filter the column names that will be renamed, similarly to `select/3`:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, &String.trim_trailing(&1, "_fuel"), &String.ends_with?(&1, "_fuel"))
@@ -1036,7 +1037,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321, "..."]
       >
 
-    Or you can just pass in the list of column names you'd like to apply the function to:
+  Or you can just pass in the list of column names you'd like to apply the function to:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, &String.upcase/1, ["total", "cement"])
@@ -1151,7 +1152,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [7, 663]
       >
 
-    Negative offsets count from the end of the series:
+  Negative offsets count from the end of the series:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.slice(df, -10, 2)
@@ -1169,7 +1170,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [30722, 251]
       >
 
-    If the length would run past the end of the dataframe, the result may be shorter than the length:
+  If the length would run past the end of the dataframe, the result may be shorter than the length:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.slice(df, -10, 20)
@@ -1232,7 +1233,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    You can sample N rows:
+  You can sample N rows:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.sample(df, 3, seed: 100)
@@ -1250,7 +1251,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 18, 19]
       >
 
-    Or you can sample a proportion of rows:
+  Or you can sample a proportion of rows:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.sample(df, 0.03, seed: 100)
@@ -1491,7 +1492,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    Inner join:
+  Inner join:
 
       iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 2], c: ["d", "e", "f"])
@@ -1503,7 +1504,7 @@ defmodule Explorer.DataFrame do
         c string ["d", "e", "f"]
       >
 
-    Left join:
+  Left join:
 
       iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 2], c: ["d", "e", "f"])
@@ -1515,7 +1516,7 @@ defmodule Explorer.DataFrame do
         c string ["d", "e", "f", nil]
       >
 
-    Right join:
+  Right join:
 
       iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 4], c: ["d", "e", "f"])
@@ -1527,7 +1528,7 @@ defmodule Explorer.DataFrame do
         b string ["a", "b", nil]
       >
 
-    Outer join:
+  Outer join:
 
       iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 4], c: ["d", "e", "f"])
@@ -1539,7 +1540,7 @@ defmodule Explorer.DataFrame do
         c string ["d", "e", "f", nil]
       >
 
-    Cross join:
+  Cross join:
 
       iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> right = Explorer.DataFrame.from_columns(a: [1, 2, 4], c: ["d", "e", "f"])
@@ -1552,7 +1553,7 @@ defmodule Explorer.DataFrame do
         c string ["d", "e", "f", "d", "e", "..."]
       >
 
-    Inner join with different names:
+  Inner join with different names:
 
       iex> left = Explorer.DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> right = Explorer.DataFrame.from_columns(d: [1, 2, 2], c: ["d", "e", "f"])
@@ -1706,7 +1707,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-    You can group by a single variable:
+  You can group by a single variable:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.group_by(df, "country")
@@ -1724,7 +1725,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321, "..."]
       >
 
-    Or you can group by multiple:
+  Or you can group by multiple:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.group_by(df, ["country", "year"])
@@ -1805,7 +1806,7 @@ defmodule Explorer.DataFrame do
 
   ## Supported operations
 
-    The following aggregations may be performed:
+  The following aggregations may be performed:
 
     * `:min` - Take the minimum value within the group. See `Explorer.Series.min/1`.
     * `:max` - Take the maximum value within the group. See `Explorer.Series.max/1`.
