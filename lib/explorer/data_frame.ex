@@ -132,7 +132,6 @@ defmodule Explorer.DataFrame do
 
     ## Options
 
-      * with_n_rows: A `n` number of rows to be read.
       * with_columns: List with name of columns to be selected.
       * with_projection: List with the index of columns to be selected.
   """
@@ -140,7 +139,6 @@ defmodule Explorer.DataFrame do
   def read_ipc(filename, opts \\ []) do
     opts =
       keyword!(opts,
-        with_n_rows: nil,
         with_columns: nil,
         with_projection: nil
       )
@@ -149,7 +147,6 @@ defmodule Explorer.DataFrame do
 
     backend.read_ipc(
       filename,
-      opts[:with_n_rows],
       opts[:with_columns],
       opts[:with_projection]
     )
