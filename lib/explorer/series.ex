@@ -181,6 +181,18 @@ defmodule Explorer.Series do
   def to_list(series), do: apply_impl(series, :to_list)
 
   @doc """
+  Converts a series to an enumerable.
+
+  ## Examples
+
+      iex> series = Explorer.Series.from_list([1, 2, 3])
+      iex> series |> Explorer.Series.to_enum() |> Enum.to_list()
+      [1, 2, 3]
+  """
+  @spec to_enum(series :: Series.t()) :: Enumerable.t()
+  def to_enum(series), do: apply_impl(series, :to_enum)
+
+  @doc """
   Converts a `t:Nx.Tensor.t/0` to a series.
 
   ## Examples

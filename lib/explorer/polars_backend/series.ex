@@ -42,6 +42,11 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
+  def to_enum(series) do
+    Explorer.PolarsBackend.Series.Iterator.new(series)
+  end
+
+  @impl true
   def cast(series, dtype), do: Shared.apply_native(series, :s_cast, [Atom.to_string(dtype)])
 
   # Introspection
