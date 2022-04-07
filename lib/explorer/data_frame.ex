@@ -129,6 +129,12 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Reads a IPC file into a dataframe.
+
+    ## Options
+
+      * with_n_rows: A `n` number of rows to be read.
+      * with_columns: List with name of columns to be selected.
+      * with_projection: List with the index of columns to be selected.
   """
   @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def read_ipc(filename, opts \\ []) do
@@ -147,6 +153,17 @@ defmodule Explorer.DataFrame do
       opts[:with_n_rows],
       opts[:with_columns],
       opts[:with_projection])
+  end
+
+  @doc """
+  Similar to `read_ipc/2` but raises if there is a problem reading the IPC file.
+  """
+  @spec read_csv!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def read_ipc!(filename, opts \\ []) do
+    case read_ipc(filename, opts) do
+      {:ok, df} -> df
+      {:error, error} -> raise "#{error}"
+    end
   end
   @doc """
   Writes a dataframe to a IPC file.

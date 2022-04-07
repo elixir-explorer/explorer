@@ -37,5 +37,6 @@ features = [
   "cum_agg",
   "rolling_window",
   "decompress",
-  "ipc"
+  "ipc",
+  "parquet"
 ]
