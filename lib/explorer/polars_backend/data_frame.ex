@@ -198,16 +198,20 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_map(%DataFrame{data: df}, convert_series?) do
-    Enum.reduce(df, %{}, &to_map_reducer(&1, &2, convert_series?))
+  def to_map(%DataFrame{data: df}, convert_series?, atom_keys?) do
+    Enum.reduce(df, %{}, &to_map_reducer(&1, &2, convert_series?, atom_keys?))
   end
 
-  defp to_map_reducer(series, acc, convert_series?) do
+  defp to_map_reducer(series, acc, convert_series?, atom_keys?) do
     series_name =
       series
       |> Native.s_name()
       |> then(fn {:ok, name} ->
-        String.to_atom(name)
+        if atom_keys? do
+          String.to_atom(name)
+        else
+          name
+        end
       end)
 
     series = Shared.to_series(series)

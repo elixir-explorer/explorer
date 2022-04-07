@@ -300,14 +300,27 @@ defmodule Explorer.DataFrame do
 
   By default, the constituent series of the dataframe are converted to Elixir lists.
 
+  ## Options
+
+    * `:convert_series` - Should the series should be converted to a list? (default: `true`)
+    * `:atom_keys` - Configure if the resultant map should have atom keys. (default: `false`)
+
   ## Examples
 
       iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, nil])
       iex> Explorer.DataFrame.to_map(df)
+      %{"floats" => [1.0, 2.0], "ints" => [1, nil]}
+
+      iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, nil])
+      iex> Explorer.DataFrame.to_map(df, atom_keys: true)
       %{floats: [1.0, 2.0], ints: [1, nil]}
   """
-  @spec to_map(df :: DataFrame.t(), convert_series? :: boolean()) :: map()
-  def to_map(df, convert_series? \\ true), do: apply_impl(df, :to_map, [convert_series?])
+  @spec to_map(df :: DataFrame.t(), Keyword.t()) :: map()
+  def to_map(df, opts \\ []) do
+    opts = keyword!(opts, convert_series: true, atom_keys: false)
+
+    apply_impl(df, :to_map, [opts[:convert_series], opts[:atom_keys]])
+  end
 
   @doc """
   Writes a dataframe to a binary representation of a delimited file.
