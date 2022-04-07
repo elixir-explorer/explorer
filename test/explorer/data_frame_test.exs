@@ -502,4 +502,18 @@ defmodule Explorer.DataFrameTest do
                  "columns and dtypes must be identical for all dataframes",
                  fn -> DF.concat_rows(df1, DF.from_columns(x: [7, 8, 9], y: [10, 11, 12])) end
   end
+
+  test "table reader integration" do
+    df = DF.from_columns(x: [1, 2, 3], y: ["a", "b", "c"])
+
+    assert df |> Table.to_rows() |> Enum.to_list() == [
+             %{"x" => 1, "y" => "a"},
+             %{"x" => 2, "y" => "b"},
+             %{"x" => 3, "y" => "c"}
+           ]
+
+    columns = Table.to_columns(df)
+    assert Enum.to_list(columns["x"]) == [1, 2, 3]
+    assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
+  end
 end

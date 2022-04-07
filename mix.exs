@@ -34,6 +34,7 @@ defmodule Explorer.MixProject do
       {:ex_doc, "~> 0.24", only: :docs, runtime: false},
       {:nx, "~> 0.1.0"},
       {:rustler_precompiled, "~> 0.3"},
+      {:table, "~> 0.1.0"},
       {:table_rex, "~> 3.1.1"}
     ]
   end
