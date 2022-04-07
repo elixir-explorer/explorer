@@ -302,7 +302,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:convert_series` - Should the series should be converted to a list? (default: `true`)
+    * `:convert_series` - Convert the series to lists (default: `true`)
     * `:atom_keys` - Configure if the resultant map should have atom keys. (default: `false`)
 
   ## Examples
