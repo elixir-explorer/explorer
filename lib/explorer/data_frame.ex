@@ -155,7 +155,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Similar to `read_ipc/2` but raises if there is a problem reading the IPC file.
   """
-  @spec read_csv!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  @spec read_ipc!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
   def read_ipc!(filename, opts \\ []) do
     case read_ipc(filename, opts) do
       {:ok, df} -> df
