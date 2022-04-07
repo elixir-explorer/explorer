@@ -138,7 +138,6 @@ defmodule Explorer.DataFrame do
   """
   @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def read_ipc(filename, opts \\ []) do
-
     opts =
       keyword!(opts,
         with_n_rows: nil,
@@ -152,7 +151,8 @@ defmodule Explorer.DataFrame do
       filename,
       opts[:with_n_rows],
       opts[:with_columns],
-      opts[:with_projection])
+      opts[:with_projection]
+    )
   end
 
   @doc """
@@ -165,6 +165,7 @@ defmodule Explorer.DataFrame do
       {:error, error} -> raise "#{error}"
     end
   end
+
   @doc """
   Writes a dataframe to a IPC file.
   """
