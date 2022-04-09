@@ -140,7 +140,8 @@ defmodule Explorer.DataFrame do
     opts =
       keyword!(opts,
         with_columns: nil,
-        with_projection: nil
+        with_projection: nil,
+        with_row_count: nil
       )
 
     backend = backend_from_options!(opts)
@@ -148,7 +149,8 @@ defmodule Explorer.DataFrame do
     backend.read_ipc(
       filename,
       opts[:with_columns],
-      opts[:with_projection]
+      opts[:with_projection],
+      opts[:with_row_count]
     )
   end
 
@@ -168,8 +170,19 @@ defmodule Explorer.DataFrame do
   """
   @spec write_ipc(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
-  def write_ipc(df, filename) do
-    apply_impl(df, :write_ipc, [filename])
+  def write_ipc(df, filename, opts \\ []) do
+    opts =
+      keyword!(opts,
+        with_compression: nil
+      )
+
+    backend = backend_from_options!(opts)
+
+    backend.write_ipc(
+      df,
+      filename,
+      opts[:compression]
+    )
   end
 
   @doc """

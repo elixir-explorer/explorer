@@ -151,7 +151,7 @@ pub fn df_to_csv_file(
 pub fn df_read_ipc(
     filename: &str,
     with_columns: Option<Vec<String>>,
-    with_projection: Option<Vec<usize>>,
+    with_projection: Option<Vec<usize>>
 ) -> Result<ExDataFrame, ExplorerError> {
     let f = File::open(filename)?;
     let df = IpcReader::new(f)
@@ -162,10 +162,22 @@ pub fn df_read_ipc(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_ipc(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+pub fn df_write_ipc(
+    data: ExDataFrame, 
+    filename: &str,
+    with_compression: Option<&str>) -> Result<(), ExplorerError> {
     df_read!(data, df, {
+
+        let compression = match with_compression {
+            Some("LZ4") => {Some(IpcCompression::LZ4)},
+            Some("ZSTD") => {Some(IpcCompression::ZSTD)},
+            _ => {None},
+        };
+
         let mut file = File::create(filename).expect("could not create file");
-        IpcWriter::new(&mut file).finish(&mut df.clone())?;
+        IpcWriter::new(&mut file)
+        .with_compression(compression)
+        .finish(&mut df.clone())?;
         Ok(())
     })
 }
