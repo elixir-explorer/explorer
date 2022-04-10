@@ -275,7 +275,7 @@ fn get_vals_in_order<'a>(
         .collect()
 }
 
-fn case_insensitive_sort(strings: &mut Vec<String>) {
+fn case_insensitive_sort(strings: &mut [String]) {
     strings.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()))
 }
 
