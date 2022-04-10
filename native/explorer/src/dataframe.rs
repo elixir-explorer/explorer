@@ -168,6 +168,7 @@ pub fn df_write_ipc(
     with_compression: Option<&str>) -> Result<(), ExplorerError> {
     df_read!(data, df, {
 
+        // Select the compression algorithm.
         let compression = match with_compression {
             Some("LZ4") => {Some(IpcCompression::LZ4)},
             Some("ZSTD") => {Some(IpcCompression::ZSTD)},

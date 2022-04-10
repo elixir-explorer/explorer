@@ -132,8 +132,8 @@ defmodule Explorer.DataFrame do
 
     ## Options
 
-      * with_columns: List with name of columns to be selected.
-      * with_projection: List with the index of columns to be selected.
+      * `with_columns` - List with name of columns to be selected.
+      * `with_projection` - List with the index of columns to be selected.
   """
   @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def read_ipc(filename, opts \\ []) do
@@ -167,6 +167,13 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Writes a dataframe to a IPC file.
+  Apache IPC is a language-agnostic columnar data structure that can be used to store data frames.
+  It excels as a format for quickly exchange data between different programming languages.
+
+  ## Options
+
+  * `with_compression` - Algorithm used to compress the IPC file.
+  It accepts "ZSTD" or "LZ4" compression. (default: `nil`)
   """
   @spec write_ipc(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
