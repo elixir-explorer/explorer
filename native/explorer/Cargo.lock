@@ -96,19 +96,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "arrow2"
-version = "0.10.1"
-source = "git+https://github.com/ritchie46/arrow2?branch=polars#da703ae38b5778b7642c3ea50763daddeb6d05b2"
-dependencies = [
- "bytemuck",
- "chrono",
- "either",
- "hash_hasher",
- "num-traits",
- "simdutf8",
-]
-
-[[package]]
 name = "async-stream"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -366,7 +353,6 @@ name = "explorer"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "arrow2 0.10.1",
  "chrono",
  "mimalloc",
  "polars",
@@ -952,7 +938,7 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcedf44a7b15b60c69e811c9d343ac459788e961dc4136f002ed1b68a1fada07"
 dependencies = [
- "arrow2 0.10.0",
+ "arrow2",
  "hashbrown 0.12.0",
  "num",
  "thiserror",
@@ -966,7 +952,7 @@ checksum = "6dfed0e21ac4d4c85df45b5864a68cfc5b2a97e9fba8a981be7b09c6f02a7eaa"
 dependencies = [
  "ahash",
  "anyhow",
- "arrow2 0.10.0",
+ "arrow2",
  "chrono",
  "hashbrown 0.12.0",
  "indexmap",
@@ -987,7 +973,7 @@ checksum = "d8770fb4233ab88affac80c410be090dc7a2c044a9e4e7b942132e94ceeb732b"
 dependencies = [
  "ahash",
  "anyhow",
- "arrow2 0.10.0",
+ "arrow2",
  "csv-core",
  "dirs",
  "flate2",
