@@ -130,10 +130,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a IPC file into a dataframe.
 
-    ## Options
+  ## Options
 
-      * `columns` - List with name of columns to be selected. Defaults to all columns.
-      * `projection` - List with the index of columns to be selected. Defaults to all columns.
+    * `columns` - List with name of columns to be selected. Defaults to all columns.
+    * `projection` - List with the index of columns to be selected. Defaults to all columns.
   """
   @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def read_ipc(filename, opts \\ []) do
