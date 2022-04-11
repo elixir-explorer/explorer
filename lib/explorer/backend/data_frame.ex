@@ -37,7 +37,7 @@ defmodule Explorer.Backend.DataFrame do
               columns :: list(String.t()),
               projection :: list(integer())
             ) :: result(df)
-  @callback write_ipc(df, filename :: String.t(), with_compression :: String.t()) ::
+  @callback write_ipc(df, filename :: String.t(), compression :: String.t()) ::
               result(String.t())
 
   @callback read_ndjson(

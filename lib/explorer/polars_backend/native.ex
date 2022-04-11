@@ -94,7 +94,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_vstack(_df, _other), do: err()
   def df_width(_df), do: err()
   def df_with_column(_df, _col), do: err()
-  def df_write_ipc(_df, _filename, _with_compression), do: err()
+  def df_write_ipc(_df, _filename, _compression), do: err()
   def df_write_parquet(_df, _filename), do: err()
 
   # Series

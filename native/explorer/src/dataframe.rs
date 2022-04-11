@@ -165,11 +165,11 @@ pub fn df_read_ipc(
 pub fn df_write_ipc(
     data: ExDataFrame,
     filename: &str,
-    with_compression: Option<&str>,
+    compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
     df_read!(data, df, {
         // Select the compression algorithm.
-        let compression = match with_compression {
+        let compression = match compression {
             Some("LZ4") => Some(IpcCompression::LZ4),
             Some("ZSTD") => Some(IpcCompression::ZSTD),
             _ => None,
