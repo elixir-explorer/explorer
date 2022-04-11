@@ -14,7 +14,7 @@ anyhow = "1"
 chrono = "0.4"
 rand = { version = "0.8.4", features = ["alloc"] }
 rand_pcg = "0.3.1"
-rustler = "0.24.0"
+rustler = "0.25.0"
 thiserror = "1"
 
 # This is because when using GCC on Windows MiMalloc won´t compile
