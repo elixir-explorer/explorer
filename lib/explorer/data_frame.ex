@@ -171,8 +171,8 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-  * `compression` - Sets the algorithm used to compress the IPC file.
-  It accepts `"ZSTD"` or `"LZ4"` compression. (default: `nil`)
+    * `compression` - Sets the algorithm used to compress the IPC file.
+      It accepts `"ZSTD"` or `"LZ4"` compression. (default: `nil`)
   """
   @spec write_ipc(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
