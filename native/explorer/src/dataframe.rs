@@ -150,13 +150,13 @@ pub fn df_to_csv_file(
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_read_ipc(
     filename: &str,
-    with_columns: Option<Vec<String>>,
-    with_projection: Option<Vec<usize>>,
+    columns: Option<Vec<String>>,
+    projection: Option<Vec<usize>>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let f = File::open(filename)?;
     let df = IpcReader::new(f)
-        .with_columns(with_columns)
-        .with_projection(with_projection)
+        .with_columns(columns)
+        .with_projection(projection)
         .finish()?;
     Ok(ExDataFrame::new(df))
 }

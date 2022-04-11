@@ -34,8 +34,8 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback read_ipc(
               filename :: String.t(),
-              with_columns :: list(String.t()),
-              with_projection :: list(integer())
+              columns :: list(String.t()),
+              projection :: list(integer())
             ) :: result(df)
   @callback write_ipc(df, filename :: String.t(), with_compression :: String.t()) ::
               result(String.t())

@@ -132,23 +132,23 @@ defmodule Explorer.DataFrame do
 
     ## Options
 
-      * `with_columns` - List with name of columns to be selected.
-      * `with_projection` - List with the index of columns to be selected.
+      * `columns` - List with name of columns to be selected. Defaults to all columns.
+      * `projection` - List with the index of columns to be selected.
   """
   @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def read_ipc(filename, opts \\ []) do
     opts =
       keyword!(opts,
-        with_columns: nil,
-        with_projection: nil
+        columns: nil,
+        projection: nil
       )
 
     backend = backend_from_options!(opts)
 
     backend.read_ipc(
       filename,
-      opts[:with_columns],
-      opts[:with_projection]
+      opts[:columns],
+      opts[:projection]
     )
   end
 
