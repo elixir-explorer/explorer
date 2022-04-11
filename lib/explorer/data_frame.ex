@@ -165,6 +165,7 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Writes a dataframe to a IPC file.
+
   Apache IPC is a language-agnostic columnar data structure that can be used to store data frames.
   It excels as a format for quickly exchange data between different programming languages.
 
