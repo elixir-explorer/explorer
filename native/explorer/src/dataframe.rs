@@ -148,17 +148,37 @@ pub fn df_to_csv_file(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_ipc(filename: &str) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_read_ipc(
+    filename: &str,
+    columns: Option<Vec<String>>,
+    projection: Option<Vec<usize>>,
+) -> Result<ExDataFrame, ExplorerError> {
     let f = File::open(filename)?;
-    let df = IpcReader::new(f).finish()?;
+    let df = IpcReader::new(f)
+        .with_columns(columns)
+        .with_projection(projection)
+        .finish()?;
     Ok(ExDataFrame::new(df))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_ipc(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+pub fn df_write_ipc(
+    data: ExDataFrame,
+    filename: &str,
+    compression: Option<&str>,
+) -> Result<(), ExplorerError> {
     df_read!(data, df, {
+        // Select the compression algorithm.
+        let compression = match compression {
+            Some("LZ4") => Some(IpcCompression::LZ4),
+            Some("ZSTD") => Some(IpcCompression::ZSTD),
+            _ => None,
+        };
+
         let mut file = File::create(filename).expect("could not create file");
-        IpcWriter::new(&mut file).finish(&mut df.clone())?;
+        IpcWriter::new(&mut file)
+            .with_compression(compression)
+            .finish(&mut df.clone())?;
         Ok(())
     })
 }
@@ -255,7 +275,7 @@ fn get_vals_in_order<'a>(
         .collect()
 }
 
-fn case_insensitive_sort(strings: &mut Vec<String>) {
+fn case_insensitive_sort(strings: &mut [String]) {
     strings.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()))
 }
 

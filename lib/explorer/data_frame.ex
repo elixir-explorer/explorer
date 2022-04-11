@@ -129,17 +129,66 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Reads a IPC file into a dataframe.
+
+  ## Options
+
+    * `columns` - List with name of columns to be selected. Defaults to all columns.
+    * `projection` - List with the index of columns to be selected. Defaults to all columns.
   """
   @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
-  def read_ipc(filename), do: Explorer.PolarsBackend.DataFrame.read_ipc(filename)
+  def read_ipc(filename, opts \\ []) do
+    opts =
+      keyword!(opts,
+        columns: nil,
+        projection: nil
+      )
+
+    backend = backend_from_options!(opts)
+
+    backend.read_ipc(
+      filename,
+      opts[:columns],
+      opts[:projection]
+    )
+  end
+
+  @doc """
+  Similar to `read_ipc/2` but raises if there is a problem reading the IPC file.
+  """
+  @spec read_ipc!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def read_ipc!(filename, opts \\ []) do
+    case read_ipc(filename, opts) do
+      {:ok, df} -> df
+      {:error, error} -> raise "#{error}"
+    end
+  end
 
   @doc """
   Writes a dataframe to a IPC file.
+
+  Apache IPC is a language-agnostic columnar data structure that can be used to store data frames.
+  It excels as a format for quickly exchange data between different programming languages.
+
+  ## Options
+
+    * `compression` - Sets the algorithm used to compress the IPC file.
+      It accepts `"ZSTD"` or `"LZ4"` compression. (default: `nil`)
   """
   @spec write_ipc(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
-  def write_ipc(df, filename) do
-    apply_impl(df, :write_ipc, [filename])
+  def write_ipc(df, filename, opts \\ []) do
+    opts =
+      keyword!(opts,
+        compression: nil
+      )
+
+    backend = backend_from_options!(opts)
+
+    backend.write_ipc(
+      df,
+      filename,
+      opts[:compression]
+    )
   end
 
   @doc """
@@ -209,7 +258,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates a new dataframe from a map or keyword of lists or series.
 
-  Lists and series must be the same length. This function has the same validations from 
+  Lists and series must be the same length. This function has the same validations from
   `Explorer.Series.from_list/2` for lists, so they must conform to the requirements for making a series.
 
   ## Options
