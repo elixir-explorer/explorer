@@ -178,7 +178,7 @@ defmodule Explorer.DataFrame do
   def write_ipc(df, filename, opts \\ []) do
     opts =
       keyword!(opts,
-        with_compression: nil
+        compression: nil
       )
 
     backend = backend_from_options!(opts)
