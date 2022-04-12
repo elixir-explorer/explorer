@@ -68,7 +68,7 @@ defmodule Explorer.Shared do
       end)
 
     case type do
-      nil -> {:error, "cannot make a series from a list of all nils"}
+      nil -> {:ok, :float}
       {:error, _} = error -> error
       valid -> {:ok, valid}
     end
