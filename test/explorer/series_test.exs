@@ -48,4 +48,49 @@ defmodule Explorer.SeriesTest do
 
     assert Series.to_list(s2) == [1, 4, 3]
   end
+
+  describe "equal/2" do
+    test "raises error when both of the arguments are empty Series" do
+      assert_raise ArgumentError,
+                   "Explorer.Series.equal/2 cannot compare zero length series",
+                   fn ->
+                     left = Series.from_list([])
+                     right = Series.from_list([])
+                     Series.equal(left, right)
+                   end
+    end
+
+    test "raises error when RHS is an empty Series" do
+      assert_raise ArgumentError,
+                   "Explorer.Series.equal/2 cannot compare zero length series",
+                   fn ->
+                     left = Series.from_list([1, 2, 3])
+                     right = Series.from_list([])
+                     Series.equal(left, right)
+                   end
+    end
+
+    test "raises error when LHS is an empty Series" do
+      assert_raise ArgumentError,
+                   "Explorer.Series.equal/2 cannot compare zero length series",
+                   fn ->
+                     left = Series.from_list([])
+                     right = Series.from_list([1, 2, 3])
+                     Series.equal(left, right)
+                   end
+    end
+
+    test "do not raise any error if LHS is length 1" do
+      left = Series.from_list([1])
+      right = Series.from_list([1, 2, 3])
+      s = Series.equal(left, right)
+      assert Series.to_list(s) == [true, false, false]
+    end
+  end
+
+  # test "equal/2" do
+  #  s = Series.from_list([1,2,3])
+
+  #  assert
+  # end
 end

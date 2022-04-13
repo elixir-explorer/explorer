@@ -1214,6 +1214,20 @@ defmodule Explorer.Series do
         [true, true, false]
       >
 
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([1])
+      iex> Explorer.Series.equal(s1, s2)
+      #Explorer.Series<
+        boolean[3]
+        [true, false, false]
+      >
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> s2 = Explorer.Series.from_list([1,2])
+      iex> Explorer.Series.equal(s1, s2)
+      ** (ArgumentError) Explorer.Series.equal/2 could not compare. One of the series must be length 1 or length of left argument (3) must match the length of right argument (2)
+
+
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.equal(s, 1)
       #Explorer.Series<
@@ -1253,8 +1267,17 @@ defmodule Explorer.Series do
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
-  def equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: apply_impl(left, :eq, [right])
+
+  def equal(%Series{dtype: _left_dtype} = left, %Series{dtype: _right_dtype} = right) do
+    case is_valid_length(left, right) do
+      {false, nil} -> dtype_length_error("equal/2", left, right, nil)
+      false -> dtype_length_error("equal/2", left, right)
+      true -> apply_impl(left, :eq, [right])
+    end
+  end
+
+  # def equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
+  #   do: apply_impl(left, :eq, [right])
 
   def equal(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
@@ -1271,6 +1294,15 @@ defmodule Explorer.Series do
 
   def equal(%Series{dtype: :boolean} = left, right) when is_boolean(right),
     do: apply_impl(left, :eq, [right])
+
+  defp is_valid_length(left, right) do
+    case {Series.length(left), Series.length(right)} do
+      {l, r} when K.or(l == 0, r == 0) -> {false, nil}
+      {l, r} when K.or(l == 1, r == 1) -> true
+      {l, r} when l != r -> false
+      {_, _} -> true
+    end
+  end
 
   @doc """
   Returns boolean mask of `left != right`, element-wise.
@@ -1974,4 +2006,20 @@ defmodule Explorer.Series do
         "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{left_dtype} and " <>
           "#{right_dtype}."
       )
+
+  defp dtype_length_error(function, left, right, zero_length \\ "")
+
+  defp dtype_length_error(function, _left, _right, nil) do
+    raise(
+      ArgumentError,
+      "Explorer.Series.#{function} cannot compare zero length series"
+    )
+  end
+
+  defp dtype_length_error(function, left, right, _zero_length) do
+    raise(
+      ArgumentError,
+      "Explorer.Series.#{function} could not compare. One of the series must be length 1 or length of left argument (#{length(left)}) must match the length of right argument (#{length(right)})"
+    )
+  end
 end
