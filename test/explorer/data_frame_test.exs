@@ -119,7 +119,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_map(df, atom_keys: true) == %{
                a: [1, 3],
                b: [2, 4],
-               c: [~N[2020-10-15 00:00:01.000], ~N[2020-10-15 00:00:18.000]]
+               c: [~N[2020-10-15 00:00:01.000000], ~N[2020-10-15 00:00:18.000000]]
              }
     end
 

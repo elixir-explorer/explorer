@@ -83,7 +83,6 @@ pub fn df_read_csv(
     Ok(ExDataFrame::new(df))
 }
 
-// TODO: consider adding "datetime[ns]"
 fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
     match dtype {
         "str" => Ok(DataType::Utf8),
@@ -91,6 +90,7 @@ fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
         "i64" => Ok(DataType::Int64),
         "bool" => Ok(DataType::Boolean),
         "date" => Ok(DataType::Date),
+        "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
         "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
         _ => Err(ExplorerError::Internal("Unrecognised datatype".into())),
     }

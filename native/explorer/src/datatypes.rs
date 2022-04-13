@@ -110,17 +110,17 @@ pub struct ExDateTime {
 }
 
 impl From<i64> for ExDateTime {
-    fn from(ms: i64) -> Self {
-        let sign = ms.signum();
+    fn from(microseconds: i64) -> Self {
+        let sign = microseconds.signum();
         let seconds = match sign {
-            -1 => ms / 1_000 - 1,
-            _ => ms / 1_000,
+            -1 => microseconds / 1_000_000 - 1,
+            _ => microseconds / 1_000_000,
         };
         let remainder = match sign {
-            -1 => 1_000 + ms % 1_000,
-            _ => ms % 1_000,
+            -1 => 1_000_000 + microseconds % 1_000_000,
+            _ => microseconds % 1_000_000,
         };
-        let nanoseconds = remainder.abs() * 1_000_000;
+        let nanoseconds = remainder.abs() * 1_000;
         ExDateTime::from(NaiveDateTime::from_timestamp(
             seconds,
             nanoseconds.try_into().unwrap(),
@@ -130,10 +130,14 @@ impl From<i64> for ExDateTime {
 
 impl From<ExDateTime> for i64 {
     fn from(dt: ExDateTime) -> i64 {
-        NaiveDate::from_ymd(dt.year, dt.month, dt.day)
+        let duration = NaiveDate::from_ymd(dt.year, dt.month, dt.day)
             .and_hms_micro(dt.hour, dt.minute, dt.second, dt.microsecond.0)
-            .signed_duration_since(NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0))
-            .num_milliseconds()
+            .signed_duration_since(NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0));
+
+        match duration.num_microseconds() {
+            Some(us) => us,
+            None => duration.num_milliseconds() * 1_000,
+        }
     }
 }
 
@@ -158,7 +162,7 @@ impl From<NaiveDateTime> for ExDateTime {
             hour: dt.hour(),
             minute: dt.minute(),
             second: dt.second(),
-            microsecond: (dt.timestamp_subsec_micros(), 3),
+            microsecond: (dt.timestamp_subsec_micros(), 6),
         }
     }
 }
@@ -176,7 +180,16 @@ fn encode_datetime_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     s.datetime()
         .unwrap()
         .into_iter()
-        .map(|d| d.map(ExDateTime::from))
+        .map(|microsecond| microsecond.map(ExDateTime::from))
+        .collect::<Vec<Option<ExDateTime>>>()
+        .encode(env)
+}
+
+fn encode_datetime_ms_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+    s.datetime()
+        .unwrap()
+        .into_iter()
+        .map(|micro| micro.map(|milli| milli * 1_000).map(ExDateTime::from))
         .collect::<Vec<Option<ExDateTime>>>()
         .encode(env)
 }
@@ -233,7 +246,9 @@ impl<'a> Encoder for ExSeriesRef {
             DataType::UInt32 => encode!(s, env, u32),
             DataType::Float64 => encode!(s, env, f64),
             DataType::Date => encode_date_series(s, env),
-            DataType::Datetime(TimeUnit::Milliseconds, None) => encode_datetime_series(s, env),
+            DataType::Datetime(TimeUnit::Microseconds, None) => encode_datetime_series(s, env),
+            // Note that "ms" is only used from IO readers/parsers (like CSV)
+            DataType::Datetime(TimeUnit::Milliseconds, None) => encode_datetime_ms_series(s, env),
             DataType::List(t) if t as &DataType == &DataType::UInt32 => {
                 encode_list!(s, env, u32, u32)
             }
@@ -264,7 +279,7 @@ impl From<ExAnyValue> for AnyValue<'_> {
             ExAnyValue::UInt32(x) => AnyValue::UInt32(x),
             ExAnyValue::Float64(x) => AnyValue::Float64(x),
             ExAnyValue::Datetime(x) => {
-                AnyValue::Datetime(i64::from(x), TimeUnit::Milliseconds, &None)
+                AnyValue::Datetime(i64::from(x), TimeUnit::Microseconds, &None)
             }
             ExAnyValue::Date(x) => AnyValue::Date(i32::from(x)),
         };
