@@ -134,6 +134,14 @@ defmodule Explorer.Series do
         ["1", nil]
       >
 
+  It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
+
+      iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: :datetime)
+      #Explorer.Series<
+        datetime[1]
+        [2022-04-13 21:00:42.000000]
+      >
+
   Mixing non-numeric data types will raise an ArgumentError.
 
       iex> Explorer.Series.from_list([1, "a"])
@@ -245,6 +253,36 @@ defmodule Explorer.Series do
       #Explorer.Series<
         string[3]
         ["1", "2", "3"]
+      >
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.cast(s, :float)
+      #Explorer.Series<
+        float[3]
+        [1.0, 2.0, 3.0]
+      >
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.cast(s, :date)
+      #Explorer.Series<
+        date[3]
+        [1970-01-02, 1970-01-03, 1970-01-04]
+      >
+
+  Note that `datetime` is represented as an integer of microseconds since Unix Epoch (1970-01-01 00:00:00).
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.cast(s, :datetime)
+      #Explorer.Series<
+        datetime[3]
+        [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
+      >
+
+      iex> s = Explorer.Series.from_list([1649883642 * 1_000 * 1_000])
+      iex> Explorer.Series.cast(s, :datetime)
+      #Explorer.Series<
+        datetime[1]
+        [2022-04-13 21:00:42.000000]
       >
 
   `cast/2` will return the series as a no-op if you try to cast to the same dtype.
@@ -640,7 +678,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.min(s)
-      ~N[1999-12-31 00:00:00.000]
+      ~N[1999-12-31 00:00:00.000000]
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.min(s)
@@ -679,7 +717,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.max(s)
-      ~N[2021-01-01 00:00:00.000]
+      ~N[2021-01-01 00:00:00.000000]
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.max(s)
@@ -830,7 +868,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.quantile(s, 0.5)
-      ~N[2021-01-01 00:00:00.000]
+      ~N[2021-01-01 00:00:00.000000]
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)

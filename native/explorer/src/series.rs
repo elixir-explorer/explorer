@@ -66,7 +66,7 @@ pub fn s_new_date64(name: &str, val: Vec<Option<ExDateTime>>) -> ExSeries {
                 .map(|dt| dt.map(|dt| dt.into()))
                 .collect::<Vec<Option<i64>>>(),
         )
-        .cast(&DataType::Datetime(TimeUnit::Milliseconds, None))
+        .cast(&DataType::Datetime(TimeUnit::Microseconds, None))
         .unwrap(),
     )
 }
@@ -467,7 +467,7 @@ pub fn s_min(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Int64 => Ok(s.min::<i64>().encode(env)),
         DataType::Float64 => Ok(s.min::<f64>().encode(env)),
         DataType::Date => Ok(s.min::<i32>().map(ExDate::from).encode(env)),
-        DataType::Datetime(TimeUnit::Milliseconds, None) => {
+        DataType::Datetime(TimeUnit::Microseconds, None) => {
             Ok(s.min::<i64>().map(ExDateTime::from).encode(env))
         }
         dt => panic!("min/1 not implemented for {:?}", dt),
@@ -481,7 +481,7 @@ pub fn s_max(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Int64 => Ok(s.max::<i64>().encode(env)),
         DataType::Float64 => Ok(s.max::<f64>().encode(env)),
         DataType::Date => Ok(s.max::<i32>().map(ExDate::from).encode(env)),
-        DataType::Datetime(TimeUnit::Milliseconds, None) => {
+        DataType::Datetime(TimeUnit::Microseconds, None) => {
             Ok(s.max::<i64>().map(ExDateTime::from).encode(env))
         }
         dt => panic!("max/1 not implemented for {:?}", dt),
@@ -543,7 +543,7 @@ fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
         AnyValue::Int64(v) => Some(v).encode(env),
         AnyValue::Float64(v) => Some(v).encode(env),
         AnyValue::Date(v) => Some(ExDate::from(v)).encode(env),
-        AnyValue::Datetime(v, TimeUnit::Milliseconds, None) => {
+        AnyValue::Datetime(v, TimeUnit::Microseconds, None) => {
             Some(ExDateTime::from(v)).encode(env)
         }
         dt => panic!("get/2 not implemented for {:?}", dt),
@@ -583,10 +583,10 @@ pub fn s_quantile<'a>(
             None => Ok(None::<ExDate>.encode(env)),
             Some(days) => Ok(ExDate::from(days as i32).encode(env)),
         },
-        DataType::Datetime(TimeUnit::Milliseconds, None) => {
+        DataType::Datetime(TimeUnit::Microseconds, None) => {
             match s.datetime()?.quantile(quantile, strategy)? {
                 None => Ok(None::<ExDateTime>.encode(env)),
-                Some(ms) => Ok(ExDateTime::from(ms as i64).encode(env)),
+                Some(microseconds) => Ok(ExDateTime::from(microseconds as i64).encode(env)),
             }
         }
         _ => Ok(term_from_value(
@@ -650,7 +650,7 @@ pub fn cast(s: &Series, to_type: &str) -> Result<Series, ExplorerError> {
         "float" => Ok(s.cast(&DataType::Float64)?),
         "integer" => Ok(s.cast(&DataType::Int64)?),
         "date" => Ok(s.cast(&DataType::Date)?),
-        "datetime" => Ok(s.cast(&DataType::Datetime(TimeUnit::Milliseconds, None))?),
+        "datetime" => Ok(s.cast(&DataType::Datetime(TimeUnit::Microseconds, None))?),
         "boolean" => Ok(s.cast(&DataType::Boolean)?),
         "string" => Ok(s.cast(&DataType::Utf8)?),
         _ => Err(ExplorerError::Other(String::from("Cannot cast to type"))),
