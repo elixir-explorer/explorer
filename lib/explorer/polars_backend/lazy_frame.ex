@@ -1,7 +1,9 @@
 defmodule Explorer.PolarsBackend.LazyFrame do
   @moduledoc false
 
+  alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Shared
+  alias Explorer.PolarsBackend.DataFrame, as: PolarsDF
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
@@ -10,8 +12,29 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @behaviour Explorer.Backend.DataFrame
 
   @impl true
-  def select(df, columns, :keep) when is_list(columns),
-    do: Shared.apply_native(df, :df_select, [columns])
+  defdelegate read_csv(
+                filename,
+                names,
+                dtypes,
+                delimiter,
+                null_character,
+                skip_rows,
+                header?,
+                encoding,
+                max_rows,
+                with_columns,
+                infer_schema_length,
+                parse_dates
+              ),
+              to: PolarsDF
+
+  @impl true
+  def select(lf, columns, :keep) when is_list(columns),
+    do: Shared.apply_native(lf, :lf_select, [columns])
+
+  @impl true
+  def names(lf),
+    do: Shared.apply_native(lf, :lf_fetch, [1]) |> DataFrame.names()
 
   def collect(lf), do: Shared.apply_native(lf, :lf_collect)
 end

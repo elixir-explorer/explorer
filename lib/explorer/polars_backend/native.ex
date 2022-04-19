@@ -52,7 +52,6 @@ defmodule Explorer.PolarsBackend.Native do
   def df_drop_duplicates(_df, _maintain_order, _subset), do: err()
   def df_drop_nulls(_df, _subset), do: err()
   def df_dtypes(_df), do: err()
-  def df_fill_none(_df, _strategy), do: err()
   def df_filter(_df, _mask), do: err()
   def df_from_map_rows(_rows), do: err()
   def df_from_keyword_rows(_rows), do: err()

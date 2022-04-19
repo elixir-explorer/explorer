@@ -26,6 +26,7 @@ version = "0.20.0"
 default-features = false
 features = [
   "cross_join",
+  "csv-file",
   "cum_agg",
   "decompress",
   "dtype-date",

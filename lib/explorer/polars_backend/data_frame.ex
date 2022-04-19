@@ -269,11 +269,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def arrange(%DataFrame{groups: []} = df, columns),
-    do:
-      Enum.reduce(columns, df, fn {direction, column}, df ->
-        Shared.apply_native(df, :df_sort, [column, direction == :desc])
-      end)
+  def arrange(%DataFrame{groups: []} = df, columns) do
+    columns = Enum.map(columns, fn {colname, direction} -> {colname, direction == :desc} end)
+    Shared.apply_native(df, :df_sort, [columns])
+  end
 
   def arrange(%DataFrame{groups: groups} = df, columns) do
     df
