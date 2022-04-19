@@ -87,10 +87,4 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s) == [true, false, false]
     end
   end
-
-  # test "equal/2" do
-  #  s = Series.from_list([1,2,3])
-
-  #  assert
-  # end
 end
