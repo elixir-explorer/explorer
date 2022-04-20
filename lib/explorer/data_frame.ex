@@ -566,11 +566,13 @@ defmodule Explorer.DataFrame do
   def select(df, columns, keep_or_drop \\ :keep)
 
   def select(df, columns, keep_or_drop) when is_list(columns) do
-    column_names = names(df)
+    if Enum.all?(columns, &is_binary/1) do
+      column_names = names(df)
 
-    Enum.each(columns, fn name ->
-      maybe_raise_column_not_found(column_names, name)
-    end)
+      Enum.each(columns, fn name ->
+        maybe_raise_column_not_found(column_names, name)
+      end)
+    end
 
     apply_impl(df, :select, [columns, keep_or_drop])
   end
