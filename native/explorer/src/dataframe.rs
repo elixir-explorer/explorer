@@ -413,6 +413,7 @@ pub fn df_select_at_idx(data: ExDataFrame, idx: usize) -> Result<Option<ExSeries
     })
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_select_at_range(
     data: ExDataFrame,
     range: Vec<usize>,
