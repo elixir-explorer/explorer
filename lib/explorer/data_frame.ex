@@ -577,6 +577,12 @@ defmodule Explorer.DataFrame do
     apply_impl(df, :select, [columns, keep_or_drop])
   end
 
+  def select(df, columns = %Range{}, keep_or_drop) do
+    range = Enum.to_list(columns)
+
+    select(df, range, keep_or_drop)
+  end
+
   @spec select(
           df :: DataFrame.t(),
           callback :: function(),
