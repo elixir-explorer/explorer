@@ -1202,7 +1202,7 @@ defmodule Explorer.Series do
   # Comparisons
 
   @doc """
-  Returns boolean mask of `left == right`, element-wise.
+  Returns boolean mask of `left == right`, element-wise. If both are empty it will return an empty series.
 
   ## Examples
 
@@ -1270,14 +1270,11 @@ defmodule Explorer.Series do
 
   def equal(%Series{dtype: _left_dtype} = left, %Series{dtype: _right_dtype} = right) do
     case is_valid_length(left, right) do
-      {false, nil} -> dtype_length_error("equal/2", left, right, nil)
+      {false, :zero_length} -> dtype_length_error("equal/2", left, right, :zero_length)
       false -> dtype_length_error("equal/2", left, right)
       true -> apply_impl(left, :eq, [right])
     end
   end
-
-  # def equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-  #   do: apply_impl(left, :eq, [right])
 
   def equal(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
@@ -1294,15 +1291,6 @@ defmodule Explorer.Series do
 
   def equal(%Series{dtype: :boolean} = left, right) when is_boolean(right),
     do: apply_impl(left, :eq, [right])
-
-  defp is_valid_length(left, right) do
-    case {Series.length(left), Series.length(right)} do
-      {l, r} when K.or(l == 0, r == 0) -> {false, nil}
-      {l, r} when K.or(l == 1, r == 1) -> true
-      {l, r} when l != r -> false
-      {_, _} -> true
-    end
-  end
 
   @doc """
   Returns boolean mask of `left != right`, element-wise.
@@ -1991,6 +1979,16 @@ defmodule Explorer.Series do
     apply(impl, fun, [series | args])
   end
 
+  defp is_valid_length(left, right) do
+    case {Series.length(left), Series.length(right)} do
+      {l, r} when K.and(l == 0, r == 0) -> true
+      {l, r} when K.or(l == 0, r == 0) -> {false, :zero_length}
+      {l, r} when K.or(l == 1, r == 1) -> true
+      {l, r} when l != r -> false
+      {_, _} -> true
+    end
+  end
+
   defp dtype_error(function, dtype, valid_dtypes),
     do:
       raise(
@@ -2009,10 +2007,10 @@ defmodule Explorer.Series do
 
   defp dtype_length_error(function, left, right, zero_length \\ "")
 
-  defp dtype_length_error(function, _left, _right, nil) do
+  defp dtype_length_error(function, _left, _right, :zero_length) do
     raise(
       ArgumentError,
-      "Explorer.Series.#{function} cannot compare zero length series"
+      "Explorer.Series.#{function} cannot compare with zero length series"
     )
   end
 
