@@ -1202,7 +1202,9 @@ defmodule Explorer.Series do
   # Comparisons
 
   @doc """
-  Returns boolean mask of `left == right`, element-wise. If both are empty it will return an empty series.
+  Returns boolean mask of `left == right`, element-wise.
+
+  If both are empty it will return an empty series.
 
   ## Examples
 
@@ -1269,10 +1271,10 @@ defmodule Explorer.Series do
         ) :: Series.t()
 
   def equal(%Series{dtype: _left_dtype} = left, %Series{dtype: _right_dtype} = right) do
-    case is_valid_length(left, right) do
-      {false, :zero_length} -> dtype_length_error("equal/2", left, right, :zero_length)
-      false -> dtype_length_error("equal/2", left, right)
-      true -> apply_impl(left, :eq, [right])
+    if reason = invalid_length(left, right) do
+      dtype_length_error("equal/2", left, right, reason)
+    else
+      apply_impl(left, :eq, [right])
     end
   end
 
@@ -1979,13 +1981,13 @@ defmodule Explorer.Series do
     apply(impl, fun, [series | args])
   end
 
-  defp is_valid_length(left, right) do
+  defp invalid_length(left, right) do
     case {Series.length(left), Series.length(right)} do
-      {l, r} when K.and(l == 0, r == 0) -> true
-      {l, r} when K.or(l == 0, r == 0) -> {false, :zero_length}
-      {l, r} when K.or(l == 1, r == 1) -> true
-      {l, r} when l != r -> false
-      {_, _} -> true
+      {0, 0} -> false
+      {l, r} when K.or(l == 0, r == 0) -> :zero_length
+      {l, r} when K.or(l == 1, r == 1) -> false
+      {l, r} when l != r -> :length_mismatch
+      {_, _} -> false
     end
   end
 
@@ -2005,8 +2007,6 @@ defmodule Explorer.Series do
           "#{right_dtype}."
       )
 
-  defp dtype_length_error(function, left, right, zero_length \\ "")
-
   defp dtype_length_error(function, _left, _right, :zero_length) do
     raise(
       ArgumentError,
@@ -2014,7 +2014,7 @@ defmodule Explorer.Series do
     )
   end
 
-  defp dtype_length_error(function, left, right, _zero_length) do
+  defp dtype_length_error(function, left, right, :length_mismatch) do
     raise(
       ArgumentError,
       "Explorer.Series.#{function} could not compare. One of the series must be length 1 or length of left argument (#{length(left)}) must match the length of right argument (#{length(right)})"
