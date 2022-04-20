@@ -257,8 +257,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def tail(df, rows), do: Shared.apply_native(df, :df_tail, [rows])
 
   @impl true
-  def select(df, columns, :keep) when is_list(columns),
-    do: Shared.apply_native(df, :df_select, [columns])
+  def select(df, columns, :keep) when is_list(columns) do
+    cond do
+      Enum.all?(columns, &is_integer/1) ->
+        Shared.apply_native(df, :df_select_at_range, [columns])
+
+      true ->
+        Shared.apply_native(df, :df_select, [columns])
+    end
+  end
 
   def select(%{groups: groups} = df, columns, :drop) when is_list(columns),
     do: df |> Shared.to_polars_df() |> drop(columns) |> Shared.to_dataframe(groups)
