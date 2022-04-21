@@ -2008,10 +2008,8 @@ defmodule Explorer.Series do
       )
 
   defp dtype_length_error(function, _left, _right, :zero_length) do
-    raise(
-      ArgumentError,
-      "Explorer.Series.#{function} cannot compare with zero length series"
-    )
+    raise ArgumentError,
+          "Explorer.Series.#{function} cannot compare non-empty series with zero length series"
   end
 
   defp dtype_length_error(function, left, right, :length_mismatch) do
