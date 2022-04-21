@@ -2013,9 +2013,9 @@ defmodule Explorer.Series do
   end
 
   defp dtype_length_error(function, left, right, :length_mismatch) do
-    raise(
-      ArgumentError,
-      "Explorer.Series.#{function} could not compare. One of the series must be length 1 or length of left argument (#{length(left)}) must match the length of right argument (#{length(right)})"
-    )
+    raise ArgumentError,
+          "Explorer.Series.#{function} could not compare. " <>
+            "One of the series must be length 1 or the length of both series should match, "
+            "got #{length(left)} and #{length(right)}"
   end
 end
