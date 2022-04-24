@@ -595,6 +595,8 @@ defmodule Explorer.DataFrame do
           |> Enum.into(%{})
 
         Enum.map(columns, &Map.fetch!(map_with_names, &1))
+      else
+        columns
       end
 
     Enum.each(columns, fn name ->
