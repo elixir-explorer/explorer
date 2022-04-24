@@ -414,21 +414,6 @@ pub fn df_select_at_idx(data: ExDataFrame, idx: usize) -> Result<Option<ExSeries
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_select_at_range(
-    data: ExDataFrame,
-    range: Vec<usize>,
-) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let columns = range
-            .into_iter()
-            .map(|i| df.select_at_idx(i).unwrap().clone())
-            .collect::<Vec<_>>();
-        let result = DataFrame::new(columns)?;
-        Ok(ExDataFrame::new(result))
-    })
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_column(data: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerError> {
     df_read!(data, df, {
         let series = df.column(name).map(|s| ExSeries::new(s.clone()))?;

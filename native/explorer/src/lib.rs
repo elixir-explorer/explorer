@@ -60,7 +60,6 @@ rustler::init!(
         df_select_at_idx,
         df_set_column_names,
         df_shape,
-        df_select_at_range,
         df_slice,
         df_sort,
         df_tail,
