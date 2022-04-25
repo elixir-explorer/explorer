@@ -591,8 +591,7 @@ defmodule Explorer.DataFrame do
     columns =
       if Enum.all?(columns, &is_number/1) do
         map_with_names =
-          Enum.zip(0..length(column_names), column_names)
-          |> Enum.into(%{})
+          for {name, idx} <- Enum.with_index(column_names), into: %{}, do: {idx, name}
 
         Enum.map(columns, &Map.fetch!(map_with_names, &1))
       else
