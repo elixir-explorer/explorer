@@ -532,6 +532,25 @@ defmodule Explorer.DataFrame do
         a string ["a", "b", "c"]
       >
 
+
+  You can also use a range or a list of integers:
+
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
+      iex> Explorer.DataFrame.select(df, [0, 1])
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        a string ["a", "b", "c"]
+        b integer [1, 2, 3]
+      >
+
+      iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
+      iex> Explorer.DataFrame.select(df, 0..1)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        a string ["a", "b", "c"]
+        b integer [1, 2, 3]
+      >
+
   Or you can use a callback function that takes the dataframe's names as its first argument:
 
       iex> df = Explorer.DataFrame.from_columns(a: ["a", "b", "c"], b: [1, 2, 3])
@@ -556,6 +575,7 @@ defmodule Explorer.DataFrame do
         [rows: 3, columns: 1]
         c integer [4, 5, 6]
       >
+
   """
   @spec select(
           df :: DataFrame.t(),
@@ -568,11 +588,26 @@ defmodule Explorer.DataFrame do
   def select(df, columns, keep_or_drop) when is_list(columns) do
     column_names = names(df)
 
+    columns =
+      if Enum.all?(columns, &is_number/1) do
+        map_with_names =
+          for {name, idx} <- Enum.with_index(column_names), into: %{}, do: {idx, name}
+
+        Enum.map(columns, &Map.fetch!(map_with_names, &1))
+      else
+        columns
+      end
+
     Enum.each(columns, fn name ->
       maybe_raise_column_not_found(column_names, name)
     end)
 
     apply_impl(df, :select, [columns, keep_or_drop])
+  end
+
+  def select(df, columns = %Range{}, keep_or_drop) do
+    range = Enum.to_list(columns)
+    select(df, range, keep_or_drop)
   end
 
   @spec select(
