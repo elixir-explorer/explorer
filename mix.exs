@@ -8,11 +8,16 @@ defmodule Explorer.MixProject do
     [
       app: :explorer,
       name: "Explorer",
+      description: "Dataframes for Elixir.",
       version: @version,
       elixir: "~> 1.12",
       package: package(),
       deps: deps(),
-      docs: docs()
+      docs: docs(),
+      preferred_cli_env: [
+        docs: :docs,
+        "hex.publish": :docs
+      ]
     ]
   end
 
@@ -25,9 +30,9 @@ defmodule Explorer.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.24", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.24", only: :docs, runtime: false},
       {:nx, "~> 0.1.0"},
-      {:rustler_precompiled, "~> 0.2"},
+      {:rustler_precompiled, "~> 0.3"},
       {:table_rex, "~> 3.1.1"}
     ]
   end
@@ -35,6 +40,7 @@ defmodule Explorer.MixProject do
   defp docs do
     [
       main: "Explorer",
+      logo: "numbat.png",
       source_ref: "v#{@version}",
       source_url: @source_url,
       groups_for_modules: [
@@ -63,7 +69,8 @@ defmodule Explorer.MixProject do
         "LICENSE"
       ],
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url}
+      links: %{"GitHub" => @source_url},
+      maintainers: ["Christopher Grainger"]
     ]
   end
 end
