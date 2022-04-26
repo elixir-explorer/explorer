@@ -25,13 +25,16 @@ defmodule Explorer.DataFrame do
     {:ok, select(df, columns)}
   end
 
-  @impl true
-  def fetch(df, column) when is_binary(column) do
+  def fetch(df, columns = %Range{}) do
+    {:ok, select(df, columns)}
+  end
+
+  def fetch(df, column) when is_binary(column) or is_integer(column) do
     {:ok, pull(df, column)}
   end
 
   @impl true
-  def pop(df, column) when is_binary(column) do
+  def pop(df, column) when is_binary(column) or is_integer(column) do
     {pull(df, column), select(df, [column], :drop)}
   end
 
@@ -40,7 +43,7 @@ defmodule Explorer.DataFrame do
   end
 
   @impl true
-  def get_and_update(df, column, fun) when is_binary(column) do
+  def get_and_update(df, column, fun) when is_binary(column) or is_integer(column) do
     value = pull(df, column)
     {current_value, new_value} = fun.(value)
     new_data = mutate(df, [{String.to_atom(column), new_value}])
@@ -579,7 +582,7 @@ defmodule Explorer.DataFrame do
   """
   @spec select(
           df :: DataFrame.t(),
-          columns :: [String.t()],
+          columns :: [String.t() | non_neg_integer()],
           keep_or_drop ::
             :keep | :drop
         ) :: DataFrame.t()
@@ -590,9 +593,7 @@ defmodule Explorer.DataFrame do
 
     columns =
       if Enum.all?(columns, &is_number/1) do
-        map_with_names =
-          for {name, idx} <- Enum.with_index(column_names), into: %{}, do: {idx, name}
-
+        map_with_names = column_index_map(column_names)
         Enum.map(columns, &Map.fetch!(map_with_names, &1))
       else
         columns
@@ -1220,11 +1221,25 @@ defmodule Explorer.DataFrame do
         integer[1094]
         [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
       >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.pull(df, 2)
+      #Explorer.Series<
+        integer[1094]
+        [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
+      >
   """
-  @spec pull(df :: DataFrame.t(), column :: String.t()) :: Series.t()
-  def pull(df, column) do
+  @spec pull(df :: DataFrame.t(), column :: String.t() | non_neg_integer()) :: Series.t()
+  def pull(df, column) when is_binary(column) do
     names = names(df)
     maybe_raise_column_not_found(names, column)
+    apply_impl(df, :pull, [column])
+  end
+
+  def pull(df, column) when is_integer(column) do
+    column_names = names(df)
+    column = column_names |> column_index_map() |> Map.fetch!(column)
+    maybe_raise_column_not_found(column_names, column)
     apply_impl(df, :pull, [column])
   end
 
@@ -2051,4 +2066,7 @@ defmodule Explorer.DataFrame do
     |> Enum.sort(&(elem(&1, 1) <= elem(&2, 1)))
     |> Enum.map(fn {_, key} -> ["      * ", inspect(key), ?\n] end)
   end
+
+  defp column_index_map(names),
+    do: for({name, idx} <- Enum.with_index(names), into: %{}, do: {idx, name})
 end
