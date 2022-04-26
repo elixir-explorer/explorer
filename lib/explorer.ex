@@ -1,15 +1,15 @@
 defmodule Explorer do
   @moduledoc """
-  The `Explorer` library is a set of functions and data types to work with 
-  tabular data in Elixir.
+  Explorer brings series (one-dimensional) and dataframes (two-dimensional)
+  for fast data exploration to Elixir.
 
-  Most of the functionality in `Explorer` is in `Explorer.DataFrame` and 
-  `Explorer.Series`. Refer to those modules for more in-depth documentation. 
+  Most of the functionality in `Explorer` is in `Explorer.DataFrame` and
+  `Explorer.Series`. Refer to those modules for more in-depth documentation.
 
-  This module only handles the default backend for `Explorer`. The default 
+  This module only handles the default backend for `Explorer`. The default
   backend is read from the application environment. Currently, the only backend
-  is an in-memory, eager one based on 
-  [`Polars`](https://github.com/pola-rs/polars). When alternatives are 
+  is an in-memory, eager one based on
+  [`Polars`](https://github.com/pola-rs/polars). When alternatives are
   available, you can use them by configuring your runtime:
 
       # config/runtime.exs
@@ -24,7 +24,7 @@ defmodule Explorer do
   @doc """
   Sets the current process default backend to `backend`.
 
-  The default backend is stored only in the process dictionary. This means if 
+  The default backend is stored only in the process dictionary. This means if
   you start a separate process, such as `Task`, the default backend must be set
   on the new process too.
 

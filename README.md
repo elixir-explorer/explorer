@@ -1,7 +1,6 @@
 <h1><img src="explorer.png" alt="Explorer"></h1>
 
-Explorer is a dataframe library for Elixir. First and foremost, Explorer is an API for data
-manipulation. Its high-level features are:
+Explorer brings series (one-dimensional) and dataframes (two-dimensional) for fast data exploration to Elixir. Its high-level features are:
 
 - Simply typed series: `:float`, `:integer`, `:boolean`, `:string`, `:date`, and `:datetime`.
 - A powerful but constrained and opinionated API, so you spend less time looking for the right 
@@ -47,7 +46,7 @@ Git dependency while we work on our first release:
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.1.0-dev", github: "elixir-nx/explorer", branch: "main"}
+    {:explorer, "~> 0.1.0"}
   ]
 end
 ```
@@ -55,7 +54,9 @@ end
 Alternatively, inside a script or Livebook:
 
 ```elixir
-Mix.install([{:explorer, "~> 0.1.0-dev", github: "elixir-nx/explorer", branch: "main"}])
+Mix.install([
+  {:explorer, "~> 0.1.0"}
+])
 ```
 
 ## Sponsors
