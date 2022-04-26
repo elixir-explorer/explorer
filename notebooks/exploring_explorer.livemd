@@ -1,4 +1,15 @@
-# Exploring Explorer
+# Ten Minutes to Explorer
+
+## Introduction
+
+Explorer is a dataframe library for Elixir. A dataframe is a common data structure used in data analysis. It is a two-dimensional table composed of columns and rows similar to a SQL table or a spreadsheet.
+
+Explorer's aim is to provide a simple and powerful API for manipulating dataframes. It takes influences mainly
+ from the [`tidyverse`](https://www.tidyverse.org), but if you've used other dataframe libraries like `pandas` you shouldn't have too much trouble working with Explorer.
+
+This document is meant to give you a crash course in using Explorer. More in-depth documentation can be found in the relevant sections of the docs.
+
+We strongly recommend you run this livebook locally so you can see the outputs and play with the inputs!
 
 ## Installation
 
@@ -13,7 +24,9 @@ Mix.install([
 
 ## Reading and writing data
 
-Currently, data can only be read in from delimited files. Support for JSON and Parquet is forthcoming. Your 'usual suspects' of options are available:
+Data can be read from delimited files (like CSV), Parquet, and the Arrow IPC (feather) format. You can also load in data from a map or keyword list of columns with `Explorer.DataFrame.from_columns/1`.
+
+For CSV, your 'usual suspects' of options are available:
 
 * `delimiter` - A single character used to separate fields within a record. (default: `","`)
 * `dtypes` - A keyword list of `[column_name: dtype]`. If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
@@ -25,7 +38,7 @@ Currently, data can only be read in from delimited files. Support for JSON and P
 * `with_columns` - A list of column names to keep. If present, only these columns are read
 * into the dataframe. (default: `nil`)
 
-`Explorer` also has a dataset built in [with more to come](https://github.com/amplifiedai/explorer/issues/16). Let's use that.
+`Explorer` also has multiple example datasets built in, which you can load from the `Explorer.Datasets` module like so:
 
 ```elixir
 df = Explorer.Datasets.fossil_fuels()
@@ -33,9 +46,13 @@ df = Explorer.Datasets.fossil_fuels()
 
 You'll notice that the output looks slightly different than many dataframe libraries. `Explorer` takes inspiration on this front from [`glimpse`](https://pillar.r-lib.org/reference/glimpse.html) in R. A benefit to this approach is that you will rarely need to elide columns.
 
-There is an [open PR](https://github.com/livebook-dev/kino/pull/42) implementing the `Kino.Render` protocol and it should be available soon.
+If you'd like to see a table with your data, we've got you covered there too.
 
-Writing delimited files is very similar. The options are a little more limited:
+```elixir
+Explorer.DataFrame.table(df)
+```
+
+Writing files is very similar to reading them. The options are a little more limited:
 
 * `header?` - Should the column names be written as the first line of the file? (default: `true`)
 * `delimiter` - A single character used to separate fields within a record. (default: `","`)
@@ -60,7 +77,7 @@ DataFrame.write_csv(df, filename)
 
 ## Working with Series
 
-`Explorer`, like `Polars`, works up from the concept of a `Series`. These are like `vectors` in R or `series` in Pandas.
+`Explorer`, like `Polars`, works up from the concept of a `Series`. In many ways, you can think of a dataframe as a row-aligned map of `Series`. These are like `vectors` in R or `series` in Pandas.
 
 For simplicity, `Explorer` uses the following `Series` `dtypes`:
 
@@ -205,7 +222,7 @@ Series.subtract(s, 4)
 Series.multiply(s, s1)
 ```
 
-Remember those helpful errors? I've tried to add those throughout. So if you try to do arithmetic with mismatching dtypes:
+Remember those helpful errors? We've tried to add those throughout. So if you try to do arithmetic with mismatching dtypes:
 
 ```elixir
 s = Series.from_list([1, 2, 3])
@@ -592,4 +609,4 @@ DataFrame.arrange(grouped, desc: :total)
 
 ### That's it!
 
-And not. This is certainly not exhaustive, but I hope it gives you a good idea of what can be done and what the 'flavour' of the API is like. I'd love contributors and issues raised where you find them!
+And not. This is certainly not exhaustive, but I hope it gives you a good idea of what can be done and what the 'flavour' of the API is like. I'd love contributions and issues raised where you find them!
