@@ -17,7 +17,7 @@ Connect to a `Mix` project with `Explorer` installed or:
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.1.0-dev", github: "elixir-nx/explorer"},
+  {:explorer, "~> 0.1.0"},
   {:kino, "~> 0.4.1"}
 ])
 ```
