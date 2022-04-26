@@ -1,6 +1,88 @@
 defmodule Explorer.DataFrame do
   @moduledoc """
   The DataFrame struct and API.
+
+  Dataframes are two-dimensional tabular data structures similar to a spreadsheet. For example, the Iris dataset:
+
+      iex> Explorer.Datasets.iris()
+      #Explorer.DataFrame<
+        [rows: 150, columns: 5]
+        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, "..."]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, "..."]
+        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, "..."]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, "..."]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "..."]
+      >
+
+  This dataframe has 150 rows and five columns. Each column is an `Explorer.Series` of the same length (150).
+
+      iex> df = Explorer.Datasets.iris()
+      iex> df["sepal_length"]
+      #Explorer.Series<
+        float[150]
+        [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9, 5.4, 4.8, 4.8, 4.3, 5.8, 5.7, 5.4, 5.1, 5.7, 5.1, 5.4, 5.1, 4.6, 5.1, 4.8, 5.0, 5.0, 5.2, 5.2, 4.7, 4.8, 5.4, 5.2, 5.5, 4.9, 5.0, 5.5, 4.9, 4.4, 5.1, 5.0, 4.5, 4.4, 5.0, 5.1, 4.8, 5.1, 4.6, 5.3, 5.0, ...]
+      >
+
+  ## Creating dataframes
+
+  Dataframes can be created from normal Elixir objects. The main ways you might do this are `Explorer.DataFrame.from_columns/1`
+  and `Explorer.DataFrame.from_rows/1`. For example:
+
+      iex> Explorer.DataFrame.from_columns(a: ["a", "b"], b: [1, 2])
+      #Explorer.DataFrame<
+        [rows: 2, columns: 2]
+        a string ["a", "b"]
+        b integer [1, 2]
+      >
+
+  ## IO
+
+  Explorer supports reading and writing of:
+
+  - delimited files (such as CSV)
+  - [Parquet](https://databricks.com/glossary/what-is-parquet)
+  - [Arrow IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-file-format)
+  - [Newline Delimited JSON](http://ndjson.org)
+
+  ## Verbs
+
+  Explorer uses the idea of a consistent set of SQL-like `verbs` like [`dplyr`](https://dplyr.tidyverse.org) 
+  which can help solve common data manipulation challenges. These are split into single table verbs and multiple table verbs.
+
+  ### Single table verbs
+
+  Single table verbs are (unsurprisingly) used for manipulating a single dataframe. These are:
+
+  - `Explorer.DataFrame.select/3` for picking variables
+  - `Explorer.DataFrame.filter/2` for picking rows based on predicates
+  - `Explorer.DataFrame.mutate/2` for adding or replacing columns that are functions of existing columns
+  - `Explorer.DataFrame.arrange/2` for changing the ordering of rows
+  - `Explorer.DataFrame.distinct/2` for picking unique rows
+  - `Explorer.DataFrame.summarise/2` for reducing multiple rows down to a single summary
+  - `Explorer.DataFrame.pivot_longer/3` and `Explorer.DataFrame.pivot_wider/4` for massaging dataframes into longer or wider forms, respectively
+
+  Each of these combine with `Explorer.DataFrame.group_by/2` for operating by group.
+
+  ### Multiple table verbs
+
+  Multiple table verbs are used for combining tables. These are:
+
+  - `Explorer.DataFrame.join/3` for performing SQL-like joins
+  - `Explorer.DataFrame.concat_rows/1` for vertically "stacking" dataframes
+
+  ## Access
+
+  In addition to this "grammar" of data manipulation, you'll find useful functions for slicing and dicing dataframes such as `Explorer.DataFrame.pull/2`,
+  `Explorer.DataFrame.head/2`, `Explorer.DataFrame.sample/3`, `Explorer.DataFrame.slice/3`, and `Explorer.DataFrame.take/2`.
+
+  `Explorer.DataFrame` also implements the `Elixir.Access` protocol. This should be familiar for users coming from other language with dataframes such as R or Python. For example:
+
+      iex> df = Explorer.Datasets.wine()
+      iex> df["class"]
+      #Explorer.Series<
+        integer[178]
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
+      >
   """
 
   alias __MODULE__, as: DataFrame
