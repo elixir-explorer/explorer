@@ -8,7 +8,8 @@ defmodule Explorer.MixProject do
     [
       app: :explorer,
       name: "Explorer",
-      description: "Dataframes for Elixir.",
+      description:
+        "Series (one-dimensional) and dataframes (two-dimensional) for fast data exploration in Elixir",
       version: @version,
       elixir: "~> 1.12",
       package: package(),
