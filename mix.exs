@@ -54,7 +54,8 @@ defmodule Explorer.MixProject do
           Explorer.Backend.Series,
           Explorer.PolarsBackend
         ]
-      ]
+      ],
+      extras: ["notebooks/exploring_explorer.livemd"]
     ]
   end
 
