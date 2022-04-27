@@ -13,6 +13,7 @@ defmodule Explorer.Backend.Series do
 
   @callback from_list(list(), dtype()) :: s
   @callback to_list(s) :: list()
+  @callback to_enum(s) :: Enumerable.t()
   @callback cast(s, dtype) :: s
 
   # Introspection

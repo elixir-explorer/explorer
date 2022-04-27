@@ -2152,3 +2152,18 @@ defmodule Explorer.DataFrame do
   defp column_index_map(names),
     do: for({name, idx} <- Enum.with_index(names), into: %{}, do: {idx, name})
 end
+
+defimpl Table.Reader, for: Explorer.DataFrame do
+  def init(df) do
+    columns = Explorer.DataFrame.names(df)
+
+    data =
+      Enum.map(columns, fn column ->
+        df
+        |> Explorer.DataFrame.pull(column)
+        |> Explorer.Series.to_enum()
+      end)
+
+    {:columns, %{columns: columns}, data}
+  end
+end
