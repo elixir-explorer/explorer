@@ -26,22 +26,20 @@ defmodule Explorer.PolarsBackend.Series.Iterator do
     end
 
     def reduce(iterator, acc, fun) do
-      reduce(iterator, 0, acc, fun)
+      reduce(iterator.series, iterator.size, 0, acc, fun)
     end
 
-    defp reduce(_iterator, _offset, {:halt, acc}, _fun), do: {:halted, acc}
+    defp reduce(_series, _size, _offset, {:halt, acc}, _fun), do: {:halted, acc}
 
-    defp reduce(iterator, offset, {:suspend, acc}, fun) do
-      {:suspended, acc, &reduce(iterator, offset, &1, fun)}
+    defp reduce(series, size, offset, {:suspend, acc}, fun) do
+      {:suspended, acc, &reduce(series, size, offset, &1, fun)}
     end
 
-    defp reduce(iterator, offset, {:cont, acc}, fun) do
-      if iterator.size == offset do
-        {:done, acc}
-      else
-        value = Series.get(iterator.series, offset)
-        reduce(iterator, offset + 1, fun.(value, acc), fun)
-      end
+    defp reduce(_series, size, size, {:cont, acc}, _fun), do: {:done, acc}
+
+    defp reduce(series, size, offset, {:cont, acc}, fun) do
+      value = Series.get(series, offset)
+      reduce(series, size, offset + 1, fun.(value, acc), fun)
     end
   end
 end
