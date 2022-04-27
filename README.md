@@ -35,20 +35,19 @@ will always return a new dataframe or series.
 
 ## Getting started
 
-In order to use `Explorer`, you will need Elixir and Rust (stable) installed. Then create an
+In order to use `Explorer`, you will need Elixir installed. Then create an
 Elixir project via the `mix` build tool:
 
 ```
 $ mix new my_app
 ```
 
-Then you can add `Explorer` as dependency in your `mix.exs`. At the moment you will have to use a
-Git dependency while we work on our first release:
+Then you can add `Explorer` as dependency in your `mix.exs`.
 
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.1.0"}
+    {:explorer, "~> 0.1.1"}
   ]
 end
 ```
@@ -57,7 +56,7 @@ Alternatively, inside a script or Livebook:
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.1.0"}
+  {:explorer, "~> 0.1.1"}
 ])
 ```
 
