@@ -1,12 +1,12 @@
 defmodule Explorer.PolarsBackend.Series.Iterator do
   @moduledoc false
 
-  defstruct [:series, :offset, :size]
+  defstruct [:series, :size]
 
   alias Explorer.PolarsBackend.Series
 
   def new(series) do
-    %__MODULE__{series: series, offset: 0, size: Series.length(series)}
+    %__MODULE__{series: series, size: Series.length(series)}
   end
 
   defimpl Enumerable do
@@ -25,24 +25,23 @@ defmodule Explorer.PolarsBackend.Series.Iterator do
        end}
     end
 
-    def reduce(_iterator, {:halt, acc}, _fun), do: {:halted, acc}
-
-    def reduce(iterator, {:suspend, acc}, fun) do
-      {:suspended, acc, &reduce(iterator, &1, fun)}
+    def reduce(iterator, acc, fun) do
+      reduce(iterator, 0, acc, fun)
     end
 
-    def reduce(iterator, {:cont, acc}, fun) do
-      case next(iterator) do
-        :done -> {:done, acc}
-        {value, iterator} -> reduce(iterator, fun.(value, acc), fun)
+    defp reduce(_iterator, _offset, {:halt, acc}, _fun), do: {:halted, acc}
+
+    defp reduce(iterator, offset, {:suspend, acc}, fun) do
+      {:suspended, acc, &reduce(iterator, offset, &1, fun)}
+    end
+
+    defp reduce(iterator, offset, {:cont, acc}, fun) do
+      if iterator.size == offset do
+        {:done, acc}
+      else
+        value = Series.get(iterator.series, offset)
+        reduce(iterator, offset + 1, fun.(value, acc), fun)
       end
-    end
-
-    defp next(%{offset: size, size: size}), do: :done
-
-    defp next(iterator) do
-      value = Series.get(iterator.series, iterator.offset)
-      {value, update_in(iterator.offset, &(&1 + 1))}
     end
   end
 end
