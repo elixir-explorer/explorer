@@ -131,14 +131,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_rows([h | _] = rows) when is_map(h) do
     case Native.df_from_map_rows(rows) do
       {:ok, df} -> Shared.to_dataframe(df)
-      {:error, reason} -> raise "#{inspect(reason)}"
+      {:error, reason} -> raise ArgumentError, reason
     end
   end
 
   def from_rows([h | _] = rows) when is_list(h) do
     case Native.df_from_keyword_rows(rows) do
       {:ok, df} -> Shared.to_dataframe(df)
-      {:error, reason} -> raise "#{inspect(reason)}"
+      {:error, reason} -> raise ArgumentError, reason
     end
   end
 
