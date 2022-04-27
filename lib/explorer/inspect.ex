@@ -22,7 +22,7 @@ defmodule Explorer.Inspect do
   def open(opts), do: IA.color("[", :list, opts)
   def close(opts), do: IA.color("]", :list, opts)
 
-  def s_shape(length, opts), do: IA.concat([open(opts), Integer.to_string(length), close(opts)])
+  def s_shape(size, opts), do: IA.concat([open(opts), Integer.to_string(size), close(opts)])
 
   def df_shape(rows, cols, [_ | _] = groups, opts),
     do:
@@ -59,9 +59,9 @@ defmodule Explorer.Inspect do
         2
       )
 
-  def s_inner(dtype, length, values, opts) do
+  def s_inner(dtype, size, values, opts) do
     data = format_data(values, opts)
-    shape = s_shape(length, opts)
+    shape = s_shape(size, opts)
     dtype = IA.color(to_string(dtype), :atom, opts)
     IA.concat([IA.line(), dtype, shape, IA.line(), data])
   end
@@ -85,9 +85,9 @@ defimpl Inspect, for: Explorer.Series do
   @printable_limit 50
 
   def inspect(series, opts) do
-    {dtype, length, values} = inspect_data(series)
+    {dtype, size, values} = inspect_data(series)
 
-    inner = Explorer.Inspect.s_inner(dtype, length, values, opts)
+    inner = Explorer.Inspect.s_inner(dtype, size, values, opts)
 
     color("#Explorer.Series<", :map, opts)
     |> concat(nest(inner, 2))
@@ -96,10 +96,10 @@ defimpl Inspect, for: Explorer.Series do
 
   defp inspect_data(series) do
     dtype = Series.dtype(series)
-    length = Series.length(series)
+    size = Series.size(series)
     l = series |> Series.slice(0, @printable_limit) |> Series.to_list()
-    l = if length > @printable_limit, do: l ++ ["..."], else: l
-    {dtype, length, l}
+    l = if size > @printable_limit, do: l ++ ["..."], else: l
+    {dtype, size, l}
   end
 end
 
