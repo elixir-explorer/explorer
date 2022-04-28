@@ -18,3 +18,4 @@ is a bit more involved than it would be otherwise.
    intermediate builds by running `rm -rf native/explorer/target`.
 5. Once the NIFs are built, use `mix rustler_precompiled.download Explorer.PolarsBackend.Native --all --print` to download generate the checksum file.
 6. Run `mix hex.publish`.
+7. Bump the version in the `mix.exs` and add the `-dev` flag to it.
