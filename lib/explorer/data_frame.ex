@@ -89,7 +89,6 @@ defmodule Explorer.DataFrame do
   alias Explorer.Series
 
   import Explorer.Shared, only: [impl!: 1]
-  import Nx.Defn.Kernel, only: [keyword!: 2]
 
   @type data :: Explorer.Backend.DataFrame.t()
   @type t :: %DataFrame{data: data}
@@ -154,7 +153,7 @@ defmodule Explorer.DataFrame do
           {:ok, DataFrame.t()} | {:error, term()}
   def read_csv(filename, opts \\ []) do
     opts =
-      keyword!(opts,
+      Keyword.validate!(opts,
         delimiter: ",",
         dtypes: nil,
         encoding: "utf8",
@@ -223,7 +222,7 @@ defmodule Explorer.DataFrame do
   @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def read_ipc(filename, opts \\ []) do
     opts =
-      keyword!(opts,
+      Keyword.validate!(opts,
         columns: nil,
         projection: nil
       )
@@ -263,7 +262,7 @@ defmodule Explorer.DataFrame do
           {:ok, String.t()} | {:error, term()}
   def write_ipc(df, filename, opts \\ []) do
     opts =
-      keyword!(opts,
+      Keyword.validate!(opts,
         compression: nil
       )
 
@@ -287,7 +286,7 @@ defmodule Explorer.DataFrame do
   @spec write_csv(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, String.t()} | {:error, term()}
   def write_csv(df, filename, opts \\ []) do
-    opts = keyword!(opts, header?: true, delimiter: ",")
+    opts = Keyword.validate!(opts, header?: true, delimiter: ",")
     apply_impl(df, :write_csv, [filename, opts[:header?], opts[:delimiter]])
   end
 
@@ -317,7 +316,7 @@ defmodule Explorer.DataFrame do
           {:ok, DataFrame.t()} | {:error, term()}
   def read_ndjson(filename, opts \\ []) do
     opts =
-      keyword!(opts,
+      Keyword.validate!(opts,
         with_batch_size: 1000,
         infer_schema_length: @default_infer_schema_length
       )
@@ -451,7 +450,7 @@ defmodule Explorer.DataFrame do
   """
   @spec to_map(df :: DataFrame.t(), Keyword.t()) :: map()
   def to_map(df, opts \\ []) do
-    opts = keyword!(opts, convert_series: true, atom_keys: false)
+    opts = Keyword.validate!(opts, convert_series: true, atom_keys: false)
 
     apply_impl(df, :to_map, [opts[:convert_series], opts[:atom_keys]])
   end
@@ -472,7 +471,7 @@ defmodule Explorer.DataFrame do
   """
   @spec to_binary(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
   def to_binary(df, opts \\ []) do
-    opts = keyword!(opts, header?: true, delimiter: ",")
+    opts = Keyword.validate!(opts, header?: true, delimiter: ",")
     apply_impl(df, :to_binary, [opts[:header?], opts[:delimiter]])
   end
 
@@ -1015,7 +1014,7 @@ defmodule Explorer.DataFrame do
   def distinct(df, opts \\ [])
 
   def distinct(df, opts) do
-    opts = keyword!(opts, columns: [], keep_all?: false)
+    opts = Keyword.validate!(opts, columns: [], keep_all?: false)
 
     column_names = names(df)
 
@@ -1468,7 +1467,9 @@ defmodule Explorer.DataFrame do
   def sample(df, n_or_frac, opts \\ [])
 
   def sample(df, n, opts) when is_integer(n) do
-    opts = keyword!(opts, with_replacement?: false, seed: Enum.random(1..1_000_000_000_000))
+    opts =
+      Keyword.validate!(opts, with_replacement?: false, seed: Enum.random(1..1_000_000_000_000))
+
     n_rows = n_rows(df)
 
     case {n > n_rows, opts[:with_replacement?]} do
@@ -1538,7 +1539,7 @@ defmodule Explorer.DataFrame do
   def pivot_longer(df, columns, opts \\ [])
 
   def pivot_longer(df, columns, opts) when is_list(columns) do
-    opts = keyword!(opts, value_cols: [], names_to: "variable", values_to: "value")
+    opts = Keyword.validate!(opts, value_cols: [], names_to: "variable", values_to: "value")
 
     names = names(df)
     dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
@@ -1625,7 +1626,7 @@ defmodule Explorer.DataFrame do
             Keyword.t()
         ) :: DataFrame.t()
   def pivot_wider(df, names_from, values_from, opts \\ []) do
-    opts = keyword!(opts, id_cols: [], names_prefix: "")
+    opts = Keyword.validate!(opts, id_cols: [], names_prefix: "")
 
     names = names(df)
     dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
@@ -1766,7 +1767,7 @@ defmodule Explorer.DataFrame do
     right_cols = names(right)
     cols = left_cols ++ right_cols
 
-    opts = keyword!(opts, on: find_overlapping_cols(left_cols, right_cols), how: :inner)
+    opts = Keyword.validate!(opts, on: find_overlapping_cols(left_cols, right_cols), how: :inner)
 
     case {opts[:on], opts[:how]} do
       {_, :cross} ->
