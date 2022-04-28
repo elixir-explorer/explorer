@@ -14,7 +14,7 @@ defmodule Explorer.DataFrame do
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "..."]
       >
 
-  This dataframe has 150 rows and five columns. Each column is an `Explorer.Series` of the same length (150).
+  This dataframe has 150 rows and five columns. Each column is an `Explorer.Series` of the same size (150).
 
       iex> df = Explorer.Datasets.iris()
       iex> df["sepal_length"]
@@ -343,7 +343,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates a new dataframe from a map or keyword of lists or series.
 
-  Lists and series must be the same length. This function has the same validations from
+  Lists and series must be the same size. This function has the same validations from
   `Explorer.Series.from_list/2` for lists, so they must conform to the requirements for making a series.
 
   ## Options
@@ -751,14 +751,14 @@ defmodule Explorer.DataFrame do
   """
   @spec filter(df :: DataFrame.t(), mask :: Series.t() | [boolean()]) :: DataFrame.t()
   def filter(df, %Series{} = mask) do
-    s_len = Series.length(mask)
+    s_len = Series.size(mask)
     df_len = n_rows(df)
 
     case s_len == df_len do
       false ->
         raise(
           ArgumentError,
-          "length of the mask (#{s_len}) must match number of rows in the dataframe (#{df_len})"
+          "size of the mask (#{s_len}) must match number of rows in the dataframe (#{df_len})"
         )
 
       true ->

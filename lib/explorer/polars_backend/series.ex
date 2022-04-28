@@ -55,7 +55,7 @@ defmodule Explorer.PolarsBackend.Series do
   def dtype(series), do: series |> Shared.apply_native(:s_dtype) |> Shared.normalise_dtype()
 
   @impl true
-  def length(series), do: Shared.apply_native(series, :s_len)
+  def size(series), do: Shared.apply_native(series, :s_len)
 
   # Slice and dice
 
@@ -69,7 +69,7 @@ defmodule Explorer.PolarsBackend.Series do
   def sample(series, n, with_replacement?, seed) when is_integer(n) do
     indices =
       series
-      |> length()
+      |> size()
       |> Native.s_seedable_random_indices(n, with_replacement?, seed)
 
     take(series, indices)
@@ -97,7 +97,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def get(series, idx) do
-    idx = if idx < 0, do: length(series) + idx, else: idx
+    idx = if idx < 0, do: size(series) + idx, else: idx
     Shared.apply_native(series, :s_get, [idx])
   end
 
@@ -343,7 +343,7 @@ defmodule Explorer.PolarsBackend.Series do
   defp scalar_rhs(scalar, lhs),
     do:
       scalar
-      |> List.duplicate(PolarsSeries.length(lhs))
+      |> List.duplicate(PolarsSeries.size(lhs))
       |> Series.from_list()
 end
 

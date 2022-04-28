@@ -24,7 +24,7 @@ defmodule Explorer.Series do
 
   import Explorer.Shared, only: [impl!: 1, check_types!: 1, cast_numerics: 2]
   import Nx.Defn.Kernel, only: [keyword!: 2]
-  import Kernel, except: [length: 1, and: 2]
+  import Kernel, except: [and: 2]
 
   @type data :: Explorer.Backend.Series.t()
   @type dtype :: :float | :integer | :boolean | :string | :date | :datetime
@@ -44,21 +44,21 @@ defmodule Explorer.Series do
 
   @impl true
   def pop(series, idx) when is_integer(idx) do
-    mask = 0..(length(series) - 1) |> Enum.map(&(&1 != idx)) |> from_list()
+    mask = 0..(size(series) - 1) |> Enum.map(&(&1 != idx)) |> from_list()
     value = get(series, idx)
     series = filter(series, mask)
     {value, series}
   end
 
   def pop(series, indices) when is_list(indices) do
-    mask = 0..(length(series) - 1) |> Enum.map(&(&1 not in indices)) |> from_list()
+    mask = 0..(size(series) - 1) |> Enum.map(&(&1 not in indices)) |> from_list()
     value = take(series, indices)
     series = filter(series, mask)
     {value, series}
   end
 
   def pop(series, %Range{} = range) do
-    mask = 0..(length(series) - 1) |> Enum.map(&(&1 not in range)) |> from_list()
+    mask = 0..(size(series) - 1) |> Enum.map(&(&1 not in range)) |> from_list()
     value = take(series, Enum.to_list(range))
     series = filter(series, mask)
     {value, series}
@@ -338,16 +338,16 @@ defmodule Explorer.Series do
   def dtype(%Series{dtype: dtype}), do: dtype
 
   @doc """
-  Returns the length of the series.
+  Returns the size of the series.
 
   ## Examples
 
       iex> s = Explorer.Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
-      iex> Explorer.Series.length(s)
+      iex> Explorer.Series.size(s)
       2
   """
-  @spec length(series :: Series.t()) :: integer()
-  def length(series), do: apply_impl(series, :length)
+  @spec size(series :: Series.t()) :: integer()
+  def size(series), do: apply_impl(series, :size)
 
   # Slice and dice
 
@@ -435,12 +435,12 @@ defmodule Explorer.Series do
 
   def sample(series, n, opts) when is_integer(n) do
     opts = keyword!(opts, with_replacement?: false, seed: Enum.random(1..1_000_000_000_000))
-    length = length(series)
+    size = size(series)
 
-    case {n > length, opts[:with_replacement?]} do
+    case {n > size, opts[:with_replacement?]} do
       {true, false} ->
         raise ArgumentError,
-              "in order to sample more elements than are in the series (#{length}), sampling " <>
+              "in order to sample more elements than are in the series (#{size}), sampling " <>
                 "`with_replacement?` must be true"
 
       _ ->
@@ -451,8 +451,8 @@ defmodule Explorer.Series do
   end
 
   def sample(series, frac, opts) when is_float(frac) do
-    length = length(series)
-    n = round(frac * length)
+    size = size(series)
+    n = round(frac * size)
     sample(series, n, opts)
   end
 
@@ -468,7 +468,7 @@ defmodule Explorer.Series do
         [1, 3, 5, 7, 9]
       >
 
-  If *n* is bigger than the length of the series, the result is a new series with only the first value of the supplied series.
+  If *n* is bigger than the size of the series, the result is a new series with only the first value of the supplied series.
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.take_every(20)
@@ -507,7 +507,7 @@ defmodule Explorer.Series do
   def filter(series, fun) when is_function(fun), do: apply_impl(series, :filter, [fun])
 
   @doc """
-  Returns a slice of the series, with `length` elements starting at `offset`.
+  Returns a slice of the series, with `size` elements starting at `offset`.
 
   ## Examples
 
@@ -527,7 +527,7 @@ defmodule Explorer.Series do
         [3, 4]
       >
 
-  If the length would run past the end of the series, the result may be shorter than the length.
+  If the size would run past the end of the series, the result may be shorter than the size.
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5])
       iex> Explorer.Series.slice(s, -3, 4)
@@ -536,8 +536,8 @@ defmodule Explorer.Series do
         [3, 4, 5]
       >
   """
-  @spec slice(series :: Series.t(), offset :: integer(), length :: integer()) :: Series.t()
-  def slice(series, offset, length), do: apply_impl(series, :slice, [offset, length])
+  @spec slice(series :: Series.t(), offset :: integer(), size :: integer()) :: Series.t()
+  def slice(series, offset, size), do: apply_impl(series, :slice, [offset, size])
 
   @doc """
   Returns the elements at the given indices as a new series.
@@ -565,14 +565,14 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.get(s, 4)
-      ** (ArgumentError) index 4 out of bounds for series of length 3
+      ** (ArgumentError) index 4 out of bounds for series of size 3
   """
   @spec get(series :: Series.t(), idx :: integer()) :: any()
   def get(series, idx) do
-    s_len = length(series)
+    s_len = size(series)
 
     if idx > s_len - 1 || idx < -s_len,
-      do: raise(ArgumentError, "index #{idx} out of bounds for series of length #{s_len}")
+      do: raise(ArgumentError, "index #{idx} out of bounds for series of size #{s_len}")
 
     apply_impl(series, :get, [idx])
   end

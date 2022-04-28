@@ -290,7 +290,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   defp mutate_reducer({colname, %Series{} = series}, %DataFrame{} = df) when is_binary(colname) do
-    check_series_length(df, series, colname)
+    check_series_size(df, series, colname)
     series = series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
     Shared.apply_native(df, :df_with_column, [series])
   end
@@ -306,15 +306,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
        when is_binary(colname),
        do: mutate_reducer({colname, value |> List.duplicate(n_rows(df))}, df)
 
-  defp check_series_length(df, series, colname) do
+  defp check_series_size(df, series, colname) do
     df_len = n_rows(df)
-    s_len = Series.length(series)
+    s_len = Series.size(series)
 
     if s_len != df_len,
       do:
         raise(
           ArgumentError,
-          "length of new column #{colname} (#{s_len}) must match number of rows in the " <>
+          "size of new column #{colname} (#{s_len}) must match number of rows in the " <>
             "dataframe (#{df_len})"
         )
   end

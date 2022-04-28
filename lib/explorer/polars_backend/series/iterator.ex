@@ -6,7 +6,7 @@ defmodule Explorer.PolarsBackend.Series.Iterator do
   alias Explorer.PolarsBackend.Series
 
   def new(series) do
-    %__MODULE__{series: series, size: Series.length(series)}
+    %__MODULE__{series: series, size: Series.size(series)}
   end
 
   defimpl Enumerable do
@@ -18,9 +18,9 @@ defmodule Explorer.PolarsBackend.Series.Iterator do
 
     def slice(iterator) do
       {:ok, iterator.size,
-       fn start, length ->
+       fn start, size ->
          iterator.series
-         |> Series.slice(start, length)
+         |> Series.slice(start, size)
          |> Series.to_list()
        end}
     end

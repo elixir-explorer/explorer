@@ -19,7 +19,7 @@ defmodule Explorer.Backend.Series do
   # Introspection
 
   @callback dtype(s) :: dtype()
-  @callback length(s) :: integer()
+  @callback size(s) :: integer()
 
   # Slice and dice
 

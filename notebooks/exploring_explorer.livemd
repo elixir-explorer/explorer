@@ -102,14 +102,14 @@ s2 = Series.from_list(["a", "b", "c"])
 s3 = Series.from_list([~D[2011-01-01], ~D[1965-01-21]])
 ```
 
-You'll notice that the `dtype` and length of the `Series` are at the top of the printed value. You can get those programmatically as well.
+You'll notice that the `dtype` and size of the `Series` are at the top of the printed value. You can get those programmatically as well.
 
 ```elixir
 Series.dtype(s3)
 ```
 
 ```elixir
-Series.length(s3)
+Series.size(s3)
 ```
 
 And the printed values max out at 50:
@@ -296,7 +296,7 @@ Series.count(s)
 
 ## Working with DataFrames
 
-A `DataFrame` is really just a collection of `Series` of the same length. Which is why you can create a `DataFrame` from a `Keyword` list.
+A `DataFrame` is really just a collection of `Series` of the same size. Which is why you can create a `DataFrame` from a `Keyword` list.
 
 ```elixir
 DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
@@ -360,7 +360,7 @@ DataFrame.select(df, &String.ends_with?(&1, "fuel"), :drop)
 
 ### Filter
 
-The next verb we'll look at is `filter`. You can pass in a boolean mask series of the same length as the dataframe, but I find it's more handy to use callbacks on the dataframe to generate those masks.
+The next verb we'll look at is `filter`. You can pass in a boolean mask series of the same size as the dataframe, but I find it's more handy to use callbacks on the dataframe to generate those masks.
 
 ```elixir
 DataFrame.filter(df, &Series.equal(&1["country"], "AFGHANISTAN"))

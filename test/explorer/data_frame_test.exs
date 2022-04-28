@@ -19,17 +19,17 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "filter/2" do
-    test "raises with mask of invalid length", %{df: df} do
+    test "raises with mask of invalid size", %{df: df} do
       assert_raise ArgumentError,
-                   "length of the mask (3) must match number of rows in the dataframe (1094)",
+                   "size of the mask (3) must match number of rows in the dataframe (1094)",
                    fn -> DF.filter(df, [true, false, true]) end
     end
   end
 
   describe "mutate/2" do
-    test "raises with series of invalid length", %{df: df} do
+    test "raises with series of invalid size", %{df: df} do
       assert_raise ArgumentError,
-                   "length of new column test (3) must match number of rows in the dataframe (1094)",
+                   "size of new column test (3) must match number of rows in the dataframe (1094)",
                    fn -> DF.mutate(df, test: [1, 2, 3]) end
     end
   end
