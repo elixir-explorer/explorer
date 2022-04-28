@@ -23,7 +23,6 @@ defmodule Explorer.Series do
   alias Kernel, as: K
 
   import Explorer.Shared, only: [impl!: 1, check_types!: 1, cast_numerics: 2]
-  import Nx.Defn.Kernel, only: [keyword!: 2]
   import Kernel, except: [and: 2]
 
   @type data :: Explorer.Backend.Series.t()
@@ -36,6 +35,8 @@ defmodule Explorer.Series do
   defstruct [:data, :dtype]
 
   @behaviour Access
+
+  @compile {:no_warn_undefined, Nx}
 
   @impl true
   def fetch(series, idx) when is_integer(idx), do: {:ok, get(series, idx)}
@@ -195,6 +196,10 @@ defmodule Explorer.Series do
   @doc """
   Converts a `t:Nx.Tensor.t/0` to a series.
 
+  > #### Warning {: .warning}
+  >
+  > `Nx` is an optional dependency. You will need to ensure it's installed to use this function.
+
   ## Examples
 
       iex> tensor = Nx.tensor([1, 2, 3])
@@ -233,6 +238,10 @@ defmodule Explorer.Series do
 
     * `:float`
     * `:integer`
+
+  > #### Warning {: .warning}
+  >
+  > `Nx` is an optional dependency. You will need to ensure it's installed to use this function.
 
   ## Examples
 
@@ -434,7 +443,9 @@ defmodule Explorer.Series do
   def sample(series, n_or_frac, opts \\ [])
 
   def sample(series, n, opts) when is_integer(n) do
-    opts = keyword!(opts, with_replacement?: false, seed: Enum.random(1..1_000_000_000_000))
+    opts =
+      Keyword.validate!(opts, with_replacement?: false, seed: Enum.random(1..1_000_000_000_000))
+
     size = size(series)
 
     case {n > size, opts[:with_replacement?]} do

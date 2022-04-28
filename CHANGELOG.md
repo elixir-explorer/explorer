@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `Series.length/1` is now `Series.size/` in keeping with Elixir idioms
+- `Nx` is now an optional dependency
+- Minimum Elixir version is now 1.13
+
 ## [v0.1.1] - 2022-04-27
 
 ### Security

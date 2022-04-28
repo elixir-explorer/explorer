@@ -2,7 +2,7 @@ defmodule Explorer.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-nx/explorer"
-  @version "0.1.1-dev"
+  @version "0.2.0-dev"
 
   def project do
     [
@@ -11,7 +11,7 @@ defmodule Explorer.MixProject do
       description:
         "Series (one-dimensional) and dataframes (two-dimensional) for fast data exploration in Elixir",
       version: @version,
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       package: package(),
       deps: deps(),
       docs: docs(),
@@ -32,7 +32,7 @@ defmodule Explorer.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.24", only: :docs, runtime: false},
-      {:nx, "~> 0.1.0"},
+      {:nx, "~> 0.1.0", only: :test},
       {:rustler_precompiled, "~> 0.3"},
       {:table, "~> 0.1.0"},
       {:table_rex, "~> 3.1.1"}
