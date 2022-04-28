@@ -11,7 +11,7 @@ defmodule Explorer.MixProject do
       description:
         "Series (one-dimensional) and dataframes (two-dimensional) for fast data exploration in Elixir",
       version: @version,
-      elixir: "~> 1.12",
+      elixir: "~> 1.13",
       package: package(),
       deps: deps(),
       docs: docs(),
