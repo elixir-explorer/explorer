@@ -18,6 +18,7 @@
             elixir
             erlang
             gdb
+	    libiconv
             openssl
             pkg-config
             rustc
@@ -30,7 +31,7 @@
             export PATH=$MIX_HOME/bin:$PATH
             export PATH=$HEX_HOME/bin:$PATH
             export PATH=$MIX_HOME/escripts:$PATH
-                  '';
+          '';
         };
       });
 }
