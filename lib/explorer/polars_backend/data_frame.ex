@@ -198,11 +198,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_map(%DataFrame{data: df}, convert_series?, atom_keys?) do
-    Enum.reduce(df, %{}, &to_map_reducer(&1, &2, convert_series?, atom_keys?))
+  def to_columns(%DataFrame{data: df}, convert_series?, atom_keys?) do
+    Enum.reduce(df, %{}, &to_columns_reducer(&1, &2, convert_series?, atom_keys?))
   end
 
-  defp to_map_reducer(series, acc, convert_series?, atom_keys?) do
+  defp to_columns_reducer(series, acc, convert_series?, atom_keys?) do
     series_name =
       series
       |> Native.s_name()
