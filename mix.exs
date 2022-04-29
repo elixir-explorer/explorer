@@ -58,7 +58,14 @@ defmodule Explorer.MixProject do
           Explorer.PolarsBackend
         ]
       ],
-      extras: ["notebooks/exploring_explorer.livemd"]
+      groups_for_functions: [
+        "Functions: Single-table": &(&1[:type] == :single),
+        "Functions: Multi-table": &(&1[:type] == :multi),
+        "Functions: Introspection": &(&1[:type] == :introspection),
+        "Functions: IO": &(&1[:type] == :io)
+      ],
+      extras: ["notebooks/exploring_explorer.livemd", "CHANGELOG.md"],
+      skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
     ]
   end
 

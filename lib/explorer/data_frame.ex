@@ -2,7 +2,8 @@ defmodule Explorer.DataFrame do
   @moduledoc """
   The DataFrame struct and API.
 
-  Dataframes are two-dimensional tabular data structures similar to a spreadsheet. For example, the Iris dataset:
+  Dataframes are two-dimensional tabular data structures similar to a spreadsheet.
+  For example, the Iris dataset:
 
       iex> Explorer.Datasets.iris()
       #Explorer.DataFrame<
@@ -14,7 +15,8 @@ defmodule Explorer.DataFrame do
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "..."]
       >
 
-  This dataframe has 150 rows and five columns. Each column is an `Explorer.Series` of the same size (150).
+  This dataframe has 150 rows and five columns. Each column is an `Explorer.Series`
+  of the same size (150):
 
       iex> df = Explorer.Datasets.iris()
       iex> df["sepal_length"]
@@ -25,8 +27,8 @@ defmodule Explorer.DataFrame do
 
   ## Creating dataframes
 
-  Dataframes can be created from normal Elixir objects. The main ways you might do this are `Explorer.DataFrame.from_columns/1`
-  and `Explorer.DataFrame.from_rows/1`. For example:
+  Dataframes can be created from normal Elixir objects. The main ways you might do this are
+  `from_columns/1` and `from_rows/1`. For example:
 
       iex> Explorer.DataFrame.from_columns(a: ["a", "b"], b: [1, 2])
       #Explorer.DataFrame<
@@ -34,15 +36,6 @@ defmodule Explorer.DataFrame do
         a string ["a", "b"]
         b integer [1, 2]
       >
-
-  ## IO
-
-  Explorer supports reading and writing of:
-
-  - delimited files (such as CSV)
-  - [Parquet](https://databricks.com/glossary/what-is-parquet)
-  - [Arrow IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-file-format)
-  - [Newline Delimited JSON](http://ndjson.org)
 
   ## Verbs
 
@@ -70,12 +63,28 @@ defmodule Explorer.DataFrame do
   - `Explorer.DataFrame.join/3` for performing SQL-like joins
   - `Explorer.DataFrame.concat_rows/1` for vertically "stacking" dataframes
 
+  ## IO
+
+  Explorer supports reading and writing of:
+
+  - delimited files (such as CSV)
+  - [Parquet](https://databricks.com/glossary/what-is-parquet)
+  - [Arrow IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-file-format)
+  - [Newline Delimited JSON](http://ndjson.org)
+
+  The convention Explorer uses is to have `from_*` and `to_*` functions to read and write
+  to files in the formats above. `load_*` and `dump_*` versions are also available to read
+  and write those formats directly in memory.
+
   ## Access
 
-  In addition to this "grammar" of data manipulation, you'll find useful functions for slicing and dicing dataframes such as `Explorer.DataFrame.pull/2`,
-  `Explorer.DataFrame.head/2`, `Explorer.DataFrame.sample/3`, `Explorer.DataFrame.slice/3`, and `Explorer.DataFrame.take/2`.
+  In addition to this "grammar" of data manipulation, you'll find useful functions for
+  slicing and dicing dataframes such as `pull/2`, `head/2`, `sample/3`, `slice/3`, and
+  `take/2`.
 
-  `Explorer.DataFrame` also implements the `Elixir.Access` protocol. This should be familiar for users coming from other language with dataframes such as R or Python. For example:
+  `Explorer.DataFrame` also implements the `Access` behaviour (also known as the brackets
+  syntax). This should be familiar for users coming from other language with dataframes
+  such as R or Python. For example:
 
       iex> df = Explorer.Datasets.wine()
       iex> df["class"]
@@ -149,6 +158,7 @@ defmodule Explorer.DataFrame do
     * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
     * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `[DataType::Utf8]`
   """
+  @doc type: :io
   @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_csv(filename, opts \\ []) do
@@ -188,6 +198,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Similar to `from_csv/2` but raises if there is a problem reading the CSV.
   """
+  @doc type: :io
   @spec from_csv!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
   def from_csv!(filename, opts \\ []) do
     case from_csv(filename, opts) do
@@ -199,6 +210,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a parquet file into a dataframe.
   """
+  @doc type: :io
   @spec from_parquet(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_parquet(filename, opts \\ []) do
@@ -209,6 +221,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Writes a dataframe to a parquet file.
   """
+  @doc type: :io
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_parquet(df, filename) do
@@ -223,6 +236,7 @@ defmodule Explorer.DataFrame do
     * `columns` - List with name of columns to be selected. Defaults to all columns.
     * `projection` - List with the index of columns to be selected. Defaults to all columns.
   """
+  @doc type: :io
   @spec from_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc(filename, opts \\ []) do
     opts =
@@ -243,6 +257,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Similar to `from_ipc/2` but raises if there is a problem reading the IPC file.
   """
+  @doc type: :io
   @spec from_ipc!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
   def from_ipc!(filename, opts \\ []) do
     case from_ipc(filename, opts) do
@@ -262,6 +277,7 @@ defmodule Explorer.DataFrame do
     * `compression` - Sets the algorithm used to compress the IPC file.
       It accepts `"ZSTD"` or `"LZ4"` compression. (default: `nil`)
   """
+  @doc type: :io
   @spec to_ipc(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_ipc(df, filename, opts \\ []) do
@@ -287,6 +303,7 @@ defmodule Explorer.DataFrame do
     * `header?` - Should the column names be written as the first line of the file? (default: `true`)
     * `delimiter` - A single character used to separate fields within a record. (default: `","`)
   """
+  @doc type: :io
   @spec to_csv(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_csv(df, filename, opts \\ []) do
@@ -297,6 +314,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Similar to `to_csv/3` but raises if there is a problem reading the CSV.
   """
+  @doc type: :io
   @spec to_csv!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: String.t()
   def to_csv!(df, filename, opts \\ []) do
     case to_csv(df, filename, opts) do
@@ -316,6 +334,7 @@ defmodule Explorer.DataFrame do
     * `infer_schema_length` - Maximum number of rows read for schema inference.
     Setting this to nil will do a full table scan and will be slow (default: `1000`).
   """
+  @doc type: :io
   @spec from_ndjson(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_ndjson(filename, opts \\ []) do
@@ -337,11 +356,35 @@ defmodule Explorer.DataFrame do
   @doc """
   Writes a dataframe to a ndjson file.
   """
+  @doc type: :io
   @spec to_ndjson(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_ndjson(df, filename) do
     apply_impl(df, :to_ndjson, [filename])
   end
+
+  @doc """
+  Writes a dataframe to a binary representation of a delimited file.
+
+  ## Options
+
+    * `header?` - Should the column names be written as the first line of the file? (default: `true`)
+    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df |> Explorer.DataFrame.head() |> Explorer.DataFrame.dump_csv()
+      "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n2010,ALGERIA,32500,332,12381,14565,2598,2623,0.9,663\\n2010,ANDORRA,141,0,141,0,0,0,1.68,0\\n2010,ANGOLA,7924,0,3649,374,204,3697,0.37,321\\n"
+  """
+  @doc type: :io
+  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  def dump_csv(df, opts \\ []) do
+    opts = Keyword.validate!(opts, header?: true, delimiter: ",")
+    apply_impl(df, :dump_csv, [opts[:header?], opts[:delimiter]])
+  end
+
+  ## Conversion
 
   @doc """
   Creates a new dataframe from a map or keyword of lists or series.
@@ -379,6 +422,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.from_columns(%{floats: [1.0, 2.0], ints: [1, "wrong"]})
       ** (ArgumentError) cannot create series "ints": cannot make a series from mismatched types - the value "wrong" does not match inferred dtype integer
   """
+  @doc type: :single
   @spec from_columns(series :: map() | Keyword.t(), opts :: Keyword.t()) :: DataFrame.t()
   def from_columns(series, opts \\ []) do
     backend = backend_from_options!(opts)
@@ -426,6 +470,7 @@ defmodule Explorer.DataFrame do
         name string ["José", nil, "Cristine"]
       >
   """
+  @doc type: :single
   @spec from_rows(rows :: list(map()) | Keyword.t(), opts :: Keyword.t()) :: DataFrame.t()
   def from_rows(rows, opts \\ []) do
     backend = backend_from_options!(opts)
@@ -452,6 +497,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.to_columns(df, atom_keys: true)
       %{floats: [1.0, 2.0], ints: [1, nil]}
   """
+  @doc type: :single
   @spec to_columns(df :: DataFrame.t(), Keyword.t()) :: map()
   def to_columns(df, opts \\ []) do
     opts = Keyword.validate!(opts, convert_series: true, atom_keys: false)
@@ -480,31 +526,12 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.to_rows(df, atom_keys: true)
       [%{floats: 1.0, ints: 1}, %{floats: 2.0, ints: nil}]
   """
+  @doc type: :single
   @spec to_rows(df :: DataFrame.t(), Keyword.t()) :: [map()]
   def to_rows(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false)
 
     apply_impl(df, :to_rows, [opts[:atom_keys]])
-  end
-
-  @doc """
-  Writes a dataframe to a binary representation of a delimited file.
-
-  ## Options
-
-    * `header?` - Should the column names be written as the first line of the file? (default: `true`)
-    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
-
-  ## Examples
-
-      iex> df = Explorer.Datasets.fossil_fuels()
-      iex> df |> Explorer.DataFrame.head() |> Explorer.DataFrame.dump_csv()
-      "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n2010,ALGERIA,32500,332,12381,14565,2598,2623,0.9,663\\n2010,ANDORRA,141,0,141,0,0,0,1.68,0\\n2010,ANGOLA,7924,0,3649,374,204,3697,0.37,321\\n"
-  """
-  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
-  def dump_csv(df, opts \\ []) do
-    opts = Keyword.validate!(opts, header?: true, delimiter: ",")
-    apply_impl(df, :dump_csv, [opts[:header?], opts[:delimiter]])
   end
 
   # Introspection
@@ -518,6 +545,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.names(df)
       ["floats", "ints"]
   """
+  @doc type: :introspection
   @spec names(df :: DataFrame.t()) :: [String.t()]
   def names(df), do: apply_impl(df, :names)
 
@@ -530,6 +558,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dtypes(df)
       [:float, :integer]
   """
+  @doc type: :introspection
   @spec dtypes(df :: DataFrame.t()) :: [atom()]
   def dtypes(df), do: apply_impl(df, :dtypes)
 
@@ -542,6 +571,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.shape(df)
       {3, 2}
   """
+  @doc type: :introspection
   @spec shape(df :: DataFrame.t()) :: {integer(), integer()}
   def shape(df), do: apply_impl(df, :shape)
 
@@ -554,6 +584,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.n_rows(df)
       1094
   """
+  @doc type: :introspection
   @spec n_rows(df :: DataFrame.t()) :: integer()
   def n_rows(df), do: apply_impl(df, :n_rows)
 
@@ -566,6 +597,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.n_cols(df)
       10
   """
+  @doc type: :introspection
   @spec n_cols(df :: DataFrame.t()) :: integer()
   def n_cols(df), do: apply_impl(df, :n_cols)
 
@@ -579,6 +611,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.groups(df)
       ["country"]
   """
+  @doc type: :introspection
   @spec groups(df :: DataFrame.t()) :: list(String.t())
   def groups(%DataFrame{groups: groups}), do: groups
 
@@ -605,6 +638,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321]
       >
   """
+  @doc type: :single
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
   def head(df, nrows \\ 5), do: apply_impl(df, :head, [nrows])
 
@@ -629,6 +663,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [761, 1, 153, 33, 9]
       >
   """
+  @doc type: :single
   @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
   def tail(df, nrows \\ 5), do: apply_impl(df, :tail, [nrows])
 
@@ -693,6 +728,7 @@ defmodule Explorer.DataFrame do
       >
 
   """
+  @doc type: :single
   @spec select(
           df :: DataFrame.t(),
           columns :: [String.t() | non_neg_integer()],
@@ -780,6 +816,7 @@ defmodule Explorer.DataFrame do
         b integer [2, 3]
       >
   """
+  @doc type: :single
   @spec filter(df :: DataFrame.t(), mask :: Series.t() | [boolean()]) :: DataFrame.t()
   def filter(df, %Series{} = mask) do
     s_len = Series.size(mask)
@@ -894,6 +931,7 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
   """
+  @doc type: :single
   @spec mutate(df :: DataFrame.t(), with_columns :: map() | Keyword.t()) :: DataFrame.t()
   def mutate(df, with_columns) when is_map(with_columns) do
     with_columns = Enum.reduce(with_columns, %{}, &mutate_reducer(&1, &2, df))
@@ -963,6 +1001,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [7, 9, 8, 9, 9, "..."]
       >
   """
+  @doc type: :single
   @spec arrange(
           df :: DataFrame.t(),
           columns ::
@@ -1042,6 +1081,7 @@ defmodule Explorer.DataFrame do
         x2 string ["a", "c"]
       >
   """
+  @doc type: :single
   @spec distinct(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
   def distinct(df, opts \\ [])
 
@@ -1079,6 +1119,7 @@ defmodule Explorer.DataFrame do
         b integer [1]
       >
   """
+  @doc type: :single
   @spec drop_nil(df :: DataFrame.t(), columns_or_column :: [String.t()] | String.t()) ::
           DataFrame.t()
   def drop_nil(df, columns_or_column \\ [])
@@ -1145,6 +1186,7 @@ defmodule Explorer.DataFrame do
       >
 
   """
+  @doc type: :single
   @spec rename(df :: DataFrame.t(), names :: [String.t() | atom()] | map()) :: DataFrame.t()
   def rename(df, names) when is_list(names) do
     case Keyword.keyword?(names) do
@@ -1266,6 +1308,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321, "..."]
       >
   """
+  @doc type: :single
   @spec rename_with(df :: DataFrame.t(), callback :: function(), columns :: list() | function()) ::
           DataFrame.t()
   def rename_with(df, callback, columns \\ [])
@@ -1321,6 +1364,7 @@ defmodule Explorer.DataFrame do
         b_d integer [0, 0, 0, 1]
       >
   """
+  @doc type: :single
   def dummies(df, columns), do: apply_impl(df, :dummies, [columns])
 
   @doc """
@@ -1342,6 +1386,7 @@ defmodule Explorer.DataFrame do
         [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
       >
   """
+  @doc type: :single
   @spec pull(df :: DataFrame.t(), column :: String.t() | non_neg_integer()) :: Series.t()
   def pull(df, column) when is_binary(column) do
     names = names(df)
@@ -1413,6 +1458,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [30722, 251, 0, 10, 1256, "..."]
       >
   """
+  @doc type: :single
   def slice(df, offset, length), do: apply_impl(df, :slice, [offset, length])
 
   @doc """
@@ -1428,6 +1474,7 @@ defmodule Explorer.DataFrame do
         b string ["a", "c"]
       >
   """
+  @doc type: :single
   def take(df, row_indices) when is_list(row_indices) do
     n_rows = n_rows(df)
 
@@ -1495,6 +1542,7 @@ defmodule Explorer.DataFrame do
       >
 
   """
+  @doc type: :single
   @spec sample(df :: DataFrame.t(), n_or_frac :: number(), opts :: Keyword.t()) :: DataFrame.t()
   def sample(df, n_or_frac, opts \\ [])
 
@@ -1563,6 +1611,7 @@ defmodule Explorer.DataFrame do
         value integer [2308, 1254, 32500, 141, 7924, "..."]
       >
   """
+  @doc type: :single
   @spec pivot_longer(
           df :: DataFrame.t(),
           columns :: [String.t()] | function(),
@@ -1650,6 +1699,7 @@ defmodule Explorer.DataFrame do
         b integer [2]
       >
   """
+  @doc type: :single
   @spec pivot_wider(
           df :: DataFrame.t(),
           names_from :: String.t(),
@@ -1793,6 +1843,7 @@ defmodule Explorer.DataFrame do
       >
 
   """
+  @doc type: :multi
   @spec join(left :: DataFrame.t(), right :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
   def join(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
     left_cols = names(left)
@@ -1853,6 +1904,7 @@ defmodule Explorer.DataFrame do
         y string ["a", "b", "c", "d", "e", "..."]
       >
   """
+  @doc type: :multi
   def concat_rows([%DataFrame{} | _t] = dfs) do
     changed_types = compute_changed_types_concat_rows(dfs)
 
@@ -1922,10 +1974,12 @@ defmodule Explorer.DataFrame do
 
   `concat_rows(df1, df2)` is equivalent to `concat_rows([df1, df2])`.
   """
+  @doc type: :multi
   def concat_rows(%DataFrame{} = df1, %DataFrame{} = df2), do: concat_rows([df1, df2])
   def concat_rows(%DataFrame{} = df, [%DataFrame{} | _] = dfs), do: concat_rows([df | dfs])
 
   # Groups
+
   @doc """
   Group the dataframe by one or more variables.
 
@@ -1970,6 +2024,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321, "..."]
       >
   """
+  @doc type: :single
   @spec group_by(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
           DataFrame.t()
   def group_by(df, groups) when is_list(groups) do
@@ -2003,6 +2058,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321, "..."]
       >
   """
+  @doc type: :single
   @spec ungroup(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
           DataFrame.t()
   def ungroup(df, groups \\ [])
@@ -2057,6 +2113,7 @@ defmodule Explorer.DataFrame do
         total_min integer [1, 2, 2, 2, 3]
       >
   """
+  @doc type: :single
   @spec summarise(df :: DataFrame.t(), with_columns :: Keyword.t() | map()) :: DataFrame.t()
   def summarise(%DataFrame{groups: []}, _),
     do:
@@ -2108,6 +2165,7 @@ defmodule Explorer.DataFrame do
      df = Explorer.Datasets.iris()
      Explorer.DataFrame.table(df)
   """
+  @doc type: :single
   def table(df, nrow \\ 5) when nrow >= 0 do
     {rows, cols} = shape(df)
     headers = names(df)
