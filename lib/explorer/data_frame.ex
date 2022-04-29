@@ -458,6 +458,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Converts a dataframe to a list of maps (rows).
 
+  > #### Warning {: .warning}
+  >
+  > This may be an expensive operation because `polars` stores data in columnar format.
+
   ## Options
 
     * `:atom_keys` - Configure if the resultant maps should have atom keys. (default: `false`)
