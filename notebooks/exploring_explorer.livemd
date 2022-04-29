@@ -72,7 +72,7 @@ input = Kino.Input.text("Filename")
 
 ```elixir
 filename = Kino.Input.read(input)
-DataFrame.write_csv(df, filename)
+DataFrame.to_csv(df, filename)
 ```
 
 ## Working with Series

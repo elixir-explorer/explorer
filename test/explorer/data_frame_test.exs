@@ -69,7 +69,7 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "read_csv/2 options" do
+  describe "from_csv/2 options" do
     @tag :tmp_dir
     test "delimiter", config do
       csv =
@@ -79,7 +79,7 @@ defmodule Explorer.DataFrameTest do
         e*f
         """)
 
-      df = DF.read_csv!(csv, delimiter: "*")
+      df = DF.from_csv!(csv, delimiter: "*")
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: ["c", "e"],
@@ -96,7 +96,7 @@ defmodule Explorer.DataFrameTest do
         3,4
         """)
 
-      df = DF.read_csv!(csv, dtypes: [{"a", :string}])
+      df = DF.from_csv!(csv, dtypes: [{"a", :string}])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: ["1", "3"],
@@ -113,7 +113,7 @@ defmodule Explorer.DataFrameTest do
         3,4,2020-10-15 00:00:18
         """)
 
-      df = DF.read_csv!(csv, parse_dates: true)
+      df = DF.from_csv!(csv, parse_dates: true)
       assert [:datetime] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
 
       assert DF.to_columns(df, atom_keys: true) == %{
@@ -132,7 +132,7 @@ defmodule Explorer.DataFrameTest do
         3,4,2020-10-15 00:00:18
         """)
 
-      df = DF.read_csv!(csv, parse_dates: false)
+      df = DF.from_csv!(csv, parse_dates: false)
       assert [:string] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
 
       assert DF.to_columns(df, atom_keys: true) == %{
@@ -151,7 +151,7 @@ defmodule Explorer.DataFrameTest do
         e,f
         """)
 
-      df = DF.read_csv!(csv, header?: false)
+      df = DF.from_csv!(csv, header?: false)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                column_1: ["a", "c", "e"],
@@ -168,7 +168,7 @@ defmodule Explorer.DataFrameTest do
         e,f
         """)
 
-      df = DF.read_csv!(csv, max_rows: 1)
+      df = DF.from_csv!(csv, max_rows: 1)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: ["c"],
@@ -186,7 +186,7 @@ defmodule Explorer.DataFrameTest do
         c,d
         """)
 
-      df = DF.read_csv!(csv, null_character: "n/a")
+      df = DF.from_csv!(csv, null_character: "n/a")
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [nil, "nil", "c"],
@@ -203,7 +203,7 @@ defmodule Explorer.DataFrameTest do
         e,f
         """)
 
-      df = DF.read_csv!(csv, skip_rows: 1)
+      df = DF.from_csv!(csv, skip_rows: 1)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                c: ["e"],
@@ -220,7 +220,7 @@ defmodule Explorer.DataFrameTest do
         e,f
         """)
 
-      df = DF.read_csv!(csv, with_columns: ["b"])
+      df = DF.from_csv!(csv, with_columns: ["b"])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                b: ["d", "f"]
@@ -236,7 +236,7 @@ defmodule Explorer.DataFrameTest do
         e,f
         """)
 
-      df = DF.read_csv!(csv, names: ["a2", "b2"])
+      df = DF.from_csv!(csv, names: ["a2", "b2"])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a2: ["c", "e"],
@@ -255,7 +255,7 @@ defmodule Explorer.DataFrameTest do
       assert_raise(
         ArgumentError,
         "Expected length of provided names (1) to match number of columns in dataframe (2).",
-        fn -> DF.read_csv(csv, names: ["a2"]) end
+        fn -> DF.from_csv(csv, names: ["a2"]) end
       )
     end
 
@@ -268,7 +268,7 @@ defmodule Explorer.DataFrameTest do
         3,4
         """)
 
-      df = DF.read_csv!(csv, dtypes: [{"a", :string}], names: ["a2", "b2"])
+      df = DF.from_csv!(csv, dtypes: [{"a", :string}], names: ["a2", "b2"])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a2: ["1", "3"],
@@ -290,7 +290,7 @@ defmodule Explorer.DataFrameTest do
           """)
         )
 
-      df = DF.read_csv!(csv)
+      df = DF.from_csv!(csv)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 3],
@@ -304,8 +304,8 @@ defmodule Explorer.DataFrameTest do
     test "can write parquet to file", %{df: df, tmp_dir: tmp_dir} do
       parquet_path = Path.join(tmp_dir, "test.parquet")
 
-      assert {:ok, ^parquet_path} = DF.write_parquet(df, parquet_path)
-      assert {:ok, parquet_df} = DF.read_parquet(parquet_path)
+      assert {:ok, ^parquet_path} = DF.to_parquet(df, parquet_path)
+      assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
 
       assert DF.names(df) == DF.names(parquet_df)
       assert DF.dtypes(df) == DF.dtypes(parquet_df)
@@ -313,12 +313,12 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "read_ndjson/2" do
+  describe "from_ndjson/2" do
     @tag :tmp_dir
     test "reads from file with default options", %{tmp_dir: tmp_dir} do
-      ndjson_path = write_ndjson(tmp_dir)
+      ndjson_path = to_ndjson(tmp_dir)
 
-      assert {:ok, df} = DF.read_ndjson(ndjson_path)
+      assert {:ok, df} = DF.from_ndjson(ndjson_path)
 
       assert DF.names(df) == ~w[a b c d]
       assert DF.dtypes(df) == [:integer, :float, :boolean, :string]
@@ -328,20 +328,20 @@ defmodule Explorer.DataFrameTest do
       assert take_five(df["c"]) == [false, true, false, false, true]
       assert take_five(df["d"]) == ["4", "4", "text", "4", "4"]
 
-      assert {:error, _message} = DF.read_ndjson(Path.join(tmp_dir, "idontexist.ndjson"))
+      assert {:error, _message} = DF.from_ndjson(Path.join(tmp_dir, "idontexist.ndjson"))
     end
 
     @tag :tmp_dir
     test "reads from file with options", %{tmp_dir: tmp_dir} do
-      ndjson_path = write_ndjson(tmp_dir)
+      ndjson_path = to_ndjson(tmp_dir)
 
-      assert {:ok, df} = DF.read_ndjson(ndjson_path, infer_schema_length: 3, with_batch_size: 3)
+      assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, with_batch_size: 3)
 
       assert DF.names(df) == ~w[a b c d]
       assert DF.dtypes(df) == [:integer, :float, :boolean, :string]
     end
 
-    defp write_ndjson(tmp_dir) do
+    defp to_ndjson(tmp_dir) do
       ndjson_path = Path.join(tmp_dir, "test.ndjson")
 
       contents = """
@@ -368,7 +368,7 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "write_ndjson" do
+  describe "to_ndjson" do
     @tag :tmp_dir
     test "writes to a file", %{tmp_dir: tmp_dir} do
       df =
@@ -381,8 +381,8 @@ defmodule Explorer.DataFrameTest do
 
       ndjson_path = Path.join(tmp_dir, "test-write.ndjson")
 
-      assert {:ok, ^ndjson_path} = DF.write_ndjson(df, ndjson_path)
-      assert {:ok, ndjson_df} = DF.read_ndjson(ndjson_path)
+      assert {:ok, ^ndjson_path} = DF.to_ndjson(df, ndjson_path)
+      assert {:ok, ndjson_df} = DF.from_ndjson(ndjson_path)
 
       assert DF.names(df) == DF.names(ndjson_df)
       assert DF.dtypes(df) == DF.dtypes(ndjson_df)

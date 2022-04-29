@@ -149,9 +149,9 @@ defmodule Explorer.DataFrame do
     * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
     * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `[DataType::Utf8]`
   """
-  @spec read_csv(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
-  def read_csv(filename, opts \\ []) do
+  def from_csv(filename, opts \\ []) do
     opts =
       Keyword.validate!(opts,
         delimiter: ",",
@@ -169,7 +169,7 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(opts)
 
-    backend.read_csv(
+    backend.from_csv(
       filename,
       opts[:names],
       opts[:dtypes],
@@ -186,11 +186,11 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Similar to `read_csv/2` but raises if there is a problem reading the CSV.
+  Similar to `from_csv/2` but raises if there is a problem reading the CSV.
   """
-  @spec read_csv!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
-  def read_csv!(filename, opts \\ []) do
-    case read_csv(filename, opts) do
+  @spec from_csv!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def from_csv!(filename, opts \\ []) do
+    case from_csv(filename, opts) do
       {:ok, df} -> df
       {:error, error} -> raise "#{error}"
     end
@@ -199,28 +199,32 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a parquet file into a dataframe.
   """
-  @spec read_parquet(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
-  def read_parquet(filename), do: Explorer.PolarsBackend.DataFrame.read_parquet(filename)
+  @spec from_parquet(filename :: String.t(), opts :: Keyword.t()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
+  def from_parquet(filename, opts \\ []) do
+    backend = backend_from_options!(opts)
+    backend.from_parquet(filename)
+  end
 
   @doc """
   Writes a dataframe to a parquet file.
   """
-  @spec write_parquet(df :: DataFrame.t(), filename :: String.t()) ::
+  @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
-  def write_parquet(df, filename) do
-    apply_impl(df, :write_parquet, [filename])
+  def to_parquet(df, filename) do
+    apply_impl(df, :to_parquet, [filename])
   end
 
   @doc """
-  Reads a IPC file into a dataframe.
+  Reads an IPC file into a dataframe.
 
   ## Options
 
     * `columns` - List with name of columns to be selected. Defaults to all columns.
     * `projection` - List with the index of columns to be selected. Defaults to all columns.
   """
-  @spec read_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
-  def read_ipc(filename, opts \\ []) do
+  @spec from_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
+  def from_ipc(filename, opts \\ []) do
     opts =
       Keyword.validate!(opts,
         columns: nil,
@@ -229,7 +233,7 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(opts)
 
-    backend.read_ipc(
+    backend.from_ipc(
       filename,
       opts[:columns],
       opts[:projection]
@@ -237,11 +241,11 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Similar to `read_ipc/2` but raises if there is a problem reading the IPC file.
+  Similar to `from_ipc/2` but raises if there is a problem reading the IPC file.
   """
-  @spec read_ipc!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
-  def read_ipc!(filename, opts \\ []) do
-    case read_ipc(filename, opts) do
+  @spec from_ipc!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def from_ipc!(filename, opts \\ []) do
+    case from_ipc(filename, opts) do
       {:ok, df} -> df
       {:error, error} -> raise "#{error}"
     end
@@ -258,9 +262,9 @@ defmodule Explorer.DataFrame do
     * `compression` - Sets the algorithm used to compress the IPC file.
       It accepts `"ZSTD"` or `"LZ4"` compression. (default: `nil`)
   """
-  @spec write_ipc(df :: DataFrame.t(), filename :: String.t()) ::
+  @spec to_ipc(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
-  def write_ipc(df, filename, opts \\ []) do
+  def to_ipc(df, filename, opts \\ []) do
     opts =
       Keyword.validate!(opts,
         compression: nil
@@ -268,7 +272,7 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(opts)
 
-    backend.write_ipc(
+    backend.to_ipc(
       df,
       filename,
       opts[:compression]
@@ -283,19 +287,19 @@ defmodule Explorer.DataFrame do
     * `header?` - Should the column names be written as the first line of the file? (default: `true`)
     * `delimiter` - A single character used to separate fields within a record. (default: `","`)
   """
-  @spec write_csv(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
+  @spec to_csv(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, String.t()} | {:error, term()}
-  def write_csv(df, filename, opts \\ []) do
+  def to_csv(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, header?: true, delimiter: ",")
-    apply_impl(df, :write_csv, [filename, opts[:header?], opts[:delimiter]])
+    apply_impl(df, :to_csv, [filename, opts[:header?], opts[:delimiter]])
   end
 
   @doc """
-  Similar to `write_csv/3` but raises if there is a problem reading the CSV.
+  Similar to `to_csv/3` but raises if there is a problem reading the CSV.
   """
-  @spec write_csv!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: String.t()
-  def write_csv!(df, filename, opts \\ []) do
-    case write_csv(df, filename, opts) do
+  @spec to_csv!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: String.t()
+  def to_csv!(df, filename, opts \\ []) do
+    case to_csv(df, filename, opts) do
       {:ok, filename} -> filename
       {:error, error} -> raise "#{error}"
     end
@@ -312,9 +316,9 @@ defmodule Explorer.DataFrame do
     * `infer_schema_length` - Maximum number of rows read for schema inference.
     Setting this to nil will do a full table scan and will be slow (default: `1000`).
   """
-  @spec read_ndjson(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_ndjson(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
-  def read_ndjson(filename, opts \\ []) do
+  def from_ndjson(filename, opts \\ []) do
     opts =
       Keyword.validate!(opts,
         with_batch_size: 1000,
@@ -323,7 +327,7 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(opts)
 
-    backend.read_ndjson(
+    backend.from_ndjson(
       filename,
       opts[:infer_schema_length],
       opts[:with_batch_size]
@@ -333,10 +337,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Writes a dataframe to a ndjson file.
   """
-  @spec write_ndjson(df :: DataFrame.t(), filename :: String.t()) ::
+  @spec to_ndjson(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
-  def write_ndjson(df, filename) do
-    apply_impl(df, :write_ndjson, [filename])
+  def to_ndjson(df, filename) do
+    apply_impl(df, :to_ndjson, [filename])
   end
 
   @doc """
@@ -494,13 +498,13 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> df |> Explorer.DataFrame.head() |> Explorer.DataFrame.to_binary()
+      iex> df |> Explorer.DataFrame.head() |> Explorer.DataFrame.dump_csv()
       "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n2010,ALGERIA,32500,332,12381,14565,2598,2623,0.9,663\\n2010,ANDORRA,141,0,141,0,0,0,1.68,0\\n2010,ANGOLA,7924,0,3649,374,204,3697,0.37,321\\n"
   """
-  @spec to_binary(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
-  def to_binary(df, opts \\ []) do
+  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  def dump_csv(df, opts \\ []) do
     opts = Keyword.validate!(opts, header?: true, delimiter: ",")
-    apply_impl(df, :to_binary, [opts[:header?], opts[:delimiter]])
+    apply_impl(df, :dump_csv, [opts[:header?], opts[:delimiter]])
   end
 
   # Introspection
