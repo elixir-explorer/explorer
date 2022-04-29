@@ -219,6 +219,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Map.put(acc, series_name, series)
   end
 
+  @impl true
+  def to_rows(%DataFrame{data: polars_df} = df, atom_keys?) do
+    names = if atom_keys?, do: df |> names() |> Enum.map(&String.to_atom/1), else: names(df)
+
+    polars_df
+    |> Enum.map(fn s -> s |> Shared.to_series() |> PolarsSeries.to_list() end)
+    |> Enum.zip_with(fn row -> names |> Enum.zip(row) |> Map.new() end)
+  end
+
   # Introspection
 
   @impl true

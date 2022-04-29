@@ -456,6 +456,30 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Converts a dataframe to a list of maps (rows).
+
+  ## Options
+
+    * `:atom_keys` - Configure if the resultant maps should have atom keys. (default: `false`)
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, nil])
+      iex> Explorer.DataFrame.to_rows(df)
+      [%{"floats" => 1.0, "ints" => 1}, %{"floats" => 2.0 ,"ints" => nil}]
+
+      iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, nil])
+      iex> Explorer.DataFrame.to_rows(df, atom_keys: true)
+      [%{floats: 1.0, ints: 1}, %{floats: 2.0, ints: nil}]
+  """
+  @spec to_rows(df :: DataFrame.t(), Keyword.t()) :: [map()]
+  def to_rows(df, opts \\ []) do
+    opts = Keyword.validate!(opts, atom_keys: false)
+
+    apply_impl(df, :to_rows, [opts[:atom_keys]])
+  end
+
+  @doc """
   Writes a dataframe to a binary representation of a delimited file.
 
   ## Options
