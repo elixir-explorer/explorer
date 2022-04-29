@@ -88,7 +88,7 @@ For simplicity, `Explorer` uses the following `Series` `dtypes`:
 * `:date` - Date type that unwraps to `Elixir.Date`
 * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
 
-`Series` can be constructed from `Elixir` basic types. For example:
+`Series` can be constructed from Elixir basic types. For example:
 
 ```elixir
 s1 = Series.from_list([1, 2, 3])
