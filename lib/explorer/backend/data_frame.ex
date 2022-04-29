@@ -12,7 +12,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # IO
 
-  @callback read_csv(
+  @callback from_csv(
               filename :: String.t(),
               names :: list(String.t()) | nil,
               dtypes :: list({String.t(), atom()}) | nil,
@@ -26,26 +26,26 @@ defmodule Explorer.Backend.DataFrame do
               infer_schema_length :: integer() | nil,
               parse_dates :: boolean()
             ) :: result(df)
-  @callback write_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
+  @callback to_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
               result(String.t())
 
-  @callback read_parquet(filename :: String.t()) :: result(df)
-  @callback write_parquet(df, filename :: String.t()) :: result(String.t())
+  @callback from_parquet(filename :: String.t()) :: result(df)
+  @callback to_parquet(df, filename :: String.t()) :: result(String.t())
 
-  @callback read_ipc(
+  @callback from_ipc(
               filename :: String.t(),
               columns :: list(String.t()),
               projection :: list(integer())
             ) :: result(df)
-  @callback write_ipc(df, filename :: String.t(), compression :: String.t()) ::
+  @callback to_ipc(df, filename :: String.t(), compression :: String.t()) ::
               result(String.t())
 
-  @callback read_ndjson(
+  @callback from_ndjson(
               filename :: String.t(),
               infer_schema_length :: integer(),
               with_batch_size :: integer()
             ) :: result(df)
-  @callback write_ndjson(df, filename :: String.t()) :: result(String.t())
+  @callback to_ndjson(df, filename :: String.t()) :: result(String.t())
 
   # Conversion
 

@@ -53,6 +53,6 @@ defmodule Explorer.Datasets do
   defp read_dataset!(name) do
     @datasets_dir
     |> Path.join("#{name}.csv")
-    |> DataFrame.read_csv!()
+    |> DataFrame.from_csv!()
   end
 end

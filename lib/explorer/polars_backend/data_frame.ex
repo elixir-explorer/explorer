@@ -18,7 +18,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # IO
 
   @impl true
-  def read_csv(
+  def from_csv(
         filename,
         names,
         dtypes,
@@ -82,7 +82,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def write_csv(%DataFrame{data: df}, filename, header?, delimiter) do
+  def to_csv(%DataFrame{data: df}, filename, header?, delimiter) do
     <<delimiter::utf8>> = delimiter
 
     case Native.df_to_csv_file(df, filename, header?, delimiter) do
@@ -92,14 +92,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def read_ndjson(filename, infer_schema_length, with_batch_size) do
+  def from_ndjson(filename, infer_schema_length, with_batch_size) do
     with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, with_batch_size) do
       {:ok, Shared.to_dataframe(df)}
     end
   end
 
   @impl true
-  def write_ndjson(%DataFrame{data: df}, filename) do
+  def to_ndjson(%DataFrame{data: df}, filename) do
     with {:ok, _} <- Native.df_write_ndjson(df, filename) do
       {:ok, filename}
     end
@@ -112,7 +112,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def read_parquet(filename) do
+  def from_parquet(filename) do
     case Native.df_read_parquet(filename) do
       {:ok, df} -> {:ok, Shared.to_dataframe(df)}
       {:error, error} -> {:error, error}
@@ -120,7 +120,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def write_parquet(%DataFrame{data: df}, filename) do
+  def to_parquet(%DataFrame{data: df}, filename) do
     case Native.df_write_parquet(df, filename) do
       {:ok, _} -> {:ok, filename}
       {:error, error} -> {:error, error}
@@ -143,7 +143,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def read_ipc(filename, columns, projection) do
+  def from_ipc(filename, columns, projection) do
     case Native.df_read_ipc(filename, columns, projection) do
       {:ok, df} -> {:ok, Shared.to_dataframe(df)}
       {:error, error} -> {:error, error}
@@ -151,7 +151,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def write_ipc(%DataFrame{data: df}, filename, compression) do
+  def to_ipc(%DataFrame{data: df}, filename, compression) do
     case Native.df_write_ipc(df, filename, compression) do
       {:ok, _} -> {:ok, filename}
       {:error, error} -> {:error, error}
