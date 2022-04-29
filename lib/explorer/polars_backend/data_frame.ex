@@ -198,11 +198,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_map(%DataFrame{data: df}, convert_series?, atom_keys?) do
-    Enum.reduce(df, %{}, &to_map_reducer(&1, &2, convert_series?, atom_keys?))
+  def to_columns(%DataFrame{data: df}, convert_series?, atom_keys?) do
+    Enum.reduce(df, %{}, &to_columns_reducer(&1, &2, convert_series?, atom_keys?))
   end
 
-  defp to_map_reducer(series, acc, convert_series?, atom_keys?) do
+  defp to_columns_reducer(series, acc, convert_series?, atom_keys?) do
     series_name =
       series
       |> Native.s_name()
@@ -217,6 +217,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
     series = Shared.to_series(series)
     series = if convert_series?, do: PolarsSeries.to_list(series), else: series
     Map.put(acc, series_name, series)
+  end
+
+  @impl true
+  def to_rows(%DataFrame{data: polars_df} = df, atom_keys?) do
+    names = if atom_keys?, do: df |> names() |> Enum.map(&String.to_atom/1), else: names(df)
+
+    polars_df
+    |> Enum.map(fn s -> s |> Shared.to_series() |> PolarsSeries.to_list() end)
+    |> Enum.zip_with(fn row -> names |> Enum.zip(row) |> Map.new() end)
   end
 
   # Introspection

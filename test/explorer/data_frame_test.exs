@@ -81,7 +81,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv, delimiter: "*")
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                a: ["c", "e"],
                b: ["d", "f"]
              }
@@ -98,7 +98,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv, dtypes: [{"a", :string}])
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                a: ["1", "3"],
                b: [2, 4]
              }
@@ -116,7 +116,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.read_csv!(csv, parse_dates: true)
       assert [:datetime] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 3],
                b: [2, 4],
                c: [~N[2020-10-15 00:00:01.000000], ~N[2020-10-15 00:00:18.000000]]
@@ -135,7 +135,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.read_csv!(csv, parse_dates: false)
       assert [:string] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 3],
                b: [2, 4],
                c: ["2020-10-15 00:00:01", "2020-10-15 00:00:18"]
@@ -153,7 +153,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv, header?: false)
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                column_1: ["a", "c", "e"],
                column_2: ["b", "d", "f"]
              }
@@ -170,7 +170,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv, max_rows: 1)
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                a: ["c"],
                b: ["d"]
              }
@@ -188,7 +188,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv, null_character: "n/a")
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                a: [nil, "nil", "c"],
                b: ["NA", nil, "d"]
              }
@@ -205,7 +205,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv, skip_rows: 1)
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                c: ["e"],
                d: ["f"]
              }
@@ -222,7 +222,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv, with_columns: ["b"])
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                b: ["d", "f"]
              }
     end
@@ -238,7 +238,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv, names: ["a2", "b2"])
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                a2: ["c", "e"],
                b2: ["d", "f"]
              }
@@ -270,7 +270,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv, dtypes: [{"a", :string}], names: ["a2", "b2"])
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                a2: ["1", "3"],
                b2: [2, 4]
              }
@@ -292,7 +292,7 @@ defmodule Explorer.DataFrameTest do
 
       df = DF.read_csv!(csv)
 
-      assert DF.to_map(df, atom_keys: true) == %{
+      assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 3],
                b: [2, 4]
              }
@@ -309,7 +309,7 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.names(df) == DF.names(parquet_df)
       assert DF.dtypes(df) == DF.dtypes(parquet_df)
-      assert DF.to_map(df) == DF.to_map(parquet_df)
+      assert DF.to_columns(df) == DF.to_columns(parquet_df)
     end
   end
 
@@ -386,7 +386,7 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.names(df) == DF.names(ndjson_df)
       assert DF.dtypes(df) == DF.dtypes(ndjson_df)
-      assert DF.to_map(df) == DF.to_map(ndjson_df)
+      assert DF.to_columns(df) == DF.to_columns(ndjson_df)
     end
   end
 
@@ -419,7 +419,7 @@ defmodule Explorer.DataFrameTest do
   test "fetch/2" do
     df = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
     assert Series.to_list(df["a"]) == [1, 2, 3]
-    assert DF.to_map(df[["a"]]) == %{"a" => [1, 2, 3]}
+    assert DF.to_columns(df[["a"]]) == %{"a" => [1, 2, 3]}
   end
 
   test "pop/2" do
@@ -427,11 +427,11 @@ defmodule Explorer.DataFrameTest do
 
     {s1, df2} = Access.pop(df1, "a")
     assert Series.to_list(s1) == [1, 2, 3]
-    assert DF.to_map(df2) == %{"b" => ["a", "b", "c"]}
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"]}
 
     {df3, df4} = Access.pop(df1, ["a"])
-    assert DF.to_map(df3) == %{"a" => [1, 2, 3]}
-    assert DF.to_map(df4) == %{"b" => ["a", "b", "c"]}
+    assert DF.to_columns(df3) == %{"a" => [1, 2, 3]}
+    assert DF.to_columns(df4) == %{"b" => ["a", "b", "c"]}
   end
 
   test "get_and_update/3" do
@@ -443,13 +443,13 @@ defmodule Explorer.DataFrameTest do
       end)
 
     assert Series.to_list(s) == [1, 2, 3]
-    assert DF.to_map(df2, atom_keys: true) == %{a: [0, 0, 0], b: ["a", "b", "c"]}
+    assert DF.to_columns(df2, atom_keys: true) == %{a: [0, 0, 0], b: ["a", "b", "c"]}
   end
 
   test "pivot_wider/2" do
     df1 = DF.from_columns(id: [1, 1], variable: ["a", "b"], value: [1, 2])
 
-    assert DF.to_map(DF.pivot_wider(df1, "variable", "value"), atom_keys: true) == %{
+    assert DF.to_columns(DF.pivot_wider(df1, "variable", "value"), atom_keys: true) == %{
              id: [1],
              a: [1],
              b: [2]
@@ -457,7 +457,7 @@ defmodule Explorer.DataFrameTest do
 
     df2 = DF.from_columns(id: [1, 1], variable: ["a", "b"], value: [1.0, 2.0])
 
-    assert DF.to_map(
+    assert DF.to_columns(
              DF.pivot_wider(df2, "variable", "value",
                id_cols: ["id"],
                names_prefix: "col"

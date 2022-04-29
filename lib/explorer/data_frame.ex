@@ -429,7 +429,7 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Converts a dataframe to a map.
+  Converts a dataframe to a map of columns.
 
   By default, the constituent series of the dataframe are converted to Elixir lists.
 
@@ -441,18 +441,46 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, nil])
-      iex> Explorer.DataFrame.to_map(df)
+      iex> Explorer.DataFrame.to_columns(df)
       %{"floats" => [1.0, 2.0], "ints" => [1, nil]}
 
       iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, nil])
-      iex> Explorer.DataFrame.to_map(df, atom_keys: true)
+      iex> Explorer.DataFrame.to_columns(df, atom_keys: true)
       %{floats: [1.0, 2.0], ints: [1, nil]}
   """
-  @spec to_map(df :: DataFrame.t(), Keyword.t()) :: map()
-  def to_map(df, opts \\ []) do
+  @spec to_columns(df :: DataFrame.t(), Keyword.t()) :: map()
+  def to_columns(df, opts \\ []) do
     opts = Keyword.validate!(opts, convert_series: true, atom_keys: false)
 
-    apply_impl(df, :to_map, [opts[:convert_series], opts[:atom_keys]])
+    apply_impl(df, :to_columns, [opts[:convert_series], opts[:atom_keys]])
+  end
+
+  @doc """
+  Converts a dataframe to a list of maps (rows).
+
+  > #### Warning {: .warning}
+  >
+  > This may be an expensive operation because `polars` stores data in columnar format.
+
+  ## Options
+
+    * `:atom_keys` - Configure if the resultant maps should have atom keys. (default: `false`)
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, nil])
+      iex> Explorer.DataFrame.to_rows(df)
+      [%{"floats" => 1.0, "ints" => 1}, %{"floats" => 2.0 ,"ints" => nil}]
+
+      iex> df = Explorer.DataFrame.from_columns(floats: [1.0, 2.0], ints: [1, nil])
+      iex> Explorer.DataFrame.to_rows(df, atom_keys: true)
+      [%{floats: 1.0, ints: 1}, %{floats: 2.0, ints: nil}]
+  """
+  @spec to_rows(df :: DataFrame.t(), Keyword.t()) :: [map()]
+  def to_rows(df, opts \\ []) do
+    opts = Keyword.validate!(opts, atom_keys: false)
+
+    apply_impl(df, :to_rows, [opts[:atom_keys]])
   end
 
   @doc """
