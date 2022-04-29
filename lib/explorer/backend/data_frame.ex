@@ -53,7 +53,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback from_rows(list(map() | Keyword.t())) :: df
   @callback to_columns(df, convert_series? :: boolean(), atom_keys? :: boolean()) :: map()
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
-  @callback to_binary(df, header? :: boolean(), delimiter :: String.t()) :: String.t()
+  @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: String.t()
 
   # Introspection
 
