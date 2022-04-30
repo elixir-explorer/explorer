@@ -113,27 +113,23 @@ defimpl Inspect, for: Explorer.DataFrame do
   def inspect(df, opts) do
     {rows, cols} = DataFrame.shape(df)
     groups = DataFrame.groups(df)
-
     shape = Explorer.Inspect.df_shape(rows, cols, groups, opts)
-    names = DataFrame.names(df)
 
-    series =
-      names
-      |> Enum.map(&DataFrame.pull(df, &1))
-      |> Enum.map(&Series.slice(&1, 0, @printable_limit))
-      |> Enum.map(fn s -> {Series.dtype(s), Series.to_list(s)} end)
-      |> Enum.map(fn {dtype, vals} ->
-        if rows > @printable_limit, do: {dtype, vals ++ ["..."]}, else: {dtype, vals}
-      end)
-      |> Enum.zip(names)
-      |> Enum.map(fn {{dtype, vals}, name} ->
+    cols_algebra =
+      for name <- DataFrame.names(df) do
+        series = df |> DataFrame.pull(name) |> Series.slice(0, @printable_limit)
+        dtype = Series.dtype(series)
+        vals = Series.to_list(series)
+        vals = if rows > @printable_limit, do: vals ++ ["..."], else: vals
         Explorer.Inspect.df_inner(name, dtype, vals, opts)
-      end)
+      end
 
-    color("#Explorer.DataFrame<", :map, opts)
-    |> concat(shape)
-    |> then(fn doc -> Enum.reduce(series, doc, &concat(&2, &1)) end)
-    |> concat(line())
-    |> concat(nest(color(">", :map, opts), 0))
+    concat([
+      color("#Explorer.DataFrame<", :map, opts),
+      shape,
+      concat(cols_algebra),
+      line(),
+      nest(color(">", :map, opts), 0)
+    ])
   end
 end
