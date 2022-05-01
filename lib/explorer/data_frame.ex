@@ -8,11 +8,11 @@ defmodule Explorer.DataFrame do
       iex> Explorer.Datasets.iris()
       #Explorer.DataFrame<
         [rows: 150, columns: 5]
-        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, "..."]
-        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, "..."]
-        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, "..."]
-        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, "..."]
-        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "..."]
+        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
   This dataframe has 150 rows and five columns. Each column is an `Explorer.Series`
@@ -989,16 +989,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.arrange(df, asc: "total", desc: "country")
       #Explorer.DataFrame<
         [rows: 1094, columns: 10]
-        year integer [2010, 2012, 2011, 2013, 2014, "..."]
-        country string ["ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "..."]
-        total integer [2121, 2125, 2608, 3184, 3278, "..."]
-        solid_fuel integer [1531, 917, 1584, 1902, 2097, "..."]
-        liquid_fuel integer [481, 1006, 888, 1119, 1005, "..."]
-        gas_fuel integer [0, 0, 0, 0, 0, "..."]
-        cement integer [109, 201, 136, 162, 177, "..."]
-        gas_flaring integer [0, 0, 0, 0, 0, "..."]
-        per_capita float [0.15, 0.15, 0.18, 0.21, 0.22, "..."]
-        bunker_fuels integer [7, 9, 8, 9, 9, "..."]
+        year integer [2010, 2012, 2011, 2013, 2014, ...]
+        country string ["ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", ...]
+        total integer [2121, 2125, 2608, 3184, 3278, ...]
+        solid_fuel integer [1531, 917, 1584, 1902, 2097, ...]
+        liquid_fuel integer [481, 1006, 888, 1119, 1005, ...]
+        gas_fuel integer [0, 0, 0, 0, 0, ...]
+        cement integer [109, 201, 136, 162, 177, ...]
+        gas_flaring integer [0, 0, 0, 0, 0, ...]
+        per_capita float [0.15, 0.15, 0.18, 0.21, 0.22, ...]
+        bunker_fuels integer [7, 9, 8, 9, 9, ...]
       >
   """
   @doc type: :single
@@ -1048,8 +1048,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"])
       #Explorer.DataFrame<
         [rows: 1094, columns: 2]
-        year integer [2010, 2010, 2010, 2010, 2010, "..."]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
       >
 
   If `keep_all?` is set to `true`, then the first value of each column not in the requested
@@ -1059,16 +1059,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"], keep_all?: true)
       #Explorer.DataFrame<
         [rows: 1094, columns: 10]
-        year integer [2010, 2010, 2010, 2010, 2010, "..."]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
-        total integer [2308, 1254, 32500, 141, 7924, "..."]
-        solid_fuel integer [627, 117, 332, 0, 0, "..."]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
-        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
-        cement integer [5, 177, 2598, 0, 204, "..."]
-        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
-        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        total integer [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel integer [627, 117, 332, 0, 0, ...]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel integer [74, 7, 14565, 0, 374, ...]
+        cement integer [5, 177, 2598, 0, 204, ...]
+        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
   A callback on the dataframe's names can be passed instead of a list (like `select/3`):
@@ -1260,16 +1260,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.rename_with(df, &String.upcase/1)
       #Explorer.DataFrame<
         [rows: 1094, columns: 10]
-        YEAR integer [2010, 2010, 2010, 2010, 2010, "..."]
-        COUNTRY string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
-        TOTAL integer [2308, 1254, 32500, 141, 7924, "..."]
-        SOLID_FUEL integer [627, 117, 332, 0, 0, "..."]
-        LIQUID_FUEL integer [1601, 953, 12381, 141, 3649, "..."]
-        GAS_FUEL integer [74, 7, 14565, 0, 374, "..."]
-        CEMENT integer [5, 177, 2598, 0, 204, "..."]
-        GAS_FLARING integer [0, 0, 2623, 0, 3697, "..."]
-        PER_CAPITA float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
-        BUNKER_FUELS integer [9, 7, 663, 0, 321, "..."]
+        YEAR integer [2010, 2010, 2010, 2010, 2010, ...]
+        COUNTRY string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        TOTAL integer [2308, 1254, 32500, 141, 7924, ...]
+        SOLID_FUEL integer [627, 117, 332, 0, 0, ...]
+        LIQUID_FUEL integer [1601, 953, 12381, 141, 3649, ...]
+        GAS_FUEL integer [74, 7, 14565, 0, 374, ...]
+        CEMENT integer [5, 177, 2598, 0, 204, ...]
+        GAS_FLARING integer [0, 0, 2623, 0, 3697, ...]
+        PER_CAPITA float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        BUNKER_FUELS integer [9, 7, 663, 0, 321, ...]
       >
 
   A callback can be used to filter the column names that will be renamed, similarly to `select/3`:
@@ -1278,16 +1278,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.rename_with(df, &String.trim_trailing(&1, "_fuel"), &String.ends_with?(&1, "_fuel"))
       #Explorer.DataFrame<
         [rows: 1094, columns: 10]
-        year integer [2010, 2010, 2010, 2010, 2010, "..."]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
-        total integer [2308, 1254, 32500, 141, 7924, "..."]
-        solid integer [627, 117, 332, 0, 0, "..."]
-        liquid integer [1601, 953, 12381, 141, 3649, "..."]
-        gas integer [74, 7, 14565, 0, 374, "..."]
-        cement integer [5, 177, 2598, 0, 204, "..."]
-        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
-        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        total integer [2308, 1254, 32500, 141, 7924, ...]
+        solid integer [627, 117, 332, 0, 0, ...]
+        liquid integer [1601, 953, 12381, 141, 3649, ...]
+        gas integer [74, 7, 14565, 0, 374, ...]
+        cement integer [5, 177, 2598, 0, 204, ...]
+        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
   Or you can just pass in the list of column names you'd like to apply the function to:
@@ -1296,16 +1296,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.rename_with(df, &String.upcase/1, ["total", "cement"])
       #Explorer.DataFrame<
         [rows: 1094, columns: 10]
-        year integer [2010, 2010, 2010, 2010, 2010, "..."]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
-        TOTAL integer [2308, 1254, 32500, 141, 7924, "..."]
-        solid_fuel integer [627, 117, 332, 0, 0, "..."]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
-        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
-        CEMENT integer [5, 177, 2598, 0, 204, "..."]
-        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
-        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        TOTAL integer [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel integer [627, 117, 332, 0, 0, ...]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel integer [74, 7, 14565, 0, 374, ...]
+        CEMENT integer [5, 177, 2598, 0, 204, ...]
+        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
   """
   @doc type: :single
@@ -1446,16 +1446,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.slice(df, -10, 20)
       #Explorer.DataFrame<
         [rows: 10, columns: 10]
-        year integer [2014, 2014, 2014, 2014, 2014, "..."]
-        country string ["UNITED STATES OF AMERICA", "URUGUAY", "UZBEKISTAN", "VANUATU", "VENEZUELA", "..."]
-        total integer [1432855, 1840, 28692, 42, 50510, "..."]
-        solid_fuel integer [450047, 2, 1677, 0, 204, "..."]
-        liquid_fuel integer [576531, 1700, 2086, 42, 28445, "..."]
-        gas_fuel integer [390719, 25, 23929, 0, 12731, "..."]
-        cement integer [11314, 112, 1000, 0, 1088, "..."]
-        gas_flaring integer [4244, 0, 0, 0, 8042, "..."]
-        per_capita float [4.43, 0.54, 0.97, 0.16, 1.65, "..."]
-        bunker_fuels integer [30722, 251, 0, 10, 1256, "..."]
+        year integer [2014, 2014, 2014, 2014, 2014, ...]
+        country string ["UNITED STATES OF AMERICA", "URUGUAY", "UZBEKISTAN", "VANUATU", "VENEZUELA", ...]
+        total integer [1432855, 1840, 28692, 42, 50510, ...]
+        solid_fuel integer [450047, 2, 1677, 0, 204, ...]
+        liquid_fuel integer [576531, 1700, 2086, 42, 28445, ...]
+        gas_fuel integer [390719, 25, 23929, 0, 12731, ...]
+        cement integer [11314, 112, 1000, 0, 1088, ...]
+        gas_flaring integer [4244, 0, 0, 0, 8042, ...]
+        per_capita float [4.43, 0.54, 0.97, 0.16, 1.65, ...]
+        bunker_fuels integer [30722, 251, 0, 10, 1256, ...]
       >
   """
   @doc type: :single
@@ -1529,16 +1529,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sample(df, 0.03, seed: 100)
       #Explorer.DataFrame<
         [rows: 33, columns: 10]
-        year integer [2013, 2012, 2013, 2012, 2010, "..."]
-        country string ["BAHAMAS", "POLAND", "SLOVAKIA", "MOZAMBIQUE", "OMAN", "..."]
-        total integer [764, 81792, 9024, 851, 12931, "..."]
-        solid_fuel integer [1, 53724, 3657, 11, 0, "..."]
-        liquid_fuel integer [763, 17353, 2090, 632, 2331, "..."]
-        gas_fuel integer [0, 8544, 2847, 47, 9309, "..."]
-        cement integer [0, 2165, 424, 161, 612, "..."]
-        gas_flaring integer [0, 6, 7, 0, 679, "..."]
-        per_capita float [2.02, 2.12, 1.67, 0.03, 4.39, "..."]
-        bunker_fuels integer [167, 573, 34, 56, 1342, "..."]
+        year integer [2013, 2012, 2013, 2012, 2010, ...]
+        country string ["BAHAMAS", "POLAND", "SLOVAKIA", "MOZAMBIQUE", "OMAN", ...]
+        total integer [764, 81792, 9024, 851, 12931, ...]
+        solid_fuel integer [1, 53724, 3657, 11, 0, ...]
+        liquid_fuel integer [763, 17353, 2090, 632, 2331, ...]
+        gas_fuel integer [0, 8544, 2847, 47, 9309, ...]
+        cement integer [0, 2165, 424, 161, 612, ...]
+        gas_flaring integer [0, 6, 7, 0, 679, ...]
+        per_capita float [2.02, 2.12, 1.67, 0.03, 4.39, ...]
+        bunker_fuels integer [167, 573, 34, 56, 1342, ...]
       >
 
   """
@@ -1595,20 +1595,20 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_cols: &String.ends_with?(&1, "fuel"))
       #Explorer.DataFrame<
         [rows: 3282, columns: 4]
-        year integer [2010, 2010, 2010, 2010, 2010, "..."]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
-        variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "..."]
-        value integer [627, 117, 332, 0, 0, "..."]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", ...]
+        value integer [627, 117, 332, 0, 0, ...]
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_cols: ["total"])
       #Explorer.DataFrame<
         [rows: 1094, columns: 4]
-        year integer [2010, 2010, 2010, 2010, 2010, "..."]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
-        variable string ["total", "total", "total", "total", "total", "..."]
-        value integer [2308, 1254, 32500, 141, 7924, "..."]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        variable string ["total", "total", "total", "total", "total", ...]
+        value integer [2308, 1254, 32500, 141, 7924, ...]
       >
   """
   @doc type: :single
@@ -1824,10 +1824,10 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.join(left, right, how: :cross)
       #Explorer.DataFrame<
         [rows: 9, columns: 4]
-        a integer [1, 1, 1, 2, 2, "..."]
-        b string ["a", "a", "a", "b", "b", "..."]
-        a_right integer [1, 2, 4, 1, 2, "..."]
-        c string ["d", "e", "f", "d", "e", "..."]
+        a integer [1, 1, 1, 2, 2, ...]
+        b string ["a", "a", "a", "b", "b", ...]
+        a_right integer [1, 2, 4, 1, 2, ...]
+        c string ["d", "e", "f", "d", "e", ...]
       >
 
   Inner join with different names:
@@ -1891,8 +1891,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.concat_rows([df1, df2])
       #Explorer.DataFrame<
         [rows: 6, columns: 2]
-        x integer [1, 2, 3, 4, 5, "..."]
-        y string ["a", "b", "c", "d", "e", "..."]
+        x integer [1, 2, 3, 4, 5, ...]
+        y string ["a", "b", "c", "d", "e", ...]
       >
 
       iex> df1 = Explorer.DataFrame.from_columns(x: [1, 2, 3], y: ["a", "b", "c"])
@@ -1900,8 +1900,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.concat_rows([df1, df2])
       #Explorer.DataFrame<
         [rows: 6, columns: 2]
-        x float [1.0, 2.0, 3.0, 4.2, 5.3, "..."]
-        y string ["a", "b", "c", "d", "e", "..."]
+        x float [1.0, 2.0, 3.0, 4.2, 5.3, ...]
+        y string ["a", "b", "c", "d", "e", ...]
       >
   """
   @doc type: :multi
@@ -1994,16 +1994,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.group_by(df, "country")
       #Explorer.DataFrame<
         [rows: 1094, columns: 10, groups: ["country"]]
-        year integer [2010, 2010, 2010, 2010, 2010, "..."]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
-        total integer [2308, 1254, 32500, 141, 7924, "..."]
-        solid_fuel integer [627, 117, 332, 0, 0, "..."]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
-        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
-        cement integer [5, 177, 2598, 0, 204, "..."]
-        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
-        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        total integer [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel integer [627, 117, 332, 0, 0, ...]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel integer [74, 7, 14565, 0, 374, ...]
+        cement integer [5, 177, 2598, 0, 204, ...]
+        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
   Or you can group by multiple:
@@ -2012,16 +2012,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.group_by(df, ["country", "year"])
       #Explorer.DataFrame<
         [rows: 1094, columns: 10, groups: ["country", "year"]]
-        year integer [2010, 2010, 2010, 2010, 2010, "..."]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
-        total integer [2308, 1254, 32500, 141, 7924, "..."]
-        solid_fuel integer [627, 117, 332, 0, 0, "..."]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
-        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
-        cement integer [5, 177, 2598, 0, 204, "..."]
-        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
-        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        total integer [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel integer [627, 117, 332, 0, 0, ...]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel integer [74, 7, 14565, 0, 374, ...]
+        cement integer [5, 177, 2598, 0, 204, ...]
+        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
   """
   @doc type: :single
@@ -2046,16 +2046,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.ungroup(df, ["country"])
       #Explorer.DataFrame<
         [rows: 1094, columns: 10, groups: ["year"]]
-        year integer [2010, 2010, 2010, 2010, 2010, "..."]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", "..."]
-        total integer [2308, 1254, 32500, 141, 7924, "..."]
-        solid_fuel integer [627, 117, 332, 0, 0, "..."]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, "..."]
-        gas_fuel integer [74, 7, 14565, 0, 374, "..."]
-        cement integer [5, 177, 2598, 0, 204, "..."]
-        gas_flaring integer [0, 0, 2623, 0, 3697, "..."]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, "..."]
-        bunker_fuels integer [9, 7, 663, 0, 321, "..."]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        total integer [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel integer [627, 117, 332, 0, 0, ...]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel integer [74, 7, 14565, 0, 374, ...]
+        cement integer [5, 177, 2598, 0, 204, ...]
+        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
   """
   @doc type: :single

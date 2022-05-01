@@ -85,21 +85,15 @@ defimpl Inspect, for: Explorer.Series do
   @printable_limit 50
 
   def inspect(series, opts) do
-    {dtype, size, values} = inspect_data(series)
+    dtype = Series.dtype(series)
+    size = Series.size(series)
+    vals = series |> Series.slice(0, @printable_limit + 1) |> Series.to_list()
 
-    inner = Explorer.Inspect.s_inner(dtype, size, values, opts)
+    inner = Explorer.Inspect.s_inner(dtype, size, vals, %{opts | limit: @printable_limit})
 
     color("#Explorer.Series<", :map, opts)
     |> concat(nest(inner, 2))
     |> concat(color("\n>", :map, opts))
-  end
-
-  defp inspect_data(series) do
-    dtype = Series.dtype(series)
-    size = Series.size(series)
-    l = series |> Series.slice(0, @printable_limit) |> Series.to_list()
-    l = if size > @printable_limit, do: l ++ ["..."], else: l
-    {dtype, size, l}
   end
 end
 
@@ -117,11 +111,10 @@ defimpl Inspect, for: Explorer.DataFrame do
 
     cols_algebra =
       for name <- DataFrame.names(df) do
-        series = df |> DataFrame.pull(name) |> Series.slice(0, @printable_limit)
+        series = df |> DataFrame.pull(name) |> Series.slice(0, @printable_limit + 1)
         dtype = Series.dtype(series)
         vals = Series.to_list(series)
-        vals = if rows > @printable_limit, do: vals ++ ["..."], else: vals
-        Explorer.Inspect.df_inner(name, dtype, vals, opts)
+        Explorer.Inspect.df_inner(name, dtype, vals, %{opts | limit: @printable_limit})
       end
 
     concat([
