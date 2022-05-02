@@ -36,6 +36,5 @@ features = [
   "rolling_window",
   "rows",
   "sort_multiple",
-  "strings",
   "temporal",
 ]
