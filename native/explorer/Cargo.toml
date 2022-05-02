@@ -33,6 +33,7 @@ features = [
   "ipc",
   "json",
   "parquet",
+  "performant",
   "rolling_window",
   "rows",
   "sort_multiple",
