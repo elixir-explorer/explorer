@@ -1738,7 +1738,7 @@ defmodule Explorer.Series do
   """
   def count(series), do: apply_impl(series, :count)
 
-  # Rolling
+  # Window
 
   @doc """
   Calculate the rolling sum, given a window size and optional list of weights.
@@ -1756,21 +1756,21 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_sum(s, 4)
+      iex> Explorer.Series.window_sum(s, 4)
       #Explorer.Series<
         integer[10]
         [1, 3, 6, 10, 14, 18, 22, 26, 30, 34]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_sum(s, 2, weights: [1.0, 2.0])
+      iex> Explorer.Series.window_sum(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
         [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
       >
   """
-  def rolling_sum(series, window_size, opts \\ []),
-    do: apply_impl(series, :rolling_sum, [window_size, rolling_opts_with_defaults(opts)])
+  def window_sum(series, window_size, opts \\ []),
+    do: apply_impl(series, :window_sum, [window_size, window_opts_with_defaults(opts)])
 
   @doc """
   Calculate the rolling mean, given a window size and optional list of weights.
@@ -1788,21 +1788,21 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_mean(s, 4)
+      iex> Explorer.Series.window_mean(s, 4)
       #Explorer.Series<
         float[10]
         [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_mean(s, 2, weights: [1.0, 2.0])
+      iex> Explorer.Series.window_mean(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
         [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5]
       >
   """
-  def rolling_mean(series, window_size, opts \\ []),
-    do: apply_impl(series, :rolling_mean, [window_size, rolling_opts_with_defaults(opts)])
+  def window_mean(series, window_size, opts \\ []),
+    do: apply_impl(series, :window_mean, [window_size, window_opts_with_defaults(opts)])
 
   @doc """
   Calculate the rolling min, given a window size and optional list of weights.
@@ -1820,21 +1820,21 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_min(s, 4)
+      iex> Explorer.Series.window_min(s, 4)
       #Explorer.Series<
         integer[10]
         [1, 1, 1, 1, 2, 3, 4, 5, 6, 7]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_min(s, 2, weights: [1.0, 2.0])
+      iex> Explorer.Series.window_min(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
         [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
       >
   """
-  def rolling_min(series, window_size, opts \\ []),
-    do: apply_impl(series, :rolling_min, [window_size, rolling_opts_with_defaults(opts)])
+  def window_min(series, window_size, opts \\ []),
+    do: apply_impl(series, :window_min, [window_size, window_opts_with_defaults(opts)])
 
   @doc """
   Calculate the rolling max, given a window size and optional list of weights.
@@ -1852,23 +1852,23 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_max(s, 4)
+      iex> Explorer.Series.window_max(s, 4)
       #Explorer.Series<
         integer[10]
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.rolling_max(s, 2, weights: [1.0, 2.0])
+      iex> Explorer.Series.window_max(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         float[10]
         [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
       >
   """
-  def rolling_max(series, window_size, opts \\ []),
-    do: apply_impl(series, :rolling_max, [window_size, rolling_opts_with_defaults(opts)])
+  def window_max(series, window_size, opts \\ []),
+    do: apply_impl(series, :window_max, [window_size, window_opts_with_defaults(opts)])
 
-  defp rolling_opts_with_defaults(opts) do
+  defp window_opts_with_defaults(opts) do
     defaults = [weights: nil, min_periods: 1, center: false]
 
     Keyword.merge(defaults, opts, fn _key, _left, right -> right end)
