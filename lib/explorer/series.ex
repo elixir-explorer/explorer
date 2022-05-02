@@ -937,12 +937,14 @@ defmodule Explorer.Series do
         [1, 2, nil, 4]
       >
   """
-  @spec cumulative_max(series :: Series.t(), reverse? :: boolean()) :: Series.t()
-  def cumulative_max(series, reverse? \\ false)
+  @spec cumulative_max(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  def cumulative_max(series, opts \\ [])
 
-  def cumulative_max(%Series{dtype: dtype} = series, reverse?)
-      when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(series, :cumulative_max, [reverse?])
+  def cumulative_max(%Series{dtype: dtype} = series, opts)
+      when dtype in [:integer, :float, :date, :datetime] do
+    opts = Keyword.validate!(opts, reverse?: false)
+    apply_impl(series, :cumulative_max, [opts[:reverse?]])
+  end
 
   def cumulative_max(%Series{dtype: dtype}, _),
     do: dtype_error("cumulative_max/2", dtype, [:integer, :float, :date, :datetime])
@@ -977,12 +979,14 @@ defmodule Explorer.Series do
         [1, 1, nil, 1]
       >
   """
-  @spec cumulative_min(series :: Series.t(), reverse? :: boolean()) :: Series.t()
-  def cumulative_min(series, reverse? \\ false)
+  @spec cumulative_min(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  def cumulative_min(series, opts \\ [])
 
-  def cumulative_min(%Series{dtype: dtype} = series, reverse?)
-      when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(series, :cumulative_min, [reverse?])
+  def cumulative_min(%Series{dtype: dtype} = series, opts)
+      when dtype in [:integer, :float, :date, :datetime] do
+    opts = Keyword.validate!(opts, reverse?: false)
+    apply_impl(series, :cumulative_min, [opts[:reverse?]])
+  end
 
   def cumulative_min(%Series{dtype: dtype}, _),
     do: dtype_error("cumulative_min/2", dtype, [:integer, :float, :date, :datetime])
@@ -1016,12 +1020,14 @@ defmodule Explorer.Series do
         [1, 3, nil, 7]
       >
   """
-  @spec cumulative_sum(series :: Series.t(), reverse? :: boolean()) :: Series.t()
-  def cumulative_sum(series, reverse? \\ false)
+  @spec cumulative_sum(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  def cumulative_sum(series, opts \\ [])
 
-  def cumulative_sum(%Series{dtype: dtype} = series, reverse?)
-      when dtype in [:integer, :float, :boolean],
-      do: apply_impl(series, :cumulative_sum, [reverse?])
+  def cumulative_sum(%Series{dtype: dtype} = series, opts)
+      when dtype in [:integer, :float] do
+    opts = Keyword.validate!(opts, reverse?: false)
+    apply_impl(series, :cumulative_sum, [opts[:reverse?]])
+  end
 
   def cumulative_sum(%Series{dtype: dtype}, _),
     do: dtype_error("cumulative_sum/2", dtype, [:integer, :float])
