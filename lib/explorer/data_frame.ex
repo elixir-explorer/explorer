@@ -46,13 +46,13 @@ defmodule Explorer.DataFrame do
 
   Single table verbs are (unsurprisingly) used for manipulating a single dataframe. These are:
 
-  - `Explorer.DataFrame.select/3` for picking variables
-  - `Explorer.DataFrame.filter/2` for picking rows based on predicates
-  - `Explorer.DataFrame.mutate/2` for adding or replacing columns that are functions of existing columns
-  - `Explorer.DataFrame.arrange/2` for changing the ordering of rows
-  - `Explorer.DataFrame.distinct/2` for picking unique rows
-  - `Explorer.DataFrame.summarise/2` for reducing multiple rows down to a single summary
-  - `Explorer.DataFrame.pivot_longer/3` and `Explorer.DataFrame.pivot_wider/4` for massaging dataframes into longer or wider forms, respectively
+  - `select/3` for picking variables
+  - `filter/2` for picking rows based on predicates
+  - `mutate/2` for adding or replacing columns that are functions of existing columns
+  - `arrange/2` for changing the ordering of rows
+  - `distinct/2` for picking unique rows
+  - `summarise/2` for reducing multiple rows down to a single summary
+  - `pivot_longer/3` and `pivot_wider/4` for massaging dataframes into longer or wider forms, respectively
 
   Each of these combine with `Explorer.DataFrame.group_by/2` for operating by group.
 
@@ -60,8 +60,8 @@ defmodule Explorer.DataFrame do
 
   Multiple table verbs are used for combining tables. These are:
 
-  - `Explorer.DataFrame.join/3` for performing SQL-like joins
-  - `Explorer.DataFrame.concat_rows/1` for vertically "stacking" dataframes
+  - `join/3` for performing SQL-like joins
+  - `concat_rows/1` for vertically "stacking" dataframes
 
   ## IO
 
@@ -99,12 +99,12 @@ defmodule Explorer.DataFrame do
 
   import Explorer.Shared, only: [impl!: 1]
 
-  @type data :: Explorer.Backend.DataFrame.t()
-  @type t :: %DataFrame{data: data}
-
+  @type data :: Explorer.Backend.DataFrame.t() | Explorer.Backend.LazyDataFrame.t()
+  @type t :: %DataFrame{data: data, groups: [String.t()]}
   @enforce_keys [:data, :groups]
-  @default_infer_schema_length 1000
   defstruct [:data, :groups]
+
+  @default_infer_schema_length 1000
 
   # Access
 
