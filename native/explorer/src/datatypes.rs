@@ -3,13 +3,12 @@ use polars::prelude::*;
 use rustler::resource::ResourceArc;
 use rustler::{Atom, Encoder, Env, NifStruct, NifUntaggedEnum, Term};
 use std::convert::TryInto;
-use std::sync::RwLock;
 
 use std::result::Result;
 
 use crate::atoms;
 
-pub struct ExDataFrameRef(pub RwLock<DataFrame>);
+pub struct ExDataFrameRef(pub DataFrame);
 pub struct ExSeriesRef(pub Series);
 
 #[derive(NifStruct)]
@@ -26,7 +25,7 @@ pub struct ExSeries {
 
 impl ExDataFrameRef {
     pub fn new(df: DataFrame) -> Self {
-        Self(RwLock::new(df))
+        Self(df)
     }
 }
 

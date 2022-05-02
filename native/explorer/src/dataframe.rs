@@ -10,28 +10,6 @@ use crate::series::{to_ex_series_collection, to_series_collection};
 
 use crate::{ExAnyValue, ExDataFrame, ExSeries, ExplorerError};
 
-macro_rules! df_read {
-    ($data: ident, $df: ident, $body: block) => {
-        match $data.resource.0.read() {
-            Ok($df) => $body,
-            Err(_) => Err(ExplorerError::Internal(
-                "Failed to take read lock for df".into(),
-            )),
-        }
-    };
-}
-
-macro_rules! df_read_read {
-    ($data: ident, $other: ident, $df: ident, $df1: ident, $body: block) => {
-        match ($data.resource.0.read(), $other.resource.0.read()) {
-            (Ok($df), Ok($df1)) => $body,
-            _ => Err(ExplorerError::Internal(
-                "Failed to take read locks for left and right".into(),
-            )),
-        }
-    };
-}
-
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(clippy::too_many_arguments)]
 pub fn df_read_csv(
@@ -105,11 +83,10 @@ pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_write_parquet(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
-    df_read!(data, df, {
-        let file = File::create(filename).expect("could not create file");
-        ParquetWriter::new(file).finish(&mut df.clone())?;
-        Ok(())
-    })
+    let df = &data.resource.0;
+    let file = File::create(filename).expect("could not create file");
+    ParquetWriter::new(file).finish(&mut df.clone())?;
+    Ok(())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -118,16 +95,15 @@ pub fn df_to_csv(
     has_headers: bool,
     delimiter: u8,
 ) -> Result<String, ExplorerError> {
-    df_read!(data, df, {
-        let mut buf: Vec<u8> = Vec::with_capacity(81920);
-        CsvWriter::new(&mut buf)
-            .has_header(has_headers)
-            .with_delimiter(delimiter)
-            .finish(&mut df.clone())?;
+    let df = &data.resource.0;
+    let mut buf: Vec<u8> = Vec::with_capacity(81920);
+    CsvWriter::new(&mut buf)
+        .has_header(has_headers)
+        .with_delimiter(delimiter)
+        .finish(&mut df.clone())?;
 
-        let s = String::from_utf8(buf)?;
-        Ok(s)
-    })
+    let s = String::from_utf8(buf)?;
+    Ok(s)
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -137,14 +113,13 @@ pub fn df_to_csv_file(
     has_headers: bool,
     delimiter: u8,
 ) -> Result<(), ExplorerError> {
-    df_read!(data, df, {
-        let mut f = File::create(filename)?;
-        CsvWriter::new(&mut f)
-            .has_header(has_headers)
-            .with_delimiter(delimiter)
-            .finish(&mut df.clone())?;
-        Ok(())
-    })
+    let df = &data.resource.0;
+    let mut f = File::create(filename)?;
+    CsvWriter::new(&mut f)
+        .has_header(has_headers)
+        .with_delimiter(delimiter)
+        .finish(&mut df.clone())?;
+    Ok(())
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -167,20 +142,19 @@ pub fn df_write_ipc(
     filename: &str,
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
-    df_read!(data, df, {
-        // Select the compression algorithm.
-        let compression = match compression {
-            Some("LZ4") => Some(IpcCompression::LZ4),
-            Some("ZSTD") => Some(IpcCompression::ZSTD),
-            _ => None,
-        };
+    let df = &data.resource.0;
+    // Select the compression algorithm.
+    let compression = match compression {
+        Some("LZ4") => Some(IpcCompression::LZ4),
+        Some("ZSTD") => Some(IpcCompression::ZSTD),
+        _ => None,
+    };
 
-        let mut file = File::create(filename).expect("could not create file");
-        IpcWriter::new(&mut file)
-            .with_compression(compression)
-            .finish(&mut df.clone())?;
-        Ok(())
-    })
+    let mut file = File::create(filename).expect("could not create file");
+    IpcWriter::new(&mut file)
+        .with_compression(compression)
+        .finish(&mut df.clone())?;
+    Ok(())
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -202,16 +176,15 @@ pub fn df_read_ndjson(
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
-    df_read!(data, df, {
-        let file = File::create(filename).expect("could not create file");
-        JsonWriter::new(file).finish(&mut df.clone())?;
-        Ok(())
-    })
+    let df = &data.resource.0;
+    let file = File::create(filename).expect("could not create file");
+    JsonWriter::new(file).finish(&mut df.clone())?;
+    Ok(())
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_as_str(data: ExDataFrame) -> Result<String, ExplorerError> {
-    df_read!(data, df, { Ok(format!("{:?}", df)) })
+    Ok(format!("{:?}", data.resource.0))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -335,55 +308,52 @@ pub fn df_join(
         }
     };
 
-    df_read_read!(data, other, df, df1, {
-        let new_df = df.join(&*df1, left_on, right_on, how, None)?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let df1 = &other.resource.0;
+    let new_df = df.join(df1, left_on, right_on, how, None)?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_get_columns(data: ExDataFrame) -> Result<Vec<ExSeries>, ExplorerError> {
-    df_read!(data, df, {
-        Ok(to_ex_series_collection(df.get_columns().clone()))
-    })
+    let df = &data.resource.0;
+    Ok(to_ex_series_collection(df.get_columns().clone()))
 }
 
 #[rustler::nif]
 pub fn df_columns(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
-    df_read!(data, df, {
-        let cols = df.get_column_names();
-        Ok(cols.into_iter().map(|s| s.to_string()).collect())
-    })
+    let df = &data.resource.0;
+    let cols = df.get_column_names();
+    Ok(cols.into_iter().map(|s| s.to_string()).collect())
 }
 
 #[rustler::nif]
 pub fn df_dtypes(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
-    df_read!(data, df, {
-        let result = df.dtypes().iter().map(|dtype| dtype.to_string()).collect();
-        Ok(result)
-    })
+    let df = &data.resource.0;
+    let result = df.dtypes().iter().map(|dtype| dtype.to_string()).collect();
+    Ok(result)
 }
 
 #[rustler::nif]
 pub fn df_shape(data: ExDataFrame) -> Result<(usize, usize), ExplorerError> {
-    df_read!(data, df, { Ok(df.shape()) })
+    Ok(data.resource.0.shape())
 }
 
 #[rustler::nif]
 pub fn df_height(data: ExDataFrame) -> Result<usize, ExplorerError> {
-    df_read!(data, df, { Ok(df.height()) })
+    Ok(data.resource.0.height())
 }
 
 #[rustler::nif]
 pub fn df_width(data: ExDataFrame) -> Result<usize, ExplorerError> {
-    df_read!(data, df, { Ok(df.width()) })
+    Ok(data.resource.0.width())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_vstack(data: ExDataFrame, other: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read_read!(data, other, df, df1, {
-        Ok(ExDataFrame::new(df.vstack(&df1.clone())?))
-    })
+    let df = &data.resource.0;
+    let df1 = &other.resource.0;
+    Ok(ExDataFrame::new(df.vstack(&df1.clone())?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -391,64 +361,57 @@ pub fn df_drop_nulls(
     data: ExDataFrame,
     subset: Option<Vec<String>>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.drop_nulls(subset.as_ref().map(|s| s.as_ref()))?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.drop_nulls(subset.as_ref().map(|s| s.as_ref()))?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_drop(data: ExDataFrame, name: &str) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = (&*df).drop(name)?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.drop(name)?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_select_at_idx(data: ExDataFrame, idx: usize) -> Result<Option<ExSeries>, ExplorerError> {
-    df_read!(data, df, {
-        let result = df.select_at_idx(idx).map(|s| ExSeries::new(s.clone()));
-        Ok(result)
-    })
+    let df = &data.resource.0;
+    let result = df.select_at_idx(idx).map(|s| ExSeries::new(s.clone()));
+    Ok(result)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_column(data: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerError> {
-    df_read!(data, df, {
-        let series = df.column(name).map(|s| ExSeries::new(s.clone()))?;
-        Ok(series)
-    })
+    let df = &data.resource.0;
+    let series = df.column(name).map(|s| ExSeries::new(s.clone()))?;
+    Ok(series)
 }
 
 #[rustler::nif]
 pub fn df_select(data: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.select(&selection)?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.select(&selection)?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let filter_series = &mask.resource.0;
-        if let Ok(ca) = filter_series.bool() {
-            let new_df = df.filter(ca)?;
-            Ok(ExDataFrame::new(new_df))
-        } else {
-            Err(ExplorerError::Other("Expected a boolean mask".into()))
-        }
-    })
+    let df = &data.resource.0;
+    let filter_series = &mask.resource.0;
+    if let Ok(ca) = filter_series.bool() {
+        let new_df = df.filter(ca)?;
+        Ok(ExDataFrame::new(new_df))
+    } else {
+        Err(ExplorerError::Other("Expected a boolean mask".into()))
+    }
 }
 
 #[rustler::nif]
 pub fn df_take(data: ExDataFrame, indices: Vec<u32>) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let idx = UInt32Chunked::from_vec("idx", indices);
-        let new_df = df.take(&idx)?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let idx = UInt32Chunked::from_vec("idx", indices);
+    let new_df = df.take(&idx)?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -457,10 +420,9 @@ pub fn df_sort(
     by_column: &str,
     reverse: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.sort([by_column], reverse)?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.sort([by_column], reverse)?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -469,26 +431,23 @@ pub fn df_slice(
     offset: i64,
     length: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.slice(offset, length);
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.slice(offset, length);
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_head(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.head(length);
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.head(length);
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_tail(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.tail(length);
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.tail(length);
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -497,10 +456,9 @@ pub fn df_melt(
     id_vars: Vec<&str>,
     value_vars: Vec<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.melt(id_vars, value_vars)?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.melt(id_vars, value_vars)?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -509,30 +467,27 @@ pub fn df_drop_duplicates(
     maintain_order: bool,
     subset: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = match maintain_order {
-            false => df.distinct(Some(&subset), DistinctKeepStrategy::First)?,
-            true => df.distinct_stable(Some(&subset), DistinctKeepStrategy::First)?,
-        };
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = match maintain_order {
+        false => df.distinct(Some(&subset), DistinctKeepStrategy::First)?,
+        true => df.distinct_stable(Some(&subset), DistinctKeepStrategy::First)?,
+    };
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_to_dummies(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.to_dummies()?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.to_dummies()?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_with_column(data: ExDataFrame, col: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let mut new_df = df.clone();
-        new_df.with_column(col.resource.0.clone())?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let mut new_df = df.clone();
+    new_df.with_column(col.resource.0.clone())?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif]
@@ -547,19 +502,17 @@ pub fn df_set_column_names(
     data: ExDataFrame,
     names: Vec<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let mut new_df = df.clone();
-        new_df.set_column_names(&names)?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let mut new_df = df.clone();
+    new_df.set_column_names(&names)?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_groups(data: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let groups = df.groupby(groups)?.groups()?;
-        Ok(ExDataFrame::new(groups))
-    })
+    let df = &data.resource.0;
+    let groups = df.groupby(groups)?.groups()?;
+    Ok(ExDataFrame::new(groups))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -568,10 +521,9 @@ pub fn df_groupby_agg(
     groups: Vec<&str>,
     aggs: Vec<(&str, Vec<&str>)>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df.groupby(groups)?.agg(&aggs)?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df.groupby(groups)?.agg(&aggs)?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -581,11 +533,10 @@ pub fn df_pivot_wider(
     pivot_column: &str,
     values_column: &str,
 ) -> Result<ExDataFrame, ExplorerError> {
-    df_read!(data, df, {
-        let new_df = df
-            .groupby(id_cols)?
-            .pivot([pivot_column], [values_column])
-            .first()?;
-        Ok(ExDataFrame::new(new_df))
-    })
+    let df = &data.resource.0;
+    let new_df = df
+        .groupby(id_cols)?
+        .pivot([pivot_column], [values_column])
+        .first()?;
+    Ok(ExDataFrame::new(new_df))
 }
