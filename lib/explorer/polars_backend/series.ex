@@ -134,13 +134,16 @@ defmodule Explorer.PolarsBackend.Series do
   # Cumulative
 
   @impl true
-  def cum_max(series, reverse?), do: Shared.apply_native(series, :s_cum_max, [reverse?])
+  def cumulative_max(series, reverse?),
+    do: Shared.apply_native(series, :s_cum_max, [reverse?])
 
   @impl true
-  def cum_min(series, reverse?), do: Shared.apply_native(series, :s_cum_min, [reverse?])
+  def cumulative_min(series, reverse?),
+    do: Shared.apply_native(series, :s_cum_min, [reverse?])
 
   @impl true
-  def cum_sum(series, reverse?), do: Shared.apply_native(series, :s_cum_sum, [reverse?])
+  def cumulative_sum(series, reverse?),
+    do: Shared.apply_native(series, :s_cum_sum, [reverse?])
 
   # Local minima/maxima
 
@@ -265,10 +268,10 @@ defmodule Explorer.PolarsBackend.Series do
       |> DataFrame.rename(["values", "counts"])
       |> DataFrame.mutate(counts: &Series.cast(&1["counts"], :integer))
 
-  # Rolling
+  # Window
 
   @impl true
-  def rolling_max(series, window_size, opts) do
+  def window_max(series, window_size, opts) do
     weights = Keyword.fetch!(opts, :weights)
     min_periods = Keyword.fetch!(opts, :min_periods)
     center = Keyword.fetch!(opts, :center)
@@ -277,7 +280,7 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def rolling_mean(series, window_size, opts) do
+  def window_mean(series, window_size, opts) do
     weights = Keyword.fetch!(opts, :weights)
     min_periods = Keyword.fetch!(opts, :min_periods)
     center = Keyword.fetch!(opts, :center)
@@ -286,7 +289,7 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def rolling_min(series, window_size, opts) do
+  def window_min(series, window_size, opts) do
     weights = Keyword.fetch!(opts, :weights)
     min_periods = Keyword.fetch!(opts, :min_periods)
     center = Keyword.fetch!(opts, :center)
@@ -295,7 +298,7 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def rolling_sum(series, window_size, opts) do
+  def window_sum(series, window_size, opts) do
     weights = Keyword.fetch!(opts, :weights)
     min_periods = Keyword.fetch!(opts, :min_periods)
     center = Keyword.fetch!(opts, :center)

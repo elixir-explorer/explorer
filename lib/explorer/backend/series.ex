@@ -47,9 +47,9 @@ defmodule Explorer.Backend.Series do
 
   # Cumulative
 
-  @callback cum_max(s, reverse? :: boolean()) :: s
-  @callback cum_min(s, reverse? :: boolean()) :: s
-  @callback cum_sum(s, reverse? :: boolean()) :: s
+  @callback cumulative_max(s, reverse? :: boolean()) :: s
+  @callback cumulative_min(s, reverse? :: boolean()) :: s
+  @callback cumulative_sum(s, reverse? :: boolean()) :: s
 
   # Local minima/maxima
 
@@ -93,15 +93,15 @@ defmodule Explorer.Backend.Series do
 
   # Rolling
 
-  @type rolling_option ::
+  @type window_option ::
           {:weights, [float()] | nil}
           | {:min_periods, integer() | nil}
           | {:center, boolean()}
 
-  @callback rolling_sum(s, window_size :: integer(), [rolling_option()]) :: s
-  @callback rolling_min(s, window_size :: integer(), [rolling_option()]) :: s
-  @callback rolling_max(s, window_size :: integer(), [rolling_option()]) :: s
-  @callback rolling_mean(s, window_size :: integer(), [rolling_option()]) :: s
+  @callback window_sum(s, window_size :: integer(), [window_option()]) :: s
+  @callback window_min(s, window_size :: integer(), [window_option()]) :: s
+  @callback window_max(s, window_size :: integer(), [window_option()]) :: s
+  @callback window_mean(s, window_size :: integer(), [window_option()]) :: s
 
   # Nulls
 
