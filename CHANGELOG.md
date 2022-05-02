@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Now uses `polars`'s "performant" feature
 - `Explorer.default_backend/0` is now `Explorer.Backend.get/0`
 - `Explorer.default_backend/1` is now `Explorer.Backend.put/1`
+- `Series.cum_*` functions are now `Series.cumulative_*` to mirror `Nx`
+- `Series.rolling_*` functions are now `Series.window_*` to mirror `Nx`
+- `reverse?` is now an option instead of an argument in `Series.cumulative_*` functions
 
 ## [v0.1.1] - 2022-04-27
 
