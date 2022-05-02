@@ -2011,7 +2011,7 @@ defmodule Explorer.Series do
   # Helpers
 
   defp backend_from_options!(opts) do
-    backend = Explorer.Shared.backend_from_options!(opts) || Explorer.default_backend()
+    backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
     Module.concat(backend, "Series")
   end
 

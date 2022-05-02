@@ -394,7 +394,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.default_backend/0`.
+    * `backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
 
   ## Examples
 
@@ -2199,7 +2199,7 @@ defmodule Explorer.DataFrame do
   # Helpers
 
   defp backend_from_options!(opts) do
-    backend = Explorer.Shared.backend_from_options!(opts) || Explorer.default_backend()
+    backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
     Module.concat(backend, "DataFrame")
   end
 
