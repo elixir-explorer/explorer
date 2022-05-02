@@ -134,13 +134,16 @@ defmodule Explorer.PolarsBackend.Series do
   # Cumulative
 
   @impl true
-  def cum_max(series, reverse?), do: Shared.apply_native(series, :s_cum_max, [reverse?])
+  def cumulative_max(series, reverse?),
+    do: Shared.apply_native(series, :s_cum_max, [reverse?])
 
   @impl true
-  def cum_min(series, reverse?), do: Shared.apply_native(series, :s_cum_min, [reverse?])
+  def cumulative_min(series, reverse?),
+    do: Shared.apply_native(series, :s_cum_min, [reverse?])
 
   @impl true
-  def cum_sum(series, reverse?), do: Shared.apply_native(series, :s_cum_sum, [reverse?])
+  def cumulative_sum(series, reverse?),
+    do: Shared.apply_native(series, :s_cum_sum, [reverse?])
 
   # Local minima/maxima
 

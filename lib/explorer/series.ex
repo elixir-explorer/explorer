@@ -924,28 +924,28 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
-      iex> Explorer.Series.cum_max(s)
+      iex> Explorer.Series.cumulative_max(s)
       #Explorer.Series<
         integer[4]
         [1, 2, 3, 4]
       >
 
       iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
-      iex> Explorer.Series.cum_max(s)
+      iex> Explorer.Series.cumulative_max(s)
       #Explorer.Series<
         integer[4]
         [1, 2, nil, 4]
       >
   """
-  @spec cum_max(series :: Series.t(), reverse? :: boolean()) :: Series.t()
-  def cum_max(series, reverse? \\ false)
+  @spec cumulative_max(series :: Series.t(), reverse? :: boolean()) :: Series.t()
+  def cumulative_max(series, reverse? \\ false)
 
-  def cum_max(%Series{dtype: dtype} = series, reverse?)
+  def cumulative_max(%Series{dtype: dtype} = series, reverse?)
       when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(series, :cum_max, [reverse?])
+      do: apply_impl(series, :cumulative_max, [reverse?])
 
-  def cum_max(%Series{dtype: dtype}, _),
-    do: dtype_error("cum_max/2", dtype, [:integer, :float, :date, :datetime])
+  def cumulative_max(%Series{dtype: dtype}, _),
+    do: dtype_error("cumulative_max/2", dtype, [:integer, :float, :date, :datetime])
 
   @doc """
   Calculates the cumulative minimum of the series.
@@ -964,28 +964,28 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
-      iex> Explorer.Series.cum_min(s)
+      iex> Explorer.Series.cumulative_min(s)
       #Explorer.Series<
         integer[4]
         [1, 1, 1, 1]
       >
 
       iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
-      iex> Explorer.Series.cum_min(s)
+      iex> Explorer.Series.cumulative_min(s)
       #Explorer.Series<
         integer[4]
         [1, 1, nil, 1]
       >
   """
-  @spec cum_min(series :: Series.t(), reverse? :: boolean()) :: Series.t()
-  def cum_min(series, reverse? \\ false)
+  @spec cumulative_min(series :: Series.t(), reverse? :: boolean()) :: Series.t()
+  def cumulative_min(series, reverse? \\ false)
 
-  def cum_min(%Series{dtype: dtype} = series, reverse?)
+  def cumulative_min(%Series{dtype: dtype} = series, reverse?)
       when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(series, :cum_min, [reverse?])
+      do: apply_impl(series, :cumulative_min, [reverse?])
 
-  def cum_min(%Series{dtype: dtype}, _),
-    do: dtype_error("cum_min/2", dtype, [:integer, :float, :date, :datetime])
+  def cumulative_min(%Series{dtype: dtype}, _),
+    do: dtype_error("cumulative_min/2", dtype, [:integer, :float, :date, :datetime])
 
   @doc """
   Calculates the cumulative sum of the series.
@@ -1003,28 +1003,28 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
-      iex> Explorer.Series.cum_sum(s)
+      iex> Explorer.Series.cumulative_sum(s)
       #Explorer.Series<
         integer[4]
         [1, 3, 6, 10]
       >
 
       iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
-      iex> Explorer.Series.cum_sum(s)
+      iex> Explorer.Series.cumulative_sum(s)
       #Explorer.Series<
         integer[4]
         [1, 3, nil, 7]
       >
   """
-  @spec cum_sum(series :: Series.t(), reverse? :: boolean()) :: Series.t()
-  def cum_sum(series, reverse? \\ false)
+  @spec cumulative_sum(series :: Series.t(), reverse? :: boolean()) :: Series.t()
+  def cumulative_sum(series, reverse? \\ false)
 
-  def cum_sum(%Series{dtype: dtype} = series, reverse?)
+  def cumulative_sum(%Series{dtype: dtype} = series, reverse?)
       when dtype in [:integer, :float, :boolean],
-      do: apply_impl(series, :cum_sum, [reverse?])
+      do: apply_impl(series, :cumulative_sum, [reverse?])
 
-  def cum_sum(%Series{dtype: dtype}, _),
-    do: dtype_error("cum_sum/2", dtype, [:integer, :float])
+  def cumulative_sum(%Series{dtype: dtype}, _),
+    do: dtype_error("cumulative_sum/2", dtype, [:integer, :float])
 
   # Local minima/maxima
 
