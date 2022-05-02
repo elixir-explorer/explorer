@@ -2,6 +2,9 @@ defmodule Explorer.Shared do
   # A collection of **private** helpers shared in Explorer.
   @moduledoc false
 
+  @doc """
+  Gets the backend from a `Keyword.t()` or `nil`.
+  """
   def backend_from_options!(opts) do
     case Keyword.fetch(opts, :backend) do
       {:ok, backend} when is_atom(backend) ->

@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Rustler` is now an optional dependency
 - `read_` and `write_` IO functions are now `from_` and `to_`
 - `to_binary` is now `dump_csv`
+- Now uses `polars`'s "simd" feature
+- Now uses `polars`'s "performant" feature
+- `Explorer.default_backend/0` is now `Explorer.Backend.get/0`
+- `Explorer.default_backend/1` is now `Explorer.Backend.put/1`
 
 ## [v0.1.1] - 2022-04-27
 
