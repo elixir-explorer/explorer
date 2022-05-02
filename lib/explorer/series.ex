@@ -942,8 +942,8 @@ defmodule Explorer.Series do
 
   def cumulative_max(%Series{dtype: dtype} = series, opts)
       when dtype in [:integer, :float, :date, :datetime] do
-    opts = Keyword.validate!(opts, reverse?: false)
-    apply_impl(series, :cumulative_max, [opts[:reverse?]])
+    opts = Keyword.validate!(opts, reverse: false)
+    apply_impl(series, :cumulative_max, [opts[:reverse]])
   end
 
   def cumulative_max(%Series{dtype: dtype}, _),
@@ -984,8 +984,8 @@ defmodule Explorer.Series do
 
   def cumulative_min(%Series{dtype: dtype} = series, opts)
       when dtype in [:integer, :float, :date, :datetime] do
-    opts = Keyword.validate!(opts, reverse?: false)
-    apply_impl(series, :cumulative_min, [opts[:reverse?]])
+    opts = Keyword.validate!(opts, reverse: false)
+    apply_impl(series, :cumulative_min, [opts[:reverse]])
   end
 
   def cumulative_min(%Series{dtype: dtype}, _),
@@ -1025,8 +1025,8 @@ defmodule Explorer.Series do
 
   def cumulative_sum(%Series{dtype: dtype} = series, opts)
       when dtype in [:integer, :float] do
-    opts = Keyword.validate!(opts, reverse?: false)
-    apply_impl(series, :cumulative_sum, [opts[:reverse?]])
+    opts = Keyword.validate!(opts, reverse: false)
+    apply_impl(series, :cumulative_sum, [opts[:reverse]])
   end
 
   def cumulative_sum(%Series{dtype: dtype}, _),
@@ -1669,12 +1669,12 @@ defmodule Explorer.Series do
       >
 
   """
-  def sort(series, reverse? \\ false), do: apply_impl(series, :sort, [reverse?])
+  def sort(series, reverse \\ false), do: apply_impl(series, :sort, [reverse])
 
   @doc """
   Returns the indices that would sort the series.
   """
-  def argsort(series, reverse? \\ false), do: apply_impl(series, :argsort, [reverse?])
+  def argsort(series, reverse \\ false), do: apply_impl(series, :argsort, [reverse])
 
   @doc """
   Reverses the series order.
