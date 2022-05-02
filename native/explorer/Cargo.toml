@@ -26,16 +26,17 @@ version = "0.20.0"
 default-features = false
 features = [
   "cross_join",
+  "cum_agg",
+  "decompress",
   "dtype-date",
   "dtype-datetime",
+  "ipc",
   "json",
   "parquet",
-  "rows",
-  "sort_multiple",
-  "strings",
-  "temporal",
-  "cum_agg",
+  "performant",
   "rolling_window",
-  "decompress",
-  "ipc"
+  "rows",
+  "simd",
+  "sort_multiple",
+  "temporal",
 ]
