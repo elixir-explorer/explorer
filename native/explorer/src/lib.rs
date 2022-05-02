@@ -11,15 +11,19 @@ mod dataframe;
 #[allow(clippy::extra_unused_lifetimes)]
 mod datatypes;
 mod error;
+mod lazyframe;
 mod series;
 
 use dataframe::*;
-pub use datatypes::{ExDataFrame, ExDataFrameRef, ExSeries, ExSeriesRef};
+pub use datatypes::{
+    ExDataFrame, ExDataFrameRef, ExLazyFrame, ExLazyFrameRef, ExSeries, ExSeriesRef,
+};
 pub use error::ExplorerError;
 use series::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExDataFrameRef, env);
+    rustler::resource!(ExLazyFrameRef, env);
     rustler::resource!(ExSeriesRef, env);
     true
 }
