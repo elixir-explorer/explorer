@@ -153,6 +153,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Conversion
 
   @impl true
+  def lazy, do: Explorer.PolarsBackend.LazyDataFrame
+
+  @impl true
   def from_tabular(tabular) do
     {columns, %{columns: keys}} = Table.to_columns_with_info(tabular)
 
