@@ -156,6 +156,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def lazy, do: Explorer.PolarsBackend.LazyDataFrame
 
   @impl true
+  def to_lazy(df), do: df |> Shared.apply_native(:df_to_lazy) |> Shared.update_dataframe(df)
+
+  @impl true
+  def collect(df), do: {:ok, df}
+
+  @impl true
   def from_tabular(tabular) do
     {columns, %{columns: keys}} = Table.to_columns_with_info(tabular)
 

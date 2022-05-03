@@ -48,6 +48,8 @@ defmodule Explorer.Backend.DataFrame do
   # Conversion
 
   @callback lazy :: module()
+  @callback to_lazy(df) :: df
+  @callback collect(df) :: result(df)
   @callback from_tabular(Table.Reader.t()) :: df
   @callback from_series(map() | Keyword.t()) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]

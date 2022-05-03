@@ -1,9 +1,24 @@
 defmodule Explorer.PolarsBackend.LazyDataFrame do
+  @moduledoc false
+
+  alias Explorer.PolarsBackend.Shared
+
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
   defstruct resource: nil, reference: nil
 
   @behaviour Explorer.Backend.DataFrame
+
+  # Conversion
+
+  @impl true
+  def lazy, do: __MODULE__
+
+  @impl true
+  def to_lazy(ldf), do: ldf
+
+  @impl true
+  def collect(ldf), do: Shared.apply_native(ldf, :lf_collect)
 
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.
