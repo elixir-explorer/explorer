@@ -212,7 +212,7 @@ defmodule Explorer.DataFrameTest do
     end
 
     @tag :tmp_dir
-    test "with_columns", config do
+    test "columns - str", config do
       csv =
         tmp_csv(config.tmp_dir, """
         a,b
@@ -220,7 +220,39 @@ defmodule Explorer.DataFrameTest do
         e,f
         """)
 
-      df = DF.from_csv!(csv, with_columns: ["b"])
+      df = DF.from_csv!(csv, columns: ["b"])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               b: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "columns - atom", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, columns: [:b])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               b: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "columns - integer", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, columns: [1])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                b: ["d", "f"]
