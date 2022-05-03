@@ -19,6 +19,7 @@ pub use datatypes::{
     ExDataFrame, ExDataFrameRef, ExLazyFrame, ExLazyFrameRef, ExSeries, ExSeriesRef,
 };
 pub use error::ExplorerError;
+use lazyframe::*;
 use series::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
@@ -69,11 +70,16 @@ rustler::init!(
         df_to_csv,
         df_to_csv_file,
         df_to_dummies,
+        df_to_lazy,
         df_vstack,
         df_width,
         df_with_column,
         df_write_ipc,
         df_write_parquet,
+        // lazyframe
+        lf_collect,
+        lf_describe_plan,
+        lf_fetch,
         // series
         s_add,
         s_and,
