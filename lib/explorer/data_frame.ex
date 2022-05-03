@@ -39,7 +39,7 @@ defmodule Explorer.DataFrame do
 
   ## Verbs
 
-  Explorer uses the idea of a consistent set of SQL-like `verbs` like [`dplyr`](https://dplyr.tidyverse.org) 
+  Explorer uses the idea of a consistent set of SQL-like `verbs` like [`dplyr`](https://dplyr.tidyverse.org)
   which can help solve common data manipulation challenges. These are split into single table verbs and multiple table verbs.
 
   ### Single table verbs
@@ -154,7 +154,7 @@ defmodule Explorer.DataFrame do
     * `names` - A list of column names. Must match the width of the dataframe. (default: nil)
     * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
     * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-    * `with_columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
+    * `columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
     * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
     * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `[DataType::Utf8]`
   """
@@ -172,7 +172,7 @@ defmodule Explorer.DataFrame do
         names: nil,
         null_character: "NA",
         skip_rows: 0,
-        with_columns: nil,
+        columns: nil,
         infer_schema_length: @default_infer_schema_length,
         parse_dates: false
       )
@@ -189,7 +189,7 @@ defmodule Explorer.DataFrame do
       opts[:header?],
       opts[:encoding],
       opts[:max_rows],
-      opts[:with_columns],
+      opts[:columns],
       opts[:infer_schema_length],
       opts[:parse_dates]
     )
@@ -233,24 +233,21 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `columns` - List with name of columns to be selected. Defaults to all columns.
-    * `projection` - List with the index of columns to be selected. Defaults to all columns.
+    * `with_columns` - List with the name or index of columns to be selected. Defaults to all columns.
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc(filename, opts \\ []) do
     opts =
       Keyword.validate!(opts,
-        columns: nil,
-        projection: nil
+        with_columns: nil
       )
 
     backend = backend_from_options!(opts)
 
     backend.from_ipc(
       filename,
-      opts[:columns],
-      opts[:projection]
+      opts[:with_columns]
     )
   end
 

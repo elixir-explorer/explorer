@@ -28,7 +28,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         header?,
         encoding,
         max_rows,
-        with_columns,
+        columns,
         infer_schema_length,
         parse_dates
       ) do
@@ -46,6 +46,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         end)
       end
 
+    {with_columns, with_projection} = column_list_check(columns)
+
     df =
       Native.df_read_csv(
         filename,
@@ -53,7 +55,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         header?,
         max_rows,
         skip_rows,
-        nil,
+        with_projection,
         delimiter,
         true,
         with_columns,
@@ -68,6 +70,18 @@ defmodule Explorer.PolarsBackend.DataFrame do
       {{:ok, df}, names} -> checked_rename(Shared.to_dataframe(df), names)
       {{:error, error}, _} -> {:error, error}
     end
+  end
+
+  def column_list_check(list) do
+    cond do
+      is_nil(list) -> {nil, nil}
+      Enum.all?(list, &is_atom/1) -> {Enum.map(list, &Atom.to_string/1), nil}
+      Enum.all?(list, &is_binary/1) -> {list, nil }
+      Enum.all?(list, &is_integer/1) -> {nil, list}
+      true -> raise "Invalid column list" ## TODO: better error message
+    end
+
+
   end
 
   defp checked_rename(df, names) do
