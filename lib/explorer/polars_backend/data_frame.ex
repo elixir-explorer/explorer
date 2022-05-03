@@ -76,12 +76,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
     cond do
       is_nil(list) -> {nil, nil}
       Enum.all?(list, &is_atom/1) -> {Enum.map(list, &Atom.to_string/1), nil}
-      Enum.all?(list, &is_binary/1) -> {list, nil }
+      Enum.all?(list, &is_binary/1) -> {list, nil}
       Enum.all?(list, &is_integer/1) -> {nil, list}
-      true -> raise "Invalid column list" ## TODO: better error message
+      ## TODO: better error message
+      true -> raise "Invalid column list"
     end
-
-
   end
 
   defp checked_rename(df, names) do
@@ -158,7 +157,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_ipc(filename, columns) do
-
     {columns, projection} = column_list_check(columns)
 
     case Native.df_read_ipc(filename, columns, projection) do
