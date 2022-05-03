@@ -233,21 +233,21 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `with_columns` - List with the name or index of columns to be selected. Defaults to all columns.
+    * `columns` - List with the name or index of columns to be selected. Defaults to all columns.
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc(filename, opts \\ []) do
     opts =
       Keyword.validate!(opts,
-        with_columns: nil
+        columns: nil
       )
 
     backend = backend_from_options!(opts)
 
     backend.from_ipc(
       filename,
-      opts[:with_columns]
+      opts[:columns]
     )
   end
 

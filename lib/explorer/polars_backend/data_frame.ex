@@ -157,7 +157,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc(filename, columns, projection) do
+  def from_ipc(filename, columns) do
+
+    {columns, projection} = column_list_check(columns)
+
     case Native.df_read_ipc(filename, columns, projection) do
       {:ok, df} -> {:ok, Shared.to_dataframe(df)}
       {:error, error} -> {:error, error}
