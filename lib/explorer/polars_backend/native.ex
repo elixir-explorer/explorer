@@ -66,8 +66,6 @@ defmodule Explorer.PolarsBackend.Native do
   def df_drop_nulls(_df, _subset), do: err()
   def df_dtypes(_df), do: err()
   def df_filter(_df, _mask), do: err()
-  def df_from_map_rows(_rows), do: err()
-  def df_from_keyword_rows(_rows), do: err()
   def df_get_columns(_df), do: err()
   def df_groups(_df, _colnames), do: err()
   def df_groupby_agg(_df, _groups, _aggs), do: err()

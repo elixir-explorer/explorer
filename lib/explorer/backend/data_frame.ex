@@ -48,8 +48,8 @@ defmodule Explorer.Backend.DataFrame do
 
   # Conversion
 
-  @callback from_columns(map() | Keyword.t()) :: df
-  @callback from_rows(list(map() | Keyword.t())) :: df
+  @callback from_tabular(Table.Reader.t()) :: df
+  @callback from_series(map() | Keyword.t()) :: df
   @callback to_columns(df, convert_series? :: boolean(), atom_keys? :: boolean()) :: map()
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
   @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: String.t()
