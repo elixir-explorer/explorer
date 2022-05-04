@@ -479,7 +479,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates a new dataframe.
 
-  Any tabular data is accepted, as long as it adheres to the `Table.Reader` protocol.
+  Accepts any tabular data adhering to the `Table.Reader` protocol, as well as a map or a keyword list with series.
 
   ## Options
 
