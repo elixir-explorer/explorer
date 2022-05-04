@@ -449,21 +449,56 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "fetch/2" do
-    df = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+    df = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
+
+    assert Series.to_list(df[:a]) == [1, 2, 3]
     assert Series.to_list(df["a"]) == [1, 2, 3]
     assert DF.to_columns(df[["a"]]) == %{"a" => [1, 2, 3]}
+    assert DF.to_columns(df[[:a, :c]]) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
+
+    assert %Series{} = s1 = df[0]
+    assert Series.to_list(s1) == [1, 2, 3]
+
+    assert %Series{} = s2 = df[2]
+    assert Series.to_list(s2) == [4.0, 5.1, 6.2]
+
+    assert %DF{} = df2 = df[1..2]
+
+    assert DF.names(df2) == ["b", "c"]
+
+    assert_raise ArgumentError,
+                 "no column exists at index 100",
+                 fn -> df[100] end
+
+    assert_raise ArgumentError,
+                 "could not find column name \"class\"",
+                 fn -> df[:class] end
+
+    assert DF.to_columns(df[0..100]) == DF.to_columns(df)
   end
 
   test "pop/2" do
-    df1 = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+    df1 = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
 
     {s1, df2} = Access.pop(df1, "a")
     assert Series.to_list(s1) == [1, 2, 3]
-    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"]}
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
 
-    {df3, df4} = Access.pop(df1, ["a"])
-    assert DF.to_columns(df3) == %{"a" => [1, 2, 3]}
+    {df3, df4} = Access.pop(df1, ["a", "c"])
+    assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
     assert DF.to_columns(df4) == %{"b" => ["a", "b", "c"]}
+
+    {df3, df4} = Access.pop(df1, 0..1)
+    assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
+    assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
+
+    assert {%Series{} = s2, %DF{} = df5} = Access.pop(df1, :a)
+    assert Series.to_list(s2) == Series.to_list(df1[:a])
+    assert DF.names(df1) -- DF.names(df5) == ["a"]
+
+    assert {%Series{} = s3, %DF{} = df6} = Access.pop(df1, 0)
+    assert Series.to_list(s3) == Series.to_list(df1[:a])
+    assert DF.names(df1) -- DF.names(df6) == ["a"]
   end
 
   test "get_and_update/3" do
@@ -533,6 +568,51 @@ defmodule Explorer.DataFrameTest do
     assert_raise ArgumentError,
                  "columns and dtypes must be identical for all dataframes",
                  fn -> DF.concat_rows(df1, DF.from_columns(x: [7, 8, 9], y: [10, 11, 12])) end
+  end
+
+  test "distinct/2", %{df: df} do
+    df1 = DF.distinct(df, columns: [:year, :country])
+    assert DF.names(df1) == ["year", "country"]
+
+    df1 = DF.distinct(df, columns: [0, 1])
+    assert DF.names(df1) == ["year", "country"]
+
+    df1 = DF.distinct(df, columns: 0..1)
+    assert DF.names(df1) == ["year", "country"]
+
+    df2 = DF.distinct(df)
+    assert DF.names(df2) == DF.names(df)
+
+    df3 = DF.distinct(df, columns: [:year, :country], keep_all?: true)
+    assert DF.names(df3) == DF.names(df)
+
+    assert_raise ArgumentError,
+                 "you must provide at least one column or omit the column option to select all columns",
+                 fn ->
+                   DF.distinct(df, columns: [])
+                 end
+  end
+
+  test "drop_nil/2" do
+    df = DF.from_columns(a: [1, 2, nil], b: [1, nil, 3])
+
+    df1 = DF.drop_nil(df)
+    assert DF.to_columns(df1) == %{"a" => [1], "b" => [1]}
+
+    df2 = DF.drop_nil(df, :a)
+    assert DF.to_columns(df2) == %{"a" => [1, 2], "b" => [1, nil]}
+
+    # Empty list do nothing.
+    df3 = DF.drop_nil(df, [])
+    assert DF.to_columns(df3) == %{"a" => [1, 2, nil], "b" => [1, nil, 3]}
+
+    assert_raise ArgumentError,
+                 "no column exists at index 3",
+                 fn -> DF.drop_nil(df, [3, 4, 5]) end
+
+    # It takes the slice of columns in the range
+    df4 = DF.drop_nil(df, 0..200)
+    assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
   end
 
   test "table reader integration" do

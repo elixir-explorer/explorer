@@ -104,39 +104,132 @@ defmodule Explorer.DataFrame do
   @enforce_keys [:data, :groups]
   defstruct [:data, :groups]
 
+  @type column_name :: atom() | String.t()
+  @type column :: column_name() | non_neg_integer()
+  @type columns :: [column] | Range.t()
+  @type column_names :: [column_name]
+  @type column_pairs(other) :: [{column(), other}] | %{column() => other}
+
   @default_infer_schema_length 1000
+
+  # Guards and helpers for columns
+
+  defguard is_column(column) when is_binary(column) or is_atom(column) or is_integer(column)
+  defguard is_column_name(column) when is_binary(column) or is_atom(column)
+  defguard is_column_pairs(columns) when is_list(columns) or is_map(columns)
+
+  # Normalize a column name to string
+  defp to_column_name(column) when is_binary(column), do: column
+  defp to_column_name(column) when is_atom(column), do: Atom.to_string(column)
+
+  # Normalize pairs of `{column, value}` where value can be anything.
+  # The `column` is only validated if it's an integer. We check that the index is present. 
+  defp to_column_pairs(df, pairs), do: to_column_pairs(df, pairs, & &1)
+
+  # The function allows to change the `value` for each pair.
+  defp to_column_pairs(df, pairs, value_fun)
+       when is_column_pairs(pairs) and is_function(value_fun, 1) do
+    existing_columns = names(df)
+
+    pairs
+    |> Enum.map_reduce(nil, fn
+      {column, value}, maybe_map when is_integer(column) ->
+        map = maybe_map || column_index_map(existing_columns)
+
+        existing_column = fetch_column_at!(map, column)
+
+        {{existing_column, value_fun.(value)}, map}
+
+      {column, value}, maybe_map when is_atom(column) ->
+        column = Atom.to_string(column)
+
+        {{column, value_fun.(value)}, maybe_map}
+
+      {column, value}, maybe_map when is_binary(column) ->
+        {{column, value_fun.(value)}, maybe_map}
+    end)
+    |> then(fn {pairs, _} -> pairs end)
+  end
+
+  defp fetch_column_at!(map, index) do
+    case map do
+      %{^index => column} -> column
+      %{} -> raise ArgumentError, "no column exists at index #{index}"
+    end
+  end
+
+  defp column_index_map(names),
+    do: for({name, idx} <- Enum.with_index(names), into: %{}, do: {idx, name})
+
+  # Normalize column names without verifying if they exist.
+  defp to_column_names(names) when is_list(names),
+    do: Enum.map(names, &to_column_name/1)
+
+  # Normalize column names and raise if column does not exist.
+  defp to_existing_columns(df, columns) when is_list(columns) do
+    existing_columns = names(df)
+
+    columns
+    |> Enum.map_reduce(nil, fn
+      column, maybe_map when is_integer(column) ->
+        map = maybe_map || column_index_map(existing_columns)
+
+        existing_column = fetch_column_at!(map, column)
+
+        {existing_column, map}
+
+      column, maybe_map when is_atom(column) ->
+        column = Atom.to_string(column)
+        maybe_raise_column_not_found(existing_columns, column)
+        {column, maybe_map}
+
+      column, maybe_map when is_binary(column) ->
+        maybe_raise_column_not_found(existing_columns, column)
+        {column, maybe_map}
+    end)
+    |> then(fn {columns, _} -> columns end)
+  end
+
+  defp to_existing_columns(df, %Range{} = columns) do
+    Enum.slice(names(df), columns)
+  end
 
   # Access
 
   @behaviour Access
 
   @impl true
-  def fetch(df, columns) when is_list(columns) do
-    {:ok, select(df, columns)}
-  end
-
-  def fetch(df, columns = %Range{}) do
-    {:ok, select(df, columns)}
-  end
-
-  def fetch(df, column) when is_binary(column) or is_integer(column) do
+  def fetch(df, column) when is_column(column) do
     {:ok, pull(df, column)}
   end
 
+  def fetch(df, columns) do
+    columns = to_existing_columns(df, columns)
+
+    {:ok, select(df, columns)}
+  end
+
   @impl true
-  def pop(df, column) when is_binary(column) or is_integer(column) do
+  def pop(df, column) when is_column(column) do
+    [column] = to_existing_columns(df, [column])
+
     {pull(df, column), select(df, [column], :drop)}
   end
 
-  def pop(df, columns) when is_list(columns) do
+  def pop(df, columns) do
+    columns = to_existing_columns(df, columns)
+
     {select(df, columns), select(df, columns, :drop)}
   end
 
   @impl true
-  def get_and_update(df, column, fun) when is_binary(column) or is_integer(column) do
+  def get_and_update(df, column, fun) when is_column(column) do
+    [column] = to_existing_columns(df, [column])
+
     value = pull(df, column)
     {current_value, new_value} = fun.(value)
-    new_data = mutate(df, [{String.to_atom(column), new_value}])
+
+    new_data = mutate(df, %{column => new_value})
     {current_value, new_data}
   end
 
@@ -420,7 +513,7 @@ defmodule Explorer.DataFrame do
       ** (ArgumentError) cannot create series "ints": cannot make a series from mismatched types - the value "wrong" does not match inferred dtype integer
   """
   @doc type: :single
-  @spec from_columns(series :: map() | Keyword.t(), opts :: Keyword.t()) :: DataFrame.t()
+  @spec from_columns(series :: column_pairs(list()), opts :: Keyword.t()) :: DataFrame.t()
   def from_columns(series, opts \\ []) do
     backend = backend_from_options!(opts)
     backend.from_columns(series)
@@ -468,7 +561,7 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec from_rows(rows :: list(map()) | Keyword.t(), opts :: Keyword.t()) :: DataFrame.t()
+  @spec from_rows(rows :: list(column_pairs(any())), opts :: Keyword.t()) :: DataFrame.t()
   def from_rows(rows, opts \\ []) do
     backend = backend_from_options!(opts)
     backend.from_rows(rows)
@@ -728,33 +821,22 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec select(
           df :: DataFrame.t(),
-          columns :: [String.t() | non_neg_integer()],
+          columns :: columns(),
           keep_or_drop ::
             :keep | :drop
         ) :: DataFrame.t()
   def select(df, columns, keep_or_drop \\ :keep)
 
-  def select(df, columns, keep_or_drop) when is_list(columns) do
-    column_names = names(df)
-
-    columns =
-      if Enum.all?(columns, &is_number/1) do
-        map_with_names = column_index_map(column_names)
-        Enum.map(columns, &Map.fetch!(map_with_names, &1))
-      else
-        columns
-      end
-
-    Enum.each(columns, fn name ->
-      maybe_raise_column_not_found(column_names, name)
-    end)
+  def select(df, [column | _] = columns, keep_or_drop) when is_column(column) do
+    columns = to_existing_columns(df, columns)
 
     apply_impl(df, :select, [columns, keep_or_drop])
   end
 
-  def select(df, columns = %Range{}, keep_or_drop) do
-    range = Enum.to_list(columns)
-    select(df, range, keep_or_drop)
+  def select(df, %Range{} = columns, keep_or_drop) do
+    columns = to_existing_columns(df, columns)
+
+    select(df, columns, keep_or_drop)
   end
 
   @spec select(
@@ -848,7 +930,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates and modifies columns.
 
-  Columns are added as keyword list arguments. New variables overwrite existing variables of the
+  Columns are added with keyword list or maps. New variables overwrite existing variables of the
   same name. Column names are coerced from atoms to strings.
 
   ## Examples
@@ -929,31 +1011,13 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec mutate(df :: DataFrame.t(), with_columns :: map() | Keyword.t()) :: DataFrame.t()
-  def mutate(df, with_columns) when is_map(with_columns) do
-    with_columns = Enum.reduce(with_columns, %{}, &mutate_reducer(&1, &2, df))
+  @spec mutate(df :: DataFrame.t(), columns :: column_pairs(any())) ::
+          DataFrame.t()
+  def mutate(df, columns) when is_column_pairs(columns) do
+    pairs = to_column_pairs(df, columns)
 
-    apply_impl(df, :mutate, [with_columns])
+    apply_impl(df, :mutate, [Map.new(pairs)])
   end
-
-  def mutate(df, with_columns) when is_list(with_columns) do
-    if not Keyword.keyword?(with_columns),
-      do: raise(ArgumentError, "expected second argument to be a keyword list")
-
-    with_columns
-    |> Enum.reduce(%{}, fn {colname, value}, acc ->
-      Map.put(acc, Atom.to_string(colname), value)
-    end)
-    |> then(&mutate(df, &1))
-  end
-
-  defp mutate_reducer({colname, value}, acc, %DataFrame{} = _df)
-       when is_binary(colname) and is_map(acc),
-       do: Map.put(acc, colname, value)
-
-  defp mutate_reducer({colname, value}, acc, %DataFrame{} = df)
-       when is_atom(colname) and is_map(acc),
-       do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
 
   @doc """
   Arranges/sorts rows by columns.
@@ -1002,37 +1066,28 @@ defmodule Explorer.DataFrame do
   @spec arrange(
           df :: DataFrame.t(),
           columns ::
-            String.t() | [String.t() | {:asc | :desc, String.t()}]
+            column() | [column() | {:asc | :desc, column()}]
         ) :: DataFrame.t()
   def arrange(df, columns) when is_list(columns) do
-    columns = columns |> Enum.reduce([], &arrange_reducer/2) |> Enum.reverse()
+    {dirs, columns} =
+      Enum.map(columns, fn
+        {dir, column} when dir in [:asc, :desc] and is_column(column) ->
+          {dir, column}
 
-    column_names = names(df)
+        column when is_column(column) ->
+          {:asc, column}
 
-    Enum.each(columns, fn {_dir, name} ->
-      maybe_raise_column_not_found(column_names, name)
-    end)
+        other ->
+          raise ArgumentError, "not a valid column or arrange instruction: #{inspect(other)}"
+      end)
+      |> Enum.unzip()
 
-    apply_impl(df, :arrange, [columns])
+    columns = to_existing_columns(df, columns)
+
+    apply_impl(df, :arrange, [Enum.zip(dirs, columns)])
   end
 
-  def arrange(df, column) when is_binary(column), do: arrange(df, [column])
-
-  defp arrange_reducer({dir, name}, acc)
-       when is_binary(name) and is_list(acc) and dir in [:asc, :desc],
-       do: [{dir, name} | acc]
-
-  defp arrange_reducer({dir, name}, acc)
-       when is_atom(name) and is_list(acc) and dir in [:asc, :desc],
-       do: arrange_reducer({dir, Atom.to_string(name)}, acc)
-
-  defp arrange_reducer(name, acc)
-       when is_binary(name) and is_list(acc),
-       do: arrange_reducer({:asc, name}, acc)
-
-  defp arrange_reducer(name, acc)
-       when is_atom(name) and is_list(acc),
-       do: arrange_reducer(Atom.to_string(name), acc)
+  def arrange(df, column) when is_column(column), do: arrange(df, [column])
 
   @doc """
   Takes distinct rows by a selection of columns.
@@ -1083,20 +1138,23 @@ defmodule Explorer.DataFrame do
   def distinct(df, opts \\ [])
 
   def distinct(df, opts) do
-    opts = Keyword.validate!(opts, columns: [], keep_all?: false)
-
-    column_names = names(df)
+    opts = Keyword.validate!(opts, columns: nil, keep_all?: false)
 
     columns =
       case opts[:columns] do
-        [] -> column_names
-        callback when is_function(callback) -> Enum.filter(column_names, callback)
-        columns -> columns
-      end
+        nil ->
+          names(df)
 
-    Enum.each(columns, fn name ->
-      maybe_raise_column_not_found(column_names, name)
-    end)
+        callback when is_function(callback) ->
+          Enum.filter(names(df), callback)
+
+        [] ->
+          raise ArgumentError,
+                "you must provide at least one column or omit the column option to select all columns"
+
+        columns ->
+          to_existing_columns(df, columns)
+      end
 
     apply_impl(df, :distinct, [columns, opts[:keep_all?]])
   end
@@ -1115,22 +1173,36 @@ defmodule Explorer.DataFrame do
         a integer [1]
         b integer [1]
       >
+
+      iex> df = Explorer.DataFrame.from_columns(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
+      iex> Explorer.DataFrame.drop_nil(df, [:a, :c])
+      #Explorer.DataFrame<
+        [rows: 1, columns: 3]
+        a integer [2]
+        b integer [nil]
+        c integer [5]
+      >
+
+      iex> df = Explorer.DataFrame.from_columns(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
+      iex> Explorer.DataFrame.drop_nil(df, 0..1)
+      #Explorer.DataFrame<
+        [rows: 1, columns: 3]
+        a integer [1]
+        b integer [1]
+        c integer [nil]
+      >
   """
   @doc type: :single
-  @spec drop_nil(df :: DataFrame.t(), columns_or_column :: [String.t()] | String.t()) ::
+  @spec drop_nil(df :: DataFrame.t(), columns_or_column :: :all | column() | columns()) ::
           DataFrame.t()
-  def drop_nil(df, columns_or_column \\ [])
+  def drop_nil(df, columns_or_column \\ :all)
 
-  def drop_nil(df, []), do: drop_nil(df, names(df))
+  def drop_nil(df, :all), do: drop_nil(df, names(df))
 
-  def drop_nil(df, column) when is_binary(column), do: drop_nil(df, [column])
+  def drop_nil(df, column) when is_column(column), do: drop_nil(df, [column])
 
-  def drop_nil(df, columns) when is_list(columns) do
-    column_names = names(df)
-
-    Enum.each(columns, fn name ->
-      maybe_raise_column_not_found(column_names, name)
-    end)
+  def drop_nil(df, columns) do
+    columns = to_existing_columns(df, columns)
 
     apply_impl(df, :drop_nil, [columns])
   end
@@ -1184,56 +1256,38 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :single
-  @spec rename(df :: DataFrame.t(), names :: [String.t() | atom()] | map()) :: DataFrame.t()
-  def rename(df, names) when is_list(names) do
-    case Keyword.keyword?(names) do
-      false ->
-        names =
-          Enum.map(names, fn
-            name when is_atom(name) -> Atom.to_string(name)
-            name -> name
-          end)
+  @spec rename(
+          df :: DataFrame.t(),
+          names :: column_names() | column_pairs(column_name()) | function()
+        ) ::
+          DataFrame.t()
+  def rename(df, [name | _] = names) when is_column_name(name) do
+    new_names = to_column_names(names)
 
-        check_new_names_length(df, names)
+    check_new_names_length!(df, new_names)
 
-        apply_impl(df, :rename, [names])
-
-      true ->
-        names
-        |> Enum.reduce(%{}, &rename_reducer/2)
-        |> then(&rename(df, &1))
-    end
+    apply_impl(df, :rename, [new_names])
   end
 
-  def rename(df, names) when is_map(names) do
-    names = Enum.reduce(names, %{}, &rename_reducer/2)
-    name_keys = Map.keys(names)
+  def rename(df, names) when is_column_pairs(names) do
+    pairs = to_column_pairs(df, names, &to_column_name(&1))
     old_names = names(df)
 
-    Enum.each(name_keys, fn name ->
+    for {name, _} <- pairs do
       maybe_raise_column_not_found(old_names, name)
-    end)
+    end
+
+    pairs_map = Map.new(pairs)
 
     old_names
-    |> Enum.map(fn name -> if name in name_keys, do: Map.get(names, name), else: name end)
+    |> Enum.map(fn name -> Map.get(pairs_map, name, name) end)
     |> then(&rename(df, &1))
   end
 
   def rename(df, names) when is_function(names),
     do: df |> names() |> Enum.map(names) |> then(&rename(df, &1))
 
-  defp rename_reducer({k, v}, acc) when is_atom(k) and is_binary(v),
-    do: Map.put(acc, Atom.to_string(k), v)
-
-  defp rename_reducer({k, v}, acc) when is_binary(k) and is_binary(v), do: Map.put(acc, k, v)
-
-  defp rename_reducer({k, v}, acc) when is_atom(k) and is_atom(v),
-    do: Map.put(acc, Atom.to_string(k), Atom.to_string(v))
-
-  defp rename_reducer({k, v}, acc) when is_binary(k) and is_atom(v),
-    do: Map.put(acc, k, Atom.to_string(v))
-
-  defp check_new_names_length(df, names) do
+  defp check_new_names_length!(df, names) do
     width = n_cols(df)
     n_new_names = length(names)
 
@@ -1306,19 +1360,21 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec rename_with(df :: DataFrame.t(), callback :: function(), columns :: list() | function()) ::
+  @spec rename_with(
+          df :: DataFrame.t(),
+          callback :: function(),
+          columns :: :all | columns() | function()
+        ) ::
           DataFrame.t()
-  def rename_with(df, callback, columns \\ [])
+  def rename_with(df, callback, columns \\ :all)
 
-  def rename_with(df, callback, []) when is_function(callback),
+  def rename_with(df, callback, :all) when is_function(callback),
     do: df |> names() |> Enum.map(callback) |> then(&rename(df, &1))
 
-  def rename_with(df, callback, columns) when is_function(callback) and is_list(columns) do
+  def rename_with(df, callback, [column | _] = columns)
+      when is_function(callback) and is_column(column) do
+    columns = to_existing_columns(df, columns)
     old_names = names(df)
-
-    Enum.each(columns, fn name ->
-      maybe_raise_column_not_found(old_names, name)
-    end)
 
     old_names
     |> Enum.map(fn name -> if name in columns, do: callback.(name), else: name end)
@@ -1327,7 +1383,7 @@ defmodule Explorer.DataFrame do
 
   def rename_with(df, callback, columns) when is_function(callback) and is_function(columns) do
     case df |> names() |> Enum.filter(columns) do
-      [_ | _] = columns ->
+      [column | _] = columns when is_column(column) ->
         rename_with(df, callback, columns)
 
       [] ->
@@ -1362,7 +1418,8 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  def dummies(df, columns), do: apply_impl(df, :dummies, [columns])
+  def dummies(df, columns),
+    do: apply_impl(df, :dummies, [to_existing_columns(df, columns)])
 
   @doc """
   Extracts a single column as a series.
@@ -1384,17 +1441,10 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec pull(df :: DataFrame.t(), column :: String.t() | non_neg_integer()) :: Series.t()
-  def pull(df, column) when is_binary(column) do
-    names = names(df)
-    maybe_raise_column_not_found(names, column)
-    apply_impl(df, :pull, [column])
-  end
+  @spec pull(df :: DataFrame.t(), column :: column()) :: Series.t()
+  def pull(df, column) when is_column(column) do
+    [column] = to_existing_columns(df, [column])
 
-  def pull(df, column) when is_integer(column) do
-    column_names = names(df)
-    column = column_names |> column_index_map() |> Map.fetch!(column)
-    maybe_raise_column_not_found(column_names, column)
     apply_impl(df, :pull, [column])
   end
 
@@ -1611,18 +1661,24 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec pivot_longer(
           df :: DataFrame.t(),
-          columns :: [String.t()] | function(),
+          columns :: columns() | function(),
           opts :: Keyword.t()
         ) :: DataFrame.t()
   def pivot_longer(df, columns, opts \\ [])
 
-  def pivot_longer(df, columns, opts) when is_list(columns) do
+  def pivot_longer(df, columns, opts) when is_function(columns),
+    do:
+      df
+      |> names()
+      |> Enum.filter(columns)
+      |> then(&pivot_longer(df, &1, opts))
+
+  def pivot_longer(df, columns, opts) do
     opts = Keyword.validate!(opts, value_cols: [], names_to: "variable", values_to: "value")
+    columns = to_existing_columns(df, columns)
 
     names = names(df)
     dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
-
-    Enum.each(columns, fn name -> maybe_raise_column_not_found(names, name) end)
 
     value_cols =
       case opts[:value_cols] do
@@ -1645,7 +1701,7 @@ defmodule Explorer.DataFrame do
           Enum.filter(names, fn name -> name not in columns && callback.(name) end)
       end
 
-    Enum.each(value_cols, fn name -> maybe_raise_column_not_found(names, name) end)
+    value_cols = to_existing_columns(df, value_cols)
 
     dtypes
     |> Map.take(value_cols)
@@ -1663,13 +1719,6 @@ defmodule Explorer.DataFrame do
 
     apply_impl(df, :pivot_longer, [columns, value_cols, opts[:names_to], opts[:values_to]])
   end
-
-  def pivot_longer(df, columns, opts) when is_function(columns),
-    do:
-      df
-      |> names()
-      |> columns.()
-      |> then(&pivot_longer(df, &1, opts))
 
   @doc """
   Pivot data from long to wide.
@@ -1699,28 +1748,21 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec pivot_wider(
           df :: DataFrame.t(),
-          names_from :: String.t(),
-          values_from :: String.t(),
+          names_from :: column(),
+          values_from :: column(),
           opts ::
             Keyword.t()
         ) :: DataFrame.t()
   def pivot_wider(df, names_from, values_from, opts \\ []) do
     opts = Keyword.validate!(opts, id_cols: [], names_prefix: "")
 
+    [values_from, names_from] = to_existing_columns(df, [values_from, names_from])
+
     names = names(df)
     dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
 
     case Map.get(dtypes, values_from) do
-      :integer ->
-        :ok
-
-      :float ->
-        :ok
-
-      :date ->
-        :ok
-
-      :datetime ->
+      dtype when dtype in [:integer, :float, :date, :datetime] ->
         :ok
 
       dtype ->
@@ -1733,15 +1775,12 @@ defmodule Explorer.DataFrame do
           Enum.filter(names, &(&1 not in [names_from, values_from]))
 
         [_ | _] = names ->
+          names = to_existing_columns(df, names)
           Enum.filter(names, &(&1 not in [names_from, values_from]))
 
         fun when is_function(fun) ->
           Enum.filter(names, fn name -> fun.(name) && name not in [names_from, values_from] end)
       end
-
-    Enum.each(id_cols ++ [names_from, values_from], fn name ->
-      maybe_raise_column_not_found(names, name)
-    end)
 
     apply_impl(df, :pivot_wider, [id_cols, names_from, values_from, opts[:names_prefix]])
   end
@@ -1845,28 +1884,45 @@ defmodule Explorer.DataFrame do
   def join(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
     left_cols = names(left)
     right_cols = names(right)
-    cols = left_cols ++ right_cols
 
     opts = Keyword.validate!(opts, on: find_overlapping_cols(left_cols, right_cols), how: :inner)
 
-    case {opts[:on], opts[:how]} do
-      {_, :cross} ->
-        nil
+    {on, how} =
+      case {opts[:on], opts[:how]} do
+        {on, :cross} ->
+          {on, :cross}
 
-      {[], _} ->
-        raise(ArgumentError, "could not find any overlapping columns")
+        {[], _} ->
+          raise(ArgumentError, "could not find any overlapping columns")
 
-      {[_ | _] = on, _} ->
-        Enum.each(on, fn
-          {l_name, r_name} -> Enum.each([l_name, r_name], &maybe_raise_column_not_found(cols, &1))
-          name -> maybe_raise_column_not_found(cols, name)
-        end)
+        {[_ | _] = on, how} ->
+          on =
+            Enum.map(on, fn
+              {l_name, r_name} ->
+                [l_column] = to_existing_columns(left, [l_name])
+                [r_column] = to_existing_columns(right, [r_name])
+                {l_column, r_column}
 
-      _ ->
-        nil
-    end
+              name ->
+                [l_column] = to_existing_columns(left, [name])
+                [r_column] = to_existing_columns(right, [name])
 
-    apply_impl(left, :join, [right, opts[:on], opts[:how]])
+                # This is an edge case for when an index is passed as column selection
+                if l_column != r_column do
+                  raise ArgumentError,
+                        "the column given to option `:on` is not the same for both dataframes"
+                end
+
+                l_column
+            end)
+
+          {on, how}
+
+        other ->
+          other
+      end
+
+    apply_impl(left, :join, [right, on, how])
   end
 
   defp find_overlapping_cols(left_cols, right_cols) do
@@ -2111,7 +2167,7 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec summarise(df :: DataFrame.t(), with_columns :: Keyword.t() | map()) :: DataFrame.t()
+  @spec summarise(df :: DataFrame.t(), columns :: Keyword.t() | map()) :: DataFrame.t()
   def summarise(%DataFrame{groups: []}, _),
     do:
       raise(
@@ -2119,40 +2175,20 @@ defmodule Explorer.DataFrame do
         "dataframe must be grouped in order to perform summarisation"
       )
 
-  def summarise(df, with_columns) when is_map(with_columns) do
-    with_columns = Enum.reduce(with_columns, %{}, &summarise_reducer(&1, &2, df))
-    columns = names(df)
+  def summarise(df, columns) when is_column_pairs(columns) do
+    column_pairs =
+      to_column_pairs(df, columns, fn values ->
+        case values -- @supported_aggs do
+          [] ->
+            values
 
-    Enum.each(with_columns, fn {name, values} ->
-      maybe_raise_column_not_found(columns, name)
+          unsupported ->
+            raise ArgumentError, "found unsupported aggregations #{inspect(unsupported)}"
+        end
+      end)
 
-      unless values |> MapSet.new() |> MapSet.subset?(MapSet.new(@supported_aggs)) do
-        unsupported = values |> MapSet.difference(MapSet.new(@supported_aggs)) |> MapSet.to_list()
-        raise ArgumentError, "found unsupported aggregations #{inspect(unsupported)}"
-      end
-    end)
-
-    apply_impl(df, :summarise, [with_columns])
+    apply_impl(df, :summarise, [Map.new(column_pairs)])
   end
-
-  def summarise(df, with_columns) when is_list(with_columns) do
-    if not Keyword.keyword?(with_columns),
-      do: raise(ArgumentError, "expected second argument to be a keyword list")
-
-    with_columns
-    |> Enum.reduce(%{}, fn {colname, value}, acc ->
-      Map.put(acc, Atom.to_string(colname), value)
-    end)
-    |> then(&summarise(df, &1))
-  end
-
-  defp summarise_reducer({colname, value}, acc, %DataFrame{} = _df)
-       when is_binary(colname) and is_map(acc) and is_list(value),
-       do: Map.put(acc, colname, value)
-
-  defp summarise_reducer({colname, value}, acc, %DataFrame{} = df)
-       when is_atom(colname) and is_map(acc) and is_list(value),
-       do: mutate_reducer({Atom.to_string(colname), value}, acc, df)
 
   @doc """
   Display the DataFrame in a tabular fashion.
@@ -2236,9 +2272,6 @@ defmodule Explorer.DataFrame do
     |> Enum.sort(&(elem(&1, 1) <= elem(&2, 1)))
     |> Enum.map(fn {_, key} -> ["      * ", inspect(key), ?\n] end)
   end
-
-  defp column_index_map(names),
-    do: for({name, idx} <- Enum.with_index(names), into: %{}, do: {idx, name})
 end
 
 defimpl Table.Reader, for: Explorer.DataFrame do
