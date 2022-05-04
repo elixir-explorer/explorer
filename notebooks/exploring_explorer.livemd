@@ -24,7 +24,7 @@ Mix.install([
 
 ## Reading and writing data
 
-Data can be read from delimited files (like CSV), Parquet, and the Arrow IPC (feather) format. You can also load in data from a map or keyword list of columns with `Explorer.DataFrame.from_columns/1`.
+Data can be read from delimited files (like CSV), Parquet, and the Arrow IPC (feather) format. You can also load in data from a map or keyword list of columns with `Explorer.DataFrame.new/1`.
 
 For CSV, your 'usual suspects' of options are available:
 
@@ -299,7 +299,7 @@ Series.count(s)
 A `DataFrame` is really just a collection of `Series` of the same size. Which is why you can create a `DataFrame` from a `Keyword` list.
 
 ```elixir
-DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
 ```
 
 Similarly to `Series`, the `Inspect` implementation prints some info at the top and to the left. At the top we see the shape of the dataframe (rows and columns) and then for each column we see the name, dtype, and first five values. We can see a bit more from that built-in dataset we loaded in earlier.

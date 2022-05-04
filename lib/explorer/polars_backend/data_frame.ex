@@ -151,21 +151,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_rows([h | _] = rows) when is_map(h) do
-    case Native.df_from_map_rows(rows) do
-      {:ok, df} -> Shared.to_dataframe(df)
-      {:error, reason} -> raise ArgumentError, reason
-    end
-  end
-
-  def from_rows([h | _] = rows) when is_list(h) do
-    case Native.df_from_keyword_rows(rows) do
-      {:ok, df} -> Shared.to_dataframe(df)
-      {:error, reason} -> raise ArgumentError, reason
-    end
-  end
-
-  @impl true
   def from_ipc(filename, columns) do
     {columns, projection} = column_list_check(columns)
 
@@ -186,43 +171,43 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Conversion
 
   @impl true
-  def new(tabular) do
-    {columns, %{columns: colnames}} = Table.to_columns_with_info(tabular)
+  def from_tabular(tabular) do
+    {columns, %{columns: keys}} = Table.to_columns_with_info(tabular)
 
-    series_list =
-      Enum.map(colnames, fn colname ->
-        from_columns_handler({colname, columns[colname]})
-      end)
-
-    case Native.df_new(series_list) do
-      {:ok, df} -> Shared.to_dataframe(df)
-      {:error, error} -> raise ArgumentError, error
-    end
+    keys
+    |> Enum.map(fn key ->
+      colname = to_colname!(key)
+      values = Enum.to_list(columns[key])
+      series_from_list!(colname, values)
+    end)
+    |> from_series_list()
   end
 
   @impl true
-  def from_columns(map) do
-    series_list = Enum.map(map, &from_columns_handler/1)
+  def from_series(pairs) do
+    pairs
+    |> Enum.map(fn {key, series} ->
+      colname = to_colname!(key)
+      PolarsSeries.rename(series, colname)
+    end)
+    |> from_series_list()
+  end
 
-    case Native.df_new(series_list) do
+  defp from_series_list(list) do
+    list = Enum.map(list, &Shared.to_polars_s/1)
+
+    case Native.df_new(list) do
       {:ok, df} -> Shared.to_dataframe(df)
       {:error, error} -> raise ArgumentError, error
     end
   end
 
-  defp from_columns_handler({key, value}) when is_atom(key) do
-    colname = Atom.to_string(key)
-    from_columns_handler({colname, value})
-  end
+  defp to_colname!(colname) when is_binary(colname), do: colname
+  defp to_colname!(colname) when is_atom(colname), do: Atom.to_string(colname)
 
-  defp from_columns_handler({colname, %Series{} = series}) when is_binary(colname) do
-    series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
-  end
-
-  defp from_columns_handler({colname, value}) do
-    value = Enum.to_list(value)
-    series = series_from_list!(colname, value)
-    from_columns_handler({colname, series})
+  defp to_colname!(colname) do
+    raise ArgumentError,
+          "expected colum name to be either string or atom, got: #{inspect(colname)}"
   end
 
   # Like `Explorer.Series.from_list/2`, but gives a better error message with the series name.
