@@ -13,7 +13,7 @@ mod error;
 mod series;
 
 use dataframe::*;
-pub use datatypes::{ExAnyValue, ExDataFrame, ExDataFrameRef, ExSeries, ExSeriesRef};
+pub use datatypes::{ExDataFrame, ExDataFrameRef, ExSeries, ExSeriesRef};
 pub use error::ExplorerError;
 use series::*;
 
