@@ -2018,7 +2018,7 @@ defmodule Explorer.Series do
 
   defp backend_from_options!(opts) do
     backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
-    Module.concat(backend, "Series")
+    :"#{backend}.Series"
   end
 
   defp apply_impl(series, fun, args \\ []) do
