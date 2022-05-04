@@ -22,7 +22,7 @@ defmodule Explorer.Backend.DataFrame do
               header? :: boolean(),
               encoding :: String.t(),
               max_rows :: integer() | Inf,
-              with_columns :: list(String.t()) | list(Atom.t()) | list(integer()) | nil,
+              columns :: list(String.t()) | list(Atom.t()) | list(integer()) | nil,
               infer_schema_length :: integer() | nil,
               parse_dates :: boolean()
             ) :: result(df)

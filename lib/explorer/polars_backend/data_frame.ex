@@ -72,14 +72,24 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
-  def column_list_check(list) do
+  defp column_list_check(list) do
     cond do
-      is_nil(list) -> {nil, nil}
-      Enum.all?(list, &is_atom/1) -> {Enum.map(list, &Atom.to_string/1), nil}
-      Enum.all?(list, &is_binary/1) -> {list, nil}
-      Enum.all?(list, &is_integer/1) -> {nil, list}
-      ## TODO: better error message
-      true -> raise "Invalid column list"
+      is_nil(list) ->
+        {nil, nil}
+
+      Enum.all?(list, &is_atom/1) ->
+        {Enum.map(list, &Atom.to_string/1), nil}
+
+      Enum.all?(list, &is_binary/1) ->
+        {list, nil}
+
+      Enum.all?(list, &is_integer/1) ->
+        {nil, list}
+
+      true ->
+        raise ArgumentError,
+              "expected :columns to be a list of only integers, only atoms, or only binaries, " <>
+                "got: #{inspect(list)}"
     end
   end
 
