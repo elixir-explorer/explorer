@@ -422,6 +422,12 @@ defmodule Explorer.Series do
 
   Can sample with or without replacement.
 
+  ## Options
+
+    * `replacement` - If set to `true`, each sample will be independent and therefore values may repeat.
+      Required to be `true` for `n` greater then the number of rows in the series or `frac` > 1.0. (default: `false`)
+    * `seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
+
   ## Examples
 
       iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
@@ -443,22 +449,21 @@ defmodule Explorer.Series do
   def sample(series, n_or_frac, opts \\ [])
 
   def sample(series, n, opts) when is_integer(n) do
-    opts =
-      Keyword.validate!(opts, with_replacement?: false, seed: Enum.random(1..1_000_000_000_000))
+    opts = Keyword.validate!(opts, replacement: false, seed: Enum.random(1..1_000_000_000_000))
 
     size = size(series)
 
-    case {n > size, opts[:with_replacement?]} do
+    case {n > size, opts[:replacement]} do
       {true, false} ->
         raise ArgumentError,
               "in order to sample more elements than are in the series (#{size}), sampling " <>
-                "`with_replacement?` must be true"
+                "`replacement` must be true"
 
       _ ->
         :ok
     end
 
-    apply_impl(series, :sample, [n, opts[:with_replacement?], opts[:seed]])
+    apply_impl(series, :sample, [n, opts[:replacement], opts[:seed]])
   end
 
   def sample(series, frac, opts) when is_float(frac) do

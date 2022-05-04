@@ -367,7 +367,7 @@ defmodule Explorer.DataFrameTest do
     test "reads from file with options", %{tmp_dir: tmp_dir} do
       ndjson_path = to_ndjson(tmp_dir)
 
-      assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, with_batch_size: 3)
+      assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, batch_size: 3)
 
       assert DF.names(df) == ~w[a b c d]
       assert DF.dtypes(df) == [:integer, :float, :boolean, :string]

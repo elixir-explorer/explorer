@@ -420,7 +420,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `with_batch_size` - Sets the batch size for reading rows.
+    * `batch_size` - Sets the batch size for reading rows.
     This value may have significant impact in performance, so adjust it for your needs (default: `1000`).
 
     * `infer_schema_length` - Maximum number of rows read for schema inference.
@@ -432,7 +432,7 @@ defmodule Explorer.DataFrame do
   def from_ndjson(filename, opts \\ []) do
     opts =
       Keyword.validate!(opts,
-        with_batch_size: 1000,
+        batch_size: 1000,
         infer_schema_length: @default_infer_schema_length
       )
 
@@ -441,7 +441,7 @@ defmodule Explorer.DataFrame do
     backend.from_ndjson(
       filename,
       opts[:infer_schema_length],
-      opts[:with_batch_size]
+      opts[:batch_size]
     )
   end
 
@@ -1531,7 +1531,8 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `with_replacement?` - If set to `true`, each sample will be independent and therefore values may repeat. Required to be `true` for `n` greater then the number of rows in the dataframe or `frac` > 1.0. (default: `false`)
+    * `replacement` - If set to `true`, each sample will be independent and therefore values may repeat.
+      Required to be `true` for `n` greater then the number of rows in the dataframe or `frac` > 1.0. (default: `false`)
     * `seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
 
   ## Examples
@@ -1578,22 +1579,21 @@ defmodule Explorer.DataFrame do
   def sample(df, n_or_frac, opts \\ [])
 
   def sample(df, n, opts) when is_integer(n) do
-    opts =
-      Keyword.validate!(opts, with_replacement?: false, seed: Enum.random(1..1_000_000_000_000))
+    opts = Keyword.validate!(opts, replacement: false, seed: Enum.random(1..1_000_000_000_000))
 
     n_rows = n_rows(df)
 
-    case {n > n_rows, opts[:with_replacement?]} do
+    case {n > n_rows, opts[:replacement]} do
       {true, false} ->
         raise ArgumentError,
               "in order to sample more rows than are in the dataframe (#{n_rows}), sampling " <>
-                "`with_replacement?` must be true"
+                "`replacement` must be true"
 
       _ ->
         :ok
     end
 
-    apply_impl(df, :sample, [n, opts[:with_replacement?], opts[:seed]])
+    apply_impl(df, :sample, [n, opts[:replacement], opts[:seed]])
   end
 
   def sample(df, frac, opts) when is_float(frac) do

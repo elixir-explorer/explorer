@@ -35,7 +35,7 @@ For CSV, your 'usual suspects' of options are available:
 * `names` - A list of column names. Must match the width of the dataframe. (default: nil)
 * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
 * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-* `with_columns` - A list of column names to keep. If present, only these columns are read
+* `columns` - A list of column names to keep. If present, only these columns are read
 * into the dataframe. (default: `nil`)
 
 `Explorer` also has multiple example datasets built in, which you can load from the `Explorer.Datasets` module like so:
@@ -481,7 +481,7 @@ DataFrame.sample(df, 10000)
 ```
 
 ```elixir
-DataFrame.sample(df, 10000, with_replacement?: true)
+DataFrame.sample(df, 10000, replacement: true)
 ```
 
 ### Pull/slice/take

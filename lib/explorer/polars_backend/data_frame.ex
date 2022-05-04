@@ -46,7 +46,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         end)
       end
 
-    {with_columns, with_projection} = column_list_check(columns)
+    {columns, with_projection} = column_list_check(columns)
 
     df =
       Native.df_read_csv(
@@ -58,7 +58,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         with_projection,
         delimiter,
         true,
-        with_columns,
+        columns,
         dtypes,
         encoding,
         null_character,
@@ -115,8 +115,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ndjson(filename, infer_schema_length, with_batch_size) do
-    with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, with_batch_size) do
+  def from_ndjson(filename, infer_schema_length, batch_size) do
+    with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, batch_size) do
       {:ok, Shared.to_dataframe(df)}
     end
   end
@@ -404,11 +404,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Shared.apply_native(:df_to_dummies)
 
   @impl true
-  def sample(df, n, with_replacement?, seed) when is_integer(n) do
+  def sample(df, n, replacement, seed) when is_integer(n) do
     indices =
       df
       |> n_rows()
-      |> Native.s_seedable_random_indices(n, with_replacement?, seed)
+      |> Native.s_seedable_random_indices(n, replacement, seed)
 
     take(df, indices)
   end
@@ -494,12 +494,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: %DataFrame{df | groups: Enum.filter(df.groups, &(&1 not in groups))}
 
   @impl true
-  def summarise(%DataFrame{groups: groups} = df, with_columns) do
-    with_columns =
-      Enum.map(with_columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
+  def summarise(%DataFrame{groups: groups} = df, columns) do
+    columns =
+      Enum.map(columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
 
     df
-    |> Shared.apply_native(:df_groupby_agg, [groups, with_columns])
+    |> Shared.apply_native(:df_groupby_agg, [groups, columns])
     |> ungroup([])
     |> DataFrame.arrange(groups)
   end
