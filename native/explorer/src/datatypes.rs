@@ -219,7 +219,6 @@ macro_rules! encode {
         $s.$convert_function()
             .unwrap()
             .into_iter()
-            .map(|item| item)
             .collect::<Vec<Option<$out_type>>>()
             .encode($env)
     };
@@ -227,7 +226,6 @@ macro_rules! encode {
         $s.$convert_function()
             .unwrap()
             .into_iter()
-            .map(|item| item)
             .collect::<Vec<Option<$convert_function>>>()
             .encode($env)
     };
