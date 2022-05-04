@@ -591,8 +591,15 @@ defmodule Explorer.DataFrame do
   @spec to_columns(df :: DataFrame.t(), Keyword.t()) :: map()
   def to_columns(df, opts \\ []) do
     opts = Keyword.validate!(opts, convert_series: true, atom_keys: false)
+    convert_series = opts[:convert_series]
+    atom_keys = opts[:atom_keys]
 
-    apply_impl(df, :to_columns, [opts[:convert_series], opts[:atom_keys]])
+    for name <- names(df), into: %{} do
+      series = apply_impl(df, :pull, [name])
+      key = if atom_keys, do: String.to_atom(name), else: name
+      value = if convert_series, do: Series.to_list(series), else: series
+      {key, value}
+    end
   end
 
   @doc """

@@ -223,28 +223,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_columns(%DataFrame{data: df}, convert_series?, atom_keys?) do
-    Enum.reduce(df, %{}, &to_columns_reducer(&1, &2, convert_series?, atom_keys?))
-  end
-
-  defp to_columns_reducer(series, acc, convert_series?, atom_keys?) do
-    series_name =
-      series
-      |> Native.s_name()
-      |> then(fn {:ok, name} ->
-        if atom_keys? do
-          String.to_atom(name)
-        else
-          name
-        end
-      end)
-
-    series = Shared.to_series(series)
-    series = if convert_series?, do: PolarsSeries.to_list(series), else: series
-    Map.put(acc, series_name, series)
-  end
-
-  @impl true
   def to_rows(%DataFrame{data: polars_df} = df, atom_keys?) do
     names = if atom_keys?, do: df |> names() |> Enum.map(&String.to_atom/1), else: names(df)
 
