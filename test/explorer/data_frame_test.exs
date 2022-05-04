@@ -455,6 +455,9 @@ defmodule Explorer.DataFrameTest do
     assert Series.to_list(df["a"]) == [1, 2, 3]
     assert DF.to_columns(df[["a"]]) == %{"a" => [1, 2, 3]}
     assert DF.to_columns(df[[:a, :c]]) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
+    assert DF.to_columns(df[0..-2]) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
+    assert DF.to_columns(df[-3..-1]) == DF.to_columns(df)
+    assert DF.to_columns(df[0..-1]) == DF.to_columns(df)
 
     assert %Series{} = s1 = df[0]
     assert Series.to_list(s1) == [1, 2, 3]
@@ -462,9 +465,17 @@ defmodule Explorer.DataFrameTest do
     assert %Series{} = s2 = df[2]
     assert Series.to_list(s2) == [4.0, 5.1, 6.2]
 
-    assert %DF{} = df2 = df[1..2]
+    assert %Series{} = s3 = df[-1]
+    assert Series.to_list(s3) == [4.0, 5.1, 6.2]
 
+    assert %DF{} = df2 = df[1..2]
     assert DF.names(df2) == ["b", "c"]
+
+    assert %DF{} = df3 = df[-2..-1]
+    assert DF.names(df3) == ["b", "c"]
+
+    assert %DF{} = df4 = df[-4..-3]
+    assert DF.names(df4) == []
 
     assert_raise ArgumentError,
                  "no column exists at index 100",
@@ -484,11 +495,27 @@ defmodule Explorer.DataFrameTest do
     assert Series.to_list(s1) == [1, 2, 3]
     assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
 
+    {s1, df2} = Access.pop(df1, :a)
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
+    {s1, df2} = Access.pop(df1, 0)
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
+    {s1, df2} = Access.pop(df1, -3)
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
     {df3, df4} = Access.pop(df1, ["a", "c"])
     assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
     assert DF.to_columns(df4) == %{"b" => ["a", "b", "c"]}
 
     {df3, df4} = Access.pop(df1, 0..1)
+    assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
+    assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
+
+    {df3, df4} = Access.pop(df1, 0..-2)
     assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
     assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
 
@@ -585,6 +612,9 @@ defmodule Explorer.DataFrameTest do
 
     df3 = DF.distinct(df, columns: [:year, :country], keep_all?: true)
     assert DF.names(df3) == DF.names(df)
+
+    df4 = DF.distinct(df, columns: 0..-1)
+    assert DF.names(df4) == DF.names(df)
 
     assert_raise ArgumentError,
                  "you must provide at least one column or omit the column option to select all columns",
