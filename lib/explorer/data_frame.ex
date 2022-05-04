@@ -2197,7 +2197,7 @@ defmodule Explorer.DataFrame do
 
   defp backend_from_options!(opts) do
     backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
-    Module.concat(backend, "DataFrame")
+    :"#{backend}.DataFrame"
   end
 
   defp apply_impl(df, fun, args \\ []) do
