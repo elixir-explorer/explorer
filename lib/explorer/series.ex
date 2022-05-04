@@ -425,7 +425,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `replacement` - If set to `true`, each sample will be independent and therefore values may repeat.
-      Required to be `true` for `n` greater then the number of rows in the dataframe or `frac` > 1.0. (default: `false`)
+      Required to be `true` for `n` greater then the number of rows in the series or `frac` > 1.0. (default: `false`)
     * `seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
 
   ## Examples
