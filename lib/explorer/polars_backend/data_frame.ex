@@ -186,6 +186,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Conversion
 
   @impl true
+  def new(tabular) do
+    {columns, %{columns: colnames}} = Table.to_columns_with_info(tabular)
+
+    series_list =
+      Enum.map(colnames, fn colname ->
+        from_columns_handler({colname, columns[colname]})
+      end)
+
+    case Native.df_new(series_list) do
+      {:ok, df} -> Shared.to_dataframe(df)
+      {:error, error} -> raise ArgumentError, error
+    end
+  end
+
+  @impl true
   def from_columns(map) do
     series_list = Enum.map(map, &from_columns_handler/1)
 
@@ -200,13 +215,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
     from_columns_handler({colname, value})
   end
 
-  defp from_columns_handler({colname, value}) when is_list(value) do
-    series = series_from_list!(colname, value)
-    from_columns_handler({colname, series})
-  end
-
   defp from_columns_handler({colname, %Series{} = series}) when is_binary(colname) do
     series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
+  end
+
+  defp from_columns_handler({colname, value}) do
+    value = Enum.to_list(value)
+    series = series_from_list!(colname, value)
+    from_columns_handler({colname, series})
   end
 
   # Like `Explorer.Series.from_list/2`, but gives a better error message with the series name.

@@ -48,6 +48,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # Conversion
 
+  @callback new(Table.Reader.t()) :: df
   @callback from_columns(map() | Keyword.t()) :: df
   @callback from_rows(list(map() | Keyword.t())) :: df
   @callback to_columns(df, convert_series? :: boolean(), atom_keys? :: boolean()) :: map()

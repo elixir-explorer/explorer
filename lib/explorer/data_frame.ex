@@ -123,7 +123,7 @@ defmodule Explorer.DataFrame do
   defp to_column_name(column) when is_atom(column), do: Atom.to_string(column)
 
   # Normalize pairs of `{column, value}` where value can be anything.
-  # The `column` is only validated if it's an integer. We check that the index is present. 
+  # The `column` is only validated if it's an integer. We check that the index is present.
   defp to_column_pairs(df, pairs), do: to_column_pairs(df, pairs, & &1)
 
   # The function allows to change the `value` for each pair.
@@ -475,6 +475,65 @@ defmodule Explorer.DataFrame do
   end
 
   ## Conversion
+
+  @doc """
+  Creates a new dataframe.
+
+  Any tabular data is accepted, as long as it adheres to the `Table.Reader` protocol.
+
+  ## Options
+
+    * `backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+  ## Examples
+
+  Columnar data:
+
+      iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, nil]})
+      #Explorer.DataFrame<
+        [rows: 2, columns: 2]
+        floats float [1.0, 2.0]
+        ints integer [1, nil]
+      >
+
+      iex> Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
+      #Explorer.DataFrame<
+        [rows: 2, columns: 2]
+        floats float [1.0, 2.0]
+        ints integer [1, nil]
+      >
+
+      iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, "wrong"]})
+      ** (ArgumentError) cannot create series "ints": cannot make a series from mismatched types - the value "wrong" does not match inferred dtype integer
+
+  Row data:
+
+      iex> rows = [%{id: 1, name: "José"}, %{id: 2, name: "Christopher"}, %{id: 3, name: "Cristine"}]
+      iex> Explorer.DataFrame.new(rows)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        id integer [1, 2, 3]
+        name string ["José", "Christopher", "Cristine"]
+      >
+
+      iex> rows = [[id: 1, name: "José"], [id: 2, name: "Christopher"], [id: 3, name: "Cristine"]]
+      iex> Explorer.DataFrame.new(rows)
+      #Explorer.DataFrame<
+        [rows: 3, columns: 2]
+        id integer [1, 2, 3]
+        name string ["José", "Christopher", "Cristine"]
+      >
+  """
+  @doc type: :single
+  @spec new(Table.Reader.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def new(tabular, opts \\ []) do
+    backend = backend_from_options!(opts)
+
+    case tabular do
+      %DataFrame{data: %^backend{}} -> tabular
+      tabular -> backend.new(tabular)
+    end
+  end
 
   @doc """
   Creates a new dataframe from a map or keyword of lists or series.
