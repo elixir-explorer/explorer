@@ -22,7 +22,7 @@ defmodule Explorer.Backend.DataFrame do
               header? :: boolean(),
               encoding :: String.t(),
               max_rows :: integer() | Inf,
-              with_columns :: list(String.t()) | nil,
+              columns :: list(String.t()) | list(Atom.t()) | list(integer()) | nil,
               infer_schema_length :: integer() | nil,
               parse_dates :: boolean()
             ) :: result(df)
@@ -34,8 +34,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback from_ipc(
               filename :: String.t(),
-              columns :: list(String.t()),
-              projection :: list(integer())
+              columns :: list(String.t()) | list(Atom.t()) | list(integer()) | nil
             ) :: result(df)
   @callback to_ipc(df, filename :: String.t(), compression :: String.t()) ::
               result(String.t())
