@@ -152,8 +152,10 @@ defmodule Explorer.DataFrame do
   end
 
   defp fetch_column_at!(map, index) do
+    normalized = if index < 0, do: index + map_size(map), else: index
+
     case map do
-      %{^index => column} -> column
+      %{^normalized => column} -> column
       %{} -> raise ArgumentError, "no column exists at index #{index}"
     end
   end
@@ -821,32 +823,20 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec select(
           df :: DataFrame.t(),
-          columns :: columns(),
+          columns_or_callback :: columns() | function(),
           keep_or_drop ::
             :keep | :drop
         ) :: DataFrame.t()
-  def select(df, columns, keep_or_drop \\ :keep)
+  def select(df, columns_or_callback, keep_or_drop \\ :keep)
 
-  def select(df, [column | _] = columns, keep_or_drop) when is_column(column) do
+  def select(df, callback, keep_or_drop) when is_function(callback),
+    do: df |> names() |> Enum.filter(callback) |> then(&select(df, &1, keep_or_drop))
+
+  def select(df, columns, keep_or_drop) do
     columns = to_existing_columns(df, columns)
 
     apply_impl(df, :select, [columns, keep_or_drop])
   end
-
-  def select(df, %Range{} = columns, keep_or_drop) do
-    columns = to_existing_columns(df, columns)
-
-    select(df, columns, keep_or_drop)
-  end
-
-  @spec select(
-          df :: DataFrame.t(),
-          callback :: function(),
-          keep_or_drop ::
-            :keep | :drop
-        ) :: DataFrame.t()
-  def select(df, callback, keep_or_drop) when is_function(callback),
-    do: df |> names() |> Enum.filter(callback) |> then(&select(df, &1, keep_or_drop))
 
   @doc """
   Subset rows using column values.
@@ -1193,11 +1183,9 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec drop_nil(df :: DataFrame.t(), columns_or_column :: :all | column() | columns()) ::
+  @spec drop_nil(df :: DataFrame.t(), columns_or_column :: column() | columns()) ::
           DataFrame.t()
-  def drop_nil(df, columns_or_column \\ :all)
-
-  def drop_nil(df, :all), do: drop_nil(df, names(df))
+  def drop_nil(df, columns_or_column \\ 0..-1)
 
   def drop_nil(df, column) when is_column(column), do: drop_nil(df, [column])
 
@@ -1363,23 +1351,10 @@ defmodule Explorer.DataFrame do
   @spec rename_with(
           df :: DataFrame.t(),
           callback :: function(),
-          columns :: :all | columns() | function()
+          columns :: columns() | function()
         ) ::
           DataFrame.t()
-  def rename_with(df, callback, columns \\ :all)
-
-  def rename_with(df, callback, :all) when is_function(callback),
-    do: df |> names() |> Enum.map(callback) |> then(&rename(df, &1))
-
-  def rename_with(df, callback, [column | _] = columns)
-      when is_function(callback) and is_column(column) do
-    columns = to_existing_columns(df, columns)
-    old_names = names(df)
-
-    old_names
-    |> Enum.map(fn name -> if name in columns, do: callback.(name), else: name end)
-    |> then(&rename(df, &1))
-  end
+  def rename_with(df, callback, columns \\ 0..-1)
 
   def rename_with(df, callback, columns) when is_function(callback) and is_function(columns) do
     case df |> names() |> Enum.filter(columns) do
@@ -1389,6 +1364,15 @@ defmodule Explorer.DataFrame do
       [] ->
         raise ArgumentError, "function to select column names did not return any names"
     end
+  end
+
+  def rename_with(df, callback, columns) when is_function(callback) do
+    old_names = names(df)
+    columns = to_existing_columns(df, columns)
+
+    old_names
+    |> Enum.map(fn name -> if name in columns, do: callback.(name), else: name end)
+    |> then(&rename(df, &1))
   end
 
   @doc """
