@@ -22,7 +22,7 @@ defmodule Explorer.PolarsBackend.Native do
         _projection,
         _sep,
         _rechunk,
-        _with_columns,
+        _columns,
         _dtypes,
         _encoding,
         _null_char,
@@ -48,7 +48,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_read_ndjson(
         _filename,
         _infer_schema_length,
-        _with_batch_size
+        _batch_size
       ),
       do: err()
 
@@ -148,7 +148,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_rolling_mean(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_rolling_min(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_rolling_sum(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
-  def s_seedable_random_indices(_length, _n_samples, _with_replacement, _seed), do: err()
+  def s_seedable_random_indices(_length, _n_samples, _replacement, _seed), do: err()
   def s_series_equal(_s, _other, _null_equal), do: err()
   def s_slice(_s, _offset, _length), do: err()
   def s_sort(_s, _reverse), do: err()

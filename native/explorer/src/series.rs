@@ -661,12 +661,12 @@ pub fn cast(s: &Series, to_type: &str) -> Result<Series, ExplorerError> {
 pub fn s_seedable_random_indices(
     length: usize,
     n_samples: usize,
-    with_replacement: bool,
+    replacement: bool,
     seed: u64,
 ) -> Vec<usize> {
     let mut rng: Pcg64 = SeedableRng::seed_from_u64(seed);
     let range: Vec<usize> = (0..length).collect();
-    if with_replacement {
+    if replacement {
         (0..n_samples).map(|_| rng.gen_range(0..length)).collect()
     } else {
         range

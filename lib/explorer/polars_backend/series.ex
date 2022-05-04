@@ -66,11 +66,11 @@ defmodule Explorer.PolarsBackend.Series do
   def tail(series, n_elements), do: Shared.apply_native(series, :s_tail, [n_elements])
 
   @impl true
-  def sample(series, n, with_replacement?, seed) when is_integer(n) do
+  def sample(series, n, replacement, seed) when is_integer(n) do
     indices =
       series
       |> size()
-      |> Native.s_seedable_random_indices(n, with_replacement?, seed)
+      |> Native.s_seedable_random_indices(n, replacement, seed)
 
     take(series, indices)
   end

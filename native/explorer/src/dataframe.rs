@@ -161,13 +161,13 @@ pub fn df_write_ipc(
 pub fn df_read_ndjson(
     filename: &str,
     infer_schema_length: Option<usize>,
-    with_batch_size: usize,
+    batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
     let df = JsonReader::new(buf_reader)
         .with_json_format(JsonFormat::JsonLines)
-        .with_batch_size(with_batch_size)
+        .with_batch_size(batch_size)
         .infer_schema_len(infer_schema_length)
         .finish()?;
 
