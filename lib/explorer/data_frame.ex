@@ -684,12 +684,12 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.n_cols(df)
+      iex> Explorer.DataFrame.n_columns(df)
       10
   """
   @doc type: :introspection
-  @spec n_cols(df :: DataFrame.t()) :: integer()
-  def n_cols(df), do: apply_impl(df, :n_cols)
+  @spec n_columns(df :: DataFrame.t()) :: integer()
+  def n_columns(df), do: apply_impl(df, :n_columns)
 
   @doc """
   Returns the groups of a dataframe.
@@ -1274,7 +1274,7 @@ defmodule Explorer.DataFrame do
     do: df |> names() |> Enum.map(names) |> then(&rename(df, &1))
 
   defp check_new_names_length!(df, names) do
-    width = n_cols(df)
+    width = n_columns(df)
     n_new_names = length(names)
 
     if width != n_new_names,
@@ -1610,18 +1610,18 @@ defmodule Explorer.DataFrame do
   The second argument (`columns`) can be either an array of column names to use or a filter callback on
   the dataframe's names.
 
-  `value_cols` must all have the same dtype.
+  `value_columns` must all have the same dtype.
 
   ## Options
 
-    * `value_cols` - Columns to use for values. May be a filter callback on the dataframe's column names. Defaults to an empty list, using all variables except the columns to pivot.
+    * `value_columns` - Columns to use for values. May be a filter callback on the dataframe's column names. Defaults to an empty list, using all variables except the columns to pivot.
     * `names_to` - A string specifying the name of the column to create from the data stored in the column names of the dataframe. Defaults to `"variable"`.
     * `values_to` - A string specifying the name of the column to create from the data stored in series element values. Defaults to `"value"`.
 
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_cols: &String.ends_with?(&1, "fuel"))
+      iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_columns: &String.ends_with?(&1, "fuel"))
       #Explorer.DataFrame<
         [rows: 3282, columns: 4]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
@@ -1631,7 +1631,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_cols: ["total"])
+      iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_columns: ["total"])
       #Explorer.DataFrame<
         [rows: 1094, columns: 4]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
@@ -1656,37 +1656,37 @@ defmodule Explorer.DataFrame do
       |> then(&pivot_longer(df, &1, opts))
 
   def pivot_longer(df, columns, opts) do
-    opts = Keyword.validate!(opts, value_cols: [], names_to: "variable", values_to: "value")
-    columns = to_existing_columns(df, columns)
+    opts = Keyword.validate!(opts, value_columns: [], names_to: "variable", values_to: "value")
+    existing_columns = to_existing_columns(df, columns)
 
     names = names(df)
     dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
 
-    value_cols =
-      case opts[:value_cols] do
+    value_columns =
+      case opts[:value_columns] do
         [] ->
           Enum.filter(names, fn name -> name not in columns end)
 
-        [_ | _] = cols ->
-          Enum.each(cols, fn col ->
-            if col in columns,
+        [_ | _] = columns ->
+          Enum.each(columns, fn column ->
+            if column in existing_columns,
               do:
                 raise(
                   ArgumentError,
-                  "value columns may not also be ID columns but found #{col} in both"
+                  "value columns may not also be ID columns but found #{column} in both"
                 )
           end)
 
-          cols
+          columns
 
         callback when is_function(callback) ->
           Enum.filter(names, fn name -> name not in columns && callback.(name) end)
       end
 
-    value_cols = to_existing_columns(df, value_cols)
+    value_columns = to_existing_columns(df, value_columns)
 
     dtypes
-    |> Map.take(value_cols)
+    |> Map.take(value_columns)
     |> Map.values()
     |> Enum.uniq()
     |> length()
@@ -1699,7 +1699,7 @@ defmodule Explorer.DataFrame do
               "value columns may only include one dtype but found multiple dtypes"
     end
 
-    apply_impl(df, :pivot_longer, [columns, value_cols, opts[:names_to], opts[:values_to]])
+    apply_impl(df, :pivot_longer, [columns, value_columns, opts[:names_to], opts[:values_to]])
   end
 
   @doc """
@@ -1713,7 +1713,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-  * `id_cols` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
+  * `id_columns` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
   * `names_prefix` - String added to the start of every variable name. This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
 
   ## Examples
@@ -1736,7 +1736,7 @@ defmodule Explorer.DataFrame do
             Keyword.t()
         ) :: DataFrame.t()
   def pivot_wider(df, names_from, values_from, opts \\ []) do
-    opts = Keyword.validate!(opts, id_cols: [], names_prefix: "")
+    opts = Keyword.validate!(opts, id_columns: [], names_prefix: "")
 
     [values_from, names_from] = to_existing_columns(df, [values_from, names_from])
 
@@ -1751,8 +1751,8 @@ defmodule Explorer.DataFrame do
         raise ArgumentError, "the values_from column must be numeric, but found #{dtype}"
     end
 
-    id_cols =
-      case opts[:id_cols] do
+    id_columns =
+      case opts[:id_columns] do
         [] ->
           Enum.filter(names, &(&1 not in [names_from, values_from]))
 
@@ -1764,7 +1764,7 @@ defmodule Explorer.DataFrame do
           Enum.filter(names, fn name -> fun.(name) && name not in [names_from, values_from] end)
       end
 
-    apply_impl(df, :pivot_wider, [id_cols, names_from, values_from, opts[:names_prefix]])
+    apply_impl(df, :pivot_wider, [id_columns, names_from, values_from, opts[:names_prefix]])
   end
 
   # Two table verbs
@@ -1864,10 +1864,14 @@ defmodule Explorer.DataFrame do
   @doc type: :multi
   @spec join(left :: DataFrame.t(), right :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
   def join(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
-    left_cols = names(left)
-    right_cols = names(right)
+    left_columns = names(left)
+    right_columns = names(right)
 
-    opts = Keyword.validate!(opts, on: find_overlapping_cols(left_cols, right_cols), how: :inner)
+    opts =
+      Keyword.validate!(opts,
+        on: find_overlapping_columns(left_columns, right_columns),
+        how: :inner
+      )
 
     {on, how} =
       case {opts[:on], opts[:how]} do
@@ -1907,10 +1911,10 @@ defmodule Explorer.DataFrame do
     apply_impl(left, :join, [right, on, how])
   end
 
-  defp find_overlapping_cols(left_cols, right_cols) do
-    left_cols = MapSet.new(left_cols)
-    right_cols = MapSet.new(right_cols)
-    left_cols |> MapSet.intersection(right_cols) |> MapSet.to_list()
+  defp find_overlapping_columns(left_columns, right_columns) do
+    left_columns = MapSet.new(left_columns)
+    right_columns = MapSet.new(right_columns)
+    left_columns |> MapSet.intersection(right_columns) |> MapSet.to_list()
   end
 
   @doc """
@@ -1947,7 +1951,7 @@ defmodule Explorer.DataFrame do
       apply_impl(dfs, :concat_rows)
     else
       dfs
-      |> cast_numeric_cols_to_float(changed_types)
+      |> cast_numeric_columns_to_float(changed_types)
       |> apply_impl(:concat_rows)
     end
   end
@@ -1956,7 +1960,7 @@ defmodule Explorer.DataFrame do
     types = Map.new(Enum.zip(names(head), dtypes(head)))
 
     Enum.reduce(tail, %{}, fn df, changed_types ->
-      if n_cols(df) != map_size(types) do
+      if n_columns(df) != map_size(types) do
         raise ArgumentError,
               "dataframes must have the same columns"
       end
@@ -1987,17 +1991,17 @@ defmodule Explorer.DataFrame do
     types[name] != type and types[name] in numeric_types and type in numeric_types
   end
 
-  defp cast_numeric_cols_to_float(dfs, changed_types) do
+  defp cast_numeric_columns_to_float(dfs, changed_types) do
     for df <- dfs do
-      cols =
+      columns =
         for {name, :integer} <- Enum.zip(names(df), dtypes(df)),
             changed_types[name] == :float,
             do: name
 
-      if Enum.empty?(cols) do
+      if Enum.empty?(columns) do
         df
       else
-        changes = for col <- cols, into: %{}, do: {col, Series.cast(df[col], :float)}
+        changes = for column <- columns, into: %{}, do: {column, Series.cast(df[column], :float)}
 
         mutate(df, changes)
       end
@@ -2182,7 +2186,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   def table(df, nrow \\ 5) when nrow >= 0 do
-    {rows, cols} = shape(df)
+    {rows, columns} = shape(df)
     headers = names(df)
 
     df = slice(df, 0, nrow)
@@ -2200,9 +2204,9 @@ defmodule Explorer.DataFrame do
     name_type = Enum.zip_with(headers, types, fn x, y -> x <> y end)
 
     TableRex.Table.new()
-    |> TableRex.Table.put_title("Explorer DataFrame: [rows: #{rows}, columns: #{cols}]")
+    |> TableRex.Table.put_title("Explorer DataFrame: [rows: #{rows}, columns: #{columns}]")
     |> TableRex.Table.put_header(name_type)
-    |> TableRex.Table.put_header_meta(0..cols, align: :center)
+    |> TableRex.Table.put_header_meta(0..columns, align: :center)
     |> TableRex.Table.add_rows(values)
     |> TableRex.Table.render!(
       header_separator_symbol: "=",

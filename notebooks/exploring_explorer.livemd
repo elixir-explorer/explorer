@@ -323,7 +323,7 @@ DataFrame.shape(df)
 ```
 
 ```elixir
-{DataFrame.n_rows(df), DataFrame.n_cols(df)}
+{DataFrame.n_rows(df), DataFrame.n_columns(df)}
 ```
 
 We can grab the head.
@@ -521,11 +521,11 @@ We can `pivot_longer/3` and `pivot_wider/4`. These are inspired by [tidyr](https
 There are some shortcomings in `pivot_wider/4` related to `polars`. The `values_from` column must be a numeric type.
 
 ```elixir
-DataFrame.pivot_longer(df, ["year", "country"], value_cols: &String.ends_with?(&1, "fuel"))
+DataFrame.pivot_longer(df, ["year", "country"], value_columns: &String.ends_with?(&1, "fuel"))
 ```
 
 ```elixir
-DataFrame.pivot_wider(df, "country", "total", id_cols: ["year"])
+DataFrame.pivot_wider(df, "country", "total", id_columns: ["year"])
 ```
 
 Let's make those names look nicer!
@@ -539,7 +539,7 @@ tidy_names = fn name ->
   |> String.replace(" ", "_")
 end
 
-df |> DataFrame.pivot_wider("country", "total", id_cols: ["year"]) |> DataFrame.rename(tidy_names)
+df |> DataFrame.pivot_wider("country", "total", id_columns: ["year"]) |> DataFrame.rename(tidy_names)
 ```
 
 ### Joins
