@@ -9,14 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `DataFrame.to_rows/2` converts a `DataFrame` to a list of maps
+- Consistently support ranges throughout the columns API
+- Support negative indexes throughout the columns API
+- Integrate with the `table` package
+- Add `Series.to_enum/1` for lazily traversing the series
 
 ### Changed
 
 - `Series.length/1` is now `Series.size/1` in keeping with Elixir idioms
 - `Nx` is now an optional dependency
 - Minimum Elixir version is now 1.13
-- `DataFrame.to_map/2` is now `DataFrame.to_columns/2`
+- `DataFrame.to_map/2` is now `DataFrame.to_columns/2` and `DataFrame.to_series/2`
 - `Rustler` is now an optional dependency
 - `read_` and `write_` IO functions are now `from_` and `to_`
 - `to_binary` is now `dump_csv`
@@ -27,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Series.cum_*` functions are now `Series.cumulative_*` to mirror `Nx`
 - `Series.rolling_*` functions are now `Series.window_*` to mirror `Nx`
 - `reverse?` is now an option instead of an argument in `Series.cumulative_*` functions
+- `DataFrame.from_columns/2` and `DataFrame.from_rows/2` is now `DataFrame.new/2`
+- Rename "col" to "column" throughout the API
+- Remove "with_" prefix in options throughout the API
 
 ## [v0.1.1] - 2022-04-27
 
