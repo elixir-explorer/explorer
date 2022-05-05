@@ -221,8 +221,8 @@ pub fn df_get_columns(data: ExDataFrame) -> Result<Vec<ExSeries>, ExplorerError>
 #[rustler::nif]
 pub fn df_columns(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
     let df = &data.resource.0;
-    let cols = df.get_column_names();
-    Ok(cols.into_iter().map(|s| s.to_string()).collect())
+    let columns = df.get_column_names();
+    Ok(columns.into_iter().map(|s| s.to_string()).collect())
 }
 
 #[rustler::nif]
@@ -381,17 +381,17 @@ pub fn df_to_dummies(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_with_column(data: ExDataFrame, col: ExSeries) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_with_column(data: ExDataFrame, column: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let mut new_df = df.clone();
-    new_df.with_column(col.resource.0.clone())?;
+    new_df.with_column(column.resource.0.clone())?;
     Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif]
-pub fn df_new(cols: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
-    let cols = to_series_collection(cols);
-    let df = DataFrame::new(cols)?;
+pub fn df_new(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
+    let columns = to_series_collection(columns);
+    let df = DataFrame::new(columns)?;
     Ok(ExDataFrame::new(df))
 }
 
@@ -427,13 +427,13 @@ pub fn df_groupby_agg(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_pivot_wider(
     data: ExDataFrame,
-    id_cols: Vec<&str>,
+    id_columns: Vec<&str>,
     pivot_column: &str,
     values_column: &str,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let new_df = df
-        .groupby(id_cols)?
+        .groupby(id_columns)?
         .pivot([pivot_column], [values_column])
         .first()?;
     Ok(ExDataFrame::new(new_df))

@@ -553,11 +553,11 @@ defmodule Explorer.DataFrameTest do
 
     assert DF.to_columns(
              DF.pivot_wider(df2, "variable", "value",
-               id_cols: ["id"],
-               names_prefix: "col"
+               id_columns: ["id"],
+               names_prefix: "column_"
              ),
              atom_keys: true
-           ) == %{id: [1], cola: [1.0], colb: [2.0]}
+           ) == %{id: [1], column_a: [1.0], column_b: [2.0]}
   end
 
   test "concat_rows/2" do
