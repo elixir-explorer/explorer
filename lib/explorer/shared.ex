@@ -3,6 +3,11 @@ defmodule Explorer.Shared do
   @moduledoc false
 
   @doc """
+  All supported dtypes.
+  """
+  def dtypes, do: [:float, :integer, :boolean, :string, :date, :datetime]
+
+  @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
   """
   def backend_from_options!(opts) do
@@ -49,49 +54,32 @@ defmodule Explorer.Shared do
   end
 
   @doc """
-  Gets the `dtype` of a list.
+  Gets the `dtype` of a list or raise error if not possible.
   """
-  def check_types(list) do
+  def check_types!(list) do
     type =
-      Enum.reduce_while(list, nil, fn el, type ->
+      Enum.reduce(list, nil, fn el, type ->
         new_type = type(el, type) || type
 
         cond do
           new_type == :numeric and type in [:float, :integer] ->
-            {:cont, new_type}
+            new_type
 
-          new_type != type and !is_nil(type) ->
-            {:halt,
-             {:error,
-              "cannot make a series from mismatched types - the value #{inspect(el)} does not match inferred dtype #{type}"}}
+          new_type != type and type != nil ->
+            raise ArgumentError,
+                  "the value #{inspect(el)} does not match the inferred series dtype #{inspect(type)}"
 
           true ->
-            {:cont, new_type}
+            new_type
         end
       end)
 
-    case type do
-      nil -> {:ok, :float}
-      {:error, _} = error -> error
-      valid -> {:ok, valid}
-    end
-  end
-
-  @doc """
-  Gets the `dtype` of a list or raise error if not possible.
-  """
-  def check_types!(list) do
-    case check_types(list) do
-      {:ok, dtype} -> dtype
-      {:error, error} -> raise ArgumentError, error
-    end
+    type || :float
   end
 
   defp type(item, type) when is_integer(item) and type == :float, do: :numeric
   defp type(item, type) when is_float(item) and type == :integer, do: :numeric
-
-  defp type(item, type) when type == :numeric and (is_integer(item) or is_float(item)),
-    do: :numeric
+  defp type(item, type) when is_number(item) and type == :numeric, do: :numeric
 
   defp type(item, _type) when is_integer(item), do: :integer
   defp type(item, _type) when is_float(item), do: :float
@@ -100,7 +88,7 @@ defmodule Explorer.Shared do
   defp type(%Date{} = _item, _type), do: :date
   defp type(%NaiveDateTime{} = _item, _type), do: :datetime
   defp type(item, _type) when is_nil(item), do: nil
-  defp type(item, _type), do: raise("Unsupported datatype: #{inspect(item)}")
+  defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
   @doc """
   Downcasts lists of mixed numeric types (float and int) to float.

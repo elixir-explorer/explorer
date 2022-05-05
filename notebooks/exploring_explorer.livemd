@@ -30,7 +30,7 @@ For CSV, your 'usual suspects' of options are available:
 
 * `delimiter` - A single character used to separate fields within a record. (default: `","`)
 * `dtypes` - A keyword list of `[column_name: dtype]`. If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
-* `header?` - Does the file have a header of column names as the first row or not? (default: `true`)
+* `header` - Does the file have a header of column names as the first row or not? (default: `true`)
 * `max_rows` - Maximum number of lines to read. (default: `Inf`)
 * `names` - A list of column names. Must match the width of the dataframe. (default: nil)
 * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
@@ -54,7 +54,7 @@ Explorer.DataFrame.table(df)
 
 Writing files is very similar to reading them. The options are a little more limited:
 
-* `header?` - Should the column names be written as the first line of the file? (default: `true`)
+* `header` - Should the column names be written as the first line of the file? (default: `true`)
 * `delimiter` - A single character used to separate fields within a record. (default: `","`)
 
 First, let's add some useful aliases:

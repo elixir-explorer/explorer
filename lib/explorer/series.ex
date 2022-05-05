@@ -23,13 +23,13 @@ defmodule Explorer.Series do
   alias Kernel, as: K
 
   import Explorer.Shared, only: [impl!: 1, check_types!: 1, cast_numerics: 2]
+  @valid_dtypes Explorer.Shared.dtypes()
+
   import Kernel, except: [and: 2]
 
   @type data :: Explorer.Backend.Series.t()
   @type dtype :: :float | :integer | :boolean | :string | :date | :datetime
   @type t :: %Series{data: data, dtype: dtype}
-
-  @valid_dtypes [:float, :integer, :boolean, :string, :date, :datetime]
 
   @enforce_keys [:data, :dtype]
   defstruct [:data, :dtype]
@@ -146,7 +146,7 @@ defmodule Explorer.Series do
   Mixing non-numeric data types will raise an ArgumentError.
 
       iex> Explorer.Series.from_list([1, "a"])
-      ** (ArgumentError) cannot make a series from mismatched types - the value "a" does not match inferred dtype integer
+      ** (ArgumentError) the value "a" does not match the inferred series dtype :integer
   """
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
@@ -155,18 +155,18 @@ defmodule Explorer.Series do
     {list, type} = cast_numerics(list, type)
     series = backend.from_list(list, type)
 
-    case {type, validate_optional_dtype(opts[:dtype])} do
+    case {type, check_optional_dtype!(opts[:dtype])} do
       {t, t} -> series
       {_t, nil} -> series
       {_, other} -> cast(series, other)
     end
   end
 
-  defp validate_optional_dtype(nil), do: nil
-  defp validate_optional_dtype(dtype) when dtype in @valid_dtypes, do: dtype
+  defp check_optional_dtype!(nil), do: nil
+  defp check_optional_dtype!(dtype) when dtype in @valid_dtypes, do: dtype
 
-  defp validate_optional_dtype(dtype) do
-    raise ArgumentError, "Unsupported datatype: #{inspect(dtype)}"
+  defp check_optional_dtype!(dtype) do
+    raise ArgumentError, "unsupported datatype: #{inspect(dtype)}"
   end
 
   @doc """
@@ -2017,7 +2017,12 @@ defmodule Explorer.Series do
         [4, 2, 5]
       >
   """
-  def transform(series, fun), do: apply_impl(series, :transform, [fun])
+  def transform(series, fun) do
+    case apply_impl(series, :transform, [fun]) do
+      %Series{} = series -> series
+      list when is_list(list) -> from_list(list)
+    end
+  end
 
   # Helpers
 

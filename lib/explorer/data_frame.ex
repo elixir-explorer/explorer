@@ -98,6 +98,7 @@ defmodule Explorer.DataFrame do
   alias Explorer.Series
 
   import Explorer.Shared, only: [impl!: 1]
+  @valid_dtypes Explorer.Shared.dtypes()
 
   @type data :: Explorer.Backend.DataFrame.t() | Explorer.Backend.LazyDataFrame.t()
   @type t :: %DataFrame{data: data, groups: [String.t()]}
@@ -196,6 +197,28 @@ defmodule Explorer.DataFrame do
     Enum.slice(names(df), columns)
   end
 
+  defp check_dtypes!(dtypes) do
+    Enum.map(dtypes, fn
+      {key, value} when is_atom(key) ->
+        {Atom.to_string(key), check_dtype!(key, value)}
+
+      {key, value} when is_binary(key) ->
+        {key, check_dtype!(key, value)}
+
+      _ ->
+        raise ArgumentError,
+              "dtypes must be a list/map of column names as keys and types as values, " <>
+                "where the keys are atoms or binaries. Got: #{inspect(dtypes)}"
+    end)
+  end
+
+  defp check_dtype!(_key, value) when value in @valid_dtypes, do: value
+
+  defp check_dtype!(key, value) do
+    raise ArgumentError,
+          "invalid dtype #{inspect(value)} for #{inspect(key)} (expected one of #{inspect(@valid_dtypes)})"
+  end
+
   # Access
 
   @behaviour Access
@@ -240,18 +263,20 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a delimited file into a dataframe.
 
+  If the CSV is compressed, it is automatically decompressed.
+
   ## Options
 
     * `delimiter` - A single character used to separate fields within a record. (default: `","`)
-    * `dtypes` - A list of `{"column_name", dtype}` tuples. Uses column names as read, not as defined in options. If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
-    * `header?` - Does the file have a header of column names as the first row or not? (default: `true`)
-    * `max_rows` - Maximum number of lines to read. (default: `Inf`)
-    * `names` - A list of column names. Must match the width of the dataframe. (default: nil)
+    * `dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
+      imputed from the first 1000 rows. (default: `[]`)
+    * `header` - Does the file have a header of column names as the first row or not? (default: `true`)
+    * `max_rows` - Maximum number of lines to read. (default: `nil`)
     * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
     * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
     * `columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
     * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
-    * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `[DataType::Utf8]`
+    * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
   """
   @doc type: :io
   @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
@@ -260,11 +285,10 @@ defmodule Explorer.DataFrame do
     opts =
       Keyword.validate!(opts,
         delimiter: ",",
-        dtypes: nil,
+        dtypes: [],
         encoding: "utf8",
-        header?: true,
-        max_rows: Inf,
-        names: nil,
+        header: true,
+        max_rows: nil,
         null_character: "NA",
         skip_rows: 0,
         columns: nil,
@@ -276,12 +300,11 @@ defmodule Explorer.DataFrame do
 
     backend.from_csv(
       filename,
-      opts[:names],
-      opts[:dtypes],
+      check_dtypes!(opts[:dtypes]),
       opts[:delimiter],
       opts[:null_character],
       opts[:skip_rows],
-      opts[:header?],
+      opts[:header],
       opts[:encoding],
       opts[:max_rows],
       opts[:columns],
@@ -392,15 +415,15 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `header?` - Should the column names be written as the first line of the file? (default: `true`)
+    * `header` - Should the column names be written as the first line of the file? (default: `true`)
     * `delimiter` - A single character used to separate fields within a record. (default: `","`)
   """
   @doc type: :io
   @spec to_csv(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_csv(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, header?: true, delimiter: ",")
-    apply_impl(df, :to_csv, [filename, opts[:header?], opts[:delimiter]])
+    opts = Keyword.validate!(opts, header: true, delimiter: ",")
+    apply_impl(df, :to_csv, [filename, opts[:header], opts[:delimiter]])
   end
 
   @doc """
@@ -460,20 +483,20 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `header?` - Should the column names be written as the first line of the file? (default: `true`)
+    * `header` - Should the column names be written as the first line of the file? (default: `true`)
     * `delimiter` - A single character used to separate fields within a record. (default: `","`)
 
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> df |> Explorer.DataFrame.head() |> Explorer.DataFrame.dump_csv()
-      "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n2010,ALGERIA,32500,332,12381,14565,2598,2623,0.9,663\\n2010,ANDORRA,141,0,141,0,0,0,1.68,0\\n2010,ANGOLA,7924,0,3649,374,204,3697,0.37,321\\n"
+      iex> df |> Explorer.DataFrame.head(2) |> Explorer.DataFrame.dump_csv()
+      "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"
   """
   @doc type: :io
   @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
   def dump_csv(df, opts \\ []) do
-    opts = Keyword.validate!(opts, header?: true, delimiter: ",")
-    apply_impl(df, :dump_csv, [opts[:header?], opts[:delimiter]])
+    opts = Keyword.validate!(opts, header: true, delimiter: ",")
+    apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
   end
 
   ## Conversion
@@ -515,7 +538,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, "wrong"]})
-      ** (ArgumentError) cannot create series "ints": cannot make a series from mismatched types - the value "wrong" does not match inferred dtype integer
+      ** (ArgumentError) cannot create series "ints": the value "wrong" does not match the inferred series dtype :integer
 
   From row data:
 

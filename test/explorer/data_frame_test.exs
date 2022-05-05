@@ -102,6 +102,13 @@ defmodule Explorer.DataFrameTest do
                a: ["1", "3"],
                b: [2, 4]
              }
+
+      df = DF.from_csv!(csv, dtypes: %{a: :string})
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: ["1", "3"],
+               b: [2, 4]
+             }
     end
 
     @tag :tmp_dir
@@ -143,7 +150,7 @@ defmodule Explorer.DataFrameTest do
     end
 
     @tag :tmp_dir
-    test "header?", config do
+    test "header", config do
       csv =
         tmp_csv(config.tmp_dir, """
         a,b
@@ -151,7 +158,7 @@ defmodule Explorer.DataFrameTest do
         e,f
         """)
 
-      df = DF.from_csv!(csv, header?: false)
+      df = DF.from_csv!(csv, header: false)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                column_1: ["a", "c", "e"],
@@ -256,55 +263,6 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_columns(df, atom_keys: true) == %{
                b: ["d", "f"]
-             }
-    end
-
-    @tag :tmp_dir
-    test "names", config do
-      csv =
-        tmp_csv(config.tmp_dir, """
-        a,b
-        c,d
-        e,f
-        """)
-
-      df = DF.from_csv!(csv, names: ["a2", "b2"])
-
-      assert DF.to_columns(df, atom_keys: true) == %{
-               a2: ["c", "e"],
-               b2: ["d", "f"]
-             }
-    end
-
-    @tag :tmp_dir
-    test "names raises exception on invalid length", config do
-      csv =
-        tmp_csv(config.tmp_dir, """
-        a,b
-        c,d
-        """)
-
-      assert_raise(
-        ArgumentError,
-        "Expected length of provided names (1) to match number of columns in dataframe (2).",
-        fn -> DF.from_csv(csv, names: ["a2"]) end
-      )
-    end
-
-    @tag :tmp_dir
-    test "names and dtypes options work together", config do
-      csv =
-        tmp_csv(config.tmp_dir, """
-        a,b
-        1,2
-        3,4
-        """)
-
-      df = DF.from_csv!(csv, dtypes: [{"a", :string}], names: ["a2", "b2"])
-
-      assert DF.to_columns(df, atom_keys: true) == %{
-               a2: ["1", "3"],
-               b2: [2, 4]
              }
     end
 
