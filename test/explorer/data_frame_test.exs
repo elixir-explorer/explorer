@@ -474,9 +474,6 @@ defmodule Explorer.DataFrameTest do
     assert %DF{} = df3 = df[-2..-1]
     assert DF.names(df3) == ["b", "c"]
 
-    assert %DF{} = df4 = df[-4..-3]
-    assert DF.names(df4) == []
-
     assert_raise ArgumentError,
                  "no column exists at index 100",
                  fn -> df[100] end
