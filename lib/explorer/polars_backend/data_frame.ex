@@ -159,7 +159,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def to_lazy(df), do: df |> Shared.apply_native(:df_to_lazy) |> Shared.update_dataframe(df)
 
   @impl true
-  def collect(df), do: {:ok, df}
+  def collect(df), do: df
 
   @impl true
   def from_tabular(tabular) do
