@@ -568,37 +568,66 @@ defmodule Explorer.DataFrame do
   defp classify_data(data), do: {:other, data}
 
   @doc """
-  Converts a dataframe to a map of columns.
+  Converts a dataframe to a list of columns with lists as values.
 
-  By default, the constituent series of the dataframe are converted to Elixir lists.
+  See `to_series/2` if you want a list of columns with series as values.
 
   ## Options
 
-    * `:convert_series` - Convert the series to lists (default: `true`)
     * `:atom_keys` - Configure if the resultant map should have atom keys. (default: `false`)
 
   ## Examples
 
-      iex> df = Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
+      iex> df = Explorer.DataFrame.new(ints: [1, nil], floats: [1.0, 2.0])
       iex> Explorer.DataFrame.to_columns(df)
       %{"floats" => [1.0, 2.0], "ints" => [1, nil]}
 
       iex> df = Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
       iex> Explorer.DataFrame.to_columns(df, atom_keys: true)
       %{floats: [1.0, 2.0], ints: [1, nil]}
+
   """
   @doc type: :single
   @spec to_columns(df :: DataFrame.t(), Keyword.t()) :: map()
   def to_columns(df, opts \\ []) do
-    opts = Keyword.validate!(opts, convert_series: true, atom_keys: false)
-    convert_series = opts[:convert_series]
+    opts = Keyword.validate!(opts, atom_keys: false)
     atom_keys = opts[:atom_keys]
 
     for name <- names(df), into: %{} do
       series = apply_impl(df, :pull, [name])
       key = if atom_keys, do: String.to_atom(name), else: name
-      value = if convert_series, do: Series.to_list(series), else: series
-      {key, value}
+      {key, Series.to_list(series)}
+    end
+  end
+
+  @doc """
+  Converts a dataframe to a list of columns with series as values.
+
+  See `to_columns/2` if you want a list of columns with lists as values.
+
+  ## Options
+
+    * `:atom_keys` - Configure if the resultant map should have atom keys. (default: `false`)
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(ints: [1, nil], floats: [1.0, 2.0])
+      iex> map = Explorer.DataFrame.to_series(df)
+      iex> Explorer.Series.to_list(map["floats"])
+      [1.0, 2.0]
+      iex> Explorer.Series.to_list(map["ints"])
+      [1, nil]
+
+  """
+  @doc type: :single
+  @spec to_series(df :: DataFrame.t(), Keyword.t()) :: map()
+  def to_series(df, opts \\ []) do
+    opts = Keyword.validate!(opts, atom_keys: false)
+    atom_keys = opts[:atom_keys]
+
+    for name <- names(df), into: %{} do
+      key = if atom_keys, do: String.to_atom(name), else: name
+      {key, apply_impl(df, :pull, [name])}
     end
   end
 
