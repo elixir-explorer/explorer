@@ -33,12 +33,7 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def to_list(%Series{data: series}) do
-    case Native.s_to_list(series) do
-      {:ok, list} -> list
-      {:error, e} -> raise "#{e}"
-    end
-  end
+  def to_list(series), do: Shared.apply_native(series, :s_to_list)
 
   @impl true
   def to_enum(series) do
@@ -80,7 +75,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def filter(series, %Series{} = mask),
-    do: Shared.apply_native(series, :s_filter, [Shared.to_polars_s(mask)])
+    do: Shared.apply_native(series, :s_filter, [mask.data])
 
   def filter(series, callback) when is_function(callback) do
     mask = callback.(series)
@@ -101,7 +96,7 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def concat(s1, s2), do: Shared.apply_native(s1, :s_append, [Shared.to_polars_s(s2)])
+  def concat(s1, s2), do: Shared.apply_native(s1, :s_append, [s2.data])
 
   # Aggregation
 
@@ -154,25 +149,25 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def add(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_add, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_add, [right.data])
 
   def add(left, right) when is_number(right), do: add(left, scalar_rhs(right, left))
 
   @impl true
   def subtract(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_sub, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_sub, [right.data])
 
   def subtract(left, right) when is_number(right), do: subtract(left, scalar_rhs(right, left))
 
   @impl true
   def multiply(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_mul, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_mul, [right.data])
 
   def multiply(left, right) when is_number(right), do: multiply(left, scalar_rhs(right, left))
 
   @impl true
   def divide(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_div, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_div, [right.data])
 
   def divide(left, right) when is_number(right), do: divide(left, scalar_rhs(right, left))
 
@@ -191,49 +186,49 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def eq(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_eq, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_eq, [right.data])
 
   def eq(left, right), do: eq(left, scalar_rhs(right, left))
 
   @impl true
   def neq(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_neq, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_neq, [right.data])
 
   def neq(left, right), do: neq(left, scalar_rhs(right, left))
 
   @impl true
   def gt(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_gt, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_gt, [right.data])
 
   def gt(left, right), do: gt(left, scalar_rhs(right, left))
 
   @impl true
   def gt_eq(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_gt_eq, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_gt_eq, [right.data])
 
   def gt_eq(left, right), do: gt_eq(left, scalar_rhs(right, left))
 
   @impl true
   def lt(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_lt, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_lt, [right.data])
 
   def lt(left, right), do: lt(left, scalar_rhs(right, left))
 
   @impl true
   def lt_eq(left, %Series{} = right),
-    do: Shared.apply_native(left, :s_lt_eq, [Shared.to_polars_s(right)])
+    do: Shared.apply_native(left, :s_lt_eq, [right.data])
 
   def lt_eq(left, right), do: lt_eq(left, scalar_rhs(right, left))
 
   @impl true
   def all_equal?(left, right),
-    do: Shared.apply_native(left, :s_series_equal, [Shared.to_polars_s(right), true])
+    do: Shared.apply_native(left, :s_series_equal, [right.data, true])
 
   @impl true
-  def binary_and(left, right), do: Shared.apply_native(left, :s_and, [Shared.to_polars_s(right)])
+  def binary_and(left, right), do: Shared.apply_native(left, :s_and, [right.data])
 
   @impl true
-  def binary_or(left, right), do: Shared.apply_native(left, :s_or, [Shared.to_polars_s(right)])
+  def binary_or(left, right), do: Shared.apply_native(left, :s_or, [right.data])
   # Sort
 
   @impl true
@@ -257,15 +252,17 @@ defmodule Explorer.PolarsBackend.Series do
   def n_distinct(series), do: Shared.apply_native(series, :s_n_unique)
 
   @impl true
-  def count(series),
-    do:
-      series
-      |> Shared.to_polars_s()
-      |> Native.s_value_counts()
-      |> Shared.unwrap()
-      |> Shared.to_dataframe()
-      |> DataFrame.rename(["values", "counts"])
-      |> DataFrame.mutate(counts: &Series.cast(&1["counts"], :integer))
+  def count(%Series{data: polars_series}) do
+    df =
+      case Native.s_value_counts(polars_series) do
+        {:ok, polars_df} -> Shared.create_dataframe(polars_df)
+        {:error, error} -> raise "#{error}"
+      end
+
+    df
+    |> DataFrame.rename(["values", "counts"])
+    |> DataFrame.mutate(counts: &Series.cast(&1["counts"], :integer))
+  end
 
   # Window
 
