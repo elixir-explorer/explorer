@@ -41,12 +41,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     dtypes =
       if dtypes do
-        Enum.map(dtypes, fn {colname, dtype} ->
-          {colname, Shared.internal_from_dtype(dtype)}
+        Enum.map(dtypes, fn {column_name, dtype} ->
+          {column_name, Shared.internal_from_dtype(dtype)}
         end)
       end
 
-    {with_columns, with_projection} = column_list_check(columns)
+    {columns, with_projection} = column_list_check(columns)
 
     df =
       Native.df_read_csv(
@@ -58,7 +58,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         with_projection,
         delimiter,
         true,
-        with_columns,
+        columns,
         dtypes,
         encoding,
         null_character,
@@ -94,10 +94,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   defp checked_rename(df, names) do
-    if n_cols(df) != length(names) do
+    if n_columns(df) != length(names) do
       raise(
         ArgumentError,
-        "Expected length of provided names (#{length(names)}) to match number of columns in dataframe (#{n_cols(df)})."
+        "Expected length of provided names (#{length(names)}) to match number of columns in dataframe (#{n_columns(df)})."
       )
     end
 
@@ -115,8 +115,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ndjson(filename, infer_schema_length, with_batch_size) do
-    with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, with_batch_size) do
+  def from_ndjson(filename, infer_schema_length, batch_size) do
+    with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, batch_size) do
       {:ok, Shared.to_dataframe(df)}
     end
   end
@@ -151,21 +151,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_rows([h | _] = rows) when is_map(h) do
-    case Native.df_from_map_rows(rows) do
-      {:ok, df} -> Shared.to_dataframe(df)
-      {:error, reason} -> raise ArgumentError, reason
-    end
-  end
-
-  def from_rows([h | _] = rows) when is_list(h) do
-    case Native.df_from_keyword_rows(rows) do
-      {:ok, df} -> Shared.to_dataframe(df)
-      {:error, reason} -> raise ArgumentError, reason
-    end
-  end
-
-  @impl true
   def from_ipc(filename, columns) do
     {columns, projection} = column_list_check(columns)
 
@@ -186,27 +171,43 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Conversion
 
   @impl true
-  def from_columns(map) do
-    series_list = Enum.map(map, &from_columns_handler/1)
+  def from_tabular(tabular) do
+    {columns, %{columns: keys}} = Table.to_columns_with_info(tabular)
 
-    case Native.df_new(series_list) do
+    keys
+    |> Enum.map(fn key ->
+      column_name = to_column_name!(key)
+      values = Enum.to_list(columns[key])
+      series_from_list!(column_name, values)
+    end)
+    |> from_series_list()
+  end
+
+  @impl true
+  def from_series(pairs) do
+    pairs
+    |> Enum.map(fn {key, series} ->
+      column_name = to_column_name!(key)
+      PolarsSeries.rename(series, column_name)
+    end)
+    |> from_series_list()
+  end
+
+  defp from_series_list(list) do
+    list = Enum.map(list, &Shared.to_polars_s/1)
+
+    case Native.df_new(list) do
       {:ok, df} -> Shared.to_dataframe(df)
       {:error, error} -> raise ArgumentError, error
     end
   end
 
-  defp from_columns_handler({key, value}) when is_atom(key) do
-    colname = Atom.to_string(key)
-    from_columns_handler({colname, value})
-  end
+  defp to_column_name!(column_name) when is_binary(column_name), do: column_name
+  defp to_column_name!(column_name) when is_atom(column_name), do: Atom.to_string(column_name)
 
-  defp from_columns_handler({colname, value}) when is_list(value) do
-    series = series_from_list!(colname, value)
-    from_columns_handler({colname, series})
-  end
-
-  defp from_columns_handler({colname, %Series{} = series}) when is_binary(colname) do
-    series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
+  defp to_column_name!(column_name) do
+    raise ArgumentError,
+          "expected colum name to be either string or atom, got: #{inspect(column_name)}"
   end
 
   # Like `Explorer.Series.from_list/2`, but gives a better error message with the series name.
@@ -258,7 +259,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def n_cols(df), do: Shared.apply_native(df, :df_width)
+  def n_columns(df), do: Shared.apply_native(df, :df_width)
 
   # Single table verbs
 
@@ -275,9 +276,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def select(%{groups: groups} = df, columns, :drop) when is_list(columns),
     do: df |> Shared.to_polars_df() |> drop(columns) |> Shared.to_dataframe(groups)
 
-  defp drop(polars_df, colnames),
+  defp drop(polars_df, column_names),
     do:
-      Enum.reduce(colnames, polars_df, fn name, df ->
+      Enum.reduce(column_names, polars_df, fn name, df ->
         {:ok, df} = Native.df_drop(df, name)
         df
       end)
@@ -301,24 +302,25 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> group_by(groups)
   end
 
-  defp mutate_reducer({colname, %Series{} = series}, %DataFrame{} = df) when is_binary(colname) do
-    check_series_size(df, series, colname)
-    series = series |> PolarsSeries.rename(colname) |> Shared.to_polars_s()
+  defp mutate_reducer({column_name, %Series{} = series}, %DataFrame{} = df)
+       when is_binary(column_name) do
+    check_series_size(df, series, column_name)
+    series = series |> PolarsSeries.rename(column_name) |> Shared.to_polars_s()
     Shared.apply_native(df, :df_with_column, [series])
   end
 
-  defp mutate_reducer({colname, callback}, %DataFrame{} = df)
+  defp mutate_reducer({column_name, callback}, %DataFrame{} = df)
        when is_function(callback),
-       do: mutate_reducer({colname, callback.(df)}, df)
+       do: mutate_reducer({column_name, callback.(df)}, df)
 
-  defp mutate_reducer({colname, values}, df) when is_list(values),
-    do: mutate_reducer({colname, series_from_list!(colname, values)}, df)
+  defp mutate_reducer({column_name, values}, df) when is_list(values),
+    do: mutate_reducer({column_name, series_from_list!(column_name, values)}, df)
 
-  defp mutate_reducer({colname, value}, %DataFrame{} = df)
-       when is_binary(colname),
-       do: mutate_reducer({colname, value |> List.duplicate(n_rows(df))}, df)
+  defp mutate_reducer({column_name, value}, %DataFrame{} = df)
+       when is_binary(column_name),
+       do: mutate_reducer({column_name, value |> List.duplicate(n_rows(df))}, df)
 
-  defp check_series_size(df, series, colname) do
+  defp check_series_size(df, series, column_name) do
     df_len = n_rows(df)
     s_len = Series.size(series)
 
@@ -326,7 +328,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       do:
         raise(
           ArgumentError,
-          "size of new column #{colname} (#{s_len}) must match number of rows in the " <>
+          "size of new column #{column_name} (#{s_len}) must match number of rows in the " <>
             "dataframe (#{df_len})"
         )
   end
@@ -382,11 +384,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Shared.apply_native(:df_to_dummies)
 
   @impl true
-  def sample(df, n, with_replacement?, seed) when is_integer(n) do
+  def sample(df, n, replacement, seed) when is_integer(n) do
     indices =
       df
       |> n_rows()
-      |> Native.s_seedable_random_indices(n, with_replacement?, seed)
+      |> Native.s_seedable_random_indices(n, replacement, seed)
 
     take(df, indices)
   end
@@ -404,8 +406,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def drop_nil(df, columns), do: Shared.apply_native(df, :df_drop_nulls, [columns])
 
   @impl true
-  def pivot_longer(df, id_cols, value_cols, names_to, values_to) do
-    df = Shared.apply_native(df, :df_melt, [id_cols, value_cols])
+  def pivot_longer(df, id_columns, value_columns, names_to, values_to) do
+    df = Shared.apply_native(df, :df_melt, [id_columns, value_columns])
 
     df
     |> names()
@@ -418,14 +420,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def pivot_wider(df, id_cols, names_from, values_from, names_prefix) do
-    df = Shared.apply_native(df, :df_pivot_wider, [id_cols, names_from, values_from])
+  def pivot_wider(df, id_columns, names_from, values_from, names_prefix) do
+    df = Shared.apply_native(df, :df_pivot_wider, [id_columns, names_from, values_from])
 
     df =
       df
       |> names()
       |> Enum.map(fn name ->
-        if name in id_cols, do: name, else: names_prefix <> name
+        if name in id_columns, do: name, else: names_prefix <> name
       end)
       |> then(&rename(df, &1))
 
@@ -444,8 +446,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_native(left, :df_join, [Shared.to_polars_df(right), left_on, right_on, how])
   end
 
-  defp join_on_reducer(colname, {left, right}) when is_binary(colname),
-    do: {[colname | left], [colname | right]}
+  defp join_on_reducer(column_name, {left, right}) when is_binary(column_name),
+    do: {[column_name | left], [column_name | right]}
 
   defp join_on_reducer({new_left, new_right}, {left, right}),
     do: {[new_left | left], [new_right | right]}
@@ -472,12 +474,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: %DataFrame{df | groups: Enum.filter(df.groups, &(&1 not in groups))}
 
   @impl true
-  def summarise(%DataFrame{groups: groups} = df, with_columns) do
-    with_columns =
-      Enum.map(with_columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
+  def summarise(%DataFrame{groups: groups} = df, columns) do
+    columns =
+      Enum.map(columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
 
     df
-    |> Shared.apply_native(:df_groupby_agg, [groups, with_columns])
+    |> Shared.apply_native(:df_groupby_agg, [groups, columns])
     |> ungroup([])
     |> DataFrame.arrange(groups)
   end
@@ -510,9 +512,9 @@ defimpl Enumerable, for: Explorer.PolarsBackend.DataFrame do
         {:done, acc}
 
       {:ok, [head | _tail]} ->
-        {:ok, next_col} = Native.df_column(df, head)
+        {:ok, next_column} = Native.df_column(df, head)
         {:ok, df} = Native.df_drop(df, head)
-        reduce(df, fun.(next_col, acc), fun)
+        reduce(df, fun.(next_column, acc), fun)
     end
   end
 

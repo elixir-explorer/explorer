@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use polars::prelude::*;
 use rustler::resource::ResourceArc;
-use rustler::{Atom, Encoder, Env, NifStruct, NifUntaggedEnum, Term};
+use rustler::{Atom, Encoder, Env, NifStruct, Term};
 use std::convert::TryInto;
 
 use std::result::Result;
@@ -252,53 +252,6 @@ impl<'a> Encoder for ExSeriesRef {
                 encode_list!(s, env, u32, u32)
             }
             dt => panic!("to_list/1 not implemented for {:?}", dt),
-        }
-    }
-}
-
-#[derive(NifUntaggedEnum, Clone, Debug)]
-pub enum ExAnyValue {
-    Boolean(bool),
-    Utf8(String),
-    Int32(i32),
-    Int64(i64),
-    UInt32(u32),
-    Float64(f64),
-    Datetime(ExDateTime),
-    Date(ExDate),
-}
-
-impl From<ExAnyValue> for AnyValue<'_> {
-    fn from(val: ExAnyValue) -> Self {
-        let value = match val {
-            ExAnyValue::Boolean(x) => AnyValue::Boolean(x),
-            ExAnyValue::Utf8(x) => AnyValue::Utf8Owned(x),
-            ExAnyValue::Int32(x) => AnyValue::Int32(x),
-            ExAnyValue::Int64(x) => AnyValue::Int64(x),
-            ExAnyValue::UInt32(x) => AnyValue::UInt32(x),
-            ExAnyValue::Float64(x) => AnyValue::Float64(x),
-            ExAnyValue::Datetime(x) => {
-                AnyValue::Datetime(i64::from(x), TimeUnit::Microseconds, &None)
-            }
-            ExAnyValue::Date(x) => AnyValue::Date(i32::from(x)),
-        };
-        value
-    }
-}
-
-impl From<AnyValue<'_>> for ExAnyValue {
-    fn from(val: AnyValue) -> Self {
-        match val {
-            AnyValue::Boolean(x) => ExAnyValue::Boolean(x),
-            AnyValue::Utf8(x) => ExAnyValue::Utf8(x.to_string()),
-            AnyValue::Utf8Owned(x) => ExAnyValue::Utf8(x),
-            AnyValue::Int32(x) => ExAnyValue::Int32(x),
-            AnyValue::Int64(x) => ExAnyValue::Int64(x),
-            AnyValue::UInt32(x) => ExAnyValue::UInt32(x),
-            AnyValue::Float64(x) => ExAnyValue::Float64(x),
-            AnyValue::Datetime(x, ..) => ExAnyValue::Datetime(ExDateTime::from(x)),
-            AnyValue::Date(x) => ExAnyValue::Date(ExDate::from(x)),
-            _ => panic!("unsupported datatype for {:?}", val),
         }
     }
 }

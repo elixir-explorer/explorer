@@ -24,7 +24,7 @@ Mix.install([
 
 ## Reading and writing data
 
-Data can be read from delimited files (like CSV), Parquet, and the Arrow IPC (feather) format. You can also load in data from a map or keyword list of columns with `Explorer.DataFrame.from_columns/1`.
+Data can be read from delimited files (like CSV), Parquet, and the Arrow IPC (feather) format. You can also load in data from a map or keyword list of columns with `Explorer.DataFrame.new/1`.
 
 For CSV, your 'usual suspects' of options are available:
 
@@ -35,7 +35,7 @@ For CSV, your 'usual suspects' of options are available:
 * `names` - A list of column names. Must match the width of the dataframe. (default: nil)
 * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
 * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-* `with_columns` - A list of column names to keep. If present, only these columns are read
+* `columns` - A list of column names to keep. If present, only these columns are read
 * into the dataframe. (default: `nil`)
 
 `Explorer` also has multiple example datasets built in, which you can load from the `Explorer.Datasets` module like so:
@@ -299,7 +299,7 @@ Series.count(s)
 A `DataFrame` is really just a collection of `Series` of the same size. Which is why you can create a `DataFrame` from a `Keyword` list.
 
 ```elixir
-DataFrame.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
 ```
 
 Similarly to `Series`, the `Inspect` implementation prints some info at the top and to the left. At the top we see the shape of the dataframe (rows and columns) and then for each column we see the name, dtype, and first five values. We can see a bit more from that built-in dataset we loaded in earlier.
@@ -323,7 +323,7 @@ DataFrame.shape(df)
 ```
 
 ```elixir
-{DataFrame.n_rows(df), DataFrame.n_cols(df)}
+{DataFrame.n_rows(df), DataFrame.n_columns(df)}
 ```
 
 We can grab the head.
@@ -481,7 +481,7 @@ DataFrame.sample(df, 10000)
 ```
 
 ```elixir
-DataFrame.sample(df, 10000, with_replacement?: true)
+DataFrame.sample(df, 10000, replacement: true)
 ```
 
 ### Pull/slice/take
@@ -521,11 +521,11 @@ We can `pivot_longer/3` and `pivot_wider/4`. These are inspired by [tidyr](https
 There are some shortcomings in `pivot_wider/4` related to `polars`. The `values_from` column must be a numeric type.
 
 ```elixir
-DataFrame.pivot_longer(df, ["year", "country"], value_cols: &String.ends_with?(&1, "fuel"))
+DataFrame.pivot_longer(df, ["year", "country"], value_columns: &String.ends_with?(&1, "fuel"))
 ```
 
 ```elixir
-DataFrame.pivot_wider(df, "country", "total", id_cols: ["year"])
+DataFrame.pivot_wider(df, "country", "total", id_columns: ["year"])
 ```
 
 Let's make those names look nicer!
@@ -539,7 +539,7 @@ tidy_names = fn name ->
   |> String.replace(" ", "_")
 end
 
-df |> DataFrame.pivot_wider("country", "total", id_cols: ["year"]) |> DataFrame.rename(tidy_names)
+df |> DataFrame.pivot_wider("country", "total", id_columns: ["year"]) |> DataFrame.rename(tidy_names)
 ```
 
 ### Joins

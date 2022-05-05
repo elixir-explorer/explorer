@@ -13,7 +13,7 @@ mod error;
 mod series;
 
 use dataframe::*;
-pub use datatypes::{ExAnyValue, ExDataFrame, ExDataFrameRef, ExSeries, ExSeriesRef};
+pub use datatypes::{ExDataFrame, ExDataFrameRef, ExSeries, ExSeriesRef};
 pub use error::ExplorerError;
 use series::*;
 
@@ -40,8 +40,6 @@ rustler::init!(
         df_drop_nulls,
         df_dtypes,
         df_filter,
-        df_from_map_rows,
-        df_from_keyword_rows,
         df_get_columns,
         df_groups,
         df_groupby_agg,

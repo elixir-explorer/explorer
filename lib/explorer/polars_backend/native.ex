@@ -22,7 +22,7 @@ defmodule Explorer.PolarsBackend.Native do
         _projection,
         _sep,
         _rechunk,
-        _with_columns,
+        _columns,
         _dtypes,
         _encoding,
         _null_char,
@@ -48,7 +48,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_read_ndjson(
         _filename,
         _infer_schema_length,
-        _with_batch_size
+        _batch_size
       ),
       do: err()
 
@@ -66,17 +66,15 @@ defmodule Explorer.PolarsBackend.Native do
   def df_drop_nulls(_df, _subset), do: err()
   def df_dtypes(_df), do: err()
   def df_filter(_df, _mask), do: err()
-  def df_from_map_rows(_rows), do: err()
-  def df_from_keyword_rows(_rows), do: err()
   def df_get_columns(_df), do: err()
-  def df_groups(_df, _colnames), do: err()
+  def df_groups(_df, _column_names), do: err()
   def df_groupby_agg(_df, _groups, _aggs), do: err()
   def df_head(_df, _length), do: err()
   def df_height(_df), do: err()
   def df_join(_df, _other, _left_on, _right_on, _how), do: err()
   def df_melt(_df, _id_vars, _value_vars), do: err()
-  def df_new(_cols), do: err()
-  def df_pivot_wider(_df, _id_cols, _pivot_column, _values_columns), do: err()
+  def df_new(_columns), do: err()
+  def df_pivot_wider(_df, _id_columns, _pivot_column, _values_columns), do: err()
   def df_read_ipc(_filename, _columns, _projection), do: err()
   def df_read_parquet(_filename), do: err()
   def df_select(_df, _selection), do: err()
@@ -90,7 +88,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_to_dummies(_df), do: err()
   def df_vstack(_df, _other), do: err()
   def df_width(_df), do: err()
-  def df_with_column(_df, _col), do: err()
+  def df_with_column(_df, _column), do: err()
   def df_write_ipc(_df, _filename, _compression), do: err()
   def df_write_parquet(_df, _filename), do: err()
 
@@ -148,7 +146,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_rolling_mean(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_rolling_min(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_rolling_sum(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
-  def s_seedable_random_indices(_length, _n_samples, _with_replacement, _seed), do: err()
+  def s_seedable_random_indices(_length, _n_samples, _replacement, _seed), do: err()
   def s_series_equal(_s, _other, _null_equal), do: err()
   def s_slice(_s, _offset, _length), do: err()
   def s_sort(_s, _reverse), do: err()

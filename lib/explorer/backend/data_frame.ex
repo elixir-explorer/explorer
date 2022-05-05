@@ -8,7 +8,7 @@ defmodule Explorer.Backend.DataFrame do
   @type df :: Explorer.DataFrame.t()
   @type result(t) :: {:ok, t} | {:error, term()}
   @type series :: Explorer.Series.t()
-  @type colname :: String.t()
+  @type column_name :: String.t()
 
   # IO
 
@@ -42,55 +42,55 @@ defmodule Explorer.Backend.DataFrame do
   @callback from_ndjson(
               filename :: String.t(),
               infer_schema_length :: integer(),
-              with_batch_size :: integer()
+              batch_size :: integer()
             ) :: result(df)
   @callback to_ndjson(df, filename :: String.t()) :: result(String.t())
 
   # Conversion
 
-  @callback from_columns(map() | Keyword.t()) :: df
-  @callback from_rows(list(map() | Keyword.t())) :: df
+  @callback from_tabular(Table.Reader.t()) :: df
+  @callback from_series(map() | Keyword.t()) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
   @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: String.t()
 
   # Introspection
 
-  @callback names(df) :: [colname]
+  @callback names(df) :: [column_name]
   @callback dtypes(df) :: [String.t()]
   @callback shape(df) :: {integer(), integer()}
   @callback n_rows(df) :: integer()
-  @callback n_cols(df) :: integer()
+  @callback n_columns(df) :: integer()
 
   # Single table verbs
 
   @callback head(df, rows :: integer()) :: df
   @callback tail(df, rows :: integer()) :: df
-  @callback select(df, columns :: [colname], :keep | :drop) :: df
+  @callback select(df, columns :: [column_name], :keep | :drop) :: df
   @callback filter(df, mask :: series) :: df
-  @callback mutate(df, with_columns :: map()) :: df
-  @callback arrange(df, columns :: [colname | {:asc | :desc, colname}]) :: df
-  @callback distinct(df, columns :: [colname], keep_all? :: boolean()) :: df
-  @callback rename(df, [colname]) :: df
-  @callback dummies(df, columns :: [colname]) :: df
-  @callback sample(df, n :: integer(), with_replacement? :: boolean(), seed :: integer()) :: df
+  @callback mutate(df, columns :: map()) :: df
+  @callback arrange(df, columns :: [column_name | {:asc | :desc, column_name}]) :: df
+  @callback distinct(df, columns :: [column_name], keep_all? :: boolean()) :: df
+  @callback rename(df, [column_name]) :: df
+  @callback dummies(df, columns :: [column_name]) :: df
+  @callback sample(df, n :: integer(), replacement :: boolean(), seed :: integer()) :: df
   @callback pull(df, column :: String.t()) :: series
   @callback slice(df, offset :: integer(), length :: integer()) :: df
   @callback take(df, indices :: list(integer())) :: df
-  @callback drop_nil(df, columns :: [colname]) :: df
+  @callback drop_nil(df, columns :: [column_name]) :: df
   @callback pivot_wider(
               df,
-              id_cols :: [colname],
-              names_from :: [colname],
+              id_columns :: [column_name],
+              names_from :: [column_name],
               values_from ::
-                [colname],
+                [column_name],
               names_prefix :: String.t()
             ) :: df
   @callback pivot_longer(
               df,
-              id_cols :: [colname],
-              value_cols :: [colname],
-              names_to :: colname,
-              values_to :: colname
+              id_columns :: [column_name],
+              value_columns :: [column_name],
+              names_to :: column_name,
+              values_to :: column_name
             ) :: df
 
   # Two or more table verbs
@@ -106,7 +106,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # Groups
 
-  @callback group_by(df, columns :: [colname]) :: df
-  @callback ungroup(df, columns :: [colname]) :: df
+  @callback group_by(df, columns :: [column_name]) :: df
+  @callback ungroup(df, columns :: [column_name]) :: df
   @callback summarise(df, aggregations :: map()) :: df
 end

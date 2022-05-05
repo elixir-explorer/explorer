@@ -1,14 +1,12 @@
 use polars::prelude::*;
-use rustler::{Term, TermType};
 
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::result::Result;
 
 use crate::series::{to_ex_series_collection, to_series_collection};
 
-use crate::{ExAnyValue, ExDataFrame, ExSeries, ExplorerError};
+use crate::{ExDataFrame, ExSeries, ExplorerError};
 
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(clippy::too_many_arguments)]
@@ -161,13 +159,13 @@ pub fn df_write_ipc(
 pub fn df_read_ndjson(
     filename: &str,
     infer_schema_length: Option<usize>,
-    with_batch_size: usize,
+    batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
     let df = JsonReader::new(buf_reader)
         .with_json_format(JsonFormat::JsonLines)
-        .with_batch_size(with_batch_size)
+        .with_batch_size(batch_size)
         .infer_schema_len(infer_schema_length)
         .finish()?;
 
@@ -185,106 +183,6 @@ pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), Explorer
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_as_str(data: ExDataFrame) -> Result<String, ExplorerError> {
     Ok(format!("{:?}", data.resource.0))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_from_map_rows(
-    rows: Vec<HashMap<Term, Option<ExAnyValue>>>,
-) -> Result<ExDataFrame, ExplorerError> {
-    // Coerce the keys from `Term` (atom or binary) to `String`
-    let rows: Vec<HashMap<String, &Option<ExAnyValue>>> = rows
-        .iter()
-        .map(|row| {
-            row.iter()
-                .map(|(key, val)| (atom_or_binary_to_string(key), val))
-                .collect()
-        })
-        .collect();
-
-    // Get the map keys and sort them
-    let mut keys = rows
-        .first()
-        .unwrap()
-        .keys()
-        .cloned()
-        .collect::<Vec<String>>();
-
-    case_insensitive_sort(&mut keys);
-
-    // Coerce the vec of hashmaps to polars Rows
-    let rows = rows
-        .iter()
-        .map(|row| row::Row::new(get_vals_in_order(row, &keys)))
-        .collect::<Vec<row::Row>>();
-
-    // Create the dataframe and assign the column names
-    let mut df = DataFrame::from_rows(&rows)?;
-    df.set_column_names(&keys)?;
-    Ok(ExDataFrame::new(df))
-}
-
-fn atom_or_binary_to_string(val: &Term) -> String {
-    match val.get_type() {
-        TermType::Atom => val.atom_to_string().unwrap(),
-        TermType::Binary => {
-            String::from_utf8_lossy(val.into_binary().unwrap().as_slice()).to_string()
-        }
-        _ => panic!("Unsupported key value"),
-    }
-}
-
-fn get_vals_in_order<'a>(
-    map: &'a HashMap<String, &Option<ExAnyValue>>,
-    keys: &'a [String],
-) -> Vec<AnyValue<'a>> {
-    keys.iter()
-        .map(|key| match map.get(key) {
-            None => AnyValue::Null,
-            Some(None) => AnyValue::Null,
-            // NOTE: This special case is necessary until/unless `DataFrame::from_rows` handles `AnyValue::Utf8Owned`. See: https://github.com/pola-rs/polars/issues/2941
-            Some(Some(ExAnyValue::Utf8(val))) => AnyValue::Utf8(val),
-            Some(Some(val)) => AnyValue::from(Some(val.clone())),
-        })
-        .collect()
-}
-
-fn case_insensitive_sort(strings: &mut [String]) {
-    strings.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_from_keyword_rows(
-    rows: Vec<Vec<(Term, Option<ExAnyValue>)>>,
-) -> Result<ExDataFrame, ExplorerError> {
-    // Get the keys and coerce them from `Term` (atom or binary) to `String`
-    let keys = rows
-        .first()
-        .unwrap()
-        .iter()
-        .map(|(key, _)| atom_or_binary_to_string(key))
-        .collect::<Vec<String>>();
-
-    // Coerce the vec of tuples to polars Rows
-    let rows = rows
-        .iter()
-        .map(|row| {
-            let row = row
-                .iter()
-                .map(|(_, val)| match val {
-                    // NOTE: This special case is necessary until/unless `DataFrame::from_rows` handles `AnyValue::Utf8Owned`. See: https://github.com/pola-rs/polars/issues/2941
-                    Some(ExAnyValue::Utf8(val)) => AnyValue::Utf8(val),
-                    Some(val) => AnyValue::from(Some(val.clone())),
-                    None => AnyValue::Null,
-                })
-                .collect();
-            row::Row::new(row)
-        })
-        .collect::<Vec<row::Row>>();
-
-    // Create the dataframe and assign the column names
-    let mut df = DataFrame::from_rows(&rows)?;
-    df.set_column_names(&keys)?;
-    Ok(ExDataFrame::new(df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -323,8 +221,8 @@ pub fn df_get_columns(data: ExDataFrame) -> Result<Vec<ExSeries>, ExplorerError>
 #[rustler::nif]
 pub fn df_columns(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
     let df = &data.resource.0;
-    let cols = df.get_column_names();
-    Ok(cols.into_iter().map(|s| s.to_string()).collect())
+    let columns = df.get_column_names();
+    Ok(columns.into_iter().map(|s| s.to_string()).collect())
 }
 
 #[rustler::nif]
@@ -483,17 +381,17 @@ pub fn df_to_dummies(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_with_column(data: ExDataFrame, col: ExSeries) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_with_column(data: ExDataFrame, column: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let mut new_df = df.clone();
-    new_df.with_column(col.resource.0.clone())?;
+    new_df.with_column(column.resource.0.clone())?;
     Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif]
-pub fn df_new(cols: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
-    let cols = to_series_collection(cols);
-    let df = DataFrame::new(cols)?;
+pub fn df_new(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
+    let columns = to_series_collection(columns);
+    let df = DataFrame::new(columns)?;
     Ok(ExDataFrame::new(df))
 }
 
@@ -529,13 +427,13 @@ pub fn df_groupby_agg(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_pivot_wider(
     data: ExDataFrame,
-    id_cols: Vec<&str>,
+    id_columns: Vec<&str>,
     pivot_column: &str,
     values_column: &str,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let new_df = df
-        .groupby(id_cols)?
+        .groupby(id_columns)?
         .pivot([pivot_column], [values_column])
         .first()?;
     Ok(ExDataFrame::new(new_df))

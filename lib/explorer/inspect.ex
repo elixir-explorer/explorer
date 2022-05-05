@@ -24,7 +24,7 @@ defmodule Explorer.Inspect do
 
   def s_shape(size, opts), do: IA.concat([open(opts), Integer.to_string(size), close(opts)])
 
-  def df_shape(rows, cols, [_ | _] = groups, opts),
+  def df_shape(rows, columns, [_ | _] = groups, opts),
     do:
       IA.nest(
         IA.concat([
@@ -34,7 +34,7 @@ defmodule Explorer.Inspect do
           to_string(rows, opts),
           ", ",
           IA.color("columns: ", :atom, opts),
-          to_string(cols, opts),
+          to_string(columns, opts),
           ", ",
           IA.color("groups: ", :atom, opts),
           to_string(groups, opts),
@@ -43,7 +43,7 @@ defmodule Explorer.Inspect do
         2
       )
 
-  def df_shape(rows, cols, [] = _groups, opts),
+  def df_shape(rows, columns, [] = _groups, opts),
     do:
       IA.nest(
         IA.concat([
@@ -53,7 +53,7 @@ defmodule Explorer.Inspect do
           to_string(rows, opts),
           ", ",
           IA.color("columns: ", :atom, opts),
-          to_string(cols, opts),
+          to_string(columns, opts),
           close(opts)
         ]),
         2
@@ -105,11 +105,11 @@ defimpl Inspect, for: Explorer.DataFrame do
   @printable_limit 5
 
   def inspect(df, opts) do
-    {rows, cols} = DataFrame.shape(df)
+    {rows, columns} = DataFrame.shape(df)
     groups = DataFrame.groups(df)
-    shape = Explorer.Inspect.df_shape(rows, cols, groups, opts)
+    shape = Explorer.Inspect.df_shape(rows, columns, groups, opts)
 
-    cols_algebra =
+    columns_algebra =
       for name <- DataFrame.names(df) do
         series = df |> DataFrame.pull(name) |> Series.slice(0, @printable_limit + 1)
         dtype = Series.dtype(series)
@@ -120,7 +120,7 @@ defimpl Inspect, for: Explorer.DataFrame do
     concat([
       color("#Explorer.DataFrame<", :map, opts),
       shape,
-      concat(cols_algebra),
+      concat(columns_algebra),
       line(),
       nest(color(">", :map, opts), 0)
     ])

@@ -55,15 +55,15 @@ defmodule Explorer.DataFrameTest do
       assert_raise ArgumentError,
                    "could not find any overlapping columns",
                    fn ->
-                     left = DF.from_columns(a: [1, 2, 3])
-                     right = DF.from_columns(b: [1, 2, 3])
+                     left = DF.new(a: [1, 2, 3])
+                     right = DF.new(b: [1, 2, 3])
                      DF.join(left, right)
                    end
     end
 
     test "doesn't raise if no overlapping columns on cross join" do
-      left = DF.from_columns(a: [1, 2, 3])
-      right = DF.from_columns(b: [1, 2, 3])
+      left = DF.new(a: [1, 2, 3])
+      right = DF.new(b: [1, 2, 3])
       joined = DF.join(left, right, how: :cross)
       assert %DF{} = joined
     end
@@ -367,7 +367,7 @@ defmodule Explorer.DataFrameTest do
     test "reads from file with options", %{tmp_dir: tmp_dir} do
       ndjson_path = to_ndjson(tmp_dir)
 
-      assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, with_batch_size: 3)
+      assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, batch_size: 3)
 
       assert DF.names(df) == ~w[a b c d]
       assert DF.dtypes(df) == [:integer, :float, :boolean, :string]
@@ -404,7 +404,7 @@ defmodule Explorer.DataFrameTest do
     @tag :tmp_dir
     test "writes to a file", %{tmp_dir: tmp_dir} do
       df =
-        DF.from_columns(
+        DF.new(
           a: [1, -10, 2, 1, 7, 1, 1, 5, 1, 1, 1, 100_000_000_000_000],
           b: [2.0, -3.5, 0.6, 2.0, -3.5, 0.6, 2.0, -3.5, 0.6, 2.0, -3.5, 0.6],
           c: [false, true, false, false, true, false, false, true, false, false, true, false],
@@ -449,12 +449,15 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "fetch/2" do
-    df = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
+    df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
 
     assert Series.to_list(df[:a]) == [1, 2, 3]
     assert Series.to_list(df["a"]) == [1, 2, 3]
     assert DF.to_columns(df[["a"]]) == %{"a" => [1, 2, 3]}
     assert DF.to_columns(df[[:a, :c]]) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
+    assert DF.to_columns(df[0..-2]) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
+    assert DF.to_columns(df[-3..-1]) == DF.to_columns(df)
+    assert DF.to_columns(df[0..-1]) == DF.to_columns(df)
 
     assert %Series{} = s1 = df[0]
     assert Series.to_list(s1) == [1, 2, 3]
@@ -462,9 +465,17 @@ defmodule Explorer.DataFrameTest do
     assert %Series{} = s2 = df[2]
     assert Series.to_list(s2) == [4.0, 5.1, 6.2]
 
-    assert %DF{} = df2 = df[1..2]
+    assert %Series{} = s3 = df[-1]
+    assert Series.to_list(s3) == [4.0, 5.1, 6.2]
 
+    assert %DF{} = df2 = df[1..2]
     assert DF.names(df2) == ["b", "c"]
+
+    assert %DF{} = df3 = df[-2..-1]
+    assert DF.names(df3) == ["b", "c"]
+
+    assert %DF{} = df4 = df[-4..-3]
+    assert DF.names(df4) == []
 
     assert_raise ArgumentError,
                  "no column exists at index 100",
@@ -478,9 +489,21 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "pop/2" do
-    df1 = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
+    df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
 
     {s1, df2} = Access.pop(df1, "a")
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
+    {s1, df2} = Access.pop(df1, :a)
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
+    {s1, df2} = Access.pop(df1, 0)
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
+    {s1, df2} = Access.pop(df1, -3)
     assert Series.to_list(s1) == [1, 2, 3]
     assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
 
@@ -489,6 +512,10 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df4) == %{"b" => ["a", "b", "c"]}
 
     {df3, df4} = Access.pop(df1, 0..1)
+    assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
+    assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
+
+    {df3, df4} = Access.pop(df1, 0..-2)
     assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
     assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
 
@@ -502,7 +529,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "get_and_update/3" do
-    df1 = DF.from_columns(a: [1, 2, 3], b: ["a", "b", "c"])
+    df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
     {s, df2} =
       Access.get_and_update(df1, "a", fn current_value ->
@@ -514,7 +541,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "pivot_wider/2" do
-    df1 = DF.from_columns(id: [1, 1], variable: ["a", "b"], value: [1, 2])
+    df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
 
     assert DF.to_columns(DF.pivot_wider(df1, "variable", "value"), atom_keys: true) == %{
              id: [1],
@@ -522,31 +549,31 @@ defmodule Explorer.DataFrameTest do
              b: [2]
            }
 
-    df2 = DF.from_columns(id: [1, 1], variable: ["a", "b"], value: [1.0, 2.0])
+    df2 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1.0, 2.0])
 
     assert DF.to_columns(
              DF.pivot_wider(df2, "variable", "value",
-               id_cols: ["id"],
-               names_prefix: "col"
+               id_columns: ["id"],
+               names_prefix: "column_"
              ),
              atom_keys: true
-           ) == %{id: [1], cola: [1.0], colb: [2.0]}
+           ) == %{id: [1], column_a: [1.0], column_b: [2.0]}
   end
 
   test "concat_rows/2" do
-    df1 = DF.from_columns(x: [1, 2, 3], y: ["a", "b", "c"])
-    df2 = DF.from_columns(x: [4, 5, 6], y: ["d", "e", "f"])
+    df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+    df2 = DF.new(x: [4, 5, 6], y: ["d", "e", "f"])
     df3 = DF.concat_rows(df1, df2)
 
     assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
     assert Series.to_list(df3["y"]) == ~w(a b c d e f)
 
-    df2 = DF.from_columns(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
+    df2 = DF.new(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
     df3 = DF.concat_rows(df1, df2)
 
     assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
 
-    df4 = DF.from_columns(x: [7, 8, 9], y: ["g", "h", nil])
+    df4 = DF.new(x: [7, 8, 9], y: ["g", "h", nil])
     df5 = DF.concat_rows(df3, df4)
 
     assert Series.to_list(df5["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
@@ -559,15 +586,15 @@ defmodule Explorer.DataFrameTest do
 
     assert_raise ArgumentError,
                  "dataframes must have the same columns",
-                 fn -> DF.concat_rows(df1, DF.from_columns(z: [7, 8, 9])) end
+                 fn -> DF.concat_rows(df1, DF.new(z: [7, 8, 9])) end
 
     assert_raise ArgumentError,
                  "dataframes must have the same columns",
-                 fn -> DF.concat_rows(df1, DF.from_columns(x: [7, 8, 9], z: [7, 8, 9])) end
+                 fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], z: [7, 8, 9])) end
 
     assert_raise ArgumentError,
                  "columns and dtypes must be identical for all dataframes",
-                 fn -> DF.concat_rows(df1, DF.from_columns(x: [7, 8, 9], y: [10, 11, 12])) end
+                 fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
   end
 
   test "distinct/2", %{df: df} do
@@ -586,6 +613,9 @@ defmodule Explorer.DataFrameTest do
     df3 = DF.distinct(df, columns: [:year, :country], keep_all?: true)
     assert DF.names(df3) == DF.names(df)
 
+    df4 = DF.distinct(df, columns: 0..-1)
+    assert DF.names(df4) == DF.names(df)
+
     assert_raise ArgumentError,
                  "you must provide at least one column or omit the column option to select all columns",
                  fn ->
@@ -594,7 +624,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "drop_nil/2" do
-    df = DF.from_columns(a: [1, 2, nil], b: [1, nil, 3])
+    df = DF.new(a: [1, 2, nil], b: [1, nil, 3])
 
     df1 = DF.drop_nil(df)
     assert DF.to_columns(df1) == %{"a" => [1], "b" => [1]}
@@ -616,7 +646,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "table reader integration" do
-    df = DF.from_columns(x: [1, 2, 3], y: ["a", "b", "c"])
+    df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
 
     assert df |> Table.to_rows() |> Enum.to_list() == [
              %{"x" => 1, "y" => "a"},
