@@ -66,8 +66,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
       )
 
     case {df, names} do
-      {{:ok, df}, nil} -> {:ok, Shared.to_dataframe(df)}
-      {{:ok, df}, names} -> checked_rename(Shared.to_dataframe(df), names)
+      {{:ok, df}, nil} -> {:ok, Shared.create_dataframe(df)}
+      {{:ok, df}, names} -> checked_rename(Shared.create_dataframe(df), names)
       {{:error, error}, _} -> {:error, error}
     end
   end
@@ -117,7 +117,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def from_ndjson(filename, infer_schema_length, batch_size) do
     with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, batch_size) do
-      {:ok, Shared.to_dataframe(df)}
+      {:ok, Shared.create_dataframe(df)}
     end
   end
 
@@ -137,7 +137,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def from_parquet(filename) do
     case Native.df_read_parquet(filename) do
-      {:ok, df} -> {:ok, Shared.to_dataframe(df)}
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
   end
@@ -155,7 +155,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     {columns, projection} = column_list_check(columns)
 
     case Native.df_read_ipc(filename, columns, projection) do
-      {:ok, df} -> {:ok, Shared.to_dataframe(df)}
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
   end
@@ -194,10 +194,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   defp from_series_list(list) do
-    list = Enum.map(list, &Shared.to_polars_s/1)
+    list = Enum.map(list, & &1.data)
 
     case Native.df_new(list) do
-      {:ok, df} -> Shared.to_dataframe(df)
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> raise ArgumentError, error
     end
   end
@@ -207,7 +207,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defp to_column_name!(column_name) do
     raise ArgumentError,
-          "expected colum name to be either string or atom, got: #{inspect(column_name)}"
+          "expected column name to be either string or atom, got: #{inspect(column_name)}"
   end
 
   # Like `Explorer.Series.from_list/2`, but gives a better error message with the series name.
@@ -228,7 +228,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     names = if atom_keys?, do: df |> names() |> Enum.map(&String.to_atom/1), else: names(df)
 
     polars_df
-    |> Enum.map(fn s -> s |> Shared.to_series() |> PolarsSeries.to_list() end)
+    |> Enum.map(fn s -> s |> Shared.create_series() |> PolarsSeries.to_list() end)
     |> Enum.zip_with(fn row -> names |> Enum.zip(row) |> Map.new() end)
   end
 
@@ -273,8 +273,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def select(df, columns, :keep) when is_list(columns),
     do: Shared.apply_native(df, :df_select, [columns])
 
-  def select(%{groups: groups} = df, columns, :drop) when is_list(columns),
-    do: df |> Shared.to_polars_df() |> drop(columns) |> Shared.to_dataframe(groups)
+  def select(df, columns, :drop) when is_list(columns),
+    do: df.data |> drop(columns) |> Shared.update_dataframe(df)
 
   defp drop(polars_df, column_names),
     do:
@@ -285,11 +285,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def filter(df, %Series{} = mask),
-    do: Shared.apply_native(df, :df_filter, [Shared.to_polars_s(mask)])
+    do: Shared.apply_native(df, :df_filter, [mask.data])
 
   @impl true
   def mutate(%DataFrame{groups: []} = df, columns) do
-    columns |> Enum.reduce(df, &mutate_reducer/2) |> Shared.to_dataframe()
+    Enum.reduce(columns, df, &mutate_reducer/2)
   end
 
   def mutate(%DataFrame{groups: groups} = df, columns) do
@@ -305,8 +305,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp mutate_reducer({column_name, %Series{} = series}, %DataFrame{} = df)
        when is_binary(column_name) do
     check_series_size(df, series, column_name)
-    series = series |> PolarsSeries.rename(column_name) |> Shared.to_polars_s()
-    Shared.apply_native(df, :df_with_column, [series])
+    series = PolarsSeries.rename(series, column_name)
+    Shared.apply_native(df, :df_with_column, [series.data])
   end
 
   defp mutate_reducer({column_name, callback}, %DataFrame{} = df)
@@ -443,7 +443,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     how = Atom.to_string(how)
     {left_on, right_on} = Enum.reduce(on, {[], []}, &join_on_reducer/2)
 
-    Shared.apply_native(left, :df_join, [Shared.to_polars_df(right), left_on, right_on, how])
+    Shared.apply_native(left, :df_join, [right.data, left_on, right_on, how])
   end
 
   defp join_on_reducer(column_name, {left, right}) when is_binary(column_name),
@@ -457,7 +457,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Enum.reduce(dfs, fn x, acc ->
       # Polars requires the _order_ of columns to be the same
       x = DataFrame.select(x, DataFrame.names(acc))
-      Shared.apply_native(acc, :df_vstack, [Shared.to_polars_df(x)])
+      Shared.apply_native(acc, :df_vstack, [x.data])
     end)
   end
 
