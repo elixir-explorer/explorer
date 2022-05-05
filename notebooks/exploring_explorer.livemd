@@ -24,7 +24,7 @@ Mix.install([
 
 ## Reading and writing data
 
-Data can be read from delimited files (like CSV), NDJSon, Parquet, and the Arrow IPC (feather) format. You can also load in data from a map or keyword list of columns with `Explorer.DataFrame.new/1`.
+Data can be read from delimited files (like CSV), NDJSON, Parquet, and the Arrow IPC (feather) format. You can also load in data from a map or keyword list of columns with `Explorer.DataFrame.new/1`.
 
 For CSV, your 'usual suspects' of options are available:
 
