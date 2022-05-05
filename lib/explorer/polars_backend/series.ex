@@ -2,7 +2,6 @@ defmodule Explorer.PolarsBackend.Series do
   @moduledoc false
 
   import Kernel, except: [length: 1]
-  import Explorer.Shared, only: [check_types!: 1, cast_numerics: 2]
 
   alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Native
@@ -325,13 +324,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Escape hatch
   @impl true
-  def transform(series, fun) do
-    list = series |> Series.to_list() |> Enum.map(fun)
-    type = check_types!(list)
-    {list, type} = cast_numerics(list, type)
-
-    from_list(list, type)
-  end
+  def transform(series, fun), do: series |> Series.to_list() |> Enum.map(fun)
 
   # Polars specific functions
 

@@ -111,5 +111,5 @@ defmodule Explorer.Backend.Series do
 
   # Escape hatch
 
-  @callback transform(s, fun) :: s
+  @callback transform(s, fun) :: s | list()
 end

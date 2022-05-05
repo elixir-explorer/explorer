@@ -14,14 +14,13 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback from_csv(
               filename :: String.t(),
-              names :: list(String.t()) | nil,
-              dtypes :: list({String.t(), atom()}) | nil,
+              dtypes :: list({String.t(), atom()}),
               delimiter :: String.t(),
               null_character :: String.t(),
               skip_rows :: integer(),
               header? :: boolean(),
               encoding :: String.t(),
-              max_rows :: integer() | Inf,
+              max_rows :: integer() | nil,
               columns :: list(String.t()) | list(Atom.t()) | list(integer()) | nil,
               infer_schema_length :: integer() | nil,
               parse_dates :: boolean()

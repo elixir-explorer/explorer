@@ -20,7 +20,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def from_csv(
         filename,
-        names,
         dtypes,
         delimiter,
         null_character,
@@ -32,19 +31,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
         infer_schema_length,
         parse_dates
       ) do
-    max_rows = if max_rows == Inf, do: nil, else: max_rows
-
     infer_schema_length =
       if infer_schema_length == nil,
         do: max_rows || @default_infer_schema_length,
         else: infer_schema_length
 
     dtypes =
-      if dtypes do
-        Enum.map(dtypes, fn {column_name, dtype} ->
-          {column_name, Shared.internal_from_dtype(dtype)}
-        end)
-      end
+      Enum.map(dtypes, fn {column_name, dtype} ->
+        {column_name, Shared.internal_from_dtype(dtype)}
+      end)
 
     {columns, with_projection} = column_list_check(columns)
 
@@ -65,10 +60,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
         parse_dates
       )
 
-    case {df, names} do
-      {{:ok, df}, nil} -> {:ok, Shared.create_dataframe(df)}
-      {{:ok, df}, names} -> checked_rename(Shared.create_dataframe(df), names)
-      {{:error, error}, _} -> {:error, error}
+    case df do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -91,17 +85,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
               "expected :columns to be a list of only integers, only atoms, or only binaries, " <>
                 "got: #{inspect(list)}"
     end
-  end
-
-  defp checked_rename(df, names) do
-    if n_columns(df) != length(names) do
-      raise(
-        ArgumentError,
-        "Expected length of provided names (#{length(names)}) to match number of columns in dataframe (#{n_columns(df)})."
-      )
-    end
-
-    {:ok, rename(df, names)}
   end
 
   @impl true
@@ -212,15 +195,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   # Like `Explorer.Series.from_list/2`, but gives a better error message with the series name.
   defp series_from_list!(name, list) do
-    case Explorer.Shared.check_types(list) do
-      {:ok, type} ->
-        {list, type} = Explorer.Shared.cast_numerics(list, type)
-        PolarsSeries.from_list(list, type, name)
-
-      {:error, error} ->
-        message = "cannot create series #{inspect(name)}: " <> error
-        raise ArgumentError, message
-    end
+    type = Explorer.Shared.check_types!(list)
+    {list, type} = Explorer.Shared.cast_numerics(list, type)
+    PolarsSeries.from_list(list, type, name)
+  rescue
+    e ->
+      raise ArgumentError, "cannot create series #{inspect(name)}: " <> Exception.message(e)
   end
 
   @impl true

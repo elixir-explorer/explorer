@@ -24,19 +24,17 @@ Mix.install([
 
 ## Reading and writing data
 
-Data can be read from delimited files (like CSV), Parquet, and the Arrow IPC (feather) format. You can also load in data from a map or keyword list of columns with `Explorer.DataFrame.new/1`.
+Data can be read from delimited files (like CSV), NDJSON, Parquet, and the Arrow IPC (feather) format. You can also load in data from a map or keyword list of columns with `Explorer.DataFrame.new/1`.
 
 For CSV, your 'usual suspects' of options are available:
 
 * `delimiter` - A single character used to separate fields within a record. (default: `","`)
-* `dtypes` - A keyword list of `[column_name: dtype]`. If `nil`, dtypes are imputed from the first 1000 rows. (default: `nil`)
-* `header?` - Does the file have a header of column names as the first row or not? (default: `true`)
-* `max_rows` - Maximum number of lines to read. (default: `Inf`)
-* `names` - A list of column names. Must match the width of the dataframe. (default: nil)
+* `dtypes` - A keyword list of `[column_name: dtype]`. If a type is not specified for a column, it is imputed from the first 1000 rows. (default: `[]`)
+* `header` - Does the file have a header of column names as the first row or not? (default: `true`)
+* `max_rows` - Maximum number of lines to read. (default: `nil`)
 * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
 * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-* `columns` - A list of column names to keep. If present, only these columns are read
-* into the dataframe. (default: `nil`)
+* `columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
 
 `Explorer` also has multiple example datasets built in, which you can load from the `Explorer.Datasets` module like so:
 
@@ -54,7 +52,7 @@ Explorer.DataFrame.table(df)
 
 Writing files is very similar to reading them. The options are a little more limited:
 
-* `header?` - Should the column names be written as the first line of the file? (default: `true`)
+* `header` - Should the column names be written as the first line of the file? (default: `true`)
 * `delimiter` - A single character used to separate fields within a record. (default: `","`)
 
 First, let's add some useful aliases:
