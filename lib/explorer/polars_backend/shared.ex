@@ -10,35 +10,34 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def apply_native(df_or_s, fun, args \\ [])
 
-  def apply_native(%Series{data: series}, fun, args) do
-    result = apply(Native, fun, [series | args])
-    unwrap(result)
+  def apply_native(%Series{} = series, fun, args) do
+    case apply(Native, fun, [series.data | args]) do
+      {:ok, %PolarsDataFrame{} = new_df} -> create_dataframe(new_df)
+      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
+      {:ok, value} -> value
+      {:error, error} -> raise "#{error}"
+    end
   end
 
-  def apply_native(%DataFrame{data: df, groups: groups}, fun, args) do
-    result = apply(Native, fun, [df | args])
-    unwrap(result, groups)
+  def apply_native(%DataFrame{} = df, fun, args) do
+    case apply(Native, fun, [df.data | args]) do
+      {:ok, %PolarsDataFrame{} = new_df} -> update_dataframe(new_df, df)
+      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
+      {:ok, value} -> value
+      {:error, error} -> raise "#{error}"
+    end
   end
 
-  def to_dataframe(df, groups \\ [])
-  def to_dataframe(%DataFrame{} = df, _groups), do: df
+  def create_dataframe(%PolarsDataFrame{} = polars_df),
+    do: %DataFrame{data: polars_df, groups: []}
 
-  def to_dataframe(%PolarsDataFrame{} = polars_df, groups),
-    do: %DataFrame{data: polars_df, groups: groups}
+  def update_dataframe(%PolarsDataFrame{} = polars_df, %DataFrame{} = df),
+    do: %DataFrame{df | data: polars_df}
 
-  def to_series(%PolarsSeries{} = polars_s) do
-    {:ok, dtype} = Native.s_dtype(polars_s)
-    dtype = normalise_dtype(dtype)
-    %Series{data: polars_s, dtype: dtype}
+  def create_series(%PolarsSeries{} = polars_series) do
+    {:ok, dtype} = Native.s_dtype(polars_series)
+    %Series{data: polars_series, dtype: normalise_dtype(dtype)}
   end
-
-  def to_series(%Series{} = series), do: series
-
-  def unwrap(df_or_s, groups \\ [])
-  def unwrap({:ok, %PolarsSeries{} = series}, _), do: to_series(series)
-  def unwrap({:ok, %PolarsDataFrame{} = df}, groups), do: to_dataframe(df, groups)
-  def unwrap({:ok, value}, _), do: value
-  def unwrap({:error, error}, _), do: raise("#{error}")
 
   def normalise_dtype("u32"), do: :integer
   def normalise_dtype("i32"), do: :integer

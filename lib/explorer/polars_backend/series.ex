@@ -34,12 +34,7 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def to_list(%Series{data: series}) do
-    case Native.s_to_list(series) do
-      {:ok, list} -> list
-      {:error, e} -> raise "#{e}"
-    end
-  end
+  def to_list(series), do: Shared.apply_native(series, :s_to_list)
 
   @impl true
   def to_enum(series) do
@@ -258,14 +253,17 @@ defmodule Explorer.PolarsBackend.Series do
   def n_distinct(series), do: Shared.apply_native(series, :s_n_unique)
 
   @impl true
-  def count(%Series{data: polars_series}),
-    do:
-      polars_series
-      |> Native.s_value_counts()
-      |> Shared.unwrap()
-      |> Shared.to_dataframe()
-      |> DataFrame.rename(["values", "counts"])
-      |> DataFrame.mutate(counts: &Series.cast(&1["counts"], :integer))
+  def count(%Series{data: polars_series}) do
+    df =
+      case Native.s_value_counts(polars_series) do
+        {:ok, polars_df} -> Shared.create_dataframe(polars_df)
+        {:error, error} -> raise "#{error}"
+      end
+
+    df
+    |> DataFrame.rename(["values", "counts"])
+    |> DataFrame.mutate(counts: &Series.cast(&1["counts"], :integer))
+  end
 
   # Window
 
