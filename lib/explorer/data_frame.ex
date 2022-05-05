@@ -558,9 +558,11 @@ defmodule Explorer.DataFrame do
 
   defp classify_data([{_, %Series{}} | _] = data), do: {:series, data}
 
-  defp classify_data(data) when map_size(data) > 0 do
-    case Enum.fetch!(data, 0) do
-      {_, %Series{}} -> {:series, data}
+  defp classify_data(%_{} = data), do: {:other, data}
+
+  defp classify_data(data) when is_map(data) do
+    case :maps.next(:maps.iterator(data)) do
+      {_key, %Series{}, _} -> {:series, data}
       _ -> {:other, data}
     end
   end
