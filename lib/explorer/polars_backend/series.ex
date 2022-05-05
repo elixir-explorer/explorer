@@ -2,7 +2,6 @@ defmodule Explorer.PolarsBackend.Series do
   @moduledoc false
 
   import Kernel, except: [length: 1]
-  import Explorer.Shared, only: [cast_numerics: 2]
 
   alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Native
