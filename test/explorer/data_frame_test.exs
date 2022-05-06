@@ -679,7 +679,9 @@ defmodule Explorer.DataFrameTest do
       assert_raise ArgumentError,
                    ~r/id_columns must select at least one existing column, but/,
                    fn ->
-                     DF.pivot_wider(df, "variable", "value", id_columns: &String.starts_with?(&1, "none"))
+                     DF.pivot_wider(df, "variable", "value",
+                       id_columns: &String.starts_with?(&1, "none")
+                     )
                    end
     end
   end
