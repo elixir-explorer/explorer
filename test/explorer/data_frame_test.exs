@@ -552,26 +552,32 @@ defmodule Explorer.DataFrameTest do
                  fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
   end
 
-  test "distinct/2", %{df: df} do
-    df1 = DF.distinct(df, columns: [:year, :country])
-    assert DF.names(df1) == ["year", "country"]
+  describe "distinct/2" do
+    test "with lists", %{df: df} do
+      df1 = DF.distinct(df, columns: [:year, :country])
+      assert DF.names(df1) == ["year", "country"]
 
-    df1 = DF.distinct(df, columns: [0, 1])
-    assert DF.names(df1) == ["year", "country"]
+      df1 = DF.distinct(df, columns: [0, 1])
+      assert DF.names(df1) == ["year", "country"]
 
-    df1 = DF.distinct(df, columns: 0..1)
-    assert DF.names(df1) == ["year", "country"]
+      assert df == DF.distinct(df, columns: [])
 
-    df2 = DF.distinct(df)
-    assert DF.names(df2) == DF.names(df)
+      df2 = DF.distinct(df, columns: [:year, :country], keep_all?: true)
+      assert DF.names(df2) == DF.names(df)
+    end
 
-    df3 = DF.distinct(df, columns: [:year, :country], keep_all?: true)
-    assert DF.names(df3) == DF.names(df)
+    test "with ranges", %{df: df} do
+      df1 = DF.distinct(df, columns: 0..1)
+      assert DF.names(df1) == ["year", "country"]
 
-    df4 = DF.distinct(df, columns: 0..-1)
-    assert DF.names(df4) == DF.names(df)
+      df2 = DF.distinct(df)
+      assert DF.names(df2) == DF.names(df)
 
-    assert df == DF.distinct(df, columns: [])
+      df3 = DF.distinct(df, columns: 0..-1)
+      assert DF.names(df3) == DF.names(df)
+
+      assert df == DF.distinct(df, columns: 100..200)
+    end
   end
 
   test "drop_nil/2" do
@@ -596,53 +602,73 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
   end
 
-  test "rename_with/2", %{df: df} do
-    df_names = DF.names(df)
+  describe "rename_with/2" do
+    test "with lists", %{df: df} do
+      df_names = DF.names(df)
 
-    df1 = DF.rename_with(df, &String.upcase/1, ["total", "cement"])
-    df1_names = DF.names(df1)
+      df1 = DF.rename_with(df, &String.upcase/1, ["total", "cement"])
+      df1_names = DF.names(df1)
 
-    assert df_names -- df1_names == ["total", "cement"]
-    assert df1_names -- df_names == ["TOTAL", "CEMENT"]
+      assert df_names -- df1_names == ["total", "cement"]
+      assert df1_names -- df_names == ["TOTAL", "CEMENT"]
+    end
 
-    df2 = DF.rename_with(df, &String.upcase/1, 0..1)
-    df2_names = DF.names(df2)
+    test "with ranges", %{df: df} do
+      df_names = DF.names(df)
 
-    assert df_names -- df2_names == ["year", "country"]
-    assert df2_names -- df_names == ["YEAR", "COUNTRY"]
+      df1 = DF.rename_with(df, &String.upcase/1, 0..1)
+      df1_names = DF.names(df1)
 
-    df3 = DF.rename_with(df, &String.upcase/1)
+      assert df_names -- df1_names == ["year", "country"]
+      assert df1_names -- df_names == ["YEAR", "COUNTRY"]
 
-    assert Enum.all?(DF.names(df3), &String.match?(&1, ~r/[A-Z]+/))
+      df2 = DF.rename_with(df, &String.upcase/1)
 
-    df4 = DF.rename_with(df, &String.upcase/1, &String.starts_with?(&1, "tot"))
-    df4_names = DF.names(df4)
+      assert Enum.all?(DF.names(df2), &String.match?(&1, ~r/[A-Z]+/))
+    end
 
-    assert df_names -- df4_names == ["total"]
-    assert df4_names -- df_names == ["TOTAL"]
+    test "with a filter function", %{df: df} do
+      df_names = DF.names(df)
 
-    df5 = DF.rename_with(df, &String.upcase/1, &String.starts_with?(&1, "non-existent"))
+      df1 = DF.rename_with(df, &String.upcase/1, &String.starts_with?(&1, "tot"))
+      df1_names = DF.names(df1)
 
-    assert df5 == df
+      assert df_names -- df1_names == ["total"]
+      assert df1_names -- df_names == ["TOTAL"]
+
+      df2 = DF.rename_with(df, &String.upcase/1, &String.starts_with?(&1, "non-existent"))
+
+      assert df2 == df
+    end
   end
 
-  test "pivot_wider/4" do
-    df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
-    df1 = DF.pivot_wider(df, "variable", "value")
+  describe "pivot_wider/4" do
+    test "with multiple id columns" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
+      df1 = DF.pivot_wider(df, "variable", "value")
 
-    assert DF.names(df1) == ["id", "other", "a", "b"]
+      assert DF.names(df1) == ["id", "other_id", "a", "b"]
+    end
 
-    df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id])
-    assert DF.names(df2) == ["id", "a", "b"]
+    test "with one id column" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
 
-    df2 = DF.pivot_wider(df, "variable", "value", id_columns: [0])
-    assert DF.names(df2) == ["id", "a", "b"]
+      df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id])
+      assert DF.names(df2) == ["id", "a", "b"]
 
-    assert_raise ArgumentError,
-                 "id_columns must select at least one existing column, but [] selects none",
-                 fn ->
-                   DF.pivot_wider(df, "variable", "value", id_columns: [])
-                 end
+      df2 = DF.pivot_wider(df, "variable", "value", id_columns: [0])
+      assert DF.names(df2) == ["id", "a", "b"]
+    end
+
+    test "without an id column" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
+
+      assert_raise ArgumentError,
+                   "id_columns must select at least one existing column, but [] selects none",
+                   fn ->
+                     DF.pivot_wider(df, "variable", "value", id_columns: [])
+                   end
+    end
   end
 
   test "table reader integration" do
