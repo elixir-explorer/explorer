@@ -1820,25 +1820,20 @@ defmodule Explorer.DataFrame do
     end
 
     id_columns =
-      if is_function(opts[:id_columns]) do
-        opts[:id_columns]
-      else
-        to_existing_columns(df, opts[:id_columns])
-      end
-
-    id_columns =
-      case id_columns do
-        [] ->
-          # TODO: could we check for empty lists after filtering?
-          raise ArgumentError,
-                "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none"
-
-        [_ | _] = names ->
-          Enum.filter(names, &(&1 not in [names_from, values_from]))
-
+      case opts[:id_columns] do
         fun when is_function(fun) ->
           Enum.filter(names, fn name -> fun.(name) && name not in [names_from, values_from] end)
+
+        names ->
+          names = to_existing_columns(df, names)
+
+          Enum.filter(names, &(&1 not in [names_from, values_from]))
       end
+
+    if id_columns == [] do
+      raise ArgumentError,
+            "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none"
+    end
 
     apply_impl(df, :pivot_wider, [id_columns, names_from, values_from, opts[:names_prefix]])
   end

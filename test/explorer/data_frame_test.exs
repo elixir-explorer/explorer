@@ -660,6 +660,13 @@ defmodule Explorer.DataFrameTest do
       assert DF.names(df2) == ["id", "a", "b"]
     end
 
+    test "with a filter function" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
+
+      df1 = DF.pivot_wider(df, "variable", "value", id_columns: &String.starts_with?(&1, "id"))
+      assert DF.names(df1) == ["id", "a", "b"]
+    end
+
     test "without an id column" do
       df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
 
@@ -667,6 +674,12 @@ defmodule Explorer.DataFrameTest do
                    "id_columns must select at least one existing column, but [] selects none",
                    fn ->
                      DF.pivot_wider(df, "variable", "value", id_columns: [])
+                   end
+
+      assert_raise ArgumentError,
+                   ~r/id_columns must select at least one existing column, but/,
+                   fn ->
+                     DF.pivot_wider(df, "variable", "value", id_columns: &String.starts_with?(&1, "none"))
                    end
     end
   end
