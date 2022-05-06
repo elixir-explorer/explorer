@@ -626,6 +626,25 @@ defmodule Explorer.DataFrameTest do
     assert df5 == df
   end
 
+  test "pivot_wider/4" do
+    df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
+    df1 = DF.pivot_wider(df, "variable", "value")
+
+    assert DF.names(df1) == ["id", "other", "a", "b"]
+
+    df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id])
+    assert DF.names(df2) == ["id", "a", "b"]
+
+    df2 = DF.pivot_wider(df, "variable", "value", id_columns: [0])
+    assert DF.names(df2) == ["id", "a", "b"]
+
+    assert_raise ArgumentError,
+                 "id_columns must select at least one existing column, but [] selects none",
+                 fn ->
+                   DF.pivot_wider(df, "variable", "value", id_columns: [])
+                 end
+  end
+
   test "table reader integration" do
     df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
 

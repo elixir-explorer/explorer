@@ -1774,8 +1774,15 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-  * `id_columns` - A set of columns that uniquely identifies each observation. Defaults to all columns in data except for the columns specified in `names_from` and `values_from`. Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated with existing variables. May accept a filter callback or list of column names.
-  * `names_prefix` - String added to the start of every variable name. This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
+  * `id_columns` - A set of columns that uniquely identifies each observation.
+    Defaults to all columns in data except for the columns specified in `names_from` and `values_from`.
+    Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated
+    with existing variables. May accept a filter callback, a list or a range of column names.
+    Default value is `0..-1`. If an empty list is passed, or a range that results in a empty list of
+    column names, it raises an error.
+
+  * `names_prefix` - String added to the start of every variable name.
+    This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
 
   ## Examples
 
@@ -1797,7 +1804,7 @@ defmodule Explorer.DataFrame do
             Keyword.t()
         ) :: DataFrame.t()
   def pivot_wider(df, names_from, values_from, opts \\ []) do
-    opts = Keyword.validate!(opts, id_columns: [], names_prefix: "")
+    opts = Keyword.validate!(opts, id_columns: 0..-1, names_prefix: "")
 
     [values_from, names_from] = to_existing_columns(df, [values_from, names_from])
 
@@ -1813,12 +1820,20 @@ defmodule Explorer.DataFrame do
     end
 
     id_columns =
-      case opts[:id_columns] do
+      if is_function(opts[:id_columns]) do
+        opts[:id_columns]
+      else
+        to_existing_columns(df, opts[:id_columns])
+      end
+
+    id_columns =
+      case id_columns do
         [] ->
-          Enum.filter(names, &(&1 not in [names_from, values_from]))
+          # TODO: could we check for empty lists after filtering?
+          raise ArgumentError,
+                "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none"
 
         [_ | _] = names ->
-          names = to_existing_columns(df, names)
           Enum.filter(names, &(&1 not in [names_from, values_from]))
 
         fun when is_function(fun) ->
