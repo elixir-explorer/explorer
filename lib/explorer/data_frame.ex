@@ -1197,15 +1197,15 @@ defmodule Explorer.DataFrame do
         callback when is_function(callback) ->
           Enum.filter(names(df), callback)
 
-        [] ->
-          raise ArgumentError,
-                "you must provide at least one column or omit the column option to select all columns"
-
         columns ->
           to_existing_columns(df, columns)
       end
 
-    apply_impl(df, :distinct, [columns, opts[:keep_all?]])
+    if columns != [] do
+      apply_impl(df, :distinct, [columns, opts[:keep_all?]])
+    else
+      df
+    end
   end
 
   @doc """
@@ -1421,7 +1421,7 @@ defmodule Explorer.DataFrame do
         rename_with(df, callback, columns)
 
       [] ->
-        raise ArgumentError, "function to select column names did not return any names"
+        df
     end
   end
 

@@ -571,11 +571,7 @@ defmodule Explorer.DataFrameTest do
     df4 = DF.distinct(df, columns: 0..-1)
     assert DF.names(df4) == DF.names(df)
 
-    assert_raise ArgumentError,
-                 "you must provide at least one column or omit the column option to select all columns",
-                 fn ->
-                   DF.distinct(df, columns: [])
-                 end
+    assert df == DF.distinct(df, columns: [])
   end
 
   test "drop_nil/2" do
@@ -598,6 +594,36 @@ defmodule Explorer.DataFrameTest do
     # It takes the slice of columns in the range
     df4 = DF.drop_nil(df, 0..200)
     assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
+  end
+
+  test "rename_with/2", %{df: df} do
+    df_names = DF.names(df)
+
+    df1 = DF.rename_with(df, &String.upcase/1, ["total", "cement"])
+    df1_names = DF.names(df1)
+
+    assert df_names -- df1_names == ["total", "cement"]
+    assert df1_names -- df_names == ["TOTAL", "CEMENT"]
+
+    df2 = DF.rename_with(df, &String.upcase/1, 0..1)
+    df2_names = DF.names(df2)
+
+    assert df_names -- df2_names == ["year", "country"]
+    assert df2_names -- df_names == ["YEAR", "COUNTRY"]
+
+    df3 = DF.rename_with(df, &String.upcase/1)
+
+    assert Enum.all?(DF.names(df3), &String.match?(&1, ~r/[A-Z]+/))
+
+    df4 = DF.rename_with(df, &String.upcase/1, &String.starts_with?(&1, "tot"))
+    df4_names = DF.names(df4)
+
+    assert df_names -- df4_names == ["total"]
+    assert df4_names -- df_names == ["TOTAL"]
+
+    df5 = DF.rename_with(df, &String.upcase/1, &String.starts_with?(&1, "non-existent"))
+
+    assert df5 == df
   end
 
   test "table reader integration" do
