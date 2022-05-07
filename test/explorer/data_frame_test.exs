@@ -606,7 +606,7 @@ defmodule Explorer.DataFrameTest do
     test "with lists", %{df: df} do
       df_names = DF.names(df)
 
-      df1 = DF.rename_with(df, &String.upcase/1, ["total", "cement"])
+      df1 = DF.rename_with(df, ["total", "cement"], &String.upcase/1)
       df1_names = DF.names(df1)
 
       assert df_names -- df1_names == ["total", "cement"]
@@ -616,7 +616,7 @@ defmodule Explorer.DataFrameTest do
     test "with ranges", %{df: df} do
       df_names = DF.names(df)
 
-      df1 = DF.rename_with(df, &String.upcase/1, 0..1)
+      df1 = DF.rename_with(df, 0..1, &String.upcase/1)
       df1_names = DF.names(df1)
 
       assert df_names -- df1_names == ["year", "country"]
@@ -630,13 +630,13 @@ defmodule Explorer.DataFrameTest do
     test "with a filter function", %{df: df} do
       df_names = DF.names(df)
 
-      df1 = DF.rename_with(df, &String.upcase/1, &String.starts_with?(&1, "tot"))
+      df1 = DF.rename_with(df, &String.starts_with?(&1, "tot"), &String.upcase/1)
       df1_names = DF.names(df1)
 
       assert df_names -- df1_names == ["total"]
       assert df1_names -- df_names == ["TOTAL"]
 
-      df2 = DF.rename_with(df, &String.upcase/1, &String.starts_with?(&1, "non-existent"))
+      df2 = DF.rename_with(df, &String.starts_with?(&1, "non-existent"), &String.upcase/1)
 
       assert df2 == df
     end
