@@ -100,7 +100,7 @@ defmodule Explorer.DataFrame do
   import Explorer.Shared, only: [impl!: 1]
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type data :: Explorer.Backend.DataFrame.t() | Explorer.Backend.LazyDataFrame.t()
+  @type data :: Explorer.Backend.DataFrame.t()
   @type t :: %DataFrame{data: data, groups: [String.t()]}
   @enforce_keys [:data, :groups]
   defstruct [:data, :groups]
