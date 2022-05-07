@@ -36,6 +36,14 @@ defmodule Explorer.Shared do
     do: pick_struct(struct1, struct2)
 
   @doc """
+  Applies a function with args using the implementation of a dataframe or series.
+  """
+  def apply_impl(df_or_series, fun, args \\ []) do
+    impl = impl!(df_or_series)
+    apply(impl, fun, [df_or_series | args])
+  end
+
+  @doc """
   Gets the implementation of a list of maybe dataframes or series.
   """
   def find_impl!(list) do

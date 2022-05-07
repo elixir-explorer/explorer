@@ -96,8 +96,8 @@ defmodule Explorer.DataFrame do
 
   alias __MODULE__, as: DataFrame
   alias Explorer.Series
+  alias Explorer.Shared
 
-  import Explorer.Shared, only: [impl!: 1]
   @valid_dtypes Explorer.Shared.dtypes()
 
   @type data :: Explorer.Backend.DataFrame.t()
@@ -343,7 +343,7 @@ defmodule Explorer.DataFrame do
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_parquet(df, filename) do
-    apply_impl(df, :to_parquet, [filename])
+    Shared.apply_impl(df, :to_parquet, [filename])
   end
 
   @doc """
@@ -423,7 +423,7 @@ defmodule Explorer.DataFrame do
           {:ok, String.t()} | {:error, term()}
   def to_csv(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    apply_impl(df, :to_csv, [filename, opts[:header], opts[:delimiter]])
+    Shared.apply_impl(df, :to_csv, [filename, opts[:header], opts[:delimiter]])
   end
 
   @doc """
@@ -475,7 +475,7 @@ defmodule Explorer.DataFrame do
   @spec to_ndjson(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_ndjson(df, filename) do
-    apply_impl(df, :to_ndjson, [filename])
+    Shared.apply_impl(df, :to_ndjson, [filename])
   end
 
   @doc """
@@ -496,7 +496,7 @@ defmodule Explorer.DataFrame do
   @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
   def dump_csv(df, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
+    Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
   end
 
   ## Conversion
@@ -619,7 +619,7 @@ defmodule Explorer.DataFrame do
     atom_keys = opts[:atom_keys]
 
     for name <- names(df), into: %{} do
-      series = apply_impl(df, :pull, [name])
+      series = Shared.apply_impl(df, :pull, [name])
       key = if atom_keys, do: String.to_atom(name), else: name
       {key, Series.to_list(series)}
     end
@@ -652,7 +652,7 @@ defmodule Explorer.DataFrame do
 
     for name <- names(df), into: %{} do
       key = if atom_keys, do: String.to_atom(name), else: name
-      {key, apply_impl(df, :pull, [name])}
+      {key, Shared.apply_impl(df, :pull, [name])}
     end
   end
 
@@ -682,7 +682,7 @@ defmodule Explorer.DataFrame do
   def to_rows(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false)
 
-    apply_impl(df, :to_rows, [opts[:atom_keys]])
+    Shared.apply_impl(df, :to_rows, [opts[:atom_keys]])
   end
 
   # Introspection
@@ -698,7 +698,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec names(df :: DataFrame.t()) :: [String.t()]
-  def names(df), do: apply_impl(df, :names)
+  def names(df), do: Shared.apply_impl(df, :names)
 
   @doc """
   Gets the dtypes of the dataframe columns.
@@ -711,7 +711,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec dtypes(df :: DataFrame.t()) :: [atom()]
-  def dtypes(df), do: apply_impl(df, :dtypes)
+  def dtypes(df), do: Shared.apply_impl(df, :dtypes)
 
   @doc """
   Gets the shape of the dataframe as a `{height, width}` tuple.
@@ -724,7 +724,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec shape(df :: DataFrame.t()) :: {integer(), integer()}
-  def shape(df), do: apply_impl(df, :shape)
+  def shape(df), do: Shared.apply_impl(df, :shape)
 
   @doc """
   Returns the number of rows in the dataframe.
@@ -737,7 +737,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec n_rows(df :: DataFrame.t()) :: integer()
-  def n_rows(df), do: apply_impl(df, :n_rows)
+  def n_rows(df), do: Shared.apply_impl(df, :n_rows)
 
   @doc """
   Returns the number of columns in the dataframe.
@@ -750,7 +750,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec n_columns(df :: DataFrame.t()) :: integer()
-  def n_columns(df), do: apply_impl(df, :n_columns)
+  def n_columns(df), do: Shared.apply_impl(df, :n_columns)
 
   @doc """
   Returns the groups of a dataframe.
@@ -791,7 +791,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def head(df, nrows \\ 5), do: apply_impl(df, :head, [nrows])
+  def head(df, nrows \\ 5), do: Shared.apply_impl(df, :head, [nrows])
 
   @doc """
   Returns the last *n* rows of the dataframe.
@@ -816,7 +816,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def tail(df, nrows \\ 5), do: apply_impl(df, :tail, [nrows])
+  def tail(df, nrows \\ 5), do: Shared.apply_impl(df, :tail, [nrows])
 
   @doc """
   Selects a subset of columns by name.
@@ -894,7 +894,7 @@ defmodule Explorer.DataFrame do
   def select(df, columns, keep_or_drop) do
     columns = to_existing_columns(df, columns)
 
-    apply_impl(df, :select, [columns, keep_or_drop])
+    Shared.apply_impl(df, :select, [columns, keep_or_drop])
   end
 
   @doc """
@@ -958,7 +958,7 @@ defmodule Explorer.DataFrame do
         )
 
       true ->
-        apply_impl(df, :filter, [mask])
+        Shared.apply_impl(df, :filter, [mask])
     end
   end
 
@@ -1065,7 +1065,7 @@ defmodule Explorer.DataFrame do
   def mutate(df, columns) when is_column_pairs(columns) do
     pairs = to_column_pairs(df, columns)
 
-    apply_impl(df, :mutate, [Map.new(pairs)])
+    Shared.apply_impl(df, :mutate, [Map.new(pairs)])
   end
 
   @doc """
@@ -1133,7 +1133,7 @@ defmodule Explorer.DataFrame do
 
     columns = to_existing_columns(df, columns)
 
-    apply_impl(df, :arrange, [Enum.zip(dirs, columns)])
+    Shared.apply_impl(df, :arrange, [Enum.zip(dirs, columns)])
   end
 
   def arrange(df, column) when is_column(column), do: arrange(df, [column])
@@ -1202,7 +1202,7 @@ defmodule Explorer.DataFrame do
       end
 
     if columns != [] do
-      apply_impl(df, :distinct, [columns, opts[:keep_all?]])
+      Shared.apply_impl(df, :distinct, [columns, opts[:keep_all?]])
     else
       df
     end
@@ -1251,7 +1251,7 @@ defmodule Explorer.DataFrame do
   def drop_nil(df, columns) do
     columns = to_existing_columns(df, columns)
 
-    apply_impl(df, :drop_nil, [columns])
+    Shared.apply_impl(df, :drop_nil, [columns])
   end
 
   @doc """
@@ -1301,7 +1301,8 @@ defmodule Explorer.DataFrame do
   def rename(df, [name | _] = names) when is_column_name(name) do
     new_names = to_column_names(names)
     check_new_names_length!(df, new_names)
-    apply_impl(df, :rename, [new_names])
+
+    Shared.apply_impl(df, :rename, [new_names])
   end
 
   def rename(df, names) when is_column_pairs(names) do
@@ -1454,7 +1455,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   def dummies(df, columns),
-    do: apply_impl(df, :dummies, [to_existing_columns(df, columns)])
+    do: Shared.apply_impl(df, :dummies, [to_existing_columns(df, columns)])
 
   @doc """
   Extracts a single column as a series.
@@ -1480,7 +1481,7 @@ defmodule Explorer.DataFrame do
   def pull(df, column) when is_column(column) do
     [column] = to_existing_columns(df, [column])
 
-    apply_impl(df, :pull, [column])
+    Shared.apply_impl(df, :pull, [column])
   end
 
   @doc """
@@ -1541,7 +1542,7 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  def slice(df, offset, length), do: apply_impl(df, :slice, [offset, length])
+  def slice(df, offset, length), do: Shared.apply_impl(df, :slice, [offset, length])
 
   @doc """
   Subset rows with a list of indices.
@@ -1569,7 +1570,7 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    apply_impl(df, :take, [row_indices])
+    Shared.apply_impl(df, :take, [row_indices])
   end
 
   @doc """
@@ -1644,7 +1645,7 @@ defmodule Explorer.DataFrame do
         :ok
     end
 
-    apply_impl(df, :sample, [n, opts[:replacement], opts[:seed]])
+    Shared.apply_impl(df, :sample, [n, opts[:replacement], opts[:seed]])
   end
 
   def sample(df, frac, opts) when is_float(frac) do
@@ -1752,7 +1753,12 @@ defmodule Explorer.DataFrame do
               "value columns may only include one dtype but found multiple dtypes"
     end
 
-    apply_impl(df, :pivot_longer, [columns, value_columns, opts[:names_to], opts[:values_to]])
+    Shared.apply_impl(df, :pivot_longer, [
+      columns,
+      value_columns,
+      opts[:names_to],
+      opts[:values_to]
+    ])
   end
 
   @doc """
@@ -1827,7 +1833,7 @@ defmodule Explorer.DataFrame do
             "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none"
     end
 
-    apply_impl(df, :pivot_wider, [id_columns, names_from, values_from, opts[:names_prefix]])
+    Shared.apply_impl(df, :pivot_wider, [id_columns, names_from, values_from, opts[:names_prefix]])
   end
 
   # Two table verbs
@@ -1971,7 +1977,7 @@ defmodule Explorer.DataFrame do
           other
       end
 
-    apply_impl(left, :join, [right, on, how])
+    Shared.apply_impl(left, :join, [right, on, how])
   end
 
   defp find_overlapping_columns(left_columns, right_columns) do
@@ -2011,11 +2017,11 @@ defmodule Explorer.DataFrame do
     changed_types = compute_changed_types_concat_rows(dfs)
 
     if Enum.empty?(changed_types) do
-      apply_impl(dfs, :concat_rows)
+      Shared.apply_impl(dfs, :concat_rows)
     else
       dfs
       |> cast_numeric_columns_to_float(changed_types)
-      |> apply_impl(:concat_rows)
+      |> Shared.apply_impl(:concat_rows)
     end
   end
 
@@ -2133,7 +2139,7 @@ defmodule Explorer.DataFrame do
     names = names(df)
     Enum.each(groups, fn name -> maybe_raise_column_not_found(names, name) end)
 
-    apply_impl(df, :group_by, [groups])
+    Shared.apply_impl(df, :group_by, [groups])
   end
 
   def group_by(df, group) when is_binary(group), do: group_by(df, [group])
@@ -2177,7 +2183,7 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    apply_impl(df, :ungroup, [groups])
+    Shared.apply_impl(df, :ungroup, [groups])
   end
 
   def ungroup(df, group) when is_binary(group), do: ungroup(df, [group])
@@ -2236,7 +2242,7 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    apply_impl(df, :summarise, [Map.new(column_pairs)])
+    Shared.apply_impl(df, :summarise, [Map.new(column_pairs)])
   end
 
   @doc """
@@ -2283,11 +2289,6 @@ defmodule Explorer.DataFrame do
   defp backend_from_options!(opts) do
     backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
     :"#{backend}.DataFrame"
-  end
-
-  defp apply_impl(df, fun, args \\ []) do
-    impl = impl!(df)
-    apply(impl, fun, [df | args])
   end
 
   defp maybe_raise_column_not_found(names, name) do
