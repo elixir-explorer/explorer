@@ -239,6 +239,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def data_for_inspect(df, opts) do
+    {n_rows, n_columns} = shape(df)
+
+    series =
+      for name <- names(df) do
+        series = df |> pull(name) |> Series.slice(0, opts.limit + 1)
+        {name, Series.dtype(series), Series.to_list(series)}
+      end
+
+    {n_rows, n_columns, "Polars", series}
+  end
+
+  @impl true
   def n_columns(df), do: Shared.apply_native(df, :df_width)
 
   # Single table verbs

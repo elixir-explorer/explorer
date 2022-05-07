@@ -59,6 +59,11 @@ defmodule Explorer.Backend.DataFrame do
   @callback shape(df) :: {integer(), integer()}
   @callback n_rows(df) :: integer()
   @callback n_columns(df) :: integer()
+  @callback data_for_inspect(df, opts :: Inspect.Opts.t()) ::
+              {rows :: nil | non_neg_integer(),
+               columns ::
+                 non_neg_integer(), backend :: atom() | String.t(),
+               series :: [{name :: String.t(), dtype :: atom() | String.t(), values :: list()}]}
 
   # Single table verbs
 

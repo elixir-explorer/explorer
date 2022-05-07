@@ -112,4 +112,11 @@ defmodule Explorer.Shared do
   end
 
   def cast_numerics(list, type), do: {list, type}
+
+  @doc """
+  Helper for shared behaviour in inspect.
+  """
+  def to_string(i, _opts) when is_nil(i), do: "nil"
+  def to_string(i, _opts) when is_binary(i), do: "\"#{i}\""
+  def to_string(i, _opts), do: Kernel.to_string(i)
 end

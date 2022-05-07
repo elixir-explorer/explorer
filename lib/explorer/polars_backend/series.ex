@@ -339,14 +339,3 @@ defmodule Explorer.PolarsBackend.Series do
       |> List.duplicate(PolarsSeries.size(lhs))
       |> Series.from_list()
 end
-
-defimpl Inspect, for: Explorer.PolarsBackend.Series do
-  alias Explorer.PolarsBackend.Native
-
-  def inspect(s, _opts) do
-    case Native.s_as_str(s) do
-      {:ok, str} -> str
-      {:error, error} -> raise "#{error}"
-    end
-  end
-end

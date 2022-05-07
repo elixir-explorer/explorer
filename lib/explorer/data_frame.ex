@@ -2322,6 +2322,60 @@ defmodule Explorer.DataFrame do
     |> Enum.sort(&(elem(&1, 1) <= elem(&2, 1)))
     |> Enum.map(fn {_, key} -> ["      * ", inspect(key), ?\n] end)
   end
+
+  defimpl Inspect do
+    import Inspect.Algebra
+
+    alias Explorer.DataFrame
+    alias Explorer.Series
+
+    @default_limit 5
+
+    def inspect(%DataFrame{groups: groups} = df, opts) do
+      opts = Map.put(opts, :limit, @default_limit)
+      open = color("[", :list, opts)
+      close = color("]", :list, opts)
+
+      {rows, columns, backend, series} = Shared.apply_impl(df, :data_for_inspect, [opts])
+
+      cols_algebra =
+        for {name, dtype, values} <- series do
+          data = container_doc(open, values, close, opts, &Shared.to_string/2)
+
+          concat([
+            line(),
+            color("#{name} ", :map, opts),
+            color("#{dtype}", :atom, opts),
+            " ",
+            data
+          ])
+        end
+
+      force_unfit(
+        concat([
+          color("#Explorer.DataFrame<", :map, opts),
+          nest(
+            concat([
+              line(),
+              color("#{backend}", :atom, opts),
+              open,
+              "#{rows} x #{columns}",
+              close,
+              groups_algebra(groups, opts) | cols_algebra
+            ]),
+            2
+          ),
+          line(),
+          nest(color(">", :map, opts), 0)
+        ])
+      )
+    end
+
+    defp groups_algebra([_ | _] = groups, opts),
+      do: concat([line(), color("Groups: ", :atom, opts), to_doc(groups, opts)])
+
+    defp groups_algebra([], _), do: ""
+  end
 end
 
 defimpl Table.Reader, for: Explorer.DataFrame do

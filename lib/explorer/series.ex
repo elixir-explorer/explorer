@@ -2046,4 +2046,37 @@ defmodule Explorer.Series do
         "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{left_dtype} and " <>
           "#{right_dtype}."
       )
+
+  defimpl Inspect do
+    import Inspect.Algebra
+
+    alias Explorer.Series
+
+    def inspect(%Series{dtype: dtype} = series, opts) do
+      open = color("[", :list, opts)
+      close = color("]", :list, opts)
+      dtype = color("#{dtype}", :atom, opts)
+      size = series |> Series.size() |> Integer.to_string()
+
+      data =
+        container_doc(
+          open,
+          series |> Series.slice(0, opts.limit + 1) |> Series.to_list(),
+          close,
+          opts,
+          &Shared.to_string/2
+        )
+
+      inner = concat([line(), dtype, open, size, close, line(), data])
+
+      force_unfit(
+        concat([
+          color("#Explorer.Series<", :map, opts),
+          nest(inner, 2),
+          line(),
+          color(">", :map, opts)
+        ])
+      )
+    end
+  end
 end
