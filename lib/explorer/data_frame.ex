@@ -1291,28 +1291,16 @@ defmodule Explorer.DataFrame do
         b integer [1, 3, 1]
       >
 
-  Or if you want to use a function:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1])
-      iex> Explorer.DataFrame.rename(df, &(&1 <> "_test"))
-      #Explorer.DataFrame<
-        [rows: 3, columns: 2]
-        a_test string ["a", "b", "a"]
-        b_test integer [1, 3, 1]
-      >
-
   """
   @doc type: :single
   @spec rename(
           df :: DataFrame.t(),
-          names :: column_names() | column_pairs(column_name()) | function()
+          names :: column_names() | column_pairs(column_name())
         ) ::
           DataFrame.t()
   def rename(df, [name | _] = names) when is_column_name(name) do
     new_names = to_column_names(names)
-
     check_new_names_length!(df, new_names)
-
     apply_impl(df, :rename, [new_names])
   end
 
@@ -1330,9 +1318,6 @@ defmodule Explorer.DataFrame do
     |> Enum.map(fn name -> Map.get(pairs_map, name, name) end)
     |> then(&rename(df, &1))
   end
-
-  def rename(df, names) when is_function(names),
-    do: df |> names() |> Enum.map(names) |> then(&rename(df, &1))
 
   defp check_new_names_length!(df, names) do
     width = n_columns(df)
@@ -1373,7 +1358,7 @@ defmodule Explorer.DataFrame do
   A callback can be used to filter the column names that will be renamed, similarly to `select/3`:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.rename_with(df, &String.trim_trailing(&1, "_fuel"), &String.ends_with?(&1, "_fuel"))
+      iex> Explorer.DataFrame.rename_with(df, &String.ends_with?(&1, "_fuel"), &String.trim_trailing(&1, "_fuel"))
       #Explorer.DataFrame<
         [rows: 1094, columns: 10]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
@@ -1391,7 +1376,7 @@ defmodule Explorer.DataFrame do
   Or you can just pass in the list of column names you'd like to apply the function to:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.rename_with(df, &String.upcase/1, ["total", "cement"])
+      iex> Explorer.DataFrame.rename_with(df, ["total", "cement"], &String.upcase/1)
       #Explorer.DataFrame<
         [rows: 1094, columns: 10]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
@@ -1409,27 +1394,34 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec rename_with(
           df :: DataFrame.t(),
-          callback :: function(),
-          columns :: columns() | function()
+          columns :: columns() | function(),
+          callback :: function()
         ) ::
           DataFrame.t()
-  def rename_with(df, callback, columns \\ 0..-1)
+  def rename_with(df, columns \\ 0..-1, callback)
 
-  def rename_with(df, callback, columns) when is_function(callback) and is_function(columns) do
+  def rename_with(df, columns, callback) when is_function(callback) and is_function(columns) do
     case df |> names() |> Enum.filter(columns) do
       [column | _] = columns when is_column(column) ->
-        rename_with(df, callback, columns)
+        rename_with(df, columns, callback)
 
       [] ->
         df
     end
   end
 
-  def rename_with(df, callback, columns) when is_function(callback) do
-    old_names = names(df)
+  def rename_with(df, 0..-1//1, callback) when is_function(callback) do
+    df
+    |> names()
+    |> Enum.map(callback)
+    |> then(&rename(df, &1))
+  end
+
+  def rename_with(df, columns, callback) when is_function(callback) do
     columns = to_existing_columns(df, columns)
 
-    old_names
+    df
+    |> names()
     |> Enum.map(fn name -> if name in columns, do: callback.(name), else: name end)
     |> then(&rename(df, &1))
   end
