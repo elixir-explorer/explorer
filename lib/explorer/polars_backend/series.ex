@@ -13,7 +13,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   defstruct resource: nil, reference: nil
 
-  @behaviour Explorer.Backend.Series
+  use Explorer.Backend.Series
 
   # Conversion
 

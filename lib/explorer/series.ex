@@ -2048,35 +2048,10 @@ defmodule Explorer.Series do
       )
 
   defimpl Inspect do
-    import Inspect.Algebra
+    alias Explorer.Shared
 
-    alias Explorer.Series
-
-    def inspect(%Series{dtype: dtype} = series, opts) do
-      open = color("[", :list, opts)
-      close = color("]", :list, opts)
-      dtype = color("#{dtype}", :atom, opts)
-      size = series |> Series.size() |> Integer.to_string()
-
-      data =
-        container_doc(
-          open,
-          series |> Series.slice(0, opts.limit + 1) |> Series.to_list(),
-          close,
-          opts,
-          &Shared.to_string/2
-        )
-
-      inner = concat([line(), dtype, open, size, close, line(), data])
-
-      force_unfit(
-        concat([
-          color("#Explorer.Series<", :map, opts),
-          nest(inner, 2),
-          line(),
-          color(">", :map, opts)
-        ])
-      )
+    def inspect(series, opts) do
+      Shared.apply_impl(series, :inspect, [opts])
     end
   end
 end

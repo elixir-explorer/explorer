@@ -59,11 +59,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback shape(df) :: {integer(), integer()}
   @callback n_rows(df) :: integer()
   @callback n_columns(df) :: integer()
-  @callback data_for_inspect(df, opts :: Inspect.Opts.t()) ::
-              {rows :: nil | non_neg_integer(),
-               columns ::
-                 non_neg_integer(), backend :: atom() | String.t(),
-               series :: [{name :: String.t(), dtype :: atom() | String.t(), values :: list()}]}
+  @callback inspect(df, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
 
   # Single table verbs
 
@@ -113,4 +109,59 @@ defmodule Explorer.Backend.DataFrame do
   @callback group_by(df, columns :: [column_name]) :: df
   @callback ungroup(df, columns :: [column_name]) :: df
   @callback summarise(df, aggregations :: map()) :: df
+
+  defmacro __using__(_opts) do
+    quote location: :keep do
+      @behaviour Explorer.Backend.DataFrame
+
+      defp default_inspect(n_rows, n_columns, backend, series, groups, opts) do
+        import Inspect.Algebra
+
+        open = color("[", :list, opts)
+        close = color("]", :list, opts)
+
+        cols_algebra =
+          for {name, dtype, values} <- series do
+            data = container_doc(open, values, close, opts, &Explorer.Shared.to_string/2)
+
+            concat([
+              line(),
+              color("#{name} ", :map, opts),
+              color("#{dtype}", :atom, opts),
+              " ",
+              data
+            ])
+          end
+
+        force_unfit(
+          concat([
+            color("#Explorer.DataFrame<", :map, opts),
+            nest(
+              concat([
+                line(),
+                color("#{backend}", :atom, opts),
+                open,
+                "#{n_rows} x #{n_columns}",
+                close,
+                groups_algebra(groups, opts) | cols_algebra
+              ]),
+              2
+            ),
+            line(),
+            nest(color(">", :map, opts), 0)
+          ])
+        )
+      end
+
+      defp groups_algebra([_ | _] = groups, opts),
+        do:
+          Inspect.Algebra.concat([
+            Inspect.Algebra.line(),
+            Inspect.Algebra.color("Groups: ", :atom, opts),
+            Inspect.Algebra.to_doc(groups, opts)
+          ])
+
+      defp groups_algebra([], _), do: ""
+    end
+  end
 end

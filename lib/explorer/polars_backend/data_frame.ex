@@ -11,7 +11,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defstruct resource: nil, reference: nil
 
-  @behaviour Explorer.Backend.DataFrame
+  use Explorer.Backend.DataFrame
 
   @default_infer_schema_length 1000
 
@@ -239,7 +239,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def data_for_inspect(df, opts) do
+  def inspect(%{groups: groups} = df, opts) do
     {n_rows, n_columns} = shape(df)
 
     series =
@@ -248,7 +248,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         {name, Series.dtype(series), Series.to_list(series)}
       end
 
-    {n_rows, n_columns, "Polars", series}
+    default_inspect(n_rows, n_columns, "Polars", series, groups, opts)
   end
 
   @impl true
