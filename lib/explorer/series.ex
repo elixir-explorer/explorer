@@ -1742,7 +1742,7 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list(["a", "a", "b", "c", "c", "c"])
       iex> Explorer.Series.count(s)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         values string ["c", "a", "b"]
         counts integer [3, 2, 1]
       >

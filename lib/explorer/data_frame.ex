@@ -7,7 +7,7 @@ defmodule Explorer.DataFrame do
 
       iex> Explorer.Datasets.iris()
       #Explorer.DataFrame<
-        [rows: 150, columns: 5]
+        Polars[150 x 5]
         sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
         sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
         petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
@@ -32,7 +32,7 @@ defmodule Explorer.DataFrame do
 
       iex> Explorer.DataFrame.new(a: ["a", "b"], b: [1, 2])
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         a string ["a", "b"]
         b integer [1, 2]
       >
@@ -516,7 +516,7 @@ defmodule Explorer.DataFrame do
 
       iex> Explorer.DataFrame.new(%{floats: Explorer.Series.from_list([1.0, 2.0]), ints: Explorer.Series.from_list([1, nil])})
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
@@ -525,14 +525,14 @@ defmodule Explorer.DataFrame do
 
       iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, nil]})
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
 
       iex> Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
@@ -545,7 +545,7 @@ defmodule Explorer.DataFrame do
       iex> rows = [%{id: 1, name: "José"}, %{id: 2, name: "Christopher"}, %{id: 3, name: "Cristine"}]
       iex> Explorer.DataFrame.new(rows)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         id integer [1, 2, 3]
         name string ["José", "Christopher", "Cristine"]
       >
@@ -553,7 +553,7 @@ defmodule Explorer.DataFrame do
       iex> rows = [[id: 1, name: "José"], [id: 2, name: "Christopher"], [id: 3, name: "Cristine"]]
       iex> Explorer.DataFrame.new(rows)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         id integer [1, 2, 3]
         name string ["José", "Christopher", "Cristine"]
       >
@@ -776,7 +776,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.head(df)
       #Explorer.DataFrame<
-        [rows: 5, columns: 10]
+        Polars[5 x 10]
         year integer [2010, 2010, 2010, 2010, 2010]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA"]
         total integer [2308, 1254, 32500, 141, 7924]
@@ -801,7 +801,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.tail(df)
       #Explorer.DataFrame<
-        [rows: 5, columns: 10]
+        Polars[5 x 10]
         year integer [2014, 2014, 2014, 2014, 2014]
         country string ["VIET NAM", "WALLIS AND FUTUNA ISLANDS", "YEMEN", "ZAMBIA", "ZIMBABWE"]
         total integer [45517, 6, 6190, 1228, 3278]
@@ -830,7 +830,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, ["a"])
       #Explorer.DataFrame<
-        [rows: 3, columns: 1]
+        Polars[3 x 1]
         a string ["a", "b", "c"]
       >
 
@@ -840,7 +840,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
       iex> Explorer.DataFrame.select(df, [0, 1])
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
       >
@@ -848,7 +848,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
       iex> Explorer.DataFrame.select(df, 0..1)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
       >
@@ -858,7 +858,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, &String.starts_with?(&1, "b"))
       #Explorer.DataFrame<
-        [rows: 3, columns: 1]
+        Polars[3 x 1]
         b integer [1, 2, 3]
       >
 
@@ -867,14 +867,14 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, ["b"], :drop)
       #Explorer.DataFrame<
-        [rows: 3, columns: 1]
+        Polars[3 x 1]
         a string ["a", "b", "c"]
       >
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
       iex> Explorer.DataFrame.select(df, ["a", "b"], :drop)
       #Explorer.DataFrame<
-        [rows: 3, columns: 1]
+        Polars[3 x 1]
         c integer [4, 5, 6]
       >
 
@@ -907,7 +907,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, Explorer.Series.greater(df["b"], 1))
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         a string ["b", "c"]
         b integer [2, 3]
       >
@@ -919,7 +919,7 @@ defmodule Explorer.DataFrame do
       iex> a_eq = Explorer.Series.equal(df["a"], "b")
       iex> Explorer.DataFrame.filter(df, Explorer.Series.and(a_eq, b_gt))
       #Explorer.DataFrame<
-        [rows: 1, columns: 2]
+        Polars[1 x 2]
         a string ["b"]
         b integer [2]
       >
@@ -929,7 +929,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, [false, true, false])
       #Explorer.DataFrame<
-        [rows: 1, columns: 2]
+        Polars[1 x 2]
         a string ["b"]
         b integer [2]
       >
@@ -939,7 +939,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, &Explorer.Series.greater(&1["b"], 1))
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         a string ["b", "c"]
         b integer [2, 3]
       >
@@ -989,7 +989,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, c: [4, 5, 6])
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
         c integer [4, 5, 6]
@@ -1001,7 +1001,7 @@ defmodule Explorer.DataFrame do
       iex> s = Explorer.Series.from_list([4, 5, 6])
       iex> Explorer.DataFrame.mutate(df, c: s)
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
         c integer [4, 5, 6]
@@ -1012,7 +1012,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, c: &Explorer.Series.add(&1["a"], &1["b"]))
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a integer [4, 5, 6]
         b integer [1, 2, 3]
         c integer [5, 7, 9]
@@ -1023,7 +1023,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: [4, 5, 6])
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a integer [4, 5, 6]
         b integer [1, 2, 3]
       >
@@ -1033,7 +1033,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: 4)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a integer [4, 4, 4]
         b integer [1, 2, 3]
       >
@@ -1043,7 +1043,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: &Explorer.Series.max(&1["b"]))
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a integer [3, 3, 3]
         b integer [1, 2, 3]
       >
@@ -1053,7 +1053,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, %{"c" => [4, 5, 6]})
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
         c integer [4, 5, 6]
@@ -1078,7 +1078,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
       iex> Explorer.DataFrame.arrange(df, "a")
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a string ["a", "b", "c"]
         b integer [3, 1, 2]
       >
@@ -1088,7 +1088,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
       iex> Explorer.DataFrame.arrange(df, desc: "a")
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a string ["c", "b", "a"]
         b integer [2, 1, 3]
       >
@@ -1098,7 +1098,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.arrange(df, asc: "total", desc: "country")
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         year integer [2010, 2012, 2011, 2013, 2014, ...]
         country string ["ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", ...]
         total integer [2121, 2125, 2608, 3184, 3278, ...]
@@ -1148,7 +1148,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"])
       #Explorer.DataFrame<
-        [rows: 1094, columns: 2]
+        Polars[1094 x 2]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
       >
@@ -1159,7 +1159,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"], keep_all?: true)
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -1177,7 +1177,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3])
       iex> Explorer.DataFrame.distinct(df, columns: &String.starts_with?(&1, "x"))
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         x1 integer [1, 3]
         x2 string ["a", "c"]
       >
@@ -1218,7 +1218,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3])
       iex> Explorer.DataFrame.drop_nil(df)
       #Explorer.DataFrame<
-        [rows: 1, columns: 2]
+        Polars[1 x 2]
         a integer [1]
         b integer [1]
       >
@@ -1226,7 +1226,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
       iex> Explorer.DataFrame.drop_nil(df, [:a, :c])
       #Explorer.DataFrame<
-        [rows: 1, columns: 3]
+        Polars[1 x 3]
         a integer [2]
         b integer [nil]
         c integer [5]
@@ -1235,7 +1235,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
       iex> Explorer.DataFrame.drop_nil(df, 0..1)
       #Explorer.DataFrame<
-        [rows: 1, columns: 3]
+        Polars[1 x 3]
         a integer [1]
         b integer [1]
         c integer [nil]
@@ -1266,7 +1266,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, ["c", "d"])
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         c string ["a", "b", "a"]
         d integer [1, 3, 1]
       >
@@ -1276,7 +1276,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, a: "first")
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         first string ["a", "b", "a"]
         b integer [1, 3, 1]
       >
@@ -1286,7 +1286,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, %{"a" => "first"})
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         first string ["a", "b", "a"]
         b integer [1, 3, 1]
       >
@@ -1343,7 +1343,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, &String.upcase/1)
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         YEAR integer [2010, 2010, 2010, 2010, 2010, ...]
         COUNTRY string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         TOTAL integer [2308, 1254, 32500, 141, 7924, ...]
@@ -1361,7 +1361,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, &String.ends_with?(&1, "_fuel"), &String.trim_trailing(&1, "_fuel"))
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -1379,7 +1379,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, ["total", "cement"], &String.upcase/1)
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         TOTAL integer [2308, 1254, 32500, 141, 7924, ...]
@@ -1435,7 +1435,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
       iex> Explorer.DataFrame.dummies(df, ["a"])
       #Explorer.DataFrame<
-        [rows: 4, columns: 3]
+        Polars[4 x 3]
         a_a integer [1, 0, 1, 0]
         a_b integer [0, 1, 0, 0]
         a_c integer [0, 0, 0, 1]
@@ -1444,7 +1444,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
       iex> Explorer.DataFrame.dummies(df, ["a", "b"])
       #Explorer.DataFrame<
-        [rows: 4, columns: 6]
+        Polars[4 x 6]
         a_a integer [1, 0, 1, 0]
         a_b integer [0, 1, 0, 0]
         a_c integer [0, 0, 0, 1]
@@ -1492,7 +1492,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.slice(df, 1, 2)
       #Explorer.DataFrame<
-        [rows: 2, columns: 10]
+        Polars[2 x 10]
         year integer [2010, 2010]
         country string ["ALBANIA", "ALGERIA"]
         total integer [1254, 32500]
@@ -1510,7 +1510,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.slice(df, -10, 2)
       #Explorer.DataFrame<
-        [rows: 2, columns: 10]
+        Polars[2 x 10]
         year integer [2014, 2014]
         country string ["UNITED STATES OF AMERICA", "URUGUAY"]
         total integer [1432855, 1840]
@@ -1528,7 +1528,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.slice(df, -10, 20)
       #Explorer.DataFrame<
-        [rows: 10, columns: 10]
+        Polars[10 x 10]
         year integer [2014, 2014, 2014, 2014, 2014, ...]
         country string ["UNITED STATES OF AMERICA", "URUGUAY", "UZBEKISTAN", "VANUATU", "VENEZUELA", ...]
         total integer [1432855, 1840, 28692, 42, 50510, ...]
@@ -1552,7 +1552,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> Explorer.DataFrame.take(df, [0, 2])
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         a integer [1, 3]
         b string ["a", "c"]
       >
@@ -1594,7 +1594,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.sample(df, 3, seed: 100)
       #Explorer.DataFrame<
-        [rows: 3, columns: 10]
+        Polars[3 x 10]
         year integer [2012, 2012, 2013]
         country string ["ZIMBABWE", "NICARAGUA", "NIGER"]
         total integer [2125, 1260, 529]
@@ -1612,7 +1612,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.sample(df, 0.03, seed: 100)
       #Explorer.DataFrame<
-        [rows: 33, columns: 10]
+        Polars[33 x 10]
         year integer [2013, 2012, 2013, 2012, 2010, ...]
         country string ["BAHAMAS", "POLAND", "SLOVAKIA", "MOZAMBIQUE", "OMAN", ...]
         total integer [764, 81792, 9024, 851, 12931, ...]
@@ -1677,7 +1677,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_columns: &String.ends_with?(&1, "fuel"))
       #Explorer.DataFrame<
-        [rows: 3282, columns: 4]
+        Polars[3282 x 4]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", ...]
@@ -1687,7 +1687,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_columns: ["total"])
       #Explorer.DataFrame<
-        [rows: 1094, columns: 4]
+        Polars[1094 x 4]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         variable string ["total", "total", "total", "total", "total", ...]
@@ -1787,7 +1787,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
       iex> Explorer.DataFrame.pivot_wider(df, "variable", "value")
       #Explorer.DataFrame<
-        [rows: 1, columns: 3]
+        Polars[1 x 3]
         id integer [1]
         a integer [1]
         b integer [2]
@@ -1862,7 +1862,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 2], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right)
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a integer [1, 2, 2]
         b string ["a", "b", "b"]
         c string ["d", "e", "f"]
@@ -1874,7 +1874,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 2], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :left)
       #Explorer.DataFrame<
-        [rows: 4, columns: 3]
+        Polars[4 x 3]
         a integer [1, 2, 2, 3]
         b string ["a", "b", "b", "c"]
         c string ["d", "e", "f", nil]
@@ -1886,7 +1886,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :right)
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a integer [1, 2, 4]
         c string ["d", "e", "f"]
         b string ["a", "b", nil]
@@ -1898,7 +1898,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :outer)
       #Explorer.DataFrame<
-        [rows: 4, columns: 3]
+        Polars[4 x 3]
         a integer [1, 2, 4, 3]
         b string ["a", "b", nil, "c"]
         c string ["d", "e", "f", nil]
@@ -1910,7 +1910,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :cross)
       #Explorer.DataFrame<
-        [rows: 9, columns: 4]
+        Polars[9 x 4]
         a integer [1, 1, 1, 2, 2, ...]
         b string ["a", "a", "a", "b", "b", ...]
         a_right integer [1, 2, 4, 1, 2, ...]
@@ -1923,7 +1923,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(d: [1, 2, 2], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, on: [{"a", "d"}])
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a integer [1, 2, 2]
         b string ["a", "b", "b"]
         c string ["d", "e", "f"]
@@ -1998,7 +1998,7 @@ defmodule Explorer.DataFrame do
       iex> df2 = Explorer.DataFrame.new(x: [4, 5, 6], y: ["d", "e", "f"])
       iex> Explorer.DataFrame.concat_rows([df1, df2])
       #Explorer.DataFrame<
-        [rows: 6, columns: 2]
+        Polars[6 x 2]
         x integer [1, 2, 3, 4, 5, ...]
         y string ["a", "b", "c", "d", "e", ...]
       >
@@ -2007,7 +2007,7 @@ defmodule Explorer.DataFrame do
       iex> df2 = Explorer.DataFrame.new(x: [4.2, 5.3, 6.4], y: ["d", "e", "f"])
       iex> Explorer.DataFrame.concat_rows([df1, df2])
       #Explorer.DataFrame<
-        [rows: 6, columns: 2]
+        Polars[6 x 2]
         x float [1.0, 2.0, 3.0, 4.2, 5.3, ...]
         y string ["a", "b", "c", "d", "e", ...]
       >
@@ -2101,7 +2101,8 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.group_by(df, "country")
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10, groups: ["country"]]
+        Polars[1094 x 10]
+        Groups: ["country"]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -2119,7 +2120,8 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.group_by(df, ["country", "year"])
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10, groups: ["country", "year"]]
+        Polars[1094 x 10]
+        Groups: ["country", "year"]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -2153,7 +2155,8 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.group_by(df, ["country", "year"])
       iex> Explorer.DataFrame.ungroup(df, ["country"])
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10, groups: ["year"]]
+        Polars[1094 x 10]
+        Groups: ["year"]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -2214,7 +2217,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> df |> Explorer.DataFrame.group_by("year") |> Explorer.DataFrame.summarise(total: [:max, :min], country: [:n_unique])
       #Explorer.DataFrame<
-        [rows: 5, columns: 4]
+        Polars[5 x 4]
         year integer [2010, 2011, 2012, 2013, 2014]
         country_n_unique integer [217, 217, 220, 220, 220]
         total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
