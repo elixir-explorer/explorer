@@ -110,12 +110,23 @@ defmodule Explorer.Backend.DataFrame do
   @callback ungroup(df, columns :: [column_name]) :: df
   @callback summarise(df, aggregations :: map()) :: df
 
-  defmacro __using__(_opts) do
-    quote location: :keep do
+  defmacro __using__(opts) do
+    quote location: :keep, bind_quoted: [opts: opts] do
+      @backend Keyword.get(opts, :backend, __MODULE__ |> Module.split() |> Enum.join("."))
       @behaviour Explorer.Backend.DataFrame
 
-      defp default_inspect(n_rows, n_columns, backend, series, groups, opts) do
+      @impl true
+      def inspect(%{groups: groups} = df, opts) do
         import Inspect.Algebra
+        alias Explorer.Series
+
+        {n_rows, n_columns} = shape(df)
+
+        series =
+          for name <- names(df) do
+            series = df |> pull(name) |> Series.slice(0, opts.limit + 1)
+            {name, Series.dtype(series), Series.to_list(series)}
+          end
 
         open = color("[", :list, opts)
         close = color("]", :list, opts)
@@ -139,7 +150,7 @@ defmodule Explorer.Backend.DataFrame do
             nest(
               concat([
                 line(),
-                color("#{backend}", :atom, opts),
+                color("#{@backend}", :atom, opts),
                 open,
                 "#{n_rows} x #{n_columns}",
                 close,
@@ -162,6 +173,8 @@ defmodule Explorer.Backend.DataFrame do
           ])
 
       defp groups_algebra([], _), do: ""
+
+      defoverridable inspect: 2
     end
   end
 end

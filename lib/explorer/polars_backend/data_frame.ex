@@ -11,7 +11,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defstruct resource: nil, reference: nil
 
-  use Explorer.Backend.DataFrame
+  use Explorer.Backend.DataFrame, backend: "Polars"
 
   @default_infer_schema_length 1000
 
@@ -236,19 +236,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> n_rows() end)
 
     groupby |> select(["groups"], :drop) |> mutate(n: n) |> group_by(groups)
-  end
-
-  @impl true
-  def inspect(%{groups: groups} = df, opts) do
-    {n_rows, n_columns} = shape(df)
-
-    series =
-      for name <- names(df) do
-        series = df |> pull(name) |> Series.slice(0, opts.limit + 1)
-        {name, Series.dtype(series), Series.to_list(series)}
-      end
-
-    default_inspect(n_rows, n_columns, "Polars", series, groups, opts)
   end
 
   @impl true

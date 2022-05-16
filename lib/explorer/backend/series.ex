@@ -120,9 +120,9 @@ defmodule Explorer.Backend.Series do
 
       @impl true
       def inspect(%Explorer.Series{dtype: dtype} = series, opts) do
+        import Inspect.Algebra
         alias Explorer.Series
         alias Explorer.Shared
-        import Inspect.Algebra
 
         open = color("[", :list, opts)
         close = color("]", :list, opts)
@@ -149,6 +149,8 @@ defmodule Explorer.Backend.Series do
           ])
         )
       end
+
+      defoverridable inspect: 2
     end
   end
 end

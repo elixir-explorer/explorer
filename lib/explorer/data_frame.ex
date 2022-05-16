@@ -2324,8 +2324,6 @@ defmodule Explorer.DataFrame do
   end
 
   defimpl Inspect do
-    import Inspect.Algebra
-
     alias Explorer.DataFrame
     alias Explorer.Series
 
