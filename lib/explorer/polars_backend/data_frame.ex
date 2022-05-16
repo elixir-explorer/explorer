@@ -11,7 +11,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defstruct resource: nil, reference: nil
 
-  @behaviour Explorer.Backend.DataFrame
+  use Explorer.Backend.DataFrame, backend: "Polars"
 
   @default_infer_schema_length 1000
 

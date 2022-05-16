@@ -7,7 +7,7 @@ defmodule Explorer.DataFrame do
 
       iex> Explorer.Datasets.iris()
       #Explorer.DataFrame<
-        [rows: 150, columns: 5]
+        Polars[150 x 5]
         sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
         sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
         petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
@@ -32,7 +32,7 @@ defmodule Explorer.DataFrame do
 
       iex> Explorer.DataFrame.new(a: ["a", "b"], b: [1, 2])
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         a string ["a", "b"]
         b integer [1, 2]
       >
@@ -96,11 +96,11 @@ defmodule Explorer.DataFrame do
 
   alias __MODULE__, as: DataFrame
   alias Explorer.Series
+  alias Explorer.Shared
 
-  import Explorer.Shared, only: [impl!: 1]
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type data :: Explorer.Backend.DataFrame.t() | Explorer.Backend.LazyDataFrame.t()
+  @type data :: Explorer.Backend.DataFrame.t()
   @type t :: %DataFrame{data: data, groups: [String.t()]}
   @enforce_keys [:data, :groups]
   defstruct [:data, :groups]
@@ -343,7 +343,7 @@ defmodule Explorer.DataFrame do
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_parquet(df, filename) do
-    apply_impl(df, :to_parquet, [filename])
+    Shared.apply_impl(df, :to_parquet, [filename])
   end
 
   @doc """
@@ -423,7 +423,7 @@ defmodule Explorer.DataFrame do
           {:ok, String.t()} | {:error, term()}
   def to_csv(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    apply_impl(df, :to_csv, [filename, opts[:header], opts[:delimiter]])
+    Shared.apply_impl(df, :to_csv, [filename, opts[:header], opts[:delimiter]])
   end
 
   @doc """
@@ -475,7 +475,7 @@ defmodule Explorer.DataFrame do
   @spec to_ndjson(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_ndjson(df, filename) do
-    apply_impl(df, :to_ndjson, [filename])
+    Shared.apply_impl(df, :to_ndjson, [filename])
   end
 
   @doc """
@@ -496,7 +496,7 @@ defmodule Explorer.DataFrame do
   @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
   def dump_csv(df, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
+    Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
   end
 
   ## Conversion
@@ -516,7 +516,7 @@ defmodule Explorer.DataFrame do
 
       iex> Explorer.DataFrame.new(%{floats: Explorer.Series.from_list([1.0, 2.0]), ints: Explorer.Series.from_list([1, nil])})
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
@@ -525,14 +525,14 @@ defmodule Explorer.DataFrame do
 
       iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, nil]})
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
 
       iex> Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
@@ -545,7 +545,7 @@ defmodule Explorer.DataFrame do
       iex> rows = [%{id: 1, name: "José"}, %{id: 2, name: "Christopher"}, %{id: 3, name: "Cristine"}]
       iex> Explorer.DataFrame.new(rows)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         id integer [1, 2, 3]
         name string ["José", "Christopher", "Cristine"]
       >
@@ -553,7 +553,7 @@ defmodule Explorer.DataFrame do
       iex> rows = [[id: 1, name: "José"], [id: 2, name: "Christopher"], [id: 3, name: "Cristine"]]
       iex> Explorer.DataFrame.new(rows)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         id integer [1, 2, 3]
         name string ["José", "Christopher", "Cristine"]
       >
@@ -619,7 +619,7 @@ defmodule Explorer.DataFrame do
     atom_keys = opts[:atom_keys]
 
     for name <- names(df), into: %{} do
-      series = apply_impl(df, :pull, [name])
+      series = Shared.apply_impl(df, :pull, [name])
       key = if atom_keys, do: String.to_atom(name), else: name
       {key, Series.to_list(series)}
     end
@@ -652,7 +652,7 @@ defmodule Explorer.DataFrame do
 
     for name <- names(df), into: %{} do
       key = if atom_keys, do: String.to_atom(name), else: name
-      {key, apply_impl(df, :pull, [name])}
+      {key, Shared.apply_impl(df, :pull, [name])}
     end
   end
 
@@ -682,7 +682,7 @@ defmodule Explorer.DataFrame do
   def to_rows(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false)
 
-    apply_impl(df, :to_rows, [opts[:atom_keys]])
+    Shared.apply_impl(df, :to_rows, [opts[:atom_keys]])
   end
 
   # Introspection
@@ -698,7 +698,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec names(df :: DataFrame.t()) :: [String.t()]
-  def names(df), do: apply_impl(df, :names)
+  def names(df), do: Shared.apply_impl(df, :names)
 
   @doc """
   Gets the dtypes of the dataframe columns.
@@ -711,7 +711,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec dtypes(df :: DataFrame.t()) :: [atom()]
-  def dtypes(df), do: apply_impl(df, :dtypes)
+  def dtypes(df), do: Shared.apply_impl(df, :dtypes)
 
   @doc """
   Gets the shape of the dataframe as a `{height, width}` tuple.
@@ -724,7 +724,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec shape(df :: DataFrame.t()) :: {integer(), integer()}
-  def shape(df), do: apply_impl(df, :shape)
+  def shape(df), do: Shared.apply_impl(df, :shape)
 
   @doc """
   Returns the number of rows in the dataframe.
@@ -737,7 +737,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec n_rows(df :: DataFrame.t()) :: integer()
-  def n_rows(df), do: apply_impl(df, :n_rows)
+  def n_rows(df), do: Shared.apply_impl(df, :n_rows)
 
   @doc """
   Returns the number of columns in the dataframe.
@@ -750,7 +750,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec n_columns(df :: DataFrame.t()) :: integer()
-  def n_columns(df), do: apply_impl(df, :n_columns)
+  def n_columns(df), do: Shared.apply_impl(df, :n_columns)
 
   @doc """
   Returns the groups of a dataframe.
@@ -776,7 +776,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.head(df)
       #Explorer.DataFrame<
-        [rows: 5, columns: 10]
+        Polars[5 x 10]
         year integer [2010, 2010, 2010, 2010, 2010]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA"]
         total integer [2308, 1254, 32500, 141, 7924]
@@ -791,7 +791,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def head(df, nrows \\ 5), do: apply_impl(df, :head, [nrows])
+  def head(df, nrows \\ 5), do: Shared.apply_impl(df, :head, [nrows])
 
   @doc """
   Returns the last *n* rows of the dataframe.
@@ -801,7 +801,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.tail(df)
       #Explorer.DataFrame<
-        [rows: 5, columns: 10]
+        Polars[5 x 10]
         year integer [2014, 2014, 2014, 2014, 2014]
         country string ["VIET NAM", "WALLIS AND FUTUNA ISLANDS", "YEMEN", "ZAMBIA", "ZIMBABWE"]
         total integer [45517, 6, 6190, 1228, 3278]
@@ -816,7 +816,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def tail(df, nrows \\ 5), do: apply_impl(df, :tail, [nrows])
+  def tail(df, nrows \\ 5), do: Shared.apply_impl(df, :tail, [nrows])
 
   @doc """
   Selects a subset of columns by name.
@@ -830,7 +830,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, ["a"])
       #Explorer.DataFrame<
-        [rows: 3, columns: 1]
+        Polars[3 x 1]
         a string ["a", "b", "c"]
       >
 
@@ -840,7 +840,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
       iex> Explorer.DataFrame.select(df, [0, 1])
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
       >
@@ -848,7 +848,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
       iex> Explorer.DataFrame.select(df, 0..1)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
       >
@@ -858,7 +858,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, &String.starts_with?(&1, "b"))
       #Explorer.DataFrame<
-        [rows: 3, columns: 1]
+        Polars[3 x 1]
         b integer [1, 2, 3]
       >
 
@@ -867,14 +867,14 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, ["b"], :drop)
       #Explorer.DataFrame<
-        [rows: 3, columns: 1]
+        Polars[3 x 1]
         a string ["a", "b", "c"]
       >
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
       iex> Explorer.DataFrame.select(df, ["a", "b"], :drop)
       #Explorer.DataFrame<
-        [rows: 3, columns: 1]
+        Polars[3 x 1]
         c integer [4, 5, 6]
       >
 
@@ -894,7 +894,7 @@ defmodule Explorer.DataFrame do
   def select(df, columns, keep_or_drop) do
     columns = to_existing_columns(df, columns)
 
-    apply_impl(df, :select, [columns, keep_or_drop])
+    Shared.apply_impl(df, :select, [columns, keep_or_drop])
   end
 
   @doc """
@@ -907,7 +907,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, Explorer.Series.greater(df["b"], 1))
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         a string ["b", "c"]
         b integer [2, 3]
       >
@@ -919,7 +919,7 @@ defmodule Explorer.DataFrame do
       iex> a_eq = Explorer.Series.equal(df["a"], "b")
       iex> Explorer.DataFrame.filter(df, Explorer.Series.and(a_eq, b_gt))
       #Explorer.DataFrame<
-        [rows: 1, columns: 2]
+        Polars[1 x 2]
         a string ["b"]
         b integer [2]
       >
@@ -929,7 +929,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, [false, true, false])
       #Explorer.DataFrame<
-        [rows: 1, columns: 2]
+        Polars[1 x 2]
         a string ["b"]
         b integer [2]
       >
@@ -939,7 +939,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, &Explorer.Series.greater(&1["b"], 1))
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         a string ["b", "c"]
         b integer [2, 3]
       >
@@ -958,7 +958,7 @@ defmodule Explorer.DataFrame do
         )
 
       true ->
-        apply_impl(df, :filter, [mask])
+        Shared.apply_impl(df, :filter, [mask])
     end
   end
 
@@ -989,7 +989,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, c: [4, 5, 6])
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
         c integer [4, 5, 6]
@@ -1001,7 +1001,7 @@ defmodule Explorer.DataFrame do
       iex> s = Explorer.Series.from_list([4, 5, 6])
       iex> Explorer.DataFrame.mutate(df, c: s)
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
         c integer [4, 5, 6]
@@ -1012,7 +1012,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, c: &Explorer.Series.add(&1["a"], &1["b"]))
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a integer [4, 5, 6]
         b integer [1, 2, 3]
         c integer [5, 7, 9]
@@ -1023,7 +1023,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: [4, 5, 6])
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a integer [4, 5, 6]
         b integer [1, 2, 3]
       >
@@ -1033,7 +1033,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: 4)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a integer [4, 4, 4]
         b integer [1, 2, 3]
       >
@@ -1043,7 +1043,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, a: &Explorer.Series.max(&1["b"]))
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a integer [3, 3, 3]
         b integer [1, 2, 3]
       >
@@ -1053,7 +1053,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, %{"c" => [4, 5, 6]})
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
         c integer [4, 5, 6]
@@ -1065,7 +1065,7 @@ defmodule Explorer.DataFrame do
   def mutate(df, columns) when is_column_pairs(columns) do
     pairs = to_column_pairs(df, columns)
 
-    apply_impl(df, :mutate, [Map.new(pairs)])
+    Shared.apply_impl(df, :mutate, [Map.new(pairs)])
   end
 
   @doc """
@@ -1078,7 +1078,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
       iex> Explorer.DataFrame.arrange(df, "a")
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a string ["a", "b", "c"]
         b integer [3, 1, 2]
       >
@@ -1088,7 +1088,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
       iex> Explorer.DataFrame.arrange(df, desc: "a")
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         a string ["c", "b", "a"]
         b integer [2, 1, 3]
       >
@@ -1098,7 +1098,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.arrange(df, asc: "total", desc: "country")
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         year integer [2010, 2012, 2011, 2013, 2014, ...]
         country string ["ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", ...]
         total integer [2121, 2125, 2608, 3184, 3278, ...]
@@ -1133,7 +1133,7 @@ defmodule Explorer.DataFrame do
 
     columns = to_existing_columns(df, columns)
 
-    apply_impl(df, :arrange, [Enum.zip(dirs, columns)])
+    Shared.apply_impl(df, :arrange, [Enum.zip(dirs, columns)])
   end
 
   def arrange(df, column) when is_column(column), do: arrange(df, [column])
@@ -1148,7 +1148,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"])
       #Explorer.DataFrame<
-        [rows: 1094, columns: 2]
+        Polars[1094 x 2]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
       >
@@ -1159,7 +1159,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"], keep_all?: true)
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -1177,7 +1177,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3])
       iex> Explorer.DataFrame.distinct(df, columns: &String.starts_with?(&1, "x"))
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         x1 integer [1, 3]
         x2 string ["a", "c"]
       >
@@ -1202,7 +1202,7 @@ defmodule Explorer.DataFrame do
       end
 
     if columns != [] do
-      apply_impl(df, :distinct, [columns, opts[:keep_all?]])
+      Shared.apply_impl(df, :distinct, [columns, opts[:keep_all?]])
     else
       df
     end
@@ -1218,7 +1218,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3])
       iex> Explorer.DataFrame.drop_nil(df)
       #Explorer.DataFrame<
-        [rows: 1, columns: 2]
+        Polars[1 x 2]
         a integer [1]
         b integer [1]
       >
@@ -1226,7 +1226,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
       iex> Explorer.DataFrame.drop_nil(df, [:a, :c])
       #Explorer.DataFrame<
-        [rows: 1, columns: 3]
+        Polars[1 x 3]
         a integer [2]
         b integer [nil]
         c integer [5]
@@ -1235,7 +1235,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
       iex> Explorer.DataFrame.drop_nil(df, 0..1)
       #Explorer.DataFrame<
-        [rows: 1, columns: 3]
+        Polars[1 x 3]
         a integer [1]
         b integer [1]
         c integer [nil]
@@ -1251,7 +1251,7 @@ defmodule Explorer.DataFrame do
   def drop_nil(df, columns) do
     columns = to_existing_columns(df, columns)
 
-    apply_impl(df, :drop_nil, [columns])
+    Shared.apply_impl(df, :drop_nil, [columns])
   end
 
   @doc """
@@ -1266,7 +1266,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, ["c", "d"])
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         c string ["a", "b", "a"]
         d integer [1, 3, 1]
       >
@@ -1276,7 +1276,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, a: "first")
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         first string ["a", "b", "a"]
         b integer [1, 3, 1]
       >
@@ -1286,7 +1286,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1])
       iex> Explorer.DataFrame.rename(df, %{"a" => "first"})
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         first string ["a", "b", "a"]
         b integer [1, 3, 1]
       >
@@ -1301,7 +1301,8 @@ defmodule Explorer.DataFrame do
   def rename(df, [name | _] = names) when is_column_name(name) do
     new_names = to_column_names(names)
     check_new_names_length!(df, new_names)
-    apply_impl(df, :rename, [new_names])
+
+    Shared.apply_impl(df, :rename, [new_names])
   end
 
   def rename(df, names) when is_column_pairs(names) do
@@ -1342,7 +1343,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, &String.upcase/1)
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         YEAR integer [2010, 2010, 2010, 2010, 2010, ...]
         COUNTRY string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         TOTAL integer [2308, 1254, 32500, 141, 7924, ...]
@@ -1360,7 +1361,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, &String.ends_with?(&1, "_fuel"), &String.trim_trailing(&1, "_fuel"))
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -1378,7 +1379,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, ["total", "cement"], &String.upcase/1)
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10]
+        Polars[1094 x 10]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         TOTAL integer [2308, 1254, 32500, 141, 7924, ...]
@@ -1434,7 +1435,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
       iex> Explorer.DataFrame.dummies(df, ["a"])
       #Explorer.DataFrame<
-        [rows: 4, columns: 3]
+        Polars[4 x 3]
         a_a integer [1, 0, 1, 0]
         a_b integer [0, 1, 0, 0]
         a_c integer [0, 0, 0, 1]
@@ -1443,7 +1444,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
       iex> Explorer.DataFrame.dummies(df, ["a", "b"])
       #Explorer.DataFrame<
-        [rows: 4, columns: 6]
+        Polars[4 x 6]
         a_a integer [1, 0, 1, 0]
         a_b integer [0, 1, 0, 0]
         a_c integer [0, 0, 0, 1]
@@ -1454,7 +1455,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   def dummies(df, columns),
-    do: apply_impl(df, :dummies, [to_existing_columns(df, columns)])
+    do: Shared.apply_impl(df, :dummies, [to_existing_columns(df, columns)])
 
   @doc """
   Extracts a single column as a series.
@@ -1480,7 +1481,7 @@ defmodule Explorer.DataFrame do
   def pull(df, column) when is_column(column) do
     [column] = to_existing_columns(df, [column])
 
-    apply_impl(df, :pull, [column])
+    Shared.apply_impl(df, :pull, [column])
   end
 
   @doc """
@@ -1491,7 +1492,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.slice(df, 1, 2)
       #Explorer.DataFrame<
-        [rows: 2, columns: 10]
+        Polars[2 x 10]
         year integer [2010, 2010]
         country string ["ALBANIA", "ALGERIA"]
         total integer [1254, 32500]
@@ -1509,7 +1510,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.slice(df, -10, 2)
       #Explorer.DataFrame<
-        [rows: 2, columns: 10]
+        Polars[2 x 10]
         year integer [2014, 2014]
         country string ["UNITED STATES OF AMERICA", "URUGUAY"]
         total integer [1432855, 1840]
@@ -1527,7 +1528,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.slice(df, -10, 20)
       #Explorer.DataFrame<
-        [rows: 10, columns: 10]
+        Polars[10 x 10]
         year integer [2014, 2014, 2014, 2014, 2014, ...]
         country string ["UNITED STATES OF AMERICA", "URUGUAY", "UZBEKISTAN", "VANUATU", "VENEZUELA", ...]
         total integer [1432855, 1840, 28692, 42, 50510, ...]
@@ -1541,7 +1542,7 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  def slice(df, offset, length), do: apply_impl(df, :slice, [offset, length])
+  def slice(df, offset, length), do: Shared.apply_impl(df, :slice, [offset, length])
 
   @doc """
   Subset rows with a list of indices.
@@ -1551,7 +1552,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> Explorer.DataFrame.take(df, [0, 2])
       #Explorer.DataFrame<
-        [rows: 2, columns: 2]
+        Polars[2 x 2]
         a integer [1, 3]
         b string ["a", "c"]
       >
@@ -1569,7 +1570,7 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    apply_impl(df, :take, [row_indices])
+    Shared.apply_impl(df, :take, [row_indices])
   end
 
   @doc """
@@ -1593,7 +1594,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.sample(df, 3, seed: 100)
       #Explorer.DataFrame<
-        [rows: 3, columns: 10]
+        Polars[3 x 10]
         year integer [2012, 2012, 2013]
         country string ["ZIMBABWE", "NICARAGUA", "NIGER"]
         total integer [2125, 1260, 529]
@@ -1611,7 +1612,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.sample(df, 0.03, seed: 100)
       #Explorer.DataFrame<
-        [rows: 33, columns: 10]
+        Polars[33 x 10]
         year integer [2013, 2012, 2013, 2012, 2010, ...]
         country string ["BAHAMAS", "POLAND", "SLOVAKIA", "MOZAMBIQUE", "OMAN", ...]
         total integer [764, 81792, 9024, 851, 12931, ...]
@@ -1644,7 +1645,7 @@ defmodule Explorer.DataFrame do
         :ok
     end
 
-    apply_impl(df, :sample, [n, opts[:replacement], opts[:seed]])
+    Shared.apply_impl(df, :sample, [n, opts[:replacement], opts[:seed]])
   end
 
   def sample(df, frac, opts) when is_float(frac) do
@@ -1676,7 +1677,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_columns: &String.ends_with?(&1, "fuel"))
       #Explorer.DataFrame<
-        [rows: 3282, columns: 4]
+        Polars[3282 x 4]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", ...]
@@ -1686,7 +1687,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_columns: ["total"])
       #Explorer.DataFrame<
-        [rows: 1094, columns: 4]
+        Polars[1094 x 4]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         variable string ["total", "total", "total", "total", "total", ...]
@@ -1752,7 +1753,12 @@ defmodule Explorer.DataFrame do
               "value columns may only include one dtype but found multiple dtypes"
     end
 
-    apply_impl(df, :pivot_longer, [columns, value_columns, opts[:names_to], opts[:values_to]])
+    Shared.apply_impl(df, :pivot_longer, [
+      columns,
+      value_columns,
+      opts[:names_to],
+      opts[:values_to]
+    ])
   end
 
   @doc """
@@ -1781,7 +1787,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
       iex> Explorer.DataFrame.pivot_wider(df, "variable", "value")
       #Explorer.DataFrame<
-        [rows: 1, columns: 3]
+        Polars[1 x 3]
         id integer [1]
         a integer [1]
         b integer [2]
@@ -1827,7 +1833,7 @@ defmodule Explorer.DataFrame do
             "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none"
     end
 
-    apply_impl(df, :pivot_wider, [id_columns, names_from, values_from, opts[:names_prefix]])
+    Shared.apply_impl(df, :pivot_wider, [id_columns, names_from, values_from, opts[:names_prefix]])
   end
 
   # Two table verbs
@@ -1856,7 +1862,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 2], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right)
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a integer [1, 2, 2]
         b string ["a", "b", "b"]
         c string ["d", "e", "f"]
@@ -1868,7 +1874,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 2], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :left)
       #Explorer.DataFrame<
-        [rows: 4, columns: 3]
+        Polars[4 x 3]
         a integer [1, 2, 2, 3]
         b string ["a", "b", "b", "c"]
         c string ["d", "e", "f", nil]
@@ -1880,7 +1886,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :right)
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a integer [1, 2, 4]
         c string ["d", "e", "f"]
         b string ["a", "b", nil]
@@ -1892,7 +1898,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :outer)
       #Explorer.DataFrame<
-        [rows: 4, columns: 3]
+        Polars[4 x 3]
         a integer [1, 2, 4, 3]
         b string ["a", "b", nil, "c"]
         c string ["d", "e", "f", nil]
@@ -1904,7 +1910,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :cross)
       #Explorer.DataFrame<
-        [rows: 9, columns: 4]
+        Polars[9 x 4]
         a integer [1, 1, 1, 2, 2, ...]
         b string ["a", "a", "a", "b", "b", ...]
         a_right integer [1, 2, 4, 1, 2, ...]
@@ -1917,7 +1923,7 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(d: [1, 2, 2], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, on: [{"a", "d"}])
       #Explorer.DataFrame<
-        [rows: 3, columns: 3]
+        Polars[3 x 3]
         a integer [1, 2, 2]
         b string ["a", "b", "b"]
         c string ["d", "e", "f"]
@@ -1971,7 +1977,7 @@ defmodule Explorer.DataFrame do
           other
       end
 
-    apply_impl(left, :join, [right, on, how])
+    Shared.apply_impl(left, :join, [right, on, how])
   end
 
   defp find_overlapping_columns(left_columns, right_columns) do
@@ -1992,7 +1998,7 @@ defmodule Explorer.DataFrame do
       iex> df2 = Explorer.DataFrame.new(x: [4, 5, 6], y: ["d", "e", "f"])
       iex> Explorer.DataFrame.concat_rows([df1, df2])
       #Explorer.DataFrame<
-        [rows: 6, columns: 2]
+        Polars[6 x 2]
         x integer [1, 2, 3, 4, 5, ...]
         y string ["a", "b", "c", "d", "e", ...]
       >
@@ -2001,7 +2007,7 @@ defmodule Explorer.DataFrame do
       iex> df2 = Explorer.DataFrame.new(x: [4.2, 5.3, 6.4], y: ["d", "e", "f"])
       iex> Explorer.DataFrame.concat_rows([df1, df2])
       #Explorer.DataFrame<
-        [rows: 6, columns: 2]
+        Polars[6 x 2]
         x float [1.0, 2.0, 3.0, 4.2, 5.3, ...]
         y string ["a", "b", "c", "d", "e", ...]
       >
@@ -2011,11 +2017,11 @@ defmodule Explorer.DataFrame do
     changed_types = compute_changed_types_concat_rows(dfs)
 
     if Enum.empty?(changed_types) do
-      apply_impl(dfs, :concat_rows)
+      Shared.apply_impl(dfs, :concat_rows)
     else
       dfs
       |> cast_numeric_columns_to_float(changed_types)
-      |> apply_impl(:concat_rows)
+      |> Shared.apply_impl(:concat_rows)
     end
   end
 
@@ -2095,7 +2101,8 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.group_by(df, "country")
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10, groups: ["country"]]
+        Polars[1094 x 10]
+        Groups: ["country"]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -2113,7 +2120,8 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.group_by(df, ["country", "year"])
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10, groups: ["country", "year"]]
+        Polars[1094 x 10]
+        Groups: ["country", "year"]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -2133,7 +2141,7 @@ defmodule Explorer.DataFrame do
     names = names(df)
     Enum.each(groups, fn name -> maybe_raise_column_not_found(names, name) end)
 
-    apply_impl(df, :group_by, [groups])
+    Shared.apply_impl(df, :group_by, [groups])
   end
 
   def group_by(df, group) when is_binary(group), do: group_by(df, [group])
@@ -2147,7 +2155,8 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.group_by(df, ["country", "year"])
       iex> Explorer.DataFrame.ungroup(df, ["country"])
       #Explorer.DataFrame<
-        [rows: 1094, columns: 10, groups: ["year"]]
+        Polars[1094 x 10]
+        Groups: ["year"]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -2177,7 +2186,7 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    apply_impl(df, :ungroup, [groups])
+    Shared.apply_impl(df, :ungroup, [groups])
   end
 
   def ungroup(df, group) when is_binary(group), do: ungroup(df, [group])
@@ -2208,7 +2217,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> df |> Explorer.DataFrame.group_by("year") |> Explorer.DataFrame.summarise(total: [:max, :min], country: [:n_unique])
       #Explorer.DataFrame<
-        [rows: 5, columns: 4]
+        Polars[5 x 4]
         year integer [2010, 2011, 2012, 2013, 2014]
         country_n_unique integer [217, 217, 220, 220, 220]
         total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
@@ -2236,7 +2245,7 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    apply_impl(df, :summarise, [Map.new(column_pairs)])
+    Shared.apply_impl(df, :summarise, [Map.new(column_pairs)])
   end
 
   @doc """
@@ -2285,11 +2294,6 @@ defmodule Explorer.DataFrame do
     :"#{backend}.DataFrame"
   end
 
-  defp apply_impl(df, fun, args \\ []) do
-    impl = impl!(df)
-    apply(impl, fun, [df | args])
-  end
-
   defp maybe_raise_column_not_found(names, name) do
     if name not in names,
       do:
@@ -2320,6 +2324,18 @@ defmodule Explorer.DataFrame do
     |> Enum.take(@max_suggestions)
     |> Enum.sort(&(elem(&1, 1) <= elem(&2, 1)))
     |> Enum.map(fn {_, key} -> ["      * ", inspect(key), ?\n] end)
+  end
+
+  defimpl Inspect do
+    alias Explorer.DataFrame
+    alias Explorer.Series
+
+    @default_limit 5
+
+    def inspect(df, opts) do
+      opts = Map.put(opts, :limit, @default_limit)
+      Shared.apply_impl(df, :inspect, [opts])
+    end
   end
 end
 

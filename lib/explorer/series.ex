@@ -19,13 +19,13 @@ defmodule Explorer.Series do
   a series with an invalid dtype is used.
   """
 
+  import Kernel, except: [and: 2]
+
   alias __MODULE__, as: Series
   alias Kernel, as: K
+  alias Explorer.Shared
 
-  import Explorer.Shared, only: [impl!: 1, check_types!: 1, cast_numerics: 2]
   @valid_dtypes Explorer.Shared.dtypes()
-
-  import Kernel, except: [and: 2]
 
   @type data :: Explorer.Backend.Series.t()
   @type dtype :: :float | :integer | :boolean | :string | :date | :datetime
@@ -151,8 +151,8 @@ defmodule Explorer.Series do
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
     backend = backend_from_options!(opts)
-    type = check_types!(list)
-    {list, type} = cast_numerics(list, type)
+    type = Shared.check_types!(list)
+    {list, type} = Shared.cast_numerics(list, type)
     series = backend.from_list(list, type)
 
     case {type, check_optional_dtype!(opts[:dtype])} do
@@ -179,7 +179,7 @@ defmodule Explorer.Series do
       [1, 2, 3]
   """
   @spec to_list(series :: Series.t()) :: list()
-  def to_list(series), do: apply_impl(series, :to_list)
+  def to_list(series), do: Shared.apply_impl(series, :to_list)
 
   @doc """
   Converts a series to an enumerable.
@@ -191,7 +191,7 @@ defmodule Explorer.Series do
       [1, 2, 3]
   """
   @spec to_enum(series :: Series.t()) :: Enumerable.t()
-  def to_enum(series), do: apply_impl(series, :to_enum)
+  def to_enum(series), do: Shared.apply_impl(series, :to_enum)
 
   @doc """
   Converts a `t:Nx.Tensor.t/0` to a series.
@@ -317,7 +317,7 @@ defmodule Explorer.Series do
   """
   @spec cast(series :: Series.t(), dtype :: dtype()) :: Series.t()
   def cast(%Series{dtype: dtype} = series, dtype), do: series
-  def cast(series, dtype), do: apply_impl(series, :cast, [dtype])
+  def cast(series, dtype), do: Shared.apply_impl(series, :cast, [dtype])
 
   # Introspection
 
@@ -356,7 +356,7 @@ defmodule Explorer.Series do
       2
   """
   @spec size(series :: Series.t()) :: integer()
-  def size(series), do: apply_impl(series, :size)
+  def size(series), do: Shared.apply_impl(series, :size)
 
   # Slice and dice
 
@@ -373,7 +373,7 @@ defmodule Explorer.Series do
       >
   """
   @spec head(series :: Series.t(), n_elements :: integer()) :: Series.t()
-  def head(series, n_elements \\ 10), do: apply_impl(series, :head, [n_elements])
+  def head(series, n_elements \\ 10), do: Shared.apply_impl(series, :head, [n_elements])
 
   @doc """
   Returns the last N elements of the series.
@@ -388,7 +388,7 @@ defmodule Explorer.Series do
       >
   """
   @spec tail(series :: Series.t(), n_elements :: integer()) :: Series.t()
-  def tail(series, n_elements \\ 10), do: apply_impl(series, :tail, [n_elements])
+  def tail(series, n_elements \\ 10), do: Shared.apply_impl(series, :tail, [n_elements])
 
   @doc """
   Returns the first element of the series.
@@ -463,7 +463,7 @@ defmodule Explorer.Series do
         :ok
     end
 
-    apply_impl(series, :sample, [n, opts[:replacement], opts[:seed]])
+    Shared.apply_impl(series, :sample, [n, opts[:replacement], opts[:seed]])
   end
 
   def sample(series, frac, opts) when is_float(frac) do
@@ -494,7 +494,7 @@ defmodule Explorer.Series do
       >
   """
   @spec take_every(series :: Series.t(), every_n :: integer()) :: Series.t()
-  def take_every(series, every_n), do: apply_impl(series, :take_every, [every_n])
+  def take_every(series, every_n), do: Shared.apply_impl(series, :take_every, [every_n])
 
   @doc """
   Filters a series with a mask or callback.
@@ -518,9 +518,9 @@ defmodule Explorer.Series do
       >
   """
   @spec filter(series :: Series.t(), mask :: Series.t()) :: Series.t()
-  def filter(series, %Series{} = mask), do: apply_impl(series, :filter, [mask])
+  def filter(series, %Series{} = mask), do: Shared.apply_impl(series, :filter, [mask])
   @spec filter(series :: Series.t(), fun :: function()) :: Series.t()
-  def filter(series, fun) when is_function(fun), do: apply_impl(series, :filter, [fun])
+  def filter(series, fun) when is_function(fun), do: Shared.apply_impl(series, :filter, [fun])
 
   @doc """
   Returns a slice of the series, with `size` elements starting at `offset`.
@@ -553,7 +553,7 @@ defmodule Explorer.Series do
       >
   """
   @spec slice(series :: Series.t(), offset :: integer(), size :: integer()) :: Series.t()
-  def slice(series, offset, size), do: apply_impl(series, :slice, [offset, size])
+  def slice(series, offset, size), do: Shared.apply_impl(series, :slice, [offset, size])
 
   @doc """
   Returns the elements at the given indices as a new series.
@@ -568,7 +568,7 @@ defmodule Explorer.Series do
       >
   """
   @spec take(series :: Series.t(), indices :: [integer()]) :: Series.t()
-  def take(series, indices), do: apply_impl(series, :take, [indices])
+  def take(series, indices), do: Shared.apply_impl(series, :take, [indices])
 
   @doc """
   Returns the value of the series at the given index.
@@ -590,7 +590,7 @@ defmodule Explorer.Series do
     if idx > s_len - 1 || idx < -s_len,
       do: raise(ArgumentError, "index #{idx} out of bounds for series of size #{s_len}")
 
-    apply_impl(series, :get, [idx])
+    Shared.apply_impl(series, :get, [idx])
   end
 
   @doc """
@@ -632,15 +632,15 @@ defmodule Explorer.Series do
     do: concat([s1 | series])
 
   defp concat_reducer(%Series{dtype: dtype} = s, %Series{dtype: dtype} = acc),
-    do: apply_impl(acc, :concat, [s])
+    do: Shared.apply_impl(acc, :concat, [s])
 
   defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
        when K.and(s_dtype == :float, acc_dtype == :integer),
-       do: acc |> cast(:float) |> apply_impl(:concat, [s])
+       do: acc |> cast(:float) |> Shared.apply_impl(:concat, [s])
 
   defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
        when K.and(s_dtype == :integer, acc_dtype == :float),
-       do: apply_impl(acc, :concat, [cast(s, :float)])
+       do: Shared.apply_impl(acc, :concat, [cast(s, :float)])
 
   defp concat_reducer(%Series{dtype: dtype1}, %Series{dtype: dtype2}),
     do: raise(ArgumentError, "dtypes must match, found #{dtype1} and #{dtype2}")
@@ -676,7 +676,7 @@ defmodule Explorer.Series do
   """
   @spec sum(series :: Series.t()) :: number()
   def sum(%Series{dtype: dtype} = series) when dtype in [:integer, :float, :boolean],
-    do: apply_impl(series, :sum)
+    do: Shared.apply_impl(series, :sum)
 
   def sum(%Series{dtype: dtype}), do: dtype_error("sum/1", dtype, [:integer, :float, :boolean])
 
@@ -714,7 +714,7 @@ defmodule Explorer.Series do
   """
   @spec min(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t()
   def min(%Series{dtype: dtype} = series) when dtype in [:integer, :float, :date, :datetime],
-    do: apply_impl(series, :min)
+    do: Shared.apply_impl(series, :min)
 
   def min(%Series{dtype: dtype}),
     do: dtype_error("min/1", dtype, [:integer, :float, :date, :datetime])
@@ -753,7 +753,7 @@ defmodule Explorer.Series do
   """
   @spec max(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t()
   def max(%Series{dtype: dtype} = series) when dtype in [:integer, :float, :date, :datetime],
-    do: apply_impl(series, :max)
+    do: Shared.apply_impl(series, :max)
 
   def max(%Series{dtype: dtype}),
     do: dtype_error("max/1", dtype, [:integer, :float, :date, :datetime])
@@ -782,7 +782,7 @@ defmodule Explorer.Series do
   """
   @spec mean(series :: Series.t()) :: float()
   def mean(%Series{dtype: dtype} = series) when dtype in [:integer, :float],
-    do: apply_impl(series, :mean)
+    do: Shared.apply_impl(series, :mean)
 
   def mean(%Series{dtype: dtype}), do: dtype_error("mean/1", dtype, [:integer, :float])
 
@@ -810,7 +810,7 @@ defmodule Explorer.Series do
   """
   @spec median(series :: Series.t()) :: float()
   def median(%Series{dtype: dtype} = series) when dtype in [:integer, :float],
-    do: apply_impl(series, :median)
+    do: Shared.apply_impl(series, :median)
 
   def median(%Series{dtype: dtype}), do: dtype_error("median/1", dtype, [:integer, :float])
 
@@ -838,7 +838,7 @@ defmodule Explorer.Series do
   """
   @spec var(series :: Series.t()) :: float()
   def var(%Series{dtype: dtype} = series) when dtype in [:integer, :float],
-    do: apply_impl(series, :var)
+    do: Shared.apply_impl(series, :var)
 
   def var(%Series{dtype: dtype}), do: dtype_error("var/1", dtype, [:integer, :float])
 
@@ -866,7 +866,7 @@ defmodule Explorer.Series do
   """
   @spec std(series :: Series.t()) :: float()
   def std(%Series{dtype: dtype} = series) when dtype in [:integer, :float],
-    do: apply_impl(series, :std)
+    do: Shared.apply_impl(series, :std)
 
   def std(%Series{dtype: dtype}), do: dtype_error("std/1", dtype, [:integer, :float])
 
@@ -905,7 +905,7 @@ defmodule Explorer.Series do
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
   def quantile(%Series{dtype: dtype} = series, quantile)
       when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(series, :quantile, [quantile])
+      do: Shared.apply_impl(series, :quantile, [quantile])
 
   def quantile(%Series{dtype: dtype}, _),
     do: dtype_error("quantile/2", dtype, [:integer, :float, :date, :datetime])
@@ -948,7 +948,7 @@ defmodule Explorer.Series do
   def cumulative_max(%Series{dtype: dtype} = series, opts)
       when dtype in [:integer, :float, :date, :datetime] do
     opts = Keyword.validate!(opts, reverse: false)
-    apply_impl(series, :cumulative_max, [opts[:reverse]])
+    Shared.apply_impl(series, :cumulative_max, [opts[:reverse]])
   end
 
   def cumulative_max(%Series{dtype: dtype}, _),
@@ -990,7 +990,7 @@ defmodule Explorer.Series do
   def cumulative_min(%Series{dtype: dtype} = series, opts)
       when dtype in [:integer, :float, :date, :datetime] do
     opts = Keyword.validate!(opts, reverse: false)
-    apply_impl(series, :cumulative_min, [opts[:reverse]])
+    Shared.apply_impl(series, :cumulative_min, [opts[:reverse]])
   end
 
   def cumulative_min(%Series{dtype: dtype}, _),
@@ -1031,7 +1031,7 @@ defmodule Explorer.Series do
   def cumulative_sum(%Series{dtype: dtype} = series, opts)
       when dtype in [:integer, :float] do
     opts = Keyword.validate!(opts, reverse: false)
-    apply_impl(series, :cumulative_sum, [opts[:reverse]])
+    Shared.apply_impl(series, :cumulative_sum, [opts[:reverse]])
   end
 
   def cumulative_sum(%Series{dtype: dtype}, _),
@@ -1063,7 +1063,7 @@ defmodule Explorer.Series do
 
   def peaks(%Series{dtype: dtype} = series, max_or_min)
       when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(series, :peaks, [max_or_min])
+      do: Shared.apply_impl(series, :peaks, [max_or_min])
 
   def peaks(%Series{dtype: dtype}, _),
     do: dtype_error("peaks/2", dtype, [:integer, :float, :date, :datetime])
@@ -1093,14 +1093,14 @@ defmodule Explorer.Series do
   @spec add(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def add(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: apply_impl(left, :add, [right])
+      do: Shared.apply_impl(left, :add, [right])
 
   def add(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("add/2", left_dtype, right_dtype)
 
   def add(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :add, [right])
+      do: Shared.apply_impl(left, :add, [right])
 
   def add(%Series{dtype: dtype}, _), do: dtype_error("add/2", dtype, [:integer, :float])
 
@@ -1127,14 +1127,14 @@ defmodule Explorer.Series do
   @spec subtract(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def subtract(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: apply_impl(left, :subtract, [right])
+      do: Shared.apply_impl(left, :subtract, [right])
 
   def subtract(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("subtract/2", left_dtype, right_dtype)
 
   def subtract(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :subtract, [right])
+      do: Shared.apply_impl(left, :subtract, [right])
 
   def subtract(%Series{dtype: dtype}, _), do: dtype_error("subtract/2", dtype, [:integer, :float])
 
@@ -1168,14 +1168,14 @@ defmodule Explorer.Series do
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def multiply(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: apply_impl(left, :multiply, [right])
+      do: Shared.apply_impl(left, :multiply, [right])
 
   def multiply(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("multiply/2", left_dtype, right_dtype)
 
   def multiply(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :multiply, [right])
+      do: Shared.apply_impl(left, :multiply, [right])
 
   def multiply(%Series{dtype: dtype}, _), do: dtype_error("multiply/2", dtype, [:integer, :float])
 
@@ -1209,14 +1209,14 @@ defmodule Explorer.Series do
   @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def divide(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: apply_impl(left, :divide, [right])
+      do: Shared.apply_impl(left, :divide, [right])
 
   def divide(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("divide/2", left_dtype, right_dtype)
 
   def divide(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :divide, [right])
+      do: Shared.apply_impl(left, :divide, [right])
 
   def divide(%Series{dtype: dtype}, _), do: dtype_error("divide/2", dtype, [:integer, :float])
 
@@ -1267,7 +1267,7 @@ defmodule Explorer.Series do
   """
   @spec pow(series :: Series.t(), exponent :: number()) :: Series.t()
   def pow(%Series{dtype: dtype} = series, exponent) when dtype in [:integer, :float],
-    do: apply_impl(series, :pow, [exponent])
+    do: Shared.apply_impl(series, :pow, [exponent])
 
   def pow(%Series{dtype: dtype}, _), do: dtype_error("pow/2", dtype, [:integer, :float])
 
@@ -1326,23 +1326,23 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
   def equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: apply_impl(left, :eq, [right])
+    do: Shared.apply_impl(left, :eq, [right])
 
   def equal(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :eq, [right])
+      do: Shared.apply_impl(left, :eq, [right])
 
   def equal(%Series{dtype: :date} = left, %Date{} = right),
-    do: apply_impl(left, :eq, [right])
+    do: Shared.apply_impl(left, :eq, [right])
 
   def equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: apply_impl(left, :eq, [right])
+    do: Shared.apply_impl(left, :eq, [right])
 
   def equal(%Series{dtype: :string} = left, right) when is_binary(right),
-    do: apply_impl(left, :eq, [right])
+    do: Shared.apply_impl(left, :eq, [right])
 
   def equal(%Series{dtype: :boolean} = left, right) when is_boolean(right),
-    do: apply_impl(left, :eq, [right])
+    do: Shared.apply_impl(left, :eq, [right])
 
   @doc """
   Returns boolean mask of `left != right`, element-wise.
@@ -1397,23 +1397,23 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
   def not_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: apply_impl(left, :neq, [right])
+    do: Shared.apply_impl(left, :neq, [right])
 
   def not_equal(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :neq, [right])
+      do: Shared.apply_impl(left, :neq, [right])
 
   def not_equal(%Series{dtype: :date} = left, %Date{} = right),
-    do: apply_impl(left, :neq, [right])
+    do: Shared.apply_impl(left, :neq, [right])
 
   def not_equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: apply_impl(left, :neq, [right])
+    do: Shared.apply_impl(left, :neq, [right])
 
   def not_equal(%Series{dtype: :string} = left, right) when is_binary(right),
-    do: apply_impl(left, :neq, [right])
+    do: Shared.apply_impl(left, :neq, [right])
 
   def not_equal(%Series{dtype: :boolean} = left, right) when is_boolean(right),
-    do: apply_impl(left, :neq, [right])
+    do: Shared.apply_impl(left, :neq, [right])
 
   @doc """
   Returns boolean mask of `left > right`, element-wise.
@@ -1441,21 +1441,21 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def greater(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
       when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(left, :gt, [right])
+      do: Shared.apply_impl(left, :gt, [right])
 
   def greater(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: apply_impl(left, :gt, [right])
+      do: Shared.apply_impl(left, :gt, [right])
 
   def greater(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :gt, [right])
+      do: Shared.apply_impl(left, :gt, [right])
 
   def greater(%Series{dtype: :date} = left, %Date{} = right),
-    do: apply_impl(left, :gt, [right])
+    do: Shared.apply_impl(left, :gt, [right])
 
   def greater(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: apply_impl(left, :gt, [right])
+    do: Shared.apply_impl(left, :gt, [right])
 
   def greater(%Series{dtype: dtype}, _),
     do: dtype_error("greater/2", dtype, [:integer, :float, :date, :datetime])
@@ -1486,21 +1486,21 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def greater_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
       when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(left, :gt_eq, [right])
+      do: Shared.apply_impl(left, :gt_eq, [right])
 
   def greater_equal(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: apply_impl(left, :gt_eq, [right])
+      do: Shared.apply_impl(left, :gt_eq, [right])
 
   def greater_equal(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :gt_eq, [right])
+      do: Shared.apply_impl(left, :gt_eq, [right])
 
   def greater_equal(%Series{dtype: :date} = left, %Date{} = right),
-    do: apply_impl(left, :gt_eq, [right])
+    do: Shared.apply_impl(left, :gt_eq, [right])
 
   def greater_equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: apply_impl(left, :gt_eq, [right])
+    do: Shared.apply_impl(left, :gt_eq, [right])
 
   def greater_equal(%Series{dtype: dtype}, _),
     do: dtype_error("greater_equal/2", dtype, [:integer, :float, :date, :datetime])
@@ -1531,21 +1531,21 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def less(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
       when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(left, :lt, [right])
+      do: Shared.apply_impl(left, :lt, [right])
 
   def less(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: apply_impl(left, :lt, [right])
+      do: Shared.apply_impl(left, :lt, [right])
 
   def less(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :lt, [right])
+      do: Shared.apply_impl(left, :lt, [right])
 
   def less(%Series{dtype: :date} = left, %Date{} = right),
-    do: apply_impl(left, :lt, [right])
+    do: Shared.apply_impl(left, :lt, [right])
 
   def less(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: apply_impl(left, :lt, [right])
+    do: Shared.apply_impl(left, :lt, [right])
 
   def less(%Series{dtype: dtype}, _),
     do: dtype_error("less/2", dtype, [:integer, :float, :date, :datetime])
@@ -1576,21 +1576,21 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def less_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
       when dtype in [:integer, :float, :date, :datetime],
-      do: apply_impl(left, :lt_eq, [right])
+      do: Shared.apply_impl(left, :lt_eq, [right])
 
   def less_equal(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: apply_impl(left, :lt_eq, [right])
+      do: Shared.apply_impl(left, :lt_eq, [right])
 
   def less_equal(%Series{dtype: dtype} = left, right)
       when K.and(dtype in [:integer, :float], is_number(right)),
-      do: apply_impl(left, :lt_eq, [right])
+      do: Shared.apply_impl(left, :lt_eq, [right])
 
   def less_equal(%Series{dtype: :date} = left, %Date{} = right),
-    do: apply_impl(left, :lt_eq, [right])
+    do: Shared.apply_impl(left, :lt_eq, [right])
 
   def less_equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: apply_impl(left, :lt_eq, [right])
+    do: Shared.apply_impl(left, :lt_eq, [right])
 
   def less_equal(%Series{dtype: dtype}, _),
     do: dtype_error("less_equal/2", dtype, [:integer, :float, :date, :datetime])
@@ -1611,7 +1611,7 @@ defmodule Explorer.Series do
 
   """
   def (%Series{} = left) and (%Series{} = right),
-    do: apply_impl(left, :binary_and, [right])
+    do: Shared.apply_impl(left, :binary_and, [right])
 
   @doc """
   Returns a boolean mask of `left or right`, element-wise
@@ -1629,7 +1629,7 @@ defmodule Explorer.Series do
 
   """
   def (%Series{} = left) or (%Series{} = right),
-    do: apply_impl(left, :binary_or, [right])
+    do: Shared.apply_impl(left, :binary_or, [right])
 
   @doc """
   Checks equality between two entire series.
@@ -1652,7 +1652,7 @@ defmodule Explorer.Series do
       false
   """
   def all_equal?(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: apply_impl(left, :all_equal?, [right])
+    do: Shared.apply_impl(left, :all_equal?, [right])
 
   def all_equal?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
       when left_dtype !=
@@ -1674,12 +1674,12 @@ defmodule Explorer.Series do
       >
 
   """
-  def sort(series, reverse \\ false), do: apply_impl(series, :sort, [reverse])
+  def sort(series, reverse \\ false), do: Shared.apply_impl(series, :sort, [reverse])
 
   @doc """
   Returns the indices that would sort the series.
   """
-  def argsort(series, reverse \\ false), do: apply_impl(series, :argsort, [reverse])
+  def argsort(series, reverse \\ false), do: Shared.apply_impl(series, :argsort, [reverse])
 
   @doc """
   Reverses the series order.
@@ -1693,7 +1693,7 @@ defmodule Explorer.Series do
         [3, 2, 1]
       >
   """
-  def reverse(series), do: apply_impl(series, :reverse)
+  def reverse(series), do: Shared.apply_impl(series, :reverse)
 
   # Distinct
 
@@ -1709,7 +1709,7 @@ defmodule Explorer.Series do
         [1, 2, 3]
       >
   """
-  def distinct(series), do: apply_impl(series, :distinct)
+  def distinct(series), do: Shared.apply_impl(series, :distinct)
 
   @doc """
   Returns the unique values of the series, but does not maintain order.
@@ -1721,7 +1721,7 @@ defmodule Explorer.Series do
       iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.unordered_distinct()
   """
-  def unordered_distinct(series), do: apply_impl(series, :unordered_distinct)
+  def unordered_distinct(series), do: Shared.apply_impl(series, :unordered_distinct)
 
   @doc """
   Returns the number of unique values in the series.
@@ -1732,7 +1732,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.n_distinct(s)
       2
   """
-  def n_distinct(series), do: apply_impl(series, :n_distinct)
+  def n_distinct(series), do: Shared.apply_impl(series, :n_distinct)
 
   @doc """
   Creates a new dataframe with unique values and the count of each.
@@ -1742,12 +1742,12 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list(["a", "a", "b", "c", "c", "c"])
       iex> Explorer.Series.count(s)
       #Explorer.DataFrame<
-        [rows: 3, columns: 2]
+        Polars[3 x 2]
         values string ["c", "a", "b"]
         counts integer [3, 2, 1]
       >
   """
-  def count(series), do: apply_impl(series, :count)
+  def count(series), do: Shared.apply_impl(series, :count)
 
   # Window
 
@@ -1781,7 +1781,7 @@ defmodule Explorer.Series do
       >
   """
   def window_sum(series, window_size, opts \\ []),
-    do: apply_impl(series, :window_sum, [window_size, window_opts_with_defaults(opts)])
+    do: Shared.apply_impl(series, :window_sum, [window_size, window_opts_with_defaults(opts)])
 
   @doc """
   Calculate the rolling mean, given a window size and optional list of weights.
@@ -1813,7 +1813,7 @@ defmodule Explorer.Series do
       >
   """
   def window_mean(series, window_size, opts \\ []),
-    do: apply_impl(series, :window_mean, [window_size, window_opts_with_defaults(opts)])
+    do: Shared.apply_impl(series, :window_mean, [window_size, window_opts_with_defaults(opts)])
 
   @doc """
   Calculate the rolling min, given a window size and optional list of weights.
@@ -1845,7 +1845,7 @@ defmodule Explorer.Series do
       >
   """
   def window_min(series, window_size, opts \\ []),
-    do: apply_impl(series, :window_min, [window_size, window_opts_with_defaults(opts)])
+    do: Shared.apply_impl(series, :window_min, [window_size, window_opts_with_defaults(opts)])
 
   @doc """
   Calculate the rolling max, given a window size and optional list of weights.
@@ -1877,7 +1877,7 @@ defmodule Explorer.Series do
       >
   """
   def window_max(series, window_size, opts \\ []),
-    do: apply_impl(series, :window_max, [window_size, window_opts_with_defaults(opts)])
+    do: Shared.apply_impl(series, :window_max, [window_size, window_opts_with_defaults(opts)])
 
   defp window_opts_with_defaults(opts) do
     defaults = [weights: nil, min_periods: 1, center: false]
@@ -1958,7 +1958,7 @@ defmodule Explorer.Series do
       >
   """
   @spec fill_missing(Series.t(), atom()) :: Series.t()
-  def fill_missing(series, strategy), do: apply_impl(series, :fill_missing, [strategy])
+  def fill_missing(series, strategy), do: Shared.apply_impl(series, :fill_missing, [strategy])
 
   @doc """
   Returns a mask of nil values.
@@ -1973,7 +1973,7 @@ defmodule Explorer.Series do
       >
   """
   @spec nil?(Series.t()) :: Series.t()
-  def nil?(series), do: apply_impl(series, :nil?)
+  def nil?(series), do: Shared.apply_impl(series, :nil?)
 
   @doc """
   Returns a mask of not nil values.
@@ -1988,7 +1988,7 @@ defmodule Explorer.Series do
       >
   """
   @spec not_nil?(Series.t()) :: Series.t()
-  def not_nil?(series), do: apply_impl(series, :not_nil?)
+  def not_nil?(series), do: Shared.apply_impl(series, :not_nil?)
 
   # Escape hatch
 
@@ -2018,7 +2018,7 @@ defmodule Explorer.Series do
       >
   """
   def transform(series, fun) do
-    case apply_impl(series, :transform, [fun]) do
+    case Shared.apply_impl(series, :transform, [fun]) do
       %Series{} = series -> series
       list when is_list(list) -> from_list(list)
     end
@@ -2029,11 +2029,6 @@ defmodule Explorer.Series do
   defp backend_from_options!(opts) do
     backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
     :"#{backend}.Series"
-  end
-
-  defp apply_impl(series, fun, args \\ []) do
-    impl = impl!(series)
-    apply(impl, fun, [series | args])
   end
 
   defp dtype_error(function, dtype, valid_dtypes),
@@ -2051,4 +2046,12 @@ defmodule Explorer.Series do
         "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{left_dtype} and " <>
           "#{right_dtype}."
       )
+
+  defimpl Inspect do
+    alias Explorer.Shared
+
+    def inspect(series, opts) do
+      Shared.apply_impl(series, :inspect, [opts])
+    end
+  end
 end

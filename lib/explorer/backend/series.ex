@@ -20,6 +20,7 @@ defmodule Explorer.Backend.Series do
 
   @callback dtype(s) :: dtype()
   @callback size(s) :: integer()
+  @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
 
   # Slice and dice
 
@@ -112,4 +113,44 @@ defmodule Explorer.Backend.Series do
   # Escape hatch
 
   @callback transform(s, fun) :: s | list()
+
+  defmacro __using__(_opts) do
+    quote location: :keep do
+      @behaviour Explorer.Backend.Series
+
+      @impl true
+      def inspect(%Explorer.Series{dtype: dtype} = series, opts) do
+        import Inspect.Algebra
+        alias Explorer.Series
+        alias Explorer.Shared
+
+        open = color("[", :list, opts)
+        close = color("]", :list, opts)
+        dtype = color("#{dtype}", :atom, opts)
+        size = series |> Series.size() |> Integer.to_string()
+
+        data =
+          container_doc(
+            open,
+            series |> Series.slice(0, opts.limit + 1) |> Series.to_list(),
+            close,
+            opts,
+            &Shared.to_string/2
+          )
+
+        inner = concat([line(), dtype, open, size, close, line(), data])
+
+        force_unfit(
+          concat([
+            color("#Explorer.Series<", :map, opts),
+            nest(inner, 2),
+            line(),
+            color(">", :map, opts)
+          ])
+        )
+      end
+
+      defoverridable inspect: 2
+    end
+  end
 end
