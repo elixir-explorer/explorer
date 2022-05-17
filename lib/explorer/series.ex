@@ -616,6 +616,7 @@ defmodule Explorer.Series do
         [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
       >
   """
+  @spec concat([Series.t()]) :: Series.t()
   def concat([%Series{} = h | t] = _series) do
     Enum.reduce(t, h, &concat_reducer/2)
   end
@@ -625,6 +626,7 @@ defmodule Explorer.Series do
 
   `concat(s1, s2)` is equivalent to `concat([s1, s2])`.
   """
+  @spec concat(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
   def concat(%Series{} = s1, %Series{} = s2),
     do: concat([s1, s2])
 
