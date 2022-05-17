@@ -33,7 +33,10 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
       |> Enum.map(&Shared.normalise_dtype/1)
 
   @impl true
-  def shape(ldf), do: {nil, ldf |> names() |> length()}
+  def shape(ldf), do: {nil, n_columns(ldf)}
+
+  @impl true
+  def n_columns(ldf), do: ldf |> names() |> length()
 
   # Single table verbs
 

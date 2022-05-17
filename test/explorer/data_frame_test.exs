@@ -730,5 +730,13 @@ defmodule Explorer.DataFrameTest do
                :integer
              ]
     end
+
+    test "n_columns/1", %{ldf: ldf} do
+      assert DF.n_columns(ldf) == 10
+    end
+
+    test "shape/1", %{ldf: ldf} do
+      assert DF.shape(ldf) == {nil, 10}
+    end
   end
 end
