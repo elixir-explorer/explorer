@@ -759,5 +759,9 @@ defmodule Explorer.DataFrameTest do
     test "collect/1", %{ldf: ldf, df: df} do
       assert ldf |> DF.collect() |> DF.to_columns() == DF.to_columns(df)
     end
+
+    test "to_lazy/1", %{df: df} do
+      assert DF.to_lazy(df).data.__struct__ == Explorer.PolarsBackend.LazyDataFrame
+    end
   end
 end
