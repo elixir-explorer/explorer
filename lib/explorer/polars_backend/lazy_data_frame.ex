@@ -26,6 +26,13 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   def names(ldf), do: Shared.apply_native(ldf, :lf_names)
 
   @impl true
+  def dtypes(ldf),
+    do:
+      ldf
+      |> Shared.apply_native(:lf_dtypes)
+      |> Enum.map(&Shared.normalise_dtype/1)
+
+  @impl true
   def shape(ldf), do: {nil, ldf |> names() |> length()}
 
   # Single table verbs

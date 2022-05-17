@@ -47,3 +47,13 @@ pub fn lf_names(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
     let lf = &data.resource.0;
     Ok(lf.schema().iter_names().cloned().collect())
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn lf_dtypes(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
+    let lf = &data.resource.0;
+    Ok(lf
+        .schema()
+        .iter_dtypes()
+        .map(|dtype| dtype.to_string())
+        .collect())
+}

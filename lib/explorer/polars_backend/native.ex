@@ -100,6 +100,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_tail(_df, _n_rows), do: err()
   def lf_pull(_df, _name), do: err()
   def lf_names(_df), do: err()
+  def lf_dtypes(_df), do: err()
 
   # Series
   def s_add(_s, _other), do: err()
