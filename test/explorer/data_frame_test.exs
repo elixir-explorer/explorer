@@ -9,7 +9,7 @@ defmodule Explorer.DataFrameTest do
   alias Explorer.Series
 
   setup do
-    {:ok, df: Datasets.fossil_fuels()}
+    {:ok, df: Datasets.fossil_fuels(), ldf: DF.to_lazy(Datasets.fossil_fuels())}
   end
 
   defp tmp_csv(tmp_dir, contents) do
@@ -698,5 +698,37 @@ defmodule Explorer.DataFrameTest do
     columns = Table.to_columns(df)
     assert Enum.to_list(columns["x"]) == [1, 2, 3]
     assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
+  end
+
+  describe "lazy" do
+    test "names/1", %{ldf: ldf} do
+      assert DF.names(ldf) == [
+               "year",
+               "country",
+               "total",
+               "solid_fuel",
+               "liquid_fuel",
+               "gas_fuel",
+               "cement",
+               "gas_flaring",
+               "per_capita",
+               "bunker_fuels"
+             ]
+    end
+
+    test "dtypes/1", %{ldf: ldf} do
+      assert DF.dtypes(ldf) == [
+               :integer,
+               :string,
+               :integer,
+               :integer,
+               :integer,
+               :integer,
+               :integer,
+               :integer,
+               :float,
+               :integer
+             ]
+    end
   end
 end
