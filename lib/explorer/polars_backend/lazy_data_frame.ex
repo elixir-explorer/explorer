@@ -1,6 +1,7 @@
 defmodule Explorer.PolarsBackend.LazyDataFrame do
   @moduledoc false
 
+  alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Shared
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
@@ -42,6 +43,18 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
 
   @impl true
   def pull(ldf, name), do: Shared.apply_native(ldf, :lf_pull, [name])
+
+  # Groups
+
+  @impl true
+  def group_by(%DataFrame{groups: groups} = ldf, new_groups),
+    do: %DataFrame{ldf | groups: groups ++ new_groups}
+
+  @impl true
+  def ungroup(ldf, []), do: %DataFrame{ldf | groups: []}
+
+  def ungroup(ldf, groups),
+    do: %DataFrame{ldf | groups: Enum.filter(ldf.groups, &(&1 not in groups))}
 
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.
