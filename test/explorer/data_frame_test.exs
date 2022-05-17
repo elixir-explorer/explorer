@@ -755,5 +755,9 @@ defmodule Explorer.DataFrameTest do
                "bunker_fuels"
              ]
     end
+
+    test "collect/1", %{ldf: ldf, df: df} do
+      assert ldf |> DF.collect() |> DF.to_columns() == DF.to_columns(df)
+    end
   end
 end
