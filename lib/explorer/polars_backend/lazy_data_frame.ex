@@ -53,9 +53,6 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   def select(ldf, columns, :drop) when is_list(columns),
     do: Shared.apply_native(ldf, :lf_drop, [columns])
 
-  @impl true
-  def pull(ldf, name), do: Shared.apply_native(ldf, :lf_pull, [name])
-
   # Groups
 
   @impl true

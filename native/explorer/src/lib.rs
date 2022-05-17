@@ -84,7 +84,6 @@ rustler::init!(
         lf_fetch,
         lf_head,
         lf_names,
-        lf_pull,
         lf_select,
         lf_tail,
         // series
