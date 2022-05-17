@@ -9,7 +9,7 @@ defmodule Explorer.DataFrameTest do
   alias Explorer.Series
 
   setup do
-    {:ok, df: Datasets.fossil_fuels(), ldf: DF.to_lazy(Datasets.fossil_fuels())}
+    {:ok, df: Datasets.fossil_fuels()}
   end
 
   defp tmp_csv(tmp_dir, contents) do
@@ -700,68 +700,11 @@ defmodule Explorer.DataFrameTest do
     assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
   end
 
-  describe "lazy" do
-    test "names/1", %{ldf: ldf} do
-      assert DF.names(ldf) == [
-               "year",
-               "country",
-               "total",
-               "solid_fuel",
-               "liquid_fuel",
-               "gas_fuel",
-               "cement",
-               "gas_flaring",
-               "per_capita",
-               "bunker_fuels"
-             ]
-    end
+  test "collect/1 is no-op", %{df: df} do
+    assert DF.collect(df) == df
+  end
 
-    test "dtypes/1", %{ldf: ldf} do
-      assert DF.dtypes(ldf) == [
-               :integer,
-               :string,
-               :integer,
-               :integer,
-               :integer,
-               :integer,
-               :integer,
-               :integer,
-               :float,
-               :integer
-             ]
-    end
-
-    test "n_columns/1", %{ldf: ldf} do
-      assert DF.n_columns(ldf) == 10
-    end
-
-    test "shape/1", %{ldf: ldf} do
-      assert DF.shape(ldf) == {nil, 10}
-    end
-
-    test "select/3 :keep", %{ldf: ldf} do
-      assert ldf |> DF.select(["total", "cement"]) |> DF.names() == ["total", "cement"]
-    end
-
-    test "select/3 :drop", %{ldf: ldf} do
-      assert ldf |> DF.select(["total", "cement"], :drop) |> DF.names() == [
-               "year",
-               "country",
-               "solid_fuel",
-               "liquid_fuel",
-               "gas_fuel",
-               "gas_flaring",
-               "per_capita",
-               "bunker_fuels"
-             ]
-    end
-
-    test "collect/1", %{ldf: ldf, df: df} do
-      assert ldf |> DF.collect() |> DF.to_columns() == DF.to_columns(df)
-    end
-
-    test "to_lazy/1", %{df: df} do
-      assert DF.to_lazy(df).data.__struct__ == Explorer.PolarsBackend.LazyDataFrame
-    end
+  test "to_lazy/1", %{df: df} do
+    assert DF.to_lazy(df).data.__struct__ == Explorer.PolarsBackend.LazyDataFrame
   end
 end
