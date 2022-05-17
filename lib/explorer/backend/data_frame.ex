@@ -110,71 +110,55 @@ defmodule Explorer.Backend.DataFrame do
   @callback ungroup(df, columns :: [column_name]) :: df
   @callback summarise(df, aggregations :: map()) :: df
 
-  defmacro __using__(opts) do
-    quote location: :keep, bind_quoted: [opts: opts] do
-      @backend Keyword.get(opts, :backend, __MODULE__ |> Module.split() |> Enum.join("."))
-      @behaviour Explorer.Backend.DataFrame
+  @default_limit 5
+  import Inspect.Algebra
+  alias Explorer.{DataFrame, Series}
 
-      @impl true
-      def inspect(%{groups: groups} = df, opts) do
-        import Inspect.Algebra
-        alias Explorer.Series
+  @doc """
+  Default inspect implementation for backends.
+  """
+  def inspect(df, backend, n_rows, inspect_opts, opts \\ [])
+      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
+    inspect_opts = %{inspect_opts | limit: @default_limit}
+    open = color("[", :list, inspect_opts)
+    close = color("]", :list, inspect_opts)
 
-        {n_rows, n_columns} = shape(df)
+    cols_algebra =
+      for name <- DataFrame.names(df) do
+        series = df[name]
 
-        series =
-          for name <- names(df) do
-            series = df |> pull(name) |> Series.slice(0, opts.limit + 1)
-            {name, Series.dtype(series), Series.to_list(series)}
-          end
+        values =
+          series
+          |> Series.slice(0, inspect_opts.limit + 1)
+          |> Series.to_list()
 
-        open = color("[", :list, opts)
-        close = color("]", :list, opts)
+        data = container_doc(open, values, close, inspect_opts, &Explorer.Shared.to_string/2)
 
-        cols_algebra =
-          for {name, dtype, values} <- series do
-            data = container_doc(open, values, close, opts, &Explorer.Shared.to_string/2)
-
-            concat([
-              line(),
-              color("#{name} ", :map, opts),
-              color("#{dtype}", :atom, opts),
-              " ",
-              data
-            ])
-          end
-
-        force_unfit(
-          concat([
-            color("#Explorer.DataFrame<", :map, opts),
-            nest(
-              concat([
-                line(),
-                color("#{@backend}", :atom, opts),
-                open,
-                "#{n_rows} x #{n_columns}",
-                close,
-                groups_algebra(groups, opts) | cols_algebra
-              ]),
-              2
-            ),
-            line(),
-            nest(color(">", :map, opts), 0)
-          ])
-        )
+        concat([
+          line(),
+          color("#{name} ", :map, inspect_opts),
+          color("#{Series.dtype(series)}", :atom, inspect_opts),
+          " ",
+          data
+        ])
       end
 
-      defp groups_algebra([_ | _] = groups, opts),
-        do:
-          Inspect.Algebra.concat([
-            Inspect.Algebra.line(),
-            Inspect.Algebra.color("Groups: ", :atom, opts),
-            Inspect.Algebra.to_doc(groups, opts)
-          ])
-
-      defp groups_algebra([], _), do: ""
-
-      defoverridable inspect: 2
-    end
+    concat([
+      color(backend, :atom, inspect_opts),
+      open,
+      "#{n_rows || "???"} x #{length(cols_algebra)}",
+      close,
+      groups_algebra(df.groups, inspect_opts) | cols_algebra
+    ])
   end
+
+  defp groups_algebra([_ | _] = groups, opts),
+    do:
+      Inspect.Algebra.concat([
+        Inspect.Algebra.line(),
+        Inspect.Algebra.color("Groups: ", :atom, opts),
+        Inspect.Algebra.to_doc(groups, opts)
+      ])
+
+  defp groups_algebra([], _), do: ""
 end

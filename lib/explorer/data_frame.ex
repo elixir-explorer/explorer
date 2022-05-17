@@ -2327,14 +2327,20 @@ defmodule Explorer.DataFrame do
   end
 
   defimpl Inspect do
-    alias Explorer.DataFrame
-    alias Explorer.Series
-
-    @default_limit 5
+    import Inspect.Algebra
 
     def inspect(df, opts) do
-      opts = Map.put(opts, :limit, @default_limit)
-      Shared.apply_impl(df, :inspect, [opts])
+      force_unfit(
+        concat([
+          color("#Explorer.DataFrame<", :map, opts),
+          nest(
+            concat([line(), Shared.apply_impl(df, :inspect, [opts])]),
+            2
+          ),
+          line(),
+          color(">", :map, opts)
+        ])
+      )
     end
   end
 end

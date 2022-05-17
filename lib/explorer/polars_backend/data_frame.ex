@@ -11,8 +11,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defstruct resource: nil, reference: nil
 
-  use Explorer.Backend.DataFrame, backend: "Polars"
-
+  @behaviour Explorer.Backend.DataFrame
   @default_infer_schema_length 1000
 
   # IO
@@ -463,6 +462,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> ungroup([])
     |> DataFrame.arrange(groups)
   end
+
+  # Inspect
+
+  @impl true
+  def inspect(df, opts) do
+    {n_rows, _} = shape(df)
+    Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows, opts)
+  end
 end
 
 defimpl Enumerable, for: Explorer.PolarsBackend.DataFrame do
@@ -505,15 +512,4 @@ defimpl Enumerable, for: Explorer.PolarsBackend.DataFrame do
   end
 
   def member?(_, _), do: {:error, __MODULE__}
-end
-
-defimpl Inspect, for: Explorer.PolarsBackend.DataFrame do
-  alias Explorer.PolarsBackend.Native
-
-  def inspect(df, _opts) do
-    case Native.df_as_str(df) do
-      {:ok, str} -> str
-      {:error, error} -> raise "#{error}"
-    end
-  end
 end

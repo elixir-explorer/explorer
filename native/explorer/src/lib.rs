@@ -32,7 +32,6 @@ mod atoms {
 rustler::init!(
     "Elixir.Explorer.PolarsBackend.Native",
     [
-        df_as_str,
         df_column,
         df_columns,
         df_drop,

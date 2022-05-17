@@ -58,7 +58,6 @@ defmodule Explorer.PolarsBackend.Native do
       ),
       do: err()
 
-  def df_as_str(_df), do: err()
   def df_column(_df, _name), do: err()
   def df_columns(_def), do: err()
   def df_drop(_df, _name), do: err()
