@@ -42,6 +42,12 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   # Single table verbs
 
   @impl true
+  def head(ldf, rows), do: Shared.apply_native(ldf, :lf_head, [rows])
+
+  @impl true
+  def tail(ldf, rows), do: Shared.apply_native(ldf, :lf_tail, [rows])
+
+  @impl true
   def pull(ldf, name), do: Shared.apply_native(ldf, :lf_pull, [name])
 
   # Groups
