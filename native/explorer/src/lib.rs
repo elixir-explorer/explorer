@@ -79,12 +79,14 @@ rustler::init!(
         // lazyframe
         lf_collect,
         lf_describe_plan,
+        lf_drop,
+        lf_dtypes,
         lf_fetch,
         lf_head,
-        lf_tail,
-        lf_pull,
         lf_names,
-        lf_dtypes,
+        lf_pull,
+        lf_select,
+        lf_tail,
         // series
         s_add,
         s_and,

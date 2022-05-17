@@ -738,5 +738,22 @@ defmodule Explorer.DataFrameTest do
     test "shape/1", %{ldf: ldf} do
       assert DF.shape(ldf) == {nil, 10}
     end
+
+    test "select/3 :keep", %{ldf: ldf} do
+      assert ldf |> DF.select(["total", "cement"]) |> DF.names() == ["total", "cement"]
+    end
+
+    test "select/3 :drop", %{ldf: ldf} do
+      assert ldf |> DF.select(["total", "cement"], :drop) |> DF.names() == [
+               "year",
+               "country",
+               "solid_fuel",
+               "liquid_fuel",
+               "gas_fuel",
+               "gas_flaring",
+               "per_capita",
+               "bunker_fuels"
+             ]
+    end
   end
 end

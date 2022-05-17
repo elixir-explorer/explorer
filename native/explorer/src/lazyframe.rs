@@ -57,3 +57,15 @@ pub fn lf_dtypes(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
         .map(|dtype| dtype.to_string())
         .collect())
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn lf_select(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
+    let lf = &data.resource.0.clone().select(&[cols(columns)]);
+    Ok(ExLazyFrame::new(lf.clone()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn lf_drop(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
+    let lf = &data.resource.0.clone().select(&[col("*").exclude(columns)]);
+    Ok(ExLazyFrame::new(lf.clone()))
+}

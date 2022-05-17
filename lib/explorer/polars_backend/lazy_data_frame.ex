@@ -48,6 +48,13 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   def tail(ldf, rows), do: Shared.apply_native(ldf, :lf_tail, [rows])
 
   @impl true
+  def select(ldf, columns, :keep) when is_list(columns),
+    do: Shared.apply_native(ldf, :lf_select, [columns])
+
+  def select(ldf, columns, :drop) when is_list(columns),
+    do: Shared.apply_native(ldf, :lf_drop, [columns])
+
+  @impl true
   def pull(ldf, name), do: Shared.apply_native(ldf, :lf_pull, [name])
 
   # Groups
