@@ -7,7 +7,7 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
 
   defstruct resource: nil, reference: nil
 
-  @behaviour Explorer.Backend.DataFrame
+  use Explorer.Backend.DataFrame, backend: "LazyPolars"
 
   # Conversion
 
@@ -20,12 +20,25 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   @impl true
   def collect(ldf), do: Shared.apply_native(ldf, :lf_collect)
 
+  # Introspection
+
+  @impl true
+  def names(ldf), do: Shared.apply_native(ldf, :lf_names)
+
+  @impl true
+  def shape(ldf), do: {nil, ldf |> names() |> length()}
+
+  # Single table verbs
+
+  @impl true
+  def pull(ldf, name), do: Shared.apply_native(ldf, :lf_pull, [name])
+
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.
   funs =
     Explorer.Backend.DataFrame.behaviour_info(:callbacks) --
       (Explorer.Backend.DataFrame.behaviour_info(:optional_callbacks) ++
-         Module.definitions_in(__MODULE__, :def))
+         Module.definitions_in(__MODULE__, :def) ++ [{:inspect, 2}])
 
   for {fun, arity} <- funs do
     args = Macro.generate_arguments(arity, __MODULE__)

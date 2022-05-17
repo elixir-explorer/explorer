@@ -59,7 +59,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback names(df) :: [column_name]
   @callback dtypes(df) :: [String.t()]
-  @callback shape(df) :: {integer(), integer()}
+  @callback shape(df) :: {non_neg_integer() | nil, non_neg_integer() | nil}
   @callback n_rows(df) :: integer()
   @callback n_columns(df) :: integer()
   @callback inspect(df, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()

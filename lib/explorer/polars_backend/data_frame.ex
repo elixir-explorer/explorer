@@ -156,7 +156,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def lazy, do: Explorer.PolarsBackend.LazyDataFrame
 
   @impl true
-  def to_lazy(df), do: df |> Shared.apply_native(:df_to_lazy) |> Shared.update_dataframe(df)
+  def to_lazy(df), do: Shared.apply_native(df, :df_to_lazy)
 
   @impl true
   def collect(df), do: df

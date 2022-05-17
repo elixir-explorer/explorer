@@ -80,6 +80,10 @@ rustler::init!(
         lf_collect,
         lf_describe_plan,
         lf_fetch,
+        lf_head,
+        lf_tail,
+        lf_pull,
+        lf_names,
         // series
         s_add,
         s_and,
