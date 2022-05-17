@@ -647,6 +647,32 @@ defmodule Explorer.Series do
   defp concat_reducer(%Series{dtype: dtype1}, %Series{dtype: dtype2}),
     do: raise(ArgumentError, "dtypes must match, found #{dtype1} and #{dtype2}")
 
+  @doc """
+  Finds the first non-missing element at each position.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, nil, nil])
+      iex> s2 = Explorer.Series.from_list([1, 2, nil, 4])
+      iex> s3 = Explorer.Series.from_list([nil, nil, 3, 4])
+      iex> Explorer.Series.coalesce([s1, s2, s3])
+      #Explorer.Series<
+        integer[4]
+        [1, 2, 3, 4]
+      >
+  """
+  @spec coalesce([Series.t()]) :: Series.t()
+  def coalesce([%Series{} = h | t] = _series),
+    do: Enum.reduce(t, h, &Shared.apply_impl(&2, :coalesce, [&1]))
+
+  @doc """
+  Finds the first non-missing element at each position.
+
+  `coalesce(s1, s2)` is equivalent to `coalesce([s1, s2])`.
+  """
+  @spec coalesce(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
+  def coalesce(s1, s2), do: concat([s1, s2])
+
   # Aggregation
 
   @doc """

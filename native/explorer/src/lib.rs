@@ -77,6 +77,7 @@ rustler::init!(
         s_argsort,
         s_as_str,
         s_cast,
+        s_coalesce,
         s_cum_max,
         s_cum_min,
         s_cum_sum,

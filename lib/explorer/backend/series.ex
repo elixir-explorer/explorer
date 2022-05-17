@@ -34,6 +34,7 @@ defmodule Explorer.Backend.Series do
   @callback take(s, indices :: list()) :: s
   @callback get(s, idx :: integer()) :: s
   @callback concat(s, s) :: s
+  @callback coalesce(s, s) :: s
 
   # Aggregation
 
