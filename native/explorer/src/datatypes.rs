@@ -234,7 +234,7 @@ macro_rules! encode_list {
     };
 }
 
-impl<'a> Encoder for ExSeriesRef {
+impl Encoder for ExSeriesRef {
     fn encode<'b>(&self, env: Env<'b>) -> Term<'b> {
         let s = &self.0;
         match s.dtype() {

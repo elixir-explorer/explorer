@@ -23,7 +23,7 @@ pub enum ExplorerError {
     Unknown(#[from] anyhow::Error),
 }
 
-impl<'a> Encoder for ExplorerError {
+impl Encoder for ExplorerError {
     fn encode<'b>(&self, env: Env<'b>) -> Term<'b> {
         format!("{:?}", self).encode(env)
     }
