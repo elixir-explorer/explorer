@@ -110,6 +110,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback ungroup(df, columns :: [column_name]) :: df
   @callback summarise(df, aggregations :: map()) :: df
 
+  # Functions
+
   @default_limit 5
   import Inspect.Algebra
   alias Explorer.{DataFrame, Series}

@@ -114,43 +114,29 @@ defmodule Explorer.Backend.Series do
 
   @callback transform(s, fun) :: s | list()
 
-  defmacro __using__(_opts) do
-    quote location: :keep do
-      @behaviour Explorer.Backend.Series
+  # Functions
 
-      @impl true
-      def inspect(%Explorer.Series{dtype: dtype} = series, opts) do
-        import Inspect.Algebra
-        alias Explorer.Series
-        alias Explorer.Shared
+  import Inspect.Algebra
+  alias Explorer.Series
 
-        open = color("[", :list, opts)
-        close = color("]", :list, opts)
-        dtype = color("#{dtype}", :atom, opts)
-        size = series |> Series.size() |> Integer.to_string()
+  @doc """
+  Default inspect implementation for backends.
+  """
+  def inspect(series, backend, n_rows, inspect_opts, opts \\ [])
+      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
+    open = color("[", :list, inspect_opts)
+    close = color("]", :list, inspect_opts)
+    dtype = color("#{Series.dtype(series)}", :atom, inspect_opts)
 
-        data =
-          container_doc(
-            open,
-            series |> Series.slice(0, opts.limit + 1) |> Series.to_list(),
-            close,
-            opts,
-            &Shared.to_string/2
-          )
+    data =
+      container_doc(
+        open,
+        series |> Series.slice(0, inspect_opts.limit + 1) |> Series.to_list(),
+        close,
+        inspect_opts,
+        &Explorer.Shared.to_string/2
+      )
 
-        inner = concat([line(), dtype, open, size, close, line(), data])
-
-        force_unfit(
-          concat([
-            color("#Explorer.Series<", :map, opts),
-            nest(inner, 2),
-            line(),
-            color(">", :map, opts)
-          ])
-        )
-      end
-
-      defoverridable inspect: 2
-    end
+    concat([dtype, open, "#{n_rows || "???"}", close, line(), data])
   end
 end

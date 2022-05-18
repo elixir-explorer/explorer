@@ -13,7 +13,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   defstruct resource: nil, reference: nil
 
-  use Explorer.Backend.Series
+  @behaviour Explorer.Backend.Series
 
   # Conversion
 
@@ -325,6 +325,11 @@ defmodule Explorer.PolarsBackend.Series do
   # Escape hatch
   @impl true
   def transform(series, fun), do: series |> Series.to_list() |> Enum.map(fun)
+
+  @impl true
+  def inspect(series, opts) do
+    Explorer.Backend.Series.inspect(series, "Polars", Series.size(series), opts)
+  end
 
   # Polars specific functions
 
