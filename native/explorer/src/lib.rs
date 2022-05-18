@@ -8,6 +8,7 @@ use rustler::{Env, Term};
 static GLOBAL: MiMalloc = MiMalloc;
 
 mod dataframe;
+#[allow(clippy::extra_unused_lifetimes)]
 mod datatypes;
 mod error;
 mod series;
