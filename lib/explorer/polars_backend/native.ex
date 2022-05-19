@@ -98,6 +98,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_argsort(_s, _reverse), do: err()
   def s_as_str(_s), do: err()
   def s_cast(_s, _dtype), do: err()
+  def s_coalesce(_s, _other), do: err()
   def s_cum_max(_s, _reverse), do: err()
   def s_cum_min(_s, _reverse), do: err()
   def s_cum_sum(_s, _reverse), do: err()

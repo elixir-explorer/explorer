@@ -688,3 +688,11 @@ pub fn parse_quantile_interpol_options(strategy: &str) -> QuantileInterpolOption
         _ => QuantileInterpolOptions::Nearest,
     }
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_coalesce(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = &data.resource.0;
+    let s2 = &other.resource.0;
+    let coalesced = s1.zip_with(&s1.is_not_null(), s2)?;
+    Ok(ExSeries::new(coalesced))
+}
