@@ -3,13 +3,12 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
 
   alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Shared
-  alias Explorer.Series
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
   defstruct resource: nil, reference: nil
 
-  use Explorer.Backend.DataFrame
+  @behaviour Explorer.Backend.DataFrame
 
   # Conversion
 
@@ -38,62 +37,10 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   def n_columns(ldf), do: ldf |> names() |> length()
 
   @impl true
-  def inspect(%{groups: groups} = ldf, opts) do
-    import Inspect.Algebra
-
-    df = Shared.apply_native(ldf, :lf_fetch, [opts.limit + 1])
-
-    series =
-      for name <- DataFrame.names(df) do
-        %Series{dtype: dtype} = series = df |> DataFrame.pull(name)
-        {name, dtype, Series.to_list(series)}
-      end
-
-    open = color("[", :list, opts)
-    close = color("]", :list, opts)
-
-    cols_algebra =
-      for {name, dtype, values} <- series do
-        data = container_doc(open, values, close, opts, &Explorer.Shared.to_string/2)
-
-        concat([
-          line(),
-          color("#{name} ", :map, opts),
-          color("#{dtype}", :atom, opts),
-          " ",
-          data
-        ])
-      end
-
-    force_unfit(
-      concat([
-        color("#Explorer.DataFrame<", :map, opts),
-        nest(
-          concat([
-            line(),
-            color("#{@backend}", :atom, opts),
-            open,
-            "?? x #{n_columns(ldf)}",
-            close,
-            groups_algebra(groups, opts) | cols_algebra
-          ]),
-          2
-        ),
-        line(),
-        nest(color(">", :map, opts), 0)
-      ])
-    )
+  def inspect(ldf, opts) do
+    df = Shared.apply_native(ldf, :lf_fetch, [opts.limit])
+    Explorer.Backend.DataFrame.inspect(df, "LazyPolars", nil, opts)
   end
-
-  defp groups_algebra([_ | _] = groups, opts),
-    do:
-      Inspect.Algebra.concat([
-        Inspect.Algebra.line(),
-        Inspect.Algebra.color("Groups: ", :atom, opts),
-        Inspect.Algebra.to_doc(groups, opts)
-      ])
-
-  defp groups_algebra([], _), do: ""
 
   # Single table verbs
 
