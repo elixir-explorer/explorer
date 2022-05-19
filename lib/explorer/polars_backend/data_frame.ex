@@ -153,6 +153,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Conversion
 
   @impl true
+  def lazy, do: Explorer.PolarsBackend.LazyDataFrame
+
+  @impl true
+  def to_lazy(df), do: Shared.apply_native(df, :df_to_lazy)
+
+  @impl true
+  def collect(df), do: df
+
+  @impl true
   def from_tabular(tabular) do
     {columns, %{columns: keys}} = Table.to_columns_with_info(tabular)
 

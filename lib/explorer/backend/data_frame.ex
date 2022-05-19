@@ -47,6 +47,9 @@ defmodule Explorer.Backend.DataFrame do
 
   # Conversion
 
+  @callback lazy :: module()
+  @callback to_lazy(df) :: df
+  @callback collect(df) :: df
   @callback from_tabular(Table.Reader.t()) :: df
   @callback from_series(map() | Keyword.t()) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
@@ -56,7 +59,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback names(df) :: [column_name]
   @callback dtypes(df) :: [String.t()]
-  @callback shape(df) :: {integer(), integer()}
+  @callback shape(df) :: {non_neg_integer() | nil, non_neg_integer() | nil}
   @callback n_rows(df) :: integer()
   @callback n_columns(df) :: integer()
   @callback inspect(df, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
@@ -81,8 +84,7 @@ defmodule Explorer.Backend.DataFrame do
               df,
               id_columns :: [column_name],
               names_from :: [column_name],
-              values_from ::
-                [column_name],
+              values_from :: [column_name],
               names_prefix :: String.t()
             ) :: df
   @callback pivot_longer(

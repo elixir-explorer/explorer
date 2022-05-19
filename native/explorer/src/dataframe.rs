@@ -6,7 +6,7 @@ use std::result::Result;
 
 use crate::series::{to_ex_series_collection, to_series_collection};
 
-use crate::{ExDataFrame, ExSeries, ExplorerError};
+use crate::{ExDataFrame, ExLazyFrame, ExSeries, ExplorerError};
 
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(clippy::too_many_arguments)]
@@ -432,4 +432,10 @@ pub fn df_pivot_wider(
         .pivot([pivot_column], [values_column])
         .first()?;
     Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_to_lazy(data: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
+    let new_lf = data.resource.0.clone().lazy();
+    Ok(ExLazyFrame::new(new_lf))
 }

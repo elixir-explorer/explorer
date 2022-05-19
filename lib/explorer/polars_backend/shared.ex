@@ -4,6 +4,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
   alias Explorer.DataFrame, as: DataFrame
   alias Explorer.PolarsBackend.DataFrame, as: PolarsDataFrame
+  alias Explorer.PolarsBackend.LazyDataFrame, as: PolarsLazyFrame
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.Series, as: Series
@@ -13,6 +14,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def apply_native(%Series{} = series, fun, args) do
     case apply(Native, fun, [series.data | args]) do
       {:ok, %PolarsDataFrame{} = new_df} -> create_dataframe(new_df)
+      {:ok, %PolarsLazyFrame{} = new_df} -> create_dataframe(new_df)
       {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, value} -> value
       {:error, error} -> raise "#{error}"
@@ -22,17 +24,19 @@ defmodule Explorer.PolarsBackend.Shared do
   def apply_native(%DataFrame{} = df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
       {:ok, %PolarsDataFrame{} = new_df} -> update_dataframe(new_df, df)
+      {:ok, %PolarsLazyFrame{} = new_df} -> update_dataframe(new_df, df)
       {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, value} -> value
       {:error, error} -> raise "#{error}"
     end
   end
 
-  def create_dataframe(%PolarsDataFrame{} = polars_df),
+  def create_dataframe(%module{} = polars_df) when module in [PolarsDataFrame, PolarsLazyFrame],
     do: %DataFrame{data: polars_df, groups: []}
 
-  def update_dataframe(%PolarsDataFrame{} = polars_df, %DataFrame{} = df),
-    do: %DataFrame{df | data: polars_df}
+  def update_dataframe(%module{} = polars_df, %DataFrame{} = df)
+      when module in [PolarsDataFrame, PolarsLazyFrame],
+      do: %DataFrame{df | data: polars_df}
 
   def create_series(%PolarsSeries{} = polars_series) do
     {:ok, dtype} = Native.s_dtype(polars_series)

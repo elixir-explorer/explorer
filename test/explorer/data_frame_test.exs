@@ -699,4 +699,12 @@ defmodule Explorer.DataFrameTest do
     assert Enum.to_list(columns["x"]) == [1, 2, 3]
     assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
   end
+
+  test "collect/1 is no-op", %{df: df} do
+    assert DF.collect(df) == df
+  end
+
+  test "to_lazy/1", %{df: df} do
+    assert DF.to_lazy(df).data.__struct__ == Explorer.PolarsBackend.LazyDataFrame
+  end
 end

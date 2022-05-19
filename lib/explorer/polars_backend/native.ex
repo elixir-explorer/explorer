@@ -85,11 +85,23 @@ defmodule Explorer.PolarsBackend.Native do
   def df_tail(_df, _length), do: err()
   def df_take(_df, _indices), do: err()
   def df_to_dummies(_df), do: err()
+  def df_to_lazy(_df), do: err()
   def df_vstack(_df, _other), do: err()
   def df_width(_df), do: err()
   def df_with_column(_df, _column), do: err()
   def df_write_ipc(_df, _filename, _compression), do: err()
   def df_write_parquet(_df, _filename), do: err()
+
+  # LazyFrame
+  def lf_collect(_df), do: err()
+  def lf_describe_plan(_df, _optimized), do: err()
+  def lf_drop(_df, _columns), do: err()
+  def lf_dtypes(_df), do: err()
+  def lf_fetch(_df, _n_rows), do: err()
+  def lf_head(_df, _n_rows), do: err()
+  def lf_names(_df), do: err()
+  def lf_select(_df, _columns), do: err()
+  def lf_tail(_df, _n_rows), do: err()
 
   # Series
   def s_add(_s, _other), do: err()

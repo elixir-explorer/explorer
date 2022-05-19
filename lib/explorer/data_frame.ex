@@ -502,6 +502,22 @@ defmodule Explorer.DataFrame do
   ## Conversion
 
   @doc """
+  Converts the dataframe to the lazy version of the current backend.
+
+  If already lazy, this is a noop.
+  """
+  @spec to_lazy(df :: DataFrame.t()) :: DataFrame.t()
+  def to_lazy(df), do: Shared.apply_impl(df, :to_lazy)
+
+  @doc """
+  This collects the lazy data frame into an eager one, computing the query.
+
+  If already eager, this is a noop.
+  """
+  @spec collect(df :: DataFrame.t()) :: {:ok, DataFrame.t()} | {:error, term()}
+  def collect(df), do: Shared.apply_impl(df, :collect)
+
+  @doc """
   Creates a new dataframe.
 
   Accepts any tabular data adhering to the `Table.Reader` protocol, as well as a map or a keyword list with series.
