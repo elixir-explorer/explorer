@@ -2048,10 +2048,20 @@ defmodule Explorer.Series do
       )
 
   defimpl Inspect do
-    alias Explorer.Shared
+    import Inspect.Algebra
 
-    def inspect(series, opts) do
-      Shared.apply_impl(series, :inspect, [opts])
+    def inspect(df, opts) do
+      force_unfit(
+        concat([
+          color("#Explorer.Series<", :map, opts),
+          nest(
+            concat([line(), Shared.apply_impl(df, :inspect, [opts])]),
+            2
+          ),
+          line(),
+          color(">", :map, opts)
+        ])
+      )
     end
   end
 end

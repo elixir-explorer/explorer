@@ -180,11 +180,6 @@ pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), Explorer
     Ok(())
 }
 
-#[rustler::nif(schedule = "DirtyIo")]
-pub fn df_as_str(data: ExDataFrame) -> Result<String, ExplorerError> {
-    Ok(format!("{:?}", data.resource.0))
-}
-
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_join(
     data: ExDataFrame,
