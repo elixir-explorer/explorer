@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support negative indexes throughout the columns API
 - Integrate with the `table` package
 - Add `Series.to_enum/1` for lazily traversing the series
+- Add `Series.coalesce/1` and `Series.coalesce/2` for finding the first non-null value in a list of series
 
 ### Changed
 
@@ -32,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `reverse?` is now an option instead of an argument in `Series.cumulative_*` functions
 - `DataFrame.from_columns/2` and `DataFrame.from_rows/2` is now `DataFrame.new/2`
 - Rename "col" to "column" throughout the API
-- Remove "with_" prefix in options throughout the API
+- Remove "with\_" prefix in options throughout the API
 
 ## [v0.1.1] - 2022-04-27
 
