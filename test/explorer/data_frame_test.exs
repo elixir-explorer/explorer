@@ -705,6 +705,6 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "to_lazy/1", %{df: df} do
-    assert DF.to_lazy(df).data.__struct__ == Explorer.PolarsBackend.LazyDataFrame
+    assert %Explorer.PolarsBackend.LazyDataFrame{} = DF.to_lazy(df).data
   end
 end

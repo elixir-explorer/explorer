@@ -28,7 +28,7 @@ defmodule Explorer.Series do
   @valid_dtypes Explorer.Shared.dtypes()
 
   @type data :: Explorer.Backend.Series.t()
-  @type dtype :: :float | :integer | :boolean | :string | :date | :datetime
+  @type dtype :: Explorer.Backend.Series.dtype()
   @type t :: %Series{data: data, dtype: dtype}
 
   @enforce_keys [:data, :dtype]

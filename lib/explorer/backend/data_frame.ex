@@ -3,25 +3,26 @@ defmodule Explorer.Backend.DataFrame do
   The behaviour for DataFrame backends.
   """
 
-  @type t :: %{__struct__: atom()}
+  @type t :: struct()
 
   @type df :: Explorer.DataFrame.t()
   @type result(t) :: {:ok, t} | {:error, term()}
   @type series :: Explorer.Series.t()
   @type column_name :: String.t()
+  @type dtype :: Explorer.Series.dtype()
 
   # IO
 
   @callback from_csv(
               filename :: String.t(),
-              dtypes :: list({String.t(), atom()}),
+              dtypes :: list({column_name(), dtype()}),
               delimiter :: String.t(),
               null_character :: String.t(),
               skip_rows :: integer(),
               header? :: boolean(),
               encoding :: String.t(),
               max_rows :: integer() | nil,
-              columns :: list(String.t()) | list(Atom.t()) | list(integer()) | nil,
+              columns :: list(column_name()) | list(atom()) | list(integer()) | nil,
               infer_schema_length :: integer() | nil,
               parse_dates :: boolean()
             ) :: result(df)
@@ -33,7 +34,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback from_ipc(
               filename :: String.t(),
-              columns :: list(String.t()) | list(Atom.t()) | list(integer()) | nil
+              columns :: list(String.t()) | list(atom()) | list(integer()) | nil
             ) :: result(df)
   @callback to_ipc(df, filename :: String.t(), compression :: String.t()) ::
               result(String.t())
@@ -47,7 +48,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # Conversion
 
-  @callback lazy :: module()
+  @callback lazy() :: module()
   @callback to_lazy(df) :: df
   @callback collect(df) :: df
   @callback from_tabular(Table.Reader.t()) :: df
@@ -57,8 +58,8 @@ defmodule Explorer.Backend.DataFrame do
 
   # Introspection
 
-  @callback names(df) :: [column_name]
-  @callback dtypes(df) :: [String.t()]
+  @callback names(df) :: [column_name()]
+  @callback dtypes(df) :: [dtype()]
   @callback shape(df) :: {non_neg_integer() | nil, non_neg_integer() | nil}
   @callback n_rows(df) :: integer()
   @callback n_columns(df) :: integer()
@@ -68,31 +69,31 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback head(df, rows :: integer()) :: df
   @callback tail(df, rows :: integer()) :: df
-  @callback select(df, columns :: [column_name], :keep | :drop) :: df
+  @callback select(df, columns :: [column_name()], :keep | :drop) :: df
   @callback filter(df, mask :: series) :: df
   @callback mutate(df, columns :: map()) :: df
-  @callback arrange(df, columns :: [column_name | {:asc | :desc, column_name}]) :: df
-  @callback distinct(df, columns :: [column_name], keep_all? :: boolean()) :: df
-  @callback rename(df, [column_name]) :: df
-  @callback dummies(df, columns :: [column_name]) :: df
+  @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
+  @callback distinct(df, columns :: [column_name()], keep_all? :: boolean()) :: df
+  @callback rename(df, [column_name()]) :: df
+  @callback dummies(df, columns :: [column_name()]) :: df
   @callback sample(df, n :: integer(), replacement :: boolean(), seed :: integer()) :: df
-  @callback pull(df, column :: String.t()) :: series
+  @callback pull(df, column :: column_name()) :: series
   @callback slice(df, offset :: integer(), length :: integer()) :: df
   @callback take(df, indices :: list(integer())) :: df
-  @callback drop_nil(df, columns :: [column_name]) :: df
+  @callback drop_nil(df, columns :: [column_name()]) :: df
   @callback pivot_wider(
               df,
-              id_columns :: [column_name],
-              names_from :: [column_name],
-              values_from :: [column_name],
+              id_columns :: [column_name()],
+              names_from :: [column_name()],
+              values_from :: [column_name()],
               names_prefix :: String.t()
             ) :: df
   @callback pivot_longer(
               df,
-              id_columns :: [column_name],
-              value_columns :: [column_name],
-              names_to :: column_name,
-              values_to :: column_name
+              id_columns :: [column_name()],
+              value_columns :: [column_name()],
+              names_to :: column_name(),
+              values_to :: column_name()
             ) :: df
 
   # Two or more table verbs
@@ -100,7 +101,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback join(
               left :: df,
               right :: df,
-              on :: list(String.t() | {String.t(), String.t()}),
+              on :: list(column_name() | {column_name(), column_name()}),
               how :: :left | :inner | :outer | :right | :cross
             ) :: df
 
@@ -108,8 +109,8 @@ defmodule Explorer.Backend.DataFrame do
 
   # Groups
 
-  @callback group_by(df, columns :: [column_name]) :: df
-  @callback ungroup(df, columns :: [column_name]) :: df
+  @callback group_by(df, columns :: [column_name()]) :: df
+  @callback ungroup(df, columns :: [column_name()]) :: df
   @callback summarise(df, aggregations :: map()) :: df
 
   # Functions
