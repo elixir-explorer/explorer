@@ -271,38 +271,30 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def window_max(series, window_size, opts) do
-    weights = Keyword.fetch!(opts, :weights)
-    min_periods = Keyword.fetch!(opts, :min_periods)
-    center = Keyword.fetch!(opts, :center)
-
-    Shared.apply_native(series, :s_rolling_max, [window_size, weights, min_periods, center])
+    window_function(:s_rolling_max, series, window_size, opts)
   end
 
   @impl true
   def window_mean(series, window_size, opts) do
-    weights = Keyword.fetch!(opts, :weights)
-    min_periods = Keyword.fetch!(opts, :min_periods)
-    center = Keyword.fetch!(opts, :center)
-
-    Shared.apply_native(series, :s_rolling_mean, [window_size, weights, min_periods, center])
+    window_function(:s_rolling_mean, series, window_size, opts)
   end
 
   @impl true
   def window_min(series, window_size, opts) do
-    weights = Keyword.fetch!(opts, :weights)
-    min_periods = Keyword.fetch!(opts, :min_periods)
-    center = Keyword.fetch!(opts, :center)
-
-    Shared.apply_native(series, :s_rolling_min, [window_size, weights, min_periods, center])
+    window_function(:s_rolling_min, series, window_size, opts)
   end
 
   @impl true
   def window_sum(series, window_size, opts) do
+    window_function(:s_rolling_sum, series, window_size, opts)
+  end
+
+  defp window_function(operation, series, window_size, opts) do
     weights = Keyword.fetch!(opts, :weights)
     min_periods = Keyword.fetch!(opts, :min_periods)
     center = Keyword.fetch!(opts, :center)
 
-    Shared.apply_native(series, :s_rolling_sum, [window_size, weights, min_periods, center])
+    Shared.apply_native(series, operation, [window_size, weights, min_periods, center])
   end
 
   # Missing values
@@ -312,11 +304,14 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_native(series, :s_fill_none, [Atom.to_string(strategy)])
 
   def fill_missing(series, strategy) do
-    cond do
-      is_float(strategy) -> Shared.apply_native(series, :s_fill_none_with_float, [strategy])
-      is_integer(strategy) -> Shared.apply_native(series, :s_fill_none_with_int, [strategy])
-      is_binary(strategy) -> Shared.apply_native(series, :s_fill_none_with_bin, [strategy])
-    end
+    operation =
+      cond do
+        is_float(strategy) -> :s_fill_none_with_float
+        is_integer(strategy) -> :s_fill_none_with_int
+        is_binary(strategy) -> :s_fill_none_with_bin
+      end
+
+    Shared.apply_native(series, operation, [strategy])
   end
 
   @impl true

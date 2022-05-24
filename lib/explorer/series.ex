@@ -38,6 +38,10 @@ defmodule Explorer.Series do
 
   @compile {:no_warn_undefined, Nx}
 
+  defguardp numeric_dtype?(dtype) when dtype in [:float, :integer]
+  defguardp numeric_or_bool_dtype?(dtype) when dtype in [:float, :integer, :boolean]
+  defguardp numeric_or_date_dtype?(dtype) when dtype in [:float, :integer, :date, :datetime]
+
   @impl true
   def fetch(series, idx) when is_integer(idx), do: {:ok, get(series, idx)}
   def fetch(series, indices) when is_list(indices), do: {:ok, take(series, indices)}
@@ -703,7 +707,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.sum/1 not implemented for dtype :date. Valid dtypes are [:integer, :float, :boolean].
   """
   @spec sum(series :: Series.t()) :: number()
-  def sum(%Series{dtype: dtype} = series) when dtype in [:integer, :float, :boolean],
+  def sum(%Series{dtype: dtype} = series) when numeric_or_bool_dtype?(dtype),
     do: Shared.apply_impl(series, :sum)
 
   def sum(%Series{dtype: dtype}), do: dtype_error("sum/1", dtype, [:integer, :float, :boolean])
@@ -741,7 +745,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime].
   """
   @spec min(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t()
-  def min(%Series{dtype: dtype} = series) when dtype in [:integer, :float, :date, :datetime],
+  def min(%Series{dtype: dtype} = series) when numeric_or_date_dtype?(dtype),
     do: Shared.apply_impl(series, :min)
 
   def min(%Series{dtype: dtype}),
@@ -780,7 +784,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime].
   """
   @spec max(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t()
-  def max(%Series{dtype: dtype} = series) when dtype in [:integer, :float, :date, :datetime],
+  def max(%Series{dtype: dtype} = series) when numeric_or_date_dtype?(dtype),
     do: Shared.apply_impl(series, :max)
 
   def max(%Series{dtype: dtype}),
@@ -809,7 +813,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are [:integer, :float].
   """
   @spec mean(series :: Series.t()) :: float()
-  def mean(%Series{dtype: dtype} = series) when dtype in [:integer, :float],
+  def mean(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :mean)
 
   def mean(%Series{dtype: dtype}), do: dtype_error("mean/1", dtype, [:integer, :float])
@@ -837,7 +841,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are [:integer, :float].
   """
   @spec median(series :: Series.t()) :: float()
-  def median(%Series{dtype: dtype} = series) when dtype in [:integer, :float],
+  def median(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :median)
 
   def median(%Series{dtype: dtype}), do: dtype_error("median/1", dtype, [:integer, :float])
@@ -865,7 +869,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.var/1 not implemented for dtype :datetime. Valid dtypes are [:integer, :float].
   """
   @spec var(series :: Series.t()) :: float()
-  def var(%Series{dtype: dtype} = series) when dtype in [:integer, :float],
+  def var(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :var)
 
   def var(%Series{dtype: dtype}), do: dtype_error("var/1", dtype, [:integer, :float])
@@ -893,7 +897,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.std/1 not implemented for dtype :string. Valid dtypes are [:integer, :float].
   """
   @spec std(series :: Series.t()) :: float()
-  def std(%Series{dtype: dtype} = series) when dtype in [:integer, :float],
+  def std(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :std)
 
   def std(%Series{dtype: dtype}), do: dtype_error("std/1", dtype, [:integer, :float])
@@ -932,7 +936,7 @@ defmodule Explorer.Series do
   """
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
   def quantile(%Series{dtype: dtype} = series, quantile)
-      when dtype in [:integer, :float, :date, :datetime],
+      when numeric_or_date_dtype?(dtype),
       do: Shared.apply_impl(series, :quantile, [quantile])
 
   def quantile(%Series{dtype: dtype}, _),
@@ -974,7 +978,7 @@ defmodule Explorer.Series do
   def cumulative_max(series, opts \\ [])
 
   def cumulative_max(%Series{dtype: dtype} = series, opts)
-      when dtype in [:integer, :float, :date, :datetime] do
+      when numeric_or_date_dtype?(dtype) do
     opts = Keyword.validate!(opts, reverse: false)
     Shared.apply_impl(series, :cumulative_max, [opts[:reverse]])
   end
@@ -1016,7 +1020,7 @@ defmodule Explorer.Series do
   def cumulative_min(series, opts \\ [])
 
   def cumulative_min(%Series{dtype: dtype} = series, opts)
-      when dtype in [:integer, :float, :date, :datetime] do
+      when numeric_or_date_dtype?(dtype) do
     opts = Keyword.validate!(opts, reverse: false)
     Shared.apply_impl(series, :cumulative_min, [opts[:reverse]])
   end
@@ -1057,7 +1061,7 @@ defmodule Explorer.Series do
   def cumulative_sum(series, opts \\ [])
 
   def cumulative_sum(%Series{dtype: dtype} = series, opts)
-      when dtype in [:integer, :float] do
+      when numeric_dtype?(dtype) do
     opts = Keyword.validate!(opts, reverse: false)
     Shared.apply_impl(series, :cumulative_sum, [opts[:reverse]])
   end
@@ -1090,7 +1094,7 @@ defmodule Explorer.Series do
   def peaks(series, max_or_min \\ :max)
 
   def peaks(%Series{dtype: dtype} = series, max_or_min)
-      when dtype in [:integer, :float, :date, :datetime],
+      when numeric_or_date_dtype?(dtype),
       do: Shared.apply_impl(series, :peaks, [max_or_min])
 
   def peaks(%Series{dtype: dtype}, _),
@@ -1119,18 +1123,7 @@ defmodule Explorer.Series do
       >
   """
   @spec add(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
-  def add(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: Shared.apply_impl(left, :add, [right])
-
-  def add(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
-    do: dtype_mismatch_error("add/2", left_dtype, right_dtype)
-
-  def add(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :add, [right])
-
-  def add(%Series{dtype: dtype}, _), do: dtype_error("add/2", dtype, [:integer, :float])
+  def add(left, right), do: basic_numeric_operation(:add, left, right)
 
   @doc """
   Subtracts right from left, element-wise.
@@ -1153,18 +1146,7 @@ defmodule Explorer.Series do
       >
   """
   @spec subtract(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
-  def subtract(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: Shared.apply_impl(left, :subtract, [right])
-
-  def subtract(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
-    do: dtype_mismatch_error("subtract/2", left_dtype, right_dtype)
-
-  def subtract(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :subtract, [right])
-
-  def subtract(%Series{dtype: dtype}, _), do: dtype_error("subtract/2", dtype, [:integer, :float])
+  def subtract(left, right), do: basic_numeric_operation(:subtract, left, right)
 
   @doc """
   Multiplies left and right, element-wise.
@@ -1194,18 +1176,7 @@ defmodule Explorer.Series do
       >
   """
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
-  def multiply(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: Shared.apply_impl(left, :multiply, [right])
-
-  def multiply(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
-    do: dtype_mismatch_error("multiply/2", left_dtype, right_dtype)
-
-  def multiply(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :multiply, [right])
-
-  def multiply(%Series{dtype: dtype}, _), do: dtype_error("multiply/2", dtype, [:integer, :float])
+  def multiply(left, right), do: basic_numeric_operation(:multiply, left, right)
 
   @doc """
   Divides left by right, element-wise.
@@ -1235,18 +1206,25 @@ defmodule Explorer.Series do
       >
   """
   @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
-  def divide(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: Shared.apply_impl(left, :divide, [right])
+  def divide(left, right), do: basic_numeric_operation(:divide, left, right)
 
-  def divide(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
-    do: dtype_mismatch_error("divide/2", left_dtype, right_dtype)
+  defp basic_numeric_operation(
+         operation,
+         %Series{dtype: left_dtype} = left,
+         %Series{dtype: right_dtype} = right
+       )
+       when K.and(numeric_dtype?(left_dtype), numeric_dtype?(right_dtype)),
+       do: Shared.apply_impl(left, operation, [right])
 
-  def divide(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :divide, [right])
+  defp basic_numeric_operation(operation, %Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
+    do: dtype_mismatch_error("#{operation}/2", left_dtype, right_dtype)
 
-  def divide(%Series{dtype: dtype}, _), do: dtype_error("divide/2", dtype, [:integer, :float])
+  defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right)
+       when K.and(numeric_dtype?(dtype), is_number(right)),
+       do: Shared.apply_impl(left, operation, [right])
+
+  defp basic_numeric_operation(operation, %Series{dtype: dtype}, _),
+    do: dtype_error("#{operation}/2", dtype, [:integer, :float])
 
   @doc """
   Raises a numeric series to the power of the exponent.
@@ -1294,7 +1272,7 @@ defmodule Explorer.Series do
       >
   """
   @spec pow(series :: Series.t(), exponent :: number()) :: Series.t()
-  def pow(%Series{dtype: dtype} = series, exponent) when dtype in [:integer, :float],
+  def pow(%Series{dtype: dtype} = series, exponent) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :pow, [exponent])
 
   def pow(%Series{dtype: dtype}, _), do: dtype_error("pow/2", dtype, [:integer, :float])
@@ -1348,29 +1326,22 @@ defmodule Explorer.Series do
         boolean[2]
         [true, false]
       >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.equal(s, false)
+      ** (ArgumentError) cannot invoke Explorer.Series.equal/2 with mismatched dtypes: string and false.
   """
   @spec equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
-  def equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: Shared.apply_impl(left, :eq, [right])
-
-  def equal(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :eq, [right])
-
-  def equal(%Series{dtype: :date} = left, %Date{} = right),
-    do: Shared.apply_impl(left, :eq, [right])
-
-  def equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: Shared.apply_impl(left, :eq, [right])
-
-  def equal(%Series{dtype: :string} = left, right) when is_binary(right),
-    do: Shared.apply_impl(left, :eq, [right])
-
-  def equal(%Series{dtype: :boolean} = left, right) when is_boolean(right),
-    do: Shared.apply_impl(left, :eq, [right])
+  def equal(%Series{dtype: dtype} = left, right) do
+    if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
+      Shared.apply_impl(left, :eq, [right])
+    else
+      dtype_mismatch_error("equal/2", dtype, inspect(right))
+    end
+  end
 
   @doc """
   Returns boolean mask of `left != right`, element-wise.
@@ -1419,29 +1390,26 @@ defmodule Explorer.Series do
         boolean[2]
         [false, true]
       >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.not_equal(s, false)
+      ** (ArgumentError) cannot invoke Explorer.Series.not_equal/2 with mismatched dtypes: string and false.
   """
   @spec not_equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
-  def not_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: Shared.apply_impl(left, :neq, [right])
+  def not_equal(%Series{dtype: dtype} = left, right) do
+    if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
+      Shared.apply_impl(left, :neq, [right])
+    else
+      dtype_mismatch_error("not_equal/2", dtype, inspect(right))
+    end
+  end
 
-  def not_equal(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :neq, [right])
-
-  def not_equal(%Series{dtype: :date} = left, %Date{} = right),
-    do: Shared.apply_impl(left, :neq, [right])
-
-  def not_equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: Shared.apply_impl(left, :neq, [right])
-
-  def not_equal(%Series{dtype: :string} = left, right) when is_binary(right),
-    do: Shared.apply_impl(left, :neq, [right])
-
-  def not_equal(%Series{dtype: :boolean} = left, right) when is_boolean(right),
-    do: Shared.apply_impl(left, :neq, [right])
+  defp sides_comparable?(%Series{dtype: :string}, right) when is_binary(right), do: true
+  defp sides_comparable?(%Series{dtype: :boolean}, right) when is_boolean(right), do: true
+  defp sides_comparable?(_, _), do: false
 
   @doc """
   Returns boolean mask of `left > right`, element-wise.
@@ -1467,26 +1435,13 @@ defmodule Explorer.Series do
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def greater(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
-      when dtype in [:integer, :float, :date, :datetime],
-      do: Shared.apply_impl(left, :gt, [right])
-
-  def greater(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: Shared.apply_impl(left, :gt, [right])
-
-  def greater(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :gt, [right])
-
-  def greater(%Series{dtype: :date} = left, %Date{} = right),
-    do: Shared.apply_impl(left, :gt, [right])
-
-  def greater(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: Shared.apply_impl(left, :gt, [right])
-
-  def greater(%Series{dtype: dtype}, _),
-    do: dtype_error("greater/2", dtype, [:integer, :float, :date, :datetime])
+  def greater(%Series{dtype: dtype} = left, right) do
+    if valid_for_bool_mask_operation?(left, right) do
+      Shared.apply_impl(left, :gt, [right])
+    else
+      dtype_error("greater/2", dtype, [:integer, :float, :date, :datetime])
+    end
+  end
 
   @doc """
   Returns boolean mask of `left >= right`, element-wise.
@@ -1512,26 +1467,13 @@ defmodule Explorer.Series do
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def greater_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
-      when dtype in [:integer, :float, :date, :datetime],
-      do: Shared.apply_impl(left, :gt_eq, [right])
-
-  def greater_equal(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: Shared.apply_impl(left, :gt_eq, [right])
-
-  def greater_equal(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :gt_eq, [right])
-
-  def greater_equal(%Series{dtype: :date} = left, %Date{} = right),
-    do: Shared.apply_impl(left, :gt_eq, [right])
-
-  def greater_equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: Shared.apply_impl(left, :gt_eq, [right])
-
-  def greater_equal(%Series{dtype: dtype}, _),
-    do: dtype_error("greater_equal/2", dtype, [:integer, :float, :date, :datetime])
+  def greater_equal(%Series{dtype: dtype} = left, right) do
+    if valid_for_bool_mask_operation?(left, right) do
+      Shared.apply_impl(left, :gt_eq, [right])
+    else
+      dtype_error("greater_equal/2", dtype, [:integer, :float, :date, :datetime])
+    end
+  end
 
   @doc """
   Returns boolean mask of `left < right`, element-wise.
@@ -1557,26 +1499,13 @@ defmodule Explorer.Series do
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def less(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
-      when dtype in [:integer, :float, :date, :datetime],
-      do: Shared.apply_impl(left, :lt, [right])
-
-  def less(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: Shared.apply_impl(left, :lt, [right])
-
-  def less(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :lt, [right])
-
-  def less(%Series{dtype: :date} = left, %Date{} = right),
-    do: Shared.apply_impl(left, :lt, [right])
-
-  def less(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: Shared.apply_impl(left, :lt, [right])
-
-  def less(%Series{dtype: dtype}, _),
-    do: dtype_error("less/2", dtype, [:integer, :float, :date, :datetime])
+  def less(%Series{dtype: dtype} = left, right) do
+    if valid_for_bool_mask_operation?(left, right) do
+      Shared.apply_impl(left, :lt, [right])
+    else
+      dtype_error("less/2", dtype, [:integer, :float, :date, :datetime])
+    end
+  end
 
   @doc """
   Returns boolean mask of `left <= right`, element-wise.
@@ -1602,26 +1531,31 @@ defmodule Explorer.Series do
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def less_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right)
-      when dtype in [:integer, :float, :date, :datetime],
-      do: Shared.apply_impl(left, :lt_eq, [right])
+  def less_equal(%Series{dtype: dtype} = left, right) do
+    if valid_for_bool_mask_operation?(left, right) do
+      Shared.apply_impl(left, :lt_eq, [right])
+    else
+      dtype_error("less_equal/2", dtype, [:integer, :float, :date, :datetime])
+    end
+  end
 
-  def less_equal(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when K.and(left_dtype in [:integer, :float], right_dtype in [:integer, :float]),
-      do: Shared.apply_impl(left, :lt_eq, [right])
+  defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype})
+       when numeric_or_date_dtype?(dtype),
+       do: true
 
-  def less_equal(%Series{dtype: dtype} = left, right)
-      when K.and(dtype in [:integer, :float], is_number(right)),
-      do: Shared.apply_impl(left, :lt_eq, [right])
+  defp valid_for_bool_mask_operation?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
+       when K.and(numeric_dtype?(left_dtype), numeric_dtype?(right_dtype)),
+       do: true
 
-  def less_equal(%Series{dtype: :date} = left, %Date{} = right),
-    do: Shared.apply_impl(left, :lt_eq, [right])
+  defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, right)
+       when K.and(numeric_dtype?(dtype), is_number(right)),
+       do: true
 
-  def less_equal(%Series{dtype: :datetime} = left, %NaiveDateTime{} = right),
-    do: Shared.apply_impl(left, :lt_eq, [right])
+  defp valid_for_bool_mask_operation?(%Series{dtype: :date}, %Date{}), do: true
 
-  def less_equal(%Series{dtype: dtype}, _),
-    do: dtype_error("less_equal/2", dtype, [:integer, :float, :date, :datetime])
+  defp valid_for_bool_mask_operation?(%Series{dtype: :datetime}, %NaiveDateTime{}), do: true
+
+  defp valid_for_bool_mask_operation?(_, _), do: false
 
   @doc """
   Returns a boolean mask of `left and right`, element-wise
