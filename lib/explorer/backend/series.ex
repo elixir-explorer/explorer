@@ -3,7 +3,7 @@ defmodule Explorer.Backend.Series do
   The behaviour for series backends.
   """
 
-  @type t :: %{__struct__: atom()}
+  @type t :: struct()
 
   @type s :: Explorer.Series.t()
   @type df :: Explorer.DataFrame.t()
