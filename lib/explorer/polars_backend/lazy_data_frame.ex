@@ -19,18 +19,18 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   def to_lazy(ldf), do: ldf
 
   @impl true
-  def collect(ldf), do: Shared.apply_native(ldf, :lf_collect)
+  def collect(ldf), do: Shared.apply_dataframe(ldf, :lf_collect)
 
   # Introspection
 
   @impl true
-  def names(ldf), do: Shared.apply_native(ldf, :lf_names)
+  def names(ldf), do: Shared.apply_dataframe(ldf, :lf_names)
 
   @impl true
   def dtypes(ldf),
     do:
       ldf
-      |> Shared.apply_native(:lf_dtypes)
+      |> Shared.apply_dataframe(:lf_dtypes)
       |> Enum.map(&Shared.normalise_dtype/1)
 
   @impl true
@@ -38,24 +38,24 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
 
   @impl true
   def inspect(ldf, opts) do
-    df = Shared.apply_native(ldf, :lf_fetch, [opts.limit])
+    df = Shared.apply_dataframe(ldf, :lf_fetch, [opts.limit])
     Explorer.Backend.DataFrame.inspect(df, "LazyPolars", nil, opts)
   end
 
   # Single table verbs
 
   @impl true
-  def head(ldf, rows), do: Shared.apply_native(ldf, :lf_head, [rows])
+  def head(ldf, rows), do: Shared.apply_dataframe(ldf, :lf_head, [rows])
 
   @impl true
-  def tail(ldf, rows), do: Shared.apply_native(ldf, :lf_tail, [rows])
+  def tail(ldf, rows), do: Shared.apply_dataframe(ldf, :lf_tail, [rows])
 
   @impl true
   def select(ldf, columns, :keep) when is_list(columns),
-    do: Shared.apply_native(ldf, :lf_select, [columns])
+    do: Shared.apply_dataframe(ldf, :lf_select, [columns])
 
   def select(ldf, columns, :drop) when is_list(columns),
-    do: Shared.apply_native(ldf, :lf_drop, [columns])
+    do: Shared.apply_dataframe(ldf, :lf_drop, [columns])
 
   # Groups
 
