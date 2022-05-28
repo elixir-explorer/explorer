@@ -101,15 +101,22 @@ defmodule Explorer.DataFrame do
   @valid_dtypes Explorer.Shared.dtypes()
 
   @type data :: Explorer.Backend.DataFrame.t()
-  @type t :: %DataFrame{data: data, groups: [String.t()]}
+  # TODO: enforce names and dtypes
   @enforce_keys [:data, :groups]
-  defstruct [:data, :groups]
+  defstruct [:data, :groups, :names, :dtypes]
 
   @type column_name :: atom() | String.t()
   @type column :: column_name() | non_neg_integer()
   @type columns :: [column] | Range.t()
   @type column_names :: [column_name]
   @type column_pairs(other) :: [{column(), other}] | %{column() => other}
+
+  @type t :: %DataFrame{
+          data: data,
+          groups: [String.t()],
+          names: [Explorer.Backend.DataFrame.column_name()],
+          dtypes: [Explorer.Backend.Series.dtype()]
+        }
 
   @default_infer_schema_length 1000
 

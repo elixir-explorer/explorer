@@ -114,10 +114,17 @@ defmodule Explorer.Backend.DataFrame do
   @callback summarise(df, aggregations :: map()) :: df
 
   # Functions
+  alias Explorer.{DataFrame, Series}
+
+  @doc """
+  Creates a new DataFrame for a given backend.
+  """
+  def new(data, names, dtypes) do
+    %DataFrame{data: data, names: names, dtypes: dtypes, groups: []}
+  end
 
   @default_limit 5
   import Inspect.Algebra
-  alias Explorer.{DataFrame, Series}
 
   @doc """
   Default inspect implementation for backends.
