@@ -923,7 +923,7 @@ defmodule Explorer.DataFrame do
         :drop -> names(df) -- columns
       end
 
-    out_df = Shared.update_names_and_dtypes(df, columns_to_keep)
+    out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
 
     Shared.apply_impl(df, :select, [out_df])
   end

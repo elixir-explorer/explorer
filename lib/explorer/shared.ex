@@ -119,15 +119,4 @@ defmodule Explorer.Shared do
   def to_string(i, _opts) when is_nil(i), do: "nil"
   def to_string(i, _opts) when is_binary(i), do: "\"#{i}\""
   def to_string(i, _opts), do: Kernel.to_string(i)
-
-  @doc """
-  Updates the names and dtypes map of a df in memory.
-
-  The intention is to provide a "out_df" with updated names and dtypes map.
-  Note that columns must be a subset of column names in the DF. No new columns
-  will be added.
-  """
-  def update_names_and_dtypes(df, columns_to_keep) do
-    %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
-  end
 end
