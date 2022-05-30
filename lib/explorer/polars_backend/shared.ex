@@ -9,15 +9,14 @@ defmodule Explorer.PolarsBackend.Shared do
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.Series, as: Series
 
-  defguardp is_polars_df(df) when is_struct(df, PolarsDataFrame) or is_struct(df, PolarsLazyFrame)
-  defguardp is_polars_series(series) when is_struct(series, PolarsSeries)
+  @polars_df [PolarsDataFrame, PolarsLazyFrame]
 
   def apply_series(series, fun, args \\ [])
 
   def apply_series(%Series{} = series, fun, args) do
     case apply(Native, fun, [series.data | args]) do
-      {:ok, new_series} when is_polars_series(new_series) -> create_series(new_series)
-      {:ok, new_df} when is_polars_df(new_df) -> create_dataframe(new_df)
+      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
+      {:ok, %module{} = new_df} when module in @polars_df -> create_dataframe(new_df)
       {:ok, value} -> value
       {:error, error} -> raise "#{error}"
     end
@@ -27,18 +26,18 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def apply_dataframe(%DataFrame{} = df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
-      {:ok, new_df} when is_polars_df(new_df) -> update_dataframe(new_df, df)
-      {:ok, new_series} when is_polars_series(new_series) -> create_series(new_series)
+      {:ok, %module{} = new_df} when module in @polars_df -> update_dataframe(new_df, df)
+      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, value} -> value
       {:error, error} -> raise "#{error}"
     end
   end
 
-  def create_dataframe(polars_df) when is_polars_df(polars_df),
+  def create_dataframe(%module{} = polars_df) when module in @polars_df,
     do: %DataFrame{data: polars_df, groups: []}
 
-  def update_dataframe(polars_df, %DataFrame{} = df)
-      when is_polars_df(polars_df),
+  def update_dataframe(%module{} = polars_df, %DataFrame{} = df)
+      when module in @polars_df,
       do: %DataFrame{df | data: polars_df}
 
   def create_series(%PolarsSeries{} = polars_series) do
