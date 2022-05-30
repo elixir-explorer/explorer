@@ -35,8 +35,8 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def apply_dataframe(%DataFrame{} = df, %DataFrame{} = out_df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
-      {:ok, new_df} when is_polars_df(new_df) -> update_dataframe(new_df, out_df)
-      {:ok, new_series} when is_polars_series(new_series) -> create_series(new_series)
+      {:ok, %module{} = new_df} when module in @polars_df -> update_dataframe(new_df, out_df)
+      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, value} -> value
       {:error, error} -> raise "#{error}"
     end
@@ -62,8 +62,8 @@ defmodule Explorer.PolarsBackend.Shared do
   end
 
   # TODO: reflect names and dtypes
-  def update_dataframe(polars_df, %DataFrame{} = df)
-      when is_polars_df(polars_df),
+  def update_dataframe(%module{} = polars_df, %DataFrame{} = df)
+      when module in @polars_df,
       do: %DataFrame{df | data: polars_df}
 
   def create_series(%PolarsSeries{} = polars_series) do
