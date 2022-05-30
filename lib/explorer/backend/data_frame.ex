@@ -69,7 +69,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback head(df, rows :: integer()) :: df
   @callback tail(df, rows :: integer()) :: df
-  @callback select(df, columns :: [column_name()], :keep | :drop) :: df
+  @callback select(df, out_df :: df()) :: df
   @callback filter(df, mask :: series) :: df
   @callback mutate(df, columns :: map()) :: df
   @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
@@ -120,7 +120,8 @@ defmodule Explorer.Backend.DataFrame do
   Creates a new DataFrame for a given backend.
   """
   def new(data, names, dtypes) do
-    %DataFrame{data: data, names: names, dtypes: dtypes, groups: []}
+    dtypes_pairs = Enum.zip(names, dtypes)
+    %DataFrame{data: data, names: names, dtypes: Map.new(dtypes_pairs), groups: []}
   end
 
   @default_limit 5

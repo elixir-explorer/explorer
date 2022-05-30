@@ -244,7 +244,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Series.to_list()
       |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> n_rows() end)
 
-    groupby |> select(["groups"], :drop) |> mutate(n: n) |> group_by(groups)
+    groupby |> DataFrame.select(["groups"], :drop) |> mutate(n: n) |> group_by(groups)
   end
 
   @impl true
@@ -259,18 +259,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def tail(df, rows), do: Shared.apply_dataframe(df, :df_tail, [rows])
 
   @impl true
-  def select(df, columns, :keep) when is_list(columns),
-    do: Shared.apply_dataframe(df, :df_select, [columns])
-
-  def select(df, columns, :drop) when is_list(columns),
-    do: df.data |> drop(columns) |> Shared.update_dataframe(df)
-
-  defp drop(polars_df, column_names),
-    do:
-      Enum.reduce(column_names, polars_df, fn name, df ->
-        {:ok, df} = Native.df_drop(df, name)
-        df
-      end)
+  def select(df, out_df) do
+    Shared.apply_dataframe(df, out_df, :df_select, [out_df.names])
+  end
 
   @impl true
   def filter(df, %Series{} = mask),
@@ -347,7 +338,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do:
       df
       |> Shared.apply_dataframe(:df_drop_duplicates, [true, columns])
-      |> select(columns, :keep)
+      |> DataFrame.select(columns)
 
   def distinct(%DataFrame{groups: groups} = df, columns, keep_all?) do
     df
@@ -369,7 +360,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def dummies(df, names),
     do:
       df
-      |> select(names, :keep)
+      |> DataFrame.select(names)
       |> Shared.apply_dataframe(:df_to_dummies)
 
   @impl true

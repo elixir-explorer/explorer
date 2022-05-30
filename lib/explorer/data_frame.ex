@@ -115,7 +115,7 @@ defmodule Explorer.DataFrame do
           data: data,
           groups: [String.t()],
           names: [Explorer.Backend.DataFrame.column_name()],
-          dtypes: [Explorer.Backend.Series.dtype()]
+          dtypes: %{Explorer.Backend.DataFrame.column_name() => Explorer.Backend.Series.dtype()}
         }
 
   @default_infer_schema_length 1000
@@ -917,7 +917,15 @@ defmodule Explorer.DataFrame do
   def select(df, columns, keep_or_drop) do
     columns = to_existing_columns(df, columns)
 
-    Shared.apply_impl(df, :select, [columns, keep_or_drop])
+    columns_to_keep =
+      case keep_or_drop do
+        :keep -> columns
+        :drop -> names(df) -- columns
+      end
+
+    out_df = Shared.update_names_and_dtypes(df, columns_to_keep)
+
+    Shared.apply_impl(df, :select, [out_df])
   end
 
   @doc """

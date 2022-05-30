@@ -51,11 +51,7 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   def tail(ldf, rows), do: Shared.apply_dataframe(ldf, :lf_tail, [rows])
 
   @impl true
-  def select(ldf, columns, :keep) when is_list(columns),
-    do: Shared.apply_dataframe(ldf, :lf_select, [columns])
-
-  def select(ldf, columns, :drop) when is_list(columns),
-    do: Shared.apply_dataframe(ldf, :lf_drop, [columns])
+  def select(ldf, out_ldf), do: Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
 
   # Groups
 
