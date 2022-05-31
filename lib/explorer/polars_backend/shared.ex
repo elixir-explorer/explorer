@@ -42,26 +42,19 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
-  def create_dataframe(%module{} = polars_df) when module in @polars_df do
-    {names, dtypes} =
-      case polars_df do
-        %PolarsLazyFrame{} ->
-          with {:ok, names} <- Native.lf_names(polars_df),
-               {:ok, dtypes} <- Native.lf_dtypes(polars_df),
-               do: {names, dtypes}
-
-        %PolarsDataFrame{} ->
-          with {:ok, names} <- Native.df_columns(polars_df),
-               {:ok, dtypes} <- Native.df_dtypes(polars_df),
-               do: {names, dtypes}
-      end
+  # TODO: consider accepting lazy df in the future
+  def create_dataframe(%PolarsDataFrame{} = polars_df) do
+    {:ok, {names, dtypes}} =
+      with {:ok, names} <- Native.df_columns(polars_df),
+           {:ok, dtypes} <- Native.df_dtypes(polars_df),
+           do: {:ok, {names, dtypes}}
 
     dtypes = Enum.map(dtypes, &normalise_dtype/1)
 
     Explorer.Backend.DataFrame.new(polars_df, names, dtypes)
   end
 
-  # TODO: reflect names and dtypes
+  # TODO: consider reflecting/checking names and dtypes
   def update_dataframe(%module{} = polars_df, %DataFrame{} = df)
       when module in @polars_df,
       do: %DataFrame{df | data: polars_df}
