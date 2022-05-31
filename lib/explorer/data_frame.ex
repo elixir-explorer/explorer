@@ -1975,14 +1975,14 @@ defmodule Explorer.DataFrame do
 
     {on, how} =
       case {opts[:on], opts[:how]} do
-        {on, :cross} ->
-          {on, :cross}
+        {[], :cross} ->
+          {[], :cross}
 
         {[], _} ->
           raise(ArgumentError, "could not find any overlapping columns")
 
         {[_ | _] = on, how} ->
-          on =
+          normalized_on =
             Enum.map(on, fn
               {l_name, r_name} ->
                 [l_column] = to_existing_columns(left, [l_name])
@@ -1999,13 +1999,10 @@ defmodule Explorer.DataFrame do
                         "the column given to option `:on` is not the same for both dataframes"
                 end
 
-                l_column
+                {l_column, r_column}
             end)
 
-          {on, how}
-
-        other ->
-          other
+          {normalized_on, how}
       end
 
     Shared.apply_impl(left, :join, [right, on, how])

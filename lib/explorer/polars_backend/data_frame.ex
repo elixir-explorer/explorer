@@ -421,16 +421,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   def join(left, right, on, how) do
     how = Atom.to_string(how)
-    {left_on, right_on} = Enum.reduce(on, {[], []}, &join_on_reducer/2)
+    {left_on, right_on} = Enum.unzip(on)
 
     Shared.apply_dataframe(left, :df_join, [right.data, left_on, right_on, how])
   end
-
-  defp join_on_reducer(column_name, {left, right}) when is_binary(column_name),
-    do: {[column_name | left], [column_name | right]}
-
-  defp join_on_reducer({new_left, new_right}, {left, right}),
-    do: {[new_left | left], [new_right | right]}
 
   @impl true
   def concat_rows(dfs) do

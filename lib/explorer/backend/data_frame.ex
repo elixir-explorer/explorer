@@ -101,7 +101,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback join(
               left :: df,
               right :: df,
-              on :: list(column_name() | {column_name(), column_name()}),
+              on :: list({column_name(), column_name()}),
               how :: :left | :inner | :outer | :right | :cross
             ) :: df
 
