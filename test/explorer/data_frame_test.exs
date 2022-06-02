@@ -707,4 +707,78 @@ defmodule Explorer.DataFrameTest do
   test "to_lazy/1", %{df: df} do
     assert %Explorer.PolarsBackend.LazyDataFrame{} = DF.to_lazy(df).data
   end
+
+  describe "select/3" do
+    test "keep column names" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      df = DF.select(df, ["a"])
+
+      assert DF.names(df) == ["a"]
+    end
+
+    test "keep column positions" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      df = DF.select(df, [1])
+
+      assert DF.names(df) == ["b"]
+    end
+
+    test "keep column range" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
+      df = DF.select(df, 1..2)
+
+      assert DF.names(df) == ["b", "c"]
+    end
+
+    test "keep columns matching callback" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
+      df = DF.select(df, fn name -> name in ~w(a c) end)
+
+      assert DF.names(df) == ["a", "c"]
+    end
+
+    test "keep column raises error with non-existent column" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+
+      assert_raise ArgumentError, "could not find column name \"g\"", fn ->
+        DF.select(df, ["g"])
+      end
+    end
+
+    test "drop column names" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      df = DF.select(df, ["a"], :drop)
+
+      assert DF.names(df) == ["b"]
+    end
+
+    test "drop column positions" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      df = DF.select(df, [1], :drop)
+
+      assert DF.names(df) == ["a"]
+    end
+
+    test "drop column range" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
+      df = DF.select(df, 1..2, :drop)
+
+      assert DF.names(df) == ["a"]
+    end
+
+    test "drop columns matching callback" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
+      df = DF.select(df, fn name -> name in ~w(a c) end, :drop)
+
+      assert DF.names(df) == ["b"]
+    end
+
+    test "drop column raises error with non-existent column" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+
+      assert_raise ArgumentError, "could not find column name \"g\"", fn ->
+        DF.select(df, ["g"], :drop)
+      end
+    end
+  end
 end
