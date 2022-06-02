@@ -602,6 +602,60 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
   end
 
+  describe "rename/2" do
+    test "with lists" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 = DF.rename(df, ["c", "d"])
+
+      assert DF.names(df1) == ["c", "d"]
+      # TODO: check if the rename is happening in Polars' Series
+      # assert df1["c"] == df["a"]
+      assert Series.to_list(df1["c"]) == Series.to_list(df["a"])
+    end
+
+    test "with keyword" do
+      df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
+      df1 = DF.rename(df, a: "first")
+
+      assert Series.to_list(df1["first"]) == Series.to_list(df["a"])
+    end
+
+    test "with a map" do
+      df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
+      df1 = DF.rename(df, %{"a" => "first", "b" => "second"})
+
+      assert Series.to_list(df1["first"]) == Series.to_list(df["a"])
+      assert Series.to_list(df1["second"]) == Series.to_list(df["b"])
+    end
+
+    test "with keyword and a column that doesn't exist" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, "could not find column name \"g\"", fn ->
+        DF.rename(df, g: "first")
+      end
+    end
+
+    test "with a map and a column that doesn't exist" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, "could not find column name \"i\"", fn ->
+        DF.rename(df, %{"a" => "first", "i" => "foo"})
+      end
+    end
+
+    test "with a mismatch size of columns" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "list of new names must match the number of columns in the dataframe; found 3 new name(s), but the supplied dataframe has 2 column(s)",
+                   fn ->
+                     DF.rename(df, ["first", "second", "third"])
+                   end
+    end
+  end
+
   describe "rename_with/2" do
     test "with lists", %{df: df} do
       df_names = DF.names(df)

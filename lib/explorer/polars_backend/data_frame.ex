@@ -353,8 +353,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def rename(df, names) when is_list(names),
-    do: Shared.apply_dataframe(df, :df_set_column_names, [names])
+  def rename(%DataFrame{} = df, %DataFrame{} = out_df),
+    do: Shared.apply_dataframe(df, out_df, :df_set_column_names, [out_df.names])
+
+  # TODO: remove after implementing `out_df` for all functions related
+  defp do_rename(%DataFrame{} = df, new_names) when is_list(new_names),
+    do: Shared.apply_dataframe(df, :df_set_column_names, [new_names])
 
   @impl true
   def dummies(df, names),
@@ -396,7 +400,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       "value" -> values_to
       name -> name
     end)
-    |> then(&rename(df, &1))
+    |> then(&do_rename(df, &1))
   end
 
   @impl true
@@ -409,7 +413,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Enum.map(fn name ->
         if name in id_columns, do: name, else: names_prefix <> name
       end)
-      |> then(&rename(df, &1))
+      |> then(&do_rename(df, &1))
 
     df
   end

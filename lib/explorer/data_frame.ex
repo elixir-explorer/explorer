@@ -1333,7 +1333,9 @@ defmodule Explorer.DataFrame do
     new_names = to_column_names(names)
     check_new_names_length!(df, new_names)
 
-    Shared.apply_impl(df, :rename, [new_names])
+    out_df = %{df | names: new_names}
+
+    Shared.apply_impl(df, :rename, [out_df])
   end
 
   def rename(df, names) when is_column_pairs(names) do
