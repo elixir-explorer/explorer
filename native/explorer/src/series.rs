@@ -191,7 +191,7 @@ pub fn s_unordered_distinct(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_value_counts(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let s = &data.resource.0;
-    let mut df = s.value_counts()?;
+    let mut df = s.value_counts(true)?;
     let df = df
         .try_apply("counts", |s: &Series| s.cast(&DataType::Int64))?
         .clone();
@@ -245,42 +245,42 @@ pub fn s_series_equal(
 pub fn s_eq(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.equal(s1).into_series()))
+    Ok(ExSeries::new(s.equal(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_neq(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.not_equal(s1).into_series()))
+    Ok(ExSeries::new(s.not_equal(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_gt(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.gt(s1).into_series()))
+    Ok(ExSeries::new(s.gt(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_gt_eq(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.gt_eq(s1).into_series()))
+    Ok(ExSeries::new(s.gt_eq(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_lt(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.lt(s1).into_series()))
+    Ok(ExSeries::new(s.lt(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_lt_eq(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.lt_eq(s1).into_series()))
+    Ok(ExSeries::new(s.lt_eq(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

@@ -362,8 +362,8 @@ pub fn df_drop_duplicates(
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let new_df = match maintain_order {
-        false => df.distinct(Some(&subset), DistinctKeepStrategy::First)?,
-        true => df.distinct_stable(Some(&subset), DistinctKeepStrategy::First)?,
+        false => df.unique(Some(&subset), UniqueKeepStrategy::First)?,
+        true => df.unique_stable(Some(&subset), UniqueKeepStrategy::First)?,
     };
     Ok(ExDataFrame::new(new_df))
 }
@@ -427,10 +427,13 @@ pub fn df_pivot_wider(
     values_column: &str,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let new_df = df
-        .groupby(id_columns)?
-        .pivot([pivot_column], [values_column])
-        .first()?;
+    let new_df = df.pivot_stable(
+        [values_column],
+        id_columns,
+        [pivot_column],
+        PivotAgg::First,
+        false,
+    )?;
     Ok(ExDataFrame::new(new_df))
 }
 
