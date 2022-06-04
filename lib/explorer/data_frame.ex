@@ -1744,6 +1744,9 @@ defmodule Explorer.DataFrame do
 
   def pivot_longer(df, columns, opts) do
     opts = Keyword.validate!(opts, value_columns: [], names_to: "variable", values_to: "value")
+    names_to = to_column_name(opts[:names_to])
+    values_to = to_column_name(opts[:values_to])
+
     existing_columns = to_existing_columns(df, columns)
 
     names = names(df)
@@ -1772,25 +1775,31 @@ defmodule Explorer.DataFrame do
 
     value_columns = to_existing_columns(df, value_columns)
 
-    dtypes
-    |> Map.take(value_columns)
-    |> Map.values()
-    |> Enum.uniq()
-    |> length()
-    |> case do
-      1 ->
-        :ok
+    values_dtype =
+      dtypes
+      |> Map.take(value_columns)
+      |> Map.values()
+      |> Enum.uniq()
+      |> case do
+        [dtype] ->
+          dtype
 
-      _ ->
-        raise ArgumentError,
-              "value columns may only include one dtype but found multiple dtypes"
-    end
+        [_ | _] ->
+          raise ArgumentError,
+                "value columns may only include one dtype but found multiple dtypes"
+      end
+
+    new_dtypes =
+      dtypes
+      |> Map.take(columns)
+      |> Map.put(names_to, :string)
+      |> Map.put(values_to, values_dtype)
+
+    out_df = %{df | names: columns ++ [names_to, values_to], dtypes: new_dtypes}
 
     Shared.apply_impl(df, :pivot_longer, [
-      columns,
-      value_columns,
-      opts[:names_to],
-      opts[:values_to]
+      out_df,
+      value_columns
     ])
   end
 
