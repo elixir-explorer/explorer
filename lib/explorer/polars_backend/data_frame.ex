@@ -394,24 +394,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     [names_to, values_to] = not_ids = Enum.slice(out_df.names, -2, 2)
     id_columns = out_df.names -- not_ids
 
-    provisional_out = Shared.apply_dataframe(df, out_df, :df_melt, [id_columns, value_columns])
-    maybe_rename_variable_and_value_columns(provisional_out, names_to, values_to)
-  end
-
-  defp maybe_rename_variable_and_value_columns(out_df, "variable", "value"), do: out_df
-
-  defp maybe_rename_variable_and_value_columns(out_df, names_to, values_to) do
-    # Note that here we need to ask Polars for the names
-    new_names =
-      out_df
-      |> names()
-      |> Enum.map(fn
-        "variable" -> names_to
-        "value" -> values_to
-        name -> name
-      end)
-
-    rename(out_df, %{out_df | names: new_names})
+    Shared.apply_dataframe(df, out_df, :df_melt, [id_columns, value_columns, names_to, values_to])
   end
 
   @impl true
