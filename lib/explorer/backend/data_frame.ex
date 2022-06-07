@@ -84,8 +84,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback pivot_wider(
               df,
               id_columns :: [column_name()],
-              names_from :: [column_name()],
-              values_from :: [column_name()],
+              names_from :: column_name(),
+              values_from :: column_name(),
               names_prefix :: String.t()
             ) :: df
   @callback pivot_longer(

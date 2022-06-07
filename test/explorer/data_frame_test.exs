@@ -495,26 +495,6 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df2, atom_keys: true) == %{a: [0, 0, 0], b: ["a", "b", "c"]}
   end
 
-  test "pivot_wider/2" do
-    df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
-
-    assert DF.to_columns(DF.pivot_wider(df1, "variable", "value"), atom_keys: true) == %{
-             id: [1],
-             a: [1],
-             b: [2]
-           }
-
-    df2 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1.0, 2.0])
-
-    assert DF.to_columns(
-             DF.pivot_wider(df2, "variable", "value",
-               id_columns: ["id"],
-               names_prefix: "column_"
-             ),
-             atom_keys: true
-           ) == %{id: [1], column_a: [1.0], column_b: [2.0]}
-  end
-
   test "concat_rows/2" do
     df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
     df2 = DF.new(x: [4, 5, 6], y: ["d", "e", "f"])
@@ -697,14 +677,46 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "pivot_wider/4" do
+    test "with a single id" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [1],
+               b: [2]
+             }
+
+      df3 = DF.new(id: [1, 1], variable: ["1", "2"], value: [1.0, 2.0])
+
+      df4 =
+        DF.pivot_wider(df3, "variable", "value",
+          id_columns: ["id"],
+          names_prefix: "column_"
+        )
+
+      assert DF.to_columns(
+               df4,
+               atom_keys: true
+             ) == %{id: [1], column_1: [1.0], column_2: [2.0]}
+    end
+
     test "with multiple id columns" do
       df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
       df1 = DF.pivot_wider(df, "variable", "value")
 
       assert DF.names(df1) == ["id", "other_id", "a", "b"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id: [1, 1],
+               other_id: [4, 5],
+               a: [1, nil],
+               b: [nil, 2]
+             }
     end
 
-    test "with one id column" do
+    test "with a single id column ignoring other columns" do
       df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
 
       df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id])
@@ -712,13 +724,25 @@ defmodule Explorer.DataFrameTest do
 
       df2 = DF.pivot_wider(df, "variable", "value", id_columns: [0])
       assert DF.names(df2) == ["id", "a", "b"]
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [1],
+               b: [2]
+             }
     end
 
-    test "with a filter function" do
-      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
+    test "with a filter function for id columns" do
+      df = DF.new(id_main: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
 
       df1 = DF.pivot_wider(df, "variable", "value", id_columns: &String.starts_with?(&1, "id"))
-      assert DF.names(df1) == ["id", "a", "b"]
+      assert DF.names(df1) == ["id_main", "a", "b"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id_main: [1],
+               a: [1],
+               b: [2]
+             }
     end
 
     test "without an id column" do

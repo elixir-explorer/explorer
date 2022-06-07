@@ -1851,12 +1851,9 @@ defmodule Explorer.DataFrame do
     names = names(df)
     dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
 
-    case Map.get(dtypes, values_from) do
-      dtype when dtype in [:integer, :float, :date, :datetime] ->
-        :ok
-
-      dtype ->
-        raise ArgumentError, "the values_from column must be numeric, but found #{dtype}"
+    unless dtypes[values_from] in [:integer, :float, :date, :datetime] do
+      raise ArgumentError,
+            "the values_from column must be numeric, but found #{dtypes[values_from]}"
     end
 
     id_columns =
