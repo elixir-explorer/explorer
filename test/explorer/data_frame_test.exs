@@ -67,6 +67,42 @@ defmodule Explorer.DataFrameTest do
       joined = DF.join(left, right, how: :cross)
       assert %DF{} = joined
     end
+
+    test "with a custom 'on'" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"])
+
+      df = DF.join(left, right, on: [{"a", "d"}])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7])
+
+      df = DF.join(left, right, on: [{"a", "d"}])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               a_right: [5, 6, 7]
+             }
+
+      df1 = DF.join(left, right, on: [{"a", "d"}], how: :left)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               a_right: [5, 6, 7, nil]
+             }
+    end
   end
 
   describe "from_csv/2 options" do
