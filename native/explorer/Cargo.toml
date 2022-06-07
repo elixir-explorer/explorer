@@ -17,8 +17,9 @@ rand_pcg = "0.3.1"
 rustler = "0.25.0"
 thiserror = "1"
 
-# This is because when using GCC on Windows MiMalloc won´t compile
-[target.'cfg(not(all(windows, target_env = "gnu")))'.dependencies]
+# MiMalloc won´t compile on Windows with the GCC compiler.
+# On Linux with Musl it won´t load correctly.
+[target.'cfg(not(any(all(windows, target_env = "gnu"), all(target_os = "linux", target_env = "musl"))))'.dependencies]
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
