@@ -1,9 +1,16 @@
-// MiMalloc won´t compile on Windows with the GCC compiler
-#[cfg(not(all(windows, target_env = "gnu")))]
+// MiMalloc won´t compile on Windows with the GCC compiler.
+// On Linux with Musl it won´t load correctly.
+#[cfg(not(any(
+    all(windows, target_env = "gnu"),
+    all(target_os = "linux", target_env = "musl")
+)))]
 use mimalloc::MiMalloc;
 use rustler::{Env, Term};
 
-#[cfg(not(all(windows, target_env = "gnu")))]
+#[cfg(not(any(
+    all(windows, target_env = "gnu"),
+    all(target_os = "linux", target_env = "musl")
+)))]
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
