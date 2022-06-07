@@ -2174,13 +2174,12 @@ defmodule Explorer.DataFrame do
   @spec group_by(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
           DataFrame.t()
   def group_by(df, groups) when is_list(groups) do
-    names = names(df)
-    Enum.each(groups, fn name -> maybe_raise_column_not_found(names, name) end)
+    groups = to_existing_columns(df, groups)
 
     Shared.apply_impl(df, :group_by, [groups])
   end
 
-  def group_by(df, group) when is_binary(group), do: group_by(df, [group])
+  def group_by(df, group) when is_column_name(group), do: group_by(df, [group])
 
   @doc """
   Removes grouping variables.
