@@ -2171,7 +2171,7 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec group_by(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
+  @spec group_by(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
           DataFrame.t()
   def group_by(df, groups) when is_list(groups) do
     groups = to_existing_columns(df, groups)
@@ -2205,12 +2205,13 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec ungroup(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
+  @spec ungroup(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
           DataFrame.t()
   def ungroup(df, groups \\ [])
 
   def ungroup(df, groups) when is_list(groups) do
     current_groups = groups(df)
+    groups = to_existing_columns(df, groups)
 
     Enum.each(groups, fn group ->
       if group not in current_groups,
@@ -2224,7 +2225,7 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :ungroup, [groups])
   end
 
-  def ungroup(df, group) when is_binary(group), do: ungroup(df, [group])
+  def ungroup(df, group) when is_column_name(group), do: ungroup(df, [group])
 
   @supported_aggs ~w[min max sum mean median first last count n_unique]a
 
