@@ -115,9 +115,9 @@ defmodule Explorer.DataFrame do
 
   # Guards and helpers for columns
 
-  defguard is_column(column) when is_binary(column) or is_atom(column) or is_integer(column)
-  defguard is_column_name(column) when is_binary(column) or is_atom(column)
-  defguard is_column_pairs(columns) when is_list(columns) or is_map(columns)
+  defguardp is_column(column) when is_binary(column) or is_atom(column) or is_integer(column)
+  defguardp is_column_name(column) when is_binary(column) or is_atom(column)
+  defguardp is_column_pairs(columns) when is_list(columns) or is_map(columns)
 
   # Normalize a column name to string
   defp to_column_name(column) when is_binary(column), do: column
@@ -506,6 +506,7 @@ defmodule Explorer.DataFrame do
 
   If already lazy, this is a noop.
   """
+  @doc type: :single
   @spec to_lazy(df :: DataFrame.t()) :: DataFrame.t()
   def to_lazy(df), do: Shared.apply_impl(df, :to_lazy)
 
@@ -514,6 +515,7 @@ defmodule Explorer.DataFrame do
 
   If already eager, this is a noop.
   """
+  @doc type: :single
   @spec collect(df :: DataFrame.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def collect(df), do: Shared.apply_impl(df, :collect)
 
