@@ -272,6 +272,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Enum.reduce(columns, df, &mutate_reducer/2)
   end
 
+  # So for groups we need to:
+  # - fetch groups from DF
+  # - map them, taking the indexes
+  # - for each group of indexes, we ungroup the group and take the registries from that
+  # - we then mutate that ungrouped group
+  # - after mutating we "join" each DF (for each given group)
+  # - then we apply the groups again
+  # BUT: if groups are "virtual", why we need to group and ungroup to mutate the DF?
   def mutate(%DataFrame{groups: groups} = df, columns) do
     df
     |> Shared.apply_dataframe(:df_groups, [groups])

@@ -27,6 +27,32 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "mutate/2" do
+    test "adds a new column" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      df1 = DF.mutate(df, c: [true, false, true])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [true, false, true]
+             }
+    end
+
+    test "adds a new column when there is a group" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [1, 1, 2])
+
+      df1 = DF.group_by(df, :c)
+      df2 = DF.mutate(df1, d: &Series.add(&1["a"], -7))
+
+      # TODO: should we have the DF in the same order from original? 
+      assert DF.to_columns(DF.arrange(df2, [:a]), atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [1, 1, 2],
+               d: [-6, -5, -4]
+             }
+    end
+
     test "raises with series of invalid size", %{df: df} do
       assert_raise ArgumentError,
                    "size of new column test (3) must match number of rows in the dataframe (1094)",
