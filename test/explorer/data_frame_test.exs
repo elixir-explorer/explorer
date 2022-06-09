@@ -36,21 +36,29 @@ defmodule Explorer.DataFrameTest do
                b: ["a", "b", "c"],
                c: [true, false, true]
              }
+
+      assert df1.names == ["a", "b", "c"]
+      assert df1.dtypes == %{"a" => :integer, "b" => :string, "c" => :boolean}
     end
 
     test "adds a new column when there is a group" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [1, 1, 2])
 
       df1 = DF.group_by(df, :c)
-      df2 = DF.mutate(df1, d: &Series.add(&1["a"], -7))
+      df2 = DF.mutate(df1, d: &Series.add(&1["a"], -7.1))
 
-      # TODO: should we have the DF in the same order from original? 
-      assert DF.to_columns(DF.arrange(df2, :a), atom_keys: true) == %{
+      # We need to sort again because it breaks ordering in the process.
+      df3 = df2 |> DF.ungroup() |> DF.arrange(:a) |> DF.group_by(:c)
+
+      assert DF.to_columns(df3, atom_keys: true) == %{
                a: [1, 2, 3],
                b: ["a", "b", "c"],
                c: [1, 1, 2],
-               d: [-6, -5, -4]
+               d: [-6.1, -5.1, -4.1]
              }
+
+      assert df2.names == ["a", "b", "c", "d"]
+      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :float}
     end
 
     test "raises with series of invalid size", %{df: df} do

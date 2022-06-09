@@ -269,38 +269,54 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_dataframe(df, :df_filter, [mask.data])
 
   @impl true
-  def mutate(%DataFrame{groups: []} = df, _out_df, columns) do
-    Enum.reduce(columns, df, &mutate_reducer/2)
+  def mutate(%DataFrame{groups: []} = df, out_df, columns) do
+    Enum.reduce(columns, df, fn {column_name, value}, acc_df when is_binary(column_name) ->
+      series = to_series(acc_df, column_name, value)
+
+      check_series_size!(acc_df, series, column_name)
+
+      Shared.apply_dataframe(acc_df, out_df, :df_with_column, [series.data])
+    end)
   end
 
   def mutate(%DataFrame{groups: groups} = df, out_df, columns) do
+    ungrouped_df = ungroup(df, [])
+    ungrouped_out = ungroup(out_df, [])
+
     df
-    |> Shared.apply_dataframe(:df_groups, [groups])
-    |> pull("groups")
-    |> Series.to_list()
-    |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> mutate(out_df, columns) end)
-    |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
+    |> groups_indexes()
+    |> Enum.map(fn indices -> ungrouped_df |> take(indices) |> mutate(ungrouped_out, columns) end)
+    |> Enum.reduce(fn df, acc ->
+      Shared.apply_dataframe(acc, ungrouped_out, :df_vstack, [df.data])
+    end)
     |> group_by(groups)
   end
 
-  defp mutate_reducer({column_name, %Series{} = series}, %DataFrame{} = df)
-       when is_binary(column_name) do
-    check_series_size(df, series, column_name)
-    series = PolarsSeries.rename(series, column_name)
-    Shared.apply_dataframe(df, :df_with_column, [series.data])
+  defp to_series(df, name, value) do
+    case value do
+      %Series{} = series ->
+        PolarsSeries.rename(series, name)
+
+      values when is_list(values) ->
+        series_from_list!(name, values)
+
+      callback when is_function(callback) ->
+        to_series(df, name, callback.(df))
+
+      any ->
+        to_series(df, name, List.duplicate(any, n_rows(df)))
+    end
   end
 
-  defp mutate_reducer({column_name, callback}, %DataFrame{} = df)
-       when is_function(callback),
-       do: mutate_reducer({column_name, callback.(df)}, df)
+  # Returns a list of lists, where each list is a group of row indexes.
+  defp groups_indexes(%DataFrame{groups: [_ | _]} = df) do
+    df
+    |> Shared.apply_dataframe(:df_groups, [df.groups])
+    |> pull("groups")
+    |> Series.to_list()
+  end
 
-  defp mutate_reducer({column_name, values}, df) when is_list(values),
-    do: mutate_reducer({column_name, series_from_list!(column_name, values)}, df)
-
-  defp mutate_reducer({column_name, value}, %DataFrame{} = df),
-    do: mutate_reducer({column_name, value |> List.duplicate(n_rows(df))}, df)
-
-  defp check_series_size(df, series, column_name) do
+  defp check_series_size!(df, series, column_name) do
     df_len = n_rows(df)
     s_len = Series.size(series)
 

@@ -1013,6 +1013,8 @@ defmodule Explorer.DataFrame do
   Columns are added with keyword list or maps. New variables overwrite existing variables of the
   same name. Column names are coerced from atoms to strings.
 
+  Be aware that mutating grouped dataframes will cause them to lost ordering.
+
   ## Examples
 
   You can pass in a list directly as a new column:
@@ -1107,16 +1109,16 @@ defmodule Explorer.DataFrame do
     dtypes = dtypes(df)
     dtypes_map = Enum.zip(names, dtypes) |> Map.new()
 
+    mut_names = mutations |> Map.keys() |> MapSet.new()
+
     new_names =
       names
       |> MapSet.new()
-      |> MapSet.difference(MapSet.new(Map.keys(mutations)))
+      |> MapSet.union(mut_names)
       |> MapSet.to_list()
 
-    all_names = names ++ new_names
-
     new_dtypes =
-      for name <- all_names do
+      for name <- new_names do
         case mutations[name] do
           nil ->
             dtypes_map[name]
@@ -1143,7 +1145,7 @@ defmodule Explorer.DataFrame do
         end
       end
 
-    %{df | names: all_names, dtypes: Enum.zip(all_names, new_dtypes) |> Map.new()}
+    %{df | names: new_names, dtypes: Enum.zip(new_names, new_dtypes) |> Map.new()}
   end
 
   @doc """
