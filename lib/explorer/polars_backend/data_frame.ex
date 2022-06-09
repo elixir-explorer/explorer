@@ -244,7 +244,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Series.to_list()
       |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> n_rows() end)
 
-    groupby |> DataFrame.select(["groups"], :drop) |> mutate(n: n) |> group_by(groups)
+    # TODO: change "mutate" with out_df when available
+    groupby |> DataFrame.select(["groups"], :drop) |> mutate(df, n: n) |> group_by(groups)
   end
 
   @impl true
@@ -268,24 +269,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_dataframe(df, :df_filter, [mask.data])
 
   @impl true
-  def mutate(%DataFrame{groups: []} = df, columns) do
+  def mutate(%DataFrame{groups: []} = df, _out_df, columns) do
     Enum.reduce(columns, df, &mutate_reducer/2)
   end
 
-  # So for groups we need to:
-  # - fetch groups from DF
-  # - map them, taking the indexes
-  # - for each group of indexes, we ungroup the group and take the registries from that
-  # - we then mutate that ungrouped group
-  # - after mutating we "join" each DF (for each given group)
-  # - then we apply the groups again
-  # BUT: if groups are "virtual", why we need to group and ungroup to mutate the DF?
-  def mutate(%DataFrame{groups: groups} = df, columns) do
+  def mutate(%DataFrame{groups: groups} = df, out_df, columns) do
     df
     |> Shared.apply_dataframe(:df_groups, [groups])
     |> pull("groups")
     |> Series.to_list()
-    |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> mutate(columns) end)
+    |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> mutate(out_df, columns) end)
     |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
     |> group_by(groups)
   end
@@ -304,9 +297,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp mutate_reducer({column_name, values}, df) when is_list(values),
     do: mutate_reducer({column_name, series_from_list!(column_name, values)}, df)
 
-  defp mutate_reducer({column_name, value}, %DataFrame{} = df)
-       when is_binary(column_name),
-       do: mutate_reducer({column_name, value |> List.duplicate(n_rows(df))}, df)
+  defp mutate_reducer({column_name, value}, %DataFrame{} = df),
+    do: mutate_reducer({column_name, value |> List.duplicate(n_rows(df))}, df)
 
   defp check_series_size(df, series, column_name) do
     df_len = n_rows(df)

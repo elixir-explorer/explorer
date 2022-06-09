@@ -1095,8 +1095,55 @@ defmodule Explorer.DataFrame do
           DataFrame.t()
   def mutate(df, columns) when is_column_pairs(columns) do
     pairs = to_column_pairs(df, columns)
+    mutations = Map.new(pairs)
+    out_df = df_for_mutations(df, mutations)
 
-    Shared.apply_impl(df, :mutate, [Map.new(pairs)])
+    Shared.apply_impl(df, :mutate, [out_df, mutations])
+  end
+
+  defp df_for_mutations(df, mutations) do
+    # TODO: take from df struct after changing operations to store these values
+    names = names(df)
+    dtypes = dtypes(df)
+    dtypes_map = Enum.zip(names, dtypes) |> Map.new()
+
+    new_names =
+      names
+      |> MapSet.new()
+      |> MapSet.difference(MapSet.new(Map.keys(mutations)))
+      |> MapSet.to_list()
+
+    all_names = names ++ new_names
+
+    new_dtypes =
+      for name <- all_names do
+        case mutations[name] do
+          nil ->
+            dtypes_map[name]
+
+          value when is_list(value) ->
+            Shared.check_types!(value)
+
+          %Series{} = value ->
+            value.dtype
+
+          value when is_function(value, 1) ->
+            provisional = value.(df)
+
+            case provisional do
+              %Series{} ->
+                provisional.dtype
+
+              other ->
+                Shared.check_types!(List.wrap(other))
+            end
+
+          value ->
+            Shared.check_types!([value])
+        end
+      end
+
+    %{df | names: all_names, dtypes: Enum.zip(all_names, new_dtypes) |> Map.new()}
   end
 
   @doc """
