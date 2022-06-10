@@ -2224,8 +2224,11 @@ defmodule Explorer.DataFrame do
           DataFrame.t()
   def group_by(df, groups) when is_list(groups) do
     groups = to_existing_columns(df, groups)
+    all_groups = MapSet.union(MapSet.new(df.groups), MapSet.new(groups)) |> MapSet.to_list()
 
-    Shared.apply_impl(df, :group_by, [groups])
+    out_df = %{df | groups: all_groups}
+
+    Shared.apply_impl(df, :group_by, [out_df])
   end
 
   def group_by(df, group) when is_column_name(group), do: group_by(df, [group])

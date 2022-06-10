@@ -245,7 +245,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> n_rows() end)
 
     # TODO: change "mutate" with out_df when available
-    groupby |> DataFrame.select(["groups"], :drop) |> mutate(df, n: n) |> group_by(groups)
+    groupby
+    |> DataFrame.select(["groups"], :drop)
+    |> mutate(df, n: n)
+    |> DataFrame.group_by(groups)
   end
 
   @impl true
@@ -289,7 +292,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> Enum.reduce(fn df, acc ->
       Shared.apply_dataframe(acc, ungrouped_out, :df_vstack, [df.data])
     end)
-    |> group_by(groups)
+    |> DataFrame.group_by(groups)
   end
 
   defp to_series(df, name, value) do
@@ -341,7 +344,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> indexes_by_groups()
     |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> arrange(columns) end)
     |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
-    |> group_by(groups)
+    |> DataFrame.group_by(groups)
   end
 
   @impl true
@@ -361,7 +364,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       df |> ungroup([]) |> take(indices) |> distinct(columns, keep_all?)
     end)
     |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
-    |> group_by(groups)
+    |> DataFrame.group_by(groups)
   end
 
   @impl true
@@ -448,8 +451,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Groups
 
   @impl true
-  def group_by(%DataFrame{groups: groups} = df, new_groups),
-    do: %DataFrame{df | groups: groups ++ new_groups}
+  def group_by(%DataFrame{}, %DataFrame{} = out_df),
+    do: out_df
 
   @impl true
   def ungroup(df, []), do: %DataFrame{df | groups: []}
