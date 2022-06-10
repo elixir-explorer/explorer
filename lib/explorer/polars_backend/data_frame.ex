@@ -282,17 +282,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end)
   end
 
-  def mutate(%DataFrame{groups: groups} = df, out_df, columns) do
-    ungrouped_df = DataFrame.ungroup(df)
+  def mutate(%DataFrame{groups: [_ | _]} = df, out_df, columns) do
     ungrouped_out = DataFrame.ungroup(out_df)
 
-    df
-    |> indexes_by_groups()
-    |> Enum.map(fn indices -> ungrouped_df |> take(indices) |> mutate(ungrouped_out, columns) end)
-    |> Enum.reduce(fn df, acc ->
-      Shared.apply_dataframe(acc, ungrouped_out, :df_vstack, [df.data])
-    end)
-    |> DataFrame.group_by(groups)
+    apply_on_groups(df, fn group -> mutate(group, ungrouped_out, columns) end)
   end
 
   defp to_series(df, name, value) do
@@ -309,14 +302,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
       any ->
         to_series(df, name, List.duplicate(any, n_rows(df)))
     end
-  end
-
-  # Returns a list of lists, where each list is a group of row indexes.
-  defp indexes_by_groups(%DataFrame{groups: [_ | _]} = df) do
-    df
-    |> Shared.apply_dataframe(:df_groups, [df.groups])
-    |> pull("groups")
-    |> Series.to_list()
   end
 
   defp check_series_size!(df, series, column_name) do
@@ -339,12 +324,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         Shared.apply_dataframe(df, :df_sort, [column, direction == :desc])
       end)
 
-  def arrange(%DataFrame{groups: groups} = df, columns) do
-    df
-    |> indexes_by_groups()
-    |> Enum.map(fn indices -> df |> DataFrame.ungroup() |> take(indices) |> arrange(columns) end)
-    |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
-    |> DataFrame.group_by(groups)
+  def arrange(%DataFrame{groups: [_ | _]} = df, columns) do
+    apply_on_groups(df, fn group -> arrange(group, columns) end)
   end
 
   @impl true
@@ -357,16 +338,28 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Shared.apply_dataframe(:df_drop_duplicates, [true, columns])
       |> DataFrame.select(columns)
 
-  def distinct(%DataFrame{groups: groups} = df, columns, keep_all?) do
+  def distinct(%DataFrame{groups: [_ | _]} = df, columns, keep_all?) do
+    apply_on_groups(df, fn group -> distinct(group, columns, keep_all?) end)
+  end
+
+  defp apply_on_groups(%DataFrame{} = df, callback) when is_function(callback, 1) do
     ungrouped_df = DataFrame.ungroup(df)
 
     df
     |> indexes_by_groups()
     |> Enum.map(fn indices ->
-      ungrouped_df |> take(indices) |> distinct(columns, keep_all?)
+      ungrouped_df |> take(indices) |> then(callback)
     end)
     |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
-    |> DataFrame.group_by(groups)
+    |> DataFrame.group_by(df.groups)
+  end
+
+  # Returns a list of lists, where each list is a group of row indexes.
+  defp indexes_by_groups(%DataFrame{groups: [_ | _]} = df) do
+    df
+    |> Shared.apply_dataframe(:df_groups, [df.groups])
+    |> pull("groups")
+    |> Series.to_list()
   end
 
   @impl true
