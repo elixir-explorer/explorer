@@ -110,7 +110,7 @@ defmodule Explorer.Backend.DataFrame do
   # Groups
 
   @callback group_by(df, out_df :: df()) :: df
-  @callback ungroup(df, columns :: [column_name()]) :: df
+  @callback ungroup(df, out_df :: df()) :: df
   @callback summarise(df, aggregations :: map()) :: df
 
   # Functions

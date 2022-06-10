@@ -2262,9 +2262,11 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec ungroup(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
+  @spec ungroup(df :: DataFrame.t(), groups_or_group :: column_names() | column_name() | :all) ::
           DataFrame.t()
-  def ungroup(df, groups \\ [])
+  def ungroup(df, groups \\ :all)
+
+  def ungroup(df, :all), do: Shared.apply_impl(df, :ungroup, [%{df | groups: []}])
 
   def ungroup(df, groups) when is_list(groups) do
     current_groups = groups(df)
@@ -2279,7 +2281,9 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    Shared.apply_impl(df, :ungroup, [groups])
+    out_df = %{df | groups: current_groups -- groups}
+
+    Shared.apply_impl(df, :ungroup, [out_df])
   end
 
   def ungroup(df, group) when is_column_name(group), do: ungroup(df, [group])

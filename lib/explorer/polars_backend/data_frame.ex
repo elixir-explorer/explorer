@@ -242,7 +242,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       groupby
       |> pull("groups")
       |> Series.to_list()
-      |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> n_rows() end)
+      |> Enum.map(fn indices -> df |> DataFrame.ungroup() |> take(indices) |> n_rows() end)
 
     # TODO: change "mutate" with out_df when available
     groupby
@@ -283,8 +283,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   def mutate(%DataFrame{groups: groups} = df, out_df, columns) do
-    ungrouped_df = ungroup(df, [])
-    ungrouped_out = ungroup(out_df, [])
+    ungrouped_df = DataFrame.ungroup(df)
+    ungrouped_out = DataFrame.ungroup(out_df)
 
     df
     |> indexes_by_groups()
@@ -342,7 +342,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def arrange(%DataFrame{groups: groups} = df, columns) do
     df
     |> indexes_by_groups()
-    |> Enum.map(fn indices -> df |> ungroup([]) |> take(indices) |> arrange(columns) end)
+    |> Enum.map(fn indices -> df |> DataFrame.ungroup() |> take(indices) |> arrange(columns) end)
     |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
     |> DataFrame.group_by(groups)
   end
@@ -358,7 +358,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> DataFrame.select(columns)
 
   def distinct(%DataFrame{groups: groups} = df, columns, keep_all?) do
-    ungrouped_df = ungroup(df, [])
+    ungrouped_df = DataFrame.ungroup(df)
 
     df
     |> indexes_by_groups()
@@ -451,11 +451,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Groups
 
   @impl true
-  def group_by(%DataFrame{}, %DataFrame{} = out_df),
-    do: out_df
+  def group_by(%DataFrame{}, %DataFrame{} = out_df), do: out_df
 
   @impl true
-  def ungroup(df, []), do: %DataFrame{df | groups: []}
+  def ungroup(%DataFrame{}, %DataFrame{} = out_df), do: out_df
 
   def ungroup(df, groups),
     do: %DataFrame{df | groups: Enum.filter(df.groups, &(&1 not in groups))}
@@ -467,7 +466,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     df
     |> Shared.apply_dataframe(:df_groupby_agg, [groups, columns])
-    |> ungroup([])
+    |> DataFrame.ungroup()
     |> DataFrame.arrange(groups)
   end
 
