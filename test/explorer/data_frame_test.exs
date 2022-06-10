@@ -659,8 +659,7 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.rename(df, ["c", "d"])
 
       assert DF.names(df1) == ["c", "d"]
-      # TODO: check if the rename is happening in Polars' Series
-      # assert df1["c"] == df["a"]
+      assert df1.names == ["c", "d"]
       assert Series.to_list(df1["c"]) == Series.to_list(df["a"])
     end
 
@@ -668,6 +667,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
       df1 = DF.rename(df, a: "first")
 
+      assert df1.names == ["first", "b"]
       assert Series.to_list(df1["first"]) == Series.to_list(df["a"])
     end
 
@@ -675,6 +675,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
       df1 = DF.rename(df, %{"a" => "first", "b" => "second"})
 
+      assert df1.names == ["first", "second"]
       assert Series.to_list(df1["first"]) == Series.to_list(df["a"])
       assert Series.to_list(df1["second"]) == Series.to_list(df["b"])
     end
@@ -715,6 +716,19 @@ defmodule Explorer.DataFrameTest do
 
       assert df_names -- df1_names == ["total", "cement"]
       assert df1_names -- df_names == ["TOTAL", "CEMENT"]
+
+      assert df1.names == [
+               "year",
+               "country",
+               "TOTAL",
+               "solid_fuel",
+               "liquid_fuel",
+               "gas_fuel",
+               "CEMENT",
+               "gas_flaring",
+               "per_capita",
+               "bunker_fuels"
+             ]
     end
 
     test "with ranges", %{df: df} do
@@ -770,6 +784,8 @@ defmodule Explorer.DataFrameTest do
                df4,
                atom_keys: true
              ) == %{id: [1], column_1: [1.0], column_2: [2.0]}
+
+      assert df4.names == ["id", "column_1", "column_2"]
     end
 
     test "with multiple id columns" do
@@ -777,6 +793,7 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.pivot_wider(df, "variable", "value")
 
       assert DF.names(df1) == ["id", "other_id", "a", "b"]
+      assert df1.names == ["id", "other_id", "a", "b"]
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                id: [1, 1],
@@ -794,6 +811,7 @@ defmodule Explorer.DataFrameTest do
 
       df2 = DF.pivot_wider(df, "variable", "value", id_columns: [0])
       assert DF.names(df2) == ["id", "a", "b"]
+      assert df2.names == ["id", "a", "b"]
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                id: [1],
@@ -878,6 +896,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.select(df, ["a"])
 
       assert DF.names(df) == ["a"]
+      assert df.names == ["a"]
     end
 
     test "keep column positions" do
@@ -885,6 +904,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.select(df, [1])
 
       assert DF.names(df) == ["b"]
+      assert df.names == ["b"]
     end
 
     test "keep column range" do
@@ -892,6 +912,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.select(df, 1..2)
 
       assert DF.names(df) == ["b", "c"]
+      assert df.names == ["b", "c"]
     end
 
     test "keep columns matching callback" do
@@ -899,6 +920,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.select(df, fn name -> name in ~w(a c) end)
 
       assert DF.names(df) == ["a", "c"]
+      assert df.names == ["a", "c"]
     end
 
     test "keep column raises error with non-existent column" do
@@ -914,6 +936,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.select(df, ["a"], :drop)
 
       assert DF.names(df) == ["b"]
+      assert df.names == ["b"]
     end
 
     test "drop column positions" do
@@ -921,6 +944,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.select(df, [1], :drop)
 
       assert DF.names(df) == ["a"]
+      assert df.names == ["a"]
     end
 
     test "drop column range" do
@@ -928,6 +952,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.select(df, 1..2, :drop)
 
       assert DF.names(df) == ["a"]
+      assert df.names == ["a"]
     end
 
     test "drop columns matching callback" do
@@ -935,6 +960,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.select(df, fn name -> name in ~w(a c) end, :drop)
 
       assert DF.names(df) == ["b"]
+      assert df.names == ["b"]
     end
 
     test "drop column raises error with non-existent column" do
