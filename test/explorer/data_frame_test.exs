@@ -59,6 +59,7 @@ defmodule Explorer.DataFrameTest do
 
       assert df2.names == ["a", "b", "c", "d"]
       assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :float}
+      assert df2.groups == ["c"]
     end
 
     test "raises with series of invalid size", %{df: df} do
@@ -115,7 +116,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "with a custom 'on' but with repeated column" do
+    test "with a custom 'on' but with repeated column on right side" do
       left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
       right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7])
 
@@ -135,6 +136,29 @@ defmodule Explorer.DataFrameTest do
                b: ["a", "b", "b", "c"],
                c: ["d", "e", "f", nil],
                a_right: [5, 6, 7, nil]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on left side" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], d: [5, 6, 7])
+      right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"])
+
+      df = DF.join(left, right, on: [{"a", "d"}])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               d: [5, 6, 6]
+             }
+
+      df1 = DF.join(left, right, on: [{"a", "d"}], how: :left)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               d: [5, 6, 6, 7]
              }
     end
   end
@@ -968,6 +992,71 @@ defmodule Explorer.DataFrameTest do
 
       assert_raise ArgumentError, "could not find column name \"g\"", fn ->
         DF.select(df, ["g"], :drop)
+      end
+    end
+  end
+
+  describe "group_by/2" do
+    test "groups a dataframe by one column", %{df: df} do
+      assert df.groups == []
+      df1 = DF.group_by(df, "country")
+
+      assert df1.groups == ["country"]
+      assert DF.groups(df1) == ["country"]
+    end
+
+    test "groups a dataframe by two columns", %{df: df} do
+      df1 = DF.group_by(df, ["country", "year"])
+
+      assert df1.groups == ["country", "year"]
+      assert DF.groups(df1) == ["country", "year"]
+    end
+
+    test "adds a group for an already grouped dataframe", %{df: df} do
+      df1 = DF.group_by(df, ["country"])
+      df2 = DF.group_by(df1, "year")
+
+      assert df2.groups == ["country", "year"]
+      assert DF.groups(df2) == ["country", "year"]
+    end
+
+    test "raise error for unknown columns", %{df: df} do
+      assert_raise ArgumentError, "could not find column name \"something_else\"", fn ->
+        DF.group_by(df, "something_else")
+      end
+    end
+  end
+
+  describe "ungroup/2" do
+    test "removes one group", %{df: df} do
+      df1 = DF.group_by(df, "country")
+      df2 = DF.ungroup(df1, "country")
+
+      assert df2.groups == []
+      assert DF.groups(df2) == []
+    end
+
+    test "remove one group for a dataframe that is grouped by two groups", %{df: df} do
+      df1 = DF.group_by(df, ["country", "year"])
+      df2 = DF.ungroup(df1, "country")
+
+      assert df2.groups == ["year"]
+      assert DF.groups(df2) == ["year"]
+    end
+
+    test "remove two groups of a dataframe", %{df: df} do
+      df1 = DF.group_by(df, ["country", "year"])
+      df2 = DF.ungroup(df1, ["year", "country"])
+
+      assert df2.groups == []
+      assert DF.groups(df2) == []
+    end
+
+    test "raise error for unknown groups", %{df: df} do
+      df1 = DF.group_by(df, ["country", "year"])
+
+      assert_raise ArgumentError, "could not find column name \"something_else\"", fn ->
+        DF.ungroup(df1, ["something_else"])
       end
     end
   end
