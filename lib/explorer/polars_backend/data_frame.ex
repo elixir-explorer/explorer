@@ -358,10 +358,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> DataFrame.select(columns)
 
   def distinct(%DataFrame{groups: groups} = df, columns, keep_all?) do
+    ungrouped_df = ungroup(df, [])
+
     df
     |> indexes_by_groups()
     |> Enum.map(fn indices ->
-      df |> ungroup([]) |> take(indices) |> distinct(columns, keep_all?)
+      ungrouped_df |> take(indices) |> distinct(columns, keep_all?)
     end)
     |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
     |> DataFrame.group_by(groups)
@@ -370,10 +372,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def rename(%DataFrame{} = df, %DataFrame{} = out_df),
     do: Shared.apply_dataframe(df, out_df, :df_set_column_names, [out_df.names])
-
-  # TODO: remove after implementing `out_df` for all functions related
-  defp do_rename(%DataFrame{} = df, new_names) when is_list(new_names),
-    do: Shared.apply_dataframe(df, :df_set_column_names, [new_names])
 
   @impl true
   def dummies(df, names),
@@ -415,16 +413,18 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def pivot_wider(df, id_columns, names_from, values_from, names_prefix) do
     df = Shared.apply_dataframe(df, :df_pivot_wider, [id_columns, names_from, values_from])
+    names = names(df)
 
-    df =
-      df
-      |> names()
-      |> Enum.map(fn name ->
+    new_names =
+      Enum.map(names, fn name ->
         if name in id_columns, do: name, else: names_prefix <> name
       end)
-      |> then(&do_rename(df, &1))
 
-    df
+    if names != new_names do
+      Shared.apply_dataframe(df, :df_set_column_names, [new_names])
+    else
+      df
+    end
   end
 
   # Two or more table verbs

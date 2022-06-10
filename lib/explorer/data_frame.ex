@@ -2224,7 +2224,12 @@ defmodule Explorer.DataFrame do
           DataFrame.t()
   def group_by(df, groups) when is_list(groups) do
     groups = to_existing_columns(df, groups)
-    all_groups = MapSet.union(MapSet.new(df.groups), MapSet.new(groups)) |> MapSet.to_list()
+
+    all_groups =
+      df.groups
+      |> MapSet.new()
+      |> MapSet.union(MapSet.new(groups))
+      |> MapSet.to_list()
 
     out_df = %{df | groups: all_groups}
 

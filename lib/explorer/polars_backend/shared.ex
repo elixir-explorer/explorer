@@ -35,7 +35,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def apply_dataframe(%DataFrame{} = df, %DataFrame{} = out_df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
-      {:ok, %module{} = new_df} when module in @polars_df -> update_dataframe(new_df, out_df)
+      {:ok, %module{} = new_df} when module in @polars_df -> %{out_df | data: new_df}
       {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, value} -> value
       {:error, error} -> raise "#{error}"
