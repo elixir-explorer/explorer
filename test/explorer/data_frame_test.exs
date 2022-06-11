@@ -1060,4 +1060,142 @@ defmodule Explorer.DataFrameTest do
       end
     end
   end
+
+  describe "summarise/2" do
+    test "with one group and one column with aggregations", %{df: df} do
+      df1 = df |> DF.group_by("year") |> DF.summarise(total: [:max, :min])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               total_min: [1, 2, 2, 2, 3],
+               total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634]
+             }
+    end
+
+    test "with one group and two columns with aggregations", %{df: df} do
+      df1 = df |> DF.group_by("year") |> DF.summarise(total: [:max, :min], country: [:n_unique])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               total_min: [1, 2, 2, 2, 3],
+               total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634],
+               country_n_unique: [217, 217, 220, 220, 220]
+             }
+    end
+
+    test "with two groups and one column with aggregations", %{df: df} do
+      df1 =
+        df |> DF.head(5) |> DF.group_by(["country", "year"]) |> DF.summarise(total: [:max, :min])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               year: [2010, 2010, 2010, 2010, 2010],
+               country: ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA"],
+               total_max: [2308, 1254, 32500, 141, 7924],
+               total_min: [2308, 1254, 32500, 141, 7924]
+             }
+    end
+
+    test "with two groups and two columns with aggregations", %{df: df} do
+      equal_filters =
+        for country <- ["BRAZIL", "AUSTRALIA", "POLAND"], do: Series.equal(df["country"], country)
+
+      # TODO: build a smaller DF with departments, employees, salary
+      filters = Enum.reduce(equal_filters, fn filter, acc -> Series.or(acc, filter) end)
+
+      df1 =
+        df
+        |> DF.filter(filters)
+        |> DF.group_by(["country", "year"])
+        |> DF.summarise(total: [:max, :min], cement: [:median])
+        |> DF.arrange(:country)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               country: [
+                 "AUSTRALIA",
+                 "AUSTRALIA",
+                 "AUSTRALIA",
+                 "AUSTRALIA",
+                 "AUSTRALIA",
+                 "BRAZIL",
+                 "BRAZIL",
+                 "BRAZIL",
+                 "BRAZIL",
+                 "BRAZIL",
+                 "POLAND",
+                 "POLAND",
+                 "POLAND",
+                 "POLAND",
+                 "POLAND"
+               ],
+               year: [
+                 2010,
+                 2011,
+                 2012,
+                 2013,
+                 2014,
+                 2010,
+                 2011,
+                 2012,
+                 2013,
+                 2014,
+                 2010,
+                 2011,
+                 2012,
+                 2013,
+                 2014
+               ],
+               total_min: [
+                 106_589,
+                 106_850,
+                 105_843,
+                 101_518,
+                 98517,
+                 114_468,
+                 119_829,
+                 128_178,
+                 137_354,
+                 144_480,
+                 86246,
+                 86446,
+                 81792,
+                 82432,
+                 77922
+               ],
+               total_max: [
+                 106_589,
+                 106_850,
+                 105_843,
+                 101_518,
+                 98517,
+                 114_468,
+                 119_829,
+                 128_178,
+                 137_354,
+                 144_480,
+                 86246,
+                 86446,
+                 81792,
+                 82432,
+                 77922
+               ],
+               cement_median: [
+                 1129.0,
+                 1170.0,
+                 1156.0,
+                 1142.0,
+                 1224.0,
+                 8040.0,
+                 8717.0,
+                 9428.0,
+                 9517.0,
+                 9691.0,
+                 2111.0,
+                 2523.0,
+                 2165.0,
+                 1977.0,
+                 2089.0
+               ]
+             }
+    end
+  end
 end
