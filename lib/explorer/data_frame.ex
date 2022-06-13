@@ -2362,7 +2362,39 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    Shared.apply_impl(df, :summarise, [Map.new(column_pairs)])
+    new_dtypes = names_with_dtypes_for_summarise(df, column_pairs)
+    new_names = for {name, _} <- new_dtypes, do: name
+
+    df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: []}
+
+    Shared.apply_impl(df, :summarise, [df_out, Map.new(column_pairs)])
+  end
+
+  defp names_with_dtypes_for_summarise(df, column_pairs) do
+    groups = for group <- df.groups, do: {group, df.dtypes[group]}
+
+    agg_pairs =
+      Enum.flat_map(column_pairs, fn {column_name, aggregations} ->
+        for agg <- aggregations do
+          name = "#{column_name}_#{agg}"
+
+          dtype =
+            case agg do
+              :median ->
+                :float
+
+              :mean ->
+                :float
+
+              _other ->
+                df.dtypes[column_name]
+            end
+
+          {name, dtype}
+        end
+      end)
+
+    groups ++ agg_pairs
   end
 
   @doc """

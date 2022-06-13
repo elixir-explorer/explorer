@@ -453,13 +453,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: %DataFrame{df | groups: Enum.filter(df.groups, &(&1 not in groups))}
 
   @impl true
-  def summarise(%DataFrame{groups: groups} = df, columns) do
+  def summarise(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, columns) do
     columns =
       Enum.map(columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
 
     df
-    |> Shared.apply_dataframe(:df_groupby_agg, [groups, columns])
-    |> DataFrame.ungroup()
+    |> Shared.apply_dataframe(out_df, :df_groupby_agg, [groups, columns])
     |> DataFrame.arrange(groups)
   end
 
