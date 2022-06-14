@@ -111,7 +111,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback group_by(df, out_df :: df()) :: df
   @callback ungroup(df, out_df :: df()) :: df
-  @callback summarise(df, out_df :: df(), aggregations :: %{column_name() => atom()}) :: df
+  @callback summarise(df, out_df :: df(), aggregations :: %{column_name() => [atom()]}) :: df
 
   # Functions
   alias Explorer.{DataFrame, Series}
