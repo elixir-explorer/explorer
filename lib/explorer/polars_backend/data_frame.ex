@@ -423,13 +423,24 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Two or more table verbs
 
   @impl true
-  def join(left, right, on, :right), do: join(right, left, on, :left)
+  def join(left, right, on, :right) do
+    # Join right is just the "join left" with inverted DFs and swapped "on" instructions.
+    # If columns on left have the same names from right, and they are not in "on" instructions,
+    # then we add a suffix "_left".
+    {left_on, right_on} =
+      on
+      |> Enum.reverse()
+      |> Enum.map(fn {left, right} -> {right, left} end)
+      |> Enum.unzip()
+
+    Shared.apply_dataframe(right, :df_join, [left.data, left_on, right_on, "left", "_left"])
+  end
 
   def join(left, right, on, how) do
     how = Atom.to_string(how)
     {left_on, right_on} = Enum.unzip(on)
 
-    Shared.apply_dataframe(left, :df_join, [right.data, left_on, right_on, how])
+    Shared.apply_dataframe(left, :df_join, [right.data, left_on, right_on, how, "_right"])
   end
 
   @impl true

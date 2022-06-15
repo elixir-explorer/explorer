@@ -137,6 +137,34 @@ defmodule Explorer.DataFrameTest do
                c: ["d", "e", "f", nil],
                a_right: [5, 6, 7, nil]
              }
+
+      df2 = DF.join(left, right, on: [{"a", "d"}], how: :outer)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               a_right: [5, 6, 7, nil]
+             }
+
+      df3 = DF.join(left, right, how: :cross)
+
+      assert DF.to_columns(df3, atom_keys: true) == %{
+               a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
+               a_right: [5, 6, 7, 5, 6, 7, 5, 6, 7],
+               b: ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
+               c: ["d", "e", "f", "d", "e", "f", "d", "e", "f"],
+               d: [1, 2, 2, 1, 2, 2, 1, 2, 2]
+             }
+
+      df4 = DF.join(left, right, on: [{"a", "d"}], how: :right)
+
+      assert DF.to_columns(df4, atom_keys: true) == %{
+               a: [5, 6, 7],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               d: [1, 2, 2]
+             }
     end
 
     test "with a custom 'on' but with repeated column on left side" do
@@ -160,6 +188,66 @@ defmodule Explorer.DataFrameTest do
                c: ["d", "e", "f", nil],
                d: [5, 6, 6, 7]
              }
+
+      df2 = DF.join(left, right, on: [{"a", "d"}], how: :outer)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               d: [5, 6, 6, 7]
+             }
+
+      df3 = DF.join(left, right, how: :cross)
+
+      assert DF.to_columns(df3, atom_keys: true) == %{
+               a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
+               b: ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
+               c: ["d", "e", "f", "d", "e", "f", "d", "e", "f"],
+               d: [5, 5, 5, 6, 6, 6, 7, 7, 7],
+               d_right: [1, 2, 2, 1, 2, 2, 1, 2, 2]
+             }
+
+      df4 = DF.join(left, right, on: [{"a", "d"}], how: :right)
+
+      assert DF.to_columns(df4, atom_keys: true) == %{
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               d: [1, 2, 2],
+               d_left: [5, 6, 6]
+             }
+    end
+
+    test "with invalid join strategy" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
+
+      msg =
+        "join type is not valid: :inner_join. Valid options are: :inner, :left, :right, :outer, :cross"
+
+      assert_raise ArgumentError, msg, fn -> DF.join(left, right, how: :inner_join) end
+    end
+
+    test "with matching column indexes" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
+
+      df = DF.join(left, right, on: [0])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"]
+             }
+    end
+
+    test "with no matching column indexes" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(c: ["d", "e", "f"], a: [1, 2, 2])
+
+      msg = "the column given to option `:on` is not the same for both dataframes"
+
+      assert_raise ArgumentError, msg, fn -> DF.join(left, right, on: [0]) end
     end
   end
 

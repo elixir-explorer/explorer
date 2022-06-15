@@ -70,7 +70,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_groupby_agg(_df, _groups, _aggs), do: err()
   def df_head(_df, _length), do: err()
   def df_height(_df), do: err()
-  def df_join(_df, _other, _left_on, _right_on, _how), do: err()
+  def df_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
   def df_melt(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()
   def df_new(_columns), do: err()
   def df_pivot_wider(_df, _id_columns, _pivot_column, _values_column), do: err()

@@ -1926,6 +1926,8 @@ defmodule Explorer.DataFrame do
 
   # Two table verbs
 
+  @valid_join_types [:inner, :left, :right, :outer, :cross]
+
   @doc """
   Join two tables.
 
@@ -2029,6 +2031,12 @@ defmodule Explorer.DataFrame do
         on: find_overlapping_columns(left_columns, right_columns),
         how: :inner
       )
+
+    unless opts[:how] in @valid_join_types do
+      raise ArgumentError,
+            "join type is not valid: #{inspect(opts[:how])}. " <>
+              "Valid options are: #{Enum.map_join(@valid_join_types, ", ", &inspect/1)}"
+    end
 
     {on, how} =
       case {opts[:on], opts[:how]} do

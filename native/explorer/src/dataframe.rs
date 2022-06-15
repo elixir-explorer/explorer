@@ -187,6 +187,7 @@ pub fn df_join(
     left_on: Vec<&str>,
     right_on: Vec<&str>,
     how: &str,
+    suffix: Option<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let how = match how {
         "left" => JoinType::Left,
@@ -203,7 +204,7 @@ pub fn df_join(
 
     let df = &data.resource.0;
     let df1 = &other.resource.0;
-    let new_df = df.join(df1, left_on, right_on, how, None)?;
+    let new_df = df.join(df1, left_on, right_on, how, suffix)?;
     Ok(ExDataFrame::new(new_df))
 }
 
