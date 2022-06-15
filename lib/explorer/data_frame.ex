@@ -2070,13 +2070,49 @@ defmodule Explorer.DataFrame do
           {normalized_on, how}
       end
 
-    Shared.apply_impl(left, :join, [right, on, how])
+    out_df = out_df_for_join(how, left, right, on)
+
+    Shared.apply_impl(left, :join, [right, out_df, on, how])
   end
 
   defp find_overlapping_columns(left_columns, right_columns) do
     left_columns = MapSet.new(left_columns)
     right_columns = MapSet.new(right_columns)
     left_columns |> MapSet.intersection(right_columns) |> MapSet.to_list()
+  end
+
+  defp out_df_for_join(:right, left, right, on) do
+    {left_on, _right_on} = Enum.unzip(on)
+
+    pairs = dtypes_pairs_for_common_join(right, left, left_on, "_left")
+
+    {new_names, _} = Enum.unzip(pairs)
+    %{right | names: new_names, dtypes: Map.new(pairs)}
+  end
+
+  defp out_df_for_join(how, left, right, on) do
+    {_left_on, right_on} = Enum.unzip(on)
+
+    right_on = if how == :cross, do: [], else: right_on
+
+    pairs = dtypes_pairs_for_common_join(left, right, right_on)
+
+    {new_names, _} = Enum.unzip(pairs)
+    %{left | names: new_names, dtypes: Map.new(pairs)}
+  end
+
+  defp dtypes_pairs_for_common_join(left, right, right_on, suffix \\ "_right") do
+    Enum.map(left.names, fn name -> {name, left.dtypes[name]} end) ++
+      Enum.map(right.names -- right_on, fn right_name ->
+        name =
+          if right_name in left.names do
+            right_name <> suffix
+          else
+            right_name
+          end
+
+        {name, right.dtypes[name]}
+      end)
   end
 
   @doc """

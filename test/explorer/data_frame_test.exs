@@ -129,6 +129,8 @@ defmodule Explorer.DataFrameTest do
                a_right: [5, 6, 7]
              }
 
+      assert df.names == ["a", "b", "c", "a_right"]
+
       df1 = DF.join(left, right, on: [{"a", "d"}], how: :left)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -138,6 +140,8 @@ defmodule Explorer.DataFrameTest do
                a_right: [5, 6, 7, nil]
              }
 
+      assert df1.names == ["a", "b", "c", "a_right"]
+
       df2 = DF.join(left, right, on: [{"a", "d"}], how: :outer)
 
       assert DF.to_columns(df2, atom_keys: true) == %{
@@ -146,6 +150,8 @@ defmodule Explorer.DataFrameTest do
                c: ["d", "e", "f", nil],
                a_right: [5, 6, 7, nil]
              }
+
+      assert df2.names == ["a", "b", "c", "a_right"]
 
       df3 = DF.join(left, right, how: :cross)
 
@@ -157,6 +163,8 @@ defmodule Explorer.DataFrameTest do
                d: [1, 2, 2, 1, 2, 2, 1, 2, 2]
              }
 
+      assert df3.names == ["a", "b", "d", "c", "a_right"]
+
       df4 = DF.join(left, right, on: [{"a", "d"}], how: :right)
 
       assert DF.to_columns(df4, atom_keys: true) == %{
@@ -165,6 +173,8 @@ defmodule Explorer.DataFrameTest do
                c: ["d", "e", "f"],
                d: [1, 2, 2]
              }
+
+      assert df4.names == ["d", "c", "a", "b"]
     end
 
     test "with a custom 'on' but with repeated column on left side" do
@@ -180,6 +190,8 @@ defmodule Explorer.DataFrameTest do
                d: [5, 6, 6]
              }
 
+      assert df.names == ["a", "b", "d", "c"]
+
       df1 = DF.join(left, right, on: [{"a", "d"}], how: :left)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -189,6 +201,8 @@ defmodule Explorer.DataFrameTest do
                d: [5, 6, 6, 7]
              }
 
+      assert df1.names == ["a", "b", "d", "c"]
+
       df2 = DF.join(left, right, on: [{"a", "d"}], how: :outer)
 
       assert DF.to_columns(df2, atom_keys: true) == %{
@@ -197,6 +211,8 @@ defmodule Explorer.DataFrameTest do
                c: ["d", "e", "f", nil],
                d: [5, 6, 6, 7]
              }
+
+      assert df2.names == ["a", "b", "d", "c"]
 
       df3 = DF.join(left, right, how: :cross)
 
@@ -208,6 +224,8 @@ defmodule Explorer.DataFrameTest do
                d_right: [1, 2, 2, 1, 2, 2, 1, 2, 2]
              }
 
+      assert df3.names == ["a", "b", "d", "d_right", "c"]
+
       df4 = DF.join(left, right, on: [{"a", "d"}], how: :right)
 
       assert DF.to_columns(df4, atom_keys: true) == %{
@@ -216,6 +234,8 @@ defmodule Explorer.DataFrameTest do
                d: [1, 2, 2],
                d_left: [5, 6, 6]
              }
+
+      assert df4.names == ["d", "c", "b", "d_left"]
     end
 
     test "with invalid join strategy" do

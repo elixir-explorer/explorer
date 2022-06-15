@@ -99,8 +99,9 @@ defmodule Explorer.Backend.DataFrame do
   # Two or more table verbs
 
   @callback join(
-              left :: df,
-              right :: df,
+              left :: df(),
+              right :: df(),
+              out_df :: df(),
               on :: list({column_name(), column_name()}),
               how :: :left | :inner | :outer | :right | :cross
             ) :: df
