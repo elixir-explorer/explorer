@@ -112,6 +112,7 @@ defmodule Explorer.DataFrame do
   @type column_pairs(other) :: [{column(), other}] | %{column() => other}
 
   @default_infer_schema_length 1000
+  @default_sample_nrows 5
 
   # Guards and helpers for columns
 
@@ -809,7 +810,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def head(df, nrows \\ 5), do: Shared.apply_impl(df, :head, [nrows])
+  def head(df, nrows \\ @default_sample_nrows), do: Shared.apply_impl(df, :head, [nrows])
 
   @doc """
   Returns the last *n* rows of the dataframe.
@@ -834,7 +835,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def tail(df, nrows \\ 5), do: Shared.apply_impl(df, :tail, [nrows])
+  def tail(df, nrows \\ @default_sample_nrows), do: Shared.apply_impl(df, :tail, [nrows])
 
   @doc """
   Selects a subset of columns by name.
@@ -2275,11 +2276,16 @@ defmodule Explorer.DataFrame do
      Explorer.DataFrame.table(df)
   """
   @doc type: :single
-  def table(df, nrow \\ 5) when nrow >= 0 do
+  def table(df, opts \\ []) do
     {rows, columns} = shape(df)
     headers = names(df)
 
-    df = slice(df, 0, nrow)
+    df =
+      case opts[:limit] do
+        :infinity -> df
+        nrow when is_integer(nrow) and nrow >= 0 -> slice(df, 0, nrow)
+        _ -> slice(df, 0, @default_sample_nrows)
+      end
 
     types =
       df
