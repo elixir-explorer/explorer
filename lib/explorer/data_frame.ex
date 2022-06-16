@@ -1472,7 +1472,7 @@ defmodule Explorer.DataFrame do
           callback :: function()
         ) ::
           DataFrame.t()
-  def rename_with(df, columns \\ 0..-1, callback)
+  def rename_with(df, columns \\ 0..-1//1, callback)
 
   def rename_with(df, columns, callback) when is_function(callback) and is_function(columns) do
     case df |> names() |> Enum.filter(columns) do
