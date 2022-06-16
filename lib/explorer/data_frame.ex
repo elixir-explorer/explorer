@@ -2274,8 +2274,11 @@ defmodule Explorer.DataFrame do
 
      df = Explorer.Datasets.iris()
      Explorer.DataFrame.table(df)
+     Explorer.DataFrame.table(df, limit: 1)
+     Explorer.DataFrame.table(df, limit: :infinity)
   """
   @doc type: :single
+  @spec table(df :: DataFrame.t(), opts :: Keyword.t() | map()) :: :ok
   def table(df, opts \\ []) do
     {rows, columns} = shape(df)
     headers = names(df)
