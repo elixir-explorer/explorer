@@ -244,7 +244,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Series.to_list()
       |> Enum.map(fn indices -> df |> DataFrame.ungroup() |> take(indices) |> n_rows() end)
 
-    # TODO: change "mutate" with out_df when available
     groupby
     |> DataFrame.select(["groups"], :drop)
     |> mutate(df, n: n)

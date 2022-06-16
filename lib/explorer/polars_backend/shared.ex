@@ -42,7 +42,6 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
-  # TODO: consider accepting lazy df in the future
   def create_dataframe(%PolarsDataFrame{} = polars_df) do
     {:ok, names} = Native.df_columns(polars_df)
     {:ok, dtypes} = Native.df_dtypes(polars_df)
@@ -52,16 +51,21 @@ defmodule Explorer.PolarsBackend.Shared do
     Explorer.Backend.DataFrame.new(polars_df, names, dtypes)
   end
 
-  def update_dataframe(%PolarsDataFrame{} = polars_df, %DataFrame{} = df) do
+  def create_dataframe(%PolarsLazyFrame{} = polars_df) do
+    {:ok, names} = Native.lf_names(polars_df)
+    {:ok, dtypes} = Native.lf_dtypes(polars_df)
+
+    dtypes = Enum.map(dtypes, &normalise_dtype/1)
+
+    Explorer.Backend.DataFrame.new(polars_df, names, dtypes)
+  end
+
+  # Updating is just creating a new DF with the same groups from existing DF
+  def update_dataframe(%module{} = polars_df, %DataFrame{} = df) when module in @polars_df do
     new_df = create_dataframe(polars_df)
 
     %{new_df | groups: df.groups}
   end
-
-  # TODO: consider reflecting/checking names and dtypes
-  def update_dataframe(%module{} = polars_df, %DataFrame{} = df)
-      when module in @polars_df,
-      do: %DataFrame{df | data: polars_df}
 
   def create_series(%PolarsSeries{} = polars_series) do
     {:ok, dtype} = Native.s_dtype(polars_series)
