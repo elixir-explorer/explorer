@@ -1282,7 +1282,14 @@ defmodule Explorer.DataFrame do
       end
 
     if columns != [] do
-      Shared.apply_impl(df, :distinct, [columns, opts[:keep_all?]])
+      out_df =
+        if opts[:keep_all?] do
+          df
+        else
+          %{df | names: columns, dtypes: Map.take(df.dtypes, columns)}
+        end
+
+      Shared.apply_impl(df, :distinct, [out_df, columns, opts[:keep_all?]])
     else
       df
     end

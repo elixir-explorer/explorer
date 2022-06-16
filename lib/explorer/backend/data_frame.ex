@@ -75,7 +75,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback filter(df, mask :: series) :: df
   @callback mutate(df, out_df :: df(), columns :: %{column_name() => mutate_value()}) :: df
   @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
-  @callback distinct(df, columns :: [column_name()], keep_all? :: boolean()) :: df
+  @callback distinct(df, out_df :: df(), columns :: [column_name()], keep_all? :: boolean()) :: df
   @callback rename(df, out_df :: df()) :: df
   @callback dummies(df, columns :: [column_name()]) :: df
   @callback sample(df, n :: integer(), replacement :: boolean(), seed :: integer()) :: df

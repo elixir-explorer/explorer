@@ -329,19 +329,22 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def distinct(%DataFrame{groups: []} = df, columns, true),
-    do: Shared.apply_dataframe(df, :df_drop_duplicates, [true, columns])
+  def distinct(%DataFrame{groups: []} = df, %DataFrame{} = out_df, columns, true),
+    do: Shared.apply_dataframe(df, out_df, :df_drop_duplicates, [true, columns])
 
-  def distinct(%DataFrame{groups: []} = df, columns, false),
+  def distinct(%DataFrame{groups: []} = df, %DataFrame{} = out_df, columns, false),
     do:
       df
-      |> Shared.apply_dataframe(:df_drop_duplicates, [true, columns])
-      |> DataFrame.select(columns)
+      |> Shared.apply_dataframe(out_df, :df_drop_duplicates, [true, columns])
+      |> select(out_df)
 
-  def distinct(%DataFrame{groups: [_ | _]} = df, columns, keep_all?) do
-    apply_on_groups(df, fn group -> distinct(group, columns, keep_all?) end)
+  def distinct(%DataFrame{groups: [_ | _]} = df, %DataFrame{} = out_df, columns, keep_all?) do
+    ungrouped_out = DataFrame.ungroup(out_df)
+
+    apply_on_groups(df, fn group -> distinct(group, ungrouped_out, columns, keep_all?) end)
   end
 
+  # Applies a callback function to each group of indexes in a dataframe. Then regroups it.
   defp apply_on_groups(%DataFrame{} = df, callback) when is_function(callback, 1) do
     ungrouped_df = DataFrame.ungroup(df)
 
