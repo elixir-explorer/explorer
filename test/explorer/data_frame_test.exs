@@ -1207,7 +1207,6 @@ defmodule Explorer.DataFrameTest do
       equal_filters =
         for country <- ["BRAZIL", "AUSTRALIA", "POLAND"], do: Series.equal(df["country"], country)
 
-      # TODO: build a smaller DF with departments, employees, salary
       filters = Enum.reduce(equal_filters, fn filter, acc -> Series.or(acc, filter) end)
 
       df1 =
