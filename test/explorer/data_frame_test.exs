@@ -67,6 +67,14 @@ defmodule Explorer.DataFrameTest do
                    "size of new column test (3) must match number of rows in the dataframe (1094)",
                    fn -> DF.mutate(df, test: [1, 2, 3]) end
     end
+
+    test "keeps the column order" do
+      df = DF.new(e: [1, 2, 3], c: ["a", "b", "c"], a: [1.2, 2.3, 4.5])
+
+      df1 = DF.mutate(df, d: 1, b: 2)
+
+      assert df1.names == ["e", "c", "a", "d", "b"]
+    end
   end
 
   describe "arrange/3" do

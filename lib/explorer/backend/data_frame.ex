@@ -11,7 +11,12 @@ defmodule Explorer.Backend.DataFrame do
   @type column_name :: String.t()
   @type dtype :: Explorer.Series.dtype()
 
-  @type mutate_value :: series() | float() | integer() | String.t() | (df() -> series())
+  @typep basic_types :: float() | integer() | String.t() | Date.t() | DateTime.t()
+  @type mutate_value ::
+          series()
+          | basic_types()
+          | [basic_types()]
+          | (df() -> series() | basic_types() | [basic_types()])
 
   # IO
 
@@ -73,7 +78,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback tail(df, rows :: integer()) :: df
   @callback select(df, out_df :: df()) :: df
   @callback filter(df, mask :: series) :: df
-  @callback mutate(df, out_df :: df(), columns :: %{column_name() => mutate_value()}) :: df
+  @callback mutate(df, out_df :: df(), mutations :: [{column_name(), mutate_value()}]) :: df
   @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()], keep_all? :: boolean()) :: df
   @callback rename(df, out_df :: df()) :: df

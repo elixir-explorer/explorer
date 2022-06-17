@@ -1095,52 +1095,40 @@ defmodule Explorer.DataFrame do
   @spec mutate(df :: DataFrame.t(), columns :: column_pairs(any())) ::
           DataFrame.t()
   def mutate(df, columns) when is_column_pairs(columns) do
-    pairs = to_column_pairs(df, columns)
-    mutations = Map.new(pairs)
+    mutations = to_column_pairs(df, columns)
+
     out_df = df_for_mutations(df, mutations)
 
     Shared.apply_impl(df, :mutate, [out_df, mutations])
   end
 
   defp df_for_mutations(df, mutations) do
-    names = df.names
-    mut_names = mutations |> Map.keys() |> MapSet.new()
+    mut_names = Enum.map(mutations, &elem(&1, 0))
 
-    new_names =
-      names
-      |> MapSet.new()
-      |> MapSet.union(mut_names)
-      |> MapSet.to_list()
+    new_names = Enum.uniq(df.names ++ mut_names)
 
-    new_dtypes =
-      for name <- new_names do
-        case mutations[name] do
-          nil ->
-            df.dtypes[name]
+    mut_dtypes =
+      for {name, value} <- mutations, into: %{} do
+        value = if is_function(value), do: value.(df), else: value
 
-          value when is_list(value) ->
-            Shared.check_types!(value)
+        dtype =
+          case value do
+            value when is_list(value) ->
+              Shared.check_types!(value)
 
-          %Series{} = value ->
-            value.dtype
+            %Series{} = value ->
+              value.dtype
 
-          value when is_function(value, 1) ->
-            provisional = value.(df)
+            value ->
+              Shared.check_types!([value])
+          end
 
-            case provisional do
-              %Series{} ->
-                provisional.dtype
-
-              other ->
-                Shared.check_types!(List.wrap(other))
-            end
-
-          value ->
-            Shared.check_types!([value])
-        end
+        {name, dtype}
       end
 
-    %{df | names: new_names, dtypes: Enum.zip(new_names, new_dtypes) |> Map.new()}
+    new_dtypes = Map.merge(df.dtypes, mut_dtypes)
+
+    %{df | names: new_names, dtypes: new_dtypes}
   end
 
   @doc """
