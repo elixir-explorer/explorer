@@ -1012,7 +1012,7 @@ defmodule Explorer.DataFrame do
   Columns are added with keyword list or maps. New variables overwrite existing variables of the
   same name. Column names are coerced from atoms to strings.
 
-  Be aware that mutating grouped dataframes will cause them to lost ordering.
+  Be aware that mutating grouped dataframes will cause them to lose ordering.
 
   ## Examples
 
