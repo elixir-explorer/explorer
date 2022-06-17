@@ -1833,10 +1833,7 @@ defmodule Explorer.DataFrame do
 
     out_df = %{df | names: columns ++ [names_to, values_to], dtypes: new_dtypes}
 
-    Shared.apply_impl(df, :pivot_longer, [
-      out_df,
-      value_columns
-    ])
+    Shared.apply_impl(df, :pivot_longer, [out_df, value_columns])
   end
 
   @doc """
@@ -2404,25 +2401,23 @@ defmodule Explorer.DataFrame do
     groups = for group <- df.groups, do: {group, df.dtypes[group]}
 
     agg_pairs =
-      Enum.flat_map(column_pairs, fn {column_name, aggregations} ->
-        for agg <- aggregations do
-          name = "#{column_name}_#{agg}"
+      for {column_name, aggregations} <- column_pairs, agg <- aggregations do
+        name = "#{column_name}_#{agg}"
 
-          dtype =
-            case agg do
-              :median ->
-                :float
+        dtype =
+          case agg do
+            :median ->
+              :float
 
-              :mean ->
-                :float
+            :mean ->
+              :float
 
-              _other ->
-                df.dtypes[column_name]
-            end
+            _other ->
+              df.dtypes[column_name]
+          end
 
-          {name, dtype}
-        end
-      end)
+        {name, dtype}
+      end
 
     groups ++ agg_pairs
   end
