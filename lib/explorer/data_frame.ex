@@ -2252,11 +2252,7 @@ defmodule Explorer.DataFrame do
   def group_by(df, groups) when is_list(groups) do
     groups = to_existing_columns(df, groups)
 
-    all_groups =
-      df.groups
-      |> MapSet.new()
-      |> MapSet.union(MapSet.new(groups))
-      |> MapSet.to_list()
+    all_groups = Enum.uniq(df.groups ++ groups)
 
     out_df = %{df | groups: all_groups}
 
