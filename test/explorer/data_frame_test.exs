@@ -47,10 +47,7 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.group_by(df, :c)
       df2 = DF.mutate(df1, d: &Series.add(&1["a"], -7.1))
 
-      # We need to sort again because it breaks ordering in the process.
-      df3 = df2 |> DF.ungroup() |> DF.arrange(:a) |> DF.group_by(:c)
-
-      assert DF.to_columns(df3, atom_keys: true) == %{
+      assert DF.to_columns(df2, atom_keys: true) == %{
                a: [1, 2, 3],
                b: ["a", "b", "c"],
                c: [1, 1, 2],

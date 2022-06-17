@@ -346,13 +346,23 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Applies a callback function to each group of indexes in a dataframe. Then regroups it.
   defp apply_on_groups(%DataFrame{} = df, callback) when is_function(callback, 1) do
     ungrouped_df = DataFrame.ungroup(df)
+    idx_column = "__original_row_idx__"
 
     df
     |> indexes_by_groups()
     |> Enum.map(fn indices ->
-      ungrouped_df |> take(indices) |> then(callback)
+      ungrouped_df
+      |> take(indices)
+      |> then(callback)
+      |> then(fn group_df ->
+        idx_series = series_from_list!(idx_column, indices)
+
+        Shared.apply_dataframe(group_df, :df_with_column, [idx_series.data])
+      end)
     end)
     |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
+    |> arrange([{:asc, idx_column}])
+    |> DataFrame.select([idx_column], :drop)
     |> DataFrame.group_by(df.groups)
   end
 
