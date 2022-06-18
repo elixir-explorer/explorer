@@ -187,6 +187,7 @@ pub fn df_join(
     left_on: Vec<&str>,
     right_on: Vec<&str>,
     how: &str,
+    suffix: Option<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let how = match how {
         "left" => JoinType::Left,
@@ -203,7 +204,7 @@ pub fn df_join(
 
     let df = &data.resource.0;
     let df1 = &other.resource.0;
-    let new_df = df.join(df1, left_on, right_on, how, None)?;
+    let new_df = df.join(df1, left_on, right_on, how, suffix)?;
     Ok(ExDataFrame::new(new_df))
 }
 
@@ -346,11 +347,19 @@ pub fn df_tail(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_melt(
     data: ExDataFrame,
-    id_vars: Vec<&str>,
-    value_vars: Vec<&str>,
+    id_vars: Vec<String>,
+    value_vars: Vec<String>,
+    names_to: String,
+    values_to: String,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let new_df = df.melt(id_vars, value_vars)?;
+    let melt_opts = MeltArgs {
+        id_vars,
+        value_vars,
+        variable_name: Some(names_to),
+        value_name: Some(values_to),
+    };
+    let new_df = df.melt2(melt_opts)?;
     Ok(ExDataFrame::new(new_df))
 }
 

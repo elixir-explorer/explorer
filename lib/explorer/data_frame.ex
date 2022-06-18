@@ -101,15 +101,21 @@ defmodule Explorer.DataFrame do
   @valid_dtypes Explorer.Shared.dtypes()
 
   @type data :: Explorer.Backend.DataFrame.t()
-  @type t :: %DataFrame{data: data, groups: [String.t()]}
-  @enforce_keys [:data, :groups]
-  defstruct [:data, :groups]
+  @enforce_keys [:data, :groups, :names, :dtypes]
+  defstruct [:data, :groups, :names, :dtypes]
 
   @type column_name :: atom() | String.t()
   @type column :: column_name() | non_neg_integer()
   @type columns :: [column] | Range.t()
   @type column_names :: [column_name]
   @type column_pairs(other) :: [{column(), other}] | %{column() => other}
+
+  @type t :: %DataFrame{
+          data: data,
+          groups: [String.t()],
+          names: [Explorer.Backend.DataFrame.column_name()],
+          dtypes: %{Explorer.Backend.DataFrame.column_name() => Explorer.Backend.Series.dtype()}
+        }
 
   @default_infer_schema_length 1000
   @default_sample_nrows 5
@@ -131,7 +137,7 @@ defmodule Explorer.DataFrame do
   # The function allows to change the `value` for each pair.
   defp to_column_pairs(df, pairs, value_fun)
        when is_column_pairs(pairs) and is_function(value_fun, 1) do
-    existing_columns = names(df)
+    existing_columns = df.names
 
     pairs
     |> Enum.map_reduce(nil, fn
@@ -171,7 +177,7 @@ defmodule Explorer.DataFrame do
 
   # Normalize column names and raise if column does not exist.
   defp to_existing_columns(df, columns) when is_list(columns) do
-    existing_columns = names(df)
+    existing_columns = df.names
 
     columns
     |> Enum.map_reduce(nil, fn
@@ -195,7 +201,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp to_existing_columns(df, %Range{} = columns) do
-    Enum.slice(names(df), columns)
+    Enum.slice(df.names, columns)
   end
 
   defp check_dtypes!(dtypes) do
@@ -637,7 +643,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, atom_keys: false)
     atom_keys = opts[:atom_keys]
 
-    for name <- names(df), into: %{} do
+    for name <- df.names, into: %{} do
       series = Shared.apply_impl(df, :pull, [name])
       key = if atom_keys, do: String.to_atom(name), else: name
       {key, Series.to_list(series)}
@@ -669,7 +675,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, atom_keys: false)
     atom_keys = opts[:atom_keys]
 
-    for name <- names(df), into: %{} do
+    for name <- df.names, into: %{} do
       key = if atom_keys, do: String.to_atom(name), else: name
       {key, Shared.apply_impl(df, :pull, [name])}
     end
@@ -908,12 +914,20 @@ defmodule Explorer.DataFrame do
   def select(df, columns_or_callback, keep_or_drop \\ :keep)
 
   def select(df, callback, keep_or_drop) when is_function(callback),
-    do: df |> names() |> Enum.filter(callback) |> then(&select(df, &1, keep_or_drop))
+    do: Enum.filter(df.names, callback) |> then(&select(df, &1, keep_or_drop))
 
   def select(df, columns, keep_or_drop) do
     columns = to_existing_columns(df, columns)
 
-    Shared.apply_impl(df, :select, [columns, keep_or_drop])
+    columns_to_keep =
+      case keep_or_drop do
+        :keep -> columns
+        :drop -> df.names -- columns
+      end
+
+    out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
+
+    Shared.apply_impl(df, :select, [out_df])
   end
 
   @doc """
@@ -1082,9 +1096,40 @@ defmodule Explorer.DataFrame do
   @spec mutate(df :: DataFrame.t(), columns :: column_pairs(any())) ::
           DataFrame.t()
   def mutate(df, columns) when is_column_pairs(columns) do
-    pairs = to_column_pairs(df, columns)
+    mutations = to_column_pairs(df, columns)
 
-    Shared.apply_impl(df, :mutate, [Map.new(pairs)])
+    out_df = df_for_mutations(df, mutations)
+
+    Shared.apply_impl(df, :mutate, [out_df, mutations])
+  end
+
+  defp df_for_mutations(df, mutations) do
+    mut_names = Enum.map(mutations, &elem(&1, 0))
+
+    new_names = Enum.uniq(df.names ++ mut_names)
+
+    mut_dtypes =
+      for {name, value} <- mutations, into: %{} do
+        value = if is_function(value), do: value.(df), else: value
+
+        dtype =
+          case value do
+            value when is_list(value) ->
+              Shared.check_types!(value)
+
+            %Series{} = value ->
+              value.dtype
+
+            value ->
+              Shared.check_types!([value])
+          end
+
+        {name, dtype}
+      end
+
+    new_dtypes = Map.merge(df.dtypes, mut_dtypes)
+
+    %{df | names: new_names, dtypes: new_dtypes}
   end
 
   @doc """
@@ -1211,17 +1256,24 @@ defmodule Explorer.DataFrame do
     columns =
       case opts[:columns] do
         nil ->
-          names(df)
+          df.names
 
         callback when is_function(callback) ->
-          Enum.filter(names(df), callback)
+          Enum.filter(df.names, callback)
 
         columns ->
           to_existing_columns(df, columns)
       end
 
     if columns != [] do
-      Shared.apply_impl(df, :distinct, [columns, opts[:keep_all?]])
+      out_df =
+        if opts[:keep_all?] do
+          df
+        else
+          %{df | names: columns, dtypes: Map.take(df.dtypes, columns)}
+        end
+
+      Shared.apply_impl(df, :distinct, [out_df, columns, opts[:keep_all?]])
     else
       df
     end
@@ -1321,12 +1373,14 @@ defmodule Explorer.DataFrame do
     new_names = to_column_names(names)
     check_new_names_length!(df, new_names)
 
-    Shared.apply_impl(df, :rename, [new_names])
+    out_df = %{df | names: new_names}
+
+    Shared.apply_impl(df, :rename, [out_df])
   end
 
   def rename(df, names) when is_column_pairs(names) do
     pairs = to_column_pairs(df, names, &to_column_name(&1))
-    old_names = names(df)
+    old_names = df.names
 
     for {name, _} <- pairs do
       maybe_raise_column_not_found(old_names, name)
@@ -1431,8 +1485,7 @@ defmodule Explorer.DataFrame do
   end
 
   def rename_with(df, 0..-1//1, callback) when is_function(callback) do
-    df
-    |> names()
+    df.names
     |> Enum.map(callback)
     |> then(&rename(df, &1))
   end
@@ -1440,8 +1493,7 @@ defmodule Explorer.DataFrame do
   def rename_with(df, columns, callback) when is_function(callback) do
     columns = to_existing_columns(df, columns)
 
-    df
-    |> names()
+    df.names
     |> Enum.map(fn name -> if name in columns, do: callback.(name), else: name end)
     |> then(&rename(df, &1))
   end
@@ -1723,17 +1775,19 @@ defmodule Explorer.DataFrame do
 
   def pivot_longer(df, columns, opts) when is_function(columns),
     do:
-      df
-      |> names()
+      df.names
       |> Enum.filter(columns)
       |> then(&pivot_longer(df, &1, opts))
 
   def pivot_longer(df, columns, opts) do
     opts = Keyword.validate!(opts, value_columns: [], names_to: "variable", values_to: "value")
+    names_to = to_column_name(opts[:names_to])
+    values_to = to_column_name(opts[:values_to])
+
     existing_columns = to_existing_columns(df, columns)
 
-    names = names(df)
-    dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
+    names = df.names
+    dtypes = df.dtypes
 
     value_columns =
       case opts[:value_columns] do
@@ -1758,26 +1812,29 @@ defmodule Explorer.DataFrame do
 
     value_columns = to_existing_columns(df, value_columns)
 
-    dtypes
-    |> Map.take(value_columns)
-    |> Map.values()
-    |> Enum.uniq()
-    |> length()
-    |> case do
-      1 ->
-        :ok
+    values_dtype =
+      dtypes
+      |> Map.take(value_columns)
+      |> Map.values()
+      |> Enum.uniq()
+      |> case do
+        [dtype] ->
+          dtype
 
-      _ ->
-        raise ArgumentError,
-              "value columns may only include one dtype but found multiple dtypes"
-    end
+        [_ | _] ->
+          raise ArgumentError,
+                "value columns may only include one dtype but found multiple dtypes"
+      end
 
-    Shared.apply_impl(df, :pivot_longer, [
-      columns,
-      value_columns,
-      opts[:names_to],
-      opts[:values_to]
-    ])
+    new_dtypes =
+      dtypes
+      |> Map.take(columns)
+      |> Map.put(names_to, :string)
+      |> Map.put(values_to, values_dtype)
+
+    out_df = %{df | names: columns ++ [names_to, values_to], dtypes: new_dtypes}
+
+    Shared.apply_impl(df, :pivot_longer, [out_df, value_columns])
   end
 
   @doc """
@@ -1825,15 +1882,12 @@ defmodule Explorer.DataFrame do
 
     [values_from, names_from] = to_existing_columns(df, [values_from, names_from])
 
-    names = names(df)
-    dtypes = names |> Enum.zip(dtypes(df)) |> Enum.into(%{})
+    names = df.names
+    dtypes = df.dtypes
 
-    case Map.get(dtypes, values_from) do
-      dtype when dtype in [:integer, :float, :date, :datetime] ->
-        :ok
-
-      dtype ->
-        raise ArgumentError, "the values_from column must be numeric, but found #{dtype}"
+    unless dtypes[values_from] in [:integer, :float, :date, :datetime] do
+      raise ArgumentError,
+            "the values_from column must be numeric, but found #{dtypes[values_from]}"
     end
 
     id_columns =
@@ -1856,6 +1910,8 @@ defmodule Explorer.DataFrame do
   end
 
   # Two table verbs
+
+  @valid_join_types [:inner, :left, :right, :outer, :cross]
 
   @doc """
   Join two tables.
@@ -1952,8 +2008,8 @@ defmodule Explorer.DataFrame do
   @doc type: :multi
   @spec join(left :: DataFrame.t(), right :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
   def join(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
-    left_columns = names(left)
-    right_columns = names(right)
+    left_columns = left.names
+    right_columns = right.names
 
     opts =
       Keyword.validate!(opts,
@@ -1961,16 +2017,22 @@ defmodule Explorer.DataFrame do
         how: :inner
       )
 
+    unless opts[:how] in @valid_join_types do
+      raise ArgumentError,
+            "join type is not valid: #{inspect(opts[:how])}. " <>
+              "Valid options are: #{Enum.map_join(@valid_join_types, ", ", &inspect/1)}"
+    end
+
     {on, how} =
       case {opts[:on], opts[:how]} do
-        {on, :cross} ->
-          {on, :cross}
+        {[], :cross} ->
+          {[], :cross}
 
         {[], _} ->
           raise(ArgumentError, "could not find any overlapping columns")
 
         {[_ | _] = on, how} ->
-          on =
+          normalized_on =
             Enum.map(on, fn
               {l_name, r_name} ->
                 [l_column] = to_existing_columns(left, [l_name])
@@ -1987,22 +2049,55 @@ defmodule Explorer.DataFrame do
                         "the column given to option `:on` is not the same for both dataframes"
                 end
 
-                l_column
+                {l_column, r_column}
             end)
 
-          {on, how}
-
-        other ->
-          other
+          {normalized_on, how}
       end
 
-    Shared.apply_impl(left, :join, [right, on, how])
+    out_df = out_df_for_join(how, left, right, on)
+
+    Shared.apply_impl(left, :join, [right, out_df, on, how])
   end
 
   defp find_overlapping_columns(left_columns, right_columns) do
     left_columns = MapSet.new(left_columns)
     right_columns = MapSet.new(right_columns)
     left_columns |> MapSet.intersection(right_columns) |> MapSet.to_list()
+  end
+
+  defp out_df_for_join(:right, left, right, on) do
+    {left_on, _right_on} = Enum.unzip(on)
+
+    pairs = dtypes_pairs_for_common_join(right, left, left_on, "_left")
+
+    {new_names, _} = Enum.unzip(pairs)
+    %{right | names: new_names, dtypes: Map.new(pairs)}
+  end
+
+  defp out_df_for_join(how, left, right, on) do
+    {_left_on, right_on} = Enum.unzip(on)
+
+    right_on = if how == :cross, do: [], else: right_on
+
+    pairs = dtypes_pairs_for_common_join(left, right, right_on)
+
+    {new_names, _} = Enum.unzip(pairs)
+    %{left | names: new_names, dtypes: Map.new(pairs)}
+  end
+
+  defp dtypes_pairs_for_common_join(left, right, right_on, suffix \\ "_right") do
+    Enum.map(left.names, fn name -> {name, left.dtypes[name]} end) ++
+      Enum.map(right.names -- right_on, fn right_name ->
+        name =
+          if right_name in left.names do
+            right_name <> suffix
+          else
+            right_name
+          end
+
+        {name, right.dtypes[name]}
+      end)
   end
 
   @doc """
@@ -2045,7 +2140,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp compute_changed_types_concat_rows([head | tail]) do
-    types = Map.new(Enum.zip(names(head), dtypes(head)))
+    types = head.dtypes
 
     Enum.reduce(tail, %{}, fn df, changed_types ->
       if n_columns(df) != map_size(types) do
@@ -2053,8 +2148,7 @@ defmodule Explorer.DataFrame do
               "dataframes must have the same columns"
       end
 
-      Enum.reduce(Enum.zip(names(df), dtypes(df)), changed_types, fn {name, type},
-                                                                     changed_types ->
+      Enum.reduce(df.dtypes, changed_types, fn {name, type}, changed_types ->
         cond do
           not Map.has_key?(types, name) ->
             raise ArgumentError,
@@ -2082,7 +2176,7 @@ defmodule Explorer.DataFrame do
   defp cast_numeric_columns_to_float(dfs, changed_types) do
     for df <- dfs do
       columns =
-        for {name, :integer} <- Enum.zip(names(df), dtypes(df)),
+        for {name, :integer} <- df.dtypes,
             changed_types[name] == :float,
             do: name
 
@@ -2154,19 +2248,25 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec group_by(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
+  @spec group_by(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
           DataFrame.t()
   def group_by(df, groups) when is_list(groups) do
-    names = names(df)
-    Enum.each(groups, fn name -> maybe_raise_column_not_found(names, name) end)
+    groups = to_existing_columns(df, groups)
 
-    Shared.apply_impl(df, :group_by, [groups])
+    all_groups = Enum.uniq(df.groups ++ groups)
+
+    out_df = %{df | groups: all_groups}
+
+    Shared.apply_impl(df, :group_by, [out_df])
   end
 
-  def group_by(df, group) when is_binary(group), do: group_by(df, [group])
+  def group_by(df, group) when is_column_name(group), do: group_by(df, [group])
 
   @doc """
   Removes grouping variables.
+
+  Accepts a list of group names. If groups is not specified, then all groups are
+  removed.
 
   ## Examples
 
@@ -2187,14 +2287,34 @@ defmodule Explorer.DataFrame do
         per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df = Explorer.DataFrame.group_by(df, ["country", "year"])
+      iex> Explorer.DataFrame.ungroup(df)
+      #Explorer.DataFrame<
+        Polars[1094 x 10]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        total integer [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel integer [627, 117, 332, 0, 0, ...]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel integer [74, 7, 14565, 0, 374, ...]
+        cement integer [5, 177, 2598, 0, 204, ...]
+        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+      >
   """
   @doc type: :single
-  @spec ungroup(df :: DataFrame.t(), groups_or_group :: [String.t()] | String.t()) ::
+  @spec ungroup(df :: DataFrame.t(), groups_or_group :: column_names() | column_name() | :all) ::
           DataFrame.t()
-  def ungroup(df, groups \\ [])
+  def ungroup(df, groups \\ :all)
+
+  def ungroup(df, :all), do: Shared.apply_impl(df, :ungroup, [%{df | groups: []}])
 
   def ungroup(df, groups) when is_list(groups) do
     current_groups = groups(df)
+    groups = to_existing_columns(df, groups)
 
     Enum.each(groups, fn group ->
       if group not in current_groups,
@@ -2205,10 +2325,12 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    Shared.apply_impl(df, :ungroup, [groups])
+    out_df = %{df | groups: current_groups -- groups}
+
+    Shared.apply_impl(df, :ungroup, [out_df])
   end
 
-  def ungroup(df, group) when is_binary(group), do: ungroup(df, [group])
+  def ungroup(df, group) when is_column_name(group), do: ungroup(df, [group])
 
   @supported_aggs ~w[min max sum mean median first last count n_unique]a
 
@@ -2264,7 +2386,37 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    Shared.apply_impl(df, :summarise, [Map.new(column_pairs)])
+    new_dtypes = names_with_dtypes_for_summarise(df, column_pairs)
+    new_names = for {name, _} <- new_dtypes, do: name
+
+    df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: []}
+
+    Shared.apply_impl(df, :summarise, [df_out, Map.new(column_pairs)])
+  end
+
+  defp names_with_dtypes_for_summarise(df, column_pairs) do
+    groups = for group <- df.groups, do: {group, df.dtypes[group]}
+
+    agg_pairs =
+      for {column_name, aggregations} <- column_pairs, agg <- aggregations do
+        name = "#{column_name}_#{agg}"
+
+        dtype =
+          case agg do
+            :median ->
+              :float
+
+            :mean ->
+              :float
+
+            _other ->
+              df.dtypes[column_name]
+          end
+
+        {name, dtype}
+      end
+
+    groups ++ agg_pairs
   end
 
   @doc """
@@ -2281,7 +2433,7 @@ defmodule Explorer.DataFrame do
   @spec table(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
   def table(df, opts \\ []) do
     {rows, columns} = shape(df)
-    headers = names(df)
+    headers = df.names
 
     df =
       case opts[:limit] do
@@ -2290,10 +2442,7 @@ defmodule Explorer.DataFrame do
         _ -> slice(df, 0, @default_sample_nrows)
       end
 
-    types =
-      df
-      |> dtypes()
-      |> Enum.map(&"\n<#{Atom.to_string(&1)}>")
+    types = Enum.map(df.names, &"\n<#{Atom.to_string(df.dtypes[&1])}>")
 
     values =
       headers

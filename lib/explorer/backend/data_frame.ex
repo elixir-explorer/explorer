@@ -11,6 +11,13 @@ defmodule Explorer.Backend.DataFrame do
   @type column_name :: String.t()
   @type dtype :: Explorer.Series.dtype()
 
+  @typep basic_types :: float() | integer() | String.t() | Date.t() | DateTime.t()
+  @type mutate_value ::
+          series()
+          | basic_types()
+          | [basic_types()]
+          | (df() -> series() | basic_types() | [basic_types()])
+
   # IO
 
   @callback from_csv(
@@ -69,12 +76,12 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback head(df, rows :: integer()) :: df
   @callback tail(df, rows :: integer()) :: df
-  @callback select(df, columns :: [column_name()], :keep | :drop) :: df
+  @callback select(df, out_df :: df()) :: df
   @callback filter(df, mask :: series) :: df
-  @callback mutate(df, columns :: map()) :: df
+  @callback mutate(df, out_df :: df(), mutations :: [{column_name(), mutate_value()}]) :: df
   @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
-  @callback distinct(df, columns :: [column_name()], keep_all? :: boolean()) :: df
-  @callback rename(df, [column_name()]) :: df
+  @callback distinct(df, out_df :: df(), columns :: [column_name()], keep_all? :: boolean()) :: df
+  @callback rename(df, out_df :: df()) :: df
   @callback dummies(df, columns :: [column_name()]) :: df
   @callback sample(df, n :: integer(), replacement :: boolean(), seed :: integer()) :: df
   @callback pull(df, column :: column_name()) :: series
@@ -84,24 +91,23 @@ defmodule Explorer.Backend.DataFrame do
   @callback pivot_wider(
               df,
               id_columns :: [column_name()],
-              names_from :: [column_name()],
-              values_from :: [column_name()],
+              names_from :: column_name(),
+              values_from :: column_name(),
               names_prefix :: String.t()
             ) :: df
   @callback pivot_longer(
               df,
-              id_columns :: [column_name()],
-              value_columns :: [column_name()],
-              names_to :: column_name(),
-              values_to :: column_name()
+              out_df :: df(),
+              value_columns :: [column_name()]
             ) :: df
 
   # Two or more table verbs
 
   @callback join(
-              left :: df,
-              right :: df,
-              on :: list(column_name() | {column_name(), column_name()}),
+              left :: df(),
+              right :: df(),
+              out_df :: df(),
+              on :: list({column_name(), column_name()}),
               how :: :left | :inner | :outer | :right | :cross
             ) :: df
 
@@ -109,15 +115,23 @@ defmodule Explorer.Backend.DataFrame do
 
   # Groups
 
-  @callback group_by(df, columns :: [column_name()]) :: df
-  @callback ungroup(df, columns :: [column_name()]) :: df
-  @callback summarise(df, aggregations :: map()) :: df
+  @callback group_by(df, out_df :: df()) :: df
+  @callback ungroup(df, out_df :: df()) :: df
+  @callback summarise(df, out_df :: df(), aggregations :: %{column_name() => [atom()]}) :: df
 
   # Functions
+  alias Explorer.{DataFrame, Series}
+
+  @doc """
+  Creates a new DataFrame for a given backend.
+  """
+  def new(data, names, dtypes) do
+    dtypes_pairs = Enum.zip(names, dtypes)
+    %DataFrame{data: data, names: names, dtypes: Map.new(dtypes_pairs), groups: []}
+  end
 
   @default_limit 5
   import Inspect.Algebra
-  alias Explorer.{DataFrame, Series}
 
   @doc """
   Default inspect implementation for backends.

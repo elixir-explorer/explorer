@@ -33,12 +33,39 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
-  def create_dataframe(%module{} = polars_df) when module in @polars_df,
-    do: %DataFrame{data: polars_df, groups: []}
+  def apply_dataframe(%DataFrame{} = df, %DataFrame{} = out_df, fun, args) do
+    case apply(Native, fun, [df.data | args]) do
+      {:ok, %module{} = new_df} when module in @polars_df -> %{out_df | data: new_df}
+      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
+      {:ok, value} -> value
+      {:error, error} -> raise "#{error}"
+    end
+  end
 
-  def update_dataframe(%module{} = polars_df, %DataFrame{} = df)
-      when module in @polars_df,
-      do: %DataFrame{df | data: polars_df}
+  def create_dataframe(%PolarsDataFrame{} = polars_df) do
+    {:ok, names} = Native.df_columns(polars_df)
+    {:ok, dtypes} = Native.df_dtypes(polars_df)
+
+    dtypes = Enum.map(dtypes, &normalise_dtype/1)
+
+    Explorer.Backend.DataFrame.new(polars_df, names, dtypes)
+  end
+
+  def create_dataframe(%PolarsLazyFrame{} = polars_df) do
+    {:ok, names} = Native.lf_names(polars_df)
+    {:ok, dtypes} = Native.lf_dtypes(polars_df)
+
+    dtypes = Enum.map(dtypes, &normalise_dtype/1)
+
+    Explorer.Backend.DataFrame.new(polars_df, names, dtypes)
+  end
+
+  # Updating is just creating a new DF with the same groups from existing DF
+  def update_dataframe(%module{} = polars_df, %DataFrame{} = df) when module in @polars_df do
+    new_df = create_dataframe(polars_df)
+
+    %{new_df | groups: df.groups}
+  end
 
   def create_series(%PolarsSeries{} = polars_series) do
     {:ok, dtype} = Native.s_dtype(polars_series)
@@ -55,6 +82,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("datetime"), do: :datetime
   def normalise_dtype("datetime[ms]"), do: :datetime
   def normalise_dtype("datetime[μs]"), do: :datetime
+  def normalise_dtype("list [u32]"), do: :list
 
   def internal_from_dtype(:integer), do: "i64"
   def internal_from_dtype(:float), do: "f64"
