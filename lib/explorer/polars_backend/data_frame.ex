@@ -272,19 +272,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def mutate(%DataFrame{groups: []} = df, out_df, columns) do
-    Enum.reduce(columns, df, fn {column_name, value}, acc_df when is_binary(column_name) ->
-      series = to_series(acc_df, column_name, value)
-
-      check_series_size!(acc_df, series, column_name)
-
-      Shared.apply_dataframe(acc_df, out_df, :df_with_column, [series.data])
-    end)
+    ungrouped_mutate(df, out_df, columns)
   end
 
   def mutate(%DataFrame{groups: [_ | _]} = df, out_df, columns) do
-    ungrouped_out = DataFrame.ungroup(out_df)
+    apply_on_groups(df, out_df, fn group -> ungrouped_mutate(group, out_df, columns) end)
+  end
 
-    apply_on_groups(df, fn group -> mutate(group, ungrouped_out, columns) end)
+  defp ungrouped_mutate(df, out_df, columns) do
+    Enum.reduce(columns, df, fn {column_name, value}, acc_df when is_binary(column_name) ->
+      series = to_series(acc_df, column_name, value)
+      check_series_size!(acc_df, series, column_name)
+      Shared.apply_dataframe(acc_df, out_df, :df_with_column, [series.data])
+    end)
   end
 
   defp to_series(df, name, value) do
@@ -317,34 +317,42 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def arrange(%DataFrame{groups: []} = df, columns),
-    do:
-      Enum.reduce(columns, df, fn {direction, column}, df ->
-        Shared.apply_dataframe(df, :df_sort, [column, direction == :desc])
-      end)
+  def arrange(%DataFrame{groups: []} = df, columns) do
+    ungrouped_arrange(df, columns)
+  end
 
   def arrange(%DataFrame{groups: [_ | _]} = df, columns) do
-    apply_on_groups(df, fn group -> arrange(group, columns) end)
+    apply_on_groups(df, df, fn group -> ungrouped_arrange(group, columns) end)
+  end
+
+  defp ungrouped_arrange(df, columns) do
+    Enum.reduce(columns, df, fn {direction, column}, df ->
+      Shared.apply_dataframe(df, :df_sort, [column, direction == :desc])
+    end)
   end
 
   @impl true
-  def distinct(%DataFrame{groups: []} = df, %DataFrame{} = out_df, columns, true),
-    do: Shared.apply_dataframe(df, out_df, :df_drop_duplicates, [true, columns])
-
-  def distinct(%DataFrame{groups: []} = df, %DataFrame{} = out_df, columns, false),
-    do:
-      df
-      |> Shared.apply_dataframe(out_df, :df_drop_duplicates, [true, columns])
-      |> select(out_df)
+  def distinct(%DataFrame{groups: []} = df, %DataFrame{} = out_df, columns, keep_all?),
+    do: ungrouped_distinct(df, out_df, columns, keep_all?)
 
   def distinct(%DataFrame{groups: [_ | _]} = df, %DataFrame{} = out_df, columns, keep_all?) do
-    ungrouped_out = DataFrame.ungroup(out_df)
+    apply_on_groups(df, out_df, fn group ->
+      ungrouped_distinct(group, out_df, columns, keep_all?)
+    end)
+  end
 
-    apply_on_groups(df, fn group -> distinct(group, ungrouped_out, columns, keep_all?) end)
+  defp ungrouped_distinct(df, out_df, columns, true) do
+    Shared.apply_dataframe(df, out_df, :df_drop_duplicates, [true, columns])
+  end
+
+  defp ungrouped_distinct(df, out_df, columns, false) do
+    df
+    |> Shared.apply_dataframe(out_df, :df_drop_duplicates, [true, columns])
+    |> select(out_df)
   end
 
   # Applies a callback function to each group of indexes in a dataframe. Then regroups it.
-  defp apply_on_groups(%DataFrame{} = df, callback) when is_function(callback, 1) do
+  defp apply_on_groups(%DataFrame{} = df, out_df, callback) when is_function(callback, 1) do
     ungrouped_df = DataFrame.ungroup(df)
     idx_column = "__original_row_idx__"
 
@@ -362,8 +370,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end)
     |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
     |> arrange([{:asc, idx_column}])
-    |> DataFrame.select([idx_column], :drop)
-    |> DataFrame.group_by(df.groups)
+    |> select(out_df)
   end
 
   # Returns a list of lists, where each list is a group of row indexes.
@@ -477,9 +484,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def ungroup(%DataFrame{}, %DataFrame{} = out_df), do: out_df
-
-  def ungroup(df, groups),
-    do: %DataFrame{df | groups: Enum.filter(df.groups, &(&1 not in groups))}
 
   @impl true
   def summarise(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, columns) do
