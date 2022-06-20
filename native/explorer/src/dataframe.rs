@@ -244,10 +244,23 @@ pub fn df_width(data: ExDataFrame) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_vstack(data: ExDataFrame, other: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_vstack_many(
+    data: ExDataFrame,
+    others: Vec<ExDataFrame>,
+) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let df1 = &other.resource.0;
-    Ok(ExDataFrame::new(df.vstack(&df1.clone())?))
+    let names = df.get_column_names();
+    let dfs = others
+        .into_iter()
+        .map(|ex_df| ex_df.resource.0.select(&names));
+
+    let mut out_df = df.clone();
+    for df in dfs {
+        out_df = out_df.vstack(&df?)?;
+    }
+    // Follows recommendation from docs and rechunk after many vstacks.
+    out_df.rechunk();
+    Ok(ExDataFrame::new(out_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

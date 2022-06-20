@@ -367,7 +367,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         Shared.apply_dataframe(group_df, :df_with_column, [idx_series.data])
       end)
     end)
-    |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
+    |> concat_rows()
     |> ungrouped_arrange([{:asc, idx_column}])
     |> select(out_df)
   end
@@ -465,11 +465,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def concat_rows(dfs) do
-    Enum.reduce(dfs, fn x, acc ->
-      # Polars requires the _order_ of columns to be the same
-      x = DataFrame.select(x, DataFrame.names(acc))
-      Shared.apply_dataframe(acc, :df_vstack, [x.data])
-    end)
+    [head | tail] = dfs
+    Shared.apply_dataframe(head, :df_vstack_many, [Enum.map(tail, & &1.data)])
   end
 
   # Groups

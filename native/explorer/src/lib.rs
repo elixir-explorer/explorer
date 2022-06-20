@@ -79,7 +79,7 @@ rustler::init!(
         df_to_csv_file,
         df_to_dummies,
         df_to_lazy,
-        df_vstack,
+        df_vstack_many,
         df_width,
         df_with_column,
         df_write_ipc,
