@@ -375,9 +375,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Returns a list of lists, where each list is a group of row indexes.
   defp indexes_by_groups(%DataFrame{groups: [_ | _]} = df) do
     df
-    |> Shared.apply_dataframe(:df_groups, [df.groups])
-    |> pull("groups")
-    |> Series.to_list()
+    |> Shared.apply_dataframe(:df_group_indices, [df.groups])
+    |> Shared.apply_series(:s_to_list)
   end
 
   @impl true

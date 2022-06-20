@@ -67,6 +67,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_filter(_df, _mask), do: err()
   def df_get_columns(_df), do: err()
   def df_groups(_df, _column_names), do: err()
+  def df_group_indices(_df, _column_names), do: err()
   def df_groupby_agg(_df, _groups, _aggs), do: err()
   def df_head(_df, _length), do: err()
   def df_height(_df), do: err()

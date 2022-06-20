@@ -55,6 +55,7 @@ rustler::init!(
         df_get_columns,
         df_groups,
         df_groupby_agg,
+        df_group_indices,
         df_head,
         df_height,
         df_join,
