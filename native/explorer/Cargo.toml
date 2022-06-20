@@ -23,7 +23,7 @@ thiserror = "1"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.21.1"
+version = "0.22.1"
 default-features = false
 features = [
   "cross_join",
