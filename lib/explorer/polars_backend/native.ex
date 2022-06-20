@@ -84,7 +84,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_sort(_df, _by, _reverse), do: err()
   def df_tail(_df, _length), do: err()
   def df_take(_df, _indices), do: err()
-  def df_to_dummies(_df), do: err()
+  def df_to_dummies(_df, _columns), do: err()
   def df_to_lazy(_df), do: err()
   def df_vstack(_df, _other), do: err()
   def df_width(_df), do: err()

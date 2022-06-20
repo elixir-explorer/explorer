@@ -378,9 +378,12 @@ pub fn df_drop_duplicates(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_to_dummies(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_to_dummies(
+    data: ExDataFrame,
+    selection: Vec<&str>,
+) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let new_df = df.to_dummies()?;
+    let new_df = df.select(&selection).and_then(|df| df.to_dummies())?;
     Ok(ExDataFrame::new(new_df))
 }
 

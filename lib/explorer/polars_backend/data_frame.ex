@@ -386,10 +386,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def dummies(df, names),
-    do:
-      df
-      |> DataFrame.select(names)
-      |> Shared.apply_dataframe(:df_to_dummies)
+    do: Shared.apply_dataframe(df, :df_to_dummies, [names])
 
   @impl true
   def sample(df, n, replacement, seed) when is_integer(n) do
