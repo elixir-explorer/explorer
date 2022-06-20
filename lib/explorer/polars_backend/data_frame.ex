@@ -262,9 +262,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def tail(df, rows), do: Shared.apply_dataframe(df, :df_tail, [rows])
 
   @impl true
-  def select(df, out_df) do
-    Shared.apply_dataframe(df, out_df, :df_select, [out_df.names])
-  end
+  def select(df, out_df),
+    do: Shared.apply_dataframe(df, out_df, :df_select, [out_df.names])
 
   @impl true
   def filter(df, %Series{} = mask),
@@ -369,7 +368,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       end)
     end)
     |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
-    |> arrange([{:asc, idx_column}])
+    |> ungrouped_arrange([{:asc, idx_column}])
     |> select(out_df)
   end
 
@@ -490,9 +489,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
     columns =
       Enum.map(columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
 
+    order = Enum.map(groups, &{:asc, &1})
+
     df
     |> Shared.apply_dataframe(out_df, :df_groupby_agg, [groups, columns])
-    |> DataFrame.arrange(groups)
+    |> ungrouped_arrange(order)
   end
 
   # Inspect
