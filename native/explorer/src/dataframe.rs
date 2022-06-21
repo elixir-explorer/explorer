@@ -323,11 +323,25 @@ pub fn df_take(data: ExDataFrame, indices: Vec<u32>) -> Result<ExDataFrame, Expl
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_sort(
     data: ExDataFrame,
-    by_columns: Vec<&str>,
+    by_columns: Vec<String>,
     reverse: Vec<bool>,
+    groups: Option<Vec<String>>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
-    let new_df = df.sort(by_columns, reverse)?;
+    let df: DataFrame = data.resource.0.clone();
+
+    let new_df = match groups {
+        None => {
+            let new_df = &df.sort(by_columns, reverse)?;
+            new_df.clone()
+        }
+        Some(groups) => {
+            let new_df = &df
+                .groupby(groups)?
+                .apply(|df| df.sort(by_columns.clone(), reverse.clone()))?;
+            new_df.clone()
+        }
+    };
+
     Ok(ExDataFrame::new(new_df))
 }
 
