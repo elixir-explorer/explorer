@@ -325,21 +325,18 @@ pub fn df_sort(
     data: ExDataFrame,
     by_columns: Vec<String>,
     reverse: Vec<bool>,
-    groups: Option<Vec<String>>,
+    groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df: DataFrame = data.resource.0.clone();
 
-    let new_df = match groups {
-        None => {
-            let new_df = &df.sort(by_columns, reverse)?;
-            new_df.clone()
-        }
-        Some(groups) => {
-            let new_df = &df
-                .groupby(groups)?
-                .apply(|df| df.sort(by_columns.clone(), reverse.clone()))?;
-            new_df.clone()
-        }
+    let new_df = if groups.is_empty() {
+        let new_df = &df.sort(by_columns, reverse)?;
+        new_df.clone()
+    } else {
+        let new_df = &df
+            .groupby(groups)?
+            .apply(|df| df.sort(by_columns.clone(), reverse.clone()))?;
+        new_df.clone()
     };
 
     Ok(ExDataFrame::new(new_df))

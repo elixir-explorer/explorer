@@ -320,12 +320,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def arrange(%DataFrame{groups: groups} = df, columns) do
-    groups =
-      case groups do
-        [] -> nil
-        groups -> groups
-      end
-
     {directions, columns} =
       columns
       |> Enum.map(fn {dir, col} ->
