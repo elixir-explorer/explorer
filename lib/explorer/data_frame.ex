@@ -1802,7 +1802,7 @@ defmodule Explorer.DataFrame do
     names = df.names
     dtypes = df.dtypes
 
-    keep_columns =
+    columns_to_keep =
       case opts[:keep] do
         [] ->
           []
@@ -1823,7 +1823,7 @@ defmodule Explorer.DataFrame do
           Enum.filter(names, fn name -> name not in columns_to_pivot && callback.(name) end)
       end
 
-    keep_columns = to_existing_columns(df, keep_columns)
+    columns_to_keep = to_existing_columns(df, columns_to_keep)
 
     values_dtype =
       dtypes
@@ -1841,13 +1841,19 @@ defmodule Explorer.DataFrame do
 
     new_dtypes =
       dtypes
-      |> Map.take(keep_columns)
+      |> Map.take(columns_to_keep)
       |> Map.put(names_to, :string)
       |> Map.put(values_to, values_dtype)
 
-    out_df = %{df | names: keep_columns ++ [names_to, values_to], dtypes: new_dtypes}
+    out_df = %{df | names: columns_to_keep ++ [names_to, values_to], dtypes: new_dtypes}
 
-    Shared.apply_impl(df, :pivot_longer, [out_df, columns_to_pivot])
+    Shared.apply_impl(df, :pivot_longer, [
+      out_df,
+      columns_to_pivot,
+      columns_to_keep,
+      names_to,
+      values_to
+    ])
   end
 
   @doc """
