@@ -391,13 +391,19 @@ pub fn df_drop_duplicates(
     data: ExDataFrame,
     maintain_order: bool,
     subset: Vec<String>,
+    groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
-    let new_df = match maintain_order {
-        false => df.unique(Some(&subset), UniqueKeepStrategy::First)?,
-        true => df.unique_stable(Some(&subset), UniqueKeepStrategy::First)?,
+    let df: DataFrame = data.resource.0.clone();
+    let operation = |input_df: DataFrame| match maintain_order {
+        false => input_df.unique(Some(&subset), UniqueKeepStrategy::First),
+        true => input_df.unique_stable(Some(&subset), UniqueKeepStrategy::First),
     };
-    Ok(ExDataFrame::new(new_df))
+    let new_df = if groups.is_empty() {
+        operation(df)
+    } else {
+        df.groupby_stable(groups)?.apply(operation)
+    };
+    Ok(ExDataFrame::new(new_df?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
