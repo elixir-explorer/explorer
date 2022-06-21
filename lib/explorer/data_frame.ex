@@ -1163,16 +1163,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.arrange(df, asc: "total", desc: "country")
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        year integer [2010, 2012, 2011, 2013, 2014, ...]
-        country string ["ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", "ZIMBABWE", ...]
-        total integer [2121, 2125, 2608, 3184, 3278, ...]
-        solid_fuel integer [1531, 917, 1584, 1902, 2097, ...]
-        liquid_fuel integer [481, 1006, 888, 1119, 1005, ...]
+        year integer [2010, 2010, 2011, 2011, 2012, ...]
+        country string ["NIUE", "TUVALU", "TUVALU", "NIUE", "NIUE", ...]
+        total integer [1, 2, 2, 2, 2, ...]
+        solid_fuel integer [0, 0, 0, 0, 0, ...]
+        liquid_fuel integer [1, 2, 2, 2, 2, ...]
         gas_fuel integer [0, 0, 0, 0, 0, ...]
-        cement integer [109, 201, 136, 162, 177, ...]
+        cement integer [0, 0, 0, 0, 0, ...]
         gas_flaring integer [0, 0, 0, 0, 0, ...]
-        per_capita float [0.15, 0.15, 0.18, 0.21, 0.22, ...]
-        bunker_fuels integer [7, 9, 8, 9, 9, ...]
+        per_capita float [0.52, 0.0, 0.0, 1.04, 1.04, ...]
+        bunker_fuels integer [0, 0, 0, 0, 0, ...]
       >
   """
   @doc type: :single
