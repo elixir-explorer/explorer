@@ -1060,7 +1060,7 @@ defmodule Explorer.DataFrameTest do
 
   describe "pivot_longer/3" do
     test "without keeping columns", %{df: df} do
-      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"))
+      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), keep: [])
 
       assert df.names == ["variable", "value"]
       assert df.dtypes == %{"variable" => :string, "value" => :integer}
@@ -1080,6 +1080,53 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.shape(df) == {3282, 4}
+    end
+
+    test "keeping all the columns (not passing keep option)", %{df: df} do
+      df = DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]))
+
+      assert df.names == [
+               "year",
+               "country",
+               "total",
+               "cement",
+               "gas_flaring",
+               "per_capita",
+               "variable",
+               "value"
+             ]
+
+      assert DF.shape(df) == {4376, 8}
+    end
+
+    test "dropping some columns", %{df: df} do
+      df =
+        DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]),
+          drop: ["gas_flaring", "cement"]
+        )
+
+      assert df.names == [
+               "year",
+               "country",
+               "total",
+               "per_capita",
+               "variable",
+               "value"
+             ]
+    end
+
+    test "keep and drop with the same columns drops the columns", %{df: df} do
+      df =
+        DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]),
+          keep: ["gas_flaring", "cement"],
+          drop: fn name -> name == "cement" end
+        )
+
+      assert df.names == [
+               "gas_flaring",
+               "variable",
+               "value"
+             ]
     end
 
     test "with pivot column in the same list of keep columns", %{df: df} do
