@@ -98,7 +98,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback pivot_longer(
               df,
               out_df :: df(),
-              value_columns :: [column_name()]
+              columns_to_pivot :: [column_name()]
             ) :: df
 
   # Two or more table verbs

@@ -1058,6 +1058,49 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "pivot_longer/3" do
+    test "without keeping columns", %{df: df} do
+      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"))
+
+      assert df.names == ["variable", "value"]
+      assert df.dtypes == %{"variable" => :string, "value" => :integer}
+      assert DF.shape(df) == {3282, 2}
+    end
+
+    test "keeping some columns", %{df: df} do
+      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), keep: ["year", "country"])
+
+      assert df.names == ["year", "country", "variable", "value"]
+
+      assert df.dtypes == %{
+               "year" => :integer,
+               "country" => :string,
+               "variable" => :string,
+               "value" => :integer
+             }
+
+      assert DF.shape(df) == {3282, 4}
+    end
+
+    test "with pivot column in the same list of keep columns", %{df: df} do
+      assert_raise ArgumentError,
+                   "columns to keep must not include columns to pivot, but found \"solid_fuel\" in both",
+                   fn ->
+                     DF.pivot_longer(df, &String.ends_with?(&1, "fuel"),
+                       keep: ["year", "country", "solid_fuel"]
+                     )
+                   end
+    end
+
+    test "with multiple types of columns to pivot", %{df: df} do
+      assert_raise ArgumentError,
+                   "columns to pivot must include columns with the same dtype, but found multiple dtypes: [:string, :integer]",
+                   fn ->
+                     DF.pivot_longer(df, &(&1 in ["solid_fuel", "country"]))
+                   end
+    end
+  end
+
   test "table reader integration" do
     df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
 
