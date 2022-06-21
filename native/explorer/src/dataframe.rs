@@ -247,15 +247,15 @@ pub fn df_vstack_many(
     data: ExDataFrame,
     others: Vec<ExDataFrame>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
-    let names = df.get_column_names();
+    let mut out_df = data.resource.0.clone();
+    let names = out_df.get_column_names();
     let dfs = others
         .into_iter()
-        .map(|ex_df| ex_df.resource.0.select(&names));
+        .map(|ex_df| ex_df.resource.0.select(&names))
+        .collect::<Result<Vec<_>, _>>()?;
 
-    let mut out_df = df.clone();
     for df in dfs {
-        out_df = out_df.vstack(&df?)?;
+        out_df.vstack_mut(&df)?;
     }
     // Follows recommendation from docs and rechunk after many vstacks.
     out_df.rechunk();
