@@ -350,13 +350,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> select(out_df)
   end
 
-  # Applies a callback function to each group of indexes in a dataframe. Then regroups it.
+  # Applies a callback function to each group of indices in a dataframe. Then regroups it.
   defp apply_on_groups(%DataFrame{} = df, out_df, callback) when is_function(callback, 1) do
     ungrouped_df = DataFrame.ungroup(df)
     idx_column = "__original_row_idx__"
 
     df
-    |> indexes_by_groups()
+    |> indices_by_groups()
     |> Enum.map(fn indices ->
       ungrouped_df
       |> take(indices)
@@ -372,8 +372,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> select(out_df)
   end
 
-  # Returns a list of lists, where each list is a group of row indexes.
-  defp indexes_by_groups(%DataFrame{groups: [_ | _]} = df) do
+  # Returns a list of lists, where each list is a group of row indices.
+  defp indices_by_groups(%DataFrame{groups: [_ | _]} = df) do
     df
     |> Shared.apply_dataframe(:df_groups, [df.groups])
     |> pull("groups")
@@ -451,20 +451,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> Enum.map(fn {left, right} -> {right, left} end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(right, out_df, :df_join, [
-      left.data,
-      left_on,
-      right_on,
-      "left",
-      "_left"
-    ])
+    args = [left.data, left_on, right_on, "left", "_left"]
+    Shared.apply_dataframe(right, out_df, :df_join, args)
   end
 
   def join(left, right, out_df, on, how) do
     how = Atom.to_string(how)
     {left_on, right_on} = Enum.unzip(on)
 
-    Shared.apply_dataframe(left, out_df, :df_join, [right.data, left_on, right_on, how, "_right"])
+    args = [right.data, left_on, right_on, how, "_right"]
+    Shared.apply_dataframe(left, out_df, :df_join, args)
   end
 
   @impl true
