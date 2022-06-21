@@ -279,11 +279,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   defp ungrouped_mutate(df, out_df, columns) do
-    Enum.reduce(columns, df, fn {column_name, value}, acc_df when is_binary(column_name) ->
-      series = to_series(acc_df, column_name, value)
-      check_series_size!(acc_df, series, column_name)
-      Shared.apply_dataframe(acc_df, out_df, :df_with_column, [series.data])
-    end)
+    columns =
+      Enum.map(columns, fn {column_name, value} ->
+        series = to_series(df, column_name, value)
+        check_series_size!(df, series, column_name)
+        series.data
+      end)
+
+    Shared.apply_dataframe(df, out_df, :df_with_columns, [columns])
   end
 
   defp to_series(df, name, value) do
@@ -369,10 +372,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> then(fn group_df ->
         idx_series = series_from_list!(idx_column, indices)
 
-        Shared.apply_dataframe(group_df, :df_with_column, [idx_series.data])
+        Shared.apply_dataframe(group_df, :df_with_columns, [[idx_series.data]])
       end)
     end)
-    |> Enum.reduce(fn df, acc -> Shared.apply_dataframe(acc, :df_vstack, [df.data]) end)
+    |> concat_rows()
     |> ungrouped_arrange([{:asc, idx_column}])
     |> select(out_df)
   end
@@ -380,9 +383,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Returns a list of lists, where each list is a group of row indices.
   defp indices_by_groups(%DataFrame{groups: [_ | _]} = df) do
     df
-    |> Shared.apply_dataframe(:df_groups, [df.groups])
-    |> pull("groups")
-    |> Series.to_list()
+    |> Shared.apply_dataframe(:df_group_indices, [df.groups])
+    |> Shared.apply_series(:s_to_list)
   end
 
   @impl true
@@ -391,10 +393,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def dummies(df, names),
-    do:
-      df
-      |> DataFrame.select(names)
-      |> Shared.apply_dataframe(:df_to_dummies)
+    do: Shared.apply_dataframe(df, :df_to_dummies, [names])
 
   @impl true
   def sample(df, n, replacement, seed) when is_integer(n) do
@@ -470,11 +469,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def concat_rows(dfs) do
-    Enum.reduce(dfs, fn x, acc ->
-      # Polars requires the _order_ of columns to be the same
-      x = DataFrame.select(x, DataFrame.names(acc))
-      Shared.apply_dataframe(acc, :df_vstack, [x.data])
-    end)
+    [head | tail] = dfs
+    Shared.apply_dataframe(head, :df_vstack_many, [Enum.map(tail, & &1.data)])
   end
 
   # Groups

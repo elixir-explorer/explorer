@@ -217,8 +217,7 @@ pub fn df_get_columns(data: ExDataFrame) -> Result<Vec<ExSeries>, ExplorerError>
 #[rustler::nif]
 pub fn df_columns(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
     let df = &data.resource.0;
-    let columns = df.get_column_names();
-    Ok(columns.into_iter().map(|s| s.to_string()).collect())
+    Ok(df.get_column_names_owned())
 }
 
 #[rustler::nif]
@@ -244,10 +243,23 @@ pub fn df_width(data: ExDataFrame) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_vstack(data: ExDataFrame, other: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
-    let df1 = &other.resource.0;
-    Ok(ExDataFrame::new(df.vstack(&df1.clone())?))
+pub fn df_vstack_many(
+    data: ExDataFrame,
+    others: Vec<ExDataFrame>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let mut out_df = data.resource.0.clone();
+    let names = out_df.get_column_names();
+    let dfs = others
+        .into_iter()
+        .map(|ex_df| ex_df.resource.0.select(&names))
+        .collect::<Result<Vec<_>, _>>()?;
+
+    for df in dfs {
+        out_df.vstack_mut(&df)?;
+    }
+    // Follows recommendation from docs and rechunk after many vstacks.
+    out_df.rechunk();
+    Ok(ExDataFrame::new(out_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -378,17 +390,28 @@ pub fn df_drop_duplicates(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_to_dummies(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_to_dummies(
+    data: ExDataFrame,
+    selection: Vec<&str>,
+) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let new_df = df.to_dummies()?;
+    let new_df = df.select(&selection).and_then(|df| df.to_dummies())?;
     Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_with_column(data: ExDataFrame, column: ExSeries) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_with_columns(
+    data: ExDataFrame,
+    columns: Vec<ExSeries>,
+) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let mut new_df = df.clone();
-    new_df.with_column(column.resource.0.clone())?;
+
+    for column in columns {
+        let series = column.resource.0.clone();
+        new_df = new_df.with_column(series)?.clone();
+    }
+
     Ok(ExDataFrame::new(new_df))
 }
 
@@ -415,6 +438,17 @@ pub fn df_groups(data: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, Ex
     let df = &data.resource.0;
     let groups = df.groupby(groups)?.groups()?;
     Ok(ExDataFrame::new(groups))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_group_indices(data: ExDataFrame, groups: Vec<&str>) -> Result<ExSeries, ExplorerError> {
+    let df = &data.resource.0;
+    let series = df
+        .groupby(groups)?
+        .groups()?
+        .column("groups")
+        .map(|series| ExSeries::new(series.clone()))?;
+    Ok(series)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
