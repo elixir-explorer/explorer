@@ -1882,13 +1882,8 @@ defmodule Explorer.DataFrame do
 
     out_df = %{df | names: columns_to_keep ++ [names_to, values_to], dtypes: new_dtypes}
 
-    Shared.apply_impl(df, :pivot_longer, [
-      out_df,
-      columns_to_pivot,
-      columns_to_keep,
-      names_to,
-      values_to
-    ])
+    args = [out_df, columns_to_pivot, columns_to_keep, names_to, values_to]
+    Shared.apply_impl(df, :pivot_longer, args)
   end
 
   @doc """
