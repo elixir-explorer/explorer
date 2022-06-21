@@ -311,11 +311,11 @@ pub fn df_take(data: ExDataFrame, indices: Vec<u32>) -> Result<ExDataFrame, Expl
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_sort(
     data: ExDataFrame,
-    by_column: &str,
-    reverse: bool,
+    by_columns: Vec<&str>,
+    reverse: Vec<bool>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let new_df = df.sort([by_column], reverse)?;
+    let new_df = df.sort(by_columns, reverse)?;
     Ok(ExDataFrame::new(new_df))
 }
 

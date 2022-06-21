@@ -325,9 +325,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   defp ungrouped_arrange(df, columns) do
-    Enum.reduce(columns, df, fn {direction, column}, df ->
-      Shared.apply_dataframe(df, :df_sort, [column, direction == :desc])
-    end)
+    {directions, columns} =
+      columns
+      |> Enum.map(fn {dir, col} ->
+        {dir == :desc, col}
+      end)
+      |> Enum.unzip()
+
+    Shared.apply_dataframe(df, df, :df_sort, [columns, directions])
   end
 
   @impl true
