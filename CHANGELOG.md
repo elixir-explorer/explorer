@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DataFrame.from_columns/2` and `DataFrame.from_rows/2` is now `DataFrame.new/2`
 - Rename "col" to "column" throughout the API
 - Remove "with\_" prefix in options throughout the API
+- `DataFrame.table/2` accepts options with `:limit` instead of single integer
+- `rename/2` no longer accepts a function, use `rename_with/2` instead
+- `rename_with/3` now expects the function as the last argument
 
 ## [v0.1.1] - 2022-04-27
 
