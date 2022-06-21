@@ -28,6 +28,7 @@
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             act
+            clang
             elixir
             erlang
             gdb
@@ -36,6 +37,8 @@
             pkg-config
             rustPkg
             rust-analyzer-nightly
+          ] ++ lib.optionals stdenv.isDarwin [
+            darwin.apple_sdk.frameworks.Security
           ];
           shellHook = ''
             mkdir -p .nix-mix
