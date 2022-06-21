@@ -400,10 +400,18 @@ pub fn df_to_dummies(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_with_column(data: ExDataFrame, column: ExSeries) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_with_columns(
+    data: ExDataFrame,
+    columns: Vec<ExSeries>,
+) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let mut new_df = df.clone();
-    new_df.with_column(column.resource.0.clone())?;
+
+    for column in columns {
+        let series = column.resource.0.clone();
+        new_df = new_df.with_column(series)?.clone();
+    }
+
     Ok(ExDataFrame::new(new_df))
 }
 

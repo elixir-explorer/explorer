@@ -89,7 +89,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_to_lazy(_df), do: err()
   def df_vstack_many(_df, _others), do: err()
   def df_width(_df), do: err()
-  def df_with_column(_df, _column), do: err()
+  def df_with_columns(_df, _columns), do: err()
   def df_write_ipc(_df, _filename, _compression), do: err()
   def df_write_parquet(_df, _filename), do: err()
 

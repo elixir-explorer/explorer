@@ -279,11 +279,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   defp ungrouped_mutate(df, out_df, columns) do
-    Enum.reduce(columns, df, fn {column_name, value}, acc_df when is_binary(column_name) ->
-      series = to_series(acc_df, column_name, value)
-      check_series_size!(acc_df, series, column_name)
-      Shared.apply_dataframe(acc_df, out_df, :df_with_column, [series.data])
-    end)
+    columns =
+      Enum.map(columns, fn {column_name, value} ->
+        series = to_series(df, column_name, value)
+        check_series_size!(df, series, column_name)
+        series.data
+      end)
+
+    Shared.apply_dataframe(df, out_df, :df_with_columns, [columns])
   end
 
   defp to_series(df, name, value) do
@@ -364,7 +367,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> then(fn group_df ->
         idx_series = series_from_list!(idx_column, indices)
 
-        Shared.apply_dataframe(group_df, :df_with_column, [idx_series.data])
+        Shared.apply_dataframe(group_df, :df_with_columns, [[idx_series.data]])
       end)
     end)
     |> concat_rows()

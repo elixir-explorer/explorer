@@ -81,7 +81,7 @@ rustler::init!(
         df_to_lazy,
         df_vstack_many,
         df_width,
-        df_with_column,
+        df_with_columns,
         df_write_ipc,
         df_write_parquet,
         // lazyframe
