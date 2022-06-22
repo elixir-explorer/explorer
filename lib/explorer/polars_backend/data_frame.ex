@@ -364,6 +364,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       end)
     end)
     |> concat_rows()
+    |> DataFrame.ungroup()
     |> arrange([{:asc, idx_column}])
     |> select(out_df)
   end
