@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v0.2.0] - 2022-06-22
 
 ### Added
 
@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DataFrame.table/2` accepts options with `:limit` instead of single integer
 - `rename/2` no longer accepts a function, use `rename_with/2` instead
 - `rename_with/3` now expects the function as the last argument
+
+### Fixed
+
+- Explorer now works on Linux with musl
 
 ## [v0.1.1] - 2022-04-27
 
