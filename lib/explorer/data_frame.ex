@@ -1732,21 +1732,46 @@ defmodule Explorer.DataFrame do
   decreasing the number of columns. The inverse transformation is
   `Explorer.DataFrame.pivot_wider/4`.
 
-  The second argument (`columns`) can be either an array of column names to use or a filter callback on
-  the dataframe's names.
-
-  `value_columns` must all have the same dtype.
+  The second argument (`columns_to_pivot`) can be either an array of column names to pivot
+  or a filter callback on the dataframe's names. These columns must always have the same
+  data type.
 
   ## Options
 
-    * `value_columns` - Columns to use for values. May be a filter callback on the dataframe's column names. Defaults to an empty list, using all variables except the columns to pivot.
-    * `names_to` - A string specifying the name of the column to create from the data stored in the column names of the dataframe. Defaults to `"variable"`.
-    * `values_to` - A string specifying the name of the column to create from the data stored in series element values. Defaults to `"value"`.
+    * `keep` - Columns that are not in the list of pivot and should be kept in the dataframe.
+      May be a filter callback on the dataframe's column names. 
+      Defaults to all columns except the ones to pivot.
+
+    * `drop` - Columns that are not in the list of pivot and should be dropped from the dataframe.
+      May be a filter callback on the dataframe's column names. This list of columns is going to be 
+      subtracted from the list of `keep`.
+      Defaults to an empty list.
+
+    * `names_to` - A string specifying the name of the column to create from the data stored
+      in the column names of the dataframe. Defaults to `"variable"`.
+
+    * `values_to` - A string specifying the name of the column to create from the data stored
+      in series element values. Defaults to `"value"`.
 
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_columns: &String.ends_with?(&1, "fuel"))
+      iex> Explorer.DataFrame.pivot_longer(df, &String.ends_with?(&1, "fuel"))
+      #Explorer.DataFrame<
+        Polars[3282 x 9]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        total integer [2308, 1254, 32500, 141, 7924, ...]
+        cement integer [5, 177, 2598, 0, 204, ...]
+        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", ...]
+        value integer [627, 117, 332, 0, 0, ...]
+      >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.pivot_longer(df, &String.ends_with?(&1, "fuel"), keep: ["year", "country"])
       #Explorer.DataFrame<
         Polars[3282 x 4]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
@@ -1756,85 +1781,109 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.pivot_longer(df, ["year", "country"], value_columns: ["total"])
+      iex> Explorer.DataFrame.pivot_longer(df, ["total"], keep: ["year", "country"], drop: ["country"])
       #Explorer.DataFrame<
-        Polars[1094 x 4]
+        Polars[1094 x 3]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
-        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         variable string ["total", "total", "total", "total", "total", ...]
         value integer [2308, 1254, 32500, 141, 7924, ...]
+      >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.pivot_longer(df, ["total"], keep: [], names_to: "my_var", values_to: "my_value")
+      #Explorer.DataFrame<
+        Polars[1094 x 2]
+        my_var string ["total", "total", "total", "total", "total", ...]
+        my_value integer [2308, 1254, 32500, 141, 7924, ...]
       >
   """
   @doc type: :single
   @spec pivot_longer(
           df :: DataFrame.t(),
-          columns :: columns() | function(),
+          columns_to_pivot :: columns() | function(),
           opts :: Keyword.t()
         ) :: DataFrame.t()
-  def pivot_longer(df, columns, opts \\ [])
+  def pivot_longer(df, columns_to_pivot, opts \\ [])
 
-  def pivot_longer(df, columns, opts) when is_function(columns),
+  def pivot_longer(df, columns_to_pivot, opts) when is_function(columns_to_pivot),
     do:
       df.names
-      |> Enum.filter(columns)
+      |> Enum.filter(columns_to_pivot)
       |> then(&pivot_longer(df, &1, opts))
 
-  def pivot_longer(df, columns, opts) do
-    opts = Keyword.validate!(opts, value_columns: [], names_to: "variable", values_to: "value")
+  def pivot_longer(df, columns_to_pivot, opts) do
+    opts =
+      Keyword.validate!(opts,
+        keep: :all_except_pivot,
+        drop: [],
+        names_to: "variable",
+        values_to: "value"
+      )
+
     names_to = to_column_name(opts[:names_to])
     values_to = to_column_name(opts[:values_to])
 
-    existing_columns = to_existing_columns(df, columns)
+    columns_to_pivot = to_existing_columns(df, columns_to_pivot)
 
     names = df.names
     dtypes = df.dtypes
 
-    value_columns =
-      case opts[:value_columns] do
-        [] ->
-          Enum.filter(names, fn name -> name not in columns end)
+    columns_to_keep =
+      case opts[:keep] do
+        :all_except_pivot ->
+          names -- columns_to_pivot
 
-        [_ | _] = columns ->
+        columns when is_list(columns) ->
           Enum.each(columns, fn column ->
-            if column in existing_columns,
+            if column in columns_to_pivot,
               do:
                 raise(
                   ArgumentError,
-                  "value columns may not also be ID columns but found #{column} in both"
+                  "columns to keep must not include columns to pivot, but found #{inspect(column)} in both"
                 )
           end)
 
-          columns
+          to_existing_columns(df, columns)
 
         callback when is_function(callback) ->
-          Enum.filter(names, fn name -> name not in columns && callback.(name) end)
+          Enum.filter(names, fn name -> name not in columns_to_pivot && callback.(name) end)
       end
 
-    value_columns = to_existing_columns(df, value_columns)
+    columns_to_drop =
+      case opts[:drop] do
+        columns when is_list(columns) ->
+          to_existing_columns(df, columns)
+
+        callback when is_function(callback) ->
+          Enum.filter(names, fn name -> name not in columns_to_pivot && callback.(name) end)
+      end
+
+    columns_to_keep = columns_to_keep -- columns_to_drop
 
     values_dtype =
       dtypes
-      |> Map.take(value_columns)
+      |> Map.take(columns_to_pivot)
       |> Map.values()
       |> Enum.uniq()
       |> case do
         [dtype] ->
           dtype
 
-        [_ | _] ->
+        [_ | _] = dtypes ->
           raise ArgumentError,
-                "value columns may only include one dtype but found multiple dtypes"
+                "columns to pivot must include columns with the same dtype, but found multiple dtypes: #{inspect(dtypes)}"
       end
 
     new_dtypes =
       dtypes
-      |> Map.take(columns)
+      |> Map.take(columns_to_keep)
       |> Map.put(names_to, :string)
       |> Map.put(values_to, values_dtype)
 
-    out_df = %{df | names: columns ++ [names_to, values_to], dtypes: new_dtypes}
+    out_df = %{df | names: columns_to_keep ++ [names_to, values_to], dtypes: new_dtypes}
 
-    Shared.apply_impl(df, :pivot_longer, [out_df, value_columns])
+    args = [out_df, columns_to_pivot, columns_to_keep, names_to, values_to]
+    Shared.apply_impl(df, :pivot_longer, args)
   end
 
   @doc """

@@ -418,11 +418,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def drop_nil(df, columns), do: Shared.apply_dataframe(df, :df_drop_nulls, [columns])
 
   @impl true
-  def pivot_longer(df, out_df, value_columns) do
-    [names_to, values_to] = not_ids = Enum.slice(out_df.names, -2, 2)
-    id_columns = out_df.names -- not_ids
-
-    Shared.apply_dataframe(df, out_df, :df_melt, [id_columns, value_columns, names_to, values_to])
+  def pivot_longer(df, out_df, columns_to_pivot, columns_to_keep, names_to, values_to) do
+    Shared.apply_dataframe(df, out_df, :df_melt, [
+      columns_to_keep,
+      columns_to_pivot,
+      names_to,
+      values_to
+    ])
   end
 
   @impl true
