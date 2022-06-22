@@ -797,6 +797,8 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.distinct(df, columns: [:year, :country])
       assert DF.names(df1) == ["year", "country"]
 
+      assert DF.shape(df1) == {1094, 2}
+
       df1 = DF.distinct(df, columns: [0, 1])
       assert DF.names(df1) == ["year", "country"]
 
@@ -804,6 +806,13 @@ defmodule Explorer.DataFrameTest do
 
       df2 = DF.distinct(df, columns: [:year, :country], keep_all?: true)
       assert DF.names(df2) == DF.names(df)
+    end
+
+    test "with one column", %{df: df} do
+      df1 = DF.distinct(df, columns: [:country])
+      assert DF.names(df1) == ["country"]
+
+      assert DF.shape(df1) == {222, 1}
     end
 
     test "with ranges", %{df: df} do
