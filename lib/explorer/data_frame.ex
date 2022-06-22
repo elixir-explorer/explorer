@@ -723,7 +723,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec names(df :: DataFrame.t()) :: [String.t()]
-  def names(df), do: Shared.apply_impl(df, :names)
+  def names(df), do: df.names
 
   @doc """
   Gets the dtypes of the dataframe columns.
@@ -732,11 +732,11 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, 2])
       iex> Explorer.DataFrame.dtypes(df)
-      [:float, :integer]
+      %{"floats" => :float, "ints" => :integer}
   """
   @doc type: :introspection
-  @spec dtypes(df :: DataFrame.t()) :: [atom()]
-  def dtypes(df), do: Shared.apply_impl(df, :dtypes)
+  @spec dtypes(df :: DataFrame.t()) :: %{String.t() => atom()}
+  def dtypes(df), do: df.dtypes
 
   @doc """
   Gets the shape of the dataframe as a `{height, width}` tuple.
@@ -749,7 +749,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec shape(df :: DataFrame.t()) :: {integer(), integer()}
-  def shape(df), do: Shared.apply_impl(df, :shape)
+  def shape(df), do: {n_rows(df), n_columns(df)}
 
   @doc """
   Returns the number of rows in the dataframe.
@@ -775,7 +775,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec n_columns(df :: DataFrame.t()) :: integer()
-  def n_columns(df), do: Shared.apply_impl(df, :n_columns)
+  def n_columns(df), do: map_size(df.dtypes)
 
   @doc """
   Returns the groups of a dataframe.
@@ -2314,12 +2314,8 @@ defmodule Explorer.DataFrame do
           DataFrame.t()
   def group_by(df, groups) when is_list(groups) do
     groups = to_existing_columns(df, groups)
-
     all_groups = Enum.uniq(df.groups ++ groups)
-
-    out_df = %{df | groups: all_groups}
-
-    Shared.apply_impl(df, :group_by, [out_df])
+    %{df | groups: all_groups}
   end
 
   def group_by(df, group) when is_column_name(group), do: group_by(df, [group])
@@ -2372,7 +2368,7 @@ defmodule Explorer.DataFrame do
           DataFrame.t()
   def ungroup(df, groups \\ :all)
 
-  def ungroup(df, :all), do: Shared.apply_impl(df, :ungroup, [%{df | groups: []}])
+  def ungroup(df, :all), do: %{df | groups: []}
 
   def ungroup(df, groups) when is_list(groups) do
     current_groups = groups(df)
@@ -2387,9 +2383,7 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    out_df = %{df | groups: current_groups -- groups}
-
-    Shared.apply_impl(df, :ungroup, [out_df])
+    %{df | groups: current_groups -- groups}
   end
 
   def ungroup(df, group) when is_column_name(group), do: ungroup(df, [group])
@@ -2422,9 +2416,9 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[5 x 4]
         year integer [2010, 2011, 2012, 2013, 2014]
-        country_n_unique integer [217, 217, 220, 220, 220]
         total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
         total_min integer [1, 2, 2, 2, 3]
+        country_n_unique integer [217, 217, 220, 220, 220]
       >
   """
   @doc type: :single

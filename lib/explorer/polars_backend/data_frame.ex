@@ -213,7 +213,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_rows(%DataFrame{data: polars_df} = df, atom_keys?) do
-    names = if atom_keys?, do: df |> names() |> Enum.map(&String.to_atom/1), else: names(df)
+    names = if atom_keys?, do: Enum.map(df.names, &String.to_atom/1), else: df.names
 
     polars_df
     |> Enum.map(fn s -> s |> Shared.create_series() |> PolarsSeries.to_list() end)
@@ -223,35 +223,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Introspection
 
   @impl true
-  def names(df), do: Shared.apply_dataframe(df, :df_columns)
-
-  @impl true
-  def dtypes(df),
-    do: df |> Shared.apply_dataframe(:df_dtypes) |> Enum.map(&Shared.normalise_dtype/1)
-
-  @impl true
-  def shape(df), do: Shared.apply_dataframe(df, :df_shape)
-
-  @impl true
-  def n_rows(%DataFrame{groups: []} = df), do: Shared.apply_dataframe(df, :df_height)
-
-  def n_rows(%DataFrame{groups: groups} = df) do
-    groupby = Shared.apply_dataframe(df, :df_groups, [groups])
-
-    n =
-      groupby
-      |> pull("groups")
-      |> Series.to_list()
-      |> Enum.map(fn indices -> df |> DataFrame.ungroup() |> take(indices) |> n_rows() end)
-
-    groupby
-    |> DataFrame.select(["groups"], :drop)
-    |> mutate(df, n: n)
-    |> DataFrame.group_by(groups)
-  end
-
-  @impl true
-  def n_columns(df), do: Shared.apply_dataframe(df, :df_width)
+  def n_rows(df), do: Shared.apply_dataframe(df, :df_height)
 
   # Single table verbs
 
@@ -409,7 +381,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def pivot_wider(df, id_columns, names_from, values_from, names_prefix) do
     df = Shared.apply_dataframe(df, :df_pivot_wider, [id_columns, names_from, values_from])
-    names = names(df)
+    names = df.names
 
     new_names =
       Enum.map(names, fn name ->
@@ -457,12 +429,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Groups
 
   @impl true
-  def group_by(%DataFrame{}, %DataFrame{} = out_df), do: out_df
-
-  @impl true
-  def ungroup(%DataFrame{}, %DataFrame{} = out_df), do: out_df
-
-  @impl true
   def summarise(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, columns) do
     columns =
       Enum.map(columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
@@ -478,8 +444,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def inspect(df, opts) do
-    {n_rows, _} = shape(df)
-    Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows, opts)
+    Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
   end
 end
 

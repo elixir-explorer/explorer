@@ -65,11 +65,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # Introspection
 
-  @callback names(df) :: [column_name()]
-  @callback dtypes(df) :: [dtype()]
-  @callback shape(df) :: {non_neg_integer() | nil, non_neg_integer() | nil}
   @callback n_rows(df) :: integer()
-  @callback n_columns(df) :: integer()
   @callback inspect(df, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
 
   # Single table verbs
@@ -118,8 +114,6 @@ defmodule Explorer.Backend.DataFrame do
 
   # Groups
 
-  @callback group_by(df, out_df :: df()) :: df
-  @callback ungroup(df, out_df :: df()) :: df
   @callback summarise(df, out_df :: df(), aggregations :: %{column_name() => [atom()]}) :: df
 
   # Functions

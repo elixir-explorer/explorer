@@ -1,7 +1,6 @@
 defmodule Explorer.PolarsBackend.LazyDataFrame do
   @moduledoc false
 
-  alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Shared
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
@@ -24,19 +23,6 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   # Introspection
 
   @impl true
-  def names(ldf), do: Shared.apply_dataframe(ldf, :lf_names)
-
-  @impl true
-  def dtypes(ldf),
-    do:
-      ldf
-      |> Shared.apply_dataframe(:lf_dtypes)
-      |> Enum.map(&Shared.normalise_dtype/1)
-
-  @impl true
-  def n_columns(ldf), do: ldf |> names() |> length()
-
-  @impl true
   def inspect(ldf, opts) do
     df = Shared.apply_dataframe(ldf, :lf_fetch, [opts.limit])
     Explorer.Backend.DataFrame.inspect(df, "LazyPolars", nil, opts)
@@ -54,16 +40,6 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   def select(ldf, out_ldf), do: Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
 
   # Groups
-
-  @impl true
-  def group_by(%DataFrame{groups: groups} = ldf, new_groups),
-    do: %DataFrame{ldf | groups: groups ++ new_groups}
-
-  @impl true
-  def ungroup(ldf, []), do: %DataFrame{ldf | groups: []}
-
-  def ungroup(ldf, groups),
-    do: %DataFrame{ldf | groups: Enum.filter(ldf.groups, &(&1 not in groups))}
 
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.
