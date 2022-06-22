@@ -477,11 +477,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     columns =
       Enum.map(columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
 
-    order = Enum.map(groups, &{:asc, &1})
-
-    df
-    |> Shared.apply_dataframe(out_df, :df_groupby_agg, [groups, columns])
-    |> arrange(order)
+    Shared.apply_dataframe(df, out_df, :df_groupby_agg, [groups, columns])
   end
 
   # Inspect
