@@ -1246,15 +1246,16 @@ defmodule Explorer.DataFrame do
         x2 string ["a", "c"]
       >
 
-  If the dataframe has groups, then the columns of each group will be added to the distinct columns.
+  If the dataframe has groups, then the columns of each group will be added to the distinct columns:
 
-      iex> df = Explorer.Datasets.fossil_fuels() |> Explorer.DataFrame.group_by("country")
-      iex> Explorer.DataFrame.distinct(df, columns: ["year"])
+      iex> df = Explorer.DataFrame.new(x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3])
+      iex> df = Explorer.DataFrame.group_by(df, "x1")
+      iex> Explorer.DataFrame.distinct(df, columns: ["x2"])
       #Explorer.DataFrame<
-        Polars[1094 x 2]
-        Groups: ["country"]
-        country string ["AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", ...]
-        year integer [2010, 2011, 2012, 2013, 2014, ...]
+        Polars[2 x 2]
+        Groups: ["x1"]
+        x1 integer [1, 3]
+        x2 string ["a", "c"]
       >
 
   """
@@ -1282,8 +1283,9 @@ defmodule Explorer.DataFrame do
         if opts[:keep_all?] do
           df
         else
-          columns_to_keep = Enum.uniq(df.groups ++ columns)
-          %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
+          groups = df.groups
+          keep = if groups == [], do: columns, else: Enum.uniq(groups ++ columns)
+          %{df | names: keep, dtypes: Map.take(df.dtypes, keep)}
         end
 
       Shared.apply_impl(df, :distinct, [out_df, columns, opts[:keep_all?]])
