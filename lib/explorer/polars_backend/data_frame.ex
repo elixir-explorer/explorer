@@ -319,15 +319,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def arrange(%DataFrame{groups: []} = df, columns) do
-    ungrouped_arrange(df, columns)
-  end
-
-  def arrange(%DataFrame{groups: [_ | _]} = df, columns) do
-    apply_on_groups(df, df, fn group -> ungrouped_arrange(group, columns) end)
-  end
-
-  defp ungrouped_arrange(df, columns) do
+  def arrange(%DataFrame{groups: groups} = df, columns) do
     {directions, columns} =
       columns
       |> Enum.map(fn {dir, col} ->
@@ -335,7 +327,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(df, df, :df_sort, [columns, directions])
+    Shared.apply_dataframe(df, df, :df_sort, [columns, directions, groups])
   end
 
   @impl true
@@ -376,7 +368,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       end)
     end)
     |> concat_rows()
-    |> ungrouped_arrange([{:asc, idx_column}])
+    |> arrange([{:asc, idx_column}])
     |> select(out_df)
   end
 
@@ -492,7 +484,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     df
     |> Shared.apply_dataframe(out_df, :df_groupby_agg, [groups, columns])
-    |> ungrouped_arrange(order)
+    |> arrange(order)
   end
 
   # Inspect
