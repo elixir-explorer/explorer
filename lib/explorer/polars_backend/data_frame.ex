@@ -331,10 +331,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def distinct(%DataFrame{} = df, %DataFrame{} = out_df, columns, keep_all?) do
+  def distinct(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, columns, keep_all?) do
+    keep = if groups == [], do: columns, else: Enum.uniq(groups ++ columns)
+    ungrouped_distinct(df, out_df, keep, keep_all?)
+  end
+
+  defp ungrouped_distinct(df, out_df, columns, true) do
+    Shared.apply_dataframe(df, out_df, :df_drop_duplicates, [true, columns])
+  end
+
+  defp ungrouped_distinct(df, out_df, columns, false) do
     df
-    |> Shared.apply_dataframe(out_df, :df_drop_duplicates, [true, columns, df.groups])
-    |> then(fn result -> if keep_all?, do: result, else: select(result, out_df) end)
+    |> Shared.apply_dataframe(out_df, :df_drop_duplicates, [true, columns])
+    |> select(out_df)
   end
 
   # Applies a callback function to each group of indices in a dataframe. Then regroups it.
