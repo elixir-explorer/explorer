@@ -26,18 +26,18 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   test "dtypes/1", %{ldf: ldf} do
-    assert DF.dtypes(ldf) == [
-             :integer,
-             :string,
-             :integer,
-             :integer,
-             :integer,
-             :integer,
-             :integer,
-             :integer,
-             :float,
-             :integer
-           ]
+    assert DF.dtypes(ldf) == %{
+             "bunker_fuels" => :integer,
+             "cement" => :integer,
+             "country" => :string,
+             "gas_flaring" => :integer,
+             "gas_fuel" => :integer,
+             "liquid_fuel" => :integer,
+             "per_capita" => :float,
+             "solid_fuel" => :integer,
+             "total" => :integer,
+             "year" => :integer
+           }
   end
 
   test "n_columns/1", %{ldf: ldf} do

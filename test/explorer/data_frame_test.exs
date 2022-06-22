@@ -312,7 +312,7 @@ defmodule Explorer.DataFrameTest do
         """)
 
       df = DF.from_csv!(csv, parse_dates: true)
-      assert [:datetime] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
+      assert %{"c" => :datetime} = Explorer.DataFrame.dtypes(df)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 3],
@@ -331,7 +331,7 @@ defmodule Explorer.DataFrameTest do
         """)
 
       df = DF.from_csv!(csv, parse_dates: false)
-      assert [:string] = DF.select(df, ["c"]) |> Explorer.DataFrame.dtypes()
+      assert %{"c" => :string} = Explorer.DataFrame.dtypes(df)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 3],
@@ -502,7 +502,7 @@ defmodule Explorer.DataFrameTest do
       assert {:ok, df} = DF.from_ndjson(ndjson_path)
 
       assert DF.names(df) == ~w[a b c d]
-      assert DF.dtypes(df) == [:integer, :float, :boolean, :string]
+      assert DF.dtypes(df) == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
 
       assert take_five(df["a"]) == [1, -10, 2, 1, 7]
       assert take_five(df["b"]) == [2.0, -3.5, 0.6, 2.0, -3.5]
@@ -519,7 +519,7 @@ defmodule Explorer.DataFrameTest do
       assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, batch_size: 3)
 
       assert DF.names(df) == ~w[a b c d]
-      assert DF.dtypes(df) == [:integer, :float, :boolean, :string]
+      assert DF.dtypes(df) == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
     end
 
     defp to_ndjson(tmp_dir) do
