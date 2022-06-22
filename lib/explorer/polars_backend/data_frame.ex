@@ -212,12 +212,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_rows(%DataFrame{data: polars_df} = df, atom_keys?) do
-    names = if atom_keys?, do: Enum.map(df.names, &String.to_atom/1), else: df.names
+  def to_rows(%DataFrame{data: polars_df, names: names} = df, atom_keys?) do
+    keys = if atom_keys?, do: Enum.map(names, &String.to_atom/1), else: df.names
 
-    polars_df
-    |> Enum.map(fn s -> s |> Shared.create_series() |> PolarsSeries.to_list() end)
-    |> Enum.zip_with(fn row -> names |> Enum.zip(row) |> Map.new() end)
+    names
+    |> Enum.map(fn name ->
+      {:ok, series} = Native.df_column(polars_df, name)
+      {:ok, list} = Native.s_to_list(series)
+      list
+    end)
+    |> Enum.zip_with(fn row -> keys |> Enum.zip(row) |> Map.new() end)
   end
 
   # Introspection
@@ -452,46 +456,4 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def inspect(df, opts) do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
   end
-end
-
-defimpl Enumerable, for: Explorer.PolarsBackend.DataFrame do
-  alias Explorer.PolarsBackend.Native
-  alias Explorer.PolarsBackend.Series, as: PolarsSeries
-
-  def count(df), do: Native.df_width(df)
-
-  def slice(df) do
-    {:ok, size} = count(df)
-    {:ok, size, &slicing_fun(df, &1, &2)}
-  end
-
-  defp slicing_fun(df, start, length) do
-    for idx <- start..(start + length - 1) do
-      {:ok, df} = Native.df_select_at_idx(df, idx)
-      df
-    end
-  end
-
-  def reduce(_df, {:halt, acc}, _fun), do: {:halted, acc}
-  def reduce(df, {:suspend, acc}, fun), do: {:suspended, acc, &reduce(df, &1, fun)}
-
-  def reduce(df, {:cont, acc}, fun) do
-    case Native.df_columns(df) do
-      {:ok, []} ->
-        {:done, acc}
-
-      {:ok, [head | _tail]} ->
-        {:ok, next_column} = Native.df_column(df, head)
-        {:ok, df} = Native.df_drop(df, head)
-        reduce(df, fun.(next_column, acc), fun)
-    end
-  end
-
-  def member?(df, %PolarsSeries{} = series) do
-    {:ok, columns} = Native.df_get_columns(df)
-
-    {:ok, Enum.any?(columns, &Native.s_series_equal(&1, series, false))}
-  end
-
-  def member?(_, _), do: {:error, __MODULE__}
 end
