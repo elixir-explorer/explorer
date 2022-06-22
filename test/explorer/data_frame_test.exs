@@ -535,7 +535,7 @@ defmodule Explorer.DataFrameTest do
       assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, batch_size: 3)
 
       assert DF.names(df) == ~w[a b c d]
-      assert DF.dtypes(df) ==  %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
+      assert DF.dtypes(df) == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
     end
 
     defp to_ndjson(tmp_dir) do
