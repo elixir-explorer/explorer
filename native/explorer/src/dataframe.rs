@@ -334,7 +334,7 @@ pub fn df_sort(
         new_df.clone()
     } else {
         let new_df = &df
-            .groupby_stable(groups)?
+            .groupby(groups)?
             .apply(|df| df.sort(by_columns.clone(), reverse.clone()))?;
         new_df.clone()
     };
@@ -447,7 +447,7 @@ pub fn df_set_column_names(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_groups(data: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let groups = df.groupby_stable(groups)?.groups()?;
+    let groups = df.groupby(groups)?.groups()?;
     Ok(ExDataFrame::new(groups))
 }
 
@@ -455,7 +455,7 @@ pub fn df_groups(data: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, Ex
 pub fn df_group_indices(data: ExDataFrame, groups: Vec<&str>) -> Result<ExSeries, ExplorerError> {
     let df = &data.resource.0;
     let series = df
-        .groupby_stable(groups)?
+        .groupby(groups)?
         .groups()?
         .column("groups")
         .map(|series| ExSeries::new(series.clone()))?;
