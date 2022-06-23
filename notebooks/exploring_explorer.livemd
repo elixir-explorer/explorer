@@ -266,13 +266,13 @@ You can calculate cumulative values.
 
 ```elixir
 s = 1..100 |> Enum.to_list() |> Series.from_list()
-Series.cum_sum(s)
+Series.cumulative_sum(s)
 ```
 
 Or rolling ones.
 
 ```elixir
-Series.rolling_sum(s, 4)
+Series.window_sum(s, 4)
 ```
 
 You can count and list unique values.
