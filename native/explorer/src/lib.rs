@@ -58,6 +58,7 @@ rustler::init!(
         df_group_indices,
         df_head,
         df_height,
+        df_hstack_many,
         df_join,
         df_melt,
         df_new,
