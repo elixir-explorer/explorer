@@ -440,6 +440,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_dataframe(head, :df_vstack_many, [Enum.map(tail, & &1.data)])
   end
 
+  @impl true
+  def concat_columns(dfs) do
+    [head | tail] = dfs
+    Shared.apply_dataframe(head, :df_hstack_many, [Enum.map(tail, & &1.data)])
+  end
+
   # Groups
 
   @impl true

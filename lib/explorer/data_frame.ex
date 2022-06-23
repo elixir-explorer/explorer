@@ -62,6 +62,7 @@ defmodule Explorer.DataFrame do
 
   - `join/3` for performing SQL-like joins
   - `concat_rows/1` for vertically "stacking" dataframes
+  - `concat_columns/1` for horizontally "stacking" dataframes
 
   ## IO
 
@@ -2165,6 +2166,60 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Combine two or more dataframes column-wise.
+
+  Dataframes must have the same number of rows.
+
+  ## Examples
+
+      iex> df1 = Explorer.DataFrame.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      iex> df2 = Explorer.DataFrame.new(z: [4, 5, 6], a: ["d", "e", "f"])
+      iex> Explorer.DataFrame.concat_columns([df1, df2])
+      #Explorer.DataFrame<
+        Polars[3 x 4]
+        x integer [1, 2, 3]
+        y string ["a", "b", "c"]
+        z integer [4, 5, 6]
+        a string ["d", "e", "f"]
+      >
+
+  Conflicting names are suffixed with the index of the dataframe in the array:
+
+      iex> df1 = Explorer.DataFrame.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      iex> df2 = Explorer.DataFrame.new(x: [4, 5, 6], a: ["d", "e", "f"])
+      iex> Explorer.DataFrame.concat_columns([df1, df2])
+      #Explorer.DataFrame<
+        Polars[3 x 4]
+        x integer [1, 2, 3]
+        y string ["a", "b", "c"]
+        x_1 integer [4, 5, 6]
+        a string ["d", "e", "f"]
+      >
+
+  """
+  @doc type: :multi
+  @spec concat_columns([DataFrame.t()]) :: DataFrame.t()
+  def concat_columns([%DataFrame{} = head | tail] = dfs) do
+    n_rows = n_rows(head)
+
+    if Enum.all?(tail, &(n_rows(&1) == n_rows)) do
+      Shared.apply_impl(dfs, :concat_columns)
+    else
+      raise ArgumentError, "all dataframes must have the same number of rows"
+    end
+  end
+
+  @doc """
+  Combine two dataframes column-wise.
+
+  `concat_columns(df1, df2)` is equivalent to `concat_columns([df1, df2])`.
+  """
+  @doc type: :multi
+  @spec concat_columns(DataFrame.t(), DataFrame.t()) :: DataFrame.t()
+  def concat_columns(%DataFrame{} = df1, %DataFrame{} = df2), do: concat_columns([df1, df2])
+  def concat_columns(%DataFrame{} = df, [%DataFrame{} | _] = dfs), do: concat_columns([df | dfs])
+
+  @doc """
   Combine two or more dataframes row-wise (stack).
 
   Column names and dtypes must match. The only exception is for numeric
@@ -2191,6 +2246,7 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :multi
+  @spec concat_rows([DataFrame.t()]) :: DataFrame.t()
   def concat_rows([%DataFrame{} | _t] = dfs) do
     changed_types = compute_changed_types_concat_rows(dfs)
 
@@ -2260,6 +2316,7 @@ defmodule Explorer.DataFrame do
   `concat_rows(df1, df2)` is equivalent to `concat_rows([df1, df2])`.
   """
   @doc type: :multi
+  @spec concat_rows(DataFrame.t(), DataFrame.t()) :: DataFrame.t()
   def concat_rows(%DataFrame{} = df1, %DataFrame{} = df2), do: concat_rows([df1, df2])
   def concat_rows(%DataFrame{} = df, [%DataFrame{} | _] = dfs), do: concat_rows([df | dfs])
 
