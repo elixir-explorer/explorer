@@ -445,7 +445,7 @@ DataFrame.rename(df, year: "year_test")
 ```
 
 ```elixir
-DataFrame.rename(df, &(&1 <> "_test"))
+DataFrame.rename_with(df, &(&1 <> "_test"))
 ```
 
 ### Dummies
