@@ -67,6 +67,9 @@ use Explorer as a package, you need Rust tooling installed on your machine if yo
 compile from source, which is the case when contributing to Explorer. In particular, you
 will need Rust Nightly, which can be installed with [Rustup](https://rust-lang.github.io/rustup/installation/index.html).
 
+If you wish to build the Rust library you will also need to use the Environment Variable `EXPLORER_BUILD=true`, which you can export
+by running `export EXPLORER_BUILD=true` before running other commands such as `mix test` etc.
+
 ## Sponsors
 
 <a href="https://amplified.ai"><img src="sponsors/amplified.png" width=100 alt="Amplified"></a>
