@@ -3,6 +3,7 @@ use polars::prelude::*;
 use std::fs::File;
 use std::io::BufReader;
 use std::result::Result;
+use rustler::{Binary, Env, NewBinary};
 
 use crate::series::{to_ex_series_collection, to_series_collection};
 
@@ -89,19 +90,23 @@ pub fn df_write_parquet(data: ExDataFrame, filename: &str) -> Result<(), Explore
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_to_csv(
+    env: Env,
     data: ExDataFrame,
     has_headers: bool,
     delimiter: u8,
-) -> Result<String, ExplorerError> {
+) -> Result<Binary, ExplorerError> {
     let df = &data.resource.0;
-    let mut buf: Vec<u8> = Vec::with_capacity(81920);
+    let mut buf = vec![];
+
     CsvWriter::new(&mut buf)
         .has_header(has_headers)
         .with_delimiter(delimiter)
         .finish(&mut df.clone())?;
 
-    let s = String::from_utf8(buf)?;
-    Ok(s)
+    let mut values_binary = NewBinary::new(env, buf.len());
+    values_binary.copy_from_slice(&buf);
+
+    Ok(values_binary.into())
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
