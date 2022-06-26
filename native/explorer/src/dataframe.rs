@@ -1,9 +1,9 @@
 use polars::prelude::*;
 
+use rustler::{Binary, Env, NewBinary};
 use std::fs::File;
 use std::io::BufReader;
 use std::result::Result;
-use rustler::{Binary, Env, NewBinary};
 
 use crate::series::{to_ex_series_collection, to_series_collection};
 
