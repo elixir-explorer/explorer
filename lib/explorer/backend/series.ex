@@ -117,6 +117,13 @@ defmodule Explorer.Backend.Series do
 
   # Functions
 
+  @doc """
+  Create a new `Series`.
+  """
+  def new(data, dtype) do
+    %Explorer.Series{data: data, dtype: dtype}
+  end
+
   import Inspect.Algebra
   alias Explorer.Series
 
