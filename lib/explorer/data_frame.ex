@@ -1010,6 +1010,22 @@ defmodule Explorer.DataFrame do
         )
       )
 
+  @doc false
+  def filter_with(df, fun) when is_function(fun) do
+    ldf =
+      df
+      |> Explorer.Backend.LazyFrame.new()
+      |> Explorer.Backend.DataFrame.new(
+        df.names,
+        Enum.map(df.names, fn name -> df.dtypes[name] end)
+      )
+
+    case fun.(ldf) do
+      %Series{data: %Explorer.Backend.LazySeries{} = data} ->
+        Shared.apply_impl(df, :filter_with, [data])
+    end
+  end
+
   @doc """
   Creates and modifies columns.
 

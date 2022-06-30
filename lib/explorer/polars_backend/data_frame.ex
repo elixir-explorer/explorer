@@ -252,6 +252,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def filter(df, %Series{} = mask),
     do: Shared.apply_dataframe(df, :df_filter, [mask.data])
 
+  def filter_with(df, %Explorer.Backend.LazySeries{} = lseries) do
+    IO.inspect(lseries, label: "lseries")
+    df
+  end
+
   @impl true
   def mutate(%DataFrame{groups: []} = df, out_df, columns) do
     ungrouped_mutate(df, out_df, columns)
