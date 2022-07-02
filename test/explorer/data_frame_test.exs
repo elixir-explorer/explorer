@@ -28,6 +28,16 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "filter_with/2" do
+    test "filter a column that is equal to a value" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [5.3, 2.4, 1.0, 0.2, 6.1, 2.1, 2.2])
+
+      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], 5) end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [5, 5], b: [6.1, 2.2]}
+    end
+  end
+
   describe "mutate/2" do
     test "adds a new column" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])

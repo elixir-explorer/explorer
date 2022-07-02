@@ -60,6 +60,7 @@ rustler::init!(
         df_drop_nulls,
         df_dtypes,
         df_filter,
+        df_filter_with,
         df_get_columns,
         df_groups,
         df_groupby_agg,

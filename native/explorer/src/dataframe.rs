@@ -9,6 +9,16 @@ use crate::series::{to_ex_series_collection, to_series_collection};
 
 use crate::{ExDataFrame, ExLazyFrame, ExSeries, ExplorerError};
 
+#[derive(rustler::NifTaggedEnum)]
+pub enum Operation {
+    EqualInt(Expression, i32),
+}
+
+#[derive(rustler::NifTaggedEnum)]
+pub enum Expression {
+    Column(String),
+}
+
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(clippy::too_many_arguments)]
 pub fn df_read_csv(
@@ -364,6 +374,22 @@ pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, Explo
     } else {
         Err(ExplorerError::Other("Expected a boolean mask".into()))
     }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_filter_with(data: ExDataFrame, filter: Operation) -> Result<ExDataFrame, ExplorerError> {
+    let ldf: LazyFrame = data.resource.0.clone().lazy();
+
+    let new_df = match filter {
+        Operation::EqualInt(exp, number) => {
+            let col_exp = match exp {
+                Expression::Column(name) => col(&name),
+            };
+            ldf.filter(col_exp.eq(number)).collect()
+        }
+    }?;
+
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif]
