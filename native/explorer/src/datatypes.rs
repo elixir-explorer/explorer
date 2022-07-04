@@ -209,8 +209,19 @@ impl From<NaiveDateTime> for ExDateTime {
             hour: dt.hour(),
             minute: dt.minute(),
             second: dt.second(),
-            microsecond: (dt.timestamp_subsec_micros(), 6),
+            microsecond: (microseconds_six_digits(dt.timestamp_subsec_micros()), 6),
         }
+    }
+}
+
+// Limit the number of digits in the microsecond part of a timestamp to 6.
+// This is necessary because the microsecond part of Elixir is only 6 digits.
+#[inline]
+fn microseconds_six_digits(microseconds: u32) -> u32 {
+    if microseconds > 999_999 {
+        999_999
+    } else {
+        microseconds
     }
 }
 
