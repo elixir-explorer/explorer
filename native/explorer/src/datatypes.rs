@@ -184,6 +184,8 @@ pub struct ExDateTime {
     pub microsecond: (u32, u32),
 }
 
+/// Converts a microsecond i64 to a `NaiveDateTime`.
+/// This is because when getting a timestamp, it might have negative values.
 #[inline]
 fn timestamp_to_datetime(microseconds: i64) -> NaiveDateTime {
     let sign = microseconds.signum();
@@ -279,8 +281,8 @@ fn encode_date_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
                     env
                 )
             })
-                .encode(env)
-                .as_c_arg()
+            .encode(env)
+            .as_c_arg()
         })
         .collect::<Vec<NIF_TERM>>();
 
