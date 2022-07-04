@@ -153,9 +153,9 @@ macro_rules! encode_datetime {
                     &[
                         $datetime_module_atom,
                         $calendar_iso_c_arg,
-                        $dt.year().encode($env).as_c_arg(),
-                        $dt.month().encode($env).as_c_arg(),
                         $dt.day().encode($env).as_c_arg(),
+                        $dt.month().encode($env).as_c_arg(),
+                        $dt.year().encode($env).as_c_arg(),
                         $dt.hour().encode($env).as_c_arg(),
                         $dt.minute().encode($env).as_c_arg(),
                         $dt.second().encode($env).as_c_arg(),
@@ -294,9 +294,9 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
     let datetime_struct_keys = &[
         __struct__().encode(env).as_c_arg(),
         calendar().encode(env).as_c_arg(),
-        year().encode(env).as_c_arg(),
-        month().encode(env).as_c_arg(),
         day().encode(env).as_c_arg(),
+        month().encode(env).as_c_arg(),
+        year().encode(env).as_c_arg(),
         hour().encode(env).as_c_arg(),
         minute().encode(env).as_c_arg(),
         second().encode(env).as_c_arg(),
@@ -318,25 +318,34 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
         .downcast_iter()
         .flat_map(move |iter| {
             iter.into_iter().map(move |opt_v| {
-                opt_v.copied().map(|x| match time_unit {
-                    TimeUnit::Milliseconds => timestamp_to_datetime(x * 1_000),
-                    TimeUnit::Microseconds => timestamp_to_datetime(x),
-                    _ => unreachable!(),
-                })
+                opt_v
+                    .copied()
+                    .map(|x| match time_unit {
+                        TimeUnit::Milliseconds => {
+                            let naive_datetime = timestamp_to_datetime(x * 1000);
+                            encode_datetime!(
+                                naive_datetime,
+                                datetime_struct_keys,
+                                calendar_iso_c_arg,
+                                datetime_module_atom,
+                                env
+                            )
+                        }
+                        TimeUnit::Microseconds => {
+                            let naive_datetime = timestamp_to_datetime(x);
+                            encode_datetime!(
+                                naive_datetime,
+                                datetime_struct_keys,
+                                calendar_iso_c_arg,
+                                datetime_module_atom,
+                                env
+                            )
+                        }
+                        _ => unreachable!(),
+                    })
+                    .encode(env)
+                    .as_c_arg()
             })
-        })
-        .map(|d| {
-            d.map(|naive_datetime| {
-                encode_datetime!(
-                    naive_datetime,
-                    datetime_struct_keys,
-                    calendar_iso_c_arg,
-                    datetime_module_atom,
-                    env
-                )
-            })
-                .encode(env)
-                .as_c_arg()
         })
         .collect::<Vec<NIF_TERM>>();
 
