@@ -10,7 +10,6 @@ use crate::atoms::{calendar, calendar_atom, day, hour, microsecond, minute, mont
 use rustler::types::atom::__struct__;
 use rustler::wrapper::list::make_list;
 use rustler::wrapper::{map, NIF_TERM};
-use std::result::Result;
 
 pub struct ExDataFrameRef(pub DataFrame);
 pub struct ExLazyFrameRef(pub LazyFrame);

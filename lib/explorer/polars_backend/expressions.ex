@@ -14,14 +14,7 @@ defmodule Explorer.PolarsBackend.Expressions do
     left = to_expressions(left)
     right = to_expressions(right)
 
-    op_name =
-      cond do
-        is_integer(right) -> :equal_int
-        is_float(right) -> :equal_float
-        true -> :equal
-      end
-
-    {op_name, left, right}
+    {:equal, [left, right]}
   end
 
   # TODO: filter what can be anything

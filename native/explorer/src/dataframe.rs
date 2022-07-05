@@ -1,10 +1,11 @@
 use polars::prelude::*;
 
-use rustler::{Binary, Env, NewBinary};
+use rustler::{Binary, Env, NewBinary, Term};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::result::Result;
 
+use crate::expressions::term_to_expressions;
 use crate::series::{to_ex_series_collection, to_series_collection};
 
 use crate::{ExDataFrame, ExLazyFrame, ExSeries, ExplorerError};
@@ -377,17 +378,11 @@ pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, Explo
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_filter_with(data: ExDataFrame, filter: Operation) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_filter_with(data: ExDataFrame, filter: Term) -> Result<ExDataFrame, ExplorerError> {
     let ldf: LazyFrame = data.resource.0.clone().lazy();
+    let exp = term_to_expressions(filter)?;
 
-    let new_df = match filter {
-        Operation::EqualInt(exp, number) => {
-            let col_exp = match exp {
-                Expression::Column(name) => col(&name),
-            };
-            ldf.filter(col_exp.eq(number)).collect()
-        }
-    }?;
+    let new_df = ldf.filter(exp).collect()?;
 
     Ok(ExDataFrame::new(new_df))
 }

@@ -18,6 +18,7 @@ mod dataframe;
 #[allow(clippy::extra_unused_lifetimes)]
 mod datatypes;
 mod error;
+mod expressions;
 mod lazyframe;
 mod series;
 
