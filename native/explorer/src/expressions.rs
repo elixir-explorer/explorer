@@ -5,64 +5,32 @@
 // the Polars expressions.
 
 use polars::prelude::col;
-use polars::prelude::Expr;
-use polars::prelude::Literal;
-use rustler::types::atom::Atom;
-use rustler::Term;
+use polars::prelude::{Expr, Literal};
 
-use crate::ExplorerError;
+use crate::ExExpr;
 
-rustler::atoms! {
-  equal,
-  column
+#[rustler::nif]
+pub fn expr_integer(number: i64) -> ExExpr {
+    let expr = number.lit();
+    ExExpr::new(expr)
 }
 
-pub fn term_to_expressions(term: Term) -> Result<Expr, ExplorerError> {
-    // {operation, args}
-    if term.is_tuple() {
-        let (key, args): (Atom, Term) = match term.decode() {
-            Ok(pair) => pair,
-            Err(_) => return Err(ExplorerError::Other("cannot read operation 1".to_string())),
-        };
-
-        // {:column, "name"}
-        if key == column() {
-            let decoded_name: &str = match args.decode() {
-                Ok(value) => value,
-                Err(_) => return Err(ExplorerError::Other("cannot read operation 2".to_string())),
-            };
-            return Ok(col(decoded_name));
-        }
-
-        // {:equal, [left, right]}
-        if key == equal() {
-            let (left, tail) = get_head_tail(args)?;
-            let (right, _) = get_head_tail(tail)?;
-
-            let left_exp = term_to_expressions(left)?;
-            let right_exp = term_to_expressions(right)?;
-            return Ok(left_exp.eq(right_exp));
-        }
-    }
-
-    if term.is_number() {
-        // TODO: make the case with floats pass
-        let int: i64 = match term.decode() {
-            Ok(value) => value,
-            Err(_) => return Err(ExplorerError::Other("cannot read operation 3".to_string())),
-        };
-
-        return Ok(int.lit());
-    }
-
-    return Err(ExplorerError::Other(
-        "cannot convert to expressions".to_string(),
-    ));
+#[rustler::nif]
+pub fn expr_float(number: f64) -> ExExpr {
+    let expr = number.lit();
+    ExExpr::new(expr)
 }
 
-fn get_head_tail(term: Term) -> Result<(Term, Term), ExplorerError> {
-    match term.list_get_cell() {
-        Ok(pair) => Ok(pair),
-        Err(_) => Err(ExplorerError::Other("cannot read operation 4".to_string())),
-    }
+#[rustler::nif]
+pub fn expr_column(name: &str) -> ExExpr {
+    let expr = col(name);
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_equal(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr: Expr = left.resource.0.clone();
+    let right_expr: Expr = right.resource.0.clone();
+
+    ExExpr::new(left_expr.eq(right_expr))
 }

@@ -12,6 +12,7 @@ use rustler::wrapper::list::make_list;
 use rustler::wrapper::{map, NIF_TERM};
 
 pub struct ExDataFrameRef(pub DataFrame);
+pub struct ExExprRef(pub Expr);
 pub struct ExLazyFrameRef(pub LazyFrame);
 pub struct ExSeriesRef(pub Series);
 
@@ -19,6 +20,12 @@ pub struct ExSeriesRef(pub Series);
 #[module = "Explorer.PolarsBackend.DataFrame"]
 pub struct ExDataFrame {
     pub resource: ResourceArc<ExDataFrameRef>,
+}
+
+#[derive(NifStruct)]
+#[module = "Explorer.PolarsBackend.Expression"]
+pub struct ExExpr {
+    pub resource: ResourceArc<ExExprRef>,
 }
 
 #[derive(NifStruct)]
@@ -39,6 +46,12 @@ impl ExDataFrameRef {
     }
 }
 
+impl ExExprRef {
+    pub fn new(expr: Expr) -> Self {
+        Self(expr)
+    }
+}
+
 impl ExLazyFrameRef {
     pub fn new(df: LazyFrame) -> Self {
         Self(df)
@@ -55,6 +68,14 @@ impl ExDataFrame {
     pub fn new(df: DataFrame) -> Self {
         Self {
             resource: ResourceArc::new(ExDataFrameRef::new(df)),
+        }
+    }
+}
+
+impl ExExpr {
+    pub fn new(expr: Expr) -> Self {
+        Self {
+            resource: ResourceArc::new(ExExprRef::new(expr)),
         }
     }
 }

@@ -24,14 +24,17 @@ mod series;
 
 use dataframe::*;
 pub use datatypes::{
-    ExDataFrame, ExDataFrameRef, ExLazyFrame, ExLazyFrameRef, ExSeries, ExSeriesRef,
+    ExDataFrame, ExDataFrameRef, ExExpr, ExExprRef, ExLazyFrame, ExLazyFrameRef, ExSeries,
+    ExSeriesRef,
 };
 pub use error::ExplorerError;
+use expressions::*;
 use lazyframe::*;
 use series::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExDataFrameRef, env);
+    rustler::resource!(ExExprRef, env);
     rustler::resource!(ExLazyFrameRef, env);
     rustler::resource!(ExSeriesRef, env);
     true
@@ -95,6 +98,11 @@ rustler::init!(
         df_with_columns,
         df_write_ipc,
         df_write_parquet,
+        // expressions
+        expr_column,
+        expr_equal,
+        expr_integer,
+        expr_float,
         // lazyframe
         lf_collect,
         lf_describe_plan,

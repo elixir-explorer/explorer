@@ -95,6 +95,13 @@ defmodule Explorer.PolarsBackend.Native do
   def df_write_ipc(_df, _filename, _compression), do: err()
   def df_write_parquet(_df, _filename), do: err()
 
+  # Expressions (for lazy queries)
+
+  def expr_column(_name), do: err()
+  def expr_equal(_left_expr, _right_expr), do: err()
+  def expr_integer(_number), do: err()
+  def expr_float(_number), do: err()
+
   # LazyFrame
   def lf_collect(_df), do: err()
   def lf_describe_plan(_df, _optimized), do: err()

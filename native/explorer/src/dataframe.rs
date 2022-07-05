@@ -1,14 +1,13 @@
 use polars::prelude::*;
 
-use rustler::{Binary, Env, NewBinary, Term};
+use rustler::{Binary, Env, NewBinary};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::result::Result;
 
-use crate::expressions::term_to_expressions;
 use crate::series::{to_ex_series_collection, to_series_collection};
 
-use crate::{ExDataFrame, ExLazyFrame, ExSeries, ExplorerError};
+use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(clippy::too_many_arguments)]
@@ -368,9 +367,9 @@ pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, Explo
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_filter_with(data: ExDataFrame, filter: Term) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_filter_with(data: ExDataFrame, ex_expr: ExExpr) -> Result<ExDataFrame, ExplorerError> {
     let ldf: LazyFrame = data.resource.0.clone().lazy();
-    let exp = term_to_expressions(filter)?;
+    let exp: Expr = ex_expr.resource.0.clone();
 
     let new_df = ldf.filter(exp).collect()?;
 
