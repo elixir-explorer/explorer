@@ -254,7 +254,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   # TODO: add callback behaviour
   def filter_with(df, %Explorer.Backend.LazySeries{} = lseries) do
-    expressions = Explorer.PolarsBackend.Expressions.to_expressions(lseries)
+    expressions = Explorer.PolarsBackend.Expression.to_expr(lseries)
     Shared.apply_dataframe(df, df, :df_filter_with, [expressions])
   end
 
