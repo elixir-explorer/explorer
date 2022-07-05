@@ -18,22 +18,15 @@ rustler::atoms! {
 }
 
 pub fn term_to_expressions(term: Term) -> Result<Expr, ExplorerError> {
+    // {operation, args}
     if term.is_tuple() {
         let (key, args): (Atom, Term) = match term.decode() {
             Ok(pair) => pair,
             Err(_) => return Err(ExplorerError::Other("cannot read operation 1".to_string())),
         };
 
+        // {:column, "name"}
         if key == column() {
-            // let (name, _) = match args.decode() {
-            //     Ok(pair) => pair,
-            //     Err(_) => {
-            //         return Err(ExplorerError::Other(
-            //             "cannot read operation 2.0".to_string(),
-            //         ))
-            //     }
-            // };
-
             let decoded_name: &str = match args.decode() {
                 Ok(value) => value,
                 Err(_) => return Err(ExplorerError::Other("cannot read operation 2".to_string())),
@@ -41,15 +34,10 @@ pub fn term_to_expressions(term: Term) -> Result<Expr, ExplorerError> {
             return Ok(col(decoded_name));
         }
 
+        // {:equal, [left, right]}
         if key == equal() {
-            let (left, tail) = match args.list_get_cell() {
-                Ok(pair) => pair,
-                Err(_) => return Err(ExplorerError::Other("cannot read operation 4".to_string())),
-            };
-            let (right, _) = match tail.list_get_cell() {
-                Ok(pair) => pair,
-                Err(_) => return Err(ExplorerError::Other("cannot read operation 5".to_string())),
-            };
+            let (left, tail) = get_head_tail(args)?;
+            let (right, _) = get_head_tail(tail)?;
 
             let left_exp = term_to_expressions(left)?;
             let right_exp = term_to_expressions(right)?;
@@ -72,9 +60,9 @@ pub fn term_to_expressions(term: Term) -> Result<Expr, ExplorerError> {
     ));
 }
 
-// fn get_head_tail(term: Term) -> Result<(Term, Term), ExplorerError:> {
-//     match term.list_get_cell() {
-//         Ok(pair) => Ok(pair),
-//         Err(_) => Err(ExplorerError::Other("cannot read operation 4".to_string())),
-//     }
-// }
+fn get_head_tail(term: Term) -> Result<(Term, Term), ExplorerError> {
+    match term.list_get_cell() {
+        Ok(pair) => Ok(pair),
+        Err(_) => Err(ExplorerError::Other("cannot read operation 4".to_string())),
+    }
+}

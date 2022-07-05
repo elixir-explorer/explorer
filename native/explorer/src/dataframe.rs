@@ -10,16 +10,6 @@ use crate::series::{to_ex_series_collection, to_series_collection};
 
 use crate::{ExDataFrame, ExLazyFrame, ExSeries, ExplorerError};
 
-#[derive(rustler::NifTaggedEnum)]
-pub enum Operation {
-    EqualInt(Expression, i32),
-}
-
-#[derive(rustler::NifTaggedEnum)]
-pub enum Expression {
-    Column(String),
-}
-
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(clippy::too_many_arguments)]
 pub fn df_read_csv(
