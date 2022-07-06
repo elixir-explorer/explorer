@@ -12,22 +12,51 @@ defmodule Explorer.Backend.LazySeries do
   defstruct op: nil, args: []
 
   @doc false
-  def new(dtype, op, args) do
-    Backend.Series.new(%__MODULE__{op: op, args: args}, dtype)
+  def new(op, args) do
+    %__MODULE__{op: op, args: args}
   end
 
   @impl true
   def eq(%Series{} = left, %Series{} = right), do: eq(left, right.data)
 
   def eq(%Series{dtype: left_dtype, data: left_lazy}, value) do
-    new(left_dtype, :equal, [left_lazy, value])
+    data = new(:equal, [left_lazy, value])
+
+    Backend.Series.new(data, left_dtype)
   end
 
+  # TODO: handle nested series
   @impl true
-  def inspect(_lseries, opts) do
-    series = Explorer.Series.from_list([1, 2, 3])
+  def inspect(series, opts) do
+    import Inspect.Algebra
 
-    Backend.Series.inspect(series, "LazySeries", nil, opts)
+    open = color("[", :list, opts)
+    close = color("]", :list, opts)
+    dtype = color("#{Series.dtype(series)}", :atom, opts)
+
+    data =
+      container_doc(
+        open,
+        series.data.args,
+        close,
+        opts,
+        &Explorer.Shared.to_string/2
+      )
+
+    concat([
+      color("LazySeries ", :atom, opts),
+      dtype,
+      line(),
+      open,
+      "???",
+      close,
+      line(),
+      color("Operation: ", :atom, opts),
+      color("#{series.data.op}", :atom, opts),
+      line(),
+      color("Args: ", :atom, opts),
+      data
+    ])
   end
 
   # TODO: Make the functions of non-implemented functions
