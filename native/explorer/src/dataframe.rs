@@ -368,10 +368,10 @@ pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, Explo
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_filter_with(data: ExDataFrame, ex_expr: ExExpr) -> Result<ExDataFrame, ExplorerError> {
-    let ldf: LazyFrame = data.resource.0.clone().lazy();
+    let df: DataFrame = data.resource.0.clone();
     let exp: Expr = ex_expr.resource.0.clone();
 
-    let new_df = ldf.filter(exp).collect()?;
+    let new_df = df.lazy().filter(exp).collect()?;
 
     Ok(ExDataFrame::new(new_df))
 }
