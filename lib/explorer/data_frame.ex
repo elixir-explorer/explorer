@@ -1015,10 +1015,7 @@ defmodule Explorer.DataFrame do
     ldf =
       df
       |> Explorer.Backend.LazyFrame.new()
-      |> Explorer.Backend.DataFrame.new(
-        df.names,
-        Enum.map(df.names, fn name -> df.dtypes[name] end)
-      )
+      |> Explorer.Backend.DataFrame.new(df.names, df.dtypes)
 
     case fun.(ldf) do
       %Series{data: %Explorer.Backend.LazySeries{} = data} ->

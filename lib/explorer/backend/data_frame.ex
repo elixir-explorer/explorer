@@ -128,9 +128,14 @@ defmodule Explorer.Backend.DataFrame do
   @doc """
   Creates a new DataFrame for a given backend.
   """
-  def new(data, names, dtypes) do
-    dtypes_pairs = Enum.zip(names, dtypes)
-    %DataFrame{data: data, names: names, dtypes: Map.new(dtypes_pairs), groups: []}
+  def new(data, names, dtypes) when is_list(dtypes) do
+    dtypes = Map.new(Enum.zip(names, dtypes))
+
+    new(data, names, dtypes)
+  end
+
+  def new(data, names, dtypes) when is_list(names) and is_map(dtypes) do
+    %DataFrame{data: data, names: names, dtypes: dtypes, groups: []}
   end
 
   @default_limit 5
