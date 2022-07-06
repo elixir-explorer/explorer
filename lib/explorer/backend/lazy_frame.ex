@@ -1,6 +1,10 @@
 defmodule Explorer.Backend.LazyFrame do
   @moduledoc """
-  Represents a dataframe in an opaque lazy format.
+  Represents a lazy dataframe for building query expressions.
+  
+  The LazyFrame is available inside `filter_with`, `mutate_with`, and
+  similar. You cannot perform any operation on them except accessing
+  its underlying series.
   """
 
   alias Explorer.Backend
@@ -27,7 +31,7 @@ defmodule Explorer.Backend.LazyFrame do
 
   @impl true
   def inspect(ldf, opts) do
-    Backend.DataFrame.inspect(ldf.data.original, "OpaqueLazyFrame", nil, opts)
+    Backend.DataFrame.inspect(ldf.data.original, "LazyFrame", nil, opts)
   end
 
   @impl true
@@ -37,19 +41,23 @@ defmodule Explorer.Backend.LazyFrame do
     Backend.Series.new(data, dtype_for_column)
   end
 
-  # TODO: Make the functions of non-implemented functions
-  # explicit once the lazy interface is ready.
   funs =
     Backend.DataFrame.behaviour_info(:callbacks) --
       (Backend.DataFrame.behaviour_info(:optional_callbacks) ++
-         Module.definitions_in(__MODULE__, :def) ++ [{:inspect, 2}])
+         Module.definitions_in(__MODULE__, :def)
 
   for {fun, arity} <- funs do
     args = Macro.generate_arguments(arity, __MODULE__)
 
     @impl true
     def unquote(fun)(unquote_splicing(args)) do
-      raise "cannot perform operation on an Explorer.Backend.LazyFrame"
+      raise """
+      cannot perform operation on an Explorer.Backend.LazyFrame.
+      
+      The LazyFrame is available inside filter_with, mutate_with, and \
+      similar to build query expressions and you cannot perform any \
+      operation on them except accessing its series
+      """
     end
   end
 end
