@@ -1,7 +1,7 @@
 defmodule Explorer.Backend.LazyFrame do
   @moduledoc """
   Represents a lazy dataframe for building query expressions.
-  
+
   The LazyFrame is available inside `filter_with`, `mutate_with`, and
   similar. You cannot perform any operation on them except accessing
   its underlying series.
@@ -44,7 +44,7 @@ defmodule Explorer.Backend.LazyFrame do
   funs =
     Backend.DataFrame.behaviour_info(:callbacks) --
       (Backend.DataFrame.behaviour_info(:optional_callbacks) ++
-         Module.definitions_in(__MODULE__, :def)
+         Module.definitions_in(__MODULE__, :def))
 
   for {fun, arity} <- funs do
     args = Macro.generate_arguments(arity, __MODULE__)
@@ -53,7 +53,7 @@ defmodule Explorer.Backend.LazyFrame do
     def unquote(fun)(unquote_splicing(args)) do
       raise """
       cannot perform operation on an Explorer.Backend.LazyFrame.
-      
+
       The LazyFrame is available inside filter_with, mutate_with, and \
       similar to build query expressions and you cannot perform any \
       operation on them except accessing its series

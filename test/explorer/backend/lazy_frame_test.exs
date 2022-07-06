@@ -12,7 +12,7 @@ defmodule Explorer.Backend.LazyFrameTest do
     assert inspect(opaque_df) ==
              """
              #Explorer.DataFrame<
-               OpaqueLazyFrame[??? x 2]
+               LazyFrame[??? x 2]
                a integer [1, 2]
                b float [3.1, 4.5]
              >
