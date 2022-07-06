@@ -103,6 +103,7 @@ rustler::init!(
         expr_equal,
         expr_integer,
         expr_float,
+        expr_describe_filter_plan,
         // lazyframe
         lf_collect,
         lf_describe_plan,

@@ -1,9 +1,9 @@
 defmodule Explorer.PolarsBackend.Expression do
   @moduledoc false
   # This module is responsible for translating the opaque LazySeries
-  # into expressions that can be encoded to types in the Rustler side.
-  # Type annotations are only for information propouses.
+  # to polars expressions in the Rust side.
 
+  alias Explorer.DataFrame
   alias Explorer.Backend.LazySeries
   alias Explorer.PolarsBackend.Native
 
@@ -30,6 +30,8 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_float(number)
   end
 
-  # TODO: filter what can be anything
-  def to_expr(anything), do: anything
+  # Only for inspecting the expression in tests
+  def describe_filter_plan(%DataFrame{data: polars_df}, %__MODULE__{} = expression) do
+    Native.expr_describe_filter_plan(polars_df, expression)
+  end
 end

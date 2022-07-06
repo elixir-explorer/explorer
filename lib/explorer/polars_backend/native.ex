@@ -101,6 +101,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_equal(_left_expr, _right_expr), do: err()
   def expr_integer(_number), do: err()
   def expr_float(_number), do: err()
+  def expr_describe_filter_plan(_df, _expr), do: err()
 
   # LazyFrame
   def lf_collect(_df), do: err()

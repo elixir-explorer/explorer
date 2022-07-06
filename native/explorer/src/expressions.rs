@@ -4,10 +4,10 @@
 // in the following format: `{:operation, args}` to
 // the Polars expressions.
 
-use polars::prelude::col;
+use polars::prelude::{col, DataFrame, IntoLazy};
 use polars::prelude::{Expr, Literal};
 
-use crate::ExExpr;
+use crate::{ExDataFrame, ExExpr};
 
 #[rustler::nif]
 pub fn expr_integer(number: i64) -> ExExpr {
@@ -33,4 +33,11 @@ pub fn expr_equal(left: ExExpr, right: ExExpr) -> ExExpr {
     let right_expr: Expr = right.resource.0.clone();
 
     ExExpr::new(left_expr.eq(right_expr))
+}
+
+#[rustler::nif]
+pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
+    let df: DataFrame = data.resource.0.clone();
+    let expressions: Expr = expr.resource.0.clone();
+    df.lazy().filter(expressions).describe_plan()
 }

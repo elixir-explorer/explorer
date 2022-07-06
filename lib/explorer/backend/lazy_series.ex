@@ -17,6 +17,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def eq(%Series{} = left, %Series{} = right), do: eq(left, right.data)
+
   def eq(%Series{dtype: left_dtype, data: left_lazy}, value) do
     new(left_dtype, :equal, [left_lazy, value])
   end
