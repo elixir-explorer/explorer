@@ -13,8 +13,24 @@ defmodule Explorer.Backend.LazySeriesTest do
              #Explorer.Series<
                LazySeries integer
                [???]
-               Operation: column
-               Args: ["col_a"]
+               column("col_a")
+             >
+             """
+             |> String.trim_trailing()
+  end
+
+  test "inspect/2 with nested operations" do
+    col = LazySeries.new(:column, ["col_a"])
+    eq = LazySeries.new(:equal, [col, 5])
+
+    series = Backend.Series.new(eq, :bool)
+
+    assert inspect(series) ==
+             """
+             #Explorer.Series<
+               LazySeries bool
+               [???]
+               equal(column("col_a"), 5)
              >
              """
              |> String.trim_trailing()

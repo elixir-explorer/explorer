@@ -19,7 +19,7 @@ defmodule Explorer.Backend.DataFrame do
           | [basic_types()]
           | (df() -> series() | basic_types() | [basic_types()])
 
-  @type opaque_ldf :: Explorer.Backend.LazyFrame.t()
+  @type lazy_frame :: Explorer.Backend.LazyFrame.t()
   @type lazy_series :: Explorer.Backend.LazySeries.t()
 
   # IO
@@ -78,7 +78,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback tail(df, rows :: integer()) :: df
   @callback select(df, out_df :: df()) :: df
   @callback filter(df, mask :: series) :: df
-  @callback filter_with(df, (opaque_ldf() -> lazy_series())) :: df
+  @callback filter_with(df, (lazy_frame() -> lazy_series())) :: df
   @callback mutate(df, out_df :: df(), mutations :: [{column_name(), mutate_value()}]) :: df
   @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()], keep_all? :: boolean()) :: df

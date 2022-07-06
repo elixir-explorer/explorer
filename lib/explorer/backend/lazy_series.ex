@@ -25,7 +25,6 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, left_dtype)
   end
 
-  # TODO: handle nested series
   @impl true
   def inspect(series, opts) do
     import Inspect.Algebra
@@ -33,15 +32,6 @@ defmodule Explorer.Backend.LazySeries do
     open = color("[", :list, opts)
     close = color("]", :list, opts)
     dtype = color("#{Series.dtype(series)}", :atom, opts)
-
-    data =
-      container_doc(
-        open,
-        series.data.args,
-        close,
-        opts,
-        &Explorer.Shared.to_string/2
-      )
 
     concat([
       color("LazySeries ", :atom, opts),
@@ -51,12 +41,22 @@ defmodule Explorer.Backend.LazySeries do
       "???",
       close,
       line(),
-      color("Operation: ", :atom, opts),
-      color("#{series.data.op}", :atom, opts),
-      line(),
-      color("Args: ", :atom, opts),
-      data
+      Code.quoted_to_algebra(to_elixir_ast(series.data))
     ])
+  end
+
+  @to_elixir_op %{
+    add: :+,
+    subtract: :-,
+    eq: :==
+  }
+
+  defp to_elixir_ast(%{op: op, args: args}) do
+    {Map.get(@to_elixir_op, op, op), [], Enum.map(args, &to_elixir_ast/1)}
+  end
+
+  defp to_elixir_ast(other) do
+    other
   end
 
   # TODO: Make the functions of non-implemented functions
