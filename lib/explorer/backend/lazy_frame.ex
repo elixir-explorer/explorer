@@ -20,7 +20,7 @@ defmodule Explorer.Backend.LazyFrame do
 
   @doc false
   def new(df) do
-    %__MODULE__{names: df.names, dtypes: df.dtypes, original: df}
+    %__MODULE__{names: df.names, dtypes: df.dtypes}
   end
 
   @impl true
@@ -31,8 +31,40 @@ defmodule Explorer.Backend.LazyFrame do
 
   @impl true
   def inspect(ldf, opts) do
-    Backend.DataFrame.inspect(ldf.data.original, "LazyFrame", nil, opts)
+    import Inspect.Algebra
+
+    open = color("[", :list, opts)
+    close = color("]", :list, opts)
+
+    dtypes = ldf.data.dtypes
+
+    cols_algebra =
+      for name <- ldf.data.names do
+        concat([
+          line(),
+          color("#{name} ", :map, opts),
+          color("#{dtypes[name]}", :atom, opts)
+        ])
+      end
+
+    concat([
+      color("LazyFrame", :atom, opts),
+      open,
+      "??? x #{length(cols_algebra)}",
+      close,
+      groups_algebra(ldf.groups, opts) | cols_algebra
+    ])
   end
+
+  defp groups_algebra([_ | _] = groups, opts),
+    do:
+      Inspect.Algebra.concat([
+        Inspect.Algebra.line(),
+        Inspect.Algebra.color("Groups: ", :atom, opts),
+        Inspect.Algebra.to_doc(groups, opts)
+      ])
+
+  defp groups_algebra([], _), do: ""
 
   @impl true
   def pull(df, column) do

@@ -4,7 +4,7 @@ defmodule Explorer.Backend.LazyFrameTest do
   alias Explorer.Backend
   alias Explorer.Backend.LazyFrame
 
-  test "inspect/2 proxies to the original dataframe" do
+  test "inspect/2 prints the columns without data" do
     df = Explorer.DataFrame.new(a: [1, 2], b: [3.1, 4.5])
     ldf = LazyFrame.new(df)
     opaque_df = Backend.DataFrame.new(ldf, df.names, df.dtypes)
@@ -13,8 +13,8 @@ defmodule Explorer.Backend.LazyFrameTest do
              """
              #Explorer.DataFrame<
                LazyFrame[??? x 2]
-               a integer [1, 2]
-               b float [3.1, 4.5]
+               a integer
+               b float
              >
              """
              |> String.trim_trailing()
