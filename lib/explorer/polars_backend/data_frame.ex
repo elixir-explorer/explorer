@@ -252,7 +252,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def filter(df, %Series{} = mask),
     do: Shared.apply_dataframe(df, :df_filter, [mask.data])
 
-  # TODO: add callback behaviour
+  @impl true
   def filter_with(df, %Explorer.Backend.LazySeries{} = lseries) do
     expressions = Explorer.PolarsBackend.Expression.to_expr(lseries)
     Shared.apply_dataframe(df, df, :df_filter_with, [expressions])
