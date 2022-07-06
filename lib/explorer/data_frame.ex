@@ -1020,6 +1020,11 @@ defmodule Explorer.DataFrame do
     case fun.(ldf) do
       %Series{data: %Explorer.Backend.LazySeries{} = data} ->
         Shared.apply_impl(df, :filter_with, [data])
+
+      other ->
+        raise ArgumentError,
+              "expecting the function to return a LazySeries, but instead it returned " <>
+                inspect(other)
     end
   end
 

@@ -48,6 +48,15 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], ldf["b"]) end)
       assert DF.to_columns(df1, atom_keys: true) == %{a: [5], b: [5]}
     end
+
+    test "returns an error if the function is not returning a lazy series" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+      message = "expecting the function to return a LazySeries, but instead it returned :foo"
+
+      assert_raise ArgumentError, message, fn ->
+        DF.filter_with(df, fn _ldf -> :foo end)
+      end
+    end
   end
 
   describe "mutate/2" do
