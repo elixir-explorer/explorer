@@ -1,8 +1,8 @@
 // The idea of this file is to have functions that
 // transform the expressions from the Elixir side
-// to the Rust side. It's a conversion of Elixir tuples
-// in the following format: `{:operation, args}` to
-// the Polars expressions.
+// to the Rust side. Each function receives a basic type
+// or an expression and returns an expression that is
+// wrapped in an Elixir struct.
 
 use polars::prelude::{col, DataFrame, IntoLazy};
 use polars::prelude::{Expr, Literal};
