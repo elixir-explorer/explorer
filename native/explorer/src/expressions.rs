@@ -28,7 +28,7 @@ pub fn expr_column(name: &str) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_equal(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_eq(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
 

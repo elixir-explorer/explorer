@@ -100,7 +100,7 @@ rustler::init!(
         df_write_parquet,
         // expressions
         expr_column,
-        expr_equal,
+        expr_eq,
         expr_integer,
         expr_float,
         expr_describe_filter_plan,

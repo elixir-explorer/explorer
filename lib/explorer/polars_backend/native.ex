@@ -96,9 +96,14 @@ defmodule Explorer.PolarsBackend.Native do
   def df_write_parquet(_df, _filename), do: err()
 
   # Expressions (for lazy queries)
+  # We first generate functions for known operations.
+  for {op, arity} <- Explorer.Backend.LazySeries.operations() do
+    args = Macro.generate_arguments(arity, __MODULE__)
+    expr_op = :"expr_#{op}"
+    def unquote(expr_op)(unquote_splicing(args)), do: err()
+  end
 
-  def expr_column(_name), do: err()
-  def expr_equal(_left_expr, _right_expr), do: err()
+  # Then we generate for some specific expressions
   def expr_integer(_number), do: err()
   def expr_float(_number), do: err()
   def expr_describe_filter_plan(_df, _expr), do: err()

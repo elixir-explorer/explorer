@@ -21,7 +21,7 @@ defmodule Explorer.Backend.LazySeriesTest do
 
   test "inspect/2 with nested operations" do
     col = LazySeries.new(:column, ["col_a"])
-    eq = LazySeries.new(:equal, [col, 5])
+    eq = LazySeries.new(:eq, [col, 5])
 
     series = Backend.Series.new(eq, :bool)
 
@@ -30,7 +30,7 @@ defmodule Explorer.Backend.LazySeriesTest do
              #Explorer.Series<
                LazySeries bool
                [???]
-               equal(column("col_a"), 5)
+               column("col_a") == 5
              >
              """
              |> String.trim_trailing()

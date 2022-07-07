@@ -11,16 +11,21 @@ defmodule Explorer.Backend.LazySeries do
 
   defstruct op: nil, args: []
 
+  @operations [column: 1, eq: 2]
+
   @doc false
   def new(op, args) do
     %__MODULE__{op: op, args: args}
   end
 
+  @doc false
+  def operations, do: @operations
+
   @impl true
   def eq(%Series{} = left, %Series{} = right), do: eq(left, right.data)
 
   def eq(%Series{dtype: left_dtype, data: left_lazy}, value) do
-    data = new(:equal, [left_lazy, value])
+    data = new(:eq, [left_lazy, value])
 
     Backend.Series.new(data, left_dtype)
   end

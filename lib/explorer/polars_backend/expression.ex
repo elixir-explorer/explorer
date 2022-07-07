@@ -11,24 +11,27 @@ defmodule Explorer.PolarsBackend.Expression do
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
-  def to_expr(%LazySeries{op: :column, args: [name]}) do
-    Native.expr_column(name)
+  # We are going to generate all functions for each valid operation.
+  for {op, arity} <- Explorer.Backend.LazySeries.operations() do
+    args = Macro.generate_arguments(arity, __MODULE__)
+
+    updates =
+      for arg <- args do
+        quote do
+          to_expr(unquote(arg))
+        end
+      end
+
+    expr_op = :"expr_#{op}"
+
+    def to_expr(%LazySeries{op: unquote(op), args: unquote(args)}) do
+      Native.unquote(expr_op)(unquote_splicing(updates))
+    end
   end
 
-  def to_expr(%LazySeries{op: :equal, args: [left, right]}) do
-    left = to_expr(left)
-    right = to_expr(right)
-
-    Native.expr_equal(left, right)
-  end
-
-  def to_expr(number) when is_integer(number) do
-    Native.expr_integer(number)
-  end
-
-  def to_expr(number) when is_float(number) do
-    Native.expr_float(number)
-  end
+  def to_expr(number) when is_integer(number), do: Native.expr_integer(number)
+  def to_expr(number) when is_float(number), do: Native.expr_float(number)
+  def to_expr(binary) when is_binary(binary), do: binary
 
   # Only for inspecting the expression in tests
   def describe_filter_plan(%DataFrame{data: polars_df}, %__MODULE__{} = expression) do
