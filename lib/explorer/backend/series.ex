@@ -10,6 +10,7 @@ defmodule Explorer.Backend.Series do
   @type s :: Explorer.Series.t()
   @type df :: Explorer.DataFrame.t()
   @type dtype :: :integer | :float | :boolean | :string | :date | :datetime
+  @type valid_types :: number() | boolean() | String.t() | Date.t() | NaiveDateTime.t()
 
   # Conversion
 
@@ -69,12 +70,12 @@ defmodule Explorer.Backend.Series do
 
   # Comparisons
 
-  @callback eq(s, s | number()) :: s
-  @callback neq(s, s | number()) :: s
-  @callback gt(s, s | number()) :: s
-  @callback gt_eq(s, s | number()) :: s
-  @callback lt(s, s | number()) :: s
-  @callback lt_eq(s, s | number()) :: s
+  @callback eq(s, s | valid_types()) :: s
+  @callback neq(s, s | valid_types()) :: s
+  @callback gt(s, s | valid_types()) :: s
+  @callback gt_eq(s, s | valid_types()) :: s
+  @callback lt(s, s | valid_types()) :: s
+  @callback lt_eq(s, s | valid_types()) :: s
   @callback all_equal?(s, s) :: boolean()
 
   @callback binary_and(s, s) :: s

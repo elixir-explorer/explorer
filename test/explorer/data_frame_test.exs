@@ -49,6 +49,44 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{a: [5], b: [5]}
     end
 
+    test "filter by a string value" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["b"], "b") end)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2], b: ["b"]}
+    end
+
+    test "filter by a boolean value" do
+      df = DF.new(a: [1, 2, 3], b: [true, true, false])
+
+      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["b"], false) end)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3], b: [false]}
+    end
+
+    test "filter by a given date" do
+      df = DF.new(a: [1, 2, 3], b: [~D[2022-07-07], ~D[2022-07-08], ~D[2022-07-09]])
+
+      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["b"], ~D[2022-07-07]) end)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1], b: [~D[2022-07-07]]}
+    end
+
+    test "filter by a given datetime" do
+      df =
+        DF.new(
+          a: [1, 2, 3],
+          b: [
+            ~N[2022-07-07 17:43:08.473561],
+            ~N[2022-07-07 17:44:13.020548],
+            ~N[2022-07-07 17:45:00.116337]
+          ]
+        )
+
+      df1 =
+        DF.filter_with(df, fn ldf -> Series.greater(ldf["b"], ~N[2022-07-07 17:44:13.020548]) end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3], b: [~N[2022-07-07 17:45:00.116337]]}
+    end
+
     test "filter with a complex filter" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 

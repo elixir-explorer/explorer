@@ -32,6 +32,36 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
       assert %Expression{} = Expression.to_expr(lazy)
     end
 
+    test "with a string value" do
+      lazy = %LazySeries{op: :eq, args: [%LazySeries{op: :column, args: ["col_b"]}, "foo"]}
+
+      assert %Expression{} = Expression.to_expr(lazy)
+    end
+
+    test "with a bool value" do
+      lazy = %LazySeries{op: :eq, args: [%LazySeries{op: :column, args: ["col_b"]}, true]}
+
+      assert %Expression{} = Expression.to_expr(lazy)
+    end
+
+    test "with date value" do
+      lazy = %LazySeries{
+        op: :eq,
+        args: [%LazySeries{op: :column, args: ["col_b"]}, ~D[2022-07-07]]
+      }
+
+      assert %Expression{} = Expression.to_expr(lazy)
+    end
+
+    test "with datetime value" do
+      lazy = %LazySeries{
+        op: :eq,
+        args: [%LazySeries{op: :column, args: ["col_b"]}, ~N[2022-07-07 18:09:17.824019]]
+      }
+
+      assert %Expression{} = Expression.to_expr(lazy)
+    end
+
     test "with another column", %{df: df} do
       lazy = %LazySeries{
         op: :eq,
