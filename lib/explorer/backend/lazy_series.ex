@@ -11,7 +11,18 @@ defmodule Explorer.Backend.LazySeries do
 
   defstruct op: nil, args: []
 
-  @operations [column: 1, eq: 2]
+  @operations [
+    column: 1,
+    eq: 2,
+    neq: 2,
+    gt: 2,
+    gt_eq: 2,
+    lt: 2,
+    lt_eq: 2,
+    binary_and: 2,
+    binary_or: 2
+  ]
+  @comparison_ops_with_numbers [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
 
   @doc false
   def new(op, args) do
@@ -21,13 +32,26 @@ defmodule Explorer.Backend.LazySeries do
   @doc false
   def operations, do: @operations
 
-  @impl true
-  def eq(%Series{} = left, %Series{} = right), do: eq(left, right.data)
+  # Implements all the comparison operations that
+  # accepts Series or number on the right-hand side.
+  for op <- @comparison_ops_with_numbers do
+    @impl true
+    def unquote(op)(%Series{} = left, %Series{} = right), do: unquote(op)(left, right.data)
 
-  def eq(%Series{dtype: left_dtype, data: left_lazy}, value) do
-    data = new(:eq, [left_lazy, value])
+    def unquote(op)(%Series{} = left, value) do
+      data = new(unquote(op), [left.data, value])
 
-    Backend.Series.new(data, left_dtype)
+      Backend.Series.new(data, :boolean)
+    end
+  end
+
+  for op <- [:binary_and, :binary_or] do
+    @impl true
+    def unquote(op)(%Series{} = left, %Series{} = right) do
+      data = new(unquote(op), [left.data, right.data])
+
+      Backend.Series.new(data, :boolean)
+    end
   end
 
   @impl true
@@ -53,7 +77,14 @@ defmodule Explorer.Backend.LazySeries do
   @to_elixir_op %{
     add: :+,
     subtract: :-,
-    eq: :==
+    eq: :==,
+    neq: :!=,
+    gt: :>,
+    gt_eq: :>=,
+    lt: :<,
+    lt_eq: :<=,
+    binary_and: :and,
+    binary_or: :or
   }
 
   defp to_elixir_ast(%{op: op, args: args}) do

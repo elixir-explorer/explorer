@@ -3,6 +3,8 @@ defmodule Explorer.Backend.Series do
   The behaviour for series backends.
   """
 
+  @valid_dtypes [:integer, :float, :boolean, :string, :date, :datetime, :list]
+
   @type t :: struct()
 
   @type s :: Explorer.Series.t()
@@ -120,7 +122,7 @@ defmodule Explorer.Backend.Series do
   @doc """
   Create a new `Series`.
   """
-  def new(data, dtype) do
+  def new(data, dtype) when dtype in @valid_dtypes do
     %Explorer.Series{data: data, dtype: dtype}
   end
 

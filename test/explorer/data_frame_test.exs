@@ -49,6 +49,23 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{a: [5], b: [5]}
     end
 
+    test "filter with a complex filter" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+
+          # a > 5 or a <= 2 and b != 9
+          Series.greater(a, 5)
+          |> Series.or(Series.less_equal(a, 2))
+          |> Series.and(Series.not_equal(b, 9))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 6], b: [8, 4]}
+    end
+
     test "returns an error if the function is not returning a lazy series" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
       message = "expecting the function to return a LazySeries, but instead it returned :foo"

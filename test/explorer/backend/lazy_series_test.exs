@@ -23,12 +23,12 @@ defmodule Explorer.Backend.LazySeriesTest do
     col = LazySeries.new(:column, ["col_a"])
     eq = LazySeries.new(:eq, [col, 5])
 
-    series = Backend.Series.new(eq, :bool)
+    series = Backend.Series.new(eq, :boolean)
 
     assert inspect(series) ==
              """
              #Explorer.Series<
-               LazySeries bool
+               LazySeries boolean
                [???]
                column("col_a") == 5
              >

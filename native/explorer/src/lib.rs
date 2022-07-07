@@ -100,9 +100,16 @@ rustler::init!(
         df_write_parquet,
         // expressions
         expr_column,
-        expr_eq,
         expr_integer,
         expr_float,
+        expr_eq,
+        expr_neq,
+        expr_gt,
+        expr_gt_eq,
+        expr_lt,
+        expr_lt_eq,
+        expr_binary_and,
+        expr_binary_or,
         expr_describe_filter_plan,
         // lazyframe
         lf_collect,
