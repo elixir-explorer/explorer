@@ -14,7 +14,9 @@ anyhow = "1"
 chrono = "0.4"
 rand = { version = "0.8.4", features = ["alloc"] }
 rand_pcg = "0.3.1"
-rustler = "0.25.0"
+# We are using Rustler from Git, since if fixes the build on nighthly
+# rustler = "0.25.0"
+rustler = { git = "https://github.com/rusterlium/rustler" }
 thiserror = "1"
 
 # MiMalloc won´t compile on Windows with the GCC compiler.

@@ -7,7 +7,7 @@ use std::result::Result;
 
 use crate::series::{to_ex_series_collection, to_series_collection};
 
-use crate::{ExDataFrame, ExLazyFrame, ExSeries, ExplorerError};
+use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(clippy::too_many_arguments)]
@@ -364,6 +364,16 @@ pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, Explo
     } else {
         Err(ExplorerError::Other("Expected a boolean mask".into()))
     }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_filter_with(data: ExDataFrame, ex_expr: ExExpr) -> Result<ExDataFrame, ExplorerError> {
+    let df: DataFrame = data.resource.0.clone();
+    let exp: Expr = ex_expr.resource.0.clone();
+
+    let new_df = df.lazy().filter(exp).collect()?;
+
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif]

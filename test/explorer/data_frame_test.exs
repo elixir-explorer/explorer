@@ -28,6 +28,54 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "filter_with/2" do
+    test "filter a column that is equal to a value" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [5.3, 2.4, 1.0, 0.2, 6.1, 2.1, 2.2])
+
+      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], 5) end)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [5, 5], b: [6.1, 2.2]}
+
+      df2 = DF.filter_with(df, fn ldf -> Series.equal(ldf["b"], 2.1) end)
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [6], b: [2.1]}
+
+      df3 = DF.filter_with(df, fn ldf -> Series.equal(ldf["b"], 52.1) end)
+      assert DF.to_columns(df3, atom_keys: true) == %{a: [], b: []}
+    end
+
+    test "filter a column that has values equal to the other column" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], ldf["b"]) end)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [5], b: [5]}
+    end
+
+    test "filter with a complex filter" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+
+          # a > 5 or a <= 2 and b != 9
+          Series.greater(a, 5)
+          |> Series.or(Series.less_equal(a, 2))
+          |> Series.and(Series.not_equal(b, 9))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 6], b: [8, 4]}
+    end
+
+    test "returns an error if the function is not returning a lazy series" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+      message = "expecting the function to return a LazySeries, but instead it returned :foo"
+
+      assert_raise ArgumentError, message, fn ->
+        DF.filter_with(df, fn _ldf -> :foo end)
+      end
+    end
+  end
+
   describe "mutate/2" do
     test "adds a new column" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])

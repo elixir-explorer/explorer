@@ -67,7 +67,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def create_series(%PolarsSeries{} = polars_series) do
     {:ok, dtype} = Native.s_dtype(polars_series)
-    %Series{data: polars_series, dtype: normalise_dtype(dtype)}
+    Explorer.Backend.Series.new(polars_series, normalise_dtype(dtype))
   end
 
   def normalise_dtype("u32"), do: :integer

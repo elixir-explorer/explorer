@@ -1010,6 +1010,24 @@ defmodule Explorer.DataFrame do
         )
       )
 
+  @doc false
+  def filter_with(df, fun) when is_function(fun) do
+    ldf =
+      df
+      |> Explorer.Backend.LazyFrame.new()
+      |> Explorer.Backend.DataFrame.new(df.names, df.dtypes)
+
+    case fun.(ldf) do
+      %Series{data: %Explorer.Backend.LazySeries{} = data} ->
+        Shared.apply_impl(df, :filter_with, [data])
+
+      other ->
+        raise ArgumentError,
+              "expecting the function to return a LazySeries, but instead it returned " <>
+                inspect(other)
+    end
+  end
+
   @doc """
   Creates and modifies columns.
 

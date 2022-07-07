@@ -65,6 +65,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_drop_nulls(_df, _subset), do: err()
   def df_dtypes(_df), do: err()
   def df_filter(_df, _mask), do: err()
+  def df_filter_with(_df, _operation), do: err()
   def df_get_columns(_df), do: err()
   def df_group_indices(_df, _column_names), do: err()
   def df_groupby_agg(_df, _groups, _aggs), do: err()
@@ -93,6 +94,19 @@ defmodule Explorer.PolarsBackend.Native do
   def df_with_columns(_df, _columns), do: err()
   def df_write_ipc(_df, _filename, _compression), do: err()
   def df_write_parquet(_df, _filename), do: err()
+
+  # Expressions (for lazy queries)
+  # We first generate functions for known operations.
+  for {op, arity} <- Explorer.Backend.LazySeries.operations() do
+    args = Macro.generate_arguments(arity, __MODULE__)
+    expr_op = :"expr_#{op}"
+    def unquote(expr_op)(unquote_splicing(args)), do: err()
+  end
+
+  # Then we generate for some specific expressions
+  def expr_integer(_number), do: err()
+  def expr_float(_number), do: err()
+  def expr_describe_filter_plan(_df, _expr), do: err()
 
   # LazyFrame
   def lf_collect(_df), do: err()

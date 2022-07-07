@@ -29,7 +29,7 @@ defmodule Explorer.PolarsBackend.Series do
         :datetime -> Native.s_new_date64(name, data)
       end
 
-    %Series{data: series, dtype: type}
+    Explorer.Backend.Series.new(series, type)
   end
 
   @impl true

@@ -18,19 +18,23 @@ mod dataframe;
 #[allow(clippy::extra_unused_lifetimes)]
 mod datatypes;
 mod error;
+mod expressions;
 mod lazyframe;
 mod series;
 
 use dataframe::*;
 pub use datatypes::{
-    ExDataFrame, ExDataFrameRef, ExLazyFrame, ExLazyFrameRef, ExSeries, ExSeriesRef,
+    ExDataFrame, ExDataFrameRef, ExExpr, ExExprRef, ExLazyFrame, ExLazyFrameRef, ExSeries,
+    ExSeriesRef,
 };
 pub use error::ExplorerError;
+use expressions::*;
 use lazyframe::*;
 use series::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExDataFrameRef, env);
+    rustler::resource!(ExExprRef, env);
     rustler::resource!(ExLazyFrameRef, env);
     rustler::resource!(ExSeriesRef, env);
     true
@@ -60,6 +64,7 @@ rustler::init!(
         df_drop_nulls,
         df_dtypes,
         df_filter,
+        df_filter_with,
         df_get_columns,
         df_groups,
         df_groupby_agg,
@@ -93,6 +98,19 @@ rustler::init!(
         df_with_columns,
         df_write_ipc,
         df_write_parquet,
+        // expressions
+        expr_column,
+        expr_integer,
+        expr_float,
+        expr_eq,
+        expr_neq,
+        expr_gt,
+        expr_gt_eq,
+        expr_lt,
+        expr_lt_eq,
+        expr_binary_and,
+        expr_binary_or,
+        expr_describe_filter_plan,
         // lazyframe
         lf_collect,
         lf_describe_plan,

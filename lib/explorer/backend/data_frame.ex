@@ -10,6 +10,7 @@ defmodule Explorer.Backend.DataFrame do
   @type series :: Explorer.Series.t()
   @type column_name :: String.t()
   @type dtype :: Explorer.Series.dtype()
+  @type dtypes :: %{column_name() => dtype()}
 
   @typep basic_types :: float() | integer() | String.t() | Date.t() | DateTime.t()
   @type mutate_value ::
@@ -17,6 +18,9 @@ defmodule Explorer.Backend.DataFrame do
           | basic_types()
           | [basic_types()]
           | (df() -> series() | basic_types() | [basic_types()])
+
+  @type lazy_frame :: Explorer.Backend.LazyFrame.t()
+  @type lazy_series :: Explorer.Backend.LazySeries.t()
 
   # IO
 
@@ -74,6 +78,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback tail(df, rows :: integer()) :: df
   @callback select(df, out_df :: df()) :: df
   @callback filter(df, mask :: series) :: df
+  @callback filter_with(df, (lazy_frame() -> lazy_series())) :: df
   @callback mutate(df, out_df :: df(), mutations :: [{column_name(), mutate_value()}]) :: df
   @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()], keep_all? :: boolean()) :: df
@@ -123,9 +128,14 @@ defmodule Explorer.Backend.DataFrame do
   @doc """
   Creates a new DataFrame for a given backend.
   """
-  def new(data, names, dtypes) do
-    dtypes_pairs = Enum.zip(names, dtypes)
-    %DataFrame{data: data, names: names, dtypes: Map.new(dtypes_pairs), groups: []}
+  def new(data, names, dtypes) when is_list(dtypes) do
+    dtypes = Map.new(Enum.zip(names, dtypes))
+
+    new(data, names, dtypes)
+  end
+
+  def new(data, names, dtypes) when is_list(names) and is_map(dtypes) do
+    %DataFrame{data: data, names: names, dtypes: dtypes, groups: []}
   end
 
   @default_limit 5
