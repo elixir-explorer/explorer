@@ -99,17 +99,23 @@ rustler::init!(
         df_write_ipc,
         df_write_parquet,
         // expressions
+        expr_boolean,
         expr_column,
-        expr_integer,
+        expr_date,
+        expr_datetime,
         expr_float,
+        expr_integer,
+        expr_string,
+        // comparison expressions
+        expr_binary_and,
+        expr_binary_or,
         expr_eq,
-        expr_neq,
         expr_gt,
         expr_gt_eq,
         expr_lt,
         expr_lt_eq,
-        expr_binary_and,
-        expr_binary_or,
+        expr_neq,
+        // inspect expressions
         expr_describe_filter_plan,
         // lazyframe
         lf_collect,

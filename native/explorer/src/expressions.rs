@@ -4,9 +4,11 @@
 // or an expression and returns an expression that is
 // wrapped in an Elixir struct.
 
+use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{col, DataFrame, IntoLazy};
 use polars::prelude::{Expr, Literal};
 
+use crate::datatypes::{ExDate, ExDateTime};
 use crate::{ExDataFrame, ExExpr};
 
 #[rustler::nif]
@@ -18,6 +20,32 @@ pub fn expr_integer(number: i64) -> ExExpr {
 #[rustler::nif]
 pub fn expr_float(number: f64) -> ExExpr {
     let expr = number.lit();
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_string(string: String) -> ExExpr {
+    let expr = string.lit();
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_boolean(boolean: bool) -> ExExpr {
+    let expr = boolean.lit();
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_date(date: ExDate) -> ExExpr {
+    let naive_date = NaiveDate::from(date);
+    let expr = naive_date.lit();
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_datetime(datetime: ExDateTime) -> ExExpr {
+    let naive_datetime = NaiveDateTime::from(datetime);
+    let expr = naive_datetime.lit();
     ExExpr::new(expr)
 }
 

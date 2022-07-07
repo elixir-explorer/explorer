@@ -104,8 +104,12 @@ defmodule Explorer.PolarsBackend.Native do
   end
 
   # Then we generate for some specific expressions
-  def expr_integer(_number), do: err()
+  def expr_boolean(_bool), do: err()
+  def expr_date(_date), do: err()
+  def expr_datetime(_datetime), do: err()
   def expr_float(_number), do: err()
+  def expr_integer(_number), do: err()
+  def expr_string(_string), do: err()
   def expr_describe_filter_plan(_df, _expr), do: err()
 
   # LazyFrame
