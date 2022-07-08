@@ -186,8 +186,8 @@ pub fn df_write_ipc(
     let df = &data.resource.0;
     // Select the compression algorithm.
     let compression = match compression {
-        Some("LZ4") => Some(IpcCompression::LZ4),
-        Some("ZSTD") => Some(IpcCompression::ZSTD),
+        Some("lz4") => Some(IpcCompression::LZ4),
+        Some("zstd") => Some(IpcCompression::ZSTD),
         _ => None,
     };
 

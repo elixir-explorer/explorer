@@ -150,7 +150,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_ipc(%DataFrame{data: df}, filename, compression) do
-    case Native.df_write_ipc(df, filename, compression) do
+    case Native.df_write_ipc(df, filename, "#{compression}") do
       {:ok, _} -> {:ok, filename}
       {:error, error} -> {:error, error}
     end
