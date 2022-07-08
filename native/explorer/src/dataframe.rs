@@ -321,7 +321,7 @@ pub fn df_drop_nulls(
     data: ExDataFrame,
     subset: Option<Vec<String>>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
+    let df: &DataFrame = &data.resource.0;
     let new_df = df.drop_nulls(subset.as_ref().map(|s| s.as_ref()))?;
     Ok(ExDataFrame::new(new_df))
 }
@@ -456,7 +456,7 @@ pub fn df_drop_duplicates(
     maintain_order: bool,
     subset: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
+    let df: &DataFrame = &data.resource.0;
     let new_df = match maintain_order {
         false => df.unique(Some(&subset), UniqueKeepStrategy::First)?,
         true => df.unique_stable(Some(&subset), UniqueKeepStrategy::First)?,
