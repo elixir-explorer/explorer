@@ -346,12 +346,18 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Writes a dataframe to a parquet file.
+
+  ## Options
+
+    * `compression` - The compression algorithm to use when writing the Parquet files. Options include: `nil` (uncompressed, default), `:snappy`, `:gzip`, `:brotli`, `:zstd`, and `:lz4raw`.
   """
   @doc type: :io
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
-  def to_parquet(df, filename) do
-    Shared.apply_impl(df, :to_parquet, [filename])
+  def to_parquet(df, filename, opts \\ []) do
+    opts = Keyword.validate!(opts, compression: nil)
+
+    Shared.apply_impl(df, :to_parquet, [filename, opts[:compression]])
   end
 
   @doc """

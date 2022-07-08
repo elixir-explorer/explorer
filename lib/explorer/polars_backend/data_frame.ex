@@ -125,8 +125,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_parquet(%DataFrame{data: df}, filename) do
-    case Native.df_write_parquet(df, filename) do
+  def to_parquet(%DataFrame{data: df}, filename, compression) do
+    compression = if is_nil(compression), do: "uncompressed", else: "#{compression}"
+
+    case Native.df_write_parquet(df, filename, compression) do
       {:ok, _} -> {:ok, filename}
       {:error, error} -> {:error, error}
     end

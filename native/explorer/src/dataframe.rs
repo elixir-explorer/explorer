@@ -82,11 +82,26 @@ pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_parquet(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+pub fn df_write_parquet(
+    data: ExDataFrame,
+    filename: &str,
+    compression: &str,
+) -> Result<(), ExplorerError> {
     let df = &data.resource.0;
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
-    ParquetWriter::new(&mut buf_writer).finish(&mut df.clone())?;
+    let compression = match compression {
+        "uncompressed" => ParquetCompression::Uncompressed,
+        "snappy" => ParquetCompression::Snappy,
+        "gzip" => ParquetCompression::Gzip(None),
+        "brotli" => ParquetCompression::Brotli(None),
+        "zstd" => ParquetCompression::Zstd(None),
+        "lz4raw" => ParquetCompression::Lz4Raw,
+        _ => ParquetCompression::Uncompressed,
+    };
+    ParquetWriter::new(&mut buf_writer)
+        .with_compression(compression)
+        .finish(&mut df.clone())?;
     Ok(())
 }
 
