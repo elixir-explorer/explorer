@@ -368,26 +368,15 @@ defmodule Explorer.DataFrame do
 
   defp normalise_compression(compression) when is_atom(compression), do: {compression, nil}
 
-  defp normalise_compression({:gzip, level}) when level not in 1..9 and not is_nil(level),
-    do:
-      raise(
-        ArgumentError,
-        "gzip compression level must be between 1 and 9 inclusive or nil, got #{level}"
-      )
-
-  defp normalise_compression({:brotli, level}) when level not in 1..11 and not is_nil(level),
-    do:
-      raise(
-        ArgumentError,
-        "brotli compression level must be between 1 and 11 inclusive or nil, got #{level}"
-      )
-
-  defp normalise_compression({:zstd, level}) when level not in -7..22 and not is_nil(level),
-    do:
-      raise(
-        ArgumentError,
-        "zstd compression level must be between -7 and 22 inclusive or nil, got #{level}"
-      )
+  for {algorithm, min, max} <- [{:gzip, 1, 9}, {:brotli, 1, 11}, {:zstd, -7, 22}] do
+    defp normalise_compression({unquote(algorithm), level})
+         when level not in unquote(min)..unquote(max) and not is_nil(level),
+         do:
+           raise(
+             ArgumentError,
+             "#{unquote(algorithm)} compression level must be between #{unquote(min)} and #{unquote(max)} inclusive or nil, got #{level}"
+           )
+  end
 
   defp normalise_compression(compression) when is_tuple(compression), do: compression
 
