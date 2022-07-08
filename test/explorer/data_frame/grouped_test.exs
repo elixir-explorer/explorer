@@ -210,6 +210,16 @@ defmodule Explorer.DataFrame.GroupedTest do
                ]
              }
     end
+
+    test "pull from summarised DF", %{df: df} do
+      series =
+        df
+        |> DF.group_by("country")
+        |> DF.summarise(total: [:count])
+        |> DF.pull("total_count")
+
+      assert Series.min(series) == 2
+    end
   end
 
   describe "arrange/2" do
