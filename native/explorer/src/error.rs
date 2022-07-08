@@ -20,6 +20,10 @@ pub enum ExplorerError {
     #[error("Other error: {0}")]
     Other(String),
     #[error(transparent)]
+    TryFromInt(#[from] std::num::TryFromIntError),
+    #[error(transparent)]
+    Parquet(#[from] polars::export::arrow::io::parquet::read::ParquetError),
+    #[error(transparent)]
     Unknown(#[from] anyhow::Error),
 }
 

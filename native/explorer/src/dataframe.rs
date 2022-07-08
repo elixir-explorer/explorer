@@ -1,6 +1,7 @@
 use polars::prelude::*;
 
 use rustler::{Binary, Env, NewBinary};
+use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
 use std::result::Result;
@@ -85,18 +86,36 @@ pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 pub fn df_write_parquet(
     data: ExDataFrame,
     filename: &str,
-    compression: &str,
+    compression: Option<&str>,
+    compression_level: Option<i32>,
 ) -> Result<(), ExplorerError> {
     let df = &data.resource.0;
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
-    let compression = match compression {
-        "uncompressed" => ParquetCompression::Uncompressed,
-        "snappy" => ParquetCompression::Snappy,
-        "gzip" => ParquetCompression::Gzip(None),
-        "brotli" => ParquetCompression::Brotli(None),
-        "zstd" => ParquetCompression::Zstd(None),
-        "lz4raw" => ParquetCompression::Lz4Raw,
+    let compression = match (compression, compression_level) {
+        (Some("snappy"), _) => ParquetCompression::Snappy,
+        (Some("gzip"), level) => {
+            let level = match level {
+                Some(level) => Some(GzipLevel::try_new(u8::try_from(level)?)?),
+                None => None,
+            };
+            ParquetCompression::Gzip(level)
+        }
+        (Some("brotli"), level) => {
+            let level = match level {
+                Some(level) => Some(BrotliLevel::try_new(u32::try_from(level)?)?),
+                None => None,
+            };
+            ParquetCompression::Brotli(level)
+        }
+        (Some("zstd"), level) => {
+            let level = match level {
+                Some(level) => Some(ZstdLevel::try_new(level)?),
+                None => None,
+            };
+            ParquetCompression::Zstd(level)
+        }
+        (Some("lz4raw"), _) => ParquetCompression::Lz4Raw,
         _ => ParquetCompression::Uncompressed,
     };
     ParquetWriter::new(&mut buf_writer)

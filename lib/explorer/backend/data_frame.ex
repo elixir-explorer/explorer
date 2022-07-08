@@ -41,7 +41,12 @@ defmodule Explorer.Backend.DataFrame do
               result(String.t())
 
   @callback from_parquet(filename :: String.t()) :: result(df)
-  @callback to_parquet(df, filename :: String.t(), compression :: atom()) :: result(String.t())
+  @callback to_parquet(
+              df,
+              filename :: String.t(),
+              compression :: {nil | atom(), nil | integer()}
+            ) ::
+              result(String.t())
 
   @callback from_ipc(
               filename :: String.t(),

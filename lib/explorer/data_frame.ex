@@ -349,16 +349,47 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `compression` - The compression algorithm to use when writing the Parquet files. Options include: `nil` (uncompressed, default), `:snappy`, `:gzip`, `:brotli`, `:zstd`, and `:lz4raw`.
+    * `compression` - The compression algorithm to use when writing the Parquet files. Where a compression level is available, this can be passed as a tuple, e.g. `{:zstd, 3}`. Options include: 
+  	* `nil` (uncompressed, default)
+  	* `:snappy`
+  	* `:gzip` (with levels 1-9)
+  	* `:brotli` (with levels 1-11)
+  	* `:zstd` (with levels -7-22)
+  	* `:lz4raw`.
   """
   @doc type: :io
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_parquet(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
-
-    Shared.apply_impl(df, :to_parquet, [filename, opts[:compression]])
+    compression = normalise_compression(opts[:compression])
+    Shared.apply_impl(df, :to_parquet, [filename, compression])
   end
+
+  defp normalise_compression(compression) when is_atom(compression), do: {compression, nil}
+
+  defp normalise_compression({:gzip, level}) when level not in 1..9 and not is_nil(level),
+    do:
+      raise(
+        ArgumentError,
+        "gzip compression level must be between 1 and 9 inclusive or nil, got #{level}"
+      )
+
+  defp normalise_compression({:brotli, level}) when level not in 1..11 and not is_nil(level),
+    do:
+      raise(
+        ArgumentError,
+        "brotli compression level must be between 1 and 11 inclusive or nil, got #{level}"
+      )
+
+  defp normalise_compression({:zstd, level}) when level not in -7..22 and not is_nil(level),
+    do:
+      raise(
+        ArgumentError,
+        "zstd compression level must be between -7 and 22 inclusive or nil, got #{level}"
+      )
+
+  defp normalise_compression(compression) when is_tuple(compression), do: compression
 
   @doc """
   Reads an IPC file into a dataframe.
