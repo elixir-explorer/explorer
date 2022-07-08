@@ -349,36 +349,47 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `compression` - The compression algorithm to use when writing the Parquet files. Where a compression level is available, this can be passed as a tuple, e.g. `{:zstd, 3}`. Options include: 
-  	* `nil` (uncompressed, default)
-  	* `:snappy`
-  	* `:gzip` (with levels 1-9)
-  	* `:brotli` (with levels 1-11)
-  	* `:zstd` (with levels -7-22)
-  	* `:lz4raw`.
+    * `compression` - The compression algorithm to use when writing files.
+      Where a compression level is available, this can be passed as a tuple,
+      such as `{:zstd, 3}`. Supported options are:
+
+        * `nil` (uncompressed, default)
+        * `:snappy`
+        * `:gzip` (with levels 1-9)
+        * `:brotli` (with levels 1-11)
+        * `:zstd` (with levels -7-22)
+        * `:lz4raw`.
+
   """
   @doc type: :io
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_parquet(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
-    compression = normalise_compression(opts[:compression])
+    compression = parquet_compression(opts[:compression])
     Shared.apply_impl(df, :to_parquet, [filename, compression])
   end
 
-  defp normalise_compression(compression) when is_atom(compression), do: {compression, nil}
+  defp parquet_compression(nil), do: {nil, nil}
 
-  for {algorithm, min, max} <- [{:gzip, 1, 9}, {:brotli, 1, 11}, {:zstd, -7, 22}] do
-    defp normalise_compression({unquote(algorithm), level})
-         when level not in unquote(min)..unquote(max) and not is_nil(level),
-         do:
-           raise(
-             ArgumentError,
-             "#{unquote(algorithm)} compression level must be between #{unquote(min)} and #{unquote(max)} inclusive or nil, got #{level}"
-           )
+  defp parquet_compression(algorithm) when algorithm in ~w(snappy gzip brotli zstd lz4raw)a do
+    {algorithm, nil}
   end
 
-  defp normalise_compression(compression) when is_tuple(compression), do: compression
+  for {algorithm, min, max} <- [{:gzip, 1, 9}, {:brotli, 1, 11}, {:zstd, -7, 22}] do
+    defp parquet_compression({unquote(algorithm), level}) do
+      if level in unquote(min)..unquote(max) or is_nil(level) do
+        {unquote(algorithm), level}
+      else
+        raise ArgumentError,
+              "#{unquote(algorithm)} compression level must be between #{unquote(min)} and #{unquote(max)} inclusive or nil, got #{level}"
+      end
+    end
+  end
+
+  defp parquet_compression(other) do
+    raise ArgumentError, "unsupported :compression #{inspect(other)} for Parquet"
+  end
 
   @doc """
   Reads an IPC file into a dataframe.
@@ -430,18 +441,15 @@ defmodule Explorer.DataFrame do
   @spec to_ipc(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_ipc(df, filename, opts \\ []) do
-    opts =
-      Keyword.validate!(opts,
-        compression: nil
-      )
-
+    opts = Keyword.validate!(opts, compression: nil)
     backend = backend_from_options!(opts)
+    compression = opts[:compression]
 
-    backend.to_ipc(
-      df,
-      filename,
-      opts[:compression]
-    )
+    unless is_nil(compression) or compression in ~w(zstd lz4) do
+      raise ArgumentError, "unsupported :compression #{inspect(compression)} for IPC"
+    end
+
+    backend.to_ipc(df, filename, {compression, nil})
   end
 
   @doc """
@@ -1799,11 +1807,11 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `keep` - Columns that are not in the list of pivot and should be kept in the dataframe.
-      May be a filter callback on the dataframe's column names. 
+      May be a filter callback on the dataframe's column names.
       Defaults to all columns except the ones to pivot.
 
     * `drop` - Columns that are not in the list of pivot and should be dropped from the dataframe.
-      May be a filter callback on the dataframe's column names. This list of columns is going to be 
+      May be a filter callback on the dataframe's column names. This list of columns is going to be
       subtracted from the list of `keep`.
       Defaults to an empty list.
 

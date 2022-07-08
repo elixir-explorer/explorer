@@ -125,14 +125,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_parquet(%DataFrame{data: df}, filename, compression) do
-    {compression, compression_level} =
-      case compression do
-        {nil, _} -> {nil, nil}
-        {compression, level} -> {"#{compression}", level}
-      end
-
-    case Native.df_write_parquet(df, filename, compression, compression_level) do
+  def to_parquet(%DataFrame{data: df}, filename, {compression, compression_level}) do
+    case Native.df_write_parquet(df, filename, Atom.to_string(compression), compression_level) do
       {:ok, _} -> {:ok, filename}
       {:error, error} -> {:error, error}
     end
@@ -149,8 +143,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_ipc(%DataFrame{data: df}, filename, compression) do
-    case Native.df_write_ipc(df, filename, "#{compression}") do
+  def to_ipc(%DataFrame{data: df}, filename, {compression, nil}) do
+    case Native.df_write_ipc(df, filename, Atom.to_string(compression)) do
       {:ok, _} -> {:ok, filename}
       {:error, error} -> {:error, error}
     end
