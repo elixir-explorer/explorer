@@ -382,7 +382,7 @@ defmodule Explorer.DataFrame do
         {unquote(algorithm), level}
       else
         raise ArgumentError,
-          "#{unquote(algorithm)} compression level must be between #{unquote(min)} and #{unquote(max)} inclusive or nil, got #{level}"
+              "#{unquote(algorithm)} compression level must be between #{unquote(min)} and #{unquote(max)} inclusive or nil, got #{level}"
       end
     end
   end
