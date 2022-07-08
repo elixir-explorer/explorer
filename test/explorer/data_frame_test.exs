@@ -578,6 +578,27 @@ defmodule Explorer.DataFrameTest do
       assert DF.dtypes(df) == DF.dtypes(parquet_df)
       assert DF.to_columns(df) == DF.to_columns(parquet_df)
     end
+
+    @tag :tmp_dir
+    test "can write parquet to file with compression", %{
+      df: df,
+      tmp_dir: tmp_dir
+    } do
+      for compression <- [:snappy, :gzip, :brotli, :zstd, :lz4raw] do
+        for compression_level <- [nil, 1, 2, 3] do
+          parquet_path = Path.join(tmp_dir, "test.parquet")
+
+          assert {:ok, ^parquet_path} =
+                   DF.to_parquet(df, parquet_path, compression: {compression, compression_level})
+
+          assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
+
+          assert DF.names(df) == DF.names(parquet_df)
+          assert DF.dtypes(df) == DF.dtypes(parquet_df)
+          assert DF.to_columns(df) == DF.to_columns(parquet_df)
+        end
+      end
+    end
   end
 
   describe "from_ndjson/2" do

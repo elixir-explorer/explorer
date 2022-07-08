@@ -93,7 +93,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_width(_df), do: err()
   def df_with_columns(_df, _columns), do: err()
   def df_write_ipc(_df, _filename, _compression), do: err()
-  def df_write_parquet(_df, _filename), do: err()
+  def df_write_parquet(_df, _filename, _compression, _compression_level), do: err()
 
   # Expressions (for lazy queries)
   # We first generate functions for known operations.

@@ -346,13 +346,39 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Writes a dataframe to a parquet file.
+
+  ## Options
+
+    * `compression` - The compression algorithm to use when writing the Parquet files. Where a compression level is available, this can be passed as a tuple, e.g. `{:zstd, 3}`. Options include: 
+  	* `nil` (uncompressed, default)
+  	* `:snappy`
+  	* `:gzip` (with levels 1-9)
+  	* `:brotli` (with levels 1-11)
+  	* `:zstd` (with levels -7-22)
+  	* `:lz4raw`.
   """
   @doc type: :io
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
-  def to_parquet(df, filename) do
-    Shared.apply_impl(df, :to_parquet, [filename])
+  def to_parquet(df, filename, opts \\ []) do
+    opts = Keyword.validate!(opts, compression: nil)
+    compression = normalise_compression(opts[:compression])
+    Shared.apply_impl(df, :to_parquet, [filename, compression])
   end
+
+  defp normalise_compression(compression) when is_atom(compression), do: {compression, nil}
+
+  for {algorithm, min, max} <- [{:gzip, 1, 9}, {:brotli, 1, 11}, {:zstd, -7, 22}] do
+    defp normalise_compression({unquote(algorithm), level})
+         when level not in unquote(min)..unquote(max) and not is_nil(level),
+         do:
+           raise(
+             ArgumentError,
+             "#{unquote(algorithm)} compression level must be between #{unquote(min)} and #{unquote(max)} inclusive or nil, got #{level}"
+           )
+  end
+
+  defp normalise_compression(compression) when is_tuple(compression), do: compression
 
   @doc """
   Reads an IPC file into a dataframe.
@@ -398,7 +424,7 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `compression` - Sets the algorithm used to compress the IPC file.
-      It accepts `"ZSTD"` or `"LZ4"` compression. (default: `nil`)
+      It accepts `:zstd` or `:lz4` compression. (default: `nil`)
   """
   @doc type: :io
   @spec to_ipc(df :: DataFrame.t(), filename :: String.t()) ::
