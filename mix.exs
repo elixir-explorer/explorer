@@ -55,6 +55,8 @@ defmodule Explorer.MixProject do
           Explorer.Backend,
           Explorer.Backend.DataFrame,
           Explorer.Backend.Series,
+          Explorer.Backend.LazyFrame,
+          Explorer.Backend.LazySeries,
           Explorer.PolarsBackend
         ]
       ],

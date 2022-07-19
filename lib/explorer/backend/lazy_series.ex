@@ -11,6 +11,8 @@ defmodule Explorer.Backend.LazySeries do
 
   defstruct op: nil, args: []
 
+  @type t :: %__MODULE__{op: atom(), args: list()}
+
   @operations [
     column: 1,
     eq: 2,
