@@ -104,6 +104,28 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 6], b: [8, 4]}
     end
 
+    test "filter for nil values" do
+      df = DF.new(a: [1, 2, 3, nil, 5, nil, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          Series.nil?(ldf["a"])
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [nil, nil], b: [6, 4]}
+    end
+
+    test "filter for not nil values" do
+      df = DF.new(a: [1, 2, 3, nil, 5, nil, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          Series.not_nil?(ldf["a"])
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 5, 5], b: [9, 8, 7, 5, 3]}
+    end
+
     test "returns an error if the function is not returning a lazy series" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
       message = "expecting the function to return a LazySeries, but instead it returned :foo"

@@ -11,6 +11,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
+  # Column is special
   def to_expr(%LazySeries{op: :column, args: [name]}) do
     Native.expr_column(name)
   end
