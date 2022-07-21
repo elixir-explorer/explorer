@@ -112,6 +112,8 @@ rustler::init!(
         expr_eq,
         expr_gt,
         expr_gt_eq,
+        expr_is_nil,
+        expr_is_not_nil,
         expr_lt,
         expr_lt_eq,
         expr_neq,

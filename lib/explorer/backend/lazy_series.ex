@@ -21,10 +21,12 @@ defmodule Explorer.Backend.LazySeries do
     gt_eq: 2,
     lt: 2,
     lt_eq: 2,
+    is_nil: 1,
+    is_not_nil: 1,
     binary_and: 2,
     binary_or: 2
   ]
-  @comparison_ops_with_numbers [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
+  @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
 
   @doc false
   def new(op, args) do
@@ -36,7 +38,7 @@ defmodule Explorer.Backend.LazySeries do
 
   # Implements all the comparison operations that
   # accepts Series or number on the right-hand side.
-  for op <- @comparison_ops_with_numbers do
+  for op <- @comparison_operations do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right), do: unquote(op)(left, right.data)
 
@@ -47,6 +49,7 @@ defmodule Explorer.Backend.LazySeries do
     end
   end
 
+  # These are also comparison operations, but they only accept `Series`.
   for op <- [:binary_and, :binary_or] do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right) do
@@ -54,6 +57,20 @@ defmodule Explorer.Backend.LazySeries do
 
       Backend.Series.new(data, :boolean)
     end
+  end
+
+  @impl true
+  def nil?(%Series{} = s) do
+    data = new(:is_nil, [s.data])
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def not_nil?(%Series{} = s) do
+    data = new(:is_not_nil, [s.data])
+
+    Backend.Series.new(data, :boolean)
   end
 
   @impl true

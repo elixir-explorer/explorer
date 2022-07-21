@@ -10,7 +10,7 @@ defmodule Explorer.Backend.LazyFrame do
   alias Explorer.Backend
   alias Explorer.Backend.LazySeries
 
-  defstruct dtypes: %{}, names: [], original: nil
+  defstruct dtypes: %{}, names: []
 
   @type t :: %__MODULE__{
           dtypes: Backend.DataFrame.dtypes(),
