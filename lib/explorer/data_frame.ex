@@ -1052,8 +1052,13 @@ defmodule Explorer.DataFrame do
       |> Explorer.Backend.DataFrame.new(df.names, df.dtypes)
 
     case fun.(ldf) do
-      %Series{data: %Explorer.Backend.LazySeries{} = data} ->
+      %Series{dtype: :boolean, data: %Explorer.Backend.LazySeries{} = data} ->
         Shared.apply_impl(df, :filter_with, [data])
+
+      %Series{dtype: dtype, data: %Explorer.Backend.LazySeries{}} ->
+        raise ArgumentError,
+              "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type " <>
+                inspect(dtype)
 
       other ->
         raise ArgumentError,

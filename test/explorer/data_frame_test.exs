@@ -126,7 +126,82 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 5, 5], b: [9, 8, 7, 5, 3]}
     end
 
-    test "returns an error if the function is not returning a lazy series" do
+    test "filter with add operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+
+          # a > (b + 1)
+          Series.greater(a, Series.add(b, 1))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [6, 5], b: [4, 3]}
+    end
+
+    test "filter with subtract operation" do
+      df = DF.new(a: [1.1, 2.2, 3.3, 4.4, 5.5, 6.5, 5.8], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+
+          # a > (b - a)
+          Series.greater(a, Series.subtract(b, a))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [4.4, 5.5, 6.5, 5.8], b: [6, 5, 4, 3]}
+    end
+
+    test "filter with divide operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+
+          # a > (b / 3)
+          Series.greater(a, Series.divide(b, 3))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 4, 5, 6, 5], b: [7, 6, 5, 4, 3]}
+    end
+
+    test "filter with pow operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+
+          # b == (a ** 3)
+          Series.equal(b, Series.pow(a, 3))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2], b: [8.0]}
+    end
+
+    test "raise an error if the last operation is an arithmetic operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      message =
+        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer"
+
+      assert_raise ArgumentError, message, fn ->
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+
+          Series.pow(a, 3)
+        end)
+      end
+    end
+
+    test "raise an error if the function is not returning a lazy series" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
       message = "expecting the function to return a LazySeries, but instead it returned :foo"
 
