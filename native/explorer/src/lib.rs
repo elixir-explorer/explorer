@@ -117,6 +117,11 @@ rustler::init!(
         expr_lt,
         expr_lt_eq,
         expr_neq,
+        // arithmetic expressions
+        expr_add,
+        expr_subtract,
+        expr_divide,
+        expr_pow,
         // inspect expressions
         expr_describe_filter_plan,
         // lazyframe

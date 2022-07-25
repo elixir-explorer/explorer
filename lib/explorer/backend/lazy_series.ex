@@ -24,9 +24,16 @@ defmodule Explorer.Backend.LazySeries do
     is_nil: 1,
     is_not_nil: 1,
     binary_and: 2,
-    binary_or: 2
+    binary_or: 2,
+    add: 2,
+    subtract: 2,
+    multiply: 2,
+    divide: 2,
+    pow: 2
   ]
   @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
+
+  @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow]
 
   @doc false
   def new(op, args) do
@@ -56,6 +63,38 @@ defmodule Explorer.Backend.LazySeries do
       data = new(unquote(op), [left.data, right.data])
 
       Backend.Series.new(data, :boolean)
+    end
+  end
+
+  for op <- @arithmetic_operations do
+    @impl true
+    def unquote(op)(%Series{} = left, value_or_series) do
+      dtype = resolve_numeric_dtype([left, value_or_series])
+
+      value =
+        case value_or_series do
+          %Series{data: data} -> data
+          other -> other
+        end
+
+      data = new(unquote(op), [left.data, value])
+
+      Backend.Series.new(data, dtype)
+    end
+  end
+
+  defp resolve_numeric_dtype(items) do
+    dtypes =
+      for item <- items, uniq: true do
+        case item do
+          %Series{dtype: dtype} -> dtype
+          other -> Explorer.Shared.check_types!([other])
+        end
+      end
+
+    case dtypes do
+      [dtype] when dtype in [:integer, :float] -> dtype
+      [_, _] -> :float
     end
   end
 
