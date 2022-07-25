@@ -47,10 +47,11 @@ defmodule Explorer.Backend.LazySeries do
   # accepts Series or number on the right-hand side.
   for op <- @comparison_operations do
     @impl true
-    def unquote(op)(%Series{} = left, %Series{} = right), do: unquote(op)(left, right.data)
+    def unquote(op)(%Series{} = left, %Series{} = right),
+      do: unquote(op)(left, lazy_series!(right))
 
     def unquote(op)(%Series{} = left, value) do
-      data = new(unquote(op), [left.data, value])
+      data = new(unquote(op), [lazy_series!(left), value])
 
       Backend.Series.new(data, :boolean)
     end
@@ -60,7 +61,7 @@ defmodule Explorer.Backend.LazySeries do
   for op <- [:binary_and, :binary_or] do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right) do
-      data = new(unquote(op), [left.data, right.data])
+      data = new(unquote(op), [lazy_series!(left), lazy_series!(right)])
 
       Backend.Series.new(data, :boolean)
     end
@@ -71,13 +72,9 @@ defmodule Explorer.Backend.LazySeries do
     def unquote(op)(%Series{} = left, value_or_series) do
       dtype = resolve_numeric_dtype([left, value_or_series])
 
-      value =
-        case value_or_series do
-          %Series{data: data} -> data
-          other -> other
-        end
+      value = with %Series{} <- value_or_series, do: lazy_series!(value_or_series)
 
-      data = new(unquote(op), [left.data, value])
+      data = new(unquote(op), [lazy_series!(left), value])
 
       Backend.Series.new(data, dtype)
     end
@@ -98,16 +95,27 @@ defmodule Explorer.Backend.LazySeries do
     end
   end
 
+  # Returns the inner `data` if it's a lazy series. Otherwise raises an error.
+  defp lazy_series!(series) do
+    case series do
+      %Series{data: %__MODULE__{} = lazy} ->
+        lazy
+
+      %Series{} ->
+        raise ArgumentError, "expecting a LazySeries, but instead got #{inspect(series)}"
+    end
+  end
+
   @impl true
-  def nil?(%Series{} = s) do
-    data = new(:is_nil, [s.data])
+  def nil?(%Series{} = series) do
+    data = new(:is_nil, [lazy_series!(series)])
 
     Backend.Series.new(data, :boolean)
   end
 
   @impl true
-  def not_nil?(%Series{} = s) do
-    data = new(:is_not_nil, [s.data])
+  def not_nil?(%Series{} = series) do
+    data = new(:is_not_nil, [lazy_series!(series)])
 
     Backend.Series.new(data, :boolean)
   end
