@@ -571,6 +571,18 @@ pub fn df_groupby_agg(
     Ok(ExDataFrame::new(new_df))
 }
 
+// Ref:https://pola-rs.github.io/polars/polars/docs/lazy/index.html#groupby
+// #[rustler::nif(schedule = "DirtyCpu")]
+// pub fn df_groupby_agg_with(
+//     data: ExDataFrame,
+//     groups: Vec<ExExpr>,
+//     aggs: Vec<(&str, ExExpr)>,
+// ) -> Result<ExDataFrame, ExplorerError> {
+//     let df = &data.resource.0;
+//     let new_df = df.groupby_stable(groups)?.agg(&aggs)?;
+//     Ok(ExDataFrame::new(new_df))
+// }
+
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_pivot_wider(
     data: ExDataFrame,

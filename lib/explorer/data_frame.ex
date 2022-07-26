@@ -98,6 +98,7 @@ defmodule Explorer.DataFrame do
   alias __MODULE__, as: DataFrame
   alias Explorer.Series
   alias Explorer.Shared
+  alias Explorer.Backend.LazySeries
 
   @valid_dtypes Explorer.Shared.dtypes()
 
@@ -1052,13 +1053,19 @@ defmodule Explorer.DataFrame do
       |> Explorer.Backend.DataFrame.new(df.names, df.dtypes)
 
     case fun.(ldf) do
-      %Series{dtype: :boolean, data: %Explorer.Backend.LazySeries{} = data} ->
+      %Series{dtype: :boolean, data: %LazySeries{} = data} ->
         Shared.apply_impl(df, :filter_with, [data])
 
-      %Series{dtype: dtype, data: %Explorer.Backend.LazySeries{}} ->
-        raise ArgumentError,
-              "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type " <>
-                inspect(dtype)
+      %Series{dtype: dtype, data: %LazySeries{} = lazy} ->
+        message =
+          if lazy.aggregation do
+            "expecting the function to return a boolean LazySeries, but instead it returned an aggregation"
+          else
+            "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type " <>
+              inspect(dtype)
+          end
+
+        raise ArgumentError, message
 
       other ->
         raise ArgumentError,
@@ -2590,6 +2597,14 @@ defmodule Explorer.DataFrame do
 
     groups ++ agg_pairs
   end
+
+  @doc false
+  def summarise_with(%DataFrame{groups: []}, _),
+    do:
+      raise(
+        ArgumentError,
+        "dataframe must be grouped in order to perform summarisation"
+      )
 
   @doc """
   Display the DataFrame in a tabular fashion.

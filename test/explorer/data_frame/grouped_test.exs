@@ -222,6 +222,26 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "summarise_with/2" do
+    @tag skip: true
+    test "with one group and one column with aggregations", %{df: df} do
+      df1 =
+        df
+        |> DF.group_by("year")
+        |> DF.summarise_with(fn ldf ->
+          total = ldf["total"]
+
+          [total_min: Series.min(total), total_max: Series.max(total)]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               total_min: [1, 2, 2, 2, 3],
+               total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634]
+             }
+    end
+  end
+
   describe "arrange/2" do
     test "sorts by group", %{df: df} do
       df = DF.arrange(df, "total")

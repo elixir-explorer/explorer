@@ -8,6 +8,7 @@ defmodule Explorer.Backend.Series do
   @type t :: struct()
 
   @type s :: Explorer.Series.t()
+  @type lazy_s :: Explorer.Series.lazy()
   @type df :: Explorer.DataFrame.t()
   @type dtype :: :integer | :float | :boolean | :string | :date | :datetime
   @type valid_types :: number() | boolean() | String.t() | Date.t() | NaiveDateTime.t()
@@ -41,14 +42,14 @@ defmodule Explorer.Backend.Series do
 
   # Aggregation
 
-  @callback sum(s) :: number()
-  @callback min(s) :: number() | Date.t() | NaiveDateTime.t()
-  @callback max(s) :: number() | Date.t() | NaiveDateTime.t()
-  @callback mean(s) :: float()
-  @callback median(s) :: float()
-  @callback var(s) :: float()
-  @callback std(s) :: float()
-  @callback quantile(s, float()) :: number | Date.t() | NaiveDateTime.t()
+  @callback sum(s) :: number() | lazy_s()
+  @callback min(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s()
+  @callback max(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s()
+  @callback mean(s) :: float() | lazy_s()
+  @callback median(s) :: float() | lazy_s()
+  @callback var(s) :: float() | lazy_s()
+  @callback std(s) :: float() | lazy_s()
+  @callback quantile(s, float()) :: number | Date.t() | NaiveDateTime.t() | lazy_s()
 
   # Cumulative
 

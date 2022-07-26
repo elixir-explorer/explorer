@@ -9,12 +9,13 @@ defmodule Explorer.Backend.LazySeries do
 
   @behaviour Explorer.Backend.Series
 
-  defstruct op: nil, args: []
+  defstruct op: nil, args: [], aggregation: false
 
-  @type t :: %__MODULE__{op: atom(), args: list()}
+  @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean()}
 
   @operations [
     column: 1,
+    # Comparisons
     eq: 2,
     neq: 2,
     gt: 2,
@@ -25,19 +26,32 @@ defmodule Explorer.Backend.LazySeries do
     is_not_nil: 1,
     binary_and: 2,
     binary_or: 2,
+    # Arithmetics
     add: 2,
     subtract: 2,
     multiply: 2,
     divide: 2,
-    pow: 2
+    pow: 2,
+    # Aggregations
+    sum: 1,
+    min: 1,
+    max: 1,
+    mean: 1,
+    median: 1,
+    var: 1,
+    std: 1,
+    quantile: 2
   ]
+
   @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
 
   @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow]
 
+  @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std]
+
   @doc false
-  def new(op, args) do
-    %__MODULE__{op: op, args: args}
+  def new(op, args, aggregation \\ false) do
+    %__MODULE__{op: op, args: args, aggregation: aggregation}
   end
 
   @doc false
@@ -51,7 +65,8 @@ defmodule Explorer.Backend.LazySeries do
       do: unquote(op)(left, lazy_series!(right))
 
     def unquote(op)(%Series{} = left, value) do
-      data = new(unquote(op), [lazy_series!(left), value])
+      args = [lazy_series!(left), value]
+      data = new(unquote(op), args, aggregations?(args))
 
       Backend.Series.new(data, :boolean)
     end
@@ -61,7 +76,8 @@ defmodule Explorer.Backend.LazySeries do
   for op <- [:binary_and, :binary_or] do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right) do
-      data = new(unquote(op), [lazy_series!(left), lazy_series!(right)])
+      args = [lazy_series!(left), lazy_series!(right)]
+      data = new(unquote(op), args, aggregations?(args))
 
       Backend.Series.new(data, :boolean)
     end
@@ -74,11 +90,35 @@ defmodule Explorer.Backend.LazySeries do
 
       value = with %Series{} <- value_or_series, do: lazy_series!(value_or_series)
 
-      data = new(unquote(op), [lazy_series!(left), value])
+      args = [lazy_series!(left), value]
+      data = new(unquote(op), args, aggregations?(args))
 
       Backend.Series.new(data, dtype)
     end
   end
+
+  for op <- @aggregation_operations do
+    @impl true
+    def unquote(op)(%Series{} = series) do
+      args = [lazy_series!(series)]
+      data = new(unquote(op), args, true)
+
+      dtype = dtype_for_agg_operation(unquote(op), series)
+
+      Backend.Series.new(data, dtype)
+    end
+  end
+
+  @impl true
+  def quantile(%Series{} = series, float) when is_float(float) do
+    args = [lazy_series!(series), float]
+    data = new(:quantile, args, true)
+
+    Backend.Series.new(data, series.dtype)
+  end
+
+  defp dtype_for_agg_operation(op, series) when op in [:sum, :min, :max], do: series.dtype
+  defp dtype_for_agg_operation(_, _), do: :float
 
   defp resolve_numeric_dtype(items) do
     dtypes =
@@ -104,6 +144,13 @@ defmodule Explorer.Backend.LazySeries do
       %Series{} ->
         raise ArgumentError, "expecting a LazySeries, but instead got #{inspect(series)}"
     end
+  end
+
+  defp aggregations?(args) do
+    Enum.any?(args, fn
+      %__MODULE__{aggregation: agg} -> agg
+      _other -> false
+    end)
   end
 
   @impl true

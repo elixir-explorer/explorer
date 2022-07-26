@@ -201,6 +201,19 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
+    test "raise an error if the last operation is an aggregation operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      message =
+        "expecting the function to return a boolean LazySeries, but instead it returned an aggregation"
+
+      assert_raise ArgumentError, message, fn ->
+        DF.filter_with(df, fn ldf ->
+          Series.sum(ldf["a"])
+        end)
+      end
+    end
+
     test "raise an error if the function is not returning a lazy series" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
       message = "expecting the function to return a LazySeries, but instead it returned :foo"

@@ -122,6 +122,15 @@ rustler::init!(
         expr_subtract,
         expr_divide,
         expr_pow,
+        // agg expressions
+        expr_sum,
+        expr_min,
+        expr_max,
+        expr_mean,
+        expr_median,
+        expr_std,
+        expr_var,
+        expr_quantile,
         // inspect expressions
         expr_describe_filter_plan,
         // lazyframe
