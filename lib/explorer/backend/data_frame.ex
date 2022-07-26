@@ -83,7 +83,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback tail(df, rows :: integer()) :: df
   @callback select(df, out_df :: df()) :: df
   @callback filter(df, mask :: series) :: df
-  @callback filter_with(df, (lazy_frame() -> lazy_series())) :: df
+  @callback filter_with(df, out_df :: df(), lazy_series()) :: df
   @callback mutate(df, out_df :: df(), mutations :: [{column_name(), mutate_value()}]) :: df
   @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()], keep_all? :: boolean()) :: df
@@ -126,6 +126,9 @@ defmodule Explorer.Backend.DataFrame do
   # Groups
 
   @callback summarise(df, out_df :: df(), aggregations :: %{column_name() => [atom()]}) :: df
+
+  @callback summarise_with(df, out_df :: df(), aggregations :: [{column_name(), lazy_series()}]) ::
+              df
 
   # Functions
   alias Explorer.{DataFrame, Series}

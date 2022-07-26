@@ -253,9 +253,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_dataframe(df, :df_filter, [mask.data])
 
   @impl true
-  def filter_with(df, %Explorer.Backend.LazySeries{} = lseries) do
+  def filter_with(df, out_df, %Explorer.Backend.LazySeries{} = lseries) do
     expressions = Explorer.PolarsBackend.Expression.to_expr(lseries)
-    Shared.apply_dataframe(df, df, :df_filter_with, [expressions])
+    Shared.apply_dataframe(df, out_df, :df_filter_with, [expressions])
   end
 
   @impl true
@@ -467,6 +467,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
       Enum.map(columns, fn {key, values} -> {key, Enum.map(values, &Atom.to_string/1)} end)
 
     Shared.apply_dataframe(df, out_df, :df_groupby_agg, [groups, columns])
+  end
+
+  @impl true
+  def summarise_with(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, column_pairs) do
+    exprs =
+      for {name, lazy_series} <- column_pairs do
+        original_expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
+        Explorer.PolarsBackend.Expression.alias_expr(original_expr, name)
+      end
+
+    groups_exprs = for group <- groups, do: Native.expr_column(group)
+
+    Shared.apply_dataframe(df, out_df, :df_groupby_agg_with, [groups_exprs, exprs])
   end
 
   # Inspect

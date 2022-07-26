@@ -42,6 +42,10 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(%Date{} = date), do: Native.expr_date(date)
   def to_expr(%NaiveDateTime{} = datetime), do: Native.expr_datetime(datetime)
 
+  def alias_expr(%__MODULE__{} = expr, alias_name) when is_binary(alias_name) do
+    Native.expr_alias(expr, alias_name)
+  end
+
   # Only for inspecting the expression in tests
   def describe_filter_plan(%DataFrame{data: polars_df}, %__MODULE__{} = expression) do
     Native.expr_describe_filter_plan(polars_df, expression)

@@ -69,6 +69,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_get_columns(_df), do: err()
   def df_group_indices(_df, _column_names), do: err()
   def df_groupby_agg(_df, _groups, _aggs), do: err()
+  def df_groupby_agg_with(_df, _groups_exprs, _aggs_pairs), do: err()
   def df_groups(_df, _column_names), do: err()
   def df_head(_df, _length), do: err()
   def df_height(_df), do: err()
@@ -111,6 +112,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_integer(_number), do: err()
   def expr_string(_string), do: err()
   def expr_describe_filter_plan(_df, _expr), do: err()
+  def expr_alias(_ex_expr, _alias_name), do: err()
 
   # LazyFrame
   def lf_collect(_df), do: err()

@@ -68,6 +68,7 @@ rustler::init!(
         df_get_columns,
         df_groups,
         df_groupby_agg,
+        df_groupby_agg_with,
         df_group_indices,
         df_head,
         df_height,
@@ -131,6 +132,7 @@ rustler::init!(
         expr_std,
         expr_var,
         expr_quantile,
+        expr_alias,
         // inspect expressions
         expr_describe_filter_plan,
         // lazyframe
