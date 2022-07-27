@@ -29,7 +29,8 @@ defmodule Explorer.Series do
 
   @type data :: Explorer.Backend.Series.t()
   @type dtype :: Explorer.Backend.Series.dtype()
-  @type t :: %Series{data: data, dtype: dtype}
+  @type t :: %Series{data: data, dtype: dtype()}
+  @type lazy :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
   @enforce_keys [:data, :dtype]
   defstruct [:data, :dtype]

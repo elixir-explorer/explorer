@@ -98,6 +98,7 @@ defmodule Explorer.DataFrame do
   alias __MODULE__, as: DataFrame
   alias Explorer.Series
   alias Explorer.Shared
+  alias Explorer.Backend.LazySeries
 
   @valid_dtypes Explorer.Shared.dtypes()
 
@@ -1046,25 +1047,34 @@ defmodule Explorer.DataFrame do
 
   @doc false
   def filter_with(df, fun) when is_function(fun) do
-    ldf =
-      df
-      |> Explorer.Backend.LazyFrame.new()
-      |> Explorer.Backend.DataFrame.new(df.names, df.dtypes)
+    ldf = to_opaque_lazy(df)
 
     case fun.(ldf) do
-      %Series{dtype: :boolean, data: %Explorer.Backend.LazySeries{} = data} ->
-        Shared.apply_impl(df, :filter_with, [data])
+      %Series{dtype: :boolean, data: %LazySeries{} = data} ->
+        Shared.apply_impl(df, :filter_with, [df, data])
 
-      %Series{dtype: dtype, data: %Explorer.Backend.LazySeries{}} ->
-        raise ArgumentError,
-              "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type " <>
-                inspect(dtype)
+      %Series{dtype: dtype, data: %LazySeries{} = lazy} ->
+        message =
+          if lazy.aggregation do
+            "expecting the function to return a boolean LazySeries, but instead it returned an aggregation"
+          else
+            "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type " <>
+              inspect(dtype)
+          end
+
+        raise ArgumentError, message
 
       other ->
         raise ArgumentError,
               "expecting the function to return a LazySeries, but instead it returned " <>
                 inspect(other)
     end
+  end
+
+  defp to_opaque_lazy(%DataFrame{} = df) do
+    df
+    |> Explorer.Backend.LazyFrame.new()
+    |> Explorer.Backend.DataFrame.new(df.names, df.dtypes)
   end
 
   @doc """
@@ -2586,6 +2596,54 @@ defmodule Explorer.DataFrame do
           end
 
         {name, dtype}
+      end
+
+    groups ++ agg_pairs
+  end
+
+  @doc false
+  def summarise_with(%DataFrame{groups: []}, _),
+    do:
+      raise(
+        ArgumentError,
+        "dataframe must be grouped in order to perform summarisation"
+      )
+
+  def summarise_with(%DataFrame{} = df, fun) when is_function(fun) do
+    ldf = to_opaque_lazy(df)
+
+    result = fun.(ldf)
+
+    column_pairs =
+      to_column_pairs(df, result, fn value ->
+        # We need to ensure that the value is always an agg expression
+        case value do
+          %Series{data: %LazySeries{op: op, aggregation: true}} when op in @supported_aggs ->
+            value
+
+          %Series{data: %LazySeries{op: op}} ->
+            raise "expecting summarise with an aggregation operation. But instead got #{inspect(op)}."
+
+          other ->
+            raise "expecting a lazy series, but instead got #{inspect(other)}"
+        end
+      end)
+
+    new_dtypes = names_with_dtypes_for_summarise_with(df, column_pairs)
+    new_names = for {name, _} <- new_dtypes, do: name
+    df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: []}
+
+    column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
+
+    Shared.apply_impl(df, :summarise_with, [df_out, column_pairs])
+  end
+
+  defp names_with_dtypes_for_summarise_with(df, column_pairs) do
+    groups = for group <- df.groups, do: {group, df.dtypes[group]}
+
+    agg_pairs =
+      for {column_name, aggregation} <- column_pairs do
+        {column_name, aggregation.dtype}
       end
 
     groups ++ agg_pairs

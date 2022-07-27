@@ -166,6 +166,71 @@ pub fn expr_pow(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_sum(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.sum())
+}
+
+#[rustler::nif]
+pub fn expr_min(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.min())
+}
+
+#[rustler::nif]
+pub fn expr_max(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.max())
+}
+
+#[rustler::nif]
+pub fn expr_mean(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.mean())
+}
+
+#[rustler::nif]
+pub fn expr_median(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.median())
+}
+
+#[rustler::nif]
+pub fn expr_var(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.var())
+}
+
+#[rustler::nif]
+pub fn expr_std(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.std())
+}
+
+#[rustler::nif]
+pub fn expr_quantile(expr: ExExpr, quantile: f64) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    // TODO: consider accepting strategy in the future.
+    let strategy = crate::parse_quantile_interpol_options("nearest");
+
+    ExExpr::new(expr.quantile(quantile, strategy))
+}
+
+#[rustler::nif]
+pub fn expr_alias(expr: ExExpr, name: &str) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.alias(name))
+}
+
+#[rustler::nif]
 pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
     let df: DataFrame = data.resource.0.clone();
     let expressions: Expr = expr.resource.0.clone();
