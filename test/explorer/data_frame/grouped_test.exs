@@ -302,6 +302,20 @@ defmodule Explorer.DataFrame.GroupedTest do
                total_min: [2308, 1254, 32500, 141, 7924]
              }
     end
+
+    test "with one group and count", %{df: df} do
+      df1 =
+        df
+        |> DF.group_by(["year"])
+        |> DF.summarise_with(fn ldf ->
+          [count: Series.count(ldf["country"])]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               count: [217, 217, 220, 220, 220]
+             }
+    end
   end
 
   describe "arrange/2" do

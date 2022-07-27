@@ -1055,7 +1055,7 @@ defmodule Explorer.DataFrame do
 
       %Series{dtype: dtype, data: %LazySeries{} = lazy} ->
         message =
-          if lazy.aggregation do
+          if lazy.aggregation == :yes do
             "expecting the function to return a boolean LazySeries, but instead it returned an aggregation"
           else
             "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type " <>
@@ -2618,7 +2618,7 @@ defmodule Explorer.DataFrame do
       to_column_pairs(df, result, fn value ->
         # We need to ensure that the value is always an agg expression
         case value do
-          %Series{data: %LazySeries{op: op, aggregation: true}} when op in @supported_aggs ->
+          %Series{data: %LazySeries{aggregation: agg}} when agg in [:yes, :maybe] ->
             value
 
           %Series{data: %LazySeries{op: op}} ->

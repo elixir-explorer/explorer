@@ -9,9 +9,9 @@ defmodule Explorer.Backend.LazySeries do
 
   @behaviour Explorer.Backend.Series
 
-  defstruct op: nil, args: [], aggregation: false
+  defstruct op: nil, args: [], aggregation: :no
 
-  @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean()}
+  @type t :: %__MODULE__{op: atom(), args: list(), aggregation: :yes | :no | :maybe}
 
   @operations [
     column: 1,
@@ -40,7 +40,11 @@ defmodule Explorer.Backend.LazySeries do
     median: 1,
     var: 1,
     std: 1,
-    quantile: 2
+    quantile: 2,
+    # Maybe aggregations
+    first: 1,
+    last: 1,
+    count: 1
   ]
 
   @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
@@ -49,8 +53,10 @@ defmodule Explorer.Backend.LazySeries do
 
   @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std]
 
+  @maybe_aggregation_operations [:count]
+
   @doc false
-  def new(op, args, aggregation \\ false) do
+  def new(op, args, aggregation \\ :no) do
     %__MODULE__{op: op, args: args, aggregation: aggregation}
   end
 
@@ -101,7 +107,7 @@ defmodule Explorer.Backend.LazySeries do
     @impl true
     def unquote(op)(%Series{} = series) do
       args = [lazy_series!(series)]
-      data = new(unquote(op), args, true)
+      data = new(unquote(op), args, :yes)
 
       dtype = dtype_for_agg_operation(unquote(op), series)
 
@@ -112,9 +118,22 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def quantile(%Series{} = series, float) when is_float(float) do
     args = [lazy_series!(series), float]
-    data = new(:quantile, args, true)
+    data = new(:quantile, args, :yes)
 
     Backend.Series.new(data, series.dtype)
+  end
+
+  for op <- @maybe_aggregation_operations do
+    @impl true
+    def unquote(op)(%Series{} = series) do
+      lazy = lazy_series!(series)
+      aggr = if lazy.aggregation == :yes, do: :yes, else: :maybe
+      data = new(unquote(op), [lazy], aggr)
+
+      dtype = dtype_for_agg_operation(unquote(op), series)
+
+      Backend.Series.new(data, dtype)
+    end
   end
 
   defp dtype_for_agg_operation(op, series) when op in [:sum, :min, :max], do: series.dtype
@@ -147,10 +166,18 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   defp aggregations?(args) do
-    Enum.any?(args, fn
-      %__MODULE__{aggregation: agg} -> agg
-      _other -> false
-    end)
+    all =
+      Enum.map(args, fn
+        %__MODULE__{aggregation: agg} -> agg
+        _other -> :no
+      end)
+      |> Enum.uniq()
+
+    cond do
+      :yes in all -> :yes
+      :maybe in all -> :maybe
+      true -> :no
+    end
   end
 
   @impl true
@@ -190,6 +217,9 @@ defmodule Explorer.Backend.LazySeries do
   @to_elixir_op %{
     add: :+,
     subtract: :-,
+    multiply: :*,
+    divide: :/,
+    pow: :**,
     eq: :==,
     neq: :!=,
     gt: :>,
@@ -204,9 +234,7 @@ defmodule Explorer.Backend.LazySeries do
     {Map.get(@to_elixir_op, op, op), [], Enum.map(args, &to_elixir_ast/1)}
   end
 
-  defp to_elixir_ast(other) do
-    other
-  end
+  defp to_elixir_ast(other), do: other
 
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.

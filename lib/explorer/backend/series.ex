@@ -95,7 +95,7 @@ defmodule Explorer.Backend.Series do
   @callback distinct(s) :: s
   @callback unordered_distinct(s) :: s
   @callback n_distinct(s) :: integer()
-  @callback count(s) :: df
+  @callback count(s) :: df | lazy_s()
 
   # Rolling
 

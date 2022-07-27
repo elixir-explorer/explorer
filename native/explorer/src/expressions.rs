@@ -231,6 +231,13 @@ pub fn expr_alias(expr: ExExpr, name: &str) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_count(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.count())
+}
+
+#[rustler::nif]
 pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
     let df: DataFrame = data.resource.0.clone();
     let expressions: Expr = expr.resource.0.clone();

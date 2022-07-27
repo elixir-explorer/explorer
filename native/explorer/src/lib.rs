@@ -133,6 +133,8 @@ rustler::init!(
         expr_var,
         expr_quantile,
         expr_alias,
+        // maybe agg expressions
+        expr_count,
         // inspect expressions
         expr_describe_filter_plan,
         // lazyframe
