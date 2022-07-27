@@ -1053,16 +1053,11 @@ defmodule Explorer.DataFrame do
       %Series{dtype: :boolean, data: %LazySeries{} = data} ->
         Shared.apply_impl(df, :filter_with, [df, data])
 
-      %Series{dtype: dtype, data: %LazySeries{} = lazy} ->
-        message =
-          if lazy.aggregation do
-            "expecting the function to return a boolean LazySeries, but instead it returned an aggregation"
-          else
-            "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type " <>
-              inspect(dtype)
-          end
-
-        raise ArgumentError, message
+      %Series{dtype: dtype, data: %LazySeries{}} ->
+        raise ArgumentError,
+              "expecting the function to return a boolean LazySeries, " <>
+                "but instead it returned a LazySeries of type " <>
+                inspect(dtype)
 
       other ->
         raise ArgumentError,
@@ -2616,13 +2611,12 @@ defmodule Explorer.DataFrame do
 
     column_pairs =
       to_column_pairs(df, result, fn value ->
-        # We need to ensure that the value is always an agg expression
         case value do
-          %Series{data: %LazySeries{op: op, aggregation: true}} when op in @supported_aggs ->
+          %Series{data: %LazySeries{aggregation: true}} ->
             value
 
           %Series{data: %LazySeries{op: op}} ->
-            raise "expecting summarise with an aggregation operation. But instead got #{inspect(op)}."
+            raise "expecting summarise with an aggregation operation inside. But instead got #{inspect(op)}."
 
           other ->
             raise "expecting a lazy series, but instead got #{inspect(other)}"

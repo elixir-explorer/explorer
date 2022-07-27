@@ -40,14 +40,18 @@ defmodule Explorer.Backend.LazySeries do
     median: 1,
     var: 1,
     std: 1,
-    quantile: 2
+    quantile: 2,
+    # Maybe aggregations
+    first: 1,
+    last: 1,
+    count: 1
   ]
 
   @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
 
   @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow]
 
-  @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std]
+  @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std, :count]
 
   @doc false
   def new(op, args, aggregation \\ false) do
@@ -190,6 +194,9 @@ defmodule Explorer.Backend.LazySeries do
   @to_elixir_op %{
     add: :+,
     subtract: :-,
+    multiply: :*,
+    divide: :/,
+    pow: :**,
     eq: :==,
     neq: :!=,
     gt: :>,
@@ -204,9 +211,7 @@ defmodule Explorer.Backend.LazySeries do
     {Map.get(@to_elixir_op, op, op), [], Enum.map(args, &to_elixir_ast/1)}
   end
 
-  defp to_elixir_ast(other) do
-    other
-  end
+  defp to_elixir_ast(other), do: other
 
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.
