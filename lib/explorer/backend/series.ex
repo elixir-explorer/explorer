@@ -39,6 +39,8 @@ defmodule Explorer.Backend.Series do
   @callback get(s, idx :: integer()) :: s
   @callback concat(s, s) :: s
   @callback coalesce(s, s) :: s
+  @callback first(s) :: valid_types() | lazy_s()
+  @callback last(s) :: valid_types() | lazy_s()
 
   # Aggregation
 

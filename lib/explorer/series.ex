@@ -405,7 +405,7 @@ defmodule Explorer.Series do
       1
   """
   @spec first(series :: Series.t()) :: any()
-  def first(series), do: series[0]
+  def first(series), do: Shared.apply_impl(series, :first, [])
 
   @doc """
   Returns the last element of the series.
@@ -417,7 +417,7 @@ defmodule Explorer.Series do
       100
   """
   @spec last(series :: Series.t()) :: any()
-  def last(series), do: series[-1]
+  def last(series), do: Shared.apply_impl(series, :last, [])
 
   @doc """
   Returns a random sample of the series.

@@ -51,7 +51,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow]
 
-  @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std, :count]
+  @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std, :count, :first, :last]
 
   @doc false
   def new(op, args, aggregation \\ false) do

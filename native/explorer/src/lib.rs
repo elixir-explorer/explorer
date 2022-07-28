@@ -135,6 +135,8 @@ rustler::init!(
         expr_alias,
         // maybe agg expressions
         expr_count,
+        expr_first,
+        expr_last,
         // inspect expressions
         expr_describe_filter_plan,
         // lazyframe
