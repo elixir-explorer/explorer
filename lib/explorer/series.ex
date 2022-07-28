@@ -676,7 +676,7 @@ defmodule Explorer.Series do
   `coalesce(s1, s2)` is equivalent to `coalesce([s1, s2])`.
   """
   @spec coalesce(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
-  def coalesce(s1, s2), do: concat([s1, s2])
+  def coalesce(s1, s2), do: coalesce([s1, s2])
 
   # Aggregation
 
