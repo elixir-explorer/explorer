@@ -573,7 +573,7 @@ pub fn df_groupby_agg(
     if renames.is_empty() {
         Ok(ExDataFrame::new(new_df))
     } else {
-        let mut new_df = new_df.clone();
+        let mut new_df = new_df;
         for (original, new_name) in renames {
             new_df.rename(original, new_name).expect("should rename");
         }
