@@ -114,8 +114,8 @@ defmodule Explorer.Backend.Series do
   # Nulls
 
   @callback fill_missing(s, strategy :: :backward | :forward | :min | :max | :mean) :: s
-  @callback nil?(s) :: s
-  @callback not_nil?(s) :: s
+  @callback is_nil(s) :: s
+  @callback is_not_nil(s) :: s
 
   # Escape hatch
 

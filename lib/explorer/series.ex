@@ -1948,14 +1948,14 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
-      iex> Explorer.Series.nil?(s)
+      iex> Explorer.Series.is_nil(s)
       #Explorer.Series<
         boolean[4]
         [false, false, true, false]
       >
   """
-  @spec nil?(Series.t()) :: Series.t()
-  def nil?(series), do: Shared.apply_impl(series, :nil?)
+  @spec is_nil(Series.t()) :: Series.t()
+  def is_nil(series), do: Shared.apply_impl(series, :is_nil)
 
   @doc """
   Returns a mask of not nil values.
@@ -1963,14 +1963,14 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
-      iex> Explorer.Series.not_nil?(s)
+      iex> Explorer.Series.is_not_nil(s)
       #Explorer.Series<
         boolean[4]
         [true, true, false, true]
       >
   """
-  @spec not_nil?(Series.t()) :: Series.t()
-  def not_nil?(series), do: Shared.apply_impl(series, :not_nil?)
+  @spec is_not_nil(Series.t()) :: Series.t()
+  def is_not_nil(series), do: Shared.apply_impl(series, :is_not_nil)
 
   # Escape hatch
 

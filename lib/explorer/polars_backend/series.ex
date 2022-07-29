@@ -321,10 +321,10 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def nil?(series), do: Shared.apply_series(series, :s_is_null)
+  def is_nil(series), do: Shared.apply_series(series, :s_is_null)
 
   @impl true
-  def not_nil?(series), do: Shared.apply_series(series, :s_is_not_null)
+  def is_not_nil(series), do: Shared.apply_series(series, :s_is_not_null)
 
   # Escape hatch
   @impl true

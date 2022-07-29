@@ -175,14 +175,14 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def nil?(%Series{} = series) do
+  def is_nil(%Series{} = series) do
     data = new(:is_nil, [lazy_series!(series)])
 
     Backend.Series.new(data, :boolean)
   end
 
   @impl true
-  def not_nil?(%Series{} = series) do
+  def is_not_nil(%Series{} = series) do
     data = new(:is_not_nil, [lazy_series!(series)])
 
     Backend.Series.new(data, :boolean)

@@ -109,7 +109,7 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.filter_with(df, fn ldf ->
-          Series.nil?(ldf["a"])
+          Series.is_nil(ldf["a"])
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [nil, nil], b: [6, 4]}
@@ -120,7 +120,7 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.filter_with(df, fn ldf ->
-          Series.not_nil?(ldf["a"])
+          Series.is_not_nil(ldf["a"])
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 5, 5], b: [9, 8, 7, 5, 3]}
@@ -241,6 +241,17 @@ defmodule Explorer.DataFrameTest do
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [nil], b: [4]}
+
+      df2 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+          c = Series.coalesce(a, b)
+
+          Series.is_nil(c)
+        end)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [], b: []}
     end
 
     test "raise an error if the last operation is an arithmetic operation" do
