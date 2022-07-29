@@ -2509,7 +2509,7 @@ defmodule Explorer.DataFrame do
 
   def ungroup(df, group) when is_column_name(group), do: ungroup(df, [group])
 
-  @supported_aggs ~w[min max sum mean median first last count n_unique]a
+  @supported_aggs ~w[min max sum mean median first last count n_distinct]a
 
   @doc """
   Summarise each group to a single row.
@@ -2528,18 +2528,18 @@ defmodule Explorer.DataFrame do
     * `:first` - Take the first value within the group. See `Explorer.Series.first/1`.
     * `:last` - Take the last value within the group. See `Explorer.Series.last/1`.
     * `:count` - Count the number of rows per group.
-    * `:n_unique` - Count the number of unique rows per group.
+    * `:n_distinct` - Count the number of unique rows per group.
 
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> df |> Explorer.DataFrame.group_by("year") |> Explorer.DataFrame.summarise(total: [:max, :min], country: [:n_unique])
+      iex> df |> Explorer.DataFrame.group_by("year") |> Explorer.DataFrame.summarise(total: [:max, :min], country: [:n_distinct])
       #Explorer.DataFrame<
         Polars[5 x 4]
         year integer [2010, 2011, 2012, 2013, 2014]
         total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
         total_min integer [1, 2, 2, 2, 3]
-        country_n_unique integer [217, 217, 220, 220, 220]
+        country_n_distinct integer [217, 217, 220, 220, 220]
       >
   """
   @doc type: :single
