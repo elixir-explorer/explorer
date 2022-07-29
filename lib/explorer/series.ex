@@ -667,16 +667,35 @@ defmodule Explorer.Series do
       >
   """
   @spec coalesce([Series.t()]) :: Series.t()
-  def coalesce([%Series{} = h | t] = _series),
-    do: Enum.reduce(t, h, &Shared.apply_impl(&2, :coalesce, [&1]))
+  def coalesce([%Series{} = h | t]),
+    do: Enum.reduce(t, h, &coalesce(&2, &1))
 
   @doc """
   Finds the first non-missing element at each position.
 
   `coalesce(s1, s2)` is equivalent to `coalesce([s1, s2])`.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, nil, 3, nil])
+      iex> s2 = Explorer.Series.from_list([1, 2, nil, 4])
+      iex> Explorer.Series.coalesce(s1, s2)
+      #Explorer.Series<
+        integer[4]
+        [1, 2, 3, 4]
+      >
+
+      iex> s1 = Explorer.Series.from_list(["foo", nil, "bar", nil])
+      iex> s2 = Explorer.Series.from_list([1, 2, nil, 4])
+      iex> Explorer.Series.coalesce(s1, s2)
+      ** (ArgumentError) cannot invoke Explorer.Series.coalesce/2 with mismatched dtypes: string and integer.
   """
   @spec coalesce(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
-  def coalesce(s1, s2), do: coalesce([s1, s2])
+  def coalesce(s1, s2) do
+    :ok = check_dtypes_for_coalesce!(s1, s2)
+
+    Shared.apply_impl(s1, :coalesce, [s2])
+  end
 
   # Aggregation
 
@@ -2009,6 +2028,15 @@ defmodule Explorer.Series do
         "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{left_dtype} and " <>
           "#{right_dtype}."
       )
+
+  defp check_dtypes_for_coalesce!(%Series{} = s1, %Series{} = s2) do
+    case {s1.dtype, s2.dtype} do
+      {dtype, dtype} -> :ok
+      {:integer, :float} -> :ok
+      {:float, :integer} -> :ok
+      {left, right} -> dtype_mismatch_error("coalesce/2", left, right)
+    end
+  end
 
   defimpl Inspect do
     import Inspect.Algebra

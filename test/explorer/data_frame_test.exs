@@ -228,6 +228,21 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 4], b: [9.2, 8.0, 7.1, 6.0]}
     end
 
+    test "filter with coalesce operation" do
+      df = DF.new(a: [1, nil, 3, nil], b: [nil, 2, nil, 4])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+          c = Series.coalesce(a, b)
+
+          Series.greater(c, 3)
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [nil], b: [4]}
+    end
+
     test "raise an error if the last operation is an arithmetic operation" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 

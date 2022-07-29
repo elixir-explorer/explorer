@@ -44,7 +44,9 @@ defmodule Explorer.Backend.LazySeries do
     # Maybe aggregations
     first: 1,
     last: 1,
-    count: 1
+    count: 1,
+    # Slice and dice
+    coalesce: 2
   ]
 
   @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
@@ -119,6 +121,21 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:quantile, args, true)
 
     Backend.Series.new(data, series.dtype)
+  end
+
+  @impl true
+  def coalesce(%Series{} = left, %Series{} = right) do
+    args = [lazy_series!(left), lazy_series!(right)]
+    data = new(:coalesce, args, aggregations?(args))
+
+    dtype =
+      if left.dtype in [:float, :integer] do
+        resolve_numeric_dtype([left, right])
+      else
+        left.dtype
+      end
+
+    Backend.Series.new(data, dtype)
   end
 
   defp dtype_for_agg_operation(op, series) when op in [:sum, :min, :max], do: series.dtype

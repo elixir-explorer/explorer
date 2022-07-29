@@ -137,6 +137,8 @@ rustler::init!(
         expr_count,
         expr_first,
         expr_last,
+        // slice and dice expressions
+        expr_coalesce,
         // inspect expressions
         expr_describe_filter_plan,
         // lazyframe
