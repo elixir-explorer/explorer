@@ -32,6 +32,8 @@ defmodule Explorer.Backend.LazySeries do
     multiply: 2,
     divide: 2,
     pow: 2,
+    # Slice and dice
+    coalesce: 2,
     # Aggregations
     sum: 1,
     min: 1,
@@ -41,12 +43,9 @@ defmodule Explorer.Backend.LazySeries do
     var: 1,
     std: 1,
     quantile: 2,
-    # Maybe aggregations
     first: 1,
     last: 1,
-    count: 1,
-    # Slice and dice
-    coalesce: 2
+    count: 1
   ]
 
   @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
