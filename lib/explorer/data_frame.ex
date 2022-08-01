@@ -2762,6 +2762,6 @@ defimpl Table.Reader, for: Explorer.DataFrame do
         |> Explorer.Series.to_enum()
       end)
 
-    {:columns, %{columns: columns}, data}
+    {:columns, %{columns: columns, count: Explorer.DataFrame.n_rows(df)}, data}
   end
 end

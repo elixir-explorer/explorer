@@ -1385,6 +1385,8 @@ defmodule Explorer.DataFrameTest do
     columns = Table.to_columns(df)
     assert Enum.to_list(columns["x"]) == [1, 2, 3]
     assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
+
+    assert {:columns, %{count: 3}, _} = Table.Reader.init(df)
   end
 
   test "collect/1 is no-op", %{df: df} do
