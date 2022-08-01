@@ -32,6 +32,8 @@ defmodule Explorer.Backend.LazySeries do
     multiply: 2,
     divide: 2,
     pow: 2,
+    # Slice and dice
+    coalesce: 2,
     # Aggregations
     sum: 1,
     min: 1,
@@ -40,14 +42,17 @@ defmodule Explorer.Backend.LazySeries do
     median: 1,
     var: 1,
     std: 1,
-    quantile: 2
+    quantile: 2,
+    first: 1,
+    last: 1,
+    count: 1
   ]
 
   @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
 
   @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow]
 
-  @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std]
+  @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std, :count, :first, :last]
 
   @doc false
   def new(op, args, aggregation \\ false) do
@@ -117,6 +122,21 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, series.dtype)
   end
 
+  @impl true
+  def coalesce(%Series{} = left, %Series{} = right) do
+    args = [lazy_series!(left), lazy_series!(right)]
+    data = new(:coalesce, args, aggregations?(args))
+
+    dtype =
+      if left.dtype in [:float, :integer] do
+        resolve_numeric_dtype([left, right])
+      else
+        left.dtype
+      end
+
+    Backend.Series.new(data, dtype)
+  end
+
   defp dtype_for_agg_operation(op, series) when op in [:sum, :min, :max], do: series.dtype
   defp dtype_for_agg_operation(_, _), do: :float
 
@@ -154,14 +174,14 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def nil?(%Series{} = series) do
+  def is_nil(%Series{} = series) do
     data = new(:is_nil, [lazy_series!(series)])
 
     Backend.Series.new(data, :boolean)
   end
 
   @impl true
-  def not_nil?(%Series{} = series) do
+  def is_not_nil(%Series{} = series) do
     data = new(:is_not_nil, [lazy_series!(series)])
 
     Backend.Series.new(data, :boolean)
@@ -190,6 +210,9 @@ defmodule Explorer.Backend.LazySeries do
   @to_elixir_op %{
     add: :+,
     subtract: :-,
+    multiply: :*,
+    divide: :/,
+    pow: :**,
     eq: :==,
     neq: :!=,
     gt: :>,
@@ -204,9 +227,7 @@ defmodule Explorer.Backend.LazySeries do
     {Map.get(@to_elixir_op, op, op), [], Enum.map(args, &to_elixir_ast/1)}
   end
 
-  defp to_elixir_ast(other) do
-    other
-  end
+  defp to_elixir_ast(other), do: other
 
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.

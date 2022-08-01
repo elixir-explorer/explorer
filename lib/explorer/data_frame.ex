@@ -1053,16 +1053,11 @@ defmodule Explorer.DataFrame do
       %Series{dtype: :boolean, data: %LazySeries{} = data} ->
         Shared.apply_impl(df, :filter_with, [df, data])
 
-      %Series{dtype: dtype, data: %LazySeries{} = lazy} ->
-        message =
-          if lazy.aggregation do
-            "expecting the function to return a boolean LazySeries, but instead it returned an aggregation"
-          else
-            "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type " <>
-              inspect(dtype)
-          end
-
-        raise ArgumentError, message
+      %Series{dtype: dtype, data: %LazySeries{}} ->
+        raise ArgumentError,
+              "expecting the function to return a boolean LazySeries, " <>
+                "but instead it returned a LazySeries of type " <>
+                inspect(dtype)
 
       other ->
         raise ArgumentError,
@@ -2514,7 +2509,7 @@ defmodule Explorer.DataFrame do
 
   def ungroup(df, group) when is_column_name(group), do: ungroup(df, [group])
 
-  @supported_aggs ~w[min max sum mean median first last count n_unique]a
+  @supported_aggs ~w[min max sum mean median first last count n_distinct]a
 
   @doc """
   Summarise each group to a single row.
@@ -2533,18 +2528,18 @@ defmodule Explorer.DataFrame do
     * `:first` - Take the first value within the group. See `Explorer.Series.first/1`.
     * `:last` - Take the last value within the group. See `Explorer.Series.last/1`.
     * `:count` - Count the number of rows per group.
-    * `:n_unique` - Count the number of unique rows per group.
+    * `:n_distinct` - Count the number of unique rows per group.
 
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> df |> Explorer.DataFrame.group_by("year") |> Explorer.DataFrame.summarise(total: [:max, :min], country: [:n_unique])
+      iex> df |> Explorer.DataFrame.group_by("year") |> Explorer.DataFrame.summarise(total: [:max, :min], country: [:n_distinct])
       #Explorer.DataFrame<
         Polars[5 x 4]
         year integer [2010, 2011, 2012, 2013, 2014]
         total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
         total_min integer [1, 2, 2, 2, 3]
-        country_n_unique integer [217, 217, 220, 220, 220]
+        country_n_distinct integer [217, 217, 220, 220, 220]
       >
   """
   @doc type: :single
@@ -2616,13 +2611,12 @@ defmodule Explorer.DataFrame do
 
     column_pairs =
       to_column_pairs(df, result, fn value ->
-        # We need to ensure that the value is always an agg expression
         case value do
-          %Series{data: %LazySeries{op: op, aggregation: true}} when op in @supported_aggs ->
+          %Series{data: %LazySeries{aggregation: true}} ->
             value
 
           %Series{data: %LazySeries{op: op}} ->
-            raise "expecting summarise with an aggregation operation. But instead got #{inspect(op)}."
+            raise "expecting summarise with an aggregation operation inside. But instead got #{inspect(op)}."
 
           other ->
             raise "expecting a lazy series, but instead got #{inspect(other)}"

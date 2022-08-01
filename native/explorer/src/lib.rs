@@ -123,6 +123,8 @@ rustler::init!(
         expr_subtract,
         expr_divide,
         expr_pow,
+        // slice and dice expressions
+        expr_coalesce,
         // agg expressions
         expr_sum,
         expr_min,
@@ -133,6 +135,9 @@ rustler::init!(
         expr_var,
         expr_quantile,
         expr_alias,
+        expr_count,
+        expr_first,
+        expr_last,
         // inspect expressions
         expr_describe_filter_plan,
         // lazyframe

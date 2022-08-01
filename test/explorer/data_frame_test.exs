@@ -109,7 +109,7 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.filter_with(df, fn ldf ->
-          Series.nil?(ldf["a"])
+          Series.is_nil(ldf["a"])
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [nil, nil], b: [6, 4]}
@@ -120,7 +120,7 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.filter_with(df, fn ldf ->
-          Series.not_nil?(ldf["a"])
+          Series.is_not_nil(ldf["a"])
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 5, 5], b: [9, 8, 7, 5, 3]}
@@ -186,6 +186,74 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{a: [2], b: [8.0]}
     end
 
+    test "filter with count operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+
+          Series.greater(b, Series.count(a))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3], b: [9.2, 8.0, 7.1]}
+    end
+
+    test "filter with max operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+
+          Series.greater(b, Series.max(a))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3], b: [9.2, 8.0, 7.1]}
+    end
+
+    test "filter with last operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+
+          Series.greater(b, Series.last(a))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 4], b: [9.2, 8.0, 7.1, 6.0]}
+    end
+
+    test "filter with coalesce operation" do
+      df = DF.new(a: [1, nil, 3, nil], b: [nil, 2, nil, 4])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+          c = Series.coalesce(a, b)
+
+          Series.greater(c, 3)
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [nil], b: [4]}
+
+      df2 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          b = ldf["b"]
+          c = Series.coalesce(a, b)
+
+          Series.is_nil(c)
+        end)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [], b: []}
+    end
+
     test "raise an error if the last operation is an arithmetic operation" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
@@ -205,7 +273,8 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
       message =
-        "expecting the function to return a boolean LazySeries, but instead it returned an aggregation"
+        "expecting the function to return a boolean LazySeries, " <>
+          "but instead it returned a LazySeries of type :integer"
 
       assert_raise ArgumentError, message, fn ->
         DF.filter_with(df, fn ldf ->

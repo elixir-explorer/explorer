@@ -565,10 +565,21 @@ pub fn df_groupby_agg(
     data: ExDataFrame,
     groups: Vec<&str>,
     aggs: Vec<(&str, Vec<&str>)>,
+    renames: Vec<(&str, &str)>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let new_df = df.groupby_stable(groups)?.agg(&aggs)?;
-    Ok(ExDataFrame::new(new_df))
+
+    if renames.is_empty() {
+        Ok(ExDataFrame::new(new_df))
+    } else {
+        let mut new_df = new_df;
+        for (original, new_name) in renames {
+            new_df.rename(original, new_name).expect("should rename");
+        }
+
+        Ok(ExDataFrame::new(new_df))
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

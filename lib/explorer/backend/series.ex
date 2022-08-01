@@ -39,6 +39,8 @@ defmodule Explorer.Backend.Series do
   @callback get(s, idx :: integer()) :: s
   @callback concat(s, s) :: s
   @callback coalesce(s, s) :: s
+  @callback first(s) :: valid_types() | lazy_s()
+  @callback last(s) :: valid_types() | lazy_s()
 
   # Aggregation
 
@@ -95,7 +97,7 @@ defmodule Explorer.Backend.Series do
   @callback distinct(s) :: s
   @callback unordered_distinct(s) :: s
   @callback n_distinct(s) :: integer()
-  @callback count(s) :: df
+  @callback count(s) :: df | lazy_s()
 
   # Rolling
 
@@ -112,8 +114,8 @@ defmodule Explorer.Backend.Series do
   # Nulls
 
   @callback fill_missing(s, strategy :: :backward | :forward | :min | :max | :mean) :: s
-  @callback nil?(s) :: s
-  @callback not_nil?(s) :: s
+  @callback is_nil(s) :: s
+  @callback is_not_nil(s) :: s
 
   # Escape hatch
 

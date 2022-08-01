@@ -87,13 +87,13 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
 
     test "with one group and two columns with aggregations", %{df: df} do
-      df1 = df |> DF.group_by("year") |> DF.summarise(total: [:max, :min], country: [:n_unique])
+      df1 = df |> DF.group_by("year") |> DF.summarise(total: [:max, :min], country: [:n_distinct])
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                year: [2010, 2011, 2012, 2013, 2014],
                total_min: [1, 2, 2, 2, 3],
                total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634],
-               country_n_unique: [217, 217, 220, 220, 220]
+               country_n_distinct: [217, 217, 220, 220, 220]
              }
     end
 
@@ -300,6 +300,20 @@ defmodule Explorer.DataFrame.GroupedTest do
                country: ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA"],
                total_max: [2308, 1254, 32500, 141, 7924],
                total_min: [2308, 1254, 32500, 141, 7924]
+             }
+    end
+
+    test "with one group and count", %{df: df} do
+      df1 =
+        df
+        |> DF.group_by(["year"])
+        |> DF.summarise_with(fn ldf ->
+          [count: Series.count(ldf["country"])]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               count: [217, 217, 220, 220, 220]
              }
     end
   end
