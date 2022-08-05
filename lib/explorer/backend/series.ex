@@ -8,9 +8,9 @@ defmodule Explorer.Backend.Series do
   @type t :: struct()
 
   @type s :: Explorer.Series.t()
-  @type lazy_s :: Explorer.Series.lazy()
+  @type lazy_s :: Explorer.Series.lazy_t()
   @type df :: Explorer.DataFrame.t()
-  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime
+  @type dtype :: Explorer.Series.dtype()
   @type valid_types :: number() | boolean() | String.t() | Date.t() | NaiveDateTime.t()
 
   # Conversion
