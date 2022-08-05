@@ -102,21 +102,60 @@ defmodule Explorer.DataFrame do
 
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type data :: Explorer.Backend.DataFrame.t()
   @enforce_keys [:data, :groups, :names, :dtypes]
   defstruct [:data, :groups, :names, :dtypes]
 
+  @typedoc """
+  Represents a column name as atom or string.
+  """
   @type column_name :: atom() | String.t()
-  @type column :: column_name() | non_neg_integer()
-  @type columns :: [column] | Range.t()
-  @type column_names :: [column_name]
-  @type column_pairs(other) :: [{column(), other}] | %{column() => other}
 
+  @typedoc """
+  Represents a column name or its index.
+  """
+  @type column :: column_name() | non_neg_integer()
+
+  @typedoc """
+  Represents multiple columns.
+
+  The columns may be specified as one of:
+
+    * a list of columns indexes or names as atoms and strings
+
+    * a range
+
+    * a one-arity function that receives column names and returns
+      true for column names to keep
+
+    * a two-arity function that receives column names and types and
+      returns true for column names to keep
+
+  """
+  @type columns ::
+          [column]
+          | Range.t()
+          | (String.t() -> boolean())
+          | (String.t(), Explorer.Series.dtype() -> boolean())
+
+  @typedoc """
+  Represents multiple column names as atoms or strings.
+  """
+  @type column_names :: [column_name]
+
+  @typedoc """
+  Represents a column pair where the value is a column name or
+  a column index, and the value is of type `value`.
+  """
+  @type column_pairs(value) :: [{column(), value}] | %{column() => value}
+
+  @typedoc """
+  Represents a dataframe.
+  """
   @type t :: %DataFrame{
-          data: data,
+          data: Explorer.Backend.DataFrame.t(),
           groups: [String.t()],
-          names: [Explorer.Backend.DataFrame.column_name()],
-          dtypes: %{Explorer.Backend.DataFrame.column_name() => Explorer.Backend.Series.dtype()}
+          names: [String.t()],
+          dtypes: %{String.t() => Explorer.Series.dtype()}
         }
 
   @default_infer_schema_length 1000
@@ -202,8 +241,35 @@ defmodule Explorer.DataFrame do
     |> then(fn {columns, _} -> columns end)
   end
 
-  defp to_existing_columns(df, %Range{} = columns) do
-    Enum.slice(df.names, columns)
+  defp to_existing_columns(%{names: names}, %Range{} = columns) do
+    Enum.slice(names, columns)
+  end
+
+  defp to_existing_columns(%{names: names}, callback) when is_function(callback, 1) do
+    Enum.filter(names, callback)
+  end
+
+  defp to_existing_columns(%{names: names, dtypes: dtypes}, callback)
+       when is_function(callback, 2) do
+    Enum.filter(names, fn name -> callback.(name, dtypes[name]) end)
+  end
+
+  defp to_existing_columns(_, other) do
+    raise ArgumentError, """
+    invalid columns specification. Columns may be specified as one of:
+
+      * a list of columns indexes or names as atoms and strings
+
+      * a range
+
+      * a one-arity function that receives column names and returns
+        true for column names to keep
+
+      * a two-arity function that receives column names and types and
+        returns true for column names to keep
+
+    Got: #{inspect(other)}
+    """
   end
 
   defp check_dtypes!(dtypes) do
@@ -886,7 +952,16 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-  You can select columns with a list of names:
+  You can select a single column:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.select(df, "a")
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        a string ["a", "b", "c"]
+      >
+
+  Or a list of names:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.select(df, ["a"])
@@ -894,7 +969,6 @@ defmodule Explorer.DataFrame do
         Polars[3 x 1]
         a string ["a", "b", "c"]
       >
-
 
   You can also use a range or a list of integers:
 
@@ -923,6 +997,15 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
+  Or a callback function that takes names and types:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.select(df, fn _name, type -> type == :integer end)
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        b integer [1, 2, 3]
+      >
+
   If you pass `:drop` as the third argument, it will return all but the named columns:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
@@ -943,14 +1026,14 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec select(
           df :: DataFrame.t(),
-          columns_or_callback :: columns() | function(),
-          keep_or_drop ::
-            :keep | :drop
+          column | columns,
+          keep_or_drop :: :keep | :drop
         ) :: DataFrame.t()
-  def select(df, columns_or_callback, keep_or_drop \\ :keep)
+  def select(df, columns_or_column, keep_or_drop \\ :keep)
 
-  def select(df, callback, keep_or_drop) when is_function(callback),
-    do: Enum.filter(df.names, callback) |> then(&select(df, &1, keep_or_drop))
+  def select(df, column, keep_or_drop) when is_column(column) do
+    select(df, [column], keep_or_drop)
+  end
 
   def select(df, columns, keep_or_drop) do
     columns = to_existing_columns(df, columns)
@@ -1003,15 +1086,6 @@ defmodule Explorer.DataFrame do
         b integer [2]
       >
 
-  Or you can invoke a callback on the dataframe:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, &Explorer.Series.greater(&1["b"], 1))
-      #Explorer.DataFrame<
-        Polars[2 x 2]
-        a string ["b", "c"]
-        b integer [2, 3]
-      >
   """
   @doc type: :single
   @spec filter(df :: DataFrame.t(), mask :: Series.t() | [boolean()]) :: DataFrame.t()
@@ -1035,15 +1109,7 @@ defmodule Explorer.DataFrame do
 
   @spec filter(df :: DataFrame.t(), callback :: function()) :: DataFrame.t()
   def filter(df, callback) when is_function(callback),
-    do:
-      df
-      |> callback.()
-      |> then(
-        &filter(
-          df,
-          &1
-        )
-      )
+    do: df |> callback.() |> then(&filter(df, &1))
 
   @doc false
   def filter_with(df, fun) when is_function(fun) do
@@ -1242,13 +1308,35 @@ defmodule Explorer.DataFrame do
         per_capita float [0.52, 0.0, 0.0, 1.04, 1.04, ...]
         bunker_fuels integer [0, 0, 0, 0, 0, ...]
       >
+
+  Alternatively you can pass a callback to sort by the given columns:
+
+      iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.arrange(df, &String.starts_with?(&1, "a"))
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a string ["a", "b", "c"]
+        b integer [3, 1, 2]
+      >
+
+  Or a callback to sort the columns of a given type:
+
+      iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.arrange(df, fn _name, type -> type == :string end)
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a string ["a", "b", "c"]
+        b integer [3, 1, 2]
+      >
+
   """
   @doc type: :single
   @spec arrange(
           df :: DataFrame.t(),
-          columns ::
-            column() | [column() | {:asc | :desc, column()}]
+          column_or_columns :: column() | columns() | [{:asc | :desc, column()}]
         ) :: DataFrame.t()
+  def arrange(df, columns_or_column)
+
   def arrange(df, columns) when is_list(columns) do
     {dirs, columns} =
       Enum.map(columns, fn
@@ -1264,11 +1352,15 @@ defmodule Explorer.DataFrame do
       |> Enum.unzip()
 
     columns = to_existing_columns(df, columns)
-
     Shared.apply_impl(df, :arrange, [Enum.zip(dirs, columns)])
   end
 
   def arrange(df, column) when is_column(column), do: arrange(df, [column])
+
+  def arrange(df, columns) do
+    columns = to_existing_columns(df, columns)
+    Shared.apply_impl(df, :arrange, [Enum.map(columns, &{:asc, &1})])
+  end
 
   @doc """
   Takes distinct rows by a selection of columns.
@@ -1339,9 +1431,6 @@ defmodule Explorer.DataFrame do
         nil ->
           df.names
 
-        callback when is_function(callback) ->
-          Enum.filter(df.names, callback)
-
         columns ->
           to_existing_columns(df, columns)
       end
@@ -1369,6 +1458,8 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
+  To drop nils on all columns:
+
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3])
       iex> Explorer.DataFrame.drop_nil(df)
       #Explorer.DataFrame<
@@ -1376,6 +1467,8 @@ defmodule Explorer.DataFrame do
         a integer [1]
         b integer [1]
       >
+
+  To select some columns:
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
       iex> Explorer.DataFrame.drop_nil(df, [:a, :c])
@@ -1386,6 +1479,8 @@ defmodule Explorer.DataFrame do
         c integer [5]
       >
 
+  To select some columns by range:
+
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
       iex> Explorer.DataFrame.drop_nil(df, 0..1)
       #Explorer.DataFrame<
@@ -1394,9 +1489,31 @@ defmodule Explorer.DataFrame do
         b integer [1]
         c integer [nil]
       >
+
+  Or to select columns by a callback on the names:
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
+      iex> Explorer.DataFrame.drop_nil(df, fn name -> name == "a" or name == "b" end)
+      #Explorer.DataFrame<
+        Polars[1 x 3]
+        a integer [1]
+        b integer [1]
+        c integer [nil]
+      >
+
+  Or to select columns by a callback on the names and types:
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5.0, 6.0])
+      iex> Explorer.DataFrame.drop_nil(df, fn _name, type -> type == :float end)
+      #Explorer.DataFrame<
+        Polars[2 x 3]
+        a integer [2, nil]
+        b integer [nil, 3]
+        c float [5.0, 6.0]
+      >
   """
   @doc type: :single
-  @spec drop_nil(df :: DataFrame.t(), columns_or_column :: column() | columns()) ::
+  @spec drop_nil(df :: DataFrame.t(), column() | columns()) ::
           DataFrame.t()
   def drop_nil(df, columns_or_column \\ 0..-1)
 
@@ -1549,23 +1666,9 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec rename_with(
-          df :: DataFrame.t(),
-          columns :: columns() | function(),
-          callback :: function()
-        ) ::
+  @spec rename_with(df :: DataFrame.t(), columns :: columns(), callback :: function()) ::
           DataFrame.t()
   def rename_with(df, columns \\ 0..-1//1, callback)
-
-  def rename_with(df, columns, callback) when is_function(callback) and is_function(columns) do
-    case df |> names() |> Enum.filter(columns) do
-      [column | _] = columns when is_column(column) ->
-        rename_with(df, columns, callback)
-
-      [] ->
-        df
-    end
-  end
 
   def rename_with(df, 0..-1//1, callback) when is_function(callback) do
     df.names
@@ -1574,11 +1677,15 @@ defmodule Explorer.DataFrame do
   end
 
   def rename_with(df, columns, callback) when is_function(callback) do
-    columns = to_existing_columns(df, columns)
+    case to_existing_columns(df, columns) do
+      [] ->
+        df
 
-    df.names
-    |> Enum.map(fn name -> if name in columns, do: callback.(name), else: name end)
-    |> then(&rename(df, &1))
+      columns ->
+        df.names
+        |> Enum.map(fn name -> if name in columns, do: callback.(name), else: name end)
+        |> then(&rename(df, &1))
+    end
   end
 
   @doc """
@@ -1586,14 +1693,18 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
+  To mark a single column as dummy:
+
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
-      iex> Explorer.DataFrame.dummies(df, ["a"])
+      iex> Explorer.DataFrame.dummies(df, "a")
       #Explorer.DataFrame<
         Polars[4 x 3]
         a_a integer [1, 0, 1, 0]
         a_b integer [0, 1, 0, 0]
         a_c integer [0, 0, 0, 1]
       >
+
+  Or multiple columns:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
       iex> Explorer.DataFrame.dummies(df, ["a", "b"])
@@ -1606,8 +1717,25 @@ defmodule Explorer.DataFrame do
         b_b integer [1, 0, 1, 0]
         b_d integer [0, 0, 0, 1]
       >
+
+  Or all string columns:
+
+      iex> df = Explorer.DataFrame.new(num: [1, 2, 3, 4], b: ["b", "a", "b", "d"])
+      iex> Explorer.DataFrame.dummies(df, fn _name, type -> type == :string end)
+      #Explorer.DataFrame<
+        Polars[4 x 3]
+        b_a integer [0, 1, 0, 0]
+        b_b integer [1, 0, 1, 0]
+        b_d integer [0, 0, 0, 1]
+      >
   """
   @doc type: :single
+  @spec dummies(df :: DataFrame.t(), column() | columns()) ::
+          DataFrame.t()
+  def dummies(df, columns_or_column)
+
+  def dummies(df, column) when is_column(column), do: dummies(df, [column])
+
   def dummies(df, columns),
     do: Shared.apply_impl(df, :dummies, [to_existing_columns(df, columns)])
 
@@ -1883,16 +2011,10 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec pivot_longer(
           df :: DataFrame.t(),
-          columns_to_pivot :: columns() | function(),
+          columns_to_pivot :: columns(),
           opts :: Keyword.t()
         ) :: DataFrame.t()
   def pivot_longer(df, columns_to_pivot, opts \\ [])
-
-  def pivot_longer(df, columns_to_pivot, opts) when is_function(columns_to_pivot),
-    do:
-      df.names
-      |> Enum.filter(columns_to_pivot)
-      |> then(&pivot_longer(df, &1, opts))
 
   def pivot_longer(df, columns_to_pivot, opts) do
     opts =
@@ -2025,11 +2147,10 @@ defmodule Explorer.DataFrame do
     id_columns =
       case opts[:id_columns] do
         fun when is_function(fun) ->
-          Enum.filter(names, fn name -> fun.(name) && name not in [names_from, values_from] end)
+          Enum.filter(names -- [names_from, values_from], fun)
 
         names ->
           names = to_existing_columns(df, names)
-
           Enum.filter(names, &(&1 not in [names_from, values_from]))
       end
 
