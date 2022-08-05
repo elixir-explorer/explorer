@@ -38,14 +38,14 @@ pub fn lf_tail(data: ExLazyFrame, length: u32) -> Result<ExLazyFrame, ExplorerEr
 #[rustler::nif]
 pub fn lf_names(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
     let lf = &data.resource.0;
-    Ok(lf.schema().iter_names().cloned().collect())
+    Ok(lf.schema()?.iter_names().cloned().collect())
 }
 
 #[rustler::nif]
 pub fn lf_dtypes(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
     let lf = &data.resource.0;
     Ok(lf
-        .schema()
+        .schema()?
         .iter_dtypes()
         .map(|dtype| dtype.to_string())
         .collect())

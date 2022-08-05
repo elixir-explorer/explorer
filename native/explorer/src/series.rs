@@ -195,7 +195,7 @@ pub fn s_unordered_distinct(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_value_counts(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let s = &data.resource.0;
-    let mut df = s.value_counts(true)?;
+    let mut df = s.value_counts(true, true)?;
     let df = df
         .try_apply("counts", |s: &Series| s.cast(&DataType::Int64))?
         .clone();
