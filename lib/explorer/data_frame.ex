@@ -2019,7 +2019,7 @@ defmodule Explorer.DataFrame do
   def pivot_longer(df, columns_to_pivot, opts) do
     opts =
       Keyword.validate!(opts,
-        keep: :all_except_pivot,
+        keep: 0..-1//1,
         drop: [],
         names_to: "variable",
         values_to: "value"
@@ -2029,41 +2029,26 @@ defmodule Explorer.DataFrame do
     values_to = to_column_name(opts[:values_to])
 
     columns_to_pivot = to_existing_columns(df, columns_to_pivot)
-
-    names = df.names
     dtypes = df.dtypes
 
     columns_to_keep =
       case opts[:keep] do
-        :all_except_pivot ->
-          names -- columns_to_pivot
-
-        columns when is_list(columns) ->
-          Enum.each(columns, fn column ->
-            if column in columns_to_pivot,
-              do:
-                raise(
-                  ArgumentError,
-                  "columns to keep must not include columns to pivot, but found #{inspect(column)} in both"
-                )
+        keep when is_list(keep) ->
+          Enum.each(keep, fn column ->
+            if column in columns_to_pivot do
+              raise ArgumentError,
+                    "columns to keep must not include columns to pivot, but found #{inspect(column)} in both"
+            end
           end)
 
-          to_existing_columns(df, columns)
+          to_existing_columns(df, keep)
 
-        callback when is_function(callback) ->
-          Enum.filter(names, fn name -> name not in columns_to_pivot && callback.(name) end)
+        keep ->
+          to_existing_columns(df, keep)
       end
 
-    columns_to_drop =
-      case opts[:drop] do
-        columns when is_list(columns) ->
-          to_existing_columns(df, columns)
-
-        callback when is_function(callback) ->
-          Enum.filter(names, fn name -> name not in columns_to_pivot && callback.(name) end)
-      end
-
-    columns_to_keep = columns_to_keep -- columns_to_drop
+    columns_to_keep =
+      (columns_to_keep -- columns_to_pivot) -- to_existing_columns(df, opts[:drop])
 
     values_dtype =
       dtypes
@@ -2135,8 +2120,6 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, id_columns: 0..-1, names_prefix: "")
 
     [values_from, names_from] = to_existing_columns(df, [values_from, names_from])
-
-    names = df.names
     dtypes = df.dtypes
 
     unless dtypes[values_from] in [:integer, :float, :date, :datetime] do
@@ -2144,15 +2127,7 @@ defmodule Explorer.DataFrame do
             "the values_from column must be numeric, but found #{dtypes[values_from]}"
     end
 
-    id_columns =
-      case opts[:id_columns] do
-        fun when is_function(fun) ->
-          Enum.filter(names -- [names_from, values_from], fun)
-
-        names ->
-          names = to_existing_columns(df, names)
-          Enum.filter(names, &(&1 not in [names_from, values_from]))
-      end
+    id_columns = to_existing_columns(df, opts[:id_columns]) -- [names_from, values_from]
 
     if id_columns == [] do
       raise ArgumentError,
