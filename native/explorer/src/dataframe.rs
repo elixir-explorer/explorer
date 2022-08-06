@@ -55,7 +55,7 @@ pub fn df_read_csv(
         .with_encoding(encoding)
         .with_columns(column_names)
         .with_dtypes(schema.as_ref())
-        .with_null_values(Some(NullValues::AllColumns(null_char)))
+        .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
         .finish()?;
 
     Ok(ExDataFrame::new(df))
