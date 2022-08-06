@@ -27,10 +27,9 @@ defmodule Explorer.Series do
 
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type data :: Explorer.Backend.Series.t()
-  @type dtype :: Explorer.Backend.Series.dtype()
-  @type t :: %Series{data: data, dtype: dtype()}
-  @type lazy :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
+  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime
+  @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
+  @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
   @enforce_keys [:data, :dtype]
   defstruct [:data, :dtype]
