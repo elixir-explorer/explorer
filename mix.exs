@@ -63,6 +63,7 @@ defmodule Explorer.MixProject do
       groups_for_functions: [
         "Functions: Single-table": &(&1[:type] == :single),
         "Functions: Multi-table": &(&1[:type] == :multi),
+        "Functions: Row-based": &(&1[:type] == :rows),
         "Functions: Introspection": &(&1[:type] == :introspection),
         "Functions: IO": &(&1[:type] == :io)
       ],

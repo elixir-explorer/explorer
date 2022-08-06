@@ -39,12 +39,15 @@ defmodule Explorer.DataFrame do
 
   ## Verbs
 
-  Explorer uses the idea of a consistent set of SQL-like `verbs` like [`dplyr`](https://dplyr.tidyverse.org)
-  which can help solve common data manipulation challenges. These are split into single table verbs and multiple table verbs.
+  Explorer uses the idea of a consistent set of SQL-like `verbs` like
+  [`dplyr`](https://dplyr.tidyverse.org) which can help solve common
+  data manipulation challenges. These are split into single table verbs,
+  multiple table verbs, and row-based verbs:
 
   ### Single table verbs
 
-  Single table verbs are (unsurprisingly) used for manipulating a single dataframe. These are:
+  Single table verbs are (unsurprisingly) used for manipulating a single dataframe.
+  Those operations typically driven by column names. These are:
 
   - `select/3` for picking variables
   - `filter/2` for picking rows based on predicates
@@ -63,6 +66,16 @@ defmodule Explorer.DataFrame do
   - `join/3` for performing SQL-like joins
   - `concat_rows/1` for vertically "stacking" dataframes
   - `concat_columns/1` for horizontally "stacking" dataframes
+
+  ### Row-based verbs
+
+  Those operations are driven by the row index. These are:
+
+  - `head/2` for picking the first rows
+  - `tail/2` for picking the last rows
+  - `slice/3` for slicing a section
+  - `take/2` for taking the given indexes
+  - `sample/2` for sampling the data-frame by row
 
   ## IO
 
@@ -850,7 +863,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321]
       >
   """
-  @doc type: :single
+  @doc type: :rows
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
   def head(df, nrows \\ @default_sample_nrows), do: Shared.apply_impl(df, :head, [nrows])
 
@@ -875,7 +888,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [761, 1, 153, 33, 9]
       >
   """
-  @doc type: :single
+  @doc type: :rows
   @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
   def tail(df, nrows \\ @default_sample_nrows), do: Shared.apply_impl(df, :tail, [nrows])
 
@@ -1690,7 +1703,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [30722, 251, 0, 10, 1256, ...]
       >
   """
-  @doc type: :single
+  @doc type: :rows
   def slice(df, offset, length), do: Shared.apply_impl(df, :slice, [offset, length])
 
   @doc """
@@ -1706,7 +1719,7 @@ defmodule Explorer.DataFrame do
         b string ["a", "c"]
       >
   """
-  @doc type: :single
+  @doc type: :rows
   def take(df, row_indices) when is_list(row_indices) do
     n_rows = n_rows(df)
 
@@ -1775,7 +1788,7 @@ defmodule Explorer.DataFrame do
       >
 
   """
-  @doc type: :single
+  @doc type: :rows
   @spec sample(df :: DataFrame.t(), n_or_frac :: number(), opts :: Keyword.t()) :: DataFrame.t()
   def sample(df, n_or_frac, opts \\ [])
 
