@@ -358,27 +358,29 @@ DataFrame.select(df, &String.ends_with?(&1, "fuel"), :drop)
 
 ### Filter
 
-The next verb we'll look at is `filter`. You can pass in a boolean mask series of the same size as the dataframe, but I find it's more handy to use callbacks on the dataframe to generate those masks.
-
-```elixir
-DataFrame.filter(df, &Series.equal(&1["country"], "AFGHANISTAN"))
-```
-
-```elixir
-filtered_df =
-  df
-  |> DataFrame.filter(&Series.equal(&1["country"], "ALGERIA"))
-  |> DataFrame.filter(&Series.greater(&1["year"], 2012))
-```
+The next verb we'll look at is `filter`. You can pass in a boolean mask series of the same size as the dataframe:
 
 ```elixir
 DataFrame.filter(filtered_df, [true, false])
 ```
 
+You can use the `filter_with` variant to pass anonymous functions:
+
+```elixir
+DataFrame.filter_with(df, &Series.equal(&1["country"], "AFGHANISTAN"))
+```
+
+```elixir
+filtered_df =
+  df
+  |> DataFrame.filter_with(&Series.equal(&1["country"], "ALGERIA"))
+  |> DataFrame.filter_with(&Series.greater(&1["year"], 2012))
+```
+
 Remember those helpful error messages?
 
 ```elixir
-DataFrame.filter(df, &Series.equal(&1["cuontry"], "AFGHANISTAN"))
+DataFrame.filter_with(df, &Series.equal(&1["cuontry"], "AFGHANISTAN"))
 ```
 
 ### Mutate

@@ -327,7 +327,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert grouped_df
              |> DF.ungroup()
-             |> DF.filter(&Series.equal(&1["country"], "HONDURAS"))
+             |> DF.filter_with(&Series.equal(&1["country"], "HONDURAS"))
              |> DF.pull("total")
              |> Series.first() == 2175
     end
