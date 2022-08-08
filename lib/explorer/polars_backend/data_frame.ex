@@ -308,6 +308,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def mutate_with(%DataFrame{groups: []} = df, %DataFrame{} = out_df, column_pairs) do
+    exprs =
+      for {name, lazy_series} <- column_pairs do
+        original_expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
+        Explorer.PolarsBackend.Expression.alias_expr(original_expr, name)
+      end
+
+    # groups_exprs = for group <- groups, do: Native.expr_column(group)
+
+    Shared.apply_dataframe(df, out_df, :df_with_column_exprs, [exprs])
+  end
+
+  @impl true
   def arrange(%DataFrame{groups: groups} = df, columns) do
     {directions, columns} =
       columns

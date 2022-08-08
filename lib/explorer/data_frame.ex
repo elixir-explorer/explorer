@@ -1276,6 +1276,52 @@ defmodule Explorer.DataFrame do
     %{df | names: new_names, dtypes: new_dtypes}
   end
 
+  # TODO: handle case when using groups.
+  def mutate_with(%DataFrame{} = df, fun) when is_function(fun) do
+    ldf = to_opaque_lazy(df)
+
+    result = fun.(ldf)
+
+    column_pairs =
+      to_column_pairs(df, result, fn value ->
+        case value do
+          # %Series{data: %LazySeries{aggregation: true, op: op}} ->
+          #   # TODO: there are some operations that may be accepted here (like first, last and count).
+          #   raise "expecting mutate without an aggregation operation inside. But instead got #{inspect(op)}."
+
+          %Series{data: %LazySeries{}} ->
+            value
+
+          other ->
+            raise "expecting a lazy series, but instead got #{inspect(other)}"
+        end
+      end)
+
+    new_dtypes = names_with_dtypes_for_mutate_with(df, column_pairs)
+    new_names = for {name, _} <- new_dtypes, do: name
+    df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes)}
+
+    column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
+
+    Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
+  end
+
+  defp names_with_dtypes_for_mutate_with(df, column_pairs) do
+    new_names_with_dtypes =
+      for {column_name, series} <- column_pairs do
+        {column_name, series.dtype}
+      end
+
+    column_names = for {name, _} <- column_pairs, do: name
+
+    existing_dtypes =
+      for name <- df.names, name not in column_names do
+        {name, df.dtypes[name]}
+      end
+
+    existing_dtypes ++ new_names_with_dtypes
+  end
+
   @doc """
   Arranges/sorts rows by columns.
 
@@ -2734,7 +2780,7 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    new_dtypes = names_with_dtypes_for_summarise_with(df, column_pairs)
+    new_dtypes = names_with_dtypes_for_column_pairs(df, column_pairs)
     new_names = for {name, _} <- new_dtypes, do: name
     df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: []}
 
@@ -2743,15 +2789,15 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :summarise_with, [df_out, column_pairs])
   end
 
-  defp names_with_dtypes_for_summarise_with(df, column_pairs) do
+  defp names_with_dtypes_for_column_pairs(df, column_pairs) do
     groups = for group <- df.groups, do: {group, df.dtypes[group]}
 
-    agg_pairs =
-      for {column_name, aggregation} <- column_pairs do
-        {column_name, aggregation.dtype}
+    names_with_dtypes =
+      for {column_name, series} <- column_pairs do
+        {column_name, series.dtype}
       end
 
-    groups ++ agg_pairs
+    groups ++ names_with_dtypes
   end
 
   @doc """

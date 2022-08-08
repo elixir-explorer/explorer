@@ -97,6 +97,7 @@ rustler::init!(
         df_vstack_many,
         df_width,
         df_with_columns,
+        df_with_column_exprs,
         df_write_ipc,
         df_write_parquet,
         // expressions
