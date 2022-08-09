@@ -373,9 +373,9 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{
                "a" => :integer,
                "b" => :string,
-               "c" => :float,
-               "d" => :float,
-               "e" => :float,
+               "c" => :integer,
+               "d" => :integer,
+               "e" => :integer,
                "f" => :float,
                "g" => :integer,
                "h" => :integer

@@ -137,7 +137,11 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, dtype)
   end
 
-  defp dtype_for_agg_operation(op, series) when op in [:sum, :min, :max], do: series.dtype
+  defp dtype_for_agg_operation(:count, _), do: :integer
+
+  defp dtype_for_agg_operation(op, series) when op in [:first, :last, :sum, :min, :max],
+    do: series.dtype
+
   defp dtype_for_agg_operation(_, _), do: :float
 
   defp resolve_numeric_dtype(items) do
