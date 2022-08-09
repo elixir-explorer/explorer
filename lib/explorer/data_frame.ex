@@ -1276,7 +1276,7 @@ defmodule Explorer.DataFrame do
     %{df | names: new_names, dtypes: new_dtypes}
   end
 
-  # TODO: handle case when using groups.
+  @doc false
   def mutate_with(%DataFrame{} = df, fun) when is_function(fun) do
     ldf = to_opaque_lazy(df)
 
@@ -1285,10 +1285,6 @@ defmodule Explorer.DataFrame do
     column_pairs =
       to_column_pairs(df, result, fn value ->
         case value do
-          # %Series{data: %LazySeries{aggregation: true, op: op}} ->
-          #   # TODO: there are some operations that may be accepted here (like first, last and count).
-          #   raise "expecting mutate without an aggregation operation inside. But instead got #{inspect(op)}."
-
           %Series{data: %LazySeries{}} ->
             value
 

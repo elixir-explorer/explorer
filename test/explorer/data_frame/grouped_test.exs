@@ -353,6 +353,39 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "mutate_with/2" do
+    test "adds new columns when there is a group" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [1, 1, 2])
+
+      df1 = DF.group_by(df, :c)
+
+      df2 =
+        DF.mutate_with(df1, fn ldf ->
+          [d: Series.add(ldf["a"], -7.1), e: Series.count(ldf["c"])]
+        end)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [1, 1, 2],
+               d: [-6.1, -5.1, -4.1],
+               e: [2, 2, 1]
+             }
+
+      assert df2.names == ["a", "b", "c", "d", "e"]
+
+      assert df2.dtypes == %{
+               "a" => :integer,
+               "b" => :string,
+               "c" => :integer,
+               "d" => :float,
+               "e" => :integer
+             }
+
+      assert df2.groups == ["c"]
+    end
+  end
+
   describe "distinct/2" do
     test "with one group", %{df: df} do
       df1 = DF.group_by(df, "year")
