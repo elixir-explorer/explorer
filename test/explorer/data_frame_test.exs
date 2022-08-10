@@ -323,6 +323,66 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "mutate_with/2" do
+    test "adds a new column" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [c: Series.add(ldf["a"], 5)]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [6, 7, 8]
+             }
+
+      assert df1.names == ["a", "b", "c"]
+      assert df1.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer}
+    end
+
+    test "adds a new column with some aggregations without groups" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            c: Series.first(ldf["a"]),
+            d: Series.last(ldf["a"]),
+            e: Series.count(ldf["a"]),
+            f: Series.median(ldf["a"]),
+            g: Series.sum(ldf["a"]),
+            h: Series.min(ldf["a"]) |> Series.add(ldf["a"])
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [1, 1, 1],
+               d: [3, 3, 3],
+               e: [3, 3, 3],
+               f: [2.0, 2.0, 2.0],
+               g: [6, 6, 6],
+               h: [2, 3, 4]
+             }
+
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h"]
+
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "b" => :string,
+               "c" => :integer,
+               "d" => :integer,
+               "e" => :integer,
+               "f" => :float,
+               "g" => :integer,
+               "h" => :integer
+             }
+    end
+  end
+
   describe "arrange/3" do
     test "raises with invalid column names", %{df: df} do
       assert_raise ArgumentError,

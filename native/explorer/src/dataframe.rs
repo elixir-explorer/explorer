@@ -524,6 +524,20 @@ pub fn df_with_columns(
     Ok(ExDataFrame::new(new_df))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_with_column_exprs(
+    data: ExDataFrame,
+    columns: Vec<ExExpr>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let df: DataFrame = data.resource.0.clone();
+    let new_df = df
+        .lazy()
+        .with_columns(ex_expr_to_exprs(columns))
+        .collect()?;
+
+    Ok(ExDataFrame::new(new_df))
+}
+
 #[rustler::nif]
 pub fn df_new(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
     let columns = to_series_collection(columns);
@@ -589,17 +603,20 @@ pub fn df_groupby_agg_with(
     aggs: Vec<ExExpr>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = data.resource.0.clone();
-    let groups: Vec<Expr> = groups
-        .iter()
-        .map(|ex_expr| ex_expr.resource.0.clone())
-        .collect();
-    let aggs: Vec<Expr> = aggs
+    let groups = ex_expr_to_exprs(groups);
+    let aggs = ex_expr_to_exprs(aggs);
+
+    let new_df = df.lazy().groupby_stable(groups).agg(aggs).collect()?;
+    Ok(ExDataFrame::new(new_df))
+}
+
+fn ex_expr_to_exprs(ex_exprs: Vec<ExExpr>) -> Vec<Expr> {
+    let exprs: Vec<Expr> = ex_exprs
         .iter()
         .map(|ex_expr| ex_expr.resource.0.clone())
         .collect();
 
-    let new_df = df.lazy().groupby_stable(groups).agg(aggs).collect()?;
-    Ok(ExDataFrame::new(new_df))
+    exprs
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
