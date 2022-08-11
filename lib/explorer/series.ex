@@ -1311,14 +1311,6 @@ defmodule Explorer.Series do
         [true, true, false]
       >
 
-      iex> s1 = Explorer.Series.from_list([true, false, true])
-      iex> s2 = Explorer.Series.from_list([false, false, true])
-      iex> Explorer.Series.equal(s1, s2)
-      #Explorer.Series<
-        boolean[3]
-        [false, true, true]
-      >
-
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.equal(s, 1)
       #Explorer.Series<
