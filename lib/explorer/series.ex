@@ -1311,6 +1311,14 @@ defmodule Explorer.Series do
         [true, true, false]
       >
 
+      iex> s1 = Explorer.Series.from_list([true, false, true])
+      iex> s2 = Explorer.Series.from_list([false, false, true])
+      iex> Explorer.Series.equal(s1, s2)
+      #Explorer.Series<
+        boolean[3]
+        [false, true, true]
+      >
+
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.equal(s, 1)
       #Explorer.Series<
@@ -1558,9 +1566,8 @@ defmodule Explorer.Series do
     end
   end
 
-  defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype})
-       when numeric_or_date_dtype?(dtype),
-       do: true
+  defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype}),
+    do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
        when K.and(numeric_dtype?(left_dtype), numeric_dtype?(right_dtype)),
