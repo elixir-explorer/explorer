@@ -1558,9 +1558,8 @@ defmodule Explorer.Series do
     end
   end
 
-  defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype})
-       when numeric_or_date_dtype?(dtype),
-       do: true
+  defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype}),
+    do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
        when K.and(numeric_dtype?(left_dtype), numeric_dtype?(right_dtype)),

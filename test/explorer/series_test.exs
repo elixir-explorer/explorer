@@ -48,4 +48,12 @@ defmodule Explorer.SeriesTest do
 
     assert Series.to_list(s2) == [1, 4, 3]
   end
+
+  describe "equal/2" do
+    test "can compare boolean series" do
+      s1 = Series.from_list([true, false, true])
+      s2 = Series.from_list([false, true, true])
+      assert s1 |> Series.equal(s2) |> Series.to_list() == [false, false, true]
+    end
+  end
 end
