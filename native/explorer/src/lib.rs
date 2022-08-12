@@ -139,6 +139,8 @@ rustler::init!(
         expr_count,
         expr_first,
         expr_last,
+        // window expressions
+        expr_window_max,
         // inspect expressions
         expr_describe_filter_plan,
         // lazyframe

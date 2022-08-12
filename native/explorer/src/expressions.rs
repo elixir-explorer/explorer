@@ -5,7 +5,7 @@
 // wrapped in an Elixir struct.
 
 use chrono::{NaiveDate, NaiveDateTime};
-use polars::prelude::{col, when, DataFrame, IntoLazy};
+use polars::prelude::{col, when, DataFrame, IntoLazy, Duration, RollingOptions};
 use polars::prelude::{Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
@@ -260,6 +260,33 @@ pub fn expr_coalesce(left: ExExpr, right: ExExpr) -> ExExpr {
     let condition = when(predicate).then(left_expr).otherwise(right_expr);
 
     ExExpr::new(condition)
+}
+
+// window functions
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn expr_window_max(
+    data: ExExpr,
+    window_size: usize,
+    weights: Option<Vec<f64>>,
+    min_periods: Option<usize>,
+    center: bool,
+) -> ExExpr {
+    let expr: Expr = data.resource.0.clone();
+    let min_periods = if let Some(mp) = min_periods {
+        mp
+    } else {
+        window_size
+    };
+    let window_size_duration = Duration::new(window_size as i64);
+    let rolling_opts = RollingOptions {
+        window_size: window_size_duration,
+        weights,
+        min_periods,
+        center,
+        ..Default::default()
+    };
+    ExExpr::new(expr.rolling_max(rolling_opts))
 }
 
 #[rustler::nif]

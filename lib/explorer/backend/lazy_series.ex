@@ -34,6 +34,8 @@ defmodule Explorer.Backend.LazySeries do
     pow: 2,
     # Slice and dice
     coalesce: 2,
+    # Window functions
+    window_max: 5,
     # Aggregations
     sum: 1,
     min: 1,
