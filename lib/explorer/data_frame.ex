@@ -1624,8 +1624,19 @@ defmodule Explorer.DataFrame do
   def rename(df, [name | _] = names) when is_column_name(name) do
     new_names = to_column_names(names)
     check_new_names_length!(df, new_names)
+    mapping = Enum.zip(df.names, new_names)
 
-    out_df = %{df | names: new_names}
+    dtypes =
+      for {old_name, new_name} <- mapping,
+          do: {new_name, Map.fetch!(df.dtypes, old_name)},
+          into: %{}
+
+    new_groups =
+      mapping
+      |> Map.new()
+      |> then(fn map -> Enum.map(df.groups, fn group -> Map.fetch!(map, group) end) end)
+
+    out_df = %{df | names: new_names, dtypes: dtypes, groups: new_groups}
 
     Shared.apply_impl(df, :rename, [out_df])
   end

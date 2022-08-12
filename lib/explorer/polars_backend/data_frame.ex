@@ -386,7 +386,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def rename(%DataFrame{} = df, %DataFrame{} = out_df),
-    do: Shared.apply_dataframe(df, out_df, :df_set_column_names, [out_df.names])
+    do: Shared.apply_dataframe(df, out_df, :df_rename_columns, [Enum.zip(df.names, out_df.names)])
 
   @impl true
   def dummies(df, names),
@@ -435,7 +435,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       end)
 
     if names != new_names do
-      Shared.apply_dataframe(df, :df_set_column_names, [new_names])
+      Shared.apply_dataframe(df, :df_rename_columns, [Enum.zip(names, new_names)])
     else
       df
     end

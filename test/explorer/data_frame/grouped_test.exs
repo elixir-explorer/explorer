@@ -109,6 +109,26 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
     end
 
+    test "pivote_wider and then summarise with a rename" do
+      df =
+        DF.new(
+          names: ["cou", "adv", "spo", "cou", "adv", "spo"],
+          val: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+          team: ["A", "A", "A", "B", "B", "B"]
+        )
+
+      df2 =
+        df
+        |> DF.pivot_wider("names", "val")
+        |> DF.group_by("team")
+        |> DF.summarise(%{"adv" => [:max], "cou" => [:max], "spo" => [:max]})
+        |> DF.rename(cou_max: "cou", adv_max: "adv", spo_max: "spo")
+
+      assert Series.to_list(df2["cou"]) == [1.0, 4.0]
+      assert Series.to_list(df2["adv"]) == [2.0, 5.0]
+      assert Series.to_list(df2["spo"]) == [3.0, 6.0]
+    end
+
     test "with two groups and two columns with aggregations", %{df: df} do
       equal_filters =
         for country <- ["BRAZIL", "AUSTRALIA", "POLAND"], do: Series.equal(df["country"], country)
