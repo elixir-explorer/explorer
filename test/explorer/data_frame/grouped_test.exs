@@ -109,7 +109,7 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
     end
 
-    test "pivote_wider and then summarise with a rename" do
+    test "pivot_wider and then summarise with a rename" do
       df =
         DF.new(
           names: ["cou", "adv", "spo", "cou", "adv", "spo"],
