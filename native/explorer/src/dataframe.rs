@@ -546,14 +546,16 @@ pub fn df_new(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_set_column_names(
+pub fn df_rename_columns(
     data: ExDataFrame,
-    names: Vec<&str>,
+    renames: Vec<(&str, &str)>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
-    let mut new_df = df.clone();
-    new_df.set_column_names(&names)?;
-    Ok(ExDataFrame::new(new_df))
+    let mut df: DataFrame = data.resource.0.clone();
+    for (original, new_name) in renames {
+        df.rename(original, new_name).expect("should rename");
+    }
+
+    Ok(ExDataFrame::new(df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

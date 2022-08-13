@@ -225,33 +225,26 @@ defmodule Explorer.DataFrame do
   defp column_index_map(names),
     do: for({name, idx} <- Enum.with_index(names), into: %{}, do: {idx, name})
 
-  # Normalize column names without verifying if they exist.
-  defp to_column_names(names) when is_list(names),
-    do: Enum.map(names, &to_column_name/1)
-
   # Normalize column names and raise if column does not exist.
   defp to_existing_columns(df, columns) when is_list(columns) do
-    existing_columns = df.names
+    {columns, _cache} =
+      Enum.map_reduce(columns, nil, fn
+        column, maybe_map when is_integer(column) ->
+          map = maybe_map || column_index_map(df.names)
+          existing_column = fetch_column_at!(map, column)
+          {existing_column, map}
+
+        column, maybe_map when is_atom(column) ->
+          column = Atom.to_string(column)
+          maybe_raise_column_not_found(df, column)
+          {column, maybe_map}
+
+        column, maybe_map when is_binary(column) ->
+          maybe_raise_column_not_found(df, column)
+          {column, maybe_map}
+      end)
 
     columns
-    |> Enum.map_reduce(nil, fn
-      column, maybe_map when is_integer(column) ->
-        map = maybe_map || column_index_map(existing_columns)
-
-        existing_column = fetch_column_at!(map, column)
-
-        {existing_column, map}
-
-      column, maybe_map when is_atom(column) ->
-        column = Atom.to_string(column)
-        maybe_raise_column_not_found(existing_columns, column)
-        {column, maybe_map}
-
-      column, maybe_map when is_binary(column) ->
-        maybe_raise_column_not_found(existing_columns, column)
-        {column, maybe_map}
-    end)
-    |> then(fn {columns, _} -> columns end)
   end
 
   defp to_existing_columns(%{names: names}, %Range{} = columns) do
@@ -1622,27 +1615,38 @@ defmodule Explorer.DataFrame do
         ) ::
           DataFrame.t()
   def rename(df, [name | _] = names) when is_column_name(name) do
-    new_names = to_column_names(names)
-    check_new_names_length!(df, new_names)
-
-    out_df = %{df | names: new_names}
-
-    Shared.apply_impl(df, :rename, [out_df])
+    check_new_names_length!(df, names)
+    rename(df, Enum.zip(df.names, names))
   end
 
   def rename(df, names) when is_column_pairs(names) do
-    pairs = to_column_pairs(df, names, &to_column_name(&1))
-    old_names = df.names
+    case to_column_pairs(df, names, &to_column_name(&1)) do
+      [] ->
+        df
 
-    for {name, _} <- pairs do
-      maybe_raise_column_not_found(old_names, name)
+      pairs ->
+        pairs_map = Map.new(pairs)
+        old_dtypes = df.dtypes
+
+        for {name, _} <- pairs do
+          maybe_raise_column_not_found(df, name)
+        end
+
+        new_dtypes =
+          for name <- df.names do
+            {Map.get(pairs_map, name, name), Map.fetch!(old_dtypes, name)}
+          end
+
+        new_names = Enum.map(new_dtypes, &elem(&1, 0))
+
+        new_groups =
+          for group <- df.groups do
+            Map.get(pairs_map, group, group)
+          end
+
+        out_df = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: new_groups}
+        Shared.apply_impl(df, :rename, [out_df, pairs])
     end
-
-    pairs_map = Map.new(pairs)
-
-    old_names
-    |> Enum.map(fn name -> Map.get(pairs_map, name, name) end)
-    |> then(&rename(df, &1))
   end
 
   defp check_new_names_length!(df, names) do
@@ -1729,15 +1733,9 @@ defmodule Explorer.DataFrame do
   end
 
   def rename_with(df, columns, callback) when is_function(callback) do
-    case to_existing_columns(df, columns) do
-      [] ->
-        df
-
-      columns ->
-        df.names
-        |> Enum.map(fn name -> if name in columns, do: callback.(name), else: name end)
-        |> then(&rename(df, &1))
-    end
+    columns = to_existing_columns(df, columns)
+    renames = for name <- df.names, name in columns, do: {name, callback.(name)}
+    rename(df, renames)
   end
 
   @doc """
@@ -2847,13 +2845,13 @@ defmodule Explorer.DataFrame do
     :"#{backend}.DataFrame"
   end
 
-  defp maybe_raise_column_not_found(names, name) do
-    if name not in names,
-      do:
-        raise(
-          ArgumentError,
-          List.to_string(["could not find column name \"#{name}\""] ++ did_you_mean(name, names))
-        )
+  defp maybe_raise_column_not_found(df, name) do
+    unless Map.has_key?(df.dtypes, name) do
+      raise ArgumentError,
+            List.to_string(
+              ["could not find column name \"#{name}\""] ++ did_you_mean(name, df.names)
+            )
+    end
   end
 
   @threshold 0.77

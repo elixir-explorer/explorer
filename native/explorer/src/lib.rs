@@ -84,7 +84,7 @@ rustler::init!(
         df_write_ndjson,
         df_select,
         df_select_at_idx,
-        df_set_column_names,
+        df_rename_columns,
         df_shape,
         df_slice,
         df_sort,

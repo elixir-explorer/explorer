@@ -82,7 +82,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_read_parquet(_filename), do: err()
   def df_select(_df, _selection), do: err()
   def df_select_at_idx(_df, _idx), do: err()
-  def df_set_column_names(_df, _names), do: err()
+  def df_rename_columns(_df, _old_new_pairs), do: err()
   def df_shape(_df), do: err()
   def df_slice(_df, _offset, _length), do: err()
   def df_sort(_df, _by, _reverse, _groups), do: err()

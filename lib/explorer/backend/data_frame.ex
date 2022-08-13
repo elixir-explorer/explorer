@@ -88,7 +88,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback mutate_with(df, out_df :: df(), mutations :: [{column_name(), mutate_value()}]) :: df
   @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()], keep_all? :: boolean()) :: df
-  @callback rename(df, out_df :: df()) :: df
+  @callback rename(df, out_df :: df(), [{old :: column_name(), new :: column_name()}]) :: df
   @callback dummies(df, columns :: [column_name()]) :: df
   @callback sample(df, n :: integer(), replacement :: boolean(), seed :: integer()) :: df
   @callback pull(df, column :: column_name()) :: series

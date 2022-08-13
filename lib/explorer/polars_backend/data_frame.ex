@@ -385,8 +385,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def rename(%DataFrame{} = df, %DataFrame{} = out_df),
-    do: Shared.apply_dataframe(df, out_df, :df_set_column_names, [out_df.names])
+  def rename(%DataFrame{} = df, %DataFrame{} = out_df, pairs),
+    do: Shared.apply_dataframe(df, out_df, :df_rename_columns, [pairs])
 
   @impl true
   def dummies(df, names),
@@ -434,12 +434,20 @@ defmodule Explorer.PolarsBackend.DataFrame do
         if name in id_columns, do: name, else: names_prefix <> name
       end)
 
-    if names != new_names do
-      Shared.apply_dataframe(df, :df_set_column_names, [new_names])
-    else
-      df
+    case zip_diff(names, new_names) do
+      [] -> df
+      renames -> Shared.apply_dataframe(df, :df_rename_columns, [renames])
     end
   end
+
+  defp zip_diff([name | lefties], [name | righties]),
+    do: zip_diff(lefties, righties)
+
+  defp zip_diff([old_name | lefties], [new_name | righties]),
+    do: [{old_name, new_name} | zip_diff(lefties, righties)]
+
+  defp zip_diff([], []),
+    do: []
 
   # Two or more table verbs
 
