@@ -1637,8 +1637,7 @@ defmodule Explorer.DataFrame do
             {Map.get(pairs_map, name, name), Map.fetch!(old_dtypes, name)}
           end
 
-        new_names =
-          Enum.map(new_dtypes, &elem(&1, 0))
+        new_names = Enum.map(new_dtypes, &elem(&1, 0))
 
         new_groups =
           for group <- df.groups do
