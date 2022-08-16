@@ -359,22 +359,9 @@ pub fn s_rolling_sum(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let min_periods = if let Some(mp) = min_periods {
-        mp
-    } else {
-        window_size
-    };
-    let window_size_duration = Duration::new(window_size as i64);
-
-    let s = &data.resource.0;
-    let rolling_opts = RollingOptions {
-        window_size: window_size_duration,
-        weights,
-        min_periods,
-        center,
-        ..Default::default()
-    };
-    let s1 = s.rolling_sum(rolling_opts.into())?;
+    let s: &Series = &data.resource.0;
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let s1 = s.rolling_sum(opts.into())?;
     Ok(ExSeries::new(s1))
 }
 
@@ -386,22 +373,9 @@ pub fn s_rolling_mean(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let min_periods = if let Some(mp) = min_periods {
-        mp
-    } else {
-        window_size
-    };
-    let window_size_duration = Duration::new(window_size as i64);
-
-    let s = &data.resource.0;
-    let rolling_opts = RollingOptions {
-        window_size: window_size_duration,
-        min_periods,
-        weights,
-        center,
-        ..Default::default()
-    };
-    let s1 = s.rolling_mean(rolling_opts.into())?;
+    let s: &Series = &data.resource.0;
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let s1 = s.rolling_mean(opts.into())?;
     Ok(ExSeries::new(s1))
 }
 
@@ -413,21 +387,9 @@ pub fn s_rolling_max(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let min_periods = if let Some(mp) = min_periods {
-        mp
-    } else {
-        window_size
-    };
-    let s = &data.resource.0;
-    let window_size_duration = Duration::new(window_size as i64);
-    let rolling_opts = RollingOptions {
-        window_size: window_size_duration,
-        weights,
-        min_periods,
-        center,
-        ..Default::default()
-    };
-    let s1 = s.rolling_max(rolling_opts.into())?;
+    let s: &Series = &data.resource.0;
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let s1 = s.rolling_max(opts.into())?;
     Ok(ExSeries::new(s1))
 }
 
@@ -439,22 +401,33 @@ pub fn s_rolling_min(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
+    let s: &Series = &data.resource.0;
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let s1 = s.rolling_min(opts.into())?;
+    Ok(ExSeries::new(s1))
+}
+
+// Used for rolling functions - also see "expressions" module
+pub fn rolling_opts(
+    window_size: usize,
+    weights: Option<Vec<f64>>,
+    min_periods: Option<usize>,
+    center: bool,
+) -> RollingOptions {
     let min_periods = if let Some(mp) = min_periods {
         mp
     } else {
         window_size
     };
     let window_size_duration = Duration::new(window_size as i64);
-    let s = &data.resource.0;
-    let rolling_opts = RollingOptions {
+
+    RollingOptions {
         window_size: window_size_duration,
         weights,
         min_periods,
         center,
         ..Default::default()
-    };
-    let s1 = s.rolling_min(rolling_opts.into())?;
-    Ok(ExSeries::new(s1))
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

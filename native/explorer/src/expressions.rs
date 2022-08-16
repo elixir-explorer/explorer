@@ -5,10 +5,11 @@
 // wrapped in an Elixir struct.
 
 use chrono::{NaiveDate, NaiveDateTime};
-use polars::prelude::{col, when, DataFrame, IntoLazy, Duration, RollingOptions};
+use polars::prelude::{col, when, DataFrame, IntoLazy};
 use polars::prelude::{Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
+use crate::series::rolling_opts;
 use crate::{ExDataFrame, ExExpr};
 
 #[rustler::nif]
@@ -273,20 +274,8 @@ pub fn expr_window_max(
     center: bool,
 ) -> ExExpr {
     let expr: Expr = data.resource.0.clone();
-    let min_periods = if let Some(mp) = min_periods {
-        mp
-    } else {
-        window_size
-    };
-    let window_size_duration = Duration::new(window_size as i64);
-    let rolling_opts = RollingOptions {
-        window_size: window_size_duration,
-        weights,
-        min_periods,
-        center,
-        ..Default::default()
-    };
-    ExExpr::new(expr.rolling_max(rolling_opts))
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    ExExpr::new(expr.rolling_max(opts))
 }
 
 #[rustler::nif]
