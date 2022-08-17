@@ -9,6 +9,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @behaviour Explorer.Backend.Series
 
+  # TODO: Validate if the window field is really required once we have distinct_with/arrange_with
   defstruct op: nil, args: [], aggregation: false, window: false
 
   @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean(), window: boolean()}
@@ -137,9 +138,7 @@ defmodule Explorer.Backend.LazySeries do
 
       args = [lazy_series!(series), window_size, weights, min_periods, center]
 
-      if aggregations?(args) do
-        raise "it's not possible to have an aggregation operation inside a window function"
-      end
+      if aggregations?(args), do: raise_agg_inside_window(unquote(op))
 
       dtype = resolve_numeric_dtype([series | List.wrap(weights)])
 
@@ -154,14 +153,17 @@ defmodule Explorer.Backend.LazySeries do
     def unquote(op)(%Series{} = series, reverse) do
       args = [lazy_series!(series), reverse]
 
-      if aggregations?(args) do
-        raise "it's not possible to have an aggregation operation inside a window function"
-      end
+      if aggregations?(args), do: raise_agg_inside_window(unquote(op))
 
       data = new(unquote(op), args, false, true)
 
       Backend.Series.new(data, series.dtype)
     end
+  end
+
+  defp raise_agg_inside_window(op) do
+    raise "it's not possible to have an aggregation operation inside #{inspect(op)}, " <>
+            "which is a window function"
   end
 
   @impl true
