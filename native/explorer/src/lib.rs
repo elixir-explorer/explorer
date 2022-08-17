@@ -141,6 +141,9 @@ rustler::init!(
         expr_last,
         // window expressions
         expr_window_max,
+        expr_window_mean,
+        expr_window_min,
+        expr_window_sum,
         // inspect expressions
         expr_describe_filter_plan,
         // lazyframe

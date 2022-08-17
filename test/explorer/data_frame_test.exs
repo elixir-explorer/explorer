@@ -347,13 +347,16 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate_with(df, fn ldf ->
+          a = ldf["a"]
+
           [
-            c: Series.first(ldf["a"]),
-            d: Series.last(ldf["a"]),
-            e: Series.count(ldf["a"]),
-            f: Series.median(ldf["a"]),
-            g: Series.sum(ldf["a"]),
-            h: Series.min(ldf["a"]) |> Series.add(ldf["a"])
+            c: Series.first(a),
+            d: Series.last(a),
+            e: Series.count(a),
+            f: Series.median(a),
+            g: Series.sum(a),
+            h: Series.min(a) |> Series.add(a),
+            i: Series.quantile(a, 0.2)
           ]
         end)
 
@@ -365,10 +368,11 @@ defmodule Explorer.DataFrameTest do
                e: [3, 3, 3],
                f: [2.0, 2.0, 2.0],
                g: [6, 6, 6],
-               h: [2, 3, 4]
+               h: [2, 3, 4],
+               i: [1, 1, 1]
              }
 
-      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h"]
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
 
       assert df1.dtypes == %{
                "a" => :integer,
@@ -378,7 +382,32 @@ defmodule Explorer.DataFrameTest do
                "e" => :integer,
                "f" => :float,
                "g" => :integer,
-               "h" => :integer
+               "h" => :integer,
+               "i" => :integer
+             }
+    end
+
+    test "adds some columns with window functions" do
+      df = DF.new(a: Enum.to_list(1..10))
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          a = ldf["a"]
+
+          [
+            b: Series.window_max(a, 2, weights: [1.0, 2.0]),
+            c: Series.window_mean(a, 2, weights: [1.0, 2.0]),
+            d: Series.window_min(a, 2, weights: [1.0, 2.0]),
+            e: Series.window_sum(a, 2, weights: [1.0, 2.0])
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+               b: [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
+               c: [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5],
+               d: [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
+               e: [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
              }
     end
   end
