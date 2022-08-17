@@ -11,7 +11,15 @@ defmodule Explorer.PolarsBackend.Expression do
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
-  @window_operations [window_max: 5, window_mean: 5, window_min: 5, window_sum: 5]
+  @window_operations [
+    cumulative_max: 2,
+    cumulative_min: 2,
+    cumulative_sum: 2,
+    window_max: 5,
+    window_mean: 5,
+    window_min: 5,
+    window_sum: 5
+  ]
   @special_operations [column: 1, quantile: 2] ++ @window_operations
 
   # Some operations are special because they don't receive all args as lazy series.

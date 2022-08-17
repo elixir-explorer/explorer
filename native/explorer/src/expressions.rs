@@ -287,6 +287,24 @@ init_window_expr_fun!(expr_window_sum, rolling_sum);
 init_window_expr_fun!(expr_window_mean, rolling_mean);
 
 #[rustler::nif]
+pub fn expr_cumulative_min(data: ExExpr, reverse: bool) -> ExExpr {
+  let expr: Expr = data.resource.0.clone();
+  ExExpr::new(expr.cummin(reverse))
+}
+
+#[rustler::nif]
+pub fn expr_cumulative_max(data: ExExpr, reverse: bool) -> ExExpr {
+  let expr: Expr = data.resource.0.clone();
+  ExExpr::new(expr.cummax(reverse))
+}
+
+#[rustler::nif]
+pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
+  let expr: Expr = data.resource.0.clone();
+  ExExpr::new(expr.cumsum(reverse))
+}
+
+#[rustler::nif]
 pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
     let df: DataFrame = data.resource.0.clone();
     let expressions: Expr = expr.resource.0.clone();

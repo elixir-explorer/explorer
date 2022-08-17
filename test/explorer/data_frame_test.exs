@@ -398,7 +398,11 @@ defmodule Explorer.DataFrameTest do
             b: Series.window_max(a, 2, weights: [1.0, 2.0]),
             c: Series.window_mean(a, 2, weights: [1.0, 2.0]),
             d: Series.window_min(a, 2, weights: [1.0, 2.0]),
-            e: Series.window_sum(a, 2, weights: [1.0, 2.0])
+            e: Series.window_sum(a, 2, weights: [1.0, 2.0]),
+            f: Series.cumulative_max(a),
+            g: Series.cumulative_min(a),
+            h: Series.cumulative_sum(a),
+            i: Series.cumulative_max(a, reverse: true)
           ]
         end)
 
@@ -407,7 +411,11 @@ defmodule Explorer.DataFrameTest do
                b: [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
                c: [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5],
                d: [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
-               e: [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
+               e: [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0],
+               f: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+               g: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+               h: [1, 3, 6, 10, 15, 21, 28, 36, 45, 55],
+               i: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
              }
     end
   end

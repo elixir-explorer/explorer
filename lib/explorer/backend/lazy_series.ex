@@ -35,6 +35,9 @@ defmodule Explorer.Backend.LazySeries do
     # Slice and dice
     coalesce: 2,
     # Window functions
+    cumulative_max: 2,
+    cumulative_min: 2,
+    cumulative_sum: 2,
     window_max: 5,
     window_mean: 5,
     window_min: 5,
@@ -60,6 +63,8 @@ defmodule Explorer.Backend.LazySeries do
   @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std, :count, :first, :last]
 
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
+
+  @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]
 
   @doc false
   def new(op, args, aggregation \\ false, window \\ false) do
@@ -132,6 +137,16 @@ defmodule Explorer.Backend.LazySeries do
       data = new(unquote(op), args, aggregations?(args), true)
 
       # TODO: dtype may change in case weights is float
+      Backend.Series.new(data, series.dtype)
+    end
+  end
+
+  for op <- @cumulative_operations do
+    @impl true
+    def unquote(op)(%Series{} = series, reverse) do
+      args = [lazy_series!(series), reverse]
+      data = new(unquote(op), args, aggregations?(args), true)
+
       Backend.Series.new(data, series.dtype)
     end
   end
