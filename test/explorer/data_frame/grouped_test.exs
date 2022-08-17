@@ -336,6 +336,58 @@ defmodule Explorer.DataFrame.GroupedTest do
                count: [217, 217, 220, 220, 220]
              }
     end
+
+    test "with one group but no aggregation", %{df: df} do
+      message = "expecting summarise with an aggregation operation inside. But instead got :add."
+
+      assert_raise RuntimeError, message, fn ->
+        df
+        |> DF.group_by(["year"])
+        |> DF.summarise_with(fn ldf ->
+          [add: Series.add(ldf["solid_fuel"], 50)]
+        end)
+      end
+    end
+
+    test "with one group, one aggregation with a window function inside", %{df: df} do
+      df1 =
+        df
+        |> DF.group_by(["year"])
+        |> DF.summarise_with(fn ldf ->
+          [
+            count: Series.count(ldf["country"]),
+            max_of_win_solid_fuel_mean: Series.max(Series.window_mean(ldf["solid_fuel"], 2))
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               count: [217, 217, 220, 220, 220],
+               max_of_win_solid_fuel_mean: [
+                 898_651.5,
+                 1_000_359.5,
+                 1_021_872.5,
+                 1_026_043.5,
+                 1_016_740.5
+               ]
+             }
+    end
+
+    test "with one group and one window function with one aggregation inside", %{df: df} do
+      message =
+        "expecting an aggregation operation, but instead got a window function operation: :window_mean."
+
+      assert_raise RuntimeError, message, fn ->
+        df
+        |> DF.group_by(["year"])
+        |> DF.summarise_with(fn ldf ->
+          [
+            count: Series.count(ldf["country"]),
+            max_of_win_solid_fuel_mean: Series.window_mean(Series.max(ldf["solid_fuel"]), 2)
+          ]
+        end)
+      end
+    end
   end
 
   describe "arrange/2" do

@@ -254,6 +254,23 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df2, atom_keys: true) == %{a: [], b: []}
     end
 
+    test "filter with window operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          a = ldf["a"]
+          c = Series.window_mean(a, 3)
+
+          Series.greater(a, c)
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [2, 3, 4, 5, 6],
+               b: [8.0, 7.1, 6.0, 5.0, 4.0]
+             }
+    end
+
     test "raise an error if the last operation is an arithmetic operation" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 

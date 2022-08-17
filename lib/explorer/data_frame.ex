@@ -2763,7 +2763,11 @@ defmodule Explorer.DataFrame do
     column_pairs =
       to_column_pairs(df, result, fn value ->
         case value do
-          %Series{data: %LazySeries{aggregation: true}} ->
+          %Series{data: %LazySeries{aggregation: true} = lazy} ->
+            if lazy.window and lazy.op in LazySeries.window_operations() do
+              raise "expecting an aggregation operation, but instead got a window function operation: #{inspect(lazy.op)}."
+            end
+
             value
 
           %Series{data: %LazySeries{op: op}} ->

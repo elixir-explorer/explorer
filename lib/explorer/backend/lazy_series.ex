@@ -63,7 +63,6 @@ defmodule Explorer.Backend.LazySeries do
   @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std, :count, :first, :last]
 
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
-
   @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]
 
   @doc false
@@ -73,6 +72,9 @@ defmodule Explorer.Backend.LazySeries do
 
   @doc false
   def operations, do: @operations
+
+  @doc false
+  def window_operations, do: @cumulative_operations ++ @window_fun_operations
 
   # Implements all the comparison operations that
   # accepts Series or number on the right-hand side.
