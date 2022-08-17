@@ -136,10 +136,16 @@ defmodule Explorer.Backend.LazySeries do
       center = Keyword.fetch!(opts, :center)
 
       args = [lazy_series!(series), window_size, weights, min_periods, center]
-      data = new(unquote(op), args, aggregations?(args), true)
 
-      # TODO: dtype may change in case weights is float
-      Backend.Series.new(data, series.dtype)
+      if aggregations?(args) do
+        raise "it's not possible to have an aggregation operation inside a window function"
+      end
+
+      dtype = resolve_numeric_dtype([series | List.wrap(weights)])
+
+      data = new(unquote(op), args, false, true)
+
+      Backend.Series.new(data, dtype)
     end
   end
 
@@ -147,7 +153,12 @@ defmodule Explorer.Backend.LazySeries do
     @impl true
     def unquote(op)(%Series{} = series, reverse) do
       args = [lazy_series!(series), reverse]
-      data = new(unquote(op), args, aggregations?(args), true)
+
+      if aggregations?(args) do
+        raise "it's not possible to have an aggregation operation inside a window function"
+      end
+
+      data = new(unquote(op), args, false, true)
 
       Backend.Series.new(data, series.dtype)
     end

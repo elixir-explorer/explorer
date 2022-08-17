@@ -423,6 +423,18 @@ defmodule Explorer.DataFrameTest do
           ]
         end)
 
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "b" => :float,
+               "c" => :float,
+               "d" => :float,
+               "e" => :float,
+               "f" => :integer,
+               "g" => :integer,
+               "h" => :integer,
+               "i" => :integer
+             }
+
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                b: [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],

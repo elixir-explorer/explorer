@@ -374,8 +374,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
 
     test "with one group and one window function with one aggregation inside", %{df: df} do
-      message =
-        "expecting an aggregation operation, but instead got a window function operation: :window_mean."
+      message = "it's not possible to have an aggregation operation inside a window function"
 
       assert_raise RuntimeError, message, fn ->
         df
