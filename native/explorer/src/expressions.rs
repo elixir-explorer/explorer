@@ -288,20 +288,20 @@ init_window_expr_fun!(expr_window_mean, rolling_mean);
 
 #[rustler::nif]
 pub fn expr_cumulative_min(data: ExExpr, reverse: bool) -> ExExpr {
-  let expr: Expr = data.resource.0.clone();
-  ExExpr::new(expr.cummin(reverse))
+    let expr: Expr = data.resource.0.clone();
+    ExExpr::new(expr.cummin(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_max(data: ExExpr, reverse: bool) -> ExExpr {
-  let expr: Expr = data.resource.0.clone();
-  ExExpr::new(expr.cummax(reverse))
+    let expr: Expr = data.resource.0.clone();
+    ExExpr::new(expr.cummax(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
-  let expr: Expr = data.resource.0.clone();
-  ExExpr::new(expr.cumsum(reverse))
+    let expr: Expr = data.resource.0.clone();
+    ExExpr::new(expr.cumsum(reverse))
 }
 
 #[rustler::nif]
