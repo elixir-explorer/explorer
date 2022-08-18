@@ -9,9 +9,10 @@ defmodule Explorer.Backend.LazySeries do
 
   @behaviour Explorer.Backend.Series
 
-  defstruct op: nil, args: [], aggregation: false
+  # TODO: Validate if the window field is really required once we have distinct_with/arrange_with
+  defstruct op: nil, args: [], aggregation: false, window: false
 
-  @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean()}
+  @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean(), window: boolean()}
 
   @operations [
     column: 1,
@@ -34,6 +35,14 @@ defmodule Explorer.Backend.LazySeries do
     pow: 2,
     # Slice and dice
     coalesce: 2,
+    # Window functions
+    cumulative_max: 2,
+    cumulative_min: 2,
+    cumulative_sum: 2,
+    window_max: 5,
+    window_mean: 5,
+    window_min: 5,
+    window_sum: 5,
     # Aggregations
     sum: 1,
     min: 1,
@@ -54,13 +63,19 @@ defmodule Explorer.Backend.LazySeries do
 
   @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std, :count, :first, :last]
 
+  @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
+  @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]
+
   @doc false
-  def new(op, args, aggregation \\ false) do
-    %__MODULE__{op: op, args: args, aggregation: aggregation}
+  def new(op, args, aggregation \\ false, window \\ false) do
+    %__MODULE__{op: op, args: args, aggregation: aggregation, window: window}
   end
 
   @doc false
   def operations, do: @operations
+
+  @doc false
+  def window_operations, do: @cumulative_operations ++ @window_fun_operations
 
   # Implements all the comparison operations that
   # accepts Series or number on the right-hand side.
@@ -71,7 +86,7 @@ defmodule Explorer.Backend.LazySeries do
 
     def unquote(op)(%Series{} = left, value) do
       args = [lazy_series!(left), value]
-      data = new(unquote(op), args, aggregations?(args))
+      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, :boolean)
     end
@@ -82,7 +97,7 @@ defmodule Explorer.Backend.LazySeries do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right) do
       args = [lazy_series!(left), lazy_series!(right)]
-      data = new(unquote(op), args, aggregations?(args))
+      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, :boolean)
     end
@@ -96,7 +111,7 @@ defmodule Explorer.Backend.LazySeries do
       value = with %Series{} <- value_or_series, do: lazy_series!(value_or_series)
 
       args = [lazy_series!(left), value]
-      data = new(unquote(op), args, aggregations?(args))
+      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, dtype)
     end
@@ -106,7 +121,7 @@ defmodule Explorer.Backend.LazySeries do
     @impl true
     def unquote(op)(%Series{} = series) do
       args = [lazy_series!(series)]
-      data = new(unquote(op), args, true)
+      data = new(unquote(op), args, true, window_functions?(args))
 
       dtype = dtype_for_agg_operation(unquote(op), series)
 
@@ -114,10 +129,47 @@ defmodule Explorer.Backend.LazySeries do
     end
   end
 
+  for op <- @window_fun_operations do
+    @impl true
+    def unquote(op)(%Series{} = series, window_size, opts) do
+      weights = Keyword.fetch!(opts, :weights)
+      min_periods = Keyword.fetch!(opts, :min_periods)
+      center = Keyword.fetch!(opts, :center)
+
+      args = [lazy_series!(series), window_size, weights, min_periods, center]
+
+      if aggregations?(args), do: raise_agg_inside_window(unquote(op))
+
+      dtype = resolve_numeric_dtype([series | List.wrap(weights)])
+
+      data = new(unquote(op), args, false, true)
+
+      Backend.Series.new(data, dtype)
+    end
+  end
+
+  for op <- @cumulative_operations do
+    @impl true
+    def unquote(op)(%Series{} = series, reverse) do
+      args = [lazy_series!(series), reverse]
+
+      if aggregations?(args), do: raise_agg_inside_window(unquote(op))
+
+      data = new(unquote(op), args, false, true)
+
+      Backend.Series.new(data, series.dtype)
+    end
+  end
+
+  defp raise_agg_inside_window(op) do
+    raise "it's not possible to have an aggregation operation inside #{inspect(op)}, " <>
+            "which is a window function"
+  end
+
   @impl true
   def quantile(%Series{} = series, float) when is_float(float) do
     args = [lazy_series!(series), float]
-    data = new(:quantile, args, true)
+    data = new(:quantile, args, true, window_functions?(args))
 
     Backend.Series.new(data, series.dtype)
   end
@@ -125,7 +177,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def coalesce(%Series{} = left, %Series{} = right) do
     args = [lazy_series!(left), lazy_series!(right)]
-    data = new(:coalesce, args, aggregations?(args))
+    data = new(:coalesce, args, aggregations?(args), window_functions?(args))
 
     dtype =
       if left.dtype in [:float, :integer] do
@@ -172,7 +224,14 @@ defmodule Explorer.Backend.LazySeries do
 
   defp aggregations?(args) do
     Enum.any?(args, fn
-      %__MODULE__{aggregation: agg} -> agg
+      %__MODULE__{aggregation: is_agg} -> is_agg
+      _other -> false
+    end)
+  end
+
+  defp window_functions?(args) do
+    Enum.any?(args, fn
+      %__MODULE__{window: is_window} -> is_window
       _other -> false
     end)
   end

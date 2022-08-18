@@ -11,14 +11,41 @@ defmodule Explorer.PolarsBackend.Expression do
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
-  # Column is special
+  @window_operations [
+    cumulative_max: 2,
+    cumulative_min: 2,
+    cumulative_sum: 2,
+    window_max: 5,
+    window_mean: 5,
+    window_min: 5,
+    window_sum: 5
+  ]
+  @special_operations [column: 1, quantile: 2] ++ @window_operations
+
+  # Some operations are special because they don't receive all args as lazy series.
+  # We define them first.
   def to_expr(%LazySeries{op: :column, args: [name]}) do
     Native.expr_column(name)
   end
 
+  def to_expr(%LazySeries{op: :quantile, args: [lazy_series, quantile]}) do
+    expr = to_expr(lazy_series)
+    Native.expr_quantile(expr, quantile)
+  end
+
+  for {op, _arity} <- @window_operations do
+    expr_op = :"expr_#{op}"
+
+    def to_expr(%LazySeries{op: unquote(op), args: [lazy_series | args]}) do
+      expr = to_expr(lazy_series)
+
+      apply(Native, unquote(expr_op), [expr | args])
+    end
+  end
+
   # We are going to generate all functions for each valid operation.
   for {op, arity} <-
-        Explorer.Backend.LazySeries.operations() -- [column: 1] do
+        Explorer.Backend.LazySeries.operations() -- @special_operations do
     args = Macro.generate_arguments(arity, __MODULE__)
 
     updates =

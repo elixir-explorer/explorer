@@ -336,6 +336,59 @@ defmodule Explorer.DataFrame.GroupedTest do
                count: [217, 217, 220, 220, 220]
              }
     end
+
+    test "with one group but no aggregation", %{df: df} do
+      message = "expecting summarise with an aggregation operation inside. But instead got :add."
+
+      assert_raise RuntimeError, message, fn ->
+        df
+        |> DF.group_by(["year"])
+        |> DF.summarise_with(fn ldf ->
+          [add: Series.add(ldf["solid_fuel"], 50)]
+        end)
+      end
+    end
+
+    test "with one group, one aggregation with a window function inside", %{df: df} do
+      df1 =
+        df
+        |> DF.group_by(["year"])
+        |> DF.summarise_with(fn ldf ->
+          [
+            count: Series.count(ldf["country"]),
+            max_of_win_solid_fuel_mean: Series.max(Series.window_mean(ldf["solid_fuel"], 2))
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               count: [217, 217, 220, 220, 220],
+               max_of_win_solid_fuel_mean: [
+                 898_651.5,
+                 1_000_359.5,
+                 1_021_872.5,
+                 1_026_043.5,
+                 1_016_740.5
+               ]
+             }
+    end
+
+    test "with one group and one window function with one aggregation inside", %{df: df} do
+      message =
+        "it's not possible to have an aggregation operation inside :window_mean, " <>
+          "which is a window function"
+
+      assert_raise RuntimeError, message, fn ->
+        df
+        |> DF.group_by(["year"])
+        |> DF.summarise_with(fn ldf ->
+          [
+            count: Series.count(ldf["country"]),
+            max_of_win_solid_fuel_mean: Series.window_mean(Series.max(ldf["solid_fuel"]), 2)
+          ]
+        end)
+      end
+    end
   end
 
   describe "arrange/2" do
@@ -403,6 +456,40 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
 
       assert df2.groups == ["c"]
+    end
+
+    test "adds new columns with window functions" do
+      df = DF.new(a: Enum.to_list(1..10), z: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2])
+      df1 = DF.group_by(df, :z)
+
+      df2 =
+        DF.mutate_with(df1, fn ldf ->
+          a = ldf["a"]
+
+          [
+            b: Series.window_max(a, 2, weights: [1.0, 2.0]),
+            c: Series.window_mean(a, 2, weights: [1.0, 2.0]),
+            d: Series.window_min(a, 2, weights: [1.0, 2.0]),
+            e: Series.window_sum(a, 2, weights: [1.0, 2.0]),
+            f: Series.cumulative_max(a),
+            g: Series.cumulative_min(a),
+            h: Series.cumulative_sum(a),
+            i: Series.cumulative_max(a, reverse: true)
+          ]
+        end)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+               b: [1.0, 4.0, 6.0, 8.0, 10.0, 6, 14.0, 16.0, 18.0, 20.0],
+               c: [1.0, 2.5, 4.0, 5.5, 7.0, 6.0, 10.0, 11.5, 13.0, 14.5],
+               d: [1.0, 1.0, 2.0, 3.0, 4.0, 6.0, 6.0, 7.0, 8.0, 9.0],
+               e: [1.0, 5.0, 8.0, 11.0, 14.0, 6.0, 20.0, 23.0, 26.0, 29.0],
+               f: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+               g: [1, 1, 1, 1, 1, 6, 6, 6, 6, 6],
+               h: [1, 3, 6, 10, 15, 6, 13, 21, 30, 40],
+               i: [5, 5, 5, 5, 5, 10, 10, 10, 10, 10],
+               z: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2]
+             }
     end
   end
 

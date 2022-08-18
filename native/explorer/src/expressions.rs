@@ -9,6 +9,7 @@ use polars::prelude::{col, when, DataFrame, IntoLazy};
 use polars::prelude::{Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
+use crate::series::rolling_opts;
 use crate::{ExDataFrame, ExExpr};
 
 #[rustler::nif]
@@ -260,6 +261,47 @@ pub fn expr_coalesce(left: ExExpr, right: ExExpr) -> ExExpr {
     let condition = when(predicate).then(left_expr).otherwise(right_expr);
 
     ExExpr::new(condition)
+}
+
+// window functions
+macro_rules! init_window_expr_fun {
+    ($name:ident, $fun:ident) => {
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $name(
+            data: ExExpr,
+            window_size: usize,
+            weights: Option<Vec<f64>>,
+            min_periods: Option<usize>,
+            center: bool,
+        ) -> ExExpr {
+            let expr: Expr = data.resource.0.clone();
+            let opts = rolling_opts(window_size, weights, min_periods, center);
+            ExExpr::new(expr.$fun(opts))
+        }
+    };
+}
+
+init_window_expr_fun!(expr_window_max, rolling_max);
+init_window_expr_fun!(expr_window_min, rolling_min);
+init_window_expr_fun!(expr_window_sum, rolling_sum);
+init_window_expr_fun!(expr_window_mean, rolling_mean);
+
+#[rustler::nif]
+pub fn expr_cumulative_min(data: ExExpr, reverse: bool) -> ExExpr {
+    let expr: Expr = data.resource.0.clone();
+    ExExpr::new(expr.cummin(reverse))
+}
+
+#[rustler::nif]
+pub fn expr_cumulative_max(data: ExExpr, reverse: bool) -> ExExpr {
+    let expr: Expr = data.resource.0.clone();
+    ExExpr::new(expr.cummax(reverse))
+}
+
+#[rustler::nif]
+pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
+    let expr: Expr = data.resource.0.clone();
+    ExExpr::new(expr.cumsum(reverse))
 }
 
 #[rustler::nif]
