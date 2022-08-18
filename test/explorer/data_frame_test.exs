@@ -457,6 +457,76 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "arrange_with/2" do
+    test "with a simple df and asc order" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"]] end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
+    test "with a simple df and desc order" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.arrange_with(df, fn ldf -> [desc: ldf["a"]] end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [6, 5, 4, 3, 2, 1],
+               b: ["f", "e", "d", "c", "b", "a"]
+             }
+    end
+
+    test "with a simple df and just the lazy series" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.arrange_with(df, fn ldf -> [ldf["a"]] end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
+    test "with a simple df and arrange by two columns" do
+      df = DF.new(a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1])
+      df1 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 2, 3, 5, 6],
+               b: [1.1, 2.2, 2.5, 3.3, 5.1, 4.0]
+             }
+    end
+
+    test "with a simple df and window function" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.arrange_with(df, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [5, 6, 3, 4, 2, 1],
+               b: ["e", "f", "c", "d", "b", "a"]
+             }
+    end
+
+    test "without a lazy series" do
+      df = DF.new(a: [1, 2])
+
+      assert_raise RuntimeError, "expecting a lazy series, but got :foo.", fn ->
+        DF.arrange_with(df, fn _ldf -> [desc: :foo] end)
+      end
+    end
+
+    test "with wrong direction" do
+      df = DF.new(a: [1, 2])
+
+      message = "expecting a valid direction, which is :asc or :desc, but got :descending."
+
+      assert_raise RuntimeError, message, fn ->
+        DF.arrange_with(df, fn ldf -> [descending: ldf["a"]] end)
+      end
+    end
+  end
+
   describe "take/2" do
     test "raises with index out of bounds", %{df: df} do
       assert_raise ArgumentError,

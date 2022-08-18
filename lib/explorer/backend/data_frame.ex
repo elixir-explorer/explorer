@@ -85,8 +85,9 @@ defmodule Explorer.Backend.DataFrame do
   @callback filter(df, mask :: series) :: df
   @callback filter_with(df, out_df :: df(), lazy_series()) :: df
   @callback mutate(df, out_df :: df(), mutations :: [{column_name(), mutate_value()}]) :: df
-  @callback mutate_with(df, out_df :: df(), mutations :: [{column_name(), mutate_value()}]) :: df
-  @callback arrange(df, columns :: [column_name() | {:asc | :desc, column_name()}]) :: df
+  @callback mutate_with(df, out_df :: df(), mutations :: [{column_name(), lazy_series()}]) :: df
+  @callback arrange(df, columns :: [{:asc | :desc, column_name()}]) :: df
+  @callback arrange_with(df, out_df :: df(), directions :: [{:asc | :desc, lazy_series()}]) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()], keep_all? :: boolean()) :: df
   @callback rename(df, out_df :: df(), [{old :: column_name(), new :: column_name()}]) :: df
   @callback dummies(df, columns :: [column_name()]) :: df

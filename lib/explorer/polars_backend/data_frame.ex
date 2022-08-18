@@ -339,6 +339,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def arrange_with(%DataFrame{} = df, out_df, column_pairs) do
+    {directions, expressions} =
+      column_pairs
+      |> Enum.map(fn {direction, lazy_series} ->
+        expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
+        {direction == :desc, expr}
+      end)
+      |> Enum.unzip()
+
+    Shared.apply_dataframe(df, out_df, :df_arrange_with, [expressions, directions, df.groups])
+  end
+
+  @impl true
   def distinct(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, columns, keep_all?) do
     keep = if groups == [], do: columns, else: Enum.uniq(groups ++ columns)
     ungrouped_distinct(df, out_df, keep, keep_all?)

@@ -86,6 +86,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_shape(_df), do: err()
   def df_slice(_df, _offset, _length), do: err()
   def df_sort(_df, _by, _reverse, _groups), do: err()
+  def df_arrange_with(_df, _expressions, _directions, _groups), do: err()
   def df_tail(_df, _length), do: err()
   def df_take(_df, _indices), do: err()
   def df_to_dummies(_df, _columns), do: err()
