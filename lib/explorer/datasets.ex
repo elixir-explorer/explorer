@@ -56,8 +56,7 @@ defmodule Explorer.Datasets do
     # Persistent term is used as a cache, in order to avoid
     # several calls to the filesystem. This is mostly useful
     # to speed up reads in tests.
-    :persistent_term.get(key, nil)
-    |> then(fn
+    case :persistent_term.get(key, nil) do
       nil ->
         @datasets_dir
         |> Path.join("#{name}.csv")
@@ -70,6 +69,6 @@ defmodule Explorer.Datasets do
       {names, df_as_map} ->
         data = for name <- names, do: {name, Map.fetch!(df_as_map, name)}
         DataFrame.new(data)
-    end)
+    end
   end
 end
