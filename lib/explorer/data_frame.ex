@@ -1056,42 +1056,45 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Subset rows using column values.
+  Picks rows based on a list or series of values.
 
   ## Examples
 
-  You can pass a mask directly:
+  This function must only be used when you need to select rows based
+  on external values that are not available to the database. For example,
+  you can pass a list:
 
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mask(df, Explorer.Series.greater(df["b"], 1))
-      #Explorer.DataFrame<
-        Polars[2 x 2]
-        a string ["b", "c"]
-        b integer [2, 3]
-      >
-
-  You can combine masks using `Explorer.Series.and/2` or `Explorer.Series.or/2`:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> b_gt = Explorer.Series.greater(df["b"], 1)
-      iex> a_eq = Explorer.Series.equal(df["a"], "b")
-      iex> Explorer.DataFrame.mask(df, Explorer.Series.and(a_eq, b_gt))
-      #Explorer.DataFrame<
-        Polars[1 x 2]
-        a string ["b"]
-        b integer [2]
-      >
-
-  Including a list:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
       iex> Explorer.DataFrame.mask(df, [false, true, false])
       #Explorer.DataFrame<
         Polars[1 x 2]
-        a string ["b"]
-        b integer [2]
+        col1 string ["b"]
+        col2 integer [2]
       >
 
+  You must avoid using masks when the masks themselves are computed from
+  other columns. For example, DO NOT do this:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.mask(df, Explorer.Series.greater(df["b"], 1))
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        col1 string ["b", "c"]
+        col2 integer [2, 3]
+      >
+
+  Instead, do this:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["b"], 1) end)
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        col1 string ["b", "c"]
+        col2 integer [2, 3]
+      >
+
+  The `filter_with/2` version is much more efficient because it doesn't need
+  to create intermediate series representations to apply the mask.
   """
   @doc type: :single
   @spec mask(df :: DataFrame.t(), mask :: Series.t() | [boolean()]) :: DataFrame.t()
