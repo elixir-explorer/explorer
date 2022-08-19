@@ -1944,7 +1944,7 @@ defmodule Explorer.DataFrame do
   end
 
   def slice(df, %Range{} = range) do
-    slice(df, Enum.slice(0..(n_rows(df) - 1), range))
+    slice(df, Enum.slice(0..(n_rows(df) - 1)//1, range))
   end
 
   @doc """
