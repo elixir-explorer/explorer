@@ -143,7 +143,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_ipc(%DataFrame{data: df}, filename, {compression, nil}) do
+  def to_ipc(%DataFrame{data: df}, filename, {compression, _level}) do
     case Native.df_write_ipc(df, filename, Atom.to_string(compression)) do
       {:ok, _} -> {:ok, filename}
       {:error, error} -> {:error, error}
@@ -376,7 +376,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> indices_by_groups()
     |> Enum.map(fn indices ->
       ungrouped_df
-      |> take(indices)
+      |> slice(indices)
       |> then(callback)
       |> then(fn group_df ->
         idx_series = series_from_list!(idx_column, indices)
@@ -412,17 +412,17 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> n_rows()
       |> Native.s_seedable_random_indices(n, replacement, seed)
 
-    take(df, indices)
+    slice(df, indices)
   end
 
   @impl true
   def pull(df, column), do: Shared.apply_dataframe(df, :df_column, [column])
 
   @impl true
-  def slice(df, offset, length), do: Shared.apply_dataframe(df, :df_slice, [offset, length])
+  def slice(df, row_indices), do: Shared.apply_dataframe(df, :df_slice_by_indices, [row_indices])
 
   @impl true
-  def take(df, row_indices), do: Shared.apply_dataframe(df, :df_take, [row_indices])
+  def slice(df, offset, length), do: Shared.apply_dataframe(df, :df_slice, [offset, length])
 
   @impl true
   def drop_nil(df, columns), do: Shared.apply_dataframe(df, :df_drop_nulls, [columns])

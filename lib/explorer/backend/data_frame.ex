@@ -52,7 +52,7 @@ defmodule Explorer.Backend.DataFrame do
               filename :: String.t(),
               columns :: list(String.t()) | list(atom()) | list(integer()) | nil
             ) :: result(df)
-  @callback to_ipc(df, filename :: String.t(), compression :: nil | atom()) ::
+  @callback to_ipc(df, filename :: String.t(), compression :: {nil | atom(), nil | integer()}) ::
               result(String.t())
 
   @callback from_ndjson(
@@ -93,8 +93,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback dummies(df, columns :: [column_name()]) :: df
   @callback sample(df, n :: integer(), replacement :: boolean(), seed :: integer()) :: df
   @callback pull(df, column :: column_name()) :: series
+  @callback slice(df, indices :: list(integer())) :: df
   @callback slice(df, offset :: integer(), length :: integer()) :: df
-  @callback take(df, indices :: list(integer())) :: df
   @callback drop_nil(df, columns :: [column_name()]) :: df
   @callback pivot_wider(
               df,
