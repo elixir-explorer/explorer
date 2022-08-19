@@ -24,7 +24,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ env.ELIXIR_VERSION}}-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-mix-${{ env.ELIXIR_VERSION }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-
       - uses: actions/cache@v3
