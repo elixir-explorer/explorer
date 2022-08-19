@@ -441,6 +441,31 @@ pub fn df_sort(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_arrange_with(
+    data: ExDataFrame,
+    expressions: Vec<ExExpr>,
+    directions: Vec<bool>,
+    groups: Vec<String>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let df: DataFrame = data.resource.0.clone();
+    let exprs = ex_expr_to_exprs(expressions);
+
+    let new_df = if groups.is_empty() {
+        df.lazy()
+            .sort_by_exprs(exprs, directions, false)
+            .collect()?
+    } else {
+        df.groupby(groups)?.apply(|df| {
+            df.lazy()
+                .sort_by_exprs(&exprs, &directions, false)
+                .collect()
+        })?
+    };
+
+    Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_slice(
     data: ExDataFrame,
     offset: i64,

@@ -1407,6 +1407,33 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :arrange, [Enum.map(columns, &{:asc, &1})])
   end
 
+  @doc false
+  def arrange_with(%DataFrame{} = df, fun) when is_function(fun) do
+    ldf = to_opaque_lazy(df)
+
+    result = fun.(ldf)
+
+    dir_and_lazy_series_pairs =
+      Enum.map(result, fn
+        {dir, %Series{data: %LazySeries{} = lazy_series}} when dir in [:asc, :desc] ->
+          {dir, lazy_series}
+
+        {wrong_dir, %Series{data: %LazySeries{}}} ->
+          raise "expecting a valid direction, which is :asc or :desc, but got #{inspect(wrong_dir)}."
+
+        {_, other} ->
+          raise "expecting a lazy series, but got #{inspect(other)}."
+
+        %Series{data: %LazySeries{} = lazy_series} ->
+          {:asc, lazy_series}
+
+        other ->
+          raise "not a valid lazy series or arrange instruction: #{inspect(other)}"
+      end)
+
+    Shared.apply_impl(df, :arrange_with, [df, dir_and_lazy_series_pairs])
+  end
+
   @doc """
   Takes distinct rows by a selection of columns.
 

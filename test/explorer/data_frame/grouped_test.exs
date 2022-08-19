@@ -406,6 +406,21 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "arrange_with/2" do
+    test "sorts by group", %{df: df} do
+      grouped_df =
+        df
+        |> DF.group_by("country")
+        |> DF.arrange_with(fn ldf -> [asc: ldf["total"]] end)
+
+      assert grouped_df
+             |> DF.ungroup()
+             |> DF.filter_with(&Series.equal(&1["country"], "HONDURAS"))
+             |> DF.pull("total")
+             |> Series.first() == 2175
+    end
+  end
+
   describe "mutate/2" do
     test "adds a new column when there is a group" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [1, 1, 2])
