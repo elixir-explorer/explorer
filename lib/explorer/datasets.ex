@@ -51,8 +51,20 @@ defmodule Explorer.Datasets do
   def iris, do: read_dataset!("iris")
 
   defp read_dataset!(name) do
-    @datasets_dir
-    |> Path.join("#{name}.csv")
-    |> DataFrame.from_csv!()
+    key = {:explorer_datasets, name}
+
+    # Persistent term is used as a cache, in order to avoid
+    # several calls to the filesystem. This is mostly useful
+    # to speed up reads in tests.
+    case :persistent_term.get(key, nil) do
+      nil ->
+        @datasets_dir
+        |> Path.join("#{name}.csv")
+        |> DataFrame.from_csv!()
+        |> tap(&:persistent_term.put(key, &1))
+
+      %DataFrame{} = df ->
+        df
+    end
   end
 end
