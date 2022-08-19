@@ -249,8 +249,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_dataframe(df, out_df, :df_select, [out_df.names])
 
   @impl true
-  def filter(df, %Series{} = mask),
-    do: Shared.apply_dataframe(df, :df_filter, [mask.data])
+  def mask(df, %Series{} = mask),
+    do: Shared.apply_dataframe(df, :df_mask, [mask.data])
 
   @impl true
   def filter_with(df, out_df, %Explorer.Backend.LazySeries{} = lseries) do

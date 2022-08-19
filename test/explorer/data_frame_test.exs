@@ -20,11 +20,11 @@ defmodule Explorer.DataFrameTest do
 
   # Tests for summarize, group, ungroup are available in grouped_test.exs
 
-  describe "filter/2" do
+  describe "mask/2" do
     test "raises with mask of invalid size", %{df: df} do
       assert_raise ArgumentError,
                    "size of the mask (3) must match number of rows in the dataframe (1094)",
-                   fn -> DF.filter(df, [true, false, true]) end
+                   fn -> DF.mask(df, [true, false, true]) end
     end
   end
 

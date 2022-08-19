@@ -1063,7 +1063,7 @@ defmodule Explorer.DataFrame do
   You can pass a mask directly:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, Explorer.Series.greater(df["b"], 1))
+      iex> Explorer.DataFrame.mask(df, Explorer.Series.greater(df["b"], 1))
       #Explorer.DataFrame<
         Polars[2 x 2]
         a string ["b", "c"]
@@ -1075,7 +1075,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> b_gt = Explorer.Series.greater(df["b"], 1)
       iex> a_eq = Explorer.Series.equal(df["a"], "b")
-      iex> Explorer.DataFrame.filter(df, Explorer.Series.and(a_eq, b_gt))
+      iex> Explorer.DataFrame.mask(df, Explorer.Series.and(a_eq, b_gt))
       #Explorer.DataFrame<
         Polars[1 x 2]
         a string ["b"]
@@ -1085,7 +1085,7 @@ defmodule Explorer.DataFrame do
   Including a list:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, [false, true, false])
+      iex> Explorer.DataFrame.mask(df, [false, true, false])
       #Explorer.DataFrame<
         Polars[1 x 2]
         a string ["b"]
@@ -1094,8 +1094,8 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :single
-  @spec filter(df :: DataFrame.t(), mask :: Series.t() | [boolean()]) :: DataFrame.t()
-  def filter(df, %Series{} = mask) do
+  @spec mask(df :: DataFrame.t(), mask :: Series.t() | [boolean()]) :: DataFrame.t()
+  def mask(df, %Series{} = mask) do
     s_len = Series.size(mask)
     df_len = n_rows(df)
 
@@ -1107,16 +1107,16 @@ defmodule Explorer.DataFrame do
         )
 
       true ->
-        Shared.apply_impl(df, :filter, [mask])
+        Shared.apply_impl(df, :mask, [mask])
     end
   end
 
-  def filter(df, mask) when is_list(mask), do: mask |> Series.from_list() |> then(&filter(df, &1))
+  def mask(df, mask) when is_list(mask), do: mask |> Series.from_list() |> then(&mask(df, &1))
 
   @spec filter(df :: DataFrame.t(), callback :: function()) :: DataFrame.t()
   def filter(df, callback) when is_function(callback) do
     IO.warn("filter/2 with a callback is deprecated, please use filter_with/2 instead")
-    df |> callback.() |> then(&filter(df, &1))
+    df |> callback.() |> then(&mask(df, &1))
   end
 
   @doc false
