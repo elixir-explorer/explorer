@@ -256,10 +256,10 @@ s = 1..100 |> Enum.to_list() |> Enum.shuffle() |> Series.from_list()
 ids = Series.argsort(s)
 ```
 
-Which you can pass to `Explorer.Series.take/2` if you want the sorted values.
+Which you can pass to `Explorer.Series.slice/2` if you want the sorted values.
 
 ```elixir
-Series.take(s, ids)
+Series.slice(s, ids)
 ```
 
 You can calculate cumulative values.
