@@ -1061,7 +1061,7 @@ defmodule Explorer.DataFrame do
   ## Examples
 
   This function must only be used when you need to select rows based
-  on external values that are not available to the database. For example,
+  on external values that are not available to the dataframe. For example,
   you can pass a list:
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
@@ -1076,7 +1076,7 @@ defmodule Explorer.DataFrame do
   other columns. For example, DO NOT do this:
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
-      iex> Explorer.DataFrame.mask(df, Explorer.Series.greater(df["b"], 1))
+      iex> Explorer.DataFrame.mask(df, Explorer.Series.greater(df["col2"], 1))
       #Explorer.DataFrame<
         Polars[2 x 2]
         col1 string ["b", "c"]
@@ -1086,7 +1086,7 @@ defmodule Explorer.DataFrame do
   Instead, do this:
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
-      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["b"], 1) end)
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["col2"], 1) end)
       #Explorer.DataFrame<
         Polars[2 x 2]
         col1 string ["b", "c"]
