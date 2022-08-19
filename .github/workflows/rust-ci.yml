@@ -10,6 +10,9 @@ on:
       - "native/**"
   workflow_dispatch:
 
+env:
+  RUST_TOOLCHAIN_VERSION: nightly-2022-08-16
+
 jobs:
   lint-rust:
     name: Lint Rust
@@ -21,10 +24,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            native/explorer/target/
+            priv/native/
+          key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: nightly-2022-08-16
+          toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
           components: rustfmt, clippy
           override: true
       - name: run rustfmt
