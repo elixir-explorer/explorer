@@ -2185,6 +2185,9 @@ defmodule Explorer.DataFrame do
     with existing variables. May accept a filter callback, a list or a range of column names.
     Default value is `0..-1`. If an empty list is passed, or a range that results in a empty list of
     column names, it raises an error.
+    ID columns cannot be of the float type. So if there is any column name whose type is float, it
+    raises an error. In case you need to consider a float column, please try to cast it to an integer
+    or string column before.
 
   * `names_prefix` - String added to the start of every variable name.
     This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
@@ -2223,7 +2226,14 @@ defmodule Explorer.DataFrame do
 
     if id_columns == [] do
       raise ArgumentError,
-            "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none"
+            "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none."
+    end
+
+    for column_name <- id_columns do
+      if df.dtypes[column_name] == :float do
+        raise ArgumentError,
+              "id_columns cannot have columns of the type float, but #{inspect(column_name)} column is float."
+      end
     end
 
     Shared.apply_impl(df, :pivot_wider, [id_columns, names_from, values_from, opts[:names_prefix]])
