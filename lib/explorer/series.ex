@@ -44,8 +44,8 @@ defmodule Explorer.Series do
 
   @impl true
   def fetch(series, idx) when is_integer(idx), do: {:ok, get(series, idx)}
-  def fetch(series, indices) when is_list(indices), do: {:ok, take(series, indices)}
-  def fetch(series, %Range{} = range), do: {:ok, take(series, Enum.to_list(range))}
+  def fetch(series, indices) when is_list(indices), do: {:ok, slice(series, indices)}
+  def fetch(series, %Range{} = range), do: {:ok, slice(series, range)}
 
   @impl true
   def pop(series, idx) when is_integer(idx) do
@@ -57,14 +57,14 @@ defmodule Explorer.Series do
 
   def pop(series, indices) when is_list(indices) do
     mask = 0..(size(series) - 1) |> Enum.map(&(&1 not in indices)) |> from_list()
-    value = take(series, indices)
+    value = slice(series, indices)
     series = filter(series, mask)
     {value, series}
   end
 
   def pop(series, %Range{} = range) do
     mask = 0..(size(series) - 1) |> Enum.map(&(&1 not in range)) |> from_list()
-    value = take(series, Enum.to_list(range))
+    value = slice(series, range)
     series = filter(series, mask)
     {value, series}
   end
@@ -565,14 +565,25 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.take(s, [0, 2])
+      iex> Explorer.Series.slice(s, [0, 2])
       #Explorer.Series<
         string[2]
         ["a", "c"]
       >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.slice(s, 1..2)
+      #Explorer.Series<
+        string[2]
+        ["b", "c"]
+      >
   """
-  @spec take(series :: Series.t(), indices :: [integer()]) :: Series.t()
-  def take(series, indices), do: Shared.apply_impl(series, :take, [indices])
+  @spec slice(series :: Series.t(), indices :: [integer()] | Range.t()) :: Series.t()
+  def slice(series, indices) when is_list(indices),
+    do: Shared.apply_impl(series, :slice, [indices])
+
+  def slice(series, %Range{} = range),
+    do: slice(series, Enum.slice(0..(size(series) - 1)//1, range))
 
   @doc """
   Returns the value of the series at the given index.

@@ -410,8 +410,11 @@ pub fn df_filter_with(data: ExDataFrame, ex_expr: ExExpr) -> Result<ExDataFrame,
     Ok(ExDataFrame::new(new_df))
 }
 
-#[rustler::nif]
-pub fn df_take(data: ExDataFrame, indices: Vec<u32>) -> Result<ExDataFrame, ExplorerError> {
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_slice_by_indices(
+    data: ExDataFrame,
+    indices: Vec<u32>,
+) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let idx = UInt32Chunked::from_vec("idx", indices);
     let new_df = df.take(&idx)?;

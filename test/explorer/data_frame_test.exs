@@ -527,11 +527,27 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "take/2" do
+  describe "slice/2" do
+    test "slice with indexes" do
+      df = DF.new(a: [1, 2, 3, 4, 5])
+
+      df1 = DF.slice(df, [2, 4])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
+    end
+
+    test "slice with ranges" do
+      df = DF.new(a: [1, 2, 3, 4, 5])
+
+      df1 = DF.slice(df, -3..-1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 4, 5]}
+    end
+
     test "raises with index out of bounds", %{df: df} do
       assert_raise ArgumentError,
                    "requested row index (2000) out of bounds (-1094:1094)",
-                   fn -> DF.take(df, [1, 2, 3, 2000]) end
+                   fn -> DF.slice(df, [1, 2, 3, 2000]) end
     end
   end
 

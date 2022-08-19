@@ -72,7 +72,7 @@ defmodule Explorer.PolarsBackend.Series do
       |> size()
       |> Native.s_seedable_random_indices(n, replacement, seed)
 
-    take(series, indices)
+    slice(series, indices)
   end
 
   @impl true
@@ -89,11 +89,11 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def slice(series, offset, length), do: Shared.apply_series(series, :s_slice, [offset, length])
+  def slice(series, indices) when is_list(indices),
+    do: Shared.apply_series(series, :s_slice_by_indices, [indices])
 
   @impl true
-  def take(series, indices) when is_list(indices),
-    do: Shared.apply_series(series, :s_take, [indices])
+  def slice(series, offset, length), do: Shared.apply_series(series, :s_slice, [offset, length])
 
   @impl true
   def get(series, idx) do

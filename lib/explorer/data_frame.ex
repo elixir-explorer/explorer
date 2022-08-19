@@ -73,8 +73,8 @@ defmodule Explorer.DataFrame do
 
   - `head/2` for picking the first rows
   - `tail/2` for picking the last rows
-  - `slice/3` for slicing a section
-  - `take/2` for taking the given indexes
+  - `slice/2` for slicing the dataframe by row indexes or a range
+  - `slice/3` for slicing a section by an offset
   - `sample/2` for sampling the data-frame by row
 
   ## IO
@@ -93,8 +93,8 @@ defmodule Explorer.DataFrame do
   ## Access
 
   In addition to this "grammar" of data manipulation, you'll find useful functions for
-  slicing and dicing dataframes such as `pull/2`, `head/2`, `sample/3`, `slice/3`, and
-  `take/2`.
+  slicing and dicing dataframes such as `pull/2`, `head/2`, `sample/3`, `slice/2`, and
+  `slice/3`.
 
   `Explorer.DataFrame` also implements the `Access` behaviour (also known as the brackets
   syntax). This should be familiar for users coming from other language with dataframes
@@ -1907,20 +1907,28 @@ defmodule Explorer.DataFrame do
   def slice(df, offset, length), do: Shared.apply_impl(df, :slice, [offset, length])
 
   @doc """
-  Subset rows with a list of indices.
+  Subset rows with a list of indices or a range.
 
   ## Examples
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
-      iex> Explorer.DataFrame.take(df, [0, 2])
+      iex> Explorer.DataFrame.slice(df, [0, 2])
       #Explorer.DataFrame<
         Polars[2 x 2]
         a integer [1, 3]
         b string ["a", "c"]
       >
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> Explorer.DataFrame.slice(df, 1..2)
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        a integer [2, 3]
+        b string ["b", "c"]
+      >
   """
   @doc type: :rows
-  def take(df, row_indices) when is_list(row_indices) do
+  def slice(df, row_indices) when is_list(row_indices) do
     n_rows = n_rows(df)
 
     Enum.each(row_indices, fn idx ->
@@ -1932,7 +1940,11 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    Shared.apply_impl(df, :take, [row_indices])
+    Shared.apply_impl(df, :slice, [row_indices])
+  end
+
+  def slice(df, %Range{} = range) do
+    slice(df, Enum.slice(0..(n_rows(df) - 1)//1, range))
   end
 
   @doc """

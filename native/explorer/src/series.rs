@@ -203,7 +203,7 @@ pub fn s_value_counts(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_take(data: ExSeries, indices: Vec<u32>) -> Result<ExSeries, ExplorerError> {
+pub fn s_slice_by_indices(data: ExSeries, indices: Vec<u32>) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let idx = UInt32Chunked::from_vec("idx", indices);
     let s1 = s.take(&idx)?;

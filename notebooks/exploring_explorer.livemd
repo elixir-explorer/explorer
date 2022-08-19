@@ -256,10 +256,10 @@ s = 1..100 |> Enum.to_list() |> Enum.shuffle() |> Series.from_list()
 ids = Series.argsort(s)
 ```
 
-Which you can pass to `Explorer.Series.take/2` if you want the sorted values.
+Which you can pass to `Explorer.Series.slice/2` if you want the sorted values.
 
 ```elixir
-Series.take(s, ids)
+Series.slice(s, ids)
 ```
 
 You can calculate cumulative values.
@@ -488,7 +488,7 @@ DataFrame.sample(df, 10000)
 DataFrame.sample(df, 10000, replacement: true)
 ```
 
-### Pull/slice/take
+### Pull and slice
 
 Slicing and dicing can be done with the `Access` protocol or with explicit pull/slice/take functions.
 
@@ -505,7 +505,7 @@ df[["year", "country"]]
 ```
 
 ```elixir
-DataFrame.take(df, [1, 20, 50])
+DataFrame.slice(df, [1, 20, 50])
 ```
 
 Negative offsets work for slice!
@@ -516,6 +516,12 @@ DataFrame.slice(df, -10, 5)
 
 ```elixir
 DataFrame.slice(df, 10, 5)
+```
+
+Slice also works with ranges:
+
+```elixir
+DataFrame.slice(df, 12..42)
 ```
 
 ### Pivot

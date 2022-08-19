@@ -34,8 +34,8 @@ defmodule Explorer.Backend.Series do
   @callback take_every(s, integer()) :: s
   @callback filter(s, mask :: s) :: s
   @callback filter(s, function()) :: s
+  @callback slice(s, indices :: list()) :: s
   @callback slice(s, offset :: integer(), length :: integer()) :: s
-  @callback take(s, indices :: list()) :: s
   @callback get(s, idx :: integer()) :: s
   @callback concat(s, s) :: s
   @callback coalesce(s, s) :: s
