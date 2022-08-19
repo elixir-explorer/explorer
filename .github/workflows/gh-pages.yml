@@ -13,6 +13,7 @@ env:
   ELIXIR_VERSION: 1.13
   OTP_VERSION: 24.2
   EXPLORER_BUILD: true
+  RUST_TOOLCHAIN_VERSION: nightly-2022-08-16
 
 jobs:
   deploy:
@@ -24,7 +25,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-mix-${{ env.ELIXIR_VERSION}}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-
       - uses: actions/cache@v3
@@ -35,10 +36,13 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             native/explorer/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            priv/native/
+          key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-08-16
+          toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
           override: true
       - uses: erlef/setup-beam@v1
         with:
