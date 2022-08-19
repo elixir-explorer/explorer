@@ -389,7 +389,7 @@ pub fn df_select(data: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame,
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_filter(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_mask(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let filter_series = &mask.resource.0;
     if let Ok(ca) = filter_series.bool() {

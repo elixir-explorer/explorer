@@ -133,11 +133,11 @@ defmodule Explorer.DataFrame.GroupedTest do
       equal_filters =
         for country <- ["BRAZIL", "AUSTRALIA", "POLAND"], do: Series.equal(df["country"], country)
 
-      filters = Enum.reduce(equal_filters, fn filter, acc -> Series.or(acc, filter) end)
+      masks = Enum.reduce(equal_filters, fn filter, acc -> Series.or(acc, filter) end)
 
       df1 =
         df
-        |> DF.filter(filters)
+        |> DF.mask(masks)
         |> DF.group_by(["country", "year"])
         |> DF.summarise(total: [:max, :min], cement: [:median])
         |> DF.arrange(:country)

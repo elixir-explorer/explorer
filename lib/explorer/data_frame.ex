@@ -1056,46 +1056,49 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Subset rows using column values.
+  Picks rows based on a list or series of values.
 
   ## Examples
 
-  You can pass a mask directly:
+  This function must only be used when you need to select rows based
+  on external values that are not available to the dataframe. For example,
+  you can pass a list:
 
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, Explorer.Series.greater(df["b"], 1))
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.mask(df, [false, true, false])
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["b"]
+        col2 integer [2]
+      >
+
+  You must avoid using masks when the masks themselves are computed from
+  other columns. For example, DO NOT do this:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.mask(df, Explorer.Series.greater(df["col2"], 1))
       #Explorer.DataFrame<
         Polars[2 x 2]
-        a string ["b", "c"]
-        b integer [2, 3]
+        col1 string ["b", "c"]
+        col2 integer [2, 3]
       >
 
-  You can combine masks using `Explorer.Series.and/2` or `Explorer.Series.or/2`:
+  Instead, do this:
 
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> b_gt = Explorer.Series.greater(df["b"], 1)
-      iex> a_eq = Explorer.Series.equal(df["a"], "b")
-      iex> Explorer.DataFrame.filter(df, Explorer.Series.and(a_eq, b_gt))
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["col2"], 1) end)
       #Explorer.DataFrame<
-        Polars[1 x 2]
-        a string ["b"]
-        b integer [2]
+        Polars[2 x 2]
+        col1 string ["b", "c"]
+        col2 integer [2, 3]
       >
 
-  Including a list:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, [false, true, false])
-      #Explorer.DataFrame<
-        Polars[1 x 2]
-        a string ["b"]
-        b integer [2]
-      >
-
+  The `filter_with/2` version is much more efficient because it doesn't need
+  to create intermediate series representations to apply the mask.
   """
   @doc type: :single
-  @spec filter(df :: DataFrame.t(), mask :: Series.t() | [boolean()]) :: DataFrame.t()
-  def filter(df, %Series{} = mask) do
+  @spec mask(df :: DataFrame.t(), mask :: Series.t() | [boolean()]) :: DataFrame.t()
+  def mask(df, %Series{} = mask) do
     s_len = Series.size(mask)
     df_len = n_rows(df)
 
@@ -1107,16 +1110,16 @@ defmodule Explorer.DataFrame do
         )
 
       true ->
-        Shared.apply_impl(df, :filter, [mask])
+        Shared.apply_impl(df, :mask, [mask])
     end
   end
 
-  def filter(df, mask) when is_list(mask), do: mask |> Series.from_list() |> then(&filter(df, &1))
+  def mask(df, mask) when is_list(mask), do: mask |> Series.from_list() |> then(&mask(df, &1))
 
   @spec filter(df :: DataFrame.t(), callback :: function()) :: DataFrame.t()
   def filter(df, callback) when is_function(callback) do
     IO.warn("filter/2 with a callback is deprecated, please use filter_with/2 instead")
-    df |> callback.() |> then(&filter(df, &1))
+    df |> callback.() |> then(&mask(df, &1))
   end
 
   @doc false
