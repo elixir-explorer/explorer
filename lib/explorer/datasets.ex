@@ -61,14 +61,10 @@ defmodule Explorer.Datasets do
         @datasets_dir
         |> Path.join("#{name}.csv")
         |> DataFrame.from_csv!()
-        |> tap(fn df ->
-          df_as_map = DataFrame.to_columns(df)
-          :persistent_term.put(key, {df.names, df_as_map})
-        end)
+        |> tap(&:persistent_term.put(key, &1))
 
-      {names, df_as_map} ->
-        data = for name <- names, do: {name, Map.fetch!(df_as_map, name)}
-        DataFrame.new(data)
+      %DataFrame{} = df ->
+        df
     end
   end
 end
