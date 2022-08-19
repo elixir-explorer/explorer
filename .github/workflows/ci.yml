@@ -18,7 +18,7 @@ jobs:
     name: test
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             deps
@@ -26,7 +26,7 @@ jobs:
           key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/bin/
@@ -37,13 +37,14 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-07-24
+          toolchain: nightly-2022-08-16
           override: true
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "${{ env.OTP_VERSION }}"
           elixir-version: "${{ env.ELIXIR_VERSION }}"
       - run: mix deps.get
+      - run: mix deps.compile
       - run: mix compile --warnings-as-errors
       - run: mix test --warnings-as-errors
   format:
