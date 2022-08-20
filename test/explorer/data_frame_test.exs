@@ -1549,7 +1549,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
 
       assert_raise ArgumentError,
-                   "id_columns must select at least one existing column, but [] selects none",
+                   "id_columns must select at least one existing column, but [] selects none.",
                    fn ->
                      DF.pivot_wider(df, "variable", "value", id_columns: [])
                    end
@@ -1560,6 +1560,22 @@ defmodule Explorer.DataFrameTest do
                      DF.pivot_wider(df, "variable", "value",
                        id_columns: &String.starts_with?(&1, "none")
                      )
+                   end
+    end
+
+    test "with an id column of type float" do
+      df = DF.new(float_id: [1.5, 1.6], variable: ["a", "b"], value: [1, 2])
+
+      assert_raise ArgumentError,
+                   "id_columns cannot have columns of the type float, but \"float_id\" column is float.",
+                   fn ->
+                     DF.pivot_wider(df, "variable", "value")
+                   end
+
+      assert_raise ArgumentError,
+                   "id_columns cannot have columns of the type float, but \"float_id\" column is float.",
+                   fn ->
+                     DF.pivot_wider(df, "variable", "value", id_columns: [:float_id])
                    end
     end
   end
