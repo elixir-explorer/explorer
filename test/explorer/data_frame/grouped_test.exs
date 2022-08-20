@@ -512,7 +512,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "with one group", %{df: df} do
       df1 = DF.group_by(df, "year")
 
-      df2 = DF.distinct(df1, columns: [:country])
+      df2 = DF.distinct(df1, [:country])
       assert DF.names(df2) == ["year", "country"]
       assert DF.groups(df2) == ["year"]
       assert DF.shape(df2) == {1094, 2}
@@ -520,7 +520,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
     test "with one group and distinct as the same", %{df: df} do
       df1 = DF.group_by(df, "country")
-      df2 = DF.distinct(df1, columns: [:country])
+      df2 = DF.distinct(df1, [:country])
 
       assert DF.names(df2) == ["country"]
       assert DF.groups(df2) == ["country"]
@@ -530,7 +530,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "multiple groups and different distinct", %{df: df} do
       df1 = DF.group_by(df, ["country", "year"])
 
-      df2 = DF.distinct(df1, columns: [:bunker_fuels])
+      df2 = DF.distinct(df1, [:bunker_fuels])
       assert DF.names(df2) == ["country", "year", "bunker_fuels"]
       assert DF.groups(df2) == ["country", "year"]
       assert DF.shape(df2) == {1094, 3}
@@ -539,7 +539,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "with groups and keeping all", %{df: df} do
       df1 = DF.group_by(df, "year")
 
-      df2 = DF.distinct(df1, columns: [:country], keep_all?: true)
+      df2 = DF.distinct(df1, [:country], keep_all: true)
 
       assert DF.names(df2) == [
                "year",

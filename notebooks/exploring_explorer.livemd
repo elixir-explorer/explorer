@@ -433,13 +433,13 @@ Sort operations happen left to right. And keyword list args permit specifying th
 Okay, as expected here too. Very straightforward.
 
 ```elixir
-DataFrame.distinct(df, columns: ["year", "country"])
+DataFrame.distinct(df, ["year", "country"])
 ```
 
 You can specify whether to keep the other columns as well.
 
 ```elixir
-DataFrame.distinct(df, columns: ["country"], keep_all?: true)
+DataFrame.distinct(df, ["country"], keep_all: true)
 ```
 
 ### Rename
