@@ -2185,9 +2185,11 @@ defmodule Explorer.DataFrame do
     with existing variables. May accept a filter callback, a list or a range of column names.
     Default value is `0..-1`. If an empty list is passed, or a range that results in a empty list of
     column names, it raises an error.
-    ID columns cannot be of the float type. So if there is any column name whose type is float, it
-    raises an error. In case you need to consider a float column, please try to cast it to an integer
-    or string column before.
+
+    ID columns cannot be of the float type and attempting so will raise an error.
+    If you need to use float columns as IDs, you must carefully consider rounding
+    or truncating the column and converting it to integer, as long as doing so
+    preserves the properties of the column.
 
   * `names_prefix` - String added to the start of every variable name.
     This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
