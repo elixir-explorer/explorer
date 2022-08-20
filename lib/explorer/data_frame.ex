@@ -1445,18 +1445,18 @@ defmodule Explorer.DataFrame do
   By default will return unique values of the requested columns:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"])
+      iex> Explorer.DataFrame.distinct(df, ["year", "country"])
       #Explorer.DataFrame<
         Polars[1094 x 2]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
       >
 
-  If `keep_all?` is set to `true`, then the first value of each column not in the requested
+  If `keep_all` is set to `true`, then the first value of each column not in the requested
   columns will be returned:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.distinct(df, columns: ["year", "country"], keep_all?: true)
+      iex> Explorer.DataFrame.distinct(df, ["year", "country"], keep_all: true)
       #Explorer.DataFrame<
         Polars[1094 x 10]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
@@ -1474,7 +1474,7 @@ defmodule Explorer.DataFrame do
   A callback on the dataframe's names can be passed instead of a list (like `select/3`):
 
       iex> df = Explorer.DataFrame.new(x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3])
-      iex> Explorer.DataFrame.distinct(df, columns: &String.starts_with?(&1, "x"))
+      iex> Explorer.DataFrame.distinct(df, &String.starts_with?(&1, "x"))
       #Explorer.DataFrame<
         Polars[2 x 2]
         x1 integer [1, 3]
@@ -1485,7 +1485,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.DataFrame.new(x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3])
       iex> df = Explorer.DataFrame.group_by(df, "x1")
-      iex> Explorer.DataFrame.distinct(df, columns: ["x2"])
+      iex> Explorer.DataFrame.distinct(df, ["x2"])
       #Explorer.DataFrame<
         Polars[2 x 2]
         Groups: ["x1"]
@@ -1495,24 +1495,17 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :single
-  @spec distinct(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
-  def distinct(df, opts \\ [])
+  @spec distinct(df :: DataFrame.t(), columns :: columns(), opts :: Keyword.t()) :: DataFrame.t()
+  def distinct(df, columns \\ 0..-1//1, opts \\ [])
 
-  def distinct(df, opts) do
-    opts = Keyword.validate!(opts, columns: nil, keep_all?: false)
+  def distinct(df, columns, opts) do
+    opts = Keyword.validate!(opts, keep_all: false)
 
-    columns =
-      case opts[:columns] do
-        nil ->
-          df.names
-
-        columns ->
-          to_existing_columns(df, columns)
-      end
+    columns = to_existing_columns(df, columns)
 
     if columns != [] do
       out_df =
-        if opts[:keep_all?] do
+        if opts[:keep_all] do
           df
         else
           groups = df.groups
@@ -1520,7 +1513,7 @@ defmodule Explorer.DataFrame do
           %{df | names: keep, dtypes: Map.take(df.dtypes, keep)}
         end
 
-      Shared.apply_impl(df, :distinct, [out_df, columns, opts[:keep_all?]])
+      Shared.apply_impl(df, :distinct, [out_df, columns, opts[:keep_all]])
     else
       df
     end

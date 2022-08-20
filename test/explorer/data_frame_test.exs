@@ -1291,38 +1291,38 @@ defmodule Explorer.DataFrameTest do
 
   describe "distinct/2" do
     test "with lists", %{df: df} do
-      df1 = DF.distinct(df, columns: [:year, :country])
+      df1 = DF.distinct(df, [:year, :country])
       assert DF.names(df1) == ["year", "country"]
 
       assert DF.shape(df1) == {1094, 2}
 
-      df1 = DF.distinct(df, columns: [0, 1])
+      df1 = DF.distinct(df, [0, 1])
       assert DF.names(df1) == ["year", "country"]
 
-      assert df == DF.distinct(df, columns: [])
+      assert df == DF.distinct(df, [])
 
-      df2 = DF.distinct(df, columns: [:year, :country], keep_all?: true)
+      df2 = DF.distinct(df, [:year, :country], keep_all: true)
       assert DF.names(df2) == DF.names(df)
     end
 
     test "with one column", %{df: df} do
-      df1 = DF.distinct(df, columns: [:country])
+      df1 = DF.distinct(df, [:country])
       assert DF.names(df1) == ["country"]
 
       assert DF.shape(df1) == {222, 1}
     end
 
     test "with ranges", %{df: df} do
-      df1 = DF.distinct(df, columns: 0..1)
+      df1 = DF.distinct(df, 0..1)
       assert DF.names(df1) == ["year", "country"]
 
       df2 = DF.distinct(df)
       assert DF.names(df2) == DF.names(df)
 
-      df3 = DF.distinct(df, columns: 0..-1)
+      df3 = DF.distinct(df, 0..-1)
       assert DF.names(df3) == DF.names(df)
 
-      assert df == DF.distinct(df, columns: 100..200)
+      assert df == DF.distinct(df, 100..200)
     end
   end
 
