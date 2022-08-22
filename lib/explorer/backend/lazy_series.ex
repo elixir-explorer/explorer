@@ -49,6 +49,7 @@ defmodule Explorer.Backend.LazySeries do
     max: 1,
     mean: 1,
     median: 1,
+    n_distinct: 1,
     var: 1,
     std: 1,
     quantile: 2,
@@ -61,7 +62,19 @@ defmodule Explorer.Backend.LazySeries do
 
   @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow]
 
-  @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std, :count, :first, :last]
+  @aggregation_operations [
+    :sum,
+    :min,
+    :max,
+    :mean,
+    :median,
+    :var,
+    :std,
+    :count,
+    :first,
+    :last,
+    :n_distinct
+  ]
 
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
   @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]

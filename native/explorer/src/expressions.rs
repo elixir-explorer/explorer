@@ -239,6 +239,13 @@ pub fn expr_count(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_n_distinct(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.n_unique())
+}
+
+#[rustler::nif]
 pub fn expr_first(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 

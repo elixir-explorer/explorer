@@ -133,6 +133,7 @@ rustler::init!(
         expr_max,
         expr_mean,
         expr_median,
+        expr_n_distinct,
         expr_std,
         expr_var,
         expr_quantile,

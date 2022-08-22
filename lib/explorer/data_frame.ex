@@ -2794,7 +2794,43 @@ defmodule Explorer.DataFrame do
     groups ++ agg_pairs
   end
 
-  @doc false
+  @doc """
+  Summarise each group to a single row using a callback function.
+
+  Implicitly ungroups.
+  The main difference between `summarise/2` and `summarise_with/2` is that the later
+  accepts a function that can be used to perform complex operations.
+  This is efficient because it doesn't need
+  to create intermediate series representations to summarise.
+
+  ## Supported operations
+
+  The function callback should be in the form of `[name_of_col: "operation"]`,
+  where `"operation"` is one of the `Explorer.Series` functions. It's required
+  that at least one of the following functions is used for summarisation:
+
+    * `Explorer.Series.min/1` - Take the minimum value within the group.
+    * `Explorer.Series.max/1` - Take the maximum value within the group.
+    * `Explorer.Series.sum/1` - Take the sum of the series within the group.
+    * `Explorer.Series.mean/1` - Take the mean of the series within the group.
+    * `Explorer.Series.median/1` - Take the median of the series within the group.
+    * `Explorer.Series.first/1` - Take the first value within the group.
+    * `Explorer.Series.last/1` - Take the last value within the group.
+    * `Explorer.Series.count/1` - Count the number of rows per group.
+    * `Explorer.Series.n_distinct/1` - Count the number of unique rows per group.
+
+  ## Examples
+
+      iex> alias Explorer.{DataFrame, Series}
+      iex> df = Explorer.Datasets.fossil_fuels() |> DataFrame.group_by("year")
+      iex> DataFrame.summarise_with(df, &[total_max: Series.max(&1["total"]), countries: Series.n_distinct(&1["country"])])
+      #Explorer.DataFrame<
+        Polars[5 x 3]
+        year integer [2010, 2011, 2012, 2013, 2014]
+        total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
+        countries integer [217, 217, 220, 220, 220]
+      >
+  """
   def summarise_with(%DataFrame{groups: []}, _),
     do:
       raise(
