@@ -1498,14 +1498,56 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :arrange, [Enum.map(columns, &{:asc, &1})])
   end
 
-  @doc false
-  def arrange_with(%DataFrame{} = df, fun) when is_function(fun) do
+  @doc """
+  Arranges/sorts rows by columns using a callback function.
+
+  ## Examples
+
+  A single column name will sort ascending by that column:
+
+      iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.arrange_with(df, &(&1["a"]))
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a string ["a", "b", "c"]
+        b integer [3, 1, 2]
+      >
+
+  You can also sort descending:
+
+      iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"]])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a string ["c", "b", "a"]
+        b integer [2, 1, 3]
+      >
+
+  Sorting by more than one column sorts them in the order they are entered:
+
+      iex> df = Explorer.DataFrame.new(a: [3, 1, 3], b: [2, 1, 3])
+      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"], asc: &1["b"]])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [3, 3, 1]
+        b integer [2, 3, 1]
+      >
+  """
+  @doc type: :single
+  @spec arrange_with(
+          df :: DataFrame.t(),
+          (Explorer.Backend.LazyFrame.t() ->
+             Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}])
+        ) :: DataFrame.t()
+  def arrange_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
     ldf = to_opaque_lazy(df)
 
     result = fun.(ldf)
 
     dir_and_lazy_series_pairs =
-      Enum.map(result, fn
+      result
+      |> List.wrap()
+      |> Enum.map(fn
         {dir, %Series{data: %LazySeries{} = lazy_series}} when dir in [:asc, :desc] ->
           {dir, lazy_series}
 

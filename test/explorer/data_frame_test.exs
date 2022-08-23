@@ -485,6 +485,16 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "with a simple df one column and without order" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.arrange_with(df, fn ldf -> ldf["a"] end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
     test "with a simple df and desc order" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
       df1 = DF.arrange_with(df, fn ldf -> [desc: ldf["a"]] end)
