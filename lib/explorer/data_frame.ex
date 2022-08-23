@@ -74,7 +74,7 @@ defmodule Explorer.DataFrame do
   - `summarise_with/2`
   - `mutate_with/2`
   - `arrange_with/2`
-  
+
   Those functions work by having a "lazy" representation of the dataframe and series,
   which adds the possibility to perform complex operations that are optimized by the backend.
 
