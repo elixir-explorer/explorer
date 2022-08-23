@@ -1122,8 +1122,51 @@ defmodule Explorer.DataFrame do
     df |> callback.() |> then(&mask(df, &1))
   end
 
-  @doc false
-  def filter_with(df, fun) when is_function(fun) do
+  @doc """
+  Picks rows based on a callback function. 
+
+  This function is efficient because uses a representation of the
+  series without pulling them. The only restriction is that
+  you need to use one of the boolean series functions.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, &Explorer.Series.greater(&1["col2"], 2))
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["c"]
+        col2 integer [3]
+      >
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.equal(df["col1"], "b") end)
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["b"]
+        col2 integer [2]
+      >
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.cumulative_max(df["col2"]) end)
+      ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer
+     
+      But it's possible to use a boolean operation based on another function:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.equal(Explorer.Series.cumulative_max(df["col2"]), 1) end)
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["a"]
+        col2 integer [1]
+      >
+  """
+  @doc type: :single
+  @spec filter_with(
+          df :: DataFrame.t(),
+          callback :: (Explorer.Backend.LazyFrame.t() -> Series.lazy_t())
+        ) :: DataFrame.t()
+  def filter_with(df, fun) when is_function(fun, 1) do
     ldf = to_opaque_lazy(df)
 
     case fun.(ldf) do
@@ -2831,6 +2874,11 @@ defmodule Explorer.DataFrame do
         countries integer [217, 217, 220, 220, 220]
       >
   """
+  @doc type: :single
+  @spec summarise_with(
+          df :: DataFrame.t(),
+          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+        ) :: DataFrame.t()
   def summarise_with(%DataFrame{groups: []}, _),
     do:
       raise(
@@ -2838,7 +2886,7 @@ defmodule Explorer.DataFrame do
         "dataframe must be grouped in order to perform summarisation"
       )
 
-  def summarise_with(%DataFrame{} = df, fun) when is_function(fun) do
+  def summarise_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
     ldf = to_opaque_lazy(df)
 
     result = fun.(ldf)
