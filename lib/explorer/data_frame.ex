@@ -1223,17 +1223,6 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
 
-  Or you can invoke a callback on the dataframe:
-
-      iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate(df, c: &Explorer.Series.add(&1["a"], &1["b"]))
-      #Explorer.DataFrame<
-        Polars[3 x 3]
-        a integer [4, 5, 6]
-        b integer [1, 2, 3]
-        c integer [5, 7, 9]
-      >
-
   You can overwrite existing columns:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
@@ -1251,16 +1240,6 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a integer [4, 4, 4]
-        b integer [1, 2, 3]
-      >
-
-  Including when a callback returns a scalar:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate(df, a: &Explorer.Series.max(&1["b"]))
-      #Explorer.DataFrame<
-        Polars[3 x 2]
-        a integer [3, 3, 3]
         b integer [1, 2, 3]
       >
 
@@ -1293,7 +1272,13 @@ defmodule Explorer.DataFrame do
 
     mut_dtypes =
       for {name, value} <- mutations, into: %{} do
-        value = if is_function(value), do: value.(df), else: value
+        value =
+          if is_function(value) do
+            IO.warn("mutate/2 with a callback is deprecated, please use mutate_with/2 instead")
+            value.(df)
+          else
+            value
+          end
 
         dtype =
           case value do
@@ -1315,7 +1300,77 @@ defmodule Explorer.DataFrame do
     %{df | names: new_names, dtypes: new_dtypes}
   end
 
-  @doc false
+  @doc """
+  Creates or modifies columns using a callback function.
+
+  This function is similar to `mutate/2`, but allows complex operations
+  to be performed, since it uses a virtual representation of the dataframe.
+  The only requirement is that a series operation is returned.
+
+  New variables overwrite existing variables of the
+  same name. Column names are coerced from atoms to strings.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, &[c: Explorer.Series.add(&1["a"], &1["b"])])
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        a integer [4, 5, 6]
+        b integer [1, 2, 3]
+        c integer [5, 7, 9]
+      >
+
+  You can overwrite existing columns:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, &[b: Explorer.Series.pow(&1["b"], 2)])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a string ["a", "b", "c"]
+        b float [1.0, 4.0, 9.0]
+      >
+
+  Scalar values are repeated to fill the series:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, &[a: Explorer.Series.max(&1["b"])])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        b integer [1, 2, 3]
+        a integer [3, 3, 3]
+      >
+
+  Alternatively, all of the above works with a map instead of a keyword list:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, fn df -> %{"c" => Explorer.Series.window_mean(df["b"], 2)} end)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        a string ["a", "b", "c"]
+        b integer [1, 2, 3]
+        c float [1.0, 1.5, 2.5]
+      >
+
+  Mutations in grouped dataframes are also possible:
+
+      iex> df = Explorer.DataFrame.new(id: ["a", "a", "b"], b: [1, 2, 3])
+      iex> grouped = Explorer.DataFrame.group_by(df, :id)
+      iex> Explorer.DataFrame.mutate_with(grouped, &[count: Explorer.Series.count(&1["b"])])
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        Groups: ["id"]
+        id string ["a", "a", "b"]
+        b integer [1, 2, 3]
+        count integer [2, 2, 1]
+      >
+
+  """
+  @doc type: :single
+  @spec mutate_with(
+          df :: DataFrame.t(),
+          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+        ) :: DataFrame.t()
   def mutate_with(%DataFrame{} = df, fun) when is_function(fun) do
     ldf = to_opaque_lazy(df)
 
