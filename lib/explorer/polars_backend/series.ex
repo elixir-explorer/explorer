@@ -268,9 +268,7 @@ defmodule Explorer.PolarsBackend.Series do
         {:error, error} -> raise "#{error}"
       end
 
-    df
-    |> DataFrame.rename(["values", "counts"])
-    |> DataFrame.mutate(counts: &Series.cast(&1["counts"], :integer))
+    DataFrame.rename(df, ["values", "counts"])
   end
 
   # Window

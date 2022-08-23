@@ -9,7 +9,7 @@ use polars::prelude::{col, when, DataFrame, IntoLazy};
 use polars::prelude::{Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
-use crate::series::rolling_opts;
+use crate::series::{rolling_opts, cast_str_to_dtype};
 use crate::{ExDataFrame, ExExpr};
 
 #[rustler::nif]
@@ -48,6 +48,14 @@ pub fn expr_datetime(datetime: ExDateTime) -> ExExpr {
     let naive_datetime = NaiveDateTime::from(datetime);
     let expr = naive_datetime.lit();
     ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_cast(data: ExExpr, to_dtype: &str) -> ExExpr {
+    let expr: Expr = data.resource.0.clone();
+    let to_dtype = cast_str_to_dtype(to_dtype).expect("dtype is not valid");
+
+    ExExpr::new(expr.cast(to_dtype))
 }
 
 #[rustler::nif]

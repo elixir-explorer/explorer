@@ -15,6 +15,7 @@ defmodule Explorer.Backend.LazySeries do
   @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean(), window: boolean()}
 
   @operations [
+    cast: 2,
     column: 1,
     # Comparisons
     eq: 2,
@@ -89,6 +90,14 @@ defmodule Explorer.Backend.LazySeries do
 
   @doc false
   def window_operations, do: @cumulative_operations ++ @window_fun_operations
+
+  @impl true
+  def cast(%Series{} = s, dtype) when is_atom(dtype) do
+    args = [lazy_series!(s), dtype]
+    data = new(:cast, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, dtype)
+  end
 
   # Implements all the comparison operations that
   # accepts Series or number on the right-hand side.

@@ -359,6 +359,23 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer}
     end
 
+    test "changes a column" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [a: Series.cast(ldf["a"], :float)]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1.0, 2.0, 3.0],
+               b: ["a", "b", "c"]
+             }
+
+      assert df1.names == ["a", "b"]
+      assert df1.dtypes == %{"a" => :float, "b" => :string}
+    end
+
     test "adds a new column with some aggregations without groups" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 

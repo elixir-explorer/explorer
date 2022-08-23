@@ -1337,8 +1337,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.mutate_with(df, &[a: Explorer.Series.max(&1["b"])])
       #Explorer.DataFrame<
         Polars[3 x 2]
-        b integer [1, 2, 3]
         a integer [3, 3, 3]
+        b integer [1, 2, 3]
       >
 
   Alternatively, all of the above works with a map instead of a keyword list:
@@ -1387,29 +1387,19 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    new_dtypes = names_with_dtypes_for_mutate_with(df, column_pairs)
-    new_names = for {name, _} <- new_dtypes, do: name
-    df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes)}
+    new_dtypes =
+      for {column_name, series} <- column_pairs, into: %{} do
+        {column_name, series.dtype}
+      end
+
+    mut_names = Enum.map(column_pairs, &elem(&1, 0))
+    new_names = Enum.uniq(df.names ++ mut_names)
+
+    df_out = %{df | names: new_names, dtypes: Map.merge(df.dtypes, new_dtypes)}
 
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
     Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
-  end
-
-  defp names_with_dtypes_for_mutate_with(df, column_pairs) do
-    new_names_with_dtypes =
-      for {column_name, series} <- column_pairs do
-        {column_name, series.dtype}
-      end
-
-    column_names = for {name, _} <- column_pairs, do: name
-
-    existing_dtypes =
-      for name <- df.names, name not in column_names do
-        {name, df.dtypes[name]}
-      end
-
-    existing_dtypes ++ new_names_with_dtypes
   end
 
   @doc """

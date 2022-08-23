@@ -20,10 +20,16 @@ defmodule Explorer.PolarsBackend.Expression do
     window_min: 5,
     window_sum: 5
   ]
-  @special_operations [column: 1, quantile: 2] ++ @window_operations
+  @special_operations [cast: 2, column: 1, quantile: 2] ++ @window_operations
 
   # Some operations are special because they don't receive all args as lazy series.
   # We define them first.
+
+  def to_expr(%LazySeries{op: :cast, args: [lazy_series, dtype]}) do
+    expr = to_expr(lazy_series)
+    Native.expr_cast(expr, Atom.to_string(dtype))
+  end
+
   def to_expr(%LazySeries{op: :column, args: [name]}) do
     Native.expr_column(name)
   end

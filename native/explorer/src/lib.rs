@@ -103,6 +103,7 @@ rustler::init!(
         df_write_parquet,
         // expressions
         expr_boolean,
+        expr_cast,
         expr_column,
         expr_date,
         expr_datetime,

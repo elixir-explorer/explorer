@@ -194,7 +194,7 @@ pub fn s_unordered_distinct(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_value_counts(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let s = &data.resource.0;
+    let s: &Series = &data.resource.0;
     let mut df = s.value_counts(true, true)?;
     let df = df
         .try_apply("counts", |s: &Series| s.cast(&DataType::Int64))?
@@ -695,7 +695,7 @@ pub fn s_n_unique(data: ExSeries) -> Result<usize, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_pow(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
-    let s = cast(s, "float")?
+    let s = s.cast(&DataType::Float64)?
         .f64()?
         .apply(|v| v.powf(exponent))
         .into_series();
@@ -711,18 +711,19 @@ pub fn s_int_pow(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerErro
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cast(data: ExSeries, to_type: &str) -> Result<ExSeries, ExplorerError> {
-    let s = &data.resource.0;
-    Ok(ExSeries::new(cast(s, to_type)?))
+    let s: &Series = &data.resource.0;
+    let dtype = cast_str_to_dtype(to_type)?;
+    Ok(ExSeries::new(s.cast(&dtype)?))
 }
 
-pub fn cast(s: &Series, to_type: &str) -> Result<Series, ExplorerError> {
-    match to_type {
-        "float" => Ok(s.cast(&DataType::Float64)?),
-        "integer" => Ok(s.cast(&DataType::Int64)?),
-        "date" => Ok(s.cast(&DataType::Date)?),
-        "datetime" => Ok(s.cast(&DataType::Datetime(TimeUnit::Microseconds, None))?),
-        "boolean" => Ok(s.cast(&DataType::Boolean)?),
-        "string" => Ok(s.cast(&DataType::Utf8)?),
+pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
+    match str_type {
+        "float" => Ok(DataType::Float64),
+        "integer" => Ok(DataType::Int64),
+        "date" => Ok(DataType::Date),
+        "datetime" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
+        "boolean" => Ok(DataType::Boolean),
+        "string" => Ok(DataType::Utf8),
         _ => Err(ExplorerError::Other(String::from("Cannot cast to type"))),
     }
 }
