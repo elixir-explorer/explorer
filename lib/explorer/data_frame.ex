@@ -1125,9 +1125,22 @@ defmodule Explorer.DataFrame do
   @doc """
   Picks rows based on a callback function. 
 
-  This function is efficient because uses a representation of the
+  This function is efficient because it uses a representation of the
   series without pulling them. The only restriction is that
-  you need to use one of the boolean series functions.
+  you need to use one of the following functions to perform a comparison:
+
+    - `Explorer.Series.equal/2`
+    - `Explorer.Series.not_equal/2`
+    - `Explorer.Series.greater/2`
+    - `Explorer.Series.greater_equal/2`
+    - `Explorer.Series.less/2`
+    - `Explorer.Series.less_equal/2`
+    - `Explorer.Series.is_nil/1`
+    - `Explorer.Series.is_not_nil/1`
+    - `Explorer.Series.and/2`
+    - `Explorer.Series.or/2`
+
+  But you can also use window functions and aggregations inside comparisons.
 
   ## Examples
 
