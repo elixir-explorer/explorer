@@ -695,7 +695,8 @@ pub fn s_n_unique(data: ExSeries) -> Result<usize, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_pow(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
-    let s = s.cast(&DataType::Float64)?
+    let s = s
+        .cast(&DataType::Float64)?
         .f64()?
         .apply(|v| v.powf(exponent))
         .into_series();

@@ -9,7 +9,7 @@ use polars::prelude::{col, when, DataFrame, IntoLazy};
 use polars::prelude::{Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
-use crate::series::{rolling_opts, cast_str_to_dtype};
+use crate::series::{cast_str_to_dtype, rolling_opts};
 use crate::{ExDataFrame, ExExpr};
 
 #[rustler::nif]
