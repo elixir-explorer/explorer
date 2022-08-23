@@ -320,6 +320,27 @@ pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_reverse(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.reverse())
+}
+
+#[rustler::nif]
+pub fn expr_sort(expr: ExExpr, reverse: bool) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.sort(reverse))
+}
+
+#[rustler::nif]
+pub fn expr_argsort(expr: ExExpr, reverse: bool) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.arg_sort(reverse))
+}
+
+#[rustler::nif]
 pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
     let df: DataFrame = data.resource.0.clone();
     let expressions: Expr = expr.resource.0.clone();

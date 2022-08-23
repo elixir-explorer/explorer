@@ -17,6 +17,9 @@ defmodule Explorer.Backend.LazySeries do
   @operations [
     cast: 2,
     column: 1,
+    reverse: 1,
+    argsort: 2,
+    sort: 2,
     # Comparisons
     eq: 2,
     neq: 2,
@@ -97,6 +100,30 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:cast, args, aggregations?(args), window_functions?(args))
 
     Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def reverse(%Series{} = s) do
+    args = [lazy_series!(s)]
+    data = new(:reverse, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def argsort(%Series{} = s, reverse?) do
+    args = [lazy_series!(s), reverse?]
+    data = new(:argsort, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, :integer)
+  end
+
+  @impl true
+  def sort(%Series{} = s, reverse?) do
+    args = [lazy_series!(s), reverse?]
+    data = new(:sort, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
   end
 
   # Implements all the comparison operations that

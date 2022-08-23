@@ -110,6 +110,10 @@ rustler::init!(
         expr_float,
         expr_integer,
         expr_string,
+        // sort
+        expr_argsort,
+        expr_reverse,
+        expr_sort,
         // comparison expressions
         expr_binary_and,
         expr_binary_or,

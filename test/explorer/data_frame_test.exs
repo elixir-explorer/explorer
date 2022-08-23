@@ -376,6 +376,37 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{"a" => :float, "b" => :string}
     end
 
+    test "adds new columns with reverse, sort and argsort" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            c: Series.reverse(ldf["a"]),
+            d: Series.argsort(ldf["a"], true),
+            e: Series.sort(ldf["b"], true)
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [3, 2, 1],
+               d: [2, 1, 0],
+               e: ["c", "b", "a"]
+             }
+
+      assert df1.names == ["a", "b", "c", "d", "e"]
+
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "b" => :string,
+               "c" => :integer,
+               "d" => :integer,
+               "e" => :string
+             }
+    end
+
     test "adds a new column with some aggregations without groups" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
