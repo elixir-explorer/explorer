@@ -1146,18 +1146,7 @@ defmodule Explorer.DataFrame do
 
   This function is efficient because it uses a representation of the
   series without pulling them. The only restriction is that
-  you need to use one of the following functions to perform a comparison:
-
-    - `Explorer.Series.equal/2`
-    - `Explorer.Series.not_equal/2`
-    - `Explorer.Series.greater/2`
-    - `Explorer.Series.greater_equal/2`
-    - `Explorer.Series.less/2`
-    - `Explorer.Series.less_equal/2`
-    - `Explorer.Series.is_nil/1`
-    - `Explorer.Series.is_not_nil/1`
-    - `Explorer.Series.and/2`
-    - `Explorer.Series.or/2`
+  you need to use a function that returns boolean.
 
   But you can also use window functions and aggregations inside comparisons.
 
@@ -1183,7 +1172,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.cumulative_max(df["col2"]) end)
       ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer
      
-      But it's possible to use a boolean operation based on another function:
+  But it's possible to use a boolean operation based on another function:
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
       iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.equal(Explorer.Series.cumulative_max(df["col2"]), 1) end)
