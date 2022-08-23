@@ -27,14 +27,23 @@ defmodule Explorer.DataFrame do
 
   ## Creating dataframes
 
-  Dataframes can be created from normal Elixir objects. The main ways you might do this are
-  `from_columns/1` and `from_rows/1`. For example:
+  Dataframes can be created from normal Elixir objects. The main way you might do this is
+  with the `new/1` function. For example:
 
       iex> Explorer.DataFrame.new(a: ["a", "b"], b: [1, 2])
       #Explorer.DataFrame<
         Polars[2 x 2]
         a string ["a", "b"]
         b integer [1, 2]
+      >
+
+  Or with a list of maps:
+
+      iex> Explorer.DataFrame.new([%{"col1" => "a", "col2" => 1}, %{"col1" => "b", "col2" => 2}])
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        col1 string ["a", "b"]
+        col2 integer [1, 2]
       >
 
   ## Verbs
@@ -58,6 +67,16 @@ defmodule Explorer.DataFrame do
   - `pivot_longer/3` and `pivot_wider/4` for massaging dataframes into longer or wider forms, respectively
 
   Each of these combine with `Explorer.DataFrame.group_by/2` for operating by group.
+
+  For more flexibility we also have functions that accept callback functions:
+
+  - `filter_with/2`
+  - `summarise_with/2`
+  - `mutate_with/2`
+  - `arrange_with/2`
+  
+  Those functions work by having a "lazy" representation of the dataframe and series,
+  which adds the possibility to perform complex operations that are optimized by the backend.
 
   ### Multiple table verbs
 
