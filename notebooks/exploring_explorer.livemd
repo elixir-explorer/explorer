@@ -392,22 +392,24 @@ DataFrame.filter_with(df, &Series.equal(&1["cuontry"], "AFGHANISTAN"))
 A common task in data analysis is to add columns or change existing ones. Mutate is a handy verb.
 
 ```elixir
-DataFrame.mutate(df, new_column: &Series.add(&1["solid_fuel"], &1["cement"]))
+DataFrame.mutate_with(df, &[new_column: Series.add(&1["solid_fuel"], &1["cement"])])
 ```
 
 Did you catch that? You can pass in new columns as keyword arguments. It also works to transform existing columns.
 
 ```elixir
-DataFrame.mutate(df,
-  gas_fuel: &Series.cast(&1["gas_fuel"], :float),
-  gas_and_liquid_fuel: &Series.add(&1["gas_fuel"], &1["liquid_fuel"])
-)
+DataFrame.mutate_with(df, fn df ->
+  [
+    gas_fuel: Series.cast(df["gas_fuel"], :float),
+    gas_and_liquid_fuel: Series.add(df["gas_fuel"], df["liquid_fuel"])
+  ]
+end)
 ```
 
 `DataFrame.mutate/2` is flexible though. You may not always want to use keyword arguments. Given that column names are `String.t()`, it may make more sense to use a map.
 
 ```elixir
-DataFrame.mutate(df, %{"gas_fuel" => &Series.subtract(&1["gas_fuel"], 10)})
+DataFrame.mutate_with(df, &%{"gas_fuel" => Series.subtract(&1["gas_fuel"], 10)})
 ```
 
 `DataFrame.transmute/2`, which is `DataFrame.mutate/2` that only retains the specified columns, is forthcoming.
@@ -617,6 +619,21 @@ Speaking of `mutate`, it's 'group-aware'. As are `arrange`, `distinct`, and `n_r
 
 ```elixir
 DataFrame.arrange(grouped, desc: :total)
+```
+
+In case you need more complex operations, like calculations inside groups, you can use the
+more flexible `Explorer.DataFrame.summarise_with/2` function.
+
+```elixir
+DataFrame.summarise_with(grouped, fn df ->
+  max = Series.max(df["per_capita"])
+
+  [
+    per_capita_max: max,
+    greater_than_9: Series.greater(max, 9.0)
+  ]
+end)
+|> DataFrame.arrange(desc: :per_capita_max)
 ```
 
 ### That's it!
