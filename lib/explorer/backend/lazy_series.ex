@@ -20,7 +20,10 @@ defmodule Explorer.Backend.LazySeries do
     reverse: 1,
     argsort: 2,
     sort: 2,
+    distinct: 1,
+    unordered_distinct: 1,
     # Comparisons
+    is_all_equal: 2,
     eq: 2,
     neq: 2,
     gt: 2,
@@ -122,6 +125,22 @@ defmodule Explorer.Backend.LazySeries do
   def sort(%Series{} = s, reverse?) do
     args = [lazy_series!(s), reverse?]
     data = new(:sort, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def distinct(%Series{} = s) do
+    args = [lazy_series!(s)]
+    data = new(:distinct, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def unordered_distinct(%Series{} = s) do
+    args = [lazy_series!(s)]
+    data = new(:unordered_distinct, args, aggregations?(args), window_functions?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -295,6 +314,14 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def is_not_nil(%Series{} = series) do
     data = new(:is_not_nil, [lazy_series!(series)])
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def all_equal?(%Series{} = left, %Series{} = right) do
+    args = [lazy_series!(left), lazy_series!(right)]
+    data = new(:is_all_equal, args, aggregations?(args), window_functions?(args))
 
     Backend.Series.new(data, :boolean)
   end

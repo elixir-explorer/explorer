@@ -143,6 +143,14 @@ pub fn expr_is_not_nil(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_is_all_equal(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr: Expr = left.resource.0.clone();
+    let right_expr: Expr = right.resource.0.clone();
+
+    ExExpr::new(left_expr.eq(right_expr).all())
+}
+
+#[rustler::nif]
 pub fn expr_add(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
@@ -338,6 +346,20 @@ pub fn expr_argsort(expr: ExExpr, reverse: bool) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
     ExExpr::new(expr.arg_sort(reverse))
+}
+
+#[rustler::nif]
+pub fn expr_distinct(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.unique_stable())
+}
+
+#[rustler::nif]
+pub fn expr_unordered_distinct(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.unique())
 }
 
 #[rustler::nif]

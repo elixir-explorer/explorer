@@ -112,6 +112,8 @@ rustler::init!(
         expr_string,
         // sort
         expr_argsort,
+        expr_distinct,
+        expr_unordered_distinct,
         expr_reverse,
         expr_sort,
         // comparison expressions
@@ -120,6 +122,7 @@ rustler::init!(
         expr_eq,
         expr_gt,
         expr_gt_eq,
+        expr_is_all_equal,
         expr_is_nil,
         expr_is_not_nil,
         expr_lt,
