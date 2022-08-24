@@ -307,15 +307,15 @@ defmodule Explorer.PolarsBackend.Series do
   def fill_missing(series, strategy) when is_atom(strategy),
     do: Shared.apply_series(series, :s_fill_none, [Atom.to_string(strategy)])
 
-  def fill_missing(series, strategy) do
+  def fill_missing(series, value) do
     operation =
       cond do
-        is_float(strategy) -> :s_fill_none_with_float
-        is_integer(strategy) -> :s_fill_none_with_int
-        is_binary(strategy) -> :s_fill_none_with_bin
+        is_float(value) -> :s_fill_none_with_float
+        is_integer(value) -> :s_fill_none_with_int
+        is_binary(value) -> :s_fill_none_with_bin
       end
 
-    Shared.apply_series(series, operation, [strategy])
+    Shared.apply_series(series, operation, [value])
   end
 
   @impl true

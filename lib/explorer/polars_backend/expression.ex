@@ -21,7 +21,17 @@ defmodule Explorer.PolarsBackend.Expression do
     window_sum: 5
   ]
 
-  @lazy_series_and_literal_args_funs [quantile: 2, argsort: 2, sort: 2] ++ @window_operations
+  @lazy_series_and_literal_args_funs [
+                                       quantile: 2,
+                                       argsort: 2,
+                                       sort: 2,
+                                       slice: 3,
+                                       head: 2,
+                                       tail: 2,
+                                       peaks: 2,
+                                       fill_missing: 2
+                                     ] ++
+                                       @window_operations
   @special_operations [cast: 2, column: 1] ++ @lazy_series_and_literal_args_funs
 
   # Some operations are special because they don't receive all args as lazy series.

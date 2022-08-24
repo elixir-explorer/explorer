@@ -1947,9 +1947,29 @@ defmodule Explorer.Series do
         string[4]
         ["a", "b", "c", "d"]
       >
+
+      iex> s = Explorer.Series.from_list([1, 2, nil, 4])
+      iex> Explorer.Series.fill_missing(s, "foo")
+      ** (ArgumentError) cannot invoke Explorer.Series.fill_missing/2 with mismatched dtypes: integer and "foo".
   """
-  @spec fill_missing(Series.t(), atom()) :: Series.t()
-  def fill_missing(series, strategy), do: Shared.apply_impl(series, :fill_missing, [strategy])
+  @spec fill_missing(
+          Series.t(),
+          :forward | :backward | :max | :min | :mean | Explorer.Backend.Series.valid_types()
+        ) :: Series.t()
+  def fill_missing(%Series{} = series, strategy)
+      when strategy in [:forward, :backward, :min, :max, :mean],
+      do: Shared.apply_impl(series, :fill_missing, [strategy])
+
+  def fill_missing(%Series{} = series, value) do
+    if K.or(
+         valid_for_bool_mask_operation?(series, value),
+         K.and(is_binary(value), series.dtype == :string)
+       ) do
+      Shared.apply_impl(series, :fill_missing, [value])
+    else
+      dtype_mismatch_error("fill_missing/2", series.dtype, inspect(value))
+    end
+  end
 
   @doc """
   Returns a mask of nil values.

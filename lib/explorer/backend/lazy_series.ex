@@ -22,6 +22,12 @@ defmodule Explorer.Backend.LazySeries do
     sort: 2,
     distinct: 1,
     unordered_distinct: 1,
+    slice: 3,
+    head: 2,
+    tail: 2,
+    peaks: 2,
+    fill_missing: 2,
+    fill_missing_with_value: 2,
     # Comparisons
     is_all_equal: 2,
     eq: 2,
@@ -141,6 +147,55 @@ defmodule Explorer.Backend.LazySeries do
   def unordered_distinct(%Series{} = s) do
     args = [lazy_series!(s)]
     data = new(:unordered_distinct, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def slice(%Series{} = s, offset, length) do
+    args = [lazy_series!(s), offset, length]
+    data = new(:slice, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def head(%Series{} = s, length) do
+    args = [lazy_series!(s), length]
+    data = new(:head, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def tail(%Series{} = s, length) do
+    args = [lazy_series!(s), length]
+    data = new(:tail, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def peaks(%Series{} = s, min_or_max) when is_atom(min_or_max) do
+    args = [lazy_series!(s), Atom.to_string(min_or_max)]
+    data = new(:peaks, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def fill_missing(%Series{} = s, strategy) when is_atom(strategy) do
+    args = [lazy_series!(s), Atom.to_string(strategy)]
+    data = new(:fill_missing, args, aggregations?(args), window_functions?(args))
+
+    dtype = if strategy == :mean, do: :float, else: s.dtype
+    Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def fill_missing(%Series{} = s, value) do
+    args = [lazy_series!(s), value]
+    data = new(:fill_missing_with_value, args, aggregations?(args), window_functions?(args))
 
     Backend.Series.new(data, s.dtype)
   end

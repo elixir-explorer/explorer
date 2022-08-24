@@ -110,6 +110,12 @@ rustler::init!(
         expr_float,
         expr_integer,
         expr_string,
+        expr_slice,
+        expr_head,
+        expr_tail,
+        expr_peaks,
+        expr_fill_missing,
+        expr_fill_missing_with_value,
         // sort
         expr_argsort,
         expr_distinct,
