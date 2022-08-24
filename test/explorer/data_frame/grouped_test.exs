@@ -426,13 +426,13 @@ defmodule Explorer.DataFrame.GroupedTest do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [1, 1, 2])
 
       df1 = DF.group_by(df, :c)
-      df2 = DF.mutate(df1, d: &Series.add(&1["a"], -7.1))
+      df2 = DF.mutate(df1, d: -7.1)
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                a: [1, 2, 3],
                b: ["a", "b", "c"],
                c: [1, 1, 2],
-               d: [-6.1, -5.1, -4.1]
+               d: [-7.1, -7.1, -7.1]
              }
 
       assert df2.names == ["a", "b", "c", "d"]

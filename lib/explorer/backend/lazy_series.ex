@@ -15,7 +15,11 @@ defmodule Explorer.Backend.LazySeries do
   @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean(), window: boolean()}
 
   @operations [
+    cast: 2,
     column: 1,
+    reverse: 1,
+    argsort: 2,
+    sort: 2,
     # Comparisons
     eq: 2,
     neq: 2,
@@ -49,6 +53,7 @@ defmodule Explorer.Backend.LazySeries do
     max: 1,
     mean: 1,
     median: 1,
+    n_distinct: 1,
     var: 1,
     std: 1,
     quantile: 2,
@@ -61,7 +66,19 @@ defmodule Explorer.Backend.LazySeries do
 
   @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow]
 
-  @aggregation_operations [:sum, :min, :max, :mean, :median, :var, :std, :count, :first, :last]
+  @aggregation_operations [
+    :sum,
+    :min,
+    :max,
+    :mean,
+    :median,
+    :var,
+    :std,
+    :count,
+    :first,
+    :last,
+    :n_distinct
+  ]
 
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
   @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]
@@ -76,6 +93,38 @@ defmodule Explorer.Backend.LazySeries do
 
   @doc false
   def window_operations, do: @cumulative_operations ++ @window_fun_operations
+
+  @impl true
+  def cast(%Series{} = s, dtype) when is_atom(dtype) do
+    args = [lazy_series!(s), dtype]
+    data = new(:cast, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def reverse(%Series{} = s) do
+    args = [lazy_series!(s)]
+    data = new(:reverse, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def argsort(%Series{} = s, reverse?) do
+    args = [lazy_series!(s), reverse?]
+    data = new(:argsort, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, :integer)
+  end
+
+  @impl true
+  def sort(%Series{} = s, reverse?) do
+    args = [lazy_series!(s), reverse?]
+    data = new(:sort, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
 
   # Implements all the comparison operations that
   # accepts Series or number on the right-hand side.

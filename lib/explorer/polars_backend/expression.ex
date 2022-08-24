@@ -20,20 +20,23 @@ defmodule Explorer.PolarsBackend.Expression do
     window_min: 5,
     window_sum: 5
   ]
-  @special_operations [column: 1, quantile: 2] ++ @window_operations
+
+  @lazy_series_and_literal_args_funs [quantile: 2, argsort: 2, sort: 2] ++ @window_operations
+  @special_operations [cast: 2, column: 1] ++ @lazy_series_and_literal_args_funs
 
   # Some operations are special because they don't receive all args as lazy series.
   # We define them first.
+
+  def to_expr(%LazySeries{op: :cast, args: [lazy_series, dtype]}) do
+    expr = to_expr(lazy_series)
+    Native.expr_cast(expr, Atom.to_string(dtype))
+  end
+
   def to_expr(%LazySeries{op: :column, args: [name]}) do
     Native.expr_column(name)
   end
 
-  def to_expr(%LazySeries{op: :quantile, args: [lazy_series, quantile]}) do
-    expr = to_expr(lazy_series)
-    Native.expr_quantile(expr, quantile)
-  end
-
-  for {op, _arity} <- @window_operations do
+  for {op, _arity} <- @lazy_series_and_literal_args_funs do
     expr_op = :"expr_#{op}"
 
     def to_expr(%LazySeries{op: unquote(op), args: [lazy_series | args]}) do

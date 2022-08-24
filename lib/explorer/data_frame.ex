@@ -27,14 +27,23 @@ defmodule Explorer.DataFrame do
 
   ## Creating dataframes
 
-  Dataframes can be created from normal Elixir objects. The main ways you might do this are
-  `from_columns/1` and `from_rows/1`. For example:
+  Dataframes can be created from normal Elixir objects. The main way you might do this is
+  with the `new/1` function. For example:
 
       iex> Explorer.DataFrame.new(a: ["a", "b"], b: [1, 2])
       #Explorer.DataFrame<
         Polars[2 x 2]
         a string ["a", "b"]
         b integer [1, 2]
+      >
+
+  Or with a list of maps:
+
+      iex> Explorer.DataFrame.new([%{"col1" => "a", "col2" => 1}, %{"col1" => "b", "col2" => 2}])
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        col1 string ["a", "b"]
+        col2 integer [1, 2]
       >
 
   ## Verbs
@@ -58,6 +67,16 @@ defmodule Explorer.DataFrame do
   - `pivot_longer/3` and `pivot_wider/4` for massaging dataframes into longer or wider forms, respectively
 
   Each of these combine with `Explorer.DataFrame.group_by/2` for operating by group.
+
+  For more flexibility we also have functions that accept callback functions:
+
+  - `filter_with/2`
+  - `summarise_with/2`
+  - `mutate_with/2`
+  - `arrange_with/2`
+
+  Those functions work by having a "lazy" representation of the dataframe and series,
+  which adds the possibility to perform complex operations that are optimized by the backend.
 
   ### Multiple table verbs
 
@@ -1122,8 +1141,53 @@ defmodule Explorer.DataFrame do
     df |> callback.() |> then(&mask(df, &1))
   end
 
-  @doc false
-  def filter_with(df, fun) when is_function(fun) do
+  @doc """
+  Picks rows based on a callback function. 
+
+  This function is efficient because it uses a representation of the
+  series without pulling them. The only restriction is that
+  you need to use a function that returns boolean.
+
+  But you can also use window functions and aggregations inside comparisons.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, &Explorer.Series.greater(&1["col2"], 2))
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["c"]
+        col2 integer [3]
+      >
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.equal(df["col1"], "b") end)
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["b"]
+        col2 integer [2]
+      >
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.cumulative_max(df["col2"]) end)
+      ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer
+     
+  But it's possible to use a boolean operation based on another function:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.equal(Explorer.Series.cumulative_max(df["col2"]), 1) end)
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["a"]
+        col2 integer [1]
+      >
+  """
+  @doc type: :single
+  @spec filter_with(
+          df :: DataFrame.t(),
+          callback :: (Explorer.Backend.LazyFrame.t() -> Series.lazy_t())
+        ) :: DataFrame.t()
+  def filter_with(df, fun) when is_function(fun, 1) do
     ldf = to_opaque_lazy(df)
 
     case fun.(ldf) do
@@ -1180,17 +1244,6 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
 
-  Or you can invoke a callback on the dataframe:
-
-      iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate(df, c: &Explorer.Series.add(&1["a"], &1["b"]))
-      #Explorer.DataFrame<
-        Polars[3 x 3]
-        a integer [4, 5, 6]
-        b integer [1, 2, 3]
-        c integer [5, 7, 9]
-      >
-
   You can overwrite existing columns:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
@@ -1208,16 +1261,6 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a integer [4, 4, 4]
-        b integer [1, 2, 3]
-      >
-
-  Including when a callback returns a scalar:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate(df, a: &Explorer.Series.max(&1["b"]))
-      #Explorer.DataFrame<
-        Polars[3 x 2]
-        a integer [3, 3, 3]
         b integer [1, 2, 3]
       >
 
@@ -1250,7 +1293,13 @@ defmodule Explorer.DataFrame do
 
     mut_dtypes =
       for {name, value} <- mutations, into: %{} do
-        value = if is_function(value), do: value.(df), else: value
+        value =
+          if is_function(value) do
+            IO.warn("mutate/2 with a callback is deprecated, please use mutate_with/2 instead")
+            value.(df)
+          else
+            value
+          end
 
         dtype =
           case value do
@@ -1272,7 +1321,77 @@ defmodule Explorer.DataFrame do
     %{df | names: new_names, dtypes: new_dtypes}
   end
 
-  @doc false
+  @doc """
+  Creates or modifies columns using a callback function.
+
+  This function is similar to `mutate/2`, but allows complex operations
+  to be performed, since it uses a virtual representation of the dataframe.
+  The only requirement is that a series operation is returned.
+
+  New variables overwrite existing variables of the
+  same name. Column names are coerced from atoms to strings.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, &[c: Explorer.Series.add(&1["a"], &1["b"])])
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        a integer [4, 5, 6]
+        b integer [1, 2, 3]
+        c integer [5, 7, 9]
+      >
+
+  You can overwrite existing columns:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, &[b: Explorer.Series.pow(&1["b"], 2)])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a string ["a", "b", "c"]
+        b float [1.0, 4.0, 9.0]
+      >
+
+  Scalar values are repeated to fill the series:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, &[a: Explorer.Series.max(&1["b"])])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [3, 3, 3]
+        b integer [1, 2, 3]
+      >
+
+  Alternatively, all of the above works with a map instead of a keyword list:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, fn df -> %{"c" => Explorer.Series.window_mean(df["b"], 2)} end)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        a string ["a", "b", "c"]
+        b integer [1, 2, 3]
+        c float [1.0, 1.5, 2.5]
+      >
+
+  Mutations in grouped dataframes are also possible:
+
+      iex> df = Explorer.DataFrame.new(id: ["a", "a", "b"], b: [1, 2, 3])
+      iex> grouped = Explorer.DataFrame.group_by(df, :id)
+      iex> Explorer.DataFrame.mutate_with(grouped, &[count: Explorer.Series.count(&1["b"])])
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        Groups: ["id"]
+        id string ["a", "a", "b"]
+        b integer [1, 2, 3]
+        count integer [2, 2, 1]
+      >
+
+  """
+  @doc type: :single
+  @spec mutate_with(
+          df :: DataFrame.t(),
+          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+        ) :: DataFrame.t()
   def mutate_with(%DataFrame{} = df, fun) when is_function(fun) do
     ldf = to_opaque_lazy(df)
 
@@ -1289,29 +1408,19 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    new_dtypes = names_with_dtypes_for_mutate_with(df, column_pairs)
-    new_names = for {name, _} <- new_dtypes, do: name
-    df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes)}
+    new_dtypes =
+      for {column_name, series} <- column_pairs, into: %{} do
+        {column_name, series.dtype}
+      end
+
+    mut_names = Enum.map(column_pairs, &elem(&1, 0))
+    new_names = Enum.uniq(df.names ++ mut_names)
+
+    df_out = %{df | names: new_names, dtypes: Map.merge(df.dtypes, new_dtypes)}
 
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
     Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
-  end
-
-  defp names_with_dtypes_for_mutate_with(df, column_pairs) do
-    new_names_with_dtypes =
-      for {column_name, series} <- column_pairs do
-        {column_name, series.dtype}
-      end
-
-    column_names = for {name, _} <- column_pairs, do: name
-
-    existing_dtypes =
-      for name <- df.names, name not in column_names do
-        {name, df.dtypes[name]}
-      end
-
-    existing_dtypes ++ new_names_with_dtypes
   end
 
   @doc """
@@ -1410,14 +1519,56 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :arrange, [Enum.map(columns, &{:asc, &1})])
   end
 
-  @doc false
-  def arrange_with(%DataFrame{} = df, fun) when is_function(fun) do
+  @doc """
+  Arranges/sorts rows by columns using a callback function.
+
+  ## Examples
+
+  A single column name will sort ascending by that column:
+
+      iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.arrange_with(df, &(&1["a"]))
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a string ["a", "b", "c"]
+        b integer [3, 1, 2]
+      >
+
+  You can also sort descending:
+
+      iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"]])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a string ["c", "b", "a"]
+        b integer [2, 1, 3]
+      >
+
+  Sorting by more than one column sorts them in the order they are entered:
+
+      iex> df = Explorer.DataFrame.new(a: [3, 1, 3], b: [2, 1, 3])
+      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"], asc: &1["b"]])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [3, 3, 1]
+        b integer [2, 3, 1]
+      >
+  """
+  @doc type: :single
+  @spec arrange_with(
+          df :: DataFrame.t(),
+          (Explorer.Backend.LazyFrame.t() ->
+             Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}])
+        ) :: DataFrame.t()
+  def arrange_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
     ldf = to_opaque_lazy(df)
 
     result = fun.(ldf)
 
     dir_and_lazy_series_pairs =
-      Enum.map(result, fn
+      result
+      |> List.wrap()
+      |> Enum.map(fn
         {dir, %Series{data: %LazySeries{} = lazy_series}} when dir in [:asc, :desc] ->
           {dir, lazy_series}
 
@@ -2794,7 +2945,48 @@ defmodule Explorer.DataFrame do
     groups ++ agg_pairs
   end
 
-  @doc false
+  @doc """
+  Summarise each group to a single row using a callback function.
+
+  Implicitly ungroups.
+  The main difference between `summarise/2` and `summarise_with/2` is that the later
+  accepts a function that can be used to perform complex operations.
+  This is efficient because it doesn't need
+  to create intermediate series representations to summarise.
+
+  ## Supported operations
+
+  The function callback should be in the form of `[name_of_col: "operation"]`,
+  where `"operation"` is one of the `Explorer.Series` functions. It's required
+  that at least one of the following functions is used for summarisation:
+
+    * `Explorer.Series.min/1` - Take the minimum value within the group.
+    * `Explorer.Series.max/1` - Take the maximum value within the group.
+    * `Explorer.Series.sum/1` - Take the sum of the series within the group.
+    * `Explorer.Series.mean/1` - Take the mean of the series within the group.
+    * `Explorer.Series.median/1` - Take the median of the series within the group.
+    * `Explorer.Series.first/1` - Take the first value within the group.
+    * `Explorer.Series.last/1` - Take the last value within the group.
+    * `Explorer.Series.count/1` - Count the number of rows per group.
+    * `Explorer.Series.n_distinct/1` - Count the number of unique rows per group.
+
+  ## Examples
+
+      iex> alias Explorer.{DataFrame, Series}
+      iex> df = Explorer.Datasets.fossil_fuels() |> DataFrame.group_by("year")
+      iex> DataFrame.summarise_with(df, &[total_max: Series.max(&1["total"]), countries: Series.n_distinct(&1["country"])])
+      #Explorer.DataFrame<
+        Polars[5 x 3]
+        year integer [2010, 2011, 2012, 2013, 2014]
+        total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
+        countries integer [217, 217, 220, 220, 220]
+      >
+  """
+  @doc type: :single
+  @spec summarise_with(
+          df :: DataFrame.t(),
+          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+        ) :: DataFrame.t()
   def summarise_with(%DataFrame{groups: []}, _),
     do:
       raise(
@@ -2802,7 +2994,7 @@ defmodule Explorer.DataFrame do
         "dataframe must be grouped in order to perform summarisation"
       )
 
-  def summarise_with(%DataFrame{} = df, fun) when is_function(fun) do
+  def summarise_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
     ldf = to_opaque_lazy(df)
 
     result = fun.(ldf)

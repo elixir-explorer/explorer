@@ -359,6 +359,54 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer}
     end
 
+    test "changes a column" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [a: Series.cast(ldf["a"], :float)]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1.0, 2.0, 3.0],
+               b: ["a", "b", "c"]
+             }
+
+      assert df1.names == ["a", "b"]
+      assert df1.dtypes == %{"a" => :float, "b" => :string}
+    end
+
+    test "adds new columns with reverse, sort and argsort" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            c: Series.reverse(ldf["a"]),
+            d: Series.argsort(ldf["a"], true),
+            e: Series.sort(ldf["b"], true)
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [3, 2, 1],
+               d: [2, 1, 0],
+               e: ["c", "b", "a"]
+             }
+
+      assert df1.names == ["a", "b", "c", "d", "e"]
+
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "b" => :string,
+               "c" => :integer,
+               "d" => :integer,
+               "e" => :string
+             }
+    end
+
     test "adds a new column with some aggregations without groups" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
@@ -461,6 +509,16 @@ defmodule Explorer.DataFrameTest do
     test "with a simple df and asc order" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
       df1 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"]] end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
+    test "with a simple df one column and without order" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.arrange_with(df, fn ldf -> ldf["a"] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],

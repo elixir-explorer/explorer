@@ -9,7 +9,7 @@ use polars::prelude::{col, when, DataFrame, IntoLazy};
 use polars::prelude::{Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
-use crate::series::rolling_opts;
+use crate::series::{cast_str_to_dtype, rolling_opts};
 use crate::{ExDataFrame, ExExpr};
 
 #[rustler::nif]
@@ -48,6 +48,14 @@ pub fn expr_datetime(datetime: ExDateTime) -> ExExpr {
     let naive_datetime = NaiveDateTime::from(datetime);
     let expr = naive_datetime.lit();
     ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_cast(data: ExExpr, to_dtype: &str) -> ExExpr {
+    let expr: Expr = data.resource.0.clone();
+    let to_dtype = cast_str_to_dtype(to_dtype).expect("dtype is not valid");
+
+    ExExpr::new(expr.cast(to_dtype))
 }
 
 #[rustler::nif]
@@ -239,6 +247,13 @@ pub fn expr_count(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_n_distinct(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.n_unique())
+}
+
+#[rustler::nif]
 pub fn expr_first(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
@@ -302,6 +317,27 @@ pub fn expr_cumulative_max(data: ExExpr, reverse: bool) -> ExExpr {
 pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
     let expr: Expr = data.resource.0.clone();
     ExExpr::new(expr.cumsum(reverse))
+}
+
+#[rustler::nif]
+pub fn expr_reverse(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.reverse())
+}
+
+#[rustler::nif]
+pub fn expr_sort(expr: ExExpr, reverse: bool) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.sort(reverse))
+}
+
+#[rustler::nif]
+pub fn expr_argsort(expr: ExExpr, reverse: bool) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.arg_sort(reverse))
 }
 
 #[rustler::nif]

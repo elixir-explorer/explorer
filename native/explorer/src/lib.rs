@@ -103,12 +103,17 @@ rustler::init!(
         df_write_parquet,
         // expressions
         expr_boolean,
+        expr_cast,
         expr_column,
         expr_date,
         expr_datetime,
         expr_float,
         expr_integer,
         expr_string,
+        // sort
+        expr_argsort,
+        expr_reverse,
+        expr_sort,
         // comparison expressions
         expr_binary_and,
         expr_binary_or,
@@ -133,6 +138,7 @@ rustler::init!(
         expr_max,
         expr_mean,
         expr_median,
+        expr_n_distinct,
         expr_std,
         expr_var,
         expr_quantile,
