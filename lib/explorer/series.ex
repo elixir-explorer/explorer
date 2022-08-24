@@ -1676,24 +1676,24 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list(["a", "b"])
       iex> s2 = Explorer.Series.from_list(["a", "b"])
-      iex> Explorer.Series.all_equal?(s1, s2)
+      iex> Explorer.Series.all_equal(s1, s2)
       true
 
       iex> s1 = Explorer.Series.from_list(["a", "b"])
       iex> s2 = Explorer.Series.from_list(["a", "c"])
-      iex> Explorer.Series.all_equal?(s1, s2)
+      iex> Explorer.Series.all_equal(s1, s2)
       false
 
       iex> s1 = Explorer.Series.from_list(["a", "b"])
       iex> s2 = Explorer.Series.from_list([1, 2])
-      iex> Explorer.Series.all_equal?(s1, s2)
+      iex> Explorer.Series.all_equal(s1, s2)
       false
   """
   @doc type: :element_wise
-  def all_equal?(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: Shared.apply_impl(left, :all_equal?, [right])
+  def all_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
+    do: Shared.apply_impl(left, :all_equal, [right])
 
-  def all_equal?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
+  def all_equal(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
       when left_dtype !=
              right_dtype,
       do: false

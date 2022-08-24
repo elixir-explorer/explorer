@@ -16,7 +16,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @operations [
     # Element-wise
-    is_all_equal: 2,
+    all_equal: 2,
     eq: 2,
     neq: 2,
     gt: 2,
@@ -376,9 +376,9 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def all_equal?(%Series{} = left, %Series{} = right) do
+  def all_equal(%Series{} = left, %Series{} = right) do
     args = [lazy_series!(left), lazy_series!(right)]
-    data = new(:is_all_equal, args, aggregations?(args), window_functions?(args))
+    data = new(:all_equal, args, aggregations?(args), window_functions?(args))
 
     Backend.Series.new(data, :boolean)
   end

@@ -143,7 +143,7 @@ pub fn expr_is_not_nil(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_is_all_equal(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_all_equal(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
 

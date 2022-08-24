@@ -271,12 +271,12 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "filter with all_equal? equals true" do
+    test "filter with all_equal equals true" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6], b: [1, 2, 3, 4, 5, 6])
 
       df1 =
         DF.filter_with(df, fn ldf ->
-          Series.all_equal?(ldf["a"], ldf["b"])
+          Series.all_equal(ldf["a"], ldf["b"])
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -285,12 +285,12 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "filter with all_equal? equals false" do
+    test "filter with all_equal equals false" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6], b: [1, 2, 3, 4, 5, 7])
 
       df1 =
         DF.filter_with(df, fn ldf ->
-          Series.all_equal?(ldf["a"], ldf["b"])
+          Series.all_equal(ldf["a"], ldf["b"])
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{

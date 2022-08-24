@@ -230,7 +230,7 @@ defmodule Explorer.PolarsBackend.Series do
   def lt_eq(left, right), do: lt_eq(left, scalar_rhs(right, left))
 
   @impl true
-  def all_equal?(left, right),
+  def all_equal(left, right),
     do: Shared.apply_series(left, :s_series_equal, [right.data, true])
 
   @impl true

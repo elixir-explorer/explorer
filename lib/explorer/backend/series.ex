@@ -79,7 +79,7 @@ defmodule Explorer.Backend.Series do
   @callback gt_eq(s, s | valid_types()) :: s
   @callback lt(s, s | valid_types()) :: s
   @callback lt_eq(s, s | valid_types()) :: s
-  @callback all_equal?(s, s) :: boolean() | lazy_s()
+  @callback all_equal(s, s) :: boolean() | lazy_s()
 
   @callback binary_and(s, s) :: s
   @callback binary_or(s, s) :: s
