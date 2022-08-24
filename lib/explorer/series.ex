@@ -1782,6 +1782,11 @@ defmodule Explorer.Series do
   @doc """
   Creates a new dataframe with unique values and the count of each.
 
+  In the context of lazy series - using `DataFrame.*_with/2` functions -,
+  `count/1` is going to count the elements inside the same group.
+  If no group is in use, then count is going to return the length of
+  the series.
+
   ## Examples
 
       iex> s = Explorer.Series.from_list(["a", "a", "b", "c", "c", "c"])

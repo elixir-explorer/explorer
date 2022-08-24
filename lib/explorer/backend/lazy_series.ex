@@ -15,6 +15,32 @@ defmodule Explorer.Backend.LazySeries do
   @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean(), window: boolean()}
 
   @operations [
+    # Element-wise
+    is_all_equal: 2,
+    eq: 2,
+    neq: 2,
+    gt: 2,
+    gt_eq: 2,
+    lt: 2,
+    lt_eq: 2,
+    is_nil: 1,
+    is_not_nil: 1,
+    binary_and: 2,
+    binary_or: 2,
+    add: 2,
+    subtract: 2,
+    multiply: 2,
+    divide: 2,
+    pow: 2,
+    # Window functions
+    cumulative_max: 2,
+    cumulative_min: 2,
+    cumulative_sum: 2,
+    window_max: 5,
+    window_mean: 5,
+    window_min: 5,
+    window_sum: 5,
+    # Transformation
     cast: 2,
     column: 1,
     reverse: 1,
@@ -28,34 +54,7 @@ defmodule Explorer.Backend.LazySeries do
     peaks: 2,
     fill_missing: 2,
     fill_missing_with_value: 2,
-    # Comparisons
-    is_all_equal: 2,
-    eq: 2,
-    neq: 2,
-    gt: 2,
-    gt_eq: 2,
-    lt: 2,
-    lt_eq: 2,
-    is_nil: 1,
-    is_not_nil: 1,
-    binary_and: 2,
-    binary_or: 2,
-    # Arithmetics
-    add: 2,
-    subtract: 2,
-    multiply: 2,
-    divide: 2,
-    pow: 2,
-    # Slice and dice
     coalesce: 2,
-    # Window functions
-    cumulative_max: 2,
-    cumulative_min: 2,
-    cumulative_sum: 2,
-    window_max: 5,
-    window_mean: 5,
-    window_min: 5,
-    window_sum: 5,
     # Aggregations
     sum: 1,
     min: 1,
@@ -102,6 +101,9 @@ defmodule Explorer.Backend.LazySeries do
 
   @doc false
   def window_operations, do: @cumulative_operations ++ @window_fun_operations
+
+  @impl true
+  def dtype(%Series{} = s), do: s.dtype
 
   @impl true
   def cast(%Series{} = s, dtype) when is_atom(dtype) do
@@ -423,12 +425,20 @@ defmodule Explorer.Backend.LazySeries do
 
   defp to_elixir_ast(other), do: other
 
-  # TODO: Make the functions of non-implemented functions
-  # explicit once the lazy interface is ready.
-  funs =
-    Backend.Series.behaviour_info(:callbacks) --
-      (Backend.Series.behaviour_info(:optional_callbacks) ++
-         Module.definitions_in(__MODULE__, :def) ++ [{:inspect, 2}])
+  # The following functions are not implemented yet and should raise if used.
+  funs = [
+    {:concat, 2},
+    {:get, 2},
+    {:filter, 2},
+    {:from_list, 2},
+    {:sample, 4},
+    {:size, 1},
+    {:slice, 2},
+    {:take_every, 2},
+    {:to_enum, 1},
+    {:to_list, 1},
+    {:transform, 2}
+  ]
 
   for {fun, arity} <- funs do
     args = Macro.generate_arguments(arity, __MODULE__)
