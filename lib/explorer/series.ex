@@ -324,7 +324,7 @@ defmodule Explorer.Series do
         [1, 2, 3]
       >
   """
-  @doc type: :transformation
+  @doc type: :element_wise
   @spec cast(series :: Series.t(), dtype :: dtype()) :: Series.t()
   def cast(%Series{dtype: dtype} = series, dtype), do: series
   def cast(series, dtype), do: Shared.apply_impl(series, :cast, [dtype])
@@ -696,7 +696,7 @@ defmodule Explorer.Series do
         [1, 2, 3, 4]
       >
   """
-  @doc type: :transformation
+  @doc type: :element_wise
   @spec coalesce([Series.t()]) :: Series.t()
   def coalesce([%Series{} = h | t]),
     do: Enum.reduce(t, h, &coalesce(&2, &1))
@@ -2095,7 +2095,7 @@ defmodule Explorer.Series do
         [4, 2, 5]
       >
   """
-  @doc type: :element_wise
+  @doc type: :transformation
   def transform(series, fun) do
     case Shared.apply_impl(series, :transform, [fun]) do
       %Series{} = series -> series

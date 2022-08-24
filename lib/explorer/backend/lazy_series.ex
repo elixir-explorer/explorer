@@ -32,6 +32,10 @@ defmodule Explorer.Backend.LazySeries do
     multiply: 2,
     divide: 2,
     pow: 2,
+    fill_missing: 2,
+    fill_missing_with_value: 2,
+    coalesce: 2,
+    cast: 2,
     # Window functions
     cumulative_max: 2,
     cumulative_min: 2,
@@ -41,7 +45,6 @@ defmodule Explorer.Backend.LazySeries do
     window_min: 5,
     window_sum: 5,
     # Transformation
-    cast: 2,
     column: 1,
     reverse: 1,
     argsort: 2,
@@ -52,9 +55,6 @@ defmodule Explorer.Backend.LazySeries do
     head: 2,
     tail: 2,
     peaks: 2,
-    fill_missing: 2,
-    fill_missing_with_value: 2,
-    coalesce: 2,
     # Aggregations
     sum: 1,
     min: 1,
