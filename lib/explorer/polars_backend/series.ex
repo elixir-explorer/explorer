@@ -96,7 +96,7 @@ defmodule Explorer.PolarsBackend.Series do
   def slice(series, offset, length), do: Shared.apply_series(series, :s_slice, [offset, length])
 
   @impl true
-  def get(series, idx) do
+  def fetch!(series, idx) do
     idx = if idx < 0, do: size(series) + idx, else: idx
     Shared.apply_series(series, :s_get, [idx])
   end

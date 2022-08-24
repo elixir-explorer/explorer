@@ -38,7 +38,7 @@ defmodule Explorer.PolarsBackend.Series.Iterator do
     defp reduce(_series, size, size, {:cont, acc}, _fun), do: {:done, acc}
 
     defp reduce(series, size, offset, {:cont, acc}, fun) do
-      value = Series.get(series, offset)
+      value = Series.fetch!(series, offset)
       reduce(series, size, offset + 1, fun.(value, acc), fun)
     end
   end

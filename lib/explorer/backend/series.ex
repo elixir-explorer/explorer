@@ -36,7 +36,7 @@ defmodule Explorer.Backend.Series do
   @callback filter(s, function()) :: s
   @callback slice(s, indices :: list()) :: s
   @callback slice(s, offset :: integer(), length :: integer()) :: s
-  @callback get(s, idx :: integer()) :: s
+  @callback fetch!(s, idx :: integer()) :: s
   @callback concat(s, s) :: s
   @callback coalesce(s, s) :: s
   @callback first(s) :: valid_types() | lazy_s()

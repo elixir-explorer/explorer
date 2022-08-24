@@ -43,14 +43,14 @@ defmodule Explorer.Series do
   defguardp numeric_or_date_dtype?(dtype) when dtype in [:float, :integer, :date, :datetime]
 
   @impl true
-  def fetch(series, idx) when is_integer(idx), do: {:ok, get(series, idx)}
+  def fetch(series, idx) when is_integer(idx), do: {:ok, fetch!(series, idx)}
   def fetch(series, indices) when is_list(indices), do: {:ok, slice(series, indices)}
   def fetch(series, %Range{} = range), do: {:ok, slice(series, range)}
 
   @impl true
   def pop(series, idx) when is_integer(idx) do
     mask = 0..(size(series) - 1) |> Enum.map(&(&1 != idx)) |> from_list()
-    value = get(series, idx)
+    value = fetch!(series, idx)
     series = filter(series, mask)
     {value, series}
   end
@@ -71,7 +71,7 @@ defmodule Explorer.Series do
 
   @impl true
   def get_and_update(series, idx, fun) when is_integer(idx) do
-    value = get(series, idx)
+    value = fetch!(series, idx)
     {current_value, new_value} = fun.(value)
     new_data = series |> to_list() |> List.replace_at(idx, new_value) |> from_list()
     {current_value, new_data}
@@ -605,25 +605,28 @@ defmodule Explorer.Series do
   @doc """
   Returns the value of the series at the given index.
 
+  This function will raise an error in case the index
+  is out of bounds.
+
   ## Examples
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.get(s, 2)
+      iex> Explorer.Series.fetch!(s, 2)
       "c"
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.get(s, 4)
+      iex> Explorer.Series.fetch!(s, 4)
       ** (ArgumentError) index 4 out of bounds for series of size 3
   """
   @doc type: :transformation
-  @spec get(series :: Series.t(), idx :: integer()) :: any()
-  def get(series, idx) do
+  @spec fetch!(series :: Series.t(), idx :: integer()) :: any()
+  def fetch!(series, idx) do
     s_len = size(series)
 
     if idx > s_len - 1 || idx < -s_len,
       do: raise(ArgumentError, "index #{idx} out of bounds for series of size #{s_len}")
 
-    Shared.apply_impl(series, :get, [idx])
+    Shared.apply_impl(series, :fetch!, [idx])
   end
 
   @doc """
