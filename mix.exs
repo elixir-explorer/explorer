@@ -65,7 +65,12 @@ defmodule Explorer.MixProject do
         "Functions: Multi-table": &(&1[:type] == :multi),
         "Functions: Row-based": &(&1[:type] == :rows),
         "Functions: Introspection": &(&1[:type] == :introspection),
-        "Functions: IO": &(&1[:type] == :io)
+        "Functions: IO": &(&1[:type] == :io),
+        # For series
+        "Functions: Aggregation": &(&1[:type] == :aggregation),
+        "Functions: Element-wise": &(&1[:type] == :element_wise),
+        "Functions: Transformation": &(&1[:type] == :transformation),
+        "Functions: Window": &(&1[:type] == :window)
       ],
       extras: ["notebooks/exploring_explorer.livemd", "CHANGELOG.md"],
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
