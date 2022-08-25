@@ -387,6 +387,10 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
 
 // Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
 fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+    let nan_atom = nan().encode(env);
+    let neg_infinity_atom = neg_infinity().encode(env);
+    let infinity_atom = infinity().encode(env);
+
     let items: Vec<NIF_TERM> = s
         .f64()
         .unwrap()
@@ -400,9 +404,9 @@ fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
                             x.encode(env)
                         } else {
                             match (x.is_nan(), x.is_sign_negative()) {
-                                (true, _) => nan().encode(env),
-                                (false, true) => neg_infinity().encode(env),
-                                (false, false) => infinity().encode(env),
+                                (true, _) => nan_atom,
+                                (false, true) => neg_infinity_atom,
+                                (false, false) => infinity_atom,
                             }
                         }
                     })
