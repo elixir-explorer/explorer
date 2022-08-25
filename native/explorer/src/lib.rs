@@ -50,7 +50,10 @@ mod atoms {
         month,
         year,
         microsecond,
-        calendar
+        calendar,
+        nan,
+        infinity,
+        neg_infinity
     }
 }
 

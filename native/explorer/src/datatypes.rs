@@ -4,7 +4,7 @@ use rustler::resource::ResourceArc;
 use rustler::{Atom, Encoder, Env, NifStruct, Term};
 use std::convert::TryInto;
 
-use crate::atoms;
+use crate::atoms::{self, infinity, nan, neg_infinity};
 use crate::atoms::{calendar, calendar_atom, day, hour, microsecond, minute, month, second, year};
 
 use rustler::types::atom::__struct__;
@@ -345,7 +345,7 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
         .encode(env)
         .as_c_arg();
 
-    let items = s
+    let items: Vec<NIF_TERM> = s
         .datetime()
         .unwrap()
         .downcast_iter()
@@ -380,7 +380,37 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
                     .as_c_arg()
             })
         })
-        .collect::<Vec<NIF_TERM>>();
+        .collect();
+
+    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+}
+
+// Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
+fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+    let items: Vec<NIF_TERM> = s
+        .f64()
+        .unwrap()
+        .downcast_iter()
+        .flat_map(move |iter| {
+            iter.into_iter().map(move |opt_v| {
+                opt_v
+                    .copied()
+                    .map(|x| {
+                        if x.is_finite() {
+                            x.encode(env)
+                        } else {
+                            match (x.is_nan(), x.is_sign_negative()) {
+                                (true, _) => nan().encode(env),
+                                (false, true) => neg_infinity().encode(env),
+                                (false, false) => infinity().encode(env),
+                            }
+                        }
+                    })
+                    .encode(env)
+                    .as_c_arg()
+            })
+        })
+        .collect();
 
     unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
 }
@@ -433,7 +463,7 @@ impl Encoder for ExSeriesRef {
             DataType::Int32 => encode!(s, env, i32),
             DataType::Int64 => encode!(s, env, i64),
             DataType::UInt32 => encode!(s, env, u32),
-            DataType::Float64 => encode!(s, env, f64),
+            DataType::Float64 => encode_float64_series(s, env),
             DataType::Date => encode_date_series(s, env),
             DataType::Datetime(TimeUnit::Microseconds, None) => {
                 encode_datetime_series(s, TimeUnit::Microseconds, env)
