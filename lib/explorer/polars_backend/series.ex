@@ -96,7 +96,7 @@ defmodule Explorer.PolarsBackend.Series do
   def slice(series, offset, length), do: Shared.apply_series(series, :s_slice, [offset, length])
 
   @impl true
-  def get(series, idx) do
+  def fetch!(series, idx) do
     idx = if idx < 0, do: size(series) + idx, else: idx
     Shared.apply_series(series, :s_get, [idx])
   end
@@ -230,7 +230,7 @@ defmodule Explorer.PolarsBackend.Series do
   def lt_eq(left, right), do: lt_eq(left, scalar_rhs(right, left))
 
   @impl true
-  def all_equal?(left, right),
+  def all_equal(left, right),
     do: Shared.apply_series(left, :s_series_equal, [right.data, true])
 
   @impl true
@@ -307,15 +307,15 @@ defmodule Explorer.PolarsBackend.Series do
   def fill_missing(series, strategy) when is_atom(strategy),
     do: Shared.apply_series(series, :s_fill_none, [Atom.to_string(strategy)])
 
-  def fill_missing(series, strategy) do
+  def fill_missing(series, value) do
     operation =
       cond do
-        is_float(strategy) -> :s_fill_none_with_float
-        is_integer(strategy) -> :s_fill_none_with_int
-        is_binary(strategy) -> :s_fill_none_with_bin
+        is_float(value) -> :s_fill_none_with_float
+        is_integer(value) -> :s_fill_none_with_int
+        is_binary(value) -> :s_fill_none_with_bin
       end
 
-    Shared.apply_series(series, operation, [strategy])
+    Shared.apply_series(series, operation, [value])
   end
 
   @impl true

@@ -36,7 +36,7 @@ defmodule Explorer.Backend.Series do
   @callback filter(s, function()) :: s
   @callback slice(s, indices :: list()) :: s
   @callback slice(s, offset :: integer(), length :: integer()) :: s
-  @callback get(s, idx :: integer()) :: s
+  @callback fetch!(s, idx :: integer()) :: s
   @callback concat(s, s) :: s
   @callback coalesce(s, s) :: s
   @callback first(s) :: valid_types() | lazy_s()
@@ -79,7 +79,7 @@ defmodule Explorer.Backend.Series do
   @callback gt_eq(s, s | valid_types()) :: s
   @callback lt(s, s | valid_types()) :: s
   @callback lt_eq(s, s | valid_types()) :: s
-  @callback all_equal?(s, s) :: boolean()
+  @callback all_equal(s, s) :: boolean() | lazy_s()
 
   @callback binary_and(s, s) :: s
   @callback binary_or(s, s) :: s
@@ -113,7 +113,10 @@ defmodule Explorer.Backend.Series do
 
   # Nulls
 
-  @callback fill_missing(s, strategy :: :backward | :forward | :min | :max | :mean) :: s
+  @callback fill_missing(
+              s,
+              strategy :: :backward | :forward | :min | :max | :mean | valid_types()
+            ) :: s
   @callback is_nil(s) :: s
   @callback is_not_nil(s) :: s
 

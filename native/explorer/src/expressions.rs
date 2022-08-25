@@ -143,6 +143,69 @@ pub fn expr_is_not_nil(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_all_equal(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr: Expr = left.resource.0.clone();
+    let right_expr: Expr = right.resource.0.clone();
+
+    ExExpr::new(left_expr.eq(right_expr).all())
+}
+
+#[rustler::nif]
+pub fn expr_slice(expr: ExExpr, offset: i64, length: u32) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.slice(offset, length))
+}
+
+#[rustler::nif]
+pub fn expr_head(expr: ExExpr, length: usize) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.head(Some(length)))
+}
+
+#[rustler::nif]
+pub fn expr_tail(expr: ExExpr, length: usize) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.tail(Some(length)))
+}
+
+#[rustler::nif]
+pub fn expr_peaks(data: ExExpr, min_or_max: &str) -> ExExpr {
+    let expr: Expr = data.resource.0.clone();
+    let type_expr = if min_or_max == "min" {
+        expr.min()
+    } else {
+        expr.max()
+    };
+
+    ExExpr::new(data.resource.0.clone().eq(type_expr))
+}
+
+#[rustler::nif]
+pub fn expr_fill_missing(data: ExExpr, strategy: &str) -> ExExpr {
+    let orig_expr = &data.resource.0;
+    let expr: Expr = orig_expr.clone();
+    let result_expr = match strategy {
+        "backward" => expr.backward_fill(None),
+        "forward" => expr.forward_fill(None),
+        "min" => expr.fill_null(orig_expr.clone().min()),
+        "max" => expr.fill_null(orig_expr.clone().max()),
+        "mean" => expr.fill_null(orig_expr.clone().mean()),
+        _other => panic!("unknown strategy"),
+    };
+    ExExpr::new(result_expr)
+}
+
+#[rustler::nif]
+pub fn expr_fill_missing_with_value(data: ExExpr, value: ExExpr) -> ExExpr {
+    let expr: Expr = data.resource.0.clone();
+    let value: Expr = value.resource.0.clone();
+    ExExpr::new(expr.fill_null(value))
+}
+
+#[rustler::nif]
 pub fn expr_add(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
@@ -338,6 +401,20 @@ pub fn expr_argsort(expr: ExExpr, reverse: bool) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
     ExExpr::new(expr.arg_sort(reverse))
+}
+
+#[rustler::nif]
+pub fn expr_distinct(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.unique_stable())
+}
+
+#[rustler::nif]
+pub fn expr_unordered_distinct(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.unique())
 }
 
 #[rustler::nif]

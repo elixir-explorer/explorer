@@ -323,17 +323,35 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
     end
 
-    test "with one group and count", %{df: df} do
+    test "with one group and some aggregations", %{df: df} do
       df1 =
         df
         |> DF.group_by(["year"])
         |> DF.summarise_with(fn ldf ->
-          [count: Series.count(ldf["country"])]
+          [
+            count: Series.count(ldf["country"]),
+            std: Series.std(ldf["gas_fuel"]),
+            var: Series.var(ldf["total"])
+          ]
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                year: [2010, 2011, 2012, 2013, 2014],
-               count: [217, 217, 220, 220, 220]
+               count: [217, 217, 220, 220, 220],
+               std: [
+                 30422.959346722244,
+                 31276.447541663372,
+                 31861.607868498428,
+                 32568.516005143894,
+                 32855.06720653753
+               ],
+               var: [
+                 38_857_563_094.67128,
+                 44_768_861_168.99863,
+                 45_897_543_842.42209,
+                 47_520_301_869.29952,
+                 48_253_624_259.8547
+               ]
              }
     end
 

@@ -43,14 +43,14 @@ defmodule Explorer.Series do
   defguardp numeric_or_date_dtype?(dtype) when dtype in [:float, :integer, :date, :datetime]
 
   @impl true
-  def fetch(series, idx) when is_integer(idx), do: {:ok, get(series, idx)}
+  def fetch(series, idx) when is_integer(idx), do: {:ok, fetch!(series, idx)}
   def fetch(series, indices) when is_list(indices), do: {:ok, slice(series, indices)}
   def fetch(series, %Range{} = range), do: {:ok, slice(series, range)}
 
   @impl true
   def pop(series, idx) when is_integer(idx) do
     mask = 0..(size(series) - 1) |> Enum.map(&(&1 != idx)) |> from_list()
-    value = get(series, idx)
+    value = fetch!(series, idx)
     series = filter(series, mask)
     {value, series}
   end
@@ -71,7 +71,7 @@ defmodule Explorer.Series do
 
   @impl true
   def get_and_update(series, idx, fun) when is_integer(idx) do
-    value = get(series, idx)
+    value = fetch!(series, idx)
     {current_value, new_value} = fun.(value)
     new_data = series |> to_list() |> List.replace_at(idx, new_value) |> from_list()
     {current_value, new_data}
@@ -152,6 +152,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1, "a"])
       ** (ArgumentError) the value "a" does not match the inferred series dtype :integer
   """
+  @doc type: :transformation
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
     backend = backend_from_options!(opts)
@@ -182,6 +183,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_list(series)
       [1, 2, 3]
   """
+  @doc type: :transformation
   @spec to_list(series :: Series.t()) :: list()
   def to_list(series), do: Shared.apply_impl(series, :to_list)
 
@@ -194,6 +196,7 @@ defmodule Explorer.Series do
       iex> series |> Explorer.Series.to_enum() |> Enum.to_list()
       [1, 2, 3]
   """
+  @doc type: :transformation
   @spec to_enum(series :: Series.t()) :: Enumerable.t()
   def to_enum(series), do: Shared.apply_impl(series, :to_enum)
 
@@ -220,6 +223,7 @@ defmodule Explorer.Series do
         [1.0, 2.0, 3.0]
       >
   """
+  @doc type: :transformation
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
   def from_tensor(tensor, opts \\ []) do
     backend = backend_from_options!(opts)
@@ -265,6 +269,7 @@ defmodule Explorer.Series do
         [1.0, 2.0, 3.0]
       >
   """
+  @doc type: :transformation
   @spec to_tensor(series :: Series.t(), tensor_opts :: Keyword.t()) :: Nx.Tensor.t()
   def to_tensor(series, tensor_opts \\ []), do: series |> to_list() |> Nx.tensor(tensor_opts)
 
@@ -319,6 +324,7 @@ defmodule Explorer.Series do
         [1, 2, 3]
       >
   """
+  @doc type: :element_wise
   @spec cast(series :: Series.t(), dtype :: dtype()) :: Series.t()
   def cast(%Series{dtype: dtype} = series, dtype), do: series
   def cast(series, dtype), do: Shared.apply_impl(series, :cast, [dtype])
@@ -347,6 +353,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.dtype(s)
       :string
   """
+  @doc type: :introspection
   @spec dtype(series :: Series.t()) :: dtype()
   def dtype(%Series{dtype: dtype}), do: dtype
 
@@ -359,6 +366,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.size(s)
       2
   """
+  @doc type: :introspection
   @spec size(series :: Series.t()) :: integer()
   def size(series), do: Shared.apply_impl(series, :size)
 
@@ -376,6 +384,7 @@ defmodule Explorer.Series do
         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       >
   """
+  @doc type: :transformation
   @spec head(series :: Series.t(), n_elements :: integer()) :: Series.t()
   def head(series, n_elements \\ 10), do: Shared.apply_impl(series, :head, [n_elements])
 
@@ -391,6 +400,7 @@ defmodule Explorer.Series do
         [91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
       >
   """
+  @doc type: :transformation
   @spec tail(series :: Series.t(), n_elements :: integer()) :: Series.t()
   def tail(series, n_elements \\ 10), do: Shared.apply_impl(series, :tail, [n_elements])
 
@@ -403,6 +413,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.first(s)
       1
   """
+  @doc type: :transformation
   @spec first(series :: Series.t()) :: any()
   def first(series), do: Shared.apply_impl(series, :first, [])
 
@@ -415,6 +426,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.last(s)
       100
   """
+  @doc type: :transformation
   @spec last(series :: Series.t()) :: any()
   def last(series), do: Shared.apply_impl(series, :last, [])
 
@@ -448,6 +460,7 @@ defmodule Explorer.Series do
         [68, 24, 6, 8, 36]
       >
   """
+  @doc type: :transformation
   @spec sample(series :: Series.t(), n_or_frac :: number(), opts :: Keyword.t()) ::
           Series.t()
   def sample(series, n_or_frac, opts \\ [])
@@ -497,6 +510,7 @@ defmodule Explorer.Series do
         [1]
       >
   """
+  @doc type: :transformation
   @spec take_every(series :: Series.t(), every_n :: integer()) :: Series.t()
   def take_every(series, every_n), do: Shared.apply_impl(series, :take_every, [every_n])
 
@@ -521,6 +535,7 @@ defmodule Explorer.Series do
         [1, 1]
       >
   """
+  @doc type: :transformation
   @spec filter(series :: Series.t(), mask :: Series.t()) :: Series.t()
   def filter(series, %Series{} = mask), do: Shared.apply_impl(series, :filter, [mask])
   @spec filter(series :: Series.t(), fun :: function()) :: Series.t()
@@ -556,6 +571,7 @@ defmodule Explorer.Series do
         [3, 4, 5]
       >
   """
+  @doc type: :transformation
   @spec slice(series :: Series.t(), offset :: integer(), size :: integer()) :: Series.t()
   def slice(series, offset, size), do: Shared.apply_impl(series, :slice, [offset, size])
 
@@ -578,6 +594,7 @@ defmodule Explorer.Series do
         ["b", "c"]
       >
   """
+  @doc type: :transformation
   @spec slice(series :: Series.t(), indices :: [integer()] | Range.t()) :: Series.t()
   def slice(series, indices) when is_list(indices),
     do: Shared.apply_impl(series, :slice, [indices])
@@ -588,24 +605,28 @@ defmodule Explorer.Series do
   @doc """
   Returns the value of the series at the given index.
 
+  This function will raise an error in case the index
+  is out of bounds.
+
   ## Examples
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.get(s, 2)
+      iex> Explorer.Series.fetch!(s, 2)
       "c"
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.get(s, 4)
+      iex> Explorer.Series.fetch!(s, 4)
       ** (ArgumentError) index 4 out of bounds for series of size 3
   """
-  @spec get(series :: Series.t(), idx :: integer()) :: any()
-  def get(series, idx) do
+  @doc type: :transformation
+  @spec fetch!(series :: Series.t(), idx :: integer()) :: any()
+  def fetch!(series, idx) do
     s_len = size(series)
 
     if idx > s_len - 1 || idx < -s_len,
       do: raise(ArgumentError, "index #{idx} out of bounds for series of size #{s_len}")
 
-    Shared.apply_impl(series, :get, [idx])
+    Shared.apply_impl(series, :fetch!, [idx])
   end
 
   @doc """
@@ -631,6 +652,7 @@ defmodule Explorer.Series do
         [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
       >
   """
+  @doc type: :transformation
   @spec concat([Series.t()]) :: Series.t()
   def concat([%Series{} = h | t] = _series) do
     Enum.reduce(t, h, &concat_reducer/2)
@@ -641,6 +663,7 @@ defmodule Explorer.Series do
 
   `concat(s1, s2)` is equivalent to `concat([s1, s2])`.
   """
+  @doc type: :transformation
   @spec concat(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
   def concat(%Series{} = s1, %Series{} = s2),
     do: concat([s1, s2])
@@ -676,6 +699,7 @@ defmodule Explorer.Series do
         [1, 2, 3, 4]
       >
   """
+  @doc type: :element_wise
   @spec coalesce([Series.t()]) :: Series.t()
   def coalesce([%Series{} = h | t]),
     do: Enum.reduce(t, h, &coalesce(&2, &1))
@@ -700,6 +724,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.coalesce(s1, s2)
       ** (ArgumentError) cannot invoke Explorer.Series.coalesce/2 with mismatched dtypes: string and integer.
   """
+  @doc type: :transformation
   @spec coalesce(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
   def coalesce(s1, s2) do
     :ok = check_dtypes_for_coalesce!(s1, s2)
@@ -736,6 +761,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.sum(s)
       ** (ArgumentError) Explorer.Series.sum/1 not implemented for dtype :date. Valid dtypes are [:integer, :float, :boolean].
   """
+  @doc type: :aggregation
   @spec sum(series :: Series.t()) :: number()
   def sum(%Series{dtype: dtype} = series) when numeric_or_bool_dtype?(dtype),
     do: Shared.apply_impl(series, :sum)
@@ -774,6 +800,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.min(s)
       ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime].
   """
+  @doc type: :aggregation
   @spec min(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t()
   def min(%Series{dtype: dtype} = series) when numeric_or_date_dtype?(dtype),
     do: Shared.apply_impl(series, :min)
@@ -813,6 +840,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.max(s)
       ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime].
   """
+  @doc type: :aggregation
   @spec max(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t()
   def max(%Series{dtype: dtype} = series) when numeric_or_date_dtype?(dtype),
     do: Shared.apply_impl(series, :max)
@@ -842,6 +870,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.mean(s)
       ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are [:integer, :float].
   """
+  @doc type: :aggregation
   @spec mean(series :: Series.t()) :: float()
   def mean(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :mean)
@@ -870,6 +899,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.median(s)
       ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are [:integer, :float].
   """
+  @doc type: :aggregation
   @spec median(series :: Series.t()) :: float()
   def median(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :median)
@@ -898,6 +928,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.var(s)
       ** (ArgumentError) Explorer.Series.var/1 not implemented for dtype :datetime. Valid dtypes are [:integer, :float].
   """
+  @doc type: :aggregation
   @spec var(series :: Series.t()) :: float()
   def var(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :var)
@@ -926,6 +957,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.std(s)
       ** (ArgumentError) Explorer.Series.std/1 not implemented for dtype :string. Valid dtypes are [:integer, :float].
   """
+  @doc type: :aggregation
   @spec std(series :: Series.t()) :: float()
   def std(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :std)
@@ -964,6 +996,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.quantile(s, 0.5)
       ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float, :date, :datetime].
   """
+  @doc type: :aggregation
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
   def quantile(%Series{dtype: dtype} = series, quantile)
       when numeric_or_date_dtype?(dtype),
@@ -1004,6 +1037,7 @@ defmodule Explorer.Series do
         [1, 2, nil, 4]
       >
   """
+  @doc type: :window
   @spec cumulative_max(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
   def cumulative_max(series, opts \\ [])
 
@@ -1046,6 +1080,7 @@ defmodule Explorer.Series do
         [1, 1, nil, 1]
       >
   """
+  @doc type: :window
   @spec cumulative_min(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
   def cumulative_min(series, opts \\ [])
 
@@ -1087,6 +1122,7 @@ defmodule Explorer.Series do
         [1, 3, nil, 7]
       >
   """
+  @doc type: :window
   @spec cumulative_sum(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
   def cumulative_sum(series, opts \\ [])
 
@@ -1120,6 +1156,7 @@ defmodule Explorer.Series do
         [false, false, true, false, true]
       >
   """
+  @doc type: :element_wise
   @spec peaks(series :: Series.t(), max_or_min :: :max | :min) :: Series.t()
   def peaks(series, max_or_min \\ :max)
 
@@ -1152,6 +1189,7 @@ defmodule Explorer.Series do
         [5, 7, 9]
       >
   """
+  @doc type: :element_wise
   @spec add(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def add(left, right), do: basic_numeric_operation(:add, left, right)
 
@@ -1175,6 +1213,7 @@ defmodule Explorer.Series do
         [-3, -3, -3]
       >
   """
+  @doc type: :element_wise
   @spec subtract(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def subtract(left, right), do: basic_numeric_operation(:subtract, left, right)
 
@@ -1205,6 +1244,7 @@ defmodule Explorer.Series do
         [2, 4, 6, 8, 10]
       >
   """
+  @doc type: :element_wise
   @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def multiply(left, right), do: basic_numeric_operation(:multiply, left, right)
 
@@ -1235,6 +1275,7 @@ defmodule Explorer.Series do
         [5, 5, 5]
       >
   """
+  @doc type: :element_wise
   @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def divide(left, right), do: basic_numeric_operation(:divide, left, right)
 
@@ -1301,6 +1342,7 @@ defmodule Explorer.Series do
         [4.0, 16.0, 36.0]
       >
   """
+  @doc type: :element_wise
   @spec pow(series :: Series.t(), exponent :: number()) :: Series.t()
   def pow(%Series{dtype: dtype} = series, exponent) when numeric_dtype?(dtype),
     do: Shared.apply_impl(series, :pow, [exponent])
@@ -1361,6 +1403,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.equal(s, false)
       ** (ArgumentError) cannot invoke Explorer.Series.equal/2 with mismatched dtypes: string and false.
   """
+  @doc type: :element_wise
   @spec equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
@@ -1425,6 +1468,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.not_equal(s, false)
       ** (ArgumentError) cannot invoke Explorer.Series.not_equal/2 with mismatched dtypes: string and false.
   """
+  @doc type: :element_wise
   @spec not_equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
@@ -1461,6 +1505,7 @@ defmodule Explorer.Series do
         [false, false, false]
       >
   """
+  @doc type: :element_wise
   @spec greater(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
@@ -1493,6 +1538,7 @@ defmodule Explorer.Series do
         [true, true, false]
       >
   """
+  @doc type: :element_wise
   @spec greater_equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
@@ -1525,6 +1571,7 @@ defmodule Explorer.Series do
         [false, false, true]
       >
   """
+  @doc type: :element_wise
   @spec less(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
@@ -1557,6 +1604,7 @@ defmodule Explorer.Series do
         [true, true, true]
       >
   """
+  @doc type: :element_wise
   @spec less_equal(
           left :: Series.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
@@ -1601,6 +1649,7 @@ defmodule Explorer.Series do
       >
 
   """
+  @doc type: :element_wise
   def (%Series{} = left) and (%Series{} = right),
     do: Shared.apply_impl(left, :binary_and, [right])
 
@@ -1619,6 +1668,7 @@ defmodule Explorer.Series do
       >
 
   """
+  @doc type: :element_wise
   def (%Series{} = left) or (%Series{} = right),
     do: Shared.apply_impl(left, :binary_or, [right])
 
@@ -1629,23 +1679,24 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list(["a", "b"])
       iex> s2 = Explorer.Series.from_list(["a", "b"])
-      iex> Explorer.Series.all_equal?(s1, s2)
+      iex> Explorer.Series.all_equal(s1, s2)
       true
 
       iex> s1 = Explorer.Series.from_list(["a", "b"])
       iex> s2 = Explorer.Series.from_list(["a", "c"])
-      iex> Explorer.Series.all_equal?(s1, s2)
+      iex> Explorer.Series.all_equal(s1, s2)
       false
 
       iex> s1 = Explorer.Series.from_list(["a", "b"])
       iex> s2 = Explorer.Series.from_list([1, 2])
-      iex> Explorer.Series.all_equal?(s1, s2)
+      iex> Explorer.Series.all_equal(s1, s2)
       false
   """
-  def all_equal?(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: Shared.apply_impl(left, :all_equal?, [right])
+  @doc type: :element_wise
+  def all_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
+    do: Shared.apply_impl(left, :all_equal, [right])
 
-  def all_equal?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
+  def all_equal(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
       when left_dtype !=
              right_dtype,
       do: false
@@ -1665,11 +1716,13 @@ defmodule Explorer.Series do
       >
 
   """
+  @doc type: :transformation
   def sort(series, reverse \\ false), do: Shared.apply_impl(series, :sort, [reverse])
 
   @doc """
   Returns the indices that would sort the series.
   """
+  @doc type: :transformation
   def argsort(series, reverse \\ false), do: Shared.apply_impl(series, :argsort, [reverse])
 
   @doc """
@@ -1684,6 +1737,7 @@ defmodule Explorer.Series do
         [3, 2, 1]
       >
   """
+  @doc type: :transformation
   def reverse(series), do: Shared.apply_impl(series, :reverse)
 
   # Distinct
@@ -1700,6 +1754,7 @@ defmodule Explorer.Series do
         [1, 2, 3]
       >
   """
+  @doc type: :transformation
   def distinct(series), do: Shared.apply_impl(series, :distinct)
 
   @doc """
@@ -1712,6 +1767,7 @@ defmodule Explorer.Series do
       iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.unordered_distinct()
   """
+  @doc type: :transformation
   def unordered_distinct(series), do: Shared.apply_impl(series, :unordered_distinct)
 
   @doc """
@@ -1723,10 +1779,16 @@ defmodule Explorer.Series do
       iex> Explorer.Series.n_distinct(s)
       2
   """
+  @doc type: :aggregation
   def n_distinct(series), do: Shared.apply_impl(series, :n_distinct)
 
   @doc """
   Creates a new dataframe with unique values and the count of each.
+
+  In the context of lazy series - using `DataFrame.*_with/2` functions -,
+  `count/1` is going to count the elements inside the same group.
+  If no group is in use, then count is going to return the length of
+  the series.
 
   ## Examples
 
@@ -1738,6 +1800,7 @@ defmodule Explorer.Series do
         counts integer [3, 2, 1]
       >
   """
+  @doc type: :aggregation
   def count(series), do: Shared.apply_impl(series, :count)
 
   # Window
@@ -1771,6 +1834,7 @@ defmodule Explorer.Series do
         [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
       >
   """
+  @doc type: :window
   def window_sum(series, window_size, opts \\ []),
     do: Shared.apply_impl(series, :window_sum, [window_size, window_opts_with_defaults(opts)])
 
@@ -1803,6 +1867,7 @@ defmodule Explorer.Series do
         [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5]
       >
   """
+  @doc type: :window
   def window_mean(series, window_size, opts \\ []),
     do: Shared.apply_impl(series, :window_mean, [window_size, window_opts_with_defaults(opts)])
 
@@ -1835,6 +1900,7 @@ defmodule Explorer.Series do
         [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
       >
   """
+  @doc type: :window
   def window_min(series, window_size, opts \\ []),
     do: Shared.apply_impl(series, :window_min, [window_size, window_opts_with_defaults(opts)])
 
@@ -1867,6 +1933,7 @@ defmodule Explorer.Series do
         [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
       >
   """
+  @doc type: :window
   def window_max(series, window_size, opts \\ []),
     do: Shared.apply_impl(series, :window_max, [window_size, window_opts_with_defaults(opts)])
 
@@ -1947,9 +2014,30 @@ defmodule Explorer.Series do
         string[4]
         ["a", "b", "c", "d"]
       >
+
+      iex> s = Explorer.Series.from_list([1, 2, nil, 4])
+      iex> Explorer.Series.fill_missing(s, "foo")
+      ** (ArgumentError) cannot invoke Explorer.Series.fill_missing/2 with mismatched dtypes: integer and "foo".
   """
-  @spec fill_missing(Series.t(), atom()) :: Series.t()
-  def fill_missing(series, strategy), do: Shared.apply_impl(series, :fill_missing, [strategy])
+  @doc type: :window
+  @spec fill_missing(
+          Series.t(),
+          :forward | :backward | :max | :min | :mean | Explorer.Backend.Series.valid_types()
+        ) :: Series.t()
+  def fill_missing(%Series{} = series, strategy)
+      when strategy in [:forward, :backward, :min, :max, :mean],
+      do: Shared.apply_impl(series, :fill_missing, [strategy])
+
+  def fill_missing(%Series{} = series, value) do
+    if K.or(
+         valid_for_bool_mask_operation?(series, value),
+         K.and(is_binary(value), series.dtype == :string)
+       ) do
+      Shared.apply_impl(series, :fill_missing, [value])
+    else
+      dtype_mismatch_error("fill_missing/2", series.dtype, inspect(value))
+    end
+  end
 
   @doc """
   Returns a mask of nil values.
@@ -1963,6 +2051,7 @@ defmodule Explorer.Series do
         [false, false, true, false]
       >
   """
+  @doc type: :element_wise
   @spec is_nil(Series.t()) :: Series.t()
   def is_nil(series), do: Shared.apply_impl(series, :is_nil)
 
@@ -1978,6 +2067,7 @@ defmodule Explorer.Series do
         [true, true, false, true]
       >
   """
+  @doc type: :element_wise
   @spec is_not_nil(Series.t()) :: Series.t()
   def is_not_nil(series), do: Shared.apply_impl(series, :is_not_nil)
 
@@ -2008,6 +2098,7 @@ defmodule Explorer.Series do
         [4, 2, 5]
       >
   """
+  @doc type: :transformation
   def transform(series, fun) do
     case Shared.apply_impl(series, :transform, [fun]) do
       %Series{} = series -> series

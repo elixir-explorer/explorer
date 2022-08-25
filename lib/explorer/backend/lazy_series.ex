@@ -15,12 +15,8 @@ defmodule Explorer.Backend.LazySeries do
   @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean(), window: boolean()}
 
   @operations [
-    cast: 2,
-    column: 1,
-    reverse: 1,
-    argsort: 2,
-    sort: 2,
-    # Comparisons
+    # Element-wise
+    all_equal: 2,
     eq: 2,
     neq: 2,
     gt: 2,
@@ -31,14 +27,15 @@ defmodule Explorer.Backend.LazySeries do
     is_not_nil: 1,
     binary_and: 2,
     binary_or: 2,
-    # Arithmetics
     add: 2,
     subtract: 2,
     multiply: 2,
     divide: 2,
     pow: 2,
-    # Slice and dice
+    fill_missing: 2,
+    fill_missing_with_value: 2,
     coalesce: 2,
+    cast: 2,
     # Window functions
     cumulative_max: 2,
     cumulative_min: 2,
@@ -47,6 +44,17 @@ defmodule Explorer.Backend.LazySeries do
     window_mean: 5,
     window_min: 5,
     window_sum: 5,
+    # Transformation
+    column: 1,
+    reverse: 1,
+    argsort: 2,
+    sort: 2,
+    distinct: 1,
+    unordered_distinct: 1,
+    slice: 3,
+    head: 2,
+    tail: 2,
+    peaks: 2,
     # Aggregations
     sum: 1,
     min: 1,
@@ -95,6 +103,9 @@ defmodule Explorer.Backend.LazySeries do
   def window_operations, do: @cumulative_operations ++ @window_fun_operations
 
   @impl true
+  def dtype(%Series{} = s), do: s.dtype
+
+  @impl true
   def cast(%Series{} = s, dtype) when is_atom(dtype) do
     args = [lazy_series!(s), dtype]
     data = new(:cast, args, aggregations?(args), window_functions?(args))
@@ -122,6 +133,71 @@ defmodule Explorer.Backend.LazySeries do
   def sort(%Series{} = s, reverse?) do
     args = [lazy_series!(s), reverse?]
     data = new(:sort, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def distinct(%Series{} = s) do
+    args = [lazy_series!(s)]
+    data = new(:distinct, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def unordered_distinct(%Series{} = s) do
+    args = [lazy_series!(s)]
+    data = new(:unordered_distinct, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def slice(%Series{} = s, offset, length) do
+    args = [lazy_series!(s), offset, length]
+    data = new(:slice, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def head(%Series{} = s, length) do
+    args = [lazy_series!(s), length]
+    data = new(:head, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def tail(%Series{} = s, length) do
+    args = [lazy_series!(s), length]
+    data = new(:tail, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def peaks(%Series{} = s, min_or_max) when is_atom(min_or_max) do
+    args = [lazy_series!(s), Atom.to_string(min_or_max)]
+    data = new(:peaks, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def fill_missing(%Series{} = s, strategy) when is_atom(strategy) do
+    args = [lazy_series!(s), Atom.to_string(strategy)]
+    data = new(:fill_missing, args, aggregations?(args), window_functions?(args))
+
+    dtype = if strategy == :mean, do: :float, else: s.dtype
+    Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def fill_missing(%Series{} = s, value) do
+    args = [lazy_series!(s), value]
+    data = new(:fill_missing_with_value, args, aggregations?(args), window_functions?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -300,6 +376,14 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def all_equal(%Series{} = left, %Series{} = right) do
+    args = [lazy_series!(left), lazy_series!(right)]
+    data = new(:all_equal, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
   def inspect(series, opts) do
     import Inspect.Algebra
 
@@ -341,12 +425,20 @@ defmodule Explorer.Backend.LazySeries do
 
   defp to_elixir_ast(other), do: other
 
-  # TODO: Make the functions of non-implemented functions
-  # explicit once the lazy interface is ready.
-  funs =
-    Backend.Series.behaviour_info(:callbacks) --
-      (Backend.Series.behaviour_info(:optional_callbacks) ++
-         Module.definitions_in(__MODULE__, :def) ++ [{:inspect, 2}])
+  # The following functions are not implemented yet and should raise if used.
+  funs = [
+    {:concat, 2},
+    {:fetch!, 2},
+    {:filter, 2},
+    {:from_list, 2},
+    {:sample, 4},
+    {:size, 1},
+    {:slice, 2},
+    {:take_every, 2},
+    {:to_enum, 1},
+    {:to_list, 1},
+    {:transform, 2}
+  ]
 
   for {fun, arity} <- funs do
     args = Macro.generate_arguments(arity, __MODULE__)

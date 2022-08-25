@@ -271,6 +271,34 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "filter with all_equal equals true" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6], b: [1, 2, 3, 4, 5, 6])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          Series.all_equal(ldf["a"], ldf["b"])
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: [1, 2, 3, 4, 5, 6]
+             }
+    end
+
+    test "filter with all_equal equals false" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6], b: [1, 2, 3, 4, 5, 7])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          Series.all_equal(ldf["a"], ldf["b"])
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [],
+               b: []
+             }
+    end
+
     test "raise an error if the last operation is an arithmetic operation" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
@@ -376,15 +404,19 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{"a" => :float, "b" => :string}
     end
 
-    test "adds new columns with reverse, sort and argsort" do
+    test "adds new columns ordering and sorting" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
       df1 =
         DF.mutate_with(df, fn ldf ->
+          a = ldf["a"]
+
           [
-            c: Series.reverse(ldf["a"]),
-            d: Series.argsort(ldf["a"], true),
-            e: Series.sort(ldf["b"], true)
+            c: Series.reverse(a),
+            d: Series.argsort(a, true),
+            e: Series.sort(ldf["b"], true),
+            f: Series.distinct(a),
+            g: Series.unordered_distinct(a)
           ]
         end)
 
@@ -393,17 +425,21 @@ defmodule Explorer.DataFrameTest do
                b: ["a", "b", "c"],
                c: [3, 2, 1],
                d: [2, 1, 0],
-               e: ["c", "b", "a"]
+               e: ["c", "b", "a"],
+               f: [1, 2, 3],
+               g: [1, 2, 3]
              }
 
-      assert df1.names == ["a", "b", "c", "d", "e"]
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g"]
 
       assert df1.dtypes == %{
                "a" => :integer,
                "b" => :string,
                "c" => :integer,
                "d" => :integer,
-               "e" => :string
+               "e" => :string,
+               "f" => :integer,
+               "g" => :integer
              }
     end
 
@@ -495,6 +531,61 @@ defmodule Explorer.DataFrameTest do
                i: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
              }
     end
+  end
+
+  test "add columns with peaks values" do
+    df = DF.new(a: [1, 2, 3, 2, 1, 3])
+
+    df1 =
+      DF.mutate_with(df, fn ldf ->
+        [b: Series.peaks(ldf["a"], :max), c: Series.peaks(ldf["a"], :min)]
+      end)
+
+    assert DF.to_columns(df1, atom_keys: true) == %{
+             a: [1, 2, 3, 2, 1, 3],
+             b: [false, false, true, false, false, true],
+             c: [true, false, false, false, true, false]
+           }
+
+    assert df1.dtypes == %{"a" => :integer, "b" => :boolean, "c" => :boolean}
+  end
+
+  test "add columns with missing values" do
+    df = DF.new(a: [1, nil, 3, 2, nil, 4])
+
+    df1 =
+      DF.mutate_with(df, fn ldf ->
+        a = ldf["a"]
+
+        [
+          b: Series.fill_missing(a, :forward),
+          c: Series.fill_missing(a, :backward),
+          d: Series.fill_missing(a, :min),
+          e: Series.fill_missing(a, :max),
+          f: Series.fill_missing(a, :mean),
+          g: Series.fill_missing(a, 42)
+        ]
+      end)
+
+    assert DF.to_columns(df1, atom_keys: true) == %{
+             a: [1, nil, 3, 2, nil, 4],
+             b: [1, 1, 3, 2, 2, 4],
+             c: [1, 3, 3, 2, 4, 4],
+             d: [1, 1, 3, 2, 1, 4],
+             e: [1, 4, 3, 2, 4, 4],
+             f: [1.0, 2.5, 3.0, 2.0, 2.5, 4.0],
+             g: [1, 42, 3, 2, 42, 4]
+           }
+
+    assert df1.dtypes == %{
+             "a" => :integer,
+             "b" => :integer,
+             "c" => :integer,
+             "d" => :integer,
+             "e" => :integer,
+             "f" => :float,
+             "g" => :integer
+           }
   end
 
   describe "arrange/3" do
