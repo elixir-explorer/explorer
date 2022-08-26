@@ -4,8 +4,10 @@ use rustler::resource::ResourceArc;
 use rustler::{Atom, Encoder, Env, NifStruct, Term};
 use std::convert::TryInto;
 
-use crate::atoms::{self, infinity, nan, neg_infinity};
-use crate::atoms::{calendar, calendar_atom, day, hour, microsecond, minute, month, second, year};
+use crate::atoms::{
+    self, calendar, calendar_atom, day, hour, infinity, microsecond, minute, month, nan,
+    neg_infinity, second, year,
+};
 
 use rustler::types::atom::__struct__;
 use rustler::wrapper::list::make_list;
