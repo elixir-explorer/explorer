@@ -80,13 +80,8 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_take_every, [every_n])
 
   @impl true
-  def filter(series, %Series{} = mask),
+  def mask(series, %Series{} = mask),
     do: Shared.apply_series(series, :s_filter, [mask.data])
-
-  def filter(series, callback) when is_function(callback) do
-    mask = callback.(series)
-    filter(series, mask)
-  end
 
   @impl true
   def slice(series, indices) when is_list(indices),

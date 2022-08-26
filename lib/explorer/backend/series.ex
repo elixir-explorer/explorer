@@ -32,8 +32,7 @@ defmodule Explorer.Backend.Series do
   @callback tail(s, n :: integer()) :: s
   @callback sample(s, n :: integer(), replacement :: boolean(), seed :: integer()) :: s
   @callback take_every(s, integer()) :: s
-  @callback filter(s, mask :: s) :: s
-  @callback filter(s, function()) :: s
+  @callback mask(s, mask :: s) :: s
   @callback slice(s, indices :: list()) :: s
   @callback slice(s, offset :: integer(), length :: integer()) :: s
   @callback fetch!(s, idx :: integer()) :: s

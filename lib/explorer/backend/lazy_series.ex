@@ -429,7 +429,7 @@ defmodule Explorer.Backend.LazySeries do
   funs = [
     {:concat, 2},
     {:fetch!, 2},
-    {:filter, 2},
+    {:mask, 2},
     {:from_list, 2},
     {:sample, 4},
     {:size, 1},
