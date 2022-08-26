@@ -51,21 +51,21 @@ defmodule Explorer.Series do
   def pop(series, idx) when is_integer(idx) do
     mask = 0..(size(series) - 1) |> Enum.map(&(&1 != idx)) |> from_list()
     value = fetch!(series, idx)
-    series = filter(series, mask)
+    series = mask(series, mask)
     {value, series}
   end
 
   def pop(series, indices) when is_list(indices) do
     mask = 0..(size(series) - 1) |> Enum.map(&(&1 not in indices)) |> from_list()
     value = slice(series, indices)
-    series = filter(series, mask)
+    series = mask(series, mask)
     {value, series}
   end
 
   def pop(series, %Range{} = range) do
     mask = 0..(size(series) - 1) |> Enum.map(&(&1 not in range)) |> from_list()
     value = slice(series, range)
-    series = filter(series, mask)
+    series = mask(series, mask)
     {value, series}
   end
 
@@ -515,31 +515,21 @@ defmodule Explorer.Series do
   def take_every(series, every_n), do: Shared.apply_impl(series, :take_every, [every_n])
 
   @doc """
-  Filters a series with a mask or callback.
+  Filters a series with a mask.
 
   ## Examples
 
       iex> s1 = Explorer.Series.from_list([1,2,3])
       iex> s2 = Explorer.Series.from_list([true, false, true])
-      iex> Explorer.Series.filter(s1, s2)
+      iex> Explorer.Series.mask(s1, s2)
       #Explorer.Series<
         integer[2]
         [1, 3]
       >
-
-      iex> s1 = Explorer.Series.from_list([1,2,1])
-      iex> s2 = Explorer.Series.from_list([1])
-      iex> Explorer.Series.filter(s1, &Explorer.Series.equal(&1, s2))
-      #Explorer.Series<
-        integer[2]
-        [1, 1]
-      >
   """
   @doc type: :transformation
-  @spec filter(series :: Series.t(), mask :: Series.t()) :: Series.t()
-  def filter(series, %Series{} = mask), do: Shared.apply_impl(series, :filter, [mask])
-  @spec filter(series :: Series.t(), fun :: function()) :: Series.t()
-  def filter(series, fun) when is_function(fun), do: Shared.apply_impl(series, :filter, [fun])
+  @spec mask(series :: Series.t(), mask :: Series.t()) :: Series.t()
+  def mask(series, %Series{} = mask), do: Shared.apply_impl(series, :mask, [mask])
 
   @doc """
   Returns a slice of the series, with `size` elements starting at `offset`.
