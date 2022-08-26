@@ -5,17 +5,23 @@ defmodule Explorer.SeriesTest do
 
   doctest Explorer.Series
 
-  test "from_list/1" do
-    s = Series.from_list([1, 2, 3])
+  describe "from_list/1" do
+    test "with integers" do
+      s = Series.from_list([1, 2, 3])
 
-    assert Series.to_list(s) === [1, 2, 3]
+      assert Series.to_list(s) === [1, 2, 3]
+    end
 
-    s = Series.from_list([1, 2.4, 3])
-    assert Series.to_list(s) === [1.0, 2.4, 3.0]
+    test "with floats" do
+      s = Series.from_list([1, 2.4, 3])
+      assert Series.to_list(s) === [1.0, 2.4, 3.0]
+    end
 
-    assert_raise ArgumentError, fn ->
-      s = Series.from_list([1, "foo", 3])
-      Series.to_list(s)
+    test "mixing types" do
+      assert_raise ArgumentError, fn ->
+        s = Series.from_list([1, "foo", 3])
+        Series.to_list(s)
+      end
     end
   end
 

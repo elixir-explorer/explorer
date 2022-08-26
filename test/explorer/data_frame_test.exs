@@ -1104,6 +1104,26 @@ defmodule Explorer.DataFrameTest do
                b: [2, 4]
              }
     end
+
+    @tag :tmp_dir
+    test "parse floats with nans and infinity", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a
+        0.1
+        NaN
+        4.2
+        Inf
+        -Inf
+        8.1
+        """)
+
+      df = DF.from_csv!(csv, dtypes: %{a: :float})
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [0.1, :nan, 4.2, :infinity, :neg_infinity, 8.1]
+             }
+    end
   end
 
   describe "parquet read and write" do
