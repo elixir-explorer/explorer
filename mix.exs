@@ -32,7 +32,7 @@ defmodule Explorer.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.24", only: :docs, runtime: false},
-      {:nx, "~> 0.1.0", only: :test},
+      {:nx, "~> 0.3.0", only: :test},
       {:rustler_precompiled, "~> 0.4"},
       {:rustler, ">= 0.0.0", optional: true},
       {:table, "~> 0.1.2"},

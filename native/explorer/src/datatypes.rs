@@ -468,6 +468,7 @@ impl Encoder for ExSeriesRef {
             DataType::Utf8 => encode!(s, env, utf8, &str),
             DataType::Int32 => encode!(s, env, i32),
             DataType::Int64 => encode!(s, env, i64),
+            DataType::UInt8 => encode!(s, env, u8),
             DataType::UInt32 => encode!(s, env, u32),
             DataType::Float64 => encode_float64_series(s, env),
             DataType::Date => encode_date_series(s, env),
