@@ -70,6 +70,7 @@ defmodule Explorer.PolarsBackend.Shared do
     Explorer.Backend.Series.new(polars_series, normalise_dtype(dtype))
   end
 
+  def normalise_dtype("u8"), do: :integer
   def normalise_dtype("u32"), do: :integer
   def normalise_dtype("i32"), do: :integer
   def normalise_dtype("i64"), do: :integer
