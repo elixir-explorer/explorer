@@ -11,6 +11,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `DataFrame.concat_columns/1` and `DataFrame.concat_columns/2` for horizontally stacking
   dataframes.
+- Add compression as an option to write parquet files.
+- Add count metadata to `DataFrame` table reader.
+- Add `DataFrame.filter_with/2`, `DataFrame.summarise_with/2`, `DataFrame.mutate_with/2` and
+`DataFrame.arrange_with/2`. They all accept a `DataFrame` and a function, and they all work with
+  a new concept called "lazy series".
+
+  Lazy Series is an opaque representation of a series that can be
+  used to perform complex operations without pulling data from the series. This is faster than
+  using masks. There is no big difference from the API perspective compared to the functions that were
+  accepting callbacks before (eg. `filter/2` and the new `filter_with/2`), with the exception being
+  `DataFrame.summarise_with/2` that now accepts a lot more operations.
+
+### Changed
+
+- Bump version requirement of the `table` dependency to `~> 0.1.2`, and raise for non-tabular values.
+- Normalize how columns are handled. This changes some functions to accept one column or
+a list of columns, ranges, indexes and callbacks selecting columns.
+- Rename `DataFrame.filter/2` to `DataFrame.mask/2`.
+- Rename `Series.filter/2` to `Series.mask/2`.
+- Rename `take/2` from both `Series` and `DataFrame` to `slice/2`. `slice/2` now they accept ranges as well.
+- Raise an error if `DataFrame.pivot_wider/4` has float columns as IDs. This is because we can´t
+properly compare floats.
+- Change `DataFrame.distinct/2` to accept columns as argument instead of receiving it as option.
+
+### Fixed
+
+- Ensure that we can compare boolean series in functions like `Series.equal/2`.
+- Fix rename of columns after summarise.
+- Fix inspect of float series containing `NaN` or `Infinity` values. They are represented as atoms.
+
+### Deprecated
+
+- Deprecate `DataFrame.filter/2` with a callback in favor of `DataFrame.filter_with/2`.
 
 ## [v0.2.0] - 2022-06-22
 
@@ -58,3 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.1.0] - 2022-04-26
 
 First release.
+
+[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.2.0...HEAD
+[v0.2.0]: https://github.com/elixir-nx/explorer/compare/v0.1.1...v0.2.0
+[v0.1.1]: https://github.com/elixir-nx/explorer/compare/v0.1.0...v0.1.1
+[v0.1.0]: https://github.com/elixir-nx/explorer/releases/tag/v0.1.0
