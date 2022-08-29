@@ -435,7 +435,7 @@ pub fn df_sort(
         new_df.clone()
     } else {
         let new_df = &df
-            .groupby(groups)?
+            .groupby_stable(groups)?
             .apply(|df| df.sort(by_columns.clone(), reverse.clone()))?;
         new_df.clone()
     };

@@ -1486,6 +1486,28 @@ defmodule Explorer.DataFrame do
         b integer [3, 1, 2]
       >
 
+  When used in a grouped dataframe, arrange is going to sort each group individually and
+  then return the entire dataframe with the existing groups. If one of the arrange columns
+  is also a group, the sorting for that column not going to work. It is necessary to
+  summarise and arrange to get any effect for that columns.
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> grouped = Explorer.DataFrame.group_by(df, "country")
+      iex> Explorer.DataFrame.arrange(grouped, desc: "country", asc: "total")
+      #Explorer.DataFrame<
+        Polars[1094 x 10]
+        Groups: ["country"]
+        year integer [2010, 2014, 2013, 2012, 2011, ...]
+        country string ["AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", ...]
+        total integer [2308, 2675, 2731, 2933, 3338, ...]
+        solid_fuel integer [627, 1194, 1075, 1000, 1174, ...]
+        liquid_fuel integer [1601, 1393, 1568, 1844, 2075, ...]
+        gas_fuel integer [74, 74, 81, 84, 84, ...]
+        cement integer [5, 14, 7, 5, 5, ...]
+        gas_flaring integer [0, 0, 0, 0, 0, ...]
+        per_capita float [0.08, 0.08, 0.09, 0.1, 0.12, ...]
+        bunker_fuels integer [9, 9, 9, 9, 9, ...]
+      >
   """
   @doc type: :single
   @spec arrange(
