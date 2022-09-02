@@ -230,6 +230,14 @@ pub fn expr_divide(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_multiply(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr: Expr = left.resource.0.clone();
+    let right_expr: Expr = right.resource.0.clone();
+
+    ExExpr::new(left_expr * right_expr)
+}
+
+#[rustler::nif]
 pub fn expr_pow(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
