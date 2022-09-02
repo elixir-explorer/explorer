@@ -443,6 +443,27 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "adds some columns with basic operations" do
+      df = DF.new(a: [1, 2, 3], b: [20, 40, 60])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            calc1: Series.divide(ldf["a"], 10.0) |> Series.multiply(2),
+            calc2: Series.add(ldf["a"], ldf["b"]),
+            calc3: Series.subtract(ldf["b"], ldf["a"])
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [20, 40, 60],
+               calc1: [0.2, 0.4, 0.6],
+               calc2: [21, 42, 63],
+               calc3: [19, 38, 57]
+             }
+    end
+
     test "adds a new column with some aggregations without groups" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 

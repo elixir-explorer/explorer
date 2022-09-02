@@ -141,6 +141,7 @@ rustler::init!(
         expr_add,
         expr_subtract,
         expr_divide,
+        expr_multiply,
         expr_pow,
         // slice and dice expressions
         expr_coalesce,
