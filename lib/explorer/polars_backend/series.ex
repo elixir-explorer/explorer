@@ -170,7 +170,7 @@ defmodule Explorer.PolarsBackend.Series do
   def multiply(left, right) when is_number(right), do: multiply(left, scalar_rhs(right, left))
 
   @impl true
-  def divide(left, %Series{} = right),
+  def divide(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_div, [right.data])
 
   def divide(left, right) when is_number(right), do: divide(left, scalar_rhs(right, left))

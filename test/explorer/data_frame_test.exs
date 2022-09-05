@@ -444,23 +444,36 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "adds some columns with basic operations" do
-      df = DF.new(a: [1, 2, 3], b: [20, 40, 60])
+      df = DF.new(a: [1, 2, 3], b: [20, 40, 60], c: [10, 0, 8])
 
       df1 =
         DF.mutate_with(df, fn ldf ->
           [
-            calc1: Series.divide(ldf["a"], 10.0) |> Series.multiply(2),
+            calc1: Series.divide(ldf["a"], 10) |> Series.multiply(2),
             calc2: Series.add(ldf["a"], ldf["b"]),
-            calc3: Series.subtract(ldf["b"], ldf["a"])
+            calc3: Series.subtract(ldf["b"], ldf["a"]),
+            calc4: Series.divide(ldf["b"], ldf["c"])
           ]
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
                b: [20, 40, 60],
+               c: [10, 0, 8],
                calc1: [0.2, 0.4, 0.6],
                calc2: [21, 42, 63],
-               calc3: [19, 38, 57]
+               calc3: [19, 38, 57],
+               calc4: [2.0, :infinity, 7.5]
+             }
+
+      assert DF.dtypes(df1) == %{
+               "a" => :integer,
+               "b" => :integer,
+               "c" => :integer,
+               "calc1" => :float,
+               "calc2" => :integer,
+               "calc3" => :integer,
+               "calc4" => :float
              }
     end
 

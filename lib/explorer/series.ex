@@ -1241,7 +1241,7 @@ defmodule Explorer.Series do
   @doc """
   Divides left by right, element-wise.
 
-  When mixing floats and integers, the resulting series will have dtype `:float`.
+  The resulting series will have the dtype as `:float`.
 
   ## Supported dtypes
 
@@ -1254,20 +1254,24 @@ defmodule Explorer.Series do
       iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
-        integer[3]
-        [5, 5, 5]
+        float[3]
+        [5.0, 5.0, 5.0]
       >
 
       iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, 2)
       #Explorer.Series<
-        integer[3]
-        [5, 5, 5]
+        float[3]
+        [5.0, 5.0, 5.0]
       >
   """
   @doc type: :element_wise
   @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
-  def divide(left, right), do: basic_numeric_operation(:divide, left, right)
+  def divide(%Series{} = left, right) do
+    left = with %Series{dtype: :integer} <- left, do: cast(left, :float)
+
+    basic_numeric_operation(:divide, left, right)
+  end
 
   defp basic_numeric_operation(
          operation,
