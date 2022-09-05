@@ -68,6 +68,7 @@ defmodule Explorer.Backend.Series do
   @callback subtract(s, s | number()) :: s
   @callback multiply(s, s | number()) :: s
   @callback divide(s, s | number()) :: s
+  @callback quotient(s, s | integer()) :: s
   @callback pow(s, number()) :: s
 
   # Comparisons

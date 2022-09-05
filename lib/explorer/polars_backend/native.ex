@@ -176,6 +176,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_pow(_s, _exponent), do: err()
   def s_int_pow(_s, _exponent), do: err()
   def s_quantile(_s, _quantile, _strategy), do: err()
+  def s_quotient(_s, _rhs), do: err()
   def s_rename(_s, _name), do: err()
   def s_reverse(_s), do: err()
   def s_rolling_max(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()

@@ -1296,6 +1296,42 @@ defmodule Explorer.Series do
     basic_numeric_operation(:divide, left, right)
   end
 
+  @doc """
+  Element-wise integer division.
+
+  ## Supported dtype
+
+    * `:integer`
+
+  Returns `nil` if there is a zero in the right-hand side.
+
+  ## Examples
+
+      iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.quotient(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [5, 5, 5]
+      >
+
+      iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 2, 0] |> Explorer.Series.from_list()
+      iex> Explorer.Series.quotient(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [5, 5, nil]
+      >
+
+  """
+  @doc type: :element_wise
+  @spec quotient(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
+  def quotient(%Series{dtype: :integer} = left, %Series{dtype: :integer} = right),
+    do: Shared.apply_impl(left, :quotient, [right])
+
+  def quotient(%Series{dtype: :integer} = left, right) when is_integer(right),
+    do: Shared.apply_impl(left, :quotient, [right])
+
   defp basic_numeric_operation(
          operation,
          %Series{dtype: left_dtype} = left,

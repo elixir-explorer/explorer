@@ -149,6 +149,14 @@ pub fn s_div(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError>
     Ok(ExSeries::new(s / s1))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_quotient(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let s1 = &other.resource.0;
+
+    Ok(ExSeries::new(s.checked_div(s1)?))
+}
+
 #[rustler::nif]
 pub fn s_head(data: ExSeries, length: Option<usize>) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
