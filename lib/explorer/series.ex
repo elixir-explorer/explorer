@@ -1250,7 +1250,7 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
+      iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
       iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
@@ -1258,17 +1258,40 @@ defmodule Explorer.Series do
         [5.0, 5.0, 5.0]
       >
 
-      iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
+      iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, 2)
       #Explorer.Series<
         float[3]
         [5.0, 5.0, 5.0]
       >
+
+      iex> s1 = [10, 52 ,10] |> Explorer.Series.from_list()
+      iex> Explorer.Series.divide(s1, 2.5)
+      #Explorer.Series<
+        float[3]
+        [4.0, 20.8, 4.0]
+      >
+
+      iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 0, 2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.divide(s1, s2)
+      #Explorer.Series<
+        float[3]
+        [5.0, infinity, 5.0]
+      >
   """
   @doc type: :element_wise
   @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
   def divide(%Series{} = left, right) do
-    left = with %Series{dtype: :integer} <- left, do: cast(left, :float)
+    left =
+      if K.and(
+           left.dtype == :integer,
+           K.or(is_integer(right), match?(%Series{dtype: :integer}, right))
+         ) do
+        cast(left, :float)
+      else
+        left
+      end
 
     basic_numeric_operation(:divide, left, right)
   end
