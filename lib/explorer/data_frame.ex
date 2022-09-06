@@ -648,6 +648,7 @@ defmodule Explorer.DataFrame do
   This collects the lazy data frame into an eager one, computing the query.
 
   If already eager, this is a noop.
+  Collecting a grouped dataframe should return a grouped dataframe.
   """
   @doc type: :single
   @spec collect(df :: DataFrame.t()) :: {:ok, DataFrame.t()} | {:error, term()}

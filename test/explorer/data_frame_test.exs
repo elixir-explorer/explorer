@@ -311,21 +311,6 @@ defmodule Explorer.DataFrameTest do
       assert DF.groups(df1) == []
     end
 
-    test "filter with an aggregation and a group" do
-      df = DF.new(col1: ["a", "a", "b", "b"], col2: [1, 2, 3, 4])
-      grouped = DF.group_by(df, "col1")
-
-      df1 =
-        DF.filter_with(grouped, fn df -> Series.greater(df["col2"], Series.mean(df["col2"])) end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{
-               col1: ["a", "b"],
-               col2: [2, 4]
-             }
-
-      assert DF.groups(df1) == ["col1"]
-    end
-
     test "raise an error if the last operation is an arithmetic operation" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
@@ -1963,15 +1948,6 @@ defmodule Explorer.DataFrameTest do
       assert df.names == ["a", "c"]
     end
 
-    test "trying to keep only a column while having another group does not have effect" do
-      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      grouped = DF.group_by(df, "b")
-      df1 = DF.select(grouped, ["a"])
-
-      assert DF.names(df1) == ["a", "b"]
-      assert DF.groups(df1) == ["b"]
-    end
-
     test "keep column raises error with non-existent column" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
 
@@ -2010,15 +1986,6 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.names(df) == ["b"]
       assert df.names == ["b"]
-    end
-
-    test "trying to drop a group does not have effect" do
-      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      grouped = DF.group_by(df, "b")
-      df1 = DF.select(grouped, ["b"], :drop)
-
-      assert DF.names(df1) == ["a", "b"]
-      assert DF.groups(df1) == ["b"]
     end
 
     test "drop column raises error with non-existent column" do
