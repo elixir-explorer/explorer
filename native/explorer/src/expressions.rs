@@ -243,6 +243,22 @@ pub fn expr_quotient(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_remainder(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr: Expr = left.resource.0.clone();
+    let right_expr: Expr = right.resource.0.clone();
+
+    let quotient = left_expr.clone()
+        / when(right_expr.clone().eq(0))
+            .then(Expr::Literal(LiteralValue::Null))
+            .otherwise(right_expr.clone());
+
+    let mult = right_expr.clone() * quotient;
+    let result = left_expr.clone() - mult;
+
+    ExExpr::new(result)
+}
+
+#[rustler::nif]
 pub fn expr_multiply(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();

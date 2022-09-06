@@ -153,8 +153,20 @@ pub fn s_div(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError>
 pub fn s_quotient(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &other.resource.0;
+    let div = s.checked_div(s1)?;
 
-    Ok(ExSeries::new(s.checked_div(s1)?))
+    Ok(ExSeries::new(div))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_remainder(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let s1 = &other.resource.0;
+    let div = s.checked_div(s1)?;
+    let mult = s1 * &div;
+    let result = s - &mult;
+
+    Ok(ExSeries::new(result))
 }
 
 #[rustler::nif]

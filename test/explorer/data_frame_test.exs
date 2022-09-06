@@ -453,7 +453,8 @@ defmodule Explorer.DataFrameTest do
             calc2: Series.add(ldf["a"], ldf["b"]),
             calc3: Series.subtract(ldf["b"], ldf["a"]),
             calc4: Series.divide(ldf["b"], ldf["c"]),
-            calc5: Series.quotient(ldf["b"], ldf["c"])
+            calc5: Series.quotient(ldf["b"], ldf["c"]),
+            calc6: Series.remainder(ldf["b"], ldf["c"])
           ]
         end)
 
@@ -465,7 +466,8 @@ defmodule Explorer.DataFrameTest do
                calc2: [21, 42, 63],
                calc3: [19, 38, 57],
                calc4: [2.0, :infinity, 7.5],
-               calc5: [2, nil, 7]
+               calc5: [2, nil, 7],
+               calc6: [0, nil, 4]
              }
 
       assert DF.dtypes(df1) == %{
@@ -476,7 +478,8 @@ defmodule Explorer.DataFrameTest do
                "calc2" => :integer,
                "calc3" => :integer,
                "calc4" => :float,
-               "calc5" => :integer
+               "calc5" => :integer,
+               "calc6" => :integer
              }
     end
 

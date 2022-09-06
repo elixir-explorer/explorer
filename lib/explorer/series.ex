@@ -1332,6 +1332,49 @@ defmodule Explorer.Series do
   def quotient(%Series{dtype: :integer} = left, right) when is_integer(right),
     do: Shared.apply_impl(left, :quotient, [right])
 
+  @doc """
+  Computes de remainder of an element-wise integer division.
+
+  ## Supported dtype
+
+    * `:integer`
+
+  Returns `nil` if there is a zero in the right-hand side.
+
+  ## Examples
+
+      iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.remainder(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [0, 1, 0]
+      >
+
+      iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 2, 0] |> Explorer.Series.from_list()
+      iex> Explorer.Series.remainder(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [0, 1, nil]
+      >
+
+      iex> s1 = [10, 11, 9] |> Explorer.Series.from_list()
+      iex> Explorer.Series.remainder(s1, 3)
+      #Explorer.Series<
+        integer[3]
+        [1, 2, 0]
+      >
+
+  """
+  @doc type: :element_wise
+  @spec remainder(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
+  def remainder(%Series{dtype: :integer} = left, %Series{dtype: :integer} = right),
+    do: Shared.apply_impl(left, :remainder, [right])
+
+  def remainder(%Series{dtype: :integer} = left, right) when is_integer(right),
+    do: Shared.apply_impl(left, :remainder, [right])
+
   defp basic_numeric_operation(
          operation,
          %Series{dtype: left_dtype} = left,
