@@ -1219,6 +1219,9 @@ defmodule Explorer.DataFrame do
   Columns are added with keyword list or maps. New variables overwrite existing variables of the
   same name. Column names are coerced from atoms to strings.
 
+  Mutate can work with groups, but it must have the same length, or be a scalar value.
+  If a complex operation with groups is needed, consider using `mutate_with/2`.
+
   ## Examples
 
   You can pass in a list directly as a new column:
@@ -1330,6 +1333,9 @@ defmodule Explorer.DataFrame do
 
   New variables overwrite existing variables of the
   same name. Column names are coerced from atoms to strings.
+
+  When the dataframe is grouped, a mutation will have the context of that
+  group or groups.
 
   ## Examples
 
@@ -1488,7 +1494,7 @@ defmodule Explorer.DataFrame do
 
   When used in a grouped dataframe, arrange is going to sort each group individually and
   then return the entire dataframe with the existing groups. If one of the arrange columns
-  is also a group, the sorting for that column not going to work. It is necessary to
+  is also a group, the sorting for that column is not going to work. It is necessary to
   summarise and arrange to get any effect for that columns.
 
       iex> df = Explorer.Datasets.fossil_fuels()
