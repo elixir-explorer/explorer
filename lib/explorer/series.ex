@@ -1323,6 +1323,13 @@ defmodule Explorer.Series do
         [5, 5, nil]
       >
 
+      iex> s1 = [10, 12, 15] |> Explorer.Series.from_list()
+      iex> Explorer.Series.quotient(s1, 3)
+      #Explorer.Series<
+        integer[3]
+        [3, 4, 5]
+      >
+
   """
   @doc type: :element_wise
   @spec quotient(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
