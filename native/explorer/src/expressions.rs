@@ -252,8 +252,8 @@ pub fn expr_remainder(left: ExExpr, right: ExExpr) -> ExExpr {
             .then(Expr::Literal(LiteralValue::Null))
             .otherwise(right_expr.clone());
 
-    let mult = right_expr.clone() * quotient;
-    let result = left_expr.clone() - mult;
+    let mult = right_expr * quotient;
+    let result = left_expr - mult;
 
     ExExpr::new(result)
 }
