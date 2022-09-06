@@ -63,7 +63,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_drop_duplicates(_df, _maintain_order, _subset, _selection), do: err()
   def df_drop_nulls(_df, _subset), do: err()
   def df_dtypes(_df), do: err()
-  def df_filter_with(_df, _operation), do: err()
+  def df_filter_with(_df, _operation, _groups), do: err()
   def df_get_columns(_df), do: err()
   def df_group_indices(_df, _column_names), do: err()
   def df_groupby_agg(_df, _groups, _aggs, _renames), do: err()

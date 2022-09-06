@@ -974,6 +974,7 @@ defmodule Explorer.DataFrame do
   Selects a subset of columns by name.
 
   Can optionally return all *but* the named columns if `:drop` is passed as the last argument.
+  It's important to notice that groups are kept: you can't select off grouping columns.
 
   ## Examples
 
@@ -1047,6 +1048,18 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
 
+  Notice that trying to drop a column that is also a group won't have effect:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> grouped = Explorer.DataFrame.group_by(df, "b")
+      iex> Explorer.DataFrame.select(grouped, ["b"], :drop)
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        Groups: ["b"]
+        a string ["a", "b", "c"]
+        b integer [1, 2, 3]
+      >
+
   """
   @doc type: :single
   @spec select(
@@ -1065,8 +1078,8 @@ defmodule Explorer.DataFrame do
 
     columns_to_keep =
       case keep_or_drop do
-        :keep -> columns
-        :drop -> df.names -- columns
+        :keep -> Enum.uniq(columns ++ df.groups)
+        :drop -> df.names -- columns -- df.groups
       end
 
     out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
@@ -1149,6 +1162,8 @@ defmodule Explorer.DataFrame do
   you need to use a function that returns boolean.
 
   But you can also use window functions and aggregations inside comparisons.
+  Notice that grouped dataframes may have different results than ungrouped ones,
+  because the filtering is computed withing groups.
 
   ## Examples
 
@@ -1180,6 +1195,28 @@ defmodule Explorer.DataFrame do
         Polars[1 x 2]
         col1 string ["a"]
         col2 integer [1]
+      >
+
+  Filtering with aggregations have different results if the dataframe is using groups or not:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "a", "b", "b"], col2: [1, 2, 3, 4])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["col2"], Explorer.Series.mean(df["col2"])) end)
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        col1 string ["b", "b"]
+        col2 integer [3, 4]
+      >
+
+  In a grouped dataframe, the aggregation is calculated within each group:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "a", "b", "b"], col2: [1, 2, 3, 4])
+      iex> grouped = Explorer.DataFrame.group_by(df, "col1")
+      iex> Explorer.DataFrame.filter_with(grouped, fn df -> Explorer.Series.greater(df["col2"], Explorer.Series.mean(df["col2"])) end)
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        Groups: ["col1"]
+        col1 string ["a", "b"]
+        col2 integer [2, 4]
       >
   """
   @doc type: :single

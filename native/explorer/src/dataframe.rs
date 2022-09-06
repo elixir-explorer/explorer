@@ -401,11 +401,20 @@ pub fn df_mask(data: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, Explore
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_filter_with(data: ExDataFrame, ex_expr: ExExpr) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_filter_with(
+    data: ExDataFrame,
+    ex_expr: ExExpr,
+    groups: Vec<String>,
+) -> Result<ExDataFrame, ExplorerError> {
     let df: DataFrame = data.resource.0.clone();
     let exp: Expr = ex_expr.resource.0.clone();
 
-    let new_df = df.lazy().filter(exp).collect()?;
+    let new_df = if groups.is_empty() {
+        df.lazy().filter(exp).collect()?
+    } else {
+        df.groupby_stable(groups)?
+            .apply(|df| df.lazy().filter(exp.clone()).collect())?
+    };
 
     Ok(ExDataFrame::new(new_df))
 }
