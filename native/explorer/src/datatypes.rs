@@ -1,7 +1,8 @@
 use chrono::prelude::*;
 use polars::prelude::*;
+use polars::export::arrow::bitmap::utils::zip_validity;
 use rustler::resource::ResourceArc;
-use rustler::{Atom, Encoder, Env, NifStruct, Term};
+use rustler::{Atom, Binary, Encoder, Env, NewBinary, NifStruct, Term};
 use std::convert::TryInto;
 
 use crate::atoms::{
@@ -9,7 +10,7 @@ use crate::atoms::{
     neg_infinity, second, year,
 };
 
-use rustler::types::atom::__struct__;
+use rustler::types::atom;
 use rustler::wrapper::list::make_list;
 use rustler::wrapper::{map, NIF_TERM};
 
@@ -284,7 +285,7 @@ fn encode_date_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     // This is because we already have the keys (we know this at compile time), and the types,
     // so we can build the struct directly.
     let date_struct_keys = &[
-        __struct__().encode(env).as_c_arg(),
+        atom::__struct__().encode(env).as_c_arg(),
         calendar().encode(env).as_c_arg(),
         day().encode(env).as_c_arg(),
         month().encode(env).as_c_arg(),
@@ -327,7 +328,7 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
     // Here we build the NaiveDateTime struct manually, as it's faster than using NifStructs.
     // It's faster because we already have the keys (we know this at compile time), and the type.
     let datetime_struct_keys = &[
-        __struct__().encode(env).as_c_arg(),
+        atom::__struct__().encode(env).as_c_arg(),
         calendar().encode(env).as_c_arg(),
         day().encode(env).as_c_arg(),
         month().encode(env).as_c_arg(),
@@ -350,39 +351,75 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
     let items: Vec<NIF_TERM> = s
         .datetime()
         .unwrap()
-        .downcast_iter()
-        .flat_map(move |iter| {
-            iter.into_iter().map(move |opt_v| {
-                opt_v
-                    .copied()
-                    .map(|x| match time_unit {
-                        TimeUnit::Milliseconds => {
-                            let naive_datetime = timestamp_to_datetime(x * 1000);
-                            encode_datetime!(
-                                naive_datetime,
-                                datetime_struct_keys,
-                                calendar_iso_c_arg,
-                                datetime_module_atom,
-                                env
-                            )
-                        }
-                        TimeUnit::Microseconds => {
-                            let naive_datetime = timestamp_to_datetime(x);
-                            encode_datetime!(
-                                naive_datetime,
-                                datetime_struct_keys,
-                                calendar_iso_c_arg,
-                                datetime_module_atom,
-                                env
-                            )
-                        }
-                        _ => unreachable!(),
-                    })
-                    .encode(env)
-                    .as_c_arg()
+        .into_iter()
+        .map(|opt_v|
+            opt_v
+            .map(|x| match time_unit {
+                TimeUnit::Milliseconds => {
+                    let naive_datetime = timestamp_to_datetime(x * 1000);
+                    encode_datetime!(
+                        naive_datetime,
+                        datetime_struct_keys,
+                        calendar_iso_c_arg,
+                        datetime_module_atom,
+                        env
+                    )
+                }
+                TimeUnit::Microseconds => {
+                    let naive_datetime = timestamp_to_datetime(x);
+                    encode_datetime!(
+                        naive_datetime,
+                        datetime_struct_keys,
+                        calendar_iso_c_arg,
+                        datetime_module_atom,
+                        env
+                    )
+                }
+                _ => unreachable!(),
             })
-        })
+            .encode(env)
+            .as_c_arg()
+        )
         .collect();
+
+    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+}
+
+fn encode_utf8_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+    let utf8 = s.utf8().unwrap();
+    let mut items: Vec<usize> = Vec::with_capacity(utf8.len());
+
+    for array in utf8.downcast_iter() {
+        // Create a binary per array buffer
+        let values = array.values();
+        let mut new_binary = NewBinary::new(env, values.len());
+        new_binary.copy_from_slice(values.as_slice());
+        let binary: Binary = new_binary.into();
+
+        // Now allocate each string as a pointer to said binary
+        let mut iter = array.offsets().iter();
+        let mut last_offset = *iter.next().unwrap() as usize;
+
+        for wrapped_offset in zip_validity(iter, array.validity().as_ref().map(|x| x.iter())) {
+            match wrapped_offset {
+                Some(offset) => {
+                    let uoffset = *offset as usize;
+
+                    items.push(
+                        binary
+                        .make_subbinary(last_offset, uoffset - last_offset)
+                        .unwrap()
+                        .to_term(env)
+                        .as_c_arg()
+                    );
+
+                    last_offset = uoffset
+                }
+                None =>
+                    items.push(atom::nil().to_term(env).as_c_arg()),
+            }
+        }
+    }
 
     unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
 }
@@ -392,50 +429,46 @@ fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let nan_atom = nan().encode(env);
     let neg_infinity_atom = neg_infinity().encode(env);
     let infinity_atom = infinity().encode(env);
+    let nil_atom = atom::nil().encode(env);
 
     let items: Vec<NIF_TERM> = s
         .f64()
         .unwrap()
-        .downcast_iter()
-        .flat_map(move |iter| {
-            iter.into_iter().map(move |opt_v| {
-                opt_v
-                    .copied()
-                    .map(|x| {
-                        if x.is_finite() {
-                            x.encode(env)
-                        } else {
-                            match (x.is_nan(), x.is_sign_negative()) {
-                                (true, _) => nan_atom,
-                                (false, true) => neg_infinity_atom,
-                                (false, false) => infinity_atom,
-                            }
+        .into_iter()
+        .map(|option|
+            match option {
+                Some(x) =>
+                    if x.is_finite() {
+                        x.encode(env)
+                    } else {
+                        match (x.is_nan(), x.is_sign_negative()) {
+                            (true, _) => nan_atom,
+                            (false, true) => neg_infinity_atom,
+                            (false, false) => infinity_atom,
                         }
-                    })
-                    .encode(env)
-                    .as_c_arg()
-            })
-        })
+                    },
+                None => nil_atom
+            }
+            .as_c_arg()
+        )
         .collect();
 
     unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
 }
 
 macro_rules! encode {
-    ($s:ident, $env:ident, $convert_function:ident, $out_type:ty) => {
-        $s.$convert_function()
-            .unwrap()
-            .into_iter()
-            .collect::<Vec<Option<$out_type>>>()
-            .encode($env)
-    };
     ($s:ident, $env:ident, $convert_function:ident) => {
-        $s.$convert_function()
-            .unwrap()
-            .into_iter()
-            .collect::<Vec<Option<$convert_function>>>()
-            .encode($env)
-    };
+        {
+            let list =
+                $s.$convert_function()
+                .unwrap()
+                .into_iter()
+                .map(|option| option.encode($env).as_c_arg())
+                .collect::<Vec<usize>>();
+
+            unsafe { Term::new($env, make_list($env.as_c_arg(), &list)) }
+        }
+    }
 }
 
 macro_rules! encode_list {
@@ -465,11 +498,11 @@ impl Encoder for ExSeriesRef {
         let s = &self.0;
         match s.dtype() {
             DataType::Boolean => encode!(s, env, bool),
-            DataType::Utf8 => encode!(s, env, utf8, &str),
             DataType::Int32 => encode!(s, env, i32),
             DataType::Int64 => encode!(s, env, i64),
             DataType::UInt8 => encode!(s, env, u8),
             DataType::UInt32 => encode!(s, env, u32),
+            DataType::Utf8 => encode_utf8_series(s, env),
             DataType::Float64 => encode_float64_series(s, env),
             DataType::Date => encode_date_series(s, env),
             DataType::Datetime(TimeUnit::Microseconds, None) => {
