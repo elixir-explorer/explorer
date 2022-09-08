@@ -265,7 +265,7 @@ defmodule Explorer.Backend.LazySeries do
 
       if aggregations?(args), do: raise_agg_inside_window(unquote(op))
 
-      dtype = resolve_numeric_dtype([series | List.wrap(weights)])
+      dtype = resolve_numeric_dtype(unquote(op), [series | List.wrap(weights)])
 
       data = new(unquote(op), args, false, true)
 
@@ -314,7 +314,7 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, dtype)
   end
 
-  defp dtype_for_agg_operation(:count, _), do: :integer
+  defp dtype_for_agg_operation(op, _) when op in [:count, :n_distinct], do: :integer
 
   defp dtype_for_agg_operation(op, series) when op in [:first, :last, :sum, :min, :max],
     do: series.dtype
@@ -335,6 +335,9 @@ defmodule Explorer.Backend.LazySeries do
       [_, _] -> :float
     end
   end
+
+  defp resolve_numeric_dtype(:window_mean, _items), do: :float
+  defp resolve_numeric_dtype(_op, items), do: resolve_numeric_dtype(items)
 
   # Returns the inner `data` if it's a lazy series. Otherwise raises an error.
   defp lazy_series!(series) do

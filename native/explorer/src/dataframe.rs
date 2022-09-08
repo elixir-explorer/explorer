@@ -517,13 +517,18 @@ pub fn df_drop_duplicates(
     data: ExDataFrame,
     maintain_order: bool,
     subset: Vec<String>,
+    columns_to_keep: Option<Vec<&str>>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df: &DataFrame = &data.resource.0;
     let new_df = match maintain_order {
         false => df.unique(Some(&subset), UniqueKeepStrategy::First)?,
         true => df.unique_stable(Some(&subset), UniqueKeepStrategy::First)?,
     };
-    Ok(ExDataFrame::new(new_df))
+
+    match columns_to_keep {
+        Some(columns) => Ok(ExDataFrame::new(new_df.select(&columns)?)),
+        None => Ok(ExDataFrame::new(new_df)),
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

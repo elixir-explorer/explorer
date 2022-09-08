@@ -77,10 +77,22 @@ defmodule Explorer.DataFrame.GroupedTest do
 
   describe "summarise/2" do
     test "with one group and one column with aggregations", %{df: df} do
-      df1 = df |> DF.group_by("year") |> DF.summarise(total: [:max, :min])
+      df1 = df |> DF.group_by("year") |> DF.summarise(total: [:min, :max, :count])
+
+      assert DF.names(df1) == ["year", "total_min", "total_max", "total_count"]
+
+      assert DF.dtypes(df1) == %{
+               "year" => :integer,
+               "total_min" => :integer,
+               "total_max" => :integer,
+               "total_count" => :integer
+             }
+
+      assert DF.groups(df1) == []
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                year: [2010, 2011, 2012, 2013, 2014],
+               total_count: [217, 217, 220, 220, 220],
                total_min: [1, 2, 2, 2, 3],
                total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634]
              }
@@ -88,6 +100,17 @@ defmodule Explorer.DataFrame.GroupedTest do
 
     test "with one group and two columns with aggregations", %{df: df} do
       df1 = df |> DF.group_by("year") |> DF.summarise(total: [:max, :min], country: [:n_distinct])
+
+      assert DF.names(df1) == ["year", "total_max", "total_min", "country_n_distinct"]
+
+      assert DF.dtypes(df1) == %{
+               "year" => :integer,
+               "total_min" => :integer,
+               "total_max" => :integer,
+               "country_n_distinct" => :integer
+             }
+
+      assert DF.groups(df1) == []
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                year: [2010, 2011, 2012, 2013, 2014],
@@ -100,6 +123,17 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "with two groups and one column with aggregations", %{df: df} do
       df1 =
         df |> DF.head(5) |> DF.group_by(["country", "year"]) |> DF.summarise(total: [:max, :min])
+
+      assert DF.names(df1) == ["country", "year", "total_max", "total_min"]
+
+      assert DF.dtypes(df1) == %{
+               "year" => :integer,
+               "total_min" => :integer,
+               "total_max" => :integer,
+               "country" => :string
+             }
+
+      assert DF.groups(df1) == []
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                year: [2010, 2010, 2010, 2010, 2010],
@@ -123,6 +157,15 @@ defmodule Explorer.DataFrame.GroupedTest do
         |> DF.group_by("team")
         |> DF.summarise(%{"adv" => [:max], "cou" => [:max], "spo" => [:max]})
         |> DF.rename(cou_max: "cou", adv_max: "adv", spo_max: "spo")
+
+      assert DF.names(df2) == ["team", "adv", "cou", "spo"]
+
+      assert DF.dtypes(df2) == %{
+               "team" => :string,
+               "adv" => :float,
+               "cou" => :float,
+               "spo" => :float
+             }
 
       assert Series.to_list(df2["cou"]) == [1.0, 4.0]
       assert Series.to_list(df2["adv"]) == [2.0, 5.0]
@@ -527,13 +570,15 @@ defmodule Explorer.DataFrame.GroupedTest do
   end
 
   describe "distinct/2" do
+    # Distinct does not behave differently when used in a DF with groups.
+    # The only difference is that the groups are kept.
     test "with one group", %{df: df} do
       df1 = DF.group_by(df, "year")
 
       df2 = DF.distinct(df1, [:country])
       assert DF.names(df2) == ["year", "country"]
       assert DF.groups(df2) == ["year"]
-      assert DF.shape(df2) == {1094, 2}
+      assert DF.shape(df2) == {222, 2}
     end
 
     test "with one group and distinct as the same", %{df: df} do
@@ -548,10 +593,12 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "multiple groups and different distinct", %{df: df} do
       df1 = DF.group_by(df, ["country", "year"])
 
+      rows_count = df1[:bunker_fuels] |> Series.n_distinct()
+
       df2 = DF.distinct(df1, [:bunker_fuels])
       assert DF.names(df2) == ["country", "year", "bunker_fuels"]
       assert DF.groups(df2) == ["country", "year"]
-      assert DF.shape(df2) == {1094, 3}
+      assert DF.shape(df2) == {rows_count, 3}
     end
 
     test "with groups and keeping all", %{df: df} do
@@ -574,7 +621,18 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert DF.groups(df2) == ["year"]
 
-      assert DF.shape(df2) == {1094, 10}
+      assert DF.shape(df2) == {222, 10}
+    end
+
+    test "with distinct by two columns", %{df: df} do
+      df1 = DF.group_by(df, "year")
+
+      df2 = DF.distinct(df1, [:year, :country])
+
+      assert DF.groups(df2) == ["year"]
+      assert DF.names(df2) == ["year", "country"]
+
+      assert DF.shape(df2) == {1094, 2}
     end
   end
 end
