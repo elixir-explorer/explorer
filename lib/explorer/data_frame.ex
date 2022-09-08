@@ -1591,6 +1591,13 @@ defmodule Explorer.DataFrame do
   @doc """
   Takes distinct rows by a selection of columns.
 
+  Distinct is not affected by groups, although groups are kept in the
+  columns selection if `keep_all` option is false (the default).
+
+  ## Options
+
+    * `keep_all` - If set to `true`, keep all columns. Default is `false`.
+
   ## Examples
 
   By default will return unique values of the requested columns:
