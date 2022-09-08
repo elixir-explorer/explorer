@@ -1,6 +1,6 @@
 use chrono::prelude::*;
-use polars::prelude::*;
 use polars::export::arrow::bitmap::utils::zip_validity;
+use polars::prelude::*;
 use rustler::resource::ResourceArc;
 use rustler::{Atom, Binary, Encoder, Env, NewBinary, NifStruct, Term};
 use std::convert::TryInto;
@@ -352,34 +352,34 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
         .datetime()
         .unwrap()
         .into_iter()
-        .map(|opt_v|
+        .map(|opt_v| {
             opt_v
-            .map(|x| match time_unit {
-                TimeUnit::Milliseconds => {
-                    let naive_datetime = timestamp_to_datetime(x * 1000);
-                    encode_datetime!(
-                        naive_datetime,
-                        datetime_struct_keys,
-                        calendar_iso_c_arg,
-                        datetime_module_atom,
-                        env
-                    )
-                }
-                TimeUnit::Microseconds => {
-                    let naive_datetime = timestamp_to_datetime(x);
-                    encode_datetime!(
-                        naive_datetime,
-                        datetime_struct_keys,
-                        calendar_iso_c_arg,
-                        datetime_module_atom,
-                        env
-                    )
-                }
-                _ => unreachable!(),
-            })
-            .encode(env)
-            .as_c_arg()
-        )
+                .map(|x| match time_unit {
+                    TimeUnit::Milliseconds => {
+                        let naive_datetime = timestamp_to_datetime(x * 1000);
+                        encode_datetime!(
+                            naive_datetime,
+                            datetime_struct_keys,
+                            calendar_iso_c_arg,
+                            datetime_module_atom,
+                            env
+                        )
+                    }
+                    TimeUnit::Microseconds => {
+                        let naive_datetime = timestamp_to_datetime(x);
+                        encode_datetime!(
+                            naive_datetime,
+                            datetime_struct_keys,
+                            calendar_iso_c_arg,
+                            datetime_module_atom,
+                            env
+                        )
+                    }
+                    _ => unreachable!(),
+                })
+                .encode(env)
+                .as_c_arg()
+        })
         .collect();
 
     unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
@@ -407,16 +407,15 @@ fn encode_utf8_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
 
                     items.push(
                         binary
-                        .make_subbinary(last_offset, uoffset - last_offset)
-                        .unwrap()
-                        .to_term(env)
-                        .as_c_arg()
+                            .make_subbinary(last_offset, uoffset - last_offset)
+                            .unwrap()
+                            .to_term(env)
+                            .as_c_arg(),
                     );
 
                     last_offset = uoffset
                 }
-                None =>
-                    items.push(atom::nil().to_term(env).as_c_arg()),
+                None => items.push(atom::nil().to_term(env).as_c_arg()),
             }
         }
     }
@@ -435,9 +434,9 @@ fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
         .f64()
         .unwrap()
         .into_iter()
-        .map(|option|
+        .map(|option| {
             match option {
-                Some(x) =>
+                Some(x) => {
                     if x.is_finite() {
                         x.encode(env)
                     } else {
@@ -446,29 +445,28 @@ fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
                             (false, true) => neg_infinity_atom,
                             (false, false) => infinity_atom,
                         }
-                    },
-                None => nil_atom
+                    }
+                }
+                None => nil_atom,
             }
             .as_c_arg()
-        )
+        })
         .collect();
 
     unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
 }
 
 macro_rules! encode {
-    ($s:ident, $env:ident, $convert_function:ident) => {
-        {
-            let list =
-                $s.$convert_function()
-                .unwrap()
-                .into_iter()
-                .map(|option| option.encode($env).as_c_arg())
-                .collect::<Vec<usize>>();
+    ($s:ident, $env:ident, $convert_function:ident) => {{
+        let list = $s
+            .$convert_function()
+            .unwrap()
+            .into_iter()
+            .map(|option| option.encode($env).as_c_arg())
+            .collect::<Vec<usize>>();
 
-            unsafe { Term::new($env, make_list($env.as_c_arg(), &list)) }
-        }
-    }
+        unsafe { Term::new($env, make_list($env.as_c_arg(), &list)) }
+    }};
 }
 
 macro_rules! encode_list {
