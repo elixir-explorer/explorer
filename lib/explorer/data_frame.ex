@@ -2935,6 +2935,9 @@ defmodule Explorer.DataFrame do
             :mean ->
               :float
 
+            agg when agg in [:count, :n_distinct] ->
+              :integer
+
             _other ->
               df.dtypes[column_name]
           end
