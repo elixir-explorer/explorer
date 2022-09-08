@@ -59,7 +59,6 @@ defmodule Explorer.PolarsBackend.Native do
       do: err()
 
   def df_column(_df, _name), do: err()
-  def df_columns(_def), do: err()
   def df_drop(_df, _name), do: err()
   def df_drop_duplicates(_df, _maintain_order, _subset), do: err()
   def df_drop_nulls(_df, _subset), do: err()
@@ -76,6 +75,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
   def df_mask(_df, _mask), do: err()
   def df_melt(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()
+  def df_names(_df), do: err()
   def df_new(_columns), do: err()
   def df_pivot_wider(_df, _id_columns, _pivot_column, _values_column), do: err()
   def df_read_ipc(_filename, _columns, _projection), do: err()

@@ -62,7 +62,7 @@ rustler::init!(
     [
         df_arrange_with,
         df_column,
-        df_columns,
+        df_names,
         df_drop,
         df_drop_duplicates,
         df_drop_nulls,

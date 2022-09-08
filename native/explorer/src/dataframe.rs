@@ -260,7 +260,7 @@ pub fn df_get_columns(data: ExDataFrame) -> Result<Vec<ExSeries>, ExplorerError>
 }
 
 #[rustler::nif]
-pub fn df_columns(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
+pub fn df_names(data: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
     let df = &data.resource.0;
     Ok(df.get_column_names_owned())
 }

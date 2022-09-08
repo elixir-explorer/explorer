@@ -26,48 +26,83 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def apply_dataframe(%DataFrame{} = df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
-      {:ok, %module{} = new_df} when module in @polars_df -> update_dataframe(new_df, df)
-      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
-      {:ok, value} -> value
-      {:error, error} -> raise "#{error}"
+      {:ok, %module{} = new_df} when module in @polars_df ->
+        # TODO: this currently assumes we want to preserve the groups
+        # but, if that's the case, we should be using apply_df/4.
+        # In other words, we should find every caller of this clause
+        # and make it use apply_dataframe/4 instead.
+        %{create_dataframe(new_df) | groups: df.groups}
+
+      {:ok, %PolarsSeries{} = new_series} ->
+        create_series(new_series)
+
+      {:ok, value} ->
+        value
+
+      {:error, error} ->
+        raise "#{error}"
     end
   end
+
+  @check_frames Application.compile_env(:explorer, :check_polars_frames, false)
 
   def apply_dataframe(%DataFrame{} = df, %DataFrame{} = out_df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
-      {:ok, %module{} = new_df} when module in @polars_df -> %{out_df | data: new_df}
-      {:error, error} -> raise "#{error}"
+      {:ok, %module{} = new_df} when module in @polars_df ->
+        if @check_frames do
+          check_df = create_dataframe(new_df)
+
+          if out_df.names != check_df.names or out_df.dtypes != check_df.dtypes do
+            raise """
+            DataFrame mismatch.
+
+            expected:
+
+                names: #{inspect(out_df.names)}
+                dtypes: #{inspect(out_df.dtypes)}
+
+            got:
+
+                names: #{inspect(check_df.names)}
+                dtypes: #{inspect(check_df.dtypes)}
+            """
+          end
+        end
+
+        %{out_df | data: new_df}
+
+      {:error, error} ->
+        raise "#{error}"
     end
-  end
-
-  def create_dataframe(%PolarsDataFrame{} = polars_df) do
-    {:ok, names} = Native.df_columns(polars_df)
-    {:ok, dtypes} = Native.df_dtypes(polars_df)
-    dtypes = Enum.map(dtypes, &normalise_dtype/1)
-
-    Explorer.Backend.DataFrame.new(polars_df, names, dtypes)
-  end
-
-  def create_dataframe(%PolarsLazyFrame{} = polars_df) do
-    {:ok, names} = Native.lf_names(polars_df)
-    {:ok, dtypes} = Native.lf_dtypes(polars_df)
-    dtypes = Enum.map(dtypes, &normalise_dtype/1)
-
-    Explorer.Backend.DataFrame.new(polars_df, names, dtypes)
-  end
-
-  # TODO: this currently assumes we want to preserve the groups
-  # but, if that's the case, we should be using apply_df/4.
-  # In other words, we should find every caller of this function
-  # and make it use apply_dataframe/4 instead.
-  defp update_dataframe(%module{} = polars_df, %DataFrame{} = df) when module in @polars_df do
-    new_df = create_dataframe(polars_df)
-    %{new_df | groups: df.groups}
   end
 
   def create_series(%PolarsSeries{} = polars_series) do
     {:ok, dtype} = Native.s_dtype(polars_series)
     Explorer.Backend.Series.new(polars_series, normalise_dtype(dtype))
+  end
+
+  def create_dataframe(polars_df) do
+    Explorer.Backend.DataFrame.new(polars_df, df_names(polars_df), df_dtypes(polars_df))
+  end
+
+  defp df_names(%PolarsDataFrame{} = polars_df) do
+    {:ok, names} = Native.df_names(polars_df)
+    names
+  end
+
+  defp df_names(%PolarsLazyFrame{} = polars_df) do
+    {:ok, names} = Native.lf_names(polars_df)
+    names
+  end
+
+  defp df_dtypes(%PolarsDataFrame{} = polars_df) do
+    {:ok, dtypes} = Native.df_dtypes(polars_df)
+    Enum.map(dtypes, &normalise_dtype/1)
+  end
+
+  defp df_dtypes(%PolarsLazyFrame{} = polars_df) do
+    {:ok, dtypes} = Native.lf_dtypes(polars_df)
+    Enum.map(dtypes, &normalise_dtype/1)
   end
 
   def normalise_dtype("u8"), do: :integer
