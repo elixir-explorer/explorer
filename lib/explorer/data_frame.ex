@@ -2572,7 +2572,7 @@ defmodule Explorer.DataFrame do
             right_name
           end
 
-        {name, right.dtypes[name]}
+        {name, right.dtypes[right_name]}
       end)
   end
 

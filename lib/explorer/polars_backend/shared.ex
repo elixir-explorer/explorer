@@ -52,7 +52,8 @@ defmodule Explorer.PolarsBackend.Shared do
         if @check_frames do
           check_df = create_dataframe(new_df)
 
-          if out_df.names != check_df.names or out_df.dtypes != check_df.dtypes do
+          if Enum.sort(out_df.names) != Enum.sort(check_df.names) or
+               out_df.dtypes != check_df.dtypes do
             raise """
             DataFrame mismatch.
 
