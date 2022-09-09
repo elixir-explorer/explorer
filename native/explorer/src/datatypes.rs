@@ -387,6 +387,7 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
 
 fn encode_utf8_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let utf8 = s.utf8().unwrap();
+    let nil_atom = atom::nil().to_term(env);
     let mut items: Vec<usize> = Vec::with_capacity(utf8.len());
 
     for array in utf8.downcast_iter() {
@@ -415,7 +416,7 @@ fn encode_utf8_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
 
                     last_offset = uoffset
                 }
-                None => items.push(atom::nil().to_term(env).as_c_arg()),
+                None => items.push(nil_atom.as_c_arg()),
             }
         }
     }
