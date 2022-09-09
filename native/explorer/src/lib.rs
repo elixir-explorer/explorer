@@ -17,6 +17,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 mod dataframe;
 #[allow(clippy::extra_unused_lifetimes)]
 mod datatypes;
+mod encoding;
 mod error;
 mod expressions;
 mod lazyframe;
@@ -42,7 +43,9 @@ fn on_load(env: Env, _info: Term) -> bool {
 
 mod atoms {
     rustler::atoms! {
-        calendar_atom = "Elixir.Calendar.ISO",
+        calendar_iso_module = "Elixir.Calendar.ISO",
+        date_module = "Elixir.Date",
+        naive_datetime_module = "Elixir.NaiveDateTime",
         hour,
         minute,
         second,

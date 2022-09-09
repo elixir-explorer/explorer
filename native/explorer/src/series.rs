@@ -1,5 +1,6 @@
 use crate::{
     datatypes::{ExDate, ExDateTime},
+    encoding::term_from_value,
     ExDataFrame, ExSeries, ExSeriesRef, ExplorerError,
 };
 
@@ -574,29 +575,6 @@ pub fn s_std(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
 pub fn s_get(env: Env, data: ExSeries, idx: usize) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
     Ok(term_from_value(s.get(idx), env))
-}
-
-fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
-    match v {
-        AnyValue::Null => None::<bool>.encode(env),
-        AnyValue::Boolean(v) => Some(v).encode(env),
-        AnyValue::Utf8(v) => Some(v).encode(env),
-        AnyValue::Int8(v) => Some(v).encode(env),
-        AnyValue::Int16(v) => Some(v).encode(env),
-        AnyValue::Int32(v) => Some(v).encode(env),
-        AnyValue::Int64(v) => Some(v).encode(env),
-        AnyValue::UInt8(v) => Some(v).encode(env),
-        AnyValue::UInt16(v) => Some(v).encode(env),
-        AnyValue::UInt32(v) => Some(v).encode(env),
-        AnyValue::UInt64(v) => Some(v).encode(env),
-        AnyValue::Float64(v) => Some(v).encode(env),
-        AnyValue::Float32(v) => Some(v).encode(env),
-        AnyValue::Date(v) => Some(ExDate::from(v)).encode(env),
-        AnyValue::Datetime(v, TimeUnit::Microseconds, None) => {
-            Some(ExDateTime::from(v)).encode(env)
-        }
-        dt => panic!("get/2 not implemented for {:?}", dt),
-    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
