@@ -39,7 +39,7 @@ In order to use `Explorer`, you will need Elixir installed. Then create an
 Elixir project via the `mix` build tool:
 
 ```
-$ mix new my_app
+mix new my_app
 ```
 
 Then you can add `Explorer` as dependency in your `mix.exs`.
@@ -47,7 +47,7 @@ Then you can add `Explorer` as dependency in your `mix.exs`.
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.3.0"}
+    {:explorer, "~> 0.3.1"}
   ]
 end
 ```
@@ -56,7 +56,7 @@ Alternatively, inside a script or Livebook:
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.3.0"}
+  {:explorer, "~> 0.3.1"}
 ])
 ```
 
