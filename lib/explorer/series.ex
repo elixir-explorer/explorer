@@ -1241,7 +1241,7 @@ defmodule Explorer.Series do
   @doc """
   Divides left by right, element-wise.
 
-  When mixing floats and integers, the resulting series will have dtype `:float`.
+  The resulting series will have the dtype as `:float`.
 
   ## Supported dtypes
 
@@ -1250,24 +1250,137 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
+      iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
       iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, s2)
+      #Explorer.Series<
+        float[3]
+        [5.0, 5.0, 5.0]
+      >
+
+      iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
+      iex> Explorer.Series.divide(s1, 2)
+      #Explorer.Series<
+        float[3]
+        [5.0, 5.0, 5.0]
+      >
+
+      iex> s1 = [10, 52 ,10] |> Explorer.Series.from_list()
+      iex> Explorer.Series.divide(s1, 2.5)
+      #Explorer.Series<
+        float[3]
+        [4.0, 20.8, 4.0]
+      >
+
+      iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 0, 2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.divide(s1, s2)
+      #Explorer.Series<
+        float[3]
+        [5.0, infinity, 5.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
+  def divide(%Series{} = left, right) do
+    left =
+      if K.and(
+           left.dtype == :integer,
+           K.or(is_integer(right), match?(%Series{dtype: :integer}, right))
+         ) do
+        cast(left, :float)
+      else
+        left
+      end
+
+    basic_numeric_operation(:divide, left, right)
+  end
+
+  @doc """
+  Element-wise integer division.
+
+  ## Supported dtype
+
+    * `:integer`
+
+  Returns `nil` if there is a zero in the right-hand side.
+
+  ## Examples
+
+      iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.quotient(s1, s2)
       #Explorer.Series<
         integer[3]
         [5, 5, 5]
       >
 
-      iex> s1 = [10, 10 ,10] |> Explorer.Series.from_list()
-      iex> Explorer.Series.divide(s1, 2)
+      iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 2, 0] |> Explorer.Series.from_list()
+      iex> Explorer.Series.quotient(s1, s2)
       #Explorer.Series<
         integer[3]
-        [5, 5, 5]
+        [5, 5, nil]
       >
+
+      iex> s1 = [10, 12, 15] |> Explorer.Series.from_list()
+      iex> Explorer.Series.quotient(s1, 3)
+      #Explorer.Series<
+        integer[3]
+        [3, 4, 5]
+      >
+
   """
   @doc type: :element_wise
-  @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
-  def divide(left, right), do: basic_numeric_operation(:divide, left, right)
+  @spec quotient(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
+  def quotient(%Series{dtype: :integer} = left, %Series{dtype: :integer} = right),
+    do: Shared.apply_impl(left, :quotient, [right])
+
+  def quotient(%Series{dtype: :integer} = left, right) when is_integer(right),
+    do: Shared.apply_impl(left, :quotient, [right])
+
+  @doc """
+  Computes the remainder of an element-wise integer division.
+
+  ## Supported dtype
+
+    * `:integer`
+
+  Returns `nil` if there is a zero in the right-hand side.
+
+  ## Examples
+
+      iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.remainder(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [0, 1, 0]
+      >
+
+      iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
+      iex> s2 = [2, 2, 0] |> Explorer.Series.from_list()
+      iex> Explorer.Series.remainder(s1, s2)
+      #Explorer.Series<
+        integer[3]
+        [0, 1, nil]
+      >
+
+      iex> s1 = [10, 11, 9] |> Explorer.Series.from_list()
+      iex> Explorer.Series.remainder(s1, 3)
+      #Explorer.Series<
+        integer[3]
+        [1, 2, 0]
+      >
+
+  """
+  @doc type: :element_wise
+  @spec remainder(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
+  def remainder(%Series{dtype: :integer} = left, %Series{dtype: :integer} = right),
+    do: Shared.apply_impl(left, :remainder, [right])
+
+  def remainder(%Series{dtype: :integer} = left, right) when is_integer(right),
+    do: Shared.apply_impl(left, :remainder, [right])
 
   defp basic_numeric_operation(
          operation,

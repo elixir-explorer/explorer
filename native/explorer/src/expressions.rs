@@ -5,7 +5,7 @@
 // wrapped in an Elixir struct.
 
 use chrono::{NaiveDate, NaiveDateTime};
-use polars::prelude::{col, when, DataFrame, IntoLazy};
+use polars::prelude::{col, when, DataFrame, IntoLazy, LiteralValue};
 use polars::prelude::{Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
@@ -227,6 +227,35 @@ pub fn expr_divide(left: ExExpr, right: ExExpr) -> ExExpr {
     let right_expr: Expr = right.resource.0.clone();
 
     ExExpr::new(left_expr / right_expr)
+}
+
+#[rustler::nif]
+pub fn expr_quotient(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr: Expr = left.resource.0.clone();
+    let right_expr: Expr = right.resource.0.clone();
+
+    let quotient = left_expr
+        / when(right_expr.clone().eq(0))
+            .then(Expr::Literal(LiteralValue::Null))
+            .otherwise(right_expr);
+
+    ExExpr::new(quotient)
+}
+
+#[rustler::nif]
+pub fn expr_remainder(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr: Expr = left.resource.0.clone();
+    let right_expr: Expr = right.resource.0.clone();
+
+    let quotient = left_expr.clone()
+        / when(right_expr.clone().eq(0))
+            .then(Expr::Literal(LiteralValue::Null))
+            .otherwise(right_expr.clone());
+
+    let mult = right_expr * quotient;
+    let result = left_expr - mult;
+
+    ExExpr::new(result)
 }
 
 #[rustler::nif]

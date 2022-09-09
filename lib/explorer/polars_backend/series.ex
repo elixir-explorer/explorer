@@ -170,10 +170,22 @@ defmodule Explorer.PolarsBackend.Series do
   def multiply(left, right) when is_number(right), do: multiply(left, scalar_rhs(right, left))
 
   @impl true
-  def divide(left, %Series{} = right),
+  def divide(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_div, [right.data])
 
   def divide(left, right) when is_number(right), do: divide(left, scalar_rhs(right, left))
+
+  @impl true
+  def quotient(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_quotient, [right.data])
+
+  def quotient(left, right) when is_integer(right), do: quotient(left, scalar_rhs(right, left))
+
+  @impl true
+  def remainder(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_remainder, [right.data])
+
+  def remainder(left, right) when is_integer(right), do: remainder(left, scalar_rhs(right, left))
 
   @impl true
   def pow(left, exponent) when is_float(exponent),

@@ -143,6 +143,8 @@ rustler::init!(
         expr_divide,
         expr_multiply,
         expr_pow,
+        expr_quotient,
+        expr_remainder,
         // slice and dice expressions
         expr_coalesce,
         // agg expressions
@@ -228,6 +230,8 @@ rustler::init!(
         s_pow,
         s_int_pow,
         s_quantile,
+        s_quotient,
+        s_remainder,
         s_rename,
         s_reverse,
         s_rolling_max,
