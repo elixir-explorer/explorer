@@ -29,7 +29,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
         AnyValue::Float64(v) => Some(v).encode(env),
         AnyValue::Float32(v) => Some(v).encode(env),
         AnyValue::Date(v) => encode_date(v, env),
-        AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit.clone(), env),
+        AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
         dt => panic!("get/2 not implemented for {:?}", dt),
     }
 }
@@ -73,7 +73,7 @@ fn date_struct_keys(env: Env) -> [NIF_TERM; 5] {
 }
 
 #[inline]
-fn encode_date<'b>(v: i32, env: Env<'b>) -> Term<'b> {
+fn encode_date(v: i32, env: Env) -> Term {
     let naive_date = days_to_date(v);
     let date_struct_keys = &date_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
@@ -160,15 +160,15 @@ fn naive_datetime_struct_keys(env: Env) -> [NIF_TERM; 9] {
 
 #[inline]
 fn time_unit_to_factor(time_unit: TimeUnit) -> i64 {
-    return match time_unit {
+    match time_unit {
         TimeUnit::Milliseconds => 1000,
         TimeUnit::Microseconds => 1,
         _ => unreachable!(),
-    };
+    }
 }
 
 #[inline]
-fn encode_datetime<'b>(v: i64, time_unit: TimeUnit, env: Env<'b>) -> Term<'b> {
+fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Term {
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
@@ -335,9 +335,7 @@ impl Encoder for ExSeriesRef {
             DataType::Utf8 => encode_utf8_series(s, env),
             DataType::Float64 => encode_float64_series(s, env),
             DataType::Date => encode_date_series(s, env),
-            DataType::Datetime(time_unit, None) => {
-                encode_datetime_series(s, time_unit.clone(), env)
-            }
+            DataType::Datetime(time_unit, None) => encode_datetime_series(s, *time_unit, env),
             DataType::List(t) if t as &DataType == &DataType::UInt32 => {
                 encode_list!(s, env, u32, u32)
             }
