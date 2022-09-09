@@ -1996,4 +1996,28 @@ defmodule Explorer.DataFrameTest do
       end
     end
   end
+
+  describe "head/2" do
+    test "selects the first 5 rows by default", %{df: df} do
+      df1 = DF.head(df)
+      assert DF.shape(df1) == {5, 10}
+    end
+
+    test "selects the first 2 rows", %{df: df} do
+      df1 = DF.head(df, 2)
+      assert DF.shape(df1) == {2, 10}
+    end
+  end
+
+  describe "tail/2" do
+    test "selects the last 5 rows by default", %{df: df} do
+      df1 = DF.tail(df)
+      assert DF.shape(df1) == {5, 10}
+    end
+
+    test "selects the last 2 rows", %{df: df} do
+      df1 = DF.tail(df, 2)
+      assert DF.shape(df1) == {2, 10}
+    end
+  end
 end

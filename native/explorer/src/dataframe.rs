@@ -489,16 +489,34 @@ pub fn df_slice(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_head(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
-    let new_df = df.head(length);
+pub fn df_head(
+    data: ExDataFrame,
+    length: Option<usize>,
+    groups: Vec<&str>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let df: DataFrame = data.resource.0.clone();
+
+    let new_df = if groups.is_empty() {
+        df.head(length)
+    } else {
+        df.groupby_stable(groups)?.apply(|df| Ok(df.head(length)))?
+    };
     Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_tail(data: ExDataFrame, length: Option<usize>) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
-    let new_df = df.tail(length);
+pub fn df_tail(
+    data: ExDataFrame,
+    length: Option<usize>,
+    groups: Vec<&str>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let df: DataFrame = data.resource.0.clone();
+
+    let new_df = if groups.is_empty() {
+        df.tail(length)
+    } else {
+        df.groupby_stable(groups)?.apply(|df| Ok(df.tail(length)))?
+    };
     Ok(ExDataFrame::new(new_df))
 }
 

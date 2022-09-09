@@ -924,6 +924,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Returns the first *n* rows of the dataframe.
 
+  By default it returns the first 5 rows.
+  If the dataframe is using groups, then the first *n* rows of each group is
+  returned.
+
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
@@ -941,6 +945,22 @@ defmodule Explorer.DataFrame do
         per_capita float [0.08, 0.43, 0.9, 1.68, 0.37]
         bunker_fuels integer [9, 7, 663, 0, 321]
       >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.head(df, 2)
+      #Explorer.DataFrame<
+        Polars[2 x 10]
+        year integer [2010, 2010]
+        country string ["AFGHANISTAN", "ALBANIA"]
+        total integer [2308, 1254]
+        solid_fuel integer [627, 117]
+        liquid_fuel integer [1601, 953]
+        gas_fuel integer [74, 7]
+        cement integer [5, 177]
+        gas_flaring integer [0, 0]
+        per_capita float [0.08, 0.43]
+        bunker_fuels integer [9, 7]
+      >
   """
   @doc type: :rows
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
@@ -948,6 +968,10 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Returns the last *n* rows of the dataframe.
+
+  By default it returns the last 5 rows.
+  If the dataframe is using groups, then the last *n* rows of each group is
+  returned.
 
   ## Examples
 
@@ -965,6 +989,22 @@ defmodule Explorer.DataFrame do
         gas_flaring integer [0, 0, 0, 0, 0]
         per_capita float [0.49, 0.44, 0.24, 0.08, 0.22]
         bunker_fuels integer [761, 1, 153, 33, 9]
+      >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.tail(df, 2)
+      #Explorer.DataFrame<
+        Polars[2 x 10]
+        year integer [2014, 2014]
+        country string ["ZAMBIA", "ZIMBABWE"]
+        total integer [1228, 3278]
+        solid_fuel integer [132, 2097]
+        liquid_fuel integer [797, 1005]
+        gas_fuel integer [0, 0]
+        cement integer [299, 177]
+        gas_flaring integer [0, 0]
+        per_capita float [0.08, 0.22]
+        bunker_fuels integer [33, 9]
       >
   """
   @doc type: :rows

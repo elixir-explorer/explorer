@@ -672,4 +672,34 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.groups(df1) == ["b"]
     end
   end
+
+  describe "head/2" do
+    test "selects the first 5 rows of each group by default", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+      df2 = DF.head(df1)
+      # 2010..2014
+      assert DF.shape(df2) == {25, 10}
+    end
+
+    test "selects the first 2 rows", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+      df2 = DF.head(df1, 2)
+      assert DF.shape(df2) == {10, 10}
+    end
+  end
+
+  describe "tail/2" do
+    test "selects the last 5 rows of each group by default", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+      df2 = DF.tail(df1)
+      # 2010..2014
+      assert DF.shape(df2) == {25, 10}
+    end
+
+    test "selects the last 2 rows", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+      df2 = DF.tail(df1, 2)
+      assert DF.shape(df2) == {10, 10}
+    end
+  end
 end
