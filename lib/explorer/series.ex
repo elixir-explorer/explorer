@@ -1340,7 +1340,7 @@ defmodule Explorer.Series do
     do: Shared.apply_impl(left, :quotient, [right])
 
   @doc """
-  Computes de remainder of an element-wise integer division.
+  Computes the remainder of an element-wise integer division.
 
   ## Supported dtype
 
