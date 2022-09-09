@@ -36,9 +36,7 @@ defmodule Explorer.PolarsBackend.Series do
   def to_list(series), do: Shared.apply_series(series, :s_to_list)
 
   @impl true
-  def to_enum(series) do
-    Explorer.PolarsBackend.Series.Iterator.new(series)
-  end
+  def to_enum(series), do: Explorer.PolarsBackend.Series.Iterator.new(series)
 
   @impl true
   def cast(series, dtype), do: Shared.apply_series(series, :s_cast, [Atom.to_string(dtype)])

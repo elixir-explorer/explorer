@@ -432,17 +432,17 @@ defmodule Explorer.Backend.LazySeries do
 
   # The following functions are not implemented yet and should raise if used.
   funs = [
-    {:concat, 2},
-    {:fetch!, 2},
-    {:mask, 2},
-    {:from_list, 2},
-    {:sample, 4},
-    {:size, 1},
-    {:slice, 2},
-    {:take_every, 2},
-    {:to_enum, 1},
-    {:to_list, 1},
-    {:transform, 2}
+    concat: 2,
+    fetch!: 2,
+    mask: 2,
+    from_list: 2,
+    sample: 4,
+    size: 1,
+    slice: 2,
+    take_every: 2,
+    to_enum: 1,
+    to_list: 1,
+    transform: 2
   ]
 
   for {fun, arity} <- funs do

@@ -1,4 +1,5 @@
 use crate::atoms::{calendar, calendar_atom, day, month, year};
+
 use crate::{
     datatypes::{ExDate, ExDateTime},
     ExDataFrame, ExSeries, ExSeriesRef, ExplorerError,
@@ -9,7 +10,7 @@ use polars::prelude::*;
 use rand::seq::IteratorRandom;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64;
-use rustler::types::atom::__struct__;
+use rustler::types::atom;
 use rustler::wrapper::map;
 use rustler::{Atom, Encoder, Env, Term};
 use std::result::Result;
@@ -32,12 +33,6 @@ macro_rules! init_method {
         #[rustler::nif]
         pub fn $name(name: &str, val: Vec<Option<$type>>) -> ExSeries {
             ExSeries::new(Series::new(name, val.as_slice()))
-        }
-    };
-    ($name:ident, $type:ty, $cast_type:expr) => {
-        #[rustler::nif]
-        pub fn $name(name: &str, val: Vec<Option<$type>>) -> ExSeries {
-            ExSeries::new(Series::new(name, val.as_slice()).cast($cast_type).unwrap())
         }
     };
 }
@@ -609,7 +604,7 @@ fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
             // This is because we already have the keys (we know this at compile time), and the types,
             // so we can build the struct directly.
             let date_struct_keys = &[
-                __struct__().encode(env).as_c_arg(),
+                atom::__struct__().encode(env).as_c_arg(),
                 calendar().encode(env).as_c_arg(),
                 day().encode(env).as_c_arg(),
                 month().encode(env).as_c_arg(),

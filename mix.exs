@@ -31,12 +31,17 @@ defmodule Explorer.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.24", only: :docs, runtime: false},
-      {:nx, "~> 0.3.0", only: :test},
       {:rustler_precompiled, "~> 0.4"},
-      {:rustler, ">= 0.0.0", optional: true},
       {:table, "~> 0.1.2"},
-      {:table_rex, "~> 3.1.1"}
+      {:table_rex, "~> 3.1.1"},
+
+      ## Optional
+      {:rustler, ">= 0.0.0", optional: true},
+      {:nx, "~> 0.3.0", optional: true},
+
+      ## Non-prod
+      {:ex_doc, "~> 0.24", only: :docs},
+      {:benchee, "~> 1.1", only: :dev}
     ]
   end
 
