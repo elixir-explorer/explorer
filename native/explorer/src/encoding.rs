@@ -36,8 +36,24 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
 
 // ExSeriesRef encoding
 
+// TODO: Implement this as a regular function or encapsulate it inside Rustler.
+macro_rules! unsafe_iterator_to_list {
+    ($env: ident, $iterator: expr) => {{
+        let env_as_c_arg = $env.as_c_arg();
+        let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
+
+        let list = $iterator.rfold(acc, |acc, term| unsafe {
+            list::make_list_cell(env_as_c_arg, term.as_c_arg(), acc)
+        });
+
+        unsafe { Term::new($env, list) }
+    }};
+}
+
 macro_rules! unsafe_encode_date {
-    ($dt: ident, $date_struct_keys: ident, $calendar_iso_module: ident, $date_module: ident, $env: ident) => {
+    ($v: ident, $date_struct_keys: ident, $calendar_iso_module: ident, $date_module: ident, $env: ident) => {{
+        let dt = days_to_date($v);
+
         unsafe {
             Term::new(
                 $env,
@@ -47,15 +63,15 @@ macro_rules! unsafe_encode_date {
                     &[
                         $date_module,
                         $calendar_iso_module,
-                        $dt.day().encode($env).as_c_arg(),
-                        $dt.month().encode($env).as_c_arg(),
-                        $dt.year().encode($env).as_c_arg(),
+                        dt.day().encode($env).as_c_arg(),
+                        dt.month().encode($env).as_c_arg(),
+                        dt.year().encode($env).as_c_arg(),
                     ],
                 )
                 .unwrap(),
             )
         }
-    };
+    }};
 }
 
 // Here we build the Date struct manually, as it's much faster than using Date NifStruct
@@ -74,17 +90,10 @@ fn date_struct_keys(env: Env) -> [NIF_TERM; 5] {
 
 #[inline]
 fn encode_date(v: i32, env: Env) -> Term {
-    let naive_date = days_to_date(v);
     let date_struct_keys = &date_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let date_module = atoms::date_module().encode(env).as_c_arg();
-    unsafe_encode_date!(
-        naive_date,
-        date_struct_keys,
-        calendar_iso_module,
-        date_module,
-        env
-    )
+    unsafe_encode_date!(v, date_struct_keys, calendar_iso_module, date_module, env)
 }
 
 #[inline]
@@ -93,32 +102,23 @@ fn encode_date_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let date_module = atoms::date_module().encode(env).as_c_arg();
 
-    let env_as_c_arg = env.as_c_arg();
-    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
-
-    let list = s.date().unwrap().into_iter().rfold(acc, |acc, option| {
-        let item = option
-            .map(|v| {
-                let date = days_to_date(v);
-                unsafe_encode_date!(
-                    date,
-                    date_struct_keys,
-                    calendar_iso_module,
-                    date_module,
-                    env
-                )
-            })
-            .encode(env)
-            .as_c_arg();
-
-        unsafe { list::make_list_cell(env_as_c_arg, item, acc) }
-    });
-
-    unsafe { Term::new(env, list) }
+    unsafe_iterator_to_list!(
+        env,
+        s.date().unwrap().into_iter().map(|option| option
+            .map(|v| unsafe_encode_date!(
+                v,
+                date_struct_keys,
+                calendar_iso_module,
+                date_module,
+                env
+            ))
+            .encode(env))
+    )
 }
 
 macro_rules! unsafe_encode_datetime {
-    ($dt: ident, $naive_datetime_struct_keys: ident, $calendar_iso_module: ident, $naive_datetime_module: ident, $env: ident) => {
+    ($v: expr, $naive_datetime_struct_keys: ident, $calendar_iso_module: ident, $naive_datetime_module: ident, $env: ident) => {{
+        let dt = timestamp_to_datetime($v);
         unsafe {
             Term::new(
                 $env,
@@ -128,19 +128,19 @@ macro_rules! unsafe_encode_datetime {
                     &[
                         $naive_datetime_module,
                         $calendar_iso_module,
-                        $dt.day().encode($env).as_c_arg(),
-                        $dt.month().encode($env).as_c_arg(),
-                        $dt.year().encode($env).as_c_arg(),
-                        $dt.hour().encode($env).as_c_arg(),
-                        $dt.minute().encode($env).as_c_arg(),
-                        $dt.second().encode($env).as_c_arg(),
-                        ($dt.timestamp_subsec_micros(), 6).encode($env).as_c_arg(),
+                        dt.day().encode($env).as_c_arg(),
+                        dt.month().encode($env).as_c_arg(),
+                        dt.year().encode($env).as_c_arg(),
+                        dt.hour().encode($env).as_c_arg(),
+                        dt.minute().encode($env).as_c_arg(),
+                        dt.second().encode($env).as_c_arg(),
+                        (dt.timestamp_subsec_micros(), 6).encode($env).as_c_arg(),
                     ],
                 )
                 .unwrap(),
             )
         }
-    };
+    }};
 }
 
 // Here we build the NaiveDateTime struct manually, as it's much faster than using NifStruct
@@ -175,9 +175,9 @@ fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Term {
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
     let factor = time_unit_to_factor(time_unit);
-    let naive_datetime = timestamp_to_datetime(v * factor);
+
     unsafe_encode_datetime!(
-        naive_datetime,
+        v * factor,
         naive_datetime_struct_keys,
         calendar_iso_module,
         naive_datetime_module,
@@ -192,28 +192,20 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
     let factor = time_unit_to_factor(time_unit);
 
-    let env_as_c_arg = env.as_c_arg();
-    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
-
-    let list = s.datetime().unwrap().into_iter().rfold(acc, |acc, option| {
-        let item = option
-            .map(|x| {
-                let naive_datetime = timestamp_to_datetime(x * factor);
+    unsafe_iterator_to_list!(
+        env,
+        s.datetime().unwrap().into_iter().map(|option| option
+            .map(|v| {
                 unsafe_encode_datetime!(
-                    naive_datetime,
+                    v * factor,
                     naive_datetime_struct_keys,
                     calendar_iso_module,
                     naive_datetime_module,
                     env
                 )
             })
-            .encode(env)
-            .as_c_arg();
-
-        unsafe { list::make_list_cell(env_as_c_arg, item, acc) }
-    });
-
-    unsafe { Term::new(env, list) }
+            .encode(env))
+    )
 }
 
 #[inline]
@@ -264,47 +256,37 @@ fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let infinity_atom = infinity().encode(env);
     let nil_atom = atom::nil().encode(env);
 
-    let env_as_c_arg = env.as_c_arg();
-    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
-
-    let list = s.f64().unwrap().into_iter().rfold(acc, |acc, option| {
-        let item = match option {
-            Some(x) => {
-                if x.is_finite() {
-                    x.encode(env)
-                } else {
-                    match (x.is_nan(), x.is_sign_negative()) {
-                        (true, _) => nan_atom,
-                        (false, true) => neg_infinity_atom,
-                        (false, false) => infinity_atom,
+    unsafe_iterator_to_list!(
+        env,
+        s.f64().unwrap().into_iter().map(|option| {
+            match option {
+                Some(x) => {
+                    if x.is_finite() {
+                        x.encode(env)
+                    } else {
+                        match (x.is_nan(), x.is_sign_negative()) {
+                            (true, _) => nan_atom,
+                            (false, true) => neg_infinity_atom,
+                            (false, false) => infinity_atom,
+                        }
                     }
                 }
+                None => nil_atom,
             }
-            None => nil_atom,
-        }
-        .as_c_arg();
-
-        unsafe { list::make_list_cell(env_as_c_arg, item, acc) }
-    });
-
-    unsafe { Term::new(env, list) }
+        })
+    )
 }
 
 macro_rules! encode {
-    ($s:ident, $env:ident, $convert_function:ident) => {{
-        let env_as_c_arg = $env.as_c_arg();
-        let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
-
-        let list = $s
-            .$convert_function()
-            .unwrap()
-            .into_iter()
-            .rfold(acc, |acc, option| unsafe {
-                list::make_list_cell(env_as_c_arg, option.encode($env).as_c_arg(), acc)
-            });
-
-        unsafe { Term::new($env, list) }
-    }};
+    ($s:ident, $env:ident, $convert_function:ident) => {
+        unsafe_iterator_to_list!(
+            $env,
+            $s.$convert_function()
+                .unwrap()
+                .into_iter()
+                .map(|option| option.encode($env))
+        )
+    };
 }
 
 macro_rules! encode_list {
