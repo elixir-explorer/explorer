@@ -10,7 +10,7 @@ use crate::atoms::{
 use crate::datatypes::{days_to_date, timestamp_to_datetime, ExSeriesRef};
 
 use rustler::types::atom;
-use rustler::wrapper::list::make_list;
+use rustler::wrapper::list;
 use rustler::wrapper::{map, NIF_TERM};
 
 pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
@@ -93,14 +93,15 @@ fn encode_date_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let date_module = atoms::date_module().encode(env).as_c_arg();
 
-    let items = s
-        .date()
-        .unwrap()
-        .as_date_iter()
-        .map(|d| {
-            d.map(|naive_date| {
+    let env_as_c_arg = env.as_c_arg();
+    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
+
+    let list = s.date().unwrap().into_iter().rfold(acc, |acc, option| {
+        let item = option
+            .map(|v| {
+                let date = days_to_date(v);
                 unsafe_encode_date!(
-                    naive_date,
+                    date,
                     date_struct_keys,
                     calendar_iso_module,
                     date_module,
@@ -108,11 +109,12 @@ fn encode_date_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
                 )
             })
             .encode(env)
-            .as_c_arg()
-        })
-        .collect::<Vec<NIF_TERM>>();
+            .as_c_arg();
 
-    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+        unsafe { list::make_list_cell(env_as_c_arg, item, acc) }
+    });
+
+    unsafe { Term::new(env, list) }
 }
 
 macro_rules! unsafe_encode_datetime {
@@ -190,28 +192,28 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
     let factor = time_unit_to_factor(time_unit);
 
-    let items: Vec<NIF_TERM> = s
-        .datetime()
-        .unwrap()
-        .into_iter()
-        .map(|opt_v| {
-            opt_v
-                .map(|x| {
-                    let naive_datetime = timestamp_to_datetime(x * factor);
-                    unsafe_encode_datetime!(
-                        naive_datetime,
-                        naive_datetime_struct_keys,
-                        calendar_iso_module,
-                        naive_datetime_module,
-                        env
-                    )
-                })
-                .encode(env)
-                .as_c_arg()
-        })
-        .collect();
+    let env_as_c_arg = env.as_c_arg();
+    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
 
-    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+    let list = s.datetime().unwrap().into_iter().rfold(acc, |acc, option| {
+        let item = option
+            .map(|x| {
+                let naive_datetime = timestamp_to_datetime(x * factor);
+                unsafe_encode_datetime!(
+                    naive_datetime,
+                    naive_datetime_struct_keys,
+                    calendar_iso_module,
+                    naive_datetime_module,
+                    env
+                )
+            })
+            .encode(env)
+            .as_c_arg();
+
+        unsafe { list::make_list_cell(env_as_c_arg, item, acc) }
+    });
+
+    unsafe { Term::new(env, list) }
 }
 
 #[inline]
@@ -251,7 +253,7 @@ fn encode_utf8_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
         }
     }
 
-    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+    unsafe { Term::new(env, list::make_list(env.as_c_arg(), &items)) }
 }
 
 // Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
@@ -262,42 +264,46 @@ fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let infinity_atom = infinity().encode(env);
     let nil_atom = atom::nil().encode(env);
 
-    let items: Vec<NIF_TERM> = s
-        .f64()
-        .unwrap()
-        .into_iter()
-        .map(|option| {
-            match option {
-                Some(x) => {
-                    if x.is_finite() {
-                        x.encode(env)
-                    } else {
-                        match (x.is_nan(), x.is_sign_negative()) {
-                            (true, _) => nan_atom,
-                            (false, true) => neg_infinity_atom,
-                            (false, false) => infinity_atom,
-                        }
+    let env_as_c_arg = env.as_c_arg();
+    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
+
+    let list = s.f64().unwrap().into_iter().rfold(acc, |acc, option| {
+        let item = match option {
+            Some(x) => {
+                if x.is_finite() {
+                    x.encode(env)
+                } else {
+                    match (x.is_nan(), x.is_sign_negative()) {
+                        (true, _) => nan_atom,
+                        (false, true) => neg_infinity_atom,
+                        (false, false) => infinity_atom,
                     }
                 }
-                None => nil_atom,
             }
-            .as_c_arg()
-        })
-        .collect();
+            None => nil_atom,
+        }
+        .as_c_arg();
 
-    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+        unsafe { list::make_list_cell(env_as_c_arg, item, acc) }
+    });
+
+    unsafe { Term::new(env, list) }
 }
 
 macro_rules! encode {
     ($s:ident, $env:ident, $convert_function:ident) => {{
+        let env_as_c_arg = $env.as_c_arg();
+        let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
+
         let list = $s
             .$convert_function()
             .unwrap()
             .into_iter()
-            .map(|option| option.encode($env).as_c_arg())
-            .collect::<Vec<NIF_TERM>>();
+            .rfold(acc, |acc, option| unsafe {
+                list::make_list_cell(env_as_c_arg, option.encode($env).as_c_arg(), acc)
+            });
 
-        unsafe { Term::new($env, make_list($env.as_c_arg(), &list)) }
+        unsafe { Term::new($env, list) }
     }};
 }
 
