@@ -1,5 +1,4 @@
 use chrono::prelude::*;
-use polars::export::arrow::bitmap::utils::zip_validity;
 use polars::prelude::*;
 use rustler::{Binary, Encoder, Env, NewBinary, Term};
 
@@ -212,40 +211,45 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
 fn encode_utf8_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let utf8 = s.utf8().unwrap();
     let nil_atom = atom::nil().to_term(env);
-    let mut items: Vec<NIF_TERM> = Vec::with_capacity(utf8.len());
+    let env_as_c_arg = env.as_c_arg();
+    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
 
-    for array in utf8.downcast_iter() {
+    let list = utf8.downcast_iter().rfold(acc, |acc, array| {
         // Create a binary per array buffer
         let values = array.values();
         let mut new_binary = NewBinary::new(env, values.len());
         new_binary.copy_from_slice(values.as_slice());
         let binary: Binary = new_binary.into();
 
-        // Now allocate each string as a pointer to said binary
-        let mut iter = array.offsets().iter();
-        let mut last_offset = *iter.next().unwrap() as NIF_TERM;
+        // Offsets have one more element than values and validity,
+        // so we read the last one as the initial accumulator and skip it.
+        let len = array.offsets().len();
+        let iter = array.offsets()[0..len - 1].iter();
+        let mut last_offset = array.offsets()[len - 1] as NIF_TERM;
 
-        for wrapped_offset in zip_validity(iter, array.validity().as_ref().map(|x| x.iter())) {
-            match wrapped_offset {
-                Some(offset) => {
-                    let uoffset = *offset as NIF_TERM;
+        let mut validity_iter = match array.validity() {
+            Some(validity) => validity.iter(),
+            None => polars::export::arrow::bitmap::utils::BitmapIter::new(&[], 0, 0),
+        };
 
-                    items.push(
-                        binary
-                            .make_subbinary(last_offset, uoffset - last_offset)
-                            .unwrap()
-                            .to_term(env)
-                            .as_c_arg(),
-                    );
+        iter.rfold(acc, |acc, uncast_offset| {
+            let offset = *uncast_offset as NIF_TERM;
 
-                    last_offset = uoffset
-                }
-                None => items.push(nil_atom.as_c_arg()),
-            }
-        }
-    }
+            let term = if validity_iter.next_back().unwrap_or(true) {
+                binary
+                    .make_subbinary(offset, last_offset - offset)
+                    .unwrap()
+                    .to_term(env)
+            } else {
+                nil_atom
+            };
 
-    unsafe { Term::new(env, list::make_list(env.as_c_arg(), &items)) }
+            last_offset = offset;
+            unsafe { list::make_list_cell(env_as_c_arg, term.as_c_arg(), acc) }
+        })
+    });
+
+    unsafe { Term::new(env, list) }
 }
 
 // Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
