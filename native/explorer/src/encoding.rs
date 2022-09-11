@@ -1,5 +1,4 @@
 use chrono::prelude::*;
-use polars::export::arrow::bitmap::utils::zip_validity;
 use polars::prelude::*;
 use rustler::{Binary, Encoder, Env, NewBinary, Term};
 
@@ -10,7 +9,7 @@ use crate::atoms::{
 use crate::datatypes::{days_to_date, timestamp_to_datetime, ExSeriesRef};
 
 use rustler::types::atom;
-use rustler::wrapper::list::make_list;
+use rustler::wrapper::list;
 use rustler::wrapper::{map, NIF_TERM};
 
 pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
@@ -36,8 +35,24 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
 
 // ExSeriesRef encoding
 
+// TODO: Implement this as a regular function or encapsulate it inside Rustler.
+macro_rules! unsafe_iterator_to_list {
+    ($env: ident, $iterator: expr) => {{
+        let env_as_c_arg = $env.as_c_arg();
+        let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
+
+        let list = $iterator.rfold(acc, |acc, term| unsafe {
+            list::make_list_cell(env_as_c_arg, term.as_c_arg(), acc)
+        });
+
+        unsafe { Term::new($env, list) }
+    }};
+}
+
 macro_rules! unsafe_encode_date {
-    ($dt: ident, $date_struct_keys: ident, $calendar_iso_module: ident, $date_module: ident, $env: ident) => {
+    ($v: ident, $date_struct_keys: ident, $calendar_iso_module: ident, $date_module: ident, $env: ident) => {{
+        let dt = days_to_date($v);
+
         unsafe {
             Term::new(
                 $env,
@@ -47,15 +62,15 @@ macro_rules! unsafe_encode_date {
                     &[
                         $date_module,
                         $calendar_iso_module,
-                        $dt.day().encode($env).as_c_arg(),
-                        $dt.month().encode($env).as_c_arg(),
-                        $dt.year().encode($env).as_c_arg(),
+                        dt.day().encode($env).as_c_arg(),
+                        dt.month().encode($env).as_c_arg(),
+                        dt.year().encode($env).as_c_arg(),
                     ],
                 )
                 .unwrap(),
             )
         }
-    };
+    }};
 }
 
 // Here we build the Date struct manually, as it's much faster than using Date NifStruct
@@ -74,17 +89,10 @@ fn date_struct_keys(env: Env) -> [NIF_TERM; 5] {
 
 #[inline]
 fn encode_date(v: i32, env: Env) -> Term {
-    let naive_date = days_to_date(v);
     let date_struct_keys = &date_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let date_module = atoms::date_module().encode(env).as_c_arg();
-    unsafe_encode_date!(
-        naive_date,
-        date_struct_keys,
-        calendar_iso_module,
-        date_module,
-        env
-    )
+    unsafe_encode_date!(v, date_struct_keys, calendar_iso_module, date_module, env)
 }
 
 #[inline]
@@ -93,30 +101,23 @@ fn encode_date_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let date_module = atoms::date_module().encode(env).as_c_arg();
 
-    let items = s
-        .date()
-        .unwrap()
-        .as_date_iter()
-        .map(|d| {
-            d.map(|naive_date| {
-                unsafe_encode_date!(
-                    naive_date,
-                    date_struct_keys,
-                    calendar_iso_module,
-                    date_module,
-                    env
-                )
-            })
-            .encode(env)
-            .as_c_arg()
-        })
-        .collect::<Vec<NIF_TERM>>();
-
-    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+    unsafe_iterator_to_list!(
+        env,
+        s.date().unwrap().into_iter().map(|option| option
+            .map(|v| unsafe_encode_date!(
+                v,
+                date_struct_keys,
+                calendar_iso_module,
+                date_module,
+                env
+            ))
+            .encode(env))
+    )
 }
 
 macro_rules! unsafe_encode_datetime {
-    ($dt: ident, $naive_datetime_struct_keys: ident, $calendar_iso_module: ident, $naive_datetime_module: ident, $env: ident) => {
+    ($v: expr, $naive_datetime_struct_keys: ident, $calendar_iso_module: ident, $naive_datetime_module: ident, $env: ident) => {{
+        let dt = timestamp_to_datetime($v);
         unsafe {
             Term::new(
                 $env,
@@ -126,19 +127,19 @@ macro_rules! unsafe_encode_datetime {
                     &[
                         $naive_datetime_module,
                         $calendar_iso_module,
-                        $dt.day().encode($env).as_c_arg(),
-                        $dt.month().encode($env).as_c_arg(),
-                        $dt.year().encode($env).as_c_arg(),
-                        $dt.hour().encode($env).as_c_arg(),
-                        $dt.minute().encode($env).as_c_arg(),
-                        $dt.second().encode($env).as_c_arg(),
-                        ($dt.timestamp_subsec_micros(), 6).encode($env).as_c_arg(),
+                        dt.day().encode($env).as_c_arg(),
+                        dt.month().encode($env).as_c_arg(),
+                        dt.year().encode($env).as_c_arg(),
+                        dt.hour().encode($env).as_c_arg(),
+                        dt.minute().encode($env).as_c_arg(),
+                        dt.second().encode($env).as_c_arg(),
+                        (dt.timestamp_subsec_micros(), 6).encode($env).as_c_arg(),
                     ],
                 )
                 .unwrap(),
             )
         }
-    };
+    }};
 }
 
 // Here we build the NaiveDateTime struct manually, as it's much faster than using NifStruct
@@ -173,9 +174,9 @@ fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Term {
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
     let factor = time_unit_to_factor(time_unit);
-    let naive_datetime = timestamp_to_datetime(v * factor);
+
     unsafe_encode_datetime!(
-        naive_datetime,
+        v * factor,
         naive_datetime_struct_keys,
         calendar_iso_module,
         naive_datetime_module,
@@ -190,68 +191,65 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
     let factor = time_unit_to_factor(time_unit);
 
-    let items: Vec<NIF_TERM> = s
-        .datetime()
-        .unwrap()
-        .into_iter()
-        .map(|opt_v| {
-            opt_v
-                .map(|x| {
-                    let naive_datetime = timestamp_to_datetime(x * factor);
-                    unsafe_encode_datetime!(
-                        naive_datetime,
-                        naive_datetime_struct_keys,
-                        calendar_iso_module,
-                        naive_datetime_module,
-                        env
-                    )
-                })
-                .encode(env)
-                .as_c_arg()
-        })
-        .collect();
-
-    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+    unsafe_iterator_to_list!(
+        env,
+        s.datetime().unwrap().into_iter().map(|option| option
+            .map(|v| {
+                unsafe_encode_datetime!(
+                    v * factor,
+                    naive_datetime_struct_keys,
+                    calendar_iso_module,
+                    naive_datetime_module,
+                    env
+                )
+            })
+            .encode(env))
+    )
 }
 
 #[inline]
 fn encode_utf8_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let utf8 = s.utf8().unwrap();
     let nil_atom = atom::nil().to_term(env);
-    let mut items: Vec<NIF_TERM> = Vec::with_capacity(utf8.len());
+    let env_as_c_arg = env.as_c_arg();
+    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
 
-    for array in utf8.downcast_iter() {
+    let list = utf8.downcast_iter().rfold(acc, |acc, array| {
         // Create a binary per array buffer
         let values = array.values();
         let mut new_binary = NewBinary::new(env, values.len());
         new_binary.copy_from_slice(values.as_slice());
         let binary: Binary = new_binary.into();
 
-        // Now allocate each string as a pointer to said binary
-        let mut iter = array.offsets().iter();
-        let mut last_offset = *iter.next().unwrap() as NIF_TERM;
+        // Offsets have one more element than values and validity,
+        // so we read the last one as the initial accumulator and skip it.
+        let len = array.offsets().len();
+        let iter = array.offsets()[0..len - 1].iter();
+        let mut last_offset = array.offsets()[len - 1] as NIF_TERM;
 
-        for wrapped_offset in zip_validity(iter, array.validity().as_ref().map(|x| x.iter())) {
-            match wrapped_offset {
-                Some(offset) => {
-                    let uoffset = *offset as NIF_TERM;
+        let mut validity_iter = match array.validity() {
+            Some(validity) => validity.iter(),
+            None => polars::export::arrow::bitmap::utils::BitmapIter::new(&[], 0, 0),
+        };
 
-                    items.push(
-                        binary
-                            .make_subbinary(last_offset, uoffset - last_offset)
-                            .unwrap()
-                            .to_term(env)
-                            .as_c_arg(),
-                    );
+        iter.rfold(acc, |acc, uncast_offset| {
+            let offset = *uncast_offset as NIF_TERM;
 
-                    last_offset = uoffset
-                }
-                None => items.push(nil_atom.as_c_arg()),
-            }
-        }
-    }
+            let term = if validity_iter.next_back().unwrap_or(true) {
+                binary
+                    .make_subbinary(offset, last_offset - offset)
+                    .unwrap()
+                    .to_term(env)
+            } else {
+                nil_atom
+            };
 
-    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+            last_offset = offset;
+            unsafe { list::make_list_cell(env_as_c_arg, term.as_c_arg(), acc) }
+        })
+    });
+
+    unsafe { Term::new(env, list) }
 }
 
 // Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
@@ -262,11 +260,9 @@ fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let infinity_atom = infinity().encode(env);
     let nil_atom = atom::nil().encode(env);
 
-    let items: Vec<NIF_TERM> = s
-        .f64()
-        .unwrap()
-        .into_iter()
-        .map(|option| {
+    unsafe_iterator_to_list!(
+        env,
+        s.f64().unwrap().into_iter().map(|option| {
             match option {
                 Some(x) => {
                     if x.is_finite() {
@@ -281,24 +277,20 @@ fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
                 }
                 None => nil_atom,
             }
-            .as_c_arg()
         })
-        .collect();
-
-    unsafe { Term::new(env, make_list(env.as_c_arg(), &items)) }
+    )
 }
 
 macro_rules! encode {
-    ($s:ident, $env:ident, $convert_function:ident) => {{
-        let list = $s
-            .$convert_function()
-            .unwrap()
-            .into_iter()
-            .map(|option| option.encode($env).as_c_arg())
-            .collect::<Vec<NIF_TERM>>();
-
-        unsafe { Term::new($env, make_list($env.as_c_arg(), &list)) }
-    }};
+    ($s:ident, $env:ident, $convert_function:ident) => {
+        unsafe_iterator_to_list!(
+            $env,
+            $s.$convert_function()
+                .unwrap()
+                .into_iter()
+                .map(|option| option.encode($env))
+        )
+    };
 }
 
 macro_rules! encode_list {

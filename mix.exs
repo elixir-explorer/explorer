@@ -15,9 +15,10 @@ defmodule Explorer.MixProject do
       package: package(),
       deps: deps(),
       docs: docs(),
-      preferred_cli_env: [
-        docs: :docs,
-        "hex.publish": :docs
+      preferred_cli_env: [docs: :docs, "hex.publish": :docs],
+      aliases: [
+        "rust.lint": ["cmd cargo clippy --manifest-path=native/explorer/Cargo.toml -- -Dwarnings"],
+        "rust.fmt": ["cmd cargo fmt --manifest-path=native/explorer/Cargo.toml --all"]
       ]
     ]
   end
