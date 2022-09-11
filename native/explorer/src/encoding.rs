@@ -1,39 +1,17 @@
 use chrono::prelude::*;
 use polars::prelude::*;
-use rustler::{Binary, Encoder, Env, NewBinary, Term};
+use rustler::{Encoder, Env, ResourceArc, Term};
 
 use crate::atoms::{
     self, calendar, day, hour, infinity, microsecond, minute, month, nan, neg_infinity, second,
     year,
 };
-use crate::datatypes::{days_to_date, timestamp_to_datetime, ExSeriesRef};
+use crate::datatypes::{days_to_date, timestamp_to_datetime, ExSeries, ExSeriesRef};
 
 use rustler::types::atom;
-use rustler::wrapper::list;
-use rustler::wrapper::{map, NIF_TERM};
+use rustler::wrapper::{binary, list, map, NIF_TERM};
 
-pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
-    match v {
-        AnyValue::Null => None::<bool>.encode(env),
-        AnyValue::Boolean(v) => Some(v).encode(env),
-        AnyValue::Utf8(v) => Some(v).encode(env),
-        AnyValue::Int8(v) => Some(v).encode(env),
-        AnyValue::Int16(v) => Some(v).encode(env),
-        AnyValue::Int32(v) => Some(v).encode(env),
-        AnyValue::Int64(v) => Some(v).encode(env),
-        AnyValue::UInt8(v) => Some(v).encode(env),
-        AnyValue::UInt16(v) => Some(v).encode(env),
-        AnyValue::UInt32(v) => Some(v).encode(env),
-        AnyValue::UInt64(v) => Some(v).encode(env),
-        AnyValue::Float64(v) => Some(v).encode(env),
-        AnyValue::Float32(v) => Some(v).encode(env),
-        AnyValue::Date(v) => encode_date(v, env),
-        AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
-        dt => panic!("get/2 not implemented for {:?}", dt),
-    }
-}
-
-// ExSeriesRef encoding
+// Encoding helpers
 
 // TODO: Implement this as a regular function or encapsulate it inside Rustler.
 macro_rules! unsafe_iterator_to_list {
@@ -208,18 +186,29 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
 }
 
 #[inline]
-fn encode_utf8_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+fn encode_utf8_series<'b>(
+    resource: &ResourceArc<ExSeriesRef>,
+    s: &Series,
+    env: Env<'b>,
+) -> Term<'b> {
     let utf8 = s.utf8().unwrap();
-    let nil_atom = atom::nil().to_term(env);
     let env_as_c_arg = env.as_c_arg();
+    let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
+    let resource_as_c_arg = resource.clone().as_c_arg();
     let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
 
     let list = utf8.downcast_iter().rfold(acc, |acc, array| {
         // Create a binary per array buffer
         let values = array.values();
-        let mut new_binary = NewBinary::new(env, values.len());
-        new_binary.copy_from_slice(values.as_slice());
-        let binary: Binary = new_binary.into();
+
+        let binary_as_c_arg = unsafe {
+            binary::make_resource_binary(
+                env_as_c_arg,
+                resource_as_c_arg,
+                values.as_ptr() as *const rustler::wrapper::c_void,
+                values.len(),
+            )
+        };
 
         // Offsets have one more element than values and validity,
         // so we read the last one as the initial accumulator and skip it.
@@ -235,17 +224,21 @@ fn encode_utf8_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
         iter.rfold(acc, |acc, uncast_offset| {
             let offset = *uncast_offset as NIF_TERM;
 
-            let term = if validity_iter.next_back().unwrap_or(true) {
-                binary
-                    .make_subbinary(offset, last_offset - offset)
-                    .unwrap()
-                    .to_term(env)
+            let term_as_c_arg = if validity_iter.next_back().unwrap_or(true) {
+                unsafe {
+                    binary::make_sub_binary(
+                        env_as_c_arg,
+                        binary_as_c_arg,
+                        offset,
+                        last_offset - offset,
+                    )
+                }
             } else {
-                nil_atom
+                nil_as_c_arg
             };
 
             last_offset = offset;
-            unsafe { list::make_list_cell(env_as_c_arg, term.as_c_arg(), acc) }
+            unsafe { list::make_list_cell(env_as_c_arg, term_as_c_arg, acc) }
         })
     });
 
@@ -315,23 +308,45 @@ macro_rules! encode_list {
     };
 }
 
-impl Encoder for ExSeriesRef {
-    fn encode<'b>(&self, env: Env<'b>) -> Term<'b> {
-        let s = &self.0;
-        match s.dtype() {
-            DataType::Boolean => encode!(s, env, bool),
-            DataType::Int32 => encode!(s, env, i32),
-            DataType::Int64 => encode!(s, env, i64),
-            DataType::UInt8 => encode!(s, env, u8),
-            DataType::UInt32 => encode!(s, env, u32),
-            DataType::Utf8 => encode_utf8_series(s, env),
-            DataType::Float64 => encode_float64_series(s, env),
-            DataType::Date => encode_date_series(s, env),
-            DataType::Datetime(time_unit, None) => encode_datetime_series(s, *time_unit, env),
-            DataType::List(t) if t as &DataType == &DataType::UInt32 => {
-                encode_list!(s, env, u32, u32)
-            }
-            dt => panic!("to_list/1 not implemented for {:?}", dt),
+// API
+
+pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
+    match v {
+        AnyValue::Null => None::<bool>.encode(env),
+        AnyValue::Boolean(v) => Some(v).encode(env),
+        AnyValue::Utf8(v) => Some(v).encode(env),
+        AnyValue::Int8(v) => Some(v).encode(env),
+        AnyValue::Int16(v) => Some(v).encode(env),
+        AnyValue::Int32(v) => Some(v).encode(env),
+        AnyValue::Int64(v) => Some(v).encode(env),
+        AnyValue::UInt8(v) => Some(v).encode(env),
+        AnyValue::UInt16(v) => Some(v).encode(env),
+        AnyValue::UInt32(v) => Some(v).encode(env),
+        AnyValue::UInt64(v) => Some(v).encode(env),
+        AnyValue::Float64(v) => Some(v).encode(env),
+        AnyValue::Float32(v) => Some(v).encode(env),
+        AnyValue::Date(v) => encode_date(v, env),
+        AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
+        dt => panic!("get/2 not implemented for {:?}", dt),
+    }
+}
+
+pub fn list_from_series<'b>(data: ExSeries, env: Env<'b>) -> Term<'b> {
+    let s = &data.resource.0;
+
+    match s.dtype() {
+        DataType::Boolean => encode!(s, env, bool),
+        DataType::Int32 => encode!(s, env, i32),
+        DataType::Int64 => encode!(s, env, i64),
+        DataType::UInt8 => encode!(s, env, u8),
+        DataType::UInt32 => encode!(s, env, u32),
+        DataType::Utf8 => encode_utf8_series(&data.resource, &s, env),
+        DataType::Float64 => encode_float64_series(&s, env),
+        DataType::Date => encode_date_series(&s, env),
+        DataType::Datetime(time_unit, None) => encode_datetime_series(&s, *time_unit, env),
+        DataType::List(t) if t as &DataType == &DataType::UInt32 => {
+            encode_list!(s, env, u32, u32)
         }
+        dt => panic!("to_list/1 not implemented for {:?}", dt),
     }
 }

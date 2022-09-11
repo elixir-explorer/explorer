@@ -16,7 +16,7 @@ anyhow = "1"
 chrono = "0.4"
 rand = { version = "0.8.4", features = ["alloc"] }
 rand_pcg = "0.3.1"
-rustler = "0.26.0"
+rustler = { path = "../../../rustler/rustler" }
 thiserror = "1"
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
