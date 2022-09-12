@@ -926,6 +926,7 @@ defmodule Explorer.DataFrame do
   Returns the first *n* rows of the dataframe.
 
   By default it returns the first 5 rows.
+
   If the dataframe is using groups, then the first *n* rows of each group is
   returned.
 
@@ -962,6 +963,25 @@ defmodule Explorer.DataFrame do
         per_capita float [0.08, 0.43]
         bunker_fuels integer [9, 7]
       >
+
+  ## Grouped examples
+
+  Using grouped dataframes makes `head/2` return **n rows** from each group. 
+  Here is an example using the Iris dataset, and returning two rows from each group:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.head(grouped, 2)
+      #Explorer.DataFrame<
+        Polars[6 x 5]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.9, 7.0, 6.4, 6.3, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.2, 3.3, ...]
+        petal_length float [1.4, 1.4, 4.7, 4.5, 6.0, ...]
+        petal_width float [0.2, 0.2, 1.4, 1.5, 2.5, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
+      >
+
   """
   @doc type: :rows
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
