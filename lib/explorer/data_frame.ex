@@ -1306,16 +1306,24 @@ defmodule Explorer.DataFrame do
         col2 integer [3, 4]
       >
 
-  In a grouped dataframe, the aggregation is calculated within each group:
+  ## Grouped examples
 
-      iex> df = Explorer.DataFrame.new(col1: ["a", "a", "b", "b"], col2: [1, 2, 3, 4])
-      iex> grouped = Explorer.DataFrame.group_by(df, "col1")
-      iex> Explorer.DataFrame.filter_with(grouped, fn df -> Explorer.Series.greater(df["col2"], Explorer.Series.mean(df["col2"])) end)
+  In a grouped dataframe, the aggregation is calculated within each group.
+
+  In the following example we select the flowers of the Iris dataset that have the "petal length"
+  above the average of each species group.
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.filter_with(grouped, &Explorer.Series.greater(&1["petal_length"], Explorer.Series.mean(&1["petal_length"])))
       #Explorer.DataFrame<
-        Polars[2 x 2]
-        Groups: ["col1"]
-        col1 string ["a", "b"]
-        col2 integer [2, 4]
+        Polars[79 x 5]
+        Groups: ["species"]
+        sepal_length float [4.6, 5.4, 5.0, 4.9, 5.4, ...]
+        sepal_width float [3.1, 3.9, 3.4, 3.1, 3.7, ...]
+        petal_length float [1.5, 1.7, 1.5, 1.5, 1.5, ...]
+        petal_width float [0.2, 0.4, 0.2, 0.1, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
   """
   @doc type: :single
