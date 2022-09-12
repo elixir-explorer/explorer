@@ -648,6 +648,7 @@ defmodule Explorer.DataFrame do
   This collects the lazy data frame into an eager one, computing the query.
 
   If already eager, this is a noop.
+
   Collecting a grouped dataframe should return a grouped dataframe.
   """
   @doc type: :single
@@ -1570,27 +1571,28 @@ defmodule Explorer.DataFrame do
         b integer [3, 1, 2]
       >
 
+  ## Grouped examples
+
   When used in a grouped dataframe, arrange is going to sort each group individually and
   then return the entire dataframe with the existing groups. If one of the arrange columns
   is also a group, the sorting for that column is not going to work. It is necessary to
-  summarise and arrange to get any effect for that columns.
+  first summarise the desired column and then arrange it.
 
-      iex> df = Explorer.Datasets.fossil_fuels()
-      iex> grouped = Explorer.DataFrame.group_by(df, "country")
-      iex> Explorer.DataFrame.arrange(grouped, desc: "country", asc: "total")
+  Here is an example using the Iris dataset. We group by species and try to sort the dataframe 
+  by species and petal length, but only "petal length" is taken into account because "species"
+  is a group.
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.arrange(grouped, desc: "species", asc: "sepal_width")
       #Explorer.DataFrame<
-        Polars[1094 x 10]
-        Groups: ["country"]
-        year integer [2010, 2014, 2013, 2012, 2011, ...]
-        country string ["AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", "AFGHANISTAN", ...]
-        total integer [2308, 2675, 2731, 2933, 3338, ...]
-        solid_fuel integer [627, 1194, 1075, 1000, 1174, ...]
-        liquid_fuel integer [1601, 1393, 1568, 1844, 2075, ...]
-        gas_fuel integer [74, 74, 81, 84, 84, ...]
-        cement integer [5, 14, 7, 5, 5, ...]
-        gas_flaring integer [0, 0, 0, 0, 0, ...]
-        per_capita float [0.08, 0.08, 0.09, 0.1, 0.12, ...]
-        bunker_fuels integer [9, 9, 9, 9, 9, ...]
+        Polars[150 x 5]
+        Groups: ["species"]
+        sepal_length float [4.5, 4.4, 4.9, 4.8, 4.3, ...]
+        sepal_width float [2.3, 2.9, 3.0, 3.0, 3.0, ...]
+        petal_length float [1.3, 1.4, 1.4, 1.4, 1.1, ...]
+        petal_width float [0.3, 0.2, 0.2, 0.1, 0.1, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
   """
   @doc type: :single
