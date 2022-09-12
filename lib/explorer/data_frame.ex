@@ -1298,9 +1298,6 @@ defmodule Explorer.DataFrame do
   Columns are added with keyword list or maps. New variables overwrite existing variables of the
   same name. Column names are coerced from atoms to strings.
 
-  Mutate can work with groups, but it must have the same length, or be a scalar value.
-  If a complex operation with groups is needed, consider using `mutate_with/2`.
-
   ## Examples
 
   You can pass in a list directly as a new column:
