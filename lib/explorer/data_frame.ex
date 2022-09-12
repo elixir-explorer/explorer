@@ -966,7 +966,7 @@ defmodule Explorer.DataFrame do
 
   ## Grouped examples
 
-  Using grouped dataframes makes `head/2` return **n rows** from each group. 
+  Using grouped dataframes makes `head/2` return *n* rows from each group. 
   Here is an example using the Iris dataset, and returning two rows from each group:
 
       iex> df = Explorer.Datasets.iris()
