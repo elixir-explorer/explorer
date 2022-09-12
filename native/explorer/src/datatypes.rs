@@ -36,9 +36,9 @@ pub struct ExSeries {
 
 #[derive(NifTaggedEnum)]
 pub enum ExMemType {
-    Signed(usize),
-    Unsigned(usize),
-    Float(usize),
+    Signed(u8),
+    Unsigned(u8),
+    Float(u8),
     Utf8,
 }
 
