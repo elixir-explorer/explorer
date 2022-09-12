@@ -299,6 +299,18 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "filter with an aggregation and without a group" do
+      df = DF.new(col1: ["a", "a", "b", "b"], col2: [1, 2, 3, 4])
+      df1 = DF.filter_with(df, fn df -> Series.greater(df["col2"], Series.mean(df["col2"])) end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               col1: ["b", "b"],
+               col2: [3, 4]
+             }
+
+      assert DF.groups(df1) == []
+    end
+
     test "raise an error if the last operation is an arithmetic operation" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
@@ -1982,6 +1994,30 @@ defmodule Explorer.DataFrameTest do
       assert_raise ArgumentError, "could not find column name \"g\"", fn ->
         DF.select(df, ["g"], :drop)
       end
+    end
+  end
+
+  describe "head/2" do
+    test "selects the first 5 rows by default", %{df: df} do
+      df1 = DF.head(df)
+      assert DF.shape(df1) == {5, 10}
+    end
+
+    test "selects the first 2 rows", %{df: df} do
+      df1 = DF.head(df, 2)
+      assert DF.shape(df1) == {2, 10}
+    end
+  end
+
+  describe "tail/2" do
+    test "selects the last 5 rows by default", %{df: df} do
+      df1 = DF.tail(df)
+      assert DF.shape(df1) == {5, 10}
+    end
+
+    test "selects the last 2 rows", %{df: df} do
+      df1 = DF.tail(df, 2)
+      assert DF.shape(df1) == {2, 10}
     end
   end
 end

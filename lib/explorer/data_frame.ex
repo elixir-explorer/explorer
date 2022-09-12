@@ -648,6 +648,8 @@ defmodule Explorer.DataFrame do
   This collects the lazy data frame into an eager one, computing the query.
 
   If already eager, this is a noop.
+
+  Collecting a grouped dataframe should return a grouped dataframe.
   """
   @doc type: :single
   @spec collect(df :: DataFrame.t()) :: {:ok, DataFrame.t()} | {:error, term()}
@@ -923,6 +925,11 @@ defmodule Explorer.DataFrame do
   @doc """
   Returns the first *n* rows of the dataframe.
 
+  By default it returns the first 5 rows.
+
+  If the dataframe is using groups, then the first *n* rows of each group is
+  returned.
+
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
@@ -940,6 +947,41 @@ defmodule Explorer.DataFrame do
         per_capita float [0.08, 0.43, 0.9, 1.68, 0.37]
         bunker_fuels integer [9, 7, 663, 0, 321]
       >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.head(df, 2)
+      #Explorer.DataFrame<
+        Polars[2 x 10]
+        year integer [2010, 2010]
+        country string ["AFGHANISTAN", "ALBANIA"]
+        total integer [2308, 1254]
+        solid_fuel integer [627, 117]
+        liquid_fuel integer [1601, 953]
+        gas_fuel integer [74, 7]
+        cement integer [5, 177]
+        gas_flaring integer [0, 0]
+        per_capita float [0.08, 0.43]
+        bunker_fuels integer [9, 7]
+      >
+
+  ## Grouped examples
+
+  Using grouped dataframes makes `head/2` return *n* rows from each group. 
+  Here is an example using the Iris dataset, and returning two rows from each group:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.head(grouped, 2)
+      #Explorer.DataFrame<
+        Polars[6 x 5]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.9, 7.0, 6.4, 6.3, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.2, 3.3, ...]
+        petal_length float [1.4, 1.4, 4.7, 4.5, 6.0, ...]
+        petal_width float [0.2, 0.2, 1.4, 1.5, 2.5, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
+      >
+
   """
   @doc type: :rows
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
@@ -947,6 +989,11 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Returns the last *n* rows of the dataframe.
+
+  By default it returns the last 5 rows.
+
+  If the dataframe is using groups, then the last *n* rows of each group is
+  returned.
 
   ## Examples
 
@@ -965,6 +1012,41 @@ defmodule Explorer.DataFrame do
         per_capita float [0.49, 0.44, 0.24, 0.08, 0.22]
         bunker_fuels integer [761, 1, 153, 33, 9]
       >
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.tail(df, 2)
+      #Explorer.DataFrame<
+        Polars[2 x 10]
+        year integer [2014, 2014]
+        country string ["ZAMBIA", "ZIMBABWE"]
+        total integer [1228, 3278]
+        solid_fuel integer [132, 2097]
+        liquid_fuel integer [797, 1005]
+        gas_fuel integer [0, 0]
+        cement integer [299, 177]
+        gas_flaring integer [0, 0]
+        per_capita float [0.08, 0.22]
+        bunker_fuels integer [33, 9]
+      >
+
+  ## Grouped examples
+
+  Using grouped dataframes makes `tail/2` return **n rows** from each group. 
+  Here is an example using the Iris dataset, and returning two rows from each group:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.tail(grouped, 2)
+      #Explorer.DataFrame<
+        Polars[6 x 5]
+        Groups: ["species"]
+        sepal_length float [5.3, 5.0, 5.1, 5.7, 6.2, ...]
+        sepal_width float [3.7, 3.3, 2.5, 2.8, 3.4, ...]
+        petal_length float [1.5, 1.4, 3.0, 4.1, 5.4, ...]
+        petal_width float [0.2, 0.2, 1.1, 1.3, 2.3, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
+      >
+
   """
   @doc type: :rows
   @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
@@ -974,6 +1056,7 @@ defmodule Explorer.DataFrame do
   Selects a subset of columns by name.
 
   Can optionally return all *but* the named columns if `:drop` is passed as the last argument.
+  It's important to notice that groups are kept: you can't select off grouping columns.
 
   ## Examples
 
@@ -1047,6 +1130,35 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
 
+  ## Grouped examples
+
+  Selecting columns from a grouped dataframe works the same way, except
+  if the column is also a group. Columns that are also groups cannot be removed, so
+  you need to ungroup before removing these columns.
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.select(grouped, ["sepal_width"])
+      #Explorer.DataFrame<
+        Polars[150 x 2]
+        Groups: ["species"]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+      >
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.select(grouped, ["species"], :drop)
+      #Explorer.DataFrame<
+        Polars[150 x 5]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+      >
+
   """
   @doc type: :single
   @spec select(
@@ -1065,8 +1177,8 @@ defmodule Explorer.DataFrame do
 
     columns_to_keep =
       case keep_or_drop do
-        :keep -> columns
-        :drop -> df.names -- columns
+        :keep -> Enum.uniq(columns ++ df.groups)
+        :drop -> df.names -- columns -- df.groups
       end
 
     out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
@@ -1149,6 +1261,8 @@ defmodule Explorer.DataFrame do
   you need to use a function that returns boolean.
 
   But you can also use window functions and aggregations inside comparisons.
+  Notice that grouped dataframes may have different results than ungrouped ones,
+  because the filtering is computed withing groups.
 
   ## Examples
 
@@ -1180,6 +1294,36 @@ defmodule Explorer.DataFrame do
         Polars[1 x 2]
         col1 string ["a"]
         col2 integer [1]
+      >
+
+  Filtering with aggregations have different results if the dataframe is using groups or not:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "a", "b", "b"], col2: [1, 2, 3, 4])
+      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["col2"], Explorer.Series.mean(df["col2"])) end)
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        col1 string ["b", "b"]
+        col2 integer [3, 4]
+      >
+
+  ## Grouped examples
+
+  In a grouped dataframe, the aggregation is calculated within each group.
+
+  In the following example we select the flowers of the Iris dataset that have the "petal length"
+  above the average of each species group.
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.filter_with(grouped, &Explorer.Series.greater(&1["petal_length"], Explorer.Series.mean(&1["petal_length"])))
+      #Explorer.DataFrame<
+        Polars[79 x 5]
+        Groups: ["species"]
+        sepal_length float [4.6, 5.4, 5.0, 4.9, 5.4, ...]
+        sepal_width float [3.1, 3.9, 3.4, 3.1, 3.7, ...]
+        petal_length float [1.5, 1.7, 1.5, 1.5, 1.5, ...]
+        petal_width float [0.2, 0.4, 0.2, 0.1, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
   """
   @doc type: :single
@@ -1331,6 +1475,9 @@ defmodule Explorer.DataFrame do
   New variables overwrite existing variables of the
   same name. Column names are coerced from atoms to strings.
 
+  When the dataframe is grouped, a mutation will have the context of that
+  group or groups.
+
   ## Examples
 
       iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
@@ -1373,7 +1520,11 @@ defmodule Explorer.DataFrame do
         c float [1.0, 1.5, 2.5]
       >
 
-  Mutations in grouped dataframes are also possible:
+  ## Grouped examples
+
+  Mutations in grouped dataframes takes the context of the group.
+  For example, if we want to count how many elements of a given group, we can add a new
+  column with that:
 
       iex> df = Explorer.DataFrame.new(id: ["a", "a", "b"], b: [1, 2, 3])
       iex> grouped = Explorer.DataFrame.group_by(df, :id)
@@ -1384,6 +1535,22 @@ defmodule Explorer.DataFrame do
         id string ["a", "a", "b"]
         b integer [1, 2, 3]
         count integer [2, 2, 1]
+      >
+
+  In case we want to get the average size of the petal length from the Iris dataset, we can:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.mutate_with(grouped, &[petal_length_avg: Explorer.Series.mean(&1["petal_length"])])
+      #Explorer.DataFrame<
+        Polars[150 x 6]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+        petal_length_avg float [1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, ...]
       >
 
   """
@@ -1486,6 +1653,29 @@ defmodule Explorer.DataFrame do
         b integer [3, 1, 2]
       >
 
+  ## Grouped examples
+
+  When used in a grouped dataframe, arrange is going to sort each group individually and
+  then return the entire dataframe with the existing groups. If one of the arrange columns
+  is also a group, the sorting for that column is not going to work. It is necessary to
+  first summarise the desired column and then arrange it.
+
+  Here is an example using the Iris dataset. We group by species and try to sort the dataframe 
+  by species and petal length, but only "petal length" is taken into account because "species"
+  is a group.
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.arrange(grouped, desc: "species", asc: "sepal_width")
+      #Explorer.DataFrame<
+        Polars[150 x 5]
+        Groups: ["species"]
+        sepal_length float [4.5, 4.4, 4.9, 4.8, 4.3, ...]
+        sepal_width float [2.3, 2.9, 3.0, 3.0, 3.0, ...]
+        petal_length float [1.3, 1.4, 1.4, 1.4, 1.1, ...]
+        petal_width float [0.3, 0.2, 0.2, 0.1, 0.1, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+      >
   """
   @doc type: :single
   @spec arrange(

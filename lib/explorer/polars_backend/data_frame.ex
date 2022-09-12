@@ -239,10 +239,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Single table verbs
 
   @impl true
-  def head(df, rows), do: Shared.apply_dataframe(df, :df_head, [rows])
+  def head(%DataFrame{} = df, rows), do: Shared.apply_dataframe(df, :df_head, [rows, df.groups])
 
   @impl true
-  def tail(df, rows), do: Shared.apply_dataframe(df, :df_tail, [rows])
+  def tail(%DataFrame{} = df, rows), do: Shared.apply_dataframe(df, :df_tail, [rows, df.groups])
 
   @impl true
   def select(df, out_df),
@@ -255,7 +255,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def filter_with(df, out_df, %Explorer.Backend.LazySeries{} = lseries) do
     expressions = Explorer.PolarsBackend.Expression.to_expr(lseries)
-    Shared.apply_dataframe(df, out_df, :df_filter_with, [expressions])
+    Shared.apply_dataframe(df, out_df, :df_filter_with, [expressions, df.groups])
   end
 
   @impl true
