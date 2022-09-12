@@ -1520,7 +1520,11 @@ defmodule Explorer.DataFrame do
         c float [1.0, 1.5, 2.5]
       >
 
-  Mutations in grouped dataframes are also possible:
+  ## Grouped examples
+
+  Mutations in grouped dataframes takes the context of the group.
+  For example, if we want to count how many elements of a given group, we can add a new
+  column with that:
 
       iex> df = Explorer.DataFrame.new(id: ["a", "a", "b"], b: [1, 2, 3])
       iex> grouped = Explorer.DataFrame.group_by(df, :id)
@@ -1531,6 +1535,22 @@ defmodule Explorer.DataFrame do
         id string ["a", "a", "b"]
         b integer [1, 2, 3]
         count integer [2, 2, 1]
+      >
+
+  In case we want to get the average size of the petal length from the Iris dataset, we can:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.mutate_with(grouped, &[petal_length_avg: Explorer.Series.mean(&1["petal_length"])])
+      #Explorer.DataFrame<
+        Polars[150 x 6]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+        petal_length_avg float [1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, ...]
       >
 
   """
