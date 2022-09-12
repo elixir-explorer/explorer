@@ -1130,16 +1130,33 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
 
-  Notice that trying to drop a column that is also a group won't have effect:
+  ## Grouped examples
 
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> grouped = Explorer.DataFrame.group_by(df, "b")
-      iex> Explorer.DataFrame.select(grouped, ["b"], :drop)
+  Selecting columns from a grouped dataframe works the same way, except
+  if the column is also a group. Columns that are also groups cannot be removed, so
+  you need to ungroup before removing these columns.
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.select(grouped, ["sepal_width"])
       #Explorer.DataFrame<
-        Polars[3 x 2]
-        Groups: ["b"]
-        a string ["a", "b", "c"]
-        b integer [1, 2, 3]
+        Polars[150 x 2]
+        Groups: ["species"]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+      >
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.select(grouped, ["species"], :drop)
+      #Explorer.DataFrame<
+        Polars[150 x 5]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
   """
