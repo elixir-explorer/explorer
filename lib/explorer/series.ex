@@ -370,6 +370,47 @@ defmodule Explorer.Series do
   @spec size(series :: Series.t()) :: integer()
   def size(series), do: Shared.apply_impl(series, :size)
 
+  @doc """
+  Returns the memory type of the series.
+
+  This function mirrors the `Nx` types.
+
+  It returns something in the shape of `:memtype` or `{:memtype, bits_size}`.
+
+  The possible memtypes are:
+
+  * `:utf8` for strings.
+  * `:u` for unsigned integers.
+  * `:s` for signed integers.
+  * `:f` for floats.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["Alice", "Bob"])
+      iex> Explorer.Series.memtype(s)
+      :utf8
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, 4])
+      iex> Explorer.Series.memtype(s)
+      {:s, 64}
+
+      iex> s = Explorer.Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
+      iex> Explorer.Series.memtype(s)
+      {:s, 32}
+
+      iex> s = Explorer.Series.from_list([1.2, 2.3, 3.5, 4.5])
+      iex> Explorer.Series.memtype(s)
+      {:f, 64}
+
+      iex> s = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.memtype(s)
+      {:u, 8}
+
+  """
+  @doc type: :introspection
+  @spec memtype(series :: Series.t()) :: atom() | {atom(), non_neg_integer()}
+  def memtype(series), do: Shared.apply_impl(series, :memtype)
+
   # Slice and dice
 
   @doc """

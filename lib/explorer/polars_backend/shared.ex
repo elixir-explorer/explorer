@@ -125,4 +125,9 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:string), do: "str"
   def internal_from_dtype(:date), do: "date"
   def internal_from_dtype(:datetime), do: "datetime[μs]"
+
+  def normalise_memtype(:utf8), do: :utf8
+  def normalise_memtype({:unsigned, n}), do: {:u, n}
+  def normalise_memtype({:signed, n}), do: {:s, n}
+  def normalise_memtype({:float, n}), do: {:f, n}
 end

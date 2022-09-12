@@ -141,6 +141,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_distinct(_s), do: err()
   def s_div(_s, _other), do: err()
   def s_dtype(_s), do: err()
+  def s_memtype(_s), do: err()
   def s_eq(_s, _rhs), do: err()
   def s_fill_none(_s, _strategy), do: err()
   def s_fill_none_with_int(_s, _strategy), do: err()

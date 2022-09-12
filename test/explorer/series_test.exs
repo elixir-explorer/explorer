@@ -62,4 +62,36 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.equal(s2) |> Series.to_list() == [false, false, true]
     end
   end
+
+  describe "memtype/1" do
+    test "integer series" do
+      s = Series.from_list([1, 2, 3])
+      assert Series.memtype(s) == {:s, 64}
+    end
+
+    test "float series" do
+      s = Series.from_list([1.2, 2.3, 3.4])
+      assert Series.memtype(s) == {:f, 64}
+    end
+
+    test "boolean series" do
+      s = Series.from_list([true, false, true])
+      assert Series.memtype(s) == {:u, 8}
+    end
+
+    test "string series" do
+      s = Series.from_list(["Bob", "Alice", "Joe"])
+      assert Series.memtype(s) == :utf8
+    end
+
+    test "date series" do
+      s = Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
+      assert Series.memtype(s) == {:s, 32}
+    end
+
+    test "datetime series" do
+      s = Series.from_list([~N[2022-09-12 22:21:46.250899]])
+      assert Series.memtype(s) == {:s, 64}
+    end
+  end
 end
