@@ -991,6 +991,7 @@ defmodule Explorer.DataFrame do
   Returns the last *n* rows of the dataframe.
 
   By default it returns the last 5 rows.
+
   If the dataframe is using groups, then the last *n* rows of each group is
   returned.
 
@@ -1027,6 +1028,25 @@ defmodule Explorer.DataFrame do
         per_capita float [0.08, 0.22]
         bunker_fuels integer [33, 9]
       >
+
+  ## Grouped examples
+
+  Using grouped dataframes makes `tail/2` return **n rows** from each group. 
+  Here is an example using the Iris dataset, and returning two rows from each group:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.tail(grouped, 2)
+      #Explorer.DataFrame<
+        Polars[6 x 5]
+        Groups: ["species"]
+        sepal_length float [5.3, 5.0, 5.1, 5.7, 6.2, ...]
+        sepal_width float [3.7, 3.3, 2.5, 2.8, 3.4, ...]
+        petal_length float [1.5, 1.4, 3.0, 4.1, 5.4, ...]
+        petal_width float [0.2, 0.2, 1.1, 1.3, 2.3, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
+      >
+
   """
   @doc type: :rows
   @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
