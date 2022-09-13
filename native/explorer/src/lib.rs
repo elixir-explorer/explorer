@@ -198,7 +198,6 @@ rustler::init!(
         s_distinct,
         s_div,
         s_dtype,
-        s_memtype,
         s_eq,
         s_fill_none,
         s_fill_none_with_int,

@@ -50,7 +50,21 @@ defmodule Explorer.PolarsBackend.Series do
   def size(series), do: Shared.apply_series(series, :s_len)
 
   @impl true
-  def memtype(series), do: Shared.apply_series(series, :s_memtype) |> Shared.normalise_memtype()
+  def memtype(series) do
+    case Shared.apply_series(series, :s_dtype) do
+      "u8" -> {:u, 8}
+      "u32" -> {:u, 32}
+      "i32" -> {:s, 32}
+      "i64" -> {:s, 64}
+      "f64" -> {:f, 64}
+      "bool" -> {:u, 8}
+      "str" -> :utf8
+      "date" -> {:s, 32}
+      "datetime[ms]" -> {:s, 64}
+      "datetime[μs]" -> {:s, 64}
+      dtype -> raise "cannot convert dtype #{inspect(dtype)} to memtype"
+    end
+  end
 
   # Slice and dice
 

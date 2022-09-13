@@ -1,5 +1,5 @@
 use crate::{
-    datatypes::{ExDate, ExDateTime, ExMemType},
+    datatypes::{ExDate, ExDateTime},
     encoding::term_from_value,
     ExDataFrame, ExSeries, ExSeriesRef, ExplorerError,
 };
@@ -83,25 +83,6 @@ pub fn s_dtype(data: ExSeries) -> Result<String, ExplorerError> {
     let s = &data.resource.0;
     let dt = s.dtype().to_string();
     Ok(dt)
-}
-
-#[rustler::nif]
-pub fn s_memtype(data: ExSeries) -> Result<ExMemType, ExplorerError> {
-    let s: &Series = &data.resource.0;
-    let memtype = match s.dtype() {
-        DataType::Boolean => ExMemType::Unsigned(8),
-        DataType::Int32 => ExMemType::Signed(32),
-        DataType::Int64 => ExMemType::Signed(64),
-        DataType::UInt8 => ExMemType::Unsigned(8),
-        DataType::UInt32 => ExMemType::Unsigned(32),
-        DataType::Utf8 => ExMemType::Utf8,
-        DataType::Float32 => ExMemType::Float(32),
-        DataType::Float64 => ExMemType::Float(64),
-        DataType::Date => ExMemType::Signed(32),
-        DataType::Datetime(_, None) => ExMemType::Signed(64),
-        dt => panic!("s_memtype/1 not implemented for {:?}", dt),
-    };
-    Ok(memtype)
 }
 
 #[rustler::nif]

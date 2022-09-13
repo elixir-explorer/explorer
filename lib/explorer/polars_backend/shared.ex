@@ -114,10 +114,9 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("bool"), do: :boolean
   def normalise_dtype("str"), do: :string
   def normalise_dtype("date"), do: :date
-  def normalise_dtype("datetime"), do: :datetime
   def normalise_dtype("datetime[ms]"), do: :datetime
   def normalise_dtype("datetime[μs]"), do: :datetime
-  def normalise_dtype("list[u32]"), do: :list
+  def normalise_dtype("list[u32]"), do: :integer
 
   def internal_from_dtype(:integer), do: "i64"
   def internal_from_dtype(:float), do: "f64"
@@ -125,9 +124,4 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:string), do: "str"
   def internal_from_dtype(:date), do: "date"
   def internal_from_dtype(:datetime), do: "datetime[μs]"
-
-  def normalise_memtype(:utf8), do: :utf8
-  def normalise_memtype({:unsigned, n}), do: {:u, n}
-  def normalise_memtype({:signed, n}), do: {:s, n}
-  def normalise_memtype({:float, n}), do: {:f, n}
 end

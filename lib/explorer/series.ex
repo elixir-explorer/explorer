@@ -375,7 +375,7 @@ defmodule Explorer.Series do
 
   This function mirrors the `Nx` types.
 
-  It returns something in the shape of `:memtype` or `{:memtype, bits_size}`.
+  It returns something in the shape of `atom()` or `{atom(), bits_size}`.
 
   The possible memtypes are:
 
