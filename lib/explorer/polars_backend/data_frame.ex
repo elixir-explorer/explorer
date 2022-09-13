@@ -91,7 +91,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     <<delimiter::utf8>> = delimiter
 
     case Native.df_to_csv_file(df, filename, header?, delimiter) do
-      {:ok, _} -> {:ok, filename}
+      {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
   end
@@ -106,7 +106,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def to_ndjson(%DataFrame{data: df}, filename) do
     with {:ok, _} <- Native.df_write_ndjson(df, filename) do
-      {:ok, filename}
+      :ok
     end
   end
 
@@ -127,7 +127,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def to_parquet(%DataFrame{data: df}, filename, {compression, compression_level}) do
     case Native.df_write_parquet(df, filename, Atom.to_string(compression), compression_level) do
-      {:ok, _} -> {:ok, filename}
+      {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
   end
@@ -145,7 +145,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def to_ipc(%DataFrame{data: df}, filename, {compression, _level}) do
     case Native.df_write_ipc(df, filename, Atom.to_string(compression)) do
-      {:ok, _} -> {:ok, filename}
+      {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
   end
