@@ -18,7 +18,8 @@ defmodule Explorer.MixProject do
       preferred_cli_env: [docs: :docs, "hex.publish": :docs],
       aliases: [
         "rust.lint": ["cmd cargo clippy --manifest-path=native/explorer/Cargo.toml -- -Dwarnings"],
-        "rust.fmt": ["cmd cargo fmt --manifest-path=native/explorer/Cargo.toml --all"]
+        "rust.fmt": ["cmd cargo fmt --manifest-path=native/explorer/Cargo.toml --all"],
+        ci: ["format", "rust.fmt", "rust.lint", "test"]
       ]
     ]
   end

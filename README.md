@@ -67,6 +67,8 @@ use Explorer as a package, you need Rust tooling installed on your machine if yo
 compile from source, which is the case when contributing to Explorer. In particular, you
 will need Rust Nightly, which can be installed with [Rustup](https://rust-lang.github.io/rustup/installation/index.html).
 
+Once you have made your changes, run `mix ci`, to lint and format both Elixir and Rust code.
+
 ## Sponsors
 
 <a href="https://amplified.ai"><img src="sponsors/amplified.png" width=100 alt="Amplified"></a>
