@@ -6,6 +6,7 @@ defmodule Explorer.Backend.DataFrame do
   @type t :: struct()
 
   @type df :: Explorer.DataFrame.t()
+  @type ok_result :: :ok | {:error, term()}
   @type result(t) :: {:ok, t} | {:error, term()}
   @type series :: Explorer.Series.t()
   @type column_name :: String.t()
@@ -38,7 +39,7 @@ defmodule Explorer.Backend.DataFrame do
               parse_dates :: boolean()
             ) :: result(df)
   @callback to_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
-              result(String.t())
+              ok_result()
 
   @callback from_parquet(filename :: String.t()) :: result(df)
   @callback to_parquet(
@@ -46,21 +47,21 @@ defmodule Explorer.Backend.DataFrame do
               filename :: String.t(),
               compression :: {nil | atom(), nil | integer()}
             ) ::
-              result(String.t())
+              ok_result()
 
   @callback from_ipc(
               filename :: String.t(),
               columns :: list(String.t()) | list(atom()) | list(integer()) | nil
             ) :: result(df)
   @callback to_ipc(df, filename :: String.t(), compression :: {nil | atom(), nil | integer()}) ::
-              result(String.t())
+              ok_result()
 
   @callback from_ndjson(
               filename :: String.t(),
               infer_schema_length :: integer(),
               batch_size :: integer()
             ) :: result(df)
-  @callback to_ndjson(df, filename :: String.t()) :: result(String.t())
+  @callback to_ndjson(df, filename :: String.t()) :: ok_result()
 
   # Conversion
 

@@ -1183,7 +1183,7 @@ defmodule Explorer.DataFrameTest do
     test "can write parquet to file", %{df: df, tmp_dir: tmp_dir} do
       parquet_path = Path.join(tmp_dir, "test.parquet")
 
-      assert {:ok, ^parquet_path} = DF.to_parquet(df, parquet_path)
+      assert :ok = DF.to_parquet(df, parquet_path)
       assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
 
       assert DF.names(df) == DF.names(parquet_df)
@@ -1199,7 +1199,7 @@ defmodule Explorer.DataFrameTest do
       for compression <- [:snappy, :gzip, :brotli, :zstd, :lz4raw] do
         parquet_path = Path.join(tmp_dir, "test.parquet")
 
-        assert {:ok, ^parquet_path} = DF.to_parquet(df, parquet_path, compression: compression)
+        assert :ok = DF.to_parquet(df, parquet_path, compression: compression)
         assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
 
         assert DF.names(df) == DF.names(parquet_df)
@@ -1216,8 +1216,7 @@ defmodule Explorer.DataFrameTest do
       for compression <- [:gzip, :brotli, :zstd], level <- [1, 2, 3] do
         parquet_path = Path.join(tmp_dir, "test.parquet")
 
-        assert {:ok, ^parquet_path} =
-                 DF.to_parquet(df, parquet_path, compression: {compression, level})
+        assert :ok = DF.to_parquet(df, parquet_path, compression: {compression, level})
 
         assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
 
@@ -1296,7 +1295,7 @@ defmodule Explorer.DataFrameTest do
 
       ndjson_path = Path.join(tmp_dir, "test-write.ndjson")
 
-      assert {:ok, ^ndjson_path} = DF.to_ndjson(df, ndjson_path)
+      assert :ok = DF.to_ndjson(df, ndjson_path)
       assert {:ok, ndjson_df} = DF.from_ndjson(ndjson_path)
 
       assert DF.names(df) == DF.names(ndjson_df)
