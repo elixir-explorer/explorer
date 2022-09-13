@@ -49,6 +49,9 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def size(series), do: Shared.apply_series(series, :s_len)
 
+  @impl true
+  def memtype(series), do: Shared.apply_series(series, :s_memtype) |> Shared.normalise_memtype()
+
   # Slice and dice
 
   @impl true

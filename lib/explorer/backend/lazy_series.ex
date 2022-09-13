@@ -432,6 +432,7 @@ defmodule Explorer.Backend.LazySeries do
 
   # The following functions are not implemented yet and should raise if used.
   funs = [
+    memtype: 1,
     concat: 2,
     fetch!: 2,
     mask: 2,
