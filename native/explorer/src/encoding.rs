@@ -194,21 +194,15 @@ fn encode_utf8_series<'b>(
     let utf8 = s.utf8().unwrap();
     let env_as_c_arg = env.as_c_arg();
     let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
-    let resource_as_c_arg = resource.clone().as_c_arg();
     let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
 
     let list = utf8.downcast_iter().rfold(acc, |acc, array| {
         // Create a binary per array buffer
         let values = array.values();
 
-        let binary_as_c_arg = unsafe {
-            binary::make_resource_binary(
-                env_as_c_arg,
-                resource_as_c_arg,
-                values.as_ptr() as *const rustler::wrapper::c_void,
-                values.len(),
-            )
-        };
+        let binary = unsafe { resource.make_binary_unsafe(env, |_| values) }
+            .to_term(env)
+            .as_c_arg();
 
         // Offsets have one more element than values and validity,
         // so we read the last one as the initial accumulator and skip it.
@@ -226,12 +220,7 @@ fn encode_utf8_series<'b>(
 
             let term_as_c_arg = if validity_iter.next_back().unwrap_or(true) {
                 unsafe {
-                    binary::make_sub_binary(
-                        env_as_c_arg,
-                        binary_as_c_arg,
-                        offset,
-                        last_offset - offset,
-                    )
+                    binary::make_subbinary(env_as_c_arg, binary, offset, last_offset - offset)
                 }
             } else {
                 nil_as_c_arg
@@ -331,7 +320,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
     }
 }
 
-pub fn list_from_series<'b>(data: ExSeries, env: Env<'b>) -> Term<'b> {
+pub fn list_from_series(data: ExSeries, env: Env) -> Term {
     let s = &data.resource.0;
 
     match s.dtype() {
@@ -340,10 +329,10 @@ pub fn list_from_series<'b>(data: ExSeries, env: Env<'b>) -> Term<'b> {
         DataType::Int64 => encode!(s, env, i64),
         DataType::UInt8 => encode!(s, env, u8),
         DataType::UInt32 => encode!(s, env, u32),
-        DataType::Utf8 => encode_utf8_series(&data.resource, &s, env),
-        DataType::Float64 => encode_float64_series(&s, env),
-        DataType::Date => encode_date_series(&s, env),
-        DataType::Datetime(time_unit, None) => encode_datetime_series(&s, *time_unit, env),
+        DataType::Utf8 => encode_utf8_series(&data.resource, s, env),
+        DataType::Float64 => encode_float64_series(s, env),
+        DataType::Date => encode_date_series(s, env),
+        DataType::Datetime(time_unit, None) => encode_datetime_series(s, *time_unit, env),
         DataType::List(t) if t as &DataType == &DataType::UInt32 => {
             encode_list!(s, env, u32, u32)
         }
