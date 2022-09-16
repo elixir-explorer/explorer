@@ -7,14 +7,19 @@ on:
   workflow_dispatch:
 
 env:
-  ELIXIR_VERSION: '1.13'
-  OTP_VERSION: '24.2'
   EXPLORER_BUILD: true
   RUST_TOOLCHAIN_VERSION: nightly-2022-08-16
   MIX_ENV: test
 
 jobs:
   test:
+    strategy:
+      matrix:
+        include:
+          - otp_version: 24.2
+            elixir_version: 1.13
+          - otp_version: 25.0
+            elixir_version: 1.14
     runs-on: ubuntu-latest
     name: test
     steps:
@@ -24,7 +29,7 @@ jobs:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ env.ELIXIR_VERSION }}-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-mix-${{ matrix.elixir_version }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-
       - uses: actions/cache@v3
@@ -43,12 +48,14 @@ jobs:
           override: true
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "${{ env.OTP_VERSION }}"
-          elixir-version: "${{ env.ELIXIR_VERSION }}"
+          otp-version: ${{ matrix.otp_version }}
+          elixir-version: ${{ matrix.elixir_version }}
       - run: mix deps.get
       - run: mix deps.compile
-      - run: mix compile --warnings-as-errors
-      - run: mix test --warnings-as-errors
+      - name: Run tests
+        run: mix test --warnings-as-errors
+      - name: Compile once again but without optional deps
+        run: mix compile --force --warnings-as-errors --skip-optional-deps
   format:
     runs-on: ubuntu-latest
     name: mix format
@@ -56,6 +63,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "${{ env.OTP_VERSION }}"
-          elixir-version: "${{ env.ELIXIR_VERSION }}"
+          otp-version: 25.0
+          elixir-version: 1.14
       - run: mix format --check-formatted
