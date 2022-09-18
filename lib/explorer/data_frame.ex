@@ -1247,6 +1247,7 @@ defmodule Explorer.DataFrame do
 
   def mask(df, mask) when is_list(mask), do: mask |> Series.from_list() |> then(&mask(df, &1))
 
+  @doc false
   @spec filter(df :: DataFrame.t(), callback :: function()) :: DataFrame.t()
   def filter(df, callback) when is_function(callback) do
     IO.warn("filter/2 with a callback is deprecated, please use filter_with/2 instead")
