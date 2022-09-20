@@ -65,22 +65,22 @@ defmodule Explorer.Backend.Series do
 
   # Arithmetic
 
-  @callback add(s, s | number()) :: s
-  @callback subtract(s, s | number()) :: s
-  @callback multiply(s, s | number()) :: s
-  @callback divide(s, s | number()) :: s
-  @callback quotient(s, s | neg_integer() | pos_integer()) :: s
-  @callback remainder(s, s | neg_integer() | pos_integer()) :: s
-  @callback pow(s, number()) :: s
+  @callback add(s | number(), s | number()) :: s
+  @callback subtract(s | number(), s | number()) :: s
+  @callback multiply(s | number(), s | number()) :: s
+  @callback divide(s | number(), s | number()) :: s
+  @callback quotient(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
+  @callback remainder(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
+  @callback pow(s | number(), s | number()) :: s
 
   # Comparisons
 
-  @callback eq(s, s | valid_types()) :: s
-  @callback neq(s, s | valid_types()) :: s
-  @callback gt(s, s | valid_types()) :: s
-  @callback gt_eq(s, s | valid_types()) :: s
-  @callback lt(s, s | valid_types()) :: s
-  @callback lt_eq(s, s | valid_types()) :: s
+  @callback eq(s | valid_types(), s | valid_types()) :: s
+  @callback neq(s | valid_types(), s | valid_types()) :: s
+  @callback gt(s | valid_types(), s | valid_types()) :: s
+  @callback gt_eq(s | valid_types(), s | valid_types()) :: s
+  @callback lt(s | valid_types(), s | valid_types()) :: s
+  @callback lt_eq(s | valid_types(), s | valid_types()) :: s
   @callback all_equal(s, s) :: boolean() | lazy_s()
 
   @callback binary_and(s, s) :: s

@@ -1221,7 +1221,7 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec add(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
+  @spec add(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
   def add(left, right), do: basic_numeric_operation(:add, left, right)
 
   @doc """
@@ -1429,14 +1429,21 @@ defmodule Explorer.Series do
          %Series{dtype: right_dtype} = right
        )
        when K.and(numeric_dtype?(left_dtype), numeric_dtype?(right_dtype)),
-       do: Shared.apply_impl(left, operation, [right])
+       do: Shared.apply_binary_op_impl(operation, left, right)
 
   defp basic_numeric_operation(operation, %Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("#{operation}/2", left_dtype, right_dtype)
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right)
        when K.and(numeric_dtype?(dtype), is_number(right)),
-       do: Shared.apply_impl(left, operation, [right])
+       do: Shared.apply_binary_op_impl(operation, left, right)
+
+  defp basic_numeric_operation(operation, left, %Series{dtype: dtype} = right)
+       when K.and(numeric_dtype?(dtype), is_number(left)),
+       do: Shared.apply_binary_op_impl(operation, left, right)
+
+  defp basic_numeric_operation(operation, _, %Series{dtype: dtype}),
+    do: dtype_error("#{operation}/2", dtype, [:integer, :float])
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype}, _),
     do: dtype_error("#{operation}/2", dtype, [:integer, :float])
