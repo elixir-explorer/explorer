@@ -1,7 +1,6 @@
 use crate::{
     datatypes::{ExDate, ExDateTime},
-    encoding::term_from_value,
-    ExDataFrame, ExSeries, ExSeriesRef, ExplorerError,
+    encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
 use polars::prelude::*;
@@ -443,8 +442,7 @@ pub fn rolling_opts(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_to_list(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
-    let s = ExSeriesRef(data.resource.0.clone());
-    Ok(s.encode(env))
+    Ok(encoding::list_from_series(data, env))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -574,7 +572,7 @@ pub fn s_std(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
 #[rustler::nif]
 pub fn s_get(env: Env, data: ExSeries, idx: usize) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
-    Ok(term_from_value(s.get(idx), env))
+    Ok(encoding::term_from_value(s.get(idx), env))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -616,7 +614,7 @@ pub fn s_quantile<'a>(
                 Some(microseconds) => Ok(ExDateTime::from(microseconds as i64).encode(env)),
             }
         }
-        _ => Ok(term_from_value(
+        _ => Ok(encoding::term_from_value(
             s.quantile_as_series(quantile, strategy)?
                 .cast(dtype)?
                 .get(0),

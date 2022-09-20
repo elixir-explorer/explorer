@@ -1,8 +1,7 @@
 use crate::atoms;
 use chrono::prelude::*;
 use polars::prelude::*;
-use rustler::resource::ResourceArc;
-use rustler::{Atom, NifStruct};
+use rustler::{Atom, NifStruct, ResourceArc};
 use std::convert::TryInto;
 
 pub struct ExDataFrameRef(pub DataFrame);
