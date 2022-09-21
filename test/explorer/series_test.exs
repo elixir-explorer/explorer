@@ -284,4 +284,64 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [-3.12, -1.56, -1.04]
     end
   end
+
+  describe "quotient/2" do
+    test "quotient of two series" do
+      s1 = Series.from_list([10, 11, 15])
+      s2 = Series.from_list([2, 2, 2])
+
+      s3 = Series.quotient(s1, s2)
+
+      assert s3.dtype == :integer
+      assert Series.to_list(s3) == [5, 5, 7]
+    end
+
+    test "quotient of a series with an integer scalar value on the right-hand side" do
+      s1 = Series.from_list([10, 11, 15])
+
+      s2 = Series.quotient(s1, -2)
+
+      assert s2.dtype == :integer
+      assert Series.to_list(s2) == [-5, -5, -7]
+    end
+
+    test "quotient of a series with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([10, 20, 25])
+
+      s2 = Series.quotient(101, s1)
+
+      assert s2.dtype == :integer
+      assert Series.to_list(s2) == [10, 5, 4]
+    end
+  end
+
+  describe "remainder/2" do
+    test "remainder of two series" do
+      s1 = Series.from_list([10, 11, 19])
+      s2 = Series.from_list([2, 2, 2])
+
+      s3 = Series.remainder(s1, s2)
+
+      assert s3.dtype == :integer
+      assert Series.to_list(s3) == [0, 1, 1]
+    end
+
+    test "remainder of a series with an integer scalar value on the right-hand side" do
+      s1 = Series.from_list([10, 11, 15])
+
+      s2 = Series.remainder(s1, -2)
+
+      assert s2.dtype == :integer
+      assert Series.to_list(s2) == [0, 1, 1]
+    end
+
+    test "remainder of a series with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([10, 20, 25])
+
+      s2 = Series.remainder(101, s1)
+
+      assert s2.dtype == :integer
+      assert Series.to_list(s2) == [1, 1, 1]
+    end
+  end
 end

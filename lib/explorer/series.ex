@@ -1421,10 +1421,13 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec quotient(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
   def quotient(%Series{dtype: :integer} = left, %Series{dtype: :integer} = right),
-    do: Shared.apply_impl(left, :quotient, [right])
+    do: Shared.apply_binary_op_impl(:quotient, left, right)
 
   def quotient(%Series{dtype: :integer} = left, right) when is_integer(right),
-    do: Shared.apply_impl(left, :quotient, [right])
+    do: Shared.apply_binary_op_impl(:quotient, left, right)
+
+  def quotient(left, %Series{dtype: :integer} = right) when is_integer(left),
+    do: Shared.apply_binary_op_impl(:quotient, left, right)
 
   @doc """
   Computes the remainder of an element-wise integer division.
@@ -1464,10 +1467,13 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec remainder(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
   def remainder(%Series{dtype: :integer} = left, %Series{dtype: :integer} = right),
-    do: Shared.apply_impl(left, :remainder, [right])
+    do: Shared.apply_binary_op_impl(:remainder, left, right)
 
   def remainder(%Series{dtype: :integer} = left, right) when is_integer(right),
-    do: Shared.apply_impl(left, :remainder, [right])
+    do: Shared.apply_binary_op_impl(:remainder, left, right)
+
+  def remainder(left, %Series{dtype: :integer} = right) when is_integer(left),
+    do: Shared.apply_binary_op_impl(:remainder, left, right)
 
   defp basic_numeric_operation(
          operation,
