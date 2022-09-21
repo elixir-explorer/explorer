@@ -1219,6 +1219,22 @@ defmodule Explorer.Series do
         integer[3]
         [5, 7, 9]
       >
+
+  You can also use scalar values on both sides:
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.add(s1, 2)
+      #Explorer.Series<
+        integer[3]
+        [3, 4, 5]
+      >
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.add(2, s1)
+      #Explorer.Series<
+        integer[3]
+        [3, 4, 5]
+      >
   """
   @doc type: :element_wise
   @spec add(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
@@ -1243,9 +1259,25 @@ defmodule Explorer.Series do
         integer[3]
         [-3, -3, -3]
       >
+
+  You can also use scalar values on both sides:
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.subtract(s1, 2)
+      #Explorer.Series<
+        integer[3]
+        [-1, 0, 1]
+      >
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.subtract(2, s1)
+      #Explorer.Series<
+        integer[3]
+        [1, 0, -1]
+      >
   """
   @doc type: :element_wise
-  @spec subtract(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
+  @spec subtract(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
   def subtract(left, right), do: basic_numeric_operation(:subtract, left, right)
 
   @doc """
@@ -1276,7 +1308,7 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec multiply(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
+  @spec multiply(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
   def multiply(left, right), do: basic_numeric_operation(:multiply, left, right)
 
   @doc """
@@ -1322,7 +1354,7 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec divide(left :: Series.t(), right :: Series.t() | number()) :: Series.t()
+  @spec divide(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
   def divide(%Series{} = left, right) do
     left =
       if K.and(
@@ -1330,6 +1362,20 @@ defmodule Explorer.Series do
            K.or(is_integer(right), match?(%Series{dtype: :integer}, right))
          ) do
         cast(left, :float)
+      else
+        left
+      end
+
+    basic_numeric_operation(:divide, left, right)
+  end
+
+  def divide(left, %Series{} = right) when is_number(left) do
+    left =
+      if K.and(
+           is_integer(left),
+           right.dtype == :integer
+         ) do
+        left / 1.0
       else
         left
       end

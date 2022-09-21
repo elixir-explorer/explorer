@@ -94,4 +94,194 @@ defmodule Explorer.SeriesTest do
       assert Series.memtype(s) == {:s, 64}
     end
   end
+
+  describe "add/2" do
+    test "adding two series together" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([4, 5, 6])
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == :integer
+      assert Series.to_list(s3) == [5, 7, 9]
+    end
+
+    test "adding a series with an integer scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.add(s1, -2)
+
+      assert s2.dtype == :integer
+      assert Series.to_list(s2) == [-1, 0, 1]
+    end
+
+    test "adding a series with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.add(-2, s1)
+
+      assert Series.to_list(s2) == [-1, 0, 1]
+    end
+
+    test "adding a series with a float scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.add(s1, 1.1)
+      assert s2.dtype == :float
+
+      assert Series.to_list(s2) == [2.1, 3.1, 4.1]
+    end
+
+    test "adding a series with a float scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.add(1.1, s1)
+      assert s2.dtype == :float
+
+      assert Series.to_list(s2) == [2.1, 3.1, 4.1]
+    end
+  end
+
+  describe "subtract/2" do
+    test "subtracting two series together" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([4, 5, 6])
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == :integer
+      assert Series.to_list(s3) == [-3, -3, -3]
+    end
+
+    test "subtracting a series with an integer scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.subtract(s1, -2)
+
+      assert s2.dtype == :integer
+      assert Series.to_list(s2) == [3, 4, 5]
+    end
+
+    test "subtracting a series with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.subtract(-2, s1)
+
+      assert Series.to_list(s2) == [-3, -4, -5]
+    end
+
+    test "subtracting a series with a float scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.subtract(s1, 1.5)
+      assert s2.dtype == :float
+
+      assert Series.to_list(s2) == [-0.5, 0.5, 1.5]
+    end
+
+    test "subtracting a series with a float scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.subtract(1.5, s1)
+      assert s2.dtype == :float
+
+      assert Series.to_list(s2) == [0.5, -0.5, -1.5]
+    end
+  end
+
+  describe "multiply/2" do
+    test "multiplying two series together" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([4, 5, 6])
+
+      s3 = Series.multiply(s1, s2)
+
+      assert s3.dtype == :integer
+      assert Series.to_list(s3) == [4, 10, 18]
+    end
+
+    test "multiplying a series with an integer scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.multiply(s1, -2)
+
+      assert s2.dtype == :integer
+      assert Series.to_list(s2) == [-2, -4, -6]
+    end
+
+    test "multiplying a series with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.multiply(-2, s1)
+
+      assert s2.dtype == :integer
+      assert Series.to_list(s2) == [-2, -4, -6]
+    end
+
+    test "multiplying a series with a float scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.multiply(s1, -2.5)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [-2.5, -5.0, -7.5]
+    end
+
+    test "multiplying a series with a float scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.multiply(-2.5, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [-2.5, -5.0, -7.5]
+    end
+  end
+
+  describe "divide/2" do
+    test "dividing two series together" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([4, 5, 6])
+
+      s3 = Series.divide(s2, s1)
+
+      assert s3.dtype == :float
+      assert Series.to_list(s3) == [4.0, 2.5, 2.0]
+    end
+
+    test "dividing a series with an integer scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.divide(s1, -2)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [-0.5, -1, -1.5]
+    end
+
+    test "dividing a series with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 5])
+
+      s2 = Series.divide(-2, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [-2.0, -1.0, -0.4]
+    end
+
+    test "dividing a series with a float scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.divide(s1, -2.5)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [-0.4, -0.8, -1.2]
+    end
+
+    test "dividing a series with a float scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.divide(-3.12, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [-3.12, -1.56, -1.04]
+    end
+  end
 end
