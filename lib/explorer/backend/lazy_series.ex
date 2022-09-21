@@ -242,6 +242,15 @@ defmodule Explorer.Backend.LazySeries do
 
       Backend.Series.new(data, dtype)
     end
+
+    def unquote(op)(left, %Series{} = right) when is_number(left) do
+      dtype = resolve_numeric_dtype([left, right])
+
+      args = [left, lazy_series!(right)]
+      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
+
+      Backend.Series.new(data, dtype)
+    end
   end
 
   for op <- @aggregation_operations do
