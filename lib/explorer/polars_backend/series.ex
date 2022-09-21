@@ -224,50 +224,59 @@ defmodule Explorer.PolarsBackend.Series do
   # Comparisons
 
   @impl true
-  def eq(left, %Series{} = right),
+  def eq(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_eq, [right.data])
 
-  def eq(left, right), do: eq(left, scalar_rhs(right, left))
+  def eq(%Series{} = left, right), do: eq(left, scalar_rhs(right, left))
+  def eq(left, %Series{} = right), do: eq(scalar_rhs(left, right), right)
 
   @impl true
-  def neq(left, %Series{} = right),
+  def neq(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_neq, [right.data])
 
-  def neq(left, right), do: neq(left, scalar_rhs(right, left))
+  def neq(%Series{} = left, right), do: neq(left, scalar_rhs(right, left))
+  def neq(left, %Series{} = right), do: neq(scalar_rhs(left, right), right)
 
   @impl true
-  def gt(left, %Series{} = right),
+  def gt(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_gt, [right.data])
 
-  def gt(left, right), do: gt(left, scalar_rhs(right, left))
+  def gt(%Series{} = left, right), do: gt(left, scalar_rhs(right, left))
+  def gt(left, %Series{} = right), do: gt(scalar_rhs(left, right), right)
 
   @impl true
-  def gt_eq(left, %Series{} = right),
+  def gt_eq(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_gt_eq, [right.data])
 
-  def gt_eq(left, right), do: gt_eq(left, scalar_rhs(right, left))
+  def gt_eq(%Series{} = left, right), do: gt_eq(left, scalar_rhs(right, left))
+  def gt_eq(left, %Series{} = right), do: gt_eq(scalar_rhs(left, right), right)
 
   @impl true
-  def lt(left, %Series{} = right),
+  def lt(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_lt, [right.data])
 
-  def lt(left, right), do: lt(left, scalar_rhs(right, left))
+  def lt(%Series{} = left, right), do: lt(left, scalar_rhs(right, left))
+  def lt(left, %Series{} = right), do: lt(scalar_rhs(left, right), right)
 
   @impl true
-  def lt_eq(left, %Series{} = right),
+  def lt_eq(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_lt_eq, [right.data])
 
-  def lt_eq(left, right), do: lt_eq(left, scalar_rhs(right, left))
+  def lt_eq(%Series{} = left, right), do: lt_eq(left, scalar_rhs(right, left))
+  def lt_eq(left, %Series{} = right), do: lt_eq(scalar_rhs(left, right), right)
 
   @impl true
-  def all_equal(left, right),
+  def all_equal(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_series_equal, [right.data, true])
 
   @impl true
-  def binary_and(left, right), do: Shared.apply_series(left, :s_and, [right.data])
+  def binary_and(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_and, [right.data])
 
   @impl true
-  def binary_or(left, right), do: Shared.apply_series(left, :s_or, [right.data])
+  def binary_or(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_or, [right.data])
+
   # Sort
 
   @impl true

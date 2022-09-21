@@ -56,10 +56,141 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "equal/2" do
-    test "can compare boolean series" do
+    test "compare boolean series" do
       s1 = Series.from_list([true, false, true])
       s2 = Series.from_list([false, true, true])
       assert s1 |> Series.equal(s2) |> Series.to_list() == [false, false, true]
+    end
+
+    test "compare integer series" do
+      s1 = Series.from_list([1, 0, 2])
+      s2 = Series.from_list([1, 0, 3])
+
+      assert s1 |> Series.equal(s2) |> Series.to_list() == [true, true, false]
+    end
+
+    test "compare integer series with a scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 0, 2])
+
+      assert s1 |> Series.equal(2) |> Series.to_list() == [false, false, true]
+    end
+
+    test "compare integer series with a scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 0, 2])
+
+      assert 2 |> Series.equal(s1) |> Series.to_list() == [false, false, true]
+    end
+  end
+
+  describe "not_equal/2" do
+    test "compare boolean series" do
+      s1 = Series.from_list([true, false, true])
+      s2 = Series.from_list([false, true, true])
+
+      assert s1 |> Series.not_equal(s2) |> Series.to_list() == [true, true, false]
+    end
+
+    test "compare integer series" do
+      s1 = Series.from_list([1, 0, 2])
+      s2 = Series.from_list([1, 0, 3])
+
+      assert s1 |> Series.not_equal(s2) |> Series.to_list() == [false, false, true]
+    end
+
+    test "compare integer series with a scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 0, 2])
+
+      assert s1 |> Series.not_equal(2) |> Series.to_list() == [true, true, false]
+    end
+
+    test "compare integer series with a scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 0, 2])
+
+      assert 2 |> Series.not_equal(s1) |> Series.to_list() == [true, true, false]
+    end
+  end
+
+  describe "greater/2" do
+    test "compare integer series" do
+      s1 = Series.from_list([1, 0, 3])
+      s2 = Series.from_list([1, 0, 2])
+
+      assert s1 |> Series.greater(s2) |> Series.to_list() == [false, false, true]
+    end
+
+    test "compare integer series with a scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 0, 2, 3])
+
+      assert s1 |> Series.greater(2) |> Series.to_list() == [false, false, false, true]
+    end
+
+    test "compare integer series with a scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 0, 2, 3])
+
+      assert 2 |> Series.greater(s1) |> Series.to_list() == [true, true, false, false]
+    end
+  end
+
+  describe "greater_equal/2" do
+    test "compare integer series" do
+      s1 = Series.from_list([1, 0, 2])
+      s2 = Series.from_list([1, 0, 3])
+
+      assert s1 |> Series.greater_equal(s2) |> Series.to_list() == [true, true, false]
+    end
+
+    test "compare integer series with a scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 0, 2, 3])
+
+      assert s1 |> Series.greater_equal(2) |> Series.to_list() == [false, false, true, true]
+    end
+
+    test "compare integer series with a scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 0, 2, 3])
+
+      assert 2 |> Series.greater_equal(s1) |> Series.to_list() == [true, true, true, false]
+    end
+  end
+
+  describe "less/2" do
+    test "compare integer series" do
+      s1 = Series.from_list([1, 0, 2])
+      s2 = Series.from_list([1, 0, 3])
+
+      assert s1 |> Series.less(s2) |> Series.to_list() == [false, false, true]
+    end
+
+    test "compare integer series with a scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 0, 2, 3])
+
+      assert s1 |> Series.less(2) |> Series.to_list() == [true, true, false, false]
+    end
+
+    test "compare integer series with a scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 0, 2, 3])
+
+      assert 2 |> Series.less(s1) |> Series.to_list() == [false, false, false, true]
+    end
+  end
+
+  describe "less_equal/2" do
+    test "compare integer series" do
+      s1 = Series.from_list([1, 0, 2])
+      s2 = Series.from_list([1, 0, 3])
+
+      assert s1 |> Series.less_equal(s2) |> Series.to_list() == [true, true, true]
+    end
+
+    test "compare integer series with a scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 0, 2, 3])
+
+      assert s1 |> Series.less_equal(2) |> Series.to_list() == [true, true, true, false]
+    end
+
+    test "compare integer series with a scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 0, 2, 3])
+
+      assert 2 |> Series.less_equal(s1) |> Series.to_list() == [false, false, true, true]
     end
   end
 

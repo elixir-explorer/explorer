@@ -1608,14 +1608,14 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec equal(
-          left :: Series.t(),
+          left :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
-  def equal(%Series{dtype: dtype} = left, right) do
+  def equal(left, right) do
     if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
-      Shared.apply_impl(left, :eq, [right])
+      Shared.apply_binary_op_impl(:eq, left, right)
     else
-      dtype_mismatch_error("equal/2", dtype, inspect(right))
+      dtype_mismatch_error("equal/2", dtype_from_sides(left, right), inspect(right))
     end
   end
 
@@ -1673,14 +1673,14 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec not_equal(
-          left :: Series.t(),
+          left :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
-  def not_equal(%Series{dtype: dtype} = left, right) do
+  def not_equal(left, right) do
     if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
-      Shared.apply_impl(left, :neq, [right])
+      Shared.apply_binary_op_impl(:neq, left, right)
     else
-      dtype_mismatch_error("not_equal/2", dtype, inspect(right))
+      dtype_mismatch_error("not_equal/2", dtype_from_sides(left, right), inspect(right))
     end
   end
 
@@ -1710,14 +1710,14 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec greater(
-          left :: Series.t(),
+          left :: Series.t() | number() | Date.t() | NaiveDateTime.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def greater(%Series{dtype: dtype} = left, right) do
+  def greater(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_impl(left, :gt, [right])
+      Shared.apply_binary_op_impl(:gt, left, right)
     else
-      dtype_error("greater/2", dtype, [:integer, :float, :date, :datetime])
+      dtype_error("greater/2", dtype_from_sides(left, right), [:integer, :float, :date, :datetime])
     end
   end
 
@@ -1743,14 +1743,19 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec greater_equal(
-          left :: Series.t(),
+          left :: Series.t() | number() | Date.t() | NaiveDateTime.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def greater_equal(%Series{dtype: dtype} = left, right) do
+  def greater_equal(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_impl(left, :gt_eq, [right])
+      Shared.apply_binary_op_impl(:gt_eq, left, right)
     else
-      dtype_error("greater_equal/2", dtype, [:integer, :float, :date, :datetime])
+      dtype_error("greater_equal/2", dtype_from_sides(left, right), [
+        :integer,
+        :float,
+        :date,
+        :datetime
+      ])
     end
   end
 
@@ -1776,14 +1781,14 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec less(
-          left :: Series.t(),
+          left :: Series.t() | number() | Date.t() | NaiveDateTime.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def less(%Series{dtype: dtype} = left, right) do
+  def less(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_impl(left, :lt, [right])
+      Shared.apply_binary_op_impl(:lt, left, right)
     else
-      dtype_error("less/2", dtype, [:integer, :float, :date, :datetime])
+      dtype_error("less/2", dtype_from_sides(left, right), [:integer, :float, :date, :datetime])
     end
   end
 
@@ -1809,14 +1814,19 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec less_equal(
-          left :: Series.t(),
+          left :: Series.t() | number() | Date.t() | NaiveDateTime.t(),
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
-  def less_equal(%Series{dtype: dtype} = left, right) do
+  def less_equal(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_impl(left, :lt_eq, [right])
+      Shared.apply_binary_op_impl(:lt_eq, left, right)
     else
-      dtype_error("less_equal/2", dtype, [:integer, :float, :date, :datetime])
+      dtype_error("less_equal/2", dtype_from_sides(left, right), [
+        :integer,
+        :float,
+        :date,
+        :datetime
+      ])
     end
   end
 
@@ -1835,7 +1845,26 @@ defmodule Explorer.Series do
 
   defp valid_for_bool_mask_operation?(%Series{dtype: :datetime}, %NaiveDateTime{}), do: true
 
+  defp valid_for_bool_mask_operation?(left, %Series{dtype: dtype})
+       when K.and(numeric_dtype?(dtype), is_number(left)),
+       do: true
+
+  defp valid_for_bool_mask_operation?(%Date{}, %Series{dtype: :date}), do: true
+
+  defp valid_for_bool_mask_operation?(%NaiveDateTime{}, %Series{dtype: :datetime}), do: true
+
   defp valid_for_bool_mask_operation?(_, _), do: false
+
+  defp dtype_from_sides(%Series{} = left, _right), do: left.dtype
+  defp dtype_from_sides(_left, %Series{} = right), do: right.dtype
+
+  defp dtype_from_sides(left, right),
+    do:
+      raise(
+        ArgumentError,
+        "expecting series for one of the sides, but got: " <>
+          "#{inspect(left)} (lhs) and #{inspect(right)} (rhs)"
+      )
 
   @doc """
   Returns a boolean mask of `left and right`, element-wise
