@@ -44,6 +44,32 @@ defmodule Explorer.Shared do
   end
 
   @doc """
+  Applies a binary operation function.
+
+  This is similar to `apply_impl/3`, but allows series or scalar on both sides.
+  One important note is that one of the sides must be a series. Otherwise, this
+  function raises.
+  """
+  def apply_binary_op_impl(fun, %{data: _} = left, right) do
+    impl = impl!(left)
+
+    apply(impl, fun, [left, right])
+  end
+
+  def apply_binary_op_impl(fun, left, %{data: _} = right) do
+    impl = impl!(right)
+
+    apply(impl, fun, [left, right])
+  end
+
+  def apply_binary_op_impl(fun, left, right) do
+    raise ArgumentError,
+          "could not find implementation for function #{inspect(fun)}. " <>
+            "One of the sides must be a series, but they are: " <>
+            "#{inspect(left)} (left-hand side) and #{inspect(right)} (right-hand side)."
+  end
+
+  @doc """
   Gets the implementation of a list of maybe dataframes or series.
   """
   def find_impl!(list) do

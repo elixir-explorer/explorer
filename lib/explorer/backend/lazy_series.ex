@@ -205,7 +205,7 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   # Implements all the comparison operations that
-  # accepts Series or number on the right-hand side.
+  # accepts Series or number on both sides.
   for op <- @comparison_operations do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right),
@@ -213,6 +213,13 @@ defmodule Explorer.Backend.LazySeries do
 
     def unquote(op)(%Series{} = left, value) do
       args = [lazy_series!(left), value]
+      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
+
+      Backend.Series.new(data, :boolean)
+    end
+
+    def unquote(op)(left, %Series{} = right) do
+      args = [left, lazy_series!(right)]
       data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, :boolean)
@@ -238,6 +245,15 @@ defmodule Explorer.Backend.LazySeries do
       value = with %Series{} <- value_or_series, do: lazy_series!(value_or_series)
 
       args = [lazy_series!(left), value]
+      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
+
+      Backend.Series.new(data, dtype)
+    end
+
+    def unquote(op)(left, %Series{} = right) when is_number(left) do
+      dtype = resolve_numeric_dtype([left, right])
+
+      args = [left, lazy_series!(right)]
       data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, dtype)
