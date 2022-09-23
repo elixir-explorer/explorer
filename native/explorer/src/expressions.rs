@@ -5,7 +5,7 @@
 // wrapped in an Elixir struct.
 
 use chrono::{NaiveDate, NaiveDateTime};
-use polars::prelude::{col, when, DataFrame, IntoLazy, LiteralValue};
+use polars::prelude::{col, when, DataFrame, IntoLazy, LiteralValue, SortOptions};
 use polars::prelude::{Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
@@ -313,14 +313,14 @@ pub fn expr_median(expr: ExExpr) -> ExExpr {
 pub fn expr_var(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
-    ExExpr::new(expr.var())
+    ExExpr::new(expr.var(1))
 }
 
 #[rustler::nif]
 pub fn expr_std(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
-    ExExpr::new(expr.std())
+    ExExpr::new(expr.std(1))
 }
 
 #[rustler::nif]
@@ -436,8 +436,13 @@ pub fn expr_sort(expr: ExExpr, reverse: bool) -> ExExpr {
 #[rustler::nif]
 pub fn expr_argsort(expr: ExExpr, reverse: bool) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
+    // TODO: check if we want nulls last
+    let opts = SortOptions {
+        descending: reverse,
+        nulls_last: false,
+    };
 
-    ExExpr::new(expr.arg_sort(reverse))
+    ExExpr::new(expr.arg_sort(opts))
 }
 
 #[rustler::nif]

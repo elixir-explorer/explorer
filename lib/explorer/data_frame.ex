@@ -3110,40 +3110,11 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    new_dtypes = names_with_dtypes_for_summarise(df, column_pairs)
-    new_names = for {name, _} <- new_dtypes, do: name
-
-    df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: []}
-
-    Shared.apply_impl(df, :summarise, [df_out, Map.new(column_pairs)])
-  end
-
-  defp names_with_dtypes_for_summarise(df, column_pairs) do
-    groups = for group <- df.groups, do: {group, df.dtypes[group]}
-
-    agg_pairs =
-      for {column_name, aggregations} <- column_pairs, agg <- aggregations do
-        name = "#{column_name}_#{agg}"
-
-        dtype =
-          case agg do
-            :median ->
-              :float
-
-            :mean ->
-              :float
-
-            agg when agg in [:count, :n_distinct] ->
-              :integer
-
-            _other ->
-              df.dtypes[column_name]
-          end
-
-        {name, dtype}
-      end
-
-    groups ++ agg_pairs
+    summarise_with(df, fn ldf ->
+      for {column_name, aggs} <- column_pairs,
+          agg <- aggs,
+          do: {column_name <> "_" <> Atom.to_string(agg), apply(Series, agg, [ldf[column_name]])}
+    end)
   end
 
   @doc """

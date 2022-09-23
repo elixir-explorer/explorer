@@ -128,8 +128,6 @@ defmodule Explorer.Backend.DataFrame do
 
   # Groups
 
-  @callback summarise(df, out_df :: df(), aggregations :: %{column_name() => [atom()]}) :: df
-
   @callback summarise_with(df, out_df :: df(), aggregations :: [{column_name(), lazy_series()}]) ::
               df
 

@@ -1229,6 +1229,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "from_ndjson/2" do
+    @tag :skip
     @tag :tmp_dir
     test "reads from file with default options", %{tmp_dir: tmp_dir} do
       ndjson_path = to_ndjson(tmp_dir)
@@ -1284,6 +1285,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "to_ndjson" do
+    @tag :skip
     @tag :tmp_dir
     test "writes to a file", %{tmp_dir: tmp_dir} do
       df =

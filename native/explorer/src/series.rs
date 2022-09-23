@@ -547,8 +547,8 @@ pub fn s_var(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
         | DataType::UInt16
         | DataType::Int32
         | DataType::UInt32
-        | DataType::Int64 => Ok(s.i64().unwrap().var().encode(env)),
-        DataType::Float32 | DataType::Float64 => Ok(s.f64().unwrap().var().encode(env)),
+        | DataType::Int64 => Ok(s.i64().unwrap().var(1).encode(env)),
+        DataType::Float32 | DataType::Float64 => Ok(s.f64().unwrap().var(1).encode(env)),
         dt => panic!("var/1 not implemented for {:?}", dt),
     }
 }
@@ -563,8 +563,8 @@ pub fn s_std(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
         | DataType::UInt16
         | DataType::Int32
         | DataType::UInt32
-        | DataType::Int64 => Ok(s.i64().unwrap().std().encode(env)),
-        DataType::Float32 | DataType::Float64 => Ok(s.f64().unwrap().std().encode(env)),
+        | DataType::Int64 => Ok(s.i64().unwrap().std(1).encode(env)),
+        DataType::Float32 | DataType::Float64 => Ok(s.f64().unwrap().std(1).encode(env)),
         dt => panic!("std/1 not implemented for {:?}", dt),
     }
 }
