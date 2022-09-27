@@ -73,7 +73,6 @@ rustler::init!(
         df_filter_with,
         df_get_columns,
         df_groups,
-        df_groupby_agg,
         df_groupby_agg_with,
         df_group_indices,
         df_head,

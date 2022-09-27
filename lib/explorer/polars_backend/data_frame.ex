@@ -494,27 +494,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Groups
 
   @impl true
-  def summarise(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, columns) do
-    {columns, columns_with_n_unique} =
-      Enum.map_reduce(columns, [], fn {column_name, values}, acc ->
-        operations = Enum.map(values, &agg_name_for_summarise/1)
-        acc = if "n_unique" in operations, do: [column_name | acc], else: acc
-
-        {{column_name, operations}, acc}
-      end)
-
-    renames =
-      Enum.map(columns_with_n_unique, fn column_name ->
-        {column_name <> "_n_unique", column_name <> "_n_distinct"}
-      end)
-
-    Shared.apply_dataframe(df, out_df, :df_groupby_agg, [groups, columns, renames])
-  end
-
-  defp agg_name_for_summarise(:n_distinct), do: "n_unique"
-  defp agg_name_for_summarise(other), do: Atom.to_string(other)
-
-  @impl true
   def summarise_with(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, column_pairs) do
     exprs =
       for {name, lazy_series} <- column_pairs do

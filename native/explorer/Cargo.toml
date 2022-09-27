@@ -25,7 +25,7 @@ thiserror = "1"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.23.0"
+version = "0.24.2"
 default-features = false
 features = [
   "checked_arithmetic",
@@ -39,6 +39,7 @@ features = [
   "lazy",
   "parquet",
   "performant",
+  "pivot",
   "rolling_window",
   "rows",
   "simd",
@@ -46,3 +47,6 @@ features = [
   "temporal",
   "to_dummies",
 ]
+
+[dependencies.polars-ops]
+version = "0.24.2"

@@ -17,12 +17,8 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
       assert %Expression{} = expr = Expression.to_expr(lazy)
 
       assert Expression.describe_filter_plan(df, expr) == """
-             FILTER [(col("col_a")) == (5i64)]
-             FROM
-             DATAFRAME(in-memory): ["col_a", "col_b"];
-             \tproject */2 columns\t|\tdetails: None;
-             \tselection: "None"
-
+               FILTER [(col("col_a")) == (5i64)] FROM
+                 DF ["col_a", "col_b"]; PROJECT */2 COLUMNS; SELECTION: "None"
              """
     end
 
@@ -74,12 +70,8 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
       assert %Expression{} = expr = Expression.to_expr(lazy)
 
       assert Expression.describe_filter_plan(df, expr) == """
-             FILTER [(col("col_a")) == (col("col_b"))]
-             FROM
-             DATAFRAME(in-memory): ["col_a", "col_b"];
-             \tproject */2 columns\t|\tdetails: None;
-             \tselection: "None"
-
+               FILTER [(col("col_a")) == (col("col_b"))] FROM
+                 DF ["col_a", "col_b"]; PROJECT */2 COLUMNS; SELECTION: "None"
              """
     end
   end
