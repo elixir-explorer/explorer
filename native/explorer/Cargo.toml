@@ -25,7 +25,7 @@ thiserror = "1"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.24.1"
+version = "0.24.2"
 default-features = false
 features = [
   "checked_arithmetic",
@@ -49,4 +49,4 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.24.1"
+version = "0.24.2"
