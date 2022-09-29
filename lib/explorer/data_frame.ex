@@ -3121,7 +3121,7 @@ defmodule Explorer.DataFrame do
   Summarise each group to a single row using a callback function.
 
   Implicitly ungroups.
-  The main difference between `summarise/2` and `summarise_with/2` is that the later
+  The main difference between `summarise/2` and `summarise_with/2` is that the latter
   accepts a function that can be used to perform complex operations.
   This is efficient because it doesn't need
   to create intermediate series representations to summarise.
