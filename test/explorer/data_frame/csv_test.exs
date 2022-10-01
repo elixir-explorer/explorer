@@ -9,6 +9,12 @@ defmodule Explorer.DataFrame.CSVTest do
   # https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.EPSILON
   @f64_epsilon 2.2204460492503131e-16
 
+  def tmp_file!(data) do
+    filename = System.tmp_dir!() |> Path.join("data.csv")
+    File.write!(filename, data)
+    filename
+  end
+
   @tag :focus
   test "read" do
     data = """
@@ -29,9 +35,7 @@ defmodule Explorer.DataFrame.CSVTest do
     "Aberdeen, Aberdeen City, UK",57.149651,-2.099075
     """
 
-    filename = System.tmp_dir!() |> Path.join("input.csv")
-    File.write!(filename, data)
-    frame = DF.from_csv!(filename)
+    frame = DF.from_csv!(tmp_file!(data))
 
     assert DF.n_rows(frame) == 14
     assert DF.n_columns(frame) == 3
@@ -50,5 +54,33 @@ defmodule Explorer.DataFrame.CSVTest do
 
     assert city[0] == "Elgin, Scotland, the UK"
     assert city[13] == "Aberdeen, Aberdeen City, UK"
+  end
+
+  # TODO: expose what is in Explorer.Backend.Series @valid_dtypes attributes, so that
+  # we ensure the tests remain up to date?
+
+  # NOTE: just a preliminary batch of data, we may want to add more than just one value,
+  # with all covered cases.
+  @valid_dtypes [
+    {:integer, "100", 100},
+    {:float, "2.3", 2.3},
+    {:boolean, "true", true},
+    {:string, "some string", "some string"},
+    {:date, "2022-12-01", ~D[2022-12-01]},
+    {:datetime, "2022-10-01T11:34:10+0000", ~U[2022-10-01 11:34:10Z]}
+    # Unsupported?
+    # :list
+  ]
+
+  describe "dtypes inference" do
+    Enum.each(@valid_dtypes, fn {type, csv_value, parsed_value} ->
+      @tag :focus
+      test "works for #{type}" do
+        data = "column\n#{unquote(csv_value)}"
+        frame = DF.from_csv!(tmp_file!(data))
+        # assert frame[0][0] == unquote(parsed_value)
+        assert frame[0].dtype == unquote(type)
+      end
+    end)
   end
 end
