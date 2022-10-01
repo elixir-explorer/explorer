@@ -67,7 +67,7 @@ defmodule Explorer.DataFrame.CSVTest do
     {:boolean, "true", true},
     {:string, "some string", "some string"},
     {:date, "2022-12-01", ~D[2022-12-01]},
-    {:datetime, "2022-10-01T11:34:10+0000", ~U[2022-10-01 11:34:10Z]}
+    {:datetime, "2022-10-01T11:34:10.123456", ~N[2022-10-01 11:34:10.123456]}
     # Unsupported?
     # :list
   ]
