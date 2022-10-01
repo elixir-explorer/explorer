@@ -15,7 +15,6 @@ defmodule Explorer.DataFrame.CSVTest do
     filename
   end
 
-  @tag :focus
   test "read" do
     data = """
     city,lat,lng
@@ -72,13 +71,19 @@ defmodule Explorer.DataFrame.CSVTest do
     # :list
   ]
 
-  describe "dtypes inference" do
+  describe "dtypes support" do
     Enum.each(@valid_dtypes, fn {type, csv_value, parsed_value} ->
-      @tag :focus
-      test "works for #{type}" do
+      test "conforms to requested dtype for #{type}" do
         data = "column\n#{unquote(csv_value)}"
-        frame = DF.from_csv!(tmp_file!(data))
-        # assert frame[0][0] == unquote(parsed_value)
+        frame = DF.from_csv!(tmp_file!(data), dtypes: [{"column", unquote(type)}])
+        assert frame[0][0] == unquote(Macro.escape(parsed_value))
+        assert frame[0].dtype == unquote(type)
+      end
+
+      test "infers requested dtype for #{type}" do
+        data = "column\n#{unquote(csv_value)}"
+        frame = DF.from_csv!(tmp_file!(data), parse_dates: true)
+        assert frame[0][0] == unquote(Macro.escape(parsed_value))
         assert frame[0].dtype == unquote(type)
       end
     end)
