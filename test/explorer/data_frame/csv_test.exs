@@ -1,10 +1,16 @@
 defmodule Explorer.DataFrame.CSVTest do
+  @moduledoc """
+  Integration tests, based on:
+  https://github.com/jorgecarleitao/arrow2/tree/main/src/io/csv/read
+  """
   use ExUnit.Case, async: true
+  alias Explorer.DataFrame, as: DF
+
+  # https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.EPSILON
+  @f64_epsilon 2.2204460492503131e-16
 
   @tag :focus
-  test "hello" do
-    # test data taken from arrow2
-    # https://github.com/jorgecarleitao/arrow2/tree/main/src/io/csv/read
+  test "read" do
     data = """
     city,lat,lng
     "Elgin, Scotland, the UK",57.653484,-3.335724
@@ -25,6 +31,24 @@ defmodule Explorer.DataFrame.CSVTest do
 
     filename = System.tmp_dir!() |> Path.join("input.csv")
     File.write!(filename, data)
-    frame = Explorer.DataFrame.from_csv!(filename)
+    frame = DF.from_csv!(filename)
+
+    assert DF.n_rows(frame) == 14
+    assert DF.n_columns(frame) == 3
+
+    assert frame.dtypes == %{
+             "city" => :string,
+             "lat" => :float,
+             "lng" => :float
+           }
+
+    assert_in_delta(57.653484, frame["lat"][0], @f64_epsilon)
+
+    city = frame["city"]
+    # TODO: write a meaningful test, but references are apparently changing
+    # assert city == frame[0]
+
+    assert city[0] == "Elgin, Scotland, the UK"
+    assert city[13] == "Aberdeen, Aberdeen City, UK"
   end
 end
