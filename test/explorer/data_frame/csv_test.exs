@@ -53,30 +53,46 @@ defmodule Explorer.DataFrame.CSVTest do
     assert city[13] == "Aberdeen, Aberdeen City, UK"
   end
 
-  describe "dtypes" do
-    [
-      {:integer, "100", 100},
-      {:float, "2.3", 2.3},
-      {:boolean, "true", true},
-      {:string, "some string", "some string"},
-      {:date, "2022-12-01", ~D[2022-12-01]},
-      {:datetime, "2022-10-01T11:34:10.123456", ~N[2022-10-01 11:34:10.123456]}
-      # :list (to be implemented)
-    ]
-    |> Enum.each(fn {type, csv_value, parsed_value} ->
-      test "supports explicit #{type} parsing" do
-        data = "column\n#{unquote(csv_value)}"
-        frame = DF.from_csv!(tmp_file!(data), dtypes: [{"column", unquote(type)}])
-        assert frame[0][0] == unquote(Macro.escape(parsed_value))
-        assert frame[0].dtype == unquote(type)
-      end
+  def assert_csv(type, csv_value, parsed_value, from_csv_options) do
+    data = "column\n#{csv_value}"
+    frame = DF.from_csv!(tmp_file!(data), from_csv_options)
+    assert frame[0][0] == parsed_value
+    assert frame[0].dtype == type
+  end
 
-      test "supports inferred #{type} parsing" do
-        data = "column\n#{unquote(csv_value)}"
-        frame = DF.from_csv!(tmp_file!(data), parse_dates: true)
-        assert frame[0][0] == unquote(Macro.escape(parsed_value))
-        assert frame[0].dtype == unquote(type)
-      end
-    end)
+  def assert_csv(type, csv_value, parsed_value) do
+    # with explicit dtype
+    assert_csv(type, csv_value, parsed_value, dtypes: [{"column", type}])
+    # with inferred dtype (date/datetime support is opt-in)
+    assert_csv(type, csv_value, parsed_value, parse_dates: true)
+  end
+
+  describe "dtypes" do
+    test "integer" do
+      assert_csv(:integer, "100", 100)
+    end
+
+    test "float" do
+      assert_csv(:float, "2.3", 2.3)
+    end
+
+    test "boolean" do
+      assert_csv(:boolean, "true", true)
+    end
+
+    test "string" do
+      assert_csv(:string, "some string", "some string")
+    end
+
+    test "date" do
+      assert_csv(:date, "2022-12-01", ~D[2022-12-01])
+    end
+
+    test "datetime" do
+      assert_csv(:datetime, "2022-10-01T11:34:10.123456", ~N[2022-10-01 11:34:10.123456])
+    end
+
+    @tag :skip
+    test "list"
   end
 end
