@@ -73,22 +73,28 @@ defmodule Explorer.DataFrame.CSVTest do
   describe "dtypes" do
     test "integer" do
       assert_csv(:integer, "100", 100)
+      assert_csv(:integer, "-101", -101)
     end
 
     test "float" do
       assert_csv(:float, "2.3", 2.3)
+      assert_csv(:float, "57.653484", 57.653484)
+      assert_csv(:float, "-1.772232", -1.772232)
     end
 
     test "boolean" do
       assert_csv(:boolean, "true", true)
+      assert_csv(:boolean, "false", false)
     end
 
     test "string" do
       assert_csv(:string, "some string", "some string")
+      assert_csv(:string, "éphémère", "éphémère")
     end
 
     test "date" do
       assert_csv(:date, "2022-12-01", ~D[2022-12-01])
+      assert_csv(:date, "1960-01-31", ~D[1960-01-31])
     end
 
     test "datetime" do
