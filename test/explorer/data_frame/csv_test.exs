@@ -100,8 +100,5 @@ defmodule Explorer.DataFrame.CSVTest do
     test "datetime" do
       assert_csv(:datetime, "2022-10-01T11:34:10.123456", ~N[2022-10-01 11:34:10.123456])
     end
-
-    @tag :skip
-    test "list"
   end
 end
