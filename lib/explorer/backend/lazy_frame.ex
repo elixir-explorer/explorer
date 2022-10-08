@@ -84,11 +84,10 @@ defmodule Explorer.Backend.LazyFrame do
     @impl true
     def unquote(fun)(unquote_splicing(args)) do
       raise """
-      cannot perform operation on an Explorer.Backend.LazyFrame.
+      cannot perform operation #{unquote(fun)} on Explorer.Backend.LazyFrame.
 
       The LazyFrame is available inside filter_with, mutate_with, and \
-      similar to build query expressions and you cannot perform any \
-      operation on them except accessing its series
+      similar and they support only a limited subset of the Series API
       """
     end
   end
