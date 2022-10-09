@@ -148,6 +148,7 @@ rustler::init!(
         expr_quotient,
         expr_remainder,
         // slice and dice expressions
+        expr_concat,
         expr_coalesce,
         // agg expressions
         expr_sum,

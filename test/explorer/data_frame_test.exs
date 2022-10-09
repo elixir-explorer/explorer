@@ -541,6 +541,32 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "adds some columns with slice and dice functions" do
+      df = DF.new(a: [1, nil, 3], b: [20.0, 40.0, 60.0])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            c: Series.concat(ldf["a"], ldf["b"]) |> Series.slice(1, 3),
+            d: Series.coalesce(ldf["a"], ldf["b"])
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, nil, 3],
+               b: [20.0, 40.0, 60.0],
+               c: [nil, 3, 20.0],
+               d: [1.0, 40.0, 3.0]
+             }
+
+      assert DF.dtypes(df1) == %{
+               "a" => :integer,
+               "b" => :float,
+               "c" => :float,
+               "d" => :float
+             }
+    end
+
     test "adds some columns with window functions" do
       df = DF.new(a: Enum.to_list(1..10))
 
