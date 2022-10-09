@@ -368,6 +368,14 @@ pub fn expr_last(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_concat(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr: Expr = left.resource.0.clone();
+    let right_expr: Expr = right.resource.0.clone();
+
+    ExExpr::new(left_expr.append(right_expr, false))
+}
+
+#[rustler::nif]
 pub fn expr_coalesce(left: ExExpr, right: ExExpr) -> ExExpr {
     let predicate: Expr = left.resource.0.clone().is_not_null();
     let left_expr: Expr = left.resource.0.clone();

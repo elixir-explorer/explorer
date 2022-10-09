@@ -36,6 +36,7 @@ defmodule Explorer.Backend.LazySeries do
     pow: 2,
     fill_missing: 2,
     fill_missing_with_value: 2,
+    concat: 2,
     coalesce: 2,
     cast: 2,
     # Window functions
@@ -332,6 +333,21 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, dtype)
   end
 
+  @impl true
+  def concat(%Series{} = left, %Series{} = right) do
+    args = [lazy_series!(left), lazy_series!(right)]
+    data = new(:concat, args, aggregations?(args), window_functions?(args))
+
+    dtype =
+      if left.dtype in [:float, :integer] do
+        resolve_numeric_dtype([left, right])
+      else
+        left.dtype
+      end
+
+    Backend.Series.new(data, dtype)
+  end
+
   defp dtype_for_agg_operation(op, _) when op in [:count, :n_distinct], do: :integer
 
   defp dtype_for_agg_operation(op, series) when op in [:first, :last, :sum, :min, :max],
@@ -449,7 +465,6 @@ defmodule Explorer.Backend.LazySeries do
   # The following functions are not implemented yet and should raise if used.
   funs = [
     memtype: 1,
-    concat: 2,
     fetch!: 2,
     mask: 2,
     from_list: 2,
