@@ -568,7 +568,10 @@ defmodule Explorer.DataFrameTest do
         DF.mutate_with(df, fn ldf ->
           [
             c: Series.concat(ldf["a"], ldf["b"]) |> Series.slice(1, 3),
-            d: Series.coalesce(ldf["a"], ldf["b"])
+            d: Series.coalesce(ldf["a"], ldf["b"]),
+            e:
+              Series.concat(ldf["a"], Series.from_list([20.0, 40.0, 60.0])) |> Series.slice(1, 3),
+            f: Series.coalesce(ldf["a"], Series.from_list([20.0, 40.0, 60.0]))
           ]
         end)
 
@@ -576,14 +579,18 @@ defmodule Explorer.DataFrameTest do
                a: [1, nil, 3],
                b: [20.0, 40.0, 60.0],
                c: [nil, 3, 20.0],
-               d: [1.0, 40.0, 3.0]
+               d: [1.0, 40.0, 3.0],
+               e: [nil, 3, 20.0],
+               f: [1.0, 40.0, 3.0]
              }
 
       assert DF.dtypes(df1) == %{
                "a" => :integer,
                "b" => :float,
                "c" => :float,
-               "d" => :float
+               "d" => :float,
+               "e" => :float,
+               "f" => :float
              }
     end
 

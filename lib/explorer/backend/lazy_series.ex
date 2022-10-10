@@ -320,7 +320,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def coalesce(%Series{} = left, %Series{} = right) do
-    args = [lazy_series!(left), lazy_series!(right)]
+    args = [lazy_series!(left), series_or_lazy_series!(right)]
     data = new(:coalesce, args, aggregations?(args), window_functions?(args))
 
     dtype =
@@ -335,7 +335,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def concat(%Series{} = left, %Series{} = right) do
-    args = [lazy_series!(left), lazy_series!(right)]
+    args = [lazy_series!(left), series_or_lazy_series!(right)]
     data = new(:concat, args, aggregations?(args), window_functions?(args))
 
     dtype =
