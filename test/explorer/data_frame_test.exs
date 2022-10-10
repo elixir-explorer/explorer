@@ -42,6 +42,17 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df3, atom_keys: true) == %{a: [], b: []}
     end
 
+    test "filter a column that has values equal to a series" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [5.3, 2.4, 1.0, 0.2, 6.1, 2.1, 2.2])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          Series.equal(ldf["a"], Series.from_list([0, 2, 3, 0, 0, 0, 0]))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 3], b: [2.4, 1.0]}
+    end
+
     test "filter a column that has values equal to the other column" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
@@ -97,8 +108,9 @@ defmodule Explorer.DataFrameTest do
 
           # a > 5 or a <= 2 and b != 9
           Series.greater(a, 5)
-          |> Series.or(Series.less_equal(a, 2))
+          |> Series.or(Series.less_equal(a, 3))
           |> Series.and(Series.not_equal(b, 9))
+          |> Series.and(Series.from_list([true, true, false, true, true, true, true]))
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 6], b: [8, 4]}
