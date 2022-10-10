@@ -42,6 +42,17 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df3, atom_keys: true) == %{a: [], b: []}
     end
 
+    test "filter a column that has values equal to a series" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [5.3, 2.4, 1.0, 0.2, 6.1, 2.1, 2.2])
+
+      df1 =
+        DF.filter_with(df, fn ldf ->
+          Series.equal(ldf["a"], Series.from_list([0, 2, 3, 0, 0, 0, 0]))
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 3], b: [2.4, 1.0]}
+    end
+
     test "filter a column that has values equal to the other column" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
@@ -97,8 +108,9 @@ defmodule Explorer.DataFrameTest do
 
           # a > 5 or a <= 2 and b != 9
           Series.greater(a, 5)
-          |> Series.or(Series.less_equal(a, 2))
+          |> Series.or(Series.less_equal(a, 3))
           |> Series.and(Series.not_equal(b, 9))
+          |> Series.and(Series.from_list([true, true, false, true, true, true, true]))
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 6], b: [8, 4]}
@@ -456,8 +468,8 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "adds some columns with basic operations" do
-      df = DF.new(a: [1, 2, 3], b: [20, 40, 60], c: [10, 0, 8])
+    test "adds some columns with arithmetic operations" do
+      df = DF.new(a: [1, 2, 3], b: [20, 40, 60], c: [10, 0, 8], d: [3, 2, 1])
 
       df1 =
         DF.mutate_with(df, fn ldf ->
@@ -466,8 +478,10 @@ defmodule Explorer.DataFrameTest do
             calc2: Series.add(ldf["a"], ldf["b"]),
             calc3: Series.subtract(ldf["b"], ldf["a"]),
             calc4: Series.divide(ldf["b"], ldf["c"]),
-            calc5: Series.quotient(ldf["b"], ldf["c"]),
-            calc6: Series.remainder(ldf["b"], ldf["c"])
+            calc5: Series.pow(ldf["a"], ldf["d"]),
+            calc6: Series.quotient(ldf["b"], ldf["c"]),
+            calc7: Series.remainder(ldf["b"], ldf["c"]),
+            calc8: Series.add(ldf["a"], Series.from_list([20, 40, 60]))
           ]
         end)
 
@@ -475,24 +489,30 @@ defmodule Explorer.DataFrameTest do
                a: [1, 2, 3],
                b: [20, 40, 60],
                c: [10, 0, 8],
+               d: [3, 2, 1],
                calc1: [0.2, 0.4, 0.6],
                calc2: [21, 42, 63],
                calc3: [19, 38, 57],
                calc4: [2.0, :infinity, 7.5],
-               calc5: [2, nil, 7],
-               calc6: [0, nil, 4]
+               calc5: [1, 4, 3],
+               calc6: [2, nil, 7],
+               calc7: [0, nil, 4],
+               calc8: [21, 42, 63]
              }
 
       assert DF.dtypes(df1) == %{
                "a" => :integer,
                "b" => :integer,
                "c" => :integer,
+               "d" => :integer,
                "calc1" => :float,
                "calc2" => :integer,
                "calc3" => :integer,
                "calc4" => :float,
                "calc5" => :integer,
-               "calc6" => :integer
+               "calc6" => :integer,
+               "calc7" => :integer,
+               "calc8" => :integer
              }
     end
 
@@ -548,7 +568,10 @@ defmodule Explorer.DataFrameTest do
         DF.mutate_with(df, fn ldf ->
           [
             c: Series.concat(ldf["a"], ldf["b"]) |> Series.slice(1, 3),
-            d: Series.coalesce(ldf["a"], ldf["b"])
+            d: Series.coalesce(ldf["a"], ldf["b"]),
+            e:
+              Series.concat(ldf["a"], Series.from_list([20.0, 40.0, 60.0])) |> Series.slice(1, 3),
+            f: Series.coalesce(ldf["a"], Series.from_list([20.0, 40.0, 60.0]))
           ]
         end)
 
@@ -556,14 +579,18 @@ defmodule Explorer.DataFrameTest do
                a: [1, nil, 3],
                b: [20.0, 40.0, 60.0],
                c: [nil, 3, 20.0],
-               d: [1.0, 40.0, 3.0]
+               d: [1.0, 40.0, 3.0],
+               e: [nil, 3, 20.0],
+               f: [1.0, 40.0, 3.0]
              }
 
       assert DF.dtypes(df1) == %{
                "a" => :integer,
                "b" => :float,
                "c" => :float,
-               "d" => :float
+               "d" => :float,
+               "e" => :float,
+               "f" => :float
              }
     end
 

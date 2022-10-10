@@ -6,6 +6,7 @@ defmodule Explorer.PolarsBackend.Expression do
   alias Explorer.DataFrame
   alias Explorer.Backend.LazySeries
   alias Explorer.PolarsBackend.Native
+  alias Explorer.PolarsBackend.Series, as: PolarsSeries
 
   defstruct resource: nil, reference: nil
 
@@ -81,6 +82,7 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(number) when is_float(number), do: Native.expr_float(number)
   def to_expr(%Date{} = date), do: Native.expr_date(date)
   def to_expr(%NaiveDateTime{} = datetime), do: Native.expr_datetime(datetime)
+  def to_expr(%PolarsSeries{} = polars_series), do: Native.expr_series(polars_series)
 
   def alias_expr(%__MODULE__{} = expr, alias_name) when is_binary(alias_name) do
     Native.expr_alias(expr, alias_name)

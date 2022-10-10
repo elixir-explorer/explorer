@@ -6,11 +6,11 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{col, when, DataFrame, IntoLazy, LiteralValue, SortOptions};
-use polars::prelude::{Expr, Literal};
+use polars::prelude::{Expr, Literal, Series};
 
 use crate::datatypes::{ExDate, ExDateTime};
 use crate::series::{cast_str_to_dtype, rolling_opts};
-use crate::{ExDataFrame, ExExpr};
+use crate::{ExDataFrame, ExExpr, ExSeries};
 
 #[rustler::nif]
 pub fn expr_integer(number: i64) -> ExExpr {
@@ -47,6 +47,13 @@ pub fn expr_date(date: ExDate) -> ExExpr {
 pub fn expr_datetime(datetime: ExDateTime) -> ExExpr {
     let naive_datetime = NaiveDateTime::from(datetime);
     let expr = naive_datetime.lit();
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_series(series: ExSeries) -> ExExpr {
+    let series: Series = series.resource.0.clone();
+    let expr = series.lit();
     ExExpr::new(expr)
 }
 

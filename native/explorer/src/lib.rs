@@ -115,6 +115,7 @@ rustler::init!(
         expr_float,
         expr_integer,
         expr_string,
+        expr_series,
         expr_slice,
         expr_head,
         expr_tail,

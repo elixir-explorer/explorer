@@ -35,20 +35,4 @@ defmodule Explorer.Backend.LazySeriesTest do
              """
              |> String.trim_trailing()
   end
-
-  test "validate lazy series on both sides" do
-    col = LazySeries.new(:column, ["col_a"])
-    add = LazySeries.new(:add, [col, 5])
-
-    series = Backend.Series.new(add, :integer)
-
-    polars_series = Explorer.Series.from_list([1, 2, 3])
-
-    msg =
-      "expecting a LazySeries, but instead got #Explorer.Series<\n  integer[3]\n  [1, 2, 3]\n>"
-
-    assert_raise ArgumentError, msg, fn ->
-      LazySeries.subtract(series, polars_series)
-    end
-  end
 end

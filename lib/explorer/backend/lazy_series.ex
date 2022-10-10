@@ -210,7 +210,7 @@ defmodule Explorer.Backend.LazySeries do
   for op <- @comparison_operations do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right),
-      do: unquote(op)(left, lazy_series!(right))
+      do: unquote(op)(left, series_or_lazy_series!(right))
 
     def unquote(op)(%Series{} = left, value) do
       args = [lazy_series!(left), value]
@@ -231,7 +231,7 @@ defmodule Explorer.Backend.LazySeries do
   for op <- [:binary_and, :binary_or] do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right) do
-      args = [lazy_series!(left), lazy_series!(right)]
+      args = [lazy_series!(left), series_or_lazy_series!(right)]
       data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, :boolean)
@@ -243,7 +243,7 @@ defmodule Explorer.Backend.LazySeries do
     def unquote(op)(%Series{} = left, value_or_series) do
       dtype = resolve_numeric_dtype([left, value_or_series])
 
-      value = with %Series{} <- value_or_series, do: lazy_series!(value_or_series)
+      value = with %Series{} <- value_or_series, do: series_or_lazy_series!(value_or_series)
 
       args = [lazy_series!(left), value]
       data = new(unquote(op), args, aggregations?(args), window_functions?(args))
@@ -320,7 +320,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def coalesce(%Series{} = left, %Series{} = right) do
-    args = [lazy_series!(left), lazy_series!(right)]
+    args = [lazy_series!(left), series_or_lazy_series!(right)]
     data = new(:coalesce, args, aggregations?(args), window_functions?(args))
 
     dtype =
@@ -335,7 +335,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def concat(%Series{} = left, %Series{} = right) do
-    args = [lazy_series!(left), lazy_series!(right)]
+    args = [lazy_series!(left), series_or_lazy_series!(right)]
     data = new(:concat, args, aggregations?(args), window_functions?(args))
 
     dtype =
@@ -383,6 +383,8 @@ defmodule Explorer.Backend.LazySeries do
         raise ArgumentError, "expecting a LazySeries, but instead got #{inspect(series)}"
     end
   end
+
+  defp series_or_lazy_series!(%Series{data: data}), do: data
 
   defp aggregations?(args) do
     Enum.any?(args, fn

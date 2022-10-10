@@ -58,6 +58,18 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
       assert %Expression{} = Expression.to_expr(lazy)
     end
 
+    test "with series" do
+      lazy = %LazySeries{
+        op: :eq,
+        args: [
+          %LazySeries{op: :column, args: ["col_b"]},
+          Explorer.Series.from_list([1, 2, 3]).data
+        ]
+      }
+
+      assert %Expression{} = Expression.to_expr(lazy)
+    end
+
     test "with another column", %{df: df} do
       lazy = %LazySeries{
         op: :eq,
