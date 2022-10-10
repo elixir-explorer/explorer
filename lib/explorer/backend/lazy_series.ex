@@ -243,7 +243,7 @@ defmodule Explorer.Backend.LazySeries do
     def unquote(op)(%Series{} = left, value_or_series) do
       dtype = resolve_numeric_dtype([left, value_or_series])
 
-      value = with %Series{} <- value_or_series, do: lazy_series!(value_or_series)
+      value = with %Series{} <- value_or_series, do: series_or_lazy_series!(value_or_series)
 
       args = [lazy_series!(left), value]
       data = new(unquote(op), args, aggregations?(args), window_functions?(args))
@@ -383,6 +383,8 @@ defmodule Explorer.Backend.LazySeries do
         raise ArgumentError, "expecting a LazySeries, but instead got #{inspect(series)}"
     end
   end
+
+  defp series_or_lazy_series!(%Series{data: data}), do: data
 
   defp aggregations?(args) do
     Enum.any?(args, fn

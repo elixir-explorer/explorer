@@ -456,8 +456,8 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "adds some columns with basic operations" do
-      df = DF.new(a: [1, 2, 3], b: [20, 40, 60], c: [10, 0, 8])
+    test "adds some columns with arithmetic operations" do
+      df = DF.new(a: [1, 2, 3], b: [20, 40, 60], c: [10, 0, 8], d: [3, 2, 1])
 
       df1 =
         DF.mutate_with(df, fn ldf ->
@@ -466,8 +466,10 @@ defmodule Explorer.DataFrameTest do
             calc2: Series.add(ldf["a"], ldf["b"]),
             calc3: Series.subtract(ldf["b"], ldf["a"]),
             calc4: Series.divide(ldf["b"], ldf["c"]),
-            calc5: Series.quotient(ldf["b"], ldf["c"]),
-            calc6: Series.remainder(ldf["b"], ldf["c"])
+            calc5: Series.pow(ldf["a"], ldf["d"]),
+            calc6: Series.quotient(ldf["b"], ldf["c"]),
+            calc7: Series.remainder(ldf["b"], ldf["c"]),
+            calc8: Series.add(ldf["a"], Series.from_list([20, 40, 60]))
           ]
         end)
 
@@ -475,24 +477,30 @@ defmodule Explorer.DataFrameTest do
                a: [1, 2, 3],
                b: [20, 40, 60],
                c: [10, 0, 8],
+               d: [3, 2, 1],
                calc1: [0.2, 0.4, 0.6],
                calc2: [21, 42, 63],
                calc3: [19, 38, 57],
                calc4: [2.0, :infinity, 7.5],
-               calc5: [2, nil, 7],
-               calc6: [0, nil, 4]
+               calc5: [1, 4, 3],
+               calc6: [2, nil, 7],
+               calc7: [0, nil, 4],
+               calc8: [21, 42, 63]
              }
 
       assert DF.dtypes(df1) == %{
                "a" => :integer,
                "b" => :integer,
                "c" => :integer,
+               "d" => :integer,
                "calc1" => :float,
                "calc2" => :integer,
                "calc3" => :integer,
                "calc4" => :float,
                "calc5" => :integer,
-               "calc6" => :integer
+               "calc6" => :integer,
+               "calc7" => :integer,
+               "calc8" => :integer
              }
     end
 
