@@ -112,6 +112,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_float(_number), do: err()
   def expr_integer(_number), do: err()
   def expr_string(_string), do: err()
+  def expr_series(_series), do: err()
   def expr_describe_filter_plan(_df, _expr), do: err()
   def expr_alias(_ex_expr, _alias_name), do: err()
 
