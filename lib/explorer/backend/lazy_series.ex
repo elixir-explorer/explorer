@@ -240,21 +240,10 @@ defmodule Explorer.Backend.LazySeries do
 
   for op <- @arithmetic_operations do
     @impl true
-    def unquote(op)(%Series{} = left, value_or_series) do
-      dtype = resolve_numeric_dtype([left, value_or_series])
-
-      value = with %Series{} <- value_or_series, do: series_or_lazy_series!(value_or_series)
-
-      args = [lazy_series!(left), value]
-      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
-
-      Backend.Series.new(data, dtype)
-    end
-
-    def unquote(op)(left, %Series{} = right) when is_number(left) do
+    def unquote(op)(left, right) do
       dtype = resolve_numeric_dtype([left, right])
 
-      args = [left, lazy_series!(right)]
+      args = [data!(left), data!(right)]
       data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, dtype)
@@ -385,6 +374,9 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   defp series_or_lazy_series!(%Series{data: data}), do: data
+
+  defp data!(%Series{data: data}), do: data
+  defp data!(value), do: value
 
   defp aggregations?(args) do
     Enum.any?(args, fn

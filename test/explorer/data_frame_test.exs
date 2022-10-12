@@ -481,7 +481,8 @@ defmodule Explorer.DataFrameTest do
             calc5: Series.pow(ldf["a"], ldf["d"]),
             calc6: Series.quotient(ldf["b"], ldf["c"]),
             calc7: Series.remainder(ldf["b"], ldf["c"]),
-            calc8: Series.add(ldf["a"], Series.from_list([20, 40, 60]))
+            calc8: Series.add(ldf["a"], Series.from_list([20, 40, 60])),
+            calc9: Series.add(Series.from_list([20, 40, 60]), ldf["a"])
           ]
         end)
 
@@ -497,7 +498,8 @@ defmodule Explorer.DataFrameTest do
                calc5: [1, 4, 3],
                calc6: [2, nil, 7],
                calc7: [0, nil, 4],
-               calc8: [21, 42, 63]
+               calc8: [21, 42, 63],
+               calc9: [21, 42, 63]
              }
 
       assert DF.dtypes(df1) == %{
@@ -512,7 +514,8 @@ defmodule Explorer.DataFrameTest do
                "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer,
-               "calc8" => :integer
+               "calc8" => :integer,
+               "calc9" => :integer
              }
     end
 

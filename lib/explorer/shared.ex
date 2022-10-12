@@ -2,6 +2,8 @@ defmodule Explorer.Shared do
   # A collection of **private** helpers shared in Explorer.
   @moduledoc false
 
+  alias Explorer.Backend.LazySeries
+
   @doc """
   All supported dtypes.
   """
@@ -50,6 +52,13 @@ defmodule Explorer.Shared do
   One important note is that one of the sides must be a series. Otherwise, this
   function raises.
   """
+
+  def apply_binary_op_impl(fun, %{data: _} = left, %{data: _} = right) do
+    impl = impl!(left, right)
+
+    apply(impl, fun, [left, right])
+  end
+
   def apply_binary_op_impl(fun, %{data: _} = left, right) do
     impl = impl!(left)
 
@@ -78,6 +87,9 @@ defmodule Explorer.Shared do
       _, acc -> acc
     end)
   end
+
+  defp pick_struct(LazySeries, _), do: LazySeries
+  defp pick_struct(_, LazySeries), do: LazySeries
 
   defp pick_struct(struct, struct), do: struct
 
