@@ -83,8 +83,7 @@ defmodule Explorer.Shared do
 
   defp pick_struct(struct1, struct2) do
     raise "cannot invoke Explorer function because it relies on two incompatible implementations: " <>
-            "#{inspect(struct1)} and #{inspect(struct2)}. You may need to call Explorer.backend_transfer/1 " <>
-            "(or Explorer.backend_copy/1) on one or both of them to transfer them to a common implementation"
+            "#{inspect(struct1)} and #{inspect(struct2)}"
   end
 
   @doc """
