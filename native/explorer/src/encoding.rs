@@ -138,10 +138,11 @@ fn naive_datetime_struct_keys(env: Env) -> [NIF_TERM; 9] {
 }
 
 #[inline]
-fn time_unit_to_factor(time_unit: TimeUnit) -> i64 {
+fn time_unit_to_factor(time_unit: TimeUnit) -> f64 {
     match time_unit {
-        TimeUnit::Milliseconds => 1000,
-        TimeUnit::Microseconds => 1,
+        TimeUnit::Milliseconds => 1000.0,
+        TimeUnit::Microseconds => 1.0,
+        TimeUnit::Nanoseconds => 0.001,
         _ => unreachable!(),
     }
 }
@@ -154,7 +155,7 @@ fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Term {
     let factor = time_unit_to_factor(time_unit);
 
     unsafe_encode_datetime!(
-        v * factor,
+        (v as f64 * factor) as i64,
         naive_datetime_struct_keys,
         calendar_iso_module,
         naive_datetime_module,
@@ -174,7 +175,7 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
         s.datetime().unwrap().into_iter().map(|option| option
             .map(|v| {
                 unsafe_encode_datetime!(
-                    v * factor,
+                    (v as f64 * factor) as i64,
                     naive_datetime_struct_keys,
                     calendar_iso_module,
                     naive_datetime_module,

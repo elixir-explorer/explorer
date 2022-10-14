@@ -69,8 +69,9 @@ fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
         "i64" => Ok(DataType::Int64),
         "bool" => Ok(DataType::Boolean),
         "date" => Ok(DataType::Date),
-        "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
         "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
+        "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
+        "datetime[ns]" => Ok(DataType::Datetime(TimeUnit::Nanoseconds, None)),
         _ => Err(ExplorerError::Internal("Unrecognised datatype".into())),
     }
 }
