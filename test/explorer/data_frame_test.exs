@@ -468,21 +468,177 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "adds some columns with arithmetic operations" do
+    test "adds some columns with arithmetic operations on (lazy series, number)" do
+      df = DF.new(a: [1, 2, 4])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            calc1: Series.add(ldf["a"], 2),
+            calc2: Series.subtract(ldf["a"], 2),
+            calc3: Series.multiply(ldf["a"], 2),
+            calc4: Series.divide(ldf["a"], 2),
+            calc5: Series.pow(ldf["a"], 2),
+            calc6: Series.quotient(ldf["a"], 2),
+            calc7: Series.remainder(ldf["a"], 2)
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 4],
+               calc1: [3, 4, 6],
+               calc2: [-1, 0, 2],
+               calc3: [2, 4, 8],
+               calc4: [0.5, 1.0, 2.0],
+               calc5: [1.0, 4.0, 16.0],
+               calc6: [0, 1, 2],
+               calc7: [1, 0, 0]
+             }
+
+      assert DF.dtypes(df1) == %{
+               "a" => :integer,
+               "calc1" => :integer,
+               "calc2" => :integer,
+               "calc3" => :integer,
+               "calc4" => :float,
+               "calc5" => :integer,
+               "calc6" => :integer,
+               "calc7" => :integer
+             }
+    end
+
+    test "adds some columns with arithmetic operations on (number, lazy series)" do
+      df = DF.new(a: [1, 2, 4])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            calc1: Series.add(2, ldf["a"]),
+            calc2: Series.subtract(2, ldf["a"]),
+            calc3: Series.multiply(2, ldf["a"]),
+            calc4: Series.divide(2, ldf["a"]),
+            # calc5: Series.pow(2, ldf["a"]),
+            calc6: Series.quotient(2, ldf["a"]),
+            calc7: Series.remainder(2, ldf["a"])
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 4],
+               calc1: [3, 4, 6],
+               calc2: [1, 0, -2],
+               calc3: [2, 4, 8],
+               calc4: [2.0, 1.0, 0.5],
+               #  calc5: [2.0, 4.0, 16.0],
+               calc6: [2, 1, 0],
+               calc7: [0, 0, 2]
+             }
+
+      assert DF.dtypes(df1) == %{
+               "a" => :integer,
+               "calc1" => :integer,
+               "calc2" => :integer,
+               "calc3" => :integer,
+               "calc4" => :float,
+               #  "calc5" => :integer,
+               "calc6" => :integer,
+               "calc7" => :integer
+             }
+    end
+
+    test "adds some columns with arithmetic operations on (lazy series, series)" do
+      df = DF.new(a: [1, 2, 4])
+      series = Explorer.Series.from_list([2, 1, 2])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            calc1: Series.add(ldf["a"], series),
+            calc2: Series.subtract(ldf["a"], series),
+            calc3: Series.multiply(ldf["a"], series),
+            calc4: Series.divide(ldf["a"], series),
+            calc5: Series.pow(ldf["a"], series),
+            calc6: Series.quotient(ldf["a"], series),
+            calc7: Series.remainder(ldf["a"], series)
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 4],
+               calc1: [3, 3, 6],
+               calc2: [-1, 1, 2],
+               calc3: [2, 2, 8],
+               calc4: [0.5, 2.0, 2.0],
+               calc5: [1.0, 2.0, 16.0],
+               calc6: [0, 2, 2],
+               calc7: [1, 0, 0]
+             }
+
+      assert DF.dtypes(df1) == %{
+               "a" => :integer,
+               "calc1" => :integer,
+               "calc2" => :integer,
+               "calc3" => :integer,
+               "calc4" => :float,
+               "calc5" => :integer,
+               "calc6" => :integer,
+               "calc7" => :integer
+             }
+    end
+
+    test "adds some columns with arithmetic operations on (series, lazy series)" do
+      df = DF.new(a: [2, 1, 2])
+      series = Explorer.Series.from_list([1, 2, 4])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            calc1: Series.add(series, ldf["a"]),
+            calc2: Series.subtract(series, ldf["a"]),
+            calc3: Series.multiply(series, ldf["a"]),
+            calc4: Series.divide(series, ldf["a"]),
+            calc5: Series.pow(series, ldf["a"]),
+            calc6: Series.quotient(series, ldf["a"]),
+            calc7: Series.remainder(series, ldf["a"])
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [2, 1, 2],
+               calc1: [3, 3, 6],
+               calc2: [-1, 1, 2],
+               calc3: [2, 2, 8],
+               calc4: [0.5, 2.0, 2.0],
+               calc5: [1.0, 2.0, 16.0],
+               calc6: [0, 2, 2],
+               calc7: [1, 0, 0]
+             }
+
+      assert DF.dtypes(df1) == %{
+               "a" => :integer,
+               "calc1" => :integer,
+               "calc2" => :integer,
+               "calc3" => :integer,
+               "calc4" => :float,
+               "calc5" => :integer,
+               "calc6" => :integer,
+               "calc7" => :integer
+             }
+    end
+
+    test "adds some columns with arithmetic operations on (lazy series, lazy series)" do
       df = DF.new(a: [1, 2, 3], b: [20, 40, 60], c: [10, 0, 8], d: [3, 2, 1])
 
       df1 =
         DF.mutate_with(df, fn ldf ->
           [
-            calc1: Series.divide(ldf["a"], 10) |> Series.multiply(2),
-            calc2: Series.add(ldf["a"], ldf["b"]),
-            calc3: Series.subtract(ldf["b"], ldf["a"]),
+            calc1: Series.add(ldf["a"], ldf["b"]),
+            calc2: Series.subtract(ldf["b"], ldf["a"]),
+            calc3: Series.multiply(ldf["a"], ldf["d"]),
             calc4: Series.divide(ldf["b"], ldf["c"]),
             calc5: Series.pow(ldf["a"], ldf["d"]),
             calc6: Series.quotient(ldf["b"], ldf["c"]),
-            calc7: Series.remainder(ldf["b"], ldf["c"]),
-            calc8: Series.add(ldf["a"], Series.from_list([20, 40, 60])),
-            calc9: Series.add(Series.from_list([20, 40, 60]), ldf["a"])
+            calc7: Series.remainder(ldf["b"], ldf["c"])
           ]
         end)
 
@@ -491,15 +647,13 @@ defmodule Explorer.DataFrameTest do
                b: [20, 40, 60],
                c: [10, 0, 8],
                d: [3, 2, 1],
-               calc1: [0.2, 0.4, 0.6],
-               calc2: [21, 42, 63],
-               calc3: [19, 38, 57],
+               calc1: [21, 42, 63],
+               calc2: [19, 38, 57],
+               calc3: [3, 4, 3],
                calc4: [2.0, :infinity, 7.5],
-               calc5: [1, 4, 3],
+               calc5: [1.0, 4.0, 3.0],
                calc6: [2, nil, 7],
-               calc7: [0, nil, 4],
-               calc8: [21, 42, 63],
-               calc9: [21, 42, 63]
+               calc7: [0, nil, 4]
              }
 
       assert DF.dtypes(df1) == %{
@@ -507,15 +661,13 @@ defmodule Explorer.DataFrameTest do
                "b" => :integer,
                "c" => :integer,
                "d" => :integer,
-               "calc1" => :float,
+               "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
                "calc4" => :float,
                "calc5" => :integer,
                "calc6" => :integer,
-               "calc7" => :integer,
-               "calc8" => :integer,
-               "calc9" => :integer
+               "calc7" => :integer
              }
     end
 
