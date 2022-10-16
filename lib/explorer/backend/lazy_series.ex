@@ -243,7 +243,7 @@ defmodule Explorer.Backend.LazySeries do
     def unquote(op)(left, right) do
       dtype = resolve_numeric_dtype([left, right])
 
-      args = has_lazy_series!([left, right])
+      args = [data!(left), data!(right)]
       data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, dtype)
@@ -374,24 +374,6 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   defp series_or_lazy_series!(%Series{} = series), do: data!(series)
-
-  defp has_lazy_series!(items) do
-    has_lazy_series =
-      items
-      |> Enum.any?(fn
-        %Series{data: %__MODULE__{}} -> true
-        _ -> false
-      end)
-
-    case has_lazy_series do
-      true ->
-        items |> Enum.map(&data!/1)
-
-      false ->
-        raise ArgumentError,
-              "expecting at least one LazySeries, but instead got #{inspect(items)}"
-    end
-  end
 
   defp data!(%Series{data: data}), do: data
   defp data!(value), do: value
