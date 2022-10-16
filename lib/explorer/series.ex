@@ -1421,13 +1421,13 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec quotient(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
   def quotient(%Series{dtype: :integer} = left, %Series{dtype: :integer} = right),
-    do: Shared.apply_binary_op_impl(:quotient, left, right)
+    do: Shared.apply_series_impl(:quotient, [left, right])
 
   def quotient(%Series{dtype: :integer} = left, right) when is_integer(right),
-    do: Shared.apply_binary_op_impl(:quotient, left, right)
+    do: Shared.apply_series_impl(:quotient, [left, right])
 
   def quotient(left, %Series{dtype: :integer} = right) when is_integer(left),
-    do: Shared.apply_binary_op_impl(:quotient, left, right)
+    do: Shared.apply_series_impl(:quotient, [left, right])
 
   @doc """
   Computes the remainder of an element-wise integer division.
@@ -1467,13 +1467,13 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec remainder(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
   def remainder(%Series{dtype: :integer} = left, %Series{dtype: :integer} = right),
-    do: Shared.apply_binary_op_impl(:remainder, left, right)
+    do: Shared.apply_series_impl(:remainder, [left, right])
 
   def remainder(%Series{dtype: :integer} = left, right) when is_integer(right),
-    do: Shared.apply_binary_op_impl(:remainder, left, right)
+    do: Shared.apply_series_impl(:remainder, [left, right])
 
   def remainder(left, %Series{dtype: :integer} = right) when is_integer(left),
-    do: Shared.apply_binary_op_impl(:remainder, left, right)
+    do: Shared.apply_series_impl(:remainder, [left, right])
 
   defp basic_numeric_operation(
          operation,
@@ -1481,18 +1481,18 @@ defmodule Explorer.Series do
          %Series{dtype: right_dtype} = right
        )
        when K.and(numeric_dtype?(left_dtype), numeric_dtype?(right_dtype)),
-       do: Shared.apply_binary_op_impl(operation, left, right)
+       do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, %Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
     do: dtype_mismatch_error("#{operation}/2", left_dtype, right_dtype)
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right)
        when K.and(numeric_dtype?(dtype), is_number(right)),
-       do: Shared.apply_binary_op_impl(operation, left, right)
+       do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, left, %Series{dtype: dtype} = right)
        when K.and(numeric_dtype?(dtype), is_number(left)),
-       do: Shared.apply_binary_op_impl(operation, left, right)
+       do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, _, %Series{dtype: dtype}),
     do: dtype_error("#{operation}/2", dtype, [:integer, :float])
@@ -1546,11 +1546,8 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec pow(series :: Series.t(), exponent :: number()) :: Series.t()
-  def pow(%Series{dtype: dtype} = series, exponent) when numeric_dtype?(dtype),
-    do: Shared.apply_impl(series, :pow, [exponent])
-
-  def pow(%Series{dtype: dtype}, _), do: dtype_error("pow/2", dtype, [:integer, :float])
+  @spec pow(series :: Series.t(), right :: Series.t() | number()) :: Series.t()
+  def pow(%Series{} = series, right), do: basic_numeric_operation(:pow, series, right)
 
   # Comparisons
 

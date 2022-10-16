@@ -49,6 +49,25 @@ defmodule Explorer.SharedTest do
     end
   end
 
+  describe "series_impl!/1" do
+    test "with series" do
+      assert Shared.series_impl!([series(), series()]) == Explorer.PolarsBackend.Series
+    end
+
+    test "with lazy sereis" do
+      assert Shared.series_impl!([lazy_series(), lazy_series()]) == Explorer.Backend.LazySeries
+    end
+
+    test "with a series and a lazy series" do
+      assert Shared.series_impl!([1, series(), lazy_series()]) == Explorer.Backend.LazySeries
+      assert Shared.series_impl!([lazy_series(), 2, series()]) == Explorer.Backend.LazySeries
+    end
+
+    test "without a series nor a lazy series" do
+      assert_raise ArgumentError, fn -> Shared.series_impl!([1, 2]) end
+    end
+  end
+
   describe "apply_binary_op_impl/1" do
     test "applies when series is on the left-hand side" do
       :ok = Shared.apply_binary_op_impl(:ping, %{data: %FakeImpl{}}, 42)
