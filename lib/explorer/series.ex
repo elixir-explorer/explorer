@@ -1384,6 +1384,55 @@ defmodule Explorer.Series do
   end
 
   @doc """
+  Raises a numeric series to the power of the exponent.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = [8, 16, 32] |> Explorer.Series.from_list()
+      iex> Explorer.Series.pow(s, 2.0)
+      #Explorer.Series<
+        float[3]
+        [64.0, 256.0, 1024.0]
+      >
+
+      iex> s = [2, 4, 6] |> Explorer.Series.from_list()
+      iex> Explorer.Series.pow(s, 3)
+      #Explorer.Series<
+        integer[3]
+        [8, 64, 216]
+      >
+
+      iex> s = [2, 4, 6] |> Explorer.Series.from_list()
+      iex> Explorer.Series.pow(s, -3.0)
+      #Explorer.Series<
+        float[3]
+        [0.125, 0.015625, 0.004629629629629629]
+      >
+
+      iex> s = [1.0, 2.0, 3.0] |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.pow(3.0)
+      #Explorer.Series<
+        float[3]
+        [1.0, 8.0, 27.0]
+      >
+
+      iex> s = [2.0, 4.0, 6.0] |> Explorer.Series.from_list()
+      iex> s |> Explorer.Series.pow(2)
+      #Explorer.Series<
+        float[3]
+        [4.0, 16.0, 36.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec pow(series :: Series.t(), right :: Series.t() | number()) :: Series.t()
+  def pow(%Series{} = series, right), do: basic_numeric_operation(:pow, series, right)
+
+  @doc """
   Element-wise integer division.
 
   ## Supported dtype
@@ -1499,55 +1548,6 @@ defmodule Explorer.Series do
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype}, _),
     do: dtype_error("#{operation}/2", dtype, [:integer, :float])
-
-  @doc """
-  Raises a numeric series to the power of the exponent.
-
-  ## Supported dtypes
-
-    * `:integer`
-    * `:float`
-
-  ## Examples
-
-      iex> s = [8, 16, 32] |> Explorer.Series.from_list()
-      iex> Explorer.Series.pow(s, 2.0)
-      #Explorer.Series<
-        float[3]
-        [64.0, 256.0, 1024.0]
-      >
-
-      iex> s = [2, 4, 6] |> Explorer.Series.from_list()
-      iex> Explorer.Series.pow(s, 3)
-      #Explorer.Series<
-        integer[3]
-        [8, 64, 216]
-      >
-
-      iex> s = [2, 4, 6] |> Explorer.Series.from_list()
-      iex> Explorer.Series.pow(s, -3.0)
-      #Explorer.Series<
-        float[3]
-        [0.125, 0.015625, 0.004629629629629629]
-      >
-
-      iex> s = [1.0, 2.0, 3.0] |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.pow(3.0)
-      #Explorer.Series<
-        float[3]
-        [1.0, 8.0, 27.0]
-      >
-
-      iex> s = [2.0, 4.0, 6.0] |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.pow(2)
-      #Explorer.Series<
-        float[3]
-        [4.0, 16.0, 36.0]
-      >
-  """
-  @doc type: :element_wise
-  @spec pow(series :: Series.t(), right :: Series.t() | number()) :: Series.t()
-  def pow(%Series{} = series, right), do: basic_numeric_operation(:pow, series, right)
 
   # Comparisons
 
