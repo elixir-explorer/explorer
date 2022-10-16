@@ -49,7 +49,8 @@ defmodule Explorer.Shared do
       end)
 
     if impl == nil do
-      raise ArgumentError, "could not find a implementation for: #{inspect(series_or_scalars)}"
+      raise ArgumentError,
+            "expected at least one series to be given as argument, got: #{inspect(series_or_scalars)}"
     end
 
     impl
