@@ -1448,8 +1448,7 @@ defmodule Explorer.DataFrameTest do
 
       assert take_five(df["a"]) == [1, -10, 2, 1, 7]
 
-      # NOTE: rounding because the parser is losing precision
-      assert Enum.map(take_five(df["b"]), &Float.round(&1, 1)) == [2.0, -3.5, 0.6, 2.0, -3.5]
+      assert take_five(df["b"]) == [2.0, -3.5, 0.6, 2.0, -3.5]
 
       assert take_five(df["c"]) == [false, true, false, false, true]
       assert take_five(df["d"]) == ["4", "4", "text", "4", "4"]
