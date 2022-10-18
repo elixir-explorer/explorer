@@ -65,6 +65,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf7d0a018de4f6aa429b9d33d69edf69072b1c5b1cb8d3e4a5f7ef898fc3eb76"
 
 [[package]]
+name = "arrayvec"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
+
+[[package]]
 name = "arrow-format"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -94,7 +100,7 @@ dependencies = [
  "hash_hasher",
  "indexmap",
  "json-deserializer",
- "lexical-core",
+ "lexical-core 0.8.5",
  "lz4",
  "multiversion",
  "num-traits",
@@ -616,7 +622,20 @@ version = "6.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c7aefb36fd43fef7003334742cbf77b243fcd36418a1d1bdd480d613a67968f6"
 dependencies = [
- "lexical-core",
+ "lexical-core 0.8.5",
+]
+
+[[package]]
+name = "lexical-core"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6607c62aa161d23d17a9072cc5da0be67cdfc89d3afb1e8d9c842bebc2525ffe"
+dependencies = [
+ "arrayvec",
+ "bitflags",
+ "cfg-if",
+ "ryu",
+ "static_assertions",
 ]
 
 [[package]]
@@ -1032,7 +1051,7 @@ dependencies = [
  "dirs",
  "flate2",
  "lexical",
- "lexical-core",
+ "lexical-core 0.8.5",
  "memchr",
  "memmap2",
  "num",
@@ -1315,10 +1334,10 @@ dependencies = [
 [[package]]
 name = "simd-json"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9bd78b840b9de64fa3f7d72909b76343849f68e8c3d32608db8d38e4e5481f84"
+source = "git+https://github.com/simd-lite/simd-json#90144db81525ec30aea37abad95168125d9db418"
 dependencies = [
  "halfbrown",
+ "lexical-core 0.7.6",
  "serde",
  "serde_json",
  "simdutf8",
@@ -1439,8 +1458,7 @@ dependencies = [
 [[package]]
 name = "value-trait"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0a635407649b66e125e4d2ffd208153210179f8c7c8b71c030aa2ad3eeb4c8f"
+source = "git+https://github.com/simd-lite/value-trait#05348f183f3ba9c8fc1491442d843ad20f3e0e6e"
 dependencies = [
  "float-cmp",
  "halfbrown",

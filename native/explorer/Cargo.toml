@@ -50,3 +50,9 @@ features = [
 
 [dependencies.polars-ops]
 version = "0.24.2"
+
+[patch.crates-io]
+# Temporary, to fix parsing of floats with a better precision.
+simd-json = { git = "https://github.com/simd-lite/simd-json" }
+# Temporary, to fix compilation against ARM 32 bits
+value-trait = { git = "https://github.com/simd-lite/value-trait" }
