@@ -703,15 +703,15 @@ defmodule Explorer.Series do
     do: concat([s1 | series])
 
   defp concat_reducer(%Series{dtype: dtype} = s, %Series{dtype: dtype} = acc),
-    do: Shared.apply_impl(acc, :concat, [s])
+    do: Shared.apply_series_impl(:concat, [acc, s])
 
   defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
        when K.and(s_dtype == :float, acc_dtype == :integer),
-       do: acc |> cast(:float) |> Shared.apply_impl(:concat, [s])
+       do: Shared.apply_series_impl(:concat, [cast(acc, :float), s])
 
   defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
        when K.and(s_dtype == :integer, acc_dtype == :float),
-       do: Shared.apply_impl(acc, :concat, [cast(s, :float)])
+       do: Shared.apply_series_impl(:concat, [acc, cast(s, :float)])
 
   defp concat_reducer(%Series{dtype: dtype1}, %Series{dtype: dtype2}),
     do: raise(ArgumentError, "dtypes must match, found #{dtype1} and #{dtype2}")
@@ -760,7 +760,7 @@ defmodule Explorer.Series do
   def coalesce(s1, s2) do
     :ok = check_dtypes_for_coalesce!(s1, s2)
 
-    Shared.apply_impl(s1, :coalesce, [s2])
+    Shared.apply_series_impl(:coalesce, [s1, s2])
   end
 
   # Aggregation

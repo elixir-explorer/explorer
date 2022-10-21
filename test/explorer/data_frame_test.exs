@@ -737,35 +737,42 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "adds some columns with slice and dice functions" do
-      df = DF.new(a: [1, nil, 3], b: [20.0, 40.0, 60.0])
+      a = Series.from_list([1, nil, 3])
+      b = Series.from_list([20.0, 40.0, 60.0])
+      df = DF.new(a: a, b: b)
 
       df1 =
         DF.mutate_with(df, fn ldf ->
           [
-            c: Series.concat(ldf["a"], ldf["b"]) |> Series.slice(1, 3),
-            d: Series.coalesce(ldf["a"], ldf["b"]),
-            e:
-              Series.concat(ldf["a"], Series.from_list([20.0, 40.0, 60.0])) |> Series.slice(1, 3),
-            f: Series.coalesce(ldf["a"], Series.from_list([20.0, 40.0, 60.0]))
+            concat1: Series.concat(a, ldf["b"]) |> Series.slice(1, 3),
+            concat2: Series.concat(ldf["a"], b) |> Series.slice(1, 3),
+            concat3: Series.concat(ldf["a"], ldf["b"]) |> Series.slice(1, 3),
+            coalesce1: Series.coalesce(a, ldf["b"]),
+            coalesce2: Series.coalesce(ldf["a"], b),
+            coalesce3: Series.coalesce(ldf["a"], ldf["b"])
           ]
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, nil, 3],
                b: [20.0, 40.0, 60.0],
-               c: [nil, 3, 20.0],
-               d: [1.0, 40.0, 3.0],
-               e: [nil, 3, 20.0],
-               f: [1.0, 40.0, 3.0]
+               concat1: [nil, 3, 20.0],
+               concat2: [nil, 3, 20.0],
+               concat3: [nil, 3, 20.0],
+               coalesce1: [1.0, 40.0, 3.0],
+               coalesce2: [1.0, 40.0, 3.0],
+               coalesce3: [1.0, 40.0, 3.0]
              }
 
       assert DF.dtypes(df1) == %{
                "a" => :integer,
                "b" => :float,
-               "c" => :float,
-               "d" => :float,
-               "e" => :float,
-               "f" => :float
+               "concat1" => :float,
+               "concat2" => :float,
+               "concat3" => :float,
+               "coalesce1" => :float,
+               "coalesce2" => :float,
+               "coalesce3" => :float
              }
     end
 
