@@ -1610,7 +1610,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def equal(left, right) do
     if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
-      Shared.apply_binary_op_impl(:eq, left, right)
+      Shared.apply_series_impl(:eq, [left, right])
     else
       dtype_mismatch_error("equal/2", dtype_from_sides(left, right), inspect(right))
     end
@@ -1675,7 +1675,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def not_equal(left, right) do
     if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
-      Shared.apply_binary_op_impl(:neq, left, right)
+      Shared.apply_series_impl(:neq, [left, right])
     else
       dtype_mismatch_error("not_equal/2", dtype_from_sides(left, right), inspect(right))
     end
@@ -1712,7 +1712,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def greater(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_binary_op_impl(:gt, left, right)
+      Shared.apply_series_impl(:gt, [left, right])
     else
       dtype_error("greater/2", dtype_from_sides(left, right), [:integer, :float, :date, :datetime])
     end
@@ -1745,7 +1745,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def greater_equal(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_binary_op_impl(:gt_eq, left, right)
+      Shared.apply_series_impl(:gt_eq, [left, right])
     else
       dtype_error("greater_equal/2", dtype_from_sides(left, right), [
         :integer,
@@ -1783,7 +1783,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def less(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_binary_op_impl(:lt, left, right)
+      Shared.apply_series_impl(:lt, [left, right])
     else
       dtype_error("less/2", dtype_from_sides(left, right), [:integer, :float, :date, :datetime])
     end
@@ -1816,7 +1816,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def less_equal(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_binary_op_impl(:lt_eq, left, right)
+      Shared.apply_series_impl(:lt_eq, [left, right])
     else
       dtype_error("less_equal/2", dtype_from_sides(left, right), [
         :integer,
@@ -1880,7 +1880,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   def (%Series{} = left) and (%Series{} = right),
-    do: Shared.apply_impl(left, :binary_and, [right])
+    do: Shared.apply_series_impl(:binary_and, [left, right])
 
   @doc """
   Returns a boolean mask of `left or right`, element-wise
@@ -1899,7 +1899,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   def (%Series{} = left) or (%Series{} = right),
-    do: Shared.apply_impl(left, :binary_or, [right])
+    do: Shared.apply_series_impl(:binary_or, [left, right])
 
   @doc """
   Checks equality between two entire series.
