@@ -29,35 +29,46 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "filter_with/2" do
-    test "filter a column that is equal to a value" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [5.3, 2.4, 1.0, 0.2, 6.1, 2.1, 2.2])
+    test "filter columns with equal comparison" do
+      df = DF.new(a: [1, 2, 3, 2], b: [5.3, 2.4, 1.0, 2.0])
 
-      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], 5) end)
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [5, 5], b: [6.1, 2.2]}
+      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], 2) end)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 2], b: [2.4, 2.0]}
 
-      df2 = DF.filter_with(df, fn ldf -> Series.equal(2.1, ldf["b"]) end)
-      assert DF.to_columns(df2, atom_keys: true) == %{a: [6], b: [2.1]}
+      df2 = DF.filter_with(df, fn ldf -> Series.equal(1.0, ldf["b"]) end)
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [1.0]}
 
-      df3 = DF.filter_with(df, fn ldf -> Series.equal(ldf["b"], 52.1) end)
-      assert DF.to_columns(df3, atom_keys: true) == %{a: [], b: []}
+      df3 =
+        DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], Series.from_list([1, 0, 3, 0])) end)
+
+      assert DF.to_columns(df3, atom_keys: true) == %{a: [1, 3], b: [5.3, 1.0]}
+
+      df4 =
+        DF.filter_with(df, fn ldf -> Series.equal(Series.from_list([0, 0, 1.0, 0]), ldf["b"]) end)
+
+      assert DF.to_columns(df4, atom_keys: true) == %{a: [3], b: [1.0]}
+
+      df5 = DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], ldf["b"]) end)
+      assert DF.to_columns(df5, atom_keys: true) == %{a: [2], b: [2.0]}
     end
 
-    test "filter a column that has values equal to a series" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [5.3, 2.4, 1.0, 0.2, 6.1, 2.1, 2.2])
+    test "filter columns with other comparison ops" do
+      df = DF.new(a: [1, 2, 3, 2], b: [5.3, 2.4, 1.0, 2.0])
 
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          Series.equal(ldf["a"], Series.from_list([0, 2, 3, 0, 0, 0, 0]))
-        end)
+      df1 = DF.filter_with(df, fn ldf -> Series.not_equal(ldf["a"], 2) end)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 3], b: [5.3, 1.0]}
 
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 3], b: [2.4, 1.0]}
-    end
+      df2 = DF.filter_with(df, fn ldf -> Series.greater(ldf["a"], 2) end)
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [1.0]}
 
-    test "filter a column that has values equal to the other column" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+      df3 = DF.filter_with(df, fn ldf -> Series.greater_equal(ldf["a"], 2) end)
+      assert DF.to_columns(df3, atom_keys: true) == %{a: [2, 3, 2], b: [2.4, 1.0, 2.0]}
 
-      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], ldf["b"]) end)
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [5], b: [5]}
+      df4 = DF.filter_with(df, fn ldf -> Series.less(ldf["a"], 2) end)
+      assert DF.to_columns(df4, atom_keys: true) == %{a: [1], b: [5.3]}
+
+      df5 = DF.filter_with(df, fn ldf -> Series.less_equal(ldf["a"], 2) end)
+      assert DF.to_columns(df5, atom_keys: true) == %{a: [1, 2, 2], b: [5.3, 2.4, 2.0]}
     end
 
     test "filter by a string value" do
@@ -108,12 +119,21 @@ defmodule Explorer.DataFrameTest do
 
           # a > 5 or a <= 2 and b != 9
           Series.greater(a, 5)
-          |> Series.or(Series.less_equal(a, 3))
+          |> Series.or(Series.less_equal(a, 2))
           |> Series.and(Series.not_equal(b, 9))
-          |> Series.and(Series.from_list([true, true, false, true, true, true, true]))
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 6], b: [8, 4]}
+
+      df2 =
+        DF.filter_with(df, fn ldf ->
+          # index == 0 or a > 4 and index in [0, 5, 6]
+          Series.from_list([true, false, false, false, false, false, false])
+          |> Series.or(Series.greater(ldf["a"], 4))
+          |> Series.and(Series.from_list([true, false, false, false, false, true, true]))
+        end)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [1, 6, 5], b: [9, 4, 3]}
     end
 
     test "filter for nil values" do
@@ -717,35 +737,42 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "adds some columns with slice and dice functions" do
-      df = DF.new(a: [1, nil, 3], b: [20.0, 40.0, 60.0])
+      a = Series.from_list([1, nil, 3])
+      b = Series.from_list([20.0, 40.0, 60.0])
+      df = DF.new(a: a, b: b)
 
       df1 =
         DF.mutate_with(df, fn ldf ->
           [
-            c: Series.concat(ldf["a"], ldf["b"]) |> Series.slice(1, 3),
-            d: Series.coalesce(ldf["a"], ldf["b"]),
-            e:
-              Series.concat(ldf["a"], Series.from_list([20.0, 40.0, 60.0])) |> Series.slice(1, 3),
-            f: Series.coalesce(ldf["a"], Series.from_list([20.0, 40.0, 60.0]))
+            concat1: Series.concat(a, ldf["b"]) |> Series.slice(1, 3),
+            concat2: Series.concat(ldf["a"], b) |> Series.slice(1, 3),
+            concat3: Series.concat(ldf["a"], ldf["b"]) |> Series.slice(1, 3),
+            coalesce1: Series.coalesce(a, ldf["b"]),
+            coalesce2: Series.coalesce(ldf["a"], b),
+            coalesce3: Series.coalesce(ldf["a"], ldf["b"])
           ]
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, nil, 3],
                b: [20.0, 40.0, 60.0],
-               c: [nil, 3, 20.0],
-               d: [1.0, 40.0, 3.0],
-               e: [nil, 3, 20.0],
-               f: [1.0, 40.0, 3.0]
+               concat1: [nil, 3, 20.0],
+               concat2: [nil, 3, 20.0],
+               concat3: [nil, 3, 20.0],
+               coalesce1: [1.0, 40.0, 3.0],
+               coalesce2: [1.0, 40.0, 3.0],
+               coalesce3: [1.0, 40.0, 3.0]
              }
 
       assert DF.dtypes(df1) == %{
                "a" => :integer,
                "b" => :float,
-               "c" => :float,
-               "d" => :float,
-               "e" => :float,
-               "f" => :float
+               "concat1" => :float,
+               "concat2" => :float,
+               "concat3" => :float,
+               "coalesce1" => :float,
+               "coalesce2" => :float,
+               "coalesce3" => :float
              }
     end
 

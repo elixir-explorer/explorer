@@ -209,18 +209,8 @@ defmodule Explorer.Backend.LazySeries do
   # accepts Series or number on both sides.
   for op <- @comparison_operations do
     @impl true
-    def unquote(op)(%Series{} = left, %Series{} = right),
-      do: unquote(op)(left, series_or_lazy_series!(right))
-
-    def unquote(op)(%Series{} = left, value) do
-      args = [lazy_series!(left), value]
-      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
-
-      Backend.Series.new(data, :boolean)
-    end
-
-    def unquote(op)(left, %Series{} = right) do
-      args = [left, lazy_series!(right)]
+    def unquote(op)(left, right) do
+      args = [data!(left), data!(right)]
       data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, :boolean)
@@ -231,7 +221,7 @@ defmodule Explorer.Backend.LazySeries do
   for op <- [:binary_and, :binary_or] do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right) do
-      args = [lazy_series!(left), series_or_lazy_series!(right)]
+      args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
       data = new(unquote(op), args, aggregations?(args), window_functions?(args))
 
       Backend.Series.new(data, :boolean)
@@ -309,7 +299,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def coalesce(%Series{} = left, %Series{} = right) do
-    args = [lazy_series!(left), series_or_lazy_series!(right)]
+    args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
     data = new(:coalesce, args, aggregations?(args), window_functions?(args))
 
     dtype =
@@ -324,7 +314,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def concat(%Series{} = left, %Series{} = right) do
-    args = [lazy_series!(left), series_or_lazy_series!(right)]
+    args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
     data = new(:concat, args, aggregations?(args), window_functions?(args))
 
     dtype =
