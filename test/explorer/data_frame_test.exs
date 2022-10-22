@@ -537,7 +537,7 @@ defmodule Explorer.DataFrameTest do
             calc2: Series.subtract(2, ldf["a"]),
             calc3: Series.multiply(2, ldf["a"]),
             calc4: Series.divide(2, ldf["a"]),
-            # calc5: Series.pow(2, ldf["a"]),
+            calc5: Series.pow(2, ldf["a"]),
             calc6: Series.quotient(2, ldf["a"]),
             calc7: Series.remainder(2, ldf["a"])
           ]
@@ -549,7 +549,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [1, 0, -2],
                calc3: [2, 4, 8],
                calc4: [2.0, 1.0, 0.5],
-               #  calc5: [2.0, 4.0, 16.0],
+               calc5: [2.0, 4.0, 16.0],
                calc6: [2, 1, 0],
                calc7: [0, 0, 2]
              }
@@ -560,7 +560,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => :integer,
                "calc3" => :integer,
                "calc4" => :float,
-               #  "calc5" => :integer,
+               "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer
              }

@@ -1429,8 +1429,8 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec pow(series :: Series.t(), right :: Series.t() | number()) :: Series.t()
-  def pow(%Series{} = series, right), do: basic_numeric_operation(:pow, series, right)
+  @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
+  def pow(left, right), do: basic_numeric_operation(:pow, left, right)
 
   @doc """
   Element-wise integer division.
