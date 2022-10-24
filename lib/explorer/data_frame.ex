@@ -439,6 +439,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Writes a dataframe to a parquet file.
 
+  Groups are ignored if the dataframe is using any.
+
   ## Options
 
     * `compression` - The compression algorithm to use when writing files.
@@ -519,10 +521,12 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Writes a dataframe to a IPC file.
+  Writes a dataframe to an IPC file.
 
-  Apache IPC is a language-agnostic columnar data structure that can be used to store data frames.
+  Apache IPC is a language-agnostic columnar data structure that can be used to store dataframes.
   It excels as a format for quickly exchange data between different programming languages.
+
+  Groups are ignored if the dataframe is using any.
 
   ## Options
 
@@ -530,8 +534,7 @@ defmodule Explorer.DataFrame do
       It accepts `:zstd` or `:lz4` compression. (default: `nil`)
   """
   @doc type: :io
-  @spec to_ipc(df :: DataFrame.t(), filename :: String.t()) ::
-          {:ok, String.t()} | {:error, term()}
+  @spec to_ipc(df :: DataFrame.t(), filename :: String.t()) :: :ok | {:error, term()}
   def to_ipc(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
     backend = backend_from_options!(opts)
@@ -547,6 +550,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Writes a dataframe to a delimited file.
 
+  Groups are ignored if the dataframe is using any.
+
   ## Options
 
     * `header` - Should the column names be written as the first line of the file? (default: `true`)
@@ -554,7 +559,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec to_csv(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
-          {:ok, String.t()} | {:error, term()}
+          :ok | {:error, term()}
   def to_csv(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",")
     Shared.apply_impl(df, :to_csv, [filename, opts[:header], opts[:delimiter]])
@@ -564,10 +569,10 @@ defmodule Explorer.DataFrame do
   Similar to `to_csv/3` but raises if there is a problem reading the CSV.
   """
   @doc type: :io
-  @spec to_csv!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: String.t()
+  @spec to_csv!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
   def to_csv!(df, filename, opts \\ []) do
     case to_csv(df, filename, opts) do
-      {:ok, filename} -> filename
+      :ok -> :ok
       {:error, error} -> raise "#{error}"
     end
   end
@@ -604,10 +609,14 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Writes a dataframe to a ndjson file.
+
+  Groups are ignored if the dataframe is using any.
+
+  NDJSON are files that contains JSON files separated by new lines.
+  They are often used as structured logs.
   """
   @doc type: :io
-  @spec to_ndjson(df :: DataFrame.t(), filename :: String.t()) ::
-          {:ok, String.t()} | {:error, term()}
+  @spec to_ndjson(df :: DataFrame.t(), filename :: String.t()) :: :ok | {:error, term()}
   def to_ndjson(df, filename) do
     Shared.apply_impl(df, :to_ndjson, [filename])
   end
@@ -639,6 +648,8 @@ defmodule Explorer.DataFrame do
   Converts the dataframe to the lazy version of the current backend.
 
   If already lazy, this is a noop.
+
+  Converting a grouped dataframe should return a lazy dataframe with groups.
   """
   @doc type: :single
   @spec to_lazy(df :: DataFrame.t()) :: DataFrame.t()
@@ -750,6 +761,7 @@ defmodule Explorer.DataFrame do
   Converts a dataframe to a list of columns with lists as values.
 
   See `to_series/2` if you want a list of columns with series as values.
+  Note that this function does not take into account groups.
 
   ## Options
 
@@ -783,6 +795,7 @@ defmodule Explorer.DataFrame do
   Converts a dataframe to a list of columns with series as values.
 
   See `to_columns/2` if you want a list of columns with lists as values.
+  Note that this function does not take into account groups.
 
   ## Options
 
@@ -923,6 +936,10 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.group_by(df, "country")
       iex> Explorer.DataFrame.groups(df)
       ["country"]
+
+      iex> df = Explorer.Datasets.iris()
+      iex> Explorer.DataFrame.groups(df)
+      []
   """
   @doc type: :introspection
   @spec groups(df :: DataFrame.t()) :: list(String.t())
