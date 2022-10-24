@@ -1355,30 +1355,14 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec divide(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def divide(%Series{} = left, right) do
-    left =
-      if K.and(
-           left.dtype == :integer,
-           K.or(is_integer(right), match?(%Series{dtype: :integer}, right))
-         ) do
-        cast(left, :float)
-      else
-        left
-      end
+  def divide(%Series{dtype: dtype} = left, right) when numeric_dtype?(dtype) do
+    left = cast(left, :float)
 
     basic_numeric_operation(:divide, left, right)
   end
 
-  def divide(left, %Series{} = right) when is_number(left) do
-    left =
-      if K.and(
-           is_integer(left),
-           right.dtype == :integer
-         ) do
-        left / 1.0
-      else
-        left
-      end
+  def divide(left, %Series{dtype: dtype} = right) when numeric_dtype?(dtype) do
+    right = cast(right, :float)
 
     basic_numeric_operation(:divide, left, right)
   end
