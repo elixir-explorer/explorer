@@ -811,4 +811,9 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.dump_csv(grouped_df) == dumped_csv
     end
   end
+
+  test "to_lazy/1", %{df: df} do
+    grouped = DF.group_by(df, ["country", "year"])
+    assert ["country", "year"] = DF.to_lazy(grouped).groups
+  end
 end
