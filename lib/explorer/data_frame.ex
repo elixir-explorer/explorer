@@ -870,6 +870,9 @@ defmodule Explorer.DataFrame do
   @doc """
   Gets the shape of the dataframe as a `{height, width}` tuple.
 
+  This function works the same way for grouped dataframes, considering the entire
+  dataframe in the counting of rows.
+
   ## Examples
 
       iex> df = Explorer.DataFrame.new(floats: [1.0, 2.0, 3.0], ints: [1, 2, 3])
@@ -883,6 +886,9 @@ defmodule Explorer.DataFrame do
   @doc """
   Returns the number of rows in the dataframe.
 
+  This function works the same way for grouped dataframes, considering the entire
+  dataframe in the counting of rows.
+
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
@@ -895,6 +901,8 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Returns the number of columns in the dataframe.
+
+  This function works the same way for grouped dataframes.
 
   ## Examples
 
@@ -1661,9 +1669,9 @@ defmodule Explorer.DataFrame do
   is also a group, the sorting for that column is not going to work. It is necessary to
   first summarise the desired column and then arrange it.
 
-  Here is an example using the Iris dataset. We group by species and try to sort the dataframe 
-  by species and petal length, but only "petal length" is taken into account because "species"
-  is a group.
+  Here is an example using the Iris dataset. We group by species and then we try to sort
+  the dataframe by species and petal length, but only "petal length" is taken into account
+  because "species" is a group.
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
@@ -1743,6 +1751,30 @@ defmodule Explorer.DataFrame do
         Polars[3 x 2]
         a integer [3, 3, 1]
         b integer [2, 3, 1]
+      >
+
+  ## Grouped examples
+
+  When used in a grouped dataframe, `arrange_with/2` is going to sort each group individually
+  and then return the entire dataframe with the existing groups. If one of the arrange columns
+  is also a group, the sorting for that column is not going to work. It is necessary to
+  first summarise the desired column and then arrange it.
+
+  Here is an example using the Iris dataset. We group by species and then we try to sort
+  the dataframe by species and petal length, but only "petal length" is taken into account
+  because "species" is a group.
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.arrange_with(grouped, &[desc: &1["species"], asc: &1["sepal_width"]])
+      #Explorer.DataFrame<
+        Polars[150 x 5]
+        Groups: ["species"]
+        sepal_length float [4.5, 4.4, 4.9, 4.8, 4.3, ...]
+        sepal_width float [2.3, 2.9, 3.0, 3.0, 3.0, ...]
+        petal_length float [1.3, 1.4, 1.4, 1.4, 1.1, ...]
+        petal_width float [0.3, 0.2, 0.2, 0.1, 0.1, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
   """
   @doc type: :single
@@ -2163,6 +2195,8 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Extracts a single column as a series.
+
+  This function is not going to consider groups when pulling series.
 
   ## Examples
 

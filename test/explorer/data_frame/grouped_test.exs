@@ -702,4 +702,39 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.shape(df2) == {10, 10}
     end
   end
+
+  describe "shape/1" do
+    test "does not consider groups when counting rows", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+
+      assert DF.shape(df1) == {1094, 10}
+      assert DF.shape(df) == DF.shape(df1)
+    end
+  end
+
+  describe "n_columns/1" do
+    test "groups don't affect counting of columns", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+
+      assert DF.n_columns(df1) == 10
+      assert DF.n_columns(df) == DF.n_columns(df1)
+    end
+  end
+
+  describe "n_rows/1" do
+    test "does not consider groups when counting rows", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+
+      assert DF.n_rows(df1) == 1094
+      assert DF.n_rows(df) == DF.n_rows(df1)
+    end
+  end
+
+  describe "pull/2" do
+    test "does not consider groups when counting rows", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+
+      assert Series.to_list(DF.pull(df1, "country")) == Series.to_list(DF.pull(df, "country"))
+    end
+  end
 end
