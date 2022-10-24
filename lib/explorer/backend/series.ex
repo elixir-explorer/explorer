@@ -71,7 +71,7 @@ defmodule Explorer.Backend.Series do
   @callback divide(s | number(), s | number()) :: s
   @callback quotient(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
   @callback remainder(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
-  @callback pow(s, number()) :: s
+  @callback pow(s | number(), s | number()) :: s
 
   # Comparisons
 
