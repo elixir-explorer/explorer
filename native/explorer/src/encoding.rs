@@ -138,24 +138,24 @@ fn naive_datetime_struct_keys(env: Env) -> [NIF_TERM; 9] {
 }
 
 #[inline]
-fn time_unit_to_factor(time_unit: TimeUnit) -> f64 {
+fn time_to_microseconds(v: i64, time_unit: TimeUnit) -> i64 {
     match time_unit {
-        TimeUnit::Milliseconds => 1000.0,
-        TimeUnit::Microseconds => 1.0,
-        TimeUnit::Nanoseconds => 0.001,
+        TimeUnit::Milliseconds => v * 1000,
+        TimeUnit::Microseconds => v,
+        TimeUnit::Nanoseconds => (v as f64 * 0.001) as i64,
         _ => unreachable!(),
     }
-}
+  }
 
 #[inline]
 fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Term {
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
-    let factor = time_unit_to_factor(time_unit);
+    let microseconds_time = time_to_microseconds(v, time_unit);
 
     unsafe_encode_datetime!(
-        (v as f64 * factor) as i64,
+        microseconds_time,
         naive_datetime_struct_keys,
         calendar_iso_module,
         naive_datetime_module,
@@ -168,14 +168,15 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
-    let factor = time_unit_to_factor(time_unit);
 
     unsafe_iterator_to_list!(
         env,
         s.datetime().unwrap().into_iter().map(|option| option
             .map(|v| {
+                let microseconds_time = time_to_microseconds(v, time_unit);
+
                 unsafe_encode_datetime!(
-                    (v as f64 * factor) as i64,
+                    microseconds_time,
                     naive_datetime_struct_keys,
                     calendar_iso_module,
                     naive_datetime_module,
