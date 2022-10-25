@@ -1773,8 +1773,8 @@ defmodule Explorer.DataFrame do
   ## Grouped examples
 
   When used in a grouped dataframe, `arrange_with/2` is going to sort each group individually
-  and then return the entire dataframe with the existing groups. If one of the arrange columns
-  is also a group, the sorting for that column is not going to work. It is necessary to
+  and then return the entire dataframe with the existing groups. Therefore, if you attempt
+  to arrange a grouped column, it won't have any effect and work as no-op. It is necessary to
   first summarise the desired column and then arrange it.
 
   Here is an example using the Iris dataset. We group by species and then we try to sort
