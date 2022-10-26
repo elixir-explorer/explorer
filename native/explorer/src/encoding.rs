@@ -143,7 +143,6 @@ fn time_to_microseconds(v: i64, time_unit: TimeUnit) -> i64 {
         TimeUnit::Milliseconds => v * 1000,
         TimeUnit::Microseconds => v,
         TimeUnit::Nanoseconds => (v as f64 * 0.001) as i64,
-        _ => unreachable!(),
     }
 }
 
