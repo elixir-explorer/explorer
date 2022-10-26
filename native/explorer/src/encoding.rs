@@ -145,7 +145,7 @@ fn time_to_microseconds(v: i64, time_unit: TimeUnit) -> i64 {
         TimeUnit::Nanoseconds => (v as f64 * 0.001) as i64,
         _ => unreachable!(),
     }
-  }
+}
 
 #[inline]
 fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Term {
