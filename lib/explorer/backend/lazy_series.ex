@@ -55,6 +55,8 @@ defmodule Explorer.Backend.LazySeries do
     distinct: 1,
     unordered_distinct: 1,
     slice: 3,
+    sample_n: 4,
+    sample_frac: 4,
     head: 2,
     tail: 2,
     peaks: 2,
@@ -70,6 +72,7 @@ defmodule Explorer.Backend.LazySeries do
     quantile: 2,
     first: 1,
     last: 1,
+    size: 1,
     count: 1
   ]
 
@@ -86,6 +89,7 @@ defmodule Explorer.Backend.LazySeries do
     :var,
     :std,
     :count,
+    :size,
     :first,
     :last,
     :n_distinct
@@ -201,6 +205,22 @@ defmodule Explorer.Backend.LazySeries do
   def fill_missing(%Series{} = s, value) do
     args = [lazy_series!(s), value]
     data = new(:fill_missing_with_value, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def sample(%Series{} = s, n, replacement, seed) when is_integer(n) do
+    args = [lazy_series!(s), n, replacement, seed]
+    data = new(:sample_n, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def sample(%Series{} = s, frac, replacement, seed) when is_float(frac) do
+    args = [lazy_series!(s), frac, replacement, seed]
+    data = new(:sample_frac, args, aggregations?(args), window_functions?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -452,8 +472,6 @@ defmodule Explorer.Backend.LazySeries do
     fetch!: 2,
     mask: 2,
     from_list: 2,
-    sample: 4,
-    size: 1,
     slice: 2,
     take_every: 2,
     to_enum: 1,

@@ -179,6 +179,25 @@ pub fn expr_tail(expr: ExExpr, length: usize) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_sample_n(expr: ExExpr, n: usize, with_replacement: bool, seed: Option<u64>) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.sample_n(n, with_replacement, true, seed))
+}
+
+#[rustler::nif]
+pub fn expr_sample_frac(
+    expr: ExExpr,
+    frac: f64,
+    with_replacement: bool,
+    seed: Option<u64>,
+) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.sample_frac(frac, with_replacement, true, seed))
+}
+
+#[rustler::nif]
 pub fn expr_peaks(data: ExExpr, min_or_max: &str) -> ExExpr {
     let expr: Expr = data.resource.0.clone();
     let type_expr = if min_or_max == "min" {
@@ -348,6 +367,13 @@ pub fn expr_alias(expr: ExExpr, name: &str) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_count(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.count())
+}
+
+#[rustler::nif]
+pub fn expr_size(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
     ExExpr::new(expr.count())

@@ -90,6 +90,14 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
+  def sample(series, frac, replacement, seed) when is_float(frac) do
+    size = size(series)
+    n = round(frac * size)
+
+    sample(series, n, replacement, seed)
+  end
+
+  @impl true
   def take_every(series, every_n),
     do: Shared.apply_series(series, :s_take_every, [every_n])
 
