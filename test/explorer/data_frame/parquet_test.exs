@@ -9,16 +9,18 @@ defmodule Explorer.DataFrame.ParquetTest do
   # https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.EPSILON
   @f64_epsilon 2.2204460492503131e-16
 
-  def tmp_file!(data) do
-    filename = System.tmp_dir!() |> Path.join("data.parquet")
-    :ok = DF.to_parquet(data, filename)
-    filename
+  def tmp_file!(df) do
+    System.tmp_dir!()
+    |> Path.join("data.parquet")
+    |> tap(fn filename ->
+      :ok = DF.to_parquet(df, filename)
+    end)
   end
 
   test "read" do
-    data = Explorer.Datasets.iris()
+    parquet = tmp_file!(Explorer.Datasets.iris())
 
-    {:ok, frame} = DF.from_parquet(tmp_file!(data))
+    {:ok, frame} = DF.from_parquet(parquet)
 
     assert DF.n_rows(frame) == 150
     assert DF.n_columns(frame) == 5
@@ -40,9 +42,9 @@ defmodule Explorer.DataFrame.ParquetTest do
   end
 
   def assert_parquet(type, value, parsed_value) do
-    data = [value] |> Series.from_list() |> Series.cast(type) |> then(&DF.new(column: &1))
+    df = [value] |> Series.from_list() |> Series.cast(type) |> then(&DF.new(column: &1))
     # parsing should work as expected
-    {:ok, frame} = DF.from_parquet(tmp_file!(data))
+    {:ok, frame} = DF.from_parquet(tmp_file!(df))
     assert frame[0][0] == parsed_value
     assert frame[0].dtype == type
   end
