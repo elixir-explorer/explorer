@@ -56,7 +56,6 @@ defmodule Explorer.Backend.DataFrame do
   @callback to_ipc(df, filename :: String.t(), compression :: {nil | atom(), nil | integer()}) ::
               ok_result()
 
-
   @callback from_ipc_stream(
               filename :: String.t(),
               columns :: list(String.t()) | list(atom()) | list(integer()) | nil
