@@ -60,7 +60,11 @@ defmodule Explorer.Backend.DataFrame do
               filename :: String.t(),
               columns :: list(String.t()) | list(atom()) | list(integer()) | nil
             ) :: result(df)
-  @callback to_ipc_stream(df, filename :: String.t(), compression :: {nil | atom(), nil | integer()}) ::
+  @callback to_ipc_stream(
+              df,
+              filename :: String.t(),
+              compression :: {nil | atom(), nil | integer()}
+            ) ::
               ok_result()
 
   @callback from_ndjson(
