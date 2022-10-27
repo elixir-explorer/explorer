@@ -823,61 +823,90 @@ defmodule Explorer.DataFrameTest do
                i: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
              }
     end
-  end
 
-  test "add columns with peaks values" do
-    df = DF.new(a: [1, 2, 3, 2, 1, 3])
+    test "add columns with peaks values" do
+      df = DF.new(a: [1, 2, 3, 2, 1, 3])
 
-    df1 =
-      DF.mutate_with(df, fn ldf ->
-        [b: Series.peaks(ldf["a"], :max), c: Series.peaks(ldf["a"], :min)]
-      end)
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [b: Series.peaks(ldf["a"], :max), c: Series.peaks(ldf["a"], :min)]
+        end)
 
-    assert DF.to_columns(df1, atom_keys: true) == %{
-             a: [1, 2, 3, 2, 1, 3],
-             b: [false, false, true, false, false, true],
-             c: [true, false, false, false, true, false]
-           }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 2, 1, 3],
+               b: [false, false, true, false, false, true],
+               c: [true, false, false, false, true, false]
+             }
 
-    assert df1.dtypes == %{"a" => :integer, "b" => :boolean, "c" => :boolean}
-  end
+      assert df1.dtypes == %{"a" => :integer, "b" => :boolean, "c" => :boolean}
+    end
 
-  test "add columns with missing values" do
-    df = DF.new(a: [1, nil, 3, 2, nil, 4])
+    test "add columns with missing values" do
+      df = DF.new(a: [1, nil, 3, 2, nil, 4])
 
-    df1 =
-      DF.mutate_with(df, fn ldf ->
-        a = ldf["a"]
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          a = ldf["a"]
 
-        [
-          b: Series.fill_missing(a, :forward),
-          c: Series.fill_missing(a, :backward),
-          d: Series.fill_missing(a, :min),
-          e: Series.fill_missing(a, :max),
-          f: Series.fill_missing(a, :mean),
-          g: Series.fill_missing(a, 42)
-        ]
-      end)
+          [
+            b: Series.fill_missing(a, :forward),
+            c: Series.fill_missing(a, :backward),
+            d: Series.fill_missing(a, :min),
+            e: Series.fill_missing(a, :max),
+            f: Series.fill_missing(a, :mean),
+            g: Series.fill_missing(a, 42)
+          ]
+        end)
 
-    assert DF.to_columns(df1, atom_keys: true) == %{
-             a: [1, nil, 3, 2, nil, 4],
-             b: [1, 1, 3, 2, 2, 4],
-             c: [1, 3, 3, 2, 4, 4],
-             d: [1, 1, 3, 2, 1, 4],
-             e: [1, 4, 3, 2, 4, 4],
-             f: [1.0, 2.5, 3.0, 2.0, 2.5, 4.0],
-             g: [1, 42, 3, 2, 42, 4]
-           }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, nil, 3, 2, nil, 4],
+               b: [1, 1, 3, 2, 2, 4],
+               c: [1, 3, 3, 2, 4, 4],
+               d: [1, 1, 3, 2, 1, 4],
+               e: [1, 4, 3, 2, 4, 4],
+               f: [1.0, 2.5, 3.0, 2.0, 2.5, 4.0],
+               g: [1, 42, 3, 2, 42, 4]
+             }
 
-    assert df1.dtypes == %{
-             "a" => :integer,
-             "b" => :integer,
-             "c" => :integer,
-             "d" => :integer,
-             "e" => :integer,
-             "f" => :float,
-             "g" => :integer
-           }
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "b" => :integer,
+               "c" => :integer,
+               "d" => :integer,
+               "e" => :integer,
+               "f" => :float,
+               "g" => :integer
+             }
+    end
+
+    test "add columns with sampling" do
+      df = DF.new(a: [1, 2, 3, 4, 5])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          a = ldf["a"]
+
+          [
+            b: Series.sample(a, 5, seed: 100),
+            c: Series.sample(a, 1.0, seed: 99),
+            d: Series.sample(a, 3, seed: 98) |> Series.concat(Series.from_list([0, 0]))
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5],
+               b: [5, 3, 2, 1, 4],
+               c: [1, 3, 2, 4, 5],
+               d: [5, 1, 4, 0, 0]
+             }
+
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "b" => :integer,
+               "c" => :integer,
+               "d" => :integer
+             }
+    end
   end
 
   describe "arrange/3" do

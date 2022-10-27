@@ -373,6 +373,7 @@ defmodule Explorer.DataFrame.GroupedTest do
         |> DF.summarise_with(fn ldf ->
           [
             count: Series.count(ldf["country"]),
+            size: Series.size(ldf["country"]),
             std: Series.std(ldf["gas_fuel"]),
             var: Series.var(ldf["total"])
           ]
@@ -381,6 +382,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.to_columns(df1, atom_keys: true) == %{
                year: [2010, 2011, 2012, 2013, 2014],
                count: [217, 217, 220, 220, 220],
+               size: [217, 217, 220, 220, 220],
                std: [
                  30422.959346722244,
                  31276.447541663372,

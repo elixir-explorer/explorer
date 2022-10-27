@@ -30,6 +30,8 @@ defmodule Explorer.PolarsBackend.Expression do
                                        head: 2,
                                        tail: 2,
                                        peaks: 2,
+                                       sample_n: 4,
+                                       sample_frac: 4,
                                        fill_missing: 2
                                      ] ++
                                        @window_operations

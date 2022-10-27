@@ -360,6 +360,11 @@ defmodule Explorer.Series do
   @doc """
   Returns the size of the series.
 
+  In the context of lazy series - using `DataFrame.*_with/2` functions -,
+  `size/1` is going to count the elements inside the same group.
+  If no group is in use, then size is going to return the length of
+  the series. This behaviour is the same as `count/1` for lazy series.
+
   ## Examples
 
       iex> s = Explorer.Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
@@ -367,7 +372,7 @@ defmodule Explorer.Series do
       2
   """
   @doc type: :introspection
-  @spec size(series :: Series.t()) :: integer()
+  @spec size(series :: Series.t()) :: non_neg_integer() | lazy_t()
   def size(series), do: Shared.apply_impl(series, :size)
 
   @doc """
@@ -500,35 +505,45 @@ defmodule Explorer.Series do
         integer[5]
         [68, 24, 6, 8, 36]
       >
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.sample(s, 7, seed: 100, replacement: true)
+      #Explorer.Series<
+        integer[7]
+        [5, 1, 2, 4, 5, 3, 1]
+      >
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.sample(s, 1.2, seed: 100, replacement: true)
+      #Explorer.Series<
+        integer[6]
+        [5, 1, 2, 4, 5, 3]
+      >
   """
   @doc type: :transformation
-  @spec sample(series :: Series.t(), n_or_frac :: number(), opts :: Keyword.t()) ::
-          Series.t()
-  def sample(series, n_or_frac, opts \\ [])
-
-  def sample(series, n, opts) when is_integer(n) do
+  @spec sample(series :: Series.t(), n_or_frac :: number(), opts :: Keyword.t()) :: Series.t()
+  def sample(series, n_or_frac, opts \\ []) when is_number(n_or_frac) do
     opts = Keyword.validate!(opts, replacement: false, seed: Enum.random(1..1_000_000_000_000))
 
     size = size(series)
 
-    case {n > size, opts[:replacement]} do
-      {true, false} ->
-        raise ArgumentError,
-              "in order to sample more elements than are in the series (#{size}), sampling " <>
-                "`replacement` must be true"
-
-      _ ->
-        :ok
+    # In case the series is lazy, we don't perform this check here.
+    if K.and(
+         is_integer(size),
+         K.and(opts[:replacement] == false, invalid_size_for_sample?(n_or_frac, size))
+       ) do
+      raise ArgumentError,
+            "in order to sample more elements than are in the series (#{size}), sampling " <>
+              "`replacement` must be true"
     end
 
-    Shared.apply_impl(series, :sample, [n, opts[:replacement], opts[:seed]])
+    Shared.apply_impl(series, :sample, [n_or_frac, opts[:replacement], opts[:seed]])
   end
 
-  def sample(series, frac, opts) when is_float(frac) do
-    size = size(series)
-    n = round(frac * size)
-    sample(series, n, opts)
-  end
+  defp invalid_size_for_sample?(n, size) when is_integer(n), do: n > size
+
+  defp invalid_size_for_sample?(frac, size) when is_float(frac),
+    do: invalid_size_for_sample?(round(frac * size), size)
 
   @doc """
   Takes every *n*th value in this series, returned as a new series.

@@ -117,6 +117,8 @@ rustler::init!(
         expr_string,
         expr_series,
         expr_slice,
+        expr_sample_n,
+        expr_sample_frac,
         expr_head,
         expr_tail,
         expr_peaks,
@@ -163,6 +165,7 @@ rustler::init!(
         expr_quantile,
         expr_alias,
         expr_count,
+        expr_size,
         expr_first,
         expr_last,
         // window expressions

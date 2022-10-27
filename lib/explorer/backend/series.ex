@@ -23,7 +23,7 @@ defmodule Explorer.Backend.Series do
   # Introspection
 
   @callback dtype(s) :: dtype()
-  @callback size(s) :: integer()
+  @callback size(s) :: non_neg_integer() | lazy_s()
   @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
   @callback memtype(s) :: :uft8 | {:s | :u | :f, non_neg_integer}
 
@@ -31,7 +31,7 @@ defmodule Explorer.Backend.Series do
 
   @callback head(s, n :: integer()) :: s
   @callback tail(s, n :: integer()) :: s
-  @callback sample(s, n :: integer(), replacement :: boolean(), seed :: integer()) :: s
+  @callback sample(s, n_or_frac :: number(), replacement :: boolean(), seed :: integer()) :: s
   @callback take_every(s, integer()) :: s
   @callback mask(s, mask :: s) :: s
   @callback slice(s, indices :: list()) :: s

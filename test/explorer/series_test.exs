@@ -475,4 +475,61 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [1, 1, 1]
     end
   end
+
+  describe "sample/2" do
+    test "sample taking 10 elements" do
+      s = 1..100 |> Enum.to_list() |> Series.from_list()
+      result = Series.sample(s, 10, seed: 100)
+
+      assert Series.size(result) == 10
+      assert Series.to_list(result) == [72, 33, 15, 4, 16, 49, 23, 96, 45, 47]
+    end
+
+    test "sample taking 5% of elements" do
+      s = 1..100 |> Enum.to_list() |> Series.from_list()
+
+      result = Series.sample(s, 0.05, seed: 100)
+
+      assert Series.size(result) == 5
+      assert Series.to_list(result) == [68, 24, 6, 8, 36]
+    end
+
+    test "sample taking more than elements without replacement" do
+      s = 1..10 |> Enum.to_list() |> Series.from_list()
+
+      assert_raise ArgumentError,
+                   "in order to sample more elements than are in the series (10), sampling `replacement` must be true",
+                   fn ->
+                     Series.sample(s, 15)
+                   end
+    end
+
+    test "sample taking more than elements using fraction without replacement" do
+      s = 1..10 |> Enum.to_list() |> Series.from_list()
+
+      assert_raise ArgumentError,
+                   "in order to sample more elements than are in the series (10), sampling `replacement` must be true",
+                   fn ->
+                     Series.sample(s, 1.2)
+                   end
+    end
+
+    test "sample taking more than elements with replacement" do
+      s = 1..10 |> Enum.to_list() |> Series.from_list()
+
+      result = Series.sample(s, 15, replacement: true, seed: 100)
+
+      assert Series.size(result) == 15
+      assert Series.to_list(result) == [1, 8, 10, 1, 3, 10, 9, 1, 10, 10, 4, 5, 9, 7, 6]
+    end
+
+    test "sample taking more than elements with fraction and replacement" do
+      s = 1..10 |> Enum.to_list() |> Series.from_list()
+
+      result = Series.sample(s, 1.2, replacement: true, seed: 100)
+
+      assert Series.size(result) == 12
+      assert Series.to_list(result) == [1, 8, 10, 1, 3, 10, 9, 1, 10, 10, 4, 5]
+    end
+  end
 end
