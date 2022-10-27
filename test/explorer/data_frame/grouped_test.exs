@@ -704,4 +704,118 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.shape(df2) == {10, 10}
     end
   end
+
+  describe "shape/1" do
+    test "does not consider groups when counting rows", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+
+      assert DF.shape(df1) == {1094, 10}
+      assert DF.shape(df) == DF.shape(df1)
+    end
+  end
+
+  describe "n_columns/1" do
+    test "groups don't affect counting of columns", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+
+      assert DF.n_columns(df1) == 10
+      assert DF.n_columns(df) == DF.n_columns(df1)
+    end
+  end
+
+  describe "n_rows/1" do
+    test "does not consider groups when counting rows", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+
+      assert DF.n_rows(df1) == 1094
+      assert DF.n_rows(df) == DF.n_rows(df1)
+    end
+  end
+
+  describe "pull/2" do
+    test "does not consider groups when counting rows", %{df: df} do
+      df1 = DF.group_by(df, ["year"])
+
+      assert Series.to_list(DF.pull(df1, "country")) == Series.to_list(DF.pull(df, "country"))
+    end
+  end
+
+  describe "to_csv/2" do
+    @tag :tmp_dir
+    test "does not consider groups when saving file", %{df: df, tmp_dir: tmp_dir} do
+      ungrouped_file_path = Path.join(tmp_dir, "ungrouped-tmp.csv")
+      :ok = DF.to_csv(df, ungrouped_file_path)
+
+      grouped_df = DF.group_by(df, "year")
+      grouped_file_path = Path.join(tmp_dir, "grouped-tmp.csv")
+
+      assert :ok = DF.to_csv(grouped_df, grouped_file_path)
+
+      # Files with the same content
+      assert File.read!(ungrouped_file_path) == File.read!(grouped_file_path)
+    end
+  end
+
+  describe "to_ipc/2" do
+    @tag :tmp_dir
+    test "does not consider groups when saving file", %{df: df, tmp_dir: tmp_dir} do
+      ungrouped_file_path = Path.join(tmp_dir, "ungrouped-tmp.ipc")
+      :ok = DF.to_ipc(df, ungrouped_file_path)
+
+      grouped_df = DF.group_by(df, "year")
+      grouped_file_path = Path.join(tmp_dir, "grouped-tmp.ipc")
+
+      assert :ok = DF.to_ipc(grouped_df, grouped_file_path)
+
+      # Files with the same content
+      assert File.read!(ungrouped_file_path) == File.read!(grouped_file_path)
+    end
+  end
+
+  describe "to_ndjson/2" do
+    @tag :tmp_dir
+    test "does not consider groups when saving file", %{df: df, tmp_dir: tmp_dir} do
+      ungrouped_file_path = Path.join(tmp_dir, "ungrouped-tmp.ndjson")
+      :ok = DF.to_ndjson(df, ungrouped_file_path)
+
+      grouped_df = DF.group_by(df, "year")
+      grouped_file_path = Path.join(tmp_dir, "grouped-tmp.ndjson")
+
+      assert :ok = DF.to_ndjson(grouped_df, grouped_file_path)
+
+      # Files with the same content
+      assert File.read!(ungrouped_file_path) == File.read!(grouped_file_path)
+    end
+  end
+
+  describe "to_parquet/2" do
+    @tag :tmp_dir
+    test "does not consider groups when saving file", %{df: df, tmp_dir: tmp_dir} do
+      ungrouped_file_path = Path.join(tmp_dir, "ungrouped-tmp.parquet")
+      :ok = DF.to_parquet(df, ungrouped_file_path)
+
+      grouped_df = DF.group_by(df, "year")
+      grouped_file_path = Path.join(tmp_dir, "grouped-tmp.parquet")
+
+      assert :ok = DF.to_parquet(grouped_df, grouped_file_path)
+
+      # Files with the same content
+      assert File.read!(ungrouped_file_path) == File.read!(grouped_file_path)
+    end
+  end
+
+  describe "dump_csv/2" do
+    test "does not consider groups when dumping DF", %{df: df} do
+      dumped_csv = DF.dump_csv(df)
+
+      grouped_df = DF.group_by(df, "year")
+
+      assert DF.dump_csv(grouped_df) == dumped_csv
+    end
+  end
+
+  test "to_lazy/1", %{df: df} do
+    grouped = DF.group_by(df, ["country", "year"])
+    assert ["country", "year"] = DF.to_lazy(grouped).groups
+  end
 end

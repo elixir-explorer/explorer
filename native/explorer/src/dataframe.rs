@@ -469,7 +469,7 @@ pub fn df_arrange_with(
             .sort_by_exprs(exprs, directions, false)
             .collect()?
     } else {
-        df.groupby(groups)?.apply(|df| {
+        df.groupby_stable(groups)?.apply(|df| {
             df.lazy()
                 .sort_by_exprs(&exprs, &directions, false)
                 .collect()
