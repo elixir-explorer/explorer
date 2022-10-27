@@ -589,7 +589,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec to_ipc_stream(df :: DataFrame.t(), filename :: String.t()) ::
-          {:ok, String.t()} | {:error, term()}
+          :ok | {:error, term()}
   def to_ipc_stream(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
     backend = backend_from_options!(opts)

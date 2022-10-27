@@ -163,7 +163,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def to_ipc_stream(%DataFrame{data: df}, filename, compression) do
     case Native.df_write_ipc_stream(df, filename, compression) do
-      {:ok, _} -> {:ok, filename}
+      {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
   end
