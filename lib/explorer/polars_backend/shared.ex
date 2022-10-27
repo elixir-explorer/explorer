@@ -116,6 +116,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("date"), do: :date
   def normalise_dtype("datetime[ms]"), do: :datetime
   def normalise_dtype("datetime[μs]"), do: :datetime
+  def normalise_dtype("datetime[ns]"), do: :datetime
   def normalise_dtype("list[u32]"), do: :integer
 
   def internal_from_dtype(:integer), do: "i64"
