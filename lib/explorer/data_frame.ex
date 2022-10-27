@@ -547,23 +547,18 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Reads an IPC Streaming file into a dataframe.
+
   ## Options
+
     * `columns` - List with the name or index of columns to be selected. Defaults to all columns.
   """
   @doc type: :io
   @spec from_ipc_stream(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc_stream(filename, opts \\ []) do
-    opts =
-      Keyword.validate!(opts,
-        columns: nil
-      )
-
+    opts = Keyword.validate!(opts, columns: nil)
     backend = backend_from_options!(opts)
 
-    backend.from_ipc_stream(
-      filename,
-      opts[:columns]
-    )
+    backend.from_ipc_stream(filename, opts[:columns])
   end
 
   @doc """
@@ -580,13 +575,15 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Writes a dataframe to a IPC Stream file.
+
   Arrow IPC Streams provide a streaming protocol or “format" for sending an arbitrary length sequence of record batches.
   The format must be processed from start to end, and does not support random access.
+
   You can read more information about the difference between IPC and IPC Streaming files on the
   [https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format](Apache Arrow Documentation(#ipc-streaming-format) page.
-  If you want to write a dataframe IPC, it's recommended to use IPC instead, unless you really need to as using IPC allows
-  supports random access, and thus is very useful when used with memory maps.
+
   ## Options
+
     * `compression` - Sets the algorithm used to compress the IPC file.
       It accepts `"ZSTD"` or `"LZ4"` compression. (default: `nil`)
   """
@@ -594,18 +591,10 @@ defmodule Explorer.DataFrame do
   @spec to_ipc_stream(df :: DataFrame.t(), filename :: String.t()) ::
           {:ok, String.t()} | {:error, term()}
   def to_ipc_stream(df, filename, opts \\ []) do
-    opts =
-      Keyword.validate!(opts,
-        compression: nil
-      )
-
+    opts = Keyword.validate!(opts, compression: nil)
     backend = backend_from_options!(opts)
 
-    backend.to_ipc_stream(
-      df,
-      filename,
-      opts[:compression]
-    )
+    backend.to_ipc_stream(df, filename, opts[:compression])
   end
 
   @doc """
