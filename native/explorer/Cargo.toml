@@ -35,6 +35,7 @@ features = [
   "dtype-date",
   "dtype-datetime",
   "ipc",
+  "ipc_streaming",
   "json",
   "lazy",
   "parquet",

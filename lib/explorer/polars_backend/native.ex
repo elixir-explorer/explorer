@@ -78,6 +78,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_new(_columns), do: err()
   def df_pivot_wider(_df, _id_columns, _pivot_column, _values_column), do: err()
   def df_read_ipc(_filename, _columns, _projection), do: err()
+  def df_read_ipc_stream(_filename, _columns, _projection), do: err()
   def df_read_parquet(_filename), do: err()
   def df_select(_df, _selection), do: err()
   def df_select_at_idx(_df, _idx), do: err()
@@ -95,6 +96,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_with_columns(_df, _columns), do: err()
   def df_with_column_exprs(_df, _exprs), do: err()
   def df_write_ipc(_df, _filename, _compression), do: err()
+  def df_write_ipc_stream(_df, _filename, _compression), do: err()
   def df_write_parquet(_df, _filename, _compression, _compression_level), do: err()
 
   # Expressions (for lazy queries)
