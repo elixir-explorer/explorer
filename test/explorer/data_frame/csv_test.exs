@@ -5,15 +5,7 @@ defmodule Explorer.DataFrame.CSVTest do
   """
   use ExUnit.Case, async: true
   alias Explorer.DataFrame, as: DF
-
-  # https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.EPSILON
-  @f64_epsilon 2.2204460492503131e-16
-
-  def tmp_file!(data) do
-    filename = System.tmp_dir!() |> Path.join("data.csv")
-    File.write!(filename, data)
-    filename
-  end
+  import Explorer.IOHelpers
 
   test "read" do
     data = """
@@ -45,7 +37,7 @@ defmodule Explorer.DataFrame.CSVTest do
              "lng" => :float
            }
 
-    assert_in_delta(57.653484, frame["lat"][0], @f64_epsilon)
+    assert_in_delta(57.653484, frame["lat"][0], f64_epsilon())
 
     city = frame["city"]
 
