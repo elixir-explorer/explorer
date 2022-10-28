@@ -1,7 +1,6 @@
 defmodule Explorer.DataFrame.ParquetTest do
-  @moduledoc """
-  Integration tests, based on `Explorer.DataFrame.CsvTest`.
-  """
+  # Integration tests, based on `Explorer.DataFrame.CsvTest`.
+
   use ExUnit.Case, async: true
   alias Explorer.DataFrame, as: DF
   import Explorer.IOHelpers

@@ -1,7 +1,6 @@
 defmodule Explorer.DataFrame.IPCTest do
-  @moduledoc """
-  Integration tests for IPC reader
-  """
+  # Integration tests for IPC reader
+
   use ExUnit.Case, async: true
   alias Explorer.DataFrame, as: DF
   import Explorer.IOHelpers

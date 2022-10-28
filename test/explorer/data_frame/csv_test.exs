@@ -1,8 +1,7 @@
 defmodule Explorer.DataFrame.CSVTest do
-  @moduledoc """
-  Integration tests, based on:
-  https://github.com/jorgecarleitao/arrow2/tree/main/src/io/csv/read
-  """
+  # Integration tests, based on:
+  # https://github.com/jorgecarleitao/arrow2/tree/main/src/io/csv/read
+
   use ExUnit.Case, async: true
   alias Explorer.DataFrame, as: DF
   import Explorer.IOHelpers
