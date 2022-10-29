@@ -237,6 +237,7 @@ pub fn df_write_ipc_stream(
     Ok(())
 }
 
+#[cfg(not(target_arch = "arm"))]
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_read_ndjson(
     filename: &str,
@@ -254,6 +255,7 @@ pub fn df_read_ndjson(
     Ok(ExDataFrame::new(df))
 }
 
+#[cfg(not(target_arch = "arm"))]
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
     let df = &data.resource.0;
@@ -261,6 +263,26 @@ pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), Explorer
     let mut buf_writer = BufWriter::new(file);
     JsonWriter::new(&mut buf_writer).finish(&mut df.clone())?;
     Ok(())
+}
+
+#[cfg(target_arch = "arm")]
+#[rustler::nif]
+pub fn df_read_ndjson(
+    _filename: &str,
+    _infer_schema_length: Option<usize>,
+    _batch_size: usize,
+) -> Result<ExDataFrame, ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "NDJSON parsing is not enabled for this machine"
+    )))
+}
+
+#[cfg(target_arch = "arm")]
+#[rustler::nif]
+pub fn df_write_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "NDJSON writing is not enabled for this machine"
+    )))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
