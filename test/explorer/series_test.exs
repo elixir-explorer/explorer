@@ -476,6 +476,44 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "pow/2" do
+    test "pow of a series with an integer scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      result = Series.pow(s1, 2)
+
+      assert result.dtype == :integer
+      assert Series.to_list(result) == [1, 4, 9]
+    end
+
+    test "pow of a series with an float scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      result = Series.pow(s1, 2.0)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 4.0, 9.0]
+    end
+
+    test "pow of a series with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      result = Series.pow(2, s1)
+
+      assert result.dtype == :integer
+      assert Series.to_list(result) == [2, 4, 8]
+    end
+
+    test "pow of a series with an float scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      result = Series.pow(2.0, s1)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [2.0, 4.0, 8.0]
+    end
+  end
+
   describe "sample/2" do
     test "sample taking 10 elements" do
       s = 1..100 |> Enum.to_list() |> Series.from_list()

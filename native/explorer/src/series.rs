@@ -8,6 +8,7 @@ use rand::seq::IteratorRandom;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64;
 use rustler::{Encoder, Env, Term};
+use std::convert::TryFrom;
 use std::result::Result;
 
 pub(crate) fn to_series_collection(s: Vec<ExSeries>) -> Vec<Series> {
@@ -648,7 +649,7 @@ pub fn s_n_unique(data: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
+pub fn s_pow_f_rhs(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s
         .cast(&DataType::Float64)?
@@ -659,9 +660,30 @@ pub fn s_pow(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_int_pow(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError> {
+pub fn s_pow_f_lhs(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let s = s
+        .cast(&DataType::Float64)?
+        .f64()?
+        .apply(|v| exponent.powf(v))
+        .into_series();
+    Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_pow_i_rhs(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s.i64()?.apply(|v| v.pow(exponent)).into_series();
+    Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_pow_i_lhs(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let s = s
+        .i64()?
+        .apply(|v| exponent.pow(u32::try_from(v).unwrap()) as i64)
+        .into_series();
     Ok(ExSeries::new(s))
 }
 
