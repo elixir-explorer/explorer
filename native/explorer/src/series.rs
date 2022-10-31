@@ -685,11 +685,9 @@ pub fn s_pow_i_lhs(data: ExSeries, base: u32) -> Result<ExSeries, ExplorerError>
             let s = s.u32()?.apply(|v| base.pow(v)).into_series();
             Ok(ExSeries::new(s))
         }
-        Err(_) => {
-            Err(ExplorerError::Other(String::from(
-                "negative exponent with integer base",
-            )))
-        }
+        Err(_) => Err(ExplorerError::Other(String::from(
+            "negative exponent with integer base",
+        ))),
     }
 }
 
