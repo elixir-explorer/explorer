@@ -8,7 +8,6 @@ use rand::seq::IteratorRandom;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64;
 use rustler::{Encoder, Env, Term};
-use std::convert::TryFrom;
 use std::result::Result;
 
 pub(crate) fn to_series_collection(s: Vec<ExSeries>) -> Vec<Series> {
@@ -678,13 +677,20 @@ pub fn s_pow_i_rhs(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerEr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_i_lhs(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError> {
+pub fn s_pow_i_lhs(data: ExSeries, base: u32) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
-    let s = s
-        .i64()?
-        .apply(|v| exponent.pow(u32::try_from(v).unwrap()) as i64)
-        .into_series();
-    Ok(ExSeries::new(s))
+
+    match s.strict_cast(&DataType::UInt32) {
+        Ok(s) => {
+            let s = s.u32()?.apply(|v| base.pow(v)).into_series();
+            Ok(ExSeries::new(s))
+        }
+        Err(_) => {
+            return Err(ExplorerError::Other(String::from(
+                "negative exponent with integer base",
+            )))
+        }
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
