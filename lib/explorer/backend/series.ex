@@ -145,7 +145,7 @@ defmodule Explorer.Backend.Series do
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
     open = color("[", :list, inspect_opts)
     close = color("]", :list, inspect_opts)
-    dtype = color("#{Series.dtype(series)}", :atom, inspect_opts)
+    dtype = color("#{Series.dtype(series)} ", :atom, inspect_opts)
 
     data =
       container_doc(
@@ -156,6 +156,14 @@ defmodule Explorer.Backend.Series do
         &Explorer.Shared.to_string/2
       )
 
-    concat([dtype, open, "#{n_rows || "???"}", close, line(), data])
+    concat([
+      color(backend, :atom, inspect_opts),
+      open,
+      "#{n_rows || "???"}",
+      close,
+      line(),
+      dtype,
+      data
+    ])
   end
 end
