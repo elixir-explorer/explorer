@@ -686,7 +686,7 @@ pub fn s_pow_i_lhs(data: ExSeries, base: u32) -> Result<ExSeries, ExplorerError>
             Ok(ExSeries::new(s))
         }
         Err(_) => {
-            return Err(ExplorerError::Other(String::from(
+            Err(ExplorerError::Other(String::from(
                 "negative exponent with integer base",
             )))
         }
