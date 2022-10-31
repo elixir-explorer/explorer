@@ -21,8 +21,8 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.iris()
       iex> df["sepal_length"]
       #Explorer.Series<
-        float[150]
-        [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9, 5.4, 4.8, 4.8, 4.3, 5.8, 5.7, 5.4, 5.1, 5.7, 5.1, 5.4, 5.1, 4.6, 5.1, 4.8, 5.0, 5.0, 5.2, 5.2, 4.7, 4.8, 5.4, 5.2, 5.5, 4.9, 5.0, 5.5, 4.9, 4.4, 5.1, 5.0, 4.5, 4.4, 5.0, 5.1, 4.8, 5.1, 4.6, 5.3, 5.0, ...]
+        Polars[150]
+        float [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9, 5.4, 4.8, 4.8, 4.3, 5.8, 5.7, 5.4, 5.1, 5.7, 5.1, 5.4, 5.1, 4.6, 5.1, 4.8, 5.0, 5.0, 5.2, 5.2, 4.7, 4.8, 5.4, 5.2, 5.5, 4.9, 5.0, 5.5, 4.9, 4.4, 5.1, 5.0, 4.5, 4.4, 5.0, 5.1, 4.8, 5.1, 4.6, 5.3, 5.0, ...]
       >
 
   ## Creating dataframes
@@ -123,8 +123,8 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.wine()
       iex> df["class"]
       #Explorer.Series<
-        integer[178]
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
+        Polars[178]
+        integer [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
       >
   """
 
@@ -1044,7 +1044,7 @@ defmodule Explorer.DataFrame do
 
   ## Grouped examples
 
-  Using grouped dataframes makes `head/2` return *n* rows from each group. 
+  Using grouped dataframes makes `head/2` return *n* rows from each group.
   Here is an example using the Iris dataset, and returning two rows from each group:
 
       iex> df = Explorer.Datasets.iris()
@@ -1109,7 +1109,7 @@ defmodule Explorer.DataFrame do
 
   ## Grouped examples
 
-  Using grouped dataframes makes `tail/2` return **n rows** from each group. 
+  Using grouped dataframes makes `tail/2` return **n rows** from each group.
   Here is an example using the Iris dataset, and returning two rows from each group:
 
       iex> df = Explorer.Datasets.iris()
@@ -1333,7 +1333,7 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Picks rows based on a callback function. 
+  Picks rows based on a callback function.
 
   This function is efficient because it uses a representation of the
   series without pulling them. The only restriction is that
@@ -1364,7 +1364,7 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
       iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.cumulative_max(df["col2"]) end)
       ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer
-     
+
   But it's possible to use a boolean operation based on another function:
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
@@ -2273,15 +2273,15 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pull(df, "total")
       #Explorer.Series<
-        integer[1094]
-        [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
+        Polars[1094]
+        integer [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pull(df, 2)
       #Explorer.Series<
-        integer[1094]
-        [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
+        Polars[1094]
+        integer [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
       >
   """
   @doc type: :single

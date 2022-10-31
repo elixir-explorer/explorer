@@ -97,54 +97,54 @@ defmodule Explorer.Series do
 
       iex> Explorer.Series.from_list([1, 2, 3])
       #Explorer.Series<
-        integer[3]
-        [1, 2, 3]
+        Polars[3]
+        integer [1, 2, 3]
       >
 
   Series are nullable, so you may also include nils.
 
       iex> Explorer.Series.from_list([1.0, nil, 2.5, 3.1])
       #Explorer.Series<
-        float[4]
-        [1.0, nil, 2.5, 3.1]
+        Polars[4]
+        float [1.0, nil, 2.5, 3.1]
       >
 
   A mix of integers and floats will be downcasted to a float.
 
       iex> Explorer.Series.from_list([1, 2.0])
       #Explorer.Series<
-        float[2]
-        [1.0, 2.0]
+        Polars[2]
+        float [1.0, 2.0]
       >
 
   Trying to create a "nil" series will, by default, result in a series of floats.
 
       iex> Explorer.Series.from_list([nil, nil])
       #Explorer.Series<
-        float[2]
-        [nil, nil]
+        Polars[2]
+        float [nil, nil]
       >
 
   You can specify the desired `dtype` for a series with the `:dtype` option.
 
       iex> Explorer.Series.from_list([nil, nil], dtype: :integer)
       #Explorer.Series<
-        integer[2]
-        [nil, nil]
+        Polars[2]
+        integer [nil, nil]
       >
 
       iex> Explorer.Series.from_list([1, nil], dtype: :string)
       #Explorer.Series<
-        string[2]
-        ["1", nil]
+        Polars[2]
+        string ["1", nil]
       >
 
   It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
 
       iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: :datetime)
       #Explorer.Series<
-        datetime[1]
-        [2022-04-13 21:00:42.000000]
+        Polars[1]
+        datetime [2022-04-13 21:00:42.000000]
       >
 
   Mixing non-numeric data types will raise an ArgumentError.
@@ -212,15 +212,15 @@ defmodule Explorer.Series do
       iex> tensor = Nx.tensor([1, 2, 3])
       iex> Explorer.Series.from_tensor(tensor)
       #Explorer.Series<
-        integer[3]
-        [1, 2, 3]
+        Polars[3]
+        integer [1, 2, 3]
       >
 
       iex> tensor = Nx.tensor([1.0, 2.0, 3.0])
       iex> Explorer.Series.from_tensor(tensor)
       #Explorer.Series<
-        float[3]
-        [1.0, 2.0, 3.0]
+        Polars[3]
+        float [1.0, 2.0, 3.0]
       >
   """
   @doc type: :transformation
@@ -281,22 +281,22 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.cast(s, :string)
       #Explorer.Series<
-        string[3]
-        ["1", "2", "3"]
+        Polars[3]
+        string ["1", "2", "3"]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.cast(s, :float)
       #Explorer.Series<
-        float[3]
-        [1.0, 2.0, 3.0]
+        Polars[3]
+        float [1.0, 2.0, 3.0]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.cast(s, :date)
       #Explorer.Series<
-        date[3]
-        [1970-01-02, 1970-01-03, 1970-01-04]
+        Polars[3]
+        date [1970-01-02, 1970-01-03, 1970-01-04]
       >
 
   Note that `datetime` is represented as an integer of microseconds since Unix Epoch (1970-01-01 00:00:00).
@@ -304,15 +304,15 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.cast(s, :datetime)
       #Explorer.Series<
-        datetime[3]
-        [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
+        Polars[3]
+        datetime [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
       >
 
       iex> s = Explorer.Series.from_list([1649883642 * 1_000 * 1_000])
       iex> Explorer.Series.cast(s, :datetime)
       #Explorer.Series<
-        datetime[1]
-        [2022-04-13 21:00:42.000000]
+        Polars[1]
+        datetime [2022-04-13 21:00:42.000000]
       >
 
   `cast/2` will return the series as a no-op if you try to cast to the same dtype.
@@ -320,8 +320,8 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.cast(s, :integer)
       #Explorer.Series<
-        integer[3]
-        [1, 2, 3]
+        Polars[3]
+        integer [1, 2, 3]
       >
   """
   @doc type: :element_wise
@@ -426,8 +426,8 @@ defmodule Explorer.Series do
       iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.head(s)
       #Explorer.Series<
-        integer[10]
-        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        Polars[10]
+        integer [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       >
   """
   @doc type: :transformation
@@ -442,8 +442,8 @@ defmodule Explorer.Series do
       iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.tail(s)
       #Explorer.Series<
-        integer[10]
-        [91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
+        Polars[10]
+        integer [91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
       >
   """
   @doc type: :transformation
@@ -495,29 +495,29 @@ defmodule Explorer.Series do
       iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 10, seed: 100)
       #Explorer.Series<
-        integer[10]
-        [72, 33, 15, 4, 16, 49, 23, 96, 45, 47]
+        Polars[10]
+        integer [72, 33, 15, 4, 16, 49, 23, 96, 45, 47]
       >
 
       iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 0.05, seed: 100)
       #Explorer.Series<
-        integer[5]
-        [68, 24, 6, 8, 36]
+        Polars[5]
+        integer [68, 24, 6, 8, 36]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 7, seed: 100, replacement: true)
       #Explorer.Series<
-        integer[7]
-        [5, 1, 2, 4, 5, 3, 1]
+        Polars[7]
+        integer [5, 1, 2, 4, 5, 3, 1]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 1.2, seed: 100, replacement: true)
       #Explorer.Series<
-        integer[6]
-        [5, 1, 2, 4, 5, 3]
+        Polars[6]
+        integer [5, 1, 2, 4, 5, 3]
       >
   """
   @doc type: :transformation
@@ -553,8 +553,8 @@ defmodule Explorer.Series do
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.take_every(2)
       #Explorer.Series<
-        integer[5]
-        [1, 3, 5, 7, 9]
+        Polars[5]
+        integer [1, 3, 5, 7, 9]
       >
 
   If *n* is bigger than the size of the series, the result is a new series with only the first value of the supplied series.
@@ -562,8 +562,8 @@ defmodule Explorer.Series do
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.take_every(20)
       #Explorer.Series<
-        integer[1]
-        [1]
+        Polars[1]
+        integer [1]
       >
   """
   @doc type: :transformation
@@ -579,8 +579,8 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.mask(s1, s2)
       #Explorer.Series<
-        integer[2]
-        [1, 3]
+        Polars[2]
+        integer [1, 3]
       >
   """
   @doc type: :transformation
@@ -595,8 +595,8 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5])
       iex> Explorer.Series.slice(s, 1, 2)
       #Explorer.Series<
-        integer[2]
-        [2, 3]
+        Polars[2]
+        integer [2, 3]
       >
 
   Negative offsets count from the end of the series.
@@ -604,8 +604,8 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5])
       iex> Explorer.Series.slice(s, -3, 2)
       #Explorer.Series<
-        integer[2]
-        [3, 4]
+        Polars[2]
+        integer [3, 4]
       >
 
   If the size would run past the end of the series, the result may be shorter than the size.
@@ -613,8 +613,8 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5])
       iex> Explorer.Series.slice(s, -3, 4)
       #Explorer.Series<
-        integer[3]
-        [3, 4, 5]
+        Polars[3]
+        integer [3, 4, 5]
       >
   """
   @doc type: :transformation
@@ -629,15 +629,15 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.slice(s, [0, 2])
       #Explorer.Series<
-        string[2]
-        ["a", "c"]
+        Polars[2]
+        string ["a", "c"]
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.slice(s, 1..2)
       #Explorer.Series<
-        string[2]
-        ["b", "c"]
+        Polars[2]
+        string ["b", "c"]
       >
   """
   @doc type: :transformation
@@ -686,16 +686,16 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([4, 5, 6])
       iex> Explorer.Series.concat([s1, s2])
       #Explorer.Series<
-        integer[6]
-        [1, 2, 3, 4, 5, 6]
+        Polars[6]
+        integer [1, 2, 3, 4, 5, 6]
       >
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> s2 = Explorer.Series.from_list([4.0, 5.0, 6.4])
       iex> Explorer.Series.concat(s1, s2)
       #Explorer.Series<
-        float[6]
-        [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
+        Polars[6]
+        float [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
       >
   """
   @doc type: :transformation
@@ -741,8 +741,8 @@ defmodule Explorer.Series do
       iex> s3 = Explorer.Series.from_list([nil, nil, 3, 4])
       iex> Explorer.Series.coalesce([s1, s2, s3])
       #Explorer.Series<
-        integer[4]
-        [1, 2, 3, 4]
+        Polars[4]
+        integer [1, 2, 3, 4]
       >
   """
   @doc type: :element_wise
@@ -761,8 +761,8 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.coalesce(s1, s2)
       #Explorer.Series<
-        integer[4]
-        [1, 2, 3, 4]
+        Polars[4]
+        integer [1, 2, 3, 4]
       >
 
       iex> s1 = Explorer.Series.from_list(["foo", nil, "bar", nil])
@@ -1072,15 +1072,15 @@ defmodule Explorer.Series do
       iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
       iex> Explorer.Series.cumulative_max(s)
       #Explorer.Series<
-        integer[4]
-        [1, 2, 3, 4]
+        Polars[4]
+        integer [1, 2, 3, 4]
       >
 
       iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
       iex> Explorer.Series.cumulative_max(s)
       #Explorer.Series<
-        integer[4]
-        [1, 2, nil, 4]
+        Polars[4]
+        integer [1, 2, nil, 4]
       >
   """
   @doc type: :window
@@ -1115,15 +1115,15 @@ defmodule Explorer.Series do
       iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
       iex> Explorer.Series.cumulative_min(s)
       #Explorer.Series<
-        integer[4]
-        [1, 1, 1, 1]
+        Polars[4]
+        integer [1, 1, 1, 1]
       >
 
       iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
       iex> Explorer.Series.cumulative_min(s)
       #Explorer.Series<
-        integer[4]
-        [1, 1, nil, 1]
+        Polars[4]
+        integer [1, 1, nil, 1]
       >
   """
   @doc type: :window
@@ -1157,15 +1157,15 @@ defmodule Explorer.Series do
       iex> s = [1, 2, 3, 4] |> Explorer.Series.from_list()
       iex> Explorer.Series.cumulative_sum(s)
       #Explorer.Series<
-        integer[4]
-        [1, 3, 6, 10]
+        Polars[4]
+        integer [1, 3, 6, 10]
       >
 
       iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
       iex> Explorer.Series.cumulative_sum(s)
       #Explorer.Series<
-        integer[4]
-        [1, 3, nil, 7]
+        Polars[4]
+        integer [1, 3, nil, 7]
       >
   """
   @doc type: :window
@@ -1198,8 +1198,8 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, 4, 1, 4])
       iex> Explorer.Series.peaks(s)
       #Explorer.Series<
-        boolean[5]
-        [false, false, true, false, true]
+        Polars[5]
+        boolean [false, false, true, false, true]
       >
   """
   @doc type: :element_wise
@@ -1231,8 +1231,8 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([4, 5, 6])
       iex> Explorer.Series.add(s1, s2)
       #Explorer.Series<
-        integer[3]
-        [5, 7, 9]
+        Polars[3]
+        integer [5, 7, 9]
       >
 
   You can also use scalar values on both sides:
@@ -1240,15 +1240,15 @@ defmodule Explorer.Series do
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.add(s1, 2)
       #Explorer.Series<
-        integer[3]
-        [3, 4, 5]
+        Polars[3]
+        integer [3, 4, 5]
       >
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.add(2, s1)
       #Explorer.Series<
-        integer[3]
-        [3, 4, 5]
+        Polars[3]
+        integer [3, 4, 5]
       >
   """
   @doc type: :element_wise
@@ -1271,8 +1271,8 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([4, 5, 6])
       iex> Explorer.Series.subtract(s1, s2)
       #Explorer.Series<
-        integer[3]
-        [-3, -3, -3]
+        Polars[3]
+        integer [-3, -3, -3]
       >
 
   You can also use scalar values on both sides:
@@ -1280,15 +1280,15 @@ defmodule Explorer.Series do
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.subtract(s1, 2)
       #Explorer.Series<
-        integer[3]
-        [-1, 0, 1]
+        Polars[3]
+        integer [-1, 0, 1]
       >
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.subtract(2, s1)
       #Explorer.Series<
-        integer[3]
-        [1, 0, -1]
+        Polars[3]
+        integer [1, 0, -1]
       >
   """
   @doc type: :element_wise
@@ -1311,15 +1311,15 @@ defmodule Explorer.Series do
       iex> s2 = 11..20 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.multiply(s1, s2)
       #Explorer.Series<
-        integer[10]
-        [11, 24, 39, 56, 75, 96, 119, 144, 171, 200]
+        Polars[10]
+        integer [11, 24, 39, 56, 75, 96, 119, 144, 171, 200]
       >
 
       iex> s1 = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.multiply(s1, 2)
       #Explorer.Series<
-        integer[5]
-        [2, 4, 6, 8, 10]
+        Polars[5]
+        integer [2, 4, 6, 8, 10]
       >
   """
   @doc type: :element_wise
@@ -1342,30 +1342,30 @@ defmodule Explorer.Series do
       iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
-        float[3]
-        [5.0, 5.0, 5.0]
+        Polars[3]
+        float [5.0, 5.0, 5.0]
       >
 
       iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, 2)
       #Explorer.Series<
-        float[3]
-        [5.0, 5.0, 5.0]
+        Polars[3]
+        float [5.0, 5.0, 5.0]
       >
 
       iex> s1 = [10, 52 ,10] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, 2.5)
       #Explorer.Series<
-        float[3]
-        [4.0, 20.8, 4.0]
+        Polars[3]
+        float [4.0, 20.8, 4.0]
       >
 
       iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
       iex> s2 = [2, 0, 2] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
-        float[3]
-        [5.0, infinity, 5.0]
+        Polars[3]
+        float [5.0, infinity, 5.0]
       >
   """
   @doc type: :element_wise
@@ -1395,36 +1395,36 @@ defmodule Explorer.Series do
       iex> s = [8, 16, 32] |> Explorer.Series.from_list()
       iex> Explorer.Series.pow(s, 2.0)
       #Explorer.Series<
-        float[3]
-        [64.0, 256.0, 1024.0]
+        Polars[3]
+        float [64.0, 256.0, 1024.0]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
       iex> Explorer.Series.pow(s, 3)
       #Explorer.Series<
-        integer[3]
-        [8, 64, 216]
+        Polars[3]
+        integer [8, 64, 216]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
       iex> Explorer.Series.pow(s, -3.0)
       #Explorer.Series<
-        float[3]
-        [0.125, 0.015625, 0.004629629629629629]
+        Polars[3]
+        float [0.125, 0.015625, 0.004629629629629629]
       >
 
       iex> s = [1.0, 2.0, 3.0] |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.pow(3.0)
       #Explorer.Series<
-        float[3]
-        [1.0, 8.0, 27.0]
+        Polars[3]
+        float [1.0, 8.0, 27.0]
       >
 
       iex> s = [2.0, 4.0, 6.0] |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.pow(2)
       #Explorer.Series<
-        float[3]
-        [4.0, 16.0, 36.0]
+        Polars[3]
+        float [4.0, 16.0, 36.0]
       >
   """
   @doc type: :element_wise
@@ -1446,23 +1446,23 @@ defmodule Explorer.Series do
       iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
       iex> Explorer.Series.quotient(s1, s2)
       #Explorer.Series<
-        integer[3]
-        [5, 5, 5]
+        Polars[3]
+        integer [5, 5, 5]
       >
 
       iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
       iex> s2 = [2, 2, 0] |> Explorer.Series.from_list()
       iex> Explorer.Series.quotient(s1, s2)
       #Explorer.Series<
-        integer[3]
-        [5, 5, nil]
+        Polars[3]
+        integer [5, 5, nil]
       >
 
       iex> s1 = [10, 12, 15] |> Explorer.Series.from_list()
       iex> Explorer.Series.quotient(s1, 3)
       #Explorer.Series<
-        integer[3]
-        [3, 4, 5]
+        Polars[3]
+        integer [3, 4, 5]
       >
 
   """
@@ -1492,23 +1492,23 @@ defmodule Explorer.Series do
       iex> s2 = [2, 2, 2] |> Explorer.Series.from_list()
       iex> Explorer.Series.remainder(s1, s2)
       #Explorer.Series<
-        integer[3]
-        [0, 1, 0]
+        Polars[3]
+        integer [0, 1, 0]
       >
 
       iex> s1 = [10, 11, 10] |> Explorer.Series.from_list()
       iex> s2 = [2, 2, 0] |> Explorer.Series.from_list()
       iex> Explorer.Series.remainder(s1, s2)
       #Explorer.Series<
-        integer[3]
-        [0, 1, nil]
+        Polars[3]
+        integer [0, 1, nil]
       >
 
       iex> s1 = [10, 11, 9] |> Explorer.Series.from_list()
       iex> Explorer.Series.remainder(s1, 3)
       #Explorer.Series<
-        integer[3]
-        [1, 2, 0]
+        Polars[3]
+        integer [1, 2, 0]
       >
 
   """
@@ -1559,43 +1559,43 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
       iex> Explorer.Series.equal(s1, s2)
       #Explorer.Series<
-        boolean[3]
-        [true, true, false]
+        Polars[3]
+        boolean [true, true, false]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.equal(s, 1)
       #Explorer.Series<
-        boolean[3]
-        [true, false, false]
+        Polars[3]
+        boolean [true, false, false]
       >
 
       iex> s = Explorer.Series.from_list([true, true, false])
       iex> Explorer.Series.equal(s, true)
       #Explorer.Series<
-        boolean[3]
-        [true, true, false]
+        Polars[3]
+        boolean [true, true, false]
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.equal(s, "a")
       #Explorer.Series<
-        boolean[3]
-        [true, false, false]
+        Polars[3]
+        boolean [true, false, false]
       >
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.equal(s, ~D[1999-12-31])
       #Explorer.Series<
-        boolean[2]
-        [false, true]
+        Polars[2]
+        boolean [false, true]
       >
 
       iex> s = Explorer.Series.from_list([~N[2022-01-01 00:00:00], ~N[2022-01-01 23:00:00]])
       iex> Explorer.Series.equal(s, ~N[2022-01-01 00:00:00])
       #Explorer.Series<
-        boolean[2]
-        [true, false]
+        Polars[2]
+        boolean [true, false]
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
@@ -1624,43 +1624,43 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
       iex> Explorer.Series.not_equal(s1, s2)
       #Explorer.Series<
-        boolean[3]
-        [false, false, true]
+        Polars[3]
+        boolean [false, false, true]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.not_equal(s, 1)
       #Explorer.Series<
-        boolean[3]
-        [false, true, true]
+        Polars[3]
+        boolean [false, true, true]
       >
 
       iex> s = Explorer.Series.from_list([true, true, false])
       iex> Explorer.Series.not_equal(s, true)
       #Explorer.Series<
-        boolean[3]
-        [false, false, true]
+        Polars[3]
+        boolean [false, false, true]
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.not_equal(s, "a")
       #Explorer.Series<
-        boolean[3]
-        [false, true, true]
+        Polars[3]
+        boolean [false, true, true]
       >
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.not_equal(s, ~D[1999-12-31])
       #Explorer.Series<
-        boolean[2]
-        [true, false]
+        Polars[2]
+        boolean [true, false]
       >
 
       iex> s = Explorer.Series.from_list([~N[2022-01-01 00:00:00], ~N[2022-01-01 23:00:00]])
       iex> Explorer.Series.not_equal(s, ~N[2022-01-01 00:00:00])
       #Explorer.Series<
-        boolean[2]
-        [false, true]
+        Polars[2]
+        boolean [false, true]
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
@@ -1700,8 +1700,8 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
       iex> Explorer.Series.greater(s1, s2)
       #Explorer.Series<
-        boolean[3]
-        [false, false, false]
+        Polars[3]
+        boolean [false, false, false]
       >
   """
   @doc type: :element_wise
@@ -1733,8 +1733,8 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
       iex> Explorer.Series.greater_equal(s1, s2)
       #Explorer.Series<
-        boolean[3]
-        [true, true, false]
+        Polars[3]
+        boolean [true, true, false]
       >
   """
   @doc type: :element_wise
@@ -1771,8 +1771,8 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
       iex> Explorer.Series.less(s1, s2)
       #Explorer.Series<
-        boolean[3]
-        [false, false, true]
+        Polars[3]
+        boolean [false, false, true]
       >
   """
   @doc type: :element_wise
@@ -1804,8 +1804,8 @@ defmodule Explorer.Series do
       iex> s2 = Explorer.Series.from_list([1, 2, 4])
       iex> Explorer.Series.less_equal(s1, s2)
       #Explorer.Series<
-        boolean[3]
-        [true, true, true]
+        Polars[3]
+        boolean [true, true, true]
       >
   """
   @doc type: :element_wise
@@ -1872,8 +1872,8 @@ defmodule Explorer.Series do
       iex> mask2 = Explorer.Series.less(s1, 3)
       iex> Explorer.Series.and(mask1, mask2)
       #Explorer.Series<
-        boolean[3]
-        [false, true, false]
+        Polars[3]
+        boolean [false, true, false]
       >
 
   """
@@ -1891,8 +1891,8 @@ defmodule Explorer.Series do
       iex> mask2 = Explorer.Series.greater(s1, 2)
       iex> Explorer.Series.or(mask1, mask2)
       #Explorer.Series<
-        boolean[3]
-        [true, false, true]
+        Polars[3]
+        boolean [true, false, true]
       >
 
   """
@@ -1939,8 +1939,8 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([9, 3, 7, 1])
       iex> s |> Explorer.Series.sort()
       #Explorer.Series<
-        integer[4]
-        [1, 3, 7, 9]
+        Polars[4]
+        integer [1, 3, 7, 9]
       >
 
   """
@@ -1961,8 +1961,8 @@ defmodule Explorer.Series do
       iex> s = [1, 2, 3] |> Explorer.Series.from_list()
       iex> Explorer.Series.reverse(s)
       #Explorer.Series<
-        integer[3]
-        [3, 2, 1]
+        Polars[3]
+        integer [3, 2, 1]
       >
   """
   @doc type: :transformation
@@ -1978,8 +1978,8 @@ defmodule Explorer.Series do
       iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.distinct()
       #Explorer.Series<
-        integer[3]
-        [1, 2, 3]
+        Polars[3]
+        integer [1, 2, 3]
       >
   """
   @doc type: :transformation
@@ -2051,15 +2051,15 @@ defmodule Explorer.Series do
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_sum(s, 4)
       #Explorer.Series<
-        integer[10]
-        [1, 3, 6, 10, 14, 18, 22, 26, 30, 34]
+        Polars[10]
+        integer [1, 3, 6, 10, 14, 18, 22, 26, 30, 34]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_sum(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
-        float[10]
-        [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
+        Polars[10]
+        float [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
       >
   """
   @doc type: :window
@@ -2084,15 +2084,15 @@ defmodule Explorer.Series do
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_mean(s, 4)
       #Explorer.Series<
-        float[10]
-        [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
+        Polars[10]
+        float [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_mean(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
-        float[10]
-        [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5]
+        Polars[10]
+        float [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5]
       >
   """
   @doc type: :window
@@ -2117,15 +2117,15 @@ defmodule Explorer.Series do
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_min(s, 4)
       #Explorer.Series<
-        integer[10]
-        [1, 1, 1, 1, 2, 3, 4, 5, 6, 7]
+        Polars[10]
+        integer [1, 1, 1, 1, 2, 3, 4, 5, 6, 7]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_min(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
-        float[10]
-        [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+        Polars[10]
+        float [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
       >
   """
   @doc type: :window
@@ -2150,15 +2150,15 @@ defmodule Explorer.Series do
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_max(s, 4)
       #Explorer.Series<
-        integer[10]
-        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        Polars[10]
+        integer [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_max(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
-        float[10]
-        [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
+        Polars[10]
+        float [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
       >
   """
   @doc type: :window
@@ -2190,57 +2190,57 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.fill_missing(s, :forward)
       #Explorer.Series<
-        integer[4]
-        [1, 2, 2, 4]
+        Polars[4]
+        integer [1, 2, 2, 4]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.fill_missing(s, :backward)
       #Explorer.Series<
-        integer[4]
-        [1, 2, 4, 4]
+        Polars[4]
+        integer [1, 2, 4, 4]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.fill_missing(s, :max)
       #Explorer.Series<
-        integer[4]
-        [1, 2, 4, 4]
+        Polars[4]
+        integer [1, 2, 4, 4]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.fill_missing(s, :min)
       #Explorer.Series<
-        integer[4]
-        [1, 2, 1, 4]
+        Polars[4]
+        integer [1, 2, 1, 4]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.fill_missing(s, :mean)
       #Explorer.Series<
-        integer[4]
-        [1, 2, 2, 4]
+        Polars[4]
+        integer [1, 2, 2, 4]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.fill_missing(s, 3)
       #Explorer.Series<
-        integer[4]
-        [1, 2, 3, 4]
+        Polars[4]
+        integer [1, 2, 3, 4]
       >
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
       iex> Explorer.Series.fill_missing(s, 3.0)
       #Explorer.Series<
-        float[4]
-        [1.0, 2.0, 3.0, 4.0]
+        Polars[4]
+        float [1.0, 2.0, 3.0, 4.0]
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", nil, "d"])
       iex> Explorer.Series.fill_missing(s, "c")
       #Explorer.Series<
-        string[4]
-        ["a", "b", "c", "d"]
+        Polars[4]
+        string ["a", "b", "c", "d"]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
@@ -2275,8 +2275,8 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.is_nil(s)
       #Explorer.Series<
-        boolean[4]
-        [false, false, true, false]
+        Polars[4]
+        boolean [false, false, true, false]
       >
   """
   @doc type: :element_wise
@@ -2291,8 +2291,8 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.is_not_nil(s)
       #Explorer.Series<
-        boolean[4]
-        [true, true, false, true]
+        Polars[4]
+        boolean [true, true, false, true]
       >
   """
   @doc type: :element_wise
@@ -2315,15 +2315,15 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list(["this ", " is", "great   "])
       iex> Explorer.Series.transform(s, &String.trim/1)
       #Explorer.Series<
-        string[3]
-        ["this", "is", "great"]
+        Polars[3]
+        string ["this", "is", "great"]
       >
 
       iex> s = Explorer.Series.from_list(["this", "is", "great"])
       iex> Explorer.Series.transform(s, &String.length/1)
       #Explorer.Series<
-        integer[3]
-        [4, 2, 5]
+        Polars[3]
+        integer [4, 2, 5]
       >
   """
   @doc type: :transformation
