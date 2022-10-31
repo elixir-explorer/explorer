@@ -224,12 +224,22 @@ defmodule Explorer.PolarsBackend.Series do
   # TODO: make pow/2 accept series on both sides.
   @impl true
   def pow(left, exponent) when is_float(exponent),
-    do: Shared.apply_series(left, :s_pow, [exponent])
+    do: Shared.apply_series(left, :s_pow_f_rhs, [exponent])
 
   def pow(left, exponent) when is_integer(exponent) and exponent >= 0 do
     cond do
-      Series.dtype(left) == :integer -> Shared.apply_series(left, :s_int_pow, [exponent])
-      Series.dtype(left) == :float -> Shared.apply_series(left, :s_pow, [exponent / 1])
+      Series.dtype(left) == :integer -> Shared.apply_series(left, :s_pow_i_rhs, [exponent])
+      Series.dtype(left) == :float -> Shared.apply_series(left, :s_pow_f_rhs, [exponent / 1])
+    end
+  end
+
+  def pow(exponent, right) when is_float(exponent),
+    do: Shared.apply_series(right, :s_pow_f_lhs, [exponent])
+
+  def pow(exponent, right) when is_integer(exponent) and exponent >= 0 do
+    cond do
+      Series.dtype(right) == :integer -> Shared.apply_series(right, :s_pow_i_lhs, [exponent])
+      Series.dtype(right) == :float -> Shared.apply_series(right, :s_pow_f_lhs, [exponent / 1])
     end
   end
 

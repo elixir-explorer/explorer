@@ -18,7 +18,7 @@ defmodule Explorer.PolarsBackend.Shared do
       {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, %module{} = new_df} when module in @polars_df -> create_dataframe(new_df)
       {:ok, value} -> value
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise error_message(error)
     end
   end
 
@@ -40,7 +40,7 @@ defmodule Explorer.PolarsBackend.Shared do
         value
 
       {:error, error} ->
-        raise "#{error}"
+        raise error_message(error)
     end
   end
 
@@ -73,7 +73,7 @@ defmodule Explorer.PolarsBackend.Shared do
         %{out_df | data: new_df}
 
       {:error, error} ->
-        raise "#{error}"
+        raise error_message(error)
     end
   end
 
@@ -125,4 +125,10 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:string), do: "str"
   def internal_from_dtype(:date), do: "date"
   def internal_from_dtype(:datetime), do: "datetime[μs]"
+
+  defp error_message(error) when is_binary(error) do
+    Regex.replace(~r/\w+\((.+)\)/, error, "\\1")
+  end
+
+  defp error_message(error), do: "#{error}"
 end
