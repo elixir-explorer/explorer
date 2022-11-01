@@ -37,20 +37,18 @@ pub enum ExplorerError {
 impl Encoder for ExplorerError {
     fn encode<'b>(&self, env: Env<'b>) -> Term<'b> {
         match self {
-            ExplorerError::Io(ref value) => error_tuple(env, io(), format!("{}", value)),
-            ExplorerError::Utf8(ref value) => error_tuple(env, utf8(), format!("{}", value)),
-            ExplorerError::Polars(ref value) => error_tuple(env, polars(), format!("{}", value)),
+            ExplorerError::Io(ref value) => error_tuple(env, io(), value.to_string()),
+            ExplorerError::Utf8(ref value) => error_tuple(env, utf8(), value.to_string()),
+            ExplorerError::Polars(ref value) => error_tuple(env, polars(), value.to_string()),
 
-            ExplorerError::Internal(ref value) => {
-                error_tuple(env, internal(), format!("{}", value))
-            }
+            ExplorerError::Internal(ref value) => error_tuple(env, internal(), value.to_string()),
 
-            ExplorerError::Other(ref value) => error_tuple(env, other(), format!("{}", value)),
+            ExplorerError::Other(ref value) => error_tuple(env, other(), value.to_string()),
             ExplorerError::TryFromInt(ref value) => {
-                error_tuple(env, try_from_int(), format!("{}", value))
+                error_tuple(env, try_from_int(), value.to_string())
             }
-            ExplorerError::Parquet(ref value) => error_tuple(env, parquet(), format!("{}", value)),
-            ExplorerError::Unknown(ref value) => error_tuple(env, unknown(), format!("{}", value)),
+            ExplorerError::Parquet(ref value) => error_tuple(env, parquet(), value.to_string()),
+            ExplorerError::Unknown(ref value) => error_tuple(env, unknown(), value.to_string()),
         }
     }
 }
