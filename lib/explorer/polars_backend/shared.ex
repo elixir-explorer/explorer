@@ -126,9 +126,6 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:date), do: "date"
   def internal_from_dtype(:datetime), do: "datetime[μs]"
 
-  defp error_message(error) when is_binary(error) do
-    Regex.replace(~r/\w+\((.+)\)/, error, "\\1")
-  end
-
-  defp error_message(error), do: "#{error}"
+  defp error_message({_err_type, error}) when is_binary(error), do: error
+  defp error_message(error), do: inspect(error)
 end
