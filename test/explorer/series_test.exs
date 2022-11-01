@@ -512,6 +512,14 @@ defmodule Explorer.SeriesTest do
       assert result.dtype == :float
       assert Series.to_list(result) == [2.0, 4.0, 8.0]
     end
+
+    test "pow of a scalar value on the left-hand side to a series with a negative integer" do
+      s1 = Series.from_list([1, -2, 3])
+
+      assert_raise RuntimeError, "negative exponent with an integer base", fn ->
+        Series.pow(2, s1)
+      end
+    end
   end
 
   describe "sample/2" do
