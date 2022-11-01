@@ -428,19 +428,18 @@ defmodule Explorer.Backend.LazySeries do
   def inspect(series, opts) do
     import Inspect.Algebra
 
-    open = color("[", :list, opts)
-    close = color("]", :list, opts)
+    open = color("(", :list, opts)
+    close = color(")", :list, opts)
     dtype = color("#{Series.dtype(series)}", :atom, opts)
 
     concat([
-      color("LazySeries ", :atom, opts),
+      color("LazySeries[???]", :atom, opts),
+      line(),
       dtype,
-      line(),
+      " ",
       open,
-      "???",
-      close,
-      line(),
-      Code.quoted_to_algebra(to_elixir_ast(series.data))
+      Code.quoted_to_algebra(to_elixir_ast(series.data)),
+      close
     ])
   end
 

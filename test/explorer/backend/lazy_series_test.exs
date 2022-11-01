@@ -11,9 +11,8 @@ defmodule Explorer.Backend.LazySeriesTest do
     assert inspect(opaque_series) ==
              """
              #Explorer.Series<
-               LazySeries integer
-               [???]
-               column("col_a")
+               LazySeries[???]
+               integer (column("col_a"))
              >
              """
              |> String.trim_trailing()
@@ -28,9 +27,8 @@ defmodule Explorer.Backend.LazySeriesTest do
     assert inspect(series) ==
              """
              #Explorer.Series<
-               LazySeries boolean
-               [???]
-               column("col_a") == 5
+               LazySeries[???]
+               boolean (column("col_a") == 5)
              >
              """
              |> String.trim_trailing()
