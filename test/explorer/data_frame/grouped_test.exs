@@ -827,6 +827,89 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "slice/2" do
+    test "take two by indices of each group" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      grouped1 = DF.slice(grouped, [0, 2])
+
+      assert DF.n_rows(grouped1) == 6
+
+      assert Series.to_list(grouped1["species"]) == [
+               "Iris-setosa",
+               "Iris-setosa",
+               "Iris-versicolor",
+               "Iris-versicolor",
+               "Iris-virginica",
+               "Iris-virginica"
+             ]
+
+      assert DF.groups(grouped1) == ["species"]
+    end
+
+    test "take the range of zero to two per group" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      grouped1 = DF.slice(grouped, 0..2)
+
+      assert DF.n_rows(grouped1) == 9
+
+      assert Series.to_list(grouped1["species"]) == [
+               "Iris-setosa",
+               "Iris-setosa",
+               "Iris-setosa",
+               "Iris-versicolor",
+               "Iris-versicolor",
+               "Iris-versicolor",
+               "Iris-virginica",
+               "Iris-virginica",
+               "Iris-virginica"
+             ]
+
+      assert DF.groups(grouped1) == ["species"]
+    end
+  end
+
+  describe "slice/3" do
+    test "take first two of each group" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      grouped1 = DF.slice(grouped, 0, 2)
+
+      assert DF.n_rows(grouped1) == 6
+
+      assert Series.to_list(grouped1["species"]) == [
+               "Iris-setosa",
+               "Iris-setosa",
+               "Iris-versicolor",
+               "Iris-versicolor",
+               "Iris-virginica",
+               "Iris-virginica"
+             ]
+
+      assert DF.groups(grouped1) == ["species"]
+    end
+
+    test "take two of each group starting with negative index" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      grouped1 = DF.slice(grouped, -6, 2)
+
+      assert DF.n_rows(grouped1) == 6
+
+      assert Series.to_list(grouped1["species"]) == [
+               "Iris-setosa",
+               "Iris-setosa",
+               "Iris-versicolor",
+               "Iris-versicolor",
+               "Iris-virginica",
+               "Iris-virginica"
+             ]
+
+      assert DF.groups(grouped1) == ["species"]
+    end
+  end
+
   describe "to_csv/2" do
     @tag :tmp_dir
     test "does not consider groups when saving file", %{df: df, tmp_dir: tmp_dir} do

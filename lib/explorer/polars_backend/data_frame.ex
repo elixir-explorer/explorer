@@ -429,10 +429,49 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def pull(df, column), do: Shared.apply_dataframe(df, :df_column, [column])
 
   @impl true
-  def slice(df, row_indices), do: Shared.apply_dataframe(df, :df_slice_by_indices, [row_indices])
+  def slice(%DataFrame{groups: []} = df, row_indices),
+    do: Shared.apply_dataframe(df, :df_slice_by_indices, [row_indices])
 
   @impl true
-  def slice(df, offset, length), do: Shared.apply_dataframe(df, :df_slice, [offset, length])
+  def slice(%DataFrame{} = df, row_indices) when is_list(row_indices) do
+    selected_indices =
+      df
+      |> indices_by_groups()
+      |> Enum.flat_map(fn group ->
+        group
+        |> Stream.with_index()
+        |> Stream.filter(fn {_row_idx, idx} -> idx in row_indices end)
+        |> Stream.map(fn {row_idx, _idx} -> row_idx end)
+        |> Enum.to_list()
+      end)
+
+    Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices])
+  end
+
+  @impl true
+  def slice(%DataFrame{} = df, %Range{} = range) do
+    selected_indices =
+      df
+      |> indices_by_groups()
+      |> Enum.flat_map(&Enum.slice(&1, range))
+
+    Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices])
+  end
+
+  @impl true
+  def slice(%DataFrame{groups: []} = df, offset, length)
+      when is_integer(offset) and is_integer(length),
+      do: Shared.apply_dataframe(df, :df_slice, [offset, length])
+
+  @impl true
+  def slice(%DataFrame{} = df, offset, length) when is_integer(offset) and is_integer(length) do
+    selected_indices =
+      df
+      |> indices_by_groups()
+      |> Enum.flat_map(&Enum.slice(&1, offset, length))
+
+    Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices])
+  end
 
   @impl true
   def drop_nil(df, columns), do: Shared.apply_dataframe(df, :df_drop_nulls, [columns])
