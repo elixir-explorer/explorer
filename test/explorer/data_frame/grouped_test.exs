@@ -502,6 +502,24 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :float}
       assert df2.groups == ["c"]
     end
+
+    test "adds a new column with series when there is a group" do
+      df = DF.new(a: [1, 2, 3, 4], b: ["a", "b", "c", "d"], c: [1, 1, 2, 2])
+
+      df1 = DF.group_by(df, :c)
+      df2 = DF.mutate(df1, d: [5, 6])
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 3, 4],
+               b: ["a", "b", "c", "d"],
+               c: [1, 1, 2, 2],
+               d: [5, 6, 5, 6]
+             }
+
+      assert df2.names == ["a", "b", "c", "d"]
+      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :integer}
+      assert df2.groups == ["c"]
+    end
   end
 
   describe "mutate_with/2" do
@@ -737,6 +755,75 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 = DF.group_by(df, ["year"])
 
       assert Series.to_list(DF.pull(df1, "country")) == Series.to_list(DF.pull(df, "country"))
+    end
+  end
+
+  describe "rename/2" do
+    test "renames groups as well" do
+      df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
+      df1 = DF.group_by(df, "b")
+      df2 = DF.rename(df1, b: :my_group)
+
+      assert DF.names(df2) == ["a", "my_group"]
+      assert DF.groups(df2) == ["my_group"]
+    end
+  end
+
+  describe "rename_with/2" do
+    test "renames groups as well" do
+      df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
+      df1 = DF.group_by(df, "b")
+      df2 = DF.rename_with(df1, &String.upcase/1)
+
+      assert DF.names(df2) == ["A", "B"]
+      assert DF.groups(df2) == ["B"]
+    end
+  end
+
+  describe "sample/3" do
+    test "sample 2 from each group" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      grouped1 = DF.sample(grouped, 2, seed: 100)
+
+      assert DF.n_rows(grouped1) == 6
+    end
+
+    test "sample 0.1 from each group" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      grouped1 = DF.sample(grouped, 0.1, seed: 100)
+
+      assert DF.n_rows(grouped1) == 15
+    end
+
+    test "sample more than the size from each group without replacement" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+
+      assert_raise RuntimeError, ~r/cannot take a larger sample than the total population/, fn ->
+        DF.sample(grouped, 60, seed: 100)
+      end
+
+      assert_raise RuntimeError, ~r/cannot take a larger sample than the total population/, fn ->
+        DF.sample(grouped, 1.2, seed: 100)
+      end
+    end
+
+    test "sample more than the size from each group with replacement" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      grouped1 = DF.sample(grouped, 60, seed: 100, replacement: true)
+
+      assert DF.n_rows(grouped1) == 180
+    end
+
+    test "sample more than 100% from each group with replacement" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      grouped1 = DF.sample(grouped, 1.2, seed: 100, replacement: true)
+
+      assert DF.n_rows(grouped1) == 180
     end
   end
 
