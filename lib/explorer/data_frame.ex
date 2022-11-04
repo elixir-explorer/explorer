@@ -2052,8 +2052,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Renames columns.
 
-  Note that renaming a column that is also a group is going to rename
-  the group as well.
+  Renaming a column that is also a group is going to rename the group as well.
   To apply a function to a subset of columns, see `rename_with/3`.
 
   ## Examples
@@ -2146,8 +2145,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Renames columns with a function.
 
-  Note that renaming a column that is also a group is going to rename
-  the group as well.
+  Renaming a column that is also a group is going to rename the group as well.
 
   ## Examples
 
