@@ -95,6 +95,8 @@ rustler::init!(
         df_shape,
         df_slice,
         df_slice_by_indices,
+        df_sample_n,
+        df_sample_frac,
         df_sort,
         df_tail,
         df_to_csv,

@@ -417,12 +417,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def sample(df, n, replacement, seed) when is_integer(n) do
-    indices =
-      df
-      |> n_rows()
-      |> Native.s_seedable_random_indices(n, replacement, seed)
+    Shared.apply_dataframe(df, :df_sample_n, [n, replacement, seed, df.groups])
+  end
 
-    slice(df, indices)
+  @impl true
+  def sample(df, frac, replacement, seed) when is_float(frac) do
+    Shared.apply_dataframe(df, :df_sample_frac, [frac, replacement, seed, df.groups])
   end
 
   @impl true

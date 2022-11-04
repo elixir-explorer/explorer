@@ -491,6 +491,44 @@ pub fn df_slice_by_indices(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_sample_n(
+    data: ExDataFrame,
+    n: usize,
+    with_replacement: bool,
+    seed: Option<u64>,
+    groups: Vec<String>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let df = &data.resource.0;
+    let new_df = if groups.is_empty() {
+        df.sample_n(n, with_replacement, false, seed)?
+    } else {
+        df.groupby_stable(groups)?
+            .apply(|df| df.sample_n(n, with_replacement, false, seed))?
+    };
+
+    Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_sample_frac(
+    data: ExDataFrame,
+    frac: f64,
+    with_replacement: bool,
+    seed: Option<u64>,
+    groups: Vec<String>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let df = &data.resource.0;
+    let new_df = if groups.is_empty() {
+        df.sample_frac(frac, with_replacement, false, seed)?
+    } else {
+        df.groupby_stable(groups)?
+            .apply(|df| df.sample_frac(frac, with_replacement, false, seed))?
+    };
+
+    Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_sort(
     data: ExDataFrame,
     by_columns: Vec<String>,

@@ -1442,6 +1442,11 @@ defmodule Explorer.DataFrame do
   Columns are added with keyword list or maps. New variables overwrite existing variables of the
   same name. Column names are coerced from atoms to strings.
 
+  Notice that working with grouped dataframes is different from `mutate_with/2` because
+  it's not possible to work with aggregations per group in this version. Another drawback is that
+  grouped dataframes need to have groups of the same size of the series you are trying to mutate. 
+  So prefer the usage of `mutate_with/2` when working with groups.
+
   ## Examples
 
   You can pass in a list directly as a new column:
@@ -2047,6 +2052,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Renames columns.
 
+  Note that renaming a column that is also a group is going to rename
+  the group as well.
   To apply a function to a subset of columns, see `rename_with/3`.
 
   ## Examples
@@ -2138,6 +2145,9 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Renames columns with a function.
+
+  Note that renaming a column that is also a group is going to rename
+  the group as well.
 
   ## Examples
 
@@ -2401,6 +2411,10 @@ defmodule Explorer.DataFrame do
 
   Can sample with or without replacement.
 
+  For grouped dataframes, sample will take into account the rows of each group, meaning that
+  if you try to get N samples and you have G groups, you will get N * G rows. See the examples
+  below.
+
   ## Options
 
     * `replacement` - If set to `true`, each sample will be independent and therefore values may repeat.
@@ -2415,16 +2429,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sample(df, 3, seed: 100)
       #Explorer.DataFrame<
         Polars[3 x 10]
-        year integer [2012, 2012, 2013]
-        country string ["ZIMBABWE", "NICARAGUA", "NIGER"]
-        total integer [2125, 1260, 529]
-        solid_fuel integer [917, 0, 93]
-        liquid_fuel integer [1006, 1176, 432]
-        gas_fuel integer [0, 0, 0]
-        cement integer [201, 84, 4]
+        year integer [2011, 2012, 2011]
+        country string ["SERBIA", "FALKLAND ISLANDS (MALVINAS)", "SWAZILAND"]
+        total integer [13422, 15, 286]
+        solid_fuel integer [9355, 3, 102]
+        liquid_fuel integer [2537, 12, 184]
+        gas_fuel integer [1188, 0, 0]
+        cement integer [342, 0, 0]
         gas_flaring integer [0, 0, 0]
-        per_capita float [0.15, 0.21, 0.03]
-        bunker_fuels integer [9, 18, 19]
+        per_capita float [1.49, 5.21, 0.24]
+        bunker_fuels integer [39, 0, 1]
       >
 
   Or you can sample a proportion of rows:
@@ -2432,17 +2446,52 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.sample(df, 0.03, seed: 100)
       #Explorer.DataFrame<
-        Polars[33 x 10]
-        year integer [2013, 2012, 2013, 2012, 2010, ...]
-        country string ["BAHAMAS", "POLAND", "SLOVAKIA", "MOZAMBIQUE", "OMAN", ...]
-        total integer [764, 81792, 9024, 851, 12931, ...]
-        solid_fuel integer [1, 53724, 3657, 11, 0, ...]
-        liquid_fuel integer [763, 17353, 2090, 632, 2331, ...]
-        gas_fuel integer [0, 8544, 2847, 47, 9309, ...]
-        cement integer [0, 2165, 424, 161, 612, ...]
-        gas_flaring integer [0, 6, 7, 0, 679, ...]
-        per_capita float [2.02, 2.12, 1.67, 0.03, 4.39, ...]
-        bunker_fuels integer [167, 573, 34, 56, 1342, ...]
+        Polars[32 x 10]
+        year integer [2011, 2012, 2012, 2013, 2010, ...]
+        country string ["URUGUAY", "FRENCH POLYNESIA", "ICELAND", "PERU", "TUNISIA", ...]
+        total integer [2117, 222, 491, 15586, 7543, ...]
+        solid_fuel integer [1, 0, 96, 784, 15, ...]
+        liquid_fuel integer [1943, 222, 395, 7097, 3138, ...]
+        gas_fuel integer [40, 0, 0, 3238, 3176, ...]
+        cement integer [132, 0, 0, 1432, 1098, ...]
+        gas_flaring integer [0, 0, 0, 3036, 116, ...]
+        per_capita float [0.63, 0.81, 1.52, 0.51, 0.71, ...]
+        bunker_fuels integer [401, 45, 170, 617, 219, ...]
+      >
+
+  ## Grouped examples
+
+  In the following example we have the Iris dataset grouped by species, and we want
+  to take a sample of two plants from each group. Since we have three species, the 
+  resultant dataframe is going to have six rows (2 * 3).
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.sample(grouped, 2, seed: 100)
+      #Explorer.DataFrame<
+        Polars[6 x 5]
+        Groups: ["species"]
+        sepal_length float [5.3, 5.1, 5.1, 5.6, 6.2, ...]
+        sepal_width float [3.7, 3.8, 2.5, 2.7, 3.4, ...]
+        petal_length float [1.5, 1.9, 3.0, 4.2, 5.4, ...]
+        petal_width float [0.2, 0.4, 1.1, 1.3, 2.3, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
+      >
+
+  The behaviour is similar when you want to take a fraction of the rows from each group. The main
+  difference is that each group can have more or less rows, depending on its size.
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.sample(grouped, 0.1, seed: 100)
+      #Explorer.DataFrame<
+        Polars[15 x 5]
+        Groups: ["species"]
+        sepal_length float [5.3, 5.1, 4.7, 5.7, 5.1, ...]
+        sepal_width float [3.7, 3.8, 3.2, 3.8, 3.5, ...]
+        petal_length float [1.5, 1.9, 1.3, 1.7, 1.4, ...]
+        petal_width float [0.2, 0.4, 0.2, 0.3, 0.3, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
   """
@@ -2450,28 +2499,21 @@ defmodule Explorer.DataFrame do
   @spec sample(df :: DataFrame.t(), n_or_frac :: number(), opts :: Keyword.t()) :: DataFrame.t()
   def sample(df, n_or_frac, opts \\ [])
 
-  def sample(df, n, opts) when is_integer(n) do
+  def sample(df, n_or_frac, opts) when is_number(n_or_frac) do
     opts = Keyword.validate!(opts, replacement: false, seed: Enum.random(1..1_000_000_000_000))
 
-    n_rows = n_rows(df)
+    if groups(df) == [] do
+      n_rows = n_rows(df)
+      n = if is_integer(n_or_frac), do: n_or_frac, else: round(n_or_frac * n_rows)
 
-    case {n > n_rows, opts[:replacement]} do
-      {true, false} ->
+      if n > n_rows && opts[:replacement] == false do
         raise ArgumentError,
               "in order to sample more rows than are in the dataframe (#{n_rows}), sampling " <>
                 "`replacement` must be true"
-
-      _ ->
-        :ok
+      end
     end
 
-    Shared.apply_impl(df, :sample, [n, opts[:replacement], opts[:seed]])
-  end
-
-  def sample(df, frac, opts) when is_float(frac) do
-    n_rows = n_rows(df)
-    n = round(frac * n_rows)
-    sample(df, n, opts)
+    Shared.apply_impl(df, :sample, [n_or_frac, opts[:replacement], opts[:seed]])
   end
 
   @doc """
