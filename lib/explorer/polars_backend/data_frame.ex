@@ -437,7 +437,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     selected_indices =
       df
       |> indices_by_groups()
-      |> Enum.flat_map(&filter_indexes(&1, 0, row_indices))
+      |> Enum.flat_map(&filter_indices(&1, 0, row_indices))
 
     Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices])
   end
@@ -467,13 +467,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices])
   end
 
-  defp filter_indexes([], _, _), do: []
+  defp filter_indices([], _, _), do: []
 
-  defp filter_indexes([row_idx | indices], idx, row_indices) do
+  defp filter_indices([row_idx | indices], idx, row_indices) do
     if idx in row_indices do
-      [row_idx | filter_indexes(indices, idx + 1, row_indices)]
+      [row_idx | filter_indices(indices, idx + 1, row_indices)]
     else
-      filter_indexes(indices, idx + 1, row_indices)
+      filter_indices(indices, idx + 1, row_indices)
     end
   end
 
