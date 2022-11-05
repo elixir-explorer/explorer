@@ -2356,12 +2356,50 @@ defmodule Explorer.DataFrame do
         per_capita float [4.43, 0.54, 0.97, 0.16, 1.65, ...]
         bunker_fuels integer [30722, 251, 0, 10, 1256, ...]
       >
+
+  ## Grouped examples
+
+  We want to take the first 3 rows of each group. We need the offset 0 and the length 3:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.slice(grouped, 0, 3)
+      #Explorer.DataFrame<
+        Polars[9 x 5]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.9, 4.7, 7.0, 6.4, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.2, 3.2, ...]
+        petal_length float [1.4, 1.4, 1.3, 4.7, 4.5, ...]
+        petal_width float [0.2, 0.2, 0.2, 1.4, 1.5, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", ...]
+      >
+
+  We can also pass a negative offset:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.slice(grouped, -6, 3)
+      #Explorer.DataFrame<
+        Polars[9 x 5]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.8, 5.1, 5.6, 5.7, ...]
+        sepal_width float [3.8, 3.0, 3.8, 2.7, 3.0, ...]
+        petal_length float [1.9, 1.4, 1.6, 4.2, 4.2, ...]
+        petal_width float [0.4, 0.3, 0.2, 1.3, 1.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", ...]
+      >
+
   """
   @doc type: :rows
-  def slice(df, offset, length), do: Shared.apply_impl(df, :slice, [offset, length])
+  def slice(df, offset, length) when is_integer(offset) and is_integer(length) and length >= 0,
+    do: Shared.apply_impl(df, :slice, [offset, length])
 
   @doc """
   Subset rows with a list of indices or a range.
+
+  Slice works differently when a dataframe is grouped. It is going to consider
+  the indices of each group instead of the entire dataframe. See the examples
+  below.
 
   ## Examples
 
@@ -2380,9 +2418,44 @@ defmodule Explorer.DataFrame do
         a integer [2, 3]
         b string ["b", "c"]
       >
+
+  ## Grouped examples
+
+  We are going to once again use the Iris dataset. In this example we want to take
+  the first and third rows of each group. Since we count from zero, it's going to take the
+  indices 0 and 2:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.slice(grouped, [0, 2])
+      #Explorer.DataFrame<
+        Polars[6 x 5]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.7, 7.0, 6.9, 6.3, ...]
+        sepal_width float [3.5, 3.2, 3.2, 3.1, 3.3, ...]
+        petal_length float [1.4, 1.3, 4.7, 4.9, 6.0, ...]
+        petal_width float [0.2, 0.2, 1.4, 1.5, 2.5, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
+      >
+
+  Now we want to take the first 3 rows of each group. This is going to work with the range `0..2`:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.slice(grouped, 0..2)
+      #Explorer.DataFrame<
+        Polars[9 x 5]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.9, 4.7, 7.0, 6.4, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.2, 3.2, ...]
+        petal_length float [1.4, 1.4, 1.3, 4.7, 4.5, ...]
+        petal_width float [0.2, 0.2, 0.2, 1.4, 1.5, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", ...]
+      >
+
   """
   @doc type: :rows
-  def slice(df, row_indices) when is_list(row_indices) do
+  def slice(%DataFrame{groups: []} = df, row_indices) when is_list(row_indices) do
     n_rows = n_rows(df)
 
     Enum.each(row_indices, fn idx ->
@@ -2397,9 +2470,15 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :slice, [row_indices])
   end
 
-  def slice(df, %Range{} = range) do
+  def slice(%DataFrame{groups: []} = df, %Range{} = range) do
     slice(df, Enum.slice(0..(n_rows(df) - 1)//1, range))
   end
+
+  def slice(%DataFrame{groups: [_ | _]} = df, row_indices) when is_list(row_indices),
+    do: Shared.apply_impl(df, :slice, [row_indices])
+
+  def slice(%DataFrame{groups: [_ | _]} = df, %Range{} = range),
+    do: Shared.apply_impl(df, :slice, [range])
 
   @doc """
   Sample rows from a dataframe.

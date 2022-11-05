@@ -727,7 +727,7 @@ pub fn df_groups(data: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, Ex
 pub fn df_group_indices(data: ExDataFrame, groups: Vec<&str>) -> Result<ExSeries, ExplorerError> {
     let df = &data.resource.0;
     let series = df
-        .groupby(groups)?
+        .groupby_stable(groups)?
         .groups()?
         .column("groups")
         .map(|series| ExSeries::new(series.clone()))?;
