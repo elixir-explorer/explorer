@@ -491,29 +491,18 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def pivot_wider(df, id_columns, names_from, values_from, names_prefix) do
-    df = Shared.apply_dataframe(df, :df_pivot_wider, [id_columns, names_from, values_from])
-    names = df.names
+  def pivot_wider(df, out_df, id_columns, names_from, values_from, names_prefix) do
+    result =
+      Shared.apply_dataframe(df, out_df, :df_pivot_wider, [id_columns, names_from, values_from])
 
-    new_names =
-      Enum.map(names, fn name ->
-        if name in id_columns, do: name, else: names_prefix <> name
-      end)
-
-    case zip_diff(names, new_names) do
-      [] -> df
-      renames -> Shared.apply_dataframe(df, :df_rename_columns, [renames])
+    if names_prefix == "" do
+      result
+    else
+      new_names = Shared.apply_dataframe(result, :df_names, []) -- id_columns
+      rename_pairs = for new_name <- new_names, do: {new_name, names_prefix <> new_name}
+      rename(result, out_df, rename_pairs)
     end
   end
-
-  defp zip_diff([name | lefties], [name | righties]),
-    do: zip_diff(lefties, righties)
-
-  defp zip_diff([old_name | lefties], [new_name | righties]),
-    do: [{old_name, new_name} | zip_diff(lefties, righties)]
-
-  defp zip_diff([], []),
-    do: []
 
   # Two or more table verbs
 

@@ -984,6 +984,76 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "pivot_longer/3" do
+    test "keep the groups if they are not in the list of pivoting" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      pivoted = DF.pivot_longer(grouped, ["sepal_length"])
+
+      assert DF.groups(pivoted) == ["species"]
+    end
+
+    test "remove groups that are in the list of pivoting" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      pivoted = DF.pivot_longer(grouped, ["species"])
+
+      assert DF.groups(pivoted) == []
+    end
+  end
+
+  describe "pivot_wider/4" do
+    test "keep the groups if they are not in the list of pivoting" do
+      df =
+        DF.new(
+          weekday: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday"
+          ],
+          team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
+          hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
+        )
+
+      grouped = DF.group_by(df, "team")
+      pivoted = DF.pivot_wider(grouped, "weekday", "hour")
+
+      assert DF.groups(pivoted) == ["team"]
+    end
+
+    test "remove groups that are in the list of pivoting" do
+      df =
+        DF.new(
+          weekday: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday"
+          ],
+          team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
+          hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
+        )
+
+      grouped = DF.group_by(df, "weekday")
+      pivoted = DF.pivot_wider(grouped, "weekday", "hour")
+
+      assert DF.groups(pivoted) == []
+    end
+  end
+
   test "to_lazy/1", %{df: df} do
     grouped = DF.group_by(df, ["country", "year"])
     assert ["country", "year"] = DF.to_lazy(grouped).groups
