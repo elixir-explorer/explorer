@@ -2596,13 +2596,15 @@ defmodule Explorer.DataFrame do
   @doc """
   Pivot data from wide to long.
 
-  `Explorer.DataFrame.pivot_longer/3` "lengthens" data, increasing the number of rows and
-  decreasing the number of columns. The inverse transformation is
-  `Explorer.DataFrame.pivot_wider/4`.
+  `pivot_longer/3` "lengthens" data, increasing the number of rows and
+  decreasing the number of columns. The inverse transformation is `pivot_wider/4`.
 
-  The second argument (`columns_to_pivot`) can be either an array of column names to pivot
+  The second argument, `columns_to_pivot`, can be either list of column names to pivot
   or a filter callback on the dataframe's names. These columns must always have the same
   data type.
+
+  In case the dataframe is using groups, the groups that are also in the list of columns
+  to pivot will be removed from the resultant dataframe. See the examples below.
 
   ## Options
 
@@ -2664,6 +2666,43 @@ defmodule Explorer.DataFrame do
         my_var string ["total", "total", "total", "total", "total", ...]
         my_value integer [2308, 1254, 32500, 141, 7924, ...]
       >
+
+  ## Grouped examples
+
+  In the following example we want to take the Iris dataset and increase the number of rows by
+  pivoting the "sepal_length" column. This dataset is grouped by "species", so the resultant
+  dataframe is going to keep the "species" group:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.pivot_longer(grouped, ["sepal_length"])
+      #Explorer.DataFrame<
+        Polars[150 x 6]
+        Groups: ["species"]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+        variable string ["sepal_length", "sepal_length", "sepal_length", "sepal_length", "sepal_length", ...]
+        value float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+      >
+
+  Now we want to do something different: we want to pivot the "species" column that is also a group.
+  This is going to remove the group in the resultant dataframe:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.pivot_longer(grouped, ["species"])
+      #Explorer.DataFrame<
+        Polars[150 x 6]
+        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        variable string ["species", "species", "species", "species", "species", ...]
+        value string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+      >
+
   """
   @doc type: :single
   @spec pivot_longer(
@@ -2727,7 +2766,12 @@ defmodule Explorer.DataFrame do
       |> Map.put(names_to, :string)
       |> Map.put(values_to, values_dtype)
 
-    out_df = %{df | names: columns_to_keep ++ [names_to, values_to], dtypes: new_dtypes}
+    out_df = %{
+      df
+      | names: columns_to_keep ++ [names_to, values_to],
+        dtypes: new_dtypes,
+        groups: df.groups -- columns_to_pivot
+    }
 
     args = [out_df, columns_to_pivot, columns_to_keep, names_to, values_to]
     Shared.apply_impl(df, :pivot_longer, args)
@@ -2736,11 +2780,13 @@ defmodule Explorer.DataFrame do
   @doc """
   Pivot data from long to wide.
 
-  `Explorer.DataFrame.pivot_wider/4` "widens" data, increasing the number of columns and
-  decreasing the number of rows. The inverse transformation is
-  `Explorer.DataFrame.pivot_longer/3`.
+  `pivot_wider/4` "widens" data, increasing the number of columns and decreasing the number of rows.
+  The inverse transformation is `pivot_longer/3`.
 
   Due to a restriction upstream, `values_from` must be a numeric type.
+
+  In case the dataframe is using groups, the groups that are also in the list of columns
+  to pivot will be removed from the resultant dataframe. See the examples below.
 
   ## Options
 
@@ -2761,14 +2807,123 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = Explorer.DataFrame.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
-      iex> Explorer.DataFrame.pivot_wider(df, "variable", "value")
+  Suppose we have a basketball court and multiple teams that want to train in that court. They need
+  to share a schedule with the hours each team is going to use it. Here is a dataframe representing
+  that schedule:
+      
+      iex> Explorer.DataFrame.new(
+      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], 
+      iex>   team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
+      iex>   hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
+      iex> )
+
+  This dataframe is going to look like this - using `table/2`:
+
+        +----------------------------------------------+
+        |  Explorer DataFrame: [rows: 10, columns: 3]  |
+        +---------------+--------------+---------------+
+        |    weekday    |     team     |     hour      |
+        |   <string>    |   <string>   |   <integer>   |
+        +===============+==============+===============+
+        | Monday        | A            | 10            |
+        +---------------+--------------+---------------+
+        | Tuesday       | B            | 9             |
+        +---------------+--------------+---------------+
+        | Wednesday     | C            | 10            |
+        +---------------+--------------+---------------+
+        | Thursday      | A            | 10            |
+        +---------------+--------------+---------------+
+        | Friday        | B            | 11            |
+        +---------------+--------------+---------------+
+        | Monday        | C            | 15            |
+        +---------------+--------------+---------------+
+        | Tuesday       | A            | 14            |
+        +---------------+--------------+---------------+
+        | Wednesday     | B            | 16            |
+        +---------------+--------------+---------------+
+        | Thursday      | C            | 14            |
+        +---------------+--------------+---------------+
+        | Friday        | A            | 16            |
+        +---------------+--------------+---------------+
+
+  You can see that the "weekday" repeats, and it's not clear how free the agenda is.
+  We can solve that by pivoting the "weekday" column in multiple columns, making each weekday
+  a new column in the resultant dataframe.
+
+      iex> df = Explorer.DataFrame.new(
+      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], 
+      iex>   team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
+      iex>   hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
+      iex> )
+      iex> Explorer.DataFrame.pivot_wider(df, "weekday", "hour") 
       #Explorer.DataFrame<
-        Polars[1 x 3]
-        id integer [1]
-        a integer [1]
-        b integer [2]
+        Polars[3 x 6]
+        team string ["A", "B", "C"]
+        Monday integer [10, nil, 15]
+        Tuesday integer [14, 9, nil]
+        Wednesday integer [nil, 16, 10]
+        Thursday integer [10, nil, 14]
+        Friday integer [16, 11, nil]
       >
+
+  Now if we print that same dataframe with `table/2`, we get a better picture of the schedule:
+
+        +----------------------------------------------------------------------+
+        |              Explorer DataFrame: [rows: 3, columns: 6]               |
+        +----------+-----------+-----------+-----------+-----------+-----------+
+        |   team   |  Monday   |  Tuesday  | Wednesday | Thursday  |  Friday   |
+        | <string> | <integer> | <integer> | <integer> | <integer> | <integer> |
+        +==========+===========+===========+===========+===========+===========+
+        | A        | 10        | 14        |           | 10        | 16        |
+        +----------+-----------+-----------+-----------+-----------+-----------+
+        | B        |           | 9         | 16        |           | 11        |
+        +----------+-----------+-----------+-----------+-----------+-----------+
+        | C        | 15        |           | 10        | 14        |           |
+        +----------+-----------+-----------+-----------+-----------+-----------+
+
+  ## Grouped examples
+
+  Now using the same idea, we can see that there is not much difference for grouped dataframes.
+  The only detail is that groups related to the pivoting columns are going to be removed.
+
+      iex> df = Explorer.DataFrame.new(
+      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], 
+      iex>   team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
+      iex>   hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
+      iex> )
+      iex> grouped = Explorer.DataFrame.group_by(df, "team")
+      iex> Explorer.DataFrame.pivot_wider(grouped, "weekday", "hour") 
+      #Explorer.DataFrame<
+        Polars[3 x 6]
+        Groups: ["team"]
+        team string ["A", "B", "C"]
+        Monday integer [10, nil, 15]
+        Tuesday integer [14, 9, nil]
+        Wednesday integer [nil, 16, 10]
+        Thursday integer [10, nil, 14]
+        Friday integer [16, 11, nil]
+      >
+
+  In the following example the group "weekday" is going to be removed, because the column is going
+  to be pivoted in multiple columns:
+
+      iex> df = Explorer.DataFrame.new(
+      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], 
+      iex>   team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
+      iex>   hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
+      iex> )
+      iex> grouped = Explorer.DataFrame.group_by(df, "weekday")
+      iex> Explorer.DataFrame.pivot_wider(grouped, "weekday", "hour") 
+      #Explorer.DataFrame<
+        Polars[3 x 6]
+        team string ["A", "B", "C"]
+        Monday integer [10, nil, 15]
+        Tuesday integer [14, 9, nil]
+        Wednesday integer [nil, 16, 10]
+        Thursday integer [10, nil, 14]
+        Friday integer [16, 11, nil]
+      >
+
   """
   @doc type: :single
   @spec pivot_wider(
@@ -2803,7 +2958,33 @@ defmodule Explorer.DataFrame do
       end
     end
 
-    Shared.apply_impl(df, :pivot_wider, [id_columns, names_from, values_from, opts[:names_prefix]])
+    distinct_pivot_columns =
+      df[names_from]
+      |> Series.distinct()
+      |> Series.to_list()
+      |> Enum.map(&String.replace_prefix(&1, "", opts[:names_prefix]))
+
+    out_columns = id_columns ++ distinct_pivot_columns
+
+    new_dtypes =
+      for column <- distinct_pivot_columns, into: %{}, do: {column, df.dtypes[values_from]}
+
+    out_dtypes =
+      df.dtypes
+      |> Map.drop([names_from, values_from])
+      |> Map.merge(new_dtypes)
+
+    out_groups = df.groups -- [names_from, values_from]
+
+    out_df = %{df | dtypes: out_dtypes, names: out_columns, groups: out_groups}
+
+    Shared.apply_impl(df, :pivot_wider, [
+      out_df,
+      id_columns,
+      names_from,
+      values_from,
+      opts[:names_prefix]
+    ])
   end
 
   # Two table verbs

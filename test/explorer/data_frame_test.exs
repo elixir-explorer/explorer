@@ -2035,6 +2035,19 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "with a single id column and repeated values with names prefix" do
+      df = DF.new(id: [1, 1, 2, 2], variable: ["a", "b", "a", "b"], value: [1, 2, 3, 4])
+
+      df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id], names_prefix: "prefix_")
+      assert DF.names(df2) == ["id", "prefix_a", "prefix_b"]
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1, 2],
+               prefix_a: [1, 3],
+               prefix_b: [2, 4]
+             }
+    end
+
     test "with a filter function for id columns" do
       df = DF.new(id_main: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
 
