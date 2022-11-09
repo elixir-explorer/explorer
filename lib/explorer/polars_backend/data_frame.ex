@@ -412,8 +412,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_dataframe(df, out_df, :df_rename_columns, [pairs])
 
   @impl true
-  def dummies(df, names),
-    do: Shared.apply_dataframe(df, :df_to_dummies, [names])
+  def dummies(df, out_df, names),
+    do: Shared.apply_dataframe(df, out_df, :df_to_dummies, [names])
 
   @impl true
   def sample(df, n, replacement, seed) when is_integer(n) do
