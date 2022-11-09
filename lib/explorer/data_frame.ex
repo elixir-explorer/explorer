@@ -3095,6 +3095,87 @@ defmodule Explorer.DataFrame do
         c string ["d", "e", "f"]
       >
 
+  ## Grouped examples
+
+  When doing a join operation with grouped dataframes, the joined dataframe
+  may keep the groups from only one side.
+
+  An inner join operation will keep the groups from the left-hand side dataframe:
+
+      iex> left = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.new(a: [1, 2, 2], c: ["d", "e", "f"])
+      iex> grouped_left = Explorer.DataFrame.group_by(left, "b")
+      iex> grouped_right = Explorer.DataFrame.group_by(right, "c")
+      iex> Explorer.DataFrame.join(grouped_left, grouped_right)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        Groups: ["b"]
+        a integer [1, 2, 2]
+        b string ["a", "b", "b"]
+        c string ["d", "e", "f"]
+      >
+
+  A left join operation will keep the groups from the left-hand side dataframe:
+
+      iex> left = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.new(a: [1, 2, 2], c: ["d", "e", "f"])
+      iex> grouped_left = Explorer.DataFrame.group_by(left, "b")
+      iex> grouped_right = Explorer.DataFrame.group_by(right, "c")
+      iex> Explorer.DataFrame.join(grouped_left, grouped_right, how: :left)
+      #Explorer.DataFrame<
+        Polars[4 x 3]
+        Groups: ["b"]
+        a integer [1, 2, 2, 3]
+        b string ["a", "b", "b", "c"]
+        c string ["d", "e", "f", nil]
+      >
+
+  A right join operation will keep the groups from the right-hand side dataframe:
+
+      iex> left = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
+      iex> grouped_left = Explorer.DataFrame.group_by(left, "b")
+      iex> grouped_right = Explorer.DataFrame.group_by(right, "c")
+      iex> Explorer.DataFrame.join(grouped_left, grouped_right, how: :right)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        Groups: ["c"]
+        a integer [1, 2, 4]
+        c string ["d", "e", "f"]
+        b string ["a", "b", nil]
+      >
+
+  An outer join operation is going to keep the groups from the left-hand side dataframe:
+
+      iex> left = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
+      iex> grouped_left = Explorer.DataFrame.group_by(left, "b")
+      iex> grouped_right = Explorer.DataFrame.group_by(right, "c")
+      iex> Explorer.DataFrame.join(grouped_left, grouped_right, how: :outer)
+      #Explorer.DataFrame<
+        Polars[4 x 3]
+        Groups: ["b"]
+        a integer [1, 2, 4, 3]
+        b string ["a", "b", nil, "c"]
+        c string ["d", "e", "f", nil]
+      >
+
+  A cross join operation is going to keep the groups from the left-hand side dataframe:
+
+      iex> left = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
+      iex> grouped_left = Explorer.DataFrame.group_by(left, "b")
+      iex> grouped_right = Explorer.DataFrame.group_by(right, "c")
+      iex> Explorer.DataFrame.join(grouped_left, grouped_right, how: :cross)
+      #Explorer.DataFrame<
+        Polars[9 x 4]
+        Groups: ["b"]
+        a integer [1, 1, 1, 2, 2, ...]
+        b string ["a", "a", "a", "b", "b", ...]
+        a_right integer [1, 2, 4, 1, 2, ...]
+        c string ["d", "e", "f", "d", "e", ...]
+      >
+
   """
   @doc type: :multi
   @spec join(left :: DataFrame.t(), right :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
