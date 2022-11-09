@@ -1064,6 +1064,68 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "join/4" do
+    test "inner join keep groups from left" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
+
+      grouped_left = DF.group_by(left, "b")
+      grouped_right = DF.group_by(right, "c")
+
+      joined = DF.join(grouped_left, grouped_right)
+
+      assert DF.groups(joined) == ["b"]
+    end
+
+    test "left join keep groups from left" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
+
+      grouped_left = DF.group_by(left, "b")
+      grouped_right = DF.group_by(right, "c")
+
+      joined = DF.join(grouped_left, grouped_right, how: :left)
+
+      assert DF.groups(joined) == ["b"]
+    end
+
+    test "right join keep groups from right" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 4], c: ["d", "e", "f"])
+
+      grouped_left = DF.group_by(left, "b")
+      grouped_right = DF.group_by(right, "c")
+
+      joined = DF.join(grouped_left, grouped_right, how: :right)
+
+      assert DF.groups(joined) == ["c"]
+    end
+
+    test "outer join keep groups from the left" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 4], c: ["d", "e", "f"])
+
+      grouped_left = DF.group_by(left, "b")
+      grouped_right = DF.group_by(right, "c")
+
+      joined = DF.join(grouped_left, grouped_right, how: :outer)
+
+      assert DF.groups(joined) == ["b"]
+    end
+
+    test "cross join keep groups from the left" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 4], c: ["d", "e", "f"])
+
+      grouped_left = DF.group_by(left, "b")
+      grouped_right = DF.group_by(right, "c")
+
+      joined = DF.join(grouped_left, grouped_right, how: :cross)
+
+      assert DF.groups(joined) == ["b"]
+    end
+  end
+
   test "to_lazy/1", %{df: df} do
     grouped = DF.group_by(df, ["country", "year"])
     assert ["country", "year"] = DF.to_lazy(grouped).groups
