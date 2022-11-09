@@ -2223,42 +2223,44 @@ defmodule Explorer.DataFrame do
   @doc """
   Turns a set of columns to dummy variables.
 
+  In case the dataframe is using groups, all groups will be removed.
+
   ## Examples
 
   To mark a single column as dummy:
 
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
-      iex> Explorer.DataFrame.dummies(df, "a")
+      iex> df = Explorer.DataFrame.new(col_x: ["a", "b", "a", "c"], col_y: ["b", "a", "b", "d"])
+      iex> Explorer.DataFrame.dummies(df, "col_x")
       #Explorer.DataFrame<
         Polars[4 x 3]
-        a_a integer [1, 0, 1, 0]
-        a_b integer [0, 1, 0, 0]
-        a_c integer [0, 0, 0, 1]
+        col_x_a integer [1, 0, 1, 0]
+        col_x_b integer [0, 1, 0, 0]
+        col_x_c integer [0, 0, 0, 1]
       >
 
   Or multiple columns:
 
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "a", "c"], b: ["b", "a", "b", "d"])
-      iex> Explorer.DataFrame.dummies(df, ["a", "b"])
+      iex> df = Explorer.DataFrame.new(col_x: ["a", "b", "a", "c"], col_y: ["b", "a", "b", "d"])
+      iex> Explorer.DataFrame.dummies(df, ["col_x", "col_y"])
       #Explorer.DataFrame<
         Polars[4 x 6]
-        a_a integer [1, 0, 1, 0]
-        a_b integer [0, 1, 0, 0]
-        a_c integer [0, 0, 0, 1]
-        b_a integer [0, 1, 0, 0]
-        b_b integer [1, 0, 1, 0]
-        b_d integer [0, 0, 0, 1]
+        col_x_a integer [1, 0, 1, 0]
+        col_x_b integer [0, 1, 0, 0]
+        col_x_c integer [0, 0, 0, 1]
+        col_y_b integer [1, 0, 1, 0]
+        col_y_a integer [0, 1, 0, 0]
+        col_y_d integer [0, 0, 0, 1]
       >
 
   Or all string columns:
 
-      iex> df = Explorer.DataFrame.new(num: [1, 2, 3, 4], b: ["b", "a", "b", "d"])
+      iex> df = Explorer.DataFrame.new(num: [1, 2, 3, 4], col_y: ["b", "a", "b", "d"])
       iex> Explorer.DataFrame.dummies(df, fn _name, type -> type == :string end)
       #Explorer.DataFrame<
         Polars[4 x 3]
-        b_a integer [0, 1, 0, 0]
-        b_b integer [1, 0, 1, 0]
-        b_d integer [0, 0, 0, 1]
+        col_y_b integer [1, 0, 1, 0]
+        col_y_a integer [0, 1, 0, 0]
+        col_y_d integer [0, 0, 0, 1]
       >
   """
   @doc type: :single
@@ -2268,8 +2270,19 @@ defmodule Explorer.DataFrame do
 
   def dummies(df, column) when is_column(column), do: dummies(df, [column])
 
-  def dummies(df, columns),
-    do: Shared.apply_impl(df, :dummies, [to_existing_columns(df, columns)])
+  def dummies(df, columns) do
+    columns = to_existing_columns(df, columns)
+
+    out_columns =
+      for column <- columns,
+          value <- Series.to_list(Series.distinct(df[column])),
+          do: column <> "_#{value}"
+
+    out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, :integer}
+
+    out_df = %{df | groups: [], names: out_columns, dtypes: out_dtypes}
+    Shared.apply_impl(df, :dummies, [out_df, columns])
+  end
 
   @doc """
   Extracts a single column as a series.

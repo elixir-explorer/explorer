@@ -1054,6 +1054,16 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "dummies/2" do
+    test "drops the groups" do
+      df = DF.new(col_x: ["a", "b", "a", "c"], col_y: ["b", "a", "b", "d"])
+      grouped = DF.group_by(df, "col_x")
+      dummies = DF.dummies(grouped, "col_x")
+
+      assert DF.groups(dummies) == []
+    end
+  end
+
   test "to_lazy/1", %{df: df} do
     grouped = DF.group_by(df, ["country", "year"])
     assert ["country", "year"] = DF.to_lazy(grouped).groups
