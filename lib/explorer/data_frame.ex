@@ -1325,23 +1325,87 @@ defmodule Explorer.DataFrame do
 
   def mask(df, mask) when is_list(mask), do: mask |> Series.from_list() |> then(&mask(df, &1))
 
-  @doc false
-  @spec filter(df :: DataFrame.t(), callback :: function()) :: DataFrame.t()
-  def filter(df, callback) when is_function(callback) do
-    IO.warn("filter/2 with a callback is deprecated, please use filter_with/2 instead")
-    df |> callback.() |> then(&mask(df, &1))
+  @doc """
+  Picks rows based on `Explorer.Query`.
+
+  The query is compiled and runs efficiently against the dataframe.
+  The query must return a boolean expression. Given this function is
+  a macro, you must require `Explorer.DataFrame` before using it.
+
+  Besides element-wise series operations, you can also use window functions
+  and aggregations inside comparisons. In such cases, grouped dataframes
+  may have different results than ungrouped ones, because the filtering
+  is computed withing groups. See examples below.
+
+  See `filter_with/2` for a callback version of this function without
+  `Explorer.Query`.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, col2 > 2)
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["c"]
+        col2 integer [3]
+      >
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, col1 == "b")
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["b"]
+        col2 integer [2]
+      >
+
+  Returning a non-boolean expression errors:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, cumulative_max(col2))
+      ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer
+
+  Which can be addressed by converting it to boolean:
+
+      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, cumulative_max(col2) == 1)
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        col1 string ["a"]
+        col2 integer [1]
+      >
+
+  ## Grouped examples
+
+  In a grouped dataframe, the aggregation is calculated within each group.
+
+  In the following example we select the flowers of the Iris dataset that have the "petal length"
+  above the average of each species group.
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.filter(grouped, petal_length > mean(petal_length))
+      #Explorer.DataFrame<
+        Polars[79 x 5]
+        Groups: ["species"]
+        sepal_length float [4.6, 5.4, 5.0, 4.9, 5.4, ...]
+        sepal_width float [3.1, 3.9, 3.4, 3.1, 3.7, ...]
+        petal_length float [1.5, 1.7, 1.5, 1.5, 1.5, ...]
+        petal_width float [0.2, 0.4, 0.2, 0.1, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+      >
+
+  """
+  defmacro filter(df, query) do
+    quote do
+      require Explorer.Query
+      Explorer.DataFrame.filter_with(unquote(df), Explorer.Query.query(unquote(query)))
+    end
   end
 
   @doc """
   Picks rows based on a callback function.
 
-  This function is efficient because it uses a representation of the
-  series without pulling them. The only restriction is that
-  you need to use a function that returns boolean.
-
-  But you can also use window functions and aggregations inside comparisons.
-  Notice that grouped dataframes may have different results than ungrouped ones,
-  because the filtering is computed withing groups.
+  This is a callback version of `filter/2`.
 
   ## Examples
 
@@ -1359,30 +1423,6 @@ defmodule Explorer.DataFrame do
         Polars[1 x 2]
         col1 string ["b"]
         col2 integer [2]
-      >
-
-      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
-      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.cumulative_max(df["col2"]) end)
-      ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer
-
-  But it's possible to use a boolean operation based on another function:
-
-      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
-      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.equal(Explorer.Series.cumulative_max(df["col2"]), 1) end)
-      #Explorer.DataFrame<
-        Polars[1 x 2]
-        col1 string ["a"]
-        col2 integer [1]
-      >
-
-  Filtering with aggregations have different results if the dataframe is using groups or not:
-
-      iex> df = Explorer.DataFrame.new(col1: ["a", "a", "b", "b"], col2: [1, 2, 3, 4])
-      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["col2"], Explorer.Series.mean(df["col2"])) end)
-      #Explorer.DataFrame<
-        Polars[2 x 2]
-        col1 string ["b", "b"]
-        col2 integer [3, 4]
       >
 
   ## Grouped examples
@@ -1444,7 +1484,7 @@ defmodule Explorer.DataFrame do
 
   Notice that working with grouped dataframes is different from `mutate_with/2` because
   it's not possible to work with aggregations per group in this version. Another drawback is that
-  grouped dataframes need to have groups of the same size of the series you are trying to mutate. 
+  grouped dataframes need to have groups of the same size of the series you are trying to mutate.
   So prefer the usage of `mutate_with/2` when working with groups.
 
   ## Examples
@@ -2552,7 +2592,7 @@ defmodule Explorer.DataFrame do
   ## Grouped examples
 
   In the following example we have the Iris dataset grouped by species, and we want
-  to take a sample of two plants from each group. Since we have three species, the 
+  to take a sample of two plants from each group. Since we have three species, the
   resultant dataframe is going to have six rows (2 * 3).
 
       iex> df = Explorer.Datasets.iris()
@@ -2823,9 +2863,9 @@ defmodule Explorer.DataFrame do
   Suppose we have a basketball court and multiple teams that want to train in that court. They need
   to share a schedule with the hours each team is going to use it. Here is a dataframe representing
   that schedule:
-      
+
       iex> Explorer.DataFrame.new(
-      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], 
+      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
       iex>   team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
       iex>   hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
       iex> )
@@ -2864,11 +2904,11 @@ defmodule Explorer.DataFrame do
   a new column in the resultant dataframe.
 
       iex> df = Explorer.DataFrame.new(
-      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], 
+      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
       iex>   team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
       iex>   hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
       iex> )
-      iex> Explorer.DataFrame.pivot_wider(df, "weekday", "hour") 
+      iex> Explorer.DataFrame.pivot_wider(df, "weekday", "hour")
       #Explorer.DataFrame<
         Polars[3 x 6]
         team string ["A", "B", "C"]
@@ -2900,12 +2940,12 @@ defmodule Explorer.DataFrame do
   The only detail is that groups related to the pivoting columns are going to be removed.
 
       iex> df = Explorer.DataFrame.new(
-      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], 
+      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
       iex>   team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
       iex>   hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
       iex> )
       iex> grouped = Explorer.DataFrame.group_by(df, "team")
-      iex> Explorer.DataFrame.pivot_wider(grouped, "weekday", "hour") 
+      iex> Explorer.DataFrame.pivot_wider(grouped, "weekday", "hour")
       #Explorer.DataFrame<
         Polars[3 x 6]
         Groups: ["team"]
@@ -2921,12 +2961,12 @@ defmodule Explorer.DataFrame do
   to be pivoted in multiple columns:
 
       iex> df = Explorer.DataFrame.new(
-      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], 
+      iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
       iex>   team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
       iex>   hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
       iex> )
       iex> grouped = Explorer.DataFrame.group_by(df, "weekday")
-      iex> Explorer.DataFrame.pivot_wider(grouped, "weekday", "hour") 
+      iex> Explorer.DataFrame.pivot_wider(grouped, "weekday", "hour")
       #Explorer.DataFrame<
         Polars[3 x 6]
         team string ["A", "B", "C"]

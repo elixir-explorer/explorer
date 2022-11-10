@@ -14,6 +14,8 @@ defmodule Explorer.Backend.LazySeries do
 
   @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean(), window: boolean()}
 
+  # TODO: Make the names mirror the Series name, not Polars one.
+
   @operations [
     # Element-wise
     all_equal: 2,
@@ -95,6 +97,18 @@ defmodule Explorer.Backend.LazySeries do
     :n_distinct
   ]
 
+  @non_lazy_operations [
+    memtype: 1,
+    fetch!: 2,
+    mask: 2,
+    from_list: 2,
+    slice: 2,
+    take_every: 2,
+    to_enum: 1,
+    to_list: 1,
+    transform: 2
+  ]
+
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
   @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]
 
@@ -107,7 +121,7 @@ defmodule Explorer.Backend.LazySeries do
   def operations, do: @operations
 
   @doc false
-  def window_operations, do: @cumulative_operations ++ @window_fun_operations
+  def non_lazy_operations, do: @non_lazy_operations
 
   @impl true
   def dtype(%Series{} = s), do: s.dtype
@@ -465,20 +479,8 @@ defmodule Explorer.Backend.LazySeries do
 
   defp to_elixir_ast(other), do: other
 
-  # The following functions are not implemented yet and should raise if used.
-  funs = [
-    memtype: 1,
-    fetch!: 2,
-    mask: 2,
-    from_list: 2,
-    slice: 2,
-    take_every: 2,
-    to_enum: 1,
-    to_list: 1,
-    transform: 2
-  ]
-
-  for {fun, arity} <- funs do
+  # The following operations are not allowed.
+  for {fun, arity} <- @non_lazy_operations do
     args = Macro.generate_arguments(arity, __MODULE__)
 
     @impl true

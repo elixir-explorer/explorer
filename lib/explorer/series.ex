@@ -1746,12 +1746,8 @@ defmodule Explorer.Series do
     if valid_for_bool_mask_operation?(left, right) do
       Shared.apply_series_impl(:gt_eq, [left, right])
     else
-      dtype_error("greater_equal/2", dtype_from_sides(left, right), [
-        :integer,
-        :float,
-        :date,
-        :datetime
-      ])
+      types = [:integer, :float, :date, :datetime]
+      dtype_error("greater_equal/2", dtype_from_sides(left, right), types)
     end
   end
 
@@ -1817,12 +1813,8 @@ defmodule Explorer.Series do
     if valid_for_bool_mask_operation?(left, right) do
       Shared.apply_series_impl(:lt_eq, [left, right])
     else
-      dtype_error("less_equal/2", dtype_from_sides(left, right), [
-        :integer,
-        :float,
-        :date,
-        :datetime
-      ])
+      types = [:integer, :float, :date, :datetime]
+      dtype_error("less_equal/2", dtype_from_sides(left, right), types)
     end
   end
 

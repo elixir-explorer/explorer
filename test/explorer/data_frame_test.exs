@@ -1,9 +1,11 @@
 defmodule Explorer.DataFrameTest do
   use ExUnit.Case, async: true
-  import ExUnit.CaptureIO
 
+  # Doctests assume the module has been required
+  require Explorer.DataFrame
   doctest Explorer.DataFrame
 
+  import ExUnit.CaptureIO
   alias Explorer.DataFrame, as: DF
   alias Explorer.Datasets
   alias Explorer.Series

@@ -57,6 +57,7 @@ defmodule Explorer.MixProject do
         # Explorer,
         # Explorer.DataFrame,
         # Explorer.Datasets,
+        # Explorer.Query,
         # Explorer.Series,
         Backends: [
           Explorer.Backend,
