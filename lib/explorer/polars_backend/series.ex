@@ -221,7 +221,6 @@ defmodule Explorer.PolarsBackend.Series do
   def remainder(left, right) when is_integer(left),
     do: apply_scalar_on_lhs(:remainder, left, right)
 
-  # TODO: make pow/2 accept series on both sides.
   @impl true
   def pow(left, exponent) when is_float(exponent),
     do: Shared.apply_series(left, :s_pow_f_rhs, [exponent])

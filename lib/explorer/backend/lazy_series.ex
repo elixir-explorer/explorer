@@ -14,8 +14,6 @@ defmodule Explorer.Backend.LazySeries do
 
   @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean(), window: boolean()}
 
-  # TODO: Make the names mirror the Series name, not Polars one.
-
   @operations [
     # Element-wise
     all_equal: 2,

@@ -13,7 +13,6 @@ use rustler::wrapper::{binary, list, map, NIF_TERM};
 
 // Encoding helpers
 
-// TODO: Implement this as a regular function or encapsulate it inside Rustler.
 macro_rules! unsafe_iterator_to_list {
     ($env: ident, $iterator: expr) => {{
         let env_as_c_arg = $env.as_c_arg();

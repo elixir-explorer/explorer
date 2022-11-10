@@ -1,6 +1,4 @@
 defmodule Explorer.Query do
-  # TODO: Support on more operations.
-
   @moduledoc """
   High-level query for Explorer.
 

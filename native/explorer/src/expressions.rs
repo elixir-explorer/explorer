@@ -352,9 +352,7 @@ pub fn expr_std(expr: ExExpr) -> ExExpr {
 #[rustler::nif]
 pub fn expr_quantile(expr: ExExpr, quantile: f64) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
-    // TODO: consider accepting strategy in the future.
     let strategy = crate::parse_quantile_interpol_options("nearest");
-
     ExExpr::new(expr.quantile(quantile, strategy))
 }
 
