@@ -1126,6 +1126,34 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "concat_rows/1" do
+    test "keep groups from the first dataframe" do
+      first = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      second = DF.new(a: [4, 5, 6], b: ["d", "e", "f"])
+
+      grouped_first = DF.group_by(first, :a)
+      grouped_second = DF.group_by(second, :b)
+
+      stacked = DF.concat_rows([grouped_first, grouped_second])
+
+      assert DF.groups(stacked) == ["a"]
+      assert DF.dtypes(stacked) == %{"a" => :integer, "b" => :string}
+    end
+
+    test "keep groups even with cast of one column" do
+      first = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      second = DF.new(a: [4.1, 5.2, 6.5], b: ["d", "e", "f"])
+
+      grouped_first = DF.group_by(first, :a)
+      grouped_second = DF.group_by(second, :b)
+
+      stacked = DF.concat_rows([grouped_first, grouped_second])
+
+      assert DF.groups(stacked) == ["a"]
+      assert DF.dtypes(stacked) == %{"a" => :float, "b" => :string}
+    end
+  end
+
   test "to_lazy/1", %{df: df} do
     grouped = DF.group_by(df, ["country", "year"])
     assert ["country", "year"] = DF.to_lazy(grouped).groups

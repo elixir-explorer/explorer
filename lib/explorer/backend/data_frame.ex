@@ -136,7 +136,7 @@ defmodule Explorer.Backend.DataFrame do
             ) :: df
 
   @callback concat_columns([df]) :: df
-  @callback concat_rows([df]) :: df
+  @callback concat_rows([df], out_df :: df()) :: df
 
   # Groups
 
