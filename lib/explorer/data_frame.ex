@@ -3317,6 +3317,9 @@ defmodule Explorer.DataFrame do
 
   Dataframes must have the same number of rows.
 
+  When working with grouped dataframes, be aware that only groups from the first
+  dataframe are kept in the resultant dataframe.
+
   ## Examples
 
       iex> df1 = Explorer.DataFrame.new(x: [1, 2, 3], y: ["a", "b", "c"])
@@ -3350,7 +3353,26 @@ defmodule Explorer.DataFrame do
     n_rows = n_rows(head)
 
     if Enum.all?(tail, &(n_rows(&1) == n_rows)) do
-      Shared.apply_impl(dfs, :concat_columns)
+      {names, dtypes} =
+        Enum.reduce(Enum.with_index(tail, 1), {head.names, head.dtypes}, fn {df, idx},
+                                                                            {names, dtypes} ->
+          new_names_and_dtypes =
+            for name <- df.names do
+              if name in names do
+                {name <> "_#{idx}", df.dtypes[name]}
+              else
+                {name, df.dtypes[name]}
+              end
+            end
+
+          new_names = for {name, _} <- new_names_and_dtypes, do: name
+
+          {names ++ new_names, Map.merge(dtypes, Map.new(new_names_and_dtypes))}
+        end)
+
+      out_df = %{head | names: names, dtypes: dtypes}
+
+      Shared.apply_impl(dfs, :concat_columns, [out_df])
     else
       raise ArgumentError, "all dataframes must have the same number of rows"
     end
@@ -3358,6 +3380,9 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Combine two dataframes column-wise.
+
+  When working with grouped dataframes, be aware that only groups from the left-hand side
+  dataframe are kept in the resultant dataframe.
 
   `concat_columns(df1, df2)` is equivalent to `concat_columns([df1, df2])`.
   """

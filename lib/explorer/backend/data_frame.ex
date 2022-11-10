@@ -135,7 +135,7 @@ defmodule Explorer.Backend.DataFrame do
               how :: :left | :inner | :outer | :right | :cross
             ) :: df
 
-  @callback concat_columns([df]) :: df
+  @callback concat_columns([df], out_df :: df()) :: df
   @callback concat_rows([df], out_df :: df()) :: df
 
   # Groups
