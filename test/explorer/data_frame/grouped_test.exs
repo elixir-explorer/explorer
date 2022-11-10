@@ -1138,6 +1138,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert DF.groups(stacked) == ["a"]
       assert DF.dtypes(stacked) == %{"a" => :integer, "b" => :string}
+      assert DF.n_rows(stacked) == 6
     end
 
     test "keep groups even with cast of one column" do
@@ -1151,6 +1152,53 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert DF.groups(stacked) == ["a"]
       assert DF.dtypes(stacked) == %{"a" => :float, "b" => :string}
+      assert DF.n_rows(stacked) == 6
+    end
+  end
+
+  describe "concat_columns/1" do
+    test "keep groups from the first dataframe" do
+      first = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      second = DF.new(c: [4, 5, 6], d: [0.3, 0.2, 0.1])
+
+      grouped_first = DF.group_by(first, :a)
+      grouped_second = DF.group_by(second, :d)
+
+      stacked = DF.concat_columns([grouped_first, grouped_second])
+
+      assert DF.groups(stacked) == ["a"]
+
+      assert DF.dtypes(stacked) == %{
+               "a" => :integer,
+               "b" => :string,
+               "c" => :integer,
+               "d" => :float
+             }
+
+      assert DF.n_rows(stacked) == 3
+      assert DF.n_columns(stacked) == 4
+    end
+
+    test "keep groups even with duplication of one column" do
+      first = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      second = DF.new(a: [4.1, 5.2, 6.5], d: [10, 9, 8])
+
+      grouped_first = DF.group_by(first, :a)
+      grouped_second = DF.group_by(second, :d)
+
+      stacked = DF.concat_columns([grouped_first, grouped_second])
+
+      assert DF.groups(stacked) == ["a"]
+
+      assert DF.dtypes(stacked) == %{
+               "a" => :integer,
+               "b" => :string,
+               "a_1" => :float,
+               "d" => :integer
+             }
+
+      assert DF.n_rows(stacked) == 3
+      assert DF.n_columns(stacked) == 4
     end
   end
 
