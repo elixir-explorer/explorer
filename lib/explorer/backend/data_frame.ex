@@ -182,10 +182,16 @@ defmodule Explorer.Backend.DataFrame do
 
         data = container_doc(open, values, close, inspect_opts, &Explorer.Shared.to_string/2)
 
+        dtype =
+          case Series.dtype(series) do
+            {:list, dtype} -> color("list(#{dtype})", :atom, inspect_opts)
+            dtype -> color("#{dtype}", :atom, inspect_opts)
+          end
+
         concat([
           line(),
           color("#{name} ", :map, inspect_opts),
-          color("#{Series.dtype(series)}", :atom, inspect_opts),
+          dtype,
           " ",
           data
         ])

@@ -128,6 +128,7 @@ rustler::init!(
         expr_peaks,
         expr_fill_missing,
         expr_fill_missing_with_value,
+        expr_to_list,
         // sort
         expr_argsort,
         expr_distinct,

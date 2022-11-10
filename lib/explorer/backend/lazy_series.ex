@@ -60,6 +60,7 @@ defmodule Explorer.Backend.LazySeries do
     head: 2,
     tail: 2,
     peaks: 2,
+    to_list: 1,
     # Aggregations
     sum: 1,
     min: 1,
@@ -425,6 +426,14 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def to_list(%Series{} = s) do
+    args = [lazy_series!(s)]
+    data = new(:to_list, args, true, window_functions?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
   def inspect(series, opts) do
     import Inspect.Algebra
 
@@ -474,7 +483,6 @@ defmodule Explorer.Backend.LazySeries do
     slice: 2,
     take_every: 2,
     to_enum: 1,
-    to_list: 1,
     transform: 2
   ]
 

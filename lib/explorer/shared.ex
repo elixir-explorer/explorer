@@ -156,5 +156,9 @@ defmodule Explorer.Shared do
   """
   def to_string(i, _opts) when is_nil(i), do: "nil"
   def to_string(i, _opts) when is_binary(i), do: "\"#{i}\""
+
+  def to_string(i, opts) when is_list(i),
+    do: "[ " <> Enum.map_join(i, ", ", &to_string(&1, opts)) <> " ]"
+
   def to_string(i, _opts), do: Kernel.to_string(i)
 end

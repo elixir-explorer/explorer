@@ -337,6 +337,12 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Term {
         DataType::List(t) if t as &DataType == &DataType::UInt32 => {
             encode_list!(s, env, u32, u32)
         }
+        DataType::List(t) if t as &DataType == &DataType::Int32 => {
+            encode_list!(s, env, i32, i32)
+        }
+        DataType::List(t) if t as &DataType == &DataType::Int64 => {
+            encode_list!(s, env, i64, i64)
+        }
         dt => panic!("to_list/1 not implemented for {:?}", dt),
     }
 }

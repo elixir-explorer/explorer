@@ -3,7 +3,7 @@ defmodule Explorer.Backend.Series do
   The behaviour for series backends.
   """
 
-  @valid_dtypes [:integer, :float, :boolean, :string, :date, :datetime, :list]
+  @valid_dtypes [:integer, :float, :boolean, :string, :date, :datetime, {:list, :integer}]
 
   @type t :: struct()
 
@@ -16,7 +16,7 @@ defmodule Explorer.Backend.Series do
   # Conversion
 
   @callback from_list(list(), dtype()) :: s
-  @callback to_list(s) :: list()
+  @callback to_list(s) :: list() | lazy_s()
   @callback to_enum(s) :: Enumerable.t()
   @callback cast(s, dtype) :: s
 
@@ -145,7 +145,12 @@ defmodule Explorer.Backend.Series do
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
     open = color("[", :list, inspect_opts)
     close = color("]", :list, inspect_opts)
-    dtype = color("#{Series.dtype(series)} ", :atom, inspect_opts)
+
+    dtype =
+      case Series.dtype(series) do
+        {:list, dtype} -> color("list(#{dtype}) ", :atom, inspect_opts)
+        dtype -> color("#{dtype} ", :atom, inspect_opts)
+      end
 
     data =
       container_doc(

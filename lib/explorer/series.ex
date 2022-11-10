@@ -27,7 +27,7 @@ defmodule Explorer.Series do
 
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime
+  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime | {:list, :integer}
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
@@ -154,7 +154,7 @@ defmodule Explorer.Series do
   """
   @doc type: :transformation
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
-  def from_list(list, opts \\ []) do
+  def from_list(list, opts \\ []) when is_list(list) do
     backend = backend_from_options!(opts)
     type = Shared.check_types!(list)
     {list, type} = Shared.cast_numerics(list, type)
@@ -2369,12 +2369,12 @@ defmodule Explorer.Series do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(df, opts) do
+    def inspect(series, opts) do
       force_unfit(
         concat([
           color("#Explorer.Series<", :map, opts),
           nest(
-            concat([line(), Shared.apply_impl(df, :inspect, [opts])]),
+            concat([line(), Shared.apply_impl(series, :inspect, [opts])]),
             2
           ),
           line(),
