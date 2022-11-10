@@ -394,7 +394,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         Shared.apply_dataframe(group_df, :df_with_columns, [[idx_series.data]])
       end)
     end)
-    |> concat_rows()
+    |> then(fn [head | _tail] = dfs -> concat_rows(dfs, head) end)
     |> DataFrame.ungroup()
     |> arrange([{:asc, idx_column}])
     |> select(out_df)
@@ -521,6 +521,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_dataframe(right, out_df, :df_join, args)
   end
 
+  @impl true
   def join(left, right, out_df, on, how) do
     how = Atom.to_string(how)
     {left_on, right_on} = Enum.unzip(on)
@@ -530,9 +531,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def concat_rows(dfs) do
-    [head | tail] = dfs
-    Shared.apply_dataframe(head, :df_vstack_many, [Enum.map(tail, & &1.data)])
+  def concat_rows([head | tail], out_df) do
+    Shared.apply_dataframe(head, out_df, :df_vstack_many, [Enum.map(tail, & &1.data)])
   end
 
   @impl true

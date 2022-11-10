@@ -3372,6 +3372,9 @@ defmodule Explorer.DataFrame do
   Column names and dtypes must match. The only exception is for numeric
   columns that can be mixed together, and casted automatically to float columns.
 
+  When working with grouped dataframes, be aware that only groups from the first
+  dataframe are kept in the resultant dataframe.
+
   ## Examples
 
       iex> df1 = Explorer.DataFrame.new(x: [1, 2, 3], y: ["a", "b", "c"])
@@ -3394,16 +3397,18 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :multi
   @spec concat_rows([DataFrame.t()]) :: DataFrame.t()
-  def concat_rows([%DataFrame{} | _t] = dfs) do
+  def concat_rows([%DataFrame{} = head | _tail] = dfs) do
     changed_types = compute_changed_types_concat_rows(dfs)
+    out_df = %{head | dtypes: Map.merge(head.dtypes, changed_types)}
 
-    if Enum.empty?(changed_types) do
-      Shared.apply_impl(dfs, :concat_rows)
-    else
-      dfs
-      |> cast_numeric_columns_to_float(changed_types)
-      |> Shared.apply_impl(:concat_rows)
-    end
+    dfs =
+      if Enum.empty?(changed_types) do
+        dfs
+      else
+        cast_numeric_columns_to_float(dfs, changed_types)
+      end
+
+    Shared.apply_impl(dfs, :concat_rows, [out_df])
   end
 
   defp compute_changed_types_concat_rows([head | tail]) do
@@ -3452,7 +3457,7 @@ defmodule Explorer.DataFrame do
       else
         changes = for column <- columns, into: %{}, do: {column, Series.cast(df[column], :float)}
 
-        mutate(df, changes)
+        mutate(ungroup(df, :all), changes)
       end
     end
   end
@@ -3461,6 +3466,9 @@ defmodule Explorer.DataFrame do
   Combine two dataframes row-wise.
 
   `concat_rows(df1, df2)` is equivalent to `concat_rows([df1, df2])`.
+
+  When working with grouped dataframes, be aware that only groups from the left-hand side
+  dataframe are kept in the resultant dataframe.
   """
   @doc type: :multi
   @spec concat_rows(DataFrame.t(), DataFrame.t()) :: DataFrame.t()
