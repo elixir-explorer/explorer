@@ -1395,6 +1395,7 @@ defmodule Explorer.DataFrame do
       >
 
   """
+  @doc type: :single
   defmacro filter(df, query) do
     quote do
       require Explorer.Query
