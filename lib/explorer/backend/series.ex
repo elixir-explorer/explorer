@@ -49,7 +49,7 @@ defmodule Explorer.Backend.Series do
   @callback max(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s()
   @callback mean(s) :: float() | lazy_s()
   @callback median(s) :: float() | lazy_s()
-  @callback var(s) :: float() | lazy_s()
+  @callback variance(s) :: float() | lazy_s()
   @callback std(s) :: float() | lazy_s()
   @callback quantile(s, float()) :: number | Date.t() | NaiveDateTime.t() | lazy_s()
 
