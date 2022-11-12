@@ -374,7 +374,7 @@ defmodule Explorer.DataFrame.GroupedTest do
           [
             count: Series.count(ldf["country"]),
             size: Series.size(ldf["country"]),
-            std: Series.std(ldf["gas_fuel"]),
+            standard_deviation: Series.standard_deviation(ldf["gas_fuel"]),
             variance: Series.variance(ldf["total"])
           ]
         end)
@@ -383,7 +383,7 @@ defmodule Explorer.DataFrame.GroupedTest do
                year: [2010, 2011, 2012, 2013, 2014],
                count: [217, 217, 220, 220, 220],
                size: [217, 217, 220, 220, 220],
-               std: [
+               standard_deviation: [
                  30422.959346722244,
                  31276.447541663372,
                  31861.607868498428,

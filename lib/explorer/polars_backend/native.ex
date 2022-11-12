@@ -195,7 +195,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_slice(_s, _offset, _length), do: err()
   def s_slice_by_indices(_s, _indices), do: err()
   def s_sort(_s, _reverse), do: err()
-  def s_std(_s), do: err()
+  def s_standard_deviation(_s), do: err()
   def s_sub(_s, _other), do: err()
   def s_sum(_s), do: err()
   def s_tail(_s, _length), do: err()

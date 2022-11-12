@@ -146,7 +146,7 @@ defmodule Explorer.PolarsBackend.Series do
   def variance(series), do: Shared.apply_series(series, :s_variance)
 
   @impl true
-  def std(series), do: Shared.apply_series(series, :s_std)
+  def standard_deviation(series), do: Shared.apply_series(series, :s_standard_deviation)
 
   @impl true
   def quantile(series, quantile),

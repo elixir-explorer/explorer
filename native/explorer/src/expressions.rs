@@ -343,7 +343,7 @@ pub fn expr_variance(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_std(expr: ExExpr) -> ExExpr {
+pub fn expr_standard_deviation(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
     ExExpr::new(expr.std(1))
