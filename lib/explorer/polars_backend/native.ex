@@ -203,7 +203,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_to_list(_s), do: err()
   def s_unordered_distinct(_s), do: err()
   def s_value_counts(_s), do: err()
-  def s_var(_s), do: err()
+  def s_variance(_s), do: err()
   def s_n_unique(_s), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)

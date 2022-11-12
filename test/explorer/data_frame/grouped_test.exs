@@ -375,7 +375,7 @@ defmodule Explorer.DataFrame.GroupedTest do
             count: Series.count(ldf["country"]),
             size: Series.size(ldf["country"]),
             std: Series.std(ldf["gas_fuel"]),
-            var: Series.var(ldf["total"])
+            variance: Series.variance(ldf["total"])
           ]
         end)
 
@@ -390,7 +390,7 @@ defmodule Explorer.DataFrame.GroupedTest do
                  32568.516005143894,
                  32855.06720653753
                ],
-               var: [
+               variance: [
                  38_857_563_094.67128,
                  44_768_861_168.99863,
                  45_897_543_842.42209,

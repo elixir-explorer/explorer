@@ -336,7 +336,7 @@ pub fn expr_median(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_var(expr: ExExpr) -> ExExpr {
+pub fn expr_variance(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
     ExExpr::new(expr.var(1))

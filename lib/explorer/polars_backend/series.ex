@@ -143,7 +143,7 @@ defmodule Explorer.PolarsBackend.Series do
   def median(series), do: Shared.apply_series(series, :s_median)
 
   @impl true
-  def var(series), do: Shared.apply_series(series, :s_var)
+  def variance(series), do: Shared.apply_series(series, :s_variance)
 
   @impl true
   def std(series), do: Shared.apply_series(series, :s_std)

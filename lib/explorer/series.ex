@@ -963,23 +963,23 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 3])
-      iex> Explorer.Series.var(s)
+      iex> Explorer.Series.variance(s)
       1.0
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 3.0])
-      iex> Explorer.Series.var(s)
+      iex> Explorer.Series.variance(s)
       1.0
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
-      iex> Explorer.Series.var(s)
-      ** (ArgumentError) Explorer.Series.var/1 not implemented for dtype :datetime. Valid dtypes are [:integer, :float].
+      iex> Explorer.Series.variance(s)
+      ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype :datetime. Valid dtypes are [:integer, :float].
   """
   @doc type: :aggregation
-  @spec var(series :: Series.t()) :: float()
-  def var(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
-    do: Shared.apply_impl(series, :var)
+  @spec variance(series :: Series.t()) :: float()
+  def variance(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+    do: Shared.apply_impl(series, :variance)
 
-  def var(%Series{dtype: dtype}), do: dtype_error("var/1", dtype, [:integer, :float])
+  def variance(%Series{dtype: dtype}), do: dtype_error("variance/1", dtype, [:integer, :float])
 
   @doc """
   Gets the standard deviation of the series.

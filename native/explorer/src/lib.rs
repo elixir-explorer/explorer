@@ -165,7 +165,7 @@ rustler::init!(
         expr_median,
         expr_n_distinct,
         expr_std,
-        expr_var,
+        expr_variance,
         expr_quantile,
         expr_alias,
         expr_count,
@@ -263,7 +263,7 @@ rustler::init!(
         s_take_every,
         s_to_list,
         s_unordered_distinct,
-        s_var,
+        s_variance,
         s_value_counts,
     ],
     load = on_load
