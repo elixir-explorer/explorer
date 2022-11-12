@@ -205,7 +205,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 4, 5, 6, 5], b: [7, 6, 5, 4, 3]}
     end
 
-    test "filter with pow operation" do
+    test "filter with power operation" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
 
       df1 =
@@ -214,7 +214,7 @@ defmodule Explorer.DataFrameTest do
           b = ldf["b"]
 
           # b == (a ** 3)
-          Series.equal(b, Series.pow(a, 3))
+          Series.equal(b, Series.power(a, 3))
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [2], b: [8.0]}
@@ -355,7 +355,7 @@ defmodule Explorer.DataFrameTest do
         DF.filter_with(df, fn ldf ->
           a = ldf["a"]
 
-          Series.pow(a, 3)
+          Series.power(a, 3)
         end)
       end
     end
@@ -500,7 +500,7 @@ defmodule Explorer.DataFrameTest do
             calc2: Series.subtract(ldf["a"], 2),
             calc3: Series.multiply(ldf["a"], 2),
             calc4: Series.divide(ldf["a"], 2),
-            calc5: Series.pow(ldf["a"], 2),
+            calc5: Series.power(ldf["a"], 2),
             calc6: Series.quotient(ldf["a"], 2),
             calc7: Series.remainder(ldf["a"], 2)
           ]
@@ -539,8 +539,8 @@ defmodule Explorer.DataFrameTest do
             calc2: Series.subtract(2, ldf["a"]),
             calc3: Series.multiply(2, ldf["a"]),
             calc4: Series.divide(2, ldf["a"]),
-            calc5: Series.pow(2, ldf["a"]),
-            calc5_1: Series.pow(2.0, ldf["a"]),
+            calc5: Series.power(2, ldf["a"]),
+            calc5_1: Series.power(2.0, ldf["a"]),
             calc6: Series.quotient(2, ldf["a"]),
             calc7: Series.remainder(2, ldf["a"])
           ]
@@ -583,7 +583,7 @@ defmodule Explorer.DataFrameTest do
             calc2: Series.subtract(ldf["a"], series),
             calc3: Series.multiply(ldf["a"], series),
             calc4: Series.divide(ldf["a"], series),
-            calc5: Series.pow(ldf["a"], series),
+            calc5: Series.power(ldf["a"], series),
             calc6: Series.quotient(ldf["a"], series),
             calc7: Series.remainder(ldf["a"], series)
           ]
@@ -623,7 +623,7 @@ defmodule Explorer.DataFrameTest do
             calc2: Series.subtract(series, ldf["a"]),
             calc3: Series.multiply(series, ldf["a"]),
             calc4: Series.divide(series, ldf["a"]),
-            calc5: Series.pow(series, ldf["a"]),
+            calc5: Series.power(series, ldf["a"]),
             calc6: Series.quotient(series, ldf["a"]),
             calc7: Series.remainder(series, ldf["a"])
           ]
@@ -662,7 +662,7 @@ defmodule Explorer.DataFrameTest do
             calc2: Series.subtract(ldf["b"], ldf["a"]),
             calc3: Series.multiply(ldf["a"], ldf["d"]),
             calc4: Series.divide(ldf["b"], ldf["c"]),
-            calc5: Series.pow(ldf["a"], ldf["d"]),
+            calc5: Series.power(ldf["a"], ldf["d"]),
             calc6: Series.quotient(ldf["b"], ldf["c"]),
             calc7: Series.remainder(ldf["b"], ldf["c"])
           ]

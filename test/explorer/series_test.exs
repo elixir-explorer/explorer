@@ -476,48 +476,48 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "pow/2" do
-    test "pow of a series with an integer scalar value on the right-hand side" do
+  describe "power/2" do
+    test "power of a series with an integer scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
-      result = Series.pow(s1, 2)
+      result = Series.power(s1, 2)
 
       assert result.dtype == :integer
       assert Series.to_list(result) == [1, 4, 9]
     end
 
-    test "pow of a series with an float scalar value on the right-hand side" do
+    test "power of a series with an float scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
-      result = Series.pow(s1, 2.0)
+      result = Series.power(s1, 2.0)
 
       assert result.dtype == :float
       assert Series.to_list(result) == [1.0, 4.0, 9.0]
     end
 
-    test "pow of a series with an integer scalar value on the left-hand side" do
+    test "power of a series with an integer scalar value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
-      result = Series.pow(2, s1)
+      result = Series.power(2, s1)
 
       assert result.dtype == :integer
       assert Series.to_list(result) == [2, 4, 8]
     end
 
-    test "pow of a series with an float scalar value on the left-hand side" do
+    test "power of a series with an float scalar value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
-      result = Series.pow(2.0, s1)
+      result = Series.power(2.0, s1)
 
       assert result.dtype == :float
       assert Series.to_list(result) == [2.0, 4.0, 8.0]
     end
 
-    test "pow of a scalar value on the left-hand side to a series with a negative integer" do
+    test "power of a scalar value on the left-hand side to a series with a negative integer" do
       s1 = Series.from_list([1, -2, 3])
 
       assert_raise RuntimeError, "negative exponent with an integer base", fn ->
-        Series.pow(2, s1)
+        Series.power(2, s1)
       end
     end
   end

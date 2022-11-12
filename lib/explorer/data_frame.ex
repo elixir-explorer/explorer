@@ -1617,7 +1617,7 @@ defmodule Explorer.DataFrame do
   You can overwrite existing columns:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate_with(df, &[b: Explorer.Series.pow(&1["b"], 2)])
+      iex> Explorer.DataFrame.mutate_with(df, &[b: Explorer.Series.power(&1["b"], 2)])
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]

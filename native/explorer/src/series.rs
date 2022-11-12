@@ -648,7 +648,7 @@ pub fn s_n_unique(data: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_f_rhs(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
+pub fn s_power_f_rhs(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s
         .cast(&DataType::Float64)?
@@ -659,7 +659,7 @@ pub fn s_pow_f_rhs(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerEr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_f_lhs(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
+pub fn s_power_f_lhs(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s
         .cast(&DataType::Float64)?
@@ -670,14 +670,14 @@ pub fn s_pow_f_lhs(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerEr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_i_rhs(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError> {
+pub fn s_power_i_rhs(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s.i64()?.apply(|v| v.pow(exponent)).into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_i_lhs(data: ExSeries, base: u32) -> Result<ExSeries, ExplorerError> {
+pub fn s_power_i_lhs(data: ExSeries, base: u32) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
 
     match s.strict_cast(&DataType::UInt32) {

@@ -33,7 +33,7 @@ defmodule Explorer.Backend.LazySeries do
     divide: 2,
     quotient: 2,
     remainder: 2,
-    pow: 2,
+    power: 2,
     fill_missing: 2,
     fill_missing_with_value: 2,
     concat: 2,
@@ -78,7 +78,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
 
-  @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow, :quotient, :remainder]
+  @arithmetic_operations [:add, :subtract, :multiply, :divide, :power, :quotient, :remainder]
 
   @aggregation_operations [
     :sum,
@@ -460,7 +460,7 @@ defmodule Explorer.Backend.LazySeries do
     subtract: :-,
     multiply: :*,
     divide: :/,
-    pow: :**,
+    power: :**,
     eq: :==,
     neq: :!=,
     gt: :>,

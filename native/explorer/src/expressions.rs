@@ -293,7 +293,7 @@ pub fn expr_multiply(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_pow(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_power(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
 

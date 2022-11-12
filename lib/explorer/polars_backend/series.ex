@@ -222,23 +222,23 @@ defmodule Explorer.PolarsBackend.Series do
     do: apply_scalar_on_lhs(:remainder, left, right)
 
   @impl true
-  def pow(left, exponent) when is_float(exponent),
-    do: Shared.apply_series(left, :s_pow_f_rhs, [exponent])
+  def power(left, exponent) when is_float(exponent),
+    do: Shared.apply_series(left, :s_power_f_rhs, [exponent])
 
-  def pow(left, exponent) when is_integer(exponent) and exponent >= 0 do
+  def power(left, exponent) when is_integer(exponent) and exponent >= 0 do
     cond do
-      Series.dtype(left) == :integer -> Shared.apply_series(left, :s_pow_i_rhs, [exponent])
-      Series.dtype(left) == :float -> Shared.apply_series(left, :s_pow_f_rhs, [exponent / 1])
+      Series.dtype(left) == :integer -> Shared.apply_series(left, :s_power_i_rhs, [exponent])
+      Series.dtype(left) == :float -> Shared.apply_series(left, :s_power_f_rhs, [exponent / 1])
     end
   end
 
-  def pow(exponent, right) when is_float(exponent),
-    do: Shared.apply_series(right, :s_pow_f_lhs, [exponent])
+  def power(exponent, right) when is_float(exponent),
+    do: Shared.apply_series(right, :s_power_f_lhs, [exponent])
 
-  def pow(exponent, right) when is_integer(exponent) and exponent >= 0 do
+  def power(exponent, right) when is_integer(exponent) and exponent >= 0 do
     cond do
-      Series.dtype(right) == :integer -> Shared.apply_series(right, :s_pow_i_lhs, [exponent])
-      Series.dtype(right) == :float -> Shared.apply_series(right, :s_pow_f_lhs, [exponent / 1])
+      Series.dtype(right) == :integer -> Shared.apply_series(right, :s_power_i_lhs, [exponent])
+      Series.dtype(right) == :float -> Shared.apply_series(right, :s_power_f_lhs, [exponent / 1])
     end
   end
 

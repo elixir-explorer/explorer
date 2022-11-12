@@ -1393,43 +1393,43 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = [8, 16, 32] |> Explorer.Series.from_list()
-      iex> Explorer.Series.pow(s, 2.0)
+      iex> Explorer.Series.power(s, 2.0)
       #Explorer.Series<
         Polars[3]
         float [64.0, 256.0, 1024.0]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
-      iex> Explorer.Series.pow(s, 3)
+      iex> Explorer.Series.power(s, 3)
       #Explorer.Series<
         Polars[3]
         integer [8, 64, 216]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
-      iex> Explorer.Series.pow(s, -3.0)
+      iex> Explorer.Series.power(s, -3.0)
       #Explorer.Series<
         Polars[3]
         float [0.125, 0.015625, 0.004629629629629629]
       >
 
       iex> s = [1.0, 2.0, 3.0] |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.pow(3.0)
+      iex> s |> Explorer.Series.power(3.0)
       #Explorer.Series<
         Polars[3]
         float [1.0, 8.0, 27.0]
       >
 
       iex> s = [2.0, 4.0, 6.0] |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.pow(2)
+      iex> s |> Explorer.Series.power(2)
       #Explorer.Series<
         Polars[3]
         float [4.0, 16.0, 36.0]
       >
   """
   @doc type: :element_wise
-  @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def pow(left, right), do: basic_numeric_operation(:pow, left, right)
+  @spec power(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
+  def power(left, right), do: basic_numeric_operation(:power, left, right)
 
   @doc """
   Element-wise integer division.
