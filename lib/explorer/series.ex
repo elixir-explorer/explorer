@@ -992,23 +992,24 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 3])
-      iex> Explorer.Series.std(s)
+      iex> Explorer.Series.standard_deviation(s)
       1.0
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 3.0])
-      iex> Explorer.Series.std(s)
+      iex> Explorer.Series.standard_deviation(s)
       1.0
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.std(s)
-      ** (ArgumentError) Explorer.Series.std/1 not implemented for dtype :string. Valid dtypes are [:integer, :float].
+      iex> Explorer.Series.standard_deviation(s)
+      ** (ArgumentError) Explorer.Series.standard_deviation/1 not implemented for dtype :string. Valid dtypes are [:integer, :float].
   """
   @doc type: :aggregation
-  @spec std(series :: Series.t()) :: float()
-  def std(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
-    do: Shared.apply_impl(series, :std)
+  @spec standard_deviation(series :: Series.t()) :: float()
+  def standard_deviation(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+    do: Shared.apply_impl(series, :standard_deviation)
 
-  def std(%Series{dtype: dtype}), do: dtype_error("std/1", dtype, [:integer, :float])
+  def standard_deviation(%Series{dtype: dtype}),
+    do: dtype_error("standard_deviation/1", dtype, [:integer, :float])
 
   @doc """
   Gets the given quantile of the series.

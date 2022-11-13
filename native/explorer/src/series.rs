@@ -554,7 +554,7 @@ pub fn s_variance(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_std(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
+pub fn s_standard_deviation(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
     match s.dtype() {
         DataType::Int8
