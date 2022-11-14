@@ -314,13 +314,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defp check_series_size!(df, series, column_name) do
     df_len = n_rows(df)
-    s_len = Series.size(series)
+    s_size = Series.size(series)
 
-    if s_len != df_len,
+    if s_size != df_len,
       do:
         raise(
           ArgumentError,
-          "size of new column #{column_name} (#{s_len}) must match number of rows in the " <>
+          "size of new column #{column_name} (#{s_size}) must match number of rows in the " <>
             "dataframe (#{df_len})"
         )
   end

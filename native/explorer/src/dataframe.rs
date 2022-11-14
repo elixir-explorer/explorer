@@ -667,10 +667,7 @@ pub fn df_to_dummies(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_mutate(
-    data: ExDataFrame,
-    columns: Vec<ExSeries>,
-) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_mutate(data: ExDataFrame, columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let mut new_df = df.clone();
 

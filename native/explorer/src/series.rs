@@ -92,7 +92,7 @@ pub fn s_slice(data: ExSeries, offset: i64, length: usize) -> Result<ExSeries, E
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_append(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_concat(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let mut s = data.resource.0.clone();
     let s1 = &other.resource.0;
     s.append(s1)?;
@@ -100,7 +100,7 @@ pub fn s_append(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerErr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_filter(data: ExSeries, filter: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_mask(data: ExSeries, filter: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &filter.resource.0;
     if let Ok(ca) = s1.bool() {
@@ -119,21 +119,21 @@ pub fn s_add(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError>
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_sub(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_subtract(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &other.resource.0;
     Ok(ExSeries::new(s - s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_mul(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_multiply(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &other.resource.0;
     Ok(ExSeries::new(s * s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_div(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_divide(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &other.resource.0;
     Ok(ExSeries::new(s / s1))
@@ -256,42 +256,42 @@ pub fn s_series_equal(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_eq(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
     Ok(ExSeries::new(s.equal(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_neq(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_not_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
     Ok(ExSeries::new(s.not_equal(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_gt(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_greater(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
     Ok(ExSeries::new(s.gt(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_gt_eq(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_greater_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
     Ok(ExSeries::new(s.gt_eq(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_lt(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_less(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
     Ok(ExSeries::new(s.lt(s1).unwrap().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_lt_eq(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_less_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
     Ok(ExSeries::new(s.lt_eq(s1).unwrap().into_series()))
@@ -314,7 +314,7 @@ pub fn s_or(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn s_len(data: ExSeries) -> Result<usize, ExplorerError> {
+pub fn s_size(data: ExSeries) -> Result<usize, ExplorerError> {
     let s = &data.resource.0;
     Ok(s.len())
 }
@@ -570,25 +570,25 @@ pub fn s_standard_deviation(env: Env, data: ExSeries) -> Result<Term, ExplorerEr
 }
 
 #[rustler::nif]
-pub fn s_get(env: Env, data: ExSeries, idx: usize) -> Result<Term, ExplorerError> {
+pub fn s_fetch(env: Env, data: ExSeries, idx: usize) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
     Ok(encoding::term_from_value(s.get(idx), env))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_cum_sum(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
+pub fn s_cumulative_sum(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     Ok(ExSeries::new(s.cumsum(reverse)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_cum_max(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
+pub fn s_cumulative_max(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     Ok(ExSeries::new(s.cummax(reverse)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_cum_min(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
+pub fn s_cumulative_min(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     Ok(ExSeries::new(s.cummin(reverse)))
 }

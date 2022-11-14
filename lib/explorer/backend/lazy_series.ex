@@ -17,12 +17,12 @@ defmodule Explorer.Backend.LazySeries do
   @operations [
     # Element-wise
     all_equal: 2,
-    eq: 2,
-    neq: 2,
-    gt: 2,
-    gt_eq: 2,
-    lt: 2,
-    lt_eq: 2,
+    equal: 2,
+    not_equal: 2,
+    greater: 2,
+    greater_equal: 2,
+    less: 2,
+    less_equal: 2,
     is_nil: 1,
     is_not_nil: 1,
     binary_and: 2,
@@ -76,7 +76,7 @@ defmodule Explorer.Backend.LazySeries do
     count: 1
   ]
 
-  @comparison_operations [:eq, :neq, :gt, :gt_eq, :lt, :lt_eq]
+  @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
 
   @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow, :quotient, :remainder]
 
@@ -461,12 +461,12 @@ defmodule Explorer.Backend.LazySeries do
     multiply: :*,
     divide: :/,
     pow: :**,
-    eq: :==,
-    neq: :!=,
-    gt: :>,
-    gt_eq: :>=,
-    lt: :<,
-    lt_eq: :<=,
+    equal: :==,
+    not_equal: :!=,
+    greater: :>,
+    greater_equal: :>=,
+    less: :<,
+    less_equal: :<=,
     binary_and: :and,
     binary_or: :or
   }

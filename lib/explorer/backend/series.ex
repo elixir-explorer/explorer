@@ -75,12 +75,12 @@ defmodule Explorer.Backend.Series do
 
   # Comparisons
 
-  @callback eq(s | valid_types(), s | valid_types()) :: s
-  @callback neq(s | valid_types(), s | valid_types()) :: s
-  @callback gt(s | valid_types(), s | valid_types()) :: s
-  @callback gt_eq(s | valid_types(), s | valid_types()) :: s
-  @callback lt(s | valid_types(), s | valid_types()) :: s
-  @callback lt_eq(s | valid_types(), s | valid_types()) :: s
+  @callback equal(s | valid_types(), s | valid_types()) :: s
+  @callback not_equal(s | valid_types(), s | valid_types()) :: s
+  @callback greater(s | valid_types(), s | valid_types()) :: s
+  @callback greater_equal(s | valid_types(), s | valid_types()) :: s
+  @callback less(s | valid_types(), s | valid_types()) :: s
+  @callback less_equal(s | valid_types(), s | valid_types()) :: s
   @callback all_equal(s, s) :: boolean() | lazy_s()
 
   @callback binary_and(s, s) :: s
