@@ -43,7 +43,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     {columns, with_projection} = column_list_check(columns)
 
     df =
-      Native.df_read_csv(
+      Native.df_from_csv(
         filename,
         infer_schema_length,
         header?,
@@ -90,7 +90,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def to_csv(%DataFrame{data: df}, filename, header?, delimiter) do
     <<delimiter::utf8>> = delimiter
 
-    case Native.df_to_csv_file(df, filename, header?, delimiter) do
+    case Native.df_to_csv(df, filename, header?, delimiter) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -98,14 +98,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_ndjson(filename, infer_schema_length, batch_size) do
-    with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, batch_size) do
+    with {:ok, df} <- Native.df_from_ndjson(filename, infer_schema_length, batch_size) do
       {:ok, Shared.create_dataframe(df)}
     end
   end
 
   @impl true
   def to_ndjson(%DataFrame{data: df}, filename) do
-    with {:ok, _} <- Native.df_write_ndjson(df, filename) do
+    with {:ok, _} <- Native.df_to_ndjson(df, filename) do
       :ok
     end
   end
@@ -113,12 +113,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def dump_csv(%DataFrame{} = df, header?, delimiter) do
     <<delimiter::utf8>> = delimiter
-    Shared.apply_dataframe(df, :df_to_csv, [header?, delimiter])
+    Shared.apply_dataframe(df, :df_dump_csv, [header?, delimiter])
   end
 
   @impl true
   def from_parquet(filename) do
-    case Native.df_read_parquet(filename) do
+    case Native.df_from_parquet(filename) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
@@ -126,7 +126,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_parquet(%DataFrame{data: df}, filename, {compression, compression_level}) do
-    case Native.df_write_parquet(df, filename, Atom.to_string(compression), compression_level) do
+    case Native.df_to_parquet(df, filename, Atom.to_string(compression), compression_level) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -136,7 +136,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_ipc(filename, columns) do
     {columns, projection} = column_list_check(columns)
 
-    case Native.df_read_ipc(filename, columns, projection) do
+    case Native.df_from_ipc(filename, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
@@ -144,7 +144,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_ipc(%DataFrame{data: df}, filename, {compression, _level}) do
-    case Native.df_write_ipc(df, filename, Atom.to_string(compression)) do
+    case Native.df_to_ipc(df, filename, Atom.to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -154,7 +154,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_ipc_stream(filename, columns) do
     {columns, projection} = column_list_check(columns)
 
-    case Native.df_read_ipc_stream(filename, columns, projection) do
+    case Native.df_from_ipc_stream(filename, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
@@ -162,7 +162,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_ipc_stream(%DataFrame{data: df}, filename, compression) do
-    case Native.df_write_ipc_stream(df, filename, compression) do
+    case Native.df_to_ipc_stream(df, filename, compression) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end

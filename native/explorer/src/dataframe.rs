@@ -13,7 +13,7 @@ use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(clippy::too_many_arguments)]
-pub fn df_read_csv(
+pub fn df_from_csv(
     filename: &str,
     infer_schema_length: Option<usize>,
     has_header: bool,
@@ -77,7 +77,7 @@ fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_from_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
     let df = ParquetReader::new(buf_reader).finish()?;
@@ -85,7 +85,7 @@ pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_parquet(
+pub fn df_to_parquet(
     data: ExDataFrame,
     filename: &str,
     compression: Option<&str>,
@@ -127,7 +127,7 @@ pub fn df_write_parquet(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_to_csv(
+pub fn df_dump_csv(
     env: Env,
     data: ExDataFrame,
     has_headers: bool,
@@ -148,7 +148,7 @@ pub fn df_to_csv(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_to_csv_file(
+pub fn df_to_csv(
     data: ExDataFrame,
     filename: &str,
     has_headers: bool,
@@ -165,7 +165,7 @@ pub fn df_to_csv_file(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_ipc(
+pub fn df_from_ipc(
     filename: &str,
     columns: Option<Vec<String>>,
     projection: Option<Vec<usize>>,
@@ -180,7 +180,7 @@ pub fn df_read_ipc(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_ipc(
+pub fn df_to_ipc(
     data: ExDataFrame,
     filename: &str,
     compression: Option<&str>,
@@ -202,7 +202,7 @@ pub fn df_write_ipc(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_ipc_stream(
+pub fn df_from_ipc_stream(
     filename: &str,
     columns: Option<Vec<String>>,
     projection: Option<Vec<usize>>,
@@ -217,7 +217,7 @@ pub fn df_read_ipc_stream(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_ipc_stream(
+pub fn df_to_ipc_stream(
     data: ExDataFrame,
     filename: &str,
     compression: Option<&str>,
@@ -239,7 +239,7 @@ pub fn df_write_ipc_stream(
 
 #[cfg(not(target_arch = "arm"))]
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_ndjson(
+pub fn df_from_ndjson(
     filename: &str,
     infer_schema_length: Option<usize>,
     batch_size: usize,
@@ -257,7 +257,7 @@ pub fn df_read_ndjson(
 
 #[cfg(not(target_arch = "arm"))]
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+pub fn df_to_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
     let df = &data.resource.0;
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
@@ -267,7 +267,7 @@ pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), Explorer
 
 #[cfg(target_arch = "arm")]
 #[rustler::nif]
-pub fn df_read_ndjson(
+pub fn df_from_ndjson(
     _filename: &str,
     _infer_schema_length: Option<usize>,
     _batch_size: usize,
@@ -279,7 +279,7 @@ pub fn df_read_ndjson(
 
 #[cfg(target_arch = "arm")]
 #[rustler::nif]
-pub fn df_write_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerError> {
+pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerError> {
     Err(ExplorerError::Other(format!(
         "NDJSON writing is not enabled for this machine"
     )))

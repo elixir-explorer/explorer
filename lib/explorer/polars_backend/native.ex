@@ -13,7 +13,7 @@ defmodule Explorer.PolarsBackend.Native do
 
   defstruct [:inner]
 
-  def df_read_csv(
+  def df_from_csv(
         _filename,
         _infer_schema_length,
         _has_header,
@@ -30,14 +30,14 @@ defmodule Explorer.PolarsBackend.Native do
       ),
       do: err()
 
-  def df_to_csv(
+  def df_dump_csv(
         _df,
         _has_headers,
         _delimiter
       ),
       do: err()
 
-  def df_to_csv_file(
+  def df_to_csv(
         _df,
         _filename,
         _has_headers,
@@ -45,14 +45,14 @@ defmodule Explorer.PolarsBackend.Native do
       ),
       do: err()
 
-  def df_read_ndjson(
+  def df_from_ndjson(
         _filename,
         _infer_schema_length,
         _batch_size
       ),
       do: err()
 
-  def df_write_ndjson(
+  def df_to_ndjson(
         _df,
         _filename
       ),
@@ -77,9 +77,9 @@ defmodule Explorer.PolarsBackend.Native do
   def df_names(_df), do: err()
   def df_new(_columns), do: err()
   def df_pivot_wider(_df, _id_columns, _pivot_column, _values_column), do: err()
-  def df_read_ipc(_filename, _columns, _projection), do: err()
-  def df_read_ipc_stream(_filename, _columns, _projection), do: err()
-  def df_read_parquet(_filename), do: err()
+  def df_from_ipc(_filename, _columns, _projection), do: err()
+  def df_from_ipc_stream(_filename, _columns, _projection), do: err()
+  def df_from_parquet(_filename), do: err()
   def df_select(_df, _selection), do: err()
   def df_select_at_idx(_df, _idx), do: err()
   def df_rename_columns(_df, _old_new_pairs), do: err()
@@ -97,9 +97,9 @@ defmodule Explorer.PolarsBackend.Native do
   def df_width(_df), do: err()
   def df_with_columns(_df, _columns), do: err()
   def df_with_column_exprs(_df, _exprs), do: err()
-  def df_write_ipc(_df, _filename, _compression), do: err()
-  def df_write_ipc_stream(_df, _filename, _compression), do: err()
-  def df_write_parquet(_df, _filename, _compression, _compression_level), do: err()
+  def df_to_ipc(_df, _filename, _compression), do: err()
+  def df_to_ipc_stream(_df, _filename, _compression), do: err()
+  def df_to_parquet(_df, _filename, _compression, _compression_level), do: err()
 
   # Expressions (for lazy queries)
   # We first generate functions for known operations.
