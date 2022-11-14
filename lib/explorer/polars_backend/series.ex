@@ -46,7 +46,7 @@ defmodule Explorer.PolarsBackend.Series do
   def dtype(series), do: series |> Shared.apply_series(:s_dtype) |> Shared.normalise_dtype()
 
   @impl true
-  def size(series), do: Shared.apply_series(series, :s_len)
+  def size(series), do: Shared.apply_series(series, :s_size)
 
   @impl true
   def memtype(series) do
@@ -104,7 +104,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def mask(series, %Series{} = mask),
-    do: Shared.apply_series(series, :s_filter, [mask.data])
+    do: Shared.apply_series(series, :s_mask, [mask.data])
 
   @impl true
   def slice(series, indices) when is_list(indices),
@@ -116,11 +116,11 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def fetch!(series, idx) do
     idx = if idx < 0, do: size(series) + idx, else: idx
-    Shared.apply_series(series, :s_get, [idx])
+    Shared.apply_series(series, :s_fetch, [idx])
   end
 
   @impl true
-  def concat(s1, s2), do: Shared.apply_series(s1, :s_append, [s2.data])
+  def concat(s1, s2), do: Shared.apply_series(s1, :s_concat, [s2.data])
 
   @impl true
   def coalesce(s1, s2), do: Shared.apply_series(s1, :s_coalesce, [s2.data])
@@ -156,15 +156,15 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def cumulative_max(series, reverse?),
-    do: Shared.apply_series(series, :s_cum_max, [reverse?])
+    do: Shared.apply_series(series, :s_cumulative_max, [reverse?])
 
   @impl true
   def cumulative_min(series, reverse?),
-    do: Shared.apply_series(series, :s_cum_min, [reverse?])
+    do: Shared.apply_series(series, :s_cumulative_min, [reverse?])
 
   @impl true
   def cumulative_sum(series, reverse?),
-    do: Shared.apply_series(series, :s_cum_sum, [reverse?])
+    do: Shared.apply_series(series, :s_cumulative_sum, [reverse?])
 
   # Local minima/maxima
 
@@ -183,21 +183,21 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def subtract(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_sub, [right.data])
+    do: Shared.apply_series(left, :s_subtract, [right.data])
 
   def subtract(left, right) when is_number(right), do: apply_scalar_on_rhs(:subtract, left, right)
   def subtract(left, right) when is_number(left), do: apply_scalar_on_lhs(:subtract, left, right)
 
   @impl true
   def multiply(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_mul, [right.data])
+    do: Shared.apply_series(left, :s_multiply, [right.data])
 
   def multiply(left, right) when is_number(right), do: apply_scalar_on_rhs(:multiply, left, right)
   def multiply(left, right) when is_number(left), do: apply_scalar_on_lhs(:multiply, left, right)
 
   @impl true
   def divide(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_div, [right.data])
+    do: Shared.apply_series(left, :s_divide, [right.data])
 
   def divide(left, right) when is_number(right), do: apply_scalar_on_rhs(:divide, left, right)
   def divide(left, right) when is_number(left), do: apply_scalar_on_lhs(:divide, left, right)
@@ -245,46 +245,46 @@ defmodule Explorer.PolarsBackend.Series do
   # Comparisons
 
   @impl true
-  def eq(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_eq, [right.data])
+  def equal(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_equal, [right.data])
 
-  def eq(%Series{} = left, right), do: apply_scalar_on_rhs(:equal, left, right)
-  def eq(left, %Series{} = right), do: apply_scalar_on_lhs(:equal, left, right)
-
-  @impl true
-  def neq(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_neq, [right.data])
-
-  def neq(%Series{} = left, right), do: apply_scalar_on_rhs(:not_equal, left, right)
-  def neq(left, %Series{} = right), do: apply_scalar_on_lhs(:not_equal, left, right)
+  def equal(%Series{} = left, right), do: apply_scalar_on_rhs(:equal, left, right)
+  def equal(left, %Series{} = right), do: apply_scalar_on_lhs(:equal, left, right)
 
   @impl true
-  def gt(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_gt, [right.data])
+  def not_equal(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_not_equal, [right.data])
 
-  def gt(%Series{} = left, right), do: apply_scalar_on_rhs(:greater, left, right)
-  def gt(left, %Series{} = right), do: apply_scalar_on_lhs(:greater, left, right)
-
-  @impl true
-  def gt_eq(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_gt_eq, [right.data])
-
-  def gt_eq(%Series{} = left, right), do: apply_scalar_on_rhs(:greater_equal, left, right)
-  def gt_eq(left, %Series{} = right), do: apply_scalar_on_lhs(:greater_equal, left, right)
+  def not_equal(%Series{} = left, right), do: apply_scalar_on_rhs(:not_equal, left, right)
+  def not_equal(left, %Series{} = right), do: apply_scalar_on_lhs(:not_equal, left, right)
 
   @impl true
-  def lt(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_lt, [right.data])
+  def greater(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_greater, [right.data])
 
-  def lt(%Series{} = left, right), do: apply_scalar_on_rhs(:less, left, right)
-  def lt(left, %Series{} = right), do: apply_scalar_on_lhs(:less, left, right)
+  def greater(%Series{} = left, right), do: apply_scalar_on_rhs(:greater, left, right)
+  def greater(left, %Series{} = right), do: apply_scalar_on_lhs(:greater, left, right)
 
   @impl true
-  def lt_eq(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_lt_eq, [right.data])
+  def greater_equal(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_greater_equal, [right.data])
 
-  def lt_eq(%Series{} = left, right), do: apply_scalar_on_rhs(:less_equal, left, right)
-  def lt_eq(left, %Series{} = right), do: apply_scalar_on_lhs(:less_equal, left, right)
+  def greater_equal(%Series{} = left, right), do: apply_scalar_on_rhs(:greater_equal, left, right)
+  def greater_equal(left, %Series{} = right), do: apply_scalar_on_lhs(:greater_equal, left, right)
+
+  @impl true
+  def less(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_less, [right.data])
+
+  def less(%Series{} = left, right), do: apply_scalar_on_rhs(:less, left, right)
+  def less(left, %Series{} = right), do: apply_scalar_on_lhs(:less, left, right)
+
+  @impl true
+  def less_equal(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_less_equal, [right.data])
+
+  def less_equal(%Series{} = left, right), do: apply_scalar_on_rhs(:less_equal, left, right)
+  def less_equal(left, %Series{} = right), do: apply_scalar_on_lhs(:less_equal, left, right)
 
   @impl true
   def all_equal(%Series{} = left, %Series{} = right),
@@ -318,7 +318,7 @@ defmodule Explorer.PolarsBackend.Series do
   def unordered_distinct(series), do: Shared.apply_series(series, :s_unordered_distinct)
 
   @impl true
-  def n_distinct(series), do: Shared.apply_series(series, :s_n_unique)
+  def n_distinct(series), do: Shared.apply_series(series, :s_n_distinct)
 
   @impl true
   def count(%Series{data: polars_series}) do
@@ -335,22 +335,22 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def window_max(series, window_size, opts) do
-    window_function(:s_rolling_max, series, window_size, opts)
+    window_function(:s_window_max, series, window_size, opts)
   end
 
   @impl true
   def window_mean(series, window_size, opts) do
-    window_function(:s_rolling_mean, series, window_size, opts)
+    window_function(:s_window_mean, series, window_size, opts)
   end
 
   @impl true
   def window_min(series, window_size, opts) do
-    window_function(:s_rolling_min, series, window_size, opts)
+    window_function(:s_window_min, series, window_size, opts)
   end
 
   @impl true
   def window_sum(series, window_size, opts) do
-    window_function(:s_rolling_sum, series, window_size, opts)
+    window_function(:s_window_sum, series, window_size, opts)
   end
 
   defp window_function(operation, series, window_size, opts) do
@@ -365,14 +365,14 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def fill_missing(series, strategy) when is_atom(strategy),
-    do: Shared.apply_series(series, :s_fill_none, [Atom.to_string(strategy)])
+    do: Shared.apply_series(series, :s_fill_missing, [Atom.to_string(strategy)])
 
   def fill_missing(series, value) do
     operation =
       cond do
-        is_float(value) -> :s_fill_none_with_float
-        is_integer(value) -> :s_fill_none_with_int
-        is_binary(value) -> :s_fill_none_with_bin
+        is_float(value) -> :s_fill_missing_with_float
+        is_integer(value) -> :s_fill_missing_with_int
+        is_binary(value) -> :s_fill_missing_with_bin
       end
 
     Shared.apply_series(series, operation, [value])

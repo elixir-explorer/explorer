@@ -12,7 +12,7 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
     end
 
     test "with basic int value", %{df: df} do
-      lazy = %LazySeries{op: :eq, args: [%LazySeries{op: :column, args: ["col_a"]}, 5]}
+      lazy = %LazySeries{op: :equal, args: [%LazySeries{op: :column, args: ["col_a"]}, 5]}
 
       assert %Expression{} = expr = Expression.to_expr(lazy)
 
@@ -23,26 +23,26 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
     end
 
     test "with basic float value" do
-      lazy = %LazySeries{op: :eq, args: [%LazySeries{op: :column, args: ["col_b"]}, 1.4]}
+      lazy = %LazySeries{op: :equal, args: [%LazySeries{op: :column, args: ["col_b"]}, 1.4]}
 
       assert %Expression{} = Expression.to_expr(lazy)
     end
 
     test "with a string value" do
-      lazy = %LazySeries{op: :eq, args: [%LazySeries{op: :column, args: ["col_b"]}, "foo"]}
+      lazy = %LazySeries{op: :equal, args: [%LazySeries{op: :column, args: ["col_b"]}, "foo"]}
 
       assert %Expression{} = Expression.to_expr(lazy)
     end
 
     test "with a bool value" do
-      lazy = %LazySeries{op: :eq, args: [%LazySeries{op: :column, args: ["col_b"]}, true]}
+      lazy = %LazySeries{op: :equal, args: [%LazySeries{op: :column, args: ["col_b"]}, true]}
 
       assert %Expression{} = Expression.to_expr(lazy)
     end
 
     test "with date value" do
       lazy = %LazySeries{
-        op: :eq,
+        op: :equal,
         args: [%LazySeries{op: :column, args: ["col_b"]}, ~D[2022-07-07]]
       }
 
@@ -51,7 +51,7 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
 
     test "with datetime value" do
       lazy = %LazySeries{
-        op: :eq,
+        op: :equal,
         args: [%LazySeries{op: :column, args: ["col_b"]}, ~N[2022-07-07 18:09:17.824019]]
       }
 
@@ -60,7 +60,7 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
 
     test "with series" do
       lazy = %LazySeries{
-        op: :eq,
+        op: :equal,
         args: [
           %LazySeries{op: :column, args: ["col_b"]},
           Explorer.Series.from_list([1, 2, 3]).data
@@ -72,7 +72,7 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
 
     test "with another column", %{df: df} do
       lazy = %LazySeries{
-        op: :eq,
+        op: :equal,
         args: [
           %LazySeries{op: :column, args: ["col_a"]},
           %LazySeries{op: :column, args: ["col_b"]}

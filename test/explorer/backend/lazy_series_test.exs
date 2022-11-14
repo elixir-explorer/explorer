@@ -20,9 +20,9 @@ defmodule Explorer.Backend.LazySeriesTest do
 
   test "inspect/2 with nested operations" do
     col = LazySeries.new(:column, ["col_a"])
-    eq = LazySeries.new(:eq, [col, 5])
+    equal = LazySeries.new(:equal, [col, 5])
 
-    series = Backend.Series.new(eq, :boolean)
+    series = Backend.Series.new(equal, :boolean)
 
     assert inspect(series) ==
              """

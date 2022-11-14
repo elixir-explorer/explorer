@@ -72,7 +72,7 @@ pub fn expr_column(name: &str) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_eq(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_equal(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
 
@@ -80,7 +80,7 @@ pub fn expr_eq(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_neq(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_not_equal(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
 
@@ -88,7 +88,7 @@ pub fn expr_neq(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_gt(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_greater(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
 
@@ -96,7 +96,7 @@ pub fn expr_gt(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_gt_eq(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_greater_equal(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
 
@@ -104,7 +104,7 @@ pub fn expr_gt_eq(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_lt(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_less(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
 
@@ -112,7 +112,7 @@ pub fn expr_lt(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_lt_eq(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_less_equal(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr: Expr = left.resource.0.clone();
     let right_expr: Expr = right.resource.0.clone();
 

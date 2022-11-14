@@ -13,7 +13,7 @@ use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 
 #[rustler::nif(schedule = "DirtyIo")]
 #[allow(clippy::too_many_arguments)]
-pub fn df_read_csv(
+pub fn df_from_csv(
     filename: &str,
     infer_schema_length: Option<usize>,
     has_header: bool,
@@ -77,7 +77,7 @@ fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_from_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
     let df = ParquetReader::new(buf_reader).finish()?;
@@ -85,7 +85,7 @@ pub fn df_read_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_parquet(
+pub fn df_to_parquet(
     data: ExDataFrame,
     filename: &str,
     compression: Option<&str>,
@@ -127,7 +127,7 @@ pub fn df_write_parquet(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_to_csv(
+pub fn df_dump_csv(
     env: Env,
     data: ExDataFrame,
     has_headers: bool,
@@ -148,7 +148,7 @@ pub fn df_to_csv(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_to_csv_file(
+pub fn df_to_csv(
     data: ExDataFrame,
     filename: &str,
     has_headers: bool,
@@ -165,7 +165,7 @@ pub fn df_to_csv_file(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_ipc(
+pub fn df_from_ipc(
     filename: &str,
     columns: Option<Vec<String>>,
     projection: Option<Vec<usize>>,
@@ -180,7 +180,7 @@ pub fn df_read_ipc(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_ipc(
+pub fn df_to_ipc(
     data: ExDataFrame,
     filename: &str,
     compression: Option<&str>,
@@ -202,7 +202,7 @@ pub fn df_write_ipc(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_ipc_stream(
+pub fn df_from_ipc_stream(
     filename: &str,
     columns: Option<Vec<String>>,
     projection: Option<Vec<usize>>,
@@ -217,7 +217,7 @@ pub fn df_read_ipc_stream(
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_ipc_stream(
+pub fn df_to_ipc_stream(
     data: ExDataFrame,
     filename: &str,
     compression: Option<&str>,
@@ -239,7 +239,7 @@ pub fn df_write_ipc_stream(
 
 #[cfg(not(target_arch = "arm"))]
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_read_ndjson(
+pub fn df_from_ndjson(
     filename: &str,
     infer_schema_length: Option<usize>,
     batch_size: usize,
@@ -257,7 +257,7 @@ pub fn df_read_ndjson(
 
 #[cfg(not(target_arch = "arm"))]
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
+pub fn df_to_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
     let df = &data.resource.0;
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
@@ -267,7 +267,7 @@ pub fn df_write_ndjson(data: ExDataFrame, filename: &str) -> Result<(), Explorer
 
 #[cfg(target_arch = "arm")]
 #[rustler::nif]
-pub fn df_read_ndjson(
+pub fn df_from_ndjson(
     _filename: &str,
     _infer_schema_length: Option<usize>,
     _batch_size: usize,
@@ -279,7 +279,7 @@ pub fn df_read_ndjson(
 
 #[cfg(target_arch = "arm")]
 #[rustler::nif]
-pub fn df_write_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerError> {
+pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerError> {
     Err(ExplorerError::Other(format!(
         "NDJSON writing is not enabled for this machine"
     )))
@@ -338,7 +338,7 @@ pub fn df_shape(data: ExDataFrame) -> Result<(usize, usize), ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn df_height(data: ExDataFrame) -> Result<usize, ExplorerError> {
+pub fn df_n_rows(data: ExDataFrame) -> Result<usize, ExplorerError> {
     Ok(data.resource.0.height())
 }
 
@@ -348,7 +348,7 @@ pub fn df_width(data: ExDataFrame) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_vstack_many(
+pub fn df_concat_rows(
     data: ExDataFrame,
     others: Vec<ExDataFrame>,
 ) -> Result<ExDataFrame, ExplorerError> {
@@ -368,7 +368,7 @@ pub fn df_vstack_many(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_hstack_many(
+pub fn df_concat_columns(
     data: ExDataFrame,
     others: Vec<ExDataFrame>,
 ) -> Result<ExDataFrame, ExplorerError> {
@@ -435,7 +435,7 @@ pub fn df_select_at_idx(data: ExDataFrame, idx: usize) -> Result<Option<ExSeries
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_column(data: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerError> {
+pub fn df_pull(data: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerError> {
     let df = &data.resource.0;
     let series = df.column(name).map(|s| ExSeries::new(s.clone()))?;
     Ok(series)
@@ -529,7 +529,7 @@ pub fn df_sample_frac(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_sort(
+pub fn df_arrange(
     data: ExDataFrame,
     by_columns: Vec<String>,
     reverse: Vec<bool>,
@@ -619,7 +619,7 @@ pub fn df_tail(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_melt(
+pub fn df_pivot_longer(
     data: ExDataFrame,
     id_vars: Vec<String>,
     value_vars: Vec<String>,
@@ -638,7 +638,7 @@ pub fn df_melt(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_drop_duplicates(
+pub fn df_distinct(
     data: ExDataFrame,
     maintain_order: bool,
     subset: Vec<String>,
@@ -667,10 +667,7 @@ pub fn df_to_dummies(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_with_columns(
-    data: ExDataFrame,
-    columns: Vec<ExSeries>,
-) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_mutate(data: ExDataFrame, columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let mut new_df = df.clone();
 
@@ -683,7 +680,7 @@ pub fn df_with_columns(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_with_column_exprs(
+pub fn df_mutate_with_exprs(
     data: ExDataFrame,
     columns: Vec<ExExpr>,
 ) -> Result<ExDataFrame, ExplorerError> {
@@ -697,7 +694,7 @@ pub fn df_with_column_exprs(
 }
 
 #[rustler::nif]
-pub fn df_new(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_from_series(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
     let columns = to_series_collection(columns);
     let df = DataFrame::new(columns)?;
     Ok(ExDataFrame::new(df))
@@ -735,7 +732,7 @@ pub fn df_group_indices(data: ExDataFrame, groups: Vec<&str>) -> Result<ExSeries
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_groupby_agg_with(
+pub fn df_summarise_with_exprs(
     data: ExDataFrame,
     groups: Vec<ExExpr>,
     aggs: Vec<ExExpr>,

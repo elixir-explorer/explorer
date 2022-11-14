@@ -1610,7 +1610,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def equal(left, right) do
     if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
-      Shared.apply_series_impl(:eq, [left, right])
+      Shared.apply_series_impl(:equal, [left, right])
     else
       dtype_mismatch_error("equal/2", dtype_from_sides(left, right), inspect(right))
     end
@@ -1675,7 +1675,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def not_equal(left, right) do
     if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
-      Shared.apply_series_impl(:neq, [left, right])
+      Shared.apply_series_impl(:not_equal, [left, right])
     else
       dtype_mismatch_error("not_equal/2", dtype_from_sides(left, right), inspect(right))
     end
@@ -1712,7 +1712,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def greater(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_series_impl(:gt, [left, right])
+      Shared.apply_series_impl(:greater, [left, right])
     else
       dtype_error("greater/2", dtype_from_sides(left, right), [:integer, :float, :date, :datetime])
     end
@@ -1745,7 +1745,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def greater_equal(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_series_impl(:gt_eq, [left, right])
+      Shared.apply_series_impl(:greater_equal, [left, right])
     else
       types = [:integer, :float, :date, :datetime]
       dtype_error("greater_equal/2", dtype_from_sides(left, right), types)
@@ -1779,7 +1779,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def less(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_series_impl(:lt, [left, right])
+      Shared.apply_series_impl(:less, [left, right])
     else
       dtype_error("less/2", dtype_from_sides(left, right), [:integer, :float, :date, :datetime])
     end
@@ -1812,7 +1812,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def less_equal(left, right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_series_impl(:lt_eq, [left, right])
+      Shared.apply_series_impl(:less_equal, [left, right])
     else
       types = [:integer, :float, :date, :datetime]
       dtype_error("less_equal/2", dtype_from_sides(left, right), types)

@@ -43,7 +43,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     {columns, with_projection} = column_list_check(columns)
 
     df =
-      Native.df_read_csv(
+      Native.df_from_csv(
         filename,
         infer_schema_length,
         header?,
@@ -90,7 +90,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def to_csv(%DataFrame{data: df}, filename, header?, delimiter) do
     <<delimiter::utf8>> = delimiter
 
-    case Native.df_to_csv_file(df, filename, header?, delimiter) do
+    case Native.df_to_csv(df, filename, header?, delimiter) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -98,14 +98,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_ndjson(filename, infer_schema_length, batch_size) do
-    with {:ok, df} <- Native.df_read_ndjson(filename, infer_schema_length, batch_size) do
+    with {:ok, df} <- Native.df_from_ndjson(filename, infer_schema_length, batch_size) do
       {:ok, Shared.create_dataframe(df)}
     end
   end
 
   @impl true
   def to_ndjson(%DataFrame{data: df}, filename) do
-    with {:ok, _} <- Native.df_write_ndjson(df, filename) do
+    with {:ok, _} <- Native.df_to_ndjson(df, filename) do
       :ok
     end
   end
@@ -113,12 +113,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def dump_csv(%DataFrame{} = df, header?, delimiter) do
     <<delimiter::utf8>> = delimiter
-    Shared.apply_dataframe(df, :df_to_csv, [header?, delimiter])
+    Shared.apply_dataframe(df, :df_dump_csv, [header?, delimiter])
   end
 
   @impl true
   def from_parquet(filename) do
-    case Native.df_read_parquet(filename) do
+    case Native.df_from_parquet(filename) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
@@ -126,7 +126,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_parquet(%DataFrame{data: df}, filename, {compression, compression_level}) do
-    case Native.df_write_parquet(df, filename, Atom.to_string(compression), compression_level) do
+    case Native.df_to_parquet(df, filename, Atom.to_string(compression), compression_level) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -136,7 +136,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_ipc(filename, columns) do
     {columns, projection} = column_list_check(columns)
 
-    case Native.df_read_ipc(filename, columns, projection) do
+    case Native.df_from_ipc(filename, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
@@ -144,7 +144,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_ipc(%DataFrame{data: df}, filename, {compression, _level}) do
-    case Native.df_write_ipc(df, filename, Atom.to_string(compression)) do
+    case Native.df_to_ipc(df, filename, Atom.to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -154,7 +154,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_ipc_stream(filename, columns) do
     {columns, projection} = column_list_check(columns)
 
-    case Native.df_read_ipc_stream(filename, columns, projection) do
+    case Native.df_from_ipc_stream(filename, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
@@ -162,7 +162,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_ipc_stream(%DataFrame{data: df}, filename, compression) do
-    case Native.df_write_ipc_stream(df, filename, compression) do
+    case Native.df_to_ipc_stream(df, filename, compression) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -212,7 +212,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp from_series_list(list) do
     list = Enum.map(list, & &1.data)
 
-    case Native.df_new(list) do
+    case Native.df_from_series(list) do
       {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> raise ArgumentError, error
     end
@@ -242,7 +242,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     names
     |> Enum.map(fn name ->
-      {:ok, series} = Native.df_column(polars_df, name)
+      {:ok, series} = Native.df_pull(polars_df, name)
       {:ok, list} = Native.s_to_list(series)
       list
     end)
@@ -252,7 +252,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Introspection
 
   @impl true
-  def n_rows(df), do: Shared.apply_dataframe(df, :df_height)
+  def n_rows(df), do: Shared.apply_dataframe(df, :df_n_rows)
 
   # Single table verbs
 
@@ -293,7 +293,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         series.data
       end)
 
-    Shared.apply_dataframe(df, out_df, :df_with_columns, [columns])
+    Shared.apply_dataframe(df, out_df, :df_mutate, [columns])
   end
 
   defp to_series(df, name, value) do
@@ -314,13 +314,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   defp check_series_size!(df, series, column_name) do
     df_len = n_rows(df)
-    s_len = Series.size(series)
+    s_size = Series.size(series)
 
-    if s_len != df_len,
+    if s_size != df_len,
       do:
         raise(
           ArgumentError,
-          "size of new column #{column_name} (#{s_len}) must match number of rows in the " <>
+          "size of new column #{column_name} (#{s_size}) must match number of rows in the " <>
             "dataframe (#{df_len})"
         )
   end
@@ -341,7 +341,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         Explorer.PolarsBackend.Expression.alias_expr(original_expr, name)
       end
 
-    Shared.apply_dataframe(df, out_df, :df_with_column_exprs, [exprs])
+    Shared.apply_dataframe(df, out_df, :df_mutate_with_exprs, [exprs])
   end
 
   @impl true
@@ -353,7 +353,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(df, df, :df_sort, [columns, directions, groups])
+    Shared.apply_dataframe(df, df, :df_arrange, [columns, directions, groups])
   end
 
   @impl true
@@ -374,7 +374,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     # This is an Option in the Nif side.
     columns_to_keep = unless keep_all, do: out_df.names
 
-    Shared.apply_dataframe(df, out_df, :df_drop_duplicates, [true, columns, columns_to_keep])
+    Shared.apply_dataframe(df, out_df, :df_distinct, [true, columns, columns_to_keep])
   end
 
   # Applies a callback function to each group of indices in a dataframe. Then regroups it.
@@ -391,7 +391,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> then(fn group_df ->
         idx_series = series_from_list!(idx_column, indices)
 
-        Shared.apply_dataframe(group_df, :df_with_columns, [[idx_series.data]])
+        Shared.apply_dataframe(group_df, :df_mutate, [[idx_series.data]])
       end)
     end)
     |> then(fn [head | _tail] = dfs -> concat_rows(dfs, head) end)
@@ -426,7 +426,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def pull(df, column), do: Shared.apply_dataframe(df, :df_column, [column])
+  def pull(df, column), do: Shared.apply_dataframe(df, :df_pull, [column])
 
   @impl true
   def slice(%DataFrame{groups: []} = df, row_indices),
@@ -482,7 +482,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def pivot_longer(df, out_df, columns_to_pivot, columns_to_keep, names_to, values_to) do
-    Shared.apply_dataframe(df, out_df, :df_melt, [
+    Shared.apply_dataframe(df, out_df, :df_pivot_longer, [
       columns_to_keep,
       columns_to_pivot,
       names_to,
@@ -532,12 +532,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def concat_rows([head | tail], out_df) do
-    Shared.apply_dataframe(head, out_df, :df_vstack_many, [Enum.map(tail, & &1.data)])
+    Shared.apply_dataframe(head, out_df, :df_concat_rows, [Enum.map(tail, & &1.data)])
   end
 
   @impl true
   def concat_columns([head | tail], out_df) do
-    Shared.apply_dataframe(head, out_df, :df_hstack_many, [Enum.map(tail, & &1.data)])
+    Shared.apply_dataframe(head, out_df, :df_concat_columns, [Enum.map(tail, & &1.data)])
   end
 
   # Groups
@@ -552,7 +552,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     groups_exprs = for group <- groups, do: Native.expr_column(group)
 
-    Shared.apply_dataframe(df, out_df, :df_groupby_agg_with, [groups_exprs, exprs])
+    Shared.apply_dataframe(df, out_df, :df_summarise_with_exprs, [groups_exprs, exprs])
   end
 
   # Inspect
