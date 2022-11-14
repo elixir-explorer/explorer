@@ -212,7 +212,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp from_series_list(list) do
     list = Enum.map(list, & &1.data)
 
-    case Native.df_new(list) do
+    case Native.df_from_series(list) do
       {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> raise ArgumentError, error
     end
@@ -242,7 +242,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     names
     |> Enum.map(fn name ->
-      {:ok, series} = Native.df_column(polars_df, name)
+      {:ok, series} = Native.df_pull(polars_df, name)
       {:ok, list} = Native.s_to_list(series)
       list
     end)
@@ -252,7 +252,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Introspection
 
   @impl true
-  def n_rows(df), do: Shared.apply_dataframe(df, :df_height)
+  def n_rows(df), do: Shared.apply_dataframe(df, :df_n_rows)
 
   # Single table verbs
 
@@ -293,7 +293,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         series.data
       end)
 
-    Shared.apply_dataframe(df, out_df, :df_with_columns, [columns])
+    Shared.apply_dataframe(df, out_df, :df_mutate, [columns])
   end
 
   defp to_series(df, name, value) do
@@ -341,7 +341,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         Explorer.PolarsBackend.Expression.alias_expr(original_expr, name)
       end
 
-    Shared.apply_dataframe(df, out_df, :df_with_column_exprs, [exprs])
+    Shared.apply_dataframe(df, out_df, :df_mutate_with_exprs, [exprs])
   end
 
   @impl true
@@ -353,7 +353,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(df, df, :df_sort, [columns, directions, groups])
+    Shared.apply_dataframe(df, df, :df_arrange, [columns, directions, groups])
   end
 
   @impl true
@@ -374,7 +374,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     # This is an Option in the Nif side.
     columns_to_keep = unless keep_all, do: out_df.names
 
-    Shared.apply_dataframe(df, out_df, :df_drop_duplicates, [true, columns, columns_to_keep])
+    Shared.apply_dataframe(df, out_df, :df_distinct, [true, columns, columns_to_keep])
   end
 
   # Applies a callback function to each group of indices in a dataframe. Then regroups it.
@@ -391,7 +391,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> then(fn group_df ->
         idx_series = series_from_list!(idx_column, indices)
 
-        Shared.apply_dataframe(group_df, :df_with_columns, [[idx_series.data]])
+        Shared.apply_dataframe(group_df, :df_mutate, [[idx_series.data]])
       end)
     end)
     |> then(fn [head | _tail] = dfs -> concat_rows(dfs, head) end)
@@ -426,7 +426,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def pull(df, column), do: Shared.apply_dataframe(df, :df_column, [column])
+  def pull(df, column), do: Shared.apply_dataframe(df, :df_pull, [column])
 
   @impl true
   def slice(%DataFrame{groups: []} = df, row_indices),
@@ -482,7 +482,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def pivot_longer(df, out_df, columns_to_pivot, columns_to_keep, names_to, values_to) do
-    Shared.apply_dataframe(df, out_df, :df_melt, [
+    Shared.apply_dataframe(df, out_df, :df_pivot_longer, [
       columns_to_keep,
       columns_to_pivot,
       names_to,
@@ -532,12 +532,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def concat_rows([head | tail], out_df) do
-    Shared.apply_dataframe(head, out_df, :df_vstack_many, [Enum.map(tail, & &1.data)])
+    Shared.apply_dataframe(head, out_df, :df_concat_rows, [Enum.map(tail, & &1.data)])
   end
 
   @impl true
   def concat_columns([head | tail], out_df) do
-    Shared.apply_dataframe(head, out_df, :df_hstack_many, [Enum.map(tail, & &1.data)])
+    Shared.apply_dataframe(head, out_df, :df_concat_columns, [Enum.map(tail, & &1.data)])
   end
 
   # Groups
@@ -552,7 +552,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     groups_exprs = for group <- groups, do: Native.expr_column(group)
 
-    Shared.apply_dataframe(df, out_df, :df_groupby_agg_with, [groups_exprs, exprs])
+    Shared.apply_dataframe(df, out_df, :df_summarise_with_exprs, [groups_exprs, exprs])
   end
 
   # Inspect
