@@ -320,7 +320,7 @@ pub fn s_size(data: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_none(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerError> {
     let strat = match strategy {
         "backward" => FillNullStrategy::Backward(None),
         "forward" => FillNullStrategy::Forward(None),
@@ -341,28 +341,28 @@ pub fn s_fill_none(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerE
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_none_with_int(data: ExSeries, strategy: i64) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_int(data: ExSeries, strategy: i64) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s.i64()?.fill_null_with_values(strategy)?.into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_none_with_float(data: ExSeries, strategy: f64) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_float(data: ExSeries, strategy: f64) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s.f64()?.fill_null_with_values(strategy)?.into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_none_with_bin(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_bin(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s.utf8()?.fill_null_with_values(strategy)?.into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_rolling_sum(
+pub fn s_window_sum(
     data: ExSeries,
     window_size: usize,
     weights: Option<Vec<f64>>,
@@ -376,7 +376,7 @@ pub fn s_rolling_sum(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_rolling_mean(
+pub fn s_window_mean(
     data: ExSeries,
     window_size: usize,
     weights: Option<Vec<f64>>,
@@ -390,7 +390,7 @@ pub fn s_rolling_mean(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_rolling_max(
+pub fn s_window_max(
     data: ExSeries,
     window_size: usize,
     weights: Option<Vec<f64>>,
@@ -404,7 +404,7 @@ pub fn s_rolling_max(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_rolling_min(
+pub fn s_window_min(
     data: ExSeries,
     window_size: usize,
     weights: Option<Vec<f64>>,
@@ -642,7 +642,7 @@ pub fn s_reverse(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_n_unique(data: ExSeries) -> Result<usize, ExplorerError> {
+pub fn s_n_distinct(data: ExSeries) -> Result<usize, ExplorerError> {
     let s = &data.resource.0;
     Ok(s.n_unique()?)
 }

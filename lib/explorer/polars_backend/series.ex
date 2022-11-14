@@ -318,7 +318,7 @@ defmodule Explorer.PolarsBackend.Series do
   def unordered_distinct(series), do: Shared.apply_series(series, :s_unordered_distinct)
 
   @impl true
-  def n_distinct(series), do: Shared.apply_series(series, :s_n_unique)
+  def n_distinct(series), do: Shared.apply_series(series, :s_n_distinct)
 
   @impl true
   def count(%Series{data: polars_series}) do
@@ -335,22 +335,22 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def window_max(series, window_size, opts) do
-    window_function(:s_rolling_max, series, window_size, opts)
+    window_function(:s_window_max, series, window_size, opts)
   end
 
   @impl true
   def window_mean(series, window_size, opts) do
-    window_function(:s_rolling_mean, series, window_size, opts)
+    window_function(:s_window_mean, series, window_size, opts)
   end
 
   @impl true
   def window_min(series, window_size, opts) do
-    window_function(:s_rolling_min, series, window_size, opts)
+    window_function(:s_window_min, series, window_size, opts)
   end
 
   @impl true
   def window_sum(series, window_size, opts) do
-    window_function(:s_rolling_sum, series, window_size, opts)
+    window_function(:s_window_sum, series, window_size, opts)
   end
 
   defp window_function(operation, series, window_size, opts) do
@@ -365,14 +365,14 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def fill_missing(series, strategy) when is_atom(strategy),
-    do: Shared.apply_series(series, :s_fill_none, [Atom.to_string(strategy)])
+    do: Shared.apply_series(series, :s_fill_missing, [Atom.to_string(strategy)])
 
   def fill_missing(series, value) do
     operation =
       cond do
-        is_float(value) -> :s_fill_none_with_float
-        is_integer(value) -> :s_fill_none_with_int
-        is_binary(value) -> :s_fill_none_with_bin
+        is_float(value) -> :s_fill_missing_with_float
+        is_integer(value) -> :s_fill_missing_with_int
+        is_binary(value) -> :s_fill_missing_with_bin
       end
 
     Shared.apply_series(series, operation, [value])
