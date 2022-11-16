@@ -57,7 +57,24 @@ defmodule Explorer.Query do
 
     quote do
       fn unquote(df) ->
-        import Kernel, except: [==: 2, !=: 2, <: 2, <=: 2, >: 2, >=: 2]
+        import Kernel,
+          except: [
+            is_nil: 1,
+            ==: 2,
+            !=: 2,
+            <: 2,
+            <=: 2,
+            >: 2,
+            >=: 2,
+            and: 2,
+            or: 2,
+            +: 2,
+            -: 2,
+            *: 2,
+            /: 2,
+            **: 2
+          ]
+
         import Explorer.Query, except: [query: 1]
         import Explorer.Series, except: unquote(Explorer.Backend.LazySeries.non_lazy_operations())
         unquote(traverse(expression, df))
@@ -82,7 +99,12 @@ defmodule Explorer.Query do
     >: :greater,
     >=: :greater_equal,
     <: :less,
-    <=: :less_equal
+    <=: :less_equal,
+    +: :add,
+    -: :subtract,
+    *: :multiply,
+    /: :divide,
+    **: :pow
   ]
 
   for {operator, delegate} <- binary_delegates do
