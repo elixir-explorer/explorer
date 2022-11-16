@@ -44,14 +44,14 @@ defmodule Explorer.Backend.Series do
 
   # Aggregation
 
-  @callback sum(s) :: number() | lazy_s()
-  @callback min(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s()
-  @callback max(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s()
-  @callback mean(s) :: float() | lazy_s()
-  @callback median(s) :: float() | lazy_s()
-  @callback variance(s) :: float() | lazy_s()
-  @callback standard_deviation(s) :: float() | lazy_s()
-  @callback quantile(s, float()) :: number | Date.t() | NaiveDateTime.t() | lazy_s()
+  @callback sum(s) :: number() | lazy_s() | nil
+  @callback min(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
+  @callback max(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
+  @callback mean(s) :: float() | lazy_s() | nil
+  @callback median(s) :: float() | lazy_s() | nil
+  @callback variance(s) :: float() | lazy_s() | nil
+  @callback standard_deviation(s) :: float() | lazy_s() | nil
+  @callback quantile(s, float()) :: number | Date.t() | NaiveDateTime.t() | lazy_s() | nil
 
   # Cumulative
 
