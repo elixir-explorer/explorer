@@ -35,7 +35,7 @@ defmodule Explorer.PolarsBackend.Expression do
                                        fill_missing: 2
                                      ] ++
                                        @window_operations
-  @special_operations [cast: 2, column: 1] ++ @lazy_series_and_literal_args_funs
+  @special_operations [cast: 2, column: 1, from_list: 2] ++ @lazy_series_and_literal_args_funs
 
   # Some operations are special because they don't receive all args as lazy series.
   # We define them first.
@@ -43,6 +43,16 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(%LazySeries{op: :cast, args: [lazy_series, dtype]}) do
     expr = to_expr(lazy_series)
     Native.expr_cast(expr, Atom.to_string(dtype))
+  end
+
+  def to_expr(%LazySeries{op: :from_list, args: [list, dtype]}) do
+    series = Explorer.PolarsBackend.Shared.new_polars_series(list, dtype)
+
+    Native.expr_series(series)
+  end
+
+  def to_expr(%LazySeries{op: :to_lazy, args: [data]}) do
+    to_expr(data)
   end
 
   def to_expr(%LazySeries{op: :column, args: [name]}) do

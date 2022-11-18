@@ -99,7 +99,6 @@ defmodule Explorer.Backend.LazySeries do
     memtype: 1,
     fetch!: 2,
     mask: 2,
-    from_list: 2,
     slice: 2,
     take_every: 2,
     to_enum: 1,
@@ -128,6 +127,13 @@ defmodule Explorer.Backend.LazySeries do
   def cast(%Series{} = s, dtype) when is_atom(dtype) do
     args = [lazy_series!(s), dtype]
     data = new(:cast, args, aggregations?(args), window_functions?(args))
+
+    Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def from_list(list, dtype) when is_list(list) and is_atom(dtype) do
+    data = new(:from_list, [list, dtype], false, false)
 
     Backend.Series.new(data, dtype)
   end

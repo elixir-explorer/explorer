@@ -18,15 +18,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def from_list(data, type, name \\ "") when is_list(data) do
-    series =
-      case type do
-        :integer -> Native.s_new_i64(name, data)
-        :float -> Native.s_new_f64(name, data)
-        :boolean -> Native.s_new_bool(name, data)
-        :string -> Native.s_new_str(name, data)
-        :date -> Native.s_new_date32(name, data)
-        :datetime -> Native.s_new_date64(name, data)
-      end
+    series = Shared.new_polars_series(data, type, name)
 
     Explorer.Backend.Series.new(series, type)
   end

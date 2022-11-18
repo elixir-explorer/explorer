@@ -327,36 +327,8 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "mutate/2" do
-    test "adds a new column" do
-      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-      df1 = DF.mutate(df, c: [true, false, true])
-
-      assert DF.to_columns(df1, atom_keys: true) == %{
-               a: [1, 2, 3],
-               b: ["a", "b", "c"],
-               c: [true, false, true]
-             }
-
-      assert df1.names == ["a", "b", "c"]
-      assert df1.dtypes == %{"a" => :integer, "b" => :string, "c" => :boolean}
-    end
-
-    test "raises with series of invalid size", %{df: df} do
-      assert_raise ArgumentError,
-                   "size of new column test (3) must match number of rows in the dataframe (1094)",
-                   fn -> DF.mutate(df, test: [1, 2, 3]) end
-    end
-
-    test "keeps the column order" do
-      df = DF.new(e: [1, 2, 3], c: ["a", "b", "c"], a: [1.2, 2.3, 4.5])
-
-      df1 = DF.mutate(df, d: 1, b: 2)
-
-      assert df1.names == ["e", "c", "a", "d", "b"]
-    end
-  end
-
+  # Since the `mutate/2` macro uses `filter_with/2` underneath, most of mutate tests are
+  # implemented using `filter/2`.
   describe "mutate_with/2" do
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
@@ -393,22 +365,64 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["a", "b"]
       assert df1.dtypes == %{"a" => :float, "b" => :string}
     end
+  end
+
+  describe "mutate/2" do
+    require DF
+
+    test "adds new columns" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 = DF.mutate(df, c: a + 5, d: 2 + a, e: 42, f: 842.1, g: "Elixir")
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [6, 7, 8],
+               d: [3, 4, 5],
+               e: [42, 42, 42],
+               f: [842.1, 842.1, 842.1],
+               g: ["Elixir", "Elixir", "Elixir"]
+             }
+
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g"]
+
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "b" => :string,
+               "c" => :integer,
+               "d" => :integer,
+               "e" => :integer,
+               "f" => :float,
+               "g" => :string
+             }
+    end
+
+    test "changes a column" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 = DF.mutate(df, a: cast(a, :float))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1.0, 2.0, 3.0],
+               b: ["a", "b", "c"]
+             }
+
+      assert df1.names == ["a", "b"]
+      assert df1.dtypes == %{"a" => :float, "b" => :string}
+    end
 
     test "adds new columns ordering and sorting" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            c: Series.reverse(a),
-            d: Series.argsort(a, true),
-            e: Series.sort(ldf["b"], true),
-            f: Series.distinct(a),
-            g: Series.unordered_distinct(a)
-          ]
-        end)
+        DF.mutate(df,
+          c: reverse(a),
+          d: argsort(a, true),
+          e: sort(b, true),
+          f: distinct(a),
+          g: unordered_distinct(a)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -437,17 +451,15 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 4])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(ldf["a"], 2),
-            calc2: Series.subtract(ldf["a"], 2),
-            calc3: Series.multiply(ldf["a"], 2),
-            calc4: Series.divide(ldf["a"], 2),
-            calc5: Series.pow(ldf["a"], 2),
-            calc6: Series.quotient(ldf["a"], 2),
-            calc7: Series.remainder(ldf["a"], 2)
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(a, 2),
+          calc2: subtract(a, 2),
+          calc3: multiply(a, 2),
+          calc4: divide(a, 2),
+          calc5: pow(a, 2),
+          calc6: quotient(a, 2),
+          calc7: remainder(a, 2)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 4],
@@ -476,18 +488,16 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 4])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(2, ldf["a"]),
-            calc2: Series.subtract(2, ldf["a"]),
-            calc3: Series.multiply(2, ldf["a"]),
-            calc4: Series.divide(2, ldf["a"]),
-            calc5: Series.pow(2, ldf["a"]),
-            calc5_1: Series.pow(2.0, ldf["a"]),
-            calc6: Series.quotient(2, ldf["a"]),
-            calc7: Series.remainder(2, ldf["a"])
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(2, a),
+          calc2: subtract(2, a),
+          calc3: multiply(2, a),
+          calc4: divide(2, a),
+          calc5: pow(2, a),
+          calc5_1: pow(2.0, a),
+          calc6: quotient(2, a),
+          calc7: remainder(2, a)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 4],
@@ -520,17 +530,15 @@ defmodule Explorer.DataFrameTest do
       series = Explorer.Series.from_list([2, 1, 2])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(ldf["a"], series),
-            calc2: Series.subtract(ldf["a"], series),
-            calc3: Series.multiply(ldf["a"], series),
-            calc4: Series.divide(ldf["a"], series),
-            calc5: Series.pow(ldf["a"], series),
-            calc6: Series.quotient(ldf["a"], series),
-            calc7: Series.remainder(ldf["a"], series)
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(a, ^series),
+          calc2: subtract(a, ^series),
+          calc3: multiply(a, ^series),
+          calc4: divide(a, ^series),
+          calc5: pow(a, ^series),
+          calc6: quotient(a, ^series),
+          calc7: remainder(a, ^series)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 4],
@@ -560,17 +568,15 @@ defmodule Explorer.DataFrameTest do
       series = Explorer.Series.from_list([1, 2, 4])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(series, ldf["a"]),
-            calc2: Series.subtract(series, ldf["a"]),
-            calc3: Series.multiply(series, ldf["a"]),
-            calc4: Series.divide(series, ldf["a"]),
-            calc5: Series.pow(series, ldf["a"]),
-            calc6: Series.quotient(series, ldf["a"]),
-            calc7: Series.remainder(series, ldf["a"])
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(^series, a),
+          calc2: subtract(^series, a),
+          calc3: multiply(^series, a),
+          calc4: divide(^series, a),
+          calc5: pow(^series, a),
+          calc6: quotient(^series, a),
+          calc7: remainder(^series, a)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [2, 1, 2],
@@ -599,17 +605,15 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3], b: [20, 40, 60], c: [10, 0, 8], d: [3, 2, 1])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(ldf["a"], ldf["b"]),
-            calc2: Series.subtract(ldf["b"], ldf["a"]),
-            calc3: Series.multiply(ldf["a"], ldf["d"]),
-            calc4: Series.divide(ldf["b"], ldf["c"]),
-            calc5: Series.pow(ldf["a"], ldf["d"]),
-            calc6: Series.quotient(ldf["b"], ldf["c"]),
-            calc7: Series.remainder(ldf["b"], ldf["c"])
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(a, b),
+          calc2: subtract(b, a),
+          calc3: multiply(a, d),
+          calc4: divide(b, c),
+          calc5: pow(a, d),
+          calc6: quotient(b, c),
+          calc7: remainder(b, c)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -644,19 +648,15 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            c: Series.first(a),
-            d: Series.last(a),
-            e: Series.count(a),
-            f: Series.median(a),
-            g: Series.sum(a),
-            h: Series.min(a) |> Series.add(a),
-            i: Series.quantile(a, 0.2)
-          ]
-        end)
+        DF.mutate(df,
+          c: Series.first(a),
+          d: Series.last(a),
+          e: Series.count(a),
+          f: Series.median(a),
+          g: Series.sum(a),
+          h: Series.min(a) |> Series.add(a),
+          i: Series.quantile(a, 0.2)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -691,16 +691,14 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: a, b: b)
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            concat1: Series.concat(a, ldf["b"]) |> Series.slice(1, 3),
-            concat2: Series.concat(ldf["a"], b) |> Series.slice(1, 3),
-            concat3: Series.concat(ldf["a"], ldf["b"]) |> Series.slice(1, 3),
-            coalesce1: Series.coalesce(a, ldf["b"]),
-            coalesce2: Series.coalesce(ldf["a"], b),
-            coalesce3: Series.coalesce(ldf["a"], ldf["b"])
-          ]
-        end)
+        DF.mutate(df,
+          concat1: concat(^a, b) |> slice(1, 3),
+          concat2: concat(a, b) |> slice(1, 3),
+          concat3: concat(a, b) |> slice(1, 3),
+          coalesce1: coalesce(^a, b),
+          coalesce2: coalesce(a, b),
+          coalesce3: coalesce(a, b)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, nil, 3],
@@ -729,20 +727,16 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: Enum.to_list(1..10))
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            b: Series.window_max(a, 2, weights: [1.0, 2.0]),
-            c: Series.window_mean(a, 2, weights: [1.0, 2.0]),
-            d: Series.window_min(a, 2, weights: [1.0, 2.0]),
-            e: Series.window_sum(a, 2, weights: [1.0, 2.0]),
-            f: Series.cumulative_max(a),
-            g: Series.cumulative_min(a),
-            h: Series.cumulative_sum(a),
-            i: Series.cumulative_max(a, reverse: true)
-          ]
-        end)
+        DF.mutate(df,
+          b: window_max(a, 2, weights: [1.0, 2.0]),
+          c: window_mean(a, 2, weights: [1.0, 2.0]),
+          d: window_min(a, 2, weights: [1.0, 2.0]),
+          e: window_sum(a, 2, weights: [1.0, 2.0]),
+          f: cumulative_max(a),
+          g: cumulative_min(a),
+          h: cumulative_sum(a),
+          i: cumulative_max(a, reverse: true)
+        )
 
       assert df1.dtypes == %{
                "a" => :integer,
@@ -772,10 +766,7 @@ defmodule Explorer.DataFrameTest do
     test "add columns with peaks values" do
       df = DF.new(a: [1, 2, 3, 2, 1, 3])
 
-      df1 =
-        DF.mutate_with(df, fn ldf ->
-          [b: Series.peaks(ldf["a"], :max), c: Series.peaks(ldf["a"], :min)]
-        end)
+      df1 = DF.mutate(df, b: peaks(a, :max), c: peaks(a, :min))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 2, 1, 3],
@@ -790,18 +781,14 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, nil, 3, 2, nil, 4])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            b: Series.fill_missing(a, :forward),
-            c: Series.fill_missing(a, :backward),
-            d: Series.fill_missing(a, :min),
-            e: Series.fill_missing(a, :max),
-            f: Series.fill_missing(a, :mean),
-            g: Series.fill_missing(a, 42)
-          ]
-        end)
+        DF.mutate(df,
+          b: fill_missing(a, :forward),
+          c: fill_missing(a, :backward),
+          d: fill_missing(a, :min),
+          e: fill_missing(a, :max),
+          f: fill_missing(a, :mean),
+          g: fill_missing(a, 42)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, nil, 3, 2, nil, 4],
@@ -828,15 +815,11 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3, 4, 5])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            b: Series.sample(a, 5, seed: 100),
-            c: Series.sample(a, 1.0, seed: 99),
-            d: Series.sample(a, 3, seed: 98) |> Series.concat(Series.from_list([0, 0]))
-          ]
-        end)
+        DF.mutate(df,
+          b: sample(a, 5, seed: 100),
+          c: sample(a, 1.0, seed: 99),
+          d: sample(a, 3, seed: 98) |> concat(from_list([0, 0]))
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5],
@@ -851,6 +834,20 @@ defmodule Explorer.DataFrameTest do
                "c" => :integer,
                "d" => :integer
              }
+    end
+
+    test "raises with series of invalid size", %{df: df} do
+      assert_raise RuntimeError,
+                   ~r/Lengths don't match: Could not add column. The Series length 3 differs from the DataFrame height: 1094/,
+                   fn -> DF.mutate(df, test: [1, 2, 3]) end
+    end
+
+    test "keeps the column order" do
+      df = DF.new(e: [1, 2, 3], c: ["a", "b", "c"], a: [1.2, 2.3, 4.5])
+
+      df1 = DF.mutate(df, d: [1, 1, 1], b: [2, 2, 2])
+
+      assert df1.names == ["e", "c", "a", "d", "b"]
     end
   end
 
