@@ -417,7 +417,6 @@ pub fn expr_coalesce(left: ExExpr, right: ExExpr) -> ExExpr {
     ExExpr::new(condition)
 }
 
-
 #[rustler::nif]
 pub fn expr_select(pred: ExExpr, on_true: ExExpr, on_false: ExExpr) -> ExExpr {
     let predicate: Expr = pred.resource.0.clone();
