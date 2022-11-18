@@ -855,7 +855,7 @@ defmodule Explorer.DataFrameTest do
     test "raises with invalid column names", %{df: df} do
       assert_raise ArgumentError,
                    "could not find column name \"test\"",
-                   fn -> DF.arrange(df, ["test"]) end
+                   fn -> DF.arrange(df, test) end
     end
   end
 
