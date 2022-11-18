@@ -2257,4 +2257,31 @@ defmodule Explorer.DataFrameTest do
       assert DF.shape(df1) == {2, 10}
     end
   end
+
+  describe "put/3" do
+    test "adds a new column to a dataframe" do
+      df = DF.new(a: [1, 2, 3])
+      df1 = DF.put(df, :b, Series.transform(df[:a], fn n -> n * 2 end))
+
+      assert DF.names(df1) == ["a", "b"]
+      assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [2, 4, 6]
+             }
+    end
+
+    test "replaces a column in the dataframe" do
+      df = DF.new(a: [1, 2, 3])
+      df1 = DF.put(df, :a, Series.transform(df[:a], fn n -> n * 2 end))
+
+      assert DF.names(df1) == ["a"]
+      assert DF.dtypes(df1) == %{"a" => :integer}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [2, 4, 6]
+             }
+    end
+  end
 end

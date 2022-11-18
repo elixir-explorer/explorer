@@ -1702,6 +1702,75 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Creates or modifies a single column.
+
+  This is a simplified way to add or modify one column.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.put(df, :b, Explorer.Series.transform(df[:a], fn n -> n * 2 end))
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [1, 2, 3]
+        b integer [2, 4, 6]
+      >
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.put(df, :b, [4, 5, 6])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [1, 2, 3]
+        b integer [4, 5, 6]
+      >
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.put(df, :b, 7)
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [1, 2, 3]
+        b integer [7, 7, 7]
+      >
+
+  ## Grouped examples
+
+  If the dataframe is grouped, then the series or list must be of the
+  same size of each group, or be a scalar value.
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> grouped = Explorer.DataFrame.group_by(df, "a")
+      iex> Explorer.DataFrame.put(grouped, :b, [4])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        Groups: ["a"]
+        a integer [1, 2, 3]
+        b integer [4, 4, 4]
+      >
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> grouped = Explorer.DataFrame.group_by(df, "a")
+      iex> Explorer.DataFrame.put(grouped, :b, 7)
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        Groups: ["a"]
+        a integer [1, 2, 3]
+        b integer [7, 7, 7]
+      >
+
+  """
+  @spec put(
+          DataFrame.t(),
+          column_name(),
+          Series.t()
+          | list(Explorer.Backend.Series.valid_types())
+          | Explorer.Backend.Series.valid_types()
+        ) ::
+          DataFrame.t()
+  def put(%DataFrame{} = df, column_name, series) do
+    mutate_with(df, fn _ -> [{column_name, series}] end)
+  end
+
+  @doc """
   Arranges/sorts rows by columns using `Explorer.Query`.
 
   > #### Notice {: .notice}

@@ -1186,4 +1186,39 @@ defmodule Explorer.DataFrame.GroupedTest do
     grouped = DF.group_by(df, ["country", "year"])
     assert ["country", "year"] = DF.to_lazy(grouped).groups
   end
+
+  describe "put/3" do
+    test "adds a new column to a dataframe" do
+      df = DF.new(a: [1, 2, 3], b: [4, 5, 6])
+      grouped = DF.group_by(df, "a")
+
+      df1 = DF.put(grouped, :c, "c")
+
+      assert DF.names(df1) == ["a", "b", "c"]
+      assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer, "c" => :string}
+      assert DF.groups(df1) == ["a"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [4, 5, 6],
+               c: ["c", "c", "c"]
+             }
+    end
+
+    test "replaces a column in the dataframe" do
+      df = DF.new(a: [1, 2, 3], b: [4, 5, 6])
+      grouped = DF.group_by(df, "a")
+
+      df1 = DF.put(grouped, :b, 10)
+
+      assert DF.names(df1) == ["a", "b"]
+      assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer}
+      assert DF.groups(df1) == ["a"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [10, 10, 10]
+             }
+    end
+  end
 end
