@@ -1331,7 +1331,7 @@ defmodule Explorer.DataFrame do
 
   > #### Notice {: .notice}
   >
-  > Given this function is a macro, you must require `Explorer.DataFrame` before using it.
+  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
 
   Besides element-wise series operations, you can also use window functions
   and aggregations inside comparisons. In such cases, grouped dataframes
@@ -1487,7 +1487,7 @@ defmodule Explorer.DataFrame do
 
   > #### Notice {: .notice}
   >
-  > Given this function is a macro, you must require `Explorer.DataFrame` before using it.
+  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
 
   Besides element-wise series operations, you can also use window functions
   and aggregations inside mutations. In such cases, grouped dataframes
