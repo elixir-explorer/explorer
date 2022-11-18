@@ -3614,91 +3614,72 @@ defmodule Explorer.DataFrame do
 
   def ungroup(df, group) when is_column_name(group), do: ungroup(df, [group])
 
-  @supported_aggs ~w[min max sum mean median first last count n_distinct]a
-
   @doc """
-  Summarise each group to a single row.
+  Summarise each group to a single row using `Explorer.Query`.
 
-  Implicitly ungroups.
+  The query is compiled and runs efficiently against the dataframe.
+  This function performs aggregations based on groups, so at least
+  one group is expected, and the query must contain at least one
+  aggregation. It implicitly ungroups the resultant dataframe.
+
+  > #### Notice {: .notice}
+  >
+  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
+
+  See `summarise_with/2` for a callback version of this function without
+  `Explorer.Query`.
 
   ## Supported operations
 
   The following aggregations may be performed:
 
-    * `:min` - Take the minimum value within the group. See `Explorer.Series.min/1`.
-    * `:max` - Take the maximum value within the group. See `Explorer.Series.max/1`.
-    * `:sum` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
-    * `:mean` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
-    * `:median` - Take the median of the series within the group. See `Explorer.Series.median/1`.
-    * `:first` - Take the first value within the group. See `Explorer.Series.first/1`.
-    * `:last` - Take the last value within the group. See `Explorer.Series.last/1`.
-    * `:count` - Count the number of rows per group.
-    * `:n_distinct` - Count the number of unique rows per group.
+    * `min/1` - Take the minimum value within the group. See `Explorer.Series.min/1`.
+    * `max/1` - Take the maximum value within the group. See `Explorer.Series.max/1`.
+    * `sum/1` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
+    * `mean/1` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
+    * `median/1` - Take the median of the series within the group. See `Explorer.Series.median/1`.
+    * `first/1` - Take the first value within the group. See `Explorer.Series.first/1`.
+    * `last/1` - Take the last value within the group. See `Explorer.Series.last/1`.
+    * `count/1` - Count the number of rows per group. See `Explorer.Series.count/1`.
+    * `n_distinct/1` - Count the number of unique rows per group. See `Explorer.Series.n_distinct/1`.
 
   ## Examples
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> df |> Explorer.DataFrame.group_by("year") |> Explorer.DataFrame.summarise(total: [:max, :min], country: [:n_distinct])
+      iex> grouped_df = Explorer.DataFrame.group_by(df, "year")
+      iex> Explorer.DataFrame.summarise(grouped_df, total_max: max(total), total_min: min(total))
       #Explorer.DataFrame<
-        Polars[5 x 4]
+        Polars[5 x 3]
         year integer [2010, 2011, 2012, 2013, 2014]
         total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
         total_min integer [1, 2, 2, 2, 3]
-        country_n_distinct integer [217, 217, 220, 220, 220]
       >
+
+  Suppose you want to get the mean petal length of each Iris species. You could do something
+  like this:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped_df = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.summarise(grouped_df, mean_petal_length: mean(petal_length))
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        species string ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
+        mean_petal_length float [1.464, 4.26, 5.552]
+      >
+
   """
   @doc type: :single
-  @spec summarise(df :: DataFrame.t(), columns :: Keyword.t() | map()) :: DataFrame.t()
-  def summarise(%DataFrame{groups: []}, _),
-    do:
-      raise(
-        ArgumentError,
-        "dataframe must be grouped in order to perform summarisation"
-      )
-
-  def summarise(df, columns) when is_column_pairs(columns) do
-    column_pairs =
-      to_column_pairs(df, columns, fn values ->
-        case values -- @supported_aggs do
-          [] ->
-            values
-
-          unsupported ->
-            raise ArgumentError, "found unsupported aggregations #{inspect(unsupported)}"
-        end
-      end)
-
-    summarise_with(df, fn ldf ->
-      for {column_name, aggs} <- column_pairs,
-          agg <- aggs,
-          do: {column_name <> "_" <> Atom.to_string(agg), apply(Series, agg, [ldf[column_name]])}
-    end)
+  defmacro summarise(df, query) do
+    quote do
+      require Explorer.Query
+      Explorer.DataFrame.summarise_with(unquote(df), Explorer.Query.query(unquote(query)))
+    end
   end
 
   @doc """
   Summarise each group to a single row using a callback function.
 
-  Implicitly ungroups.
-  The main difference between `summarise/2` and `summarise_with/2` is that the latter
-  accepts a function that can be used to perform complex operations.
-  This is efficient because it doesn't need
-  to create intermediate series representations to summarise.
-
-  ## Supported operations
-
-  The function callback should be in the form of `[name_of_col: "operation"]`,
-  where `"operation"` is one of the `Explorer.Series` functions. It's required
-  that at least one of the following functions is used for summarisation:
-
-    * `Explorer.Series.min/1` - Take the minimum value within the group.
-    * `Explorer.Series.max/1` - Take the maximum value within the group.
-    * `Explorer.Series.sum/1` - Take the sum of the series within the group.
-    * `Explorer.Series.mean/1` - Take the mean of the series within the group.
-    * `Explorer.Series.median/1` - Take the median of the series within the group.
-    * `Explorer.Series.first/1` - Take the first value within the group.
-    * `Explorer.Series.last/1` - Take the last value within the group.
-    * `Explorer.Series.count/1` - Count the number of rows per group.
-    * `Explorer.Series.n_distinct/1` - Count the number of unique rows per group.
+  This is a callback version of `summarise/2`.
 
   ## Examples
 
