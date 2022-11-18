@@ -1702,14 +1702,21 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Arranges/sorts rows by columns.
+  Arranges/sorts rows by columns using `Explorer.Query`.
+
+  > #### Notice {: .notice}
+  >
+  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
+
+  See `arrange_with/2` for a callback version of this function without
+  `Explorer.Query`.
 
   ## Examples
 
   A single column name will sort ascending by that column:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange(df, "a")
+      iex> Explorer.DataFrame.arrange(df, a)
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
@@ -1719,7 +1726,7 @@ defmodule Explorer.DataFrame do
   You can also sort descending:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange(df, desc: "a")
+      iex> Explorer.DataFrame.arrange(df, desc: a)
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["c", "b", "a"]
@@ -1729,7 +1736,7 @@ defmodule Explorer.DataFrame do
   Sorting by more than one column sorts them in the order they are entered:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.arrange(df, asc: "total", desc: "country")
+      iex> Explorer.DataFrame.arrange(df, asc: total, desc: country)
       #Explorer.DataFrame<
         Polars[1094 x 10]
         year integer [2010, 2010, 2011, 2011, 2012, ...]
@@ -1742,26 +1749,6 @@ defmodule Explorer.DataFrame do
         gas_flaring integer [0, 0, 0, 0, 0, ...]
         per_capita float [0.52, 0.0, 0.0, 1.04, 1.04, ...]
         bunker_fuels integer [0, 0, 0, 0, 0, ...]
-      >
-
-  Alternatively you can pass a callback to sort by the given columns:
-
-      iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange(df, &String.starts_with?(&1, "a"))
-      #Explorer.DataFrame<
-        Polars[3 x 2]
-        a string ["a", "b", "c"]
-        b integer [3, 1, 2]
-      >
-
-  Or a callback to sort the columns of a given type:
-
-      iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange(df, fn _name, type -> type == :string end)
-      #Explorer.DataFrame<
-        Polars[3 x 2]
-        a string ["a", "b", "c"]
-        b integer [3, 1, 2]
       >
 
   ## Grouped examples
@@ -1777,7 +1764,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.arrange(grouped, desc: "species", asc: "sepal_width")
+      iex> Explorer.DataFrame.arrange(grouped, desc: species, asc: sepal_width)
       #Explorer.DataFrame<
         Polars[150 x 5]
         Groups: ["species"]
@@ -1789,39 +1776,17 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec arrange(
-          df :: DataFrame.t(),
-          column_or_columns :: column() | columns() | [{:asc | :desc, column()}]
-        ) :: DataFrame.t()
-  def arrange(df, columns_or_column)
-
-  def arrange(df, columns) when is_list(columns) do
-    {dirs, columns} =
-      Enum.map(columns, fn
-        {dir, column} when dir in [:asc, :desc] and is_column(column) ->
-          {dir, column}
-
-        column when is_column(column) ->
-          {:asc, column}
-
-        other ->
-          raise ArgumentError, "not a valid column or arrange instruction: #{inspect(other)}"
-      end)
-      |> Enum.unzip()
-
-    columns = to_existing_columns(df, columns)
-    Shared.apply_impl(df, :arrange, [Enum.zip(dirs, columns)])
-  end
-
-  def arrange(df, column) when is_column(column), do: arrange(df, [column])
-
-  def arrange(df, columns) do
-    columns = to_existing_columns(df, columns)
-    Shared.apply_impl(df, :arrange, [Enum.map(columns, &{:asc, &1})])
+  defmacro arrange(df, query) do
+    quote do
+      require Explorer.Query
+      Explorer.DataFrame.arrange_with(unquote(df), Explorer.Query.query(unquote(query)))
+    end
   end
 
   @doc """
   Arranges/sorts rows by columns using a callback function.
+
+  This is a callback version of `arrange/2`.
 
   ## Examples
 
@@ -1856,15 +1821,6 @@ defmodule Explorer.DataFrame do
       >
 
   ## Grouped examples
-
-  When used in a grouped dataframe, `arrange_with/2` is going to sort each group individually
-  and then return the entire dataframe with the existing groups. Therefore, if you attempt
-  to arrange a grouped column, it won't have any effect and work as no-op. It is necessary to
-  first summarise the desired column and then arrange it.
-
-  Here is an example using the Iris dataset. We group by species and then we try to sort
-  the dataframe by species and petal length, but only "petal length" is taken into account
-  because "species" is a group.
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
