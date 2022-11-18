@@ -117,6 +117,10 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def coalesce(s1, s2), do: Shared.apply_series(s1, :s_coalesce, [s2.data])
 
+  @impl true
+  def select(pred, %Series{} = on_true, %Series{} = on_false),
+    do: Shared.apply_series(pred, :s_select, [on_true.data, on_false.data])
+
   # Aggregation
 
   @impl true

@@ -41,6 +41,7 @@ defmodule Explorer.Backend.Series do
   @callback coalesce(s, s) :: s
   @callback first(s) :: valid_types() | lazy_s()
   @callback last(s) :: valid_types() | lazy_s()
+  @callback select(pred :: s, s, s) :: s
 
   # Aggregation
 

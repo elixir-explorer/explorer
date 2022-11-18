@@ -749,3 +749,21 @@ pub fn s_coalesce(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerE
     let coalesced = s1.zip_with(&s1.is_not_null(), s2)?;
     Ok(ExSeries::new(coalesced))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_select(
+    pred: ExSeries,
+    on_true: ExSeries,
+    on_false: ExSeries,
+) -> Result<ExSeries, ExplorerError> {
+    let s1 = &pred.resource.0;
+    let s2 = &on_true.resource.0;
+    let s3 = &on_false.resource.0;
+
+    if let Ok(ca) = s1.bool() {
+        let selected = s2.zip_with(ca, s3)?;
+        Ok(ExSeries::new(selected))
+    } else {
+        Err(ExplorerError::Other("Expected a boolean mask".into()))
+    }
+}

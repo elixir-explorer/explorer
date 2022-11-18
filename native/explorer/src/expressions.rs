@@ -417,6 +417,18 @@ pub fn expr_coalesce(left: ExExpr, right: ExExpr) -> ExExpr {
     ExExpr::new(condition)
 }
 
+
+#[rustler::nif]
+pub fn expr_select(pred: ExExpr, on_true: ExExpr, on_false: ExExpr) -> ExExpr {
+    let predicate: Expr = pred.resource.0.clone();
+    let on_true_expr: Expr = on_true.resource.0.clone();
+    let on_false_expr: Expr = on_false.resource.0.clone();
+
+    let condition = when(predicate).then(on_true_expr).otherwise(on_false_expr);
+
+    ExExpr::new(condition)
+}
+
 // window functions
 macro_rules! init_window_expr_fun {
     ($name:ident, $fun:ident) => {

@@ -477,6 +477,20 @@ defmodule Explorer.Series do
   def last(series), do: Shared.apply_impl(series, :last, [])
 
   @doc """
+  return a series from two series, based on a predicate.
+
+  The resulting tensor is built by evaluating each element of
+  `pred` and returning either the corresponding element from
+  `on_true` or `on_false`.
+
+  `pred` must be a boolean series. `on_true` and `on_false` may either
+  be a series of the same length as `pred` or a scalar value.
+  """
+  @doc type: :transformation
+  @spec select(pred :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) :: any()
+  def select(pred, on_true, on_false), do: Shared.apply_impl(pred, :select, [on_true, on_false])
+
+  @doc """
   Returns a random sample of the series.
 
   If given an integer as the second argument, it will return N samples. If given a float, it will
