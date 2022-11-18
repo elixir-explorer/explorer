@@ -30,6 +30,8 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  # Since `filter/2` macro uses `filter_with/2` underneath, most of filter tests are
+  # implemented using `filter/2`.
   describe "filter_with/2" do
     test "filter columns with equal comparison" do
       df = DF.new(a: [1, 2, 3, 2], b: [5.3, 2.4, 1.0, 2.0])
@@ -52,297 +54,6 @@ defmodule Explorer.DataFrameTest do
 
       df5 = DF.filter_with(df, fn ldf -> Series.equal(ldf["a"], ldf["b"]) end)
       assert DF.to_columns(df5, atom_keys: true) == %{a: [2], b: [2.0]}
-    end
-
-    test "filter columns with other comparison ops" do
-      df = DF.new(a: [1, 2, 3, 2], b: [5.3, 2.4, 1.0, 2.0])
-
-      df1 = DF.filter_with(df, fn ldf -> Series.not_equal(ldf["a"], 2) end)
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 3], b: [5.3, 1.0]}
-
-      df2 = DF.filter_with(df, fn ldf -> Series.greater(ldf["a"], 2) end)
-      assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [1.0]}
-
-      df3 = DF.filter_with(df, fn ldf -> Series.greater_equal(ldf["a"], 2) end)
-      assert DF.to_columns(df3, atom_keys: true) == %{a: [2, 3, 2], b: [2.4, 1.0, 2.0]}
-
-      df4 = DF.filter_with(df, fn ldf -> Series.less(ldf["a"], 2) end)
-      assert DF.to_columns(df4, atom_keys: true) == %{a: [1], b: [5.3]}
-
-      df5 = DF.filter_with(df, fn ldf -> Series.less_equal(ldf["a"], 2) end)
-      assert DF.to_columns(df5, atom_keys: true) == %{a: [1, 2, 2], b: [5.3, 2.4, 2.0]}
-    end
-
-    test "filter by a string value" do
-      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["b"], "b") end)
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [2], b: ["b"]}
-    end
-
-    test "filter by a boolean value" do
-      df = DF.new(a: [1, 2, 3], b: [true, true, false])
-
-      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["b"], false) end)
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [3], b: [false]}
-    end
-
-    test "filter by a given date" do
-      df = DF.new(a: [1, 2, 3], b: [~D[2022-07-07], ~D[2022-07-08], ~D[2022-07-09]])
-
-      df1 = DF.filter_with(df, fn ldf -> Series.equal(ldf["b"], ~D[2022-07-07]) end)
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [1], b: [~D[2022-07-07]]}
-    end
-
-    test "filter by a given datetime" do
-      df =
-        DF.new(
-          a: [1, 2, 3],
-          b: [
-            ~N[2022-07-07 17:43:08.473561],
-            ~N[2022-07-07 17:44:13.020548],
-            ~N[2022-07-07 17:45:00.116337]
-          ]
-        )
-
-      df1 =
-        DF.filter_with(df, fn ldf -> Series.greater(ldf["b"], ~N[2022-07-07 17:44:13.020548]) end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [3], b: [~N[2022-07-07 17:45:00.116337]]}
-    end
-
-    test "filter with a complex filter" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-
-          # a > 5 or a <= 2 and b != 9
-          Series.greater(a, 5)
-          |> Series.or(Series.less_equal(a, 2))
-          |> Series.and(Series.not_equal(b, 9))
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 6], b: [8, 4]}
-
-      df2 =
-        DF.filter_with(df, fn ldf ->
-          # index == 0 or a > 4 and index in [0, 5, 6]
-          Series.from_list([true, false, false, false, false, false, false])
-          |> Series.or(Series.greater(ldf["a"], 4))
-          |> Series.and(Series.from_list([true, false, false, false, false, true, true]))
-        end)
-
-      assert DF.to_columns(df2, atom_keys: true) == %{a: [1, 6, 5], b: [9, 4, 3]}
-    end
-
-    test "filter for nil values" do
-      df = DF.new(a: [1, 2, 3, nil, 5, nil, 5], b: [9, 8, 7, 6, 5, 4, 3])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          Series.is_nil(ldf["a"])
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [nil, nil], b: [6, 4]}
-    end
-
-    test "filter for not nil values" do
-      df = DF.new(a: [1, 2, 3, nil, 5, nil, 5], b: [9, 8, 7, 6, 5, 4, 3])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          Series.is_not_nil(ldf["a"])
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 5, 5], b: [9, 8, 7, 5, 3]}
-    end
-
-    test "filter with add operation" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-
-          # a > (b + 1)
-          Series.greater(a, Series.add(b, 1))
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [6, 5], b: [4, 3]}
-    end
-
-    test "filter with subtract operation" do
-      df = DF.new(a: [1.1, 2.2, 3.3, 4.4, 5.5, 6.5, 5.8], b: [9, 8, 7, 6, 5, 4, 3])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-
-          # a > (b - a)
-          Series.greater(a, Series.subtract(b, a))
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [4.4, 5.5, 6.5, 5.8], b: [6, 5, 4, 3]}
-    end
-
-    test "filter with divide operation" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-
-          # a > (b / 3)
-          Series.greater(a, Series.divide(b, 3))
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 4, 5, 6, 5], b: [7, 6, 5, 4, 3]}
-    end
-
-    test "filter with pow operation" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-
-          # b == (a ** 3)
-          Series.equal(b, Series.pow(a, 3))
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [2], b: [8.0]}
-    end
-
-    test "filter with count operation" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-
-          Series.greater(b, Series.count(a))
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3], b: [9.2, 8.0, 7.1]}
-    end
-
-    test "filter with max operation" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-
-          Series.greater(b, Series.max(a))
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3], b: [9.2, 8.0, 7.1]}
-    end
-
-    test "filter with last operation" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-
-          Series.greater(b, Series.last(a))
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 4], b: [9.2, 8.0, 7.1, 6.0]}
-    end
-
-    test "filter with coalesce operation" do
-      df = DF.new(a: [1, nil, 3, nil], b: [nil, 2, nil, 4])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-          c = Series.coalesce(a, b)
-
-          Series.greater(c, 3)
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [nil], b: [4]}
-
-      df2 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          b = ldf["b"]
-          c = Series.coalesce(a, b)
-
-          Series.is_nil(c)
-        end)
-
-      assert DF.to_columns(df2, atom_keys: true) == %{a: [], b: []}
-    end
-
-    test "filter with window operation" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          a = ldf["a"]
-          c = Series.window_mean(a, 3)
-
-          Series.greater(a, c)
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{
-               a: [2, 3, 4, 5, 6],
-               b: [8.0, 7.1, 6.0, 5.0, 4.0]
-             }
-    end
-
-    test "filter with all_equal equals true" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6], b: [1, 2, 3, 4, 5, 6])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          Series.all_equal(ldf["a"], ldf["b"])
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{
-               a: [1, 2, 3, 4, 5, 6],
-               b: [1, 2, 3, 4, 5, 6]
-             }
-    end
-
-    test "filter with all_equal equals false" do
-      df = DF.new(a: [1, 2, 3, 4, 5, 6], b: [1, 2, 3, 4, 5, 7])
-
-      df1 =
-        DF.filter_with(df, fn ldf ->
-          Series.all_equal(ldf["a"], ldf["b"])
-        end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{
-               a: [],
-               b: []
-             }
-    end
-
-    test "filter with an aggregation and without a group" do
-      df = DF.new(col1: ["a", "a", "b", "b"], col2: [1, 2, 3, 4])
-      df1 = DF.filter_with(df, fn df -> Series.greater(df["col2"], Series.mean(df["col2"])) end)
-
-      assert DF.to_columns(df1, atom_keys: true) == %{
-               col1: ["b", "b"],
-               col2: [3, 4]
-             }
-
-      assert DF.groups(df1) == []
     end
 
     test "raise an error if the last operation is an arithmetic operation" do
@@ -384,36 +95,240 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "mutate/2" do
-    test "adds a new column" do
+  describe "filter/2" do
+    require DF
+
+    test "filter columns with equal comparison" do
+      df = DF.new(a: [1, 2, 3, 2], b: [5.3, 2.4, 1.0, 2.0])
+
+      df1 = DF.filter(df, a == 2)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 2], b: [2.4, 2.0]}
+
+      df2 = DF.filter(df, 1.0 == b)
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [1.0]}
+
+      df3 = DF.filter(df, a == Series.from_list([1, 0, 3, 0]))
+
+      assert DF.to_columns(df3, atom_keys: true) == %{a: [1, 3], b: [5.3, 1.0]}
+
+      df4 = DF.filter(df, Series.from_list([0, 0, 1.0, 0]) == b)
+
+      assert DF.to_columns(df4, atom_keys: true) == %{a: [3], b: [1.0]}
+
+      df5 = DF.filter(df, a == b)
+      assert DF.to_columns(df5, atom_keys: true) == %{a: [2], b: [2.0]}
+    end
+
+    test "filter columns with other comparison ops" do
+      df = DF.new(a: [1, 2, 3, 2], b: [5.3, 2.4, 1.0, 2.0])
+
+      df1 = DF.filter(df, a != 2)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 3], b: [5.3, 1.0]}
+
+      df2 = DF.filter(df, a > 2)
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [1.0]}
+
+      df3 = DF.filter(df, a >= 2)
+      assert DF.to_columns(df3, atom_keys: true) == %{a: [2, 3, 2], b: [2.4, 1.0, 2.0]}
+
+      df4 = DF.filter(df, a < 2)
+      assert DF.to_columns(df4, atom_keys: true) == %{a: [1], b: [5.3]}
+
+      df5 = DF.filter(df, a <= 2)
+      assert DF.to_columns(df5, atom_keys: true) == %{a: [1, 2, 2], b: [5.3, 2.4, 2.0]}
+    end
+
+    test "filter by a string value" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-      df1 = DF.mutate(df, c: [true, false, true])
+
+      df1 = DF.filter(df, b == "b")
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2], b: ["b"]}
+    end
+
+    test "filter by a boolean value" do
+      df = DF.new(a: [1, 2, 3], b: [true, true, false])
+
+      df1 = DF.filter(df, b == false)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3], b: [false]}
+    end
+
+    test "filter by a given date" do
+      df = DF.new(a: [1, 2, 3], b: [~D[2022-07-07], ~D[2022-07-08], ~D[2022-07-09]])
+
+      df1 = DF.filter(df, b == ~D[2022-07-07])
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1], b: [~D[2022-07-07]]}
+    end
+
+    test "filter by a given datetime" do
+      df =
+        DF.new(
+          a: [1, 2, 3],
+          b: [
+            ~N[2022-07-07 17:43:08.473561],
+            ~N[2022-07-07 17:44:13.020548],
+            ~N[2022-07-07 17:45:00.116337]
+          ]
+        )
+
+      df1 = DF.filter(df, b > ~N[2022-07-07 17:44:13.020548])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3], b: [~N[2022-07-07 17:45:00.116337]]}
+    end
+
+    test "filter with a complex filter" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 = DF.filter(df, a > 5 or (a <= 2 and b != 9))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 6], b: [8, 4]}
+    end
+
+    test "filter with a complex filter and series" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df2 =
+        DF.filter(
+          df,
+          from_list([true, false, false, false, false, false, false]) or
+            (a > 4 and from_list([true, false, false, false, false, true, true]))
+        )
+
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [1, 6, 5], b: [9, 4, 3]}
+    end
+
+    test "filter for nil values" do
+      df = DF.new(a: [1, 2, 3, nil, 5, nil, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 = DF.filter(df, is_nil(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [nil, nil], b: [6, 4]}
+    end
+
+    test "filter for not nil values" do
+      df = DF.new(a: [1, 2, 3, nil, 5, nil, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 = DF.filter(df, is_not_nil(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 5, 5], b: [9, 8, 7, 5, 3]}
+    end
+
+    test "filter with add operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 = DF.filter(df, a > b + 1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [6, 5], b: [4, 3]}
+    end
+
+    test "filter with subtract operation" do
+      df = DF.new(a: [1.1, 2.2, 3.3, 4.4, 5.5, 6.5, 5.8], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 = DF.filter(df, a > b - a)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [4.4, 5.5, 6.5, 5.8], b: [6, 5, 4, 3]}
+    end
+
+    test "filter with divide operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 = DF.filter(df, a > b / 3)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 4, 5, 6, 5], b: [7, 6, 5, 4, 3]}
+    end
+
+    test "filter with pow operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 = DF.filter(df, b == a ** 3)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2], b: [8.0]}
+    end
+
+    test "filter with count operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 = DF.filter(df, b > count(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3], b: [9.2, 8.0, 7.1]}
+    end
+
+    test "filter with max operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 = DF.filter(df, b > max(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3], b: [9.2, 8.0, 7.1]}
+    end
+
+    test "filter with last operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 = DF.filter(df, b > last(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 4], b: [9.2, 8.0, 7.1, 6.0]}
+    end
+
+    test "filter with coalesce operation" do
+      df = DF.new(a: [1, nil, 3, nil], b: [nil, 2, nil, 4])
+
+      df1 = DF.filter(df, greater(coalesce(a, b), 3))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [nil], b: [4]}
+
+      df2 = DF.filter(df, is_nil(coalesce(a, b)))
+
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [], b: []}
+    end
+
+    test "filter with window operation" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9.2, 8.0, 7.1, 6.0, 5.0, 4.0, 3.2])
+
+      df1 = DF.filter(df, a > window_mean(a, 3))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               a: [1, 2, 3],
-               b: ["a", "b", "c"],
-               c: [true, false, true]
+               a: [2, 3, 4, 5, 6],
+               b: [8.0, 7.1, 6.0, 5.0, 4.0]
+             }
+    end
+
+    test "filter with all_equal equals true" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6], b: [1, 2, 3, 4, 5, 6])
+
+      df1 = DF.filter(df, all_equal(a, b))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: [1, 2, 3, 4, 5, 6]
+             }
+    end
+
+    test "filter with all_equal equals false" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6], b: [1, 2, 3, 4, 5, 7])
+
+      df1 = DF.filter(df, all_equal(a, b))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [],
+               b: []
+             }
+    end
+
+    test "filter with an aggregation and without a group" do
+      df = DF.new(col1: ["a", "a", "b", "b"], col2: [1, 2, 3, 4])
+
+      df1 = DF.filter(df, col2 > mean(col2))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               col1: ["b", "b"],
+               col2: [3, 4]
              }
 
-      assert df1.names == ["a", "b", "c"]
-      assert df1.dtypes == %{"a" => :integer, "b" => :string, "c" => :boolean}
-    end
-
-    test "raises with series of invalid size", %{df: df} do
-      assert_raise ArgumentError,
-                   "size of new column test (3) must match number of rows in the dataframe (1094)",
-                   fn -> DF.mutate(df, test: [1, 2, 3]) end
-    end
-
-    test "keeps the column order" do
-      df = DF.new(e: [1, 2, 3], c: ["a", "b", "c"], a: [1.2, 2.3, 4.5])
-
-      df1 = DF.mutate(df, d: 1, b: 2)
-
-      assert df1.names == ["e", "c", "a", "d", "b"]
+      assert DF.groups(df1) == []
     end
   end
 
+  # Since the `mutate/2` macro uses `filter_with/2` underneath, most of mutate tests are
+  # implemented using `filter/2`.
   describe "mutate_with/2" do
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
@@ -450,22 +365,64 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["a", "b"]
       assert df1.dtypes == %{"a" => :float, "b" => :string}
     end
+  end
+
+  describe "mutate/2" do
+    require DF
+
+    test "adds new columns" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 = DF.mutate(df, c: a + 5, d: 2 + a, e: 42, f: 842.1, g: "Elixir")
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [6, 7, 8],
+               d: [3, 4, 5],
+               e: [42, 42, 42],
+               f: [842.1, 842.1, 842.1],
+               g: ["Elixir", "Elixir", "Elixir"]
+             }
+
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g"]
+
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "b" => :string,
+               "c" => :integer,
+               "d" => :integer,
+               "e" => :integer,
+               "f" => :float,
+               "g" => :string
+             }
+    end
+
+    test "changes a column" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 = DF.mutate(df, a: cast(a, :float))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1.0, 2.0, 3.0],
+               b: ["a", "b", "c"]
+             }
+
+      assert df1.names == ["a", "b"]
+      assert df1.dtypes == %{"a" => :float, "b" => :string}
+    end
 
     test "adds new columns ordering and sorting" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            c: Series.reverse(a),
-            d: Series.argsort(a, true),
-            e: Series.sort(ldf["b"], true),
-            f: Series.distinct(a),
-            g: Series.unordered_distinct(a)
-          ]
-        end)
+        DF.mutate(df,
+          c: reverse(a),
+          d: argsort(a, true),
+          e: sort(b, true),
+          f: distinct(a),
+          g: unordered_distinct(a)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -494,17 +451,15 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 4])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(ldf["a"], 2),
-            calc2: Series.subtract(ldf["a"], 2),
-            calc3: Series.multiply(ldf["a"], 2),
-            calc4: Series.divide(ldf["a"], 2),
-            calc5: Series.pow(ldf["a"], 2),
-            calc6: Series.quotient(ldf["a"], 2),
-            calc7: Series.remainder(ldf["a"], 2)
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(a, 2),
+          calc2: subtract(a, 2),
+          calc3: multiply(a, 2),
+          calc4: divide(a, 2),
+          calc5: pow(a, 2),
+          calc6: quotient(a, 2),
+          calc7: remainder(a, 2)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 4],
@@ -533,18 +488,16 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 4])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(2, ldf["a"]),
-            calc2: Series.subtract(2, ldf["a"]),
-            calc3: Series.multiply(2, ldf["a"]),
-            calc4: Series.divide(2, ldf["a"]),
-            calc5: Series.pow(2, ldf["a"]),
-            calc5_1: Series.pow(2.0, ldf["a"]),
-            calc6: Series.quotient(2, ldf["a"]),
-            calc7: Series.remainder(2, ldf["a"])
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(2, a),
+          calc2: subtract(2, a),
+          calc3: multiply(2, a),
+          calc4: divide(2, a),
+          calc5: pow(2, a),
+          calc5_1: pow(2.0, a),
+          calc6: quotient(2, a),
+          calc7: remainder(2, a)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 4],
@@ -577,17 +530,15 @@ defmodule Explorer.DataFrameTest do
       series = Explorer.Series.from_list([2, 1, 2])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(ldf["a"], series),
-            calc2: Series.subtract(ldf["a"], series),
-            calc3: Series.multiply(ldf["a"], series),
-            calc4: Series.divide(ldf["a"], series),
-            calc5: Series.pow(ldf["a"], series),
-            calc6: Series.quotient(ldf["a"], series),
-            calc7: Series.remainder(ldf["a"], series)
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(a, ^series),
+          calc2: subtract(a, ^series),
+          calc3: multiply(a, ^series),
+          calc4: divide(a, ^series),
+          calc5: pow(a, ^series),
+          calc6: quotient(a, ^series),
+          calc7: remainder(a, ^series)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 4],
@@ -617,17 +568,15 @@ defmodule Explorer.DataFrameTest do
       series = Explorer.Series.from_list([1, 2, 4])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(series, ldf["a"]),
-            calc2: Series.subtract(series, ldf["a"]),
-            calc3: Series.multiply(series, ldf["a"]),
-            calc4: Series.divide(series, ldf["a"]),
-            calc5: Series.pow(series, ldf["a"]),
-            calc6: Series.quotient(series, ldf["a"]),
-            calc7: Series.remainder(series, ldf["a"])
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(^series, a),
+          calc2: subtract(^series, a),
+          calc3: multiply(^series, a),
+          calc4: divide(^series, a),
+          calc5: pow(^series, a),
+          calc6: quotient(^series, a),
+          calc7: remainder(^series, a)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [2, 1, 2],
@@ -656,17 +605,15 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3], b: [20, 40, 60], c: [10, 0, 8], d: [3, 2, 1])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            calc1: Series.add(ldf["a"], ldf["b"]),
-            calc2: Series.subtract(ldf["b"], ldf["a"]),
-            calc3: Series.multiply(ldf["a"], ldf["d"]),
-            calc4: Series.divide(ldf["b"], ldf["c"]),
-            calc5: Series.pow(ldf["a"], ldf["d"]),
-            calc6: Series.quotient(ldf["b"], ldf["c"]),
-            calc7: Series.remainder(ldf["b"], ldf["c"])
-          ]
-        end)
+        DF.mutate(df,
+          calc1: add(a, b),
+          calc2: subtract(b, a),
+          calc3: multiply(a, d),
+          calc4: divide(b, c),
+          calc5: pow(a, d),
+          calc6: quotient(b, c),
+          calc7: remainder(b, c)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -701,19 +648,15 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            c: Series.first(a),
-            d: Series.last(a),
-            e: Series.count(a),
-            f: Series.median(a),
-            g: Series.sum(a),
-            h: Series.min(a) |> Series.add(a),
-            i: Series.quantile(a, 0.2)
-          ]
-        end)
+        DF.mutate(df,
+          c: Series.first(a),
+          d: Series.last(a),
+          e: Series.count(a),
+          f: Series.median(a),
+          g: Series.sum(a),
+          h: Series.min(a) |> Series.add(a),
+          i: Series.quantile(a, 0.2)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -748,16 +691,14 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: a, b: b)
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            concat1: Series.concat(a, ldf["b"]) |> Series.slice(1, 3),
-            concat2: Series.concat(ldf["a"], b) |> Series.slice(1, 3),
-            concat3: Series.concat(ldf["a"], ldf["b"]) |> Series.slice(1, 3),
-            coalesce1: Series.coalesce(a, ldf["b"]),
-            coalesce2: Series.coalesce(ldf["a"], b),
-            coalesce3: Series.coalesce(ldf["a"], ldf["b"])
-          ]
-        end)
+        DF.mutate(df,
+          concat1: concat(^a, b) |> slice(1, 3),
+          concat2: concat(a, b) |> slice(1, 3),
+          concat3: concat(a, b) |> slice(1, 3),
+          coalesce1: coalesce(^a, b),
+          coalesce2: coalesce(a, b),
+          coalesce3: coalesce(a, b)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, nil, 3],
@@ -786,20 +727,16 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: Enum.to_list(1..10))
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            b: Series.window_max(a, 2, weights: [1.0, 2.0]),
-            c: Series.window_mean(a, 2, weights: [1.0, 2.0]),
-            d: Series.window_min(a, 2, weights: [1.0, 2.0]),
-            e: Series.window_sum(a, 2, weights: [1.0, 2.0]),
-            f: Series.cumulative_max(a),
-            g: Series.cumulative_min(a),
-            h: Series.cumulative_sum(a),
-            i: Series.cumulative_max(a, reverse: true)
-          ]
-        end)
+        DF.mutate(df,
+          b: window_max(a, 2, weights: [1.0, 2.0]),
+          c: window_mean(a, 2, weights: [1.0, 2.0]),
+          d: window_min(a, 2, weights: [1.0, 2.0]),
+          e: window_sum(a, 2, weights: [1.0, 2.0]),
+          f: cumulative_max(a),
+          g: cumulative_min(a),
+          h: cumulative_sum(a),
+          i: cumulative_max(a, reverse: true)
+        )
 
       assert df1.dtypes == %{
                "a" => :integer,
@@ -829,10 +766,7 @@ defmodule Explorer.DataFrameTest do
     test "add columns with peaks values" do
       df = DF.new(a: [1, 2, 3, 2, 1, 3])
 
-      df1 =
-        DF.mutate_with(df, fn ldf ->
-          [b: Series.peaks(ldf["a"], :max), c: Series.peaks(ldf["a"], :min)]
-        end)
+      df1 = DF.mutate(df, b: peaks(a, :max), c: peaks(a, :min))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 2, 1, 3],
@@ -847,18 +781,14 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, nil, 3, 2, nil, 4])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            b: Series.fill_missing(a, :forward),
-            c: Series.fill_missing(a, :backward),
-            d: Series.fill_missing(a, :min),
-            e: Series.fill_missing(a, :max),
-            f: Series.fill_missing(a, :mean),
-            g: Series.fill_missing(a, 42)
-          ]
-        end)
+        DF.mutate(df,
+          b: fill_missing(a, :forward),
+          c: fill_missing(a, :backward),
+          d: fill_missing(a, :min),
+          e: fill_missing(a, :max),
+          f: fill_missing(a, :mean),
+          g: fill_missing(a, 42)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, nil, 3, 2, nil, 4],
@@ -885,15 +815,11 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3, 4, 5])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          a = ldf["a"]
-
-          [
-            b: Series.sample(a, 5, seed: 100),
-            c: Series.sample(a, 1.0, seed: 99),
-            d: Series.sample(a, 3, seed: 98) |> Series.concat(Series.from_list([0, 0]))
-          ]
-        end)
+        DF.mutate(df,
+          b: sample(a, 5, seed: 100),
+          c: sample(a, 1.0, seed: 99),
+          d: sample(a, 3, seed: 98) |> concat(from_list([0, 0]))
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5],
@@ -908,6 +834,20 @@ defmodule Explorer.DataFrameTest do
                "c" => :integer,
                "d" => :integer
              }
+    end
+
+    test "raises with series of invalid size", %{df: df} do
+      assert_raise RuntimeError,
+                   ~r/Lengths don't match: Could not add column. The Series length 3 differs from the DataFrame height: 1094/,
+                   fn -> DF.mutate(df, test: [1, 2, 3]) end
+    end
+
+    test "keeps the column order" do
+      df = DF.new(e: [1, 2, 3], c: ["a", "b", "c"], a: [1.2, 2.3, 4.5])
+
+      df1 = DF.mutate(df, d: [1, 1, 1], b: [2, 2, 2])
+
+      assert df1.names == ["e", "c", "a", "d", "b"]
     end
   end
 

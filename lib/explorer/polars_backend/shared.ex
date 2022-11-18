@@ -106,6 +106,17 @@ defmodule Explorer.PolarsBackend.Shared do
     Enum.map(dtypes, &normalise_dtype/1)
   end
 
+  def new_polars_series(list, dtype, name \\ "") when is_list(list) and is_atom(dtype) do
+    case dtype do
+      :integer -> Native.s_new_i64(name, list)
+      :float -> Native.s_new_f64(name, list)
+      :boolean -> Native.s_new_bool(name, list)
+      :string -> Native.s_new_str(name, list)
+      :date -> Native.s_new_date32(name, list)
+      :datetime -> Native.s_new_date64(name, list)
+    end
+  end
+
   def normalise_dtype("u8"), do: :integer
   def normalise_dtype("u32"), do: :integer
   def normalise_dtype("i32"), do: :integer

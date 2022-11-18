@@ -485,6 +485,8 @@ defmodule Explorer.DataFrame.GroupedTest do
   end
 
   describe "mutate/2" do
+    require DF
+
     test "adds a new column when there is a group" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [1, 1, 2])
 

@@ -206,8 +206,6 @@ defmodule Explorer.DataFrame do
 
   # Normalize pairs of `{column, value}` where value can be anything.
   # The `column` is only validated if it's an integer. We check that the index is present.
-  defp to_column_pairs(df, pairs), do: to_column_pairs(df, pairs, & &1)
-
   # The function allows to change the `value` for each pair.
   defp to_column_pairs(df, pairs, value_fun)
        when is_column_pairs(pairs) and is_function(value_fun, 1) do
@@ -355,7 +353,7 @@ defmodule Explorer.DataFrame do
     value = pull(df, column)
     {current_value, new_value} = fun.(value)
 
-    new_data = mutate(df, %{column => new_value})
+    new_data = mutate_with(df, fn _ -> %{column => new_value} end)
     {current_value, new_data}
   end
 
@@ -1329,8 +1327,11 @@ defmodule Explorer.DataFrame do
   Picks rows based on `Explorer.Query`.
 
   The query is compiled and runs efficiently against the dataframe.
-  The query must return a boolean expression. Given this function is
-  a macro, you must require `Explorer.DataFrame` before using it.
+  The query must return a boolean expression.
+
+  > #### Notice {: .notice}
+  >
+  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
 
   Besides element-wise series operations, you can also use window functions
   and aggregations inside comparisons. In such cases, grouped dataframes
@@ -1478,15 +1479,23 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Creates and modifies columns.
+  Creates or modifies columns based on `Explorer.Query`.
 
-  Columns are added with keyword list or maps. New variables overwrite existing variables of the
-  same name. Column names are coerced from atoms to strings.
+  The query is compiled and runs efficiently against the dataframe.
+  New variables overwrite existing variables of the same name.
+  Column names are coerced from atoms to strings.
 
-  Notice that working with grouped dataframes is different from `mutate_with/2` because
-  it's not possible to work with aggregations per group in this version. Another drawback is that
-  grouped dataframes need to have groups of the same size of the series you are trying to mutate.
-  So prefer the usage of `mutate_with/2` when working with groups.
+  > #### Notice {: .notice}
+  >
+  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
+
+  Besides element-wise series operations, you can also use window functions
+  and aggregations inside mutations. In such cases, grouped dataframes
+  may have different results than ungrouped ones, because the mutation
+  is computed withing groups. See examples below.
+
+  See `mutate_with/2` for a callback version of this function without
+  `Explorer.Query`.
 
   ## Examples
 
@@ -1505,7 +1514,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> s = Explorer.Series.from_list([4, 5, 6])
-      iex> Explorer.DataFrame.mutate(df, c: s)
+      iex> Explorer.DataFrame.mutate(df, c: ^s)
       #Explorer.DataFrame<
         Polars[3 x 3]
         a string ["a", "b", "c"]
@@ -1533,6 +1542,16 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
+  It's possible to use functions from the Series module thanks to the macro:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate(df, a: sum(b))
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [6, 6, 6]
+        b integer [1, 2, 3]
+      >
+
   Alternatively, all of the above works with a map instead of a keyword list:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
@@ -1543,65 +1562,52 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
         c integer [4, 5, 6]
       >
+
+  ## Grouped examples
+
+  Mutations in grouped dataframes takes the context of the group.
+  For example, if we want to count how many elements of a given group, we can add a new
+  column with that:
+
+      iex> df = Explorer.DataFrame.new(id: ["a", "a", "b"], b: [1, 2, 3])
+      iex> grouped = Explorer.DataFrame.group_by(df, :id)
+      iex> Explorer.DataFrame.mutate(grouped, count: count(b))
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        Groups: ["id"]
+        id string ["a", "a", "b"]
+        b integer [1, 2, 3]
+        count integer [2, 2, 1]
+      >
+
+  In case we want to get the average size of the petal length from the Iris dataset, we can:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.mutate(grouped, petal_length_avg: mean(petal_length))
+      #Explorer.DataFrame<
+        Polars[150 x 6]
+        Groups: ["species"]
+        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+        petal_length_avg float [1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, ...]
+      >
   """
   @doc type: :single
-  @spec mutate(df :: DataFrame.t(), columns :: column_pairs(any())) ::
-          DataFrame.t()
-  def mutate(df, columns) when is_column_pairs(columns) do
-    mutations = to_column_pairs(df, columns)
-
-    out_df = df_for_mutations(df, mutations)
-
-    Shared.apply_impl(df, :mutate, [out_df, mutations])
-  end
-
-  defp df_for_mutations(df, mutations) do
-    mut_names = Enum.map(mutations, &elem(&1, 0))
-
-    new_names = Enum.uniq(df.names ++ mut_names)
-
-    mut_dtypes =
-      for {name, value} <- mutations, into: %{} do
-        value =
-          if is_function(value) do
-            IO.warn("mutate/2 with a callback is deprecated, please use mutate_with/2 instead")
-            value.(df)
-          else
-            value
-          end
-
-        dtype =
-          case value do
-            value when is_list(value) ->
-              Shared.check_types!(value)
-
-            %Series{} = value ->
-              value.dtype
-
-            value ->
-              Shared.check_types!([value])
-          end
-
-        {name, dtype}
-      end
-
-    new_dtypes = Map.merge(df.dtypes, mut_dtypes)
-
-    %{df | names: new_names, dtypes: new_dtypes}
+  defmacro mutate(df, mutations) do
+    quote do
+      require Explorer.Query
+      Explorer.DataFrame.mutate_with(unquote(df), Explorer.Query.query(unquote(mutations)))
+    end
   end
 
   @doc """
   Creates or modifies columns using a callback function.
 
-  This function is similar to `mutate/2`, but allows complex operations
-  to be performed, since it uses a virtual representation of the dataframe.
-  The only requirement is that a series operation is returned.
-
-  New variables overwrite existing variables of the
-  same name. Column names are coerced from atoms to strings.
-
-  When the dataframe is grouped, a mutation will have the context of that
-  group or groups.
+  This is a callback version of `mutate/2`.
 
   ## Examples
 
@@ -1624,27 +1630,6 @@ defmodule Explorer.DataFrame do
         b float [1.0, 4.0, 9.0]
       >
 
-  Scalar values are repeated to fill the series:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate_with(df, &[a: Explorer.Series.max(&1["b"])])
-      #Explorer.DataFrame<
-        Polars[3 x 2]
-        a integer [3, 3, 3]
-        b integer [1, 2, 3]
-      >
-
-  Alternatively, all of the above works with a map instead of a keyword list:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate_with(df, fn df -> %{"c" => Explorer.Series.window_mean(df["b"], 2)} end)
-      #Explorer.DataFrame<
-        Polars[3 x 3]
-        a string ["a", "b", "c"]
-        b integer [1, 2, 3]
-        c float [1.0, 1.5, 2.5]
-      >
-
   ## Grouped examples
 
   Mutations in grouped dataframes takes the context of the group.
@@ -1660,22 +1645,6 @@ defmodule Explorer.DataFrame do
         id string ["a", "a", "b"]
         b integer [1, 2, 3]
         count integer [2, 2, 1]
-      >
-
-  In case we want to get the average size of the petal length from the Iris dataset, we can:
-
-      iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.mutate_with(grouped, &[petal_length_avg: Explorer.Series.mean(&1["petal_length"])])
-      #Explorer.DataFrame<
-        Polars[150 x 6]
-        Groups: ["species"]
-        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
-        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
-        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
-        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
-        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
-        petal_length_avg float [1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, ...]
       >
 
   """
@@ -1695,8 +1664,25 @@ defmodule Explorer.DataFrame do
           %Series{data: %LazySeries{}} ->
             value
 
+          %Series{data: other} = series ->
+            %{series | data: LazySeries.new(:to_lazy, [other])}
+
+          list when is_list(list) ->
+            Series.from_list(list, backend: Explorer.Backend.LazySeries)
+
+          number when is_number(number) ->
+            dtype = if is_integer(number), do: :integer, else: :float
+            lazy_s = LazySeries.new(:to_lazy, [number])
+
+            Explorer.Backend.Series.new(lazy_s, dtype)
+
+          string when is_binary(string) ->
+            lazy_s = LazySeries.new(:to_lazy, [string])
+
+            Explorer.Backend.Series.new(lazy_s, :string)
+
           other ->
-            raise "expecting a lazy series, but instead got #{inspect(other)}"
+            raise "expecting a series or scalar value, but instead got #{inspect(other)}"
         end
       end)
 
@@ -3483,7 +3469,7 @@ defmodule Explorer.DataFrame do
       else
         changes = for column <- columns, into: %{}, do: {column, Series.cast(df[column], :float)}
 
-        mutate(ungroup(df, :all), changes)
+        mutate(ungroup(df, :all), ^changes)
       end
     end
   end
