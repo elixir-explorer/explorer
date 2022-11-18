@@ -479,12 +479,12 @@ defmodule Explorer.Series do
   @doc """
   return a series from two series, based on a predicate.
 
-  The resulting tensor is built by evaluating each element of
+  The resulting series is built by evaluating each element of
   `pred` and returning either the corresponding element from
   `on_true` or `on_false`.
 
-  `pred` must be a boolean series. `on_true` and `on_false` may either
-  be a series of the same length as `pred` or a scalar value.
+  `pred` must be a boolean series. `on_true` and `on_false` must be
+  a series of the same length as `pred`.
   """
   @doc type: :transformation
   @spec select(pred :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) :: any()
