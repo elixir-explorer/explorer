@@ -1,7 +1,7 @@
 defmodule Explorer.DataFrame.GroupedTest do
   use ExUnit.Case, async: true
 
-  alias Explorer.DataFrame, as: DF
+  require Explorer.DataFrame, as: DF
   alias Explorer.Datasets
   alias Explorer.Series
 
@@ -76,53 +76,30 @@ defmodule Explorer.DataFrame.GroupedTest do
   end
 
   describe "summarise/2" do
-    test "with one group and one column with aggregations", %{df: df} do
-      df1 = df |> DF.group_by("year") |> DF.summarise(total: [:min, :max, :count])
+    test "with one group and one column with aggregation", %{df: df} do
+      df1 = df |> DF.group_by("year") |> DF.summarise(total: count(total))
 
-      assert DF.names(df1) == ["year", "total_min", "total_max", "total_count"]
+      assert DF.names(df1) == ["year", "total"]
 
       assert DF.dtypes(df1) == %{
                "year" => :integer,
-               "total_min" => :integer,
-               "total_max" => :integer,
-               "total_count" => :integer
+               "total" => :integer
              }
 
       assert DF.groups(df1) == []
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                year: [2010, 2011, 2012, 2013, 2014],
-               total_count: [217, 217, 220, 220, 220],
-               total_min: [1, 2, 2, 2, 3],
-               total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634]
-             }
-    end
-
-    test "with one group and two columns with aggregations", %{df: df} do
-      df1 = df |> DF.group_by("year") |> DF.summarise(total: [:max, :min], country: [:n_distinct])
-
-      assert DF.names(df1) == ["year", "total_max", "total_min", "country_n_distinct"]
-
-      assert DF.dtypes(df1) == %{
-               "year" => :integer,
-               "total_min" => :integer,
-               "total_max" => :integer,
-               "country_n_distinct" => :integer
-             }
-
-      assert DF.groups(df1) == []
-
-      assert DF.to_columns(df1, atom_keys: true) == %{
-               year: [2010, 2011, 2012, 2013, 2014],
-               total_min: [1, 2, 2, 2, 3],
-               total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634],
-               country_n_distinct: [217, 217, 220, 220, 220]
+               total: [217, 217, 220, 220, 220]
              }
     end
 
     test "with two groups and one column with aggregations", %{df: df} do
       df1 =
-        df |> DF.head(5) |> DF.group_by(["country", "year"]) |> DF.summarise(total: [:max, :min])
+        df
+        |> DF.head(5)
+        |> DF.group_by(["country", "year"])
+        |> DF.summarise(total_max: max(total), total_min: min(total))
 
       assert DF.names(df1) == ["country", "year", "total_max", "total_min"]
 
@@ -155,8 +132,7 @@ defmodule Explorer.DataFrame.GroupedTest do
         df
         |> DF.pivot_wider("names", "val")
         |> DF.group_by("team")
-        |> DF.summarise(%{"adv" => [:max], "cou" => [:max], "spo" => [:max]})
-        |> DF.rename(cou_max: "cou", adv_max: "adv", spo_max: "spo")
+        |> DF.summarise(%{"adv" => max(adv), "cou" => max(cou), "spo" => max(spo)})
 
       assert DF.names(df2) == ["team", "adv", "cou", "spo"]
 
@@ -182,7 +158,11 @@ defmodule Explorer.DataFrame.GroupedTest do
         df
         |> DF.mask(masks)
         |> DF.group_by(["country", "year"])
-        |> DF.summarise(total: [:max, :min], cement: [:median])
+        |> DF.summarise(
+          total_max: max(total),
+          total_min: min(total),
+          cement_median: median(cement)
+        )
         |> DF.arrange(:country)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -278,7 +258,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       series =
         df
         |> DF.group_by("country")
-        |> DF.summarise(total: [:count])
+        |> DF.summarise(total_count: count(total))
         |> DF.pull("total_count")
 
       assert Series.min(series) == 2
@@ -485,8 +465,6 @@ defmodule Explorer.DataFrame.GroupedTest do
   end
 
   describe "mutate/2" do
-    require DF
-
     test "adds a new column when there is a group" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [1, 1, 2])
 
