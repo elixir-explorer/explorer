@@ -667,16 +667,12 @@ pub fn df_to_dummies(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_mutate(data: ExDataFrame, columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
-    let df = &data.resource.0;
-    let mut new_df = df.clone();
+pub fn df_add_column(data: ExDataFrame, series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
+    let mut df: DataFrame = data.resource.0.clone();
+    let s: Series = series.resource.0.clone();
+    let new_df = df.with_column(s)?;
 
-    for column in columns {
-        let series = column.resource.0.clone();
-        new_df = new_df.with_column(series)?.clone();
-    }
-
-    Ok(ExDataFrame::new(new_df))
+    Ok(ExDataFrame::new(new_df.clone()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

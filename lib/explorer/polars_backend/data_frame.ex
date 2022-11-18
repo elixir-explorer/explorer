@@ -277,55 +277,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def mutate(%DataFrame{groups: []} = df, out_df, columns) do
-    ungrouped_mutate(df, out_df, columns)
-  end
-
-  def mutate(%DataFrame{groups: [_ | _]} = df, out_df, columns) do
-    apply_on_groups(df, out_df, fn group -> ungrouped_mutate(group, out_df, columns) end)
-  end
-
-  defp ungrouped_mutate(df, out_df, columns) do
-    columns =
-      Enum.map(columns, fn {column_name, value} ->
-        series = to_series(df, column_name, value)
-        check_series_size!(df, series, column_name)
-        series.data
-      end)
-
-    Shared.apply_dataframe(df, out_df, :df_mutate, [columns])
-  end
-
-  defp to_series(df, name, value) do
-    case value do
-      %Series{} = series ->
-        PolarsSeries.rename(series, name)
-
-      values when is_list(values) ->
-        series_from_list!(name, values)
-
-      callback when is_function(callback) ->
-        to_series(df, name, callback.(df))
-
-      any ->
-        to_series(df, name, List.duplicate(any, n_rows(df)))
-    end
-  end
-
-  defp check_series_size!(df, series, column_name) do
-    df_len = n_rows(df)
-    s_size = Series.size(series)
-
-    if s_size != df_len,
-      do:
-        raise(
-          ArgumentError,
-          "size of new column #{column_name} (#{s_size}) must match number of rows in the " <>
-            "dataframe (#{df_len})"
-        )
-  end
-
-  @impl true
   def mutate_with(%DataFrame{groups: []} = df, %DataFrame{} = out_df, column_pairs) do
     ungrouped_mutate_with(df, out_df, column_pairs)
   end
@@ -391,7 +342,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> then(fn group_df ->
         idx_series = series_from_list!(idx_column, indices)
 
-        Shared.apply_dataframe(group_df, :df_mutate, [[idx_series.data]])
+        Shared.apply_dataframe(group_df, :df_add_column, [idx_series.data])
       end)
     end)
     |> then(fn [head | _tail] = dfs -> concat_rows(dfs, head) end)
