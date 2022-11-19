@@ -1500,10 +1500,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-  Mutations are useful to add or modify variables in your dataframe.
-  For example, if we want to add "1" to the value of a column, we can
-  simply do a `add(column, 1)`, or even `column + 1`, thanks to our
-  macro:
+  Mutations are useful to add or modify columns in your dataframe:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate(df, c: b + 1)
