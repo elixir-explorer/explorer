@@ -423,7 +423,9 @@ pub fn expr_select(predicate: ExExpr, on_true: ExExpr, on_false: ExExpr) -> ExEx
     let on_true_expr: Expr = on_true.resource.0.clone();
     let on_false_expr: Expr = on_false.resource.0.clone();
 
-    let condition = when(predicate_expr).then(on_true_expr).otherwise(on_false_expr);
+    let condition = when(predicate_expr)
+        .then(on_true_expr)
+        .otherwise(on_false_expr);
 
     ExExpr::new(condition)
 }
