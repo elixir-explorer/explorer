@@ -353,8 +353,9 @@ defmodule Explorer.DataFrame do
     value = pull(df, column)
     {current_value, new_value} = fun.(value)
 
-    new_data = mutate_with(df, fn _ -> %{column => new_value} end)
-    {current_value, new_data}
+    new_df = put(df, column, new_value)
+
+    {current_value, new_df}
   end
 
   # IO
@@ -1499,36 +1500,24 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-  You can pass in a list directly as a new column:
+  Mutations are useful to add or modify columns in your dataframe:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate(df, c: [4, 5, 6])
+      iex> Explorer.DataFrame.mutate(df, c: b + 1)
       #Explorer.DataFrame<
         Polars[3 x 3]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
-        c integer [4, 5, 6]
+        c integer [2, 3, 4]
       >
 
-  Or you can pass in a series:
+  It's also possible to overwrite existing columns:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> s = Explorer.Series.from_list([4, 5, 6])
-      iex> Explorer.DataFrame.mutate(df, c: ^s)
-      #Explorer.DataFrame<
-        Polars[3 x 3]
-        a string ["a", "b", "c"]
-        b integer [1, 2, 3]
-        c integer [4, 5, 6]
-      >
-
-  You can overwrite existing columns:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate(df, a: [4, 5, 6])
+      iex> Explorer.DataFrame.mutate(df, a: b * 2)
       #Explorer.DataFrame<
         Polars[3 x 2]
-        a integer [4, 5, 6]
+        a integer [2, 4, 6]
         b integer [1, 2, 3]
       >
 
@@ -1542,32 +1531,34 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
-  It's possible to use functions from the Series module thanks to the macro:
+  It's also possible to use functions from the Series module, like `Explorer.Series.window_sum/3`:
 
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate(df, a: sum(b))
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate(df, b: window_sum(a, 2))
       #Explorer.DataFrame<
         Polars[3 x 2]
-        a integer [6, 6, 6]
-        b integer [1, 2, 3]
+        a integer [1, 2, 3]
+        b integer [1, 3, 5]
       >
 
   Alternatively, all of the above works with a map instead of a keyword list:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate(df, %{"c" => [4, 5, 6]})
+      iex> Explorer.DataFrame.mutate(df, %{"c" => cast(b, :float)})
       #Explorer.DataFrame<
         Polars[3 x 3]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
-        c integer [4, 5, 6]
+        c float [1.0, 2.0, 3.0]
       >
 
   ## Grouped examples
 
   Mutations in grouped dataframes takes the context of the group.
+  This enables some aggregations to be made considering each group. It's almost like `summarise/2`,
+  but repeating the results for each member in the group.
   For example, if we want to count how many elements of a given group, we can add a new
-  column with that:
+  column with that aggregation:
 
       iex> df = Explorer.DataFrame.new(id: ["a", "a", "b"], b: [1, 2, 3])
       iex> grouped = Explorer.DataFrame.group_by(df, :id)
@@ -1611,6 +1602,8 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
+  Here is an example of a new column that sums the value of two other columns:
+
       iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate_with(df, &[c: Explorer.Series.add(&1["a"], &1["b"])])
       #Explorer.DataFrame<
@@ -1620,7 +1613,7 @@ defmodule Explorer.DataFrame do
         c integer [5, 7, 9]
       >
 
-  You can overwrite existing columns:
+  You can overwrite existing columns as well:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate_with(df, &[b: Explorer.Series.pow(&1["b"], 2)])
@@ -1630,11 +1623,26 @@ defmodule Explorer.DataFrame do
         b float [1.0, 4.0, 9.0]
       >
 
+  It's possible to "reuse" a variable for different computations:
+
+      iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, fn ldf ->
+      iex>   c = Explorer.Series.add(ldf["a"], ldf["b"])
+      iex>   [c: c, d: Explorer.Series.window_sum(c, 2)]
+      iex> end)
+      #Explorer.DataFrame<
+        Polars[3 x 4]
+        a integer [4, 5, 6]
+        b integer [1, 2, 3]
+        c integer [5, 7, 9]
+        d integer [5, 12, 16]
+      >
+
   ## Grouped examples
 
   Mutations in grouped dataframes takes the context of the group.
-  For example, if we want to count how many elements of a given group, we can add a new
-  column with that:
+  For example, if we want to count how many elements of a given group,
+  we can add a new column with that aggregation:
 
       iex> df = Explorer.DataFrame.new(id: ["a", "a", "b"], b: [1, 2, 3])
       iex> grouped = Explorer.DataFrame.group_by(df, :id)
@@ -1661,14 +1669,19 @@ defmodule Explorer.DataFrame do
     column_pairs =
       to_column_pairs(df, result, fn value ->
         case value do
-          %Series{data: %LazySeries{}} ->
-            value
+          %Series{data: %LazySeries{}} = lazy_series ->
+            lazy_series
 
-          %Series{data: other} = series ->
-            %{series | data: LazySeries.new(:to_lazy, [other])}
+          %Series{data: _other} ->
+            raise ArgumentError,
+                  "expecting a lazy series. Consider using `Explorer.DataFrame.put/3` " <>
+                    "to add eager series to your dataframe."
 
           list when is_list(list) ->
-            Series.from_list(list, backend: Explorer.Backend.LazySeries)
+            raise ArgumentError,
+                  "expecting a lazy series or scalar value, but instead got a list. " <>
+                    "consider using `Explorer.Series.from_list/2` to create a `Series`, " <>
+                    "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
 
           number when is_number(number) ->
             dtype = if is_integer(number), do: :integer, else: :float
@@ -1682,7 +1695,8 @@ defmodule Explorer.DataFrame do
             Explorer.Backend.Series.new(lazy_s, :string)
 
           other ->
-            raise "expecting a series or scalar value, but instead got #{inspect(other)}"
+            raise ArgumentError,
+                  "expecting a lazy series or scalar value, but instead got #{inspect(other)}"
         end
       end)
 
@@ -1699,6 +1713,73 @@ defmodule Explorer.DataFrame do
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
     Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
+  end
+
+  @doc """
+  Creates or modifies a single column.
+
+  This is a simplified way to add or modify one column, accepting only series.
+  It's preferable to use `mutate/2` or `mutate_with/2`, since they are much more
+  powerful, accepting expressions and scalar values.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.put(df, :b, Explorer.Series.transform(df[:a], fn n -> n * 2 end))
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [1, 2, 3]
+        b integer [2, 4, 6]
+      >
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.put(df, :b, Explorer.Series.from_list([4, 5, 6]))
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [1, 2, 3]
+        b integer [4, 5, 6]
+      >
+
+  ## Grouped examples
+
+  If the dataframe is grouped, `put/3` is going to ignore the groups.
+  So the series must be of the same size of the entire dataframe.
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> grouped = Explorer.DataFrame.group_by(df, "a")
+      iex> series = Explorer.Series.from_list([9, 8, 7])
+      iex> Explorer.DataFrame.put(grouped, :b, series)
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        Groups: ["a"]
+        a integer [1, 2, 3]
+        b integer [9, 8, 7]
+      >
+
+  """
+  @spec put(
+          DataFrame.t(),
+          column_name(),
+          Series.t()
+        ) ::
+          DataFrame.t()
+  def put(%DataFrame{} = df, column_name, %Series{} = series) when is_column_name(column_name) do
+    name = to_column_name(column_name)
+
+    new_names =
+      if name in df.names do
+        df.names
+      else
+        List.insert_at(df.names, -1, name)
+      end
+
+    out_df = %{
+      df
+      | names: new_names,
+        dtypes: Map.put(df.dtypes, name, series.dtype)
+    }
+
+    Shared.apply_impl(df, :put, [out_df, name, series])
   end
 
   @doc """
@@ -3423,9 +3504,9 @@ defmodule Explorer.DataFrame do
       if Enum.empty?(columns) do
         df
       else
-        changes = for column <- columns, into: %{}, do: {column, Series.cast(df[column], :float)}
-
-        mutate(ungroup(df, :all), ^changes)
+        mutate_with(ungroup(df, :all), fn ldf ->
+          for column <- columns, do: {column, Series.cast(ldf[column], :float)}
+        end)
       end
     end
   end

@@ -63,7 +63,6 @@ mod atoms {
 rustler::init!(
     "Elixir.Explorer.PolarsBackend.Native",
     [
-        df_add_column,
         df_arrange,
         df_arrange_with,
         df_concat_columns,
@@ -92,6 +91,7 @@ rustler::init!(
         df_pivot_longer,
         df_pivot_wider,
         df_pull,
+        df_put_column,
         df_rename_columns,
         df_sample_frac,
         df_sample_n,

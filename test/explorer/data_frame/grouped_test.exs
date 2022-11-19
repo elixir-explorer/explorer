@@ -483,21 +483,21 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert df2.groups == ["c"]
     end
 
-    test "adds a new column with series when there is a group" do
+    test "adds a new column with aggregation when there is a group" do
       df = DF.new(a: [1, 2, 3, 4], b: ["a", "b", "c", "d"], c: [1, 1, 2, 2])
 
       df1 = DF.group_by(df, :c)
-      df2 = DF.mutate(df1, d: [5, 6])
+      df2 = DF.mutate(df1, d: mean(a))
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                a: [1, 2, 3, 4],
                b: ["a", "b", "c", "d"],
                c: [1, 1, 2, 2],
-               d: [5, 6, 5, 6]
+               d: [1.5, 1.5, 3.5, 3.5]
              }
 
       assert df2.names == ["a", "b", "c", "d"]
-      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :integer}
+      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :float}
       assert df2.groups == ["c"]
     end
   end
@@ -1185,5 +1185,40 @@ defmodule Explorer.DataFrame.GroupedTest do
   test "to_lazy/1", %{df: df} do
     grouped = DF.group_by(df, ["country", "year"])
     assert ["country", "year"] = DF.to_lazy(grouped).groups
+  end
+
+  describe "put/3" do
+    test "adds a new column to a dataframe" do
+      df = DF.new(a: [1, 2, 3], b: [4, 5, 6])
+      grouped = DF.group_by(df, "a")
+
+      df1 = DF.put(grouped, :c, Series.from_list(~w(a b c)))
+
+      assert DF.names(df1) == ["a", "b", "c"]
+      assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer, "c" => :string}
+      assert DF.groups(df1) == ["a"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [4, 5, 6],
+               c: ["a", "b", "c"]
+             }
+    end
+
+    test "replaces a column in the dataframe" do
+      df = DF.new(a: [1, 2, 3], b: [4, 5, 6])
+      grouped = DF.group_by(df, "a")
+
+      df1 = DF.put(grouped, :b, Series.from_list([10, 10, 10]))
+
+      assert DF.names(df1) == ["a", "b"]
+      assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer}
+      assert DF.groups(df1) == ["a"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [10, 10, 10]
+             }
+    end
   end
 end
