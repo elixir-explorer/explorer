@@ -477,7 +477,7 @@ defmodule Explorer.Series do
   def last(series), do: Shared.apply_impl(series, :last, [])
 
   @doc """
-  return a series from two series, based on a predicate.
+  Returns a series from two series, based on a predicate.
 
   The resulting series is built by evaluating each element of
   `pred` and returning either the corresponding element from
