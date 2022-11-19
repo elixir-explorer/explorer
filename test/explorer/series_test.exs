@@ -11,7 +11,13 @@ defmodule Explorer.SeriesTest do
 
     for {{:function, name, arity}, _ann, _signature, docs, metadata} <- entries,
         is_map(docs) and map_size(docs) > 0,
-        metadata[:type] not in [:transformation, :introspection, :aggregation, :window, :element_wise] do
+        metadata[:type] not in [
+          :transformation,
+          :introspection,
+          :aggregation,
+          :window,
+          :element_wise
+        ] do
       flunk("invalid @doc type: #{inspect(metadata[:type])} for #{name}/#{arity}")
     end
   end
