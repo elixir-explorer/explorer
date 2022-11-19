@@ -480,7 +480,7 @@ defmodule Explorer.Series do
   Returns a series from two series, based on a predicate.
 
   The resulting series is built by evaluating each element of
-  `pred` and returning either the corresponding element from
+  `predicate` and returning either the corresponding element from
   `on_true` or `on_false`.
 
   `pred` must be a boolean series. `on_true` and `on_false` must be
