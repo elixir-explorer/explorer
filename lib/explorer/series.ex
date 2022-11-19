@@ -2139,6 +2139,21 @@ defmodule Explorer.Series do
     end
   end
 
+  @doc """
+  Check if the elements of the series in the left exists in the series in the right.
+  """
+  @doc type: :element_wise
+  def %Series{} = left in %Series{} = right do
+    if valid_for_bool_mask_operation?(left, right) do
+      Shared.apply_series_impl(:is_in, [left, right])
+    else
+      dtype_mismatch_error("is_in/2", left, right)
+    end
+  end
+
+  def %Series{} = left in right when is_list(right),
+    do: is_in(left, Explorer.Series.from_list(right))
+
   defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype}),
     do: true
 

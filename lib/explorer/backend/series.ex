@@ -87,6 +87,7 @@ defmodule Explorer.Backend.Series do
   @callback less(s | valid_types(), s | valid_types()) :: s
   @callback less_equal(s | valid_types(), s | valid_types()) :: s
   @callback all_equal(s, s) :: boolean() | lazy_s()
+  @callback s() in s() :: s()
 
   @callback binary_and(s, s) :: s
   @callback binary_or(s, s) :: s

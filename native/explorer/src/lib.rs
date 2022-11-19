@@ -290,6 +290,7 @@ rustler::init!(
         s_window_mean,
         s_window_min,
         s_window_sum,
+        s_in,
     ],
     load = on_load
 );

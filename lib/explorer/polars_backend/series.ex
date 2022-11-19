@@ -299,6 +299,10 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(left, :s_series_equal, [right.data, true])
 
   @impl true
+  def %Series{} = left in %Series{} = right,
+    do: Shared.apply_series(left, :s_in, [right.data])
+
+  @impl true
   def binary_and(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_and, [right.data])
 

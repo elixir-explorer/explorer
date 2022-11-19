@@ -51,6 +51,7 @@ features = [
   "sort_multiple",
   "temporal",
   "to_dummies",
+  "is_in"
 ]
 
 [dependencies.polars-ops]
