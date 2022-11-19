@@ -483,7 +483,7 @@ defmodule Explorer.Series do
   `predicate` and returning either the corresponding element from
   `on_true` or `on_false`.
 
-  `pred` must be a boolean series. `on_true` and `on_false` must be
+  `predicate` must be a boolean series. `on_true` and `on_false` must be
   a series of the same length as `pred`.
   """
   @doc type: :transformation
