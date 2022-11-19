@@ -55,6 +55,14 @@ defmodule Explorer.SeriesTest do
     assert Series.to_list(s2) == [1, 4, 3]
   end
 
+  describe "fill_missing/2" do
+    test "with literals" do
+      s1 = Series.from_list([true, false, nil])
+      assert Series.fill_missing(s1, true) |> Series.to_list() == [true, false, true]
+      assert Series.fill_missing(s1, false) |> Series.to_list() == [true, false, false]
+    end
+  end
+
   describe "equal/2" do
     test "compare boolean series" do
       s1 = Series.from_list([true, false, true])
@@ -71,14 +79,18 @@ defmodule Explorer.SeriesTest do
 
     test "compare integer series with a scalar value on the right-hand side" do
       s1 = Series.from_list([1, 0, 2])
-
       assert s1 |> Series.equal(2) |> Series.to_list() == [false, false, true]
+
+      s2 = Series.from_list(["foo", "bar", "baz"])
+      assert s2 |> Series.equal("baz") |> Series.to_list() == [false, false, true]
     end
 
     test "compare integer series with a scalar value on the left-hand side" do
       s1 = Series.from_list([1, 0, 2])
-
       assert 2 |> Series.equal(s1) |> Series.to_list() == [false, false, true]
+
+      s2 = Series.from_list(["foo", "bar", "baz"])
+      assert "baz" |> Series.equal(s2) |> Series.to_list() == [false, false, true]
     end
   end
 

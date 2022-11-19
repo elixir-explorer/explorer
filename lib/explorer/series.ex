@@ -768,13 +768,12 @@ defmodule Explorer.Series do
       iex> s1 = Explorer.Series.from_list(["foo", nil, "bar", nil])
       iex> s2 = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.coalesce(s1, s2)
-      ** (ArgumentError) cannot invoke Explorer.Series.coalesce/2 with mismatched dtypes: string and integer.
+      ** (ArgumentError) cannot invoke Explorer.Series.coalesce/2 with mismatched dtypes: :string and :integer
   """
   @doc type: :transformation
   @spec coalesce(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
   def coalesce(s1, s2) do
     :ok = check_dtypes_for_coalesce!(s1, s2)
-
     Shared.apply_series_impl(:coalesce, [s1, s2])
   end
 
@@ -805,7 +804,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.sum(s)
-      ** (ArgumentError) Explorer.Series.sum/1 not implemented for dtype :date. Valid dtypes are [:integer, :float, :boolean].
+      ** (ArgumentError) Explorer.Series.sum/1 not implemented for dtype :date. Valid dtypes are [:integer, :float, :boolean]
   """
   @doc type: :aggregation
   @spec sum(series :: Series.t()) :: number() | nil
@@ -844,7 +843,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.min(s)
-      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime].
+      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime]
   """
   @doc type: :aggregation
   @spec min(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t() | nil
@@ -884,7 +883,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.max(s)
-      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime].
+      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime]
   """
   @doc type: :aggregation
   @spec max(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t() | nil
@@ -914,7 +913,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.mean(s)
-      ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are [:integer, :float].
+      ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
   @spec mean(series :: Series.t()) :: float() | nil
@@ -943,7 +942,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.median(s)
-      ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are [:integer, :float].
+      ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
   @spec median(series :: Series.t()) :: float() | nil
@@ -972,7 +971,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.variance(s)
-      ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype :datetime. Valid dtypes are [:integer, :float].
+      ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype :datetime. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
   @spec variance(series :: Series.t()) :: float() | nil
@@ -1001,7 +1000,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.standard_deviation(s)
-      ** (ArgumentError) Explorer.Series.standard_deviation/1 not implemented for dtype :string. Valid dtypes are [:integer, :float].
+      ** (ArgumentError) Explorer.Series.standard_deviation/1 not implemented for dtype :string. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
   @spec standard_deviation(series :: Series.t()) :: float() | nil
@@ -1041,7 +1040,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)
-      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float, :date, :datetime].
+      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float, :date, :datetime]
   """
   @doc type: :aggregation
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
@@ -1057,7 +1056,7 @@ defmodule Explorer.Series do
   @doc """
   Calculates the cumulative maximum of the series.
 
-  Optionally, can fill in reverse.
+  Optionally, can accumulate in reverse.
 
   Does not fill nil values. See `fill_missing/2`.
 
@@ -1100,7 +1099,7 @@ defmodule Explorer.Series do
   @doc """
   Calculates the cumulative minimum of the series.
 
-  Optionally, can fill in reverse.
+  Optionally, can accumulate in reverse.
 
   Does not fill nil values. See `fill_missing/2`.
 
@@ -1143,7 +1142,7 @@ defmodule Explorer.Series do
   @doc """
   Calculates the cumulative sum of the series.
 
-  Optionally, can fill in reverse.
+  Optionally, can accumulate in reverse.
 
   Does not fill nil values. See `fill_missing/2`.
 
@@ -1532,8 +1531,8 @@ defmodule Explorer.Series do
        when K.and(numeric_dtype?(left_dtype), numeric_dtype?(right_dtype)),
        do: Shared.apply_series_impl(operation, [left, right])
 
-  defp basic_numeric_operation(operation, %Series{dtype: left_dtype}, %Series{dtype: right_dtype}),
-    do: dtype_mismatch_error("#{operation}/2", left_dtype, right_dtype)
+  defp basic_numeric_operation(operation, %Series{} = left, %Series{} = right),
+    do: dtype_mismatch_error("#{operation}/2", left, right)
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right)
        when K.and(numeric_dtype?(dtype), is_number(right)),
@@ -1601,7 +1600,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.equal(s, false)
-      ** (ArgumentError) cannot invoke Explorer.Series.equal/2 with mismatched dtypes: string and false.
+      ** (ArgumentError) cannot invoke Explorer.Series.equal/2 with mismatched dtypes: :string and false
   """
   @doc type: :element_wise
   @spec equal(
@@ -1612,7 +1611,7 @@ defmodule Explorer.Series do
     if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
       Shared.apply_series_impl(:equal, [left, right])
     else
-      dtype_mismatch_error("equal/2", dtype_from_sides(left, right), inspect(right))
+      dtype_mismatch_error("equal/2", left, right)
     end
   end
 
@@ -1666,7 +1665,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.not_equal(s, false)
-      ** (ArgumentError) cannot invoke Explorer.Series.not_equal/2 with mismatched dtypes: string and false.
+      ** (ArgumentError) cannot invoke Explorer.Series.not_equal/2 with mismatched dtypes: :string and false
   """
   @doc type: :element_wise
   @spec not_equal(
@@ -1677,12 +1676,14 @@ defmodule Explorer.Series do
     if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
       Shared.apply_series_impl(:not_equal, [left, right])
     else
-      dtype_mismatch_error("not_equal/2", dtype_from_sides(left, right), inspect(right))
+      dtype_mismatch_error("not_equal/2", left, right)
     end
   end
 
   defp sides_comparable?(%Series{dtype: :string}, right) when is_binary(right), do: true
   defp sides_comparable?(%Series{dtype: :boolean}, right) when is_boolean(right), do: true
+  defp sides_comparable?(left, %Series{dtype: :string}) when is_binary(left), do: true
+  defp sides_comparable?(left, %Series{dtype: :boolean}) when is_boolean(left), do: true
   defp sides_comparable?(_, _), do: false
 
   @doc """
@@ -2222,13 +2223,6 @@ defmodule Explorer.Series do
         integer [1, 2, 3, 4]
       >
 
-      iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
-      iex> Explorer.Series.fill_missing(s, 3.0)
-      #Explorer.Series<
-        Polars[4]
-        float [1.0, 2.0, 3.0, 4.0]
-      >
-
       iex> s = Explorer.Series.from_list(["a", "b", nil, "d"])
       iex> Explorer.Series.fill_missing(s, "c")
       #Explorer.Series<
@@ -2238,7 +2232,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.fill_missing(s, "foo")
-      ** (ArgumentError) cannot invoke Explorer.Series.fill_missing/2 with mismatched dtypes: integer and "foo".
+      ** (ArgumentError) cannot invoke Explorer.Series.fill_missing/2 with mismatched dtypes: :integer and "foo"
   """
   @doc type: :window
   @spec fill_missing(
@@ -2252,11 +2246,11 @@ defmodule Explorer.Series do
   def fill_missing(%Series{} = series, value) do
     if K.or(
          valid_for_bool_mask_operation?(series, value),
-         K.and(is_binary(value), series.dtype == :string)
+         sides_comparable?(series, value)
        ) do
       Shared.apply_impl(series, :fill_missing, [value])
     else
-      dtype_mismatch_error("fill_missing/2", series.dtype, inspect(value))
+      dtype_mismatch_error("fill_missing/2", series, value)
     end
   end
 
@@ -2344,16 +2338,19 @@ defmodule Explorer.Series do
       raise(
         ArgumentError,
         "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. Valid " <>
-          "dtypes are #{inspect(valid_dtypes)}."
+          "dtypes are #{inspect(valid_dtypes)}"
       )
 
-  defp dtype_mismatch_error(function, left_dtype, right_dtype),
+  defp dtype_mismatch_error(function, left, right),
     do:
       raise(
         ArgumentError,
-        "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{left_dtype} and " <>
-          "#{right_dtype}."
+        "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{dtype_or_inspect(left)} and " <>
+          "#{dtype_or_inspect(right)}"
       )
+
+  defp dtype_or_inspect(%Series{dtype: dtype}), do: inspect(dtype)
+  defp dtype_or_inspect(value), do: inspect(value)
 
   defp check_dtypes_for_coalesce!(%Series{} = s1, %Series{} = s2) do
     case {s1.dtype, s2.dtype} do

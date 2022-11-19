@@ -923,7 +923,7 @@ defmodule Explorer.DataFrameTest do
     test "without a lazy series" do
       df = DF.new(a: [1, 2])
 
-      assert_raise RuntimeError, "expecting a lazy series, but got :foo.", fn ->
+      assert_raise RuntimeError, "expecting a lazy series, got: :foo", fn ->
         DF.arrange_with(df, fn _ldf -> [desc: :foo] end)
       end
     end
@@ -931,7 +931,7 @@ defmodule Explorer.DataFrameTest do
     test "with wrong direction" do
       df = DF.new(a: [1, 2])
 
-      message = "expecting a valid direction, which is :asc or :desc, but got :descending."
+      message = "expecting a valid direction, which is :asc or :desc, got: :descending"
 
       assert_raise RuntimeError, message, fn ->
         DF.arrange_with(df, fn ldf -> [descending: ldf["a"]] end)
@@ -2007,7 +2007,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
 
       assert_raise ArgumentError,
-                   "id_columns must select at least one existing column, but [] selects none.",
+                   "id_columns must select at least one existing column, but [] selects none",
                    fn ->
                      DF.pivot_wider(df, "variable", "value", id_columns: [])
                    end
@@ -2025,13 +2025,13 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(float_id: [1.5, 1.6], variable: ["a", "b"], value: [1, 2])
 
       assert_raise ArgumentError,
-                   "id_columns cannot have columns of the type float, but \"float_id\" column is float.",
+                   "id_columns cannot have columns of the type float, but \"float_id\" column is float",
                    fn ->
                      DF.pivot_wider(df, "variable", "value")
                    end
 
       assert_raise ArgumentError,
-                   "id_columns cannot have columns of the type float, but \"float_id\" column is float.",
+                   "id_columns cannot have columns of the type float, but \"float_id\" column is float",
                    fn ->
                      DF.pivot_wider(df, "variable", "value", id_columns: [:float_id])
                    end

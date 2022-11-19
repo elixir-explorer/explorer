@@ -210,6 +210,7 @@ rustler::init!(
         s_fetch,
         s_fill_missing,
         s_fill_missing_with_bin,
+        s_fill_missing_with_boolean,
         s_fill_missing_with_float,
         s_fill_missing_with_int,
         s_greater,

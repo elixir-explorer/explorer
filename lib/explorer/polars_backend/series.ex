@@ -356,7 +356,7 @@ defmodule Explorer.PolarsBackend.Series do
   # Missing values
 
   @impl true
-  def fill_missing(series, strategy) when is_atom(strategy),
+  def fill_missing(series, strategy) when is_atom(strategy) and not is_boolean(strategy),
     do: Shared.apply_series(series, :s_fill_missing, [Atom.to_string(strategy)])
 
   def fill_missing(series, value) do
@@ -365,6 +365,7 @@ defmodule Explorer.PolarsBackend.Series do
         is_float(value) -> :s_fill_missing_with_float
         is_integer(value) -> :s_fill_missing_with_int
         is_binary(value) -> :s_fill_missing_with_bin
+        is_boolean(value) -> :s_fill_missing_with_boolean
       end
 
     Shared.apply_series(series, operation, [value])

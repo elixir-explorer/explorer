@@ -1854,10 +1854,10 @@ defmodule Explorer.DataFrame do
           {dir, lazy_series}
 
         {wrong_dir, %Series{data: %LazySeries{}}} ->
-          raise "expecting a valid direction, which is :asc or :desc, but got #{inspect(wrong_dir)}."
+          raise "expecting a valid direction, which is :asc or :desc, got: #{inspect(wrong_dir)}"
 
         {_, other} ->
-          raise "expecting a lazy series, but got #{inspect(other)}."
+          raise "expecting a lazy series, got: #{inspect(other)}"
 
         %Series{data: %LazySeries{} = lazy_series} ->
           {:asc, lazy_series}
@@ -2944,13 +2944,13 @@ defmodule Explorer.DataFrame do
 
     if id_columns == [] do
       raise ArgumentError,
-            "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none."
+            "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none"
     end
 
     for column_name <- id_columns do
       if df.dtypes[column_name] == :float do
         raise ArgumentError,
-              "id_columns cannot have columns of the type float, but #{inspect(column_name)} column is float."
+              "id_columns cannot have columns of the type float, but #{inspect(column_name)} column is float"
       end
     end
 
@@ -3673,10 +3673,10 @@ defmodule Explorer.DataFrame do
             value
 
           %Series{data: %LazySeries{op: op}} ->
-            raise "expecting summarise with an aggregation operation inside. But instead got #{inspect(op)}."
+            raise "expecting summarise with an aggregation operation inside, got: #{inspect(op)}"
 
           other ->
-            raise "expecting a lazy series, but instead got #{inspect(other)}"
+            raise "expecting a lazy series, got: #{inspect(other)}"
         end
       end)
 

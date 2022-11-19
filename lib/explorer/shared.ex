@@ -96,7 +96,7 @@ defmodule Explorer.Shared do
 
   defp pick_series_impl(struct1, struct2) do
     raise "cannot invoke Explorer function because it relies on two incompatible implementations: " <>
-            "#{inspect(struct1)} and #{inspect(struct2)}."
+            "#{inspect(struct1)} and #{inspect(struct2)}"
   end
 
   @doc """
