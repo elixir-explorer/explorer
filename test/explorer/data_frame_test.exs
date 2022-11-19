@@ -20,6 +20,17 @@ defmodule Explorer.DataFrameTest do
     path
   end
 
+  test "defines doc metadata" do
+    {:docs_v1, _, :elixir, "text/markdown", _docs, _metadata, entries} =
+      Code.fetch_docs(Explorer.DataFrame)
+
+    for {{:function, name, arity}, _ann, _signature, docs, metadata} <- entries,
+        is_map(docs) and map_size(docs) > 0,
+        metadata[:type] not in [:single, :multi, :introspection, :io, :rows] do
+      flunk("invalid @doc type: #{inspect(metadata[:type])} for #{name}/#{arity}")
+    end
+  end
+
   # Tests for summarize, group, ungroup are available in grouped_test.exs
 
   describe "mask/2" do

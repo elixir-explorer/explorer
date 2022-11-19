@@ -5,6 +5,17 @@ defmodule Explorer.SeriesTest do
 
   doctest Explorer.Series
 
+  test "defines doc metadata" do
+    {:docs_v1, _, :elixir, "text/markdown", _docs, _metadata, entries} =
+      Code.fetch_docs(Explorer.Series)
+
+    for {{:function, name, arity}, _ann, _signature, docs, metadata} <- entries,
+        is_map(docs) and map_size(docs) > 0,
+        metadata[:type] not in [:transformation, :introspection, :aggregation, :window, :element_wise] do
+      flunk("invalid @doc type: #{inspect(metadata[:type])} for #{name}/#{arity}")
+    end
+  end
+
   describe "from_list/1" do
     test "with integers" do
       s = Series.from_list([1, 2, 3])

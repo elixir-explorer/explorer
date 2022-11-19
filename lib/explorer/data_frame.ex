@@ -1757,12 +1757,8 @@ defmodule Explorer.DataFrame do
       >
 
   """
-  @spec put(
-          DataFrame.t(),
-          column_name(),
-          Series.t()
-        ) ::
-          DataFrame.t()
+  @doc type: :single
+  @spec put(DataFrame.t(), column_name(), Series.t()) :: DataFrame.t()
   def put(%DataFrame{} = df, column_name, %Series{} = series) when is_column_name(column_name) do
     name = to_column_name(column_name)
 
