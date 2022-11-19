@@ -487,7 +487,7 @@ defmodule Explorer.Series do
   a series of the same length as `pred`.
   """
   @doc type: :transformation
-  @spec select(predicate :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) :: any()
+  @spec select(predicate :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) :: Series.t()
   def select(
         predicate,
         %Series{dtype: on_true_dtype} = on_true,
