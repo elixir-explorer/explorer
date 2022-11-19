@@ -362,7 +362,10 @@ pub fn s_fill_missing_with_bin(data: ExSeries, strategy: &str) -> Result<ExSerie
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_boolean(data: ExSeries, strategy: bool) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_boolean(
+    data: ExSeries,
+    strategy: bool,
+) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s.bool()?.fill_null_with_values(strategy)?.into_series();
     Ok(ExSeries::new(s))
