@@ -418,8 +418,8 @@ defmodule Explorer.DataFrameTest do
       df1 =
         DF.mutate(df,
           c: reverse(a),
-          d: argsort(a, true),
-          e: sort(b, true),
+          d: argsort(a, direction: :desc),
+          e: sort(b, direction: :desc),
           f: distinct(a),
           g: unordered_distinct(a)
         )

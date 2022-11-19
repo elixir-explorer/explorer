@@ -714,9 +714,6 @@ defmodule Explorer.Series do
   def concat(%Series{} = s1, %Series{} = s2),
     do: concat([s1, s2])
 
-  def concat(%Series{} = s1, [%Series{} | _] = series),
-    do: concat([s1 | series])
-
   defp concat_reducer(%Series{dtype: dtype} = s, %Series{dtype: dtype} = acc),
     do: Shared.apply_series_impl(:concat, [acc, s])
 
@@ -1928,6 +1925,10 @@ defmodule Explorer.Series do
   @doc """
   Sorts the series.
 
+  ## Options
+
+    * `:direction` - `:asc` or `:desc`
+
   ## Examples
 
       iex> s = Explorer.Series.from_list([9, 3, 7, 1])
@@ -1939,13 +1940,23 @@ defmodule Explorer.Series do
 
   """
   @doc type: :transformation
-  def sort(series, reverse \\ false), do: Shared.apply_impl(series, :sort, [reverse])
+  def sort(series, opts \\ []) do
+    opts = Keyword.validate!(opts, direction: :asc)
+    Shared.apply_impl(series, :sort, [opts[:direction] == :desc])
+  end
 
   @doc """
   Returns the indices that would sort the series.
+
+  ## Options
+
+    * `:direction` - `:asc` or `:desc`
   """
   @doc type: :transformation
-  def argsort(series, reverse \\ false), do: Shared.apply_impl(series, :argsort, [reverse])
+  def argsort(series, opts \\ []) do
+    opts = Keyword.validate!(opts, direction: :asc)
+    Shared.apply_impl(series, :argsort, [opts[:direction] == :desc])
+  end
 
   @doc """
   Reverses the series order.
