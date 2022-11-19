@@ -39,6 +39,7 @@ defmodule Explorer.Backend.LazySeries do
     concat: 2,
     coalesce: 2,
     cast: 2,
+    select: 3,
     # Window functions
     cumulative_max: 2,
     cumulative_min: 2,
@@ -345,6 +346,26 @@ defmodule Explorer.Backend.LazySeries do
         resolve_numeric_dtype([left, right])
       else
         left.dtype
+      end
+
+    Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def select(%Series{} = predicate, %Series{} = on_true, %Series{} = on_false) do
+    args = [
+      series_or_lazy_series!(predicate),
+      series_or_lazy_series!(on_true),
+      series_or_lazy_series!(on_false)
+    ]
+
+    data = new(:select, args, aggregations?(args), window_functions?(args))
+
+    dtype =
+      if on_true.dtype in [:float, :integer] do
+        resolve_numeric_dtype([on_true, on_false])
+      else
+        on_true.dtype
       end
 
     Backend.Series.new(data, dtype)

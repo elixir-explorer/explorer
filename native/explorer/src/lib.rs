@@ -157,6 +157,7 @@ rustler::init!(
         // slice and dice expressions
         expr_coalesce,
         expr_concat,
+        expr_select,
         // agg expressions
         expr_alias,
         expr_count,
@@ -238,6 +239,7 @@ rustler::init!(
         s_or,
         s_peak_max,
         s_peak_min,
+        s_select,
         s_pow_f_lhs,
         s_pow_f_rhs,
         s_pow_i_lhs,

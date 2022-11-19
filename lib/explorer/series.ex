@@ -477,6 +477,45 @@ defmodule Explorer.Series do
   def last(series), do: Shared.apply_impl(series, :last, [])
 
   @doc """
+  Returns a series from two series, based on a predicate.
+
+  The resulting series is built by evaluating each element of
+  `predicate` and returning either the corresponding element from
+  `on_true` or `on_false`.
+
+  `predicate` must be a boolean series. `on_true` and `on_false` must be
+  a series of the same length as `pred`.
+  """
+  @doc type: :transformation
+  @spec select(predicate :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) ::
+          Series.t()
+  def select(
+        %Series{dtype: predicate_dtype} = predicate,
+        %Series{dtype: on_true_dtype} = on_true,
+        %Series{dtype: on_false_dtype} = on_false
+      )
+      when K.and(
+             K.and(numeric_dtype?(on_true_dtype) == true, numeric_dtype?(on_false_dtype) == true),
+             predicate_dtype == :boolean
+           ),
+      do: Shared.apply_impl(predicate, :select, [on_true, on_false])
+
+  def select(
+        %Series{dtype: predicate_dtype} = predicate,
+        %Series{dtype: on_true_dtype} = on_true,
+        %Series{dtype: on_false_dtype} = on_false
+      )
+      when K.and(on_true_dtype == on_false_dtype, predicate_dtype == :boolean),
+      do: Shared.apply_impl(predicate, :select, [on_true, on_false])
+
+  def select(
+        _predicate,
+        %Series{dtype: on_true_dtype},
+        %Series{dtype: on_false_dtype}
+      ),
+      do: dtype_mismatch_error("select/3", on_true_dtype, on_false_dtype)
+
+  @doc """
   Returns a random sample of the series.
 
   If given an integer as the second argument, it will return N samples. If given a float, it will
