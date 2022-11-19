@@ -611,5 +611,15 @@ defmodule Explorer.SeriesTest do
         Series.select(predicate, on_true, on_false)
       end
     end
+
+    test "select requires boolean predicate" do
+      predicate = [1.1, 1.2, 1.3] |> Series.from_list()
+      on_true = [1.1, 1.2, 1.3] |> Series.from_list()
+      on_false = [5, 3, 2] |> Series.from_list()
+
+      assert_raise ArgumentError, fn ->
+        Series.select(predicate, on_true, on_false)
+      end
+    end
   end
 end

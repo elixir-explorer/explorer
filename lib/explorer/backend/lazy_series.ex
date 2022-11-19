@@ -362,15 +362,10 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:select, args, aggregations?(args), window_functions?(args))
 
     dtype =
-      cond do
-        on_true.dtype in [:float, :integer] ->
-          resolve_numeric_dtype([on_true, on_false])
-
-        on_true.dtype != on_false.dtype ->
-          raise "on_true dtype #{on_true.dtype} must equal on_false dtype #{on_false.dtype}"
-
-        true ->
-          on_true.dtype
+      if on_true.dtype in [:float, :integer] do
+        resolve_numeric_dtype([on_true, on_false])
+      else
+        on_true.dtype
       end
 
     Backend.Series.new(data, dtype)

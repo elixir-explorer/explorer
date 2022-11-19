@@ -489,19 +489,22 @@ defmodule Explorer.Series do
   @doc type: :transformation
   @spec select(predicate :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) :: Series.t()
   def select(
-        predicate,
+        %Series{dtype: predicate_dtype} = predicate,
         %Series{dtype: on_true_dtype} = on_true,
         %Series{dtype: on_false_dtype} = on_false
       )
-      when K.and(numeric_dtype?(on_true_dtype), numeric_dtype?(on_false_dtype)),
+      when K.and(
+             K.and(numeric_dtype?(on_true_dtype) == true, numeric_dtype?(on_false_dtype) == true),
+             predicate_dtype == :boolean
+           ),
       do: Shared.apply_impl(predicate, :select, [on_true, on_false])
 
   def select(
-        predicate,
+        %Series{dtype: predicate_dtype} = predicate,
         %Series{dtype: on_true_dtype} = on_true,
         %Series{dtype: on_false_dtype} = on_false
       )
-      when on_true_dtype == on_false_dtype,
+      when K.and(on_true_dtype == on_false_dtype, predicate_dtype == :boolean),
       do: Shared.apply_impl(predicate, :select, [on_true, on_false])
 
   def select(
