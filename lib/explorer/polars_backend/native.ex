@@ -13,7 +13,6 @@ defmodule Explorer.PolarsBackend.Native do
 
   defstruct [:inner]
 
-  def df_add_column(_df, _series), do: err()
   def df_arrange(_df, _by, _reverse, _groups), do: err()
   def df_arrange_with(_df, _expressions, _directions, _groups), do: err()
   def df_concat_columns(_df, _others), do: err()
@@ -59,6 +58,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_pivot_longer(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()
   def df_pivot_wider(_df, _id_columns, _pivot_column, _values_column), do: err()
   def df_pull(_df, _name), do: err()
+  def df_put_column(_df, _series), do: err()
   def df_rename_columns(_df, _old_new_pairs), do: err()
   def df_sample_frac(_df, _frac, _with_replacement, _seed, _groups), do: err()
   def df_sample_n(_df, _n, _with_replacement, _seed, _groups), do: err()

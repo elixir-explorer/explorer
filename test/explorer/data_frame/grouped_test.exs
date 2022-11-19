@@ -483,21 +483,21 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert df2.groups == ["c"]
     end
 
-    test "adds a new column with series when there is a group" do
+    test "adds a new column with aggregation when there is a group" do
       df = DF.new(a: [1, 2, 3, 4], b: ["a", "b", "c", "d"], c: [1, 1, 2, 2])
 
       df1 = DF.group_by(df, :c)
-      df2 = DF.mutate(df1, d: [5, 6])
+      df2 = DF.mutate(df1, d: mean(a))
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                a: [1, 2, 3, 4],
                b: ["a", "b", "c", "d"],
                c: [1, 1, 2, 2],
-               d: [5, 6, 5, 6]
+               d: [1.5, 1.5, 3.5, 3.5]
              }
 
       assert df2.names == ["a", "b", "c", "d"]
-      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :integer}
+      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :float}
       assert df2.groups == ["c"]
     end
   end
@@ -1192,7 +1192,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df = DF.new(a: [1, 2, 3], b: [4, 5, 6])
       grouped = DF.group_by(df, "a")
 
-      df1 = DF.put(grouped, :c, "c")
+      df1 = DF.put(grouped, :c, Series.from_list(~w(a b c)))
 
       assert DF.names(df1) == ["a", "b", "c"]
       assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer, "c" => :string}
@@ -1201,7 +1201,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
                b: [4, 5, 6],
-               c: ["c", "c", "c"]
+               c: ["a", "b", "c"]
              }
     end
 
@@ -1209,7 +1209,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df = DF.new(a: [1, 2, 3], b: [4, 5, 6])
       grouped = DF.group_by(df, "a")
 
-      df1 = DF.put(grouped, :b, 10)
+      df1 = DF.put(grouped, :b, Series.from_list([10, 10, 10]))
 
       assert DF.names(df1) == ["a", "b"]
       assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer}

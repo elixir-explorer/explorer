@@ -2332,11 +2332,7 @@ defmodule Explorer.Series do
   defp backend_from_options!(opts) do
     backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
 
-    if backend == Explorer.Backend.LazySeries do
-      backend
-    else
-      :"#{backend}.Series"
-    end
+    :"#{backend}.Series"
   end
 
   defp dtype_error(function, dtype, valid_dtypes),

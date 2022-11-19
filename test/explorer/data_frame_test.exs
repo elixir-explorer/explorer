@@ -836,18 +836,37 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "raises with series of invalid size", %{df: df} do
-      assert_raise RuntimeError,
-                   ~r/Lengths don't match: Could not add column. The Series length 3 differs from the DataFrame height: 1094/,
-                   fn -> DF.mutate(df, test: [1, 2, 3]) end
-    end
-
     test "keeps the column order" do
       df = DF.new(e: [1, 2, 3], c: ["a", "b", "c"], a: [1.2, 2.3, 4.5])
 
-      df1 = DF.mutate(df, d: [1, 1, 1], b: [2, 2, 2])
+      df1 = DF.mutate(df, d: 1, b: 2)
 
       assert df1.names == ["e", "c", "a", "d", "b"]
+    end
+
+    test "raises when adding eager series" do
+      df = DF.new(a: [1, 2, 3])
+      series = Series.from_list([4, 5, 6])
+
+      assert_raise ArgumentError,
+                   "expecting a lazy series. Consider using `Explorer.DataFrame.put/3` to add eager series to your dataframe.",
+                   fn ->
+                     DF.mutate(df, b: ^series)
+                   end
+    end
+
+    test "raises when adding list" do
+      df = DF.new(a: [1, 2, 3])
+      series = [4, 5, 6]
+
+      error =
+        "expecting a lazy series or scalar value, but instead got a list. " <>
+          "consider using `Explorer.Series.from_list/2` to create a `Series`, " <>
+          "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
+
+      assert_raise ArgumentError, error, fn ->
+        DF.mutate(df, b: ^series)
+      end
     end
   end
 
@@ -1690,7 +1709,7 @@ defmodule Explorer.DataFrameTest do
 
     {s, df2} =
       Access.get_and_update(df1, "a", fn current_value ->
-        {current_value, [0, 0, 0]}
+        {current_value, Series.from_list([0, 0, 0])}
       end)
 
     assert Series.to_list(s) == [1, 2, 3]

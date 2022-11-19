@@ -285,6 +285,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
     apply_on_groups(df, out_df, fn group -> ungrouped_mutate_with(group, out_df, column_pairs) end)
   end
 
+  @impl true
+  def put(%DataFrame{} = df, %DataFrame{} = out_df, new_column_name, series) do
+    series = PolarsSeries.rename(series, new_column_name)
+
+    Shared.apply_dataframe(df, out_df, :df_put_column, [series.data])
+  end
+
   defp ungrouped_mutate_with(df, out_df, column_pairs) do
     exprs =
       for {name, lazy_series} <- column_pairs do
@@ -330,7 +337,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       |> then(fn group_df ->
         idx_series = series_from_list!(idx_column, indices)
 
-        Shared.apply_dataframe(group_df, :df_add_column, [idx_series.data])
+        Shared.apply_dataframe(group_df, :df_put_column, [idx_series.data])
       end)
     end)
     |> then(fn [head | _tail] = dfs -> concat_rows(dfs, head) end)
