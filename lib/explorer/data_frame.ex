@@ -1623,8 +1623,7 @@ defmodule Explorer.DataFrame do
         b float [1.0, 4.0, 9.0]
       >
 
-  Different from the macro `mutate/2`, it's possible to "reuse" a variable
-  for different computations:
+  It's possible to "reuse" a variable for different computations:
 
       iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
       iex> Explorer.DataFrame.mutate_with(df, fn ldf ->
