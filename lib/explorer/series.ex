@@ -486,34 +486,30 @@ defmodule Explorer.Series do
   `predicate` must be a boolean series. `on_true` and `on_false` must be
   a series of the same length as `pred`.
   """
-  @doc type: :transformation
+  @doc type: :element_wise
   @spec select(predicate :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) ::
           Series.t()
   def select(
         %Series{dtype: predicate_dtype} = predicate,
         %Series{dtype: on_true_dtype} = on_true,
         %Series{dtype: on_false_dtype} = on_false
-      )
-      when K.and(
-             K.and(numeric_dtype?(on_true_dtype) == true, numeric_dtype?(on_false_dtype) == true),
-             predicate_dtype == :boolean
-           ),
-      do: Shared.apply_impl(predicate, :select, [on_true, on_false])
+      ) do
+    if predicate_dtype != :boolean do
+      raise ArgumentError,
+            "Explorer.Series.select/3 expect the first argument to be a series of booleans, got: #{inspect(predicate_dtype)}"
+    end
 
-  def select(
-        %Series{dtype: predicate_dtype} = predicate,
-        %Series{dtype: on_true_dtype} = on_true,
-        %Series{dtype: on_false_dtype} = on_false
-      )
-      when K.and(on_true_dtype == on_false_dtype, predicate_dtype == :boolean),
-      do: Shared.apply_impl(predicate, :select, [on_true, on_false])
+    cond do
+      K.and(numeric_dtype?(on_true_dtype), numeric_dtype?(on_false_dtype)) ->
+        Shared.apply_impl(predicate, :select, [on_true, on_false])
 
-  def select(
-        _predicate,
-        %Series{dtype: on_true_dtype},
-        %Series{dtype: on_false_dtype}
-      ),
-      do: dtype_mismatch_error("select/3", on_true_dtype, on_false_dtype)
+      on_true_dtype == on_false_dtype ->
+        Shared.apply_impl(predicate, :select, [on_true, on_false])
+
+      true ->
+        dtype_mismatch_error("select/3", on_true_dtype, on_false_dtype)
+    end
+  end
 
   @doc """
   Returns a random sample of the series.
