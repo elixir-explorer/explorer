@@ -487,8 +487,29 @@ defmodule Explorer.Series do
   a series of the same length as `pred`.
   """
   @doc type: :transformation
-  @spec select(pred :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) :: any()
-  def select(pred, on_true, on_false), do: Shared.apply_impl(pred, :select, [on_true, on_false])
+  @spec select(predicate :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) :: any()
+  def select(
+        predicate,
+        %Series{dtype: on_true_dtype} = on_true,
+        %Series{dtype: on_false_dtype} = on_false
+      )
+      when K.and(numeric_dtype?(on_true_dtype), numeric_dtype?(on_false_dtype)),
+      do: Shared.apply_impl(predicate, :select, [on_true, on_false])
+
+  def select(
+        predicate,
+        %Series{dtype: on_true_dtype} = on_true,
+        %Series{dtype: on_false_dtype} = on_false
+      )
+      when on_true_dtype == on_false_dtype,
+      do: Shared.apply_impl(predicate, :select, [on_true, on_false])
+
+  def select(
+        _predicate,
+        %Series{dtype: on_true_dtype},
+        %Series{dtype: on_false_dtype}
+      ),
+      do: dtype_mismatch_error("select/3", on_true_dtype, on_false_dtype)
 
   @doc """
   Returns a random sample of the series.

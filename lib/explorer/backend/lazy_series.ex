@@ -352,9 +352,9 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def select(%Series{} = pred, %Series{} = on_true, %Series{} = on_false) do
+  def select(%Series{} = predicate, %Series{} = on_true, %Series{} = on_false) do
     args = [
-      series_or_lazy_series!(pred),
+      series_or_lazy_series!(predicate),
       series_or_lazy_series!(on_true),
       series_or_lazy_series!(on_false)
     ]
@@ -362,10 +362,15 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:select, args, aggregations?(args), window_functions?(args))
 
     dtype =
-      if on_true.dtype != on_false.dtype do
-        raise "on_true dtype #{on_true.dtype} must equal on_false dtype #{on_false.dtype}"
-      else
-        on_true.dtype
+      cond do
+        on_true.dtype in [:float, :integer] ->
+          resolve_numeric_dtype([on_true, on_false])
+
+        on_true.dtype != on_false.dtype ->
+          raise "on_true dtype #{on_true.dtype} must equal on_false dtype #{on_false.dtype}"
+
+        true ->
+          on_true.dtype
       end
 
     Backend.Series.new(data, dtype)

@@ -418,12 +418,12 @@ pub fn expr_coalesce(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_select(pred: ExExpr, on_true: ExExpr, on_false: ExExpr) -> ExExpr {
-    let predicate: Expr = pred.resource.0.clone();
+pub fn expr_select(predicate: ExExpr, on_true: ExExpr, on_false: ExExpr) -> ExExpr {
+    let predicate_expr: Expr = predicate.resource.0.clone();
     let on_true_expr: Expr = on_true.resource.0.clone();
     let on_false_expr: Expr = on_false.resource.0.clone();
 
-    let condition = when(predicate).then(on_true_expr).otherwise(on_false_expr);
+    let condition = when(predicate_expr).then(on_true_expr).otherwise(on_false_expr);
 
     ExExpr::new(condition)
 }

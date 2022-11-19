@@ -578,4 +578,38 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [1, 8, 10, 1, 3, 10, 9, 1, 10, 10, 4, 5]
     end
   end
+
+  describe "select/3" do
+    test "select elements of the same type" do
+      predicate = [true, false, false, true, false] |> Series.from_list()
+      on_true = 1..5 |> Enum.to_list() |> Series.from_list()
+      on_false = 5..1//-1 |> Enum.to_list() |> Series.from_list()
+
+      result = Series.select(predicate, on_true, on_false)
+
+      assert Series.size(result) == 5
+      assert Series.to_list(result) == [1, 4, 3, 4, 1]
+    end
+
+    test "select elements of compatible types" do
+      predicate = [true, false, true] |> Series.from_list()
+      on_true = [1.1, 1.2, 1.3] |> Series.from_list()
+      on_false = [5, 3, 2] |> Series.from_list()
+
+      result = Series.select(predicate, on_true, on_false)
+
+      assert Series.size(result) == 3
+      assert Series.to_list(result) == [1.1, 3, 1.3]
+    end
+
+    test "select errors mixing incompatible types" do
+      predicate = [true, false, true] |> Series.from_list()
+      on_true = [1.1, 1.2, 1.3] |> Series.from_list()
+      on_false = ["foo", "bar", "baz"] |> Series.from_list()
+
+      assert_raise ArgumentError, fn ->
+        Series.select(predicate, on_true, on_false)
+      end
+    end
+  end
 end
