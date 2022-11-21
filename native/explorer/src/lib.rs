@@ -15,7 +15,6 @@ use rustler::{Env, Term};
 static GLOBAL: MiMalloc = MiMalloc;
 
 mod dataframe;
-#[allow(clippy::extra_unused_lifetimes)]
 mod datatypes;
 mod encoding;
 mod error;
@@ -23,6 +22,7 @@ mod expressions;
 mod lazyframe;
 mod series;
 
+use dataframe::io::*;
 use dataframe::*;
 pub use datatypes::{
     ExDataFrame, ExDataFrameRef, ExExpr, ExExprRef, ExLazyFrame, ExLazyFrameRef, ExSeries,
