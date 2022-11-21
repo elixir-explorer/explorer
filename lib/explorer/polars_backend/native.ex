@@ -22,6 +22,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_drop_nulls(_df, _subset), do: err()
   def df_dtypes(_df), do: err()
   def df_dump_csv(_df, _has_headers, _delimiter), do: err()
+  def df_dump_ndjson(_df), do: err()
   def df_filter_with(_df, _operation, _groups), do: err()
 
   def df_from_csv(

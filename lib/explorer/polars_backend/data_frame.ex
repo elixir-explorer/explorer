@@ -20,7 +20,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_csv(
         filename,
         dtypes,
-        delimiter,
+        <<delimiter::utf8>>,
         null_character,
         skip_rows,
         header?,
@@ -111,9 +111,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def dump_csv(%DataFrame{} = df, header?, delimiter) do
-    <<delimiter::utf8>> = delimiter
-    Shared.apply_dataframe(df, :df_dump_csv, [header?, delimiter])
+  def dump_csv(%DataFrame{} = df, header?, <<delimiter::utf8>>) do
+    Native.df_dump_csv(df.data, header?, delimiter)
+  end
+
+  @impl true
+  def dump_ndjson(%DataFrame{} = df) do
+    Native.df_dump_ndjson(df.data)
   end
 
   @impl true
@@ -161,8 +165,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_ipc_stream(%DataFrame{data: df}, filename, compression) do
-    case Native.df_to_ipc_stream(df, filename, compression) do
+  def to_ipc_stream(%DataFrame{data: df}, filename, {compression, _level}) do
+    case Native.df_to_ipc_stream(df, filename, Atom.to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end

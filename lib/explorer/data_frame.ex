@@ -437,6 +437,18 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Similar to `from_parquet/2` but raises if there is a problem reading the Parquet file.
+  """
+  @doc type: :io
+  @spec from_parquet!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def from_parquet!(filename, opts \\ []) do
+    case from_parquet(filename, opts) do
+      {:ok, df} -> df
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
   Writes a dataframe to a parquet file.
 
   Groups are ignored if the dataframe is using any.
@@ -456,8 +468,7 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :io
-  @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) ::
-          {:ok, String.t()} | {:error, term()}
+  @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) :: :ok | {:error, term()}
   def to_parquet(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
     compression = parquet_compression(opts[:compression])
@@ -483,6 +494,18 @@ defmodule Explorer.DataFrame do
 
   defp parquet_compression(other) do
     raise ArgumentError, "unsupported :compression #{inspect(other)} for Parquet"
+  end
+
+  @doc """
+  Similar to `to_parquet/3`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec to_parquet!(df :: DataFrame.t(), filename :: String.t()) :: :ok
+  def to_parquet!(df, filename, opts \\ []) do
+    case to_parquet(df, filename, opts) do
+      :ok -> :ok
+      {:error, error} -> raise "#{error}"
+    end
   end
 
   @doc """
@@ -530,21 +553,39 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `compression` - Sets the algorithm used to compress the IPC file.
-      It accepts `:zstd` or `:lz4` compression. (default: `nil`)
+    * `compression` - The compression algorithm to use when writing files.
+      Supported options are:
+
+        * `nil` (uncompressed, default)
+        * `:zstd`
+        * `:lz4`.
+
   """
   @doc type: :io
-  @spec to_ipc(df :: DataFrame.t(), filename :: String.t()) :: :ok | {:error, term()}
+  @spec to_ipc(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
+          :ok | {:error, term()}
   def to_ipc(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
-    backend = backend_from_options!(opts)
-    compression = opts[:compression]
+    compression = ipc_compression(opts[:compression])
 
-    unless is_nil(compression) or compression in ~w(zstd lz4) do
-      raise ArgumentError, "unsupported :compression #{inspect(compression)} for IPC"
+    Shared.apply_impl(df, :to_ipc, [filename, compression])
+  end
+
+  defp ipc_compression(nil), do: {nil, nil}
+  defp ipc_compression(algorithm) when algorithm in ~w(zstd lz4)a, do: {algorithm, nil}
+  defp ipc_compression(other), do:
+      raise ArgumentError, "unsupported :compression #{inspect(other)} for IPC"
+
+  @doc """
+  Similar to `to_ipc/3`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec to_ipc!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
+  def to_ipc!(df, filename, opts \\ []) do
+    case to_ipc(df, filename, opts) do
+      :ok -> :ok
+      {:error, error} -> raise "#{error}"
     end
-
-    backend.to_ipc(df, filename, {compression, nil})
   end
 
   @doc """
@@ -576,27 +617,30 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Writes a dataframe to a IPC Stream file.
+  Writes a dataframe to an IPC Stream file.
 
-  Arrow IPC Streams provide a streaming protocol or “format" for sending an arbitrary length sequence of record batches.
+  Arrow IPC Streams provide a streaming protocol or “format" for sending an arbitrary
+  length sequence of record batches.
   The format must be processed from start to end, and does not support random access.
-
-  You can read more information about the difference between IPC and IPC Streaming files on the
-  [https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format](Apache Arrow Documentation(#ipc-streaming-format) page.
 
   ## Options
 
-    * `compression` - Sets the algorithm used to compress the IPC file.
-      It accepts `"ZSTD"` or `"LZ4"` compression. (default: `nil`)
+    * `compression` - The compression algorithm to use when writing files.
+      Supported options are:
+
+        * `nil` (uncompressed, default)
+        * `:zstd`
+        * `:lz4`.
+
   """
   @doc type: :io
   @spec to_ipc_stream(df :: DataFrame.t(), filename :: String.t()) ::
           :ok | {:error, term()}
   def to_ipc_stream(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
-    backend = backend_from_options!(opts)
+    compression = ipc_compression(opts[:compression])
 
-    backend.to_ipc_stream(df, filename, opts[:compression])
+    Shared.apply_impl(df, :to_ipc_stream, [filename, compression])
   end
 
   @doc """
@@ -660,6 +704,19 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Similar to `from_ndjson/2`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec from_ndjson!(filename :: String.t(), opts :: Keyword.t()) ::
+          DataFrame.t()
+  def from_ndjson!(filename, opts \\ []) do
+    case from_ndjson(filename, opts) do
+      {:ok, df} -> df
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
   Writes a dataframe to a ndjson file.
 
   Groups are ignored if the dataframe is using any.
@@ -683,15 +740,57 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = Explorer.Datasets.fossil_fuels()
-      iex> df |> Explorer.DataFrame.head(2) |> Explorer.DataFrame.dump_csv()
-      "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"
+      iex> df = Explorer.Datasets.fossil_fuels() |> Explorer.DataFrame.head(2) 
+      iex> Explorer.DataFrame.dump_csv(df)
+      {:ok, "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"}
   """
   @doc type: :io
-  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: {:ok, String.t()} | {:error, term()}
   def dump_csv(df, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",")
     Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
+  end
+
+  @doc """
+  Similar to `dump_csv/2`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec dump_csv!(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  def dump_csv!(df, opts \\ []) do
+    case dump_csv(df, opts) do
+      {:ok, csv} -> csv
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
+  Writes a dataframe to a binary representation of a NDJSON file.
+
+  Groups are ignored if the dataframe is using any.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(col_a: [1, 2], col_b: [5.1, 5.2])
+      iex> Explorer.DataFrame.dump_ndjson(df)
+      {:ok, ~s({"col_a":1,"col_b":5.1}\\n{"col_a":2,"col_b":5.2}\\n)}
+
+  """
+  @doc type: :io
+  @spec dump_ndjson(df :: DataFrame.t()) :: {:ok, binary()} | {:error, term()}
+  def dump_ndjson(df) do
+    Shared.apply_impl(df, :dump_ndjson, [])
+  end
+
+  @doc """
+  Similar to `dump_ndjson!/2`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec dump_ndjson!(df :: DataFrame.t()) :: binary()
+  def dump_ndjson!(df) do
+    case dump_ndjson(df) do
+      {:ok, ndjson} -> ndjson
+      {:error, error} -> raise "#{error}"
+    end
   end
 
   ## Conversion

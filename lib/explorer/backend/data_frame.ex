@@ -23,6 +23,8 @@ defmodule Explorer.Backend.DataFrame do
   @type lazy_frame :: Explorer.Backend.LazyFrame.t()
   @type lazy_series :: Explorer.Backend.LazySeries.t()
 
+  @type compression :: {algorithm :: atom() | nil, level :: integer() | nil}
+
   # IO
 
   @callback from_csv(
@@ -45,7 +47,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback to_parquet(
               df,
               filename :: String.t(),
-              compression :: {nil | atom(), nil | integer()}
+              compression()
             ) ::
               ok_result()
 
@@ -53,7 +55,7 @@ defmodule Explorer.Backend.DataFrame do
               filename :: String.t(),
               columns :: list(String.t()) | list(atom()) | list(integer()) | nil
             ) :: result(df)
-  @callback to_ipc(df, filename :: String.t(), compression :: {nil | atom(), nil | integer()}) ::
+  @callback to_ipc(df, filename :: String.t(), compression()) ::
               ok_result()
 
   @callback from_ipc_stream(
@@ -63,7 +65,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback to_ipc_stream(
               df,
               filename :: String.t(),
-              compression :: {nil | atom(), nil | integer()}
+              compression()
             ) ::
               ok_result()
 
@@ -74,6 +76,9 @@ defmodule Explorer.Backend.DataFrame do
             ) :: result(df)
   @callback to_ndjson(df, filename :: String.t()) :: ok_result()
 
+  @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: result(binary())
+  @callback dump_ndjson(df) :: result(binary())
+
   # Conversion
 
   @callback lazy() :: module()
@@ -82,7 +87,6 @@ defmodule Explorer.Backend.DataFrame do
   @callback from_tabular(Table.Reader.t()) :: df
   @callback from_series(map() | Keyword.t()) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
-  @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: String.t()
 
   # Introspection
 

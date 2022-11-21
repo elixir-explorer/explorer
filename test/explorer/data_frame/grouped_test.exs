@@ -956,11 +956,11 @@ defmodule Explorer.DataFrame.GroupedTest do
 
   describe "dump_csv/2" do
     test "does not consider groups when dumping DF", %{df: df} do
-      dumped_csv = DF.dump_csv(df)
+      dumped_csv = DF.dump_csv!(df)
 
       grouped_df = DF.group_by(df, "year")
 
-      assert DF.dump_csv(grouped_df) == dumped_csv
+      assert DF.dump_csv!(grouped_df) == dumped_csv
     end
   end
 

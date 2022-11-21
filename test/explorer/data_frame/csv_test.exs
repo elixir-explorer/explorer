@@ -51,7 +51,7 @@ defmodule Explorer.DataFrame.CSVTest do
     assert frame[0][0] == parsed_value
     assert frame[0].dtype == type
     # but we also re-encode to make a full tested round-trip
-    assert DF.dump_csv(frame) == data
+    assert DF.dump_csv!(frame) == data
   end
 
   def assert_csv(type, csv_value, parsed_value) do

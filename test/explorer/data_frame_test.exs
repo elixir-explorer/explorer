@@ -2,11 +2,10 @@ defmodule Explorer.DataFrameTest do
   use ExUnit.Case, async: true
 
   # Doctests assume the module has been required
-  require Explorer.DataFrame
+  require Explorer.DataFrame, as: DF
   doctest Explorer.DataFrame
 
   import ExUnit.CaptureIO
-  alias Explorer.DataFrame, as: DF
   alias Explorer.Datasets
   alias Explorer.Series
 
@@ -107,8 +106,6 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "filter/2" do
-    require DF
-
     test "filter columns with equal comparison" do
       df = DF.new(a: [1, 2, 3, 2], b: [5.3, 2.4, 1.0, 2.0])
 
@@ -379,8 +376,6 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "mutate/2" do
-    require DF
-
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
