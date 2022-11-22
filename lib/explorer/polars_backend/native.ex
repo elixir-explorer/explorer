@@ -25,6 +25,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_dump_ndjson(_df), do: err()
   def df_dump_parquet(_df, _compression, _compression_level), do: err()
   def df_dump_ipc(_df, _compression), do: err()
+  def df_dump_ipc_stream(_df, _compression), do: err()
   def df_filter_with(_df, _operation, _groups), do: err()
 
   def df_from_csv(

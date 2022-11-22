@@ -71,6 +71,7 @@ defmodule Explorer.Backend.DataFrame do
               compression()
             ) ::
               ok_result()
+  @callback dump_ipc_stream(df, compression()) :: result(binary())
 
   @callback from_ndjson(
               filename :: String.t(),

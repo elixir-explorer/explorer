@@ -165,6 +165,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def dump_ipc_stream(%DataFrame{data: df}, {compression, _level}) do
+    Native.df_dump_ipc_stream(df, Atom.to_string(compression))
+  end
+
+  @impl true
   def from_ipc_stream(filename, columns) do
     {columns, projection} = column_list_check(columns)
 

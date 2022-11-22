@@ -316,6 +316,32 @@ pub fn df_to_ipc_stream(
     Ok(())
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_dump_ipc_stream<'a>(
+    env: Env<'a>,
+    data: ExDataFrame,
+    compression: Option<&str>
+) -> Result<Binary<'a>, ExplorerError> {
+    let df = &data.resource.0;
+    let mut buf = vec![];
+
+    // Select the compression algorithm.
+    let compression = match compression {
+        Some("lz4") => Some(IpcCompression::LZ4),
+        Some("zstd") => Some(IpcCompression::ZSTD),
+        _ => None,
+    };
+
+    IpcStreamWriter::new(&mut buf)
+        .with_compression(compression)
+        .finish(&mut df.clone())?;
+
+    let mut values_binary = NewBinary::new(env, buf.len());
+    values_binary.copy_from_slice(&buf);
+
+    Ok(values_binary.into())
+}
+
 // ============ NDJSON ============ //
 
 #[cfg(not(target_arch = "arm"))]
