@@ -5,7 +5,7 @@ defmodule Explorer.DataFrame.ParquetTest do
   alias Explorer.DataFrame, as: DF
   import Explorer.IOHelpers
 
-  test "read" do
+  test "from_parquet/2" do
     parquet = tmp_parquet_file!(Explorer.Datasets.iris())
 
     {:ok, frame} = DF.from_parquet(parquet)
@@ -66,6 +66,59 @@ defmodule Explorer.DataFrame.ParquetTest do
 
     test "datetime" do
       assert_parquet(:datetime, "1664624050123456", ~N[2022-10-01 11:34:10.123456])
+    end
+  end
+
+  describe "to_parquet/2" do
+    setup do
+      [df: Explorer.Datasets.iris()]
+    end
+
+    @tag :tmp_dir
+    test "can write parquet to file", %{df: df, tmp_dir: tmp_dir} do
+      parquet_path = Path.join(tmp_dir, "test.parquet")
+
+      assert :ok = DF.to_parquet(df, parquet_path)
+      assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
+
+      assert DF.names(df) == DF.names(parquet_df)
+      assert DF.dtypes(df) == DF.dtypes(parquet_df)
+      assert DF.to_columns(df) == DF.to_columns(parquet_df)
+    end
+
+    @tag :tmp_dir
+    test "can write parquet to file with compression", %{
+      df: df,
+      tmp_dir: tmp_dir
+    } do
+      for compression <- [:snappy, :gzip, :brotli, :zstd, :lz4raw] do
+        parquet_path = Path.join(tmp_dir, "test.parquet")
+
+        assert :ok = DF.to_parquet(df, parquet_path, compression: compression)
+        assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
+
+        assert DF.names(df) == DF.names(parquet_df)
+        assert DF.dtypes(df) == DF.dtypes(parquet_df)
+        assert DF.to_columns(df) == DF.to_columns(parquet_df)
+      end
+    end
+
+    @tag :tmp_dir
+    test "can write parquet to file with compression and level", %{
+      df: df,
+      tmp_dir: tmp_dir
+    } do
+      for compression <- [:gzip, :brotli, :zstd], level <- [1, 2, 3] do
+        parquet_path = Path.join(tmp_dir, "test.parquet")
+
+        assert :ok = DF.to_parquet(df, parquet_path, compression: {compression, level})
+
+        assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
+
+        assert DF.names(df) == DF.names(parquet_df)
+        assert DF.dtypes(df) == DF.dtypes(parquet_df)
+        assert DF.to_columns(df) == DF.to_columns(parquet_df)
+      end
     end
   end
 end

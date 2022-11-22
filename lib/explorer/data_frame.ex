@@ -573,8 +573,9 @@ defmodule Explorer.DataFrame do
 
   defp ipc_compression(nil), do: {nil, nil}
   defp ipc_compression(algorithm) when algorithm in ~w(zstd lz4)a, do: {algorithm, nil}
-  defp ipc_compression(other), do:
-      raise ArgumentError, "unsupported :compression #{inspect(other)} for IPC"
+
+  defp ipc_compression(other),
+    do: raise(ArgumentError, "unsupported :compression #{inspect(other)} for IPC")
 
   @doc """
   Similar to `to_ipc/3`, but raises in case of error.

@@ -5,7 +5,7 @@ defmodule Explorer.DataFrame.IPCTest do
   alias Explorer.DataFrame, as: DF
   import Explorer.IOHelpers
 
-  test "read" do
+  test "from_ipc/2" do
     ipc = tmp_ipc_file!(Explorer.Datasets.iris())
 
     assert {:ok, df} = DF.from_ipc(ipc)

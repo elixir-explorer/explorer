@@ -4,7 +4,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
   alias Explorer.DataFrame, as: DF
   import Explorer.IOHelpers
 
-  test "from" do
+  test "from_ndjson/2" do
     filename = tmp_ndjson_file!(Explorer.Datasets.iris())
 
     df = DF.from_ndjson!(filename)
@@ -28,7 +28,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
     assert species[149] == "Iris-virginica"
   end
 
-  test "dump" do
+  test "dump_ndjson/1" do
     df = Explorer.Datasets.iris() |> DF.slice(0, 10)
 
     assert {:ok, ndjson} = DF.dump_ndjson(df)
@@ -85,5 +85,94 @@ defmodule Explorer.DataFrame.NDJSONTest do
     # test "datetime" do
     #   assert_ndjson(:datetime, "1664624050123456", ~N[2022-10-01 11:34:10.123456])
     # end
+  end
+
+  describe "from_ndjson/2 options" do
+    @tag :tmp_dir
+    test "reads from file with default options", %{tmp_dir: tmp_dir} do
+      ndjson_path = to_ndjson(tmp_dir)
+
+      assert {:ok, df} = DF.from_ndjson(ndjson_path)
+
+      assert DF.names(df) == ~w[a b c d]
+      assert DF.dtypes(df) == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
+
+      sliced = DF.slice(df, 0, 5)
+
+      assert DF.to_columns(sliced, atom_keys: true) == %{
+               a: [1, -10, 2, 1, 7],
+               b: [2.0, -3.5, 0.6, 2.0, -3.5],
+               c: [false, true, false, false, true],
+               d: ["4", "4", "text", "4", "4"]
+             }
+
+      assert {:error, _message} = DF.from_ndjson(Path.join(tmp_dir, "idontexist.ndjson"))
+    end
+
+    @tag :tmp_dir
+    test "reads from file with options", %{tmp_dir: tmp_dir} do
+      ndjson_path = to_ndjson(tmp_dir)
+
+      assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, batch_size: 3)
+
+      assert DF.names(df) == ~w[a b c d]
+      assert DF.dtypes(df) == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
+    end
+
+    defp to_ndjson(tmp_dir) do
+      ndjson_path = Path.join(tmp_dir, "test.ndjson")
+
+      contents = """
+      {"a":1, "b":2.0, "c":false, "d":"4"}
+      {"a":-10, "b":-3.5, "c":true, "d":"4"}
+      {"a":2, "b":0.6, "c":false, "d":"text"}
+      {"a":1, "b":2.0, "c":false, "d":"4"}
+      {"a":7, "b":-3.5, "c":true, "d":"4"}
+      {"a":1, "b":0.6, "c":false, "d":"text"}
+      {"a":1, "b":2.0, "c":false, "d":"4"}
+      {"a":5, "b":-3.5, "c":true, "d":"4"}
+      {"a":1, "b":0.6, "c":false, "d":"text"}
+      {"a":1, "b":2.0, "c":false, "d":"4"}
+      {"a":1, "b":-3.5, "c":true, "d":"4"}
+      {"a":100000000000000, "b":0.6, "c":false, "d":"text"}
+      """
+
+      :ok = File.write!(ndjson_path, contents)
+      ndjson_path
+    end
+  end
+
+  describe "to_ndjson/2" do
+    @tag :tmp_dir
+    test "writes to a file", %{tmp_dir: tmp_dir} do
+      df =
+        DF.new(
+          a: [1, -10, 2, 1, 7, 1, 1, 5, 1, 1, 1, 100_000_000_000_000],
+          b: [2.0, -3.5, 0.6, 2.0, -3.5, 0.6, 2.0, -3.5, 0.6, 2.0, -3.5, 0.6],
+          c: [false, true, false, false, true, false, false, true, false, false, true, false],
+          d: ["4", "4", "text", "4", "4", "text", "4", "4", "text", "4", "4", "text"]
+        )
+
+      ndjson_path = Path.join(tmp_dir, "test-write.ndjson")
+
+      assert :ok = DF.to_ndjson(df, ndjson_path)
+
+      contents = File.read!(ndjson_path)
+
+      assert contents == """
+             {"a":1,"b":2.0,"c":false,"d":"4"}
+             {"a":-10,"b":-3.5,"c":true,"d":"4"}
+             {"a":2,"b":0.6,"c":false,"d":"text"}
+             {"a":1,"b":2.0,"c":false,"d":"4"}
+             {"a":7,"b":-3.5,"c":true,"d":"4"}
+             {"a":1,"b":0.6,"c":false,"d":"text"}
+             {"a":1,"b":2.0,"c":false,"d":"4"}
+             {"a":5,"b":-3.5,"c":true,"d":"4"}
+             {"a":1,"b":0.6,"c":false,"d":"text"}
+             {"a":1,"b":2.0,"c":false,"d":"4"}
+             {"a":1,"b":-3.5,"c":true,"d":"4"}
+             {"a":100000000000000,"b":0.6,"c":false,"d":"text"}
+             """
+    end
   end
 end

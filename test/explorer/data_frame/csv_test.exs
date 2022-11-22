@@ -1,12 +1,11 @@
 defmodule Explorer.DataFrame.CSVTest do
-  # Integration tests, based on:
-  # https://github.com/jorgecarleitao/arrow2/tree/main/src/io/csv/read
-
   use ExUnit.Case, async: true
   alias Explorer.DataFrame, as: DF
   import Explorer.IOHelpers
 
-  test "read" do
+  # Integration tests, based on:
+  # https://github.com/jorgecarleitao/arrow2/blob/0ba4f8e21547ed08b446828bd921787e8c00e3d3/tests/it/io/csv/read.rs
+  test "from_csv/2" do
     data = """
     city,lat,lng
     "Elgin, Scotland, the UK",57.653484,-3.335724
@@ -90,6 +89,252 @@ defmodule Explorer.DataFrame.CSVTest do
 
     test "datetime" do
       assert_csv(:datetime, "2022-10-01T11:34:10.123456", ~N[2022-10-01 11:34:10.123456])
+    end
+  end
+
+  describe "from_csv/2 options" do
+    defp tmp_csv(tmp_dir, contents) do
+      path = Path.join(tmp_dir, "tmp.csv")
+      :ok = File.write!(path, contents)
+      path
+    end
+
+    @tag :tmp_dir
+    test "delimiter", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a*b
+        c*d
+        e*f
+        """)
+
+      df = DF.from_csv!(csv, delimiter: "*")
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: ["c", "e"],
+               b: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "dtypes", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        1,2
+        3,4
+        """)
+
+      df = DF.from_csv!(csv, dtypes: [{"a", :string}])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: ["1", "3"],
+               b: [2, 4]
+             }
+
+      df = DF.from_csv!(csv, dtypes: %{a: :string})
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: ["1", "3"],
+               b: [2, 4]
+             }
+    end
+
+    @tag :tmp_dir
+    test "dtypes - parse datetime", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b,c
+        1,2,2020-10-15 00:00:01,
+        3,4,2020-10-15 00:00:18
+        """)
+
+      df = DF.from_csv!(csv, parse_dates: true)
+      assert %{"c" => :datetime} = Explorer.DataFrame.dtypes(df)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 3],
+               b: [2, 4],
+               c: [~N[2020-10-15 00:00:01.000000], ~N[2020-10-15 00:00:18.000000]]
+             }
+    end
+
+    @tag :tmp_dir
+    test "dtypes - do not parse datetime(default)", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b,c
+        1,2,"2020-10-15 00:00:01",
+        3,4,2020-10-15 00:00:18
+        """)
+
+      df = DF.from_csv!(csv, parse_dates: false)
+      assert %{"c" => :string} = Explorer.DataFrame.dtypes(df)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 3],
+               b: [2, 4],
+               c: ["2020-10-15 00:00:01", "2020-10-15 00:00:18"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "header", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, header: false)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               column_1: ["a", "c", "e"],
+               column_2: ["b", "d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "max_rows", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, max_rows: 1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: ["c"],
+               b: ["d"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "null_character", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        n/a,NA
+        nil,
+        c,d
+        """)
+
+      df = DF.from_csv!(csv, null_character: "n/a")
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [nil, "nil", "c"],
+               b: ["NA", nil, "d"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "skip_rows", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, skip_rows: 1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               c: ["e"],
+               d: ["f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "columns - str", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, columns: ["b"])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               b: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "columns - atom", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, columns: [:b])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               b: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "columns - integer", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, columns: [1])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               b: ["d", "f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "automatically detects gz and uncompresses", config do
+      csv = Path.join(config.tmp_dir, "tmp.csv.gz")
+
+      :ok =
+        File.write!(
+          csv,
+          :zlib.gzip("""
+          a,b
+          1,2
+          3,4
+          """)
+        )
+
+      df = DF.from_csv!(csv)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 3],
+               b: [2, 4]
+             }
+    end
+
+    @tag :tmp_dir
+    test "parse floats with nans and infinity", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a
+        0.1
+        NaN
+        4.2
+        Inf
+        -Inf
+        8.1
+        """)
+
+      df = DF.from_csv!(csv, dtypes: %{a: :float})
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [0.1, :nan, 4.2, :infinity, :neg_infinity, 8.1]
+             }
     end
   end
 end
