@@ -147,7 +147,19 @@ pub fn df_to_parquet(
     let df = &data.resource.0;
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
-    let compression = match (compression, compression_level) {
+    let compression = parquet_compression(compression, compression_level)?;
+
+    ParquetWriter::new(&mut buf_writer)
+        .with_compression(compression)
+        .finish(&mut df.clone())?;
+    Ok(())
+}
+
+fn parquet_compression(
+    compression: Option<&str>,
+    compression_level: Option<i32>,
+) -> Result<ParquetCompression, ExplorerError> {
+    let compression_type = match (compression, compression_level) {
         (Some("snappy"), _) => ParquetCompression::Snappy,
         (Some("gzip"), level) => {
             let level = match level {
@@ -173,10 +185,30 @@ pub fn df_to_parquet(
         (Some("lz4raw"), _) => ParquetCompression::Lz4Raw,
         _ => ParquetCompression::Uncompressed,
     };
-    ParquetWriter::new(&mut buf_writer)
+
+    Ok(compression_type)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_dump_parquet<'a>(
+    env: Env<'a>,
+    data: ExDataFrame,
+    compression: Option<&str>,
+    compression_level: Option<i32>,
+) -> Result<Binary<'a>, ExplorerError> {
+    let df = &data.resource.0;
+    let mut buf = vec![];
+
+    let compression = parquet_compression(compression, compression_level)?;
+
+    ParquetWriter::new(&mut buf)
         .with_compression(compression)
         .finish(&mut df.clone())?;
-    Ok(())
+
+    let mut values_binary = NewBinary::new(env, buf.len());
+    values_binary.copy_from_slice(&buf);
+
+    Ok(values_binary.into())
 }
 
 // ============ IPC ============ //

@@ -137,6 +137,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def dump_parquet(%DataFrame{data: df}, {compression, compression_level}) do
+    Native.df_dump_parquet(df, Atom.to_string(compression), compression_level)
+  end
+
+  @impl true
   def from_ipc(filename, columns) do
     {columns, projection} = column_list_check(columns)
 

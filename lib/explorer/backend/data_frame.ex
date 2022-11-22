@@ -42,6 +42,7 @@ defmodule Explorer.Backend.DataFrame do
             ) :: result(df)
   @callback to_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
               ok_result()
+  @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: result(binary())
 
   @callback from_parquet(filename :: String.t()) :: result(df)
   @callback to_parquet(
@@ -50,6 +51,7 @@ defmodule Explorer.Backend.DataFrame do
               compression()
             ) ::
               ok_result()
+  @callback dump_parquet(df, compression()) :: result(binary())
 
   @callback from_ipc(
               filename :: String.t(),
@@ -76,7 +78,6 @@ defmodule Explorer.Backend.DataFrame do
             ) :: result(df)
   @callback to_ndjson(df, filename :: String.t()) :: ok_result()
 
-  @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: result(binary())
   @callback dump_ndjson(df) :: result(binary())
 
   # Conversion

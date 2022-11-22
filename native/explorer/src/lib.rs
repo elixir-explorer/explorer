@@ -73,6 +73,7 @@ rustler::init!(
         df_dtypes,
         df_dump_csv,
         df_dump_ndjson,
+        df_dump_parquet,
         df_filter_with,
         df_from_csv,
         df_from_ipc,

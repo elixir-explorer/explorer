@@ -509,6 +509,47 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Writes a dataframe to a binary representation of a Parquet file.
+
+  Groups are ignored if the dataframe is using any.
+
+  ## Options
+
+    * `compression` - The compression algorithm to use when writing files.
+      Where a compression level is available, this can be passed as a tuple,
+      such as `{:zstd, 3}`. Supported options are:
+
+        * `nil` (uncompressed, default)
+        * `:snappy`
+        * `:gzip` (with levels 1-9)
+        * `:brotli` (with levels 1-11)
+        * `:zstd` (with levels -7-22)
+        * `:lz4raw`.
+
+  """
+  @doc type: :io
+  @spec dump_parquet(df :: DataFrame.t(), opts :: Keyword.t()) ::
+          {:ok, binary()} | {:error, term()}
+  def dump_parquet(df, opts \\ []) do
+    opts = Keyword.validate!(opts, compression: nil)
+    compression = parquet_compression(opts[:compression])
+
+    Shared.apply_impl(df, :dump_parquet, [compression])
+  end
+
+  @doc """
+  Similar to `dump_parquet/2`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec dump_parquet!(df :: DataFrame.t(), opts :: Keyword.t()) :: binary()
+  def dump_parquet!(df, opts \\ []) do
+    case dump_parquet(df, opts) do
+      {:ok, parquet} -> parquet
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
   Reads an IPC file into a dataframe.
 
   ## Options
@@ -675,6 +716,39 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Writes a dataframe to a binary representation of a delimited file.
+
+  ## Options
+
+    * `header` - Should the column names be written as the first line of the file? (default: `true`)
+    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels() |> Explorer.DataFrame.head(2) 
+      iex> Explorer.DataFrame.dump_csv(df)
+      {:ok, "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"}
+  """
+  @doc type: :io
+  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: {:ok, String.t()} | {:error, term()}
+  def dump_csv(df, opts \\ []) do
+    opts = Keyword.validate!(opts, header: true, delimiter: ",")
+    Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
+  end
+
+  @doc """
+  Similar to `dump_csv/2`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec dump_csv!(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  def dump_csv!(df, opts \\ []) do
+    case dump_csv(df, opts) do
+      {:ok, csv} -> csv
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
   Read a file of JSON objects or lists separated by new lines
 
   ## Options
@@ -729,39 +803,6 @@ defmodule Explorer.DataFrame do
   @spec to_ndjson(df :: DataFrame.t(), filename :: String.t()) :: :ok | {:error, term()}
   def to_ndjson(df, filename) do
     Shared.apply_impl(df, :to_ndjson, [filename])
-  end
-
-  @doc """
-  Writes a dataframe to a binary representation of a delimited file.
-
-  ## Options
-
-    * `header` - Should the column names be written as the first line of the file? (default: `true`)
-    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
-
-  ## Examples
-
-      iex> df = Explorer.Datasets.fossil_fuels() |> Explorer.DataFrame.head(2) 
-      iex> Explorer.DataFrame.dump_csv(df)
-      {:ok, "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"}
-  """
-  @doc type: :io
-  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: {:ok, String.t()} | {:error, term()}
-  def dump_csv(df, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
-  end
-
-  @doc """
-  Similar to `dump_csv/2`, but raises in case of error.
-  """
-  @doc type: :io
-  @spec dump_csv!(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
-  def dump_csv!(df, opts \\ []) do
-    case dump_csv(df, opts) do
-      {:ok, csv} -> csv
-      {:error, error} -> raise "#{error}"
-    end
   end
 
   @doc """

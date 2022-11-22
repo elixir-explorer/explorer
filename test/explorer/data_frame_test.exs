@@ -329,8 +329,6 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  # Since the `mutate/2` macro uses `filter_with/2` underneath, most of mutate tests are
-  # implemented using `filter/2`.
   describe "mutate_with/2" do
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])

@@ -69,6 +69,14 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
   end
 
+  test "dump_parquet/1" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, parquet} = DF.dump_parquet(df)
+
+    assert is_binary(parquet)
+  end
+
   describe "to_parquet/2" do
     setup do
       [df: Explorer.Datasets.iris()]
