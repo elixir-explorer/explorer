@@ -69,10 +69,18 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
   end
 
-  test "dump_parquet/1" do
+  test "dump_parquet/1 without compression" do
     df = Explorer.Datasets.iris() |> DF.slice(0, 10)
 
     assert {:ok, parquet} = DF.dump_parquet(df)
+
+    assert is_binary(parquet)
+  end
+
+  test "dump_parquet/1 with compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, parquet} = DF.dump_parquet(df, compression: {:gzip, 5})
 
     assert is_binary(parquet)
   end

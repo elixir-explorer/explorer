@@ -59,6 +59,7 @@ defmodule Explorer.Backend.DataFrame do
             ) :: result(df)
   @callback to_ipc(df, filename :: String.t(), compression()) ::
               ok_result()
+  @callback dump_ipc(df, compression()) :: result(binary())
 
   @callback from_ipc_stream(
               filename :: String.t(),

@@ -29,6 +29,22 @@ defmodule Explorer.DataFrame.IPCTest do
     assert species[149] == "Iris-virginica"
   end
 
+  test "dump_ipc/2 without compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, ipc} = DF.dump_ipc(df)
+
+    assert is_binary(ipc)
+  end
+
+  test "dump_ipc/2 with compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, ipc} = DF.dump_ipc(df, compression: :lz4)
+
+    assert is_binary(ipc)
+  end
+
   def assert_ipc(type, value, parsed_value) do
     assert_from_with_correct_type(type, value, parsed_value, fn df ->
       assert {:ok, df} = DF.from_ipc(tmp_ipc_file!(df))

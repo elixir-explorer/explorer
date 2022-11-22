@@ -631,6 +631,43 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Writes a dataframe to a binary representation of an IPC file.
+
+  Groups are ignored if the dataframe is using any.
+
+  ## Options
+
+    * `compression` - The compression algorithm to use when writing files.
+      Supported options are:
+
+        * `nil` (uncompressed, default)
+        * `:zstd`
+        * `:lz4`.
+
+  """
+  @doc type: :io
+  @spec dump_ipc(df :: DataFrame.t(), opts :: Keyword.t()) ::
+          {:ok, binary()} | {:error, term()}
+  def dump_ipc(df, opts \\ []) do
+    opts = Keyword.validate!(opts, compression: nil)
+    compression = ipc_compression(opts[:compression])
+
+    Shared.apply_impl(df, :dump_ipc, [compression])
+  end
+
+  @doc """
+  Similar to `dump_ipc/2`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec dump_ipc!(df :: DataFrame.t(), opts :: Keyword.t()) :: binary()
+  def dump_ipc!(df, opts \\ []) do
+    case dump_ipc(df, opts) do
+      {:ok, ipc} -> ipc
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
   Reads an IPC Streaming file into a dataframe.
 
   ## Options

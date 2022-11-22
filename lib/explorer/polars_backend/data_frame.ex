@@ -97,6 +97,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def dump_csv(%DataFrame{} = df, header?, <<delimiter::utf8>>) do
+    Native.df_dump_csv(df.data, header?, delimiter)
+  end
+
+  @impl true
   def from_ndjson(filename, infer_schema_length, batch_size) do
     with {:ok, df} <- Native.df_from_ndjson(filename, infer_schema_length, batch_size) do
       {:ok, Shared.create_dataframe(df)}
@@ -108,11 +113,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
     with {:ok, _} <- Native.df_to_ndjson(df, filename) do
       :ok
     end
-  end
-
-  @impl true
-  def dump_csv(%DataFrame{} = df, header?, <<delimiter::utf8>>) do
-    Native.df_dump_csv(df.data, header?, delimiter)
   end
 
   @impl true
@@ -157,6 +157,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
+  end
+
+  @impl true
+  def dump_ipc(%DataFrame{data: df}, {compression, _level}) do
+    Native.df_dump_ipc(df, Atom.to_string(compression))
   end
 
   @impl true
