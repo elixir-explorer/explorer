@@ -255,7 +255,7 @@ pub fn df_to_ipc(
 pub fn df_dump_ipc<'a>(
     env: Env<'a>,
     data: ExDataFrame,
-    compression: Option<&str>
+    compression: Option<&str>,
 ) -> Result<Binary<'a>, ExplorerError> {
     let df = &data.resource.0;
     let mut buf = vec![];
@@ -320,7 +320,7 @@ pub fn df_to_ipc_stream(
 pub fn df_dump_ipc_stream<'a>(
     env: Env<'a>,
     data: ExDataFrame,
-    compression: Option<&str>
+    compression: Option<&str>,
 ) -> Result<Binary<'a>, ExplorerError> {
     let df = &data.resource.0;
     let mut buf = vec![];

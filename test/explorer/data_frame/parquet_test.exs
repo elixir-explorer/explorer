@@ -27,6 +27,13 @@ defmodule Explorer.DataFrame.ParquetTest do
 
     assert species[0] == "Iris-setosa"
     assert species[149] == "Iris-virginica"
+
+    file_path =
+      tmp_filename(fn filename ->
+        :ok = DF.to_parquet!(frame, filename)
+      end)
+
+    assert File.read!(file_path) == File.read!(parquet)
   end
 
   def assert_parquet(type, value, parsed_value) do

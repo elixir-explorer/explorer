@@ -11,7 +11,7 @@ defmodule Explorer.DataFrame.CSVTest do
     "Elgin, Scotland, the UK",57.653484,-3.335724
     "Stoke-on-Trent, Staffordshire, the UK",53.002666,-2.179404
     "Solihull, Birmingham, UK",52.412811,-1.778197
-    "Cardiff, Cardiff county, UK",51.481583,-3.179090
+    "Cardiff, Cardiff county, UK",51.481583,-3.17909
     "Eastbourne, East Sussex, UK",50.768036,0.290472
     "Oxford, Oxfordshire, UK",51.752022,-1.257677
     "London, UK",51.509865,-0.118092
@@ -20,7 +20,7 @@ defmodule Explorer.DataFrame.CSVTest do
     "Northampton, Northamptonshire, UK",52.240479,-0.902656
     "Rugby, Warwickshire, UK",52.370876,-1.265032
     "Sutton Coldfield, West Midlands, UK",52.570385,-1.824042
-    "Harlow, Essex, UK",51.772938,0.102310
+    "Harlow, Essex, UK",51.772938,0.10231
     "Aberdeen, Aberdeen City, UK",57.149651,-2.099075
     """
 
@@ -41,6 +41,13 @@ defmodule Explorer.DataFrame.CSVTest do
 
     assert city[0] == "Elgin, Scotland, the UK"
     assert city[13] == "Aberdeen, Aberdeen City, UK"
+
+    file_path =
+      tmp_filename(fn filename ->
+        :ok = DF.to_csv!(frame, filename)
+      end)
+
+    assert File.read!(file_path) == data
   end
 
   def assert_csv(type, csv_value, parsed_value, from_csv_options) do
