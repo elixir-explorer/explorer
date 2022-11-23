@@ -515,7 +515,7 @@ pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerE
 
 #[cfg(target_arch = "arm")]
 #[rustler::nif]
-pub fn df_dump_ndjson(_data: ExDataFrame) -> Result<Binary, ExplorerError> {
+pub fn df_dump_ndjson(_data: ExDataFrame) -> Result<Binary<'static>, ExplorerError> {
     Err(ExplorerError::Other(format!(
         "NDJSON dumping is not enabled for this machine"
     )))
