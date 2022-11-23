@@ -426,6 +426,71 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Reads a representation of a CSV file into a dataframe.
+
+  If the CSV is compressed, it is automatically decompressed.
+
+  ## Options
+
+    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
+    * `dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
+      imputed from the first 1000 rows. (default: `[]`)
+    * `header` - Does the file have a header of column names as the first row or not? (default: `true`)
+    * `max_rows` - Maximum number of lines to read. (default: `nil`)
+    * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
+    * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
+    * `columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
+    * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
+    * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
+  """
+  @doc type: :io
+  @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
+  def load_csv(contents, opts \\ []) do
+    opts =
+      Keyword.validate!(opts,
+        delimiter: ",",
+        dtypes: [],
+        encoding: "utf8",
+        header: true,
+        max_rows: nil,
+        null_character: "NA",
+        skip_rows: 0,
+        columns: nil,
+        infer_schema_length: @default_infer_schema_length,
+        parse_dates: false
+      )
+
+    backend = backend_from_options!(opts)
+
+    backend.load_csv(
+      contents,
+      check_dtypes!(opts[:dtypes]),
+      opts[:delimiter],
+      opts[:null_character],
+      opts[:skip_rows],
+      opts[:header],
+      opts[:encoding],
+      opts[:max_rows],
+      opts[:columns],
+      opts[:infer_schema_length],
+      opts[:parse_dates]
+    )
+  end
+
+  @doc """
+  Similar to `load_csv/2` but raises if there is a problem reading the CSV.
+  """
+  @doc type: :io
+  @spec load_csv!(contents :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def load_csv!(contents, opts \\ []) do
+    case load_csv(contents, opts) do
+      {:ok, df} -> df
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
   Reads a parquet file into a dataframe.
   """
   @doc type: :io
@@ -550,6 +615,29 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Reads a binary representation of a parquet file into a dataframe.
+  """
+  @doc type: :io
+  @spec load_parquet(contents :: binary(), opts :: Keyword.t()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
+  def load_parquet(contents, opts \\ []) do
+    backend = backend_from_options!(opts)
+    backend.load_parquet(contents)
+  end
+
+  @doc """
+  Similar to `load_parquet/2` but raises if there is a problem reading the Parquet file.
+  """
+  @doc type: :io
+  @spec load_parquet!(contents :: binary(), opts :: Keyword.t()) :: DataFrame.t()
+  def load_parquet!(contents, opts \\ []) do
+    case load_parquet(contents, opts) do
+      {:ok, df} -> df
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
   Reads an IPC file into a dataframe.
 
   ## Options
@@ -557,7 +645,8 @@ defmodule Explorer.DataFrame do
     * `columns` - List with the name or index of columns to be selected. Defaults to all columns.
   """
   @doc type: :io
-  @spec from_ipc(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
+  @spec from_ipc(filename :: String.t(), opts :: Keyword.t()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc(filename, opts \\ []) do
     opts =
       Keyword.validate!(opts,
@@ -668,6 +757,43 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Reads a binary representing an IPC file into a dataframe.
+
+  ## Options
+
+    * `columns` - List with the name or index of columns to be selected. Defaults to all columns.
+
+  """
+  @doc type: :io
+  @spec load_ipc(contents :: binary(), opts :: Keyword.t()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
+  def load_ipc(contents, opts \\ []) do
+    opts =
+      Keyword.validate!(opts,
+        columns: nil
+      )
+
+    backend = backend_from_options!(opts)
+
+    backend.load_ipc(
+      contents,
+      opts[:columns]
+    )
+  end
+
+  @doc """
+  Similar to `load_ipc/2` but raises if there is a problem reading the IPC file.
+  """
+  @doc type: :io
+  @spec load_ipc!(contents :: binary(), opts :: Keyword.t()) :: DataFrame.t()
+  def load_ipc!(contents, opts \\ []) do
+    case load_ipc(contents, opts) do
+      {:ok, df} -> df
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
   Reads an IPC Streaming file into a dataframe.
 
   ## Options
@@ -755,6 +881,43 @@ defmodule Explorer.DataFrame do
   def dump_ipc_stream!(df, opts \\ []) do
     case dump_ipc_stream(df, opts) do
       {:ok, ipc} -> ipc
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
+  Reads a binary representing an IPC Stream file into a dataframe.
+
+  ## Options
+
+    * `columns` - List with the name or index of columns to be selected. Defaults to all columns.
+
+  """
+  @doc type: :io
+  @spec load_ipc_stream(contents :: binary(), opts :: Keyword.t()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
+  def load_ipc_stream(contents, opts \\ []) do
+    opts =
+      Keyword.validate!(opts,
+        columns: nil
+      )
+
+    backend = backend_from_options!(opts)
+
+    backend.load_ipc_stream(
+      contents,
+      opts[:columns]
+    )
+  end
+
+  @doc """
+  Similar to `load_ipc_stream/2` but raises if there is a problem.
+  """
+  @doc type: :io
+  @spec load_ipc_stream!(contents :: binary(), opts :: Keyword.t()) :: DataFrame.t()
+  def load_ipc_stream!(contents, opts \\ []) do
+    case load_ipc_stream(contents, opts) do
+      {:ok, df} -> df
       {:error, error} -> raise "#{error}"
     end
   end
@@ -905,6 +1068,61 @@ defmodule Explorer.DataFrame do
   def dump_ndjson!(df) do
     case dump_ndjson(df) do
       {:ok, ndjson} -> ndjson
+      {:error, error} -> raise "#{error}"
+    end
+  end
+
+  @doc """
+  Reads a representation of a NDJSON file into a dataframe.
+
+  ## Options
+
+    * `batch_size` - Sets the batch size for reading rows.
+    This value may have significant impact in performance, so adjust it for your needs (default: `1000`).
+
+    * `infer_schema_length` - Maximum number of rows read for schema inference.
+    Setting this to nil will do a full table scan and will be slow (default: `1000`).
+
+  """
+  @doc type: :io
+  @spec load_ndjson(contents :: String.t(), opts :: Keyword.t()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
+  def load_ndjson(contents, opts \\ []) do
+    opts =
+      Keyword.validate!(opts,
+        batch_size: 1000,
+        infer_schema_length: @default_infer_schema_length
+      )
+
+    backend = backend_from_options!(opts)
+
+    backend.load_ndjson(
+      contents,
+      opts[:infer_schema_length],
+      opts[:batch_size]
+    )
+  end
+
+  @doc """
+  Similar to `load_ndjson/2`, but raises in case of error.
+
+  ## Examples
+
+      iex> contents = ~s({"col_a":1,"col_b":5.1}\\n{"col_a":2,"col_b":5.2}\\n)
+      iex> Explorer.DataFrame.load_ndjson!(contents)
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        col_a integer [1, 2]
+        col_b float [5.1, 5.2]
+      >
+
+  """
+  @doc type: :io
+  @spec load_ndjson!(contents :: String.t(), opts :: Keyword.t()) ::
+          DataFrame.t()
+  def load_ndjson!(contents, opts \\ []) do
+    case load_ndjson(contents, opts) do
+      {:ok, df} -> df
       {:error, error} -> raise "#{error}"
     end
   end

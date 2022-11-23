@@ -47,6 +47,40 @@ defmodule Explorer.DataFrame.NDJSONTest do
            """
   end
 
+  test "load_ndjson/1" do
+    ndjson = """
+    {"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
+    {"sepal_length":4.9,"sepal_width":3.0,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
+    {"sepal_length":4.7,"sepal_width":3.2,"petal_length":1.3,"petal_width":0.2,"species":"Iris-setosa"}
+    {"sepal_length":4.6,"sepal_width":3.1,"petal_length":1.5,"petal_width":0.2,"species":"Iris-setosa"}
+    {"sepal_length":5.0,"sepal_width":3.6,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
+    {"sepal_length":5.4,"sepal_width":3.9,"petal_length":1.7,"petal_width":0.4,"species":"Iris-setosa"}
+    {"sepal_length":4.6,"sepal_width":3.4,"petal_length":1.4,"petal_width":0.3,"species":"Iris-setosa"}
+    {"sepal_length":5.0,"sepal_width":3.4,"petal_length":1.5,"petal_width":0.2,"species":"Iris-setosa"}
+    {"sepal_length":4.4,"sepal_width":2.9,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
+    {"sepal_length":4.9,"sepal_width":3.1,"petal_length":1.5,"petal_width":0.1,"species":"Iris-setosa"}
+    """
+
+    assert {:ok, df} = DF.load_ndjson(ndjson)
+
+    assert DF.n_rows(df) == 10
+    assert DF.n_columns(df) == 5
+
+    assert df.dtypes == %{
+             "sepal_length" => :float,
+             "sepal_width" => :float,
+             "petal_length" => :float,
+             "petal_width" => :float,
+             "species" => :string
+           }
+
+    assert_in_delta(5.1, df["sepal_length"][0], f64_epsilon())
+
+    species = df["species"]
+
+    assert species[0] == "Iris-setosa"
+  end
+
   def assert_ndjson(type, value, parsed_value) do
     assert_from_with_correct_type(type, value, parsed_value, fn df ->
       assert {:ok, df} = DF.from_ndjson(tmp_ndjson_file!(df))

@@ -102,6 +102,55 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def load_csv(
+        contents,
+        dtypes,
+        <<delimiter::utf8>>,
+        null_character,
+        skip_rows,
+        header?,
+        encoding,
+        max_rows,
+        columns,
+        infer_schema_length,
+        parse_dates
+      ) do
+    infer_schema_length =
+      if infer_schema_length == nil,
+        do: max_rows || @default_infer_schema_length,
+        else: infer_schema_length
+
+    dtypes =
+      Enum.map(dtypes, fn {column_name, dtype} ->
+        {column_name, Shared.internal_from_dtype(dtype)}
+      end)
+
+    {columns, with_projection} = column_list_check(columns)
+
+    df =
+      Native.df_load_csv(
+        contents,
+        infer_schema_length,
+        header?,
+        max_rows,
+        skip_rows,
+        with_projection,
+        delimiter,
+        true,
+        columns,
+        dtypes,
+        encoding,
+        null_character,
+        parse_dates
+      )
+
+    case df do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def from_ndjson(filename, infer_schema_length, batch_size) do
     with {:ok, df} <- Native.df_from_ndjson(filename, infer_schema_length, batch_size) do
       {:ok, Shared.create_dataframe(df)}
@@ -118,6 +167,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def dump_ndjson(%DataFrame{} = df) do
     Native.df_dump_ndjson(df.data)
+  end
+
+  @impl true
+  def load_ndjson(contents, infer_schema_length, batch_size) when is_binary(contents) do
+    case Native.df_load_ndjson(contents, infer_schema_length, batch_size) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true
@@ -139,6 +196,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def dump_parquet(%DataFrame{data: df}, {compression, compression_level}) do
     Native.df_dump_parquet(df, Atom.to_string(compression), compression_level)
+  end
+
+  @impl true
+  def load_parquet(contents) when is_binary(contents) do
+    case Native.df_load_parquet(contents) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true
@@ -165,8 +230,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def dump_ipc_stream(%DataFrame{data: df}, {compression, _level}) do
-    Native.df_dump_ipc_stream(df, Atom.to_string(compression))
+  def load_ipc(contents, columns) when is_binary(contents) do
+    {columns, projection} = column_list_check(columns)
+
+    case Native.df_load_ipc(contents, columns, projection) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true
@@ -183,6 +253,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def to_ipc_stream(%DataFrame{data: df}, filename, {compression, _level}) do
     case Native.df_to_ipc_stream(df, filename, Atom.to_string(compression)) do
       {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def dump_ipc_stream(%DataFrame{data: df}, {compression, _level}) do
+    Native.df_dump_ipc_stream(df, Atom.to_string(compression))
+  end
+
+  @impl true
+  def load_ipc_stream(contents, columns) when is_binary(contents) do
+    {columns, projection} = column_list_check(columns)
+
+    case Native.df_load_ipc_stream(contents, columns, projection) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
   end

@@ -25,8 +25,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @type compression :: {algorithm :: atom() | nil, level :: integer() | nil}
 
-  # IO
-
+  # IO: CSV
   @callback from_csv(
               filename :: String.t(),
               dtypes :: list({column_name(), dtype()}),
@@ -44,6 +43,21 @@ defmodule Explorer.Backend.DataFrame do
               ok_result()
   @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: result(binary())
 
+  @callback load_csv(
+              contents :: String.t(),
+              dtypes :: list({column_name(), dtype()}),
+              delimiter :: String.t(),
+              null_character :: String.t(),
+              skip_rows :: integer(),
+              header? :: boolean(),
+              encoding :: String.t(),
+              max_rows :: integer() | nil,
+              columns :: list(column_name()) | list(atom()) | list(integer()) | nil,
+              infer_schema_length :: integer() | nil,
+              parse_dates :: boolean()
+            ) :: result(df)
+
+  # IO: Parquet
   @callback from_parquet(filename :: String.t()) :: result(df)
   @callback to_parquet(
               df,
@@ -52,7 +66,9 @@ defmodule Explorer.Backend.DataFrame do
             ) ::
               ok_result()
   @callback dump_parquet(df, compression()) :: result(binary())
+  @callback load_parquet(contents :: binary()) :: result(df)
 
+  # IO: IPC
   @callback from_ipc(
               filename :: String.t(),
               columns :: list(String.t()) | list(atom()) | list(integer()) | nil
@@ -60,7 +76,12 @@ defmodule Explorer.Backend.DataFrame do
   @callback to_ipc(df, filename :: String.t(), compression()) ::
               ok_result()
   @callback dump_ipc(df, compression()) :: result(binary())
+  @callback load_ipc(
+              contents :: binary(),
+              columns :: list(String.t()) | list(atom()) | list(integer()) | nil
+            ) :: result(df)
 
+  # IO: IPC Stream
   @callback from_ipc_stream(
               filename :: String.t(),
               columns :: list(String.t()) | list(atom()) | list(integer()) | nil
@@ -72,7 +93,12 @@ defmodule Explorer.Backend.DataFrame do
             ) ::
               ok_result()
   @callback dump_ipc_stream(df, compression()) :: result(binary())
+  @callback load_ipc_stream(
+              contents :: binary(),
+              columns :: list(String.t()) | list(atom()) | list(integer()) | nil
+            ) :: result(df)
 
+  # IO: IPC NDJSON
   @callback from_ndjson(
               filename :: String.t(),
               infer_schema_length :: integer(),
@@ -81,6 +107,12 @@ defmodule Explorer.Backend.DataFrame do
   @callback to_ndjson(df, filename :: String.t()) :: ok_result()
 
   @callback dump_ndjson(df) :: result(binary())
+
+  @callback load_ndjson(
+              contents :: String.t(),
+              infer_schema_length :: integer(),
+              batch_size :: integer()
+            ) :: result(df)
 
   # Conversion
 

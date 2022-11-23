@@ -36,6 +36,31 @@ defmodule Explorer.DataFrame.ParquetTest do
     assert File.read!(file_path) == File.read!(parquet)
   end
 
+  test "load_parquet/2" do
+    parquet = tmp_parquet_file!(Explorer.Datasets.iris())
+    contents = File.read!(parquet)
+
+    assert {:ok, frame} = DF.load_parquet(contents)
+
+    assert DF.n_rows(frame) == 150
+    assert DF.n_columns(frame) == 5
+
+    assert frame.dtypes == %{
+             "sepal_length" => :float,
+             "sepal_width" => :float,
+             "petal_length" => :float,
+             "petal_width" => :float,
+             "species" => :string
+           }
+
+    assert_in_delta(5.1, frame["sepal_length"][0], f64_epsilon())
+
+    species = frame["species"]
+
+    assert species[0] == "Iris-setosa"
+    assert species[149] == "Iris-virginica"
+  end
+
   def assert_parquet(type, value, parsed_value) do
     assert_from_with_correct_type(type, value, parsed_value, fn df ->
       assert {:ok, df} = DF.from_parquet(tmp_parquet_file!(df))

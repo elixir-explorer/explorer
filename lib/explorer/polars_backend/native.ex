@@ -55,6 +55,29 @@ defmodule Explorer.PolarsBackend.Native do
   def df_groups(_df, _column_names), do: err()
   def df_head(_df, _length, _groups), do: err()
   def df_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
+
+  def df_load_csv(
+        _binary,
+        _infer_schema_length,
+        _has_header,
+        _stop_after_n_rows,
+        _skip_rows,
+        _projection,
+        _sep,
+        _rechunk,
+        _columns,
+        _dtypes,
+        _encoding,
+        _null_char,
+        _parse_dates
+      ),
+      do: err()
+
+  def df_load_ipc(_binary, _columns, _projection), do: err()
+  def df_load_ipc_stream(_binary, _columns, _projection), do: err()
+  def df_load_ndjson(_binary, _infer_schema_length, _batch_size), do: err()
+  def df_load_parquet(_binary), do: err()
+
   def df_mask(_df, _mask), do: err()
   def df_mutate_with_exprs(_df, _exprs), do: err()
   def df_n_rows(_df), do: err()

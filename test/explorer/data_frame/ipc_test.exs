@@ -45,6 +45,24 @@ defmodule Explorer.DataFrame.IPCTest do
     assert is_binary(ipc)
   end
 
+  test "load_ipc/2 without compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+    ipc = DF.dump_ipc!(df)
+
+    assert {:ok, df1} = DF.load_ipc(ipc)
+
+    assert DF.to_columns(df) == DF.to_columns(df1)
+  end
+
+  test "load_ipc/2 with compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+    ipc = DF.dump_ipc!(df, compression: :lz4)
+
+    assert {:ok, df1} = DF.load_ipc(ipc)
+
+    assert DF.to_columns(df) == DF.to_columns(df1)
+  end
+
   def assert_ipc(type, value, parsed_value) do
     assert_from_with_correct_type(type, value, parsed_value, fn df ->
       assert {:ok, df} = DF.from_ipc(tmp_ipc_file!(df))
