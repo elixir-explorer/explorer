@@ -296,6 +296,28 @@ defmodule Explorer.DataFrame do
     """
   end
 
+  # Normalizes the "columns" option for some IO operations.
+  defp to_columns_for_io(nil), do: nil
+
+  defp to_columns_for_io([h | _] = columns) when is_integer(h) do
+    if Enum.all?(columns, &is_integer/1) do
+      columns
+    else
+      raise ArgumentError,
+            "expected :columns to be a list of only integers, only atoms, or only binaries, " <>
+              "got: #{inspect(columns)}"
+    end
+  end
+
+  defp to_columns_for_io([h | _] = columns) when is_column_name(h),
+    do: Enum.map(columns, &to_column_name/1)
+
+  defp to_columns_for_io(other) do
+    raise ArgumentError,
+          "expected :columns to be a list of only integers, only atoms, or only binaries, " <>
+            "got: #{inspect(other)}"
+  end
+
   defp check_dtypes!(dtypes) do
     Enum.map(dtypes, fn
       {key, value} when is_atom(key) ->
@@ -407,7 +429,7 @@ defmodule Explorer.DataFrame do
       opts[:header],
       opts[:encoding],
       opts[:max_rows],
-      opts[:columns],
+      to_columns_for_io(opts[:columns]),
       opts[:infer_schema_length],
       opts[:parse_dates]
     )
@@ -472,7 +494,7 @@ defmodule Explorer.DataFrame do
       opts[:header],
       opts[:encoding],
       opts[:max_rows],
-      opts[:columns],
+      to_columns_for_io(opts[:columns]),
       opts[:infer_schema_length],
       opts[:parse_dates]
     )
@@ -657,7 +679,7 @@ defmodule Explorer.DataFrame do
 
     backend.from_ipc(
       filename,
-      opts[:columns]
+      to_columns_for_io(opts[:columns])
     )
   end
 
@@ -777,7 +799,7 @@ defmodule Explorer.DataFrame do
 
     backend.load_ipc(
       contents,
-      opts[:columns]
+      to_columns_for_io(opts[:columns])
     )
   end
 
@@ -806,7 +828,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, columns: nil)
     backend = backend_from_options!(opts)
 
-    backend.from_ipc_stream(filename, opts[:columns])
+    backend.from_ipc_stream(filename, to_columns_for_io(opts[:columns]))
   end
 
   @doc """
@@ -906,7 +928,7 @@ defmodule Explorer.DataFrame do
 
     backend.load_ipc_stream(
       contents,
-      opts[:columns]
+      to_columns_for_io(opts[:columns])
     )
   end
 

@@ -40,7 +40,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         {column_name, Shared.internal_from_dtype(dtype)}
       end)
 
-    {columns, with_projection} = column_list_check(columns)
+    {columns, with_projection} = column_names_or_projection(columns)
 
     df =
       Native.df_from_csv(
@@ -65,14 +65,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
-  defp column_list_check(list) do
+  # In case column names are given, it returns the columns.
+  # Otherwise returns the list of integers, selecting the "projection" of columns.
+  defp column_names_or_projection(nil), do: {nil, nil}
+
+  defp column_names_or_projection(list) do
     cond do
-      is_nil(list) ->
-        {nil, nil}
-
-      Enum.all?(list, &is_atom/1) ->
-        {Enum.map(list, &Atom.to_string/1), nil}
-
       Enum.all?(list, &is_binary/1) ->
         {list, nil}
 
@@ -80,9 +78,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         {nil, list}
 
       true ->
-        raise ArgumentError,
-              "expected :columns to be a list of only integers, only atoms, or only binaries, " <>
-                "got: #{inspect(list)}"
+        {nil, nil}
     end
   end
 
@@ -125,7 +121,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         {column_name, Shared.internal_from_dtype(dtype)}
       end)
 
-    {columns, with_projection} = column_list_check(columns)
+    {columns, with_projection} = column_names_or_projection(columns)
 
     df =
       Native.df_load_csv(
@@ -208,7 +204,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_ipc(filename, columns) do
-    {columns, projection} = column_list_check(columns)
+    {columns, projection} = column_names_or_projection(columns)
 
     case Native.df_from_ipc(filename, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
@@ -231,7 +227,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def load_ipc(contents, columns) when is_binary(contents) do
-    {columns, projection} = column_list_check(columns)
+    {columns, projection} = column_names_or_projection(columns)
 
     case Native.df_load_ipc(contents, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
@@ -241,7 +237,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_ipc_stream(filename, columns) do
-    {columns, projection} = column_list_check(columns)
+    {columns, projection} = column_names_or_projection(columns)
 
     case Native.df_from_ipc_stream(filename, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
@@ -264,7 +260,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def load_ipc_stream(contents, columns) when is_binary(contents) do
-    {columns, projection} = column_list_check(columns)
+    {columns, projection} = column_names_or_projection(columns)
 
     case Native.df_load_ipc_stream(contents, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}

@@ -13,7 +13,7 @@ defmodule Explorer.Backend.DataFrame do
   @type dtype :: Explorer.Series.dtype()
   @type dtypes :: %{column_name() => dtype()}
 
-  @typep basic_types :: float() | integer() | String.t() | Date.t() | DateTime.t()
+  @type basic_types :: float() | integer() | String.t() | Date.t() | DateTime.t()
   @type mutate_value ::
           series()
           | basic_types()
@@ -24,6 +24,7 @@ defmodule Explorer.Backend.DataFrame do
   @type lazy_series :: Explorer.Backend.LazySeries.t()
 
   @type compression :: {algorithm :: atom() | nil, level :: integer() | nil}
+  @type columns_for_io :: list(column_name()) | list(pos_integer()) | nil
 
   # IO: CSV
   @callback from_csv(
@@ -35,7 +36,7 @@ defmodule Explorer.Backend.DataFrame do
               header? :: boolean(),
               encoding :: String.t(),
               max_rows :: integer() | nil,
-              columns :: list(column_name()) | list(atom()) | list(integer()) | nil,
+              columns :: columns_for_io(),
               infer_schema_length :: integer() | nil,
               parse_dates :: boolean()
             ) :: result(df)
@@ -52,7 +53,7 @@ defmodule Explorer.Backend.DataFrame do
               header? :: boolean(),
               encoding :: String.t(),
               max_rows :: integer() | nil,
-              columns :: list(column_name()) | list(atom()) | list(integer()) | nil,
+              columns :: columns_for_io(),
               infer_schema_length :: integer() | nil,
               parse_dates :: boolean()
             ) :: result(df)
@@ -71,20 +72,20 @@ defmodule Explorer.Backend.DataFrame do
   # IO: IPC
   @callback from_ipc(
               filename :: String.t(),
-              columns :: list(String.t()) | list(atom()) | list(integer()) | nil
+              columns :: columns_for_io()
             ) :: result(df)
   @callback to_ipc(df, filename :: String.t(), compression()) ::
               ok_result()
   @callback dump_ipc(df, compression()) :: result(binary())
   @callback load_ipc(
               contents :: binary(),
-              columns :: list(String.t()) | list(atom()) | list(integer()) | nil
+              columns :: columns_for_io()
             ) :: result(df)
 
   # IO: IPC Stream
   @callback from_ipc_stream(
               filename :: String.t(),
-              columns :: list(String.t()) | list(atom()) | list(integer()) | nil
+              columns :: columns_for_io()
             ) :: result(df)
   @callback to_ipc_stream(
               df,
@@ -95,7 +96,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback dump_ipc_stream(df, compression()) :: result(binary())
   @callback load_ipc_stream(
               contents :: binary(),
-              columns :: list(String.t()) | list(atom()) | list(integer()) | nil
+              columns :: columns_for_io()
             ) :: result(df)
 
   # IO: IPC NDJSON
