@@ -1965,8 +1965,8 @@ defmodule Explorer.Series do
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
       By default it sorts in acending order.
 
-    * `:nils_last` - `true` or `false`. By default it is `true` if direction is `:asc`, and
-      false otherwise.
+    * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
+      `:first` otherwise.
 
   ## Examples
 
@@ -1990,12 +1990,14 @@ defmodule Explorer.Series do
     opts =
       Keyword.validate!(opts,
         direction: :asc,
-        nils_last: K.or(K.is_nil(opts[:direction]), opts[:direction] == :asc)
+        nils:
+          if(K.or(K.is_nil(opts[:direction]), opts[:direction] == :asc), do: :last, else: :first)
       )
 
     descending? = opts[:direction] == :desc
+    nils_last? = opts[:nils] == :last
 
-    Shared.apply_impl(series, :sort, [descending?, opts[:nils_last]])
+    Shared.apply_impl(series, :sort, [descending?, nils_last?])
   end
 
   @doc """
@@ -2006,8 +2008,8 @@ defmodule Explorer.Series do
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
       By default it sorts in acending order.
 
-    * `:nils_last` - `true` or `false`. By default it is `true` if direction is `:asc`, and
-      false otherwise.
+    * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
+      `:first` otherwise.
 
   ## Examples
 
@@ -2031,12 +2033,14 @@ defmodule Explorer.Series do
     opts =
       Keyword.validate!(opts,
         direction: :asc,
-        nils_last: K.or(K.is_nil(opts[:direction]), opts[:direction] == :asc)
+        nils:
+          if(K.or(K.is_nil(opts[:direction]), opts[:direction] == :asc), do: :last, else: :first)
       )
 
     descending? = opts[:direction] == :desc
+    nils_last? = opts[:nils] == :last
 
-    Shared.apply_impl(series, :argsort, [descending?, opts[:nils_last]])
+    Shared.apply_impl(series, :argsort, [descending?, nils_last?])
   end
 
   @doc """

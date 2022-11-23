@@ -672,7 +672,7 @@ defmodule Explorer.SeriesTest do
     test "sort a series in descending order, but with nils last" do
       s1 = Series.from_list([3, 1, nil, 2])
 
-      result = Series.sort(s1, direction: :desc, nils_last: true)
+      result = Series.sort(s1, direction: :desc, nils: :last)
 
       assert Series.to_list(result) == [3, 2, 1, nil]
     end
@@ -680,7 +680,7 @@ defmodule Explorer.SeriesTest do
     test "sort a series in ascending order, but nils first" do
       s1 = Series.from_list([3, 1, nil, 2])
 
-      result = Series.sort(s1, nils_last: false)
+      result = Series.sort(s1, nils: :first)
 
       assert Series.to_list(result) == [nil, 1, 2, 3]
     end
@@ -696,18 +696,19 @@ defmodule Explorer.SeriesTest do
     end
 
     # There is a bug which is not considering "nils first" for descending argsort
-    # test "indices of sorting a series in descending order" do
-    #   s1 = Series.from_list([9, 4, nil, 5])
+    @tag :skip
+    test "indices of sorting a series in descending order" do
+      s1 = Series.from_list([9, 4, nil, 5])
 
-    #   result = Series.argsort(s1, direction: :desc, nils_last: false)
+      result = Series.argsort(s1, direction: :desc, nils: :first)
 
-    #   assert Series.to_list(result) == [2, 0, 3, 1]
-    # end
+      assert Series.to_list(result) == [2, 0, 3, 1]
+    end
 
     test "sort a series in descending order, but with nils last" do
       s1 = Series.from_list([9, 4, nil, 5])
 
-      result = Series.argsort(s1, direction: :desc, nils_last: true)
+      result = Series.argsort(s1, direction: :desc, nils: :last)
 
       assert Series.to_list(result) == [0, 3, 1, 2]
     end
@@ -715,7 +716,7 @@ defmodule Explorer.SeriesTest do
     test "sort a series in ascending order, but nils first" do
       s1 = Series.from_list([9, 4, nil, 5])
 
-      result = Series.argsort(s1, nils_last: false)
+      result = Series.argsort(s1, nils: :first)
 
       assert Series.to_list(result) == [2, 1, 3, 0]
     end
