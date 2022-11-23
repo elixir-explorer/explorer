@@ -96,17 +96,6 @@ defmodule Explorer.Backend.LazySeries do
     :n_distinct
   ]
 
-  @non_lazy_operations [
-    memtype: 1,
-    fetch!: 2,
-    mask: 2,
-    slice: 2,
-    take_every: 2,
-    to_enum: 1,
-    to_list: 1,
-    transform: 2
-  ]
-
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
   @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]
 
@@ -117,9 +106,6 @@ defmodule Explorer.Backend.LazySeries do
 
   @doc false
   def operations, do: @operations
-
-  @doc false
-  def non_lazy_operations, do: @non_lazy_operations
 
   @impl true
   def dtype(%Series{} = s), do: s.dtype
@@ -504,13 +490,43 @@ defmodule Explorer.Backend.LazySeries do
 
   defp to_elixir_ast(other), do: other
 
-  # The following operations are not allowed.
-  for {fun, arity} <- @non_lazy_operations do
-    args = Macro.generate_arguments(arity, __MODULE__)
+  @impl true
+  def transform(_series, _fun) do
+    raise """
+    #{unsupported(:transform, 2)}
 
+    If you want to transform a column, you must do so outside of a query.
+    For example, instead of:
+
+        Explorer.DataFrame.mutate(df, new_column: transform(column, &String.upcase/1))
+
+    You must write:
+
+        Explorer.DataFrame.put(df, :new_column, Explorer.Series.transform(column, &String.upcase/1))
+
+    However, keep in mind that in such cases you are loading the data into Elixir and
+    serializing it back, which may be expensive for large datasets
+    """
+  end
+
+  @remaining_non_lazy_operations [
+    memtype: 1,
+    fetch!: 2,
+    mask: 2,
+    slice: 2,
+    take_every: 2,
+    to_enum: 1,
+    to_list: 1
+  ]
+
+  for {fun, arity} <- @remaining_non_lazy_operations do
+    args = Macro.generate_arguments(arity, __MODULE__)
     @impl true
-    def unquote(fun)(unquote_splicing(args)) do
-      raise "cannot perform operation on an Explorer.Backend.LazySeries"
-    end
+    def unquote(fun)(unquote_splicing(args)), do: raise(unsupported(unquote(fun), unquote(arity)))
+  end
+
+  defp unsupported(fun, arity) do
+    "cannot perform #{fun}/#{arity} operation on Explorer.Backend.LazySeries. " <>
+      "Query operations work on lazy series and those support only a subset of series operations"
   end
 end

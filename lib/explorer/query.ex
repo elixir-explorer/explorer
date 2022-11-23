@@ -76,7 +76,7 @@ defmodule Explorer.Query do
           ]
 
         import Explorer.Query, except: [query: 1]
-        import Explorer.Series, except: unquote(Explorer.Backend.LazySeries.non_lazy_operations())
+        import Explorer.Series
         unquote(traverse(expression, df))
       end
     end
