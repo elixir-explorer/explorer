@@ -1987,15 +1987,9 @@ defmodule Explorer.Series do
   """
   @doc type: :transformation
   def sort(series, opts \\ []) do
-    opts =
-      Keyword.validate!(opts,
-        direction: :asc,
-        nils:
-          if(K.or(K.is_nil(opts[:direction]), opts[:direction] == :asc), do: :last, else: :first)
-      )
-
+    opts = Keyword.validate!(opts, [:nils, direction: :asc])
     descending? = opts[:direction] == :desc
-    nils_last? = opts[:nils] == :last
+    nils_last? = if nils = opts[:nils], do: nils == :last, else: not descending?
 
     Shared.apply_impl(series, :sort, [descending?, nils_last?])
   end
@@ -2030,15 +2024,9 @@ defmodule Explorer.Series do
   """
   @doc type: :transformation
   def argsort(series, opts \\ []) do
-    opts =
-      Keyword.validate!(opts,
-        direction: :asc,
-        nils:
-          if(K.or(K.is_nil(opts[:direction]), opts[:direction] == :asc), do: :last, else: :first)
-      )
-
+    opts = Keyword.validate!(opts, [:nils, direction: :asc])
     descending? = opts[:direction] == :desc
-    nils_last? = opts[:nils] == :last
+    nils_last? = if nils = opts[:nils], do: nils == :last, else: not descending?
 
     Shared.apply_impl(series, :argsort, [descending?, nils_last?])
   end
