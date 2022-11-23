@@ -5,7 +5,7 @@ defmodule Explorer.DataFrame.IPCTest do
   alias Explorer.DataFrame, as: DF
   import Explorer.IOHelpers
 
-  test "read" do
+  test "from_ipc/2" do
     ipc = tmp_ipc_file!(Explorer.Datasets.iris())
 
     assert {:ok, df} = DF.from_ipc(ipc)
@@ -27,6 +27,40 @@ defmodule Explorer.DataFrame.IPCTest do
 
     assert species[0] == "Iris-setosa"
     assert species[149] == "Iris-virginica"
+  end
+
+  test "dump_ipc/2 without compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, ipc} = DF.dump_ipc(df)
+
+    assert is_binary(ipc)
+  end
+
+  test "dump_ipc/2 with compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, ipc} = DF.dump_ipc(df, compression: :lz4)
+
+    assert is_binary(ipc)
+  end
+
+  test "load_ipc/2 without compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+    ipc = DF.dump_ipc!(df)
+
+    assert {:ok, df1} = DF.load_ipc(ipc)
+
+    assert DF.to_columns(df) == DF.to_columns(df1)
+  end
+
+  test "load_ipc/2 with compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+    ipc = DF.dump_ipc!(df, compression: :lz4)
+
+    assert {:ok, df1} = DF.load_ipc(ipc)
+
+    assert DF.to_columns(df) == DF.to_columns(df1)
   end
 
   def assert_ipc(type, value, parsed_value) do

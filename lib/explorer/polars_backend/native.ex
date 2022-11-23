@@ -22,6 +22,10 @@ defmodule Explorer.PolarsBackend.Native do
   def df_drop_nulls(_df, _subset), do: err()
   def df_dtypes(_df), do: err()
   def df_dump_csv(_df, _has_headers, _delimiter), do: err()
+  def df_dump_ndjson(_df), do: err()
+  def df_dump_parquet(_df, _compression, _compression_level), do: err()
+  def df_dump_ipc(_df, _compression), do: err()
+  def df_dump_ipc_stream(_df, _compression), do: err()
   def df_filter_with(_df, _operation, _groups), do: err()
 
   def df_from_csv(
@@ -51,6 +55,29 @@ defmodule Explorer.PolarsBackend.Native do
   def df_groups(_df, _column_names), do: err()
   def df_head(_df, _length, _groups), do: err()
   def df_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
+
+  def df_load_csv(
+        _binary,
+        _infer_schema_length,
+        _has_header,
+        _stop_after_n_rows,
+        _skip_rows,
+        _projection,
+        _sep,
+        _rechunk,
+        _columns,
+        _dtypes,
+        _encoding,
+        _null_char,
+        _parse_dates
+      ),
+      do: err()
+
+  def df_load_ipc(_binary, _columns, _projection), do: err()
+  def df_load_ipc_stream(_binary, _columns, _projection), do: err()
+  def df_load_ndjson(_binary, _infer_schema_length, _batch_size), do: err()
+  def df_load_parquet(_binary), do: err()
+
   def df_mask(_df, _mask), do: err()
   def df_mutate_with_exprs(_df, _exprs), do: err()
   def df_n_rows(_df), do: err()

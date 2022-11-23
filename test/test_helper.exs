@@ -13,8 +13,7 @@ defmodule Explorer.IOHelpers do
       when is_atom(type) and is_function(reader_fun, 1) do
     df = List.wrap(value) |> Series.from_list() |> Series.cast(type) |> then(&DF.new(column: &1))
 
-    # reader fun should return a DF
-    df = reader_fun.(df)
+    %DF{} = df = reader_fun.(df)
 
     ExUnit.Assertions.assert(df[0][0] == parsed_value)
     ExUnit.Assertions.assert(df[0].dtype == type)
@@ -32,16 +31,14 @@ defmodule Explorer.IOHelpers do
     tmp_filename(fn filename -> :ok = File.write!(filename, data) end)
   end
 
-  def tmp_parquet_file!(df) do
-    tmp_filename(fn filename -> :ok = DF.to_parquet(df, filename) end)
-  end
+  # Defines functions like `tmp_parquet_file!(df)`.
+  for format <- [:parquet, :ipc, :ipc_stream, :ndjson] do
+    fun_name = :"tmp_#{format}_file!"
+    to_name = :"to_#{format}"
 
-  def tmp_ipc_file!(df) do
-    tmp_filename(fn filename -> :ok = DF.to_ipc(df, filename) end)
-  end
-
-  def tmp_ipc_stream_file!(df) do
-    tmp_filename(fn filename -> :ok = DF.to_ipc_stream(df, filename) end)
+    def unquote(fun_name)(df) do
+      tmp_filename(fn filename -> :ok = apply(DF, unquote(to_name), [df, filename]) end)
+    end
   end
 end
 
