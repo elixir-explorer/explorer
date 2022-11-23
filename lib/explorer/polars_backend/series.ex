@@ -297,10 +297,16 @@ defmodule Explorer.PolarsBackend.Series do
   # Sort
 
   @impl true
-  def sort(series, reverse?), do: Shared.apply_series(series, :s_sort, [reverse?])
+  def sort(series, descending?, nils_last?)
+      when is_boolean(descending?) and is_boolean(nils_last?) do
+    Shared.apply_series(series, :s_sort, [descending?, nils_last?])
+  end
 
   @impl true
-  def argsort(series, reverse?), do: Shared.apply_series(series, :s_argsort, [reverse?])
+  def argsort(series, descending?, nils_last?)
+      when is_boolean(descending?) and is_boolean(nils_last?) do
+    Shared.apply_series(series, :s_argsort, [descending?, nils_last?])
+  end
 
   @impl true
   def reverse(series), do: Shared.apply_series(series, :s_reverse)

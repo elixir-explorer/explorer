@@ -172,20 +172,32 @@ pub fn s_tail(data: ExSeries, length: Option<usize>) -> Result<ExSeries, Explore
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_sort(data: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
+pub fn s_sort(
+    data: ExSeries,
+    descending: bool,
+    nulls_last: bool,
+) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
-    Ok(ExSeries::new(s.sort(reverse)))
+    let opts = SortOptions {
+        descending,
+        nulls_last,
+    };
+    Ok(ExSeries::new(s.sort_with(opts)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_argsort(data: ExSeries, reverse: bool) -> Result<Vec<Option<u32>>, ExplorerError> {
+pub fn s_argsort(
+    data: ExSeries,
+    descending: bool,
+    nulls_last: bool,
+) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
-    Ok(s.argsort(SortOptions {
-        descending: reverse,
-        nulls_last: false,
-    })
-    .into_iter()
-    .collect::<Vec<Option<u32>>>())
+    let opts = SortOptions {
+        descending,
+        nulls_last,
+    };
+    let indices: Series = s.argsort(opts).into();
+    Ok(ExSeries::new(indices))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

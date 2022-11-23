@@ -24,8 +24,8 @@ defmodule Explorer.PolarsBackend.Expression do
 
   @lazy_series_and_literal_args_funs [
                                        quantile: 2,
-                                       argsort: 2,
-                                       sort: 2,
+                                       argsort: 3,
+                                       sort: 3,
                                        slice: 3,
                                        head: 2,
                                        tail: 2,
