@@ -91,8 +91,8 @@ defmodule Explorer.Backend.Series do
 
   # Sort
 
-  @callback sort(s, reverse? :: boolean()) :: s
-  @callback argsort(s, reverse? :: boolean()) :: s
+  @callback sort(s, descending? :: boolean(), nils_last :: boolean()) :: s
+  @callback argsort(s, descending? :: boolean(), nils_last :: boolean()) :: s
   @callback reverse(s) :: s
 
   # Distinct

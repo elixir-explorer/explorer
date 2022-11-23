@@ -651,4 +651,74 @@ defmodule Explorer.SeriesTest do
       end
     end
   end
+
+  describe "sort/2" do
+    test "sort a series in ascending order" do
+      s1 = Series.from_list([3, 1, nil, 2])
+
+      result = Series.sort(s1)
+
+      assert Series.to_list(result) == [1, 2, 3, nil]
+    end
+
+    test "sort a series in descending order" do
+      s1 = Series.from_list([3, 1, nil, 2])
+
+      result = Series.sort(s1, direction: :desc)
+
+      assert Series.to_list(result) == [nil, 3, 2, 1]
+    end
+
+    test "sort a series in descending order, but with nils last" do
+      s1 = Series.from_list([3, 1, nil, 2])
+
+      result = Series.sort(s1, direction: :desc, nils: :last)
+
+      assert Series.to_list(result) == [3, 2, 1, nil]
+    end
+
+    test "sort a series in ascending order, but nils first" do
+      s1 = Series.from_list([3, 1, nil, 2])
+
+      result = Series.sort(s1, nils: :first)
+
+      assert Series.to_list(result) == [nil, 1, 2, 3]
+    end
+  end
+
+  describe "argsort/2" do
+    test "indices of sorting a series in ascending order" do
+      s1 = Series.from_list([3, 1, nil, 2])
+
+      result = Series.argsort(s1)
+
+      assert Series.to_list(result) == [1, 3, 0, 2]
+    end
+
+    # There is a bug which is not considering "nils first" for descending argsort
+    @tag :skip
+    test "indices of sorting a series in descending order" do
+      s1 = Series.from_list([9, 4, nil, 5])
+
+      result = Series.argsort(s1, direction: :desc, nils: :first)
+
+      assert Series.to_list(result) == [2, 0, 3, 1]
+    end
+
+    test "sort a series in descending order, but with nils last" do
+      s1 = Series.from_list([9, 4, nil, 5])
+
+      result = Series.argsort(s1, direction: :desc, nils: :last)
+
+      assert Series.to_list(result) == [0, 3, 1, 2]
+    end
+
+    test "sort a series in ascending order, but nils first" do
+      s1 = Series.from_list([9, 4, nil, 5])
+
+      result = Series.argsort(s1, nils: :first)
+
+      assert Series.to_list(result) == [2, 1, 3, 0]
+    end
+  end
 end

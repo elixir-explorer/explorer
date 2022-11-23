@@ -138,7 +138,7 @@ defmodule Explorer.PolarsBackend.Native do
   # Series
   def s_add(_s, _other), do: err()
   def s_and(_s, _s2), do: err()
-  def s_argsort(_s, _reverse), do: err()
+  def s_argsort(_s, _descending?, _nils_last?), do: err()
   def s_as_str(_s), do: err()
   def s_cast(_s, _dtype), do: err()
   def s_coalesce(_s, _other), do: err()
@@ -197,7 +197,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_size(_s), do: err()
   def s_slice(_s, _offset, _length), do: err()
   def s_slice_by_indices(_s, _indices), do: err()
-  def s_sort(_s, _reverse), do: err()
+  def s_sort(_s, _descending?, _nils_last?), do: err()
   def s_standard_deviation(_s), do: err()
   def s_subtract(_s, _other), do: err()
   def s_sum(_s), do: err()

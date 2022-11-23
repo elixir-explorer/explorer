@@ -479,19 +479,22 @@ pub fn expr_reverse(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_sort(expr: ExExpr, reverse: bool) -> ExExpr {
+pub fn expr_sort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
+    let opts = SortOptions {
+        descending,
+        nulls_last,
+    };
 
-    ExExpr::new(expr.sort(reverse))
+    ExExpr::new(expr.sort_with(opts))
 }
 
 #[rustler::nif]
-pub fn expr_argsort(expr: ExExpr, reverse: bool) -> ExExpr {
+pub fn expr_argsort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
-    // TODO: check if we want nulls last
     let opts = SortOptions {
-        descending: reverse,
-        nulls_last: false,
+        descending,
+        nulls_last,
     };
 
     ExExpr::new(expr.arg_sort(opts))

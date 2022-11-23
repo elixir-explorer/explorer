@@ -1962,7 +1962,11 @@ defmodule Explorer.Series do
 
   ## Options
 
-    * `:direction` - `:asc` or `:desc`
+    * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
+      By default it sorts in acending order.
+
+    * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
+      `:first` otherwise.
 
   ## Examples
 
@@ -1973,11 +1977,21 @@ defmodule Explorer.Series do
         integer [1, 3, 7, 9]
       >
 
+      iex> s = Explorer.Series.from_list([9, 3, 7, 1])
+      iex> s |> Explorer.Series.sort(direction: :desc)
+      #Explorer.Series<
+        Polars[4]
+        integer [9, 7, 3, 1]
+      >
+
   """
   @doc type: :transformation
   def sort(series, opts \\ []) do
-    opts = Keyword.validate!(opts, direction: :asc)
-    Shared.apply_impl(series, :sort, [opts[:direction] == :desc])
+    opts = Keyword.validate!(opts, [:nils, direction: :asc])
+    descending? = opts[:direction] == :desc
+    nils_last? = if nils = opts[:nils], do: nils == :last, else: not descending?
+
+    Shared.apply_impl(series, :sort, [descending?, nils_last?])
   end
 
   @doc """
@@ -1985,12 +1999,36 @@ defmodule Explorer.Series do
 
   ## Options
 
-    * `:direction` - `:asc` or `:desc`
+    * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
+      By default it sorts in acending order.
+
+    * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
+      `:first` otherwise.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([9, 3, 7, 1])
+      iex> s |> Explorer.Series.argsort()
+      #Explorer.Series<
+        Polars[4]
+        integer [3, 1, 2, 0]
+      >
+
+      iex> s = Explorer.Series.from_list([9, 3, 7, 1])
+      iex> s |> Explorer.Series.argsort(direction: :desc)
+      #Explorer.Series<
+        Polars[4]
+        integer [0, 2, 1, 3]
+      >
+
   """
   @doc type: :transformation
   def argsort(series, opts \\ []) do
-    opts = Keyword.validate!(opts, direction: :asc)
-    Shared.apply_impl(series, :argsort, [opts[:direction] == :desc])
+    opts = Keyword.validate!(opts, [:nils, direction: :asc])
+    descending? = opts[:direction] == :desc
+    nils_last? = if nils = opts[:nils], do: nils == :last, else: not descending?
+
+    Shared.apply_impl(series, :argsort, [descending?, nils_last?])
   end
 
   @doc """
