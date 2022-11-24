@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 use polars::prelude::*;
-use rustler::{OwnedBinary, Encoder, Env, ResourceArc, Term};
+use rustler::{Encoder, Env, OwnedBinary, ResourceArc, Term};
 use std::{mem, slice};
 
 use crate::atoms::{
@@ -377,7 +377,7 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Term {
                 slice[i] = v.unwrap() as u8;
             }
             [bin.release(env)].encode(env)
-        },
+        }
         DataType::Int32 => series_to_iovec!(resource, s, env, i32, i32),
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
         DataType::UInt8 => series_to_iovec!(resource, s, env, u8, u8),
