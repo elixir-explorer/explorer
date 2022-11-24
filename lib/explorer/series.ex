@@ -227,6 +227,10 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<1::64-native, 2::64-native, 3::64-native>>]
 
+      iex> series = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.to_iovec(series)
+      [<<1, 0, 1>>]
+
       iex> series = Explorer.Series.from_list([1.0, 2.0, 3.0])
       iex> Explorer.Series.to_iovec(series)
       [<<1.0::float-64-native, 2.0::float-64-native, 3.0::float-64-native>>]

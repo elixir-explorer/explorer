@@ -370,7 +370,9 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Term {
     let resource = &data.resource;
 
     match s.dtype() {
-        // DataType::Boolean => encode_iovec!(resource, s, env, bool, u8),
+        DataType::Boolean => {
+            s.bool().unwrap().into_iter().map(|v| v.unwrap() as u8).collect::<Vec<u8>>().encode(env)
+        },
         DataType::Int32 => series_to_iovec!(resource, s, env, i32, i32),
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
         DataType::UInt8 => series_to_iovec!(resource, s, env, u8, u8),
