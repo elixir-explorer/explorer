@@ -27,6 +27,9 @@ defmodule Explorer.PolarsBackend.Series do
   def to_list(series), do: Shared.apply_series(series, :s_to_list)
 
   @impl true
+  def to_iovec(series), do: Shared.apply_series(series, :s_to_iovec)
+
+  @impl true
   def cast(series, dtype), do: Shared.apply_series(series, :s_cast, [Atom.to_string(dtype)])
 
   # Introspection
@@ -38,7 +41,7 @@ defmodule Explorer.PolarsBackend.Series do
   def size(series), do: Shared.apply_series(series, :s_size)
 
   @impl true
-  def memtype(series) do
+  def iotype(series) do
     case Shared.apply_series(series, :s_dtype) do
       "u8" -> {:u, 8}
       "u32" -> {:u, 32}
@@ -51,7 +54,7 @@ defmodule Explorer.PolarsBackend.Series do
       "datetime[ms]" -> {:s, 64}
       "datetime[μs]" -> {:s, 64}
       "datetime[ns]" -> {:s, 64}
-      dtype -> raise "cannot convert dtype #{inspect(dtype)} to memtype"
+      dtype -> raise "cannot convert dtype #{inspect(dtype)} to iotype"
     end
   end
 

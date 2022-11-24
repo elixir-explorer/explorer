@@ -15,7 +15,7 @@ defmodule Explorer.MixProject do
       package: package(),
       deps: deps(),
       docs: docs(),
-      preferred_cli_env: [docs: :docs, "hex.publish": :docs],
+      preferred_cli_env: [docs: :docs, "hex.publish": :docs, ci: :test],
       aliases: [
         "rust.lint": ["cmd cargo clippy --manifest-path=native/explorer/Cargo.toml -- -Dwarnings"],
         "rust.fmt": ["cmd cargo fmt --manifest-path=native/explorer/Cargo.toml --all"],
@@ -39,7 +39,7 @@ defmodule Explorer.MixProject do
 
       ## Optional
       {:rustler, ">= 0.0.0", optional: true},
-      {:nx, "~> 0.3.0", optional: true},
+      {:nx, "~> 0.4.0", optional: true},
 
       ## Non-prod
       {:ex_doc, "~> 0.24", only: :docs},
