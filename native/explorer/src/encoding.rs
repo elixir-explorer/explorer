@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 use polars::prelude::*;
-use rustler::{Encoder, Env, ResourceArc, Term};
+use rustler::{OwnedBinary, Encoder, Env, ResourceArc, Term};
 use std::{mem, slice};
 
 use crate::atoms::{
@@ -371,7 +371,12 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Term {
 
     match s.dtype() {
         DataType::Boolean => {
-            s.bool().unwrap().into_iter().map(|v| v.unwrap() as u8).collect::<Vec<u8>>().encode(env)
+            let mut bin = OwnedBinary::new(s.len()).unwrap();
+            let slice = bin.as_mut_slice();
+            for (i, v) in s.bool().unwrap().into_iter().enumerate() {
+                slice[i] = v.unwrap() as u8;
+            }
+            [bin.release(env)].encode(env)
         },
         DataType::Int32 => series_to_iovec!(resource, s, env, i32, i32),
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
@@ -379,11 +384,8 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Term {
         DataType::UInt32 => series_to_iovec!(resource, s, env, u32, u32),
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Utf8 => series_to_iovec!(resource, s, env, utf8, u8),
-        // DataType::Date => date_series_to_list(s, env),
+        DataType::Date => series_to_iovec!(resource, s, env, date, i32),
         // DataType::Datetime(time_unit, None) => datetime_series_to_list(s, *time_unit, env),
-        // DataType::List(t) if t as &DataType == &DataType::UInt32 => {
-        //     encode_list!(s, env, u32, u32)
-        // }
         dt => panic!("to_iovec/1 not implemented for {:?}", dt),
     }
 }

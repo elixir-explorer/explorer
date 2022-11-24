@@ -219,21 +219,34 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> series = Explorer.Series.from_list(["foo", "bar", "bazbat"])
-      iex> Explorer.Series.to_iovec(series)
-      [<<"foobarbazbat">>]
+  Integers and floats follow their native encoding:
 
       iex> series = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.to_iovec(series)
-      [<<1::64-native, 2::64-native, 3::64-native>>]
+      [<<1::signed-64-native, 2::signed-64-native, 3::signed-64-native>>]
+
+      iex> series = Explorer.Series.from_list([1.0, 2.0, 3.0])
+      iex> Explorer.Series.to_iovec(series)
+      [<<1.0::float-64-native, 2.0::float-64-native, 3.0::float-64-native>>]
+
+  Booleans are encoded as 0 and 1:
 
       iex> series = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.to_iovec(series)
       [<<1, 0, 1>>]
 
-      iex> series = Explorer.Series.from_list([1.0, 2.0, 3.0])
+  Dates are encoded as i32 representing days from the Unix epoch (1970-01-01):
+
+      iex> series = Explorer.Series.from_list([~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]])
       iex> Explorer.Series.to_iovec(series)
-      [<<1.0::float-64-native, 2.0::float-64-native, 3.0::float-64-native>>]
+      [<<-719162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>]
+
+  And strings are encoded contiguously, which may not be necessarily useful:
+
+      iex> series = Explorer.Series.from_list(["foo", "bar", "bazbat"])
+      iex> Explorer.Series.to_iovec(series)
+      [<<"foobarbazbat">>]
+
   """
   @doc type: :transformation
   @spec to_iovec(series :: Series.t()) :: Enumerable.t()
