@@ -3,27 +3,27 @@ defmodule Explorer.Query do
   High-level query for Explorer.
 
   Queries convert regular Elixir code which compile to efficient
-  dataframes operations. Variables in queries represent dataframe
-  column names:
+  dataframes operations. Identifiers in queries, such as `strs`
+  and `nums`, represent dataframe column names:
 
-      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, col2 > 2)
+      iex> df = Explorer.DataFrame.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, nums > 2)
       #Explorer.DataFrame<
         Polars[1 x 2]
-        col1 string ["c"]
-        col2 integer [3]
+        strs string ["c"]
+        nums integer [3]
       >
 
-  If you want to pass outside values to the query, you must escape
-  them using `^`:
+  If you want to access variables defined outside of the query,
+  you must escape them using `^`:
 
       iex> min = 2
-      iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, col2 > ^min)
+      iex> df = Explorer.DataFrame.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, nums > ^min)
       #Explorer.DataFrame<
         Polars[1 x 2]
-        col1 string ["c"]
-        col2 integer [3]
+        strs string ["c"]
+        nums integer [3]
       >
 
   All operations from `Explorer.Series` are imported inside queries.
@@ -35,11 +35,11 @@ defmodule Explorer.Query do
   Queries simply become lazy dataframe operations at runtime.
   For example, the following query
 
-      Explorer.DataFrame.filter(df, col2 > 2)
+      Explorer.DataFrame.filter(df, nums > 2)
 
-  is equivalent to:
+  is equivalent to
 
-      Explorer.DataFrame.filter_with(df, fn df -> df["col2"] > 2 end)
+      Explorer.DataFrame.filter_with(df, fn df -> df["nums"] > 2 end)
 
   This means that, whenever you want to generate queries programatically,
   you can fallback to the regular `_with` APIs.
@@ -80,6 +80,10 @@ defmodule Explorer.Query do
         unquote(traverse(expression, df))
       end
     end
+  end
+
+  defp traverse({:=, _, [_, _]}, _df) do
+    raise "= is not currently supported in Explorer.Query"
   end
 
   defp traverse({:^, _, [expr]}, _df), do: expr
