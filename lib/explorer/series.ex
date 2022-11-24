@@ -241,6 +241,12 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<-719162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>]
 
+  Datetimes are encoded as i64 representing microseconds from the Unix epoch (1970-01-01):
+
+      iex> series = Explorer.Series.from_list([~N[0001-01-01 00:00:00], ~N[1970-01-01 00:00:00], ~N[1986-10-13 01:23:45.987654]])
+      iex> Explorer.Series.to_iovec(series)
+      [<<-62135596800000000::signed-64-native, 0::signed-64-native, 529550625987654::signed-64-native>>]
+
   And strings are encoded contiguously, which may not be necessarily useful:
 
       iex> series = Explorer.Series.from_list(["foo", "bar", "bazbat"])

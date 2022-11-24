@@ -385,7 +385,9 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Term {
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Utf8 => series_to_iovec!(resource, s, env, utf8, u8),
         DataType::Date => series_to_iovec!(resource, s, env, date, i32),
-        // DataType::Datetime(time_unit, None) => datetime_series_to_list(s, *time_unit, env),
+        DataType::Datetime(TimeUnit::Microseconds, None) => {
+            series_to_iovec!(resource, s, env, datetime, i64)
+        }
         dt => panic!("to_iovec/1 not implemented for {:?}", dt),
     }
 }
