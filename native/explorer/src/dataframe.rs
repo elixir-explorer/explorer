@@ -3,8 +3,6 @@ use polars_ops::pivot::{pivot_stable, PivotAgg};
 
 use std::result::Result;
 
-use crate::series::{to_ex_series_collection, to_series_collection};
-
 use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
@@ -36,12 +34,6 @@ pub fn df_join(
     let df1 = &other.resource.0;
     let new_df = df.join(df1, left_on, right_on, how, suffix)?;
     Ok(ExDataFrame::new(new_df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_get_columns(data: ExDataFrame) -> Result<Vec<ExSeries>, ExplorerError> {
-    let df = &data.resource.0;
-    Ok(to_ex_series_collection(df.get_columns().clone()))
 }
 
 #[rustler::nif]
@@ -416,7 +408,10 @@ pub fn df_mutate_with_exprs(
 
 #[rustler::nif]
 pub fn df_from_series(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
-    let columns = to_series_collection(columns);
+    let columns = columns
+        .into_iter()
+        .map(|c| c.resource.0.clone())
+        .collect::<Vec<Series>>();
     let df = DataFrame::new(columns)?;
     Ok(ExDataFrame::new(df))
 }

@@ -10,14 +10,6 @@ use rand_pcg::Pcg64;
 use rustler::{Encoder, Env, Term};
 use std::result::Result;
 
-pub(crate) fn to_series_collection(s: Vec<ExSeries>) -> Vec<Series> {
-    s.into_iter().map(|c| c.resource.0.clone()).collect()
-}
-
-pub(crate) fn to_ex_series_collection(s: Vec<Series>) -> Vec<ExSeries> {
-    s.into_iter().map(ExSeries::new).collect()
-}
-
 #[rustler::nif]
 pub fn s_as_str(data: ExSeries) -> Result<String, ExplorerError> {
     Ok(format!("{:?}", data.resource.0))
@@ -465,6 +457,17 @@ pub fn rolling_opts(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_to_list(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
     Ok(encoding::list_from_series(data, env))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_to_iovec(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
+    if data.resource.0.null_count() != 0 {
+        Err(ExplorerError::Other(String::from(
+            "cannot invoke to_iovec on series with nils",
+        )))
+    } else {
+        Ok(encoding::iovec_from_series(data, env))
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

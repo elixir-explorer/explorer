@@ -1,6 +1,7 @@
 use chrono::prelude::*;
 use polars::prelude::*;
-use rustler::{Encoder, Env, ResourceArc, Term};
+use rustler::{Encoder, Env, OwnedBinary, ResourceArc, Term};
+use std::{mem, slice};
 
 use crate::atoms::{
     self, calendar, day, hour, infinity, microsecond, minute, month, nan, neg_infinity, second,
@@ -13,7 +14,7 @@ use rustler::wrapper::{binary, list, map, NIF_TERM};
 
 // Encoding helpers
 
-macro_rules! unsafe_iterator_to_list {
+macro_rules! unsafe_iterator_series_to_list {
     ($env: ident, $iterator: expr) => {{
         let env_as_c_arg = $env.as_c_arg();
         let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
@@ -73,12 +74,12 @@ fn encode_date(v: i32, env: Env) -> Term {
 }
 
 #[inline]
-fn encode_date_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+fn date_series_to_list<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let date_struct_keys = &date_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let date_module = atoms::date_module().encode(env).as_c_arg();
 
-    unsafe_iterator_to_list!(
+    unsafe_iterator_series_to_list!(
         env,
         s.date().unwrap().into_iter().map(|option| option
             .map(|v| unsafe_encode_date!(
@@ -162,12 +163,12 @@ fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Term {
 }
 
 #[inline]
-fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> Term<'b> {
+fn datetime_series_to_list<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> Term<'b> {
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
 
-    unsafe_iterator_to_list!(
+    unsafe_iterator_series_to_list!(
         env,
         s.datetime().unwrap().into_iter().map(|option| option
             .map(|v| {
@@ -186,7 +187,7 @@ fn encode_datetime_series<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> 
 }
 
 #[inline]
-fn encode_utf8_series<'b>(
+fn utf8_series_to_list<'b>(
     resource: &ResourceArc<ExSeriesRef>,
     s: &Series,
     env: Env<'b>,
@@ -236,13 +237,13 @@ fn encode_utf8_series<'b>(
 
 // Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
 #[inline]
-fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+fn float64_series_to_list<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     let nan_atom = nan().encode(env);
     let neg_infinity_atom = neg_infinity().encode(env);
     let infinity_atom = infinity().encode(env);
     let nil_atom = atom::nil().encode(env);
 
-    unsafe_iterator_to_list!(
+    unsafe_iterator_series_to_list!(
         env,
         s.f64().unwrap().into_iter().map(|option| {
             match option {
@@ -263,9 +264,9 @@ fn encode_float64_series<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
     )
 }
 
-macro_rules! encode {
+macro_rules! series_to_list {
     ($s:ident, $env:ident, $convert_function:ident) => {
-        unsafe_iterator_to_list!(
+        unsafe_iterator_series_to_list!(
             $env,
             $s.$convert_function()
                 .unwrap()
@@ -275,7 +276,7 @@ macro_rules! encode {
     };
 }
 
-macro_rules! encode_list {
+macro_rules! list_series_to_list {
     ($s:ident, $env:ident, $convert_function:ident, $out_type:ty) => {
         $s.list()
             .unwrap()
@@ -295,6 +296,29 @@ macro_rules! encode_list {
             .collect::<Vec<Vec<Option<$out_type>>>>()
             .encode($env)
     };
+}
+
+macro_rules! series_to_iovec {
+    ($resource:ident, $s:ident, $env:ident, $convert_function:ident, $in_type:ty) => {{
+        unsafe_iterator_series_to_list!(
+            $env,
+            $s.$convert_function()
+                .unwrap()
+                .downcast_iter()
+                .map(|array| {
+                    let slice: &[$in_type] = array.values().as_slice();
+
+                    let aligned_slice = unsafe {
+                        slice::from_raw_parts(
+                            slice.as_ptr() as *const u8,
+                            slice.len() * mem::size_of::<$in_type>(),
+                        )
+                    };
+
+                    unsafe { $resource.make_binary_unsafe($env, |_| aligned_slice) }.to_term($env)
+                })
+        )
+    }};
 }
 
 // API
@@ -324,18 +348,46 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Term {
     let s = &data.resource.0;
 
     match s.dtype() {
-        DataType::Boolean => encode!(s, env, bool),
-        DataType::Int32 => encode!(s, env, i32),
-        DataType::Int64 => encode!(s, env, i64),
-        DataType::UInt8 => encode!(s, env, u8),
-        DataType::UInt32 => encode!(s, env, u32),
-        DataType::Utf8 => encode_utf8_series(&data.resource, s, env),
-        DataType::Float64 => encode_float64_series(s, env),
-        DataType::Date => encode_date_series(s, env),
-        DataType::Datetime(time_unit, None) => encode_datetime_series(s, *time_unit, env),
+        DataType::Boolean => series_to_list!(s, env, bool),
+        DataType::Int32 => series_to_list!(s, env, i32),
+        DataType::Int64 => series_to_list!(s, env, i64),
+        DataType::UInt8 => series_to_list!(s, env, u8),
+        DataType::UInt32 => series_to_list!(s, env, u32),
+        DataType::Utf8 => utf8_series_to_list(&data.resource, s, env),
+        DataType::Float64 => float64_series_to_list(s, env),
+        DataType::Date => date_series_to_list(s, env),
+        DataType::Datetime(time_unit, None) => datetime_series_to_list(s, *time_unit, env),
         DataType::List(t) if t as &DataType == &DataType::UInt32 => {
-            encode_list!(s, env, u32, u32)
+            list_series_to_list!(s, env, u32, u32)
         }
         dt => panic!("to_list/1 not implemented for {:?}", dt),
+    }
+}
+
+#[allow(clippy::size_of_in_element_count)]
+pub fn iovec_from_series(data: ExSeries, env: Env) -> Term {
+    let s = &data.resource.0;
+    let resource = &data.resource;
+
+    match s.dtype() {
+        DataType::Boolean => {
+            let mut bin = OwnedBinary::new(s.len()).unwrap();
+            let slice = bin.as_mut_slice();
+            for (i, v) in s.bool().unwrap().into_iter().enumerate() {
+                slice[i] = v.unwrap() as u8;
+            }
+            [bin.release(env)].encode(env)
+        }
+        DataType::Int32 => series_to_iovec!(resource, s, env, i32, i32),
+        DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
+        DataType::UInt8 => series_to_iovec!(resource, s, env, u8, u8),
+        DataType::UInt32 => series_to_iovec!(resource, s, env, u32, u32),
+        DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
+        DataType::Utf8 => series_to_iovec!(resource, s, env, utf8, u8),
+        DataType::Date => series_to_iovec!(resource, s, env, date, i32),
+        DataType::Datetime(TimeUnit::Microseconds, None) => {
+            series_to_iovec!(resource, s, env, datetime, i64)
+        }
+        dt => panic!("to_iovec/1 not implemented for {:?}", dt),
     }
 }

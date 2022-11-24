@@ -203,6 +203,62 @@ defmodule Explorer.Series do
   def to_enum(series), do: Explorer.Series.Iterator.new(series)
 
   @doc """
+  Retrieves the underlying io vectors from a series.
+
+  An io vector is a list of binaries. This is typically the
+  in-memory representation of the series. If the whole series
+  in contiguous in memory, then the list will have a single
+  element.
+
+  This operation fails if the series has `nil` values.
+  Use `fill_missing/1` to handle them accordingly.
+
+  To retrieve the type of the underlying io vector, use `iotype/1`.
+
+  To convert the iovec to a binary, you can use `IO.iodata_to_binary/1`.
+
+  ## Examples
+
+  Integers and floats follow their native encoding:
+
+      iex> series = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.to_iovec(series)
+      [<<1::signed-64-native, 2::signed-64-native, 3::signed-64-native>>]
+
+      iex> series = Explorer.Series.from_list([1.0, 2.0, 3.0])
+      iex> Explorer.Series.to_iovec(series)
+      [<<1.0::float-64-native, 2.0::float-64-native, 3.0::float-64-native>>]
+
+  Booleans are encoded as 0 and 1:
+
+      iex> series = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.to_iovec(series)
+      [<<1, 0, 1>>]
+
+  Dates are encoded as i32 representing days from the Unix epoch (1970-01-01):
+
+      iex> series = Explorer.Series.from_list([~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]])
+      iex> Explorer.Series.to_iovec(series)
+      [<<-719162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>]
+
+  Datetimes are encoded as i64 representing microseconds from the Unix epoch (1970-01-01):
+
+      iex> series = Explorer.Series.from_list([~N[0001-01-01 00:00:00], ~N[1970-01-01 00:00:00], ~N[1986-10-13 01:23:45.987654]])
+      iex> Explorer.Series.to_iovec(series)
+      [<<-62135596800000000::signed-64-native, 0::signed-64-native, 529550625987654::signed-64-native>>]
+
+  And strings are encoded contiguously, which may not be necessarily useful:
+
+      iex> series = Explorer.Series.from_list(["foo", "bar", "bazbat"])
+      iex> Explorer.Series.to_iovec(series)
+      [<<"foobarbazbat">>]
+
+  """
+  @doc type: :transformation
+  @spec to_iovec(series :: Series.t()) :: Enumerable.t()
+  def to_iovec(series), do: Shared.apply_impl(series, :to_iovec)
+
+  @doc """
   Converts a `t:Nx.Tensor.t/0` to a series.
 
   > #### Warning {: .warning}
@@ -382,7 +438,7 @@ defmodule Explorer.Series do
 
   It returns something in the shape of `atom()` or `{atom(), bits_size}`.
 
-  The possible memtypes are:
+  The possible iotypes are:
 
   * `:utf8` for strings.
   * `:u` for unsigned integers.
@@ -392,29 +448,29 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list(["Alice", "Bob"])
-      iex> Explorer.Series.memtype(s)
+      iex> Explorer.Series.iotype(s)
       :utf8
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4])
-      iex> Explorer.Series.memtype(s)
+      iex> Explorer.Series.iotype(s)
       {:s, 64}
 
       iex> s = Explorer.Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
-      iex> Explorer.Series.memtype(s)
+      iex> Explorer.Series.iotype(s)
       {:s, 32}
 
       iex> s = Explorer.Series.from_list([1.2, 2.3, 3.5, 4.5])
-      iex> Explorer.Series.memtype(s)
+      iex> Explorer.Series.iotype(s)
       {:f, 64}
 
       iex> s = Explorer.Series.from_list([true, false, true])
-      iex> Explorer.Series.memtype(s)
+      iex> Explorer.Series.iotype(s)
       {:u, 8}
 
   """
   @doc type: :introspection
-  @spec memtype(series :: Series.t()) :: atom() | {atom(), non_neg_integer()}
-  def memtype(series), do: Shared.apply_impl(series, :memtype)
+  @spec iotype(series :: Series.t()) :: atom() | {atom(), non_neg_integer()}
+  def iotype(series), do: Shared.apply_impl(series, :iotype)
 
   # Slice and dice
 

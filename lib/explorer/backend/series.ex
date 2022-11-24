@@ -17,6 +17,7 @@ defmodule Explorer.Backend.Series do
 
   @callback from_list(list(), dtype()) :: s
   @callback to_list(s) :: list()
+  @callback to_iovec(s) :: [binary()]
   @callback cast(s, dtype) :: s
 
   # Introspection
@@ -24,7 +25,7 @@ defmodule Explorer.Backend.Series do
   @callback dtype(s) :: dtype()
   @callback size(s) :: non_neg_integer() | lazy_s()
   @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
-  @callback memtype(s) :: :uft8 | {:s | :u | :f, non_neg_integer}
+  @callback iotype(s) :: :uft8 | {:s | :u | :f, non_neg_integer}
 
   # Slice and dice
 

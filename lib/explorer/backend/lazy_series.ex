@@ -510,12 +510,13 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @remaining_non_lazy_operations [
-    memtype: 1,
+    iotype: 1,
     fetch!: 2,
     mask: 2,
     slice: 2,
     take_every: 2,
-    to_list: 1
+    to_list: 1,
+    to_iovec: 1
   ]
 
   for {fun, arity} <- @remaining_non_lazy_operations do
