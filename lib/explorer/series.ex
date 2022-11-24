@@ -190,6 +190,8 @@ defmodule Explorer.Series do
   @doc """
   Converts a series to an enumerable.
 
+  The enumerable will lazily traverse the series.
+
   ## Examples
 
       iex> series = Explorer.Series.from_list([1, 2, 3])
@@ -198,7 +200,7 @@ defmodule Explorer.Series do
   """
   @doc type: :transformation
   @spec to_enum(series :: Series.t()) :: Enumerable.t()
-  def to_enum(series), do: Shared.apply_impl(series, :to_enum)
+  def to_enum(series), do: Explorer.Series.Iterator.new(series)
 
   @doc """
   Converts a `t:Nx.Tensor.t/0` to a series.
@@ -377,8 +379,6 @@ defmodule Explorer.Series do
 
   @doc """
   Returns the memory type of the series.
-
-  This function mirrors the `Nx` types.
 
   It returns something in the shape of `atom()` or `{atom(), bits_size}`.
 
@@ -2456,6 +2456,48 @@ defmodule Explorer.Series do
           color(">", :map, opts)
         ])
       )
+    end
+  end
+end
+
+defmodule Explorer.Series.Iterator do
+  @moduledoc false
+  defstruct [:series, :size, :impl]
+
+  def new(series) do
+    impl = Explorer.Shared.impl!(series)
+    %__MODULE__{series: series, size: impl.size(series), impl: impl}
+  end
+
+  defimpl Enumerable do
+    def count(iterator), do: {:ok, iterator.size}
+
+    def member?(_iterator, _value), do: {:error, __MODULE__}
+
+    def slice(%{size: size, series: series, impl: impl}) do
+      {:ok, size,
+       fn start, size ->
+         series
+         |> impl.slice(start, size)
+         |> impl.to_list()
+       end}
+    end
+
+    def reduce(%{series: series, size: size, impl: impl}, acc, fun) do
+      reduce(series, impl, size, 0, acc, fun)
+    end
+
+    defp reduce(_series, _impl, _size, _offset, {:halt, acc}, _fun), do: {:halted, acc}
+
+    defp reduce(series, impl, size, offset, {:suspend, acc}, fun) do
+      {:suspended, acc, &reduce(series, impl, size, offset, &1, fun)}
+    end
+
+    defp reduce(_series, _impl, size, size, {:cont, acc}, _fun), do: {:done, acc}
+
+    defp reduce(series, impl, size, offset, {:cont, acc}, fun) do
+      value = impl.fetch!(series, offset)
+      reduce(series, impl, size, offset + 1, fun.(value, acc), fun)
     end
   end
 end

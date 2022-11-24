@@ -515,7 +515,6 @@ defmodule Explorer.Backend.LazySeries do
     mask: 2,
     slice: 2,
     take_every: 2,
-    to_enum: 1,
     to_list: 1
   ]
 
