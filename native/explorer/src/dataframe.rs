@@ -396,12 +396,16 @@ pub fn df_put_column(data: ExDataFrame, series: ExSeries) -> Result<ExDataFrame,
 pub fn df_mutate_with_exprs(
     data: ExDataFrame,
     columns: Vec<ExExpr>,
+    groups: Vec<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df: DataFrame = data.resource.0.clone();
-    let new_df = df
-        .lazy()
-        .with_columns(ex_expr_to_exprs(columns))
-        .collect()?;
+    let mutations = ex_expr_to_exprs(columns);
+    let new_df = if groups.is_empty() {
+        df.lazy().with_columns(mutations).collect()?
+    } else {
+        df.groupby_stable(groups)?
+            .apply(|df| df.lazy().with_columns(&mutations).collect())?
+    };
 
     Ok(ExDataFrame::new(new_df))
 }

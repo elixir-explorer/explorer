@@ -78,7 +78,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_load_parquet(_binary), do: err()
 
   def df_mask(_df, _mask), do: err()
-  def df_mutate_with_exprs(_df, _exprs), do: err()
+  def df_mutate_with_exprs(_df, _exprs, _groups), do: err()
   def df_n_rows(_df), do: err()
   def df_names(_df), do: err()
   def df_pivot_longer(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()

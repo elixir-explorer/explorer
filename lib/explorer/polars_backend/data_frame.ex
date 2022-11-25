@@ -378,12 +378,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def mutate_with(%DataFrame{groups: []} = df, %DataFrame{} = out_df, column_pairs) do
-    ungrouped_mutate_with(df, out_df, column_pairs)
-  end
+  def mutate_with(%DataFrame{} = df, %DataFrame{} = out_df, column_pairs) do
+    exprs =
+      for {name, lazy_series} <- column_pairs do
+        original_expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
+        Explorer.PolarsBackend.Expression.alias_expr(original_expr, name)
+      end
 
-  def mutate_with(%DataFrame{groups: [_ | _]} = df, %DataFrame{} = out_df, column_pairs) do
-    apply_on_groups(df, out_df, fn group -> ungrouped_mutate_with(group, out_df, column_pairs) end)
+    Shared.apply_dataframe(df, out_df, :df_mutate_with_exprs, [exprs, df.groups])
   end
 
   @impl true
@@ -391,16 +393,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
     series = PolarsSeries.rename(series, new_column_name)
 
     Shared.apply_dataframe(df, out_df, :df_put_column, [series.data])
-  end
-
-  defp ungrouped_mutate_with(df, out_df, column_pairs) do
-    exprs =
-      for {name, lazy_series} <- column_pairs do
-        original_expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
-        Explorer.PolarsBackend.Expression.alias_expr(original_expr, name)
-      end
-
-    Shared.apply_dataframe(df, out_df, :df_mutate_with_exprs, [exprs])
   end
 
   @impl true
@@ -422,29 +414,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
     columns_to_keep = unless keep_all, do: out_df.names
 
     Shared.apply_dataframe(df, out_df, :df_distinct, [true, columns, columns_to_keep])
-  end
-
-  # Applies a callback function to each group of indices in a dataframe. Then regroups it.
-  defp apply_on_groups(%DataFrame{} = df, out_df, callback) when is_function(callback, 1) do
-    ungrouped_df = DataFrame.ungroup(df)
-    idx_column = "__original_row_idx__"
-
-    df
-    |> indices_by_groups()
-    |> Enum.map(fn indices ->
-      ungrouped_df
-      |> slice(indices)
-      |> then(callback)
-      |> then(fn group_df ->
-        idx_series = series_from_list!(idx_column, indices)
-
-        Shared.apply_dataframe(group_df, :df_put_column, [idx_series.data])
-      end)
-    end)
-    |> then(fn [head | _tail] = dfs -> concat_rows(dfs, head) end)
-    |> DataFrame.ungroup()
-    |> DataFrame.arrange_with(fn ldf -> [asc: ldf[idx_column]] end)
-    |> select(out_df)
   end
 
   # Returns a list of lists, where each list is a group of row indices.
