@@ -54,6 +54,8 @@ if Code.ensure_loaded?(Nx) do
 
     ## Nx
 
+    import Nx.Defn
+
     @doc """
     Puts a tensor in the TensorFrame.
 
