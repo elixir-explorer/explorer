@@ -50,8 +50,8 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_series(series)
   end
 
-  def to_expr(%LazySeries{op: :from_binary, args: [binary, bintype, alignment]}) do
-    series = Explorer.PolarsBackend.Shared.from_binary(binary, bintype, alignment)
+  def to_expr(%LazySeries{op: :from_binary, args: [binary, dtype]}) do
+    series = Explorer.PolarsBackend.Shared.from_binary(binary, dtype)
     Native.expr_series(series)
   end
 

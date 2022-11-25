@@ -391,7 +391,10 @@ pub fn df_to_dummies(
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let dummies = df.select(&selection).and_then(|df| df.to_dummies())?;
-    let series = dummies.iter().map(|series| series.cast(&DataType::Int64).unwrap()).collect();
+    let series = dummies
+        .iter()
+        .map(|series| series.cast(&DataType::Int64).unwrap())
+        .collect();
     Ok(ExDataFrame::new(DataFrame::new(series)?))
 }
 

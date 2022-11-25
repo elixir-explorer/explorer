@@ -55,7 +55,7 @@ defmodule Explorer.TensorFrameTest do
       end
 
       assert_raise ArgumentError,
-                   "cannot find dtype for tensor of type {:u, 32}, please pass the :dtype option instead",
+                   "cannot convert binary/tensor type {:u, 32} into dtype",
                    fn ->
                      TF.put(tf, :d, Nx.tensor([1, 2, 3], type: {:u, 32}))
                    end

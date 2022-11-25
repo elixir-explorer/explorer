@@ -230,15 +230,14 @@ defmodule Explorer.Series do
           Series.t()
   def from_binary(binary, dtype, opts \\ [])
       when K.and(is_binary(binary), K.and(is_atom(dtype), is_list(opts))) do
-    {type, alignment} = Shared.dtype_to_bintype(dtype)
-    backend = backend_from_options!(opts)
-    series = backend.from_binary(binary, type, alignment)
+    {_type, alignment} = Shared.dtype_to_bintype!(dtype)
 
-    if dtype in [:float, :integer] do
-      series
-    else
-      backend.cast(series, dtype)
+    if rem(bit_size(binary), alignment) != 0 do
+      raise ArgumentError, "binary for dtype #{dtype} is expected to be #{alignment}-bit aligned"
     end
+
+    backend = backend_from_options!(opts)
+    backend.from_binary(binary, dtype)
   end
 
   @doc """
@@ -272,8 +271,7 @@ defmodule Explorer.Series do
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
   def from_tensor(tensor, opts \\ []) do
     {type, alignment} = Nx.type(tensor)
-    backend = backend_from_options!(opts)
-    tensor |> Nx.to_binary() |> backend.from_binary(type, alignment)
+    tensor |> Nx.to_binary() |> from_binary(Shared.bintype_to_dtype!({type, alignment}), opts)
   end
 
   @doc """

@@ -74,17 +74,8 @@ if Code.ensure_loaded?(Nx) do
       tensor = Nx.to_tensor(tensor)
       opts = Keyword.validate!(opts, [:dtype])
       name = to_column_name(name)
-      dtype = opts[:dtype] || tf.dtypes[name] || dtype_from_tensor!(tensor.type)
+      dtype = opts[:dtype] || tf.dtypes[name] || Explorer.Shared.bintype_to_dtype!(tensor.type)
       put!(tf, name, tensor, dtype)
-    end
-
-    defp dtype_from_tensor!({:u, 8}), do: :boolean
-    defp dtype_from_tensor!({:s, 64}), do: :integer
-    defp dtype_from_tensor!({:f, 64}), do: :float
-
-    defp dtype_from_tensor!(type) do
-      raise ArgumentError,
-            "cannot find dtype for tensor of type #{inspect(type)}, please pass the :dtype option instead"
     end
 
     ## Access
@@ -145,10 +136,10 @@ if Code.ensure_loaded?(Nx) do
 
     defp put!(%{dtypes: dtypes, n_rows: n_rows} = tf, name, value, dtype) when is_binary(name) do
       cond do
-        Explorer.Shared.dtype_to_bintype(dtype) != value.type ->
+        Explorer.Shared.dtype_to_bintype!(dtype) != value.type ->
           raise ArgumentError,
                 "cannot add column \"#{name}\" to TensorFrame with a tensor that does not match its dtype. " <>
-                  "The dtype #{dtype} expects a tensor of type #{inspect(Explorer.Shared.dtype_to_bintype(dtype))} " <>
+                  "The dtype #{dtype} expects a tensor of type #{inspect(Explorer.Shared.dtype_to_bintype!(dtype))} " <>
                   "but got tensor #{inspect(value)}"
 
         Map.has_key?(dtypes, name) ->

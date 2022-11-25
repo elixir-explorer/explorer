@@ -117,25 +117,17 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
-  def from_binary(binary, bintype, alignment, name \\ "") when is_binary(binary) do
-    case {bintype, alignment} do
-      {:u, 8} ->
-        Native.s_from_binary_u8(name, binary)
-
-      {:s, 32} ->
-        Native.s_from_binary_i32(name, binary)
-
-      {:s, 64} ->
-        Native.s_from_binary_i64(name, binary)
-
-      {:f, 64} ->
-        Native.s_from_binary_f64(name, binary)
-
-      _ ->
-        raise ArgumentError,
-              "Polars backend does not support loading #{bintype}#{alignment} from binary"
+  def from_binary(binary, dtype, name \\ "") when is_binary(binary) do
+    case dtype do
+      :boolean -> Native.s_from_binary_u8(name, binary) |> Native.s_cast("boolean") |> ok()
+      :date -> Native.s_from_binary_i32(name, binary) |> Native.s_cast("date") |> ok()
+      :datetime -> Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime") |> ok()
+      :integer -> Native.s_from_binary_i64(name, binary)
+      :float -> Native.s_from_binary_f64(name, binary)
     end
   end
+
+  defp ok({:ok, value}), do: value
 
   def normalise_dtype("u8"), do: :integer
   def normalise_dtype("u32"), do: :integer
