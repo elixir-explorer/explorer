@@ -389,16 +389,16 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
-    * `dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
+    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+    * `:dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
       imputed from the first 1000 rows. (default: `[]`)
-    * `header` - Does the file have a header of column names as the first row or not? (default: `true`)
-    * `max_rows` - Maximum number of lines to read. (default: `nil`)
-    * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
-    * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-    * `columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
-    * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
-    * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
+    * `:header` - Does the file have a header of column names as the first row or not? (default: `true`)
+    * `:max_rows` - Maximum number of lines to read. (default: `nil`)
+    * `:null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
+    * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
+    * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
+    * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
+    * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
   """
   @doc type: :io
   @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
@@ -454,16 +454,16 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
-    * `dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
+    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+    * `:dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
       imputed from the first 1000 rows. (default: `[]`)
-    * `header` - Does the file have a header of column names as the first row or not? (default: `true`)
-    * `max_rows` - Maximum number of lines to read. (default: `nil`)
-    * `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
-    * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-    * `columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
-    * `infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
-    * `parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
+    * `:header` - Does the file have a header of column names as the first row or not? (default: `true`)
+    * `:max_rows` - Maximum number of lines to read. (default: `nil`)
+    * `:null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
+    * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
+    * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
+    * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
+    * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
   """
   @doc type: :io
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
@@ -542,7 +542,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `compression` - The compression algorithm to use when writing files.
+    * `:compression` - The compression algorithm to use when writing files.
       Where a compression level is available, this can be passed as a tuple,
       such as `{:zstd, 3}`. Supported options are:
 
@@ -602,7 +602,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `compression` - The compression algorithm to use when writing files.
+    * `:compression` - The compression algorithm to use when writing files.
       Where a compression level is available, this can be passed as a tuple,
       such as `{:zstd, 3}`. Supported options are:
 
@@ -664,7 +664,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `columns` - List with the name or index of columns to be selected. Defaults to all columns.
+    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t(), opts :: Keyword.t()) ::
@@ -705,7 +705,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `compression` - The compression algorithm to use when writing files.
+    * `:compression` - The compression algorithm to use when writing files.
       Supported options are:
 
         * `nil` (uncompressed, default)
@@ -748,7 +748,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `compression` - The compression algorithm to use when writing files.
+    * `:compression` - The compression algorithm to use when writing files.
       Supported options are:
 
         * `nil` (uncompressed, default)
@@ -783,7 +783,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `columns` - List with the name or index of columns to be selected. Defaults to all columns.
+    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
 
   """
   @doc type: :io
@@ -820,7 +820,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `columns` - List with the name or index of columns to be selected. Defaults to all columns.
+    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
   """
   @doc type: :io
   @spec from_ipc_stream(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
@@ -852,7 +852,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `compression` - The compression algorithm to use when writing files.
+    * `:compression` - The compression algorithm to use when writing files.
       Supported options are:
 
         * `nil` (uncompressed, default)
@@ -877,7 +877,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `compression` - The compression algorithm to use when writing files.
+    * `:compression` - The compression algorithm to use when writing files.
       Supported options are:
 
         * `nil` (uncompressed, default)
@@ -912,7 +912,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `columns` - List with the name or index of columns to be selected. Defaults to all columns.
+    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
 
   """
   @doc type: :io
@@ -951,8 +951,8 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `header` - Should the column names be written as the first line of the file? (default: `true`)
-    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
+    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
+    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
   """
   @doc type: :io
   @spec to_csv(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
@@ -979,8 +979,8 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `header` - Should the column names be written as the first line of the file? (default: `true`)
-    * `delimiter` - A single character used to separate fields within a record. (default: `","`)
+    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
+    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
 
   ## Examples
 
@@ -1012,10 +1012,10 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `batch_size` - Sets the batch size for reading rows.
+    * `:batch_size` - Sets the batch size for reading rows.
     This value may have significant impact in performance, so adjust it for your needs (default: `1000`).
 
-    * `infer_schema_length` - Maximum number of rows read for schema inference.
+    * `:infer_schema_length` - Maximum number of rows read for schema inference.
     Setting this to nil will do a full table scan and will be slow (default: `1000`).
   """
   @doc type: :io
@@ -1099,10 +1099,10 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `batch_size` - Sets the batch size for reading rows.
+    * `:batch_size` - Sets the batch size for reading rows.
     This value may have significant impact in performance, so adjust it for your needs (default: `1000`).
 
-    * `infer_schema_length` - Maximum number of rows read for schema inference.
+    * `:infer_schema_length` - Maximum number of rows read for schema inference.
     Setting this to nil will do a full table scan and will be slow (default: `1000`).
 
   """
@@ -1180,7 +1180,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
 
   ## Examples
 
@@ -2409,7 +2409,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `keep_all` - If set to `true`, keep all columns. Default is `false`.
+    * `:keep_all` - If set to `true`, keep all columns. Default is `false`.
 
   ## Examples
 
@@ -3022,9 +3022,9 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `replacement` - If set to `true`, each sample will be independent and therefore values may repeat.
+    * `:replacement` - If set to `true`, each sample will be independent and therefore values may repeat.
       Required to be `true` for `n` greater then the number of rows in the dataframe or `frac` > 1.0. (default: `false`)
-    * `seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
+    * `:seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
 
   ## Examples
 
@@ -3136,19 +3136,19 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `keep` - Columns that are not in the list of pivot and should be kept in the dataframe.
+    * `:keep` - Columns that are not in the list of pivot and should be kept in the dataframe.
       May be a filter callback on the dataframe's column names.
       Defaults to all columns except the ones to pivot.
 
-    * `drop` - Columns that are not in the list of pivot and should be dropped from the dataframe.
+    * `:drop` - Columns that are not in the list of pivot and should be dropped from the dataframe.
       May be a filter callback on the dataframe's column names. This list of columns is going to be
       subtracted from the list of `keep`.
       Defaults to an empty list.
 
-    * `names_to` - A string specifying the name of the column to create from the data stored
+    * `:names_to` - A string specifying the name of the column to create from the data stored
       in the column names of the dataframe. Defaults to `"variable"`.
 
-    * `values_to` - A string specifying the name of the column to create from the data stored
+    * `:values_to` - A string specifying the name of the column to create from the data stored
       in series element values. Defaults to `"value"`.
 
   ## Examples
@@ -3318,7 +3318,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-  * `id_columns` - A set of columns that uniquely identifies each observation.
+  * `:id_columns` - A set of columns that uniquely identifies each observation.
     Defaults to all columns in data except for the columns specified in `names_from` and `values_from`.
     Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated
     with existing variables. May accept a filter callback, a list or a range of column names.
@@ -3330,7 +3330,7 @@ defmodule Explorer.DataFrame do
     or truncating the column and converting it to integer, as long as doing so
     preserves the properties of the column.
 
-  * `names_prefix` - String added to the start of every variable name.
+  * `:names_prefix` - String added to the start of every variable name.
     This is particularly useful if `names_from` is a numeric vector and you want to create syntactic variable names.
 
   ## Examples
@@ -3524,16 +3524,16 @@ defmodule Explorer.DataFrame do
 
   ## Join types
 
-    * `inner` - Returns all rows from `left` where there are matching values in `right`, and all columns from `left` and `right`.
-    * `left` - Returns all rows from `left` and all columns from `left` and `right`. Rows in `left` with no match in `right` will have `nil` values in the new columns.
-    * `right` - Returns all rows from `right` and all columns from `left` and `right`. Rows in `right` with no match in `left` will have `nil` values in the new columns.
-    * `outer` - Returns all rows and all columns from both `left` and `right`. Where there are not matching values, returns `nil` for the one missing.
-    * `cross` - Also known as a cartesian join. Returns all combinations of `left` and `right`. Can be very computationally expensive.
+    * `:inner` - Returns all rows from `left` where there are matching values in `right`, and all columns from `left` and `right`.
+    * `:left` - Returns all rows from `left` and all columns from `left` and `right`. Rows in `left` with no match in `right` will have `nil` values in the new columns.
+    * `:right` - Returns all rows from `right` and all columns from `left` and `right`. Rows in `right` with no match in `left` will have `nil` values in the new columns.
+    * `:outer` - Returns all rows and all columns from both `left` and `right`. Where there are not matching values, returns `nil` for the one missing.
+    * `:cross` - Also known as a cartesian join. Returns all combinations of `left` and `right`. Can be very computationally expensive.
 
   ## Options
 
-    * `on` - The columns to join on. Defaults to overlapping columns. Does not apply to cross join.
-    * `how` - One of the join types (as an atom) described above. Defaults to `:inner`.
+    * `:on` - The columns to join on. Defaults to overlapping columns. Does not apply to cross join.
+    * `:how` - One of the join types (as an atom) described above. Defaults to `:inner`.
 
   ## Examples
 
@@ -4105,9 +4105,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Summarise each group to a single row using `Explorer.Query`.
 
-  The query is compiled and runs efficiently against the dataframe.
-  This function performs aggregations based on groups, so at least
-  one group is expected, and the query must contain at least one
+  To summarize, you must perform aggregation, defined in `Explorer.Series`,
+  on the desired columns. The query is compiled and runs efficiently
+  against the dataframe. This function performs aggregations based on groups,
+  so at least one group is expected, and the query must contain at least one
   aggregation. It implicitly ungroups the resultant dataframe.
 
   > #### Notice {: .notice}
@@ -4116,20 +4117,6 @@ defmodule Explorer.DataFrame do
 
   See `summarise_with/2` for a callback version of this function without
   `Explorer.Query`.
-
-  ## Supported operations
-
-  The following aggregations may be performed:
-
-    * `min/1` - Take the minimum value within the group. See `Explorer.Series.min/1`.
-    * `max/1` - Take the maximum value within the group. See `Explorer.Series.max/1`.
-    * `sum/1` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
-    * `mean/1` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
-    * `median/1` - Take the median of the series within the group. See `Explorer.Series.median/1`.
-    * `first/1` - Take the first value within the group. See `Explorer.Series.first/1`.
-    * `last/1` - Take the last value within the group. See `Explorer.Series.last/1`.
-    * `count/1` - Count the number of rows per group. See `Explorer.Series.count/1`.
-    * `n_distinct/1` - Count the number of unique rows per group. See `Explorer.Series.n_distinct/1`.
 
   ## Examples
 
@@ -4285,34 +4272,8 @@ defmodule Explorer.DataFrame do
 
   defp maybe_raise_column_not_found(df, name) do
     unless Map.has_key?(df.dtypes, name) do
-      raise ArgumentError,
-            List.to_string(
-              ["could not find column name \"#{name}\""] ++ did_you_mean(name, df.names)
-            )
+      Shared.raise_column_not_found!(name, df.names)
     end
-  end
-
-  @threshold 0.77
-  @max_suggestions 5
-  defp did_you_mean(missing_key, available_keys) do
-    suggestions =
-      for key <- available_keys,
-          distance = String.jaro_distance(missing_key, key),
-          distance >= @threshold,
-          do: {distance, key}
-
-    case suggestions do
-      [] -> []
-      suggestions -> [". Did you mean:\n\n" | format_suggestions(suggestions)]
-    end
-  end
-
-  defp format_suggestions(suggestions) do
-    suggestions
-    |> Enum.sort(&(elem(&1, 0) >= elem(&2, 0)))
-    |> Enum.take(@max_suggestions)
-    |> Enum.sort(&(elem(&1, 1) <= elem(&2, 1)))
-    |> Enum.map(fn {_, key} -> ["      * ", inspect(key), ?\n] end)
   end
 
   defimpl Inspect do

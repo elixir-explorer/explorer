@@ -35,7 +35,6 @@ defmodule Explorer.Series do
   defstruct [:data, :dtype]
 
   @behaviour Access
-
   @compile {:no_warn_undefined, Nx}
 
   defguardp numeric_dtype?(dtype) when dtype in [:float, :integer]
@@ -179,6 +178,10 @@ defmodule Explorer.Series do
 
   All binaries must be in native endianness.
 
+  ## Options
+
+    * `:backend` - The backend to allocate the series on.
+
   ## Examples
 
   Integers and floats follow their native encoding:
@@ -240,6 +243,41 @@ defmodule Explorer.Series do
   end
 
   @doc """
+  Converts a `t:Nx.Tensor.t/0` to a series.
+
+  > #### Warning {: .warning}
+  >
+  > `Nx` is an optional dependency. You will need to ensure it's installed to use this function.
+
+  ## Options
+
+    * `:backend` - The backend to allocate the series on.
+
+  ## Examples
+
+      iex> tensor = Nx.tensor([1, 2, 3])
+      iex> Explorer.Series.from_tensor(tensor)
+      #Explorer.Series<
+        Polars[3]
+        integer [1, 2, 3]
+      >
+
+      iex> tensor = Nx.tensor([1.0, 2.0, 3.0], type: :f64)
+      iex> Explorer.Series.from_tensor(tensor)
+      #Explorer.Series<
+        Polars[3]
+        float [1.0, 2.0, 3.0]
+      >
+  """
+  @doc type: :transformation
+  @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
+  def from_tensor(tensor, opts \\ []) do
+    {type, alignment} = Nx.type(tensor)
+    backend = backend_from_options!(opts)
+    tensor |> Nx.to_binary() |> backend.from_binary(type, alignment)
+  end
+
+  @doc """
   Converts a series to a list.
 
   ## Examples
@@ -270,10 +308,10 @@ defmodule Explorer.Series do
   @doc """
   Retrieves the underlying io vectors from a series.
 
-  An io vector is a list of binaries. This is typically the
-  in-memory representation of the series. If the whole series
-  in contiguous in memory, then the list will have a single
-  element. All binaries are in native endianness.
+  An io vector is a list of binaries. This is typically a reference
+  to the in-memory representation of the series. If the whole series
+  in contiguous in memory, then the list will have a single element.
+  All binaries are in native endianness.
 
   This operation fails if the series has `nil` values.
   Use `fill_missing/1` to handle them accordingly.
@@ -346,55 +384,17 @@ defmodule Explorer.Series do
   def to_binary(series), do: series |> to_iovec() |> IO.iodata_to_binary()
 
   @doc """
-  Converts a `t:Nx.Tensor.t/0` to a series.
-
-  > #### Warning {: .warning}
-  >
-  > `Nx` is an optional dependency. You will need to ensure it's installed to use this function.
-
-  ## Examples
-
-      iex> tensor = Nx.tensor([1, 2, 3])
-      iex> Explorer.Series.from_tensor(tensor)
-      #Explorer.Series<
-        Polars[3]
-        integer [1, 2, 3]
-      >
-
-      iex> tensor = Nx.tensor([1.0, 2.0, 3.0])
-      iex> Explorer.Series.from_tensor(tensor)
-      #Explorer.Series<
-        Polars[3]
-        float [1.0, 2.0, 3.0]
-      >
-  """
-  @doc type: :transformation
-  @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
-  def from_tensor(tensor, opts \\ []) do
-    backend = backend_from_options!(opts)
-
-    type =
-      case Nx.type(tensor) do
-        {t, _} when t in [:s, :u] -> :integer
-        {t, _} when t in [:f, :bf] -> :float
-      end
-
-    tensor |> Nx.to_flat_list() |> backend.from_list(type)
-  end
-
-  @doc """
   Converts a series to a `t:Nx.Tensor.t/0`.
 
-  Options are passed directly to `Nx.tensor/2`.
-
-  ## Supported dtypes
-
-    * `:float`
-    * `:integer`
+  The tensor type will be specified by `bintype/1`.
 
   > #### Warning {: .warning}
   >
   > `Nx` is an optional dependency. You will need to ensure it's installed to use this function.
+
+  ## Options
+
+    * `:backend` - the Nx backend to allocate the tensor on
 
   ## Examples
 
@@ -405,18 +405,22 @@ defmodule Explorer.Series do
         [1, 2, 3]
       >
 
-  Tensor options can be passed directly to `to_tensor/2`.
-
-      iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.to_tensor(s, names: [:y], type: {:f, 64})
+      iex> s = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.to_tensor(s)
       #Nx.Tensor<
-        f64[y: 3]
-        [1.0, 2.0, 3.0]
+        u8[3]
+        [1, 0, 1]
       >
+
   """
   @doc type: :transformation
   @spec to_tensor(series :: Series.t(), tensor_opts :: Keyword.t()) :: Nx.Tensor.t()
-  def to_tensor(series, tensor_opts \\ []), do: series |> to_list() |> Nx.tensor(tensor_opts)
+  def to_tensor(series, tensor_opts \\ []) do
+    case bintype(series) do
+      {_, _} = type -> Nx.from_binary(to_binary(series), type, tensor_opts)
+      other -> raise ArgumentError, "cannot convert #{inspect(other)} series to tensor"
+    end
+  end
 
   @doc """
   Cast the series to another type.
@@ -665,9 +669,9 @@ defmodule Explorer.Series do
 
   ## Options
 
-    * `replacement` - If set to `true`, each sample will be independent and therefore values may repeat.
+    * `:replacement` - If set to `true`, each sample will be independent and therefore values may repeat.
       Required to be `true` for `n` greater then the number of rows in the series or `frac` > 1.0. (default: `false`)
-    * `seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
+    * `:seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
 
   ## Examples
 

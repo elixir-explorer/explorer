@@ -157,4 +157,35 @@ defmodule Explorer.Shared do
   def to_string(i, _opts) when is_nil(i), do: "nil"
   def to_string(i, _opts) when is_binary(i), do: "\"#{i}\""
   def to_string(i, _opts), do: Kernel.to_string(i)
+
+  @doc """
+  Raising helper for when a column is not found.
+  """
+  def raise_column_not_found!(name, names) do
+    raise ArgumentError,
+            List.to_string(["could not find column name \"#{name}\"" | did_you_mean(name, names)])
+  end
+
+  @threshold 0.77
+  @max_suggestions 5
+  defp did_you_mean(missing_key, available_keys) do
+    suggestions =
+      for key <- available_keys,
+          distance = String.jaro_distance(missing_key, key),
+          distance >= @threshold,
+          do: {distance, key}
+
+    case suggestions do
+      [] -> []
+      suggestions -> [". Did you mean:\n\n" | format_suggestions(suggestions)]
+    end
+  end
+
+  defp format_suggestions(suggestions) do
+    suggestions
+    |> Enum.sort(&(elem(&1, 0) >= elem(&2, 0)))
+    |> Enum.take(@max_suggestions)
+    |> Enum.sort(&(elem(&1, 1) <= elem(&2, 1)))
+    |> Enum.map(fn {_, key} -> ["      * ", inspect(key), ?\n] end)
+  end
 end
