@@ -200,10 +200,15 @@ pub fn df_filter_with(
 pub fn df_slice_by_indices(
     data: ExDataFrame,
     indices: Vec<u32>,
+    groups: Vec<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let idx = UInt32Chunked::from_vec("idx", indices);
-    let new_df = df.take(&idx)?;
+    let new_df = if groups.is_empty() {
+        df.take(&idx)?
+    } else {
+        df.groupby_stable(groups)?.apply(|df| df.take(&idx))?
+    };
     Ok(ExDataFrame::new(new_df))
 }
 
@@ -297,9 +302,15 @@ pub fn df_slice(
     data: ExDataFrame,
     offset: i64,
     length: usize,
+    groups: Vec<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let new_df = df.slice(offset, length);
+    let new_df = if groups.is_empty() {
+        df.slice(offset, length)
+    } else {
+        df.groupby_stable(groups)?
+            .apply(|df| Ok(df.slice(offset, length)))?
+    };
     Ok(ExDataFrame::new(new_df))
 }
 
@@ -396,12 +407,16 @@ pub fn df_put_column(data: ExDataFrame, series: ExSeries) -> Result<ExDataFrame,
 pub fn df_mutate_with_exprs(
     data: ExDataFrame,
     columns: Vec<ExExpr>,
+    groups: Vec<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df: DataFrame = data.resource.0.clone();
-    let new_df = df
-        .lazy()
-        .with_columns(ex_expr_to_exprs(columns))
-        .collect()?;
+    let mutations = ex_expr_to_exprs(columns);
+    let new_df = if groups.is_empty() {
+        df.lazy().with_columns(mutations).collect()?
+    } else {
+        df.groupby_stable(groups)?
+            .apply(|df| df.lazy().with_columns(&mutations).collect())?
+    };
 
     Ok(ExDataFrame::new(new_df))
 }
