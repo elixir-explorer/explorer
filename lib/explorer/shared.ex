@@ -163,7 +163,7 @@ defmodule Explorer.Shared do
   """
   def raise_column_not_found!(name, names) do
     raise ArgumentError,
-            List.to_string(["could not find column name \"#{name}\"" | did_you_mean(name, names)])
+          List.to_string(["could not find column name \"#{name}\"" | did_you_mean(name, names)])
   end
 
   @threshold 0.77
