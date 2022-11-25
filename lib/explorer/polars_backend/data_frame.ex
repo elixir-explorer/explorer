@@ -458,8 +458,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
       do: Shared.apply_dataframe(df, :df_slice, [offset, length, df.groups])
 
   # Returns a list of lists, where each list is a group of row indices.
-  # TODO: Optimize indices by group so we don't convert it to a list.
-  # Instead, we pass a series to the following operations.
   defp indices_by_groups(%DataFrame{groups: [_ | _]} = df) do
     df
     |> Shared.apply_dataframe(:df_group_indices, [df.groups])
