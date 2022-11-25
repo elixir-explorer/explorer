@@ -230,15 +230,14 @@ defmodule Explorer.Series do
           Series.t()
   def from_binary(binary, dtype, opts \\ [])
       when K.and(is_binary(binary), K.and(is_atom(dtype), is_list(opts))) do
+    {type, alignment} = Shared.dtype_to_bintype(dtype)
     backend = backend_from_options!(opts)
+    series = backend.from_binary(binary, type, alignment)
 
-    case dtype do
-      :float -> backend.from_binary(binary, :f, 64)
-      :integer -> backend.from_binary(binary, :s, 64)
-      :boolean -> backend.from_binary(binary, :u, 8) |> backend.cast(:boolean)
-      :date -> backend.from_binary(binary, :s, 32) |> backend.cast(:date)
-      :datetime -> backend.from_binary(binary, :s, 64) |> backend.cast(:datetime)
-      _ -> raise ArgumentError, "unsupported dtype #{dtype} in from_binary/3"
+    if dtype in [:float, :integer] do
+      series
+    else
+      backend.cast(series, dtype)
     end
   end
 

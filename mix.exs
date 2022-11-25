@@ -59,6 +59,7 @@ defmodule Explorer.MixProject do
         # Explorer.Datasets,
         # Explorer.Query,
         # Explorer.Series,
+        # Explorer.TensorFrame,
         Backends: [
           Explorer.Backend,
           Explorer.Backend.DataFrame,
@@ -69,6 +70,7 @@ defmodule Explorer.MixProject do
         ]
       ],
       groups_for_functions: [
+        # For dataframes
         "Functions: Single-table": &(&1[:type] == :single),
         "Functions: Multi-table": &(&1[:type] == :multi),
         "Functions: Row-based": &(&1[:type] == :rows),
