@@ -194,14 +194,43 @@ defmodule Explorer.Series do
         integer [-1, 1]
       >
 
+  Booleans are unsigned integers:
+
+      iex> Explorer.Series.from_binary(<<1, 0, 1>>, :boolean)
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, false, true]
+      >
+
+  Dates are encoded as i32 representing days from the Unix epoch (1970-01-01):
+
+      iex> binary = <<-719162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>
+      iex> Explorer.Series.from_binary(binary, :date)
+      #Explorer.Series<
+        Polars[3]
+        date [0001-01-01, 1970-01-01, 1986-10-13]
+      >
+
+  Datetimes are encoded as i64 representing microseconds from the Unix epoch (1970-01-01):
+
+      iex> binary = <<0::signed-64-native, 529550625987654::signed-64-native>>
+      iex> Explorer.Series.from_binary(binary, :datetime)
+      #Explorer.Series<
+        Polars[2]
+        datetime [1970-01-01 00:00:00.000000, 1986-10-13 01:23:45.987654]
+      >
+
   """
   @doc type: :transformation
-  @spec from_binary(binary, :float | :integer, keyword) :: Series.t()
+  @spec from_binary(binary, :float | :integer | :boolean | :date | :datetime, keyword) :: Series.t()
   def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
     alignment =
       case dtype do
         :float -> 64
         :integer -> 64
+        :boolean -> 8
+        :date -> 32
+        :datetime -> 64
         _ -> raise ArgumentError, "unsupported dtype #{dtype} in from_binary/3"
       end
 

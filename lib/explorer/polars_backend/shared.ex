@@ -125,9 +125,15 @@ defmodule Explorer.PolarsBackend.Shared do
       {:float, 64} ->
         Native.s_from_binary_f64(name, binary)
 
-      # :boolean -> Native.s_from_list_bool(list)
-      # :date -> Native.s_from_list_date(list)
-      # :datetime -> Native.s_from_list_datetime(list)
+      {:boolean, 8} ->
+        Native.s_from_binary_bool(name, binary)
+
+      {:date, 32} ->
+        Native.s_from_binary_date(name, binary)
+
+      {:datetime, 64} ->
+        Native.s_from_binary_datetime(name, binary)
+
       _ ->
         raise ArgumentError,
               "Polars backend does not support loading #{dtype} series of #{alignment}-bit alignment from binary"

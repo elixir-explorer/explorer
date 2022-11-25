@@ -8,7 +8,7 @@ use rand::seq::IteratorRandom;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64;
 use rustler::{Binary, Encoder, Env, Term};
-use std::{slice, result::Result};
+use std::{result::Result, slice};
 
 #[rustler::nif]
 pub fn s_as_str(data: ExSeries) -> Result<String, ExplorerError> {
@@ -59,17 +59,49 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>) -> ExSerie
 
 macro_rules! from_binary {
     ($name:ident, $type:ty, $bytes:expr) => {
-        #[rustler::nif(schedule = "DirtyCpu")]
-        pub fn $name(name: &str, val: Binary) -> ExSeries {
+        fn $name(name: &str, val: Binary) -> Series {
             let slice = val.as_slice();
-            let transmuted = unsafe { slice::from_raw_parts(slice.as_ptr() as *const $type, slice.len() / $bytes) };
-            ExSeries::new(Series::new(name, transmuted))
+            let transmuted = unsafe {
+                slice::from_raw_parts(slice.as_ptr() as *const $type, slice.len() / $bytes)
+            };
+            Series::new(name, transmuted)
         }
     };
 }
 
-from_binary!(s_from_binary_i64, i64, 8);
-from_binary!(s_from_binary_f64, f64, 8);
+from_binary!(from_binary_bool, bool, 1);
+from_binary!(from_binary_f64, f64, 8);
+from_binary!(from_binary_i64, i64, 8);
+from_binary!(from_binary_i32, i32, 4);
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_binary_bool(name: &str, val: Binary) -> ExSeries {
+    ExSeries::new(from_binary_bool(name, val))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_binary_f64(name: &str, val: Binary) -> ExSeries {
+    ExSeries::new(from_binary_f64(name, val))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_binary_i64(name: &str, val: Binary) -> ExSeries {
+    ExSeries::new(from_binary_i64(name, val))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_binary_date(name: &str, val: Binary) -> ExSeries {
+    ExSeries::new(from_binary_i32(name, val).cast(&DataType::Date).unwrap())
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_binary_datetime(name: &str, val: Binary) -> ExSeries {
+    ExSeries::new(
+        from_binary_i64(name, val)
+            .cast(&DataType::Datetime(TimeUnit::Microseconds, None))
+            .unwrap(),
+    )
+}
 
 #[rustler::nif]
 pub fn s_name(data: ExSeries) -> Result<String, ExplorerError> {
