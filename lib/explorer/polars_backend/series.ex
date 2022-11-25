@@ -23,9 +23,14 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def from_binary(data, type, alignment) when is_binary(data) do
-    series = Shared.from_binary(data, type, alignment)
-    Explorer.Backend.Series.new(series, type)
+  def from_binary(data, bintype, alignment) when is_binary(data) do
+    series = Shared.from_binary(data, bintype, alignment)
+
+    case bintype do
+      :s -> Explorer.Backend.Series.new(series, :integer)
+      :u -> Explorer.Backend.Series.new(series, :integer)
+      :f -> Explorer.Backend.Series.new(series, :float)
+    end
   end
 
   @impl true

@@ -117,26 +117,23 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
-  def from_binary(binary, dtype, alignment, name \\ "") when is_binary(binary) do
-    case {dtype, alignment} do
-      {:integer, 64} ->
+  def from_binary(binary, bintype, alignment, name \\ "") when is_binary(binary) do
+    case {bintype, alignment} do
+      {:u, 8} ->
+        Native.s_from_binary_u8(name, binary)
+
+      {:s, 32} ->
+        Native.s_from_binary_i32(name, binary)
+
+      {:s, 64} ->
         Native.s_from_binary_i64(name, binary)
 
-      {:float, 64} ->
+      {:f, 64} ->
         Native.s_from_binary_f64(name, binary)
-
-      {:boolean, 8} ->
-        Native.s_from_binary_bool(name, binary)
-
-      {:date, 32} ->
-        Native.s_from_binary_date(name, binary)
-
-      {:datetime, 64} ->
-        Native.s_from_binary_datetime(name, binary)
 
       _ ->
         raise ArgumentError,
-              "Polars backend does not support loading #{dtype} series of #{alignment}-bit alignment from binary"
+              "Polars backend does not support loading #{bintype}#{alignment} from binary"
     end
   end
 

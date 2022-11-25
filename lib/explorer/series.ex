@@ -175,6 +175,7 @@ defmodule Explorer.Series do
   end
 
   @doc """
+  Builds a series of `dtype` from `binary`.
 
   All binaries must be in native endianness.
 
@@ -222,20 +223,20 @@ defmodule Explorer.Series do
 
   """
   @doc type: :transformation
-  @spec from_binary(binary, :float | :integer | :boolean | :date | :datetime, keyword) :: Series.t()
-  def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
-    alignment =
-      case dtype do
-        :float -> 64
-        :integer -> 64
-        :boolean -> 8
-        :date -> 32
-        :datetime -> 64
-        _ -> raise ArgumentError, "unsupported dtype #{dtype} in from_binary/3"
-      end
-
+  @spec from_binary(binary, :float | :integer | :boolean | :date | :datetime, keyword) ::
+          Series.t()
+  def from_binary(binary, dtype, opts \\ [])
+      when K.and(is_binary(binary), K.and(is_atom(dtype), is_list(opts))) do
     backend = backend_from_options!(opts)
-    backend.from_binary(binary, dtype, alignment)
+
+    case dtype do
+      :float -> backend.from_binary(binary, :f, 64)
+      :integer -> backend.from_binary(binary, :s, 64)
+      :boolean -> backend.from_binary(binary, :u, 8) |> backend.cast(:boolean)
+      :date -> backend.from_binary(binary, :s, 32) |> backend.cast(:date)
+      :datetime -> backend.from_binary(binary, :s, 64) |> backend.cast(:datetime)
+      _ -> raise ArgumentError, "unsupported dtype #{dtype} in from_binary/3"
+    end
   end
 
   @doc """

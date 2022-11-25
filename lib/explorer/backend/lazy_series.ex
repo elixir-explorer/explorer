@@ -126,11 +126,15 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def from_binary(binary, dtype, alignment)
-      when is_binary(binary) and is_atom(dtype) and is_integer(alignment) do
-    data = new(:from_binary, [binary, dtype, alignment], false, false)
+  def from_binary(binary, bintype, alignment)
+      when is_binary(binary) and is_atom(bintype) and is_integer(alignment) do
+    data = new(:from_binary, [binary, bintype, alignment], false, false)
 
-    Backend.Series.new(data, dtype)
+    case bintype do
+      :s -> Backend.Series.new(data, :integer)
+      :u -> Backend.Series.new(data, :integer)
+      :f -> Backend.Series.new(data, :float)
+    end
   end
 
   @impl true
