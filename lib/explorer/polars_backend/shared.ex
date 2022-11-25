@@ -117,12 +117,12 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
-  def from_binary(binary, dtype, size, name \\ "") when is_binary(binary) and is_integer(size) do
-    alignment = div(bit_size(binary), size)
+  def from_binary(binary, dtype, alignment, name \\ "") when is_binary(binary) do
+    case {dtype, alignment} do
+      {:integer, 64} ->
+        Native.s_from_binary_i64(name, binary)
 
-    case dtype do
-      # :integer -> Native.s_from_list_i64(list)
-      :float when alignment == 64 ->
+      {:float, 64} ->
         Native.s_from_binary_f64(name, binary)
 
       # :boolean -> Native.s_from_list_bool(list)

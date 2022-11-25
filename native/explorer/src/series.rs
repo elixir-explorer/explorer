@@ -15,21 +15,21 @@ pub fn s_as_str(data: ExSeries) -> Result<String, ExplorerError> {
     Ok(format!("{:?}", data.resource.0))
 }
 
-macro_rules! init_method {
+macro_rules! from_list {
     ($name:ident, $type:ty) => {
-        #[rustler::nif]
+        #[rustler::nif(schedule = "DirtyCpu")]
         pub fn $name(name: &str, val: Vec<Option<$type>>) -> ExSeries {
             ExSeries::new(Series::new(name, val.as_slice()))
         }
     };
 }
 
-init_method!(s_from_list_i64, i64);
-init_method!(s_from_list_bool, bool);
-init_method!(s_from_list_f64, f64);
-init_method!(s_from_list_str, String);
+from_list!(s_from_list_i64, i64);
+from_list!(s_from_list_bool, bool);
+from_list!(s_from_list_f64, f64);
+from_list!(s_from_list_str, String);
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
     ExSeries::new(
         Series::new(
@@ -43,7 +43,7 @@ pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
     )
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>) -> ExSeries {
     ExSeries::new(
         Series::new(
@@ -57,12 +57,19 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>) -> ExSerie
     )
 }
 
-#[rustler::nif]
-pub fn s_from_binary_f64(name: &str, val: Binary) -> ExSeries {
-    let slice = val.as_slice();
-    let transmuted = unsafe { slice::from_raw_parts(slice.as_ptr() as *const f64, slice.len() / 8) };
-    ExSeries::new(Series::new(name, transmuted))
+macro_rules! from_binary {
+    ($name:ident, $type:ty, $bytes:expr) => {
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $name(name: &str, val: Binary) -> ExSeries {
+            let slice = val.as_slice();
+            let transmuted = unsafe { slice::from_raw_parts(slice.as_ptr() as *const $type, slice.len() / $bytes) };
+            ExSeries::new(Series::new(name, transmuted))
+        }
+    };
 }
+
+from_binary!(s_from_binary_i64, i64, 8);
+from_binary!(s_from_binary_f64, f64, 8);
 
 #[rustler::nif]
 pub fn s_name(data: ExSeries) -> Result<String, ExplorerError> {
@@ -83,7 +90,7 @@ pub fn s_dtype(data: ExSeries) -> Result<String, ExplorerError> {
     Ok(dt)
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_slice(data: ExSeries, offset: i64, length: usize) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let series = s.slice(offset, length);

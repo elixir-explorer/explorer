@@ -23,8 +23,8 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def from_binary(data, type, size) when is_binary(data) do
-    series = Shared.from_binary(data, type, size)
+  def from_binary(data, type, alignment) when is_binary(data) do
+    series = Shared.from_binary(data, type, alignment)
     Explorer.Backend.Series.new(series, type)
   end
 

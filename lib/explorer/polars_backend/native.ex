@@ -178,6 +178,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_from_list_i64(_name, _val), do: err()
   def s_from_list_str(_name, _val), do: err()
   def s_from_binary_f64(_name, _val), do: err()
+  def s_from_binary_i64(_name, _val), do: err()
   def s_not_equal(_s, _rhs), do: err()
   def s_or(_s, _s2), do: err()
   def s_peak_max(_s), do: err()

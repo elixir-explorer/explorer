@@ -175,39 +175,38 @@ defmodule Explorer.Series do
   end
 
   @doc """
+
+  All binaries must be in native endianness.
+
   ## Examples
 
-      iex> Explorer.Series.from_binary(<<1.0::float-64-native, 2.0::float-64-native>>, :float, 2)
+  Integers and floats follow their native encoding:
+
+      iex> Explorer.Series.from_binary(<<1.0::float-64-native, 2.0::float-64-native>>, :float)
       #Explorer.Series<
         Polars[2]
         float [1.0, 2.0]
       >
 
+      iex> Explorer.Series.from_binary(<<-1::signed-64-native, 1::signed-64-native>>, :integer)
+      #Explorer.Series<
+        Polars[2]
+        integer [-1, 1]
+      >
+
   """
   @doc type: :transformation
-  @spec from_binary(binary, :float, non_neg_integer, keyword) :: Series.t()
-  def from_binary(binary, dtype, size, opts \\ [])
-      when K.and(
-             is_binary(binary),
-             K.and(dtype in [:float], K.and(is_integer(size), K.and(size > 0, is_list(opts))))
-           ) do
-    validate_binary_size!(binary, dtype, size)
+  @spec from_binary(binary, :float | :integer, keyword) :: Series.t()
+  def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
+    alignment =
+      case dtype do
+        :float -> 64
+        :integer -> 64
+        _ -> raise ArgumentError, "unsupported dtype #{dtype} in from_binary/3"
+      end
+
     backend = backend_from_options!(opts)
-    backend.from_binary(binary, :float, size)
-  end
-
-  defp validate_binary_size!(binary, dtype, size) when rem(bit_size(binary), size) != 0 do
-    raise ArgumentError,
-          "cannot create #{dtype} series from binary because binary is not bit aligned to its size"
-  end
-
-  defp validate_binary_size!(binary, :float, size) do
-    if div(bit_size(binary), size) in [16, 32, 64] do
-      :ok
-    else
-      raise ArgumentError,
-            "cannot create float series from binary because it is not 16/32/64-bit aligned"
-    end
+    backend.from_binary(binary, dtype, alignment)
   end
 
   @doc """
@@ -244,7 +243,7 @@ defmodule Explorer.Series do
   An io vector is a list of binaries. This is typically the
   in-memory representation of the series. If the whole series
   in contiguous in memory, then the list will have a single
-  element.
+  element. All binaries are in native endianness.
 
   This operation fails if the series has `nil` values.
   Use `fill_missing/1` to handle them accordingly.
@@ -257,9 +256,9 @@ defmodule Explorer.Series do
 
   Integers and floats follow their native encoding:
 
-      iex> series = Explorer.Series.from_list([1, 2, 3])
+      iex> series = Explorer.Series.from_list([-1, 0, 1])
       iex> Explorer.Series.to_iovec(series)
-      [<<1::signed-64-native, 2::signed-64-native, 3::signed-64-native>>]
+      [<<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>]
 
       iex> series = Explorer.Series.from_list([1.0, 2.0, 3.0])
       iex> Explorer.Series.to_iovec(series)
