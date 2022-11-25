@@ -17,10 +17,20 @@ defmodule Explorer.PolarsBackend.Series do
   # Conversion
 
   @impl true
-  def from_list(data, type, name \\ "") when is_list(data) do
-    series = Shared.new_polars_series(data, type, name)
-
+  def from_list(data, type) when is_list(data) do
+    series = Shared.from_list(data, type)
     Explorer.Backend.Series.new(series, type)
+  end
+
+  @impl true
+  def from_binary(data, bintype, alignment) when is_binary(data) do
+    series = Shared.from_binary(data, bintype, alignment)
+
+    case bintype do
+      :s -> Explorer.Backend.Series.new(series, :integer)
+      :u -> Explorer.Backend.Series.new(series, :integer)
+      :f -> Explorer.Backend.Series.new(series, :float)
+    end
   end
 
   @impl true

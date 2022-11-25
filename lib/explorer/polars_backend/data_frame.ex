@@ -330,7 +330,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp series_from_list!(name, list) do
     type = Explorer.Shared.check_types!(list)
     {list, type} = Explorer.Shared.cast_numerics(list, type)
-    PolarsSeries.from_list(list, type, name)
+    series = Shared.from_list(list, type, name)
+    Explorer.Backend.Series.new(series, type)
   rescue
     e ->
       raise ArgumentError, "cannot create series #{inspect(name)}: " <> Exception.message(e)
@@ -447,6 +448,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   # Returns a list of lists, where each list is a group of row indices.
+  # TODO: Optimize indices by group so we don't convert it to a list.
+  # Instead, we pass a series to the following operations.
   defp indices_by_groups(%DataFrame{groups: [_ | _]} = df) do
     df
     |> Shared.apply_dataframe(:df_group_indices, [df.groups])

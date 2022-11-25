@@ -106,14 +106,34 @@ defmodule Explorer.PolarsBackend.Shared do
     Enum.map(dtypes, &normalise_dtype/1)
   end
 
-  def new_polars_series(list, dtype, name \\ "") when is_list(list) and is_atom(dtype) do
+  def from_list(list, dtype, name \\ "") when is_list(list) and is_atom(dtype) do
     case dtype do
-      :integer -> Native.s_new_i64(name, list)
-      :float -> Native.s_new_f64(name, list)
-      :boolean -> Native.s_new_bool(name, list)
-      :string -> Native.s_new_str(name, list)
-      :date -> Native.s_new_date32(name, list)
-      :datetime -> Native.s_new_date64(name, list)
+      :integer -> Native.s_from_list_i64(name, list)
+      :float -> Native.s_from_list_f64(name, list)
+      :boolean -> Native.s_from_list_bool(name, list)
+      :string -> Native.s_from_list_str(name, list)
+      :date -> Native.s_from_list_date(name, list)
+      :datetime -> Native.s_from_list_datetime(name, list)
+    end
+  end
+
+  def from_binary(binary, bintype, alignment, name \\ "") when is_binary(binary) do
+    case {bintype, alignment} do
+      {:u, 8} ->
+        Native.s_from_binary_u8(name, binary)
+
+      {:s, 32} ->
+        Native.s_from_binary_i32(name, binary)
+
+      {:s, 64} ->
+        Native.s_from_binary_i64(name, binary)
+
+      {:f, 64} ->
+        Native.s_from_binary_f64(name, binary)
+
+      _ ->
+        raise ArgumentError,
+              "Polars backend does not support loading #{bintype}#{alignment} from binary"
     end
   end
 

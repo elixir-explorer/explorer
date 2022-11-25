@@ -160,10 +160,10 @@ defmodule Explorer.Series do
     {list, type} = Shared.cast_numerics(list, type)
     series = backend.from_list(list, type)
 
-    case {type, check_optional_dtype!(opts[:dtype])} do
-      {t, t} -> series
-      {_t, nil} -> series
-      {_, other} -> cast(series, other)
+    case check_optional_dtype!(opts[:dtype]) do
+      nil -> series
+      ^type -> series
+      other -> cast(series, other)
     end
   end
 
@@ -172,6 +172,71 @@ defmodule Explorer.Series do
 
   defp check_optional_dtype!(dtype) do
     raise ArgumentError, "unsupported datatype: #{inspect(dtype)}"
+  end
+
+  @doc """
+  Builds a series of `dtype` from `binary`.
+
+  All binaries must be in native endianness.
+
+  ## Examples
+
+  Integers and floats follow their native encoding:
+
+      iex> Explorer.Series.from_binary(<<1.0::float-64-native, 2.0::float-64-native>>, :float)
+      #Explorer.Series<
+        Polars[2]
+        float [1.0, 2.0]
+      >
+
+      iex> Explorer.Series.from_binary(<<-1::signed-64-native, 1::signed-64-native>>, :integer)
+      #Explorer.Series<
+        Polars[2]
+        integer [-1, 1]
+      >
+
+  Booleans are unsigned integers:
+
+      iex> Explorer.Series.from_binary(<<1, 0, 1>>, :boolean)
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, false, true]
+      >
+
+  Dates are encoded as i32 representing days from the Unix epoch (1970-01-01):
+
+      iex> binary = <<-719162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>
+      iex> Explorer.Series.from_binary(binary, :date)
+      #Explorer.Series<
+        Polars[3]
+        date [0001-01-01, 1970-01-01, 1986-10-13]
+      >
+
+  Datetimes are encoded as i64 representing microseconds from the Unix epoch (1970-01-01):
+
+      iex> binary = <<0::signed-64-native, 529550625987654::signed-64-native>>
+      iex> Explorer.Series.from_binary(binary, :datetime)
+      #Explorer.Series<
+        Polars[2]
+        datetime [1970-01-01 00:00:00.000000, 1986-10-13 01:23:45.987654]
+      >
+
+  """
+  @doc type: :transformation
+  @spec from_binary(binary, :float | :integer | :boolean | :date | :datetime, keyword) ::
+          Series.t()
+  def from_binary(binary, dtype, opts \\ [])
+      when K.and(is_binary(binary), K.and(is_atom(dtype), is_list(opts))) do
+    backend = backend_from_options!(opts)
+
+    case dtype do
+      :float -> backend.from_binary(binary, :f, 64)
+      :integer -> backend.from_binary(binary, :s, 64)
+      :boolean -> backend.from_binary(binary, :u, 8) |> backend.cast(:boolean)
+      :date -> backend.from_binary(binary, :s, 32) |> backend.cast(:date)
+      :datetime -> backend.from_binary(binary, :s, 64) |> backend.cast(:datetime)
+      _ -> raise ArgumentError, "unsupported dtype #{dtype} in from_binary/3"
+    end
   end
 
   @doc """
@@ -208,7 +273,7 @@ defmodule Explorer.Series do
   An io vector is a list of binaries. This is typically the
   in-memory representation of the series. If the whole series
   in contiguous in memory, then the list will have a single
-  element.
+  element. All binaries are in native endianness.
 
   This operation fails if the series has `nil` values.
   Use `fill_missing/1` to handle them accordingly.
@@ -221,9 +286,9 @@ defmodule Explorer.Series do
 
   Integers and floats follow their native encoding:
 
-      iex> series = Explorer.Series.from_list([1, 2, 3])
+      iex> series = Explorer.Series.from_list([-1, 0, 1])
       iex> Explorer.Series.to_iovec(series)
-      [<<1::signed-64-native, 2::signed-64-native, 3::signed-64-native>>]
+      [<<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>]
 
       iex> series = Explorer.Series.from_list([1.0, 2.0, 3.0])
       iex> Explorer.Series.to_iovec(series)
