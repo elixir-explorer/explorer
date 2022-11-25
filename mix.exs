@@ -38,7 +38,7 @@ defmodule Explorer.MixProject do
       {:table_rex, "~> 3.1.1"},
 
       ## Optional
-      {:rustler, ">= 0.0.0", optional: true},
+      {:rustler, ">= 0.0.0", optional: Mix.env() == :prod},
       {:nx, "~> 0.4.0", optional: true},
 
       ## Non-prod
