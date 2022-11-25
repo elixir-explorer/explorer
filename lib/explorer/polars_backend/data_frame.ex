@@ -416,15 +416,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_dataframe(df, out_df, :df_distinct, [true, columns, columns_to_keep])
   end
 
-  # Returns a list of lists, where each list is a group of row indices.
-  # TODO: Optimize indices by group so we don't convert it to a list.
-  # Instead, we pass a series to the following operations.
-  defp indices_by_groups(%DataFrame{groups: [_ | _]} = df) do
-    df
-    |> Shared.apply_dataframe(:df_group_indices, [df.groups])
-    |> Shared.apply_series(:s_to_list)
-  end
-
   @impl true
   def rename(%DataFrame{} = df, %DataFrame{} = out_df, pairs),
     do: Shared.apply_dataframe(df, out_df, :df_rename_columns, [pairs])
@@ -447,52 +438,32 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def pull(df, column), do: Shared.apply_dataframe(df, :df_pull, [column])
 
   @impl true
-  def slice(%DataFrame{groups: []} = df, row_indices),
-    do: Shared.apply_dataframe(df, :df_slice_by_indices, [row_indices])
+  def slice(%DataFrame{} = df, row_indices) when is_list(row_indices),
+    do: Shared.apply_dataframe(df, :df_slice_by_indices, [row_indices, df.groups])
 
+  # Note that the version without groups is already validated at DataFrame level.
   @impl true
-  def slice(%DataFrame{} = df, row_indices) when is_list(row_indices) do
-    selected_indices =
-      df
-      |> indices_by_groups()
-      |> Enum.flat_map(&filter_indices(&1, 0, row_indices))
-
-    Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices])
-  end
-
-  @impl true
-  def slice(%DataFrame{} = df, %Range{} = range) do
+  def slice(%DataFrame{groups: [_ | _]} = df, %Range{} = range) do
     selected_indices =
       df
       |> indices_by_groups()
       |> Enum.flat_map(&Enum.slice(&1, range))
 
-    Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices])
+    Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices, []])
   end
 
   @impl true
-  def slice(%DataFrame{groups: []} = df, offset, length)
+  def slice(%DataFrame{} = df, offset, length)
       when is_integer(offset) and is_integer(length),
-      do: Shared.apply_dataframe(df, :df_slice, [offset, length])
+      do: Shared.apply_dataframe(df, :df_slice, [offset, length, df.groups])
 
-  @impl true
-  def slice(%DataFrame{} = df, offset, length) when is_integer(offset) and is_integer(length) do
-    selected_indices =
-      df
-      |> indices_by_groups()
-      |> Enum.flat_map(&Enum.slice(&1, offset, length))
-
-    Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices])
-  end
-
-  defp filter_indices([], _, _), do: []
-
-  defp filter_indices([row_idx | indices], idx, row_indices) do
-    if idx in row_indices do
-      [row_idx | filter_indices(indices, idx + 1, row_indices)]
-    else
-      filter_indices(indices, idx + 1, row_indices)
-    end
+  # Returns a list of lists, where each list is a group of row indices.
+  # TODO: Optimize indices by group so we don't convert it to a list.
+  # Instead, we pass a series to the following operations.
+  defp indices_by_groups(%DataFrame{groups: [_ | _]} = df) do
+    df
+    |> Shared.apply_dataframe(:df_group_indices, [df.groups])
+    |> Shared.apply_series(:s_to_list)
   end
 
   @impl true
