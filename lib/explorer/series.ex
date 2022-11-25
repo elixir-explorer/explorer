@@ -160,10 +160,10 @@ defmodule Explorer.Series do
     {list, type} = Shared.cast_numerics(list, type)
     series = backend.from_list(list, type)
 
-    case {type, check_optional_dtype!(opts[:dtype])} do
-      {t, t} -> series
-      {_t, nil} -> series
-      {_, other} -> cast(series, other)
+    case check_optional_dtype!(opts[:dtype]) do
+      nil -> series
+      ^type -> series
+      other -> cast(series, other)
     end
   end
 
@@ -172,6 +172,42 @@ defmodule Explorer.Series do
 
   defp check_optional_dtype!(dtype) do
     raise ArgumentError, "unsupported datatype: #{inspect(dtype)}"
+  end
+
+  @doc """
+  ## Examples
+
+      iex> Explorer.Series.from_binary(<<1.0::float-64-native, 2.0::float-64-native>>, :float, 2)
+      #Explorer.Series<
+        Polars[2]
+        float [1.0, 2.0]
+      >
+
+  """
+  @doc type: :transformation
+  @spec from_binary(binary, :float, non_neg_integer, keyword) :: Series.t()
+  def from_binary(binary, dtype, size, opts \\ [])
+      when K.and(
+             is_binary(binary),
+             K.and(dtype in [:float], K.and(is_integer(size), K.and(size > 0, is_list(opts))))
+           ) do
+    validate_binary_size!(binary, dtype, size)
+    backend = backend_from_options!(opts)
+    backend.from_binary(binary, :float, size)
+  end
+
+  defp validate_binary_size!(binary, dtype, size) when rem(bit_size(binary), size) != 0 do
+    raise ArgumentError,
+          "cannot create #{dtype} series from binary because binary is not bit aligned to its size"
+  end
+
+  defp validate_binary_size!(binary, :float, size) do
+    if div(bit_size(binary), size) in [16, 32, 64] do
+      :ok
+    else
+      raise ArgumentError,
+            "cannot create float series from binary because it is not 16/32/64-bit aligned"
+    end
   end
 
   @doc """

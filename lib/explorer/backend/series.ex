@@ -16,6 +16,7 @@ defmodule Explorer.Backend.Series do
   # Conversion
 
   @callback from_list(list(), dtype()) :: s
+  @callback from_binary(binary(), dtype(), size :: pos_integer()) :: s
   @callback to_list(s) :: list()
   @callback to_iovec(s) :: [binary()]
   @callback cast(s, dtype) :: s

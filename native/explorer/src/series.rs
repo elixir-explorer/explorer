@@ -7,8 +7,8 @@ use polars::prelude::*;
 use rand::seq::IteratorRandom;
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64;
-use rustler::{Encoder, Env, Term};
-use std::result::Result;
+use rustler::{Binary, Encoder, Env, Term};
+use std::{slice, result::Result};
 
 #[rustler::nif]
 pub fn s_as_str(data: ExSeries) -> Result<String, ExplorerError> {
@@ -24,13 +24,13 @@ macro_rules! init_method {
     };
 }
 
-init_method!(s_new_i64, i64);
-init_method!(s_new_bool, bool);
-init_method!(s_new_f64, f64);
-init_method!(s_new_str, String);
+init_method!(s_from_list_i64, i64);
+init_method!(s_from_list_bool, bool);
+init_method!(s_from_list_f64, f64);
+init_method!(s_from_list_str, String);
 
 #[rustler::nif]
-pub fn s_new_date32(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
+pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
     ExSeries::new(
         Series::new(
             name,
@@ -44,7 +44,7 @@ pub fn s_new_date32(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
 }
 
 #[rustler::nif]
-pub fn s_new_date64(name: &str, val: Vec<Option<ExDateTime>>) -> ExSeries {
+pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>) -> ExSeries {
     ExSeries::new(
         Series::new(
             name,
@@ -55,6 +55,13 @@ pub fn s_new_date64(name: &str, val: Vec<Option<ExDateTime>>) -> ExSeries {
         .cast(&DataType::Datetime(TimeUnit::Microseconds, None))
         .unwrap(),
     )
+}
+
+#[rustler::nif]
+pub fn s_from_binary_f64(name: &str, val: Binary) -> ExSeries {
+    let slice = val.as_slice();
+    let transmuted = unsafe { slice::from_raw_parts(slice.as_ptr() as *const f64, slice.len() / 8) };
+    ExSeries::new(Series::new(name, transmuted))
 }
 
 #[rustler::nif]

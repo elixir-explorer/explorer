@@ -126,6 +126,14 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def from_binary(binary, dtype, size)
+      when is_binary(binary) and is_atom(dtype) and is_integer(size) do
+    data = new(:from_binary, [binary, dtype, size], false, false)
+
+    Backend.Series.new(data, dtype)
+  end
+
+  @impl true
   def reverse(%Series{} = s) do
     args = [lazy_series!(s)]
     data = new(:reverse, args, aggregations?(args), window_functions?(args))
