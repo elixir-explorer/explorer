@@ -213,7 +213,7 @@ defmodule Explorer.Series do
   This operation fails if the series has `nil` values.
   Use `fill_missing/1` to handle them accordingly.
 
-  To retrieve the type of the underlying io vector, use `iotype/1`.
+  To retrieve the type of the underlying io vector, use `bintype/1`.
 
   To convert the iovec to a binary, you can use `IO.iodata_to_binary/1`.
 
@@ -247,7 +247,8 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<-62135596800000000::signed-64-native, 0::signed-64-native, 529550625987654::signed-64-native>>]
 
-  And strings are encoded contiguously, which may not be necessarily useful:
+  And strings are encoded contiguously, which has limited usage unless they are
+  all of the same size.
 
       iex> series = Explorer.Series.from_list(["foo", "bar", "bazbat"])
       iex> Explorer.Series.to_iovec(series)
@@ -255,8 +256,29 @@ defmodule Explorer.Series do
 
   """
   @doc type: :transformation
-  @spec to_iovec(series :: Series.t()) :: Enumerable.t()
+  @spec to_iovec(series :: Series.t()) :: [binary]
   def to_iovec(series), do: Shared.apply_impl(series, :to_iovec)
+
+  @doc """
+  Retrieves the underlying binary from a series.
+
+  This is a shortcut around `to_iovec/1`. If possible, prefer
+  to use `to_iovec/1` as that avoids copying binaries.
+
+  ## Examples
+
+      iex> series = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.to_binary(series)
+      <<1::signed-64-native, 2::signed-64-native, 3::signed-64-native>>
+
+      iex> series = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.to_binary(series)
+      <<1, 0, 1>>
+
+  """
+  @doc type: :transformation
+  @spec to_binary(series :: Series.t()) :: binary
+  def to_binary(series), do: series |> to_iovec() |> IO.iodata_to_binary()
 
   @doc """
   Converts a `t:Nx.Tensor.t/0` to a series.
@@ -434,11 +456,12 @@ defmodule Explorer.Series do
   def size(series), do: Shared.apply_impl(series, :size)
 
   @doc """
-  Returns the memory type of the series.
+  Returns the type of the underlying binary representation.
 
-  It returns something in the shape of `atom()` or `{atom(), bits_size}`.
+  It returns something in the shape of `atom()` or `{atom(), bits_size}`
+  and is often used in conjunction with `to_iovec/1` and `to_binary/1`.
 
-  The possible iotypes are:
+  The possible bintypes are:
 
   * `:utf8` for strings.
   * `:u` for unsigned integers.
@@ -448,29 +471,29 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list(["Alice", "Bob"])
-      iex> Explorer.Series.iotype(s)
+      iex> Explorer.Series.bintype(s)
       :utf8
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4])
-      iex> Explorer.Series.iotype(s)
+      iex> Explorer.Series.bintype(s)
       {:s, 64}
 
       iex> s = Explorer.Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
-      iex> Explorer.Series.iotype(s)
+      iex> Explorer.Series.bintype(s)
       {:s, 32}
 
       iex> s = Explorer.Series.from_list([1.2, 2.3, 3.5, 4.5])
-      iex> Explorer.Series.iotype(s)
+      iex> Explorer.Series.bintype(s)
       {:f, 64}
 
       iex> s = Explorer.Series.from_list([true, false, true])
-      iex> Explorer.Series.iotype(s)
+      iex> Explorer.Series.bintype(s)
       {:u, 8}
 
   """
   @doc type: :introspection
-  @spec iotype(series :: Series.t()) :: atom() | {atom(), non_neg_integer()}
-  def iotype(series), do: Shared.apply_impl(series, :iotype)
+  @spec bintype(series :: Series.t()) :: :utf8 | {:s | :u | :f, non_neg_integer()}
+  def bintype(series), do: Shared.apply_impl(series, :bintype)
 
   # Slice and dice
 

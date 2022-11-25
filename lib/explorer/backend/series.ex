@@ -25,7 +25,7 @@ defmodule Explorer.Backend.Series do
   @callback dtype(s) :: dtype()
   @callback size(s) :: non_neg_integer() | lazy_s()
   @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
-  @callback iotype(s) :: :uft8 | {:s | :u | :f, non_neg_integer}
+  @callback bintype(s) :: :uft8 | {:s | :u | :f, non_neg_integer}
 
   # Slice and dice
 

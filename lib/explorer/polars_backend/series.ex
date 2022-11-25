@@ -41,7 +41,7 @@ defmodule Explorer.PolarsBackend.Series do
   def size(series), do: Shared.apply_series(series, :s_size)
 
   @impl true
-  def iotype(series) do
+  def bintype(series) do
     case Shared.apply_series(series, :s_dtype) do
       "u8" -> {:u, 8}
       "u32" -> {:u, 32}
@@ -54,7 +54,7 @@ defmodule Explorer.PolarsBackend.Series do
       "datetime[ms]" -> {:s, 64}
       "datetime[μs]" -> {:s, 64}
       "datetime[ns]" -> {:s, 64}
-      dtype -> raise "cannot convert dtype #{inspect(dtype)} to iotype"
+      dtype -> raise "cannot convert dtype #{inspect(dtype)} to bintype"
     end
   end
 
