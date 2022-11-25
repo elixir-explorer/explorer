@@ -9,10 +9,9 @@ defmodule Explorer.Backend.LazySeries do
 
   @behaviour Explorer.Backend.Series
 
-  # TODO: Validate if the window field is really required once we have distinct_with/arrange_with
-  defstruct op: nil, args: [], aggregation: false, window: false
+  defstruct op: nil, args: [], aggregation: false
 
-  @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean(), window: boolean()}
+  @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean()}
 
   @operations [
     # Element-wise
@@ -100,8 +99,8 @@ defmodule Explorer.Backend.LazySeries do
   @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]
 
   @doc false
-  def new(op, args, aggregation \\ false, window \\ false) do
-    %__MODULE__{op: op, args: args, aggregation: aggregation, window: window}
+  def new(op, args, aggregation \\ false) do
+    %__MODULE__{op: op, args: args, aggregation: aggregation}
   end
 
   @doc false
@@ -113,14 +112,14 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def cast(%Series{} = s, dtype) when is_atom(dtype) do
     args = [lazy_series!(s), dtype]
-    data = new(:cast, args, aggregations?(args), window_functions?(args))
+    data = new(:cast, args, aggregations?(args))
 
     Backend.Series.new(data, dtype)
   end
 
   @impl true
   def from_list(list, dtype) when is_list(list) and is_atom(dtype) do
-    data = new(:from_list, [list, dtype], false, false)
+    data = new(:from_list, [list, dtype], false)
 
     Backend.Series.new(data, dtype)
   end
@@ -128,7 +127,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def from_binary(binary, bintype, alignment)
       when is_binary(binary) and is_atom(bintype) and is_integer(alignment) do
-    data = new(:from_binary, [binary, bintype, alignment], false, false)
+    data = new(:from_binary, [binary, bintype, alignment], false)
 
     case bintype do
       :s -> Backend.Series.new(data, :integer)
@@ -140,7 +139,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def reverse(%Series{} = s) do
     args = [lazy_series!(s)]
-    data = new(:reverse, args, aggregations?(args), window_functions?(args))
+    data = new(:reverse, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -148,7 +147,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def argsort(%Series{} = s, descending?, nils_last?) do
     args = [lazy_series!(s), descending?, nils_last?]
-    data = new(:argsort, args, aggregations?(args), window_functions?(args))
+    data = new(:argsort, args, aggregations?(args))
 
     Backend.Series.new(data, :integer)
   end
@@ -156,7 +155,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def sort(%Series{} = s, descending?, nils_last?) do
     args = [lazy_series!(s), descending?, nils_last?]
-    data = new(:sort, args, aggregations?(args), window_functions?(args))
+    data = new(:sort, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -164,7 +163,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def distinct(%Series{} = s) do
     args = [lazy_series!(s)]
-    data = new(:distinct, args, aggregations?(args), window_functions?(args))
+    data = new(:distinct, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -172,7 +171,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def unordered_distinct(%Series{} = s) do
     args = [lazy_series!(s)]
-    data = new(:unordered_distinct, args, aggregations?(args), window_functions?(args))
+    data = new(:unordered_distinct, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -180,7 +179,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def slice(%Series{} = s, offset, length) do
     args = [lazy_series!(s), offset, length]
-    data = new(:slice, args, aggregations?(args), window_functions?(args))
+    data = new(:slice, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -188,7 +187,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def head(%Series{} = s, length) do
     args = [lazy_series!(s), length]
-    data = new(:head, args, aggregations?(args), window_functions?(args))
+    data = new(:head, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -196,7 +195,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def tail(%Series{} = s, length) do
     args = [lazy_series!(s), length]
-    data = new(:tail, args, aggregations?(args), window_functions?(args))
+    data = new(:tail, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -204,7 +203,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def peaks(%Series{} = s, min_or_max) when is_atom(min_or_max) do
     args = [lazy_series!(s), Atom.to_string(min_or_max)]
-    data = new(:peaks, args, aggregations?(args), window_functions?(args))
+    data = new(:peaks, args, aggregations?(args))
 
     Backend.Series.new(data, :boolean)
   end
@@ -212,7 +211,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def fill_missing(%Series{} = s, strategy) when is_atom(strategy) do
     args = [lazy_series!(s), Atom.to_string(strategy)]
-    data = new(:fill_missing, args, aggregations?(args), window_functions?(args))
+    data = new(:fill_missing, args, aggregations?(args))
 
     dtype = if strategy == :mean, do: :float, else: s.dtype
     Backend.Series.new(data, dtype)
@@ -221,7 +220,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def fill_missing(%Series{} = s, value) do
     args = [lazy_series!(s), value]
-    data = new(:fill_missing_with_value, args, aggregations?(args), window_functions?(args))
+    data = new(:fill_missing_with_value, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -229,7 +228,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def sample(%Series{} = s, n, replacement, seed) when is_integer(n) do
     args = [lazy_series!(s), n, replacement, seed]
-    data = new(:sample_n, args, aggregations?(args), window_functions?(args))
+    data = new(:sample_n, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -237,7 +236,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def sample(%Series{} = s, frac, replacement, seed) when is_float(frac) do
     args = [lazy_series!(s), frac, replacement, seed]
-    data = new(:sample_frac, args, aggregations?(args), window_functions?(args))
+    data = new(:sample_frac, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -248,7 +247,7 @@ defmodule Explorer.Backend.LazySeries do
     @impl true
     def unquote(op)(left, right) do
       args = [data!(left), data!(right)]
-      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
+      data = new(unquote(op), args, aggregations?(args))
 
       Backend.Series.new(data, :boolean)
     end
@@ -259,7 +258,7 @@ defmodule Explorer.Backend.LazySeries do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right) do
       args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
-      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
+      data = new(unquote(op), args, aggregations?(args))
 
       Backend.Series.new(data, :boolean)
     end
@@ -271,7 +270,7 @@ defmodule Explorer.Backend.LazySeries do
       dtype = resolve_numeric_dtype([left, right])
 
       args = [data!(left), data!(right)]
-      data = new(unquote(op), args, aggregations?(args), window_functions?(args))
+      data = new(unquote(op), args, aggregations?(args))
 
       Backend.Series.new(data, dtype)
     end
@@ -281,7 +280,7 @@ defmodule Explorer.Backend.LazySeries do
     @impl true
     def unquote(op)(%Series{} = series) do
       args = [lazy_series!(series)]
-      data = new(unquote(op), args, true, window_functions?(args))
+      data = new(unquote(op), args, true)
 
       dtype = dtype_for_agg_operation(unquote(op), series)
 
@@ -302,7 +301,7 @@ defmodule Explorer.Backend.LazySeries do
 
       dtype = resolve_numeric_dtype(unquote(op), [series | List.wrap(weights)])
 
-      data = new(unquote(op), args, false, true)
+      data = new(unquote(op), args, false)
 
       Backend.Series.new(data, dtype)
     end
@@ -315,7 +314,7 @@ defmodule Explorer.Backend.LazySeries do
 
       if aggregations?(args), do: raise_agg_inside_window(unquote(op))
 
-      data = new(unquote(op), args, false, true)
+      data = new(unquote(op), args, false)
 
       Backend.Series.new(data, series.dtype)
     end
@@ -329,7 +328,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def quantile(%Series{} = series, float) when is_float(float) do
     args = [lazy_series!(series), float]
-    data = new(:quantile, args, true, window_functions?(args))
+    data = new(:quantile, args, true)
 
     Backend.Series.new(data, series.dtype)
   end
@@ -337,7 +336,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def coalesce(%Series{} = left, %Series{} = right) do
     args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
-    data = new(:coalesce, args, aggregations?(args), window_functions?(args))
+    data = new(:coalesce, args, aggregations?(args))
 
     dtype =
       if left.dtype in [:float, :integer] do
@@ -357,7 +356,7 @@ defmodule Explorer.Backend.LazySeries do
       series_or_lazy_series!(on_false)
     ]
 
-    data = new(:select, args, aggregations?(args), window_functions?(args))
+    data = new(:select, args, aggregations?(args))
 
     dtype =
       if on_true.dtype in [:float, :integer] do
@@ -372,7 +371,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def concat(%Series{} = left, %Series{} = right) do
     args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
-    data = new(:concat, args, aggregations?(args), window_functions?(args))
+    data = new(:concat, args, aggregations?(args))
 
     dtype =
       if left.dtype in [:float, :integer] do
@@ -432,13 +431,6 @@ defmodule Explorer.Backend.LazySeries do
     end)
   end
 
-  defp window_functions?(args) do
-    Enum.any?(args, fn
-      %__MODULE__{window: is_window} -> is_window
-      _other -> false
-    end)
-  end
-
   @impl true
   def is_nil(%Series{} = series) do
     data = new(:is_nil, [lazy_series!(series)])
@@ -456,7 +448,7 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def all_equal(%Series{} = left, %Series{} = right) do
     args = [lazy_series!(left), lazy_series!(right)]
-    data = new(:all_equal, args, aggregations?(args), window_functions?(args))
+    data = new(:all_equal, args, aggregations?(args))
 
     Backend.Series.new(data, :boolean)
   end
