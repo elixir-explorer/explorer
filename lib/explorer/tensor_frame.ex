@@ -26,6 +26,31 @@ if Code.ensure_loaded?(Nx) do
     convert it to a TensorFrame. The TensorFrame will lazily
     build tensors out of the used dataframe fields.
 
+    ## Warning: returning TensorFrames
+
+    It is not recommended to return a TensorFrame from a `defn`,
+    as that would force all columns to be sent to the CPU/GPU
+    and then copied back. Return only the columns that have been
+    modified during the computation. For example, in the example
+    above we used `Nx` to add two columns, if you want to
+    put the result of the computation back into a DataFrame,
+    you can use `Explorer.DataFrame.put/4`, which also accepts
+    tensors:
+
+        iex> df = Explorer.DataFrame.new(a: [11, 12], b: [21, 22])
+        iex> Explorer.DataFrame.put(df, "result", add_columns(df))
+        #Explorer.DataFrame<
+          Polars[2 x 3]
+          a integer [11, 12]
+          b integer [21, 22]
+          result integer [32, 34]
+        >
+
+    One benefit of using `Explorer.DataFrame.put/3` is that it will
+    preserve the type of the column if one already exists. Alternatively,
+    use `Explorer.Series.from_tensor/1` to explicitly convert a tensor
+    back to a series.
+
     ## Supported dtypes
 
     The following dtypes can be converted to tensors:
@@ -40,14 +65,13 @@ if Code.ensure_loaded?(Nx) do
     to learn more about their internal representation.
     """
 
-    defstruct [:data, :names, :dtypes, :n_rows]
+    defstruct [:data, :n_rows]
     @type t :: %__MODULE__{}
 
     @doc false
-    def new(data, names, dtypes, n_rows)
-        when is_map(data) and is_list(names) and is_map(dtypes) and
-               is_integer(n_rows) and n_rows > 0 do
-      %TF{data: data, names: names, dtypes: dtypes, n_rows: n_rows}
+    def new(data, n_rows)
+        when is_map(data) and is_integer(n_rows) and n_rows > 0 do
+      %TF{data: data, n_rows: n_rows}
     end
 
     @compile {:no_warn_undefined, Nx}
@@ -57,25 +81,32 @@ if Code.ensure_loaded?(Nx) do
     import Nx.Defn
 
     @doc """
+    Pulls a tensor from the TensorFrame.
+
+    This is equivalent to using the `tf[name]` to access
+    a tensor.
+
+    ## Examples
+
+        Explorer.TensorFrame.pull(tf, "some_column")
+
+    """
+    deftransform pull(%TF{} = tf, name) do
+      fetch!(tf, to_column_name(name))
+    end
+
+    @doc """
     Puts a tensor in the TensorFrame.
 
     This function can be invoked from within `defn`.
 
-    A `:dtype` can be given as option. If none is given,
-    one is retrieved from the existing dtypes (if there
-    is a column of matching name), or it is automatically
-    inferred from the tensor.
-
     ## Examples
 
         Explorer.TensorFrame.put(tf, "result", some_tensor)
+
     """
-    deftransform put(%TF{} = tf, name, tensor, opts \\ []) do
-      tensor = Nx.to_tensor(tensor)
-      opts = Keyword.validate!(opts, [:dtype])
-      name = to_column_name(name)
-      dtype = opts[:dtype] || tf.dtypes[name] || Explorer.Shared.bintype_to_dtype!(tensor.type)
-      put!(tf, name, tensor, dtype)
+    deftransform put(%TF{} = tf, name, tensor) do
+      put!(tf, to_column_name(name), tensor)
     end
 
     ## Access
@@ -91,36 +122,27 @@ if Code.ensure_loaded?(Nx) do
     def get_and_update(tf, name, callback) do
       name = to_column_name(name)
       {get, update} = callback.(fetch!(tf, name))
-      {get, put!(tf, name, Nx.to_tensor(update), tf.dtypes[name])}
+      {get, put!(tf, name, update)}
     end
 
     @impl Access
-    def pop(%TF{data: data, names: names, dtypes: dtypes} = tf, name) do
+    def pop(%TF{data: data} = tf, name) do
       name = to_column_name(name)
 
-      {fetch!(tf, name),
-       %{
-         tf
-         | data: Map.delete(data, name),
-           names: List.delete(names, name),
-           dtypes: Map.delete(dtypes, name)
-       }}
+      {fetch!(tf, name), %{tf | data: Map.delete(data, name)}}
     end
 
-    defp fetch!(%TF{} = tf, name) when is_binary(name) do
-      case tf.data do
+    defp fetch!(%TF{data: data}, name) when is_binary(name) do
+      case data do
         %{^name => data} ->
           data
 
         %{} ->
-          case tf.dtypes do
-            %{^name => dtype} ->
-              raise ArgumentError,
-                    "cannot access \"#{name}\" because its dtype #{dtype} is not supported in Explorer.TensorFrame"
-
-            %{} ->
-              Explorer.Shared.raise_column_not_found!(name, tf.names)
-          end
+          raise ArgumentError,
+                List.to_string([
+                  "could not find column \"#{name}\" either because it doesn't exist or its dtype is not supported in Explorer.TensorFrame"
+                  | Explorer.Shared.did_you_mean(name, Map.keys(data))
+                ])
       end
     end
 
@@ -134,37 +156,8 @@ if Code.ensure_loaded?(Nx) do
             "Explorer.TensorFrame only accepts atoms and strings as column names, got: #{inspect(name)}"
     end
 
-    defp put!(%{dtypes: dtypes, n_rows: n_rows} = tf, name, value, dtype) when is_binary(name) do
-      cond do
-        Explorer.Shared.dtype_to_bintype!(dtype) != value.type ->
-          raise ArgumentError,
-                "cannot add column \"#{name}\" to TensorFrame with a tensor that does not match its dtype. " <>
-                  "The dtype #{dtype} expects a tensor of type #{inspect(Explorer.Shared.dtype_to_bintype!(dtype))} " <>
-                  "but got tensor #{inspect(value)}"
-
-        Map.has_key?(dtypes, name) ->
-          put_in(tf.data[name], broadcast!(value, n_rows))
-
-        true ->
-          %{data: data, names: names} = tf
-
-          %{
-            tf
-            | data: Map.put(data, name, broadcast!(value, n_rows)),
-              names: names ++ [name],
-              dtypes: Map.put(dtypes, name, dtype)
-          }
-      end
-    end
-
-    defp broadcast!(%{shape: {}} = tensor, n_rows), do: Nx.broadcast(tensor, {n_rows})
-    defp broadcast!(%{shape: {1}} = tensor, n_rows), do: Nx.broadcast(tensor, {n_rows})
-    defp broadcast!(%{shape: {n_rows}} = tensor, n_rows), do: tensor
-
-    defp broadcast!(tensor, n_rows) do
-      raise ArgumentError,
-            "cannot add column to TensorFrame with a tensor that does not match its size. " <>
-              "Expected a tensor of shape {#{n_rows}} but got tensor #{inspect(tensor)}"
+    defp put!(%{n_rows: n_rows} = tf, name, value) when is_binary(name) do
+      put_in(tf.data[name], value |> Nx.to_tensor() |> Explorer.Shared.broadcast!(n_rows))
     end
 
     defimpl Inspect do
@@ -183,32 +176,21 @@ if Code.ensure_loaded?(Nx) do
 
       @default_limit 5
 
-      defp inner(%{data: data, names: names, dtypes: dtypes, n_rows: n_rows}, opts) do
+      defp inner(%{data: data, n_rows: n_rows}, opts) do
         opts = %{opts | limit: @default_limit}
         open = color("[", :list, opts)
         close = color("]", :list, opts)
 
-        tensors_docs =
-          for name <- names, tensor = data[name] do
+        pairs =
+          for {name, tensor} <- Enum.sort(data) do
             concat([
               line(),
               color("#{name} ", :map, opts),
-              color("#{dtypes[name]} ", :atom, opts),
               Inspect.Algebra.to_doc(tensor, opts)
             ])
           end
 
-        header = "#{n_rows} x #{map_size(data)}"
-        unsupported = for name <- names, not is_map_key(data, name), do: name
-        concat([open, header, close, unsupported(unsupported, dtypes, opts) | tensors_docs])
-      end
-
-      defp unsupported([], _, _), do: ""
-
-      defp unsupported(names, dtypes, opts) do
-        fun = fn name, _opts -> "#{name} #{dtypes[name]}" end
-        doc = container_doc("[", names, "]", %{opts | limit: :infinity}, fun)
-        concat([line(), "Unsupported: ", doc])
+        concat([open, "#{n_rows} x #{map_size(data)}", close | pairs])
       end
     end
   end
@@ -218,10 +200,9 @@ if Code.ensure_loaded?(Nx) do
 
     def traverse(df, acc, fun) do
       n_rows = DF.n_rows(df)
-      dtypes = DF.dtypes(df)
 
       {data, acc} =
-        Enum.reduce(dtypes, {[], acc}, fn
+        Enum.reduce(DF.dtypes(df), {[], acc}, fn
           {_name, dtype}, {data, acc} when dtype in @unsupported ->
             {data, acc}
 
@@ -233,7 +214,7 @@ if Code.ensure_loaded?(Nx) do
         end)
 
       # We keep original names and dtypes for display
-      {TF.new(Map.new(data), DF.names(df), dtypes, n_rows), acc}
+      {TF.new(Map.new(data), n_rows), acc}
     end
   end
 

@@ -186,16 +186,26 @@ defmodule Explorer.Shared do
   end
 
   @doc """
-  Raising helper for when a column is not found.
+  Broadcasts a tensor to the number of rows.
   """
-  def raise_column_not_found!(name, names) do
+  @compile {:no_warn_undefined, {Nx, :broadcast, 2}}
+  def broadcast!(%{shape: {}} = tensor, n_rows), do: Nx.broadcast(tensor, {n_rows})
+  def broadcast!(%{shape: {1}} = tensor, n_rows), do: Nx.broadcast(tensor, {n_rows})
+  def broadcast!(%{shape: {n_rows}} = tensor, n_rows), do: tensor
+
+  def broadcast!(tensor, n_rows) do
     raise ArgumentError,
-          List.to_string(["could not find column name \"#{name}\"" | did_you_mean(name, names)])
+          "cannot add tensor that does not match the frame size. " <>
+            "Expected a tensor of shape {#{n_rows}} but got tensor #{inspect(tensor)}"
   end
 
   @threshold 0.77
   @max_suggestions 5
-  defp did_you_mean(missing_key, available_keys) do
+
+  @doc """
+  Provides did_you_mean suggestions based on keys.
+  """
+  def did_you_mean(missing_key, available_keys) do
     suggestions =
       for key <- available_keys,
           distance = String.jaro_distance(missing_key, key),

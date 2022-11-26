@@ -1941,5 +1941,54 @@ defmodule Explorer.DataFrameTest do
                a: [2, 4, 6]
              }
     end
+
+    test "with tensors" do
+      i = Nx.tensor(1)
+      f = Nx.tensor([1.0], type: :f64)
+      d = Nx.tensor([-1, 0, 1], type: :s32)
+
+      df =
+        DF.new(
+          a: [1, 2, 3],
+          b: [4.0, 5.0, 6.0],
+          c: ["a", "b", "c"],
+          d: [~D[1970-01-01], ~D[1980-01-01], ~D[1990-01-01]]
+        )
+
+      assert DF.put(df, :a, i)[:a] |> Series.to_list() == [1, 1, 1]
+      assert DF.put(df, :a, f, dtype: :float)[:a] |> Series.to_list() == [1.0, 1.0, 1.0]
+
+      assert DF.put(df, :a, d, dtype: :date)[:a] |> Series.to_list() == [
+               ~D[1969-12-31],
+               ~D[1970-01-01],
+               ~D[1970-01-02]
+             ]
+
+      assert DF.put(df, :c, i, dtype: :integer)[:c] |> Series.to_list() == [1, 1, 1]
+      assert DF.put(df, :c, f, dtype: :float)[:c] |> Series.to_list() == [1.0, 1.0, 1.0]
+
+      assert DF.put(df, :c, d, dtype: :date)[:c] |> Series.to_list() == [
+               ~D[1969-12-31],
+               ~D[1970-01-01],
+               ~D[1970-01-02]
+             ]
+
+      assert DF.put(df, :d, i, dtype: :integer)[:d] |> Series.to_list() == [1, 1, 1]
+      assert DF.put(df, :d, f, dtype: :float)[:d] |> Series.to_list() == [1.0, 1.0, 1.0]
+
+      assert DF.put(df, :d, d)[:d] |> Series.to_list() == [
+               ~D[1969-12-31],
+               ~D[1970-01-01],
+               ~D[1970-01-02]
+             ]
+
+      assert_raise ArgumentError,
+                   "cannot convert dtype string into a binary/tensor type",
+                   fn -> DF.put(df, :c, i) end
+
+      assert_raise ArgumentError,
+                   "cannot convert binary/tensor type {:u, 32} into dtype",
+                   fn -> DF.put(df, :e, Nx.tensor([1, 2, 3], type: {:u, 32})) end
+    end
   end
 end

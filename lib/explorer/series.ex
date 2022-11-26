@@ -154,6 +154,7 @@ defmodule Explorer.Series do
   @doc type: :transformation
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
+    opts = Keyword.validate!(opts, [:dtype, :backend])
     backend = backend_from_options!(opts)
     type = Shared.check_types!(list)
     {list, type} = Shared.cast_numerics(list, type)
@@ -230,6 +231,7 @@ defmodule Explorer.Series do
           Series.t()
   def from_binary(binary, dtype, opts \\ [])
       when K.and(is_binary(binary), K.and(is_atom(dtype), is_list(opts))) do
+    opts = Keyword.validate!(opts, [:dtype, :backend])
     {_type, alignment} = Shared.dtype_to_bintype!(dtype)
 
     if rem(bit_size(binary), alignment) != 0 do
@@ -299,7 +301,8 @@ defmodule Explorer.Series do
   """
   @doc type: :transformation
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
-  def from_tensor(tensor, opts \\ []) do
+  def from_tensor(tensor, opts \\ []) when is_struct(tensor, Nx.Tensor) do
+    opts = Keyword.validate!(opts, [:dtype, :backend])
     type = Nx.type(tensor)
     {dtype, opts} = Keyword.pop_lazy(opts, :dtype, fn -> Shared.bintype_to_dtype!(type) end)
 

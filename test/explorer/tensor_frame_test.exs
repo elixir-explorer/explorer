@@ -22,7 +22,7 @@ defmodule Explorer.TensorFrameTest do
     end
 
     defnp put_column(data) do
-      TF.put(data, "d", data["a"] + data["b"])
+      TF.put(data, "d", data["a"] + TF.pull(data, "b"))
     end
 
     test "handles deftransform functions" do
@@ -37,58 +37,31 @@ defmodule Explorer.TensorFrameTest do
   end
 
   describe "put" do
-    test "dtype fallback" do
+    test "broadcasts" do
       i = 1
       f = Nx.tensor([1.0], type: :f64)
       tf = tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])
       assert TF.put(tf, :a, i)[:a] == Nx.tensor([1, 1, 1])
-      assert TF.put(tf, :a, f, dtype: :float)[:a] == Nx.tensor([1.0, 1.0, 1.0], type: :f64)
+      assert TF.put(tf, :a, f)[:a] == Nx.tensor([1.0, 1.0, 1.0], type: :f64)
 
-      assert TF.put(tf, :c, i, dtype: :integer)[:c] == Nx.tensor([1, 1, 1])
-      assert TF.put(tf, :c, f, dtype: :float)[:c] == Nx.tensor([1.0, 1.0, 1.0], type: :f64)
+      assert TF.put(tf, :c, i)[:c] == Nx.tensor([1, 1, 1])
+      assert TF.put(tf, :c, f)[:c] == Nx.tensor([1.0, 1.0, 1.0], type: :f64)
 
       assert TF.put(tf, :d, i)[:d] == Nx.tensor([1, 1, 1])
-      assert TF.put(tf, :d, f, dtype: :float)[:d] == Nx.tensor([1.0, 1.0, 1.0], type: :f64)
-
-      assert_raise ArgumentError, "cannot convert dtype string into a binary/tensor type", fn ->
-        TF.put(tf, :c, i)
-      end
-
-      assert_raise ArgumentError,
-                   "cannot convert binary/tensor type {:u, 32} into dtype",
-                   fn ->
-                     TF.put(tf, :d, Nx.tensor([1, 2, 3], type: {:u, 32}))
-                   end
+      assert TF.put(tf, :d, f)[:d] == Nx.tensor([1.0, 1.0, 1.0], type: :f64)
     end
   end
 
   describe "inspect" do
-    test "with missing columns" do
+    test "columns and tensors" do
       assert inspect(tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])) == """
              #Explorer.TensorFrame<
                [3 x 2]
-               Unsupported: [c string]
-               a integer #Nx.Tensor<
+               a #Nx.Tensor<
                  s64[3]
                  [1, 2, 3]
                >
-               b float #Nx.Tensor<
-                 f64[3]
-                 [4.0, 5.0, 6.0]
-               >
-             >\
-             """
-    end
-
-    test "without missing columns" do
-      assert inspect(tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0])) == """
-             #Explorer.TensorFrame<
-               [3 x 2]
-               a integer #Nx.Tensor<
-                 s64[3]
-                 [1, 2, 3]
-               >
-               b float #Nx.Tensor<
+               b #Nx.Tensor<
                  f64[3]
                  [4.0, 5.0, 6.0]
                >
@@ -110,7 +83,7 @@ defmodule Explorer.TensorFrameTest do
                    fn -> tf[0] end
 
       assert_raise ArgumentError,
-                   "cannot access \"c\" because its dtype string is not supported in Explorer.TensorFrame",
+                   "could not find column \"c\" either because it doesn't exist or its dtype is not supported in Explorer.TensorFrame",
                    fn -> tf[:c] end
     end
 
@@ -125,15 +98,9 @@ defmodule Explorer.TensorFrameTest do
       assert update[:a] == Nx.tensor([123, 123, 123])
 
       assert_raise ArgumentError,
-                   ~r"cannot add column to TensorFrame with a tensor that does not match its size",
+                   ~r"cannot add tensor that does not match the frame size. Expected a tensor of shape \{3\}",
                    fn ->
                      Access.get_and_update(tf, :a, fn a -> {a, Nx.tensor([1, 2])} end)
-                   end
-
-      assert_raise ArgumentError,
-                   ~r"cannot add column \"a\" to TensorFrame with a tensor that does not match its dtype",
-                   fn ->
-                     Access.get_and_update(tf, :a, fn a -> {a, Nx.multiply(a, 2.0)} end)
                    end
     end
 
@@ -142,8 +109,6 @@ defmodule Explorer.TensorFrameTest do
       {tensor, popped} = Access.pop(tf, :a)
       assert tensor == Nx.tensor([1, 2, 3])
       assert popped.data[:a] == nil
-      assert popped.names == ["b", "c"]
-      assert popped.dtypes == %{"b" => :float, "c" => :string}
     end
   end
 end
