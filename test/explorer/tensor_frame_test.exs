@@ -62,6 +62,41 @@ defmodule Explorer.TensorFrameTest do
     end
   end
 
+  describe "inspect" do
+    test "with missing columns" do
+      assert inspect(tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])) == """
+             #Explorer.TensorFrame<
+               [3 x 2]
+               Unsupported: [c string]
+               a integer #Nx.Tensor<
+                 s64[3]
+                 [1, 2, 3]
+               >
+               b float #Nx.Tensor<
+                 f64[3]
+                 [4.0, 5.0, 6.0]
+               >
+             >\
+             """
+    end
+
+    test "without missing columns" do
+      assert inspect(tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0])) == """
+             #Explorer.TensorFrame<
+               [3 x 2]
+               a integer #Nx.Tensor<
+                 s64[3]
+                 [1, 2, 3]
+               >
+               b float #Nx.Tensor<
+                 f64[3]
+                 [4.0, 5.0, 6.0]
+               >
+             >\
+             """
+    end
+  end
+
   describe "access" do
     test "get" do
       tf = tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])

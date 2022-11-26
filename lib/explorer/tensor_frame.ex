@@ -166,6 +166,51 @@ if Code.ensure_loaded?(Nx) do
             "cannot add column to TensorFrame with a tensor that does not match its size. " <>
               "Expected a tensor of shape {#{n_rows}} but got tensor #{inspect(tensor)}"
     end
+
+    defimpl Inspect do
+      import Inspect.Algebra
+
+      def inspect(tf, opts) do
+        force_unfit(
+          concat([
+            color("#Explorer.TensorFrame<", :map, opts),
+            nest(concat([line(), inner(tf, opts)]), 2),
+            line(),
+            color(">", :map, opts)
+          ])
+        )
+      end
+
+      @default_limit 5
+
+      defp inner(%{data: data, names: names, dtypes: dtypes, n_rows: n_rows}, opts) do
+        opts = %{opts | limit: @default_limit}
+        open = color("[", :list, opts)
+        close = color("]", :list, opts)
+
+        tensors_docs =
+          for name <- names, tensor = data[name] do
+            concat([
+              line(),
+              color("#{name} ", :map, opts),
+              color("#{dtypes[name]} ", :atom, opts),
+              Inspect.Algebra.to_doc(tensor, opts)
+            ])
+          end
+
+        header = "#{n_rows} x #{map_size(data)}"
+        unsupported = for name <- names, not is_map_key(data, name), do: name
+        concat([open, header, close, unsupported(unsupported, dtypes, opts) | tensors_docs])
+      end
+
+      defp unsupported([], _, _), do: ""
+
+      defp unsupported(names, dtypes, opts) do
+        fun = fn name, _opts -> "#{name} #{dtypes[name]}" end
+        doc = container_doc("[", names, "]", %{opts | limit: :infinity}, fun)
+        concat([line(), "Unsupported: ", doc])
+      end
+    end
   end
 
   defimpl Nx.LazyContainer, for: DF do
