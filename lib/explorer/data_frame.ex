@@ -2223,7 +2223,7 @@ defmodule Explorer.DataFrame do
         b integer [9, 8, 7]
       >
 
-  ## Tensors
+  ## Tensor examples
 
   You can also put tensors into the dataframe:
 
@@ -2234,10 +2234,10 @@ defmodule Explorer.DataFrame do
         a integer [1, 2, 3]
       >
 
-  You can also specify a dtype to customize which dtype
-  the tensor represents. For example, a tensor of s64
-  may represent timestamps in microseconds from the
-  Unix epoch:
+  You can specify which dtype the tensor represents.
+  For example, a tensor of s64 represents integers
+  by default, but it may also represent timestamps
+  in microseconds from the Unix epoch:
 
       iex> df = DF.new([])
       iex> DF.put(df, :a, Nx.tensor([1, 2, 3]), dtype: :datetime)
@@ -2257,7 +2257,9 @@ defmodule Explorer.DataFrame do
       >
 
   If there is already a column where we want to place the tensor,
-  the column dtype will be automatically used:
+  the column dtype will be automatically used, this means that
+  updating dataframes in place while preserving their types is
+  straight-forward:
 
       iex> df = DF.new(a: [~N[1970-01-01 00:00:00]])
       iex> DF.put(df, :a, Nx.tensor(529550625987654))
@@ -2266,9 +2268,9 @@ defmodule Explorer.DataFrame do
         a datetime [1986-10-13 01:23:45.987654]
       >
 
-  On the other hand, if you try to set a floating tensor on
+  On the other hand, if you try to put a floating tensor on
   an integer column, an error will be raised unless a dtype
-  is explicitly given:
+  or `dtype: :from_tensor` is given:
 
       iex> df = DF.new(a: [1, 2, 3])
       iex> DF.put(df, :a, Nx.tensor(1.0, type: :f64))
@@ -2276,6 +2278,13 @@ defmodule Explorer.DataFrame do
 
       iex> df = DF.new(a: [1, 2, 3])
       iex> DF.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: :float)
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        a float [1.0, 1.0, 1.0]
+      >
+
+      iex> df = DF.new(a: [1, 2, 3])
+      iex> DF.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: :from_tensor)
       #Explorer.DataFrame<
         Polars[3 x 1]
         a float [1.0, 1.0, 1.0]
@@ -2300,7 +2309,13 @@ defmodule Explorer.DataFrame do
       when is_column_name(column_name) and is_struct(tensor, Nx.Tensor) do
     opts = Keyword.validate!(opts, [:dtype])
     name = to_column_name(column_name)
-    dtype = opts[:dtype] || df.dtypes[name] || Shared.bintype_to_dtype!(Nx.type(tensor))
+
+    dtype =
+      case opts[:dtype] do
+        nil -> df.dtypes[name] || Shared.bintype_to_dtype!(Nx.type(tensor))
+        :from_tensor -> Shared.bintype_to_dtype!(Nx.type(tensor))
+        dtype -> dtype
+      end
 
     backend_df_string = Atom.to_string(df.data.__struct__)
     backend_string = binary_part(backend_df_string, 0, byte_size(backend_df_string) - 10)

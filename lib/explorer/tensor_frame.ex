@@ -46,7 +46,7 @@ if Code.ensure_loaded?(Nx) do
           result integer [32, 34]
         >
 
-    One benefit of using `Explorer.DataFrame.put/3` is that it will
+    One benefit of using `Explorer.DataFrame.put/4` is that it will
     preserve the type of the column if one already exists. Alternatively,
     use `Explorer.Series.from_tensor/1` to explicitly convert a tensor
     back to a series.
