@@ -262,7 +262,7 @@ pub fn s_is_not_null(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_take_every(data: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
+pub fn s_at_every(data: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = s.take_every(n);
     Ok(ExSeries::new(s1))
@@ -574,7 +574,7 @@ pub fn s_standard_deviation(env: Env, data: ExSeries) -> Result<Term, ExplorerEr
 }
 
 #[rustler::nif]
-pub fn s_fetch(env: Env, data: ExSeries, idx: usize) -> Result<Term, ExplorerError> {
+pub fn s_at(env: Env, data: ExSeries, idx: usize) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
     encoding::term_from_value(s.get(idx), env)
 }

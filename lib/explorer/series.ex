@@ -76,6 +76,16 @@ defmodule Explorer.Series do
     {current_value, new_data}
   end
 
+  defp fetch!(series, idx) do
+    size = size(series)
+    idx = if idx < 0, do: idx + size, else: idx
+
+    if K.or(idx < 0, idx > size),
+      do: raise(ArgumentError, "index #{idx} out of bounds for series of size #{size}")
+
+    Shared.apply_impl(series, :at, [idx])
+  end
+
   # Conversion
 
   @doc """
@@ -798,7 +808,7 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.take_every(2)
+      iex> Explorer.Series.at_every(s, 2)
       #Explorer.Series<
         Polars[5]
         integer [1, 3, 5, 7, 9]
@@ -807,15 +817,15 @@ defmodule Explorer.Series do
   If *n* is bigger than the size of the series, the result is a new series with only the first value of the supplied series.
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.take_every(20)
+      iex> Explorer.Series.at_every(s, 20)
       #Explorer.Series<
         Polars[1]
         integer [1]
       >
   """
   @doc type: :shape
-  @spec take_every(series :: Series.t(), every_n :: integer()) :: Series.t()
-  def take_every(series, every_n), do: Shared.apply_impl(series, :take_every, [every_n])
+  @spec at_every(series :: Series.t(), every_n :: integer()) :: Series.t()
+  def at_every(series, every_n), do: Shared.apply_impl(series, :at_every, [every_n])
 
   @doc """
   Filters a series with a mask.
@@ -947,24 +957,16 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.fetch!(s, 2)
+      iex> Explorer.Series.at(s, 2)
       "c"
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.fetch!(s, 4)
+      iex> Explorer.Series.at(s, 4)
       ** (ArgumentError) index 4 out of bounds for series of size 3
   """
   @doc type: :shape
-  @spec fetch!(series :: Series.t(), idx :: integer()) :: any()
-  def fetch!(series, idx) do
-    size = size(series)
-    idx = if idx < 0, do: idx + size, else: idx
-
-    if K.or(idx < 0, idx > size),
-      do: raise(ArgumentError, "index #{idx} out of bounds for series of size #{size}")
-
-    Shared.apply_impl(series, :fetch!, [idx])
-  end
+  @spec at(series :: Series.t(), idx :: integer()) :: any()
+  def at(series, idx), do: fetch!(series, idx)
 
   @doc """
   Concatenate one or more series.
@@ -1702,14 +1704,14 @@ defmodule Explorer.Series do
       >
 
       iex> s = [1.0, 2.0, 3.0] |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.pow(3.0)
+      iex> Explorer.Series.pow(s, 3.0)
       #Explorer.Series<
         Polars[3]
         float [1.0, 8.0, 27.0]
       >
 
       iex> s = [2.0, 4.0, 6.0] |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.pow(2)
+      iex> Explorer.Series.pow(s, 2)
       #Explorer.Series<
         Polars[3]
         float [4.0, 16.0, 36.0]
@@ -2227,14 +2229,14 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list([9, 3, 7, 1])
-      iex> s |> Explorer.Series.sort()
+      iex> Explorer.Series.sort(s)
       #Explorer.Series<
         Polars[4]
         integer [1, 3, 7, 9]
       >
 
       iex> s = Explorer.Series.from_list([9, 3, 7, 1])
-      iex> s |> Explorer.Series.sort(direction: :desc)
+      iex> Explorer.Series.sort(s, direction: :desc)
       #Explorer.Series<
         Polars[4]
         integer [9, 7, 3, 1]
@@ -2264,14 +2266,14 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list([9, 3, 7, 1])
-      iex> s |> Explorer.Series.argsort()
+      iex> Explorer.Series.argsort(s)
       #Explorer.Series<
         Polars[4]
         integer [3, 1, 2, 0]
       >
 
       iex> s = Explorer.Series.from_list([9, 3, 7, 1])
-      iex> s |> Explorer.Series.argsort(direction: :desc)
+      iex> Explorer.Series.argsort(s, direction: :desc)
       #Explorer.Series<
         Polars[4]
         integer [0, 2, 1, 3]
@@ -2310,7 +2312,7 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.distinct()
+      iex> Explorer.Series.distinct(s)
       #Explorer.Series<
         Polars[3]
         integer [1, 2, 3]
@@ -2327,7 +2329,7 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
-      iex> s |> Explorer.Series.unordered_distinct()
+      iex> Explorer.Series.unordered_distinct(s)
   """
   @doc type: :shape
   def unordered_distinct(series), do: Shared.apply_impl(series, :unordered_distinct)
@@ -2752,7 +2754,7 @@ defmodule Explorer.Series.Iterator do
     defp reduce(_series, _impl, size, size, {:cont, acc}, _fun), do: {:done, acc}
 
     defp reduce(series, impl, size, offset, {:cont, acc}, fun) do
-      value = impl.fetch!(series, offset)
+      value = impl.at(series, offset)
       reduce(series, impl, size, offset + 1, fun.(value, acc), fun)
     end
   end
