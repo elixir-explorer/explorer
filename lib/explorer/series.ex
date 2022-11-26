@@ -846,7 +846,7 @@ defmodule Explorer.Series do
         integer [2, 3]
       >
 
-  Negative offsets count from the end of the series.
+  Negative offsets count from the end of the series:
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5])
       iex> Explorer.Series.slice(s, -3, 2)
@@ -855,7 +855,18 @@ defmodule Explorer.Series do
         integer [3, 4]
       >
 
-  If the size would run past the end of the series, the result may be shorter than the size.
+  If the offset runs past the end of the series,
+  the series is empty:
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5])
+      iex> Explorer.Series.slice(s, 10, 3)
+      #Explorer.Series<
+        Polars[0]
+        integer []
+      >
+
+  If the size runs past the end of the series,
+  the result may be shorter than the size:
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5])
       iex> Explorer.Series.slice(s, -3, 4)
@@ -869,7 +880,12 @@ defmodule Explorer.Series do
   def slice(series, offset, size), do: Shared.apply_impl(series, :slice, [offset, size])
 
   @doc """
-  Returns the elements at the given indices as a new series.
+  Slices the elements at the given indices as a new series.
+
+  The indices may be either a list of indices or a range.
+  A list of indices does not support negative numbers.
+  Ranges may be negative on either end, which are then
+  normalized. Note ranges in Elixir are inclusive.
 
   ## Examples
 
@@ -886,11 +902,38 @@ defmodule Explorer.Series do
         Polars[2]
         string ["b", "c"]
       >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.slice(s, -2..-1)
+      #Explorer.Series<
+        Polars[2]
+        string ["b", "c"]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.slice(s, 3..2)
+      #Explorer.Series<
+        Polars[0]
+        string []
+      >
+
   """
   @doc type: :transformation
   @spec slice(series :: Series.t(), indices :: [integer()] | Range.t()) :: Series.t()
   def slice(series, indices) when is_list(indices),
     do: Shared.apply_impl(series, :slice, [indices])
+
+  def slice(series, first..last//1) do
+    first = if first < 0, do: first + size(series), else: first
+    last = if last < 0, do: last + size(series), else: last
+    size = last - first + 1
+
+    if K.and(first >= 0, size >= 0) do
+      Shared.apply_impl(series, :slice, [first, size])
+    else
+      Shared.apply_impl(series, :slice, [[]])
+    end
+  end
 
   def slice(series, %Range{} = range),
     do: slice(series, Enum.slice(0..(size(series) - 1)//1, range))

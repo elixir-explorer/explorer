@@ -3020,11 +3020,16 @@ defmodule Explorer.DataFrame do
     do: Shared.apply_impl(df, :slice, [offset, length])
 
   @doc """
-  Subset rows with a list of indices or a range.
+  Slices rows at the given indices as a new dataframe.
 
-  Slice works differently when a dataframe is grouped. It is going to consider
-  the indices of each group instead of the entire dataframe. See the examples
-  below.
+  The indices may be either a list of indices or a range.
+  A list of indices does not support negative numbers.
+  Ranges may be negative on either end, which are then
+  normalized. Note ranges in Elixir are inclusive.
+
+  Slice works differently when a dataframe is grouped.
+  It is going to consider the indices of each group
+  instead of the entire dataframe. See the examples below.
 
   ## Examples
 
@@ -3036,6 +3041,8 @@ defmodule Explorer.DataFrame do
         b string ["a", "c"]
       >
 
+  With a range:
+
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> Explorer.DataFrame.slice(df, 1..2)
       #Explorer.DataFrame<
@@ -3044,11 +3051,21 @@ defmodule Explorer.DataFrame do
         b string ["b", "c"]
       >
 
+  With a range with negative first and last:
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> Explorer.DataFrame.slice(df, -2..-1)
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        a integer [2, 3]
+        b string ["b", "c"]
+      >
+
   ## Grouped examples
 
-  We are going to once again use the Iris dataset. In this example we want to take
-  the first and third rows of each group. Since we count from zero, it's going to take the
-  indices 0 and 2:
+  We are going to once again use the Iris dataset.
+  In this example we want to take elements at indexes
+  0 and 2:
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
@@ -3063,7 +3080,8 @@ defmodule Explorer.DataFrame do
         species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
       >
 
-  Now we want to take the first 3 rows of each group. This is going to work with the range `0..2`:
+  Now we want to take the first 3 rows of each group.
+  This is going to work with the range `0..2`:
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
@@ -3093,6 +3111,18 @@ defmodule Explorer.DataFrame do
     end)
 
     Shared.apply_impl(df, :slice, [row_indices])
+  end
+
+  def slice(%DataFrame{groups: []} = df, first..last//1) do
+    first = if first < 0, do: first + n_rows(df), else: first
+    last = if last < 0, do: last + n_rows(df), else: last
+    size = last - first + 1
+
+    if first >= 0 and size >= 0 do
+      Shared.apply_impl(df, :slice, [first, size])
+    else
+      Shared.apply_impl(df, :slice, [[]])
+    end
   end
 
   def slice(%DataFrame{groups: []} = df, %Range{} = range) do
