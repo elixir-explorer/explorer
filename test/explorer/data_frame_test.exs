@@ -1833,7 +1833,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "to_lazy/1", %{df: df} do
-    assert %Explorer.PolarsBackend.LazyDataFrame{} = DF.to_lazy(df).data
+    assert %Explorer.PolarsBackend.LazyFrame{} = DF.to_lazy(df).data
   end
 
   describe "select/3" do

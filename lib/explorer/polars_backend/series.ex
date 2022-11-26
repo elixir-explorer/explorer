@@ -331,14 +331,10 @@ defmodule Explorer.PolarsBackend.Series do
   def n_distinct(series), do: Shared.apply_series(series, :s_n_distinct)
 
   @impl true
-  def count(%Series{data: polars_series}) do
-    df =
-      case Native.s_value_counts(polars_series) do
-        {:ok, polars_df} -> Shared.create_dataframe(polars_df)
-        {:error, error} -> raise "#{error}"
-      end
-
-    DataFrame.rename(df, ["values", "counts"])
+  def count(series) do
+    series
+    |> Shared.apply_series(:s_value_counts)
+    |> DataFrame.rename(["values", "counts"])
   end
 
   # Window
@@ -435,12 +431,13 @@ defmodule Explorer.PolarsBackend.Series do
 end
 
 defimpl Inspect, for: Explorer.PolarsBackend.Series do
-  alias Explorer.PolarsBackend.Native
+  import Inspect.Algebra
 
   def inspect(s, _opts) do
-    case Native.s_as_str(s) do
-      {:ok, str} -> str
-      {:error, error} -> raise "#{error}"
-    end
+    concat([
+      "#Explorer.PolarsBackend.Series<",
+      nest(Explorer.PolarsBackend.Shared.apply_series(s, []), 2),
+      ">"
+    ])
   end
 end

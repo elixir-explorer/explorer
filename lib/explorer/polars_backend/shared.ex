@@ -4,7 +4,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
   alias Explorer.DataFrame, as: DataFrame
   alias Explorer.PolarsBackend.DataFrame, as: PolarsDataFrame
-  alias Explorer.PolarsBackend.LazyDataFrame, as: PolarsLazyFrame
+  alias Explorer.PolarsBackend.LazyFrame, as: PolarsLazyFrame
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.Series, as: Series
@@ -22,25 +22,13 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
-  def apply_dataframe(df_or_s, fun, args \\ [])
+  def apply_dataframe(dataframe, fun, args \\ [])
 
   def apply_dataframe(%DataFrame{} = df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
-      {:ok, %module{} = new_df} when module in @polars_df ->
-        # TODO: this currently assumes we want to preserve the groups
-        # but, if that's the case, we should be using apply_df/4.
-        # In other words, we should find every caller of this clause
-        # and make it use apply_dataframe/4 instead.
-        %{create_dataframe(new_df) | groups: df.groups}
-
-      {:ok, %PolarsSeries{} = new_series} ->
-        create_series(new_series)
-
-      {:ok, value} ->
-        value
-
-      {:error, error} ->
-        raise error_message(error)
+      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
+      {:ok, value} -> value
+      {:error, error} -> raise error_message(error)
     end
   end
 

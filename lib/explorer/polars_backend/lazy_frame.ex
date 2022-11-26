@@ -1,4 +1,4 @@
-defmodule Explorer.PolarsBackend.LazyDataFrame do
+defmodule Explorer.PolarsBackend.LazyFrame do
   @moduledoc false
 
   alias Explorer.PolarsBackend.Shared
@@ -18,13 +18,13 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
   def to_lazy(ldf), do: ldf
 
   @impl true
-  def collect(ldf), do: Shared.apply_dataframe(ldf, :lf_collect)
+  def collect(ldf), do: Shared.apply_dataframe(ldf, ldf, :lf_collect, [])
 
   # Introspection
 
   @impl true
   def inspect(ldf, opts) do
-    df = Shared.apply_dataframe(ldf, :lf_fetch, [opts.limit])
+    df = Shared.apply_dataframe(ldf, ldf, :lf_fetch, [opts.limit])
     Explorer.Backend.DataFrame.inspect(df, "LazyPolars", nil, opts)
   end
 
@@ -53,7 +53,7 @@ defmodule Explorer.PolarsBackend.LazyDataFrame do
 
     @impl true
     def unquote(fun)(unquote_splicing(args)) do
-      raise "cannot perform operation on an Explorer.PolarsBackend.LazyDataFrame"
+      raise "cannot perform operation on an Explorer.PolarsBackend.LazyFrame"
     end
   end
 end

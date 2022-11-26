@@ -1910,7 +1910,7 @@ defmodule Explorer.DataFrame do
           callback :: (Explorer.Backend.LazyFrame.t() -> Series.lazy_t())
         ) :: DataFrame.t()
   def filter_with(df, fun) when is_function(fun, 1) do
-    ldf = to_opaque_lazy(df)
+    ldf = Explorer.Backend.LazyFrame.new(df)
 
     case fun.(ldf) do
       %Series{dtype: :boolean, data: %LazySeries{} = data} ->
@@ -1927,12 +1927,6 @@ defmodule Explorer.DataFrame do
               "expecting the function to return a LazySeries, but instead it returned " <>
                 inspect(other)
     end
-  end
-
-  defp to_opaque_lazy(%DataFrame{} = df) do
-    df
-    |> Explorer.Backend.LazyFrame.new()
-    |> Explorer.Backend.DataFrame.new(df.names, df.dtypes)
   end
 
   @doc """
@@ -2118,7 +2112,7 @@ defmodule Explorer.DataFrame do
           callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
         ) :: DataFrame.t()
   def mutate_with(%DataFrame{} = df, fun) when is_function(fun) do
-    ldf = to_opaque_lazy(df)
+    ldf = Explorer.Backend.LazyFrame.new(df)
 
     result = fun.(ldf)
 
@@ -2471,7 +2465,7 @@ defmodule Explorer.DataFrame do
              Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}])
         ) :: DataFrame.t()
   def arrange_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
-    ldf = to_opaque_lazy(df)
+    ldf = Explorer.Backend.LazyFrame.new(df)
 
     result = fun.(ldf)
 
@@ -4308,7 +4302,7 @@ defmodule Explorer.DataFrame do
       )
 
   def summarise_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
-    ldf = to_opaque_lazy(df)
+    ldf = Explorer.Backend.LazyFrame.new(df)
 
     result = fun.(ldf)
 

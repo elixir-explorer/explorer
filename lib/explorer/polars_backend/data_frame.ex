@@ -271,10 +271,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Conversion
 
   @impl true
-  def lazy, do: Explorer.PolarsBackend.LazyDataFrame
+  def lazy, do: Explorer.PolarsBackend.LazyFrame
 
   @impl true
-  def to_lazy(df), do: Shared.apply_dataframe(df, :df_to_lazy)
+  def to_lazy(df), do: Shared.apply_dataframe(df, df, :df_to_lazy, [])
 
   @impl true
   def collect(df), do: df
@@ -358,10 +358,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Single table verbs
 
   @impl true
-  def head(%DataFrame{} = df, rows), do: Shared.apply_dataframe(df, :df_head, [rows, df.groups])
+  def head(%DataFrame{} = df, rows),
+    do: Shared.apply_dataframe(df, df, :df_head, [rows, df.groups])
 
   @impl true
-  def tail(%DataFrame{} = df, rows), do: Shared.apply_dataframe(df, :df_tail, [rows, df.groups])
+  def tail(%DataFrame{} = df, rows),
+    do: Shared.apply_dataframe(df, df, :df_tail, [rows, df.groups])
 
   @impl true
   def select(df, out_df),
@@ -369,7 +371,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def mask(df, %Series{} = mask),
-    do: Shared.apply_dataframe(df, :df_mask, [mask.data])
+    do: Shared.apply_dataframe(df, df, :df_mask, [mask.data])
 
   @impl true
   def filter_with(df, out_df, %Explorer.Backend.LazySeries{} = lseries) do
@@ -426,12 +428,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def sample(df, n, replacement, seed) when is_integer(n) do
-    Shared.apply_dataframe(df, :df_sample_n, [n, replacement, seed, df.groups])
+    Shared.apply_dataframe(df, df, :df_sample_n, [n, replacement, seed, df.groups])
   end
 
   @impl true
   def sample(df, frac, replacement, seed) when is_float(frac) do
-    Shared.apply_dataframe(df, :df_sample_frac, [frac, replacement, seed, df.groups])
+    Shared.apply_dataframe(df, df, :df_sample_frac, [frac, replacement, seed, df.groups])
   end
 
   @impl true
@@ -439,7 +441,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def slice(%DataFrame{} = df, row_indices) when is_list(row_indices),
-    do: Shared.apply_dataframe(df, :df_slice_by_indices, [row_indices, df.groups])
+    do: Shared.apply_dataframe(df, df, :df_slice_by_indices, [row_indices, df.groups])
 
   # TODO: If we expose group_indices at the Explorer.DataFrame level,
   # then we can implement this in pure Elixir.
@@ -456,16 +458,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
         acc
       end)
 
-    Shared.apply_dataframe(df, :df_slice_by_series, [idx])
+    Shared.apply_dataframe(df, df, :df_slice_by_series, [idx])
   end
 
   @impl true
   def slice(%DataFrame{} = df, offset, length)
       when is_integer(offset) and is_integer(length),
-      do: Shared.apply_dataframe(df, :df_slice, [offset, length, df.groups])
+      do: Shared.apply_dataframe(df, df, :df_slice, [offset, length, df.groups])
 
   @impl true
-  def drop_nil(df, columns), do: Shared.apply_dataframe(df, :df_drop_nulls, [columns])
+  def drop_nil(df, columns), do: Shared.apply_dataframe(df, df, :df_drop_nulls, [columns])
 
   @impl true
   def pivot_longer(df, out_df, columns_to_pivot, columns_to_keep, names_to, values_to) do

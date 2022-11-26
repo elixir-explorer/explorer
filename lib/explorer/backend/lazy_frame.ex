@@ -20,7 +20,11 @@ defmodule Explorer.Backend.LazyFrame do
 
   @doc false
   def new(df) do
-    %__MODULE__{names: df.names, dtypes: df.dtypes}
+    Explorer.Backend.DataFrame.new(
+      %__MODULE__{names: df.names, dtypes: df.dtypes},
+      df.names,
+      df.dtypes
+    )
   end
 
   @impl true
