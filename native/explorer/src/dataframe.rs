@@ -213,6 +213,16 @@ pub fn df_slice_by_indices(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_slice_by_series(
+    data: ExDataFrame,
+    series: ExSeries,
+) -> Result<ExDataFrame, ExplorerError> {
+    let df = &data.resource.0;
+    let cast = series.resource.0.cast(&DataType::UInt32)?;
+    Ok(ExDataFrame::new(df.take(cast.u32().unwrap())?))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_sample_n(
     data: ExDataFrame,
     n: usize,

@@ -442,22 +442,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_dataframe(df, :df_slice_by_indices, [row_indices, df.groups])
 
   # TODO: If we expose group_indices at the Explorer.DataFrame level,
-  # then we can implement this in pure Elixir. Ideally we would also
-  # allow slicing by a series (or potentially a list of series).
+  # then we can implement this in pure Elixir.
   @impl true
   def slice(%DataFrame{groups: [_ | _]} = df, %Range{} = range) do
     {:ok, group_indices} = Native.df_group_indices(df.data, df.groups)
 
-    indices =
-      Enum.flat_map(group_indices, fn series ->
+    idx =
+      Enum.reduce(group_indices, Native.s_from_list_u32("idx", []), fn series, acc ->
         {:ok, size} = Native.s_size(series)
         indices = Enum.slice(0..(size - 1)//1, range)
         {:ok, sliced} = Native.s_slice_by_indices(series, indices)
-        {:ok, list} = Native.s_to_list(sliced)
-        list
+        {:ok, acc} = Native.s_concat(acc, sliced)
+        acc
       end)
 
-    Shared.apply_dataframe(df, :df_slice_by_indices, [indices, []])
+    Shared.apply_dataframe(df, :df_slice_by_series, [idx])
   end
 
   @impl true

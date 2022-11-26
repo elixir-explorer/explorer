@@ -25,6 +25,7 @@ macro_rules! from_list {
 }
 
 from_list!(s_from_list_i64, i64);
+from_list!(s_from_list_u32, u32);
 from_list!(s_from_list_bool, bool);
 from_list!(s_from_list_f64, f64);
 from_list!(s_from_list_str, String);
