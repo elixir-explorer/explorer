@@ -59,7 +59,7 @@ defmodule Explorer.Backend.LazySeries do
     sample_frac: 4,
     head: 2,
     tail: 2,
-    shift: 2,
+    shift: 3,
     peaks: 2,
     # Aggregations
     sum: 1,
@@ -196,8 +196,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def shift(%Series{} = s, offset) do
-    args = [lazy_series!(s), offset]
+  def shift(%Series{} = s, offset, default) do
+    args = [lazy_series!(s), offset, default]
     data = new(:shift, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)

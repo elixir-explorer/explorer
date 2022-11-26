@@ -43,7 +43,7 @@ defmodule Explorer.Backend.Series do
   @callback first(s) :: valid_types() | lazy_s()
   @callback last(s) :: valid_types() | lazy_s()
   @callback select(predicate :: s, s, s) :: s
-  @callback shift(s, offset :: integer) :: s
+  @callback shift(s, offset :: integer, default :: nil) :: s
 
   # Aggregation
 

@@ -830,6 +830,32 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "add columns with head+shift" do
+      df = DF.new(a: [1, 2, 3])
+
+      df1 =
+        DF.mutate(df,
+          b: head(shift(a, 3), 3),
+          c: head(shift(a, 2), 3),
+          d: head(shift(a, 1), 3),
+          e: head(shift(a, 0), 3),
+          f: head(shift(a, -1), 3),
+          g: head(shift(a, -2), 3),
+          h: head(shift(a, -3), 3)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [nil, nil, nil],
+               c: [nil, nil, 1],
+               d: [nil, 1, 2],
+               e: [1, 2, 3],
+               f: [2, 3, nil],
+               g: [3, nil, nil],
+               h: [nil, nil, nil],
+             }
+    end
+
     test "add columns with sampling" do
       df = DF.new(a: [1, 2, 3, 4, 5])
 

@@ -179,6 +179,13 @@ pub fn expr_tail(expr: ExExpr, length: usize) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_shift(expr: ExExpr, offset: i64, _default: Option<ExExpr>) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+
+    ExExpr::new(expr.shift(offset))
+}
+
+#[rustler::nif]
 pub fn expr_sample_n(expr: ExExpr, n: usize, with_replacement: bool, seed: Option<u64>) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 

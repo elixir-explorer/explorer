@@ -133,6 +133,7 @@ rustler::init!(
         expr_sample_frac,
         expr_sample_n,
         expr_series,
+        expr_shift,
         expr_slice,
         expr_string,
         expr_tail,

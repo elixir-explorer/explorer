@@ -12,7 +12,59 @@ defmodule Explorer.PolarsBackend.Expression do
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
-  @window_operations [
+  @all_expressions [
+    add: 2,
+    all_equal: 2,
+    binary_and: 2,
+    binary_or: 2,
+    coalesce: 2,
+    concat: 2,
+    count: 1,
+    distinct: 1,
+    divide: 2,
+    equal: 2,
+    fill_missing_with_value: 2,
+    first: 1,
+    greater: 2,
+    greater_equal: 2,
+    is_nil: 1,
+    is_not_nil: 1,
+    last: 1,
+    less: 2,
+    less_equal: 2,
+    max: 1,
+    mean: 1,
+    median: 1,
+    min: 1,
+    multiply: 2,
+    n_distinct: 1,
+    not_equal: 2,
+    pow: 2,
+    quotient: 2,
+    remainder: 2,
+    reverse: 1,
+    select: 3,
+    size: 1,
+    standard_deviation: 1,
+    subtract: 2,
+    sum: 1,
+    unordered_distinct: 1,
+    variance: 1
+  ]
+
+  @first_only_expression [
+    quantile: 2,
+    argsort: 3,
+    sort: 3,
+    slice: 3,
+    head: 2,
+    tail: 2,
+    peaks: 2,
+    sample_n: 4,
+    sample_frac: 4,
+    fill_missing: 2,
+
+    # Window operations
     cumulative_max: 2,
     cumulative_min: 2,
     cumulative_sum: 2,
@@ -22,23 +74,7 @@ defmodule Explorer.PolarsBackend.Expression do
     window_sum: 5
   ]
 
-  @lazy_series_and_literal_args_funs [
-                                       quantile: 2,
-                                       argsort: 3,
-                                       sort: 3,
-                                       slice: 3,
-                                       head: 2,
-                                       tail: 2,
-                                       peaks: 2,
-                                       sample_n: 4,
-                                       sample_frac: 4,
-                                       fill_missing: 2
-                                     ] ++
-                                       @window_operations
-  @special_operations [cast: 2, column: 1, from_list: 2] ++ @lazy_series_and_literal_args_funs
-
-  # Some operations are special because they don't receive all args as lazy series.
-  # We define them first.
+  # Those operations follow custom rules.
 
   def to_expr(%LazySeries{op: :cast, args: [lazy_series, dtype]}) do
     expr = to_expr(lazy_series)
@@ -59,11 +95,15 @@ defmodule Explorer.PolarsBackend.Expression do
     to_expr(data)
   end
 
+  def to_expr(%LazySeries{op: :shift, args: [lazy_series, offset, nil]}) do
+    Native.expr_shift(to_expr(lazy_series), offset, nil)
+  end
+
   def to_expr(%LazySeries{op: :column, args: [name]}) do
     Native.expr_column(name)
   end
 
-  for {op, _arity} <- @lazy_series_and_literal_args_funs do
+  for {op, _arity} <- @first_only_expression do
     expr_op = :"expr_#{op}"
 
     def to_expr(%LazySeries{op: unquote(op), args: [lazy_series | args]}) do
@@ -73,9 +113,7 @@ defmodule Explorer.PolarsBackend.Expression do
     end
   end
 
-  # We are going to generate all functions for each valid operation.
-  for {op, arity} <-
-        Explorer.Backend.LazySeries.operations() -- @special_operations do
+  for {op, arity} <- @all_expressions do
     args = Macro.generate_arguments(arity, __MODULE__)
 
     updates =
@@ -100,6 +138,7 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(%NaiveDateTime{} = datetime), do: Native.expr_datetime(datetime)
   def to_expr(%PolarsSeries{} = polars_series), do: Native.expr_series(polars_series)
 
+  # Used by Explorer.PolarsBackend.DataFrame
   def alias_expr(%__MODULE__{} = expr, alias_name) when is_binary(alias_name) do
     Native.expr_alias(expr, alias_name)
   end

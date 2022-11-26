@@ -78,7 +78,7 @@ defmodule Explorer.PolarsBackend.Series do
   def last(series), do: series[-1]
 
   @impl true
-  def shift(series, offset), do: Shared.apply_series(series, :s_shift, [offset])
+  def shift(series, offset, nil), do: Shared.apply_series(series, :s_shift, [offset])
 
   @impl true
   def sample(series, n, replacement, seed) when is_integer(n) do
