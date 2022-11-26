@@ -159,6 +159,33 @@ defmodule Explorer.Shared do
   def to_string(i, _opts), do: Kernel.to_string(i)
 
   @doc """
+  Converts a dtype to a binary type when possible.
+  """
+  def dtype_to_bintype!(dtype) do
+    case dtype do
+      :float -> {:f, 64}
+      :integer -> {:s, 64}
+      :boolean -> {:u, 8}
+      :date -> {:s, 32}
+      :datetime -> {:s, 64}
+      _ -> raise ArgumentError, "cannot convert dtype #{dtype} into a binary/tensor type"
+    end
+  end
+
+  @doc """
+  Converts a binary type to dtype.
+  """
+  def bintype_to_dtype!(type) do
+    case type do
+      {:f, 64} -> :float
+      {:s, 64} -> :integer
+      {:u, 8} -> :boolean
+      {:s, 32} -> :date
+      _ -> raise ArgumentError, "cannot convert binary/tensor type #{inspect(type)} into dtype"
+    end
+  end
+
+  @doc """
   Raising helper for when a column is not found.
   """
   def raise_column_not_found!(name, names) do

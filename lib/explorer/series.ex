@@ -230,16 +230,14 @@ defmodule Explorer.Series do
           Series.t()
   def from_binary(binary, dtype, opts \\ [])
       when K.and(is_binary(binary), K.and(is_atom(dtype), is_list(opts))) do
-    backend = backend_from_options!(opts)
+    {_type, alignment} = Shared.dtype_to_bintype!(dtype)
 
-    case dtype do
-      :float -> backend.from_binary(binary, :f, 64)
-      :integer -> backend.from_binary(binary, :s, 64)
-      :boolean -> backend.from_binary(binary, :u, 8) |> backend.cast(:boolean)
-      :date -> backend.from_binary(binary, :s, 32) |> backend.cast(:date)
-      :datetime -> backend.from_binary(binary, :s, 64) |> backend.cast(:datetime)
-      _ -> raise ArgumentError, "unsupported dtype #{dtype} in from_binary/3"
+    if rem(bit_size(binary), alignment) != 0 do
+      raise ArgumentError, "binary for dtype #{dtype} is expected to be #{alignment}-bit aligned"
     end
+
+    backend = backend_from_options!(opts)
+    backend.from_binary(binary, dtype)
   end
 
   @doc """
@@ -252,8 +250,11 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
+    * `:dtype` - The dtype of the series, it must match the underlying tensor type.
 
   ## Examples
+
+  Integers and floats:
 
       iex> tensor = Nx.tensor([1, 2, 3])
       iex> Explorer.Series.from_tensor(tensor)
@@ -268,13 +269,48 @@ defmodule Explorer.Series do
         Polars[3]
         float [1.0, 2.0, 3.0]
       >
+
+  Unsigned 8-bit tensors are assumed to be booleans:
+
+      iex> tensor = Nx.tensor([1, 0, 1], type: :u8)
+      iex> Explorer.Series.from_tensor(tensor)
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, false, true]
+      >
+
+  Signed 32-bit tensors are assumed to be dates:
+
+      iex> tensor = Nx.tensor([-719162, 0, 6129], type: :s32)
+      iex> Explorer.Series.from_tensor(tensor)
+      #Explorer.Series<
+        Polars[3]
+        date [0001-01-01, 1970-01-01, 1986-10-13]
+      >
+
+  Datetimes are signed 64-bit and therefore must have their dtype explicitly given:
+
+      iex> tensor = Nx.tensor([0, 529550625987654])
+      iex> Explorer.Series.from_tensor(tensor, dtype: :datetime)
+      #Explorer.Series<
+        Polars[2]
+        datetime [1970-01-01 00:00:00.000000, 1986-10-13 01:23:45.987654]
+      >
   """
   @doc type: :transformation
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
   def from_tensor(tensor, opts \\ []) do
-    {type, alignment} = Nx.type(tensor)
+    type = Nx.type(tensor)
+    {dtype, opts} = Keyword.pop_lazy(opts, :dtype, fn -> Shared.bintype_to_dtype!(type) end)
+
+    if Shared.dtype_to_bintype!(dtype) != type do
+      raise ArgumentError,
+            "dtype #{dtype} expects a tensor of type #{inspect(Shared.dtype_to_bintype!(dtype))} " <>
+              "but got type #{inspect(type)}"
+    end
+
     backend = backend_from_options!(opts)
-    tensor |> Nx.to_binary() |> backend.from_binary(type, alignment)
+    tensor |> Nx.to_binary() |> backend.from_binary(dtype)
   end
 
   @doc """

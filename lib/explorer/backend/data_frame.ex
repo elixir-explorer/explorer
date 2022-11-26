@@ -224,8 +224,7 @@ defmodule Explorer.Backend.DataFrame do
         concat([
           line(),
           color("#{name} ", :map, inspect_opts),
-          color("#{Series.dtype(series)}", :atom, inspect_opts),
-          " ",
+          color("#{Series.dtype(series)} ", :atom, inspect_opts),
           data
         ])
       end

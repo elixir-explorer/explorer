@@ -55,7 +55,7 @@ jobs:
       - name: Run tests
         run: mix test --warnings-as-errors
       - name: Compile once again but without optional deps
-        run: mix compile --force --warnings-as-errors --skip-optional-deps
+        run: mix compile --force --warnings-as-errors --no-optional-deps
   format:
     runs-on: ubuntu-latest
     name: mix format

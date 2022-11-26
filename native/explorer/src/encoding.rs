@@ -328,16 +328,10 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
         AnyValue::Null => None::<bool>.encode(env),
         AnyValue::Boolean(v) => Some(v).encode(env),
         AnyValue::Utf8(v) => Some(v).encode(env),
-        AnyValue::Int8(v) => Some(v).encode(env),
-        AnyValue::Int16(v) => Some(v).encode(env),
-        AnyValue::Int32(v) => Some(v).encode(env),
         AnyValue::Int64(v) => Some(v).encode(env),
-        AnyValue::UInt8(v) => Some(v).encode(env),
-        AnyValue::UInt16(v) => Some(v).encode(env),
         AnyValue::UInt32(v) => Some(v).encode(env),
         AnyValue::UInt64(v) => Some(v).encode(env),
         AnyValue::Float64(v) => Some(v).encode(env),
-        AnyValue::Float32(v) => Some(v).encode(env),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
         dt => panic!("get/2 not implemented for {:?}", dt),
@@ -349,9 +343,7 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Term {
 
     match s.dtype() {
         DataType::Boolean => series_to_list!(s, env, bool),
-        DataType::Int32 => series_to_list!(s, env, i32),
         DataType::Int64 => series_to_list!(s, env, i64),
-        DataType::UInt8 => series_to_list!(s, env, u8),
         DataType::UInt32 => series_to_list!(s, env, u32),
         DataType::Utf8 => utf8_series_to_list(&data.resource, s, env),
         DataType::Float64 => float64_series_to_list(s, env),
@@ -378,9 +370,7 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Term {
             }
             [bin.release(env)].encode(env)
         }
-        DataType::Int32 => series_to_iovec!(resource, s, env, i32, i32),
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
-        DataType::UInt8 => series_to_iovec!(resource, s, env, u8, u8),
         DataType::UInt32 => series_to_iovec!(resource, s, env, u32, u32),
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Utf8 => series_to_iovec!(resource, s, env, utf8, u8),

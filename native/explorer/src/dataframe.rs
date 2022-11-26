@@ -390,8 +390,12 @@ pub fn df_to_dummies(
     selection: Vec<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let new_df = df.select(&selection).and_then(|df| df.to_dummies())?;
-    Ok(ExDataFrame::new(new_df))
+    let dummies = df.select(&selection).and_then(|df| df.to_dummies())?;
+    let series = dummies
+        .iter()
+        .map(|series| series.cast(&DataType::Int64).unwrap())
+        .collect();
+    Ok(ExDataFrame::new(DataFrame::new(series)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
