@@ -332,8 +332,8 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def count(series) do
-    series
-    |> Shared.apply_series(:s_value_counts)
+    Shared.apply(:s_value_counts, [series.data])
+    |> Shared.create_dataframe()
     |> DataFrame.rename(["values", "counts"])
   end
 

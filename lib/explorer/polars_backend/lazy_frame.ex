@@ -46,7 +46,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   funs =
     Explorer.Backend.DataFrame.behaviour_info(:callbacks) --
       (Explorer.Backend.DataFrame.behaviour_info(:optional_callbacks) ++
-         Module.definitions_in(__MODULE__, :def) ++ [{:inspect, 2}])
+         Module.definitions_in(__MODULE__, :def))
 
   for {fun, arity} <- funs do
     args = Macro.generate_arguments(arity, __MODULE__)

@@ -312,10 +312,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp from_series_list(list) do
     list = Enum.map(list, & &1.data)
 
-    case Native.df_from_series(list) do
-      {:ok, df} -> Shared.create_dataframe(df)
-      {:error, error} -> raise ArgumentError, error
-    end
+    Shared.apply(:df_from_series, [list])
+    |> Shared.create_dataframe()
   end
 
   defp to_column_name!(column_name) when is_binary(column_name), do: column_name

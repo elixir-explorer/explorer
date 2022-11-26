@@ -11,20 +11,24 @@ defmodule Explorer.PolarsBackend.Shared do
 
   @polars_df [PolarsDataFrame, PolarsLazyFrame]
 
-  def apply_series(series, fun, args \\ [])
-
-  def apply_series(%Series{} = series, fun, args) do
-    case apply(Native, fun, [series.data | args]) do
-      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
-      {:ok, %module{} = new_df} when module in @polars_df -> create_dataframe(new_df)
+  def apply(fun, args \\ []) do
+    case apply(Native, fun, args) do
       {:ok, value} -> value
       {:error, error} -> raise error_message(error)
     end
   end
 
-  def apply_dataframe(dataframe, fun, args \\ [])
+  # Applies to a series. Expects a series or a value back.
+  def apply_series(%Series{} = series, fun, args \\ []) do
+    case apply(Native, fun, [series.data | args]) do
+      {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
+      {:ok, value} -> value
+      {:error, error} -> raise error_message(error)
+    end
+  end
 
-  def apply_dataframe(%DataFrame{} = df, fun, args) do
+  # Applies to a dataframe. Expects a series or a value back.
+  def apply_dataframe(%DataFrame{} = df, fun, args \\ []) do
     case apply(Native, fun, [df.data | args]) do
       {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, value} -> value
@@ -34,6 +38,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
   @check_frames Application.compile_env(:explorer, :check_polars_frames, false)
 
+  # Applies to a dataframe. Expects a dataframe back.
   def apply_dataframe(%DataFrame{} = df, %DataFrame{} = out_df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
       {:ok, %module{} = new_df} when module in @polars_df ->
