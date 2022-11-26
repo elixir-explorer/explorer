@@ -625,8 +625,9 @@ defmodule Explorer.Series do
   def last(series), do: Shared.apply_impl(series, :last, [])
 
   @doc """
-  Returns the series, shifted by given offset.
-  Positive offset shfts from first, negative offset shifts from last.
+  Shifts `series` by `offset` with `nil` values.
+
+  Positive offset shifts from first, negative offset shifts from last.
 
   ## Examples
 
