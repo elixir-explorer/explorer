@@ -52,7 +52,7 @@ defmodule Explorer.PolarsBackend.Expression do
     variance: 1
   ]
 
-  @first_only_expression [
+  @first_only_expressions [
     quantile: 2,
     argsort: 3,
     sort: 3,
@@ -74,7 +74,22 @@ defmodule Explorer.PolarsBackend.Expression do
     window_sum: 5
   ]
 
-  # Those operations follow custom rules.
+  @custom_expressions [
+    cast: 2,
+    from_list: 2,
+    from_binary: 2,
+    to_lazy: 1,
+    shift: 3,
+    column: 1
+  ]
+
+  missing =
+    ((Explorer.Backend.LazySeries.operations() -- @all_expressions) -- @first_only_expressions) --
+      @custom_expressions
+
+  if missing != [] do
+    raise ArgumentError, "missing #{inspect(__MODULE__)} nodes: #{inspect(missing)}"
+  end
 
   def to_expr(%LazySeries{op: :cast, args: [lazy_series, dtype]}) do
     expr = to_expr(lazy_series)
@@ -103,7 +118,7 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_column(name)
   end
 
-  for {op, _arity} <- @first_only_expression do
+  for {op, _arity} <- @first_only_expressions do
     expr_op = :"expr_#{op}"
 
     def to_expr(%LazySeries{op: unquote(op), args: [lazy_series | args]}) do
