@@ -12,9 +12,10 @@ defmodule Explorer.SeriesTest do
     for {{:function, name, arity}, _ann, _signature, docs, metadata} <- entries,
         is_map(docs) and map_size(docs) > 0,
         metadata[:type] not in [
-          :transformation,
+          :shape,
           :introspection,
           :aggregation,
+          :conversion,
           :window,
           :element_wise
         ] do

@@ -151,7 +151,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1, "a"])
       ** (ArgumentError) the value "a" does not match the inferred series dtype :integer
   """
-  @doc type: :transformation
+  @doc type: :conversion
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
     opts = Keyword.validate!(opts, [:dtype, :backend])
@@ -226,7 +226,7 @@ defmodule Explorer.Series do
       >
 
   """
-  @doc type: :transformation
+  @doc type: :conversion
   @spec from_binary(binary, :float | :integer | :boolean | :date | :datetime, keyword) ::
           Series.t()
   def from_binary(binary, dtype, opts \\ [])
@@ -299,7 +299,7 @@ defmodule Explorer.Series do
         datetime [1970-01-01 00:00:00.000000, 1986-10-13 01:23:45.987654]
       >
   """
-  @doc type: :transformation
+  @doc type: :conversion
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
   def from_tensor(tensor, opts \\ []) when is_struct(tensor, Nx.Tensor) do
     opts = Keyword.validate!(opts, [:dtype, :backend])
@@ -325,7 +325,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_list(series)
       [1, 2, 3]
   """
-  @doc type: :transformation
+  @doc type: :conversion
   @spec to_list(series :: Series.t()) :: list()
   def to_list(series), do: Shared.apply_impl(series, :to_list)
 
@@ -340,7 +340,7 @@ defmodule Explorer.Series do
       iex> series |> Explorer.Series.to_enum() |> Enum.to_list()
       [1, 2, 3]
   """
-  @doc type: :transformation
+  @doc type: :conversion
   @spec to_enum(series :: Series.t()) :: Enumerable.t()
   def to_enum(series), do: Explorer.Series.Iterator.new(series)
 
@@ -397,7 +397,7 @@ defmodule Explorer.Series do
       [<<"foobarbazbat">>]
 
   """
-  @doc type: :transformation
+  @doc type: :conversion
   @spec to_iovec(series :: Series.t()) :: [binary]
   def to_iovec(series), do: Shared.apply_impl(series, :to_iovec)
 
@@ -418,7 +418,7 @@ defmodule Explorer.Series do
       <<1, 0, 1>>
 
   """
-  @doc type: :transformation
+  @doc type: :conversion
   @spec to_binary(series :: Series.t()) :: binary
   def to_binary(series), do: series |> to_iovec() |> IO.iodata_to_binary()
 
@@ -452,7 +452,7 @@ defmodule Explorer.Series do
       >
 
   """
-  @doc type: :transformation
+  @doc type: :conversion
   @spec to_tensor(series :: Series.t(), tensor_opts :: Keyword.t()) :: Nx.Tensor.t()
   def to_tensor(series, tensor_opts \\ []) do
     case bintype(series) do
@@ -617,7 +617,7 @@ defmodule Explorer.Series do
         integer [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       >
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec head(series :: Series.t(), n_elements :: integer()) :: Series.t()
   def head(series, n_elements \\ 10), do: Shared.apply_impl(series, :head, [n_elements])
 
@@ -633,7 +633,7 @@ defmodule Explorer.Series do
         integer [91, 92, 93, 94, 95, 96, 97, 98, 99, 100]
       >
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec tail(series :: Series.t(), n_elements :: integer()) :: Series.t()
   def tail(series, n_elements \\ 10), do: Shared.apply_impl(series, :tail, [n_elements])
 
@@ -646,7 +646,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.first(s)
       1
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec first(series :: Series.t()) :: any()
   def first(series), do: Shared.apply_impl(series, :first, [])
 
@@ -659,7 +659,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.last(s)
       100
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec last(series :: Series.t()) :: any()
   def last(series), do: Shared.apply_impl(series, :last, [])
 
@@ -684,7 +684,7 @@ defmodule Explorer.Series do
         integer [3, 4, 5, nil, nil]
       >
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec shift(series :: Series.t(), offset :: integer()) :: Series.t()
   def shift(series, offset), do: Shared.apply_impl(series, :shift, [offset, nil])
 
@@ -767,7 +767,7 @@ defmodule Explorer.Series do
         integer [5, 1, 2, 4, 5, 3]
       >
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec sample(series :: Series.t(), n_or_frac :: number(), opts :: Keyword.t()) :: Series.t()
   def sample(series, n_or_frac, opts \\ []) when is_number(n_or_frac) do
     opts = Keyword.validate!(opts, replacement: false, seed: Enum.random(1..1_000_000_000_000))
@@ -813,7 +813,7 @@ defmodule Explorer.Series do
         integer [1]
       >
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec take_every(series :: Series.t(), every_n :: integer()) :: Series.t()
   def take_every(series, every_n), do: Shared.apply_impl(series, :take_every, [every_n])
 
@@ -830,7 +830,7 @@ defmodule Explorer.Series do
         integer [1, 3]
       >
   """
-  @doc type: :transformation
+  @doc type: :element_wise
   @spec mask(series :: Series.t(), mask :: Series.t()) :: Series.t()
   def mask(series, %Series{} = mask), do: Shared.apply_impl(series, :mask, [mask])
 
@@ -875,7 +875,7 @@ defmodule Explorer.Series do
         integer [3, 4, 5]
       >
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec slice(series :: Series.t(), offset :: integer(), size :: integer()) :: Series.t()
   def slice(series, offset, size), do: Shared.apply_impl(series, :slice, [offset, size])
 
@@ -918,7 +918,7 @@ defmodule Explorer.Series do
       >
 
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec slice(series :: Series.t(), indices :: [integer()] | Range.t()) :: Series.t()
   def slice(series, indices) when is_list(indices),
     do: Shared.apply_impl(series, :slice, [indices])
@@ -954,7 +954,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.fetch!(s, 4)
       ** (ArgumentError) index 4 out of bounds for series of size 3
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec fetch!(series :: Series.t(), idx :: integer()) :: any()
   def fetch!(series, idx) do
     s_len = size(series)
@@ -988,7 +988,7 @@ defmodule Explorer.Series do
         float [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
       >
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec concat([Series.t()]) :: Series.t()
   def concat([%Series{} = h | t] = _series) do
     Enum.reduce(t, h, &concat_reducer/2)
@@ -999,7 +999,7 @@ defmodule Explorer.Series do
 
   `concat(s1, s2)` is equivalent to `concat([s1, s2])`.
   """
-  @doc type: :transformation
+  @doc type: :shape
   @spec concat(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
   def concat(%Series{} = s1, %Series{} = s2),
     do: concat([s1, s2])
@@ -1057,7 +1057,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.coalesce(s1, s2)
       ** (ArgumentError) cannot invoke Explorer.Series.coalesce/2 with mismatched dtypes: :string and :integer
   """
-  @doc type: :transformation
+  @doc type: :element_wise
   @spec coalesce(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
   def coalesce(s1, s2) do
     :ok = check_dtypes_for_coalesce!(s1, s2)
@@ -2240,7 +2240,7 @@ defmodule Explorer.Series do
       >
 
   """
-  @doc type: :transformation
+  @doc type: :shape
   def sort(series, opts \\ []) do
     opts = Keyword.validate!(opts, [:nils, direction: :asc])
     descending? = opts[:direction] == :desc
@@ -2277,7 +2277,7 @@ defmodule Explorer.Series do
       >
 
   """
-  @doc type: :transformation
+  @doc type: :shape
   def argsort(series, opts \\ []) do
     opts = Keyword.validate!(opts, [:nils, direction: :asc])
     descending? = opts[:direction] == :desc
@@ -2298,7 +2298,7 @@ defmodule Explorer.Series do
         integer [3, 2, 1]
       >
   """
-  @doc type: :transformation
+  @doc type: :shape
   def reverse(series), do: Shared.apply_impl(series, :reverse)
 
   # Distinct
@@ -2315,7 +2315,7 @@ defmodule Explorer.Series do
         integer [1, 2, 3]
       >
   """
-  @doc type: :transformation
+  @doc type: :shape
   def distinct(series), do: Shared.apply_impl(series, :distinct)
 
   @doc """
@@ -2328,7 +2328,7 @@ defmodule Explorer.Series do
       iex> s = [1, 1, 2, 2, 3, 3] |> Explorer.Series.from_list()
       iex> s |> Explorer.Series.unordered_distinct()
   """
-  @doc type: :transformation
+  @doc type: :shape
   def unordered_distinct(series), do: Shared.apply_impl(series, :unordered_distinct)
 
   @doc """
@@ -2652,7 +2652,7 @@ defmodule Explorer.Series do
         integer [4, 2, 5]
       >
   """
-  @doc type: :transformation
+  @doc type: :element_wise
   def transform(series, fun) do
     case Shared.apply_impl(series, :transform, [fun]) do
       %Series{} = series -> series

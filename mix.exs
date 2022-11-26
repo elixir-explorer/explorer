@@ -70,16 +70,15 @@ defmodule Explorer.MixProject do
         ]
       ],
       groups_for_functions: [
-        # For dataframes
+        "Functions: Conversion": &(&1[:type] == :conversion),
         "Functions: Single-table": &(&1[:type] == :single),
         "Functions: Multi-table": &(&1[:type] == :multi),
         "Functions: Row-based": &(&1[:type] == :rows),
-        "Functions: Introspection": &(&1[:type] == :introspection),
-        "Functions: IO": &(&1[:type] == :io),
-        # For series
         "Functions: Aggregation": &(&1[:type] == :aggregation),
         "Functions: Element-wise": &(&1[:type] == :element_wise),
-        "Functions: Transformation": &(&1[:type] == :transformation),
+        "Functions: Introspection": &(&1[:type] == :introspection),
+        "Functions: IO": &(&1[:type] == :io),
+        "Functions: Shape": &(&1[:type] == :shape),
         "Functions: Window": &(&1[:type] == :window)
       ],
       extras: ["notebooks/exploring_explorer.livemd", "CHANGELOG.md"],

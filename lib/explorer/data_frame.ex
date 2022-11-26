@@ -64,27 +64,18 @@ defmodule Explorer.DataFrame do
   - `arrange/2` for changing the ordering of rows
   - `distinct/2` for picking unique rows
   - `summarise/2` for reducing multiple rows down to a single summary
-  - `pivot_longer/3` and `pivot_wider/4` for massaging dataframes into longer or wider forms, respectively
+  - `pivot_longer/3` and `pivot_wider/4` for massaging dataframes into longer or
+    wider forms, respectively
 
   Each of these combine with `Explorer.DataFrame.group_by/2` for operating by group.
-
-  For more flexibility we also have functions that accept callback functions:
-
-  - `filter_with/2`
-  - `summarise_with/2`
-  - `mutate_with/2`
-  - `arrange_with/2`
-
-  Those functions work by having a "lazy" representation of the dataframe and series,
-  which adds the possibility to perform complex operations that are optimized by the backend.
 
   ### Multiple table verbs
 
   Multiple table verbs are used for combining tables. These are:
 
   - `join/3` for performing SQL-like joins
-  - `concat_rows/1` for vertically "stacking" dataframes
   - `concat_columns/1` for horizontally "stacking" dataframes
+  - `concat_rows/1` for vertically "stacking" dataframes
 
   ### Row-based verbs
 
@@ -1159,7 +1150,7 @@ defmodule Explorer.DataFrame do
 
   Converting a grouped dataframe should return a lazy dataframe with groups.
   """
-  @doc type: :single
+  @doc type: :conversion
   @spec to_lazy(df :: DataFrame.t()) :: DataFrame.t()
   def to_lazy(df), do: Shared.apply_impl(df, :to_lazy)
 
@@ -1170,7 +1161,7 @@ defmodule Explorer.DataFrame do
 
   Collecting a grouped dataframe should return a grouped dataframe.
   """
-  @doc type: :single
+  @doc type: :conversion
   @spec collect(df :: DataFrame.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def collect(df), do: Shared.apply_impl(df, :collect)
 
@@ -1231,7 +1222,7 @@ defmodule Explorer.DataFrame do
         name string ["José", "Christopher", "Cristine"]
       >
   """
-  @doc type: :single
+  @doc type: :conversion
   @spec new(
           Table.Reader.t() | series_pairs,
           opts :: Keyword.t()
@@ -1286,7 +1277,7 @@ defmodule Explorer.DataFrame do
       %{floats: [1.0, 2.0], ints: [1, nil]}
 
   """
-  @doc type: :single
+  @doc type: :conversion
   @spec to_columns(df :: DataFrame.t(), Keyword.t()) :: map()
   def to_columns(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false)
@@ -1319,7 +1310,7 @@ defmodule Explorer.DataFrame do
       [1, nil]
 
   """
-  @doc type: :single
+  @doc type: :conversion
   @spec to_series(df :: DataFrame.t(), Keyword.t()) :: map()
   def to_series(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false)
@@ -1352,7 +1343,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.to_rows(df, atom_keys: true)
       [%{floats: 1.0, ints: 1}, %{floats: 2.0, ints: nil}]
   """
-  @doc type: :single
+  @doc type: :conversion
   @spec to_rows(df :: DataFrame.t(), Keyword.t()) :: [map()]
   def to_rows(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false)
@@ -4350,7 +4341,7 @@ defmodule Explorer.DataFrame do
      Explorer.DataFrame.table(df, limit: 1)
      Explorer.DataFrame.table(df, limit: :infinity)
   """
-  @doc type: :single
+  @doc type: :introspection
   @spec table(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
   def table(df, opts \\ []) do
     {rows, columns} = shape(df)
