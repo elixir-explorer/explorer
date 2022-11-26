@@ -441,28 +441,29 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def slice(%DataFrame{} = df, row_indices) when is_list(row_indices),
     do: Shared.apply_dataframe(df, :df_slice_by_indices, [row_indices, df.groups])
 
-  # Note that the version without groups is already validated at DataFrame level.
+  # TODO: If we expose group_indices at the Explorer.DataFrame level,
+  # then we can implement this in pure Elixir. Ideally we would also
+  # allow slicing by a series (or potentially a list of series).
   @impl true
   def slice(%DataFrame{groups: [_ | _]} = df, %Range{} = range) do
-    selected_indices =
-      df
-      |> indices_by_groups()
-      |> Enum.flat_map(&Enum.slice(&1, range))
+    {:ok, group_indices} = Native.df_group_indices(df.data, df.groups)
 
-    Shared.apply_dataframe(df, :df_slice_by_indices, [selected_indices, []])
+    indices =
+      Enum.flat_map(group_indices, fn series ->
+        {:ok, size} = Native.s_size(series)
+        indices = Enum.slice(0..(size - 1)//1, range)
+        {:ok, sliced} = Native.s_slice_by_indices(series, indices)
+        {:ok, list} = Native.s_to_list(sliced)
+        list
+      end)
+
+    Shared.apply_dataframe(df, :df_slice_by_indices, [indices, []])
   end
 
   @impl true
   def slice(%DataFrame{} = df, offset, length)
       when is_integer(offset) and is_integer(length),
       do: Shared.apply_dataframe(df, :df_slice, [offset, length, df.groups])
-
-  # Returns a list of lists, where each list is a group of row indices.
-  defp indices_by_groups(%DataFrame{groups: [_ | _]} = df) do
-    df
-    |> Shared.apply_dataframe(:df_group_indices, [df.groups])
-    |> Shared.apply_series(:s_to_list)
-  end
 
   @impl true
   def drop_nil(df, columns), do: Shared.apply_dataframe(df, :df_drop_nulls, [columns])

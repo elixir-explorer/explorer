@@ -276,28 +276,6 @@ macro_rules! series_to_list {
     };
 }
 
-macro_rules! list_series_to_list {
-    ($s:ident, $env:ident, $convert_function:ident, $out_type:ty) => {
-        $s.list()
-            .unwrap()
-            .into_iter()
-            .map(|item| item)
-            .collect::<Vec<Option<Series>>>()
-            .iter()
-            .map(|item| {
-                item.clone()
-                    .unwrap()
-                    .$convert_function()
-                    .unwrap()
-                    .into_iter()
-                    .map(|item| item)
-                    .collect::<Vec<Option<$out_type>>>()
-            })
-            .collect::<Vec<Vec<Option<$out_type>>>>()
-            .encode($env)
-    };
-}
-
 macro_rules! series_to_iovec {
     ($resource:ident, $s:ident, $env:ident, $convert_function:ident, $in_type:ty) => {{
         unsafe_iterator_series_to_list!(
@@ -349,9 +327,6 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Term {
         DataType::Float64 => float64_series_to_list(s, env),
         DataType::Date => date_series_to_list(s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(s, *time_unit, env),
-        DataType::List(t) if t as &DataType == &DataType::UInt32 => {
-            list_series_to_list!(s, env, u32, u32)
-        }
         dt => panic!("to_list/1 not implemented for {:?}", dt),
     }
 }
