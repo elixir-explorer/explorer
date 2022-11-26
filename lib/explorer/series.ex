@@ -625,6 +625,30 @@ defmodule Explorer.Series do
   def last(series), do: Shared.apply_impl(series, :last, [])
 
   @doc """
+  Returns the series, shifted by given offset.
+  Positive offset shfts from first, negative offset shifts from last.
+
+  ## Examples
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.shift(s, 2)
+      #Explorer.Series<
+        Polars[5]
+        integer [nil, nil, 1, 2, 3]
+      >
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.shift(s, -2)
+      #Explorer.Series<
+        Polars[5]
+        integer [3, 4, 5, nil, nil]
+      >
+  """
+  @doc type: :transformation
+  @spec shift(series :: Series.t(), offset :: integer()) :: Series.t()
+  def shift(series, offset), do: Shared.apply_impl(series, :shift, [offset])
+
+  @doc """
   Returns a series from two series, based on a predicate.
 
   The resulting series is built by evaluating each element of

@@ -182,6 +182,12 @@ pub fn s_tail(data: ExSeries, length: Option<usize>) -> Result<ExSeries, Explore
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_shift(data: ExSeries, offset: i64) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    Ok(ExSeries::new(s.shift(offset)))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sort(
     data: ExSeries,
     descending: bool,
