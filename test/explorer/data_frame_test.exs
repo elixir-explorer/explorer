@@ -852,7 +852,7 @@ defmodule Explorer.DataFrameTest do
                e: [1, 2, 3],
                f: [2, 3, nil],
                g: [3, nil, nil],
-               h: [nil, nil, nil],
+               h: [nil, nil, nil]
              }
     end
 
