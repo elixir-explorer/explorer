@@ -288,42 +288,42 @@ pub fn s_series_equal(
 pub fn s_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.equal(s1).unwrap().into_series()))
+    Ok(ExSeries::new(s.equal(s1)?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_not_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.not_equal(s1).unwrap().into_series()))
+    Ok(ExSeries::new(s.not_equal(s1)?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_greater(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.gt(s1).unwrap().into_series()))
+    Ok(ExSeries::new(s.gt(s1)?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_greater_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.gt_eq(s1).unwrap().into_series()))
+    Ok(ExSeries::new(s.gt_eq(s1)?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_less(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.lt(s1).unwrap().into_series()))
+    Ok(ExSeries::new(s.lt(s1)?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_less_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = &rhs.resource.0;
-    Ok(ExSeries::new(s.lt_eq(s1).unwrap().into_series()))
+    Ok(ExSeries::new(s.lt_eq(s1)?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -481,7 +481,7 @@ pub fn rolling_opts(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_to_list(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
-    Ok(encoding::list_from_series(data, env))
+    encoding::list_from_series(data, env)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -491,7 +491,7 @@ pub fn s_to_iovec(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
             "cannot invoke to_iovec on series with nils",
         )))
     } else {
-        Ok(encoding::iovec_from_series(data, env))
+        encoding::iovec_from_series(data, env)
     }
 }
 
@@ -557,8 +557,8 @@ pub fn s_median(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
 pub fn s_variance(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
     match s.dtype() {
-        DataType::UInt32 | DataType::Int64 => Ok(s.i64().unwrap().var(1).encode(env)),
-        DataType::Float64 => Ok(s.f64().unwrap().var(1).encode(env)),
+        DataType::UInt32 | DataType::Int64 => Ok(s.i64()?.var(1).encode(env)),
+        DataType::Float64 => Ok(s.f64()?.var(1).encode(env)),
         dt => panic!("var/1 not implemented for {:?}", dt),
     }
 }
@@ -567,8 +567,8 @@ pub fn s_variance(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
 pub fn s_standard_deviation(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
     match s.dtype() {
-        DataType::UInt32 | DataType::Int64 => Ok(s.i64().unwrap().std(1).encode(env)),
-        DataType::Float64 => Ok(s.f64().unwrap().std(1).encode(env)),
+        DataType::UInt32 | DataType::Int64 => Ok(s.i64()?.std(1).encode(env)),
+        DataType::Float64 => Ok(s.f64()?.std(1).encode(env)),
         dt => panic!("std/1 not implemented for {:?}", dt),
     }
 }
@@ -576,7 +576,7 @@ pub fn s_standard_deviation(env: Env, data: ExSeries) -> Result<Term, ExplorerEr
 #[rustler::nif]
 pub fn s_fetch(env: Env, data: ExSeries, idx: usize) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
-    Ok(encoding::term_from_value(s.get(idx), env))
+    encoding::term_from_value(s.get(idx), env)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -618,12 +618,12 @@ pub fn s_quantile<'a>(
                 Some(microseconds) => Ok(ExDateTime::from(microseconds as i64).encode(env)),
             }
         }
-        _ => Ok(encoding::term_from_value(
+        _ => encoding::term_from_value(
             s.quantile_as_series(quantile, strategy)?
                 .cast(dtype)?
                 .get(0),
             env,
-        )),
+        ),
     }
 }
 

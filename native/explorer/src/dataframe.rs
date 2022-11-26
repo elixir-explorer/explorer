@@ -219,7 +219,7 @@ pub fn df_slice_by_series(
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
     let cast = series.resource.0.cast(&DataType::UInt32)?;
-    Ok(ExDataFrame::new(df.take(cast.u32().unwrap())?))
+    Ok(ExDataFrame::new(df.take(cast.u32()?)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

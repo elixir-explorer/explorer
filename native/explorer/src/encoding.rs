@@ -8,6 +8,7 @@ use crate::atoms::{
     year,
 };
 use crate::datatypes::{days_to_date, timestamp_to_datetime, ExSeries, ExSeriesRef};
+use crate::ExplorerError;
 
 use rustler::types::atom;
 use rustler::wrapper::{binary, list, map, NIF_TERM};
@@ -66,22 +67,28 @@ fn date_struct_keys(env: Env) -> [NIF_TERM; 5] {
 }
 
 #[inline]
-fn encode_date(v: i32, env: Env) -> Term {
+fn encode_date(v: i32, env: Env) -> Result<Term, ExplorerError> {
     let date_struct_keys = &date_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let date_module = atoms::date_module().encode(env).as_c_arg();
-    unsafe_encode_date!(v, date_struct_keys, calendar_iso_module, date_module, env)
+    Ok(unsafe_encode_date!(
+        v,
+        date_struct_keys,
+        calendar_iso_module,
+        date_module,
+        env
+    ))
 }
 
 #[inline]
-fn date_series_to_list<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+fn date_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     let date_struct_keys = &date_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let date_module = atoms::date_module().encode(env).as_c_arg();
 
-    unsafe_iterator_series_to_list!(
+    Ok(unsafe_iterator_series_to_list!(
         env,
-        s.date().unwrap().into_iter().map(|option| option
+        s.date()?.into_iter().map(|option| option
             .map(|v| unsafe_encode_date!(
                 v,
                 date_struct_keys,
@@ -90,7 +97,7 @@ fn date_series_to_list<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
                 env
             ))
             .encode(env))
-    )
+    ))
 }
 
 macro_rules! unsafe_encode_datetime {
@@ -147,30 +154,34 @@ fn time_to_microseconds(v: i64, time_unit: TimeUnit) -> i64 {
 }
 
 #[inline]
-fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Term {
+fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Result<Term, ExplorerError> {
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
     let microseconds_time = time_to_microseconds(v, time_unit);
 
-    unsafe_encode_datetime!(
+    Ok(unsafe_encode_datetime!(
         microseconds_time,
         naive_datetime_struct_keys,
         calendar_iso_module,
         naive_datetime_module,
         env
-    )
+    ))
 }
 
 #[inline]
-fn datetime_series_to_list<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) -> Term<'b> {
+fn datetime_series_to_list<'b>(
+    s: &Series,
+    time_unit: TimeUnit,
+    env: Env<'b>,
+) -> Result<Term<'b>, ExplorerError> {
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
 
-    unsafe_iterator_series_to_list!(
+    Ok(unsafe_iterator_series_to_list!(
         env,
-        s.datetime().unwrap().into_iter().map(|option| option
+        s.datetime()?.into_iter().map(|option| option
             .map(|v| {
                 let microseconds_time = time_to_microseconds(v, time_unit);
 
@@ -183,7 +194,7 @@ fn datetime_series_to_list<'b>(s: &Series, time_unit: TimeUnit, env: Env<'b>) ->
                 )
             })
             .encode(env))
-    )
+    ))
 }
 
 #[inline]
@@ -191,8 +202,8 @@ fn utf8_series_to_list<'b>(
     resource: &ResourceArc<ExSeriesRef>,
     s: &Series,
     env: Env<'b>,
-) -> Term<'b> {
-    let utf8 = s.utf8().unwrap();
+) -> Result<Term<'b>, ExplorerError> {
+    let utf8 = s.utf8()?;
     let env_as_c_arg = env.as_c_arg();
     let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
     let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
@@ -232,20 +243,20 @@ fn utf8_series_to_list<'b>(
         })
     });
 
-    unsafe { Term::new(env, list) }
+    Ok(unsafe { Term::new(env, list) })
 }
 
 // Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
 #[inline]
-fn float64_series_to_list<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
+fn float64_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     let nan_atom = nan().encode(env);
     let neg_infinity_atom = neg_infinity().encode(env);
     let infinity_atom = infinity().encode(env);
     let nil_atom = atom::nil().encode(env);
 
-    unsafe_iterator_series_to_list!(
+    Ok(unsafe_iterator_series_to_list!(
         env,
-        s.f64().unwrap().into_iter().map(|option| {
+        s.f64()?.into_iter().map(|option| {
             match option {
                 Some(x) => {
                     if x.is_finite() {
@@ -261,62 +272,58 @@ fn float64_series_to_list<'b>(s: &Series, env: Env<'b>) -> Term<'b> {
                 None => nil_atom,
             }
         })
-    )
+    ))
 }
 
 macro_rules! series_to_list {
     ($s:ident, $env:ident, $convert_function:ident) => {
-        unsafe_iterator_series_to_list!(
+        Ok(unsafe_iterator_series_to_list!(
             $env,
-            $s.$convert_function()
-                .unwrap()
+            $s.$convert_function()?
                 .into_iter()
                 .map(|option| option.encode($env))
-        )
+        ))
     };
 }
 
 macro_rules! series_to_iovec {
     ($resource:ident, $s:ident, $env:ident, $convert_function:ident, $in_type:ty) => {{
-        unsafe_iterator_series_to_list!(
+        Ok(unsafe_iterator_series_to_list!(
             $env,
-            $s.$convert_function()
-                .unwrap()
-                .downcast_iter()
-                .map(|array| {
-                    let slice: &[$in_type] = array.values().as_slice();
+            $s.$convert_function()?.downcast_iter().map(|array| {
+                let slice: &[$in_type] = array.values().as_slice();
 
-                    let aligned_slice = unsafe {
-                        slice::from_raw_parts(
-                            slice.as_ptr() as *const u8,
-                            slice.len() * mem::size_of::<$in_type>(),
-                        )
-                    };
+                let aligned_slice = unsafe {
+                    slice::from_raw_parts(
+                        slice.as_ptr() as *const u8,
+                        slice.len() * mem::size_of::<$in_type>(),
+                    )
+                };
 
-                    unsafe { $resource.make_binary_unsafe($env, |_| aligned_slice) }.to_term($env)
-                })
-        )
+                unsafe { $resource.make_binary_unsafe($env, |_| aligned_slice) }.to_term($env)
+            })
+        ))
     }};
 }
 
 // API
 
-pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Term<'b> {
+pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     match v {
-        AnyValue::Null => None::<bool>.encode(env),
-        AnyValue::Boolean(v) => Some(v).encode(env),
-        AnyValue::Utf8(v) => Some(v).encode(env),
-        AnyValue::Int64(v) => Some(v).encode(env),
-        AnyValue::UInt32(v) => Some(v).encode(env),
-        AnyValue::UInt64(v) => Some(v).encode(env),
-        AnyValue::Float64(v) => Some(v).encode(env),
+        AnyValue::Null => Ok(None::<bool>.encode(env)),
+        AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
+        AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
+        AnyValue::Int64(v) => Ok(Some(v).encode(env)),
+        AnyValue::UInt32(v) => Ok(Some(v).encode(env)),
+        AnyValue::UInt64(v) => Ok(Some(v).encode(env)),
+        AnyValue::Float64(v) => Ok(Some(v).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
         dt => panic!("get/2 not implemented for {:?}", dt),
     }
 }
 
-pub fn list_from_series(data: ExSeries, env: Env) -> Term {
+pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
 
     match s.dtype() {
@@ -332,7 +339,7 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Term {
 }
 
 #[allow(clippy::size_of_in_element_count)]
-pub fn iovec_from_series(data: ExSeries, env: Env) -> Term {
+pub fn iovec_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
     let resource = &data.resource;
 
@@ -340,10 +347,10 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Term {
         DataType::Boolean => {
             let mut bin = OwnedBinary::new(s.len()).unwrap();
             let slice = bin.as_mut_slice();
-            for (i, v) in s.bool().unwrap().into_iter().enumerate() {
+            for (i, v) in s.bool()?.into_iter().enumerate() {
                 slice[i] = v.unwrap() as u8;
             }
-            [bin.release(env)].encode(env)
+            Ok([bin.release(env)].encode(env))
         }
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
         DataType::UInt32 => series_to_iovec!(resource, s, env, u32, u32),
