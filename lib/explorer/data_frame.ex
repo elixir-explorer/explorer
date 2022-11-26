@@ -87,7 +87,7 @@ defmodule Explorer.DataFrame do
   - `slice/3` for slicing a section by an offset
   - `sample/2` for sampling the data-frame by row
 
-  ## IO
+  ## IO operations
 
   Explorer supports reading and writing of:
 

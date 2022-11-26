@@ -830,7 +830,7 @@ defmodule Explorer.Series do
         integer [1, 3]
       >
   """
-  @doc type: :element_wise
+  @doc type: :shape
   @spec mask(series :: Series.t(), mask :: Series.t()) :: Series.t()
   def mask(series, %Series{} = mask), do: Shared.apply_impl(series, :mask, [mask])
 
@@ -957,10 +957,11 @@ defmodule Explorer.Series do
   @doc type: :shape
   @spec fetch!(series :: Series.t(), idx :: integer()) :: any()
   def fetch!(series, idx) do
-    s_len = size(series)
+    size = size(series)
+    idx = if idx < 0, do: idx + size, else: idx
 
-    if idx > s_len - 1 || idx < -s_len,
-      do: raise(ArgumentError, "index #{idx} out of bounds for series of size #{s_len}")
+    if K.or(idx < 0, idx > size),
+      do: raise(ArgumentError, "index #{idx} out of bounds for series of size #{size}")
 
     Shared.apply_impl(series, :fetch!, [idx])
   end

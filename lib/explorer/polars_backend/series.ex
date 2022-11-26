@@ -114,10 +114,7 @@ defmodule Explorer.PolarsBackend.Series do
   def slice(series, offset, length), do: Shared.apply_series(series, :s_slice, [offset, length])
 
   @impl true
-  def fetch!(series, idx) do
-    idx = if idx < 0, do: size(series) + idx, else: idx
-    Shared.apply_series(series, :s_fetch, [idx])
-  end
+  def fetch!(series, idx), do: Shared.apply_series(series, :s_fetch, [idx])
 
   @impl true
   def concat(s1, s2), do: Shared.apply_series(s1, :s_concat, [s2.data])
