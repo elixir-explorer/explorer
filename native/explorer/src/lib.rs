@@ -263,6 +263,7 @@ rustler::init!(
         s_reverse,
         s_seedable_random_indices,
         s_series_equal,
+        s_shift,
         s_size,
         s_slice,
         s_slice_by_indices,

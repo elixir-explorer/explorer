@@ -205,6 +205,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_subtract(_s, _other), do: err()
   def s_sum(_s), do: err()
   def s_tail(_s, _length), do: err()
+  def s_shift(_s, _offset), do: err()
   def s_take_every(_s, _n), do: err()
   def s_to_list(_s), do: err()
   def s_to_iovec(_s), do: err()
