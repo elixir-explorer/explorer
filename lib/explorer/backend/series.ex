@@ -47,6 +47,7 @@ defmodule Explorer.Backend.Series do
 
   # Aggregation
 
+  @callback count(s) :: number() | lazy_s()
   @callback sum(s) :: number() | lazy_s() | nil
   @callback min(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
   @callback max(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
@@ -102,7 +103,7 @@ defmodule Explorer.Backend.Series do
   @callback distinct(s) :: s
   @callback unordered_distinct(s) :: s
   @callback n_distinct(s) :: integer() | lazy_s()
-  @callback count(s) :: df | lazy_s()
+  @callback frequencies(s) :: df
 
   # Rolling
 

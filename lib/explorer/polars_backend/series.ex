@@ -129,6 +129,9 @@ defmodule Explorer.PolarsBackend.Series do
   # Aggregation
 
   @impl true
+  def count(series), do: Shared.apply_series(series, :s_size)
+
+  @impl true
   def sum(series), do: Shared.apply_series(series, :s_sum)
 
   @impl true
@@ -328,8 +331,8 @@ defmodule Explorer.PolarsBackend.Series do
   def n_distinct(series), do: Shared.apply_series(series, :s_n_distinct)
 
   @impl true
-  def count(series) do
-    Shared.apply(:s_value_counts, [series.data])
+  def frequencies(series) do
+    Shared.apply(:s_frequencies, [series.data])
     |> Shared.create_dataframe()
     |> DataFrame.rename(["values", "counts"])
   end

@@ -315,7 +315,6 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
         AnyValue::Int64(v) => Ok(Some(v).encode(env)),
         AnyValue::UInt32(v) => Ok(Some(v).encode(env)),
-        AnyValue::UInt64(v) => Ok(Some(v).encode(env)),
         AnyValue::Float64(v) => Ok(Some(v).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),

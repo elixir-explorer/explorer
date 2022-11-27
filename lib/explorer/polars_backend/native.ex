@@ -212,7 +212,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_to_list(_s), do: err()
   def s_to_iovec(_s), do: err()
   def s_unordered_distinct(_s), do: err()
-  def s_value_counts(_s), do: err()
+  def s_frequencies(_s), do: err()
   def s_variance(_s), do: err()
   def s_window_max(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_mean(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()

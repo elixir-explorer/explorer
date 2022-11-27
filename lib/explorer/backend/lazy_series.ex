@@ -73,7 +73,6 @@ defmodule Explorer.Backend.LazySeries do
     quantile: 2,
     first: 1,
     last: 1,
-    size: 1,
     count: 1
   ]
 
@@ -498,6 +497,13 @@ defmodule Explorer.Backend.LazySeries do
   defp to_elixir_ast(other), do: other
 
   @impl true
+  def size(_series) do
+    raise """
+    cannot retrieve the size of a lazy series, use count/1 instead
+    """
+  end
+
+  @impl true
   def transform(_series, _fun) do
     raise """
     #{unsupported(:transform, 2)}
@@ -520,10 +526,11 @@ defmodule Explorer.Backend.LazySeries do
     at: 2,
     at_every: 2,
     bintype: 1,
+    frequencies: 1,
     mask: 2,
     slice: 2,
-    to_list: 1,
-    to_iovec: 1
+    to_iovec: 1,
+    to_list: 1
   ]
 
   for {fun, arity} <- @remaining_non_lazy_operations do

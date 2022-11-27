@@ -558,10 +558,7 @@ defmodule Explorer.Series do
   @doc """
   Returns the size of the series.
 
-  In the context of lazy series - using `DataFrame.*_with/2` functions -,
-  `size/1` is going to count the elements inside the same group.
-  If no group is in use, then size is going to return the length of
-  the series. This behaviour is the same as `count/1` for lazy series.
+  This is not allowed inside a lazy series. Use `count/1` instead.
 
   ## Examples
 
@@ -2347,22 +2344,35 @@ defmodule Explorer.Series do
   def n_distinct(series), do: Shared.apply_impl(series, :n_distinct)
 
   @doc """
-  Creates a new dataframe with unique values and the count of each.
-
-  In the context of lazy series - using `DataFrame.*_with/2` functions -,
-  `count/1` is going to count the elements inside the same group.
-  If no group is in use, then count is going to return the length of
-  the series.
+  Creates a new dataframe with unique values and the frequencies of each.
 
   ## Examples
 
       iex> s = Explorer.Series.from_list(["a", "a", "b", "c", "c", "c"])
-      iex> Explorer.Series.count(s)
+      iex> Explorer.Series.frequencies(s)
       #Explorer.DataFrame<
         Polars[3 x 2]
         values string ["c", "a", "b"]
         counts integer [3, 2, 1]
       >
+  """
+  @doc type: :aggregation
+  def frequencies(series), do: Shared.apply_impl(series, :frequencies)
+
+  @doc """
+  Counts the number of elements in a series.
+
+  In the context of lazy series and `Explorer.Query`,
+  `count/1` counts the elements inside the same group.
+  If no group is in use, then count is going to return
+  the size of the series.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.count(s)
+      3
+
   """
   @doc type: :aggregation
   def count(series), do: Shared.apply_impl(series, :count)

@@ -44,7 +44,6 @@ defmodule Explorer.PolarsBackend.Expression do
     remainder: 2,
     reverse: 1,
     select: 3,
-    size: 1,
     standard_deviation: 1,
     subtract: 2,
     sum: 1,

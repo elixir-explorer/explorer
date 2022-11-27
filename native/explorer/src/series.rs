@@ -213,7 +213,7 @@ pub fn s_argsort(
         descending,
         nulls_last,
     };
-    let indices: Series = s.argsort(opts).into();
+    let indices: Series = s.argsort(opts).cast(&DataType::Int64)?.into();
     Ok(ExSeries::new(indices))
 }
 
@@ -232,7 +232,7 @@ pub fn s_unordered_distinct(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_value_counts(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
+pub fn s_frequencies(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let s: &Series = &data.resource.0;
     let mut df = s.value_counts(true, true)?;
     let df = df
