@@ -213,7 +213,7 @@ pub fn s_argsort(
         descending,
         nulls_last,
     };
-    let indices: Series = s.argsort(opts).cast(&DataType::Int64)?.into();
+    let indices = s.argsort(opts).cast(&DataType::Int64)?;
     Ok(ExSeries::new(indices))
 }
 
@@ -684,15 +684,17 @@ pub fn s_pow_i_rhs(data: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerEr
 pub fn s_pow_i_lhs(data: ExSeries, base: u32) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
 
-    match s.strict_cast(&DataType::UInt32) {
-        Ok(s) => {
-            let s = s.u32()?.apply(|v| base.pow(v)).into_series();
-            Ok(ExSeries::new(s))
-        }
-        Err(_) => Err(ExplorerError::Other(String::from(
-            "negative exponent with an integer base",
-        ))),
-    }
+    let s = s
+        .i64()?
+        .try_apply(|v| match u32::try_from(v) {
+            Ok(v) => Ok(base.pow(v).into()),
+            Err(_) => Err(PolarsError::ComputeError(
+                "negative exponent with an integer base".into(),
+            )),
+        })?
+        .into_series();
+
+    Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
