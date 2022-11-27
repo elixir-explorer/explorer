@@ -652,7 +652,7 @@ defmodule Explorer.DataFrame.GroupedTest do
   end
 
   describe "select/2" do
-    test "trying to keep only a column while having another group does not have effect" do
+    test "trying to select only a column while having another group does not have effect" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
       grouped = DF.group_by(df, "b")
       df1 = DF.select(grouped, ["a"])
@@ -660,11 +660,13 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.names(df1) == ["a", "b"]
       assert DF.groups(df1) == ["b"]
     end
+  end
 
-    test "trying to drop a group does not have effect" do
+  describe "discard/2" do
+    test "trying to discard a group does not have effect" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
       grouped = DF.group_by(df, "b")
-      df1 = DF.select(grouped, ["b"], :drop)
+      df1 = DF.discard(grouped, ["b"])
 
       assert DF.names(df1) == ["a", "b"]
       assert DF.groups(df1) == ["b"]

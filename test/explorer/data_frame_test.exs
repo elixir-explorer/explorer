@@ -1723,16 +1723,16 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "pivot_longer/3" do
-    test "without keeping columns", %{df: df} do
-      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), keep: [])
+    test "without selecting columns", %{df: df} do
+      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), select: [])
 
       assert df.names == ["variable", "value"]
       assert df.dtypes == %{"variable" => :string, "value" => :integer}
       assert DF.shape(df) == {3282, 2}
     end
 
-    test "keeping some columns", %{df: df} do
-      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), keep: ["year", "country"])
+    test "selecting some columns", %{df: df} do
+      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), select: ["year", "country"])
 
       assert df.names == ["year", "country", "variable", "value"]
 
@@ -1746,7 +1746,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.shape(df) == {3282, 4}
     end
 
-    test "keeping all the columns (not passing keep option)", %{df: df} do
+    test "selecting all the columns (not passing select option)", %{df: df} do
       df = DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]))
 
       assert df.names == [
@@ -1766,7 +1766,7 @@ defmodule Explorer.DataFrameTest do
     test "dropping some columns", %{df: df} do
       df =
         DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]),
-          drop: ["gas_flaring", "cement"]
+          discard: ["gas_flaring", "cement"]
         )
 
       assert df.names == [
@@ -1779,11 +1779,11 @@ defmodule Explorer.DataFrameTest do
              ]
     end
 
-    test "keep and drop with the same columns drops the columns", %{df: df} do
+    test "select and discard with the same columns discards the columns", %{df: df} do
       df =
         DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]),
-          keep: ["gas_flaring", "cement"],
-          drop: fn name -> name == "cement" end
+          select: ["gas_flaring", "cement"],
+          discard: fn name -> name == "cement" end
         )
 
       assert df.names == [
@@ -1793,12 +1793,12 @@ defmodule Explorer.DataFrameTest do
              ]
     end
 
-    test "with pivot column in the same list of keep columns", %{df: df} do
+    test "with pivot column in the same list of select columns", %{df: df} do
       assert_raise ArgumentError,
-                   "columns to keep must not include columns to pivot, but found \"solid_fuel\" in both",
+                   "selected columns must not include columns to pivot, but found \"solid_fuel\" in both",
                    fn ->
                      DF.pivot_longer(df, &String.ends_with?(&1, "fuel"),
-                       keep: ["year", "country", "solid_fuel"]
+                       select: ["year", "country", "solid_fuel"]
                      )
                    end
     end
@@ -1836,7 +1836,7 @@ defmodule Explorer.DataFrameTest do
     assert %Explorer.PolarsBackend.LazyFrame{} = DF.to_lazy(df).data
   end
 
-  describe "select/3" do
+  describe "select/2" do
     test "keep column names" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
       df = DF.select(df, ["a"])
@@ -1876,10 +1876,12 @@ defmodule Explorer.DataFrameTest do
         DF.select(df, ["g"])
       end
     end
+  end
 
+  describe "discard/2" do
     test "drop column names" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      df = DF.select(df, ["a"], :drop)
+      df = DF.discard(df, ["a"])
 
       assert DF.names(df) == ["b"]
       assert df.names == ["b"]
@@ -1887,7 +1889,7 @@ defmodule Explorer.DataFrameTest do
 
     test "drop column positions" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      df = DF.select(df, [1], :drop)
+      df = DF.discard(df, [1])
 
       assert DF.names(df) == ["a"]
       assert df.names == ["a"]
@@ -1895,7 +1897,7 @@ defmodule Explorer.DataFrameTest do
 
     test "drop column range" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
-      df = DF.select(df, 1..2, :drop)
+      df = DF.discard(df, 1..2)
 
       assert DF.names(df) == ["a"]
       assert df.names == ["a"]
@@ -1903,7 +1905,7 @@ defmodule Explorer.DataFrameTest do
 
     test "drop columns matching callback" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
-      df = DF.select(df, fn name -> name in ~w(a c) end, :drop)
+      df = DF.discard(df, fn name -> name in ~w(a c) end)
 
       assert DF.names(df) == ["b"]
       assert df.names == ["b"]
@@ -1913,7 +1915,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
 
       assert_raise ArgumentError, "could not find column name \"g\"", fn ->
-        DF.select(df, ["g"], :drop)
+        DF.discard(df, ["g"])
       end
     end
   end

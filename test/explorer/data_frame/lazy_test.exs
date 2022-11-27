@@ -44,12 +44,12 @@ defmodule Explorer.DataFrame.LazyTest do
     assert DF.n_columns(ldf) == 10
   end
 
-  test "select/3 :keep", %{ldf: ldf} do
+  test "select/2", %{ldf: ldf} do
     assert ldf |> DF.select(["total", "cement"]) |> DF.names() == ["total", "cement"]
   end
 
-  test "select/3 :drop", %{ldf: ldf} do
-    assert ldf |> DF.select(["total", "cement"], :drop) |> DF.names() == [
+  test "discard/2", %{ldf: ldf} do
+    assert ldf |> DF.discard(["total", "cement"]) |> DF.names() == [
              "year",
              "country",
              "solid_fuel",

@@ -58,7 +58,7 @@ defmodule Explorer.DataFrame do
   Single table verbs are (unsurprisingly) used for manipulating a single dataframe.
   Those operations typically driven by column names. These are:
 
-  - `select/3` for picking variables
+  - `select/2` for picking columns and `discard/2` to discard them
   - `filter/2` for picking rows based on predicates
   - `mutate/2` for adding or replacing columns that are functions of existing columns
   - `arrange/2` for changing the ordering of rows
@@ -350,14 +350,12 @@ defmodule Explorer.DataFrame do
   @impl true
   def pop(df, column) when is_column(column) do
     [column] = to_existing_columns(df, [column])
-
-    {pull(df, column), select(df, [column], :drop)}
+    {pull(df, column), discard(df, [column])}
   end
 
   def pop(df, columns) do
     columns = to_existing_columns(df, columns)
-
-    {select(df, columns), select(df, columns, :drop)}
+    {select(df, columns), discard(df, columns)}
   end
 
   @impl true
@@ -1579,8 +1577,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Selects a subset of columns by name.
 
-  Can optionally return all *but* the named columns if `:drop` is passed as the last argument.
-  It's important to notice that groups are kept: you can't select off grouping columns.
+  It's important to notice that groups are kept:
+  you can't select off grouping columns.
 
   ## Examples
 
@@ -1638,26 +1636,9 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
-  If you pass `:drop` as the third argument, it will return all but the named columns:
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.select(df, ["b"], :drop)
-      #Explorer.DataFrame<
-        Polars[3 x 1]
-        a string ["a", "b", "c"]
-      >
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
-      iex> Explorer.DataFrame.select(df, ["a", "b"], :drop)
-      #Explorer.DataFrame<
-        Polars[3 x 1]
-        c integer [4, 5, 6]
-      >
-
   ## Grouped examples
 
-  Selecting columns from a grouped dataframe works the same way, except
-  if the column is also a group. Columns that are also groups cannot be removed, so
+  Columns that are also groups cannot be removed,
   you need to ungroup before removing these columns.
 
       iex> df = Explorer.Datasets.iris()
@@ -1670,9 +1651,53 @@ defmodule Explorer.DataFrame do
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
+  """
+  @doc type: :single
+  @spec select(df :: DataFrame.t(), column | columns) :: DataFrame.t()
+  def select(df, columns_or_column)
+
+  def select(df, column) when is_column(column) do
+    select(df, [column])
+  end
+
+  def select(df, columns) do
+    columns = to_existing_columns(df, columns)
+    columns_to_keep = Enum.uniq(columns ++ df.groups)
+    out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
+    Shared.apply_impl(df, :select, [out_df])
+  end
+
+  @doc """
+  Discards a subset of columns by name.
+
+  It's important to notice that groups are kept:
+  you can't discard grouping columns.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.discard(df, ["b"])
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        a string ["a", "b", "c"]
+      >
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
+      iex> Explorer.DataFrame.discard(df, ["a", "b"])
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        c integer [4, 5, 6]
+      >
+
+  Ranges and functions are also accepted in column names, as in `select/2`.
+
+  ## Grouped examples
+
+  You cannot discard grouped columns. You need to ungroup before removing them:
+
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.select(grouped, ["species"], :drop)
+      iex> Explorer.DataFrame.discard(grouped, ["species"])
       #Explorer.DataFrame<
         Polars[150 x 5]
         Groups: ["species"]
@@ -1685,28 +1710,17 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :single
-  @spec select(
-          df :: DataFrame.t(),
-          column | columns,
-          keep_or_drop :: :keep | :drop
-        ) :: DataFrame.t()
-  def select(df, columns_or_column, keep_or_drop \\ :keep)
+  @spec discard(df :: DataFrame.t(), column | columns) :: DataFrame.t()
+  def discard(df, columns_or_column)
 
-  def select(df, column, keep_or_drop) when is_column(column) do
-    select(df, [column], keep_or_drop)
+  def discard(df, column) when is_column(column) do
+    discard(df, [column])
   end
 
-  def select(df, columns, keep_or_drop) do
-    columns = to_existing_columns(df, columns)
-
-    columns_to_keep =
-      case keep_or_drop do
-        :keep -> Enum.uniq(columns ++ df.groups)
-        :drop -> df.names -- columns -- df.groups
-      end
-
+  def discard(df, columns) do
+    columns = to_existing_columns(df, columns) -- df.groups
+    columns_to_keep = df.names -- columns
     out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
-
     Shared.apply_impl(df, :select, [out_df])
   end
 
@@ -2524,7 +2538,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
-  A callback on the dataframe's names can be passed instead of a list (like `select/3`):
+  A callback on the dataframe's names can be passed instead of a list (like `select/2`):
 
       iex> df = Explorer.DataFrame.new(x1: [1, 3, 3], x2: ["a", "c", "c"], y1: [1, 2, 3])
       iex> Explorer.DataFrame.distinct(df, &String.starts_with?(&1, "x"))
@@ -2764,7 +2778,7 @@ defmodule Explorer.DataFrame do
         BUNKER_FUELS integer [9, 7, 663, 0, 321, ...]
       >
 
-  A callback can be used to filter the column names that will be renamed, similarly to `select/3`:
+  A callback can be used to filter the column names that will be renamed, similarly to `select/2`:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.rename_with(df, &String.ends_with?(&1, "_fuel"), &String.trim_trailing(&1, "_fuel"))
@@ -3248,13 +3262,13 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:keep` - Columns that are not in the list of pivot and should be kept in the dataframe.
+    * `:select` - Columns that are not in the list of pivot and should be kept in the dataframe.
       May be a filter callback on the dataframe's column names.
       Defaults to all columns except the ones to pivot.
 
-    * `:drop` - Columns that are not in the list of pivot and should be dropped from the dataframe.
+    * `:discard` - Columns that are not in the list of pivot and should be dropped from the dataframe.
       May be a filter callback on the dataframe's column names. This list of columns is going to be
-      subtracted from the list of `keep`.
+      subtracted from the list of `select`.
       Defaults to an empty list.
 
     * `:names_to` - A string specifying the name of the column to create from the data stored
@@ -3281,7 +3295,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.pivot_longer(df, &String.ends_with?(&1, "fuel"), keep: ["year", "country"])
+      iex> Explorer.DataFrame.pivot_longer(df, &String.ends_with?(&1, "fuel"), select: ["year", "country"])
       #Explorer.DataFrame<
         Polars[3282 x 4]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
@@ -3291,7 +3305,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.pivot_longer(df, ["total"], keep: ["year", "country"], drop: ["country"])
+      iex> Explorer.DataFrame.pivot_longer(df, ["total"], select: ["year", "country"], discard: ["country"])
       #Explorer.DataFrame<
         Polars[1094 x 3]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
@@ -3300,7 +3314,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.pivot_longer(df, ["total"], keep: [], names_to: "my_var", values_to: "my_value")
+      iex> Explorer.DataFrame.pivot_longer(df, ["total"], select: [], names_to: "my_var", values_to: "my_value")
       #Explorer.DataFrame<
         Polars[1094 x 2]
         my_var string ["total", "total", "total", "total", "total", ...]
@@ -3355,8 +3369,8 @@ defmodule Explorer.DataFrame do
   def pivot_longer(df, columns_to_pivot, opts) do
     opts =
       Keyword.validate!(opts,
-        keep: 0..-1//1,
-        drop: [],
+        select: 0..-1//1,
+        discard: [],
         names_to: "variable",
         values_to: "value"
       )
@@ -3368,12 +3382,12 @@ defmodule Explorer.DataFrame do
     dtypes = df.dtypes
 
     columns_to_keep =
-      case opts[:keep] do
+      case opts[:select] do
         keep when is_list(keep) ->
           Enum.each(keep, fn column ->
             if column in columns_to_pivot do
               raise ArgumentError,
-                    "columns to keep must not include columns to pivot, but found #{inspect(column)} in both"
+                    "selected columns must not include columns to pivot, but found #{inspect(column)} in both"
             end
           end)
 
@@ -3384,7 +3398,7 @@ defmodule Explorer.DataFrame do
       end
 
     columns_to_keep =
-      (columns_to_keep -- columns_to_pivot) -- to_existing_columns(df, opts[:drop])
+      (columns_to_keep -- columns_to_pivot) -- to_existing_columns(df, opts[:discard])
 
     values_dtype =
       dtypes

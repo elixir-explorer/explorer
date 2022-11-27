@@ -369,10 +369,10 @@ But Elixir gives us some superpowers. In R there's [`tidy-select`](https://dplyr
 DF.select(df, &String.ends_with?(&1, "fuel"))
 ```
 
-Want all but some columns? `select/3` takes `:keep` or `:drop` as the last arg. It just defaults to `:keep`.
+Want all but some columns? `discard/2` performs the opposite of `select/2`.
 
 ```elixir
-DF.select(df, &String.ends_with?(&1, "fuel"), :drop)
+DF.discard(df, &String.ends_with?(&1, "fuel"))
 ```
 
 ### Filter
