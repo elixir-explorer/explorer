@@ -517,11 +517,11 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @remaining_non_lazy_operations [
+    at: 2,
+    at_every: 2,
     bintype: 1,
-    fetch!: 2,
     mask: 2,
     slice: 2,
-    take_every: 2,
     to_list: 1,
     to_iovec: 1
   ]

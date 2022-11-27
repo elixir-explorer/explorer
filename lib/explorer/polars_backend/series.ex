@@ -99,8 +99,8 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def take_every(series, every_n),
-    do: Shared.apply_series(series, :s_take_every, [every_n])
+  def at_every(series, every_n),
+    do: Shared.apply_series(series, :s_at_every, [every_n])
 
   @impl true
   def mask(series, %Series{} = mask),
@@ -114,7 +114,7 @@ defmodule Explorer.PolarsBackend.Series do
   def slice(series, offset, length), do: Shared.apply_series(series, :s_slice, [offset, length])
 
   @impl true
-  def fetch!(series, idx), do: Shared.apply_series(series, :s_fetch, [idx])
+  def at(series, idx), do: Shared.apply_series(series, :s_at, [idx])
 
   @impl true
   def concat(s1, s2), do: Shared.apply_series(s1, :s_concat, [s2.data])

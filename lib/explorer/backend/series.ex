@@ -33,11 +33,11 @@ defmodule Explorer.Backend.Series do
   @callback head(s, n :: integer()) :: s
   @callback tail(s, n :: integer()) :: s
   @callback sample(s, n_or_frac :: number(), replacement :: boolean(), seed :: integer()) :: s
-  @callback take_every(s, integer()) :: s
+  @callback at(s, idx :: integer()) :: s
+  @callback at_every(s, integer()) :: s
   @callback mask(s, mask :: s) :: s
   @callback slice(s, indices :: list()) :: s
   @callback slice(s, offset :: integer(), length :: integer()) :: s
-  @callback fetch!(s, idx :: integer()) :: s
   @callback concat(s, s) :: s
   @callback coalesce(s, s) :: s
   @callback first(s) :: valid_types() | lazy_s()
