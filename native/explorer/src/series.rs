@@ -501,7 +501,7 @@ pub fn s_sum(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Boolean => Ok(s.sum::<i64>().encode(env)),
         DataType::UInt32 | DataType::Int64 => Ok(s.sum::<i64>().encode(env)),
-        DataType::Float32 | DataType::Float64 => Ok(s.sum::<f64>().encode(env)),
+        DataType::Float64 => Ok(s.sum::<f64>().encode(env)),
         dt => panic!("sum/1 not implemented for {:?}", dt),
     }
 }
