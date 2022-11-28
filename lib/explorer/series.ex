@@ -149,6 +149,23 @@ defmodule Explorer.Series do
         string ["1", nil]
       >
 
+  The `dtype` option is particulary important if a `:binary` series is desired, because
+  by default binary series will have the dtype of `:string`.
+
+      iex> Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>], dtype: :binary)
+      #Explorer.Series<
+        Polars[2]
+        binary [<<228, 146, 51>>, <<42, 209, 236>>]
+      >
+
+  A series mixing UTF8 strings and binaries is possible:
+
+      iex> Explorer.Series.from_list([<<228, 146, 51>>, "Elixir"], dtype: :binary)
+      #Explorer.Series<
+        Polars[2]
+        binary [<<228, 146, 51>>, "Elixir"]
+      >
+
   It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
 
       iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: :datetime)
@@ -167,8 +184,10 @@ defmodule Explorer.Series do
   def from_list(list, opts \\ []) do
     opts = Keyword.validate!(opts, [:dtype, :backend])
     backend = backend_from_options!(opts)
-    type = Shared.check_types!(list)
+
+    type = Shared.check_types!(list, opts[:dtype])
     {list, type} = Shared.cast_numerics(list, type)
+
     series = backend.from_list(list, type)
 
     case check_optional_dtype!(opts[:dtype]) do
@@ -409,7 +428,7 @@ defmodule Explorer.Series do
 
   The same principle from strings applies to binaries:
 
-      iex> series = Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>])
+      iex> series = Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>], dtype: :binary)
       iex> Explorer.Series.to_iovec(series)
       [<<228, 146, 51, 42, 209, 236>>]
 
@@ -612,7 +631,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.bintype(s)
       {:u, 8}
 
-      iex> s = Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>])
+      iex> s = Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>], dtype: :binary)
       iex> Explorer.Series.bintype(s)
       :binary
 
