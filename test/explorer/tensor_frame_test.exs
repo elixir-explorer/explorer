@@ -8,6 +8,7 @@ defmodule Explorer.TensorFrameTest do
   end
 
   doctest Explorer.TensorFrame
+  alias Explorer.Series, as: S
   alias Explorer.DataFrame, as: DF
   alias Explorer.TensorFrame, as: TF
 
@@ -16,7 +17,13 @@ defmodule Explorer.TensorFrameTest do
   end
 
   describe "defn integration" do
-    test "works even if dataframe has unsupported columns" do
+    test "with series" do
+      a = S.from_list([1, 2, 3])
+      b = S.from_list([4.0, 5.0, 6.0])
+      assert add_columns(%{a: a, b: b}) == Nx.tensor([5.0, 7.0, 9.0], type: :f64)
+    end
+
+    test "with dataframes" do
       df = DF.new(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])
       assert add_columns(df) == Nx.tensor([5.0, 7.0, 9.0], type: :f64)
     end

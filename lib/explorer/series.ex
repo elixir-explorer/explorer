@@ -435,7 +435,9 @@ defmodule Explorer.Series do
   @doc """
   Converts a series to a `t:Nx.Tensor.t/0`.
 
-  The tensor type will be specified by `bintype/1`.
+  Note that `Explorer.Series` are automatically converted
+  to tensors once give to numerical definitions.
+  The tensor type is given by `bintype/1`.
 
   > #### Warning {: .warning}
   >

@@ -195,6 +195,14 @@ if Code.ensure_loaded?(Nx) do
     end
   end
 
+  defimpl Nx.LazyContainer, for: S do
+    def traverse(series, acc, fun) do
+      size = S.size(series)
+      template = Nx.template({size}, S.bintype(series))
+      fun.(template, fn -> S.to_tensor(series) end, acc)
+    end
+  end
+
   defimpl Nx.LazyContainer, for: DF do
     @unsupported [:string]
 
@@ -213,7 +221,6 @@ if Code.ensure_loaded?(Nx) do
             {[{name, result} | data], acc}
         end)
 
-      # We keep original names and dtypes for display
       {TF.new(Map.new(data), n_rows), acc}
     end
   end
