@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use polars::export::arrow::array::GenericBinaryArray;
 use polars::prelude::*;
 use rustler::{Binary, Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
 use std::{mem, slice};
@@ -197,68 +198,20 @@ fn datetime_series_to_list<'b>(
     ))
 }
 
-#[inline]
-fn utf8_series_to_list<'b>(
+fn generic_binary_series_to_list<'a, 'b, T, G>(
     resource: &ResourceArc<ExSeriesRef>,
-    s: &Series,
+    iter: T,
     env: Env<'b>,
-) -> Result<Term<'b>, ExplorerError> {
-    let utf8 = s.utf8()?;
+) -> Result<Term<'b>, ExplorerError>
+where
+    T: Iterator<Item = &'a G> + DoubleEndedIterator,
+    G: GenericBinaryArray<i64>,
+{
     let env_as_c_arg = env.as_c_arg();
     let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
     let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
 
-    let list = utf8.downcast_iter().rfold(acc, |acc, array| {
-        // Create a binary per array buffer
-        let values = array.values();
-
-        let binary = unsafe { resource.make_binary_unsafe(env, |_| values) }
-            .to_term(env)
-            .as_c_arg();
-
-        // Offsets have one more element than values and validity,
-        // so we read the last one as the initial accumulator and skip it.
-        let len = array.offsets().len();
-        let iter = array.offsets()[0..len - 1].iter();
-        let mut last_offset = array.offsets()[len - 1] as NIF_TERM;
-
-        let mut validity_iter = match array.validity() {
-            Some(validity) => validity.iter(),
-            None => polars::export::arrow::bitmap::utils::BitmapIter::new(&[], 0, 0),
-        };
-
-        iter.rfold(acc, |acc, uncast_offset| {
-            let offset = *uncast_offset as NIF_TERM;
-
-            let term_as_c_arg = if validity_iter.next_back().unwrap_or(true) {
-                unsafe {
-                    binary::make_subbinary(env_as_c_arg, binary, offset, last_offset - offset)
-                }
-            } else {
-                nil_as_c_arg
-            };
-
-            last_offset = offset;
-            unsafe { list::make_list_cell(env_as_c_arg, term_as_c_arg, acc) }
-        })
-    });
-
-    Ok(unsafe { Term::new(env, list) })
-}
-
-// Same as `utf8_series_to_list`, but with binary series.
-#[inline]
-fn binary_series_to_list<'b>(
-    resource: &ResourceArc<ExSeriesRef>,
-    s: &Series,
-    env: Env<'b>,
-) -> Result<Term<'b>, ExplorerError> {
-    let binary = s.binary()?;
-    let env_as_c_arg = env.as_c_arg();
-    let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
-    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
-
-    let list = binary.downcast_iter().rfold(acc, |acc, array| {
+    let list = iter.rfold(acc, |acc, array| {
         // Create a binary per array buffer
         let values = array.values();
 
@@ -385,11 +338,15 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError>
         DataType::Boolean => series_to_list!(s, env, bool),
         DataType::Int64 => series_to_list!(s, env, i64),
         DataType::UInt32 => series_to_list!(s, env, u32),
-        DataType::Utf8 => utf8_series_to_list(&data.resource, s, env),
-        DataType::Binary => binary_series_to_list(&data.resource, s, env),
         DataType::Float64 => float64_series_to_list(s, env),
         DataType::Date => date_series_to_list(s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(s, *time_unit, env),
+        DataType::Utf8 => {
+            generic_binary_series_to_list(&data.resource, s.utf8()?.downcast_iter(), env)
+        }
+        DataType::Binary => {
+            generic_binary_series_to_list(&data.resource, s.binary()?.downcast_iter(), env)
+        }
         dt => panic!("to_list/1 not implemented for {:?}", dt),
     }
 }
