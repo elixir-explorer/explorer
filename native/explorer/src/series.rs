@@ -586,7 +586,7 @@ pub fn s_standard_deviation(env: Env, data: ExSeries) -> Result<Term, ExplorerEr
 #[rustler::nif]
 pub fn s_at(env: Env, data: ExSeries, idx: usize) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
-    encoding::term_from_value(s.get(idx), env)
+    encoding::resource_term_from_value(&data.resource, s.get(idx), env)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

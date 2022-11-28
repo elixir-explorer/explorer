@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use polars::export::arrow::array::GenericBinaryArray;
 use polars::prelude::*;
-use rustler::{Binary, Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
+use rustler::{Encoder, Env, OwnedBinary, ResourceArc, Term};
 use std::{mem, slice};
 
 use crate::atoms::{
@@ -311,17 +311,24 @@ macro_rules! series_to_iovec {
 
 // API
 
+pub fn resource_term_from_value<'b>(
+    resource: &ResourceArc<ExSeriesRef>,
+    v: AnyValue,
+    env: Env<'b>,
+) -> Result<Term<'b>, ExplorerError> {
+    match v {
+        AnyValue::Binary(v) => unsafe {
+            Ok(Some(resource.make_binary_unsafe(env, |_| v)).encode(env))
+        },
+        _ => term_from_value(v, env),
+    }
+}
+
 pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     match v {
         AnyValue::Null => Ok(None::<bool>.encode(env)),
         AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
         AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
-        AnyValue::Binary(v) => {
-            let mut bin = NewBinary::new(env, v.len());
-            bin.copy_from_slice(v);
-
-            Ok(Some(Binary::from(bin)).encode(env))
-        }
         AnyValue::Int64(v) => Ok(Some(v).encode(env)),
         AnyValue::UInt32(v) => Ok(Some(v).encode(env)),
         AnyValue::Float64(v) => Ok(Some(v).encode(env)),
