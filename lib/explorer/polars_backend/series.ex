@@ -55,6 +55,7 @@ defmodule Explorer.PolarsBackend.Series do
       "f64" -> {:f, 64}
       "bool" -> {:u, 8}
       "str" -> :utf8
+      "binary" -> :binary
       "date" -> {:s, 32}
       "datetime[ms]" -> {:s, 64}
       "datetime[μs]" -> {:s, 64}

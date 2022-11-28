@@ -7,7 +7,7 @@ defmodule Explorer.Shared do
   @doc """
   All supported dtypes.
   """
-  def dtypes, do: [:float, :integer, :boolean, :string, :date, :datetime]
+  def dtypes, do: [:float, :integer, :boolean, :string, :date, :datetime, :binary]
 
   @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
@@ -101,10 +101,16 @@ defmodule Explorer.Shared do
 
   @doc """
   Gets the `dtype` of a list or raise error if not possible.
+
+  It's possible to override the initial type by passing a preferable type.
+  This is useful in cases where you want to build the series in a target type,
+  without the need to cast it later.
   """
-  def check_types!(list) do
+  def check_types!(list, preferable_type \\ nil) do
+    initial_type = if preferable_type in [:binary, :float, :integer], do: preferable_type
+
     type =
-      Enum.reduce(list, nil, fn el, type ->
+      Enum.reduce(list, initial_type, fn el, type ->
         new_type = type(el, type) || type
 
         cond do
@@ -130,7 +136,10 @@ defmodule Explorer.Shared do
   defp type(item, _type) when is_integer(item), do: :integer
   defp type(item, _type) when is_float(item), do: :float
   defp type(item, _type) when is_boolean(item), do: :boolean
+
+  defp type(item, :binary) when is_binary(item), do: :binary
   defp type(item, _type) when is_binary(item), do: :string
+
   defp type(%Date{} = _item, _type), do: :date
   defp type(%NaiveDateTime{} = _item, _type), do: :datetime
   defp type(item, _type) when is_nil(item), do: nil
@@ -155,7 +164,8 @@ defmodule Explorer.Shared do
   Helper for shared behaviour in inspect.
   """
   def to_string(i, _opts) when is_nil(i), do: "nil"
-  def to_string(i, _opts) when is_binary(i), do: "\"#{i}\""
+  def to_string(i, _opts) when is_binary(i), do: inspect(i)
+
   def to_string(i, _opts), do: Kernel.to_string(i)
 
   @doc """

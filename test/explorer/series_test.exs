@@ -28,17 +28,49 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([1, 2, 3])
 
       assert Series.to_list(s) === [1, 2, 3]
+      assert Series.dtype(s) == :integer
     end
 
     test "with floats" do
       s = Series.from_list([1, 2.4, 3])
       assert Series.to_list(s) === [1.0, 2.4, 3.0]
+      assert Series.dtype(s) == :float
+    end
+
+    test "with binaries" do
+      s = Series.from_list([<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>], dtype: :binary)
+      assert Series.to_list(s) === [<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>]
+      assert Series.dtype(s) == :binary
+    end
+
+    test "with strings" do
+      s = Series.from_list(["a", "b", "c"])
+      assert Series.to_list(s) === ["a", "b", "c"]
+      assert Series.dtype(s) == :string
+    end
+
+    test "with binaries from strings" do
+      s = Series.from_list(["a", "b", "c"], dtype: :binary)
+      assert Series.to_list(s) === ["a", "b", "c"]
+      assert Series.dtype(s) == :binary
+    end
+
+    test "mixing binaries and strings" do
+      s = Series.from_list([<<228, 146, 51>>, "hello", <<42, 209, 236>>], dtype: :binary)
+      assert Series.to_list(s) === [<<228, 146, 51>>, <<"hello">>, <<42, 209, 236>>]
+      assert Series.dtype(s) == :binary
     end
 
     test "mixing types" do
       assert_raise ArgumentError, fn ->
         s = Series.from_list([1, "foo", 3])
         Series.to_list(s)
+      end
+    end
+
+    test "with binaries without passing the dtype" do
+      assert_raise ArgumentError, fn ->
+        Series.from_list([<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>])
       end
     end
   end
@@ -253,6 +285,11 @@ defmodule Explorer.SeriesTest do
     test "datetime series" do
       s = Series.from_list([~N[2022-09-12 22:21:46.250899]])
       assert Series.bintype(s) == {:s, 64}
+    end
+
+    test "binary series" do
+      s = Series.from_list([<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>], dtype: :binary)
+      assert Series.bintype(s) == :binary
     end
   end
 
@@ -720,6 +757,37 @@ defmodule Explorer.SeriesTest do
       result = Series.argsort(s1, nils: :first)
 
       assert Series.to_list(result) == [2, 1, 3, 0]
+    end
+  end
+
+  describe "at/2" do
+    test "fetch an item from a given position in the series - integer" do
+      s1 = Series.from_list([9, 4, nil, 5])
+
+      assert Series.at(s1, 1) == 4
+      assert Series.at(s1, 3) == 5
+    end
+
+    test "fetch an item from a given position in the series - float" do
+      s1 = Series.from_list([9.1, 4.2, 3.6, 5.9])
+
+      assert Series.at(s1, 1) == 4.2
+      assert Series.at(s1, 2) == 3.6
+    end
+
+    test "fetch an item from a given position in the series - string" do
+      s1 = Series.from_list(["a", "b", "c", "d"])
+
+      assert Series.at(s1, 0) == "a"
+      assert Series.at(s1, 3) == "d"
+    end
+
+    test "fetch an item from a given position in the series - binary" do
+      s1 =
+        Series.from_list([<<114, 231, 242>>, <<181, 43, 48>>, <<89, 155, 216>>], dtype: :binary)
+
+      assert Series.at(s1, 1) == <<181, 43, 48>>
+      assert Series.at(s1, 2) == <<89, 155, 216>>
     end
   end
 end

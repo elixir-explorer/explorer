@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use polars::export::arrow::array::GenericBinaryArray;
 use polars::prelude::*;
 use rustler::{Encoder, Env, OwnedBinary, ResourceArc, Term};
 use std::{mem, slice};
@@ -197,18 +198,20 @@ fn datetime_series_to_list<'b>(
     ))
 }
 
-#[inline]
-fn utf8_series_to_list<'b>(
+fn generic_binary_series_to_list<'a, 'b, T, G>(
     resource: &ResourceArc<ExSeriesRef>,
-    s: &Series,
+    iter: T,
     env: Env<'b>,
-) -> Result<Term<'b>, ExplorerError> {
-    let utf8 = s.utf8()?;
+) -> Result<Term<'b>, ExplorerError>
+where
+    T: Iterator<Item = &'a G> + DoubleEndedIterator,
+    G: GenericBinaryArray<i64>,
+{
     let env_as_c_arg = env.as_c_arg();
     let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
     let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
 
-    let list = utf8.downcast_iter().rfold(acc, |acc, array| {
+    let list = iter.rfold(acc, |acc, array| {
         // Create a binary per array buffer
         let values = array.values();
 
@@ -308,6 +311,19 @@ macro_rules! series_to_iovec {
 
 // API
 
+pub fn resource_term_from_value<'b>(
+    resource: &ResourceArc<ExSeriesRef>,
+    v: AnyValue,
+    env: Env<'b>,
+) -> Result<Term<'b>, ExplorerError> {
+    match v {
+        AnyValue::Binary(v) => unsafe {
+            Ok(Some(resource.make_binary_unsafe(env, |_| v)).encode(env))
+        },
+        _ => term_from_value(v, env),
+    }
+}
+
 pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     match v {
         AnyValue::Null => Ok(None::<bool>.encode(env)),
@@ -318,7 +334,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Float64(v) => Ok(Some(v).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
-        dt => panic!("get/2 not implemented for {:?}", dt),
+        dt => panic!("cannot encode value {:?} to term", dt),
     }
 }
 
@@ -329,10 +345,15 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError>
         DataType::Boolean => series_to_list!(s, env, bool),
         DataType::Int64 => series_to_list!(s, env, i64),
         DataType::UInt32 => series_to_list!(s, env, u32),
-        DataType::Utf8 => utf8_series_to_list(&data.resource, s, env),
         DataType::Float64 => float64_series_to_list(s, env),
         DataType::Date => date_series_to_list(s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(s, *time_unit, env),
+        DataType::Utf8 => {
+            generic_binary_series_to_list(&data.resource, s.utf8()?.downcast_iter(), env)
+        }
+        DataType::Binary => {
+            generic_binary_series_to_list(&data.resource, s.binary()?.downcast_iter(), env)
+        }
         dt => panic!("to_list/1 not implemented for {:?}", dt),
     }
 }
@@ -355,6 +376,7 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError
         DataType::UInt32 => series_to_iovec!(resource, s, env, u32, u32),
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Utf8 => series_to_iovec!(resource, s, env, utf8, u8),
+        DataType::Binary => series_to_iovec!(resource, s, env, binary, u8),
         DataType::Date => series_to_iovec!(resource, s, env, date, i32),
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             series_to_iovec!(resource, s, env, datetime, i64)
