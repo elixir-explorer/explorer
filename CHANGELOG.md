@@ -66,12 +66,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `DataFrame.discard/2` to drop columns. This is the opposite of `select/2`.
 
+- Implement `Nx.LazyContainer` for `Explorer.DataFrame` and `Explorer.Series`
+  so data can be passed into Nx.
+
 ### Changed
 
 - Change DataFrame's `to_*` functions to return only `:ok`.
 - Change series inspect to resamble the dataframe inspect with the backend name.
 - Rename `Series.var/1` to `Series.variance/1`
 - Rename `Series.std/1` to `Series.standard_deviation/1`
+- Rename `Series.count/2` to `Series.frequencies/1` and add a new `Series.count/1`
+  that returns the size of an "eager" series, or the count of members in a group
+  for a lazy series.
+  In case there is no groups, it calculates the size of the dataframe.
+- Change the option to control direction in `Series.sort/2` and `Series.argsort/2`.
+  Instead of a boolean, now we have a new option called `:direction` that accepts
+  `:asc` or `:desc`.
 
 ### Fixed
 
