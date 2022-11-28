@@ -162,15 +162,7 @@ defmodule Explorer.Shared do
   Helper for shared behaviour in inspect.
   """
   def to_string(i, _opts) when is_nil(i), do: "nil"
-
-  def to_string(i, _opts) when is_binary(i) do
-    if String.valid?(i) do
-      "\"#{i}\""
-    else
-      bin_as_list = :binary.bin_to_list(i)
-      "<<#{Enum.join(bin_as_list, ", ")}>>"
-    end
-  end
+  def to_string(i, _opts) when is_binary(i), do: inspect(i)
 
   def to_string(i, _opts), do: Kernel.to_string(i)
 
