@@ -98,7 +98,7 @@ defmodule Explorer.MixProject do
       ],
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      maintainers: ["Christopher Grainger"]
+      maintainers: ["Christopher Grainger", "Philip Sampaio", "José Valim"]
     ]
   end
 end
