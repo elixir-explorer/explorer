@@ -365,7 +365,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
         AnyValue::Binary(v) => {
             let mut bin = NewBinary::new(env, v.len());
-            bin.copy_from_slice(&v);
+            bin.copy_from_slice(v);
 
             Ok(Some(Binary::from(bin)).encode(env))
         }
