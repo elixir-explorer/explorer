@@ -334,7 +334,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Float64(v) => Ok(Some(v).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
-        dt => panic!("get/2 not implemented for {:?}", dt),
+        dt => panic!("cannot encode value {:?} to term", dt),
     }
 }
 
