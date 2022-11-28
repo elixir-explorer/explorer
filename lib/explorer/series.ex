@@ -407,6 +407,12 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<"foobarbazbat">>]
 
+  The same principle from strings applies to binaries:
+
+      iex> series = Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>])
+      iex> Explorer.Series.to_iovec(series)
+      [<<228, 146, 51, 42, 209, 236>>]
+
   """
   @doc type: :conversion
   @spec to_iovec(series :: Series.t()) :: [binary]
@@ -606,9 +612,13 @@ defmodule Explorer.Series do
       iex> Explorer.Series.bintype(s)
       {:u, 8}
 
+      iex> s = Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>])
+      iex> Explorer.Series.bintype(s)
+      :binary
+
   """
   @doc type: :introspection
-  @spec bintype(series :: Series.t()) :: :utf8 | {:s | :u | :f, non_neg_integer()}
+  @spec bintype(series :: Series.t()) :: :utf8 | :binary | {:s | :u | :f, non_neg_integer()}
   def bintype(series), do: Shared.apply_impl(series, :bintype)
 
   # Slice and dice

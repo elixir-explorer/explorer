@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 use polars::prelude::*;
-use rustler::{Encoder, Env, OwnedBinary, ResourceArc, Term};
+use rustler::{Binary, Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
 use std::{mem, slice};
 
 use crate::atoms::{
@@ -363,6 +363,12 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Null => Ok(None::<bool>.encode(env)),
         AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
         AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
+        AnyValue::Binary(v) => {
+            let mut bin = NewBinary::new(env, v.len());
+            bin.copy_from_slice(&v);
+
+            Ok(Some(Binary::from(bin)).encode(env))
+        }
         AnyValue::Int64(v) => Ok(Some(v).encode(env)),
         AnyValue::UInt32(v) => Ok(Some(v).encode(env)),
         AnyValue::Float64(v) => Ok(Some(v).encode(env)),
@@ -406,6 +412,7 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError
         DataType::UInt32 => series_to_iovec!(resource, s, env, u32, u32),
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Utf8 => series_to_iovec!(resource, s, env, utf8, u8),
+        DataType::Binary => series_to_iovec!(resource, s, env, binary, u8),
         DataType::Date => series_to_iovec!(resource, s, env, date, i32),
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             series_to_iovec!(resource, s, env, datetime, i64)

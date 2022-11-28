@@ -274,6 +274,11 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([~N[2022-09-12 22:21:46.250899]])
       assert Series.bintype(s) == {:s, 64}
     end
+
+    test "binary series" do
+      s = Series.from_list([<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>])
+      assert Series.bintype(s) == :binary
+    end
   end
 
   describe "add/2" do
