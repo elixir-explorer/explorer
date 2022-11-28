@@ -58,6 +58,13 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>) -> ExSerie
     )
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_binary(name: &str, val: Vec<Option<Binary>>) -> ExSeries {
+    let results: Vec<Option<&[u8]>> = val.iter().map(|dt| dt.map(|dt| dt.as_slice())).collect();
+
+    ExSeries::new(Series::new(name, results))
+}
+
 macro_rules! from_binary {
     ($name:ident, $type:ty, $bytes:expr) => {
         #[rustler::nif(schedule = "DirtyCpu")]
@@ -712,6 +719,7 @@ pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
         "datetime" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
         "boolean" => Ok(DataType::Boolean),
         "string" => Ok(DataType::Utf8),
+        "binary" => Ok(DataType::Binary),
         _ => Err(ExplorerError::Other(String::from("Cannot cast to type"))),
     }
 }

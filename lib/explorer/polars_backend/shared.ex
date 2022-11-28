@@ -107,6 +107,7 @@ defmodule Explorer.PolarsBackend.Shared do
       :string -> Native.s_from_list_str(name, list)
       :date -> Native.s_from_list_date(name, list)
       :datetime -> Native.s_from_list_datetime(name, list)
+      :binary -> Native.s_from_list_binary(name, list)
     end
   end
 
@@ -129,6 +130,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("f64"), do: :float
   def normalise_dtype("bool"), do: :boolean
   def normalise_dtype("str"), do: :string
+  def normalise_dtype("binary"), do: :binary
   def normalise_dtype("date"), do: :date
   def normalise_dtype("datetime[ms]"), do: :datetime
   def normalise_dtype("datetime[μs]"), do: :datetime

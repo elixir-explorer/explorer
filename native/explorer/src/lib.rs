@@ -244,6 +244,7 @@ rustler::init!(
         s_from_list_i64,
         s_from_list_u32,
         s_from_list_str,
+        s_from_list_binary,
         s_from_binary_f64,
         s_from_binary_i64,
         s_from_binary_i32,

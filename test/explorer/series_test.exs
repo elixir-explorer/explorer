@@ -28,11 +28,31 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([1, 2, 3])
 
       assert Series.to_list(s) === [1, 2, 3]
+      assert Series.dtype(s) == :integer
     end
 
     test "with floats" do
       s = Series.from_list([1, 2.4, 3])
       assert Series.to_list(s) === [1.0, 2.4, 3.0]
+      assert Series.dtype(s) == :float
+    end
+
+    test "with binaries" do
+      s = Series.from_list([<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>])
+      assert Series.to_list(s) === [<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>]
+      assert Series.dtype(s) == :binary
+    end
+
+    test "with strings" do
+      s = Series.from_list(["a", "b", "c"])
+      assert Series.to_list(s) === ["a", "b", "c"]
+      assert Series.dtype(s) == :string
+    end
+
+    test "with binaries from strings" do
+      s = Series.from_list(["a", "b", "c"], dtype: :binary)
+      assert Series.to_list(s) === ["a", "b", "c"]
+      assert Series.dtype(s) == :binary
     end
 
     test "mixing types" do

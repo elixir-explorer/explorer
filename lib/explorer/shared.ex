@@ -7,7 +7,7 @@ defmodule Explorer.Shared do
   @doc """
   All supported dtypes.
   """
-  def dtypes, do: [:float, :integer, :boolean, :string, :date, :datetime]
+  def dtypes, do: [:float, :integer, :boolean, :string, :date, :datetime, :binary]
 
   @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
@@ -111,6 +111,9 @@ defmodule Explorer.Shared do
           new_type == :numeric and type in [:float, :integer] ->
             new_type
 
+          new_type == :binary and type == :string ->
+            new_type
+
           new_type != type and type != nil ->
             raise ArgumentError,
                   "the value #{inspect(el)} does not match the inferred series dtype #{inspect(type)}"
@@ -130,7 +133,11 @@ defmodule Explorer.Shared do
   defp type(item, _type) when is_integer(item), do: :integer
   defp type(item, _type) when is_float(item), do: :float
   defp type(item, _type) when is_boolean(item), do: :boolean
-  defp type(item, _type) when is_binary(item), do: :string
+  defp type(item, :binary) when is_binary(item), do: :binary
+
+  defp type(item, _type) when is_binary(item),
+    do: if(String.valid?(item), do: :string, else: :binary)
+
   defp type(%Date{} = _item, _type), do: :date
   defp type(%NaiveDateTime{} = _item, _type), do: :datetime
   defp type(item, _type) when is_nil(item), do: nil
@@ -155,7 +162,16 @@ defmodule Explorer.Shared do
   Helper for shared behaviour in inspect.
   """
   def to_string(i, _opts) when is_nil(i), do: "nil"
-  def to_string(i, _opts) when is_binary(i), do: "\"#{i}\""
+
+  def to_string(i, _opts) when is_binary(i) do
+    if String.valid?(i) do
+      "\"#{i}\""
+    else
+      bin_as_list = :binary.bin_to_list(i)
+      "<<#{Enum.join(bin_as_list, ", ")}>>"
+    end
+  end
+
   def to_string(i, _opts), do: Kernel.to_string(i)
 
   @doc """

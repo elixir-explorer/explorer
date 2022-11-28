@@ -34,6 +34,7 @@ features = [
   "decompress",
   "dtype-date",
   "dtype-datetime",
+  "dtype-binary",
   "ipc",
   "ipc_streaming",
   # JSON won't compile on ARM 32 bits targets, so we disable in the "release" workflow.

@@ -8,6 +8,7 @@ defmodule Explorer.Series do
     * `:integer` - 64-bit signed integer
     * `:boolean` - Boolean
     * `:string` - UTF-8 encoded binary
+    * `:binary` - Binary
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
 
@@ -27,7 +28,7 @@ defmodule Explorer.Series do
 
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime
+  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime | :binary
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
@@ -98,7 +99,7 @@ defmodule Explorer.Series do
 
     * `:backend` - The backend to allocate the series on.
     * `:dtype` - Cast the series to a given `:dtype`. By default this is `nil`, which means
-    that Explorer will infer the type from the values in the list.
+      that Explorer will infer the type from the values in the list.
 
   ## Examples
 
