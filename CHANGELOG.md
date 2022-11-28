@@ -5,7 +5,109 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.1] - 2022-09-09
+## [v0.4.0] - To be released
+
+### Added
+
+- Add `Series.quotient/2` and `Series.remainder/2` to work with integer division.
+- Add `Series.bintype/1` to return the underlying representation type.
+- Allow series on both sides of binary operations, like: `add(series, 1)`
+  and `add(1, series)`.
+
+- Allow comparison, concat and coalesce operations on "(series, lazy series)".
+- Add lazy version of `Series.sample/3` and `Series.size/1`.
+- Add support for Arrow IPC Stream files.
+- Add `Explorer.Query` and the macros that allow a simplified query API.
+  This is a huge improvement to some of the main functions, and allow refering to
+  columns as they were variables.
+
+  Before this change we would need to write a filter like this:
+
+  ```elixir
+  Explorer.DataFrame.filter_with(df, &Explorer.Series.greater(&1["col1"], 42))
+  ```
+
+  But now it's also possible to write this operation like this:
+
+  ```elixir
+  Explorer.DataFrame.filter(df, col1 > 42)
+  ```
+
+  This operation is going to use `filter_with/2` underneath, which means that
+  is going to use lazy series and compute the results at once.
+  Notice that is mandatory to "require" the DataFrame module, since these operations
+  are implemented as macros.
+
+  The following new macros were added:
+  - `filter/2`
+  - `mutate/2`
+  - `summarise/2`
+  - `arrange/2`
+
+  They substitute older versions that did not accept the new query syntax.
+
+- Add `DataFrame.put/3` to enable adding or replacing columns in a eager manner.
+  This works similar to the previous version of `mutate/2`.
+
+- Add `Series.select/3` operation that enables selecting a value
+  from two series based on a predicate.
+
+- Add "dump" and "load" functions to IO operations. They are useful to load
+  or dump dataframes from/to memory.
+
+- Add `Series.to_iovec/2` and `Series.to_binary/1`. They return the underlying
+  representation of series as binary. The first one returns a list of binaries,
+  possibly with one element if the series is contiguous in memory. The second one
+  returns a single binary representing the series.
+
+- Add `Series.shift/2` that shifts the series by an offset with nil values.
+- Rename `Series.fetch!/2` and `Series.take_every/2` to `Series.at/2`
+  and `Series.at_every/2`.
+
+- Add `DataFrame.discard/2` to drop columns. This is the opposite of `select/2`.
+
+- Implement `Nx.LazyContainer` for `Explorer.DataFrame` and `Explorer.Series`
+  so data can be passed into Nx.
+
+### Changed
+
+- Change DataFrame's `to_*` functions to return only `:ok`.
+- Change series inspect to resamble the dataframe inspect with the backend name.
+- Rename `Series.var/1` to `Series.variance/1`
+- Rename `Series.std/1` to `Series.standard_deviation/1`
+- Rename `Series.count/2` to `Series.frequencies/1` and add a new `Series.count/1`
+  that returns the size of an "eager" series, or the count of members in a group
+  for a lazy series.
+  In case there is no groups, it calculates the size of the dataframe.
+- Change the option to control direction in `Series.sort/2` and `Series.argsort/2`.
+  Instead of a boolean, now we have a new option called `:direction` that accepts
+  `:asc` or `:desc`.
+
+### Fixed
+
+- Fix the following DataFrame functions to work with groups:
+  - `filter_with/2`
+  - `head/2`
+  - `tail/2`
+  - `slice/2`
+  - `slice/3`
+  - `pivot_longer/3`
+  - `pivot_wider/4`
+  - `concat_rows/1`
+  - `concat_columns/1`
+- Improve the documentation of functions that behave differently with groups.
+- Fix `arrange_with/2` to use "group by" stable, making results more predictable.
+- Add `nil` as a possible return value of aggregations.
+- Fix the behaviour of `Series.sort/2` and `Series.argsort/2` to add nils at the
+  front when direction is descending, or at the back when the direction is ascending.
+  This also adds an option to control this behaviour.
+
+### Removed
+
+- Remove support for `NDJSON` read and write for ARM 32 bits targets.
+  This is due to a limitation of a dependency of Polars.
+
+## [v0.3.1] - 2022-09-09
 
 ### Fixed
 
@@ -99,6 +201,9 @@ properly compare floats.
 
 First release.
 
+[v0.4.0]: https://github.com/elixir-nx/explorer/compare/v0.3.1...HEAD
+[v0.3.1]: https://github.com/elixir-nx/explorer/compare/v0.3.0...v0.3.1
+[v0.3.0]: https://github.com/elixir-nx/explorer/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/elixir-nx/explorer/compare/v0.1.1...v0.2.0
 [v0.1.1]: https://github.com/elixir-nx/explorer/compare/v0.1.0...v0.1.1
 [v0.1.0]: https://github.com/elixir-nx/explorer/releases/tag/v0.1.0
