@@ -2176,7 +2176,7 @@ defmodule Explorer.Series do
       )
 
   @doc """
-  Returns a boolean mask of `left and right`, element-wise
+  Returns a boolean mask of `left and right`, element-wise.
 
   ## Examples
 
@@ -2195,7 +2195,7 @@ defmodule Explorer.Series do
     do: Shared.apply_series_impl(:binary_and, [left, right])
 
   @doc """
-  Returns a boolean mask of `left or right`, element-wise
+  Returns a boolean mask of `left or right`, element-wise.
 
   ## Examples
 

@@ -34,8 +34,6 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  # Since `filter/2` macro uses `filter_with/2` underneath, most of filter tests are
-  # implemented using `filter/2`.
   describe "filter_with/2" do
     test "filter columns with equal comparison" do
       df = DF.new(a: [1, 2, 3, 2], b: [5.3, 2.4, 1.0, 2.0])

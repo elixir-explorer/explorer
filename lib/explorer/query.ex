@@ -3,7 +3,8 @@ defmodule Explorer.Query do
   High-level query for Explorer.
 
   Queries convert regular Elixir code which compile to efficient
-  dataframes operations. Identifiers in queries, such as `strs`
+  dataframes operations. Inside a query, only the limited set of
+  Series operations are available and identifiers, such as `strs`
   and `nums`, represent dataframe column names:
 
       iex> df = Explorer.DataFrame.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
@@ -14,8 +15,8 @@ defmodule Explorer.Query do
         nums integer [3]
       >
 
-  If you want to access variables defined outside of the query,
-  you must escape them using `^`:
+  If you want to access variables defined outside of the query
+  or get access to all Elixir constructs, you must use `^`:
 
       iex> min = 2
       iex> df = Explorer.DataFrame.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
@@ -24,6 +25,15 @@ defmodule Explorer.Query do
         Polars[1 x 2]
         strs string ["c"]
         nums integer [3]
+      >
+
+      iex> min = 2
+      iex> df = Explorer.DataFrame.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, nums < ^if(min > 0, do: 10, else: -10))
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        strs string ["a", "b", "c"]
+        nums integer [1, 2, 3]
       >
 
   All operations from `Explorer.Series` are imported inside queries.
@@ -54,49 +64,79 @@ defmodule Explorer.Query do
   """
   defmacro query(expression) do
     df = Macro.unique_var(:df, __MODULE__)
+    {query, vars} = traverse(expression, [], %{df: df})
 
     quote do
       fn unquote(df) ->
+        unquote_splicing(Enum.reverse(vars))
+
         import Kernel,
-          except: [
-            is_nil: 1,
-            ==: 2,
-            !=: 2,
-            <: 2,
-            <=: 2,
-            >: 2,
-            >=: 2,
-            and: 2,
-            or: 2,
-            +: 2,
-            -: 2,
-            *: 2,
-            /: 2,
-            **: 2
+          only: [
+            @: 1,
+            |>: 2,
+            dbg: 0,
+            dbg: 1,
+            dbg: 2,
+            sigil_c: 2,
+            sigil_C: 2,
+            sigil_D: 2,
+            sigil_N: 2,
+            sigil_s: 2,
+            sigil_S: 2,
+            sigil_w: 2,
+            sigil_W: 2,
+            tap: 2,
+            then: 2
           ]
 
         import Explorer.Query, except: [query: 1]
         import Explorer.Series
-        unquote(traverse(expression, df))
+        unquote(query)
       end
     end
   end
 
-  defp traverse({:=, _, [_, _]}, _df) do
-    raise "= is not currently supported in Explorer.Query"
+  defp traverse({:^, meta, [expr]}, vars, _state) do
+    var = Macro.unique_var(:pin, __MODULE__)
+    {var, [{:=, meta, [var, expr]} | vars]}
   end
 
-  defp traverse({:^, _, [expr]}, _df), do: expr
-
-  defp traverse({var, meta, ctx}, df) when is_atom(var) and is_atom(ctx) do
-    {{:., meta, [Explorer.DataFrame, :pull]}, meta, [df, var]}
+  defp traverse({var, meta, ctx}, vars, state) when is_atom(var) and is_atom(ctx) do
+    {{{:., meta, [Explorer.DataFrame, :pull]}, meta, [state.df, var]}, vars}
   end
 
-  defp traverse({left, meta, right}, df), do: {traverse(left, df), meta, traverse(right, df)}
-  defp traverse({left, right}, df), do: {traverse(left, df), traverse(right, df)}
-  defp traverse(list, df) when is_list(list), do: Enum.map(list, &traverse(&1, df))
-  defp traverse(other, _df), do: other
+  defp traverse({left, meta, right}, vars, state) do
+    if is_atom(left) and is_list(right) and special_form_defines_var?(left, right) do
+      raise ArgumentError, "#{left}/#{length(right)} is not currently supported in Explorer.Query"
+    end
 
+    {left, vars} = traverse(left, vars, state)
+    {right, vars} = traverse(right, vars, state)
+    {{left, meta, right}, vars}
+  end
+
+  defp traverse({left, right}, vars, state) do
+    {left, vars} = traverse(left, vars, state)
+    {right, vars} = traverse(right, vars, state)
+    {{left, right}, vars}
+  end
+
+  defp traverse(list, vars, state) when is_list(list) do
+    Enum.map_reduce(list, vars, &traverse(&1, &2, state))
+  end
+
+  defp traverse(other, vars, _state), do: {other, vars}
+
+  defp special_form_defines_var?(:=, [_, _]), do: true
+  defp special_form_defines_var?(:case, [_, _]), do: true
+  defp special_form_defines_var?(:cond, [_]), do: true
+  defp special_form_defines_var?(:for, [_ | _]), do: true
+  defp special_form_defines_var?(:receive, [_]), do: true
+  defp special_form_defines_var?(:try, [_]), do: true
+  defp special_form_defines_var?(:with, [_ | _]), do: true
+  defp special_form_defines_var?(_, _), do: false
+
+  # and and or are sent as is to queries
   binary_delegates = [
     ==: :equal,
     !=: :not_equal,
@@ -117,4 +157,20 @@ defmodule Explorer.Query do
     """
     def unquote(operator)(left, right), do: Explorer.Series.unquote(delegate)(left, right)
   end
+
+  @doc """
+  Unary minus operator.
+
+  Works with numbers and series.
+  """
+  def -number when is_number(number), do: Kernel.-(number)
+  # def -series when is_struct(series, Explorer.Series), do: Explorer.Series.negate(series)
+
+  @doc """
+  Unary plus operator.
+
+  Works with numbers and series.
+  """
+  def +number when is_number(number), do: number
+  def +series when is_struct(series, Explorer.Series), do: series
 end
