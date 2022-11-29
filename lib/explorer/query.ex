@@ -55,6 +55,28 @@ defmodule Explorer.Query do
   you can fallback to the regular `_with` APIs.
   """
 
+  kernel_all = Kernel.__info__(:functions) ++ Kernel.__info__(:macros)
+
+  kernel_only = [
+    @: 1,
+    |>: 2,
+    dbg: 0,
+    dbg: 1,
+    dbg: 2,
+    sigil_c: 2,
+    sigil_C: 2,
+    sigil_D: 2,
+    sigil_N: 2,
+    sigil_s: 2,
+    sigil_S: 2,
+    sigil_w: 2,
+    sigil_W: 2,
+    tap: 2,
+    then: 2
+  ]
+
+  @kernel_only kernel_only -- kernel_only -- kernel_all
+
   @doc """
   Builds an anonymous function from a query.
 
@@ -69,26 +91,7 @@ defmodule Explorer.Query do
     quote do
       fn unquote(df) ->
         unquote_splicing(Enum.reverse(vars))
-
-        import Kernel,
-          only: [
-            @: 1,
-            |>: 2,
-            dbg: 0,
-            dbg: 1,
-            dbg: 2,
-            sigil_c: 2,
-            sigil_C: 2,
-            sigil_D: 2,
-            sigil_N: 2,
-            sigil_s: 2,
-            sigil_S: 2,
-            sigil_w: 2,
-            sigil_W: 2,
-            tap: 2,
-            then: 2
-          ]
-
+        import Kernel, only: unquote(@kernel_only)
         import Explorer.Query, except: [query: 1]
         import Explorer.Series
         unquote(query)
