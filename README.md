@@ -47,7 +47,7 @@ Then you can add `Explorer` as dependency in your `mix.exs`.
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.3.1"}
+    {:explorer, "~> 0.4.0"}
   ]
 end
 ```
@@ -56,7 +56,7 @@ Alternatively, inside a script or Livebook:
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.3.1"}
+  {:explorer, "~> 0.4.0"}
 ])
 ```
 
