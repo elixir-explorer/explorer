@@ -1,7 +1,7 @@
 defmodule Explorer.PolarsBackend.Series do
   @moduledoc false
 
-  import Kernel, except: [length: 1]
+  import Kernel, except: [length: 1, not: 1]
 
   alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Native
@@ -371,7 +371,7 @@ defmodule Explorer.PolarsBackend.Series do
   # Missing values
 
   @impl true
-  def fill_missing(series, strategy) when is_atom(strategy) and not is_boolean(strategy),
+  def fill_missing(series, strategy) when is_atom(strategy) and Kernel.not(is_boolean(strategy)),
     do: Shared.apply_series(series, :s_fill_missing, [Atom.to_string(strategy)])
 
   def fill_missing(series, value) do
@@ -400,6 +400,11 @@ defmodule Explorer.PolarsBackend.Series do
   def inspect(series, opts) do
     Explorer.Backend.Series.inspect(series, "Polars", Series.size(series), opts)
   end
+
+  # Inversions
+
+  @impl true
+  def not (%Series{} = series), do: Shared.apply_series(series, :s_not, [])
 
   # Polars specific functions
 

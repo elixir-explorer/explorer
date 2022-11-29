@@ -20,7 +20,7 @@ defmodule Explorer.Series do
   a series with an invalid dtype is used.
   """
 
-  import Kernel, except: [and: 2]
+  import Kernel, except: [and: 2, not: 1]
 
   alias __MODULE__, as: Series
   alias Kernel, as: K
@@ -56,14 +56,14 @@ defmodule Explorer.Series do
   end
 
   def pop(series, indices) when is_list(indices) do
-    mask = 0..(size(series) - 1) |> Enum.map(&(&1 not in indices)) |> from_list()
+    mask = 0..(size(series) - 1) |> Enum.map(&K.not(&1 in indices)) |> from_list()
     value = slice(series, indices)
     series = mask(series, mask)
     {value, series}
   end
 
   def pop(series, %Range{} = range) do
-    mask = 0..(size(series) - 1) |> Enum.map(&(&1 not in range)) |> from_list()
+    mask = 0..(size(series) - 1) |> Enum.map(&K.not(&1 in range)) |> from_list()
     value = slice(series, range)
     series = mask(series, mask)
     {value, series}
@@ -2242,6 +2242,22 @@ defmodule Explorer.Series do
              right_dtype,
       do: false
 
+  @doc """
+  Negate the elements of a boolean series.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([true, false, false])
+      iex> Explorer.Series.not(s1)
+      #Explorer.Series<
+        Polars[3]
+        boolean [false, true, true]
+      >
+
+  """
+  @doc type: :element_wise
+  def not (%Series{dtype: :boolean} = series), do: Shared.apply_impl(series, :not, [])
+
   # Sort
 
   @doc """
@@ -2276,7 +2292,7 @@ defmodule Explorer.Series do
   def sort(series, opts \\ []) do
     opts = Keyword.validate!(opts, [:nils, direction: :asc])
     descending? = opts[:direction] == :desc
-    nils_last? = if nils = opts[:nils], do: nils == :last, else: not descending?
+    nils_last? = if nils = opts[:nils], do: nils == :last, else: K.not(descending?)
 
     Shared.apply_impl(series, :sort, [descending?, nils_last?])
   end
@@ -2313,7 +2329,7 @@ defmodule Explorer.Series do
   def argsort(series, opts \\ []) do
     opts = Keyword.validate!(opts, [:nils, direction: :asc])
     descending? = opts[:direction] == :desc
-    nils_last? = if nils = opts[:nils], do: nils == :last, else: not descending?
+    nils_last? = if nils = opts[:nils], do: nils == :last, else: K.not(descending?)
 
     Shared.apply_impl(series, :argsort, [descending?, nils_last?])
   end

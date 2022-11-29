@@ -408,7 +408,7 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{"a" => :float, "b" => :string}
     end
 
-    test "adds new columns ordering and sorting" do
+    test "adds new columns ordering, sorting and negating" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
       df1 =
@@ -417,7 +417,8 @@ defmodule Explorer.DataFrameTest do
           d: argsort(a, direction: :desc),
           e: sort(b, direction: :desc),
           f: distinct(a),
-          g: unordered_distinct(a)
+          g: unordered_distinct(a),
+          h: -a
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -427,10 +428,11 @@ defmodule Explorer.DataFrameTest do
                d: [2, 1, 0],
                e: ["c", "b", "a"],
                f: [1, 2, 3],
-               g: [1, 2, 3]
+               g: [1, 2, 3],
+               h: [-1, -2, -3]
              }
 
-      assert df1.names == ["a", "b", "c", "d", "e", "f", "g"]
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h"]
 
       assert df1.dtypes == %{
                "a" => :integer,
@@ -439,7 +441,8 @@ defmodule Explorer.DataFrameTest do
                "d" => :integer,
                "e" => :string,
                "f" => :integer,
-               "g" => :integer
+               "g" => :integer,
+               "h" => :integer
              }
     end
 
@@ -885,6 +888,20 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.mutate(df, d: 1, b: 2)
 
       assert df1.names == ["e", "c", "a", "d", "b"]
+    end
+
+    test "negate boolean column" do
+      df = DF.new(a: [true, false, true, nil])
+
+      df1 = DF.mutate(df, b: not a)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [true, false, true, nil],
+               b: [false, true, false, nil]
+             }
+
+      assert df1.names == ["a", "b"]
+      assert df1.dtypes == %{"a" => :boolean, "b" => :boolean}
     end
 
     test "raises when adding eager series" do

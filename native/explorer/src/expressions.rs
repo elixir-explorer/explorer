@@ -515,6 +515,12 @@ pub fn expr_unordered_distinct(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_not(expr: ExExpr) -> ExExpr {
+    let predicate: Expr = expr.resource.0.clone();
+    ExExpr::new(predicate.not())
+}
+
+#[rustler::nif]
 pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
     let df: DataFrame = data.resource.0.clone();
     let expressions: Expr = expr.resource.0.clone();

@@ -784,3 +784,16 @@ pub fn s_select(
         Err(ExplorerError::Other("Expected a boolean mask".into()))
     }
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_not(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    let s2: Series = s1
+        .bool()
+        .unwrap()
+        .into_iter()
+        .map(|opt_v| opt_v.map(|v| !v))
+        .collect();
+
+    Ok(ExSeries::new(s2))
+}

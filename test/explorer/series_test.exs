@@ -790,4 +790,11 @@ defmodule Explorer.SeriesTest do
       assert Series.at(s1, 2) == <<89, 155, 216>>
     end
   end
+
+  test "not/1 invert a boolean series" do
+    s1 = Series.from_list([true, false, false, nil, true])
+    result = Series.not(s1)
+
+    assert Series.to_list(result) == [false, true, true, nil, false]
+  end
 end
