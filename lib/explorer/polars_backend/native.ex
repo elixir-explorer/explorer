@@ -188,6 +188,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_peak_max(_s), do: err()
   def s_peak_min(_s), do: err()
   def s_select(_pred, _on_true, _on_false), do: err()
+  def s_pow(_s, _other), do: err()
   def s_pow_f_lhs(_s, _exponent), do: err()
   def s_pow_f_rhs(_s, _exponent), do: err()
   def s_pow_i_lhs(_s, _exponent), do: err()

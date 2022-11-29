@@ -227,6 +227,9 @@ defmodule Explorer.PolarsBackend.Series do
     do: apply_scalar_on_lhs(:remainder, left, right)
 
   @impl true
+  def pow(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_pow, [right.data])
+
   def pow(left, exponent) when is_float(exponent),
     do: Shared.apply_series(left, :s_pow_f_rhs, [exponent])
 
