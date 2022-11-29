@@ -61,6 +61,7 @@ defmodule Explorer.Backend.LazySeries do
     tail: 2,
     shift: 3,
     peaks: 2,
+    not: 1,
     # Aggregations
     sum: 1,
     min: 1,
@@ -451,6 +452,13 @@ defmodule Explorer.Backend.LazySeries do
   def all_equal(%Series{} = left, %Series{} = right) do
     args = [lazy_series!(left), lazy_series!(right)]
     data = new(:all_equal, args, aggregations?(args))
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def not (%Series{} = series) do
+    data = new(:not, [lazy_series!(series)])
 
     Backend.Series.new(data, :boolean)
   end

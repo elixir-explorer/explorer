@@ -167,7 +167,9 @@ defmodule Explorer.Query do
   Works with numbers and series.
   """
   def -number when is_number(number), do: Kernel.-(number)
-  # def -series when is_struct(series, Explorer.Series), do: Explorer.Series.negate(series)
+
+  def -series when is_struct(series, Explorer.Series),
+    do: Explorer.Series.multiply(series, Kernel.-(1))
 
   @doc """
   Unary plus operator.

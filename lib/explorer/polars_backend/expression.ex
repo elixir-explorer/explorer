@@ -39,6 +39,7 @@ defmodule Explorer.PolarsBackend.Expression do
     multiply: 2,
     n_distinct: 1,
     not_equal: 2,
+    not: 1,
     pow: 2,
     quotient: 2,
     remainder: 2,

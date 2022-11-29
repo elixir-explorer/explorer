@@ -130,6 +130,10 @@ defmodule Explorer.Backend.Series do
 
   @callback transform(s, fun) :: s | list()
 
+  # Inversions
+
+  @callback not s :: s
+
   # Functions
 
   @doc """
