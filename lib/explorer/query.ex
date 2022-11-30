@@ -40,6 +40,15 @@ defmodule Explorer.Query do
   This module also provides operators to use in queries, which are
   also imported into queries.
 
+  ## Supported operations
+
+  Queries are supported in the following operations:
+
+    * `Explorer.DataFrame.arrange/2`
+    * `Explorer.DataFrame.filter/2`
+    * `Explorer.DataFrame.mutate/2`
+    * `Explorer.DataFrame.summarize/2`
+
   ## Implementation details
 
   Queries simply become lazy dataframe operations at runtime.
