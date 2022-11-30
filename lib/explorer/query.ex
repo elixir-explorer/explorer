@@ -47,7 +47,7 @@ defmodule Explorer.Query do
     * `Explorer.DataFrame.arrange/2`
     * `Explorer.DataFrame.filter/2`
     * `Explorer.DataFrame.mutate/2`
-    * `Explorer.DataFrame.summarize/2`
+    * `Explorer.DataFrame.summarise/2`
 
   ## Implementation details
 
