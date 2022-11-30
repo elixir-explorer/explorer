@@ -282,10 +282,10 @@ Series.distinct(s)
 Series.n_distinct(s)
 ```
 
-And you can even get a dataframe showing the counts for each distinct value.
+And you can even get a dataframe showing the frequencies for each distinct value.
 
 ```elixir
-Series.count(s)
+Series.frequencies(s)
 ```
 
 ## Working with DataFrames
@@ -666,8 +666,6 @@ grouped
 |> DF.summarise(greater_than_9: greater(max(per_capita), 9.0), per_capita_max: max(per_capita))
 |> DataFrame.arrange(desc: per_capita_max)
 ```
-
-<!-- livebook:{"break_markdown":true} -->
 
 ### That's it!
 
