@@ -32,6 +32,7 @@ features = [
   "cross_join",
   "cum_agg",
   "decompress",
+  "describe",
   "dtype-date",
   "dtype-datetime",
   "dtype-binary",

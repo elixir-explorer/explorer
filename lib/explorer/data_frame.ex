@@ -4389,6 +4389,29 @@ defmodule Explorer.DataFrame do
     |> IO.puts()
   end
 
+  @doc """
+  Describe the numeric columns of a DataFrame.
+
+  ## Examples
+
+      iex> df = DF.new(a: ["d", "e", "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      iex> Explorer.DataFrame.describe(df)
+      #Explorer.DataFrame<
+        Polars[8 x 4]
+        describe string ["count", "mean", "std", "min", "25%", ...]
+        a float [3.0, nil, nil, nil, nil, ...]
+        b float [3.0, 2.0, 1.0, 1.0, 1.5, ...]
+        c float [3.0, nil, nil, nil, nil, ...]
+      >
+  """
+  @doc type: :single
+  @spec describe(df :: DataFrame.t()) :: DataFrame.t()
+  def describe(df) do
+    types = for name <- df.names, into: %{"describe" => :string}, do: {name, :float}
+    out_df = %{df | names: ["describe" | df.names], dtypes: types, groups: []}
+    Shared.apply_impl(df, :describe, [out_df])
+  end
+
   # Helpers
 
   defp backend_from_options!(opts) do

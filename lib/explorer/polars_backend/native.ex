@@ -104,6 +104,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_to_ndjson(_df, _filename), do: err()
   def df_to_parquet(_df, _filename, _compression, _compression_level), do: err()
   def df_width(_df), do: err()
+  def df_describe(_df), do: err()
 
   # Expressions (for lazy queries)
   # We first generate functions for known operations.
