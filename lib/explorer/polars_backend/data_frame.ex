@@ -396,6 +396,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def describe(%DataFrame{} = df, %DataFrame{} = out_df) do
+    Shared.apply_dataframe(df, out_df, :df_describe, [])
+  end
+
+  @impl true
   def arrange_with(%DataFrame{} = df, out_df, column_pairs) do
     {directions, expressions} =
       column_pairs
