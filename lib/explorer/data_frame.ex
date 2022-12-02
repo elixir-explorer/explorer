@@ -4390,7 +4390,9 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Describe the numeric columns of a DataFrame.
+  Describe numeric columns of a DataFrame.
+
+  Groups are ignored if the dataframe is using any.
 
   ## Examples
 
