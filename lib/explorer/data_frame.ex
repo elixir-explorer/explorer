@@ -4396,7 +4396,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = DF.new(a: ["d", "e", "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      iex> df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df)
       #Explorer.DataFrame<
         Polars[8 x 4]
