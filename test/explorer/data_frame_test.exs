@@ -369,7 +369,7 @@ defmodule Explorer.DataFrameTest do
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-      df1 = DF.mutate(df, c: a + 5, d: 2 + a, e: 42, f: 842.1, g: "Elixir")
+      df1 = DF.mutate(df, c: a + 5, d: 2 + a, e: 42, f: 842.1, g: "Elixir", h: true)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -378,10 +378,11 @@ defmodule Explorer.DataFrameTest do
                d: [3, 4, 5],
                e: [42, 42, 42],
                f: [842.1, 842.1, 842.1],
-               g: ["Elixir", "Elixir", "Elixir"]
+               g: ["Elixir", "Elixir", "Elixir"],
+               h: [true, true, true]
              }
 
-      assert df1.names == ["a", "b", "c", "d", "e", "f", "g"]
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h"]
 
       assert df1.dtypes == %{
                "a" => :integer,
@@ -390,7 +391,8 @@ defmodule Explorer.DataFrameTest do
                "d" => :integer,
                "e" => :integer,
                "f" => :float,
-               "g" => :string
+               "g" => :string,
+               "h" => :boolean
              }
     end
 

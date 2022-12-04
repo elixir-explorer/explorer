@@ -2149,6 +2149,11 @@ defmodule Explorer.DataFrame do
 
             Explorer.Backend.Series.new(lazy_s, :string)
 
+          boolean when is_boolean(boolean) ->
+            lazy_s = LazySeries.new(:to_lazy, [boolean])
+
+            Explorer.Backend.Series.new(lazy_s, :boolean)
+
           other ->
             raise ArgumentError,
                   "expecting a lazy series or scalar value, but instead got #{inspect(other)}"
