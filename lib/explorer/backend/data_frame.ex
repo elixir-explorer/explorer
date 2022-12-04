@@ -164,6 +164,7 @@ defmodule Explorer.Backend.DataFrame do
             ) :: df
   @callback put(df, out_df :: df(), column_name(), series()) :: df
   @callback describe(df, out_df :: df()) :: df()
+  @callback null_count(df, out_df :: df()) :: df()
 
   # Two or more table verbs
 

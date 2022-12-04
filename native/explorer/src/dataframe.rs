@@ -426,6 +426,14 @@ pub fn df_describe(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_null_count(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
+    let df: DataFrame = data.resource.0.clone();
+    let new_df = df.null_count();
+
+    Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_mutate_with_exprs(
     data: ExDataFrame,
     columns: Vec<ExExpr>,

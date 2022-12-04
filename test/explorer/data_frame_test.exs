@@ -2048,4 +2048,13 @@ defmodule Explorer.DataFrameTest do
              describe: ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
            }
   end
+
+  test "null_count/1" do
+    df =
+      DF.new(a: ["f", nil, "h", "j", nil], b: [nil, 2, 3, nil, nil], c: ["a", "b", "c", "d", "e"])
+
+    df1 = DF.null_count(df)
+
+    assert DF.to_columns(df1, atom_keys: true) == %{a: [2], b: [3], c: [0]}
+  end
 end

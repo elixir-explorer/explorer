@@ -97,6 +97,7 @@ rustler::init!(
         df_mutate_with_exprs,
         df_n_rows,
         df_names,
+        df_null_count,
         df_pivot_longer,
         df_pivot_wider,
         df_pull,
