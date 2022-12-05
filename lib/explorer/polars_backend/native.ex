@@ -173,6 +173,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_n_chunks(_s), do: err()
   def s_n_distinct(_s), do: err()
   def s_name(_s), do: err()
+  def s_nill_count(_s), do: err()
   def s_not(_s), do: err()
   def s_from_list_bool(_name, _val), do: err()
   def s_from_list_date(_name, _val), do: err()

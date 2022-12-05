@@ -358,6 +358,12 @@ pub fn s_size(data: ExSeries) -> Result<usize, ExplorerError> {
     Ok(s.len())
 }
 
+#[rustler::nif]
+pub fn s_nill_count(data: ExSeries) -> Result<usize, ExplorerError> {
+    let s = &data.resource.0;
+    Ok(s.null_count())
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_fill_missing(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerError> {
     let strat = match strategy {
