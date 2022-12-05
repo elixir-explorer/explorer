@@ -2425,6 +2425,19 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   def count(series), do: Shared.apply_impl(series, :count)
 
+  @doc """
+  Counts the number of null elements in a series.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["a", nil, "c", nil, nil])
+      iex> Explorer.Series.nil_count(s)
+      3
+
+  """
+  @doc type: :aggregation
+  def nil_count(series), do: Shared.apply_impl(series, :nil_count)
+
   # Window
 
   @doc """

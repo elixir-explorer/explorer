@@ -56,6 +56,7 @@ defmodule Explorer.Backend.Series do
   @callback variance(s) :: float() | lazy_s() | nil
   @callback standard_deviation(s) :: float() | lazy_s() | nil
   @callback quantile(s, float()) :: number | Date.t() | NaiveDateTime.t() | lazy_s() | nil
+  @callback nil_count(s) :: number() | lazy_s()
 
   # Cumulative
 

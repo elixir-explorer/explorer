@@ -38,6 +38,7 @@ defmodule Explorer.PolarsBackend.Expression do
     min: 1,
     multiply: 2,
     n_distinct: 1,
+    nil_count: 1,
     not_equal: 2,
     not: 1,
     pow: 2,

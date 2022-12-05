@@ -797,4 +797,14 @@ defmodule Explorer.SeriesTest do
 
     assert Series.to_list(result) == [false, true, true, nil, false]
   end
+
+  test "nil_count/1" do
+    s1 = Explorer.Series.from_list(["a", nil, "c", nil, nil])
+    s2 = Explorer.Series.from_list([1, nil, 3, nil, nil, 6, 7, nil])
+    s3 = Explorer.Series.from_list(["a", "b", "c"])
+
+    assert Series.nil_count(s1) == 3
+    assert Series.nil_count(s2) == 4
+    assert Series.nil_count(s3) == 0
+  end
 end

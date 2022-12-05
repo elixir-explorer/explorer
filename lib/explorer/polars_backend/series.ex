@@ -133,6 +133,9 @@ defmodule Explorer.PolarsBackend.Series do
   def count(series), do: Shared.apply_series(series, :s_size)
 
   @impl true
+  def nil_count(series), do: Shared.apply_series(series, :s_nil_count)
+
+  @impl true
   def sum(series), do: Shared.apply_series(series, :s_sum)
 
   @impl true

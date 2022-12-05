@@ -74,7 +74,8 @@ defmodule Explorer.Backend.LazySeries do
     quantile: 2,
     first: 1,
     last: 1,
-    count: 1
+    count: 1,
+    nil_count: 1
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -90,6 +91,7 @@ defmodule Explorer.Backend.LazySeries do
     :variance,
     :standard_deviation,
     :count,
+    :nil_count,
     :size,
     :first,
     :last,
@@ -386,7 +388,7 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, dtype)
   end
 
-  defp dtype_for_agg_operation(op, _) when op in [:count, :n_distinct], do: :integer
+  defp dtype_for_agg_operation(op, _) when op in [:count, :nil_count, :n_distinct], do: :integer
 
   defp dtype_for_agg_operation(op, series) when op in [:first, :last, :sum, :min, :max],
     do: series.dtype
