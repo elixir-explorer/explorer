@@ -402,7 +402,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def null_count(%DataFrame{} = df, %DataFrame{} = out_df) do
-    Shared.apply_dataframe(df, out_df, :df_null_count, [])
+    Shared.apply_dataframe(df, out_df, :df_nill_count, [])
   end
 
   @impl true

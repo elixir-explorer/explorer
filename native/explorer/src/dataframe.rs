@@ -426,7 +426,7 @@ pub fn df_describe(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_null_count(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_nill_count(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
     let df: DataFrame = data.resource.0.clone();
     let new_df = df.null_count();
 
