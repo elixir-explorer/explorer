@@ -378,7 +378,7 @@ pub fn expr_count(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_nill_count(expr: ExExpr) -> ExExpr {
+pub fn expr_nil_count(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
     ExExpr::new(expr.null_count())

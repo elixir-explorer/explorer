@@ -105,7 +105,6 @@ defmodule Explorer.PolarsBackend.Native do
   def df_to_parquet(_df, _filename, _compression, _compression_level), do: err()
   def df_width(_df), do: err()
   def df_describe(_df), do: err()
-  def df_nill_count(_df), do: err()
 
   # Expressions (for lazy queries)
   # We first generate functions for known operations.
@@ -173,7 +172,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_n_chunks(_s), do: err()
   def s_n_distinct(_s), do: err()
   def s_name(_s), do: err()
-  def s_nill_count(_s), do: err()
+  def s_nil_count(_s), do: err()
   def s_not(_s), do: err()
   def s_from_list_bool(_name, _val), do: err()
   def s_from_list_date(_name, _val), do: err()

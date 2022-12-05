@@ -359,7 +359,7 @@ pub fn s_size(data: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn s_nill_count(data: ExSeries) -> Result<usize, ExplorerError> {
+pub fn s_nil_count(data: ExSeries) -> Result<usize, ExplorerError> {
     let s = &data.resource.0;
     Ok(s.null_count())
 }

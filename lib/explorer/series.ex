@@ -2431,12 +2431,12 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list(["a", nil, "c", nil, nil])
-      iex> Explorer.Series.nill_count(s)
+      iex> Explorer.Series.nil_count(s)
       3
 
   """
   @doc type: :aggregation
-  def nill_count(series), do: Shared.apply_impl(series, :nill_count)
+  def nil_count(series), do: Shared.apply_impl(series, :nil_count)
 
   # Window
 

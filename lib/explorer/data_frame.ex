@@ -4419,30 +4419,6 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :describe, [out_df])
   end
 
-  @doc """
-  Shows the null counts per column.
-
-  Groups are ignored if the dataframe is using any.
-
-  ## Examples
-
-      iex> df = DF.new(a: ["f", nil, "h", "j", nil], b: [nil, 2, 3, nil, nil], c: ["a", "b", "c", "d", "e"])
-      iex> Explorer.DataFrame.null_count(df)
-      #Explorer.DataFrame<
-        Polars[1 x 3]
-        a integer [2]
-        b integer [3]
-        c integer [0]
-      >
-  """
-  @doc type: :single
-  @spec null_count(df :: DataFrame.t()) :: DataFrame.t()
-  def null_count(df) do
-    types = for name <- df.names, into: %{}, do: {name, :integer}
-    out_df = %{df | names: df.names, dtypes: types, groups: []}
-    Shared.apply_impl(df, :null_count, [out_df])
-  end
-
   # Helpers
 
   defp backend_from_options!(opts) do
