@@ -330,7 +330,6 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
         AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
         AnyValue::Int64(v) => Ok(Some(v).encode(env)),
-        AnyValue::UInt32(v) => Ok(Some(v).encode(env)),
         AnyValue::Float64(v) => Ok(Some(v).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
@@ -344,7 +343,6 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError>
     match s.dtype() {
         DataType::Boolean => series_to_list!(s, env, bool),
         DataType::Int64 => series_to_list!(s, env, i64),
-        DataType::UInt32 => series_to_list!(s, env, u32),
         DataType::Float64 => float64_series_to_list(s, env),
         DataType::Date => date_series_to_list(s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(s, *time_unit, env),
@@ -373,7 +371,6 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError
             Ok([bin.release(env)].encode(env))
         }
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
-        DataType::UInt32 => series_to_iovec!(resource, s, env, u32, u32),
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Utf8 => series_to_iovec!(resource, s, env, utf8, u8),
         DataType::Binary => series_to_iovec!(resource, s, env, binary, u8),

@@ -440,7 +440,7 @@ pub fn df_mutate_with_exprs(
             .apply(|df| df.lazy().with_columns(&mutations).collect())?
     };
 
-    Ok(ExDataFrame::new(new_df))
+    Ok(ExDataFrame::new(maybe_cast_numeric_columns(new_df)?))
 }
 
 #[rustler::nif]
@@ -501,7 +501,29 @@ pub fn df_summarise_with_exprs(
     let aggs = ex_expr_to_exprs(aggs);
 
     let new_df = df.lazy().groupby_stable(groups).agg(aggs).collect()?;
-    Ok(ExDataFrame::new(new_df))
+    Ok(ExDataFrame::new(maybe_cast_numeric_columns(new_df)?))
+}
+
+// We don't want to leak numeric dtypes that we don't support at the Elixir side.
+fn maybe_cast_numeric_columns(df: DataFrame) -> Result<DataFrame, ExplorerError> {
+    let dtypes = df.dtypes();
+    let mut df = df;
+
+    for (idx, dtype) in dtypes.iter().enumerate() {
+        match dtype {
+            DataType::UInt8
+            | DataType::UInt16
+            | DataType::UInt32
+            | DataType::UInt64
+            | DataType::Int8
+            | DataType::Int16
+            | DataType::Int32 => df.try_apply_at_idx(idx, |s| s.cast(&DataType::Int64)),
+            DataType::Float32 => df.try_apply_at_idx(idx, |s| s.cast(&DataType::Float64)),
+            _ => Ok(&mut df),
+        }?;
+    }
+
+    Ok(df)
 }
 
 fn ex_expr_to_exprs(ex_exprs: Vec<ExExpr>) -> Vec<Expr> {

@@ -6,7 +6,7 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{col, when, DataFrame, IntoLazy, LiteralValue, SortOptions};
-use polars::prelude::{DataType, Expr, Literal, Series};
+use polars::prelude::{Expr, Literal, Series};
 
 use crate::datatypes::{ExDate, ExDateTime};
 use crate::series::{cast_str_to_dtype, rolling_opts};
@@ -388,7 +388,7 @@ pub fn expr_nil_count(expr: ExExpr) -> ExExpr {
 pub fn expr_n_distinct(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
-    ExExpr::new(expr.n_unique().cast(DataType::Int64))
+    ExExpr::new(expr.n_unique())
 }
 
 #[rustler::nif]
@@ -504,7 +504,7 @@ pub fn expr_argsort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr 
         nulls_last,
     };
 
-    ExExpr::new(expr.arg_sort(opts).cast(DataType::Int64))
+    ExExpr::new(expr.arg_sort(opts))
 }
 
 #[rustler::nif]
