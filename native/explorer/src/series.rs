@@ -342,7 +342,6 @@ pub fn s_in(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let rhs: &Series = &rhs.resource.0;
 
     let s = match s.dtype() {
-        DataType::UInt32 => s.u32()?.is_in(rhs)?,
         DataType::Int64 => s.i64()?.is_in(rhs)?,
         DataType::Float64 => s.f64()?.is_in(rhs)?,
         DataType::Utf8 => s.utf8()?.is_in(rhs)?,
