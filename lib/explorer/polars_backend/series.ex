@@ -1,8 +1,6 @@
 defmodule Explorer.PolarsBackend.Series do
   @moduledoc false
 
-  import Kernel, except: [length: 1, not: 1]
-
   alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Shared
@@ -299,6 +297,10 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(left, :s_series_equal, [right.data, true])
 
   @impl true
+  def binary_in(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_in, [right.data])
+
+  @impl true
   def binary_and(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_and, [right.data])
 
@@ -374,7 +376,7 @@ defmodule Explorer.PolarsBackend.Series do
   # Missing values
 
   @impl true
-  def fill_missing(series, strategy) when is_atom(strategy) and Kernel.not(is_boolean(strategy)),
+  def fill_missing(series, strategy) when is_atom(strategy) and not is_boolean(strategy),
     do: Shared.apply_series(series, :s_fill_missing, [Atom.to_string(strategy)])
 
   def fill_missing(series, value) do
@@ -407,7 +409,7 @@ defmodule Explorer.PolarsBackend.Series do
   # Inversions
 
   @impl true
-  def not (%Series{} = series), do: Shared.apply_series(series, :s_not, [])
+  def unary_not(%Series{} = series), do: Shared.apply_series(series, :s_not, [])
 
   # Polars specific functions
 

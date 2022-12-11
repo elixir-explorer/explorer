@@ -132,7 +132,7 @@ rustler::init!(
         expr_head,
         expr_integer,
         expr_peaks,
-        expr_not,
+        expr_unary_not,
         expr_sample_frac,
         expr_sample_n,
         expr_series,
@@ -150,6 +150,7 @@ rustler::init!(
         expr_all_equal,
         expr_binary_and,
         expr_binary_or,
+        expr_binary_in,
         expr_equal,
         expr_greater,
         expr_greater_equal,
@@ -290,6 +291,7 @@ rustler::init!(
         s_window_mean,
         s_window_min,
         s_window_sum,
+        s_in,
     ],
     load = on_load
 );

@@ -90,6 +90,7 @@ defmodule Explorer.Backend.Series do
 
   @callback binary_and(s, s) :: s
   @callback binary_or(s, s) :: s
+  @callback binary_in(s, s) :: s
 
   # Coercion
 
@@ -133,7 +134,7 @@ defmodule Explorer.Backend.Series do
 
   # Inversions
 
-  @callback not s :: s
+  @callback unary_not(s) :: s
 
   # Functions
 
