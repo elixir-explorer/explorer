@@ -1,7 +1,7 @@
 defmodule Explorer.PolarsBackend.Series do
   @moduledoc false
 
-  import Kernel, except: [length: 1, not: 1]
+  import Kernel, except: [not: 1]
 
   alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Native
@@ -299,7 +299,7 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(left, :s_series_equal, [right.data, true])
 
   @impl true
-  def %Series{} = left in %Series{} = right,
+  def binary_in(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_in, [right.data])
 
   @impl true
@@ -411,7 +411,7 @@ defmodule Explorer.PolarsBackend.Series do
   # Inversions
 
   @impl true
-  def not (%Series{} = series), do: Shared.apply_series(series, :s_not, [])
+  def unary_not(%Series{} = series), do: Shared.apply_series(series, :s_not, [])
 
   # Polars specific functions
 

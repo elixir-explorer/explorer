@@ -175,7 +175,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{a: [3], b: [~N[2022-07-07 17:45:00.116337]]}
     end
 
-    test "filter with a complex filter" do
+    test "filter with a complex boolean filter" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
       df1 = DF.filter(df, a > 5 or (a <= 2 and b != 9))
@@ -183,7 +183,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 6], b: [8, 4]}
     end
 
-    test "filter with a complex filter and series" do
+    test "filter with a complex series" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
       df2 =
@@ -210,6 +210,14 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.filter(df, is_not_nil(a))
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3, 5, 5], b: [9, 8, 7, 5, 3]}
+    end
+
+    test "filter with in" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df2 = DF.filter(df, a in b)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [3, 4, 5, 6, 5], b: [7, 6, 5, 4, 3]}
     end
 
     test "filter with add operation" do

@@ -20,7 +20,7 @@ defmodule Explorer.Series do
   a series with an invalid dtype is used.
   """
 
-  import Kernel, except: [and: 2, not: 1]
+  import Kernel, except: [and: 2, not: 1, in: 2]
 
   alias __MODULE__, as: Series
   alias Kernel, as: K
@@ -38,9 +38,9 @@ defmodule Explorer.Series do
   @behaviour Access
   @compile {:no_warn_undefined, Nx}
 
-  defguardp numeric_dtype?(dtype) when dtype in [:float, :integer]
-  defguardp numeric_or_bool_dtype?(dtype) when dtype in [:float, :integer, :boolean]
-  defguardp numeric_or_date_dtype?(dtype) when dtype in [:float, :integer, :date, :datetime]
+  defguardp numeric_dtype?(dtype) when K.in(dtype, [:float, :integer])
+  defguardp numeric_or_bool_dtype?(dtype) when K.in(dtype, [:float, :integer, :boolean])
+  defguardp numeric_or_date_dtype?(dtype) when K.in(dtype, [:float, :integer, :date, :datetime])
 
   @impl true
   def fetch(series, idx) when is_integer(idx), do: {:ok, fetch!(series, idx)}
@@ -56,14 +56,14 @@ defmodule Explorer.Series do
   end
 
   def pop(series, indices) when is_list(indices) do
-    mask = 0..(size(series) - 1) |> Enum.map(&K.not(&1 in indices)) |> from_list()
+    mask = 0..(size(series) - 1) |> Enum.map(&K.not(Enum.member?(indices, &1))) |> from_list()
     value = slice(series, indices)
     series = mask(series, mask)
     {value, series}
   end
 
   def pop(series, %Range{} = range) do
-    mask = 0..(size(series) - 1) |> Enum.map(&K.not(&1 in range)) |> from_list()
+    mask = 0..(size(series) - 1) |> Enum.map(&K.not(Enum.member?(range, &1))) |> from_list()
     value = slice(series, range)
     series = mask(series, mask)
     {value, series}
@@ -198,7 +198,7 @@ defmodule Explorer.Series do
   end
 
   defp check_optional_dtype!(nil), do: nil
-  defp check_optional_dtype!(dtype) when dtype in @valid_dtypes, do: dtype
+  defp check_optional_dtype!(dtype) when K.in(dtype, @valid_dtypes), do: dtype
 
   defp check_optional_dtype!(dtype) do
     raise ArgumentError, "unsupported datatype: #{inspect(dtype)}"
@@ -2140,19 +2140,37 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Check if the elements of the series in the left exists in the series in the right.
+  Checks if each element of the series in the left exists in the series in the right, returning a boolean mask.
+
+  ## Examples
+
+      iex> left = Explorer.Series.from_list([1, 2, 3])
+      iex> right = Explorer.Series.from_list([1, 2])
+      iex> Series.in(left, right)
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, true, false]
+      >
+
+      iex> left = Explorer.Series.from_list([~D[1970-01-01], ~D[2000-01-01], ~D[2010-04-17]])
+      iex> right = Explorer.Series.from_list([~D[1970-01-01], ~D[2010-04-17]])
+      iex> Series.in(left, right)
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, false, true]
+      >
   """
   @doc type: :element_wise
-  def %Series{} = left in %Series{} = right do
+  def (%Series{} = left) in (%Series{} = right) do
     if valid_for_bool_mask_operation?(left, right) do
-      Shared.apply_series_impl(:is_in, [left, right])
+      Shared.apply_series_impl(:binary_in, [left, right])
     else
-      dtype_mismatch_error("is_in/2", left, right)
+      dtype_mismatch_error("in/2", left, right)
     end
   end
 
-  def %Series{} = left in right when is_list(right),
-    do: is_in(left, Explorer.Series.from_list(right))
+  def (%Series{} = left) in right when is_list(right),
+    do: left in Explorer.Series.from_list(right)
 
   defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype}),
     do: true
@@ -2271,7 +2289,7 @@ defmodule Explorer.Series do
 
   """
   @doc type: :element_wise
-  def not (%Series{dtype: :boolean} = series), do: Shared.apply_impl(series, :not, [])
+  def not (%Series{dtype: :boolean} = series), do: Shared.apply_impl(series, :unary_not, [])
 
   # Sort
 
@@ -2668,7 +2686,7 @@ defmodule Explorer.Series do
           :forward | :backward | :max | :min | :mean | Explorer.Backend.Series.valid_types()
         ) :: Series.t()
   def fill_missing(%Series{} = series, strategy)
-      when strategy in [:forward, :backward, :min, :max, :mean],
+      when K.in(strategy, [:forward, :backward, :min, :max, :mean]),
       do: Shared.apply_impl(series, :fill_missing, [strategy])
 
   def fill_missing(%Series{} = series, value) do

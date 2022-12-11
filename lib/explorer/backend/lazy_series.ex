@@ -26,6 +26,7 @@ defmodule Explorer.Backend.LazySeries do
     is_not_nil: 1,
     binary_and: 2,
     binary_or: 2,
+    binary_in: 2,
     add: 2,
     subtract: 2,
     multiply: 2,
@@ -61,7 +62,7 @@ defmodule Explorer.Backend.LazySeries do
     tail: 2,
     shift: 3,
     peaks: 2,
-    not: 1,
+    unary_not: 1,
     # Aggregations
     sum: 1,
     min: 1,
@@ -259,7 +260,7 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   # These are also comparison operations, but they only accept `Series`.
-  for op <- [:binary_and, :binary_or] do
+  for op <- [:binary_and, :binary_or, :binary_in] do
     @impl true
     def unquote(op)(%Series{} = left, %Series{} = right) do
       args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
@@ -459,8 +460,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def not (%Series{} = series) do
-    data = new(:not, [lazy_series!(series)])
+  def unary_not(%Series{} = series) do
+    data = new(:unary_not, [lazy_series!(series)])
 
     Backend.Series.new(data, :boolean)
   end
@@ -497,7 +498,9 @@ defmodule Explorer.Backend.LazySeries do
     less: :<,
     less_equal: :<=,
     binary_and: :and,
-    binary_or: :or
+    binary_or: :or,
+    binary_in: :in,
+    unary_not: :not
   }
 
   defp to_elixir_ast(%{op: op, args: args}) do

@@ -136,6 +136,14 @@ pub fn expr_binary_or(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_binary_in(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr: Expr = left.resource.0.clone();
+    let right_expr: Expr = right.resource.0.clone();
+
+    ExExpr::new(left_expr.is_in(right_expr))
+}
+
+#[rustler::nif]
 pub fn expr_is_nil(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
@@ -522,7 +530,7 @@ pub fn expr_unordered_distinct(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_not(expr: ExExpr) -> ExExpr {
+pub fn expr_unary_not(expr: ExExpr) -> ExExpr {
     let predicate: Expr = expr.resource.0.clone();
     ExExpr::new(predicate.not())
 }
