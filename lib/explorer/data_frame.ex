@@ -433,7 +433,7 @@ defmodule Explorer.DataFrame do
   def from_csv!(filename, opts \\ []) do
     case from_csv(filename, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "from_csv failed: #{inspect(error)}"
     end
   end
 
@@ -498,7 +498,7 @@ defmodule Explorer.DataFrame do
   def load_csv!(contents, opts \\ []) do
     case load_csv(contents, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "load_csv failed: #{inspect(error)}"
     end
   end
 
@@ -521,7 +521,7 @@ defmodule Explorer.DataFrame do
   def from_parquet!(filename, opts \\ []) do
     case from_parquet(filename, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "from_parquet failed: #{inspect(error)}"
     end
   end
 
@@ -581,7 +581,7 @@ defmodule Explorer.DataFrame do
   def to_parquet!(df, filename, opts \\ []) do
     case to_parquet(df, filename, opts) do
       :ok -> :ok
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "to_parquet failed: #{inspect(error)}"
     end
   end
 
@@ -622,7 +622,7 @@ defmodule Explorer.DataFrame do
   def dump_parquet!(df, opts \\ []) do
     case dump_parquet(df, opts) do
       {:ok, parquet} -> parquet
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "dump_parquet failed: #{inspect(error)}"
     end
   end
 
@@ -645,7 +645,7 @@ defmodule Explorer.DataFrame do
   def load_parquet!(contents, opts \\ []) do
     case load_parquet(contents, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "load_parquet failed: #{inspect(error)}"
     end
   end
 
@@ -681,7 +681,7 @@ defmodule Explorer.DataFrame do
   def from_ipc!(filename, opts \\ []) do
     case from_ipc(filename, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "from_ipc failed: #{inspect(error)}"
     end
   end
 
@@ -727,7 +727,7 @@ defmodule Explorer.DataFrame do
   def to_ipc!(df, filename, opts \\ []) do
     case to_ipc(df, filename, opts) do
       :ok -> :ok
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "to_ipc failed: #{inspect(error)}"
     end
   end
 
@@ -764,7 +764,7 @@ defmodule Explorer.DataFrame do
   def dump_ipc!(df, opts \\ []) do
     case dump_ipc(df, opts) do
       {:ok, ipc} -> ipc
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "dump_ipc failed: #{inspect(error)}"
     end
   end
 
@@ -801,7 +801,7 @@ defmodule Explorer.DataFrame do
   def load_ipc!(contents, opts \\ []) do
     case load_ipc(contents, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "load_ipc failed: #{inspect(error)}"
     end
   end
 
@@ -829,7 +829,7 @@ defmodule Explorer.DataFrame do
   def from_ipc_stream!(filename, opts \\ []) do
     case from_ipc_stream(filename, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "from_ipc_stream failed: #{inspect(error)}"
     end
   end
 
@@ -893,7 +893,7 @@ defmodule Explorer.DataFrame do
   def dump_ipc_stream!(df, opts \\ []) do
     case dump_ipc_stream(df, opts) do
       {:ok, ipc} -> ipc
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "dump_ipc_stream failed: #{inspect(error)}"
     end
   end
 
@@ -930,7 +930,7 @@ defmodule Explorer.DataFrame do
   def load_ipc_stream!(contents, opts \\ []) do
     case load_ipc_stream(contents, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "load_ipc_stream failed: #{inspect(error)}"
     end
   end
 
@@ -960,7 +960,7 @@ defmodule Explorer.DataFrame do
   def to_csv!(df, filename, opts \\ []) do
     case to_csv(df, filename, opts) do
       :ok -> :ok
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "to_csv failed: #{inspect(error)}"
     end
   end
 
@@ -993,7 +993,7 @@ defmodule Explorer.DataFrame do
   def dump_csv!(df, opts \\ []) do
     case dump_csv(df, opts) do
       {:ok, csv} -> csv
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "dump_csv failed: #{inspect(error)}"
     end
   end
 
@@ -1036,7 +1036,7 @@ defmodule Explorer.DataFrame do
   def from_ndjson!(filename, opts \\ []) do
     case from_ndjson(filename, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "from_ndjson failed: #{inspect(error)}"
     end
   end
 
@@ -1080,7 +1080,7 @@ defmodule Explorer.DataFrame do
   def dump_ndjson!(df) do
     case dump_ndjson(df) do
       {:ok, ndjson} -> ndjson
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "dump_ndjson failed: #{inspect(error)}"
     end
   end
 
@@ -1135,7 +1135,7 @@ defmodule Explorer.DataFrame do
   def load_ndjson!(contents, opts \\ []) do
     case load_ndjson(contents, opts) do
       {:ok, df} -> df
-      {:error, error} -> raise "#{error}"
+      {:error, error} -> raise "load_ndjson failed: #{inspect(error)}"
     end
   end
 

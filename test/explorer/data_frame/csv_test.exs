@@ -50,6 +50,12 @@ defmodule Explorer.DataFrame.CSVTest do
     assert File.read!(file_path) == @data
   end
 
+  test "from_csv/2 error" do
+    assert_raise RuntimeError, ~r/from_csv failed:/, fn ->
+      DF.from_csv!("unknown")
+    end
+  end
+
   test "load_csv/2" do
     frame = DF.load_csv!(@data)
 
