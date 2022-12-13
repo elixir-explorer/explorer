@@ -422,6 +422,39 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def unary_not(%Series{} = series), do: Shared.apply_series(series, :s_not, [])
 
+  # Strings
+
+  @impl true
+  def contains(series, %Regex{source: pattern}),
+    do: Shared.apply_series(series, :s_contains, [pattern])
+
+  def contains(series, pattern) when is_binary(pattern),
+    do: Shared.apply_series(series, :s_contains_literal, [pattern])
+
+  @impl true
+  def upcase(series),
+    do: Shared.apply_series(series, :s_to_uppercase)
+
+  @impl true
+  def downcase(series),
+    do: Shared.apply_series(series, :s_to_lowercase)
+
+  @impl true
+  def trim(series),
+    do: Shared.apply_series(series, :s_strip)
+
+  @impl true
+  def trim_leading(series),
+    do: Shared.apply_series(series, :s_lstrip)
+
+  @impl true
+  def trim_trailing(series),
+    do: Shared.apply_series(series, :s_rstrip)
+
+  @impl true
+  def extract(series, %Regex{source: pattern}, group),
+    do: Shared.apply_series(series, :s_extract, [pattern, group])
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

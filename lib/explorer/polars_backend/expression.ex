@@ -76,7 +76,10 @@ defmodule Explorer.PolarsBackend.Expression do
     window_max: 5,
     window_mean: 5,
     window_min: 5,
-    window_sum: 5
+    window_sum: 5,
+
+    # Strings
+    contains: 2
   ]
 
   @custom_expressions [

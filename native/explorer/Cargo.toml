@@ -51,7 +51,7 @@ features = [
   "sort_multiple",
   "temporal",
   "to_dummies",
-  "is_in"
+  "is_in",
   "strings",
 ]
 

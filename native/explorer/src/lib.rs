@@ -124,6 +124,7 @@ rustler::init!(
         expr_boolean,
         expr_cast,
         expr_column,
+        expr_contains,
         expr_date,
         expr_datetime,
         expr_fill_missing,

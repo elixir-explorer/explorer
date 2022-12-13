@@ -562,3 +562,9 @@ pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
     let expressions: Expr = expr.resource.0.clone();
     df.lazy().filter(expressions).describe_plan()
 }
+
+#[rustler::nif]
+pub fn expr_contains(expr: ExExpr, pattern: &str) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().contains(pattern))
+}
