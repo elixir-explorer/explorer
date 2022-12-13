@@ -334,7 +334,6 @@ defmodule Explorer.Backend.LazySeries do
   for predicate <- @float_predicates do
     @impl true
     def unquote(predicate)(%Series{} = series) do
-      resolve_numeric_dtype([series])
       data = new(unquote(predicate), [lazy_series!(series)])
 
       Backend.Series.new(data, :boolean)

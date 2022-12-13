@@ -2750,10 +2750,10 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec is_finite(Series.t()) :: Series.t()
-  def is_finite(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+  def is_finite(%Series{dtype: dtype} = series) when dtype == :float,
     do: Shared.apply_impl(series, :is_finite)
 
-  def is_finite(%Series{dtype: dtype}), do: dtype_error("is_finite/1", dtype, [:integer, :float])
+  def is_finite(%Series{dtype: dtype}), do: dtype_error("is_finite/1", dtype, [:float])
 
   @doc """
   Returns a mask of infinite values.
@@ -2771,11 +2771,11 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec is_infinite(Series.t()) :: Series.t()
-  def is_infinite(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+  def is_infinite(%Series{dtype: dtype} = series) when dtype == :float,
     do: Shared.apply_impl(series, :is_infinite)
 
   def is_infinite(%Series{dtype: dtype}),
-    do: dtype_error("is_infinite/1", dtype, [:integer, :float])
+    do: dtype_error("is_infinite/1", dtype, [:float])
 
   @doc """
   Returns a mask of infinite values.
@@ -2793,10 +2793,10 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec is_nan(Series.t()) :: Series.t()
-  def is_nan(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+  def is_nan(%Series{dtype: dtype} = series) when dtype == :float,
     do: Shared.apply_impl(series, :is_nan)
 
-  def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:integer, :float])
+  def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:float])
 
   # Escape hatch
 
