@@ -24,6 +24,9 @@ defmodule Explorer.Backend.LazySeries do
     less_equal: 2,
     is_nil: 1,
     is_not_nil: 1,
+    is_finite: 1,
+    is_infinite: 1,
+    is_nan: 1,
     binary_and: 2,
     binary_or: 2,
     binary_in: 2,
@@ -101,6 +104,8 @@ defmodule Explorer.Backend.LazySeries do
 
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
   @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]
+
+  @float_predicates [:is_finite, :is_infinite, :is_nan]
 
   @doc false
   def new(op, args, aggregation \\ false) do
@@ -323,6 +328,15 @@ defmodule Explorer.Backend.LazySeries do
       data = new(unquote(op), args, false)
 
       Backend.Series.new(data, series.dtype)
+    end
+  end
+
+  for predicate <- @float_predicates do
+    @impl true
+    def unquote(predicate)(%Series{} = series) do
+      data = new(unquote(predicate), [lazy_series!(series)])
+
+      Backend.Series.new(data, :boolean)
     end
   end
 

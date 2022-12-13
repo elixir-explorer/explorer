@@ -92,6 +92,11 @@ defmodule Explorer.Backend.Series do
   @callback binary_or(s, s) :: s
   @callback binary_in(s, s) :: s
 
+  # Float predicates
+  @callback is_finite(s) :: s
+  @callback is_infinite(s) :: s
+  @callback is_nan(s) :: s
+
   # Coercion
 
   # Sort
