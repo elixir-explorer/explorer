@@ -52,6 +52,7 @@ features = [
   "temporal",
   "to_dummies",
   "is_in"
+  "strings",
 ]
 
 [dependencies.polars-ops]

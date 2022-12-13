@@ -2797,6 +2797,26 @@ defmodule Explorer.Series do
     do: Shared.apply_impl(series, :is_nan)
 
   def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:float])
+  # Strings
+
+  @doc """
+  Detects whether a string contains a RegEx pattern.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def", "bcd"])
+      iex> Explorer.Series.contains(s, "bc")
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, false, true]
+      >
+  """
+  @doc type: :element_wise
+  @spec contains(Series.t(), String.t()) :: Series.t()
+  def contains(%Series{dtype: :string} = series, pattern),
+    do: Shared.apply_impl(series, :contains, [pattern])
+
+  def contains(%Series{dtype: dtype}, _), do: dtype_error("contains/2", dtype, [:string])
 
   # Escape hatch
 

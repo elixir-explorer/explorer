@@ -427,6 +427,11 @@ defmodule Explorer.PolarsBackend.Series do
   def name(series), do: Shared.apply_series(series, :s_name)
   def rename(series, name), do: Shared.apply_series(series, :s_rename, [name])
 
+  # Strings
+
+  @impl true
+  def contains(series, pattern), do: Shared.apply_series(series, :s_contains, [pattern])
+
   # Helpers
 
   defp apply_scalar_on_rhs(fun_name, %Series{} = left, scalar) when is_atom(fun_name) do

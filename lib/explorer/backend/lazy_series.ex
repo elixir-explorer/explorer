@@ -79,7 +79,9 @@ defmodule Explorer.Backend.LazySeries do
     first: 1,
     last: 1,
     count: 1,
-    nil_count: 1
+    nil_count: 1,
+    # Strings
+    contains: 2
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -547,6 +549,13 @@ defmodule Explorer.Backend.LazySeries do
     However, keep in mind that in such cases you are loading the data into Elixir and
     serializing it back, which may be expensive for large datasets
     """
+  end
+
+  @impl true
+  def contains(series, value) do
+    data = new(:contains, [lazy_series!(series), value]) |> IO.inspect()
+
+    Backend.Series.new(data, :boolean)
   end
 
   @remaining_non_lazy_operations [

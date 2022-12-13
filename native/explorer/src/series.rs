@@ -838,3 +838,9 @@ pub fn s_not(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 
     Ok(ExSeries::new(s2))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_contains(data: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    Ok(ExSeries::new(s1.utf8()?.contains(pattern)?.into()))
+}

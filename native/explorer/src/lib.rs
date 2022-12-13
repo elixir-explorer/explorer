@@ -214,6 +214,7 @@ rustler::init!(
         s_cast,
         s_coalesce,
         s_concat,
+        s_contains,
         s_cumulative_max,
         s_cumulative_min,
         s_cumulative_sum,
