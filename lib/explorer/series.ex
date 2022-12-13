@@ -2750,7 +2750,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec is_finite(Series.t()) :: Series.t()
-  def is_finite(%Series{dtype: dtype} = series) when dtype == :float,
+  def is_finite(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :is_finite)
 
   def is_finite(%Series{dtype: dtype}), do: dtype_error("is_finite/1", dtype, [:float])
@@ -2771,7 +2771,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec is_infinite(Series.t()) :: Series.t()
-  def is_infinite(%Series{dtype: dtype} = series) when dtype == :float,
+  def is_infinite(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :is_infinite)
 
   def is_infinite(%Series{dtype: dtype}),
@@ -2793,7 +2793,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec is_nan(Series.t()) :: Series.t()
-  def is_nan(%Series{dtype: dtype} = series) when dtype == :float,
+  def is_nan(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :is_nan)
 
   def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:float])
