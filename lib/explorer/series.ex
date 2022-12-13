@@ -2732,6 +2732,72 @@ defmodule Explorer.Series do
   @spec is_not_nil(Series.t()) :: Series.t()
   def is_not_nil(series), do: Shared.apply_impl(series, :is_not_nil)
 
+  # Float predicates
+
+  @doc """
+  Returns a mask of finite values.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 0, nil])
+      iex> s2 = Explorer.Series.from_list([0, 2, 0, nil])
+      iex> s3 = Explorer.Series.divide(s1, s2)
+      iex> Explorer.Series.is_finite(s3)
+      #Explorer.Series<
+        Polars[4]
+        boolean [false, true, false, nil]
+      >
+  """
+  @doc type: :element_wise
+  @spec is_finite(Series.t()) :: Series.t()
+  def is_finite(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+    do: Shared.apply_impl(series, :is_finite)
+
+  def is_finite(%Series{dtype: dtype}), do: dtype_error("is_finite/1", dtype, [:integer, :float])
+
+  @doc """
+  Returns a mask of infinite values.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 0, nil])
+      iex> s2 = Explorer.Series.from_list([0, 2, 0, nil])
+      iex> s3 = Explorer.Series.divide(s1, s2)
+      iex> Explorer.Series.is_infinite(s3)
+      #Explorer.Series<
+        Polars[4]
+        boolean [true, false, false, nil]
+      >
+  """
+  @doc type: :element_wise
+  @spec is_infinite(Series.t()) :: Series.t()
+  def is_infinite(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+    do: Shared.apply_impl(series, :is_infinite)
+
+  def is_infinite(%Series{dtype: dtype}),
+    do: dtype_error("is_infinite/1", dtype, [:integer, :float])
+
+  @doc """
+  Returns a mask of infinite values.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 0, nil])
+      iex> s2 = Explorer.Series.from_list([0, 2, 0, nil])
+      iex> s3 = Explorer.Series.divide(s1, s2)
+      iex> Explorer.Series.is_nan(s3)
+      #Explorer.Series<
+        Polars[4]
+        boolean [false, false, true, nil]
+      >
+  """
+  @doc type: :element_wise
+  @spec is_nan(Series.t()) :: Series.t()
+  def is_nan(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+    do: Shared.apply_impl(series, :is_nan)
+
+  def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:integer, :float])
+
   # Escape hatch
 
   @doc """

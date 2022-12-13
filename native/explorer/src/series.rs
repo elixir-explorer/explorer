@@ -272,6 +272,24 @@ pub fn s_is_not_null(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_is_finite(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    Ok(ExSeries::new(s.is_finite()?.into_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_is_infinite(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    Ok(ExSeries::new(s.is_infinite()?.into_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_is_nan(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    Ok(ExSeries::new(s.is_nan()?.into_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_at_every(data: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s1 = s.take_every(n);

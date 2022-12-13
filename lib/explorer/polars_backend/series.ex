@@ -308,6 +308,17 @@ defmodule Explorer.PolarsBackend.Series do
   def binary_or(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_or, [right.data])
 
+  # Float predicates
+
+  @impl true
+  def is_finite(series), do: Shared.apply_series(series, :s_is_finite)
+
+  @impl true
+  def is_infinite(series), do: Shared.apply_series(series, :s_is_infinite)
+
+  @impl true
+  def is_nan(series), do: Shared.apply_series(series, :s_is_nan)
+
   # Sort
 
   @impl true
