@@ -145,6 +145,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_coalesce(_s, _other), do: err()
   def s_concat(_s, _other), do: err()
   def s_contains(_s, _pattern), do: err()
+  def s_contains_literal(_s, _pattern), do: err()
   def s_cumulative_max(_s, _reverse), do: err()
   def s_cumulative_min(_s, _reverse), do: err()
   def s_cumulative_sum(_s, _reverse), do: err()

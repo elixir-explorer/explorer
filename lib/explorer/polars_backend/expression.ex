@@ -79,7 +79,8 @@ defmodule Explorer.PolarsBackend.Expression do
     window_sum: 5,
 
     # Strings
-    contains: 2
+    contains: 2,
+    contains_literal: 2
   ]
 
   @custom_expressions [

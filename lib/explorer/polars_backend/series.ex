@@ -463,7 +463,12 @@ defmodule Explorer.PolarsBackend.Series do
   # Strings
 
   @impl true
-  def contains(series, pattern), do: Shared.apply_series(series, :s_contains, [pattern])
+  def contains(series, %Regex{source: pattern}),
+    do: Shared.apply_series(series, :s_contains, [pattern])
+
+  @impl true
+  def contains_literal(series, pattern),
+    do: Shared.apply_series(series, :s_contains_literal, [pattern])
 
   # Helpers
 

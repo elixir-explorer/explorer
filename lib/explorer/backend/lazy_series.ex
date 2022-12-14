@@ -81,7 +81,8 @@ defmodule Explorer.Backend.LazySeries do
     count: 1,
     nil_count: 1,
     # Strings
-    contains: 2
+    contains: 2,
+    contains_literal: 2
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]

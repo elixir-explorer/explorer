@@ -2800,7 +2800,7 @@ defmodule Explorer.Series do
   # Strings
 
   @doc """
-  Detects whether a string contains a RegEx pattern.
+  Detects whether a string contains a substring or a regular expression pattern.
 
   ## Examples
 
@@ -2810,12 +2810,22 @@ defmodule Explorer.Series do
         Polars[3]
         boolean [true, false, true]
       >
+
+      iex> s = Explorer.Series.from_list(["abc1", "def", "bcd"])
+      iex> Explorer.Series.contains(s, ~r/\\d/)
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, false, false]
+      >
   """
   @doc type: :element_wise
   @spec contains(Series.t(), String.t() | Regex.t()) :: Series.t()
   def contains(%Series{dtype: :string} = series, pattern)
       when K.or(K.is_binary(pattern), K.is_struct(pattern, Regex)),
       do: Shared.apply_impl(series, :contains, [pattern])
+
+  def contains(%Series{dtype: :string} = series, literal) when is_binary(literal),
+    do: Shared.apply_impl(series, :contains_literal, [literal])
 
   def contains(%Series{dtype: dtype}, _), do: dtype_error("contains/2", dtype, [:string])
 
