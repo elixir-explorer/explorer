@@ -153,6 +153,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_divide(_s, _other), do: err()
   def s_dtype(_s), do: err()
   def s_equal(_s, _rhs), do: err()
+  def s_extract(_s, _pattern, _group), do: err()
   def s_fill_missing(_s, _strategy), do: err()
   def s_fill_missing_with_boolean(_s, _value), do: err()
   def s_fill_missing_with_bin(_s, _value), do: err()

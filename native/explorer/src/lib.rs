@@ -199,6 +199,7 @@ rustler::init!(
         // string expressions
         expr_contains,
         expr_contains_literal,
+        expr_extract,
         expr_to_uppercase,
         expr_to_lowercase,
         expr_strip,
@@ -233,6 +234,7 @@ rustler::init!(
         s_divide,
         s_dtype,
         s_equal,
+        s_extract,
         s_fill_missing,
         s_fill_missing_with_bin,
         s_fill_missing_with_boolean,

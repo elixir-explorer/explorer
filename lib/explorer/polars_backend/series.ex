@@ -490,6 +490,10 @@ defmodule Explorer.PolarsBackend.Series do
   def trim_trailing(series),
     do: Shared.apply_series(series, :s_rstrip)
 
+  @impl true
+  def extract(series, %Regex{source: pattern}, group),
+    do: Shared.apply_series(series, :s_extract, [pattern, group])
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

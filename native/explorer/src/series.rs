@@ -885,3 +885,16 @@ pub fn s_rstrip(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     Ok(ExSeries::new(s1.utf8()?.replace(r#"[ \s]+$"#, "")?.into()))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_extract(
+    data: ExSeries,
+    pattern: &str,
+    group_index: usize,
+) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    // There are no eager strip functions.
+    Ok(ExSeries::new(
+        s1.utf8()?.extract(pattern, group_index)?.into(),
+    ))
+}

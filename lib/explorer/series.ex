@@ -2924,6 +2924,29 @@ defmodule Explorer.Series do
 
   def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
 
+  @doc """
+  Extracts the regular expression from the string.
+
+  Optionally takes a capture group index.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["Explorer the library", "is a really", "great library"])
+      iex> Explorer.Series.extract(s, ~r/^(\\w+)\\b/)
+      #Explorer.Series<
+        Polars[3]
+        string ["Explorer", "is", "great"]
+      >
+  """
+  @doc type: :element_wise
+  @spec extract(Series.t(), Regex.t(), pos_integer()) :: Series.t()
+  def extract(series, pattern, group \\ 0)
+
+  def extract(%Series{dtype: :string} = series, %Regex{} = pattern, group),
+    do: Shared.apply_impl(series, :extract, [pattern, group])
+
+  def extract(%Series{dtype: dtype}, _, _), do: dtype_error("extract/2", dtype, [:string])
+
   # Escape hatch
 
   @doc """

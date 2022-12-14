@@ -81,6 +81,7 @@ defmodule Explorer.PolarsBackend.Expression do
     # Strings
     contains: 2,
     contains_literal: 2,
+    extract: 3,
     lstrip: 1,
     rstrip: 1,
     strip: 1,

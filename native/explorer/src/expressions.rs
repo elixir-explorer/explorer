@@ -604,3 +604,9 @@ pub fn expr_rstrip(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
     ExExpr::new(expr.str().rstrip(None))
 }
+
+#[rustler::nif]
+pub fn expr_extract(expr: ExExpr, pattern: &str, group_index: usize) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().extract(pattern, group_index))
+}
