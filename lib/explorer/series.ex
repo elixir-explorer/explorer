@@ -2800,7 +2800,7 @@ defmodule Explorer.Series do
   # Strings
 
   @doc """
-  Detects whether a string contains a substring or a regular expression pattern.
+  Detects whether a string contains a substring.
 
   ## Examples
 
@@ -2810,22 +2810,12 @@ defmodule Explorer.Series do
         Polars[3]
         boolean [true, false, true]
       >
-
-      iex> s = Explorer.Series.from_list(["abc1", "def", "bcd"])
-      iex> Explorer.Series.contains(s, ~r/\\d/)
-      #Explorer.Series<
-        Polars[3]
-        boolean [true, false, false]
-      >
   """
   @doc type: :element_wise
   @spec contains(Series.t(), String.t() | Regex.t()) :: Series.t()
   def contains(%Series{dtype: :string} = series, pattern)
       when K.or(K.is_binary(pattern), K.is_struct(pattern, Regex)),
       do: Shared.apply_impl(series, :contains, [pattern])
-
-  def contains(%Series{dtype: :string} = series, literal) when is_binary(literal),
-    do: Shared.apply_impl(series, :contains_literal, [literal])
 
   def contains(%Series{dtype: dtype}, _), do: dtype_error("contains/2", dtype, [:string])
 
@@ -2923,29 +2913,6 @@ defmodule Explorer.Series do
     do: Shared.apply_impl(series, :trim_trailing)
 
   def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
-
-  @doc """
-  Extracts the regular expression from the string.
-
-  Optionally takes a capture group index.
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list(["Explorer the library", "is a really", "great library"])
-      iex> Explorer.Series.extract(s, ~r/^(\\w+)\\b/)
-      #Explorer.Series<
-        Polars[3]
-        string ["Explorer", "is", "great"]
-      >
-  """
-  @doc type: :element_wise
-  @spec extract(Series.t(), Regex.t(), pos_integer()) :: Series.t()
-  def extract(series, pattern, group \\ 0)
-
-  def extract(%Series{dtype: :string} = series, %Regex{} = pattern, group),
-    do: Shared.apply_impl(series, :extract, [pattern, group])
-
-  def extract(%Series{dtype: dtype}, _, _), do: dtype_error("extract/2", dtype, [:string])
 
   # Escape hatch
 

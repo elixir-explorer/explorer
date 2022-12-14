@@ -82,13 +82,11 @@ defmodule Explorer.Backend.LazySeries do
     nil_count: 1,
     # Strings
     contains: 2,
-    contains_literal: 2,
-    extract: 3,
-    lstrip: 1,
-    rstrip: 1,
-    strip: 1,
-    to_lowercase: 1,
-    to_uppercase: 1
+    trim_leading: 1,
+    trim_trailing: 1,
+    trim: 1,
+    upcase: 1,
+    downcase: 1
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -559,56 +557,43 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def contains(series, %Regex{source: pattern}) do
+  def contains(series, pattern) do
     data = new(:contains, [lazy_series!(series), pattern])
-
-    Backend.Series.new(data, :boolean)
-  end
-
-  def contains(series, pattern) when is_binary(pattern) do
-    data = new(:contains_literal, [lazy_series!(series), pattern])
 
     Backend.Series.new(data, :boolean)
   end
 
   @impl true
   def upcase(series) do
-    data = new(:to_uppercase, [lazy_series!(series)])
+    data = new(:upcase, [lazy_series!(series)])
 
     Backend.Series.new(data, :string)
   end
 
   @impl true
   def downcase(series) do
-    data = new(:to_lowercase, [lazy_series!(series)])
+    data = new(:downcase, [lazy_series!(series)])
 
     Backend.Series.new(data, :string)
   end
 
   @impl true
   def trim(series) do
-    data = new(:strip, [lazy_series!(series)])
+    data = new(:trim, [lazy_series!(series)])
 
     Backend.Series.new(data, :string)
   end
 
   @impl true
   def trim_leading(series) do
-    data = new(:lstrip, [lazy_series!(series)])
+    data = new(:trim_leading, [lazy_series!(series)])
 
     Backend.Series.new(data, :string)
   end
 
   @impl true
   def trim_trailing(series) do
-    data = new(:rstrip, [lazy_series!(series)])
-
-    Backend.Series.new(data, :string)
-  end
-
-  @impl true
-  def extract(series, pattern, group) do
-    data = new(:extract, [lazy_series!(series), pattern, group])
+    data = new(:trim_trailing, [lazy_series!(series)])
 
     Backend.Series.new(data, :string)
   end

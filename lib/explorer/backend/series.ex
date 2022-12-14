@@ -143,13 +143,12 @@ defmodule Explorer.Backend.Series do
 
   # Strings
 
-  @callback contains(s, String.t() | Regex.t()) :: s
+  @callback contains(s, String.t()) :: s
   @callback upcase(s) :: s
   @callback downcase(s) :: s
   @callback trim(s) :: s
   @callback trim_leading(s) :: s
   @callback trim_trailing(s) :: s
-  @callback extract(s, Regex.t(), pos_integer()) :: s
 
   # Functions
 

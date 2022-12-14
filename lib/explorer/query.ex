@@ -76,8 +76,6 @@ defmodule Explorer.Query do
     sigil_C: 2,
     sigil_D: 2,
     sigil_N: 2,
-    sigil_r: 2,
-    sigil_R: 2,
     sigil_s: 2,
     sigil_S: 2,
     sigil_w: 2,

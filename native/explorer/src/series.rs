@@ -846,25 +846,19 @@ pub fn s_contains(data: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerErr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_contains_literal(data: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
-    let s1: &Series = &data.resource.0;
-    Ok(ExSeries::new(s1.utf8()?.contains_literal(pattern)?.into()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_to_uppercase(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_upcase(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1: &Series = &data.resource.0;
     Ok(ExSeries::new(s1.utf8()?.to_uppercase().into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_to_lowercase(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_downcase(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1: &Series = &data.resource.0;
     Ok(ExSeries::new(s1.utf8()?.to_lowercase().into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_strip(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_trim(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1: &Series = &data.resource.0;
     // There are no eager strip functions.
     Ok(ExSeries::new(
@@ -873,28 +867,15 @@ pub fn s_strip(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_lstrip(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_trim_leading(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1: &Series = &data.resource.0;
     // There are no eager strip functions.
     Ok(ExSeries::new(s1.utf8()?.replace(r#"^[ \s]+"#, "")?.into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_rstrip(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_trim_trailing(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1: &Series = &data.resource.0;
     // There are no eager strip functions.
     Ok(ExSeries::new(s1.utf8()?.replace(r#"[ \s]+$"#, "")?.into()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_extract(
-    data: ExSeries,
-    pattern: &str,
-    group_index: usize,
-) -> Result<ExSeries, ExplorerError> {
-    let s1: &Series = &data.resource.0;
-    // There are no eager strip functions.
-    Ok(ExSeries::new(
-        s1.utf8()?.extract(pattern, group_index)?.into(),
-    ))
 }
