@@ -81,6 +81,9 @@ defmodule Explorer.PolarsBackend.Expression do
     # Strings
     contains: 2,
     contains_literal: 2,
+    lstrip: 1,
+    rstrip: 1,
+    strip: 1,
     to_lowercase: 1,
     to_uppercase: 1
   ]

@@ -862,3 +862,26 @@ pub fn s_to_lowercase(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1: &Series = &data.resource.0;
     Ok(ExSeries::new(s1.utf8()?.to_lowercase().into()))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_strip(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    // There are no eager strip functions.
+    Ok(ExSeries::new(
+        s1.utf8()?.replace(r#"^[ \s]+|[ \s]+$"#, "")?.into(),
+    ))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_lstrip(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    // There are no eager strip functions.
+    Ok(ExSeries::new(s1.utf8()?.replace(r#"^[ \s]+"#, "")?.into()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_rstrip(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    // There are no eager strip functions.
+    Ok(ExSeries::new(s1.utf8()?.replace(r#"[ \s]+$"#, "")?.into()))
+}

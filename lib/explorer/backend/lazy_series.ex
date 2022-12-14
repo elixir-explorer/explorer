@@ -83,6 +83,9 @@ defmodule Explorer.Backend.LazySeries do
     # Strings
     contains: 2,
     contains_literal: 2,
+    lstrip: 1,
+    rstrip: 1,
+    strip: 1,
     to_lowercase: 1,
     to_uppercase: 1
   ]
@@ -619,6 +622,27 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def downcase(series) do
     data = new(:to_lowercase, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def trim(series) do
+    data = new(:strip, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def trim_leading(series) do
+    data = new(:lstrip, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def trim_trailing(series) do
+    data = new(:rstrip, [lazy_series!(series)])
 
     Backend.Series.new(data, :string)
   end

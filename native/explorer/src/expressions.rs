@@ -586,3 +586,21 @@ pub fn expr_to_lowercase(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
     ExExpr::new(expr.str().to_lowercase())
 }
+
+#[rustler::nif]
+pub fn expr_strip(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().strip(None))
+}
+
+#[rustler::nif]
+pub fn expr_lstrip(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().lstrip(None))
+}
+
+#[rustler::nif]
+pub fn expr_rstrip(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().rstrip(None))
+}

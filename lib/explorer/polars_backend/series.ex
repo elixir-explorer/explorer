@@ -478,6 +478,18 @@ defmodule Explorer.PolarsBackend.Series do
   def downcase(series),
     do: Shared.apply_series(series, :s_to_lowercase)
 
+  @impl true
+  def trim(series),
+    do: Shared.apply_series(series, :s_strip)
+
+  @impl true
+  def trim_leading(series),
+    do: Shared.apply_series(series, :s_lstrip)
+
+  @impl true
+  def trim_trailing(series),
+    do: Shared.apply_series(series, :s_rstrip)
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

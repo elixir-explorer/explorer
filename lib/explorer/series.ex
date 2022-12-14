@@ -2867,6 +2867,63 @@ defmodule Explorer.Series do
 
   def downcase(%Series{dtype: dtype}), do: dtype_error("downcase/1", dtype, [:string])
 
+  @doc """
+  Returns a string where all leading and trailing Unicode whitespaces have been removed.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd"])
+      iex> Explorer.Series.trim(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["abc", "def", "bcd"]
+      >
+  """
+  @doc type: :element_wise
+  @spec trim(Series.t()) :: Series.t()
+  def trim(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :trim)
+
+  def trim(%Series{dtype: dtype}), do: dtype_error("trim/1", dtype, [:string])
+
+  @doc """
+  Returns a string where all leading Unicode whitespaces have been removed.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd"])
+      iex> Explorer.Series.trim_leading(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["abc", "def  ", "bcd"]
+      >
+  """
+  @doc type: :element_wise
+  @spec trim_leading(Series.t()) :: Series.t()
+  def trim_leading(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :trim_leading)
+
+  def trim_leading(%Series{dtype: dtype}), do: dtype_error("trim_leading/1", dtype, [:string])
+
+  @doc """
+  Returns a string where all trailing Unicode whitespaces have been removed.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd"])
+      iex> Explorer.Series.trim_trailing(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["  abc", "def", "  bcd"]
+      >
+  """
+  @doc type: :element_wise
+  @spec trim_trailing(Series.t()) :: Series.t()
+  def trim_trailing(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :trim_trailing)
+
+  def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
+
   # Escape hatch
 
   @doc """
