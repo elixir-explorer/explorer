@@ -574,3 +574,15 @@ pub fn expr_contains(expr: ExExpr, pattern: &str) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
     ExExpr::new(expr.str().contains(pattern))
 }
+
+#[rustler::nif]
+pub fn expr_to_uppercase(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().to_uppercase())
+}
+
+#[rustler::nif]
+pub fn expr_to_lowercase(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().to_lowercase())
+}

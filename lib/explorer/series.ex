@@ -2829,6 +2829,44 @@ defmodule Explorer.Series do
 
   def contains(%Series{dtype: dtype}, _), do: dtype_error("contains/2", dtype, [:string])
 
+  @doc """
+  Converts all characters to uppercase.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def", "bcd"])
+      iex> Explorer.Series.upcase(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["ABC", "DEF", "BCD"]
+      >
+  """
+  @doc type: :element_wise
+  @spec upcase(Series.t()) :: Series.t()
+  def upcase(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :upcase)
+
+  def upcase(%Series{dtype: dtype}), do: dtype_error("upcase/1", dtype, [:string])
+
+  @doc """
+  Converts all characters to lowercase.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["ABC", "DEF", "BCD"])
+      iex> Explorer.Series.downcase(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["abc", "def", "bcd"]
+      >
+  """
+  @doc type: :element_wise
+  @spec downcase(Series.t()) :: Series.t()
+  def downcase(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :downcase)
+
+  def downcase(%Series{dtype: dtype}), do: dtype_error("downcase/1", dtype, [:string])
+
   # Escape hatch
 
   @doc """

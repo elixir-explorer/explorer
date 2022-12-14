@@ -470,6 +470,19 @@ defmodule Explorer.PolarsBackend.Series do
   def contains_literal(series, pattern),
     do: Shared.apply_series(series, :s_contains_literal, [pattern])
 
+  @impl true
+  def upcase(series),
+    do: Shared.apply_series(series, :s_to_uppercase)
+
+  @impl true
+  def downcase(series),
+    do: Shared.apply_series(series, :s_to_lowercase)
+
+  # Polars specific functions
+
+  def name(series), do: Shared.apply_series(series, :s_name)
+  def rename(series, name), do: Shared.apply_series(series, :s_rename, [name])
+
   # Helpers
 
   defp apply_scalar_on_rhs(fun_name, %Series{} = left, scalar) when is_atom(fun_name) do

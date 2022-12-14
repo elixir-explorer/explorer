@@ -80,7 +80,9 @@ defmodule Explorer.PolarsBackend.Expression do
 
     # Strings
     contains: 2,
-    contains_literal: 2
+    contains_literal: 2,
+    to_lowercase: 1,
+    to_uppercase: 1
   ]
 
   @custom_expressions [

@@ -82,7 +82,9 @@ defmodule Explorer.Backend.LazySeries do
     nil_count: 1,
     # Strings
     contains: 2,
-    contains_literal: 2
+    contains_literal: 2,
+    to_lowercase: 1,
+    to_uppercase: 1
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -603,6 +605,20 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def extract(series, pattern, group) do
     data = new(:extract, [lazy_series!(series), pattern, group])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def upcase(series) do
+    data = new(:to_uppercase, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def downcase(series) do
+    data = new(:to_lowercase, [lazy_series!(series)])
 
     Backend.Series.new(data, :string)
   end

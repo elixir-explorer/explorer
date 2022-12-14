@@ -124,8 +124,6 @@ rustler::init!(
         expr_boolean,
         expr_cast,
         expr_column,
-        expr_contains,
-        expr_contains_literal,
         expr_date,
         expr_datetime,
         expr_fill_missing,
@@ -198,6 +196,11 @@ rustler::init!(
         expr_window_sum,
         // inspect expressions
         expr_describe_filter_plan,
+        // string expressions
+        expr_contains,
+        expr_contains_literal,
+        expr_to_uppercase,
+        expr_to_lowercase,
         // lazyframe
         lf_collect,
         lf_describe_plan,
@@ -218,6 +221,8 @@ rustler::init!(
         s_concat,
         s_contains,
         s_contains_literal,
+        s_to_uppercase,
+        s_to_lowercase,
         s_cumulative_max,
         s_cumulative_min,
         s_cumulative_sum,
