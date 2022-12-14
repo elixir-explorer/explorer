@@ -460,45 +460,6 @@ defmodule Explorer.PolarsBackend.Series do
   def name(series), do: Shared.apply_series(series, :s_name)
   def rename(series, name), do: Shared.apply_series(series, :s_rename, [name])
 
-  # Strings
-
-  @impl true
-  def contains(series, %Regex{source: pattern}),
-    do: Shared.apply_series(series, :s_contains, [pattern])
-
-  @impl true
-  def contains_literal(series, pattern),
-    do: Shared.apply_series(series, :s_contains_literal, [pattern])
-
-  @impl true
-  def upcase(series),
-    do: Shared.apply_series(series, :s_to_uppercase)
-
-  @impl true
-  def downcase(series),
-    do: Shared.apply_series(series, :s_to_lowercase)
-
-  @impl true
-  def trim(series),
-    do: Shared.apply_series(series, :s_strip)
-
-  @impl true
-  def trim_leading(series),
-    do: Shared.apply_series(series, :s_lstrip)
-
-  @impl true
-  def trim_trailing(series),
-    do: Shared.apply_series(series, :s_rstrip)
-
-  @impl true
-  def extract(series, %Regex{source: pattern}, group),
-    do: Shared.apply_series(series, :s_extract, [pattern, group])
-
-  # Polars specific functions
-
-  def name(series), do: Shared.apply_series(series, :s_name)
-  def rename(series, name), do: Shared.apply_series(series, :s_rename, [name])
-
   # Helpers
 
   defp apply_scalar_on_rhs(fun_name, %Series{} = left, scalar) when is_atom(fun_name) do

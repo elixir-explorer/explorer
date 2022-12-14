@@ -613,48 +613,6 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, :string)
   end
 
-  @impl true
-  def upcase(series) do
-    data = new(:to_uppercase, [lazy_series!(series)])
-
-    Backend.Series.new(data, :string)
-  end
-
-  @impl true
-  def downcase(series) do
-    data = new(:to_lowercase, [lazy_series!(series)])
-
-    Backend.Series.new(data, :string)
-  end
-
-  @impl true
-  def trim(series) do
-    data = new(:strip, [lazy_series!(series)])
-
-    Backend.Series.new(data, :string)
-  end
-
-  @impl true
-  def trim_leading(series) do
-    data = new(:lstrip, [lazy_series!(series)])
-
-    Backend.Series.new(data, :string)
-  end
-
-  @impl true
-  def trim_trailing(series) do
-    data = new(:rstrip, [lazy_series!(series)])
-
-    Backend.Series.new(data, :string)
-  end
-
-  @impl true
-  def extract(series, pattern, group) do
-    data = new(:rstrip, [lazy_series!(series), pattern, group])
-
-    Backend.Series.new(data, :string)
-  end
-
   @remaining_non_lazy_operations [
     at: 2,
     at_every: 2,
