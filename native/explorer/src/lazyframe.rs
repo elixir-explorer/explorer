@@ -1,7 +1,9 @@
+use crate::{ExDataFrame, ExLazyFrame, ExplorerError};
 use polars::prelude::*;
 use std::result::Result;
 
-use crate::{ExDataFrame, ExLazyFrame, ExplorerError};
+// Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
+pub mod io;
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn lf_collect(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {

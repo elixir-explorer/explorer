@@ -66,7 +66,7 @@ pub fn df_from_csv(
     Ok(ExDataFrame::new(df))
 }
 
-fn schema_from_dtypes_pairs(dtypes: Vec<(&str, &str)>) -> Result<Schema, ExplorerError> {
+pub fn schema_from_dtypes_pairs(dtypes: Vec<(&str, &str)>) -> Result<Schema, ExplorerError> {
     let mut schema = Schema::new();
     for (name, dtype_str) in dtypes {
         let dtype = dtype_from_str(dtype_str)?;

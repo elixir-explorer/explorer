@@ -100,4 +100,49 @@ defmodule Explorer.DataFrame.LazyTest do
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >)
   end
+
+  @tag :tmp_dir
+  test "from_csv/2 - with defaults", %{df: df, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.csv"])
+    df = DF.slice(df, 0, 10)
+    DF.to_csv!(df, path)
+
+    ldf = DF.from_csv!(path, lazy: true)
+
+    # no-op 
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
+
+  @tag :tmp_dir
+  test "from_csv/2 - passing columns", %{df: df, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.csv"])
+    df = DF.slice(df, 0, 10)
+    DF.to_csv!(df, path)
+
+    assert_raise ArgumentError,
+                 "`columns` is not supported by Polars' lazy backend. Consider using `select/2` after reading the CSV",
+                 fn ->
+                   DF.from_csv!(path, lazy: true, columns: ["country", "year", "total"])
+                 end
+  end
+
+  @tag :tmp_dir
+  test "from_parquet/2 - with defaults", %{df: df, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.parquet"])
+    df = DF.slice(df, 0, 10)
+    DF.to_parquet!(df, path)
+
+    ldf = DF.from_parquet!(path, lazy: true)
+
+    # no-op 
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
 end

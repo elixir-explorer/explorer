@@ -30,6 +30,7 @@ pub use datatypes::{
 };
 pub use error::ExplorerError;
 use expressions::*;
+use lazyframe::io::*;
 use lazyframe::*;
 use series::*;
 
@@ -214,6 +215,10 @@ rustler::init!(
         lf_select,
         lf_tail,
         lf_slice,
+        lf_from_csv,
+        lf_from_ipc,
+        lf_from_parquet,
+        lf_from_ndjson,
         // series
         s_add,
         s_and,
