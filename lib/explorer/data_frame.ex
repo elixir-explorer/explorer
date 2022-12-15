@@ -394,6 +394,8 @@ defmodule Explorer.DataFrame do
   @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_csv(filename, opts \\ []) do
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+
     opts =
       Keyword.validate!(opts,
         delimiter: ",",
@@ -408,7 +410,7 @@ defmodule Explorer.DataFrame do
         parse_dates: false
       )
 
-    backend = backend_from_options!(opts)
+    backend = backend_from_options!(backend_opts)
 
     backend.from_csv(
       filename,
@@ -459,6 +461,8 @@ defmodule Explorer.DataFrame do
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def load_csv(contents, opts \\ []) do
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+
     opts =
       Keyword.validate!(opts,
         delimiter: ",",
@@ -473,7 +477,7 @@ defmodule Explorer.DataFrame do
         parse_dates: false
       )
 
-    backend = backend_from_options!(opts)
+    backend = backend_from_options!(backend_opts)
 
     backend.load_csv(
       contents,
@@ -660,12 +664,14 @@ defmodule Explorer.DataFrame do
   @spec from_ipc(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc(filename, opts \\ []) do
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+
     opts =
       Keyword.validate!(opts,
         columns: nil
       )
 
-    backend = backend_from_options!(opts)
+    backend = backend_from_options!(backend_opts)
 
     backend.from_ipc(
       filename,
@@ -780,12 +786,14 @@ defmodule Explorer.DataFrame do
   @spec load_ipc(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def load_ipc(contents, opts \\ []) do
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+
     opts =
       Keyword.validate!(opts,
         columns: nil
       )
 
-    backend = backend_from_options!(opts)
+    backend = backend_from_options!(backend_opts)
 
     backend.load_ipc(
       contents,
@@ -815,8 +823,10 @@ defmodule Explorer.DataFrame do
   @doc type: :io
   @spec from_ipc_stream(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc_stream(filename, opts \\ []) do
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+
     opts = Keyword.validate!(opts, columns: nil)
-    backend = backend_from_options!(opts)
+    backend = backend_from_options!(backend_opts)
 
     backend.from_ipc_stream(filename, to_columns_for_io(opts[:columns]))
   end
@@ -909,12 +919,14 @@ defmodule Explorer.DataFrame do
   @spec load_ipc_stream(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def load_ipc_stream(contents, opts \\ []) do
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+
     opts =
       Keyword.validate!(opts,
         columns: nil
       )
 
-    backend = backend_from_options!(opts)
+    backend = backend_from_options!(backend_opts)
 
     backend.load_ipc_stream(
       contents,
@@ -1012,13 +1024,15 @@ defmodule Explorer.DataFrame do
   @spec from_ndjson(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_ndjson(filename, opts \\ []) do
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+
     opts =
       Keyword.validate!(opts,
         batch_size: 1000,
         infer_schema_length: @default_infer_schema_length
       )
 
-    backend = backend_from_options!(opts)
+    backend = backend_from_options!(backend_opts)
 
     backend.from_ndjson(
       filename,
@@ -1100,13 +1114,15 @@ defmodule Explorer.DataFrame do
   @spec load_ndjson(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def load_ndjson(contents, opts \\ []) do
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+
     opts =
       Keyword.validate!(opts,
         batch_size: 1000,
         infer_schema_length: @default_infer_schema_length
       )
 
-    backend = backend_from_options!(opts)
+    backend = backend_from_options!(backend_opts)
 
     backend.load_ndjson(
       contents,
@@ -4423,7 +4439,12 @@ defmodule Explorer.DataFrame do
 
   defp backend_from_options!(opts) do
     backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
-    :"#{backend}.DataFrame"
+
+    if opts[:lazy] do
+      :"#{backend}.LazyFrame"
+    else
+      :"#{backend}.DataFrame"
+    end
   end
 
   defp maybe_raise_column_not_found(df, name) do
