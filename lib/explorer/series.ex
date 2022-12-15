@@ -2797,6 +2797,122 @@ defmodule Explorer.Series do
     do: Shared.apply_impl(series, :is_nan)
 
   def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:float])
+  # Strings
+
+  @doc """
+  Detects whether a string contains a substring.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def", "bcd"])
+      iex> Explorer.Series.contains(s, "bc")
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, false, true]
+      >
+  """
+  @doc type: :element_wise
+  @spec contains(Series.t(), String.t() | Regex.t()) :: Series.t()
+  def contains(%Series{dtype: :string} = series, pattern)
+      when K.or(K.is_binary(pattern), K.is_struct(pattern, Regex)),
+      do: Shared.apply_impl(series, :contains, [pattern])
+
+  def contains(%Series{dtype: dtype}, _), do: dtype_error("contains/2", dtype, [:string])
+
+  @doc """
+  Converts all characters to uppercase.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def", "bcd"])
+      iex> Explorer.Series.upcase(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["ABC", "DEF", "BCD"]
+      >
+  """
+  @doc type: :element_wise
+  @spec upcase(Series.t()) :: Series.t()
+  def upcase(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :upcase)
+
+  def upcase(%Series{dtype: dtype}), do: dtype_error("upcase/1", dtype, [:string])
+
+  @doc """
+  Converts all characters to lowercase.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["ABC", "DEF", "BCD"])
+      iex> Explorer.Series.downcase(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["abc", "def", "bcd"]
+      >
+  """
+  @doc type: :element_wise
+  @spec downcase(Series.t()) :: Series.t()
+  def downcase(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :downcase)
+
+  def downcase(%Series{dtype: dtype}), do: dtype_error("downcase/1", dtype, [:string])
+
+  @doc """
+  Returns a string where all leading and trailing Unicode whitespaces have been removed.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd"])
+      iex> Explorer.Series.trim(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["abc", "def", "bcd"]
+      >
+  """
+  @doc type: :element_wise
+  @spec trim(Series.t()) :: Series.t()
+  def trim(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :trim)
+
+  def trim(%Series{dtype: dtype}), do: dtype_error("trim/1", dtype, [:string])
+
+  @doc """
+  Returns a string where all leading Unicode whitespaces have been removed.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd"])
+      iex> Explorer.Series.trim_leading(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["abc", "def  ", "bcd"]
+      >
+  """
+  @doc type: :element_wise
+  @spec trim_leading(Series.t()) :: Series.t()
+  def trim_leading(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :trim_leading)
+
+  def trim_leading(%Series{dtype: dtype}), do: dtype_error("trim_leading/1", dtype, [:string])
+
+  @doc """
+  Returns a string where all trailing Unicode whitespaces have been removed.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd"])
+      iex> Explorer.Series.trim_trailing(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["  abc", "def", "  bcd"]
+      >
+  """
+  @doc type: :element_wise
+  @spec trim_trailing(Series.t()) :: Series.t()
+  def trim_trailing(%Series{dtype: :string} = series),
+    do: Shared.apply_impl(series, :trim_trailing)
+
+  def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
 
   # Escape hatch
 

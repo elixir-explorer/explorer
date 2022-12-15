@@ -79,7 +79,14 @@ defmodule Explorer.Backend.LazySeries do
     first: 1,
     last: 1,
     count: 1,
-    nil_count: 1
+    nil_count: 1,
+    # Strings
+    contains: 2,
+    trim_leading: 1,
+    trim_trailing: 1,
+    trim: 1,
+    upcase: 1,
+    downcase: 1
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -547,6 +554,48 @@ defmodule Explorer.Backend.LazySeries do
     However, keep in mind that in such cases you are loading the data into Elixir and
     serializing it back, which may be expensive for large datasets
     """
+  end
+
+  @impl true
+  def contains(series, pattern) do
+    data = new(:contains, [lazy_series!(series), pattern])
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def upcase(series) do
+    data = new(:upcase, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def downcase(series) do
+    data = new(:downcase, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def trim(series) do
+    data = new(:trim, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def trim_leading(series) do
+    data = new(:trim_leading, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def trim_trailing(series) do
+    data = new(:trim_trailing, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
   end
 
   @remaining_non_lazy_operations [

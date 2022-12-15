@@ -29,8 +29,8 @@
           buildInputs = with pkgs; [
             act
             clang
-            elixir
-            erlang
+            beam.packages.erlangR25.elixir_1_14
+            erlangR25
             gdb
             libiconv
             openssl

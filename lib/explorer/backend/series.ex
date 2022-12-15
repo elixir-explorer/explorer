@@ -141,6 +141,15 @@ defmodule Explorer.Backend.Series do
 
   @callback unary_not(s) :: s
 
+  # Strings
+
+  @callback contains(s, String.t()) :: s
+  @callback upcase(s) :: s
+  @callback downcase(s) :: s
+  @callback trim(s) :: s
+  @callback trim_leading(s) :: s
+  @callback trim_trailing(s) :: s
+
   # Functions
 
   @doc """

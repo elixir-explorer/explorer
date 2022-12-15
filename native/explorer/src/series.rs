@@ -838,3 +838,44 @@ pub fn s_not(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 
     Ok(ExSeries::new(s2))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_contains(data: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    Ok(ExSeries::new(s1.utf8()?.contains(pattern)?.into()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_upcase(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    Ok(ExSeries::new(s1.utf8()?.to_uppercase().into()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_downcase(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    Ok(ExSeries::new(s1.utf8()?.to_lowercase().into()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_trim(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    // There are no eager strip functions.
+    Ok(ExSeries::new(
+        s1.utf8()?.replace(r#"^[ \s]+|[ \s]+$"#, "")?.into(),
+    ))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_trim_leading(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    // There are no eager strip functions.
+    Ok(ExSeries::new(s1.utf8()?.replace(r#"^[ \s]+"#, "")?.into()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_trim_trailing(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1: &Series = &data.resource.0;
+    // There are no eager strip functions.
+    Ok(ExSeries::new(s1.utf8()?.replace(r#"[ \s]+$"#, "")?.into()))
+}

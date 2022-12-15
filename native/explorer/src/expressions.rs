@@ -562,3 +562,39 @@ pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
     let expressions: Expr = expr.resource.0.clone();
     df.lazy().filter(expressions).describe_plan()
 }
+
+#[rustler::nif]
+pub fn expr_contains(expr: ExExpr, pattern: &str) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().contains(pattern))
+}
+
+#[rustler::nif]
+pub fn expr_upcase(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().to_uppercase())
+}
+
+#[rustler::nif]
+pub fn expr_downcase(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().to_lowercase())
+}
+
+#[rustler::nif]
+pub fn expr_trim(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().strip(None))
+}
+
+#[rustler::nif]
+pub fn expr_trim_leading(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().lstrip(None))
+}
+
+#[rustler::nif]
+pub fn expr_trim_trailing(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.str().rstrip(None))
+}
