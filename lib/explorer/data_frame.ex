@@ -549,7 +549,8 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :io
-  @spec to_parquet(df :: DataFrame.t(), filename :: String.t()) :: :ok | {:error, term()}
+  @spec to_parquet(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
+          :ok | {:error, term()}
   def to_parquet(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
     compression = parquet_compression(opts[:compression])
@@ -1063,9 +1064,22 @@ defmodule Explorer.DataFrame do
   They are often used as structured logs.
   """
   @doc type: :io
-  @spec to_ndjson(df :: DataFrame.t(), filename :: String.t()) :: :ok | {:error, term()}
-  def to_ndjson(df, filename) do
+  @spec to_ndjson(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
+          :ok | {:error, term()}
+  def to_ndjson(df, filename, _opts \\ []) do
     Shared.apply_impl(df, :to_ndjson, [filename])
+  end
+
+  @doc """
+  Similar to `to_ndjson/3`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec to_ndjson!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
+  def to_ndjson!(df, filename, opts \\ []) do
+    case to_ndjson(df, filename, opts) do
+      :ok -> :ok
+      {:error, error} -> raise "to_ndjson failed: #{inspect(error)}"
+    end
   end
 
   @doc """

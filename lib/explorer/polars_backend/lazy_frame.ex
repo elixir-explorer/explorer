@@ -3,6 +3,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Shared
+  alias Explorer.PolarsBackend.DataFrame, as: Eager
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
@@ -103,6 +104,84 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def from_parquet(filename) do
     case Native.lf_from_parquet(filename) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def from_ndjson(filename, infer_schema_length, batch_size) do
+    case Native.lf_from_ndjson(filename, infer_schema_length, batch_size) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def from_ipc(filename, columns) do
+    if columns do
+      raise ArgumentError,
+            "`columns` is not supported by Polars' lazy backend. " <>
+              "Consider using `select/2` after reading the IPC file"
+    end
+
+    case Native.lf_from_ipc(filename) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def load_csv(
+        contents,
+        dtypes,
+        delimiter,
+        null_character,
+        skip_rows,
+        header?,
+        encoding,
+        max_rows,
+        columns,
+        infer_schema_length,
+        parse_dates
+      ) do
+    case Eager.load_csv(
+           contents,
+           dtypes,
+           delimiter,
+           null_character,
+           skip_rows,
+           header?,
+           encoding,
+           max_rows,
+           columns,
+           infer_schema_length,
+           parse_dates
+         ) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def load_parquet(contents) do
+    case Eager.load_parquet(contents) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def load_ndjson(contents, infer_schema_length, batch_size) do
+    case Eager.load_ndjson(contents, infer_schema_length, batch_size) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def load_ipc(contents, columns) do
+    case Eager.load_ipc(contents, columns) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
       {:error, error} -> {:error, error}
     end
   end

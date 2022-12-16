@@ -145,4 +145,105 @@ defmodule Explorer.DataFrame.LazyTest do
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
+
+  @tag :tmp_dir
+  test "from_ndjson/2 - with defaults", %{df: df, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.ndjson"])
+    df = DF.slice(df, 0, 10)
+    DF.to_ndjson!(df, path)
+
+    ldf = DF.from_ndjson!(path, lazy: true)
+
+    # no-op 
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
+
+  @tag :tmp_dir
+  test "from_ipc/2 - with defaults", %{df: df, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.ipc"])
+    df = DF.slice(df, 0, 10)
+    DF.to_ipc!(df, path)
+
+    ldf = DF.from_ipc!(path, lazy: true)
+
+    # no-op 
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
+
+  @tag :tmp_dir
+  test "from_ipc/2 - passing columns", %{df: df, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.ipc"])
+    df = DF.slice(df, 0, 10)
+    DF.to_ipc!(df, path)
+
+    assert_raise ArgumentError,
+                 "`columns` is not supported by Polars' lazy backend. Consider using `select/2` after reading the IPC file",
+                 fn ->
+                   DF.from_ipc!(path, lazy: true, columns: ["country", "year", "total"])
+                 end
+  end
+
+  test "load_csv/2 - with defaults", %{df: df} do
+    df = DF.slice(df, 0, 10)
+    contents = DF.dump_csv!(df)
+
+    ldf = DF.load_csv!(contents, lazy: true)
+
+    # no-op 
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
+
+  test "load_parquet/2 - with defaults", %{df: df} do
+    df = DF.slice(df, 0, 10)
+    contents = DF.dump_parquet!(df)
+
+    ldf = DF.load_parquet!(contents, lazy: true)
+
+    # no-op 
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
+
+  test "load_ndjson/2 - with defaults", %{df: df} do
+    df = DF.slice(df, 0, 10)
+    contents = DF.dump_ndjson!(df)
+
+    ldf = DF.load_ndjson!(contents, lazy: true)
+
+    # no-op 
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
+
+  test "load_ipc/2 - with defaults", %{df: df} do
+    df = DF.slice(df, 0, 10)
+    contents = DF.dump_ipc!(df)
+
+    ldf = DF.load_ipc!(contents, lazy: true)
+
+    # no-op 
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
 end
