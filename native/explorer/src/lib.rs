@@ -213,6 +213,7 @@ rustler::init!(
         lf_names,
         lf_select,
         lf_tail,
+        lf_slice,
         // series
         s_add,
         s_and,

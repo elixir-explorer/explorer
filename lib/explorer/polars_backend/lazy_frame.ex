@@ -39,6 +39,9 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def select(ldf, out_ldf), do: Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
 
+  @impl true
+  def slice(ldf, offset, length), do: Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length])
+
   # Groups
 
   # TODO: Make the functions of non-implemented functions

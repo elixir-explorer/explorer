@@ -135,6 +135,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_names(_df), do: err()
   def lf_select(_df, _columns), do: err()
   def lf_tail(_df, _n_rows), do: err()
+  def lf_slice(_df, _offset, _length), do: err()
 
   # Series
   def s_add(_s, _other), do: err()

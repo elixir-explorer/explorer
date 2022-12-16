@@ -62,3 +62,9 @@ pub fn lf_drop(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, Exp
     let lf = &data.resource.0.clone().select(&[col("*").exclude(columns)]);
     Ok(ExLazyFrame::new(lf.clone()))
 }
+
+#[rustler::nif]
+pub fn lf_slice(data: ExLazyFrame, offset: i64, length: u32) -> Result<ExLazyFrame, ExplorerError> {
+    let lf = &data.resource.0.clone().slice(offset, length);
+    Ok(ExLazyFrame::new(lf.clone()))
+}
