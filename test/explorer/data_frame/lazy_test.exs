@@ -48,6 +48,22 @@ defmodule Explorer.DataFrame.LazyTest do
     assert ldf |> DF.select(["total", "cement"]) |> DF.names() == ["total", "cement"]
   end
 
+  test "slice/3", %{ldf: ldf} do
+    assert ldf |> DF.slice(0, 5) |> inspect() == ~s(#Explorer.DataFrame<
+  LazyPolars[??? x 10]
+  year integer [2010, 2010, 2010, 2010, 2010]
+  country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA"]
+  total integer [2308, 1254, 32500, 141, 7924]
+  solid_fuel integer [627, 117, 332, 0, 0]
+  liquid_fuel integer [1601, 953, 12381, 141, 3649]
+  gas_fuel integer [74, 7, 14565, 0, 374]
+  cement integer [5, 177, 2598, 0, 204]
+  gas_flaring integer [0, 0, 2623, 0, 3697]
+  per_capita float [0.08, 0.43, 0.9, 1.68, 0.37]
+  bunker_fuels integer [9, 7, 663, 0, 321]
+>)
+  end
+
   test "discard/2", %{ldf: ldf} do
     assert ldf |> DF.discard(["total", "cement"]) |> DF.names() == [
              "year",
