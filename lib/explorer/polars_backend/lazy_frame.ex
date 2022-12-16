@@ -1,7 +1,9 @@
 defmodule Explorer.PolarsBackend.LazyFrame do
   @moduledoc false
 
+  alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Shared
+  alias Explorer.PolarsBackend.DataFrame, as: Eager
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
@@ -42,6 +44,147 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def slice(ldf, offset, length),
     do: Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length])
+
+  # IO
+
+  @default_infer_schema_length 1000
+
+  @impl true
+  def from_csv(
+        filename,
+        dtypes,
+        <<delimiter::utf8>>,
+        null_character,
+        skip_rows,
+        header?,
+        encoding,
+        max_rows,
+        columns,
+        infer_schema_length,
+        parse_dates
+      ) do
+    if columns do
+      raise ArgumentError,
+            "`columns` is not supported by Polars' lazy backend. " <>
+              "Consider using `select/2` after reading the CSV"
+    end
+
+    infer_schema_length =
+      if infer_schema_length == nil,
+        do: max_rows || @default_infer_schema_length,
+        else: infer_schema_length
+
+    dtypes =
+      Enum.map(dtypes, fn {column_name, dtype} ->
+        {column_name, Shared.internal_from_dtype(dtype)}
+      end)
+
+    df =
+      Native.lf_from_csv(
+        filename,
+        infer_schema_length,
+        header?,
+        max_rows,
+        skip_rows,
+        delimiter,
+        true,
+        dtypes,
+        encoding,
+        null_character,
+        parse_dates
+      )
+
+    case df do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def from_parquet(filename) do
+    case Native.lf_from_parquet(filename) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def from_ndjson(filename, infer_schema_length, batch_size) do
+    case Native.lf_from_ndjson(filename, infer_schema_length, batch_size) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def from_ipc(filename, columns) do
+    if columns do
+      raise ArgumentError,
+            "`columns` is not supported by Polars' lazy backend. " <>
+              "Consider using `select/2` after reading the IPC file"
+    end
+
+    case Native.lf_from_ipc(filename) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def load_csv(
+        contents,
+        dtypes,
+        delimiter,
+        null_character,
+        skip_rows,
+        header?,
+        encoding,
+        max_rows,
+        columns,
+        infer_schema_length,
+        parse_dates
+      ) do
+    case Eager.load_csv(
+           contents,
+           dtypes,
+           delimiter,
+           null_character,
+           skip_rows,
+           header?,
+           encoding,
+           max_rows,
+           columns,
+           infer_schema_length,
+           parse_dates
+         ) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def load_parquet(contents) do
+    case Eager.load_parquet(contents) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def load_ndjson(contents, infer_schema_length, batch_size) do
+    case Eager.load_ndjson(contents, infer_schema_length, batch_size) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
+  def load_ipc(contents, columns) do
+    case Eager.load_ipc(contents, columns) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
 
   # Groups
 

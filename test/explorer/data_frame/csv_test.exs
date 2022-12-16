@@ -125,13 +125,13 @@ defmodule Explorer.DataFrame.CSVTest do
     end
   end
 
-  describe "from_csv/2 options" do
-    defp tmp_csv(tmp_dir, contents) do
-      path = Path.join(tmp_dir, "tmp.csv")
-      :ok = File.write!(path, contents)
-      path
-    end
+  defp tmp_csv(tmp_dir, contents) do
+    path = Path.join(tmp_dir, "tmp.csv")
+    :ok = File.write!(path, contents)
+    path
+  end
 
+  describe "from_csv/2 options" do
     @tag :tmp_dir
     test "delimiter", config do
       csv =
