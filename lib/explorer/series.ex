@@ -2165,6 +2165,27 @@ defmodule Explorer.Series do
   def mean(%Series{dtype: dtype}), do: dtype_error("mean/1", dtype, [:integer, :float])
 
   @doc """
+  Gets the mode value of the series.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 2, 3])
+      iex> Explorer.Series.mode(s)
+      2
+  """
+  @doc type: :aggregation
+  @spec mode(series :: Series.t()) :: number() | nil
+  def mode(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+    do: Shared.apply_impl(series, :mode)
+
+  def mode(%Series{dtype: dtype}), do: dtype_error("mode/1", dtype, [:integer, :float])
+
+  @doc """
   Gets the median value of the series.
 
   ## Supported dtypes
