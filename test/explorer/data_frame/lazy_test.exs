@@ -263,4 +263,18 @@ defmodule Explorer.DataFrame.LazyTest do
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
+
+  test "load_ipc_stream/2 - with defaults", %{df: df} do
+    df = DF.slice(df, 0, 10)
+    contents = DF.dump_ipc_stream!(df)
+
+    ldf = DF.load_ipc_stream!(contents, lazy: true)
+
+    # no-op 
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
 end

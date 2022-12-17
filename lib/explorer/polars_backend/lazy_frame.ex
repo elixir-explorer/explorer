@@ -192,6 +192,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     end
   end
 
+  @impl true
+  def load_ipc_stream(contents, columns) do
+    case Eager.load_ipc_stream(contents, columns) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
   # Groups
 
   # TODO: Make the functions of non-implemented functions
