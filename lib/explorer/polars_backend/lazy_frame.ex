@@ -22,6 +22,12 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def collect(ldf), do: Shared.apply_dataframe(ldf, ldf, :lf_collect, [])
 
+  @impl true
+  def from_tabular(tabular), do: Eager.from_tabular(tabular) |> Eager.to_lazy()
+
+  @impl true
+  def from_series(pairs), do: Eager.from_series(pairs) |> Eager.to_lazy()
+
   # Introspection
 
   @impl true

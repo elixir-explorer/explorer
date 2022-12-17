@@ -3,11 +3,28 @@ defmodule Explorer.DataFrame.LazyTest do
 
   alias Explorer.DataFrame, as: DF
   alias Explorer.Datasets
+  alias Explorer.Series
 
   setup do
     df = Datasets.fossil_fuels()
     ldf = DF.to_lazy(df)
     {:ok, ldf: ldf, df: df}
+  end
+
+  test "new/1" do
+    ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+    assert DF.to_lazy(ldf) == ldf
+
+    ldf1 = DF.new([%{a: 42, b: "a"}, %{a: 51, b: "c"}], lazy: true)
+    assert DF.to_lazy(ldf1) == ldf1
+
+    ldf2 =
+      DF.new(
+        [a: Series.from_list([1, 2, 3]), b: Series.from_list(["a", "b", "c"])],
+        lazy: true
+      )
+
+    assert DF.to_lazy(ldf2) == ldf2
   end
 
   test "names/1", %{ldf: ldf} do
