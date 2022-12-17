@@ -76,11 +76,11 @@ pub fn lf_from_ndjson(
 
 #[cfg(target_arch = "arm")]
 #[rustler::nif]
-pub fn df_from_ndjson(
+pub fn lf_from_ndjson(
     _filename: &str,
     _infer_schema_length: Option<usize>,
     _batch_size: usize,
-) -> Result<ExDataFrame, ExplorerError> {
+) -> Result<ExLazyFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
         "NDJSON parsing is not enabled for this machine"
     )))
