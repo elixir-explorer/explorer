@@ -418,9 +418,9 @@ pub fn df_put_column(data: ExDataFrame, series: ExSeries) -> Result<ExDataFrame,
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_describe(data: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_describe(data: ExDataFrame, percentiles: Vec<f64>) -> Result<ExDataFrame, ExplorerError> {
     let df: DataFrame = data.resource.0.clone();
-    let new_df = df.describe(None);
+    let new_df = df.describe(Some(percentiles.as_slice()));
 
     Ok(ExDataFrame::new(new_df))
 }

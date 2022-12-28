@@ -184,6 +184,7 @@ defmodule Explorer.DataFrame do
 
   @default_infer_schema_length 1000
   @default_sample_nrows 5
+  @default_percentiles [0.25, 0.5, 0.75]
 
   # Guards and helpers for columns
 
@@ -4443,10 +4444,10 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec describe(df :: DataFrame.t()) :: DataFrame.t()
-  def describe(df) do
+  def describe(df, percentiles \\ @default_percentiles) do
     types = for name <- df.names, into: %{"describe" => :string}, do: {name, :float}
     out_df = %{df | names: ["describe" | df.names], dtypes: types, groups: []}
-    Shared.apply_impl(df, :describe, [out_df])
+    Shared.apply_impl(df, :describe, [out_df, percentiles])
   end
 
   # Helpers
