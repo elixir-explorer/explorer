@@ -2045,15 +2045,49 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  test "describe/1" do
-    df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
-    df1 = DF.describe(df)
+  describe "describe/2" do
+    test "default percentiles" do
+      df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      df1 = DF.describe(df)
 
-    assert DF.to_columns(df1, atom_keys: true) == %{
-             a: [3.0, nil, nil, nil, nil, nil, nil, nil],
-             b: [3.0, 2.0, 1.0, 1.0, 1.5, 2.0, 2.5, 3.0],
-             c: [3.0, nil, nil, nil, nil, nil, nil, nil],
-             describe: ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
-           }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [3.0, nil, nil, nil, nil, nil, nil, nil],
+               b: [3.0, 2.0, 1.0, 1.0, 1.5, 2.0, 2.5, 3.0],
+               c: [3.0, nil, nil, nil, nil, nil, nil, nil],
+               describe: ["count", "mean", "std", "min", "25%", "50%", "75%", "max"]
+             }
+    end
+
+    test "custom percentiles" do
+      df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      df1 = DF.describe(df, percentiles: [0.3, 0.5, 0.8])
+      df2 = DF.describe(df, percentiles: [0.5])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [3.0, nil, nil, nil, nil, nil, nil, nil],
+               b: [3.0, 2.0, 1.0, 1.0, 1.6, 2.0, 2.6, 3.0],
+               c: [3.0, nil, nil, nil, nil, nil, nil, nil],
+               describe: ["count", "mean", "std", "min", "30%", "50%", "80%", "max"]
+             }
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [3.0, nil, nil, nil, nil, nil],
+               b: [3.0, 2.0, 1.0, 1.0, 2.0, 3.0],
+               c: [3.0, nil, nil, nil, nil, nil],
+               describe: ["count", "mean", "std", "min", "50%", "max"]
+             }
+    end
+
+    test "no percentiles" do
+      df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      df1 = DF.describe(df, percentiles: [])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [3.0, nil, nil, nil, nil],
+               b: [3.0, 2.0, 1.0, 1.0, 3.0],
+               c: [3.0, nil, nil, nil, nil],
+               describe: ["count", "mean", "std", "min", "max"]
+             }
+    end
   end
 end
