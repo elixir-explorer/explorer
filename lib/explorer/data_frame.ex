@@ -4429,6 +4429,10 @@ defmodule Explorer.DataFrame do
 
   Groups are ignored if the dataframe is using any.
 
+  ## Options
+
+   * `:percentiles` - Floating point list with the percentiles to be calculated. (default: `[0.25, 0.5, 0.75]`)
+
   ## Examples
 
       iex> df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
@@ -4438,6 +4442,16 @@ defmodule Explorer.DataFrame do
         describe string ["count", "mean", "std", "min", "25%", ...]
         a float [3.0, nil, nil, nil, nil, ...]
         b float [3.0, 2.0, 1.0, 1.0, 1.5, ...]
+        c float [3.0, nil, nil, nil, nil, ...]
+      >
+
+      iex> df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      iex> Explorer.DataFrame.describe(df, percentiles: [0.3, 0.5, 0.8])
+      #Explorer.DataFrame<
+        Polars[8 x 4]
+        describe string ["count", "mean", "std", "min", "30%", ...]
+        a float [3.0, nil, nil, nil, nil, ...]
+        b float [3.0, 2.0, 1.0, 1.0, 1.6, ...]
         c float [3.0, nil, nil, nil, nil, ...]
       >
   """

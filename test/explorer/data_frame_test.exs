@@ -2060,7 +2060,7 @@ defmodule Explorer.DataFrameTest do
 
     test "custom percentiles" do
       df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
-      df1 = DF.describe(df, percentiles: [0.3, 0.5, 0.80])
+      df1 = DF.describe(df, percentiles: [0.3, 0.5, 0.8])
       df2 = DF.describe(df, percentiles: [0.5])
 
       assert DF.to_columns(df1, atom_keys: true) == %{
