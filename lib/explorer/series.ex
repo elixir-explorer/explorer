@@ -2914,6 +2914,31 @@ defmodule Explorer.Series do
 
   def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
 
+  # Float round
+
+  @doc """
+  Round floating point series to given decimal places.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1.124993, 2.555321, 3.995001])
+      iex> Explorer.Series.round(s, 2)
+      #Explorer.Series<
+        Polars[3]
+        float [1.12, 2.56, 4.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec round(Series.t(), non_neg_integer()) :: Series.t()
+  def round(%Series{dtype: :float} = series, decimals)
+      when K.and(is_integer(decimals), decimals >= 0),
+      do: Shared.apply_impl(series, :round, [decimals])
+
+  def round(%Series{dtype: :float}, _),
+    do: raise(ArgumentError, "second argument to round/2 must be a non-negative integer")
+
+  def round(%Series{dtype: dtype}, _), do: dtype_error("round/2", dtype, [:float])
+
   # Escape hatch
 
   @doc """

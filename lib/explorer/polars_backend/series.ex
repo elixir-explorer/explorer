@@ -448,6 +448,11 @@ defmodule Explorer.PolarsBackend.Series do
   def trim_trailing(series),
     do: Shared.apply_series(series, :s_trim_trailing)
 
+  # Float round
+  @impl true
+  def round(series, decimals),
+    do: Shared.apply_series(series, :s_round, [decimals])
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

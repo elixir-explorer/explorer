@@ -86,7 +86,9 @@ defmodule Explorer.Backend.LazySeries do
     trim_trailing: 1,
     trim: 1,
     upcase: 1,
-    downcase: 1
+    downcase: 1,
+    # Float round
+    round: 2
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -596,6 +598,13 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:trim_trailing, [lazy_series!(series)])
 
     Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def round(series, decimals) when is_integer(decimals) and decimals >= 0 do
+    data = new(:round, [lazy_series!(series), decimals])
+
+    Backend.Series.new(data, :float)
   end
 
   @remaining_non_lazy_operations [

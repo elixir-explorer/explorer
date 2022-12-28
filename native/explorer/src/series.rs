@@ -879,3 +879,9 @@ pub fn s_trim_trailing(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     Ok(ExSeries::new(s1.utf8()?.replace(r#"[ \s]+$"#, "")?.into()))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_round(data: ExSeries, decimals: i64) -> Result<ExSeries, ExplorerError> {
+    let s: &Series = &data.resource.0;
+    Ok(ExSeries::new(s.round(decimals as u32)?.into_series()))
+}

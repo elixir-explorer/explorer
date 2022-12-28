@@ -314,6 +314,7 @@ rustler::init!(
         s_window_min,
         s_window_sum,
         s_in,
+        s_round,
     ],
     load = on_load
 );
