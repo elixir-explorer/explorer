@@ -2060,8 +2060,8 @@ defmodule Explorer.DataFrameTest do
 
     test "custom percentiles" do
       df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
-      df1 = DF.describe(df, [0.3, 0.5, 0.80])
-      df2 = DF.describe(df, [0.5])
+      df1 = DF.describe(df, percentiles: [0.3, 0.5, 0.80])
+      df2 = DF.describe(df, percentiles: [0.5])
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [3.0, nil, nil, nil, nil, nil, nil, nil],
@@ -2075,6 +2075,18 @@ defmodule Explorer.DataFrameTest do
                b: [3.0, 2.0, 1.0, 1.0, 2.0, 3.0],
                c: [3.0, nil, nil, nil, nil, nil],
                describe: ["count", "mean", "std", "min", "50%", "max"]
+             }
+    end
+
+    test "no percentiles" do
+      df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      df1 = DF.describe(df, percentiles: [])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [3.0, nil, nil, nil, nil],
+               b: [3.0, 2.0, 1.0, 1.0, 3.0],
+               c: [3.0, nil, nil, nil, nil],
+               describe: ["count", "mean", "std", "min", "max"]
              }
     end
   end
