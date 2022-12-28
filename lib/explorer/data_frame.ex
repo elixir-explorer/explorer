@@ -4442,7 +4442,7 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec describe(df :: DataFrame.t()) :: DataFrame.t()
+  @spec describe(df :: DataFrame.t(), Keyword.t()) :: DataFrame.t()
   def describe(df, opts \\ []) do
     opts = Keyword.validate!(opts, percentiles: nil)
     types = for name <- df.names, into: %{"describe" => :string}, do: {name, :float}
