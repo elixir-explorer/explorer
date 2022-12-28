@@ -90,7 +90,7 @@ defmodule Explorer.Backend.LazySeries do
     # Float round
     round: 2,
     floor: 1,
-    ceil: 1,
+    ceil: 1
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
