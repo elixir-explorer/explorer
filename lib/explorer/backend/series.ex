@@ -97,6 +97,11 @@ defmodule Explorer.Backend.Series do
   @callback is_infinite(s) :: s
   @callback is_nan(s) :: s
 
+  # Float round
+  @callback round(s, decimals :: non_neg_integer()) :: s
+  @callback floor(s) :: s
+  @callback ceil(s) :: s
+
   # Coercion
 
   # Sort

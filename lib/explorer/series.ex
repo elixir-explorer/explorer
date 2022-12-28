@@ -2914,6 +2914,65 @@ defmodule Explorer.Series do
 
   def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
 
+  # Float round
+
+  @doc """
+  Round floating point series to given decimal places.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1.124993, 2.555321, 3.995001])
+      iex> Explorer.Series.round(s, 2)
+      #Explorer.Series<
+        Polars[3]
+        float [1.12, 2.56, 4.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec round(Series.t(), non_neg_integer()) :: Series.t()
+  def round(%Series{dtype: :float} = series, decimals)
+      when K.and(is_integer(decimals), decimals >= 0),
+      do: Shared.apply_impl(series, :round, [decimals])
+
+  def round(%Series{dtype: :float}, _),
+    do: raise(ArgumentError, "second argument to round/2 must be a non-negative integer")
+
+  def round(%Series{dtype: dtype}, _), do: dtype_error("round/2", dtype, [:float])
+
+  @doc """
+  Floor floating point series to lowest integers smaller or equal to the float value.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1.124993, 2.555321, 3.995001])
+      iex> Explorer.Series.floor(s)
+      #Explorer.Series<
+        Polars[3]
+        float [1.0, 2.0, 3.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec floor(Series.t()) :: Series.t()
+  def floor(%Series{dtype: :float} = series), do: Shared.apply_impl(series, :floor)
+  def floor(%Series{dtype: dtype}), do: dtype_error("floor/1", dtype, [:float])
+
+  @doc """
+  Ceil floating point series to highest integers smaller or equal to the float value.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1.124993, 2.555321, 3.995001])
+      iex> Explorer.Series.ceil(s)
+      #Explorer.Series<
+        Polars[3]
+        float [2.0, 3.0, 4.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec ceil(Series.t()) :: Series.t()
+  def ceil(%Series{dtype: :float} = series), do: Shared.apply_impl(series, :ceil)
+  def ceil(%Series{dtype: dtype}), do: dtype_error("ceil/1", dtype, [:float])
+
   # Escape hatch
 
   @doc """

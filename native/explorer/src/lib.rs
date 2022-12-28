@@ -204,6 +204,10 @@ rustler::init!(
         expr_trim,
         expr_trim_leading,
         expr_trim_trailing,
+        // float round expressions
+        expr_round,
+        expr_floor,
+        expr_ceil,
         // lazyframe
         lf_collect,
         lf_describe_plan,
@@ -314,6 +318,9 @@ rustler::init!(
         s_window_min,
         s_window_sum,
         s_in,
+        s_round,
+        s_floor,
+        s_ceil,
     ],
     load = on_load
 );

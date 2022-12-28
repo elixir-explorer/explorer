@@ -54,6 +54,7 @@ features = [
   "to_dummies",
   "is_in",
   "strings",
+  "round_series"
 ]
 
 [dependencies.polars-ops]
