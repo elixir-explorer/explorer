@@ -100,6 +100,7 @@ defmodule Explorer.Backend.Series do
   # Float round
   @callback round(s, decimals :: non_neg_integer()) :: s
   @callback floor(s) :: s
+  @callback ceil(s) :: s
 
   # Coercion
 

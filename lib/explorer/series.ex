@@ -2956,6 +2956,23 @@ defmodule Explorer.Series do
   def floor(%Series{dtype: :float} = series), do: Shared.apply_impl(series, :floor)
   def floor(%Series{dtype: dtype}), do: dtype_error("floor/1", dtype, [:float])
 
+  @doc """
+  Ceil floating point series to highest integers smaller or equal to the float value.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1.124993, 2.555321, 3.995001])
+      iex> Explorer.Series.ceil(s)
+      #Explorer.Series<
+        Polars[3]
+        float [2.0, 3.0, 4.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec ceil(Series.t()) :: Series.t()
+  def ceil(%Series{dtype: :float} = series), do: Shared.apply_impl(series, :ceil)
+  def ceil(%Series{dtype: dtype}), do: dtype_error("ceil/1", dtype, [:float])
+
   # Escape hatch
 
   @doc """

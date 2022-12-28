@@ -90,6 +90,7 @@ defmodule Explorer.Backend.LazySeries do
     # Float round
     round: 2,
     floor: 1,
+    ceil: 1,
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -611,6 +612,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def floor(series) do
     data = new(:floor, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def ceil(series) do
+    data = new(:ceil, [lazy_series!(series)])
 
     Backend.Series.new(data, :float)
   end

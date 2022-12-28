@@ -51,6 +51,7 @@ defmodule Explorer.PolarsBackend.Expression do
     reverse: 1,
     round: 2,
     floor: 1,
+    ceil: 1,
     select: 3,
     standard_deviation: 1,
     subtract: 2,

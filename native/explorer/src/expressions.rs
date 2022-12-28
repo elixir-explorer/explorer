@@ -610,3 +610,9 @@ pub fn expr_floor(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
     ExExpr::new(expr.floor())
 }
+
+#[rustler::nif]
+pub fn expr_ceil(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.ceil())
+}

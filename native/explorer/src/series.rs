@@ -891,3 +891,9 @@ pub fn s_floor(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s: &Series = &data.resource.0;
     Ok(ExSeries::new(s.floor()?.into_series()))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_ceil(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s: &Series = &data.resource.0;
+    Ok(ExSeries::new(s.ceil()?.into_series()))
+}
