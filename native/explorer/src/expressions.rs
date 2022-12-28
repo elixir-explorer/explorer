@@ -600,9 +600,9 @@ pub fn expr_trim_trailing(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_round(expr: ExExpr, decimals: f64) -> ExExpr {
+pub fn expr_round(expr: ExExpr, decimals: u32) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
-    ExExpr::new(expr.round(decimals as u32))
+    ExExpr::new(expr.round(decimals))
 }
 
 #[rustler::nif]

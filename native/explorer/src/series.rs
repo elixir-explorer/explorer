@@ -881,9 +881,9 @@ pub fn s_trim_trailing(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_round(data: ExSeries, decimals: i64) -> Result<ExSeries, ExplorerError> {
+pub fn s_round(data: ExSeries, decimals: u32) -> Result<ExSeries, ExplorerError> {
     let s: &Series = &data.resource.0;
-    Ok(ExSeries::new(s.round(decimals as u32)?.into_series()))
+    Ok(ExSeries::new(s.round(decimals)?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
