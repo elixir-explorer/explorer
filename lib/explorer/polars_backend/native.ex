@@ -225,6 +225,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_rename(_s, _name), do: err()
   def s_reverse(_s), do: err()
   def s_round(_s, _decimals), do: err()
+  def s_floor(_s), do: err()
   def s_trim_trailing(_s), do: err()
   def s_seedable_random_indices(_length, _n_samples, _replacement, _seed), do: err()
   def s_series_equal(_s, _other, _null_equal), do: err()

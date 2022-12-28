@@ -885,3 +885,9 @@ pub fn s_round(data: ExSeries, decimals: i64) -> Result<ExSeries, ExplorerError>
     let s: &Series = &data.resource.0;
     Ok(ExSeries::new(s.round(decimals as u32)?.into_series()))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_floor(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s: &Series = &data.resource.0;
+    Ok(ExSeries::new(s.floor()?.into_series()))
+}

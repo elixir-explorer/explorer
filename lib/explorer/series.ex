@@ -2939,6 +2939,23 @@ defmodule Explorer.Series do
 
   def round(%Series{dtype: dtype}, _), do: dtype_error("round/2", dtype, [:float])
 
+  @doc """
+  Floor floating point series to lowest integers smaller or equal to the float value.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1.124993, 2.555321, 3.995001])
+      iex> Explorer.Series.floor(s)
+      #Explorer.Series<
+        Polars[3]
+        float [1.0, 2.0, 3.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec floor(Series.t()) :: Series.t()
+  def floor(%Series{dtype: :float} = series), do: Shared.apply_impl(series, :floor)
+  def floor(%Series{dtype: dtype}), do: dtype_error("floor/1", dtype, [:float])
+
   # Escape hatch
 
   @doc """

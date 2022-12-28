@@ -453,6 +453,10 @@ defmodule Explorer.PolarsBackend.Series do
   def round(series, decimals),
     do: Shared.apply_series(series, :s_round, [decimals])
 
+  @impl true
+  def floor(series),
+    do: Shared.apply_series(series, :s_floor)
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

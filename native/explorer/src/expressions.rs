@@ -604,3 +604,9 @@ pub fn expr_round(expr: ExExpr, decimals: f64) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
     ExExpr::new(expr.round(decimals as u32))
 }
+
+#[rustler::nif]
+pub fn expr_floor(expr: ExExpr) -> ExExpr {
+    let expr: Expr = expr.resource.0.clone();
+    ExExpr::new(expr.floor())
+}

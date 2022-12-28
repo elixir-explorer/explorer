@@ -50,6 +50,7 @@ defmodule Explorer.PolarsBackend.Expression do
     remainder: 2,
     reverse: 1,
     round: 2,
+    floor: 1,
     select: 3,
     standard_deviation: 1,
     subtract: 2,
