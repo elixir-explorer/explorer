@@ -204,6 +204,10 @@ rustler::init!(
         expr_trim,
         expr_trim_leading,
         expr_trim_trailing,
+        // float round expressions
+        expr_round,
+        expr_floor,
+        expr_ceil,
         // lazyframe
         lf_collect,
         lf_describe_plan,
