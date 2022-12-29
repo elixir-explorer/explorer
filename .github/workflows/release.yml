@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - main
+      # WIP: remove before merge
+      - ps-add-support-for-more-platforms
     paths:
       # Just run on main branch if "native" path changed. Tags will always run.
       - "native/**"
@@ -35,10 +37,12 @@ jobs:
               disable-polars-json-feature: true,
             }
           - { target: aarch64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
           - { target: aarch64-apple-darwin, os: macos-11 }
           - { target: x86_64-apple-darwin, os: macos-11 }
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04 }
           - { target: x86_64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
+          - { target: riscv64gc-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
           - { target: x86_64-pc-windows-gnu, os: windows-2019 }
           - { target: x86_64-pc-windows-msvc, os: windows-2019 }
 
@@ -47,14 +51,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
-
-      - name: Install prerequisites
-        shell: bash
-        run: |
-          case ${{ matrix.job.target }} in
-            arm-unknown-linux-*) sudo apt-get -y update ; sudo apt-get -y install gcc-arm-linux-gnueabihf ;;
-            aarch64-unknown-linux-gnu) sudo apt-get -y update ; sudo apt-get -y install gcc-aarch64-linux-gnu ;;
-          esac
 
       - name: Extract crate information
         shell: bash
@@ -66,7 +62,7 @@ jobs:
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-08-16
+          toolchain: nightly-2022-12-29
           target: ${{ matrix.job.target }}
           override: true
           profile: minimal
@@ -94,8 +90,8 @@ jobs:
         if: ${{ matrix.job.use-cross }}
         with:
           binary: "cross"
-          version: "v0.2.1"
-          download_url: "https://github.com/rust-embedded/cross/releases/download/${version}/cross-${version}-x86_64-unknown-linux-gnu.tar.gz"
+          version: "v0.2.4"
+          download_url: "https://github.com/cross-rs/cross/releases/download/${version}/cross-x86_64-unknown-linux-gnu.tar.gz"
           tarball_binary_path: "${binary}"
           smoke_test: "${binary} --version"
 
