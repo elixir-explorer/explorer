@@ -24,8 +24,7 @@ pub fn df_join(
         "cross" => JoinType::Cross,
         _ => {
             return Err(ExplorerError::Other(format!(
-                "Join method {} not supported",
-                how
+                "Join method {how} not supported"
             )))
         }
     };
@@ -110,7 +109,7 @@ pub fn df_concat_columns(
                 .with_row_count(id_column, None)
         })
         .fold((first, 1), |(acc_df, count), df| {
-            let suffix = format!("_{}", count);
+            let suffix = format!("_{count}");
             let new_df = acc_df
                 .join_builder()
                 .with(df)
@@ -161,7 +160,7 @@ pub fn df_pull(data: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerError>
 #[rustler::nif]
 pub fn df_select(data: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let new_df = df.select(&selection)?;
+    let new_df = df.select(selection)?;
     Ok(ExDataFrame::new(new_df))
 }
 
@@ -389,7 +388,7 @@ pub fn df_distinct(
     };
 
     match columns_to_keep {
-        Some(columns) => Ok(ExDataFrame::new(new_df.select(&columns)?)),
+        Some(columns) => Ok(ExDataFrame::new(new_df.select(columns)?)),
         None => Ok(ExDataFrame::new(new_df)),
     }
 }
@@ -400,7 +399,7 @@ pub fn df_to_dummies(
     selection: Vec<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = &data.resource.0;
-    let dummies = df.select(&selection).and_then(|df| df.to_dummies())?;
+    let dummies = df.select(selection).and_then(|df| df.to_dummies())?;
     let series = dummies
         .iter()
         .map(|series| series.cast(&DataType::Int64).unwrap())

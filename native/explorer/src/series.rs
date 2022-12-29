@@ -365,7 +365,7 @@ pub fn s_in(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         DataType::Utf8 => s.utf8()?.is_in(rhs)?,
         DataType::Date => s.date()?.is_in(rhs)?,
         DataType::Datetime(_, _) => s.datetime()?.is_in(rhs)?,
-        dt => panic!("is_in/2 not implemented for {:?}", dt),
+        dt => panic!("is_in/2 not implemented for {dt:?}"),
     };
 
     Ok(ExSeries::new(s.into_series()))
@@ -407,12 +407,7 @@ pub fn s_fill_missing(data: ExSeries, strategy: &str) -> Result<ExSeries, Explor
         "min" => FillNullStrategy::Min,
         "max" => FillNullStrategy::Max,
         "mean" => FillNullStrategy::Mean,
-        s => {
-            return Err(ExplorerError::Other(format!(
-                "Strategy {} not supported",
-                s
-            )))
-        }
+        s => return Err(ExplorerError::Other(format!("Strategy {s} not supported"))),
     };
 
     let s = &data.resource.0;
@@ -553,7 +548,7 @@ pub fn s_sum(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Boolean => Ok(s.sum::<i64>().encode(env)),
         DataType::UInt32 | DataType::Int64 => Ok(s.sum::<i64>().encode(env)),
         DataType::Float64 => Ok(s.sum::<f64>().encode(env)),
-        dt => panic!("sum/1 not implemented for {:?}", dt),
+        dt => panic!("sum/1 not implemented for {dt:?}"),
     }
 }
 
@@ -567,7 +562,7 @@ pub fn s_min(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             Ok(s.min::<i64>().map(ExDateTime::from).encode(env))
         }
-        dt => panic!("min/1 not implemented for {:?}", dt),
+        dt => panic!("min/1 not implemented for {dt:?}"),
     }
 }
 
@@ -581,7 +576,7 @@ pub fn s_max(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             Ok(s.max::<i64>().map(ExDateTime::from).encode(env))
         }
-        dt => panic!("max/1 not implemented for {:?}", dt),
+        dt => panic!("max/1 not implemented for {dt:?}"),
     }
 }
 
@@ -591,7 +586,7 @@ pub fn s_mean(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Boolean => Ok(s.mean().encode(env)),
         DataType::UInt32 | DataType::Int64 | DataType::Float64 => Ok(s.mean().encode(env)),
-        dt => panic!("mean/1 not implemented for {:?}", dt),
+        dt => panic!("mean/1 not implemented for {dt:?}"),
     }
 }
 
@@ -600,7 +595,7 @@ pub fn s_median(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
     let s = &data.resource.0;
     match s.dtype() {
         DataType::UInt32 | DataType::Int64 | DataType::Float64 => Ok(s.median().encode(env)),
-        dt => panic!("median/1 not implemented for {:?}", dt),
+        dt => panic!("median/1 not implemented for {dt:?}"),
     }
 }
 
@@ -610,7 +605,7 @@ pub fn s_variance(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::UInt32 | DataType::Int64 => Ok(s.i64()?.var(1).encode(env)),
         DataType::Float64 => Ok(s.f64()?.var(1).encode(env)),
-        dt => panic!("var/1 not implemented for {:?}", dt),
+        dt => panic!("var/1 not implemented for {dt:?}"),
     }
 }
 
@@ -620,7 +615,7 @@ pub fn s_standard_deviation(env: Env, data: ExSeries) -> Result<Term, ExplorerEr
     match s.dtype() {
         DataType::UInt32 | DataType::Int64 => Ok(s.i64()?.std(1).encode(env)),
         DataType::Float64 => Ok(s.f64()?.std(1).encode(env)),
-        dt => panic!("std/1 not implemented for {:?}", dt),
+        dt => panic!("std/1 not implemented for {dt:?}"),
     }
 }
 

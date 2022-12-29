@@ -334,7 +334,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Float64(v) => Ok(Some(v).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
-        dt => panic!("cannot encode value {:?} to term", dt),
+        dt => panic!("cannot encode value {dt:?} to term"),
     }
 }
 
@@ -354,7 +354,7 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError>
         DataType::Binary => {
             generic_binary_series_to_list(&data.resource, s.binary()?.downcast_iter(), env)
         }
-        dt => panic!("to_list/1 not implemented for {:?}", dt),
+        dt => panic!("to_list/1 not implemented for {dt:?}"),
     }
 }
 
@@ -381,6 +381,6 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             series_to_iovec!(resource, s, env, datetime, i64)
         }
-        dt => panic!("to_iovec/1 not implemented for {:?}", dt),
+        dt => panic!("to_iovec/1 not implemented for {dt:?}"),
     }
 }
