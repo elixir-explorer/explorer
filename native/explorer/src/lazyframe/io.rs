@@ -59,7 +59,7 @@ pub fn lf_from_csv(
     Ok(ExLazyFrame::new(df))
 }
 
-#[cfg(not(target_arch = "arm"))]
+#[cfg(not(any(target_arch = "arm", target_arch = "riscv")))]
 #[rustler::nif]
 pub fn lf_from_ndjson(
     filename: String,
@@ -74,7 +74,7 @@ pub fn lf_from_ndjson(
     Ok(ExLazyFrame::new(lf))
 }
 
-#[cfg(target_arch = "arm")]
+#[cfg(any(target_arch = "arm", target_arch = "riscv"))]
 #[rustler::nif]
 pub fn lf_from_ndjson(
     _filename: &str,

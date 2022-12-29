@@ -39,7 +39,7 @@ features = [
   "dtype-binary",
   "ipc",
   "ipc_streaming",
-  # JSON won't compile on ARM 32 bits targets, so we disable in the "release" workflow.
+  # JSON won't compile on RISCV and ARM 32 bits targets, so we disable in the "release" workflow.
   "json",
   "lazy",
   "parquet",
