@@ -427,7 +427,7 @@ pub fn df_load_ipc_stream(
 
 // ============ NDJSON ============ //
 
-#[cfg(not(any(target_arch = "arm", target_arch = "riscv")))]
+#[cfg(not(any(target_arch = "arm", target_arch = "riscv64")))]
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_from_ndjson(
     filename: &str,
@@ -445,7 +445,7 @@ pub fn df_from_ndjson(
     Ok(ExDataFrame::new(df))
 }
 
-#[cfg(not(any(target_arch = "arm", target_arch = "riscv")))]
+#[cfg(not(any(target_arch = "arm", target_arch = "riscv64")))]
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_to_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
     let df = &data.resource.0;
@@ -458,7 +458,7 @@ pub fn df_to_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerErr
     Ok(())
 }
 
-#[cfg(not(any(target_arch = "arm", target_arch = "riscv")))]
+#[cfg(not(any(target_arch = "arm", target_arch = "riscv64")))]
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_dump_ndjson(env: Env, data: ExDataFrame) -> Result<Binary, ExplorerError> {
     let df = &data.resource.0;
@@ -474,7 +474,7 @@ pub fn df_dump_ndjson(env: Env, data: ExDataFrame) -> Result<Binary, ExplorerErr
     Ok(values_binary.into())
 }
 
-#[cfg(not(any(target_arch = "arm", target_arch = "riscv")))]
+#[cfg(not(any(target_arch = "arm", target_arch = "riscv64")))]
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_load_ndjson(
     binary: Binary,
@@ -493,7 +493,7 @@ pub fn df_load_ndjson(
 
 // ============ ARM 32 specifics ============ //
 
-#[cfg(any(target_arch = "arm", target_arch = "riscv"))]
+#[cfg(any(target_arch = "arm", target_arch = "riscv64"))]
 #[rustler::nif]
 pub fn df_from_ndjson(
     _filename: &str,
@@ -505,7 +505,7 @@ pub fn df_from_ndjson(
     )))
 }
 
-#[cfg(any(target_arch = "arm", target_arch = "riscv"))]
+#[cfg(any(target_arch = "arm", target_arch = "riscv64"))]
 #[rustler::nif]
 pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerError> {
     Err(ExplorerError::Other(format!(
@@ -513,7 +513,7 @@ pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerE
     )))
 }
 
-#[cfg(any(target_arch = "arm", target_arch = "riscv"))]
+#[cfg(any(target_arch = "arm", target_arch = "riscv64"))]
 #[rustler::nif]
 pub fn df_dump_ndjson(_data: ExDataFrame) -> Result<Binary<'static>, ExplorerError> {
     Err(ExplorerError::Other(format!(
@@ -521,7 +521,7 @@ pub fn df_dump_ndjson(_data: ExDataFrame) -> Result<Binary<'static>, ExplorerErr
     )))
 }
 
-#[cfg(any(target_arch = "arm", target_arch = "riscv"))]
+#[cfg(any(target_arch = "arm", target_arch = "riscv64"))]
 #[rustler::nif]
 pub fn df_load_ndjson(
     _binary: Binary,
