@@ -283,10 +283,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_tabular(tabular, dtypes) do
     {_, %{columns: keys}, _} = reader = init_reader!(tabular)
     columns = Table.to_columns(reader)
+    dtypes = Map.new(dtypes)
 
     keys
     |> Enum.map(fn key ->
-      dtype = dtypes |> Map.new() |> Map.get(key)
+      dtype = Map.get(dtypes, key)
       column_name = to_column_name!(key)
       values = Enum.to_list(columns[key])
       series_from_list!(column_name, values, dtype)
