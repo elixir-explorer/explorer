@@ -389,7 +389,7 @@ pub fn expr_standard_deviation(expr: ExExpr) -> ExExpr {
 pub fn expr_quantile(expr: ExExpr, quantile: f64) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
     let strategy = crate::parse_quantile_interpol_options("nearest");
-    ExExpr::new(expr.quantile(quantile, strategy))
+    ExExpr::new(expr.quantile(quantile.into(), strategy))
 }
 
 #[rustler::nif]

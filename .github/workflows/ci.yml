@@ -41,6 +41,7 @@ jobs:
             ~/.cargo/git/db/
             native/explorer/target/
             priv/native/
+            _build/test/lib/explorer
           key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
