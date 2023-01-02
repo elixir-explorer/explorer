@@ -120,7 +120,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback lazy() :: module()
   @callback to_lazy(df) :: df
   @callback collect(df) :: df
-  @callback from_tabular(Table.Reader.t()) :: df
+  @callback from_tabular(Table.Reader.t(), dtypes :: list({column_name(), dtype()})) :: df
   @callback from_series(map() | Keyword.t()) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
 

@@ -280,15 +280,17 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def collect(df), do: df
 
   @impl true
-  def from_tabular(tabular) do
+  def from_tabular(tabular, dtypes) do
     {_, %{columns: keys}, _} = reader = init_reader!(tabular)
     columns = Table.to_columns(reader)
+    dtypes = Map.new(dtypes)
 
     keys
     |> Enum.map(fn key ->
+      dtype = Map.get(dtypes, key)
       column_name = to_column_name!(key)
       values = Enum.to_list(columns[key])
-      series_from_list!(column_name, values)
+      series_from_list!(column_name, values, dtype)
     end)
     |> from_series_list()
   end
@@ -325,8 +327,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   # Like `Explorer.Series.from_list/2`, but gives a better error message with the series name.
-  defp series_from_list!(name, list) do
-    type = Explorer.Shared.check_types!(list)
+  defp series_from_list!(name, list, dtype) do
+    type = Explorer.Shared.check_types!(list, dtype)
     {list, type} = Explorer.Shared.cast_numerics(list, type)
     series = Shared.from_list(list, type, name)
     Explorer.Backend.Series.new(series, type)

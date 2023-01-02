@@ -1201,6 +1201,7 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+    * `:dtypes` - A list/map of `{column_name, dtype}` tuples. (default: `[]`)
 
   ## Examples
 
@@ -1225,6 +1226,14 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
       #Explorer.DataFrame<
         Polars[2 x 2]
+        floats float [1.0, 2.0]
+        ints integer [1, nil]
+      >
+
+      iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, nil], binaries: [<<239, 191, 19>>, nil]}, dtypes: [{:binaries, :binary}])
+      #Explorer.DataFrame<
+        Polars[2 x 3]
+        binaries binary [<<239, 191, 19>>, nil]
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
@@ -1257,6 +1266,8 @@ defmodule Explorer.DataFrame do
         ) :: DataFrame.t()
         when series_pairs: %{column_name() => Series.t()} | [{column_name(), Series.t()}]
   def new(data, opts \\ []) do
+    opts = Keyword.validate!(opts, lazy: false, backend: nil, dtypes: [])
+
     backend = backend_from_options!(opts)
 
     case data do
@@ -1266,7 +1277,7 @@ defmodule Explorer.DataFrame do
       data ->
         case classify_data(data) do
           {:series, series} -> backend.from_series(series)
-          {:other, tabular} -> backend.from_tabular(tabular)
+          {:other, tabular} -> backend.from_tabular(tabular, opts[:dtypes])
         end
     end
   end
