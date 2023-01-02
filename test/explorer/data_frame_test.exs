@@ -26,6 +26,157 @@ defmodule Explorer.DataFrameTest do
 
   # Tests for summarize, group, ungroup are available in grouped_test.exs
 
+  describe "new/1" do
+    test "from series" do
+      df = DF.new(%{floats: Series.from_list([1.0, 2.0]), integers: Series.from_list([1, 2])})
+
+      assert DF.to_columns(df, atom_keys: true) == %{floats: [1.0, 2.0], integers: [1, 2]}
+      assert DF.dtypes(df) == %{"floats" => :float, "integers" => :integer}
+    end
+
+    test "from columnar data" do
+      df = DF.new(%{floats: [1.0, 2.0], integers: [1, nil]})
+
+      assert DF.to_columns(df, atom_keys: true) == %{floats: [1.0, 2.0], integers: [1, nil]}
+      assert DF.dtypes(df) == %{"floats" => :float, "integers" => :integer}
+    end
+
+    test "from columnar data with binaries" do
+      df =
+        DF.new(%{floats: [1.0, 2.0], integers: [1, nil], binaries: [<<239, 191, 19>>, nil]},
+          dtypes: [{:binaries, :binary}]
+        )
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               floats: [1.0, 2.0],
+               integers: [1, nil],
+               binaries: [<<239, 191, 19>>, nil]
+             }
+
+      assert DF.dtypes(df) == %{"floats" => :float, "integers" => :integer, "binaries" => :binary}
+    end
+
+    test "from rows" do
+      rows = [
+        %{
+          lower: 17,
+          middle: 17.5,
+          outliers: <<131, 107, 0, 8, 12, 12, 23, 24, 25, 25, 26, 27>>,
+          upper: 19,
+          ymax: 22,
+          ymin: 14
+        },
+        %{
+          lower: 12,
+          middle: 15.5,
+          outliers: <<131, 107, 0, 8, 9, 5, 23, 24, 25, 25, 26, 27>>,
+          upper: 20.3,
+          ymax: 22,
+          ymin: 10
+        },
+        %{
+          lower: 22.2,
+          middle: 26.5,
+          outliers: <<131, 107, 0, 2, 11, 13, 38, 72, 36, 88, 55, 90>>,
+          upper: 31.7,
+          ymax: 35,
+          ymin: 16
+        }
+      ]
+
+      df = DF.new(rows, dtypes: [{:outliers, :binary}, {:ymax, :float}, {:ymin, :float}])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               lower: [17.0, 12.0, 22.2],
+               middle: [17.5, 15.5, 26.5],
+               outliers: [
+                 <<131, 107, 0, 8, 12, 12, 23, 24, 25, 25, 26, 27>>,
+                 <<131, 107, 0, 8, 9, 5, 23, 24, 25, 25, 26, 27>>,
+                 <<131, 107, 0, 2, 11, 13, 38, 72, 36, 88, 55, 90>>
+               ],
+               upper: [19.0, 20.3, 31.7],
+               ymax: [22.0, 22.0, 35.0],
+               ymin: [14.0, 10.0, 16.0]
+             }
+
+      assert DF.dtypes(df) == %{
+               "lower" => :float,
+               "middle" => :float,
+               "outliers" => :binary,
+               "upper" => :float,
+               "ymax" => :float,
+               "ymin" => :float
+             }
+    end
+
+    test "with integers" do
+      df = DF.new(%{integers: [1, 2, 3]})
+
+      assert DF.to_columns(df, atom_keys: true) == %{integers: [1, 2, 3]}
+      assert DF.dtypes(df) == %{"integers" => :integer}
+    end
+
+    test "with floats" do
+      df = DF.new(%{floats: [1, 2.4, 3]})
+
+      assert DF.to_columns(df, atom_keys: true) == %{floats: [1, 2.4, 3]}
+      assert DF.dtypes(df) == %{"floats" => :float}
+    end
+
+    test "with binaries" do
+      df =
+        DF.new(%{binaries: [<<239, 191, 19>>, <<228, 146, 51>>]}, dtypes: [{:binaries, :binary}])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               binaries: [<<239, 191, 19>>, <<228, 146, 51>>]
+             }
+
+      assert DF.dtypes(df) == %{"binaries" => :binary}
+    end
+
+    test "with strings" do
+      df = DF.new(%{strings: ["a", "b", "c"]})
+
+      assert DF.to_columns(df, atom_keys: true) == %{strings: ["a", "b", "c"]}
+      assert DF.dtypes(df) == %{"strings" => :string}
+    end
+
+    test "with binaries from strings" do
+      df =
+        DF.new(%{binaries_from_strings: ["a", "b", "c"]},
+          dtypes: [{:binaries_from_strings, :binary}]
+        )
+
+      assert DF.to_columns(df, atom_keys: true) == %{binaries_from_strings: ["a", "b", "c"]}
+      assert DF.dtypes(df) == %{"binaries_from_strings" => :binary}
+    end
+
+    test "mixing binaries and strings" do
+      df =
+        DF.new(%{strings_and_binaries: [<<228, 146, 51>>, "hello", <<42, 209, 236>>]},
+          dtypes: [{:strings_and_binaries, :binary}]
+        )
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               strings_and_binaries: [<<228, 146, 51>>, "hello", <<42, 209, 236>>]
+             }
+
+      assert DF.dtypes(df) == %{"strings_and_binaries" => :binary}
+    end
+
+    test "mixing types" do
+      assert_raise ArgumentError, fn ->
+        DF.new(%{mixing_types: [1, "foo", 3]})
+      end
+    end
+
+    test "with binaries without passing the dtypes" do
+      assert_raise ArgumentError, fn ->
+        DF.new(%{binaries: [<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>]})
+      end
+    end
+  end
+
   describe "mask/2" do
     test "raises with mask of invalid size", %{df: df} do
       assert_raise ArgumentError,
