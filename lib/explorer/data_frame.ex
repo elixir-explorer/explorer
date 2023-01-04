@@ -1277,7 +1277,7 @@ defmodule Explorer.DataFrame do
       data ->
         case classify_data(data) do
           {:series, series} -> backend.from_series(series)
-          {:other, tabular} -> backend.from_tabular(tabular, opts[:dtypes])
+          {:other, tabular} -> backend.from_tabular(tabular, check_dtypes!(opts[:dtypes]))
         end
     end
   end

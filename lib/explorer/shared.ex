@@ -117,9 +117,6 @@ defmodule Explorer.Shared do
           new_type == :numeric and type in [:float, :integer] ->
             new_type
 
-          new_type == type and type == :binary ->
-            new_type
-
           new_type != type and type != nil ->
             raise ArgumentError,
                   "the value #{inspect(el)} does not match the inferred series dtype #{inspect(type)}"

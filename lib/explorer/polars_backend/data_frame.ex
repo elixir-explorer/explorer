@@ -287,9 +287,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     keys
     |> Enum.map(fn key ->
-      dtype = Map.get(dtypes, key)
       column_name = to_column_name!(key)
       values = Enum.to_list(columns[key])
+      dtype = Map.get(dtypes, column_name)
       series_from_list!(column_name, values, dtype)
     end)
     |> from_series_list()
