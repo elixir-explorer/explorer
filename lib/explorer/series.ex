@@ -57,7 +57,8 @@ defmodule Explorer.Series do
 
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime | :binary | :categorical
+  @type dtype ::
+          :integer | :float | :boolean | :string | :date | :datetime | :binary | :categorical
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
