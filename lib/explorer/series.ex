@@ -9,6 +9,7 @@ defmodule Explorer.Series do
     * `:boolean` - Boolean
     * `:string` - UTF-8 encoded binary
     * `:binary` - Binary
+    * `:categorical` - UTF-8 encoded binary, but as categories.
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
 
@@ -56,7 +57,7 @@ defmodule Explorer.Series do
 
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime | :binary
+  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime | :binary | :categorical
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
@@ -194,7 +195,15 @@ defmodule Explorer.Series do
         binary [<<228, 146, 51>>, "Elixir"]
       >
 
-  It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch:
+  Another option is to create a categorical series from a list of strings:
+
+      iex> Explorer.Series.from_list(["EUA", "Brazil", "Poland"], dtype: :categorical)
+      #Explorer.Series<
+        Polars[3]
+        categorical ["EUA", "Brazil", "Poland"]
+      >
+
+  It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
 
       iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: :datetime)
       #Explorer.Series<

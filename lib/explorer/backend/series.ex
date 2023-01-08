@@ -3,7 +3,17 @@ defmodule Explorer.Backend.Series do
   The behaviour for series backends.
   """
 
-  @valid_dtypes [:integer, :float, :boolean, :string, :date, :datetime, :list, :binary]
+  @valid_dtypes [
+    :integer,
+    :float,
+    :boolean,
+    :string,
+    :date,
+    :datetime,
+    :list,
+    :binary,
+    :categorical
+  ]
 
   @type t :: struct()
 

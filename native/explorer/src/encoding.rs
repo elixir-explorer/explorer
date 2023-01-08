@@ -1,7 +1,8 @@
 use chrono::prelude::*;
 use polars::export::arrow::array::GenericBinaryArray;
 use polars::prelude::*;
-use rustler::{Encoder, Env, OwnedBinary, ResourceArc, Term};
+use rustler::{Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
+use std::collections::HashMap;
 use std::{mem, slice};
 
 use crate::atoms::{
@@ -249,6 +250,38 @@ where
     Ok(unsafe { Term::new(env, list) })
 }
 
+fn categorical_series_to_list<'b>(
+    s: &Series,
+    env: Env<'b>,
+    mapping: &Arc<RevMapping>,
+) -> Result<Term<'b>, ExplorerError> {
+    let env_as_c_arg = env.as_c_arg();
+    let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
+    let mut list = unsafe { list::make_list(env_as_c_arg, &[]) };
+
+    let mut terms: HashMap<u32, NIF_TERM> = HashMap::new();
+
+    let logical = s.categorical()?.logical();
+
+    for maybe_id in &logical.reverse() {
+        let term_as_c_arg = match maybe_id {
+            None => &nil_as_c_arg,
+            Some(id) => terms.entry(id).or_insert_with(|| {
+                let values = mapping.get(id);
+                let mut binary = NewBinary::new(env, values.len());
+                binary.copy_from_slice(values.as_bytes());
+
+                let binary_term: Term = binary.into();
+                binary_term.as_c_arg()
+            }),
+        };
+
+        list = unsafe { list::make_list_cell(env_as_c_arg, *term_as_c_arg, list) }
+    }
+
+    Ok(unsafe { Term::new(env, list) })
+}
+
 // Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
 #[inline]
 fn float64_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
@@ -354,6 +387,7 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError>
         DataType::Binary => {
             generic_binary_series_to_list(&data.resource, s.binary()?.downcast_iter(), env)
         }
+        DataType::Categorical(Some(mapping)) => categorical_series_to_list(s, env, mapping),
         dt => panic!("to_list/1 not implemented for {dt:?}"),
     }
 }

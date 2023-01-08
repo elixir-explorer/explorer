@@ -73,6 +73,12 @@ defmodule Explorer.SeriesTest do
         Series.from_list([<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>])
       end
     end
+
+    test "with strings as categories" do
+      s = Series.from_list(["a", "b", "c"], dtype: :categorical)
+      assert Series.to_list(s) === ["a", "b", "c"]
+      assert Series.dtype(s) == :categorical
+    end
   end
 
   test "fetch/2" do

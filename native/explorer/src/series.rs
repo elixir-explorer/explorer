@@ -68,6 +68,15 @@ pub fn s_from_list_binary(name: &str, val: Vec<Option<Binary>>) -> ExSeries {
     ))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries {
+    ExSeries::new(
+        Series::new(name, val.as_slice())
+            .cast(&DataType::Categorical(None))
+            .unwrap(),
+    )
+}
+
 macro_rules! from_binary {
     ($name:ident, $type:ty, $bytes:expr) => {
         #[rustler::nif(schedule = "DirtyCpu")]
