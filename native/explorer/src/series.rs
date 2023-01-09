@@ -789,9 +789,7 @@ pub fn s_categories(data: ExSeries) -> Result<ExSeries, ExplorerError> {
             let series = Series::new("categories", &categories);
             Ok(ExSeries::new(series))
         }
-        _ => Err(ExplorerError::Other(
-            "Cannot get categories from non categorical series".into(),
-        )),
+        _ => panic!("Cannot get categories from non categorical series"),
     }
 }
 
