@@ -4,14 +4,14 @@ defmodule Explorer.Series do
 
   A series can be of the following data types:
 
-    * `:float` - 64-bit floating point number
-    * `:integer` - 64-bit signed integer
-    * `:boolean` - Boolean
-    * `:string` - UTF-8 encoded binary
     * `:binary` - Binary
-    * `:categorical` - UTF-8 encoded binary, but as categories.
+    * `:boolean` - Boolean
+    * `:categorical` - UTF-8 encoded binary, but as categories
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
+    * `:float` - 64-bit floating point number
+    * `:integer` - 64-bit signed integer
+    * `:string` - UTF-8 encoded binary
 
   A series must consist of a single data type only. Series may have `nil` values in them.
 
@@ -58,7 +58,15 @@ defmodule Explorer.Series do
   @valid_dtypes Explorer.Shared.dtypes()
 
   @type dtype ::
-          :integer | :float | :boolean | :string | :date | :datetime | :binary | :categorical
+          :binary
+          | :boolean
+          | :categorical
+          | :date
+          | :datetime
+          | :float
+          | :integer
+          | :string
+
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 

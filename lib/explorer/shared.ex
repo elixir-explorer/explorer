@@ -7,7 +7,7 @@ defmodule Explorer.Shared do
   @doc """
   All supported dtypes.
   """
-  def dtypes, do: [:float, :integer, :boolean, :string, :date, :datetime, :binary, :categorical]
+  def dtypes, do: [:binary, :boolean, :categorical, :date, :datetime, :float, :integer, :string]
 
   @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
