@@ -81,11 +81,40 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  test "fetch/2" do
-    s = Series.from_list([1, 2, 3])
-    assert s[0] === 1
-    assert s[0..1] |> Series.to_list() === [1, 2]
-    assert s[[0, 1]] |> Series.to_list() === [1, 2]
+  describe "fetch/2" do
+    test "integer series" do
+      s = Series.from_list([1, 2, 3, nil, 5])
+      assert s[0] === 1
+      assert s[0..1] |> Series.to_list() === [1, 2]
+      assert s[[0, 1]] |> Series.to_list() === [1, 2]
+
+      assert s[3] == nil
+      assert s[-1] == 5
+    end
+
+    test "float series" do
+      s = Series.from_list([1.2, 2.3, 3.4, nil, 5.6])
+      assert s[0] === 1.2
+      assert s[0..1] |> Series.to_list() === [1.2, 2.3]
+      assert s[[0, 1]] |> Series.to_list() === [1.2, 2.3]
+
+      assert s[3] == nil
+      assert s[-1] == 5.6
+    end
+
+    test "string series" do
+      s = Series.from_list(["a", "b", nil, "d"])
+      assert s[0] === "a"
+      assert s[2] == nil
+      assert s[-1] == "d"
+    end
+
+    test "categorical series" do
+      s = Series.from_list(["a", "b", nil, "d"], dtype: :categorical)
+      assert s[0] === "a"
+      assert s[2] == nil
+      assert s[-1] == "d"
+    end
   end
 
   test "pop/2" do

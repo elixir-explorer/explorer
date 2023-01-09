@@ -478,6 +478,12 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<-62135596800000000::signed-64-native, 0::signed-64-native, 529550625987654::signed-64-native>>]
 
+  Categories are encoded as u32, with their internal representation:
+
+      iex> series = Explorer.Series.from_list(["a", "b", "c", "b"], dtype: :categorical)
+      iex> Explorer.Series.to_iovec(series)
+      [<<0::unsigned-32-native, 1::unsigned-32-native, 2::unsigned-32-native, 1::unsigned-32-native>>]
+
   """
   @doc type: :conversion
   @spec to_iovec(series :: Series.t()) :: [binary]

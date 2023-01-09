@@ -367,6 +367,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Float64(v) => Ok(Some(v).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
+        AnyValue::Categorical(idx, mapping) => Ok(mapping.get(idx).encode(env)),
         dt => panic!("cannot encode value {dt:?} to term"),
     }
 }
@@ -412,6 +413,11 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError
         DataType::Date => series_to_iovec!(resource, s, env, date, i32),
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             series_to_iovec!(resource, s, env, datetime, i64)
+        }
+        DataType::Categorical(Some(_)) => {
+            let cat_series = s.cast(&DataType::UInt32)?;
+
+            series_to_iovec!(resource, cat_series, env, u32, u32)
         }
         dt => panic!("to_iovec/1 not implemented for {dt:?}"),
     }
