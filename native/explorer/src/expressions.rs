@@ -409,14 +409,16 @@ pub fn expr_alias(expr: ExExpr, name: &str) -> ExExpr {
 pub fn expr_count(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
-    ExExpr::new(expr.count())
+    // We need to add zero to work around a Polars bug
+    // where casting a count returns the wrong result
+    ExExpr::new((expr.count() + 0.lit()).cast(DataType::Int64))
 }
 
 #[rustler::nif]
 pub fn expr_nil_count(expr: ExExpr) -> ExExpr {
     let expr: Expr = expr.resource.0.clone();
 
-    ExExpr::new(expr.null_count())
+    ExExpr::new(expr.null_count().cast(DataType::Int64))
 }
 
 #[rustler::nif]
