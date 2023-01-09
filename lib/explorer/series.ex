@@ -4,13 +4,14 @@ defmodule Explorer.Series do
 
   A series can be of the following data types:
 
-    * `:float` - 64-bit floating point number
-    * `:integer` - 64-bit signed integer
-    * `:boolean` - Boolean
-    * `:string` - UTF-8 encoded binary
     * `:binary` - Binary
+    * `:boolean` - Boolean
+    * `:category` - UTF-8 encoded binary, but as categories
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
+    * `:float` - 64-bit floating point number
+    * `:integer` - 64-bit signed integer
+    * `:string` - UTF-8 encoded binary
 
   A series must consist of a single data type only. Series may have `nil` values in them.
 
@@ -56,7 +57,16 @@ defmodule Explorer.Series do
 
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type dtype :: :integer | :float | :boolean | :string | :date | :datetime | :binary
+  @type dtype ::
+          :binary
+          | :boolean
+          | :category
+          | :date
+          | :datetime
+          | :float
+          | :integer
+          | :string
+
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
@@ -194,7 +204,15 @@ defmodule Explorer.Series do
         binary [<<228, 146, 51>>, "Elixir"]
       >
 
-  It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch:
+  Another option is to create a categorical series from a list of strings:
+
+      iex> Explorer.Series.from_list(["EUA", "Brazil", "Poland"], dtype: :category)
+      #Explorer.Series<
+        Polars[3]
+        category ["EUA", "Brazil", "Poland"]
+      >
+
+  It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
 
       iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: :datetime)
       #Explorer.Series<
@@ -460,6 +478,12 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<-62135596800000000::signed-64-native, 0::signed-64-native, 529550625987654::signed-64-native>>]
 
+  Categories are encoded as u32, with their internal representation:
+
+      iex> series = Explorer.Series.from_list(["a", "b", "c", "b"], dtype: :category)
+      iex> Explorer.Series.to_iovec(series)
+      [<<0::unsigned-32-native, 1::unsigned-32-native, 2::unsigned-32-native, 1::unsigned-32-native>>]
+
   """
   @doc type: :conversion
   @spec to_iovec(series :: Series.t()) :: [binary]
@@ -655,6 +679,10 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.bintype(s)
       {:u, 8}
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"], dtype: :category)
+      iex> Explorer.Series.bintype(s)
+      {:u, 32}
 
   """
   @doc type: :introspection

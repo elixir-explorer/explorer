@@ -37,6 +37,7 @@ features = [
   "dtype-date",
   "dtype-datetime",
   "dtype-binary",
+  "dtype-categorical",
   "ipc",
   "ipc_streaming",
   # JSON won't compile on RISCV and ARM 32 bits targets, so we disable in the "release" workflow.

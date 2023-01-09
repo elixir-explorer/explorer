@@ -56,6 +56,7 @@ defmodule Explorer.PolarsBackend.Series do
       "datetime[ms]" -> {:s, 64}
       "datetime[μs]" -> {:s, 64}
       "datetime[ns]" -> {:s, 64}
+      "cat" -> {:u, 32}
       dtype -> raise "cannot convert dtype #{inspect(dtype)} to bintype"
     end
   end

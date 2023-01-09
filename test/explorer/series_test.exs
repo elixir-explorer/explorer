@@ -73,13 +73,48 @@ defmodule Explorer.SeriesTest do
         Series.from_list([<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>])
       end
     end
+
+    test "with strings as categories" do
+      s = Series.from_list(["a", "b", "c"], dtype: :category)
+      assert Series.to_list(s) === ["a", "b", "c"]
+      assert Series.dtype(s) == :category
+    end
   end
 
-  test "fetch/2" do
-    s = Series.from_list([1, 2, 3])
-    assert s[0] === 1
-    assert s[0..1] |> Series.to_list() === [1, 2]
-    assert s[[0, 1]] |> Series.to_list() === [1, 2]
+  describe "fetch/2" do
+    test "integer series" do
+      s = Series.from_list([1, 2, 3, nil, 5])
+      assert s[0] === 1
+      assert s[0..1] |> Series.to_list() === [1, 2]
+      assert s[[0, 1]] |> Series.to_list() === [1, 2]
+
+      assert s[3] == nil
+      assert s[-1] == 5
+    end
+
+    test "float series" do
+      s = Series.from_list([1.2, 2.3, 3.4, nil, 5.6])
+      assert s[0] === 1.2
+      assert s[0..1] |> Series.to_list() === [1.2, 2.3]
+      assert s[[0, 1]] |> Series.to_list() === [1.2, 2.3]
+
+      assert s[3] == nil
+      assert s[-1] == 5.6
+    end
+
+    test "string series" do
+      s = Series.from_list(["a", "b", nil, "d"])
+      assert s[0] === "a"
+      assert s[2] == nil
+      assert s[-1] == "d"
+    end
+
+    test "categorical series" do
+      s = Series.from_list(["a", "b", nil, "d"], dtype: :category)
+      assert s[0] === "a"
+      assert s[2] == nil
+      assert s[-1] == "d"
+    end
   end
 
   test "pop/2" do

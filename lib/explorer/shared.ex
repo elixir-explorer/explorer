@@ -7,7 +7,7 @@ defmodule Explorer.Shared do
   @doc """
   All supported dtypes.
   """
-  def dtypes, do: [:float, :integer, :boolean, :string, :date, :datetime, :binary]
+  def dtypes, do: [:binary, :boolean, :category, :date, :datetime, :float, :integer, :string]
 
   @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
@@ -107,7 +107,8 @@ defmodule Explorer.Shared do
   without the need to cast it later.
   """
   def check_types!(list, preferable_type \\ nil) do
-    initial_type = if preferable_type in [:binary, :float, :integer], do: preferable_type
+    initial_type =
+      if preferable_type in [:binary, :float, :integer, :category], do: preferable_type
 
     type =
       Enum.reduce(list, initial_type, fn el, type ->
@@ -138,6 +139,7 @@ defmodule Explorer.Shared do
   defp type(item, _type) when is_boolean(item), do: :boolean
 
   defp type(item, :binary) when is_binary(item), do: :binary
+  defp type(item, :category) when is_binary(item), do: :category
   defp type(item, _type) when is_binary(item), do: :string
 
   defp type(%Date{} = _item, _type), do: :date
