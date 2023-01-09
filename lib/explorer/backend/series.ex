@@ -4,15 +4,15 @@ defmodule Explorer.Backend.Series do
   """
 
   @valid_dtypes [
-    :integer,
-    :float,
+    :binary,
     :boolean,
-    :string,
+    :categorical,
     :date,
     :datetime,
+    :float,
+    :integer,
     :list,
-    :binary,
-    :categorical
+    :string
   ]
 
   @type t :: struct()
