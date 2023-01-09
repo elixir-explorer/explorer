@@ -105,7 +105,7 @@ defmodule Explorer.PolarsBackend.Shared do
       :float -> Native.s_from_list_f64(name, list)
       :boolean -> Native.s_from_list_bool(name, list)
       :string -> Native.s_from_list_str(name, list)
-      :categorical -> Native.s_from_list_categories(name, list)
+      :category -> Native.s_from_list_categories(name, list)
       :date -> Native.s_from_list_date(name, list)
       :datetime -> Native.s_from_list_datetime(name, list)
       :binary -> Native.s_from_list_binary(name, list)
@@ -131,7 +131,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("f64"), do: :float
   def normalise_dtype("bool"), do: :boolean
   def normalise_dtype("str"), do: :string
-  def normalise_dtype("cat"), do: :categorical
+  def normalise_dtype("cat"), do: :category
   def normalise_dtype("binary"), do: :binary
   def normalise_dtype("date"), do: :date
   def normalise_dtype("datetime[ms]"), do: :datetime
@@ -143,7 +143,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:float), do: "f64"
   def internal_from_dtype(:boolean), do: "bool"
   def internal_from_dtype(:string), do: "str"
-  def internal_from_dtype(:categorical), do: "cat"
+  def internal_from_dtype(:category), do: "cat"
   def internal_from_dtype(:date), do: "date"
   def internal_from_dtype(:datetime), do: "datetime[μs]"
 

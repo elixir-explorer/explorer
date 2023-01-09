@@ -75,9 +75,9 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with strings as categories" do
-      s = Series.from_list(["a", "b", "c"], dtype: :categorical)
+      s = Series.from_list(["a", "b", "c"], dtype: :category)
       assert Series.to_list(s) === ["a", "b", "c"]
-      assert Series.dtype(s) == :categorical
+      assert Series.dtype(s) == :category
     end
   end
 
@@ -110,7 +110,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "categorical series" do
-      s = Series.from_list(["a", "b", nil, "d"], dtype: :categorical)
+      s = Series.from_list(["a", "b", nil, "d"], dtype: :category)
       assert s[0] === "a"
       assert s[2] == nil
       assert s[-1] == "d"

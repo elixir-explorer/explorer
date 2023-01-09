@@ -6,7 +6,7 @@ defmodule Explorer.Backend.Series do
   @valid_dtypes [
     :binary,
     :boolean,
-    :categorical,
+    :category,
     :date,
     :datetime,
     :float,

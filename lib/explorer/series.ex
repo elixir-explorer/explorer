@@ -6,7 +6,7 @@ defmodule Explorer.Series do
 
     * `:binary` - Binary
     * `:boolean` - Boolean
-    * `:categorical` - UTF-8 encoded binary, but as categories
+    * `:category` - UTF-8 encoded binary, but as categories
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
     * `:float` - 64-bit floating point number
@@ -60,7 +60,7 @@ defmodule Explorer.Series do
   @type dtype ::
           :binary
           | :boolean
-          | :categorical
+          | :category
           | :date
           | :datetime
           | :float
@@ -206,10 +206,10 @@ defmodule Explorer.Series do
 
   Another option is to create a categorical series from a list of strings:
 
-      iex> Explorer.Series.from_list(["EUA", "Brazil", "Poland"], dtype: :categorical)
+      iex> Explorer.Series.from_list(["EUA", "Brazil", "Poland"], dtype: :category)
       #Explorer.Series<
         Polars[3]
-        categorical ["EUA", "Brazil", "Poland"]
+        category ["EUA", "Brazil", "Poland"]
       >
 
   It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
@@ -480,7 +480,7 @@ defmodule Explorer.Series do
 
   Categories are encoded as u32, with their internal representation:
 
-      iex> series = Explorer.Series.from_list(["a", "b", "c", "b"], dtype: :categorical)
+      iex> series = Explorer.Series.from_list(["a", "b", "c", "b"], dtype: :category)
       iex> Explorer.Series.to_iovec(series)
       [<<0::unsigned-32-native, 1::unsigned-32-native, 2::unsigned-32-native, 1::unsigned-32-native>>]
 
@@ -680,7 +680,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.bintype(s)
       {:u, 8}
 
-      iex> s = Explorer.Series.from_list(["a", "b", "c"], dtype: :categorical)
+      iex> s = Explorer.Series.from_list(["a", "b", "c"], dtype: :category)
       iex> Explorer.Series.bintype(s)
       {:u, 32}
 
