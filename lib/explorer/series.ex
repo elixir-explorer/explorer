@@ -693,6 +693,7 @@ defmodule Explorer.Series do
   Return a series with the category names of a categorical series.
 
   Each category has the index equal to its position.
+  No order for the categories is guaranteed.
 
   ## Examples
 
