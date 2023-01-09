@@ -992,6 +992,33 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "add columns with dtype-specific missing values" do
+      df = DF.new(a: [true, nil, false], b: [nil, 1.0, 2.0])
+
+      df1 =
+        DF.mutate(df,
+          c: fill_missing(a, false),
+          d: fill_missing(a, true),
+          e: fill_missing(b, :nan)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [true, nil, false],
+               b: [nil, 1.0, 2.0],
+               c: [true, false, false],
+               d: [true, true, false],
+               e: [:nan, 1.0, 2.0]
+             }
+
+      assert df1.dtypes == %{
+               "a" => :boolean,
+               "b" => :float,
+               "c" => :boolean,
+               "d" => :boolean,
+               "e" => :float
+             }
+    end
+
     test "add columns with head+shift" do
       df = DF.new(a: [1, 2, 3])
 

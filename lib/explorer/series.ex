@@ -1703,7 +1703,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
         Polars[3]
-        float [5.0, infinity, 5.0]
+        float [5.0, Inf, 5.0]
       >
   """
   @doc type: :element_wise
@@ -2643,6 +2643,7 @@ defmodule Explorer.Series do
     * `:max` - replace nil with the series maximum
     * `:min` - replace nil with the series minimum
     * `:mean` - replace nil with the series mean
+    * `:nan` (float only) - replace nil with `NaN`
 
   ## Examples
 
@@ -2681,6 +2682,8 @@ defmodule Explorer.Series do
         integer [1, 2, 2, 4]
       >
 
+  Values that belong to the series itself can also be added as missing:
+
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.fill_missing(s, 3)
       #Explorer.Series<
@@ -2695,15 +2698,42 @@ defmodule Explorer.Series do
         string ["a", "b", "c", "d"]
       >
 
+  Mismatched types will raise:
+
       iex> s = Explorer.Series.from_list([1, 2, nil, 4])
       iex> Explorer.Series.fill_missing(s, "foo")
       ** (ArgumentError) cannot invoke Explorer.Series.fill_missing/2 with mismatched dtypes: :integer and "foo"
+
+  Floats in particular accept missing values to be set to NaN:
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
+      iex> Explorer.Series.fill_missing(s, :nan)
+      #Explorer.Series<
+        Polars[4]
+        float [1.0, 2.0, NaN, 4.0]
+      >
+
   """
   @doc type: :window
   @spec fill_missing(
           Series.t(),
-          :forward | :backward | :max | :min | :mean | Explorer.Backend.Series.valid_types()
+          :forward
+          | :backward
+          | :max
+          | :min
+          | :mean
+          | :nan
+          | Explorer.Backend.Series.valid_types()
         ) :: Series.t()
+  def fill_missing(%Series{} = series, :nan) do
+    if series.dtype != :float do
+      raise ArgumentError,
+            "fill_missing with :nan values require a :float series, got #{inspect(series.dtype)}"
+    end
+
+    Shared.apply_impl(series, :fill_missing, [:nan])
+  end
+
   def fill_missing(%Series{} = series, strategy)
       when K.in(strategy, [:forward, :backward, :min, :max, :mean]),
       do: Shared.apply_impl(series, :fill_missing, [strategy])
@@ -2816,6 +2846,7 @@ defmodule Explorer.Series do
     do: Shared.apply_impl(series, :is_nan)
 
   def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:float])
+
   # Strings
 
   @doc """

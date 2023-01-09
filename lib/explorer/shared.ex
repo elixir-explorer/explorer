@@ -163,9 +163,11 @@ defmodule Explorer.Shared do
   @doc """
   Helper for shared behaviour in inspect.
   """
-  def to_string(i, _opts) when is_nil(i), do: "nil"
+  def to_string(nil, _opts), do: "nil"
+  def to_string(:nan, _opts), do: "NaN"
+  def to_string(:infinity, _opts), do: "Inf"
+  def to_string(:neg_infinity, _opts), do: "-Inf"
   def to_string(i, _opts) when is_binary(i), do: inspect(i)
-
   def to_string(i, _opts), do: Kernel.to_string(i)
 
   @doc """

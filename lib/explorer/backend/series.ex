@@ -133,7 +133,7 @@ defmodule Explorer.Backend.Series do
 
   @callback fill_missing(
               s,
-              strategy :: :backward | :forward | :min | :max | :mean | valid_types()
+              strategy :: :backward | :forward | :min | :max | :mean | :nan | valid_types()
             ) :: s
   @callback is_nil(s) :: s
   @callback is_not_nil(s) :: s

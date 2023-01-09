@@ -38,7 +38,6 @@ defmodule Explorer.Backend.LazySeries do
     remainder: 2,
     pow: 2,
     fill_missing: 2,
-    fill_missing_with_value: 2,
     concat: 2,
     coalesce: 2,
     cast: 2,
@@ -231,20 +230,11 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def fill_missing(%Series{} = s, strategy) when is_atom(strategy) do
-    args = [lazy_series!(s), Atom.to_string(strategy)]
+  def fill_missing(%Series{} = s, strategy) do
+    args = [lazy_series!(s), strategy]
     data = new(:fill_missing, args, aggregations?(args))
-
     dtype = if strategy == :mean, do: :float, else: s.dtype
     Backend.Series.new(data, dtype)
-  end
-
-  @impl true
-  def fill_missing(%Series{} = s, value) do
-    args = [lazy_series!(s), value]
-    data = new(:fill_missing_with_value, args, aggregations?(args))
-
-    Backend.Series.new(data, s.dtype)
   end
 
   @impl true

@@ -416,6 +416,13 @@ pub fn s_fill_missing(data: ExSeries, strategy: &str) -> Result<ExSeries, Explor
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_fill_missing_with_nan(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let s = s.f64()?.fill_null_with_values(f64::NAN)?.into_series();
+    Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_fill_missing_with_int(data: ExSeries, strategy: i64) -> Result<ExSeries, ExplorerError> {
     let s = &data.resource.0;
     let s = s.i64()?.fill_null_with_values(strategy)?.into_series();
