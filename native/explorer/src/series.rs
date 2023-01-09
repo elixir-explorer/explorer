@@ -786,7 +786,7 @@ pub fn s_categories(data: ExSeries) -> Result<ExSeries, ExplorerError> {
         DataType::Categorical(Some(mapping)) => {
             let size = mapping.len() as u32;
             let categories: Vec<&str> = (0..size).map(|id| mapping.get(id)).collect();
-            let series = Series::new("categories".into(), &categories);
+            let series = Series::new("categories", &categories);
             Ok(ExSeries::new(series))
         }
         _ => Err(ExplorerError::Other(
