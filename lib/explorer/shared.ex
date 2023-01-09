@@ -223,7 +223,7 @@ defmodule Explorer.Shared do
           do: {distance, key}
 
     case suggestions do
-      [] -> []
+      [] -> [". The available entries are: #{inspect(available_keys)}"]
       suggestions -> [". Did you mean:\n\n" | format_suggestions(suggestions)]
     end
   end

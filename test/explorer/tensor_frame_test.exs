@@ -90,7 +90,7 @@ defmodule Explorer.TensorFrameTest do
                    fn -> tf[0] end
 
       assert_raise ArgumentError,
-                   "could not find column \"c\" either because it doesn't exist or its dtype is not supported in Explorer.TensorFrame",
+                   ~r"could not find column \"c\" either because it doesn't exist or its dtype is not supported in Explorer.TensorFrame",
                    fn -> tf[:c] end
     end
 

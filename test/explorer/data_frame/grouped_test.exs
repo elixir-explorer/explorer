@@ -35,7 +35,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
 
     test "raise error for unknown columns", %{df: df} do
-      assert_raise ArgumentError, "could not find column name \"something_else\"", fn ->
+      assert_raise ArgumentError, ~r"could not find column name \"something_else\"", fn ->
         DF.group_by(df, "something_else")
       end
     end
@@ -69,7 +69,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "raise error for unknown groups", %{df: df} do
       df1 = DF.group_by(df, ["country", "year"])
 
-      assert_raise ArgumentError, "could not find column name \"something_else\"", fn ->
+      assert_raise ArgumentError, ~r"could not find column name \"something_else\"", fn ->
         DF.ungroup(df1, ["something_else"])
       end
     end

@@ -117,6 +117,34 @@ defmodule Explorer.DataFrame do
         Polars[178]
         integer [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
       >
+
+  Accessing a dataframe will always return a column. You can pass either a string or
+  an atom, representing the column name. Or an integer representing the column order:
+
+      iex> df = Explorer.Datasets.wine()
+      iex> df[0]
+      #Explorer.Series<
+        Polars[178]
+        integer [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
+      >
+
+  Passing a list will return a dataframe with only the desired columns:
+
+      iex> df = Explorer.Datasets.wine()
+      iex> df[["class", "hue"]]
+      #Explorer.DataFrame<
+        Polars[178 x 2]
+        class integer [1, 1, 1, 1, 1, ...]
+        hue float [1.04, 1.05, 1.03, 0.86, 1.04, ...]
+      >
+
+  Given you can also access a series using its index, you can use multiple accesses to select
+  a column and row at the same time:
+
+      iex> df = Explorer.Datasets.wine()
+      iex> df["class"][3]
+      1
+
   """
 
   alias __MODULE__, as: DataFrame
@@ -1301,6 +1329,13 @@ defmodule Explorer.DataFrame do
   See `to_series/2` if you want a list of columns with series as values.
   Note that this function does not take into account groups.
 
+  > #### Warning {: .warning}
+  >
+  > This is an expensive operation since it converts series to lists and doing
+  > so will copy the whole dataframe. Prefer to use the operations in this and
+  > the `Explorer.Series` module rather than the ones in `Enum` whenever possible,
+  > as Explorer is optimized for large series.
+
   ## Options
 
     * `:atom_keys` - Configure if the resultant map should have atom keys. (default: `false`)
@@ -1366,7 +1401,11 @@ defmodule Explorer.DataFrame do
 
   > #### Warning {: .warning}
   >
-  > This may be an expensive operation because `polars` stores data in columnar format.
+  > This is an expensive operation since data is stored in a columnar format.
+  > You must avoid converting a dataframe to rows, as that will transform and
+  > copy the whole dataframe in memory. Prefer to use the operations in this
+  > module rather than the ones in `Enum` whenever possible, as this module is
+  > optimized for large series.
 
   ## Options
 

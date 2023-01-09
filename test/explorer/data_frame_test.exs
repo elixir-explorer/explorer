@@ -1094,7 +1094,7 @@ defmodule Explorer.DataFrameTest do
   describe "arrange/3" do
     test "raises with invalid column names", %{df: df} do
       assert_raise ArgumentError,
-                   "could not find column name \"test\"",
+                   ~r"could not find column name \"test\"",
                    fn -> DF.arrange(df, test) end
     end
   end
@@ -1206,7 +1206,7 @@ defmodule Explorer.DataFrameTest do
   describe "join/3" do
     test "raises if no overlapping columns" do
       assert_raise ArgumentError,
-                   "could not find any overlapping columns",
+                   ~r"could not find any overlapping columns",
                    fn ->
                      left = DF.new(a: [1, 2, 3])
                      right = DF.new(b: [1, 2, 3])
@@ -1499,7 +1499,7 @@ defmodule Explorer.DataFrameTest do
                  fn -> df[100] end
 
     assert_raise ArgumentError,
-                 "could not find column name \"class\"",
+                 ~r"could not find column name \"class\"",
                  fn -> df[:class] end
 
     assert DF.to_columns(df[0..100]) == DF.to_columns(df)
@@ -1684,7 +1684,7 @@ defmodule Explorer.DataFrameTest do
     test "with keyword and a column that doesn't exist" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-      assert_raise ArgumentError, "could not find column name \"g\"", fn ->
+      assert_raise ArgumentError, ~r"could not find column name \"g\"", fn ->
         DF.rename(df, g: "first")
       end
     end
@@ -1692,7 +1692,7 @@ defmodule Explorer.DataFrameTest do
     test "with a map and a column that doesn't exist" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-      assert_raise ArgumentError, "could not find column name \"i\"", fn ->
+      assert_raise ArgumentError, ~r"could not find column name \"i\"", fn ->
         DF.rename(df, %{"a" => "first", "i" => "foo"})
       end
     end
@@ -2048,7 +2048,7 @@ defmodule Explorer.DataFrameTest do
     test "keep column raises error with non-existent column" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
 
-      assert_raise ArgumentError, "could not find column name \"g\"", fn ->
+      assert_raise ArgumentError, ~r"could not find column name \"g\"", fn ->
         DF.select(df, ["g"])
       end
     end
@@ -2090,7 +2090,7 @@ defmodule Explorer.DataFrameTest do
     test "drop column raises error with non-existent column" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
 
-      assert_raise ArgumentError, "could not find column name \"g\"", fn ->
+      assert_raise ArgumentError, ~r"could not find column name \"g\"", fn ->
         DF.discard(df, ["g"])
       end
     end

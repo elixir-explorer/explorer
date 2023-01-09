@@ -12,12 +12,40 @@ defmodule Explorer.Series do
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
 
-  A series must consist of a single data type only. Series are nullable, but may not consist only of
-  nils.
+  A series must consist of a single data type only. Series may have `nil` values in them.
 
-  Many functions only apply to certain dtypes. Where that is the case, you'll find a `Supported
-  dtypes` section in the function documentation and the function will raise an `ArgumentError` if
+  Many functions only apply to certain dtypes. Where that is the case, you'll find a "Supported
+  dtypes" section in the function documentation and the function will raise an `ArgumentError` if
   a series with an invalid dtype is used.
+
+  ## Creating series
+
+  Series can be created using `from_list/2`, `from_binary/3`, and friends:
+
+  Series can be made of numbers:
+
+      iex> Explorer.Series.from_list([1, 2, 3])
+      #Explorer.Series<
+        Polars[3]
+        integer [1, 2, 3]
+      >
+
+  Series are nullable, so you may also include nils:
+
+      iex> Explorer.Series.from_list([1.0, nil, 2.5, 3.1])
+      #Explorer.Series<
+        Polars[4]
+        float [1.0, nil, 2.5, 3.1]
+      >
+
+  Any of the dtypes above are supported, such as strings:
+
+      iex> Explorer.Series.from_list(["foo", "bar", "baz"])
+      #Explorer.Series<
+        Polars[3]
+        string ["foo", "bar", "baz"]
+      >
+
   """
 
   import Kernel, except: [and: 2, not: 1, in: 2]
@@ -103,7 +131,7 @@ defmodule Explorer.Series do
 
   ## Examples
 
-  Explorer will infer the type from the values in the list.
+  Explorer will infer the type from the values in the list:
 
       iex> Explorer.Series.from_list([1, 2, 3])
       #Explorer.Series<
@@ -111,7 +139,7 @@ defmodule Explorer.Series do
         integer [1, 2, 3]
       >
 
-  Series are nullable, so you may also include nils.
+  Series are nullable, so you may also include nils:
 
       iex> Explorer.Series.from_list([1.0, nil, 2.5, 3.1])
       #Explorer.Series<
@@ -119,7 +147,7 @@ defmodule Explorer.Series do
         float [1.0, nil, 2.5, 3.1]
       >
 
-  A mix of integers and floats will be downcasted to a float.
+  A mix of integers and floats will be cast to a float:
 
       iex> Explorer.Series.from_list([1, 2.0])
       #Explorer.Series<
@@ -127,7 +155,7 @@ defmodule Explorer.Series do
         float [1.0, 2.0]
       >
 
-  Trying to create a "nil" series will, by default, result in a series of floats.
+  Trying to create a "nil" series will, by default, result in a series of floats:
 
       iex> Explorer.Series.from_list([nil, nil])
       #Explorer.Series<
@@ -150,7 +178,7 @@ defmodule Explorer.Series do
       >
 
   The `dtype` option is particulary important if a `:binary` series is desired, because
-  by default binary series will have the dtype of `:string`.
+  by default binary series will have the dtype of `:string`:
 
       iex> Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>], dtype: :binary)
       #Explorer.Series<
@@ -166,7 +194,7 @@ defmodule Explorer.Series do
         binary [<<228, 146, 51>>, "Elixir"]
       >
 
-  It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
+  It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch:
 
       iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: :datetime)
       #Explorer.Series<
@@ -174,7 +202,7 @@ defmodule Explorer.Series do
         datetime [2022-04-13 21:00:42.000000]
       >
 
-  Mixing non-numeric data types will raise an ArgumentError.
+  Mixing non-numeric data types will raise an ArgumentError:
 
       iex> Explorer.Series.from_list([1, "a"])
       ** (ArgumentError) the value "a" does not match the inferred series dtype :integer
@@ -349,6 +377,13 @@ defmodule Explorer.Series do
   @doc """
   Converts a series to a list.
 
+  > #### Warning {: .warning}
+  >
+  > You must avoid converting a series to list, as that requires copying
+  > the whole series in memory. Prefer to use the operations in this module
+  > rather than the ones in `Enum` whenever possible, as this module is
+  > optimized for large series.
+
   ## Examples
 
       iex> series = Explorer.Series.from_list([1, 2, 3])
@@ -363,6 +398,13 @@ defmodule Explorer.Series do
   Converts a series to an enumerable.
 
   The enumerable will lazily traverse the series.
+
+  > #### Warning {: .warning}
+  >
+  > You must avoid converting a series to enum, as that will copy the whole
+  > series in memory as you traverse it. Prefer to use the operations in this
+  > module rather than the ones in `Enum` whenever possible, as this module is
+  > optimized for large series.
 
   ## Examples
 
