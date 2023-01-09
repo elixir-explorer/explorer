@@ -272,11 +272,6 @@ defmodule Explorer.SeriesTest do
       assert Series.bintype(s) == {:u, 8}
     end
 
-    test "string series" do
-      s = Series.from_list(["Bob", "Alice", "Joe"])
-      assert Series.bintype(s) == :utf8
-    end
-
     test "date series" do
       s = Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
       assert Series.bintype(s) == {:s, 32}
@@ -285,11 +280,6 @@ defmodule Explorer.SeriesTest do
     test "datetime series" do
       s = Series.from_list([~N[2022-09-12 22:21:46.250899]])
       assert Series.bintype(s) == {:s, 64}
-    end
-
-    test "binary series" do
-      s = Series.from_list([<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>], dtype: :binary)
-      assert Series.bintype(s) == :binary
     end
   end
 

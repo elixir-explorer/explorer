@@ -375,19 +375,18 @@ defmodule Explorer.Series do
   def to_enum(series), do: Explorer.Series.Iterator.new(series)
 
   @doc """
-  Retrieves the underlying io vectors from a series.
+  Returns a series as a list of fixed-width binaries.
 
-  An io vector is a list of binaries. This is typically a reference
-  to the in-memory representation of the series. If the whole series
-  in contiguous in memory, then the list will have a single element.
-  All binaries are in native endianness.
+  An io vector (`iovec`) is the Erlang VM term for a flat list of binaries.
+  This is typically a reference to the in-memory representation of the series.
+  If the whole series in contiguous in memory, then the list will have a single
+  element. All binaries are in native endianness.
 
   This operation fails if the series has `nil` values.
   Use `fill_missing/1` to handle them accordingly.
 
   To retrieve the type of the underlying io vector, use `bintype/1`.
-
-  To convert the iovec to a binary, you can use `IO.iodata_to_binary/1`.
+  To convert an iovec to a binary, you can use `IO.iodata_to_binary/1`.
 
   ## Examples
 
@@ -419,26 +418,13 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<-62135596800000000::signed-64-native, 0::signed-64-native, 529550625987654::signed-64-native>>]
 
-  And strings are encoded contiguously, which has limited usage unless they are
-  all of the same size.
-
-      iex> series = Explorer.Series.from_list(["foo", "bar", "bazbat"])
-      iex> Explorer.Series.to_iovec(series)
-      [<<"foobarbazbat">>]
-
-  The same principle from strings applies to binaries:
-
-      iex> series = Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>], dtype: :binary)
-      iex> Explorer.Series.to_iovec(series)
-      [<<228, 146, 51, 42, 209, 236>>]
-
   """
   @doc type: :conversion
   @spec to_iovec(series :: Series.t()) :: [binary]
   def to_iovec(series), do: Shared.apply_impl(series, :to_iovec)
 
   @doc """
-  Retrieves the underlying binary from a series.
+  Returns a series as a fixed-width binary.
 
   This is a shortcut around `to_iovec/1`. If possible, prefer
   to use `to_iovec/1` as that avoids copying binaries.
@@ -599,23 +585,18 @@ defmodule Explorer.Series do
   def size(series), do: Shared.apply_impl(series, :size)
 
   @doc """
-  Returns the type of the underlying binary representation.
+  Returns the type of the underlying fixed-width binary representation.
 
-  It returns something in the shape of `atom()` or `{atom(), bits_size}`
+  It returns something in the shape of `{atom(), bits_size}`
   and is often used in conjunction with `to_iovec/1` and `to_binary/1`.
 
   The possible bintypes are:
 
-  * `:utf8` for strings.
   * `:u` for unsigned integers.
   * `:s` for signed integers.
   * `:f` for floats.
 
   ## Examples
-
-      iex> s = Explorer.Series.from_list(["Alice", "Bob"])
-      iex> Explorer.Series.bintype(s)
-      :utf8
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4])
       iex> Explorer.Series.bintype(s)
@@ -633,13 +614,9 @@ defmodule Explorer.Series do
       iex> Explorer.Series.bintype(s)
       {:u, 8}
 
-      iex> s = Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>], dtype: :binary)
-      iex> Explorer.Series.bintype(s)
-      :binary
-
   """
   @doc type: :introspection
-  @spec bintype(series :: Series.t()) :: :utf8 | :binary | {:s | :u | :f, non_neg_integer()}
+  @spec bintype(series :: Series.t()) :: {:s | :u | :f, non_neg_integer()}
   def bintype(series), do: Shared.apply_impl(series, :bintype)
 
   # Slice and dice
