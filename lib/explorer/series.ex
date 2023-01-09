@@ -680,6 +680,10 @@ defmodule Explorer.Series do
       iex> Explorer.Series.bintype(s)
       {:u, 8}
 
+      iex> s = Explorer.Series.from_list(["a", "b", "c"], dtype: :categorical)
+      iex> Explorer.Series.bintype(s)
+      {:u, 32}
+
   """
   @doc type: :introspection
   @spec bintype(series :: Series.t()) :: {:s | :u | :f, non_neg_integer()}
