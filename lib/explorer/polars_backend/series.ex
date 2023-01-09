@@ -61,6 +61,10 @@ defmodule Explorer.PolarsBackend.Series do
     end
   end
 
+  @impl true
+  def categories(%Series{dtype: :category} = series),
+    do: Shared.apply_series(series, :s_categories)
+
   # Slice and dice
 
   @impl true
