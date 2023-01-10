@@ -689,6 +689,34 @@ defmodule Explorer.Series do
   @spec bintype(series :: Series.t()) :: {:s | :u | :f, non_neg_integer()}
   def bintype(series), do: Shared.apply_impl(series, :bintype)
 
+  @doc """
+  Return a series with the category names of a categorical series.
+
+  Each category has the index equal to its position.
+  No order for the categories is guaranteed.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c", nil, "a", "c"], dtype: :category)
+      iex> Explorer.Series.categories(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["a", "b", "c"]
+      >
+
+      iex> s = Explorer.Series.from_list(["c", "a", "b"], dtype: :category)
+      iex> Explorer.Series.categories(s)
+      #Explorer.Series<
+        Polars[3]
+        string ["c", "a", "b"]
+      >
+
+  """
+  @doc type: :introspection
+  @spec categories(series :: Series.t()) :: Series.t()
+  def categories(%Series{dtype: :category} = series), do: Shared.apply_impl(series, :categories)
+  def categories(%Series{dtype: dtype}), do: dtype_error("categories/1", dtype, [:category])
+
   # Slice and dice
 
   @doc """

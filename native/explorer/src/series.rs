@@ -780,6 +780,20 @@ pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_categories(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s: &Series = &data.resource.0;
+    match s.dtype() {
+        DataType::Categorical(Some(mapping)) => {
+            let size = mapping.len() as u32;
+            let categories: Vec<&str> = (0..size).map(|id| mapping.get(id)).collect();
+            let series = Series::new("categories", &categories);
+            Ok(ExSeries::new(series))
+        }
+        _ => panic!("Cannot get categories from non categorical series"),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_seedable_random_indices(
     length: usize,
     n_samples: usize,

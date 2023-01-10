@@ -230,6 +230,7 @@ rustler::init!(
         s_argsort,
         s_as_str,
         s_cast,
+        s_categories,
         s_coalesce,
         s_concat,
         s_contains,

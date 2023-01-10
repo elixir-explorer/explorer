@@ -832,4 +832,11 @@ defmodule Explorer.SeriesTest do
     assert Series.nil_count(s2) == 4
     assert Series.nil_count(s3) == 0
   end
+
+  test "categories/1" do
+    s = Series.from_list(["a", "b", "c", nil, "a"], dtype: :category)
+    categories = Series.categories(s)
+    assert Series.to_list(categories) === ["a", "b", "c"]
+    assert Series.dtype(categories) == :string
+  end
 end
