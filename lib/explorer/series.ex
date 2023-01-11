@@ -76,6 +76,7 @@ defmodule Explorer.Series do
   @behaviour Access
   @compile {:no_warn_undefined, Nx}
 
+  defguardp io_dtype?(dtype) when K.not(K.in(dtype, [:binary, :string]))
   defguardp numeric_dtype?(dtype) when K.in(dtype, [:float, :integer])
   defguardp numeric_or_bool_dtype?(dtype) when K.in(dtype, [:float, :integer, :boolean])
   defguardp numeric_or_date_dtype?(dtype) when K.in(dtype, [:float, :integer, :date, :datetime])
@@ -478,7 +479,15 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<-62135596800000000::signed-64-native, 0::signed-64-native, 529550625987654::signed-64-native>>]
 
-  Categories are encoded as u32, with their internal representation:
+  The operation raises for binaries and strings, as they do not provide a fixed-width
+  binary representation:
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c", "b"])
+      iex> Explorer.Series.to_iovec(s)
+      ** (ArgumentError) cannot convert series of dtype :string into iovec
+
+  However, if appropriate, you can convert them to categorical types,
+  which will then return the index of each category:
 
       iex> series = Explorer.Series.from_list(["a", "b", "c", "b"], dtype: :category)
       iex> Explorer.Series.to_iovec(series)
@@ -487,7 +496,13 @@ defmodule Explorer.Series do
   """
   @doc type: :conversion
   @spec to_iovec(series :: Series.t()) :: [binary]
-  def to_iovec(series), do: Shared.apply_impl(series, :to_iovec)
+  def to_iovec(%Series{dtype: dtype} = series) do
+    if io_dtype?(dtype) do
+      Shared.apply_impl(series, :to_iovec)
+    else
+      raise ArgumentError, "cannot convert series of dtype #{inspect(dtype)} into iovec"
+    end
+  end
 
   @doc """
   Returns a series as a fixed-width binary.
@@ -653,8 +668,8 @@ defmodule Explorer.Series do
   @doc """
   Returns the type of the underlying fixed-width binary representation.
 
-  It returns something in the shape of `{atom(), bits_size}`
-  and is often used in conjunction with `to_iovec/1` and `to_binary/1`.
+  It returns something in the shape of `{atom(), bits_size}` or `:none`.
+  It is often used in conjunction with `to_iovec/1` and `to_binary/1`.
 
   The possible bintypes are:
 
@@ -680,14 +695,30 @@ defmodule Explorer.Series do
       iex> Explorer.Series.bintype(s)
       {:u, 8}
 
+  The operation returns `:none` for strings and binaries, as they do not
+  provide a fixed-width binary representation:
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.bintype(s)
+      :none
+
+  However, if appropriate, you can convert them to categorical types,
+  which will then return the index of each category:
+
       iex> s = Explorer.Series.from_list(["a", "b", "c"], dtype: :category)
       iex> Explorer.Series.bintype(s)
       {:u, 32}
 
   """
   @doc type: :introspection
-  @spec bintype(series :: Series.t()) :: {:s | :u | :f, non_neg_integer()}
-  def bintype(series), do: Shared.apply_impl(series, :bintype)
+  @spec bintype(series :: Series.t()) :: {:s | :u | :f, non_neg_integer()} | :none
+  def bintype(%Series{dtype: dtype} = series) do
+    if io_dtype?(dtype) do
+      Shared.apply_impl(series, :bintype)
+    else
+      :none
+    end
+  end
 
   @doc """
   Return a series with the category names of a categorical series.
