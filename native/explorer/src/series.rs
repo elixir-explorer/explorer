@@ -3,6 +3,7 @@ use crate::{
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
+use polars::export::arrow::array::Utf8Array;
 use polars::prelude::*;
 use rand::seq::IteratorRandom;
 use rand::{Rng, SeedableRng};
@@ -790,6 +791,48 @@ pub fn s_categories(data: ExSeries) -> Result<ExSeries, ExplorerError> {
             Ok(ExSeries::new(series))
         }
         _ => panic!("Cannot get categories from non categorical series"),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_categorize(indices: ExSeries, categories: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s: &Series = &indices.resource.0;
+    let cat: &Series = &categories.resource.0;
+    let chunks = s.cast(&DataType::UInt32)?.u32()?.clone();
+
+    match cat.dtype() {
+        DataType::Categorical(Some(mapping)) => {
+            let categorical_chunks = unsafe {
+                CategoricalChunked::from_cats_and_rev_map_unchecked(chunks, mapping.clone())
+            };
+            Ok(ExSeries::new(categorical_chunks.into_series()))
+        }
+        DataType::Utf8 => {
+            if cat.len() != cat.unique()?.len() {
+                return Err(ExplorerError::Other(
+                    "categories as strings cannot have duplicated values".into(),
+                ));
+            };
+
+            let utf8s = cat.utf8()?;
+
+            if utf8s.has_validity() {
+                Err(ExplorerError::Other(
+                    "categories as strings cannot have nil values".into(),
+                ))
+            } else {
+                let values: Vec<Option<&str>> = utf8s.into();
+                let array = Utf8Array::<i64>::from(values);
+                let mapping = RevMapping::Local(array);
+
+                let categorical_chunks = unsafe {
+                    CategoricalChunked::from_cats_and_rev_map_unchecked(chunks, Arc::new(mapping))
+                };
+
+                Ok(ExSeries::new(categorical_chunks.into_series()))
+            }
+        }
+        _ => panic!("Cannot get categories from non categorical or string series"),
     }
 }
 

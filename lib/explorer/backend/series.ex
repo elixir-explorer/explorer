@@ -30,6 +30,7 @@ defmodule Explorer.Backend.Series do
   @callback to_list(s) :: list()
   @callback to_iovec(s) :: [binary()]
   @callback cast(s, dtype) :: s
+  @callback categorize(s, s) :: s
 
   # Introspection
 

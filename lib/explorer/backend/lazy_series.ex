@@ -618,6 +618,7 @@ defmodule Explorer.Backend.LazySeries do
     at_every: 2,
     bintype: 1,
     categories: 1,
+    categorize: 2,
     frequencies: 1,
     mask: 2,
     slice: 2,
