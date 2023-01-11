@@ -795,7 +795,7 @@ pub fn s_categories(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_categorize(indices: ExSeries, categories: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_categorise(indices: ExSeries, categories: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s: &Series = &indices.resource.0;
     let cat: &Series = &categories.resource.0;
     let chunks = s.cast(&DataType::UInt32)?.u32()?.clone();

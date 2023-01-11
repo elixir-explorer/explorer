@@ -730,14 +730,14 @@ defmodule Explorer.Series do
 
       iex> categories = Explorer.Series.from_list(["a", "b", "c"], dtype: :category)
       iex> indexes = Explorer.Series.from_list([0, 2, 1, 0, 2])
-      iex> Explorer.Series.categorize(indexes, categories)
+      iex> Explorer.Series.categorise(indexes, categories)
       #Explorer.Series<
         Polars[5]
         category ["a", "c", "b", "a", "c"]
       >
 
       iex> indexes = Explorer.Series.from_list([0, 2, 1, 0, 2])
-      iex> Explorer.Series.categorize(indexes, ["a", "b", "c"])
+      iex> Explorer.Series.categorise(indexes, ["a", "b", "c"])
       #Explorer.Series<
         Polars[5]
         category ["a", "c", "b", "a", "c"]
@@ -746,7 +746,7 @@ defmodule Explorer.Series do
   Elements that are not mapped to a category will become `nil`:
 
       iex> indexes = Explorer.Series.from_list([0, 2, 1, 0, 2, 7])
-      iex> Explorer.Series.categorize(indexes, ["a", "b", "c"])
+      iex> Explorer.Series.categorise(indexes, ["a", "b", "c"])
       #Explorer.Series<
         Polars[6]
         category ["a", "c", "b", "a", "c", nil]
@@ -756,7 +756,7 @@ defmodule Explorer.Series do
 
       iex> categories = Explorer.Series.from_list(["a", "b", "c", nil, "a"], dtype: :category)
       iex> indexes = Explorer.Series.from_list([0, 2, 1, 0, 2])
-      iex> Explorer.Series.categorize(indexes, categories)
+      iex> Explorer.Series.categorise(indexes, categories)
       #Explorer.Series<
         Polars[5]
         category ["a", "c", "b", "a", "c"]
@@ -764,11 +764,12 @@ defmodule Explorer.Series do
 
   """
   @doc type: :element_wise
-  def categorize(%Series{dtype: :integer} = series, %Series{} = categories),
-    do: Shared.apply_impl(series, :categorize, [categories])
+  def categorise(%Series{dtype: :integer} = series, %Series{dtype: dtype} = categories)
+      when K.in(dtype, [:string, :category]),
+      do: Shared.apply_impl(series, :categorise, [categories])
 
-  def categorize(%Series{dtype: :integer} = series, [head | _] = categories) when is_binary(head),
-    do: Shared.apply_impl(series, :categorize, [from_list(categories, dtype: :string)])
+  def categorise(%Series{dtype: :integer} = series, [head | _] = categories) when is_binary(head),
+    do: Shared.apply_impl(series, :categorise, [from_list(categories, dtype: :string)])
 
   # Slice and dice
 
