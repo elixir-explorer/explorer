@@ -15,7 +15,7 @@ defmodule Explorer.MixProject do
       package: package(),
       deps: deps(),
       docs: docs(),
-      preferred_cli_env: [docs: :docs, "hex.publish": :docs, ci: :test],
+      preferred_cli_env: [ci: :test],
       aliases: [
         "rust.lint": ["cmd cargo clippy --manifest-path=native/explorer/Cargo.toml -- -Dwarnings"],
         "rust.fmt": ["cmd cargo fmt --manifest-path=native/explorer/Cargo.toml --all"],
@@ -41,8 +41,8 @@ defmodule Explorer.MixProject do
       {:rustler, ">= 0.0.0", optional: Mix.env() == :prod},
       {:nx, "~> 0.4.0", optional: true},
 
-      ## Non-prod
-      {:ex_doc, "~> 0.24", only: :docs},
+      ## Dev
+      {:ex_doc, "~> 0.24", only: :dev},
       {:benchee, "~> 1.1", only: :dev}
     ]
   end
@@ -76,6 +76,8 @@ defmodule Explorer.MixProject do
         "Functions: Row-based": &(&1[:type] == :rows),
         "Functions: Aggregation": &(&1[:type] == :aggregation),
         "Functions: Element-wise": &(&1[:type] == :element_wise),
+        "Functions: Float-wise": &(&1[:type] == :float_wise),
+        "Functions: String-wise": &(&1[:type] == :string_wise),
         "Functions: Introspection": &(&1[:type] == :introspection),
         "Functions: IO": &(&1[:type] == :io),
         "Functions: Shape": &(&1[:type] == :shape),

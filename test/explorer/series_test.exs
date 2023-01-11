@@ -17,7 +17,9 @@ defmodule Explorer.SeriesTest do
           :aggregation,
           :conversion,
           :window,
-          :element_wise
+          :element_wise,
+          :float_wise,
+          :string_wise
         ] do
       flunk("invalid @doc type: #{inspect(metadata[:type])} for #{name}/#{arity}")
     end

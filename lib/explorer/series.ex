@@ -1095,7 +1095,7 @@ defmodule Explorer.Series do
         integer [1, 3]
       >
   """
-  @doc type: :shape
+  @doc type: :element_wise
   @spec mask(series :: Series.t(), mask :: Series.t()) :: Series.t()
   def mask(series, %Series{} = mask), do: Shared.apply_impl(series, :mask, [mask])
 
@@ -2988,72 +2988,6 @@ defmodule Explorer.Series do
   @spec is_not_nil(Series.t()) :: Series.t()
   def is_not_nil(series), do: Shared.apply_impl(series, :is_not_nil)
 
-  # Float predicates
-
-  @doc """
-  Returns a mask of finite values.
-
-  ## Examples
-
-      iex> s1 = Explorer.Series.from_list([1, 2, 0, nil])
-      iex> s2 = Explorer.Series.from_list([0, 2, 0, nil])
-      iex> s3 = Explorer.Series.divide(s1, s2)
-      iex> Explorer.Series.is_finite(s3)
-      #Explorer.Series<
-        Polars[4]
-        boolean [false, true, false, nil]
-      >
-  """
-  @doc type: :element_wise
-  @spec is_finite(Series.t()) :: Series.t()
-  def is_finite(%Series{dtype: :float} = series),
-    do: Shared.apply_impl(series, :is_finite)
-
-  def is_finite(%Series{dtype: dtype}), do: dtype_error("is_finite/1", dtype, [:float])
-
-  @doc """
-  Returns a mask of infinite values.
-
-  ## Examples
-
-      iex> s1 = Explorer.Series.from_list([1, -1, 2, 0, nil])
-      iex> s2 = Explorer.Series.from_list([0, 0, 2, 0, nil])
-      iex> s3 = Explorer.Series.divide(s1, s2)
-      iex> Explorer.Series.is_infinite(s3)
-      #Explorer.Series<
-        Polars[5]
-        boolean [true, true, false, false, nil]
-      >
-  """
-  @doc type: :element_wise
-  @spec is_infinite(Series.t()) :: Series.t()
-  def is_infinite(%Series{dtype: :float} = series),
-    do: Shared.apply_impl(series, :is_infinite)
-
-  def is_infinite(%Series{dtype: dtype}),
-    do: dtype_error("is_infinite/1", dtype, [:float])
-
-  @doc """
-  Returns a mask of infinite values.
-
-  ## Examples
-
-      iex> s1 = Explorer.Series.from_list([1, 2, 0, nil])
-      iex> s2 = Explorer.Series.from_list([0, 2, 0, nil])
-      iex> s3 = Explorer.Series.divide(s1, s2)
-      iex> Explorer.Series.is_nan(s3)
-      #Explorer.Series<
-        Polars[4]
-        boolean [false, false, true, nil]
-      >
-  """
-  @doc type: :element_wise
-  @spec is_nan(Series.t()) :: Series.t()
-  def is_nan(%Series{dtype: :float} = series),
-    do: Shared.apply_impl(series, :is_nan)
-
-  def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:float])
-
   # Strings
 
   @doc """
@@ -3068,7 +3002,7 @@ defmodule Explorer.Series do
         boolean [true, false, true]
       >
   """
-  @doc type: :element_wise
+  @doc type: :string_wise
   @spec contains(Series.t(), String.t() | Regex.t()) :: Series.t()
   def contains(%Series{dtype: :string} = series, pattern)
       when K.or(K.is_binary(pattern), K.is_struct(pattern, Regex)),
@@ -3088,7 +3022,7 @@ defmodule Explorer.Series do
         string ["ABC", "DEF", "BCD"]
       >
   """
-  @doc type: :element_wise
+  @doc type: :string_wise
   @spec upcase(Series.t()) :: Series.t()
   def upcase(%Series{dtype: :string} = series),
     do: Shared.apply_impl(series, :upcase)
@@ -3107,7 +3041,7 @@ defmodule Explorer.Series do
         string ["abc", "def", "bcd"]
       >
   """
-  @doc type: :element_wise
+  @doc type: :string_wise
   @spec downcase(Series.t()) :: Series.t()
   def downcase(%Series{dtype: :string} = series),
     do: Shared.apply_impl(series, :downcase)
@@ -3126,7 +3060,7 @@ defmodule Explorer.Series do
         string ["abc", "def", "bcd"]
       >
   """
-  @doc type: :element_wise
+  @doc type: :string_wise
   @spec trim(Series.t()) :: Series.t()
   def trim(%Series{dtype: :string} = series),
     do: Shared.apply_impl(series, :trim)
@@ -3145,7 +3079,7 @@ defmodule Explorer.Series do
         string ["abc", "def  ", "bcd"]
       >
   """
-  @doc type: :element_wise
+  @doc type: :string_wise
   @spec trim_leading(Series.t()) :: Series.t()
   def trim_leading(%Series{dtype: :string} = series),
     do: Shared.apply_impl(series, :trim_leading)
@@ -3164,14 +3098,14 @@ defmodule Explorer.Series do
         string ["  abc", "def", "  bcd"]
       >
   """
-  @doc type: :element_wise
+  @doc type: :string_wise
   @spec trim_trailing(Series.t()) :: Series.t()
   def trim_trailing(%Series{dtype: :string} = series),
     do: Shared.apply_impl(series, :trim_trailing)
 
   def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
 
-  # Float round
+  # Float
 
   @doc """
   Round floating point series to given decimal places.
@@ -3185,7 +3119,7 @@ defmodule Explorer.Series do
         float [1.12, 2.56, 4.0]
       >
   """
-  @doc type: :element_wise
+  @doc type: :float_wise
   @spec round(Series.t(), non_neg_integer()) :: Series.t()
   def round(%Series{dtype: :float} = series, decimals)
       when K.and(is_integer(decimals), decimals >= 0),
@@ -3208,7 +3142,7 @@ defmodule Explorer.Series do
         float [1.0, 2.0, 3.0]
       >
   """
-  @doc type: :element_wise
+  @doc type: :float_wise
   @spec floor(Series.t()) :: Series.t()
   def floor(%Series{dtype: :float} = series), do: Shared.apply_impl(series, :floor)
   def floor(%Series{dtype: dtype}), do: dtype_error("floor/1", dtype, [:float])
@@ -3225,10 +3159,74 @@ defmodule Explorer.Series do
         float [2.0, 3.0, 4.0]
       >
   """
-  @doc type: :element_wise
+  @doc type: :float_wise
   @spec ceil(Series.t()) :: Series.t()
   def ceil(%Series{dtype: :float} = series), do: Shared.apply_impl(series, :ceil)
   def ceil(%Series{dtype: dtype}), do: dtype_error("ceil/1", dtype, [:float])
+
+  @doc """
+  Returns a mask of finite values.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 0, nil])
+      iex> s2 = Explorer.Series.from_list([0, 2, 0, nil])
+      iex> s3 = Explorer.Series.divide(s1, s2)
+      iex> Explorer.Series.is_finite(s3)
+      #Explorer.Series<
+        Polars[4]
+        boolean [false, true, false, nil]
+      >
+  """
+  @doc type: :float_wise
+  @spec is_finite(Series.t()) :: Series.t()
+  def is_finite(%Series{dtype: :float} = series),
+    do: Shared.apply_impl(series, :is_finite)
+
+  def is_finite(%Series{dtype: dtype}), do: dtype_error("is_finite/1", dtype, [:float])
+
+  @doc """
+  Returns a mask of infinite values.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, -1, 2, 0, nil])
+      iex> s2 = Explorer.Series.from_list([0, 0, 2, 0, nil])
+      iex> s3 = Explorer.Series.divide(s1, s2)
+      iex> Explorer.Series.is_infinite(s3)
+      #Explorer.Series<
+        Polars[5]
+        boolean [true, true, false, false, nil]
+      >
+  """
+  @doc type: :float_wise
+  @spec is_infinite(Series.t()) :: Series.t()
+  def is_infinite(%Series{dtype: :float} = series),
+    do: Shared.apply_impl(series, :is_infinite)
+
+  def is_infinite(%Series{dtype: dtype}),
+    do: dtype_error("is_infinite/1", dtype, [:float])
+
+  @doc """
+  Returns a mask of infinite values.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([1, 2, 0, nil])
+      iex> s2 = Explorer.Series.from_list([0, 2, 0, nil])
+      iex> s3 = Explorer.Series.divide(s1, s2)
+      iex> Explorer.Series.is_nan(s3)
+      #Explorer.Series<
+        Polars[4]
+        boolean [false, false, true, nil]
+      >
+  """
+  @doc type: :float_wise
+  @spec is_nan(Series.t()) :: Series.t()
+  def is_nan(%Series{dtype: :float} = series),
+    do: Shared.apply_impl(series, :is_nan)
+
+  def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:float])
 
   # Escape hatch
 
