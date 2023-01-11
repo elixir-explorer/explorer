@@ -616,7 +616,7 @@ defmodule Explorer.Backend.LazySeries do
   @remaining_non_lazy_operations [
     at: 2,
     at_every: 2,
-    bintype: 1,
+    iotype: 1,
     categories: 1,
     frequencies: 1,
     mask: 2,

@@ -291,30 +291,30 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "bintype/1" do
+  describe "iotype/1" do
     test "integer series" do
       s = Series.from_list([1, 2, 3])
-      assert Series.bintype(s) == {:s, 64}
+      assert Series.iotype(s) == {:s, 64}
     end
 
     test "float series" do
       s = Series.from_list([1.2, 2.3, 3.4])
-      assert Series.bintype(s) == {:f, 64}
+      assert Series.iotype(s) == {:f, 64}
     end
 
     test "boolean series" do
       s = Series.from_list([true, false, true])
-      assert Series.bintype(s) == {:u, 8}
+      assert Series.iotype(s) == {:u, 8}
     end
 
     test "date series" do
       s = Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
-      assert Series.bintype(s) == {:s, 32}
+      assert Series.iotype(s) == {:s, 32}
     end
 
     test "datetime series" do
       s = Series.from_list([~N[2022-09-12 22:21:46.250899]])
-      assert Series.bintype(s) == {:s, 64}
+      assert Series.iotype(s) == {:s, 64}
     end
   end
 

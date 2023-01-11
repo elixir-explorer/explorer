@@ -36,7 +36,7 @@ defmodule Explorer.Backend.Series do
   @callback dtype(s) :: dtype()
   @callback size(s) :: non_neg_integer() | lazy_s()
   @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
-  @callback bintype(s) :: :uft8 | :binary | {:s | :u | :f, non_neg_integer}
+  @callback iotype(s) :: :uft8 | :binary | {:s | :u | :f, non_neg_integer}
   @callback categories(s) :: s
 
   # Slice and dice

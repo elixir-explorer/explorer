@@ -198,7 +198,7 @@ if Code.ensure_loaded?(Nx) do
   defimpl Nx.LazyContainer, for: S do
     def traverse(series, acc, fun) do
       size = S.size(series)
-      template = Nx.template({size}, S.bintype(series))
+      template = Nx.template({size}, S.iotype(series))
       fun.(template, fn -> S.to_tensor(series) end, acc)
     end
   end
@@ -216,7 +216,7 @@ if Code.ensure_loaded?(Nx) do
 
           {name, _dtype}, {data, acc} ->
             series = DF.pull(df, name)
-            template = Nx.template({n_rows}, S.bintype(series))
+            template = Nx.template({n_rows}, S.iotype(series))
             {result, acc} = fun.(template, fn -> S.to_tensor(series) end, acc)
             {[{name, result} | data], acc}
         end)

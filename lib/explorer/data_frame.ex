@@ -2396,8 +2396,8 @@ defmodule Explorer.DataFrame do
 
     dtype =
       case opts[:dtype] do
-        nil -> df.dtypes[name] || Shared.bintype_to_dtype!(Nx.type(tensor))
-        :from_tensor -> Shared.bintype_to_dtype!(Nx.type(tensor))
+        nil -> df.dtypes[name] || Shared.iotype_to_dtype!(Nx.type(tensor))
+        :from_tensor -> Shared.iotype_to_dtype!(Nx.type(tensor))
         dtype -> dtype
       end
 

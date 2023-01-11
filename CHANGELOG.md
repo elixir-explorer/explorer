@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `Series.quotient/2` and `Series.remainder/2` to work with integer division.
-- Add `Series.bintype/1` to return the underlying representation type.
+- Add `Series.iotype/1` to return the underlying representation type.
 - Allow series on both sides of binary operations, like: `add(series, 1)`
   and `add(1, series)`.
 

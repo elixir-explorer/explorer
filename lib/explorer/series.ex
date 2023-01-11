@@ -309,7 +309,7 @@ defmodule Explorer.Series do
   def from_binary(binary, dtype, opts \\ [])
       when K.and(is_binary(binary), K.and(is_atom(dtype), is_list(opts))) do
     opts = Keyword.validate!(opts, [:dtype, :backend])
-    {_type, alignment} = Shared.dtype_to_bintype!(dtype)
+    {_type, alignment} = Shared.dtype_to_iotype!(dtype)
 
     if rem(bit_size(binary), alignment) != 0 do
       raise ArgumentError, "binary for dtype #{dtype} is expected to be #{alignment}-bit aligned"
@@ -381,11 +381,11 @@ defmodule Explorer.Series do
   def from_tensor(tensor, opts \\ []) when is_struct(tensor, Nx.Tensor) do
     opts = Keyword.validate!(opts, [:dtype, :backend])
     type = Nx.type(tensor)
-    {dtype, opts} = Keyword.pop_lazy(opts, :dtype, fn -> Shared.bintype_to_dtype!(type) end)
+    {dtype, opts} = Keyword.pop_lazy(opts, :dtype, fn -> Shared.iotype_to_dtype!(type) end)
 
-    if Shared.dtype_to_bintype!(dtype) != type do
+    if Shared.dtype_to_iotype!(dtype) != type do
       raise ArgumentError,
-            "dtype #{dtype} expects a tensor of type #{inspect(Shared.dtype_to_bintype!(dtype))} " <>
+            "dtype #{dtype} expects a tensor of type #{inspect(Shared.dtype_to_iotype!(dtype))} " <>
               "but got type #{inspect(type)}"
     end
 
@@ -446,7 +446,7 @@ defmodule Explorer.Series do
   This operation fails if the series has `nil` values.
   Use `fill_missing/1` to handle them accordingly.
 
-  To retrieve the type of the underlying io vector, use `bintype/1`.
+  To retrieve the type of the underlying io vector, use `iotype/1`.
   To convert an iovec to a binary, you can use `IO.iodata_to_binary/1`.
 
   ## Examples
@@ -530,7 +530,7 @@ defmodule Explorer.Series do
 
   Note that `Explorer.Series` are automatically converted
   to tensors once give to numerical definitions.
-  The tensor type is given by `bintype/1`.
+  The tensor type is given by `iotype/1`.
 
   > #### Warning {: .warning}
   >
@@ -560,7 +560,7 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec to_tensor(series :: Series.t(), tensor_opts :: Keyword.t()) :: Nx.Tensor.t()
   def to_tensor(series, tensor_opts \\ []) do
-    case bintype(series) do
+    case iotype(series) do
       {_, _} = type -> Nx.from_binary(to_binary(series), type, tensor_opts)
       other -> raise ArgumentError, "cannot convert #{inspect(other)} series to tensor"
     end
@@ -671,7 +671,7 @@ defmodule Explorer.Series do
   It returns something in the shape of `{atom(), bits_size}` or `:none`.
   It is often used in conjunction with `to_iovec/1` and `to_binary/1`.
 
-  The possible bintypes are:
+  The possible iotypes are:
 
   * `:u` for unsigned integers.
   * `:s` for signed integers.
@@ -680,41 +680,41 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4])
-      iex> Explorer.Series.bintype(s)
+      iex> Explorer.Series.iotype(s)
       {:s, 64}
 
       iex> s = Explorer.Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
-      iex> Explorer.Series.bintype(s)
+      iex> Explorer.Series.iotype(s)
       {:s, 32}
 
       iex> s = Explorer.Series.from_list([1.2, 2.3, 3.5, 4.5])
-      iex> Explorer.Series.bintype(s)
+      iex> Explorer.Series.iotype(s)
       {:f, 64}
 
       iex> s = Explorer.Series.from_list([true, false, true])
-      iex> Explorer.Series.bintype(s)
+      iex> Explorer.Series.iotype(s)
       {:u, 8}
 
   The operation returns `:none` for strings and binaries, as they do not
   provide a fixed-width binary representation:
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.bintype(s)
+      iex> Explorer.Series.iotype(s)
       :none
 
   However, if appropriate, you can convert them to categorical types,
   which will then return the index of each category:
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"], dtype: :category)
-      iex> Explorer.Series.bintype(s)
+      iex> Explorer.Series.iotype(s)
       {:u, 32}
 
   """
   @doc type: :introspection
-  @spec bintype(series :: Series.t()) :: {:s | :u | :f, non_neg_integer()} | :none
-  def bintype(%Series{dtype: dtype} = series) do
+  @spec iotype(series :: Series.t()) :: {:s | :u | :f, non_neg_integer()} | :none
+  def iotype(%Series{dtype: dtype} = series) do
     if io_dtype?(dtype) do
-      Shared.apply_impl(series, :bintype)
+      Shared.apply_impl(series, :iotype)
     else
       :none
     end

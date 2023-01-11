@@ -175,7 +175,7 @@ defmodule Explorer.Shared do
   @doc """
   Converts a dtype to a binary type when possible.
   """
-  def dtype_to_bintype!(dtype) do
+  def dtype_to_iotype!(dtype) do
     case dtype do
       :float -> {:f, 64}
       :integer -> {:s, 64}
@@ -189,7 +189,7 @@ defmodule Explorer.Shared do
   @doc """
   Converts a binary type to dtype.
   """
-  def bintype_to_dtype!(type) do
+  def iotype_to_dtype!(type) do
     case type do
       {:f, 64} -> :float
       {:s, 64} -> :integer
