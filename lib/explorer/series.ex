@@ -394,6 +394,72 @@ defmodule Explorer.Series do
   end
 
   @doc """
+  Replaces the contents of the given series by the one given in
+  a tensor or list.
+
+  The new series will have the same dtype and backend as the current
+  series, but the size may not necessarily match.
+
+  ## Tensor examples
+
+      iex> s = Explorer.Series.from_list([0, 1, 2])
+      iex> Explorer.Series.replace(s, Nx.tensor([1, 2, 3]))
+      #Explorer.Series<
+        Polars[3]
+        integer [1, 2, 3]
+      >
+
+  This is particularly useful for categorical columns:
+
+      iex> s = Explorer.Series.from_list(["foo", "bar", "baz"], dtype: :category)
+      iex> Explorer.Series.replace(s, Nx.tensor([2, 1, 0]))
+      #Explorer.Series<
+        Polars[3]
+        category ["baz", "bar", "foo"]
+      >
+
+  ## List examples
+
+  Similar to tensors, we can also replace by lists:
+
+      iex> s = Explorer.Series.from_list([0, 1, 2])
+      iex> Explorer.Series.replace(s, [1, 2, 3, 4, 5])
+      #Explorer.Series<
+        Polars[5]
+        integer [1, 2, 3, 4, 5]
+      >
+
+  The same considerations as above apply.
+  """
+  @doc type: :conversion
+  @spec replace(Series.t(), Nx.Tensor.t() | list()) :: Series.t()
+  def replace(series, tensor_or_list)
+
+  def replace(series, tensor) when is_struct(tensor, Nx.Tensor) do
+    replace(series, :from_tensor, tensor)
+  end
+
+  def replace(series, list) when is_list(list) do
+    replace(series, :from_list, list)
+  end
+
+  defp replace(series, fun, arg) do
+    backend_series_string = Atom.to_string(series.data.__struct__)
+    backend_string = binary_part(backend_series_string, 0, byte_size(backend_series_string) - 7)
+    backend = String.to_atom(backend_string)
+
+    case series.dtype do
+      :category ->
+        Series
+        |> apply(fun, [arg, [dtype: :integer, backend: backend]])
+        |> categorise(series)
+
+      dtype ->
+        apply(Series, fun, [arg, [dtype: dtype, backend: backend]])
+    end
+  end
+
+  @doc """
   Converts a series to a list.
 
   > #### Warning {: .warning}

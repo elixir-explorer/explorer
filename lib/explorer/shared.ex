@@ -199,20 +199,6 @@ defmodule Explorer.Shared do
     end
   end
 
-  @doc """
-  Broadcasts a tensor to the number of rows.
-  """
-  @compile {:no_warn_undefined, {Nx, :broadcast, 2}}
-  def broadcast!(%{shape: {}} = tensor, n_rows), do: Nx.broadcast(tensor, {n_rows})
-  def broadcast!(%{shape: {1}} = tensor, n_rows), do: Nx.broadcast(tensor, {n_rows})
-  def broadcast!(%{shape: {n_rows}} = tensor, n_rows), do: tensor
-
-  def broadcast!(tensor, n_rows) do
-    raise ArgumentError,
-          "cannot add tensor that does not match the frame size. " <>
-            "Expected a tensor of shape {#{n_rows}} but got tensor #{inspect(tensor)}"
-  end
-
   @threshold 0.77
   @max_suggestions 5
 

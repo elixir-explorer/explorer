@@ -2259,19 +2259,18 @@ defmodule Explorer.DataFrame do
   Creates or modifies a single column.
 
   This is a simplified way to add or modify one column,
-  accepting a series or a tensor.
+  accepting a series, tensor, or a list.
 
   If you are computing a series, it is preferrable to use
   `mutate/2` or `mutate_with/2` to compute the series and
   modify it in a single step, as it is more powerful and
   it handles both expressions and scalar values accordingly.
 
-  If you are passing tensors, the tensor will be automatically
-  converted to a series using `Explorer.Series.from_tensor/2`.
-  The `:dtype` option can be given to customize the resulting
-  type of the series, otherwise it will fallback to the dtype
-  of a column with the same name (if it exists) or it will be
-  inflected from the tensor.
+  If you are passing tensors or lists, they will be automatically
+  converted to a series. By default, the new series will have the
+  same dtype as the existing series, unless the `:dtype` option
+  is given. If there is no existing series, one is inferred from
+  the tensor/list.
 
   ## Examples
 
@@ -2311,8 +2310,8 @@ defmodule Explorer.DataFrame do
 
   You can also put tensors into the dataframe:
 
-      iex> df = DF.new([])
-      iex> DF.put(df, :a, Nx.tensor([1, 2, 3]))
+      iex> df = Explorer.DataFrame.new([])
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]))
       #Explorer.DataFrame<
         Polars[3 x 1]
         a integer [1, 2, 3]
@@ -2323,21 +2322,11 @@ defmodule Explorer.DataFrame do
   by default, but it may also represent timestamps
   in microseconds from the Unix epoch:
 
-      iex> df = DF.new([])
-      iex> DF.put(df, :a, Nx.tensor([1, 2, 3]), dtype: :datetime)
+      iex> df = Explorer.DataFrame.new([])
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]), dtype: :datetime)
       #Explorer.DataFrame<
         Polars[3 x 1]
         a datetime [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
-      >
-
-  Tensors are automatically broadcast too:
-
-      iex> df = DF.new(a: [1, 2, 3])
-      iex> DF.put(df, :b, Nx.tensor(0))
-      #Explorer.DataFrame<
-        Polars[3 x 2]
-        a integer [1, 2, 3]
-        b integer [0, 0, 0]
       >
 
   If there is already a column where we want to place the tensor,
@@ -2345,39 +2334,61 @@ defmodule Explorer.DataFrame do
   updating dataframes in place while preserving their types is
   straight-forward:
 
-      iex> df = DF.new(a: [~N[1970-01-01 00:00:00]])
-      iex> DF.put(df, :a, Nx.tensor(529550625987654))
+      iex> df = Explorer.DataFrame.new(a: [~N[1970-01-01 00:00:00]])
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor(529550625987654))
       #Explorer.DataFrame<
         Polars[1 x 1]
         a datetime [1986-10-13 01:23:45.987654]
       >
 
+  This is particularly useful for categorical columns:
+
+      iex> cat = Explorer.Series.from_list(["foo", "bar", "baz"], dtype: :category)
+      iex> df = Explorer.DataFrame.new(a: cat)
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([2, 1, 0]))
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        a category ["baz", "bar", "foo"]
+      >
+
   On the other hand, if you try to put a floating tensor on
   an integer column, an error will be raised unless a dtype
-  or `dtype: :from_tensor` is given:
+  or `dtype: :infer` is given:
 
-      iex> df = DF.new(a: [1, 2, 3])
-      iex> DF.put(df, :a, Nx.tensor(1.0, type: :f64))
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor(1.0, type: :f64))
       ** (ArgumentError) dtype integer expects a tensor of type {:s, 64} but got type {:f, 64}
 
-      iex> df = DF.new(a: [1, 2, 3])
-      iex> DF.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: :float)
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: :float)
       #Explorer.DataFrame<
         Polars[3 x 1]
         a float [1.0, 1.0, 1.0]
       >
 
-      iex> df = DF.new(a: [1, 2, 3])
-      iex> DF.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: :from_tensor)
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: :infer)
       #Explorer.DataFrame<
         Polars[3 x 1]
         a float [1.0, 1.0, 1.0]
       >
 
+  ## List examples
+
+  Similar to tensors, we can also put lists in the dataframe:
+
+      iex> df = Explorer.DataFrame.new([])
+      iex> Explorer.DataFrame.put(df, :a, [1, 2, 3])
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        a integer [1, 2, 3]
+      >
+
+  The same considerations as above apply.
   """
   @doc type: :single
-  @spec put(DataFrame.t(), column_name(), Series.t() | Nx.Tensor.t()) :: DataFrame.t()
-  def put(df, column_name, series_or_tensor, opts \\ [])
+  @spec put(DataFrame.t(), column_name(), Series.t() | Nx.Tensor.t() | list()) :: DataFrame.t()
+  def put(df, column_name, series_or_tensor_or_list, opts \\ [])
 
   def put(%DataFrame{} = df, column_name, %Series{} = series, opts)
       when is_column_name(column_name) do
@@ -2391,23 +2402,35 @@ defmodule Explorer.DataFrame do
 
   def put(%DataFrame{} = df, column_name, tensor, opts)
       when is_column_name(column_name) and is_struct(tensor, Nx.Tensor) do
+    put(df, column_name, :from_tensor, tensor, opts)
+  end
+
+  def put(%DataFrame{} = df, column_name, list, opts)
+      when is_column_name(column_name) and is_list(list) do
+    put(df, column_name, :from_list, list, opts)
+  end
+
+  defp put(%DataFrame{} = df, column_name, fun, arg, opts) when is_column_name(column_name) do
     opts = Keyword.validate!(opts, [:dtype])
     name = to_column_name(column_name)
+    dtype = opts[:dtype]
 
-    dtype =
-      case opts[:dtype] do
-        nil -> df.dtypes[name] || Shared.iotype_to_dtype!(Nx.type(tensor))
-        :from_tensor -> Shared.iotype_to_dtype!(Nx.type(tensor))
-        dtype -> dtype
-      end
+    if dtype == nil and is_map_key(df.dtypes, name) do
+      put(df, name, Series.replace(pull(df, name), arg), [])
+    else
+      backend_df_string = Atom.to_string(df.data.__struct__)
+      backend_string = binary_part(backend_df_string, 0, byte_size(backend_df_string) - 10)
+      backend = String.to_atom(backend_string)
 
-    backend_df_string = Atom.to_string(df.data.__struct__)
-    backend_string = binary_part(backend_df_string, 0, byte_size(backend_df_string) - 10)
-    backend = String.to_atom(backend_string)
+      opts =
+        if dtype == nil or dtype == :infer do
+          [backend: backend]
+        else
+          [dtype: dtype, backend: backend]
+        end
 
-    # If we are changing the only tensor in the frame, explicitly broadcast.
-    tensor = if df.names == [name], do: Shared.broadcast!(tensor, n_rows(df)), else: tensor
-    put(df, name, Series.from_tensor(tensor, dtype: dtype, backend: backend), [])
+      put(df, name, apply(Series, fun, [arg, opts]), [])
+    end
   end
 
   defp append_unless_present([name | tail], name), do: [name | tail]
@@ -4485,7 +4508,7 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-      iex> df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df)
       #Explorer.DataFrame<
         Polars[8 x 4]
@@ -4495,7 +4518,7 @@ defmodule Explorer.DataFrame do
         c float [3.0, nil, nil, nil, nil, ...]
       >
 
-      iex> df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df, percentiles: [0.3, 0.5, 0.8])
       #Explorer.DataFrame<
         Polars[8 x 4]

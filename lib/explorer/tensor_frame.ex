@@ -157,7 +157,17 @@ if Code.ensure_loaded?(Nx) do
     end
 
     defp put!(%{n_rows: n_rows} = tf, name, value) when is_binary(name) do
-      put_in(tf.data[name], value |> Nx.to_tensor() |> Explorer.Shared.broadcast!(n_rows))
+      put_in(tf.data[name], value |> Nx.to_tensor() |> broadcast!(n_rows))
+    end
+
+    defp broadcast!(%{shape: {}} = tensor, n_rows), do: Nx.broadcast(tensor, {n_rows})
+    defp broadcast!(%{shape: {1}} = tensor, n_rows), do: Nx.broadcast(tensor, {n_rows})
+    defp broadcast!(%{shape: {n_rows}} = tensor, n_rows), do: tensor
+
+    defp broadcast!(tensor, n_rows) do
+      raise ArgumentError,
+            "cannot add tensor that does not match the frame size. " <>
+              "Expected a tensor of shape {#{n_rows}} but got tensor #{inspect(tensor)}"
     end
 
     defimpl Inspect do
