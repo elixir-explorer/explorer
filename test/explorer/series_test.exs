@@ -839,4 +839,32 @@ defmodule Explorer.SeriesTest do
     assert Series.to_list(categories) === ["a", "b", "c"]
     assert Series.dtype(categories) == :string
   end
+
+  describe "categorize/2" do
+    test "takes int series and categorize with categorical series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :category)
+      indexes = Series.from_list([0, 2, 1, 0, 2])
+      categorized = Series.categorize(indexes, categories)
+
+      assert Series.to_list(categorized) == ["a", "c", "b", "a", "c"]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes int series and categorize with string series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :string)
+      indexes = Series.from_list([0, 2, 1, 0, 2])
+      categorized = Series.categorize(indexes, categories)
+
+      assert Series.to_list(categorized) == ["a", "c", "b", "a", "c"]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes int series and categorize with string list and nils" do
+      indexes = Series.from_list([0, 2, 1, 0, 2, 7, 1, 9, nil])
+      categorized = Series.categorize(indexes, ["a", "b", "c"])
+
+      assert Series.to_list(categorized) == ["a", "c", "b", "a", "c", nil, "b", nil, nil]
+      assert Series.dtype(categorized) == :category
+    end
+  end
 end
