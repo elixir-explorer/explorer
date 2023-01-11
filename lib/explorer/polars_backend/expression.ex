@@ -24,6 +24,7 @@ defmodule Explorer.PolarsBackend.Expression do
     distinct: 1,
     divide: 2,
     equal: 2,
+    fill_missing_with_value: 2,
     first: 1,
     greater: 2,
     greater_equal: 2,
@@ -90,7 +91,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
   @custom_expressions [
     cast: 2,
-    fill_missing: 2,
+    fill_missing_with_strategy: 2,
     from_list: 2,
     from_binary: 2,
     to_lazy: 1,
@@ -111,20 +112,9 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_cast(expr, Atom.to_string(dtype))
   end
 
-  def to_expr(%LazySeries{op: :fill_missing, args: [lazy_series, :nan]}) do
+  def to_expr(%LazySeries{op: :fill_missing_with_strategy, args: [lazy_series, strategy]}) do
     expr = to_expr(lazy_series)
-    Native.expr_fill_missing_with_nan(expr)
-  end
-
-  def to_expr(%LazySeries{op: :fill_missing, args: [lazy_series, strategy]})
-      when is_atom(strategy) and not is_boolean(strategy) do
-    expr = to_expr(lazy_series)
-    Native.expr_fill_missing(expr, Atom.to_string(strategy))
-  end
-
-  def to_expr(%LazySeries{op: :fill_missing, args: [lazy_series, value]}) do
-    expr = to_expr(lazy_series)
-    Native.expr_fill_missing_with_value(expr, to_expr(value))
+    Native.expr_fill_missing_with_strategy(expr, Atom.to_string(strategy))
   end
 
   def to_expr(%LazySeries{op: :from_list, args: [list, dtype]}) do
@@ -177,6 +167,7 @@ defmodule Explorer.PolarsBackend.Expression do
   end
 
   def to_expr(bool) when is_boolean(bool), do: Native.expr_boolean(bool)
+  def to_expr(atom) when is_atom(atom), do: Native.expr_atom(Atom.to_string(atom))
   def to_expr(binary) when is_binary(binary), do: Native.expr_string(binary)
   def to_expr(number) when is_integer(number), do: Native.expr_integer(number)
   def to_expr(number) when is_float(number), do: Native.expr_float(number)

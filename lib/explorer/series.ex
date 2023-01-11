@@ -2938,19 +2938,19 @@ defmodule Explorer.Series do
             "fill_missing with :nan values require a :float series, got #{inspect(series.dtype)}"
     end
 
-    Shared.apply_impl(series, :fill_missing, [:nan])
+    Shared.apply_impl(series, :fill_missing_with_value, [:nan])
   end
 
   def fill_missing(%Series{} = series, strategy)
       when K.in(strategy, [:forward, :backward, :min, :max, :mean]),
-      do: Shared.apply_impl(series, :fill_missing, [strategy])
+      do: Shared.apply_impl(series, :fill_missing_with_strategy, [strategy])
 
   def fill_missing(%Series{} = series, value) do
     if K.or(
          valid_for_bool_mask_operation?(series, value),
          sides_comparable?(series, value)
        ) do
-      Shared.apply_impl(series, :fill_missing, [value])
+      Shared.apply_impl(series, :fill_missing_with_value, [value])
     else
       dtype_mismatch_error("fill_missing/2", series, value)
     end
@@ -3016,13 +3016,13 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s1 = Explorer.Series.from_list([1, 2, 0, nil])
-      iex> s2 = Explorer.Series.from_list([0, 2, 0, nil])
+      iex> s1 = Explorer.Series.from_list([1, -1, 2, 0, nil])
+      iex> s2 = Explorer.Series.from_list([0, 0, 2, 0, nil])
       iex> s3 = Explorer.Series.divide(s1, s2)
       iex> Explorer.Series.is_infinite(s3)
       #Explorer.Series<
-        Polars[4]
-        boolean [true, false, false, nil]
+        Polars[5]
+        boolean [true, true, false, false, nil]
       >
   """
   @doc type: :element_wise

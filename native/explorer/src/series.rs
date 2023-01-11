@@ -410,7 +410,10 @@ pub fn s_nil_count(data: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_strategy(
+    data: ExSeries,
+    strategy: &str,
+) -> Result<ExSeries, ExplorerError> {
     let strat = match strategy {
         "backward" => FillNullStrategy::Backward(None),
         "forward" => FillNullStrategy::Forward(None),
@@ -426,9 +429,10 @@ pub fn s_fill_missing(data: ExSeries, strategy: &str) -> Result<ExSeries, Explor
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_nan(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_atom(data: ExSeries, atom: &str) -> Result<ExSeries, ExplorerError> {
+    let value = cast_str_to_f64(atom);
     let s = &data.resource.0;
-    let s = s.f64()?.fill_null_with_values(f64::NAN)?.into_series();
+    let s = s.f64()?.fill_null_with_values(value)?.into_series();
     Ok(ExSeries::new(s))
 }
 
@@ -777,6 +781,15 @@ pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
         "string" => Ok(DataType::Utf8),
         "binary" => Ok(DataType::Binary),
         _ => Err(ExplorerError::Other(String::from("Cannot cast to type"))),
+    }
+}
+
+pub fn cast_str_to_f64(atom: &str) -> f64 {
+    match atom {
+        "nan" => f64::NAN,
+        "infinity" => f64::INFINITY,
+        "neg_infinity" => f64::NEG_INFINITY,
+        _ => panic!("unknown literal {atom:?}"),
     }
 }
 

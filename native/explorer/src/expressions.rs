@@ -9,7 +9,7 @@ use polars::prelude::{col, when, DataFrame, IntoLazy, LiteralValue, SortOptions}
 use polars::prelude::{DataType, Expr, Literal, Series};
 
 use crate::datatypes::{ExDate, ExDateTime};
-use crate::series::{cast_str_to_dtype, rolling_opts};
+use crate::series::{cast_str_to_dtype, cast_str_to_f64, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 
 #[rustler::nif]
@@ -33,6 +33,12 @@ pub fn expr_string(string: String) -> ExExpr {
 #[rustler::nif]
 pub fn expr_boolean(boolean: bool) -> ExExpr {
     let expr = boolean.lit();
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_atom(atom: &str) -> ExExpr {
+    let expr = cast_str_to_f64(atom).lit();
     ExExpr::new(expr)
 }
 
@@ -246,7 +252,7 @@ pub fn expr_peaks(data: ExExpr, min_or_max: &str) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_fill_missing(data: ExExpr, strategy: &str) -> ExExpr {
+pub fn expr_fill_missing_with_strategy(data: ExExpr, strategy: &str) -> ExExpr {
     let orig_expr = &data.resource.0;
     let expr: Expr = orig_expr.clone();
     let result_expr = match strategy {
@@ -255,7 +261,7 @@ pub fn expr_fill_missing(data: ExExpr, strategy: &str) -> ExExpr {
         "min" => expr.fill_null(orig_expr.clone().min()),
         "max" => expr.fill_null(orig_expr.clone().max()),
         "mean" => expr.fill_null(orig_expr.clone().mean()),
-        _other => panic!("unknown strategy"),
+        _other => panic!("unknown strategy {strategy:?}"),
     };
     ExExpr::new(result_expr)
 }
@@ -265,12 +271,6 @@ pub fn expr_fill_missing_with_value(data: ExExpr, value: ExExpr) -> ExExpr {
     let expr: Expr = data.resource.0.clone();
     let value: Expr = value.resource.0.clone();
     ExExpr::new(expr.fill_null(value))
-}
-
-#[rustler::nif]
-pub fn expr_fill_missing_with_nan(data: ExExpr) -> ExExpr {
-    let expr: Expr = data.resource.0.clone();
-    ExExpr::new(expr.fill_null(f64::NAN))
 }
 
 #[rustler::nif]
