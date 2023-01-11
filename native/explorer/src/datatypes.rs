@@ -106,8 +106,9 @@ impl From<i32> for ExDate {
 
 impl From<ExDate> for i32 {
     fn from(d: ExDate) -> i32 {
-        NaiveDate::from_ymd(d.year, d.month, d.day)
-            .signed_duration_since(NaiveDate::from_ymd(1970, 1, 1))
+        NaiveDate::from_ymd_opt(d.year, d.month, d.day)
+            .unwrap()
+            .signed_duration_since(NaiveDate::from_ymd_opt(1970, 1, 1).unwrap())
             .num_days()
             .try_into()
             .unwrap()
@@ -116,7 +117,7 @@ impl From<ExDate> for i32 {
 
 impl From<ExDate> for NaiveDate {
     fn from(d: ExDate) -> NaiveDate {
-        NaiveDate::from_ymd(d.year, d.month, d.day)
+        NaiveDate::from_ymd_opt(d.year, d.month, d.day).unwrap()
     }
 }
 
@@ -159,7 +160,7 @@ pub fn timestamp_to_datetime(microseconds: i64) -> NaiveDateTime {
         _ => microseconds % 1_000_000,
     };
     let nanoseconds = remainder.abs() * 1_000;
-    NaiveDateTime::from_timestamp(seconds, nanoseconds.try_into().unwrap())
+    NaiveDateTime::from_timestamp_opt(seconds, nanoseconds.try_into().unwrap()).unwrap()
 }
 
 // Limit the number of digits in the microsecond part of a timestamp to 6.
@@ -181,9 +182,16 @@ impl From<i64> for ExDateTime {
 
 impl From<ExDateTime> for i64 {
     fn from(dt: ExDateTime) -> i64 {
-        let duration = NaiveDate::from_ymd(dt.year, dt.month, dt.day)
-            .and_hms_micro(dt.hour, dt.minute, dt.second, dt.microsecond.0)
-            .signed_duration_since(NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0));
+        let duration = NaiveDate::from_ymd_opt(dt.year, dt.month, dt.day)
+            .unwrap()
+            .and_hms_micro_opt(dt.hour, dt.minute, dt.second, dt.microsecond.0)
+            .unwrap()
+            .signed_duration_since(
+                NaiveDate::from_ymd_opt(1970, 1, 1)
+                    .unwrap()
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap(),
+            );
 
         match duration.num_microseconds() {
             Some(us) => us,
@@ -194,12 +202,10 @@ impl From<ExDateTime> for i64 {
 
 impl From<ExDateTime> for NaiveDateTime {
     fn from(dt: ExDateTime) -> NaiveDateTime {
-        NaiveDate::from_ymd(dt.year, dt.month, dt.day).and_hms_micro(
-            dt.hour,
-            dt.minute,
-            dt.second,
-            dt.microsecond.0,
-        )
+        NaiveDate::from_ymd_opt(dt.year, dt.month, dt.day)
+            .unwrap()
+            .and_hms_micro_opt(dt.hour, dt.minute, dt.second, dt.microsecond.0)
+            .unwrap()
     }
 }
 

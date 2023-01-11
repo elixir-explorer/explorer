@@ -14,7 +14,7 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1"
 chrono = "0.4"
-rand = { version = "0.8.4", features = ["alloc"] }
+rand = { version = "0.8.5", features = ["alloc"] }
 rand_pcg = "0.3.1"
 rustler = { git = "https://github.com/rusterlium/rustler" }
 thiserror = "1"
