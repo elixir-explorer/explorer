@@ -3193,10 +3193,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   def transform(series, fun) do
-    case Shared.apply_impl(series, :transform, [fun]) do
-      %Series{} = series -> series
-      list when is_list(list) -> from_list(list)
-    end
+    Shared.apply_impl(series, :transform, [fun])
   end
 
   # Helpers

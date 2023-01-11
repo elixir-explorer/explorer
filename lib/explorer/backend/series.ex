@@ -152,7 +152,7 @@ defmodule Explorer.Backend.Series do
 
   # Escape hatch
 
-  @callback transform(s, fun) :: s | list()
+  @callback transform(s, fun) :: s
 
   # Inversions
 

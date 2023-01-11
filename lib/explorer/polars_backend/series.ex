@@ -419,9 +419,13 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def is_not_nil(series), do: Shared.apply_series(series, :s_is_not_null)
 
-  # Escape hatch
   @impl true
-  def transform(series, fun), do: series |> Series.to_list() |> Enum.map(fun)
+  def transform(series, fun) do
+    series
+    |> Series.to_list()
+    |> Enum.map(fun)
+    |> Series.from_list(backend: Explorer.PolarsBackend)
+  end
 
   @impl true
   def inspect(series, opts) do
