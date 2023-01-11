@@ -15,6 +15,31 @@ defmodule Explorer.Query do
         nums integer [3]
       >
 
+  If a column has unusual format, you can either rename it before-hand,
+  or use `col/1` inside queries:
+
+      iex> df = Explorer.DataFrame.new("unusual nums": [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, col("unusual nums") > 2)
+      #Explorer.DataFrame<
+        Polars[1 x 1]
+        unusual nums integer [3]
+      >
+
+  All operations from `Explorer.Series` are imported inside queries.
+  This module also provides operators to use in queries, which are
+  also imported into queries.
+
+  ## Supported operations
+
+  Queries are supported in the following operations:
+
+    * `Explorer.DataFrame.arrange/2`
+    * `Explorer.DataFrame.filter/2`
+    * `Explorer.DataFrame.mutate/2`
+    * `Explorer.DataFrame.summarise/2`
+
+  ## Interpolation
+
   If you want to access variables defined outside of the query
   or get access to all Elixir constructs, you must use `^`:
 
@@ -36,18 +61,15 @@ defmodule Explorer.Query do
         nums integer [1, 2, 3]
       >
 
-  All operations from `Explorer.Series` are imported inside queries.
-  This module also provides operators to use in queries, which are
-  also imported into queries.
+  `^` can be used with `col` to access columns dynamically:
 
-  ## Supported operations
-
-  Queries are supported in the following operations:
-
-    * `Explorer.DataFrame.arrange/2`
-    * `Explorer.DataFrame.filter/2`
-    * `Explorer.DataFrame.mutate/2`
-    * `Explorer.DataFrame.summarise/2`
+      iex> df = Explorer.DataFrame.new("unusual nums": [1, 2, 3])
+      iex> name = "unusual nums"
+      iex> Explorer.DataFrame.filter(df, col(^name) > 2)
+      #Explorer.DataFrame<
+        Polars[1 x 1]
+        unusual nums integer [3]
+      >
 
   ## Implementation details
 
@@ -94,7 +116,7 @@ defmodule Explorer.Query do
   See the moduledoc for more information.
   """
   defmacro query(expression) do
-    df = Macro.unique_var(:df, __MODULE__)
+    df = df_var()
     {query, vars} = traverse(expression, [], %{df: df})
 
     quote do
@@ -187,4 +209,16 @@ defmodule Explorer.Query do
   """
   def +number when is_number(number), do: number
   def +series when is_struct(series, Explorer.Series), do: series
+
+  @doc """
+  Access a column programatically.
+
+  `name` must be an atom, a string, or an integer.
+  It is equivalent to `df[name]` but inside a query.
+  """
+  defmacro col(name) do
+    quote do: Explorer.DataFrame.pull(unquote(df_var()), unquote(name))
+  end
+
+  defp df_var(), do: quote(do: var!(df, Explorer.Query))
 end
