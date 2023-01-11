@@ -231,6 +231,7 @@ rustler::init!(
         s_as_str,
         s_cast,
         s_categories,
+        s_categorise,
         s_coalesce,
         s_concat,
         s_contains,

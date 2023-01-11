@@ -262,17 +262,28 @@ fn categorical_series_to_list<'b>(
     let mut terms: HashMap<u32, NIF_TERM> = HashMap::new();
 
     let logical = s.categorical()?.logical();
+    let cat_size = mapping.len() as u32;
 
     for maybe_id in &logical.reverse() {
         let term_as_c_arg = match maybe_id {
             None => &nil_as_c_arg,
             Some(id) => terms.entry(id).or_insert_with(|| {
-                let values = mapping.get(id);
-                let mut binary = NewBinary::new(env, values.len());
-                binary.copy_from_slice(values.as_bytes());
+                // TODO: update to `get_optional` once available:
+                // https://pola-rs.github.io/polars/polars/datatypes/enum.RevMapping.html#method.get_optional
+                let maybe_str = if id < cat_size {
+                    Some(mapping.get(id))
+                } else {
+                    None
+                };
+                if let Some(existing_str) = maybe_str {
+                    let mut binary = NewBinary::new(env, existing_str.len());
+                    binary.copy_from_slice(existing_str.as_bytes());
 
-                let binary_term: Term = binary.into();
-                binary_term.as_c_arg()
+                    let binary_term: Term = binary.into();
+                    binary_term.as_c_arg()
+                } else {
+                    nil_as_c_arg
+                }
             }),
         };
 
