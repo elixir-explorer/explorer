@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.0] - Unreleased
+
+### Added
+
+- Add `DataFrame.describe/2` to gather some statistics from a dataframe.
+- Add `Series.nil_count/1` to count nil values.
+- Add `Series.in/2` to check if a given value is inside a series.
+- Add `Series` float predicates: `is_finite/1`, `is_infinite/1` and `is_nan/1`.
+- Add `Series` string functions: `contains/2`, `trim/1`, `trim_leading/1`, `trim_trailing/1`,
+  `upcase/1` and `downcase/1`.
+- Enable slicing of lazy frames (`LazyFrame`).
+- Add IO operations "from/load" to the lazy frame implementation.
+- Add support for the `:lazy` option in the `DataFrame.new/2` function.
+- Add `Series` float rounding methods: `round/2`, `floor/1` and `ceil/1`.
+- Add support for precompiling to Linux running on RISCV CPUs.
+- Add support for precompiling to Linux running on AARCH64 (Apple's M1/M2).
+- Allow `DataFrame.new/1` to receive the dtypes option.
+- Accept `:nan` as an option for `Series.fill_missing/2` with float series.
+- Add basic support for categorical dtype.
+- Add `Series.categories/1` to return categories from a categorical series.
+- Add `Series.categorise/2` to categorise a series of integers using predefined categories.
+- Add `Series.replace/2` to replace the contents of a series.
+
+### Fixed
+
+- Fix `DataFrame.mutate/2` using a boolean scalar value.
+
+### Changed
+
+- Rename `Series.bintype/1` to `Series.iotype/1`.
+
 ## [v0.4.0] - 2022-11-29
 
 ### Added
@@ -204,6 +235,7 @@ properly compare floats.
 
 First release.
 
+[v0.5.0]: https://github.com/elixir-nx/explorer/compare/v0.4.0...v0.5.0
 [v0.4.0]: https://github.com/elixir-nx/explorer/compare/v0.3.1...v0.4.0
 [v0.3.1]: https://github.com/elixir-nx/explorer/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/elixir-nx/explorer/compare/v0.2.0...v0.3.0
