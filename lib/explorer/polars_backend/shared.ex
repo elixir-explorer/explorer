@@ -124,9 +124,6 @@ defmodule Explorer.PolarsBackend.Shared do
 
   defp ok({:ok, value}), do: value
 
-  def normalise_dtype("u8"), do: :integer
-  def normalise_dtype("u32"), do: :integer
-  def normalise_dtype("i32"), do: :integer
   def normalise_dtype("i64"), do: :integer
   def normalise_dtype("f64"), do: :float
   def normalise_dtype("bool"), do: :boolean
