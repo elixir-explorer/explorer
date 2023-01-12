@@ -2,7 +2,7 @@ defmodule Explorer.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-nx/explorer"
-  @version "0.5.0"
+  @version "0.6.0-dev"
 
   def project do
     [
