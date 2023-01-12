@@ -2,9 +2,11 @@
 
 [![Package](https://img.shields.io/hexpm/v/explorer.svg)](https://hex.pm/packages/explorer) [![Documentation](http://img.shields.io/badge/hex.pm-docs-green.svg?style=flat)](https://hexdocs.pm/explorer) ![CI](https://github.com/elixir-nx/explorer/actions/workflows/ci.yml/badge.svg)
 
-Explorer brings series (one-dimensional) and dataframes (two-dimensional) for fast data exploration to Elixir. Its high-level features are:
+Explorer brings series (one-dimensional) and dataframes (two-dimensional) for fast
+data exploration to Elixir. Its high-level features are:
 
-- Simply typed series: `:float`, `:integer`, `:boolean`, `:string`, `:date`, and `:datetime`.
+- Simply typed series: `:float`, `:integer`, `:boolean`, `:string`, `:binary`, `:category`,
+  `:date` and `:datetime`.
 - A powerful but constrained and opinionated API, so you spend less time looking for the right
   function and more time doing data manipulation.
 - Pluggable backends, providing a uniform API whether you're working in-memory or (forthcoming) on
@@ -47,7 +49,7 @@ Then you can add `Explorer` as dependency in your `mix.exs`.
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.4.0"}
+    {:explorer, "~> 0.5.0"}
   ]
 end
 ```
@@ -56,7 +58,7 @@ Alternatively, inside a script or Livebook:
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.4.0"}
+  {:explorer, "~> 0.5.0"}
 ])
 ```
 

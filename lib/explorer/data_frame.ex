@@ -4339,7 +4339,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Summarise each group to a single row using `Explorer.Query`.
 
-  To summarize, you must perform aggregation, defined in `Explorer.Series`,
+  To summarise, you must perform aggregation, defined in `Explorer.Series`,
   on the desired columns. The query is compiled and runs efficiently
   against the dataframe. This function performs aggregations based on groups,
   so at least one group is expected, and the query must contain at least one
