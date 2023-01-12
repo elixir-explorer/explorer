@@ -7,11 +7,9 @@ pub mod io;
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn lf_collect(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {
-    let mut df = data.resource.0.clone().collect()?;
+    let df = data.resource.0.clone().collect()?;
 
-    let normalized_df = crate::dataframe::normalize_numeric_dtypes(&mut df)?;
-
-    Ok(ExDataFrame::new(normalized_df))
+    Ok(ExDataFrame::new(df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
