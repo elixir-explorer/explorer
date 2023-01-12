@@ -124,25 +124,26 @@ defmodule Explorer.PolarsBackend.Shared do
 
   defp ok({:ok, value}), do: value
 
-  def normalise_dtype("i64"), do: :integer
-  def normalise_dtype("f64"), do: :float
-  def normalise_dtype("bool"), do: :boolean
-  def normalise_dtype("str"), do: :string
-  def normalise_dtype("cat"), do: :category
   def normalise_dtype("binary"), do: :binary
+  def normalise_dtype("bool"), do: :boolean
+  def normalise_dtype("cat"), do: :category
   def normalise_dtype("date"), do: :date
   def normalise_dtype("datetime[ms]"), do: :datetime
-  def normalise_dtype("datetime[μs]"), do: :datetime
   def normalise_dtype("datetime[ns]"), do: :datetime
+  def normalise_dtype("datetime[μs]"), do: :datetime
+  def normalise_dtype("f64"), do: :float
+  def normalise_dtype("i64"), do: :integer
   def normalise_dtype("list[u32]"), do: :integer
+  def normalise_dtype("str"), do: :string
 
-  def internal_from_dtype(:integer), do: "i64"
-  def internal_from_dtype(:float), do: "f64"
+  def internal_from_dtype(:binary), do: "binary"
   def internal_from_dtype(:boolean), do: "bool"
-  def internal_from_dtype(:string), do: "str"
   def internal_from_dtype(:category), do: "cat"
   def internal_from_dtype(:date), do: "date"
   def internal_from_dtype(:datetime), do: "datetime[μs]"
+  def internal_from_dtype(:float), do: "f64"
+  def internal_from_dtype(:integer), do: "i64"
+  def internal_from_dtype(:string), do: "str"
 
   defp error_message({_err_type, error}) when is_binary(error), do: error
   defp error_message(error), do: inspect(error)

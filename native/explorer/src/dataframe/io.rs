@@ -88,14 +88,16 @@ pub fn schema_from_dtypes_pairs(dtypes: Vec<(&str, &str)>) -> Result<Schema, Exp
 
 fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
     match dtype {
-        "str" => Ok(DataType::Utf8),
-        "f64" => Ok(DataType::Float64),
-        "i64" => Ok(DataType::Int64),
+        "binary" => Ok(DataType::Binary),
         "bool" => Ok(DataType::Boolean),
+        "cat" => Ok(DataType::Categorical(None)),
         "date" => Ok(DataType::Date),
         "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
-        "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
         "datetime[ns]" => Ok(DataType::Datetime(TimeUnit::Nanoseconds, None)),
+        "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
+        "f64" => Ok(DataType::Float64),
+        "i64" => Ok(DataType::Int64),
+        "str" => Ok(DataType::Utf8),
         _ => Err(ExplorerError::Internal("Unrecognised datatype".into())),
     }
 }
