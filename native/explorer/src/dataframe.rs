@@ -8,6 +8,26 @@ use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
 
+// Helper to normalize integers and float column dtypes.
+pub fn normalize_numeric_dtypes(df: &mut DataFrame) -> Result<DataFrame, crate::ExplorerError> {
+    let dtypes = df.dtypes().into_iter().enumerate();
+
+    for (idx, dtype) in dtypes {
+        match dtype {
+            DataType::UInt8
+            | DataType::UInt16
+            | DataType::UInt32
+            | DataType::Int8
+            | DataType::Int16
+            | DataType::Int32 => df.apply_at_idx(idx, |s| s.cast(&DataType::Int64).unwrap())?,
+            DataType::Float32 => df.apply_at_idx(idx, |s| s.cast(&DataType::Float64).unwrap())?,
+            _ => df,
+        };
+    }
+
+    Ok(df.clone())
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_join(
     data: ExDataFrame,

@@ -16,6 +16,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter, Cursor};
 use std::result::Result;
 
+use crate::dataframe::normalize_numeric_dtypes;
 use crate::{ExDataFrame, ExplorerError};
 
 // ============ CSV ============ //
@@ -48,7 +49,7 @@ pub fn df_from_csv(
         None => None,
     };
 
-    let df = CsvReader::from_path(filename)?
+    let mut df = CsvReader::from_path(filename)?
         .infer_schema(infer_schema_length)
         .has_header(has_header)
         .with_parse_dates(parse_dates)
@@ -63,7 +64,9 @@ pub fn df_from_csv(
         .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
         .finish()?;
 
-    Ok(ExDataFrame::new(df))
+    let normalized_df = normalize_numeric_dtypes(&mut df)?;
+
+    Ok(ExDataFrame::new(normalized_df))
 }
 
 pub fn schema_from_dtypes_pairs(dtypes: Vec<(&str, &str)>) -> Result<Schema, ExplorerError> {
@@ -157,7 +160,7 @@ pub fn df_load_csv(
 
     let cursor = Cursor::new(binary.as_slice());
 
-    let df = CsvReader::new(cursor)
+    let mut df = CsvReader::new(cursor)
         .infer_schema(infer_schema_length)
         .has_header(has_header)
         .with_parse_dates(parse_dates)
@@ -172,7 +175,9 @@ pub fn df_load_csv(
         .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
         .finish()?;
 
-    Ok(ExDataFrame::new(df))
+    let normalized_df = normalize_numeric_dtypes(&mut df)?;
+
+    Ok(ExDataFrame::new(normalized_df))
 }
 
 // ============ Parquet ============ //
@@ -181,8 +186,11 @@ pub fn df_load_csv(
 pub fn df_from_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
-    let df = ParquetReader::new(buf_reader).finish()?;
-    Ok(ExDataFrame::new(df))
+    let mut df = ParquetReader::new(buf_reader).finish()?;
+
+    let normalized_df = normalize_numeric_dtypes(&mut df)?;
+
+    Ok(ExDataFrame::new(normalized_df))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -276,11 +284,14 @@ pub fn df_from_ipc(
 ) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
-    let df = IpcReader::new(buf_reader)
+    let mut df = IpcReader::new(buf_reader)
         .with_columns(columns)
         .with_projection(projection)
         .finish()?;
-    Ok(ExDataFrame::new(df))
+
+    let normalized_df = normalize_numeric_dtypes(&mut df)?;
+
+    Ok(ExDataFrame::new(normalized_df))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -339,11 +350,14 @@ pub fn df_load_ipc(
     projection: Option<Vec<usize>>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let cursor = Cursor::new(binary.as_slice());
-    let df = IpcReader::new(cursor)
+    let mut df = IpcReader::new(cursor)
         .with_columns(columns)
         .with_projection(projection)
         .finish()?;
-    Ok(ExDataFrame::new(df))
+
+    let normalized_df = normalize_numeric_dtypes(&mut df)?;
+
+    Ok(ExDataFrame::new(normalized_df))
 }
 
 // ============ IPC Streaming ============ //
@@ -356,11 +370,14 @@ pub fn df_from_ipc_stream(
 ) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
-    let df = IpcStreamReader::new(buf_reader)
+    let mut df = IpcStreamReader::new(buf_reader)
         .with_columns(columns)
         .with_projection(projection)
         .finish()?;
-    Ok(ExDataFrame::new(df))
+
+    let normalized_df = normalize_numeric_dtypes(&mut df)?;
+
+    Ok(ExDataFrame::new(normalized_df))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -418,11 +435,14 @@ pub fn df_load_ipc_stream(
     projection: Option<Vec<usize>>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let cursor = Cursor::new(binary.as_slice());
-    let df = IpcStreamReader::new(cursor)
+    let mut df = IpcStreamReader::new(cursor)
         .with_columns(columns)
         .with_projection(projection)
         .finish()?;
-    Ok(ExDataFrame::new(df))
+
+    let normalized_df = normalize_numeric_dtypes(&mut df)?;
+
+    Ok(ExDataFrame::new(normalized_df))
 }
 
 // ============ NDJSON ============ //
@@ -436,13 +456,15 @@ pub fn df_from_ndjson(
 ) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
-    let df = JsonReader::new(buf_reader)
+    let mut df = JsonReader::new(buf_reader)
         .with_json_format(JsonFormat::JsonLines)
         .with_batch_size(batch_size)
         .infer_schema_len(infer_schema_length)
         .finish()?;
 
-    Ok(ExDataFrame::new(df))
+    let normalized_df = normalize_numeric_dtypes(&mut df)?;
+
+    Ok(ExDataFrame::new(normalized_df))
 }
 
 #[cfg(not(any(target_arch = "arm", target_arch = "riscv64")))]
@@ -482,13 +504,15 @@ pub fn df_load_ndjson(
     batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
     let cursor = Cursor::new(binary.as_slice());
-    let df = JsonReader::new(cursor)
+    let mut df = JsonReader::new(cursor)
         .with_json_format(JsonFormat::JsonLines)
         .with_batch_size(batch_size)
         .infer_schema_len(infer_schema_length)
         .finish()?;
 
-    Ok(ExDataFrame::new(df))
+    let normalized_df = normalize_numeric_dtypes(&mut df)?;
+
+    Ok(ExDataFrame::new(normalized_df))
 }
 
 // ============ ARM 32 specifics ============ //
