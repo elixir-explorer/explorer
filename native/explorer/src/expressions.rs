@@ -6,7 +6,7 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{col, when, DataFrame, IntoLazy, LiteralValue, SortOptions};
-use polars::prelude::{DataType, Expr, Literal, Series};
+use polars::prelude::{DataType, Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
 use crate::series::{cast_str_to_dtype, cast_str_to_f64, rolling_opts};
@@ -58,14 +58,14 @@ pub fn expr_datetime(datetime: ExDateTime) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_series(series: ExSeries) -> ExExpr {
-    let series: Series = series.resource.0.clone();
+    let series = series.clone_inner();
     let expr = series.lit();
     ExExpr::new(expr)
 }
 
 #[rustler::nif]
 pub fn expr_cast(data: ExExpr, to_dtype: &str) -> ExExpr {
-    let expr: Expr = data.resource.0.clone();
+    let expr = data.clone_inner();
     let to_dtype = cast_str_to_dtype(to_dtype).expect("dtype is not valid");
 
     ExExpr::new(expr.cast(to_dtype))
@@ -79,150 +79,150 @@ pub fn expr_column(name: &str) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_equal(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.eq(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_not_equal(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.neq(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_greater(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.gt(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_greater_equal(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.gt_eq(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_less(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.lt(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_less_equal(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.lt_eq(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_binary_and(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.and(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_binary_or(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.or(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_binary_in(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.is_in(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_is_nil(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.is_null())
 }
 
 #[rustler::nif]
 pub fn expr_is_not_nil(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.is_not_null())
 }
 
 #[rustler::nif]
 pub fn expr_is_finite(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.is_finite())
 }
 
 #[rustler::nif]
 pub fn expr_is_infinite(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.is_infinite())
 }
 
 #[rustler::nif]
 pub fn expr_is_nan(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.is_nan())
 }
 
 #[rustler::nif]
 pub fn expr_all_equal(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.eq(right_expr).all())
 }
 
 #[rustler::nif]
 pub fn expr_slice(expr: ExExpr, offset: i64, length: u32) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.slice(offset, length))
 }
 
 #[rustler::nif]
 pub fn expr_head(expr: ExExpr, length: usize) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.head(Some(length)))
 }
 
 #[rustler::nif]
 pub fn expr_tail(expr: ExExpr, length: usize) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.tail(Some(length)))
 }
 
 #[rustler::nif]
 pub fn expr_shift(expr: ExExpr, offset: i64, _default: Option<ExExpr>) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.shift(offset))
 }
 
 #[rustler::nif]
 pub fn expr_sample_n(expr: ExExpr, n: usize, with_replacement: bool, seed: Option<u64>) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.sample_n(n, with_replacement, true, seed))
 }
@@ -234,33 +234,32 @@ pub fn expr_sample_frac(
     with_replacement: bool,
     seed: Option<u64>,
 ) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.sample_frac(frac, with_replacement, true, seed))
 }
 
 #[rustler::nif]
 pub fn expr_peaks(data: ExExpr, min_or_max: &str) -> ExExpr {
-    let expr: Expr = data.resource.0.clone();
+    let expr = data.clone_inner();
     let type_expr = if min_or_max == "min" {
         expr.min()
     } else {
         expr.max()
     };
 
-    ExExpr::new(data.resource.0.clone().eq(type_expr))
+    ExExpr::new(data.clone_inner().eq(type_expr))
 }
 
 #[rustler::nif]
 pub fn expr_fill_missing_with_strategy(data: ExExpr, strategy: &str) -> ExExpr {
-    let orig_expr = &data.resource.0;
-    let expr: Expr = orig_expr.clone();
+    let expr = data.clone_inner();
     let result_expr = match strategy {
         "backward" => expr.backward_fill(None),
         "forward" => expr.forward_fill(None),
-        "min" => expr.fill_null(orig_expr.clone().min()),
-        "max" => expr.fill_null(orig_expr.clone().max()),
-        "mean" => expr.fill_null(orig_expr.clone().mean()),
+        "min" => expr.clone().fill_null(expr.min()),
+        "max" => expr.clone().fill_null(expr.max()),
+        "mean" => expr.clone().fill_null(expr.mean()),
         _other => panic!("unknown strategy {strategy:?}"),
     };
     ExExpr::new(result_expr)
@@ -268,39 +267,39 @@ pub fn expr_fill_missing_with_strategy(data: ExExpr, strategy: &str) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_fill_missing_with_value(data: ExExpr, value: ExExpr) -> ExExpr {
-    let expr: Expr = data.resource.0.clone();
-    let value: Expr = value.resource.0.clone();
+    let expr = data.clone_inner();
+    let value = value.clone_inner();
     ExExpr::new(expr.fill_null(value))
 }
 
 #[rustler::nif]
 pub fn expr_add(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr + right_expr)
 }
 
 #[rustler::nif]
 pub fn expr_subtract(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr - right_expr)
 }
 
 #[rustler::nif]
 pub fn expr_divide(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr / right_expr)
 }
 
 #[rustler::nif]
 pub fn expr_quotient(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     let quotient = left_expr
         / when(right_expr.clone().eq(0))
@@ -312,8 +311,8 @@ pub fn expr_quotient(left: ExExpr, right: ExExpr) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_remainder(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     let quotient = left_expr.clone()
         / when(right_expr.clone().eq(0))
@@ -328,86 +327,86 @@ pub fn expr_remainder(left: ExExpr, right: ExExpr) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_multiply(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr * right_expr)
 }
 
 #[rustler::nif]
 pub fn expr_pow(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.pow(right_expr))
 }
 
 #[rustler::nif]
 pub fn expr_sum(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.sum())
 }
 
 #[rustler::nif]
 pub fn expr_min(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.min())
 }
 
 #[rustler::nif]
 pub fn expr_max(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.max())
 }
 
 #[rustler::nif]
 pub fn expr_mean(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.mean())
 }
 
 #[rustler::nif]
 pub fn expr_median(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.median())
 }
 
 #[rustler::nif]
 pub fn expr_variance(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.var(1))
 }
 
 #[rustler::nif]
 pub fn expr_standard_deviation(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.std(1))
 }
 
 #[rustler::nif]
 pub fn expr_quantile(expr: ExExpr, quantile: f64) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     let strategy = crate::parse_quantile_interpol_options("nearest");
     ExExpr::new(expr.quantile(quantile.into(), strategy))
 }
 
 #[rustler::nif]
 pub fn expr_alias(expr: ExExpr, name: &str) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.alias(name))
 }
 
 #[rustler::nif]
 pub fn expr_count(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     // We need to add zero to work around a Polars bug
     // where casting a count returns the wrong result
@@ -416,45 +415,45 @@ pub fn expr_count(expr: ExExpr) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_nil_count(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.null_count().cast(DataType::Int64))
 }
 
 #[rustler::nif]
 pub fn expr_n_distinct(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.n_unique().cast(DataType::Int64))
 }
 
 #[rustler::nif]
 pub fn expr_first(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.first())
 }
 
 #[rustler::nif]
 pub fn expr_last(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.last())
 }
 
 #[rustler::nif]
 pub fn expr_concat(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     ExExpr::new(left_expr.append(right_expr, false))
 }
 
 #[rustler::nif]
 pub fn expr_coalesce(left: ExExpr, right: ExExpr) -> ExExpr {
-    let predicate: Expr = left.resource.0.clone().is_not_null();
-    let left_expr: Expr = left.resource.0.clone();
-    let right_expr: Expr = right.resource.0.clone();
+    let predicate = left.clone_inner().is_not_null();
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
 
     let condition = when(predicate).then(left_expr).otherwise(right_expr);
 
@@ -463,9 +462,9 @@ pub fn expr_coalesce(left: ExExpr, right: ExExpr) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_select(predicate: ExExpr, on_true: ExExpr, on_false: ExExpr) -> ExExpr {
-    let predicate_expr: Expr = predicate.resource.0.clone();
-    let on_true_expr: Expr = on_true.resource.0.clone();
-    let on_false_expr: Expr = on_false.resource.0.clone();
+    let predicate_expr = predicate.clone_inner();
+    let on_true_expr = on_true.clone_inner();
+    let on_false_expr = on_false.clone_inner();
 
     let condition = when(predicate_expr)
         .then(on_true_expr)
@@ -485,7 +484,7 @@ macro_rules! init_window_expr_fun {
             min_periods: Option<usize>,
             center: bool,
         ) -> ExExpr {
-            let expr: Expr = data.resource.0.clone();
+            let expr = data.clone_inner();
             let opts = rolling_opts(window_size, weights, min_periods, center);
             ExExpr::new(expr.$fun(opts))
         }
@@ -499,32 +498,32 @@ init_window_expr_fun!(expr_window_mean, rolling_mean);
 
 #[rustler::nif]
 pub fn expr_cumulative_min(data: ExExpr, reverse: bool) -> ExExpr {
-    let expr: Expr = data.resource.0.clone();
+    let expr = data.clone_inner();
     ExExpr::new(expr.cummin(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_max(data: ExExpr, reverse: bool) -> ExExpr {
-    let expr: Expr = data.resource.0.clone();
+    let expr = data.clone_inner();
     ExExpr::new(expr.cummax(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
-    let expr: Expr = data.resource.0.clone();
+    let expr = data.clone_inner();
     ExExpr::new(expr.cumsum(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_reverse(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.reverse())
 }
 
 #[rustler::nif]
 pub fn expr_sort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     let opts = SortOptions {
         descending,
         nulls_last,
@@ -535,7 +534,7 @@ pub fn expr_sort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_argsort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     let opts = SortOptions {
         descending,
         nulls_last,
@@ -546,81 +545,81 @@ pub fn expr_argsort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr 
 
 #[rustler::nif]
 pub fn expr_distinct(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.unique_stable())
 }
 
 #[rustler::nif]
 pub fn expr_unordered_distinct(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
 
     ExExpr::new(expr.unique())
 }
 
 #[rustler::nif]
 pub fn expr_unary_not(expr: ExExpr) -> ExExpr {
-    let predicate: Expr = expr.resource.0.clone();
+    let predicate = expr.clone_inner();
     ExExpr::new(predicate.not())
 }
 
 #[rustler::nif]
 pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
-    let df: DataFrame = data.resource.0.clone();
-    let expressions: Expr = expr.resource.0.clone();
+    let df: DataFrame = data.clone_inner();
+    let expressions = expr.clone_inner();
     df.lazy().filter(expressions).describe_plan()
 }
 
 #[rustler::nif]
 pub fn expr_contains(expr: ExExpr, pattern: &str) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     ExExpr::new(expr.str().contains(pattern))
 }
 
 #[rustler::nif]
 pub fn expr_upcase(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     ExExpr::new(expr.str().to_uppercase())
 }
 
 #[rustler::nif]
 pub fn expr_downcase(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     ExExpr::new(expr.str().to_lowercase())
 }
 
 #[rustler::nif]
 pub fn expr_trim(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     ExExpr::new(expr.str().strip(None))
 }
 
 #[rustler::nif]
 pub fn expr_trim_leading(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     ExExpr::new(expr.str().lstrip(None))
 }
 
 #[rustler::nif]
 pub fn expr_trim_trailing(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     ExExpr::new(expr.str().rstrip(None))
 }
 
 #[rustler::nif]
 pub fn expr_round(expr: ExExpr, decimals: u32) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     ExExpr::new(expr.round(decimals))
 }
 
 #[rustler::nif]
 pub fn expr_floor(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     ExExpr::new(expr.floor())
 }
 
 #[rustler::nif]
 pub fn expr_ceil(expr: ExExpr) -> ExExpr {
-    let expr: Expr = expr.resource.0.clone();
+    let expr = expr.clone_inner();
     ExExpr::new(expr.ceil())
 }
