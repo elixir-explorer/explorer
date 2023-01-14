@@ -1949,6 +1949,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Picks rows based on a callback function.
 
+  The callback receives a lazy dataframe. A lazy dataframe does
+  hold any values, instead it stores all operations in order to
+  execute all filtering performantly.
+
   This is a callback version of `filter/2`.
 
   ## Examples
@@ -2031,7 +2035,9 @@ defmodule Explorer.DataFrame do
   is computed withing groups. See examples below.
 
   See `mutate_with/2` for a callback version of this function without
-  `Explorer.Query`.
+  `Explorer.Query`. If your mutation cannot be expressed with queries,
+  you may compute the values using the `Explorer.Series` API directly
+  and then add it to the dataframe using `put/3`.
 
   ## Examples
 
@@ -2133,7 +2139,14 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates or modifies columns using a callback function.
 
-  This is a callback version of `mutate/2`.
+  The callback receives a lazy dataframe. A lazy dataframe does
+  hold any values, instead it stores all operations in order to
+  execute all mutations performantly.
+
+  This is a callback version of `mutate/2`. If your mutation
+  cannot be expressed with lazy dataframes, you may compute the
+  values using the `Explorer.Series` API directly and then add
+  it to the dataframe using `put/3`.
 
   ## Examples
 
@@ -2521,6 +2534,10 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Arranges/sorts rows by columns using a callback function.
+
+  The callback receives a lazy dataframe. A lazy dataframe does
+  hold any values, instead it stores all operations in order to
+  execute all sorting performantly.
 
   This is a callback version of `arrange/2`.
 
@@ -4387,6 +4404,10 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Summarise each group to a single row using a callback function.
+
+  The callback receives a lazy dataframe. A lazy dataframe does
+  hold any values, instead it stores all operations in order to
+  execute all summarizations performantly.
 
   This is a callback version of `summarise/2`.
 
