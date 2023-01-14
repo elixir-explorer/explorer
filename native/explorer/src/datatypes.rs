@@ -63,6 +63,11 @@ impl ExDataFrame {
             resource: ResourceArc::new(ExDataFrameRef::new(df)),
         }
     }
+
+    // Returns a clone of the DataFrame inside the ResourceArc container.
+    pub fn clone_inner(&self) -> DataFrame {
+        self.resource.0.clone()
+    }
 }
 
 impl ExExpr {
@@ -70,6 +75,11 @@ impl ExExpr {
         Self {
             resource: ResourceArc::new(ExExprRef::new(expr)),
         }
+    }
+
+    // Returns a clone of the Expr inside the ResourceArc container.
+    pub fn clone_inner(&self) -> Expr {
+        self.resource.0.clone()
     }
 }
 
@@ -79,6 +89,11 @@ impl ExLazyFrame {
             resource: ResourceArc::new(ExLazyFrameRef::new(df)),
         }
     }
+
+    // Returns a clone of the LazyFrame inside the ResourceArc container.
+    pub fn clone_inner(&self) -> LazyFrame {
+        self.resource.0.clone()
+    }
 }
 
 impl ExSeries {
@@ -86,6 +101,19 @@ impl ExSeries {
         Self {
             resource: ResourceArc::new(ExSeriesRef::new(s)),
         }
+    }
+
+    // Returns a clone of the Series inside the ResourceArc container.
+    pub fn clone_inner(&self) -> Series {
+        self.resource.0.clone()
+    }
+
+    pub fn name(&self) -> &str {
+        self.resource.0.name()
+    }
+
+    pub fn dtype(&self) -> &DataType {
+        self.resource.0.dtype()
     }
 }
 

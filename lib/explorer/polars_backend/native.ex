@@ -172,7 +172,6 @@ defmodule Explorer.PolarsBackend.Native do
   def s_add(_s, _other), do: err()
   def s_and(_s, _s2), do: err()
   def s_argsort(_s, _descending?, _nils_last?), do: err()
-  def s_as_str(_s), do: err()
   def s_cast(_s, _dtype), do: err()
   def s_categories(_s), do: err()
   def s_categorise(_s, _s_categories), do: err()

@@ -109,13 +109,12 @@ pub fn df_to_csv(
     has_headers: bool,
     delimiter: u8,
 ) -> Result<(), ExplorerError> {
-    let df = &data.resource.0;
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
     CsvWriter::new(&mut buf_writer)
         .has_header(has_headers)
         .with_delimiter(delimiter)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
     Ok(())
 }
 
@@ -126,13 +125,12 @@ pub fn df_dump_csv(
     has_headers: bool,
     delimiter: u8,
 ) -> Result<Binary, ExplorerError> {
-    let df = &data.resource.0;
     let mut buf = vec![];
 
     CsvWriter::new(&mut buf)
         .has_header(has_headers)
         .with_delimiter(delimiter)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);
@@ -205,14 +203,13 @@ pub fn df_to_parquet(
     compression: Option<&str>,
     compression_level: Option<i32>,
 ) -> Result<(), ExplorerError> {
-    let df = &data.resource.0;
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
     let compression = parquet_compression(compression, compression_level)?;
 
     ParquetWriter::new(&mut buf_writer)
         .with_compression(compression)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
     Ok(())
 }
 
@@ -257,14 +254,13 @@ pub fn df_dump_parquet<'a>(
     compression: Option<&str>,
     compression_level: Option<i32>,
 ) -> Result<Binary<'a>, ExplorerError> {
-    let df = &data.resource.0;
     let mut buf = vec![];
 
     let compression = parquet_compression(compression, compression_level)?;
 
     ParquetWriter::new(&mut buf)
         .with_compression(compression)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);
@@ -303,8 +299,6 @@ pub fn df_to_ipc(
     filename: &str,
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
-    let df = &data.resource.0;
-
     // Select the compression algorithm.
     let compression = match compression {
         Some("lz4") => Some(IpcCompression::LZ4),
@@ -316,7 +310,7 @@ pub fn df_to_ipc(
     let mut buf_writer = BufWriter::new(file);
     IpcWriter::new(&mut buf_writer)
         .with_compression(compression)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
     Ok(())
 }
 
@@ -326,7 +320,6 @@ pub fn df_dump_ipc<'a>(
     data: ExDataFrame,
     compression: Option<&str>,
 ) -> Result<Binary<'a>, ExplorerError> {
-    let df = &data.resource.0;
     let mut buf = vec![];
 
     // Select the compression algorithm.
@@ -338,7 +331,7 @@ pub fn df_dump_ipc<'a>(
 
     IpcWriter::new(&mut buf)
         .with_compression(compression)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);
@@ -383,8 +376,6 @@ pub fn df_to_ipc_stream(
     filename: &str,
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
-    let df = &data.resource.0;
-
     // Select the compression algorithm.
     let compression = match compression {
         Some("lz4") => Some(IpcCompression::LZ4),
@@ -395,7 +386,7 @@ pub fn df_to_ipc_stream(
     let mut file = File::create(filename).expect("could not create file");
     IpcStreamWriter::new(&mut file)
         .with_compression(compression)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
     Ok(())
 }
 
@@ -405,7 +396,6 @@ pub fn df_dump_ipc_stream<'a>(
     data: ExDataFrame,
     compression: Option<&str>,
 ) -> Result<Binary<'a>, ExplorerError> {
-    let df = &data.resource.0;
     let mut buf = vec![];
 
     // Select the compression algorithm.
@@ -417,7 +407,7 @@ pub fn df_dump_ipc_stream<'a>(
 
     IpcStreamWriter::new(&mut buf)
         .with_compression(compression)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);
@@ -461,25 +451,23 @@ pub fn df_from_ndjson(
 #[cfg(not(any(target_arch = "arm", target_arch = "riscv64")))]
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_to_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerError> {
-    let df = &data.resource.0;
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
 
     JsonWriter::new(&mut buf_writer)
         .with_json_format(JsonFormat::JsonLines)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
     Ok(())
 }
 
 #[cfg(not(any(target_arch = "arm", target_arch = "riscv64")))]
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_dump_ndjson(env: Env, data: ExDataFrame) -> Result<Binary, ExplorerError> {
-    let df = &data.resource.0;
     let mut buf = vec![];
 
     JsonWriter::new(&mut buf)
         .with_json_format(JsonFormat::JsonLines)
-        .finish(&mut df.clone())?;
+        .finish(&mut data.clone_inner())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);

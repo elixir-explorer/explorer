@@ -228,7 +228,6 @@ rustler::init!(
         s_add,
         s_and,
         s_argsort,
-        s_as_str,
         s_cast,
         s_categories,
         s_categorise,
