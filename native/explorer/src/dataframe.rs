@@ -3,8 +3,8 @@ use polars_ops::pivot::{pivot_stable, PivotAgg};
 
 use std::result::Result;
 
-use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 use crate::ex_expr_to_exprs;
+use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
