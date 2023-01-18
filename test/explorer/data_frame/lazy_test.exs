@@ -277,4 +277,64 @@ defmodule Explorer.DataFrame.LazyTest do
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
+
+  describe "filter_with/2" do
+    test "filters by a simple selector" do
+      ldf = DF.new([a: [1, 2, 3, 4], b: [150, 50, 250, 0]], lazy: true)
+
+      ldf1 = DF.filter_with(ldf, fn ldf -> Series.greater(ldf["a"], 2) end)
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [3, 4],
+               b: [250, 0]
+             }
+    end
+
+    test "filters with a group and without aggregation" do
+      ldf =
+        DF.new([col1: ["a", "b", "a", "b"], col2: [1, 2, 3, 4], col3: ["z", "y", "w", "k"]],
+          lazy: true
+        )
+
+      ldf_grouped = DF.group_by(ldf, "col1")
+
+      ldf1 =
+        DF.filter_with(ldf_grouped, fn ldf ->
+          Series.greater(ldf["col2"], 2)
+        end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               col1: ["a", "b"],
+               col2: [3, 4],
+               col3: ["w", "k"]
+             }
+
+      assert DF.groups(df1) == ["col1"]
+    end
+
+    test "filters with a group and with aggregation" do
+      ldf =
+        DF.new(
+          [
+            col1: ["a", "b", "a", "b", "a", "b"],
+            col2: [1, 2, 3, 4, 5, 6],
+            col3: ["z", "y", "w", "k", "d", "j"]
+          ],
+          lazy: true
+        )
+
+      ldf_grouped = DF.group_by(ldf, "col1")
+
+      assert_raise RuntimeError,
+                   "filter_with/2 with groups and aggregations is not supported yet for lazy frames",
+                   fn ->
+                     DF.filter_with(ldf_grouped, fn ldf ->
+                       Series.greater(ldf["col2"], Series.mean(ldf["col2"]))
+                     end)
+                   end
+    end
+  end
 end

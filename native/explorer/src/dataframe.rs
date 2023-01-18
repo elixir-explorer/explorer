@@ -3,6 +3,7 @@ use polars_ops::pivot::{pivot_stable, PivotAgg};
 
 use std::result::Result;
 
+use crate::ex_expr_to_exprs;
 use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
@@ -26,13 +27,6 @@ pub fn normalize_numeric_dtypes(df: &mut DataFrame) -> Result<DataFrame, crate::
     }
 
     Ok(df.clone())
-}
-
-fn ex_expr_to_exprs(ex_exprs: Vec<ExExpr>) -> Vec<Expr> {
-    ex_exprs
-        .iter()
-        .map(|ex_expr| ex_expr.clone_inner())
-        .collect()
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

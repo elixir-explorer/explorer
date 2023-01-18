@@ -1,4 +1,4 @@
-use crate::{ExDataFrame, ExLazyFrame, ExplorerError};
+use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExplorerError};
 use polars::prelude::*;
 use std::result::Result;
 
@@ -71,4 +71,12 @@ pub fn lf_drop(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, Exp
 pub fn lf_slice(data: ExLazyFrame, offset: i64, length: u32) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
     Ok(ExLazyFrame::new(lf.slice(offset, length)))
+}
+
+#[rustler::nif]
+pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame, ExplorerError> {
+    let ldf = data.clone_inner();
+    let expr = ex_expr.clone_inner();
+
+    Ok(ExLazyFrame::new(ldf.filter(expr)))
 }

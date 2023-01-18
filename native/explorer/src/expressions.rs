@@ -12,6 +12,14 @@ use crate::datatypes::{ExDate, ExDateTime};
 use crate::series::{cast_str_to_dtype, cast_str_to_f64, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 
+// Useful to get an ExExpr vec into a vec of expressions.
+pub fn ex_expr_to_exprs(ex_exprs: Vec<ExExpr>) -> Vec<Expr> {
+    ex_exprs
+        .iter()
+        .map(|ex_expr| ex_expr.clone_inner())
+        .collect()
+}
+
 #[rustler::nif]
 pub fn expr_integer(number: i64) -> ExExpr {
     let expr = number.lit();
