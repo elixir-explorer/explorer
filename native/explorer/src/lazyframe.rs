@@ -1,4 +1,4 @@
-use crate::{ExDataFrame, ExLazyFrame, ExplorerError};
+use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExplorerError};
 use polars::prelude::*;
 use std::result::Result;
 
@@ -71,4 +71,36 @@ pub fn lf_drop(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, Exp
 pub fn lf_slice(data: ExLazyFrame, offset: i64, length: u32) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
     Ok(ExLazyFrame::new(lf.slice(offset, length)))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame, ExplorerError> {
+    let ldf = data.clone_inner();
+    let expr = ex_expr.clone_inner();
+
+    Ok(ExLazyFrame::new(ldf.filter(expr)))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn lf_filter_with_aggregation(
+    data: ExLazyFrame,
+    ex_expr: ExExpr,
+    groups: Vec<&str>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let ldf = data.clone_inner();
+    let aggs: Vec<Expr> = ldf
+        .schema()?
+        .iter_names()
+        .filter(|name| !groups.contains(&name.as_str()))
+        .map(|name| col(name).filter(ex_expr.clone_inner()).list().keep_name())
+        .collect();
+
+    let expr_groups: Vec<Expr> = groups.iter().map(|group| col(group)).collect();
+
+    let new_ldf = ldf
+        .groupby_stable(&expr_groups)
+        .agg(aggs)
+        .explode([col("*").exclude(&groups)]);
+
+    Ok(ExLazyFrame::new(new_ldf))
 }
