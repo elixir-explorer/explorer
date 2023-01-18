@@ -73,7 +73,7 @@ pub fn lf_slice(data: ExLazyFrame, offset: i64, length: u32) -> Result<ExLazyFra
     Ok(ExLazyFrame::new(lf.slice(offset, length)))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
+#[rustler::nif]
 pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
     let expr = ex_expr.clone_inner();
@@ -81,7 +81,7 @@ pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame,
     Ok(ExLazyFrame::new(ldf.filter(expr)))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
+#[rustler::nif]
 pub fn lf_filter_with_aggregation(
     data: ExLazyFrame,
     ex_expr: ExExpr,
