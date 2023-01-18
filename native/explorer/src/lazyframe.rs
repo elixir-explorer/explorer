@@ -80,27 +80,3 @@ pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame,
 
     Ok(ExLazyFrame::new(ldf.filter(expr)))
 }
-
-#[rustler::nif]
-pub fn lf_filter_with_aggregation(
-    data: ExLazyFrame,
-    ex_expr: ExExpr,
-    groups: Vec<&str>,
-) -> Result<ExLazyFrame, ExplorerError> {
-    let ldf = data.clone_inner();
-    let aggs: Vec<Expr> = ldf
-        .schema()?
-        .iter_names()
-        .filter(|name| !groups.contains(&name.as_str()))
-        .map(|name| col(name).filter(ex_expr.clone_inner()).list().keep_name())
-        .collect();
-
-    let expr_groups: Vec<Expr> = groups.iter().map(|group| col(group)).collect();
-
-    let new_ldf = ldf
-        .groupby_stable(&expr_groups)
-        .agg(aggs)
-        .explode([col("*").exclude(&groups)]);
-
-    Ok(ExLazyFrame::new(new_ldf))
-}

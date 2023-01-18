@@ -206,13 +206,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def filter_with(
-        %DF{} = df,
-        %DF{groups: [_ | _]} = out_df,
-        %LazySeries{aggregation: true} = lseries
+        %DF{},
+        %DF{groups: [_ | _]},
+        %LazySeries{aggregation: true}
       ) do
-    aggregation = Explorer.PolarsBackend.Expression.to_expr(lseries)
-
-    Shared.apply_dataframe(df, out_df, :lf_filter_with_aggregation, [aggregation, out_df.groups])
+    raise "filter_with/2 with groups and aggregations is not supported yet for lazy frames"
   end
 
   @impl true
