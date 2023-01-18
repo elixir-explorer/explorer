@@ -294,6 +294,13 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "in/2" do
+    test "with boolean series" do
+      s1 = Series.from_list([true, false, true])
+      s2 = Series.from_list([false, false, false, false])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [false, true, false]
+    end
+
     test "with integer series" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, 0, 3])
@@ -366,6 +373,15 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list([1, 3, 5, 10])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "compare boolean series with an integer series" do
+      s1 = Series.from_list([true, false, true])
+      s2 = Series.from_list([0, 1])
+
+      assert_raise ArgumentError, fn ->
+        Series.in(s1, s2)
+      end
     end
 
     test "compare integer series with a float series" do
