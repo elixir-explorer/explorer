@@ -293,6 +293,122 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "in/2" do
+    test "with integer series" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([1, 0, 3])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with float series" do
+      s1 = Series.from_list([1.0, 2.0, 3.0])
+      s2 = Series.from_list([1.0, 0.0, 3.0])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with binary series" do
+      s1 = Series.from_list([<<239, 191, 19>>, <<2>>, <<3>>], dtype: :binary)
+      s2 = Series.from_list([<<239, 191, 19>>, <<0>>, <<3>>], dtype: :binary)
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with string series" do
+      s1 = Series.from_list(["1", "2", "3"])
+      s2 = Series.from_list(["1", "0", "3"])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with date series" do
+      s1 = Series.from_list([~D[2023-01-17], ~D[2023-01-18], ~D[2023-01-09]])
+      s2 = Series.from_list([~D[2023-01-17], ~D[2023-01-04], ~D[2023-01-09]])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with datetime series" do
+      s1 =
+        Series.from_list([
+          ~N[2023-01-17 20:00:56.576456Z],
+          ~N[2023-01-18 20:30:56.576456Z],
+          ~N[2023-01-09 21:00:56.576456Z]
+        ])
+
+      s2 =
+        Series.from_list([
+          ~N[2023-01-17 20:00:56.576456Z],
+          ~N[2023-01-04 22:00:56.576456Z],
+          ~N[2023-01-09 21:00:56.576456Z]
+        ])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with a list on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+      l1 = [1, 0, 3]
+
+      assert s1 |> Series.in(l1) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with a smaller series on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([1, 3])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with a bigger series on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([1, 3, 5, 10])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "compare integer series with a float series" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([1.0, 0.5, 3.0])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "compare integer series with a string series" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list(["1", "0", "3"])
+
+      assert_raise ArgumentError, fn ->
+        Series.in(s1, s2)
+      end
+    end
+
+    test "compare string series with a binary series" do
+      s1 = Series.from_list(["1", "2", "3"])
+      s2 = Series.from_list([<<1>>, <<0>>, <<"3">>], dtype: :binary)
+
+      assert_raise ArgumentError, fn ->
+        Series.in(s1, s2)
+      end
+    end
+
+    test "compare date series with a datetime series" do
+      s1 = Series.from_list([~D[2023-01-17], ~D[2023-01-18], ~D[2023-01-09]])
+
+      s2 =
+        Series.from_list([
+          ~N[2023-01-17 20:00:56.576456Z],
+          ~N[2023-01-04 22:00:56.576456Z],
+          ~N[2023-01-09 21:00:56.576456Z]
+        ])
+
+      assert_raise ArgumentError, fn ->
+        Series.in(s1, s2)
+      end
+    end
+  end
+
   describe "iotype/1" do
     test "integer series" do
       s = Series.from_list([1, 2, 3])

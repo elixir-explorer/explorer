@@ -368,6 +368,7 @@ pub fn s_in(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         DataType::Int64 => s.i64()?.is_in(&rhs)?,
         DataType::Float64 => s.f64()?.is_in(&rhs)?,
         DataType::Utf8 => s.utf8()?.is_in(&rhs)?,
+        DataType::Binary => s.binary()?.is_in(&rhs)?,
         DataType::Date => s.date()?.is_in(&rhs)?,
         DataType::Datetime(_, _) => s.datetime()?.is_in(&rhs)?,
         dt => panic!("is_in/2 not implemented for {dt:?}"),
