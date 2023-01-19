@@ -225,6 +225,7 @@ rustler::init!(
         lf_from_parquet,
         lf_from_ndjson,
         lf_filter_with,
+        lf_arrange_with,
         // series
         s_add,
         s_and,

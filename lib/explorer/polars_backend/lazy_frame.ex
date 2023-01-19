@@ -220,6 +220,24 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Shared.apply_dataframe(df, out_df, :lf_filter_with, [expression])
   end
 
+  @impl true
+  def arrange_with(%DF{groups: []} = df, out_df, column_pairs) do
+    {directions, expressions} =
+      column_pairs
+      |> Enum.map(fn {direction, lazy_series} ->
+        expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
+        {direction == :desc, expr}
+      end)
+      |> Enum.unzip()
+
+    Shared.apply_dataframe(df, out_df, :lf_arrange_with, [expressions, directions])
+  end
+
+  @impl true
+  def arrange_with(_df, _out_df, _directions) do
+    raise "arrange_with/2 with groups is not supported yet for lazy frames"
+  end
+
   # Groups
 
   # TODO: Make the functions of non-implemented functions

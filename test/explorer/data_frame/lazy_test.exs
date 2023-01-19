@@ -337,4 +337,89 @@ defmodule Explorer.DataFrame.LazyTest do
                    end
     end
   end
+
+  describe "arrange_with/2" do
+    test "with a simple df and asc order" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"]] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
+    test "with a simple df one column and without order" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> ldf["a"] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
+    test "with a simple df and desc order" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [desc: ldf["a"]] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [6, 5, 4, 3, 2, 1],
+               b: ["f", "e", "d", "c", "b", "a"]
+             }
+    end
+
+    test "with a simple df and just the lazy series" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [ldf["a"]] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
+    test "with a simple df and arrange by two columns" do
+      ldf = DF.new([a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 2, 3, 5, 6],
+               b: [1.1, 2.2, 2.5, 3.3, 5.1, 4.0]
+             }
+    end
+
+    test "with a simple df and window function" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [5, 6, 3, 4, 2, 1],
+               b: ["e", "f", "c", "d", "b", "a"]
+             }
+    end
+
+    test "raise when groups is in use" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf = DF.group_by(ldf, "b")
+
+      assert_raise RuntimeError,
+                   "arrange_with/2 with groups is not supported yet for lazy frames",
+                   fn ->
+                     DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+                   end
+    end
+  end
 end

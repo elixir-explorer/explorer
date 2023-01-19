@@ -1,4 +1,4 @@
-use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExplorerError};
+use crate::{expressions::ex_expr_to_exprs, ExDataFrame, ExExpr, ExLazyFrame, ExplorerError};
 use polars::prelude::*;
 use std::result::Result;
 
@@ -79,4 +79,16 @@ pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame,
     let expr = ex_expr.clone_inner();
 
     Ok(ExLazyFrame::new(ldf.filter(expr)))
+}
+
+#[rustler::nif]
+pub fn lf_arrange_with(
+    data: ExLazyFrame,
+    expressions: Vec<ExExpr>,
+    directions: Vec<bool>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let exprs = ex_expr_to_exprs(expressions);
+    let ldf = data.clone_inner().sort_by_exprs(exprs, directions, false);
+
+    Ok(ExLazyFrame::new(ldf))
 }
