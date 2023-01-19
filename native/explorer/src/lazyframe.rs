@@ -1,4 +1,4 @@
-use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExplorerError};
+use crate::{expressions::ex_expr_to_exprs, ExDataFrame, ExExpr, ExLazyFrame, ExplorerError};
 use polars::prelude::*;
 use std::result::Result;
 
@@ -79,4 +79,56 @@ pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame,
     let expr = ex_expr.clone_inner();
 
     Ok(ExLazyFrame::new(ldf.filter(expr)))
+}
+
+#[rustler::nif]
+pub fn lf_arrange_with(
+    data: ExLazyFrame,
+    expressions: Vec<ExExpr>,
+    directions: Vec<bool>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let exprs = ex_expr_to_exprs(expressions);
+    let ldf = data.clone_inner().sort_by_exprs(exprs, directions, false);
+
+    Ok(ExLazyFrame::new(ldf))
+}
+
+#[rustler::nif]
+pub fn lf_distinct(
+    data: ExLazyFrame,
+    subset: Vec<String>,
+    columns_to_keep: Option<Vec<ExExpr>>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let df = data.clone_inner();
+    let new_df = df.unique_stable(Some(subset), UniqueKeepStrategy::First);
+
+    match columns_to_keep {
+        Some(columns) => Ok(ExLazyFrame::new(new_df.select(ex_expr_to_exprs(columns)))),
+        None => Ok(ExLazyFrame::new(new_df)),
+    }
+}
+
+#[rustler::nif]
+pub fn lf_mutate_with(
+    data: ExLazyFrame,
+    columns: Vec<ExExpr>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let ldf = data.clone_inner();
+    let mutations = ex_expr_to_exprs(columns);
+
+    Ok(ExLazyFrame::new(ldf.with_columns(mutations)))
+}
+
+#[rustler::nif]
+pub fn lf_summarise_with(
+    data: ExLazyFrame,
+    groups: Vec<ExExpr>,
+    aggs: Vec<ExExpr>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let ldf = data.clone_inner();
+    let groups = ex_expr_to_exprs(groups);
+    let aggs = ex_expr_to_exprs(aggs);
+
+    let new_df = ldf.groupby_stable(groups).agg(aggs);
+    Ok(ExLazyFrame::new(new_df))
 }

@@ -337,4 +337,249 @@ defmodule Explorer.DataFrame.LazyTest do
                    end
     end
   end
+
+  describe "arrange_with/2" do
+    test "with a simple df and asc order" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"]] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
+    test "with a simple df one column and without order" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> ldf["a"] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
+    test "with a simple df and desc order" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [desc: ldf["a"]] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [6, 5, 4, 3, 2, 1],
+               b: ["f", "e", "d", "c", "b", "a"]
+             }
+    end
+
+    test "with a simple df and just the lazy series" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [ldf["a"]] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
+
+    test "with a simple df and arrange by two columns" do
+      ldf = DF.new([a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 2, 3, 5, 6],
+               b: [1.1, 2.2, 2.5, 3.3, 5.1, 4.0]
+             }
+    end
+
+    test "with a simple df and window function" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf1 = DF.arrange_with(ldf, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
+
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [5, 6, 3, 4, 2, 1],
+               b: ["e", "f", "c", "d", "b", "a"]
+             }
+    end
+
+    test "raise when groups is in use" do
+      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
+      ldf = DF.group_by(ldf, "b")
+
+      assert_raise RuntimeError,
+                   "arrange_with/2 with groups is not supported yet for lazy frames",
+                   fn ->
+                     DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+                   end
+    end
+  end
+
+  describe "head/2" do
+    test "selects the first 5 rows by default", %{ldf: ldf} do
+      ldf1 = DF.head(ldf)
+      df = DF.collect(ldf1)
+
+      assert DF.shape(df) == {5, 10}
+    end
+
+    test "selects the first 2 rows", %{ldf: ldf} do
+      ldf1 = DF.head(ldf, 2)
+      df = DF.collect(ldf1)
+
+      assert DF.shape(df) == {2, 10}
+    end
+  end
+
+  describe "distinct/2" do
+    test "with lists of strings", %{ldf: ldf} do
+      ldf1 = DF.distinct(ldf, [:year, :country])
+      assert DF.names(ldf1) == ["year", "country"]
+
+      assert DF.n_columns(ldf1) == 2
+
+      ldf2 = DF.head(ldf1, 1)
+      df = DF.collect(ldf2)
+
+      assert DF.to_columns(df, atom_keys: true) == %{country: ["AFGHANISTAN"], year: [2010]}
+    end
+
+    test "keeping all columns", %{ldf: ldf} do
+      ldf2 = DF.distinct(ldf, [:year, :country], keep_all: true)
+      assert DF.names(ldf2) == DF.names(ldf)
+    end
+
+    test "with lists of indices", %{ldf: ldf} do
+      ldf1 = DF.distinct(ldf, [0, 2, 4])
+      assert DF.names(ldf1) == ["year", "total", "liquid_fuel"]
+
+      assert DF.n_columns(ldf1) == 3
+    end
+
+    test "with ranges", %{df: df} do
+      df1 = DF.distinct(df, 0..1)
+      assert DF.names(df1) == ["year", "country"]
+
+      df2 = DF.distinct(df)
+      assert DF.names(df2) == DF.names(df)
+
+      df3 = DF.distinct(df, 0..-1)
+      assert DF.names(df3) == DF.names(df)
+
+      assert df == DF.distinct(df, 100..200)
+    end
+  end
+
+  describe "mutate_with/2" do
+    test "adds new columns" do
+      ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+
+      ldf1 =
+        DF.mutate_with(ldf, fn ldf ->
+          [c: Series.add(ldf["a"], 5), d: Series.add(2, ldf["a"])]
+        end)
+
+      assert ldf1.names == ["a", "b", "c", "d"]
+      assert ldf1.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :integer}
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [6, 7, 8],
+               d: [3, 4, 5]
+             }
+
+      assert ldf1.names == df.names
+      assert ldf1.dtypes == df.dtypes
+    end
+
+    test "changes a column" do
+      ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+
+      ldf1 =
+        DF.mutate_with(ldf, fn ldf ->
+          [a: Series.cast(ldf["a"], :float)]
+        end)
+
+      assert ldf1.names == ["a", "b"]
+      assert ldf1.dtypes == %{"a" => :float, "b" => :string}
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1.0, 2.0, 3.0],
+               b: ["a", "b", "c"]
+             }
+
+      assert ldf1.names == df.names
+      assert ldf1.dtypes == df.dtypes
+    end
+
+    test "raise when groups is in use" do
+      ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+      ldf1 = DF.group_by(ldf, "b")
+
+      assert_raise RuntimeError,
+                   "mutate_with/2 with groups is not supported yet for lazy frames",
+                   fn ->
+                     DF.mutate_with(ldf1, fn ldf -> [a: Series.cast(ldf["a"], :float)] end)
+                   end
+    end
+  end
+
+  describe "summarise_with/2" do
+    test "with one group and one column with aggregations", %{ldf: ldf} do
+      ldf1 =
+        ldf
+        |> DF.group_by("year")
+        |> DF.summarise_with(fn ldf ->
+          total = ldf["total"]
+
+          [total_min: Series.min(total), total_max: Series.max(total)]
+        end)
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               total_min: [1, 2, 2, 2, 3],
+               total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634]
+             }
+    end
+
+    test "with one group and two columns with aggregations", %{ldf: ldf} do
+      ldf1 =
+        ldf
+        |> DF.group_by("year")
+        |> DF.summarise_with(fn ldf ->
+          total = ldf["total"]
+          liquid_fuel = ldf["liquid_fuel"]
+
+          [
+            total_min: Series.min(total),
+            total_max: Series.max(total),
+            median_liquid_fuel: Series.median(liquid_fuel)
+          ]
+        end)
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               total_min: [1, 2, 2, 2, 3],
+               total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634],
+               median_liquid_fuel: [1193.0, 1236.0, 1199.0, 1260.0, 1255.0]
+             }
+    end
+  end
 end

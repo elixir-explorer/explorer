@@ -8,6 +8,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.PolarsBackend.DataFrame, as: Eager
 
+  import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
+
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
   defstruct resource: nil, reference: nil
@@ -43,10 +45,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Single table verbs
 
   @impl true
-  def head(ldf, rows), do: Shared.apply_dataframe(ldf, :lf_head, [rows])
+  def head(ldf, rows), do: Shared.apply_dataframe(ldf, ldf, :lf_head, [rows])
 
   @impl true
-  def tail(ldf, rows), do: Shared.apply_dataframe(ldf, :lf_tail, [rows])
+  def tail(ldf, rows), do: Shared.apply_dataframe(ldf, ldf, :lf_tail, [rows])
 
   @impl true
   def select(ldf, out_ldf), do: Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
@@ -215,12 +217,63 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def filter_with(df, out_df, %LazySeries{} = lseries) do
-    expression = Explorer.PolarsBackend.Expression.to_expr(lseries)
+    Shared.apply_dataframe(df, out_df, :lf_filter_with, [to_expr(lseries)])
+  end
 
-    Shared.apply_dataframe(df, out_df, :lf_filter_with, [expression])
+  @impl true
+  def arrange_with(%DF{groups: []} = df, out_df, column_pairs) do
+    {directions, expressions} =
+      column_pairs
+      |> Enum.map(fn {direction, lazy_series} -> {direction == :desc, to_expr(lazy_series)} end)
+      |> Enum.unzip()
+
+    Shared.apply_dataframe(df, out_df, :lf_arrange_with, [expressions, directions])
+  end
+
+  @impl true
+  def arrange_with(_df, _out_df, _directions) do
+    raise "arrange_with/2 with groups is not supported yet for lazy frames"
+  end
+
+  @impl true
+  def distinct(%DF{} = df, %DF{} = out_df, columns) do
+    maybe_columns_to_keep =
+      if df.names != out_df.names, do: Enum.map(out_df.names, &Native.expr_column/1)
+
+    Shared.apply_dataframe(df, out_df, :lf_distinct, [columns, maybe_columns_to_keep])
+  end
+
+  @impl true
+  def mutate_with(%DF{} = df, %DF{groups: []} = out_df, column_pairs) do
+    exprs =
+      for {name, lazy_series} <- column_pairs do
+        lazy_series
+        |> to_expr()
+        |> alias_expr(name)
+      end
+
+    Shared.apply_dataframe(df, out_df, :lf_mutate_with, [exprs])
+  end
+
+  @impl true
+  def mutate_with(_df, _out_df, _mutations) do
+    raise "mutate_with/2 with groups is not supported yet for lazy frames"
   end
 
   # Groups
+
+  @impl true
+  def summarise_with(%DF{groups: groups} = df, %DF{} = out_df, column_pairs) do
+    exprs =
+      for {name, lazy_series} <- column_pairs do
+        original_expr = to_expr(lazy_series)
+        alias_expr(original_expr, name)
+      end
+
+    groups_exprs = for group <- groups, do: Native.expr_column(group)
+
+    Shared.apply_dataframe(df, out_df, :lf_summarise_with, [groups_exprs, exprs])
+  end
 
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.
