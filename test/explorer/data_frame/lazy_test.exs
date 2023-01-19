@@ -536,4 +536,50 @@ defmodule Explorer.DataFrame.LazyTest do
                    end
     end
   end
+
+  describe "summarise_with/2" do
+    test "with one group and one column with aggregations", %{ldf: ldf} do
+      ldf1 =
+        ldf
+        |> DF.group_by("year")
+        |> DF.summarise_with(fn ldf ->
+          total = ldf["total"]
+
+          [total_min: Series.min(total), total_max: Series.max(total)]
+        end)
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               total_min: [1, 2, 2, 2, 3],
+               total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634]
+             }
+    end
+
+    test "with one group and two columns with aggregations", %{ldf: ldf} do
+      ldf1 =
+        ldf
+        |> DF.group_by("year")
+        |> DF.summarise_with(fn ldf ->
+          total = ldf["total"]
+          liquid_fuel = ldf["liquid_fuel"]
+
+          [
+            total_min: Series.min(total),
+            total_max: Series.max(total),
+            median_liquid_fuel: Series.median(liquid_fuel)
+          ]
+        end)
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               year: [2010, 2011, 2012, 2013, 2014],
+               total_min: [1, 2, 2, 2, 3],
+               total_max: [2_393_248, 2_654_360, 2_734_817, 2_797_384, 2_806_634],
+               median_liquid_fuel: [1193.0, 1236.0, 1199.0, 1260.0, 1255.0]
+             }
+    end
+  end
 end

@@ -118,3 +118,17 @@ pub fn lf_mutate_with(
 
     Ok(ExLazyFrame::new(ldf.with_columns(mutations)))
 }
+
+#[rustler::nif]
+pub fn lf_summarise_with(
+    data: ExLazyFrame,
+    groups: Vec<ExExpr>,
+    aggs: Vec<ExExpr>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let ldf = data.clone_inner();
+    let groups = ex_expr_to_exprs(groups);
+    let aggs = ex_expr_to_exprs(aggs);
+
+    let new_df = ldf.groupby_stable(groups).agg(aggs);
+    Ok(ExLazyFrame::new(new_df))
+}

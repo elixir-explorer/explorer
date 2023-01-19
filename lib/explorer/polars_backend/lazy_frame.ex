@@ -262,6 +262,19 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   # Groups
 
+  @impl true
+  def summarise_with(%DF{groups: groups} = df, %DF{} = out_df, column_pairs) do
+    exprs =
+      for {name, lazy_series} <- column_pairs do
+        original_expr = to_expr(lazy_series)
+        alias_expr(original_expr, name)
+      end
+
+    groups_exprs = for group <- groups, do: Native.expr_column(group)
+
+    Shared.apply_dataframe(df, out_df, :lf_summarise_with, [groups_exprs, exprs])
+  end
+
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.
   funs =
