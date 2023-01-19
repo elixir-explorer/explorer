@@ -227,6 +227,7 @@ rustler::init!(
         lf_filter_with,
         lf_arrange_with,
         lf_distinct,
+        lf_mutate_with,
         // series
         s_add,
         s_and,

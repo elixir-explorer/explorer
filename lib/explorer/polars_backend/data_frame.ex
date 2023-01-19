@@ -7,6 +7,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series, as: Series
 
+  import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
+
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
   defstruct resource: nil, reference: nil
@@ -375,7 +377,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def filter_with(df, out_df, %Explorer.Backend.LazySeries{} = lseries) do
-    expressions = Explorer.PolarsBackend.Expression.to_expr(lseries)
+    expressions = to_expr(lseries)
     Shared.apply_dataframe(df, out_df, :df_filter_with, [expressions, df.groups])
   end
 
@@ -383,8 +385,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def mutate_with(%DataFrame{} = df, %DataFrame{} = out_df, column_pairs) do
     exprs =
       for {name, lazy_series} <- column_pairs do
-        original_expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
-        Explorer.PolarsBackend.Expression.alias_expr(original_expr, name)
+        lazy_series
+        |> to_expr()
+        |> alias_expr(name)
       end
 
     Shared.apply_dataframe(df, out_df, :df_mutate_with_exprs, [exprs, df.groups])
@@ -407,7 +410,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     {directions, expressions} =
       column_pairs
       |> Enum.map(fn {direction, lazy_series} ->
-        expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
+        expr = to_expr(lazy_series)
         {direction == :desc, expr}
       end)
       |> Enum.unzip()
@@ -539,8 +542,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def summarise_with(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, column_pairs) do
     exprs =
       for {name, lazy_series} <- column_pairs do
-        original_expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
-        Explorer.PolarsBackend.Expression.alias_expr(original_expr, name)
+        original_expr = to_expr(lazy_series)
+        alias_expr(original_expr, name)
       end
 
     groups_exprs = for group <- groups, do: Native.expr_column(group)

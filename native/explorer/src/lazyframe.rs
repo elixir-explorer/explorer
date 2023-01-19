@@ -107,3 +107,14 @@ pub fn lf_distinct(
         None => Ok(ExLazyFrame::new(new_df)),
     }
 }
+
+#[rustler::nif]
+pub fn lf_mutate_with(
+    data: ExLazyFrame,
+    columns: Vec<ExExpr>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let ldf = data.clone_inner();
+    let mutations = ex_expr_to_exprs(columns);
+
+    Ok(ExLazyFrame::new(ldf.with_columns(mutations)))
+}

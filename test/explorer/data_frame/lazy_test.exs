@@ -477,4 +477,63 @@ defmodule Explorer.DataFrame.LazyTest do
       assert df == DF.distinct(df, 100..200)
     end
   end
+
+  describe "mutate_with/2" do
+    test "adds new columns" do
+      ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+
+      ldf1 =
+        DF.mutate_with(ldf, fn ldf ->
+          [c: Series.add(ldf["a"], 5), d: Series.add(2, ldf["a"])]
+        end)
+
+      assert ldf1.names == ["a", "b", "c", "d"]
+      assert ldf1.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :integer}
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [6, 7, 8],
+               d: [3, 4, 5]
+             }
+
+      assert ldf1.names == df.names
+      assert ldf1.dtypes == df.dtypes
+    end
+
+    test "changes a column" do
+      ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+
+      ldf1 =
+        DF.mutate_with(ldf, fn ldf ->
+          [a: Series.cast(ldf["a"], :float)]
+        end)
+
+      assert ldf1.names == ["a", "b"]
+      assert ldf1.dtypes == %{"a" => :float, "b" => :string}
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1.0, 2.0, 3.0],
+               b: ["a", "b", "c"]
+             }
+
+      assert ldf1.names == df.names
+      assert ldf1.dtypes == df.dtypes
+    end
+
+    test "raise when groups is in use" do
+      ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+      ldf1 = DF.group_by(ldf, "b")
+
+      assert_raise RuntimeError,
+                   "mutate_with/2 with groups is not supported yet for lazy frames",
+                   fn ->
+                     DF.mutate_with(ldf1, fn ldf -> [a: Series.cast(ldf["a"], :float)] end)
+                   end
+    end
+  end
 end

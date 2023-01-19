@@ -8,7 +8,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.PolarsBackend.DataFrame, as: Eager
 
-  import Explorer.PolarsBackend.Expression, only: [to_expr: 1]
+  import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
 
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
@@ -241,6 +241,23 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       if df.names != out_df.names, do: Enum.map(out_df.names, &Native.expr_column/1)
 
     Shared.apply_dataframe(df, out_df, :lf_distinct, [columns, maybe_columns_to_keep])
+  end
+
+  @impl true
+  def mutate_with(%DF{} = df, %DF{groups: []} = out_df, column_pairs) do
+    exprs =
+      for {name, lazy_series} <- column_pairs do
+        lazy_series
+        |> to_expr()
+        |> alias_expr(name)
+      end
+
+    Shared.apply_dataframe(df, out_df, :lf_mutate_with, [exprs])
+  end
+
+  @impl true
+  def mutate_with(_df, _out_df, _mutations) do
+    raise "mutate_with/2 with groups is not supported yet for lazy frames"
   end
 
   # Groups

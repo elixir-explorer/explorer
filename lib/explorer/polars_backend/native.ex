@@ -171,6 +171,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_filter_with(_df, _expression), do: err()
   def lf_arrange_with(_df, _expressions, _directions), do: err()
   def lf_distinct(_df, _subset, _selection), do: err()
+  def lf_mutate_with(_df, _exprs), do: err()
 
   # Series
   def s_add(_s, _other), do: err()
