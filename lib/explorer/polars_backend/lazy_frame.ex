@@ -8,6 +8,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.PolarsBackend.DataFrame, as: Eager
 
+  import Explorer.PolarsBackend.Expression, only: [to_expr: 1]
+
   @type t :: %__MODULE__{resource: binary(), reference: reference()}
 
   defstruct resource: nil, reference: nil
@@ -215,19 +217,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def filter_with(df, out_df, %LazySeries{} = lseries) do
-    expression = Explorer.PolarsBackend.Expression.to_expr(lseries)
-
-    Shared.apply_dataframe(df, out_df, :lf_filter_with, [expression])
+    Shared.apply_dataframe(df, out_df, :lf_filter_with, [to_expr(lseries)])
   end
 
   @impl true
   def arrange_with(%DF{groups: []} = df, out_df, column_pairs) do
     {directions, expressions} =
       column_pairs
-      |> Enum.map(fn {direction, lazy_series} ->
-        expr = Explorer.PolarsBackend.Expression.to_expr(lazy_series)
-        {direction == :desc, expr}
-      end)
+      |> Enum.map(fn {direction, lazy_series} -> {direction == :desc, to_expr(lazy_series)} end)
       |> Enum.unzip()
 
     Shared.apply_dataframe(df, out_df, :lf_arrange_with, [expressions, directions])
