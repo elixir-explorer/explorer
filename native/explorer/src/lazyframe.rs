@@ -92,3 +92,18 @@ pub fn lf_arrange_with(
 
     Ok(ExLazyFrame::new(ldf))
 }
+
+#[rustler::nif]
+pub fn lf_distinct(
+    data: ExLazyFrame,
+    subset: Vec<String>,
+    columns_to_keep: Option<Vec<ExExpr>>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let df = data.clone_inner();
+    let new_df = df.unique_stable(Some(subset), UniqueKeepStrategy::First);
+
+    match columns_to_keep {
+        Some(columns) => Ok(ExLazyFrame::new(new_df.select(ex_expr_to_exprs(columns)))),
+        None => Ok(ExLazyFrame::new(new_df)),
+    }
+}

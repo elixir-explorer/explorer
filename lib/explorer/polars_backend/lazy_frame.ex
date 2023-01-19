@@ -43,10 +43,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Single table verbs
 
   @impl true
-  def head(ldf, rows), do: Shared.apply_dataframe(ldf, :lf_head, [rows])
+  def head(ldf, rows), do: Shared.apply_dataframe(ldf, ldf, :lf_head, [rows])
 
   @impl true
-  def tail(ldf, rows), do: Shared.apply_dataframe(ldf, :lf_tail, [rows])
+  def tail(ldf, rows), do: Shared.apply_dataframe(ldf, ldf, :lf_tail, [rows])
 
   @impl true
   def select(ldf, out_ldf), do: Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
@@ -236,6 +236,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def arrange_with(_df, _out_df, _directions) do
     raise "arrange_with/2 with groups is not supported yet for lazy frames"
+  end
+
+  @impl true
+  def distinct(%DF{} = df, %DF{} = out_df, columns) do
+    maybe_columns_to_keep =
+      if df.names != out_df.names, do: Enum.map(out_df.names, &Native.expr_column/1)
+
+    Shared.apply_dataframe(df, out_df, :lf_distinct, [columns, maybe_columns_to_keep])
   end
 
   # Groups

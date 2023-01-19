@@ -389,15 +389,11 @@ pub fn df_pivot_longer(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_distinct(
     data: ExDataFrame,
-    maintain_order: bool,
     subset: Vec<String>,
     columns_to_keep: Option<Vec<&str>>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = data.clone_inner();
-    let new_df = match maintain_order {
-        false => df.unique(Some(&subset), UniqueKeepStrategy::First)?,
-        true => df.unique_stable(Some(&subset), UniqueKeepStrategy::First)?,
-    };
+    let new_df = df.unique_stable(Some(&subset), UniqueKeepStrategy::First)?;
 
     match columns_to_keep {
         Some(columns) => Ok(ExDataFrame::new(new_df.select(columns)?)),

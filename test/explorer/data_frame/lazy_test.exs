@@ -422,4 +422,59 @@ defmodule Explorer.DataFrame.LazyTest do
                    end
     end
   end
+
+  describe "head/2" do
+    test "selects the first 5 rows by default", %{ldf: ldf} do
+      ldf1 = DF.head(ldf)
+      df = DF.collect(ldf1)
+
+      assert DF.shape(df) == {5, 10}
+    end
+
+    test "selects the first 2 rows", %{ldf: ldf} do
+      ldf1 = DF.head(ldf, 2)
+      df = DF.collect(ldf1)
+
+      assert DF.shape(df) == {2, 10}
+    end
+  end
+
+  describe "distinct/2" do
+    test "with lists of strings", %{ldf: ldf} do
+      ldf1 = DF.distinct(ldf, [:year, :country])
+      assert DF.names(ldf1) == ["year", "country"]
+
+      assert DF.n_columns(ldf1) == 2
+
+      ldf2 = DF.head(ldf1, 1)
+      df = DF.collect(ldf2)
+
+      assert DF.to_columns(df, atom_keys: true) == %{country: ["AFGHANISTAN"], year: [2010]}
+    end
+
+    test "keeping all columns", %{ldf: ldf} do
+      ldf2 = DF.distinct(ldf, [:year, :country], keep_all: true)
+      assert DF.names(ldf2) == DF.names(ldf)
+    end
+
+    test "with lists of indices", %{ldf: ldf} do
+      ldf1 = DF.distinct(ldf, [0, 2, 4])
+      assert DF.names(ldf1) == ["year", "total", "liquid_fuel"]
+
+      assert DF.n_columns(ldf1) == 3
+    end
+
+    test "with ranges", %{df: df} do
+      df1 = DF.distinct(df, 0..1)
+      assert DF.names(df1) == ["year", "country"]
+
+      df2 = DF.distinct(df)
+      assert DF.names(df2) == DF.names(df)
+
+      df3 = DF.distinct(df, 0..-1)
+      assert DF.names(df3) == DF.names(df)
+
+      assert df == DF.distinct(df, 100..200)
+    end
+  end
 end

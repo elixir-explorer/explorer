@@ -226,6 +226,7 @@ rustler::init!(
         lf_from_ndjson,
         lf_filter_with,
         lf_arrange_with,
+        lf_distinct,
         // series
         s_add,
         s_and,

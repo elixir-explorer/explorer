@@ -416,11 +416,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def distinct(%DataFrame{} = df, %DataFrame{} = out_df, columns, keep_all) do
-    # This is an Option in the Nif side.
-    columns_to_keep = unless keep_all, do: out_df.names
+  def distinct(%DataFrame{} = df, %DataFrame{} = out_df, columns) do
+    maybe_columns_to_keep = if df.names != out_df.names, do: out_df.names
 
-    Shared.apply_dataframe(df, out_df, :df_distinct, [true, columns, columns_to_keep])
+    Shared.apply_dataframe(df, out_df, :df_distinct, [columns, maybe_columns_to_keep])
   end
 
   @impl true

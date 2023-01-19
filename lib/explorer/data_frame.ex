@@ -2705,7 +2705,7 @@ defmodule Explorer.DataFrame do
           %{df | names: keep, dtypes: Map.take(df.dtypes, keep)}
         end
 
-      Shared.apply_impl(df, :distinct, [out_df, columns, opts[:keep_all]])
+      Shared.apply_impl(df, :distinct, [out_df, columns])
     else
       df
     end
