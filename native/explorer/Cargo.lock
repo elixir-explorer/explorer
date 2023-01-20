@@ -1397,8 +1397,9 @@ dependencies = [
 
 [[package]]
 name = "rustler"
-version = "0.26.0"
-source = "git+https://github.com/rusterlium/rustler#baec31bfb08116dc4b65cac260535bfcd42b4a3b"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b7a4037063eab996ea56fada36d3cc982d501ed485b36a73eabdaec99b4acf6e"
 dependencies = [
  "lazy_static",
  "rustler_codegen",
@@ -1407,8 +1408,9 @@ dependencies = [
 
 [[package]]
 name = "rustler_codegen"
-version = "0.26.0"
-source = "git+https://github.com/rusterlium/rustler#baec31bfb08116dc4b65cac260535bfcd42b4a3b"
+version = "0.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0dbdc98de074c324945ecc2e3ecefa47948ad8e6ed4ecf6f3424f1293a6188d"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -1419,7 +1421,8 @@ dependencies = [
 [[package]]
 name = "rustler_sys"
 version = "2.2.0"
-source = "git+https://github.com/rusterlium/rustler#baec31bfb08116dc4b65cac260535bfcd42b4a3b"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ff26a42e62d538f82913dd34f60105ecfdffbdb25abdc3c3580b0c622285332"
 dependencies = [
  "regex",
  "unreachable",
