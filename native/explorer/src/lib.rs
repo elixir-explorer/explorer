@@ -240,6 +240,7 @@ rustler::init!(
         s_concat,
         s_contains,
         s_upcase,
+        s_day_of_week,
         s_downcase,
         s_cumulative_max,
         s_cumulative_min,
