@@ -276,6 +276,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_window_min(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_sum(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_in(_s, _other), do: err()
+  def s_day_of_week(_s), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

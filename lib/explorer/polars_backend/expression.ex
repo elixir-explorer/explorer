@@ -21,6 +21,7 @@ defmodule Explorer.PolarsBackend.Expression do
     coalesce: 2,
     concat: 2,
     count: 1,
+    day_of_week: 1,
     distinct: 1,
     divide: 2,
     equal: 2,

@@ -165,6 +165,10 @@ defmodule Explorer.Backend.Series do
   @callback trim_leading(s) :: s
   @callback trim_trailing(s) :: s
 
+  # Date / DateTime
+
+  @callback day_of_week(s) :: s
+
   # Functions
 
   @doc """

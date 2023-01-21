@@ -90,7 +90,9 @@ defmodule Explorer.Backend.LazySeries do
     # Float round
     round: 2,
     floor: 1,
-    ceil: 1
+    ceil: 1,
+    # Date functions
+    day_of_week: 1
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -411,6 +413,13 @@ defmodule Explorer.Backend.LazySeries do
       end
 
     Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def day_of_week(%Series{} = s) do
+    data = new(:day_of_week, [lazy_series!(s)])
+
+    Backend.Series.new(data, :integer)
   end
 
   defp dtype_for_agg_operation(op, _) when op in [:count, :nil_count, :n_distinct], do: :integer

@@ -3228,6 +3228,38 @@ defmodule Explorer.Series do
 
   def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:float])
 
+  # Date / DateTime
+
+  @doc """
+  Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-01-16], ~D[2023-01-20], nil])
+      iex> Explorer.Series.day_of_week(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [7, 1, 5, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-01-16 23:59:59.999999], ~N[2023-01-20 12:00:00], nil])
+      iex> Explorer.Series.day_of_week(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [7, 1, 5, nil]
+      >
+  """
+
+  @doc type: :date_wise
+  @spec day_of_week(Series.t()) :: Series.t()
+  def day_of_week(%Series{dtype: dtype} = series) when K.in(dtype, [:date, :datetime]),
+    do: Shared.apply_series_impl(:day_of_week, [series])
+
+  def day_of_week(%Series{dtype: dtype}),
+    do: dtype_error("day_of_week/1", dtype, [:date, :datetime])
+
   # Escape hatch
 
   @doc """

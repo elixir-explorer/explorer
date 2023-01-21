@@ -1,8 +1,9 @@
 use crate::{
-    datatypes::{ExDate, ExDateTime},
+    datatypes::{timestamp_to_datetime, ExDate, ExDateTime},
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
+use chrono::Datelike;
 use polars::export::arrow::array::Utf8Array;
 use polars::prelude::*;
 use rand::seq::IteratorRandom;
@@ -10,6 +11,8 @@ use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64;
 use rustler::{Binary, Encoder, Env, Term};
 use std::{result::Result, slice};
+
+use polars::export::arrow::temporal_conversions::date32_to_date;
 
 macro_rules! from_list {
     ($name:ident, $type:ty) => {
@@ -974,4 +977,26 @@ pub fn s_floor(data: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_ceil(data: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
     Ok(ExSeries::new(s.ceil()?.into_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_day_of_week(data: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = data.clone_inner();
+
+    let s2 = match s.dtype() {
+        DataType::Date => s
+            .date()?
+            .into_iter()
+            .map(|v| v.map(|d| (date32_to_date(d).weekday().number_from_monday()) as i64))
+            .collect(),
+
+        DataType::Datetime(TimeUnit::Microseconds, None) => s
+            .datetime()?
+            .into_iter()
+            .map(|v| v.map(|d| (timestamp_to_datetime(d).weekday().number_from_monday()) as i64))
+            .collect(),
+        dt => panic!("day_of_week/1 not implemented for {dt:?}"),
+    };
+
+    Ok(ExSeries::new(s2))
 }
