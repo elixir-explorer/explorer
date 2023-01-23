@@ -471,6 +471,20 @@ pub fn s_fill_missing_with_date(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_fill_missing_with_datetime(
+    data: ExSeries,
+    strategy: ExDateTime,
+) -> Result<ExSeries, ExplorerError> {
+    let s = data.clone_inner();
+    let s = s
+        .datetime()?
+        .fill_null_with_values(strategy.into())?
+        .cast(&DataType::Datetime(TimeUnit::Microseconds, None))?
+        .into_series();
+    Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_fill_missing_with_boolean(
     data: ExSeries,
     strategy: bool,
