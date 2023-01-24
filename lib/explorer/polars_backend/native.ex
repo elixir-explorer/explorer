@@ -177,6 +177,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_distinct(_df, _subset, _selection), do: err()
   def lf_mutate_with(_df, _exprs), do: err()
   def lf_summarise_with(_df, _groups, _aggs), do: err()
+  def lf_rename_columns(_df, _column_pairs), do: err()
 
   # Series
   def s_add(_s, _other), do: err()

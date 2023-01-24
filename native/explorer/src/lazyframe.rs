@@ -132,3 +132,14 @@ pub fn lf_summarise_with(
     let new_df = ldf.groupby_stable(groups).agg(aggs);
     Ok(ExLazyFrame::new(new_df))
 }
+
+#[rustler::nif]
+pub fn lf_rename_columns(
+    data: ExLazyFrame,
+    renames: Vec<(&str, &str)>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let df = data.clone_inner();
+    let (existing, new): (Vec<_>, Vec<_>) = renames.iter().cloned().unzip();
+
+    Ok(ExLazyFrame::new(df.rename(existing, new)))
+}

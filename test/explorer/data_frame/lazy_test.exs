@@ -582,4 +582,25 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
   end
+
+  describe "rename/2" do
+    test "renames a column" do
+      ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+
+      ldf1 = DF.rename(ldf, %{"a" => "ids"})
+
+      assert ldf1.names == ["ids", "b"]
+      assert ldf1.dtypes == %{"ids" => :integer, "b" => :string}
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               ids: [1, 2, 3],
+               b: ["a", "b", "c"]
+             }
+
+      assert ldf1.names == df.names
+      assert ldf1.dtypes == df.dtypes
+    end
+  end
 end

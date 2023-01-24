@@ -229,6 +229,7 @@ rustler::init!(
         lf_distinct,
         lf_mutate_with,
         lf_summarise_with,
+        lf_rename_columns,
         // series
         s_add,
         s_and,
