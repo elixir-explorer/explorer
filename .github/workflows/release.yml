@@ -60,8 +60,13 @@ jobs:
         if: ${{ matrix.job.disable-polars-json-feature }}
         shell: bash
         run: |
+          original_path=$(pwd)
+          cd native/explorer
+
           cargo install cargo-feature
           cargo feature polars ^json
+
+          cd "$original_path"
 
       - name: Build the project
         id: build-crate
