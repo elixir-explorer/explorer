@@ -49,12 +49,9 @@ jobs:
           echo "PROJECT_VERSION=$(sed -n 's/^  @version "\(.*\)"/\1/p' mix.exs | head -n1)" >> $GITHUB_ENV
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@nightly-2022-12-29
         with:
-          toolchain: nightly-2022-12-29
-          target: ${{ matrix.job.target }}
-          override: true
-          profile: minimal
+          targets: ${{ matrix.job.target }}
 
       - name: Disable JSON feature from Polars that won't compile on certain targets
         if: ${{ matrix.job.disable-polars-json-feature }}

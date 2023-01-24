@@ -40,14 +40,16 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - uses: actions-rs/toolchain@v1
+
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
-          override: true
+
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "${{ env.OTP_VERSION }}"
           elixir-version: "${{ env.ELIXIR_VERSION }}"
+
       - run: mix deps.get
       - run: mix docs
       - name: Deploy 🚀

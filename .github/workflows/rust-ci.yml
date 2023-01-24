@@ -37,19 +37,14 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - uses: actions-rs/toolchain@v1
+
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
           components: rustfmt, clippy
-          override: true
+
       - name: run rustfmt
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --manifest-path=${{ matrix.manifest }} --all -- --check
+        run: cargo fmt --manifest-path=${{ matrix.manifest }} --all -- --check
+
       - name: run clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --manifest-path=${{ matrix.manifest }} -- -Dwarnings
+        run: cargo clippy --manifest-path=${{ matrix.manifest }} -- -Dwarnings
