@@ -32,6 +32,7 @@ jobs:
           key: ${{ runner.os }}-mix-${{ matrix.elixir_version }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-
+
       - uses: actions/cache@v3
         with:
           path: |
@@ -43,20 +44,23 @@ jobs:
             priv/native/
             _build/test/lib/explorer
           key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions-rs/toolchain@v1
+
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
-          override: true
+
       - uses: erlef/setup-beam@v1
         with:
           otp-version: ${{ matrix.otp_version }}
           elixir-version: ${{ matrix.elixir_version }}
+
       - run: mix deps.get
       - run: mix deps.compile
       - name: Run tests
         run: mix test --warnings-as-errors
       - name: Compile once again but without optional deps
         run: mix compile --force --warnings-as-errors --no-optional-deps
+
   format:
     runs-on: ubuntu-latest
     name: mix format
