@@ -270,6 +270,16 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Shared.apply_dataframe(df, df, :lf_drop_nils, [exprs])
   end
 
+  @impl true
+  def pivot_longer(%DF{} = df, %DF{} = out_df, cols_to_pivot, cols_to_keep, names_to, values_to),
+    do:
+      Shared.apply_dataframe(df, out_df, :lf_pivot_longer, [
+        cols_to_keep,
+        cols_to_pivot,
+        names_to,
+        values_to
+      ])
+
   # Groups
 
   @impl true

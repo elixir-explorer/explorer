@@ -150,10 +150,26 @@ pub fn lf_drop_nils(
     subset: Option<Vec<ExExpr>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
-    let columns = if let Some(exprs) = subset {
-        Some(ex_expr_to_exprs(exprs))
-    } else {
-        None
-    };
+    let columns = subset.map(ex_expr_to_exprs);
+
     Ok(ExLazyFrame::new(ldf.drop_nulls(columns)))
+}
+
+#[rustler::nif]
+pub fn lf_pivot_longer(
+    data: ExLazyFrame,
+    id_vars: Vec<String>,
+    value_vars: Vec<String>,
+    names_to: String,
+    values_to: String,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let ldf = data.clone_inner();
+    let melt_opts = MeltArgs {
+        id_vars,
+        value_vars,
+        variable_name: Some(names_to),
+        value_name: Some(values_to),
+    };
+    let new_df = ldf.melt(melt_opts);
+    Ok(ExLazyFrame::new(new_df))
 }

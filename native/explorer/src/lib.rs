@@ -231,6 +231,7 @@ rustler::init!(
         lf_summarise_with,
         lf_rename_columns,
         lf_drop_nils,
+        lf_pivot_longer,
         // series
         s_add,
         s_and,
