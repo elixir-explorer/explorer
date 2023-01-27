@@ -8,6 +8,7 @@ defmodule Explorer.Series do
     * `:boolean` - Boolean
     * `:category` - UTF-8 encoded binary, but as categories
     * `:date` - Date type that unwraps to `Elixir.Date`
+    * `:time` - Time type that unwraps to `Elixir.Time`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
     * `:float` - 64-bit floating point number
     * `:integer` - 64-bit signed integer
@@ -62,6 +63,7 @@ defmodule Explorer.Series do
           | :boolean
           | :category
           | :date
+          | :time
           | :datetime
           | :float
           | :integer
@@ -219,6 +221,14 @@ defmodule Explorer.Series do
       #Explorer.Series<
         Polars[1]
         datetime [2022-04-13 21:00:42.000000]
+      >
+
+  It is possible to create a series of `:time` from a list of microseconds since midnight.
+
+      iex> Explorer.Series.from_list([123 * 1_000 * 1_000], dtype: :time)
+      #Explorer.Series<
+        Polars[1]
+        time [00:02:03.000000]
       >
 
   Mixing non-numeric data types will raise an ArgumentError:

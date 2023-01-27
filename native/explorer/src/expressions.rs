@@ -8,7 +8,7 @@ use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{col, when, DataFrame, IntoLazy, LiteralValue, SortOptions};
 use polars::prelude::{DataType, Expr, Literal};
 
-use crate::datatypes::{ExDate, ExDateTime};
+use crate::datatypes::{ExDate, ExDateTime, ExTime};
 use crate::series::{cast_str_to_dtype, cast_str_to_f64, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 
@@ -54,6 +54,15 @@ pub fn expr_atom(atom: &str) -> ExExpr {
 pub fn expr_date(date: ExDate) -> ExExpr {
     let naive_date = NaiveDate::from(date);
     let expr = naive_date.lit();
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_time(_time: ExTime) -> ExExpr {
+    // FIXME: lit() is not available on NaiveTime
+    // let time = NaiveTime::from(time);
+    // let expr = time.lit();
+    let expr = "time".into();
     ExExpr::new(expr)
 }
 

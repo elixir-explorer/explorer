@@ -7,7 +7,8 @@ defmodule Explorer.Shared do
   @doc """
   All supported dtypes.
   """
-  def dtypes, do: [:binary, :boolean, :category, :date, :datetime, :float, :integer, :string]
+  def dtypes,
+    do: [:binary, :boolean, :category, :date, :time, :datetime, :float, :integer, :string]
 
   @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
@@ -143,6 +144,7 @@ defmodule Explorer.Shared do
   defp type(item, _type) when is_binary(item), do: :string
 
   defp type(%Date{} = _item, _type), do: :date
+  defp type(%Time{} = _item, _type), do: :time
   defp type(%NaiveDateTime{} = _item, _type), do: :datetime
   defp type(item, _type) when is_nil(item), do: nil
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
@@ -181,6 +183,7 @@ defmodule Explorer.Shared do
       :integer -> {:s, 64}
       :boolean -> {:u, 8}
       :date -> {:s, 32}
+      :time -> {:s, 64}
       :datetime -> {:s, 64}
       _ -> raise ArgumentError, "cannot convert dtype #{dtype} into a binary/tensor type"
     end

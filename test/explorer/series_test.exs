@@ -52,6 +52,13 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == :string
     end
 
+    test "with time" do
+      time = ~T[02:05:03.654321]
+      s = Series.from_list([time])
+      assert Series.to_list(s) === [time]
+      assert Series.dtype(s) == :time
+    end
+
     test "with binaries from strings" do
       s = Series.from_list(["a", "b", "c"], dtype: :binary)
       assert Series.to_list(s) === ["a", "b", "c"]

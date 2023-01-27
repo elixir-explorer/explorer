@@ -1,5 +1,5 @@
 use crate::{
-    datatypes::{timestamp_to_datetime, ExDate, ExDateTime},
+    datatypes::{timestamp_to_datetime, ExDate, ExDateTime, ExTime},
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
@@ -53,6 +53,20 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>) -> ExSerie
                 .collect::<Vec<Option<i64>>>(),
         )
         .cast(&DataType::Datetime(TimeUnit::Microseconds, None))
+        .unwrap(),
+    )
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_time(name: &str, val: Vec<Option<ExTime>>) -> ExSeries {
+    ExSeries::new(
+        Series::new(
+            name,
+            val.iter()
+                .map(|dt| dt.map(|dt| dt.into()))
+                .collect::<Vec<Option<i64>>>(),
+        )
+        .cast(&DataType::Time)
         .unwrap(),
     )
 }
@@ -775,6 +789,7 @@ pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
         "float" => Ok(DataType::Float64),
         "integer" => Ok(DataType::Int64),
         "date" => Ok(DataType::Date),
+        "time" => Ok(DataType::Time),
         "datetime" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
         "boolean" => Ok(DataType::Boolean),
         "string" => Ok(DataType::Utf8),

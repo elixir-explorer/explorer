@@ -9,7 +9,9 @@ use crate::atoms::{
     self, calendar, day, hour, infinity, microsecond, minute, month, nan, neg_infinity, second,
     year,
 };
-use crate::datatypes::{days_to_date, timestamp_to_datetime, ExSeries, ExSeriesRef};
+use crate::datatypes::{
+    days_to_date, timestamp_to_datetime, timestamp_to_time, ExSeries, ExSeriesRef,
+};
 use crate::ExplorerError;
 
 use rustler::types::atom;
@@ -157,7 +159,7 @@ fn naive_datetime_struct_keys(env: Env) -> [NIF_TERM; 9] {
 }
 
 #[inline]
-fn time_to_microseconds(v: i64, time_unit: TimeUnit) -> i64 {
+fn datetime_to_microseconds(v: i64, time_unit: TimeUnit) -> i64 {
     match time_unit {
         TimeUnit::Milliseconds => v * 1000,
         TimeUnit::Microseconds => v,
@@ -170,7 +172,7 @@ fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Result<Term, Explor
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
-    let microseconds_time = time_to_microseconds(v, time_unit);
+    let microseconds_time = datetime_to_microseconds(v, time_unit);
 
     Ok(unsafe_encode_datetime!(
         microseconds_time,
@@ -195,13 +197,108 @@ fn datetime_series_to_list<'b>(
         env,
         s.datetime()?.into_iter().map(|option| option
             .map(|v| {
-                let microseconds_time = time_to_microseconds(v, time_unit);
+                let microseconds_time = datetime_to_microseconds(v, time_unit);
 
                 unsafe_encode_datetime!(
                     microseconds_time,
                     naive_datetime_struct_keys,
                     calendar_iso_module,
                     naive_datetime_module,
+                    env
+                )
+            })
+            .encode(env))
+    ))
+}
+
+macro_rules! unsafe_encode_time {
+    ($v: expr, $naive_time_struct_keys: ident, $calendar_iso_module: ident, $time_module: ident, $env: ident) => {{
+        let t = timestamp_to_time($v);
+        let duration =
+            NaiveTime::from_hms_micro_opt(t.hour(), t.minute(), t.second(), t.nanosecond() / 1_000)
+                .unwrap()
+                .signed_duration_since(
+                    NaiveTime::from_hms_opt(t.hour(), t.minute(), t.second()).unwrap(),
+                );
+
+        let microseconds = match duration.num_microseconds() {
+            Some(us) => us,
+            None => duration.num_milliseconds() * 1_000,
+        };
+
+        // Limit the number of digits in the microsecond part of a timestamp to 6.
+        // This is necessary because the microsecond part of Elixir is only 6 digits.
+        let limited_ms = if microseconds > 999_999 {
+            999_999
+        } else {
+            microseconds
+        };
+
+        unsafe {
+            Term::new(
+                $env,
+                map::make_map_from_arrays(
+                    $env.as_c_arg(),
+                    $naive_time_struct_keys,
+                    &[
+                        $time_module,
+                        $calendar_iso_module,
+                        t.hour().encode($env).as_c_arg(),
+                        t.minute().encode($env).as_c_arg(),
+                        t.second().encode($env).as_c_arg(),
+                        limited_ms.encode($env).as_c_arg(),
+                    ],
+                )
+                .unwrap(),
+            )
+        }
+    }};
+}
+
+// Here we build the NaiveTime struct manually, as it's much faster than using NifStruct
+// This is because we already have the keys (we know this at compile time), and the types,
+// so we can build the struct directly.
+fn naive_time_struct_keys(env: Env) -> [NIF_TERM; 6] {
+    return [
+        atom::__struct__().encode(env).as_c_arg(),
+        calendar().encode(env).as_c_arg(),
+        hour().encode(env).as_c_arg(),
+        minute().encode(env).as_c_arg(),
+        second().encode(env).as_c_arg(),
+        microsecond().encode(env).as_c_arg(),
+    ];
+}
+
+#[inline]
+fn encode_time(v: i64, env: Env) -> Result<Term, ExplorerError> {
+    let naive_time_struct_keys = &naive_time_struct_keys(env);
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
+    let time_module = atoms::time_module().encode(env).as_c_arg();
+
+    Ok(unsafe_encode_time!(
+        v,
+        naive_time_struct_keys,
+        calendar_iso_module,
+        time_module,
+        env
+    ))
+}
+
+#[inline]
+fn time_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
+    let naive_time_struct_keys = &naive_time_struct_keys(env);
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
+    let time_module = atoms::time_module().encode(env).as_c_arg();
+
+    Ok(unsafe_iterator_series_to_list!(
+        env,
+        s.time()?.into_iter().map(|option| option
+            .map(|v| {
+                unsafe_encode_time!(
+                    v,
+                    naive_time_struct_keys,
+                    calendar_iso_module,
+                    time_module,
                     env
                 )
             })
@@ -386,6 +483,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Int64(v) => Ok(Some(v).encode(env)),
         AnyValue::Float64(v) => Ok(Some(v).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
+        AnyValue::Time(v) => encode_time(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
         AnyValue::Categorical(idx, mapping) => Ok(mapping.get(idx).encode(env)),
         dt => panic!("cannot encode value {dt:?} to term"),
@@ -400,6 +498,7 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError>
         DataType::Int64 => series_to_list!(s, env, i64),
         DataType::Float64 => float64_series_to_list(&s, env),
         DataType::Date => date_series_to_list(&s, env),
+        DataType::Time => time_series_to_list(&s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(&s, *time_unit, env),
         DataType::Utf8 => {
             generic_binary_series_to_list(&data.resource, s.utf8()?.downcast_iter(), env)
@@ -429,6 +528,7 @@ pub fn iovec_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Date => series_to_iovec!(resource, s, env, date, i32),
+        DataType::Time => series_to_iovec!(resource, s, env, time, i64),
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             series_to_iovec!(resource, s, env, datetime, i64)
         }
