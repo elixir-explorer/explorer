@@ -603,4 +603,33 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf1.dtypes == df.dtypes
     end
   end
+
+  describe "drop_nils/2" do
+    test "considering all columns" do
+      ldf = DF.new([a: [1, 2, nil], b: [1, nil, 3]], lazy: true)
+
+      ldf1 = DF.drop_nil(ldf)
+
+      df = DF.collect(ldf1)
+      assert DF.to_columns(df) == %{"a" => [1], "b" => [1]}
+    end
+
+    test "considering one column" do
+      ldf = DF.new([a: [1, 2, nil], b: [1, nil, 3]], lazy: true)
+
+      ldf1 = DF.drop_nil(ldf, :a)
+
+      df = DF.collect(ldf1)
+      assert DF.to_columns(df) == %{"a" => [1, 2], "b" => [1, nil]}
+    end
+
+    test "selecting none" do
+      ldf = DF.new([a: [1, 2, nil], b: [1, nil, 3]], lazy: true)
+
+      ldf1 = DF.drop_nil(ldf, [])
+
+      df = DF.collect(ldf1)
+      assert DF.to_columns(df) == %{"a" => [1, 2, nil], "b" => [1, nil, 3]}
+    end
+  end
 end

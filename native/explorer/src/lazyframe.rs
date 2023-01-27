@@ -143,3 +143,17 @@ pub fn lf_rename_columns(
 
     Ok(ExLazyFrame::new(df.rename(existing, new)))
 }
+
+#[rustler::nif]
+pub fn lf_drop_nils(
+    data: ExLazyFrame,
+    subset: Option<Vec<ExExpr>>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let ldf = data.clone_inner();
+    let columns = if let Some(exprs) = subset {
+        Some(ex_expr_to_exprs(exprs))
+    } else {
+        None
+    };
+    Ok(ExLazyFrame::new(ldf.drop_nulls(columns)))
+}

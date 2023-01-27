@@ -264,6 +264,12 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def rename(%DF{} = df, %DF{} = out_df, pairs),
     do: Shared.apply_dataframe(df, out_df, :lf_rename_columns, [pairs])
 
+  @impl true
+  def drop_nil(%DF{} = df, columns) do
+    exprs = for col <- columns, do: Native.expr_column(col)
+    Shared.apply_dataframe(df, df, :lf_drop_nils, [exprs])
+  end
+
   # Groups
 
   @impl true

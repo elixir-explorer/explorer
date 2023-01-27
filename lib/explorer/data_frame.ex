@@ -2779,6 +2779,8 @@ defmodule Explorer.DataFrame do
 
   def drop_nil(df, column) when is_column(column), do: drop_nil(df, [column])
 
+  def drop_nil(df, []), do: df
+
   def drop_nil(df, columns) do
     columns = to_existing_columns(df, columns)
 
