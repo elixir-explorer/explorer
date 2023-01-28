@@ -387,6 +387,7 @@ pub fn s_in(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         DataType::Utf8 => s.utf8()?.is_in(&rhs)?,
         DataType::Binary => s.binary()?.is_in(&rhs)?,
         DataType::Date => s.date()?.is_in(&rhs)?,
+        DataType::Time => s.time()?.is_in(&rhs)?,
         DataType::Datetime(_, _) => s.datetime()?.is_in(&rhs)?,
         dt => panic!("is_in/2 not implemented for {dt:?}"),
     };
@@ -593,6 +594,7 @@ pub fn s_min(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Int64 => Ok(s.min::<i64>().encode(env)),
         DataType::Float64 => Ok(s.min::<f64>().encode(env)),
         DataType::Date => Ok(s.min::<i32>().map(ExDate::from).encode(env)),
+        DataType::Time => Ok(s.min::<i64>().map(ExTime::from).encode(env)),
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             Ok(s.min::<i64>().map(ExDateTime::from).encode(env))
         }
@@ -607,6 +609,7 @@ pub fn s_max(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Int64 => Ok(s.max::<i64>().encode(env)),
         DataType::Float64 => Ok(s.max::<f64>().encode(env)),
         DataType::Date => Ok(s.max::<i32>().map(ExDate::from).encode(env)),
+        DataType::Time => Ok(s.max::<i64>().map(ExTime::from).encode(env)),
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             Ok(s.max::<i64>().map(ExDateTime::from).encode(env))
         }
@@ -691,6 +694,10 @@ pub fn s_quantile<'a>(
         DataType::Date => match s.date()?.quantile(quantile, strategy)? {
             None => Ok(None::<ExDate>.encode(env)),
             Some(days) => Ok(ExDate::from(days as i32).encode(env)),
+        },
+        DataType::Time => match s.time()?.quantile(quantile, strategy)? {
+            None => Ok(None::<ExTime>.encode(env)),
+            Some(microseconds) => Ok(ExTime::from(microseconds as i64).encode(env)),
         },
         DataType::Datetime(TimeUnit::Microseconds, None) => {
             match s.datetime()?.quantile(quantile, strategy)? {

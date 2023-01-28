@@ -53,6 +53,7 @@ defmodule Explorer.PolarsBackend.Series do
       "f64" -> {:f, 64}
       "bool" -> {:u, 8}
       "date" -> {:s, 32}
+      "time" -> {:s, 64}
       "datetime[ms]" -> {:s, 64}
       "datetime[μs]" -> {:s, 64}
       "datetime[ns]" -> {:s, 64}

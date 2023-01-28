@@ -81,7 +81,9 @@ defmodule Explorer.Series do
   defguardp io_dtype?(dtype) when K.not(K.in(dtype, [:binary, :string]))
   defguardp numeric_dtype?(dtype) when K.in(dtype, [:float, :integer])
   defguardp numeric_or_bool_dtype?(dtype) when K.in(dtype, [:float, :integer, :boolean])
-  defguardp numeric_or_date_dtype?(dtype) when K.in(dtype, [:float, :integer, :date, :datetime])
+
+  defguardp numeric_or_date_dtype?(dtype)
+            when K.in(dtype, [:float, :integer, :date, :time, :datetime])
 
   @impl true
   def fetch(series, idx) when is_integer(idx), do: {:ok, fetch!(series, idx)}
@@ -303,6 +305,15 @@ defmodule Explorer.Series do
         date [0001-01-01, 1970-01-01, 1986-10-13]
       >
 
+  Times are encoded as i64 representing microseconds from midnight:
+
+      iex> binary = <<0::signed-64-native, 86399999999::signed-64-native>>
+      iex> Explorer.Series.from_binary(binary, :time)
+      #Explorer.Series<
+        Polars[2]
+        time [00:00:00.000000, 23:59:59.999999]
+      >
+
   Datetimes are encoded as i64 representing microseconds from the Unix epoch (1970-01-01):
 
       iex> binary = <<0::signed-64-native, 529550625987654::signed-64-native>>
@@ -314,7 +325,7 @@ defmodule Explorer.Series do
 
   """
   @doc type: :conversion
-  @spec from_binary(binary, :float | :integer | :boolean | :date | :datetime, keyword) ::
+  @spec from_binary(binary, :float | :integer | :boolean | :date | :time | :datetime, keyword) ::
           Series.t()
   def from_binary(binary, dtype, opts \\ [])
       when K.and(is_binary(binary), K.and(is_atom(dtype), is_list(opts))) do
@@ -375,6 +386,15 @@ defmodule Explorer.Series do
       #Explorer.Series<
         Polars[3]
         date [0001-01-01, 1970-01-01, 1986-10-13]
+      >
+
+  Times are signed 64-bit and therefore must have their dtype explicitly given:
+
+      iex> tensor = Nx.tensor([0, 86399999999])
+      iex> Explorer.Series.from_tensor(tensor, dtype: :time)
+      #Explorer.Series<
+        Polars[2]
+        time [00:00:00.000000, 23:59:59.999999]
       >
 
   Datetimes are signed 64-bit and therefore must have their dtype explicitly given:
@@ -549,6 +569,12 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<-719162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>]
 
+  Times are encoded as i64 representing microseconds from midnight:
+
+      iex> series = Explorer.Series.from_list([~T[00:00:00.000000], ~T[23:59:59.999999]])
+      iex> Explorer.Series.to_iovec(series)
+      [<<0::signed-64-native, 86399999999::signed-64-native>>]
+
   Datetimes are encoded as i64 representing microseconds from the Unix epoch (1970-01-01):
 
       iex> series = Explorer.Series.from_list([~N[0001-01-01 00:00:00], ~N[1970-01-01 00:00:00], ~N[1986-10-13 01:23:45.987654]])
@@ -668,6 +694,22 @@ defmodule Explorer.Series do
         date [1970-01-02, 1970-01-03, 1970-01-04]
       >
 
+  Note that `time` is represented as an integer of microseconds since midnight.
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.cast(s, :time)
+      #Explorer.Series<
+        Polars[3]
+        time [00:00:00.000001, 00:00:00.000002, 00:00:00.000003]
+      >
+
+      iex> s = Explorer.Series.from_list([86399 * 1_000 * 1_000])
+      iex> Explorer.Series.cast(s, :time)
+      #Explorer.Series<
+        Polars[1]
+        time [23:59:59.000000]
+      >
+
   Note that `datetime` is represented as an integer of microseconds since Unix Epoch (1970-01-01 00:00:00).
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
@@ -710,6 +752,7 @@ defmodule Explorer.Series do
     * `:boolean` - Boolean
     * `:string` - UTF-8 encoded binary
     * `:date` - Date type that unwraps to `Elixir.Date`
+    * `:time` - Time type that unwraps to `Elixir.Time`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
 
   ## Examples
@@ -762,6 +805,10 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
       iex> Explorer.Series.iotype(s)
       {:s, 32}
+
+      iex> s = Explorer.Series.from_list([~T[00:00:00.000000], ~T[23:59:59.999999]])
+      iex> Explorer.Series.iotype(s)
+      {:s, 64}
 
       iex> s = Explorer.Series.from_list([1.2, 2.3, 3.5, 4.5])
       iex> Explorer.Series.iotype(s)
@@ -1376,6 +1423,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -1396,17 +1444,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.min(s)
       ~N[1999-12-31 00:00:00.000000]
 
+      iex> s = Explorer.Series.from_list([~T[00:02:03.000000], ~T[00:05:04.000000]])
+      iex> Explorer.Series.min(s)
+      ~T[00:02:03.000000]
+
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.min(s)
-      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime]
+      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :time, :datetime]
   """
   @doc type: :aggregation
-  @spec min(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t() | nil
+  @spec min(series :: Series.t()) :: number() | Date.t() | Time.t() | NaiveDateTime.t() | nil
   def min(%Series{dtype: dtype} = series) when numeric_or_date_dtype?(dtype),
     do: Shared.apply_impl(series, :min)
 
   def min(%Series{dtype: dtype}),
-    do: dtype_error("min/1", dtype, [:integer, :float, :date, :datetime])
+    do: dtype_error("min/1", dtype, [:integer, :float, :date, :time, :datetime])
 
   @doc """
   Gets the maximum value of the series.
@@ -1416,6 +1468,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -1436,17 +1489,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.max(s)
       ~N[2021-01-01 00:00:00.000000]
 
+      iex> s = Explorer.Series.from_list([~T[00:02:03.000000], ~T[00:05:04.000000]])
+      iex> Explorer.Series.max(s)
+      ~T[00:05:04.000000]
+
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.max(s)
-      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :datetime]
+      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :time, :datetime]
   """
   @doc type: :aggregation
-  @spec max(series :: Series.t()) :: number() | Date.t() | NaiveDateTime.t() | nil
+  @spec max(series :: Series.t()) :: number() | Date.t() | Time.t() | NaiveDateTime.t() | nil
   def max(%Series{dtype: dtype} = series) when numeric_or_date_dtype?(dtype),
     do: Shared.apply_impl(series, :max)
 
   def max(%Series{dtype: dtype}),
-    do: dtype_error("max/1", dtype, [:integer, :float, :date, :datetime])
+    do: dtype_error("max/1", dtype, [:integer, :float, :date, :time, :datetime])
 
   @doc """
   Gets the mean value of the series.
@@ -1573,6 +1630,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -1593,9 +1651,13 @@ defmodule Explorer.Series do
       iex> Explorer.Series.quantile(s, 0.5)
       ~N[2021-01-01 00:00:00.000000]
 
+      iex> s = Explorer.Series.from_list([~T[01:55:00.000000], ~T[15:35:00.000000], ~T[23:00:00.000000]])
+      iex> Explorer.Series.quantile(s, 0.5)
+      ~T[15:35:00.000000]
+
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)
-      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float, :date, :datetime]
+      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float, :date, :time, :datetime]
   """
   @doc type: :aggregation
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
@@ -1604,7 +1666,7 @@ defmodule Explorer.Series do
       do: Shared.apply_impl(series, :quantile, [quantile])
 
   def quantile(%Series{dtype: dtype}, _),
-    do: dtype_error("quantile/2", dtype, [:integer, :float, :date, :datetime])
+    do: dtype_error("quantile/2", dtype, [:integer, :float, :date, :time, :datetime])
 
   # Cumulative
 
@@ -1620,6 +1682,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -1637,6 +1700,13 @@ defmodule Explorer.Series do
         Polars[4]
         integer [1, 2, nil, 4]
       >
+
+      iex> s = [~T[03:00:02.000000], ~T[02:04:19.000000], nil, ~T[13:24:56.000000]] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cumulative_max(s)
+      #Explorer.Series<
+        Polars[4]
+        time [03:00:02.000000, 03:00:02.000000, nil, 13:24:56.000000]
+      >
   """
   @doc type: :window
   @spec cumulative_max(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
@@ -1649,7 +1719,7 @@ defmodule Explorer.Series do
   end
 
   def cumulative_max(%Series{dtype: dtype}, _),
-    do: dtype_error("cumulative_max/2", dtype, [:integer, :float, :date, :datetime])
+    do: dtype_error("cumulative_max/2", dtype, [:integer, :float, :date, :time, :datetime])
 
   @doc """
   Calculates the cumulative minimum of the series.
@@ -1663,6 +1733,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -1680,6 +1751,13 @@ defmodule Explorer.Series do
         Polars[4]
         integer [1, 1, nil, 1]
       >
+
+      iex> s = [~T[03:00:02.000000], ~T[02:04:19.000000], nil, ~T[13:24:56.000000]] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cumulative_min(s)
+      #Explorer.Series<
+        Polars[4]
+        time [03:00:02.000000, 02:04:19.000000, nil, 02:04:19.000000]
+      >
   """
   @doc type: :window
   @spec cumulative_min(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
@@ -1692,7 +1770,7 @@ defmodule Explorer.Series do
   end
 
   def cumulative_min(%Series{dtype: dtype}, _),
-    do: dtype_error("cumulative_min/2", dtype, [:integer, :float, :date, :datetime])
+    do: dtype_error("cumulative_min/2", dtype, [:integer, :float, :date, :time, :datetime])
 
   @doc """
   Calculates the cumulative sum of the series.
@@ -1746,6 +1824,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -1755,6 +1834,13 @@ defmodule Explorer.Series do
       #Explorer.Series<
         Polars[5]
         boolean [false, false, true, false, true]
+      >
+
+      iex> s = [~T[03:00:02.000000], ~T[13:24:56.000000], ~T[02:04:19.000000]] |> Explorer.Series.from_list()
+      iex> Explorer.Series.peaks(s)
+      #Explorer.Series<
+        Polars[3]
+        boolean [false, true, false]
       >
   """
   @doc type: :element_wise
@@ -1766,7 +1852,7 @@ defmodule Explorer.Series do
       do: Shared.apply_impl(series, :peaks, [max_or_min])
 
   def peaks(%Series{dtype: dtype}, _),
-    do: dtype_error("peaks/2", dtype, [:integer, :float, :date, :datetime])
+    do: dtype_error("peaks/2", dtype, [:integer, :float, :date, :time, :datetime])
 
   # Arithmetic
 
@@ -2249,6 +2335,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -2270,7 +2357,13 @@ defmodule Explorer.Series do
     if valid_for_bool_mask_operation?(left, right) do
       Shared.apply_series_impl(:greater, [left, right])
     else
-      dtype_error("greater/2", dtype_from_sides(left, right), [:integer, :float, :date, :datetime])
+      dtype_error("greater/2", dtype_from_sides(left, right), [
+        :integer,
+        :float,
+        :date,
+        :time,
+        :datetime
+      ])
     end
   end
 
@@ -2282,6 +2375,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -2303,7 +2397,7 @@ defmodule Explorer.Series do
     if valid_for_bool_mask_operation?(left, right) do
       Shared.apply_series_impl(:greater_equal, [left, right])
     else
-      types = [:integer, :float, :date, :datetime]
+      types = [:integer, :float, :date, :time, :datetime]
       dtype_error("greater_equal/2", dtype_from_sides(left, right), types)
     end
   end
@@ -2316,6 +2410,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -2337,7 +2432,13 @@ defmodule Explorer.Series do
     if valid_for_bool_mask_operation?(left, right) do
       Shared.apply_series_impl(:less, [left, right])
     else
-      dtype_error("less/2", dtype_from_sides(left, right), [:integer, :float, :date, :datetime])
+      dtype_error("less/2", dtype_from_sides(left, right), [
+        :integer,
+        :float,
+        :date,
+        :time,
+        :datetime
+      ])
     end
   end
 
@@ -2349,6 +2450,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
     * `:date`
+    * `:time`
     * `:datetime`
 
   ## Examples
@@ -2370,7 +2472,7 @@ defmodule Explorer.Series do
     if valid_for_bool_mask_operation?(left, right) do
       Shared.apply_series_impl(:less_equal, [left, right])
     else
-      types = [:integer, :float, :date, :datetime]
+      types = [:integer, :float, :date, :time, :datetime]
       dtype_error("less_equal/2", dtype_from_sides(left, right), types)
     end
   end
