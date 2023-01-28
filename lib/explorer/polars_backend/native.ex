@@ -135,7 +135,6 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_atom(_atom), do: err()
   def expr_boolean(_bool), do: err()
   def expr_date(_date), do: err()
-  def expr_time(_time), do: err()
   def expr_datetime(_datetime), do: err()
   def expr_describe_filter_plan(_df, _expr), do: err()
   def expr_float(_number), do: err()

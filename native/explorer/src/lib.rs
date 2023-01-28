@@ -128,7 +128,6 @@ rustler::init!(
         expr_cast,
         expr_column,
         expr_date,
-        expr_time,
         expr_datetime,
         expr_fill_missing_with_strategy,
         expr_fill_missing_with_value,
