@@ -476,7 +476,7 @@ pub fn s_fill_missing_with_datetime(
     let s = s
         .datetime()?
         .fill_null_with_values(datetime.into())?
-        .cast(&DataType::Datetime(TimeUnit::Microseconds, None))?
+        .cast(s.dtype())?
         .into_series();
     Ok(ExSeries::new(s))
 }
