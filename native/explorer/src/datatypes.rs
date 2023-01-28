@@ -253,7 +253,7 @@ impl From<NaiveDateTime> for ExDateTime {
 }
 
 #[derive(NifStruct, Copy, Clone, Debug)]
-#[module = "NaiveTime"]
+#[module = "Time"]
 pub struct ExTime {
     pub calendar: Atom,
     pub hour: u32,
