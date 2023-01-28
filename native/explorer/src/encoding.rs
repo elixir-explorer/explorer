@@ -246,7 +246,7 @@ macro_rules! unsafe_encode_time {
                         t.hour().encode($env).as_c_arg(),
                         t.minute().encode($env).as_c_arg(),
                         t.second().encode($env).as_c_arg(),
-                        limited_ms.encode($env).as_c_arg(),
+                        (limited_ms, 6).encode($env).as_c_arg(),
                     ],
                 )
                 .unwrap(),
