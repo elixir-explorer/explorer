@@ -251,3 +251,59 @@ impl From<NaiveDateTime> for ExDateTime {
         }
     }
 }
+
+#[derive(NifStruct, Copy, Clone, Debug)]
+#[module = "Time"]
+pub struct ExTime {
+    pub calendar: Atom,
+    pub hour: u32,
+    pub minute: u32,
+    pub second: u32,
+    pub microsecond: (u32, u32),
+}
+
+pub use polars::export::arrow::temporal_conversions::time64us_to_time as timestamp_to_time;
+
+impl From<i64> for ExTime {
+    fn from(microseconds: i64) -> Self {
+        timestamp_to_time(microseconds).into()
+    }
+}
+
+impl From<ExTime> for i64 {
+    fn from(t: ExTime) -> i64 {
+        let duration = NaiveTime::from_hms_micro_opt(t.hour, t.minute, t.second, t.microsecond.0)
+            .unwrap()
+            .signed_duration_since(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
+
+        match duration.num_microseconds() {
+            Some(us) => us,
+            None => duration.num_milliseconds() * 1_000,
+        }
+    }
+}
+
+impl From<ExTime> for NaiveTime {
+    fn from(t: ExTime) -> NaiveTime {
+        NaiveTime::from_hms_micro_opt(t.hour, t.minute, t.second, t.microsecond.0).unwrap()
+    }
+}
+
+impl From<NaiveTime> for ExTime {
+    fn from(t: NaiveTime) -> Self {
+        let microseconds = t
+            .signed_duration_since(
+                NaiveTime::from_hms_opt(t.hour(), t.minute(), t.second()).unwrap(),
+            )
+            .num_microseconds()
+            .unwrap();
+
+        ExTime {
+            calendar: atoms::calendar_iso_module(),
+            hour: t.hour(),
+            minute: t.minute(),
+            second: t.second(),
+            microsecond: (microseconds_six_digits(microseconds.try_into().unwrap()), 6),
+        }
+    }
+}

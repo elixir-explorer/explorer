@@ -107,6 +107,7 @@ defmodule Explorer.PolarsBackend.Shared do
       :string -> Native.s_from_list_str(name, list)
       :category -> Native.s_from_list_categories(name, list)
       :date -> Native.s_from_list_date(name, list)
+      :time -> Native.s_from_list_time(name, list)
       :datetime -> Native.s_from_list_datetime(name, list)
       :binary -> Native.s_from_list_binary(name, list)
     end
@@ -116,6 +117,7 @@ defmodule Explorer.PolarsBackend.Shared do
     case dtype do
       :boolean -> Native.s_from_binary_u8(name, binary) |> Native.s_cast("boolean") |> ok()
       :date -> Native.s_from_binary_i32(name, binary) |> Native.s_cast("date") |> ok()
+      :time -> Native.s_from_binary_i64(name, binary) |> Native.s_cast("time") |> ok()
       :datetime -> Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime") |> ok()
       :integer -> Native.s_from_binary_i64(name, binary)
       :float -> Native.s_from_binary_f64(name, binary)
@@ -128,6 +130,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("bool"), do: :boolean
   def normalise_dtype("cat"), do: :category
   def normalise_dtype("date"), do: :date
+  def normalise_dtype("time"), do: :time
   def normalise_dtype("datetime[ms]"), do: :datetime
   def normalise_dtype("datetime[ns]"), do: :datetime
   def normalise_dtype("datetime[μs]"), do: :datetime
@@ -140,6 +143,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:boolean), do: "bool"
   def internal_from_dtype(:category), do: "cat"
   def internal_from_dtype(:date), do: "date"
+  def internal_from_dtype(:time), do: "time"
   def internal_from_dtype(:datetime), do: "datetime[μs]"
   def internal_from_dtype(:float), do: "f64"
   def internal_from_dtype(:integer), do: "i64"

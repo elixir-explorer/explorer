@@ -8,6 +8,7 @@ defmodule Explorer.Backend.Series do
     :boolean,
     :category,
     :date,
+    :time,
     :datetime,
     :float,
     :integer,
@@ -21,7 +22,7 @@ defmodule Explorer.Backend.Series do
   @type lazy_s :: Explorer.Series.lazy_t()
   @type df :: Explorer.DataFrame.t()
   @type dtype :: Explorer.Series.dtype()
-  @type valid_types :: number() | boolean() | String.t() | Date.t() | NaiveDateTime.t()
+  @type valid_types :: number() | boolean() | String.t() | Date.t() | Time.t() | NaiveDateTime.t()
 
   # Conversion
 

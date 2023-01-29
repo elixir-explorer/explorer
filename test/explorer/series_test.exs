@@ -52,6 +52,13 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == :string
     end
 
+    test "with time" do
+      time = ~T[02:05:03.654321]
+      s = Series.from_list([time])
+      assert Series.to_list(s) === [time]
+      assert Series.dtype(s) == :time
+    end
+
     test "with binaries from strings" do
       s = Series.from_list(["a", "b", "c"], dtype: :binary)
       assert Series.to_list(s) === ["a", "b", "c"]
@@ -384,6 +391,13 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.equal(s2) |> Series.to_list() == [true, true, false]
     end
 
+    test "compare time series" do
+      s1 = Series.from_list([~T[00:00:00.000000], ~T[12:00:00.000000], ~T[23:59:59.999999]])
+      s2 = Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:59:59.999999]])
+
+      assert s1 |> Series.equal(s2) |> Series.to_list() == [true, false, true]
+    end
+
     test "compare integer series with a scalar value on the right-hand side" do
       s1 = Series.from_list([1, 0, 2])
       assert s1 |> Series.equal(2) |> Series.to_list() == [false, false, true]
@@ -416,6 +430,13 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.not_equal(s2) |> Series.to_list() == [false, false, true]
     end
 
+    test "compare time series" do
+      s1 = Series.from_list([~T[00:00:00.000000], ~T[12:00:00.000000], ~T[23:59:59.999999]])
+      s2 = Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:59:59.999999]])
+
+      assert s1 |> Series.not_equal(s2) |> Series.to_list() == [false, true, false]
+    end
+
     test "compare integer series with a scalar value on the right-hand side" do
       s1 = Series.from_list([1, 0, 2])
 
@@ -433,6 +454,13 @@ defmodule Explorer.SeriesTest do
     test "compare integer series" do
       s1 = Series.from_list([1, 0, 3])
       s2 = Series.from_list([1, 0, 2])
+
+      assert s1 |> Series.greater(s2) |> Series.to_list() == [false, false, true]
+    end
+
+    test "compare time series" do
+      s1 = Series.from_list([~T[00:00:00.000000], ~T[12:00:00.000000], ~T[23:59:59.999999]])
+      s2 = Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:50:59.999999]])
 
       assert s1 |> Series.greater(s2) |> Series.to_list() == [false, false, true]
     end
@@ -458,6 +486,13 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.greater_equal(s2) |> Series.to_list() == [true, true, false]
     end
 
+    test "compare time series" do
+      s1 = Series.from_list([~T[00:00:00.000000], ~T[12:00:00.000000], ~T[23:59:59.999999]])
+      s2 = Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:50:59.999999]])
+
+      assert s1 |> Series.greater_equal(s2) |> Series.to_list() == [true, false, true]
+    end
+
     test "compare integer series with a scalar value on the right-hand side" do
       s1 = Series.from_list([1, 0, 2, 3])
 
@@ -479,6 +514,13 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.less(s2) |> Series.to_list() == [false, false, true]
     end
 
+    test "compare time series" do
+      s1 = Series.from_list([~T[00:00:00.000000], ~T[12:00:00.000000], ~T[23:59:59.999999]])
+      s2 = Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:50:59.999999]])
+
+      assert s1 |> Series.less(s2) |> Series.to_list() == [false, true, false]
+    end
+
     test "compare integer series with a scalar value on the right-hand side" do
       s1 = Series.from_list([1, 0, 2, 3])
 
@@ -498,6 +540,13 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list([1, 0, 3])
 
       assert s1 |> Series.less_equal(s2) |> Series.to_list() == [true, true, true]
+    end
+
+    test "compare time series" do
+      s1 = Series.from_list([~T[00:00:00.000000], ~T[12:00:00.000000], ~T[23:59:59.999999]])
+      s2 = Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:50:59.999999]])
+
+      assert s1 |> Series.less_equal(s2) |> Series.to_list() == [true, true, false]
     end
 
     test "compare integer series with a scalar value on the right-hand side" do
@@ -552,6 +601,16 @@ defmodule Explorer.SeriesTest do
     test "with date series" do
       s1 = Series.from_list([~D[2023-01-17], ~D[2023-01-18], ~D[2023-01-09]])
       s2 = Series.from_list([~D[2023-01-17], ~D[2023-01-04], ~D[2023-01-09]])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with time series" do
+      s1 =
+        Explorer.Series.from_list([~T[00:00:00.000000], ~T[12:00:00.000000], ~T[23:59:59.999999]])
+
+      s2 =
+        Explorer.Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:59:59.999999]])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end
@@ -664,6 +723,11 @@ defmodule Explorer.SeriesTest do
     test "date series" do
       s = Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
       assert Series.iotype(s) == {:s, 32}
+    end
+
+    test "time series" do
+      s = Series.from_list([~T[00:00:00.000000], ~T[23:59:59.999999]])
+      assert Series.iotype(s) == {:s, 64}
     end
 
     test "datetime series" do

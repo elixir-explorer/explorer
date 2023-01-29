@@ -35,6 +35,7 @@ features = [
   "decompress",
   "describe",
   "dtype-date",
+  "dtype-time",
   "dtype-datetime",
   "dtype-binary",
   "dtype-categorical",
