@@ -322,12 +322,6 @@ defmodule Explorer.SeriesTest do
       assert_raise RuntimeError, fn ->
         Series.fill_missing(s1, :mean)
       end
-
-      assert_raise ArgumentError,
-                   "fill_missing with :nan values require a :float series, got :integer",
-                   fn ->
-                     Series.fill_missing(s1, :nan)
-                   end
     end
 
     test "with nan" do
@@ -338,9 +332,9 @@ defmodule Explorer.SeriesTest do
     test "non-float series with nan" do
       s1 = Series.from_list([1, 2, nil, 4])
 
-      assert_raise ArgumentError, fn ->
-        Series.fill_missing(s1, :nan)
-      end
+      assert_raise ArgumentError,
+                   "fill_missing with :nan values require a :float series, got :integer",
+                   fn -> Series.fill_missing(s1, :nan) end
     end
 
     test "with infinity" do
@@ -353,9 +347,7 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "fill_missing with :infinity values require a :float series, got :integer",
-                   fn ->
-                     Series.fill_missing(s1, :infinity)
-                   end
+                   fn -> Series.fill_missing(s1, :infinity) end
     end
 
     test "with neg_infinity" do
@@ -374,9 +366,7 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "fill_missing with :neg_infinity values require a :float series, got :integer",
-                   fn ->
-                     Series.fill_missing(s1, :neg_infinity)
-                   end
+                   fn -> Series.fill_missing(s1, :neg_infinity) end
     end
   end
 
