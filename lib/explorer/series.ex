@@ -2911,13 +2911,27 @@ defmodule Explorer.Series do
       iex> Explorer.Series.fill_missing(s, "foo")
       ** (ArgumentError) cannot invoke Explorer.Series.fill_missing/2 with mismatched dtypes: :integer and "foo"
 
-  Floats in particular accept missing values to be set to NaN:
+  Floats in particular accept missing values to be set to NaN, Inf, and -Inf:
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
       iex> Explorer.Series.fill_missing(s, :nan)
       #Explorer.Series<
         Polars[4]
         float [1.0, 2.0, NaN, 4.0]
+      >
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
+      iex> Explorer.Series.fill_missing(s, :infinity)
+      #Explorer.Series<
+        Polars[4]
+        float [1.0, 2.0, Inf, 4.0]
+      >
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
+      iex> Explorer.Series.fill_missing(s, :neg_infinity)
+      #Explorer.Series<
+        Polars[4]
+        float [1.0, 2.0, -Inf, 4.0]
       >
 
   """
@@ -2930,15 +2944,18 @@ defmodule Explorer.Series do
           | :min
           | :mean
           | :nan
+          | :infinity
+          | :neg_infinity
           | Explorer.Backend.Series.valid_types()
         ) :: Series.t()
-  def fill_missing(%Series{} = series, :nan) do
+  def fill_missing(%Series{} = series, value)
+      when K.in(value, [:nan, :infinity, :neg_infinity]) do
     if series.dtype != :float do
       raise ArgumentError,
-            "fill_missing with :nan values require a :float series, got #{inspect(series.dtype)}"
+            "fill_missing with :#{value} values require a :float series, got #{inspect(series.dtype)}"
     end
 
-    Shared.apply_impl(series, :fill_missing_with_value, [:nan])
+    Shared.apply_impl(series, :fill_missing_with_value, [value])
   end
 
   def fill_missing(%Series{} = series, strategy)

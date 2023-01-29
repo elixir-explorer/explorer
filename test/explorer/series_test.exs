@@ -193,19 +193,6 @@ defmodule Explorer.SeriesTest do
              ]
     end
 
-    test "with nan" do
-      s1 = Series.from_list([1.0, 2.0, nil, 4.5])
-      assert Series.fill_missing(s1, :nan) |> Series.to_list() == [1.0, 2.0, :nan, 4.5]
-    end
-
-    test "non-float series with nan" do
-      s1 = Series.from_list([1, 2, nil, 4])
-
-      assert_raise ArgumentError, fn ->
-        Series.fill_missing(s1, :nan)
-      end
-    end
-
     test "with forward strategy" do
       s1 = Series.from_list([1, 2, nil, 4])
       assert Series.fill_missing(s1, :forward) |> Series.to_list() == [1, 2, 2, 4]
@@ -335,6 +322,61 @@ defmodule Explorer.SeriesTest do
       assert_raise RuntimeError, fn ->
         Series.fill_missing(s1, :mean)
       end
+
+      assert_raise ArgumentError,
+                   "fill_missing with :nan values require a :float series, got :integer",
+                   fn ->
+                     Series.fill_missing(s1, :nan)
+                   end
+    end
+
+    test "with nan" do
+      s1 = Series.from_list([1.0, 2.0, nil, 4.5])
+      assert Series.fill_missing(s1, :nan) |> Series.to_list() == [1.0, 2.0, :nan, 4.5]
+    end
+
+    test "non-float series with nan" do
+      s1 = Series.from_list([1, 2, nil, 4])
+
+      assert_raise ArgumentError, fn ->
+        Series.fill_missing(s1, :nan)
+      end
+    end
+
+    test "with infinity" do
+      s1 = Series.from_list([1.0, 2.0, nil, 4.5])
+      assert Series.fill_missing(s1, :infinity) |> Series.to_list() == [1.0, 2.0, :infinity, 4.5]
+    end
+
+    test "non-float series with infinity" do
+      s1 = Series.from_list([1, 2, nil, 4])
+
+      assert_raise ArgumentError,
+                   "fill_missing with :infinity values require a :float series, got :integer",
+                   fn ->
+                     Series.fill_missing(s1, :infinity)
+                   end
+    end
+
+    test "with neg_infinity" do
+      s1 = Series.from_list([1.0, 2.0, nil, 4.5])
+
+      assert Series.fill_missing(s1, :neg_infinity) |> Series.to_list() == [
+               1.0,
+               2.0,
+               :neg_infinity,
+               4.5
+             ]
+    end
+
+    test "non-float series with neg_infinity" do
+      s1 = Series.from_list([1, 2, nil, 4])
+
+      assert_raise ArgumentError,
+                   "fill_missing with :neg_infinity values require a :float series, got :integer",
+                   fn ->
+                     Series.fill_missing(s1, :neg_infinity)
+                   end
     end
   end
 
