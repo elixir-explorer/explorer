@@ -167,9 +167,44 @@ defmodule Explorer.SeriesTest do
       assert Series.fill_missing(s1, 3.5) |> Series.to_list() == [1.0, 2.0, 3.5, 4.0]
     end
 
+    test "with binary" do
+      s1 = Series.from_list([<<1>>, <<2>>, nil, <<4>>], dtype: :binary)
+
+      assert Series.fill_missing(s1, <<239, 191, 19>>) |> Series.to_list() == [
+               <<1>>,
+               <<2>>,
+               <<239, 191, 19>>,
+               <<4>>
+             ]
+    end
+
+    test "mixing binary series with string" do
+      s1 = Series.from_list([<<239, 191, 19>>, <<2>>, nil, <<4>>], dtype: :binary)
+
+      assert Series.fill_missing(s1, "3") |> Series.to_list() == [
+               <<239, 191, 19>>,
+               <<2>>,
+               "3",
+               <<4>>
+             ]
+    end
+
     test "with string" do
       s1 = Series.from_list(["1", "2", nil, "4"])
       assert Series.fill_missing(s1, "3") |> Series.to_list() == ["1", "2", "3", "4"]
+    end
+
+    test "mixing string series with a binary that is a valid string" do
+      s1 = Series.from_list(["1", "2", nil, "4"])
+      assert Series.fill_missing(s1, <<3>>) |> Series.to_list() == ["1", "2", <<3>>, "4"]
+    end
+
+    test "mixing string series with a binary that is an invalid string" do
+      s1 = Series.from_list(["1", "2", nil, "4"])
+
+      assert_raise RuntimeError, "cannot cast to string", fn ->
+        Series.fill_missing(s1, <<239, 191, 19>>)
+      end
     end
 
     test "with date" do
