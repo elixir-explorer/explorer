@@ -474,7 +474,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       do: Shared.apply_dataframe(df, df, :df_slice, [offset, length, df.groups])
 
   @impl true
-  def drop_nil(df, columns), do: Shared.apply_dataframe(df, df, :df_drop_nulls, [columns])
+  def drop_nil(df, columns), do: Shared.apply_dataframe(df, df, :df_drop_nils, [columns])
 
   @impl true
   def pivot_longer(df, out_df, columns_to_pivot, columns_to_keep, names_to, values_to) do

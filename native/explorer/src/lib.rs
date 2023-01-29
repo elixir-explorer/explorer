@@ -72,7 +72,7 @@ rustler::init!(
         df_describe,
         df_distinct,
         df_drop,
-        df_drop_nulls,
+        df_drop_nils,
         df_dtypes,
         df_dump_csv,
         df_dump_ndjson,
@@ -230,6 +230,9 @@ rustler::init!(
         lf_distinct,
         lf_mutate_with,
         lf_summarise_with,
+        lf_rename_columns,
+        lf_drop_nils,
+        lf_pivot_longer,
         // series
         s_add,
         s_and,

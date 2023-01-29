@@ -582,4 +582,148 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
   end
+
+  describe "rename/2" do
+    test "renames a column" do
+      ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+
+      ldf1 = DF.rename(ldf, %{"a" => "ids"})
+
+      assert ldf1.names == ["ids", "b"]
+      assert ldf1.dtypes == %{"ids" => :integer, "b" => :string}
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               ids: [1, 2, 3],
+               b: ["a", "b", "c"]
+             }
+
+      assert ldf1.names == df.names
+      assert ldf1.dtypes == df.dtypes
+    end
+  end
+
+  describe "drop_nils/2" do
+    test "considering all columns" do
+      ldf = DF.new([a: [1, 2, nil], b: [1, nil, 3]], lazy: true)
+
+      ldf1 = DF.drop_nil(ldf)
+
+      df = DF.collect(ldf1)
+      assert DF.to_columns(df) == %{"a" => [1], "b" => [1]}
+    end
+
+    test "considering one column" do
+      ldf = DF.new([a: [1, 2, nil], b: [1, nil, 3]], lazy: true)
+
+      ldf1 = DF.drop_nil(ldf, :a)
+
+      df = DF.collect(ldf1)
+      assert DF.to_columns(df) == %{"a" => [1, 2], "b" => [1, nil]}
+    end
+
+    test "selecting none" do
+      ldf = DF.new([a: [1, 2, nil], b: [1, nil, 3]], lazy: true)
+
+      ldf1 = DF.drop_nil(ldf, [])
+
+      df = DF.collect(ldf1)
+      assert DF.to_columns(df) == %{"a" => [1, 2, nil], "b" => [1, nil, 3]}
+    end
+  end
+
+  describe "pivot_longer/3" do
+    test "without selecting columns", %{ldf: ldf} do
+      ldf = DF.pivot_longer(ldf, &String.ends_with?(&1, "fuel"), select: [])
+
+      assert ldf.names == ["variable", "value"]
+      assert ldf.dtypes == %{"variable" => :string, "value" => :integer}
+
+      df = DF.collect(ldf)
+      assert DF.shape(df) == {3282, 2}
+      assert ldf.names == df.names
+      assert ldf.dtypes == df.dtypes
+    end
+
+    test "selecting some columns", %{ldf: ldf} do
+      ldf = DF.pivot_longer(ldf, &String.ends_with?(&1, "fuel"), select: ["year", "country"])
+
+      assert ldf.names == ["year", "country", "variable", "value"]
+
+      assert ldf.dtypes == %{
+               "year" => :integer,
+               "country" => :string,
+               "variable" => :string,
+               "value" => :integer
+             }
+
+      df = DF.collect(ldf)
+
+      assert DF.shape(df) == {3282, 4}
+      assert ldf.names == df.names
+      assert ldf.dtypes == df.dtypes
+    end
+
+    test "selecting all the columns (not passing select option)", %{ldf: ldf} do
+      ldf = DF.pivot_longer(ldf, &String.ends_with?(&1, ["fuel", "fuels"]))
+
+      assert ldf.names == [
+               "year",
+               "country",
+               "total",
+               "cement",
+               "gas_flaring",
+               "per_capita",
+               "variable",
+               "value"
+             ]
+
+      df = DF.collect(ldf)
+
+      assert DF.shape(df) == {4376, 8}
+      assert ldf.names == df.names
+      assert ldf.dtypes == df.dtypes
+    end
+
+    test "dropping some columns", %{ldf: ldf} do
+      ldf =
+        DF.pivot_longer(ldf, &String.ends_with?(&1, ["fuel", "fuels"]),
+          discard: ["gas_flaring", "cement"]
+        )
+
+      assert ldf.names == [
+               "year",
+               "country",
+               "total",
+               "per_capita",
+               "variable",
+               "value"
+             ]
+
+      df = DF.collect(ldf)
+
+      assert ldf.names == df.names
+      assert ldf.dtypes == df.dtypes
+    end
+
+    test "select and discard with the same columns discards the columns", %{ldf: ldf} do
+      ldf =
+        DF.pivot_longer(ldf, &String.ends_with?(&1, ["fuel", "fuels"]),
+          select: ["gas_flaring", "cement"],
+          discard: fn name -> name == "cement" end
+        )
+
+      assert ldf.names == [
+               "gas_flaring",
+               "variable",
+               "value"
+             ]
+
+      df = DF.collect(ldf)
+
+      assert ldf.names == df.names
+      assert ldf.dtypes == df.dtypes
+    end
+  end
 end

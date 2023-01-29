@@ -139,7 +139,7 @@ pub fn df_concat_columns(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_drop_nulls(
+pub fn df_drop_nils(
     data: ExDataFrame,
     subset: Option<Vec<String>>,
 ) -> Result<ExDataFrame, ExplorerError> {

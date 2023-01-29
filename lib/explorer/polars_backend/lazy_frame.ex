@@ -260,6 +260,26 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     raise "mutate_with/2 with groups is not supported yet for lazy frames"
   end
 
+  @impl true
+  def rename(%DF{} = df, %DF{} = out_df, pairs),
+    do: Shared.apply_dataframe(df, out_df, :lf_rename_columns, [pairs])
+
+  @impl true
+  def drop_nil(%DF{} = df, columns) do
+    exprs = for col <- columns, do: Native.expr_column(col)
+    Shared.apply_dataframe(df, df, :lf_drop_nils, [exprs])
+  end
+
+  @impl true
+  def pivot_longer(%DF{} = df, %DF{} = out_df, cols_to_pivot, cols_to_keep, names_to, values_to),
+    do:
+      Shared.apply_dataframe(df, out_df, :lf_pivot_longer, [
+        cols_to_keep,
+        cols_to_pivot,
+        names_to,
+        values_to
+      ])
+
   # Groups
 
   @impl true

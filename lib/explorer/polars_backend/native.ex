@@ -35,7 +35,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_concat_rows(_df, _others), do: err()
   def df_distinct(_df, _subset, _selection), do: err()
   def df_drop(_df, _name), do: err()
-  def df_drop_nulls(_df, _subset), do: err()
+  def df_drop_nils(_df, _subset), do: err()
   def df_dtypes(_df), do: err()
   def df_dump_csv(_df, _has_headers, _delimiter), do: err()
   def df_dump_ndjson(_df), do: err()
@@ -177,6 +177,9 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_distinct(_df, _subset, _selection), do: err()
   def lf_mutate_with(_df, _exprs), do: err()
   def lf_summarise_with(_df, _groups, _aggs), do: err()
+  def lf_rename_columns(_df, _column_pairs), do: err()
+  def lf_drop_nils(_df, _column_pairs), do: err()
+  def lf_pivot_longer(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()
 
   # Series
   def s_add(_s, _other), do: err()
