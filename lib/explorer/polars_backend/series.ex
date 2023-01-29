@@ -410,6 +410,8 @@ defmodule Explorer.PolarsBackend.Series do
         is_integer(value) -> :s_fill_missing_with_int
         is_binary(value) -> :s_fill_missing_with_bin
         is_boolean(value) -> :s_fill_missing_with_boolean
+        is_struct(value, Date) -> :s_fill_missing_with_date
+        is_struct(value, NaiveDateTime) -> :s_fill_missing_with_datetime
       end
 
     Shared.apply_series(series, operation, [value])

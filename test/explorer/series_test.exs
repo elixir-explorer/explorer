@@ -150,6 +150,180 @@ defmodule Explorer.SeriesTest do
       assert Series.fill_missing(s1, false) |> Series.to_list() == [true, false, false]
     end
 
+    test "with integer" do
+      s1 = Series.from_list([1, 2, nil, 4])
+      assert Series.fill_missing(s1, 3) |> Series.to_list() == [1, 2, 3, 4]
+    end
+
+    test "with float" do
+      s1 = Series.from_list([1.0, 2.0, nil, 4.0])
+      assert Series.fill_missing(s1, 3.5) |> Series.to_list() == [1.0, 2.0, 3.5, 4.0]
+    end
+
+    test "with string" do
+      s1 = Series.from_list(["1", "2", nil, "4"])
+      assert Series.fill_missing(s1, "3") |> Series.to_list() == ["1", "2", "3", "4"]
+    end
+
+    test "with date" do
+      s1 = Series.from_list([~D[2023-01-17], ~D[2023-01-18], nil, ~D[2023-01-09]])
+
+      assert Series.fill_missing(s1, ~D[2023-01-19]) |> Series.to_list() == [
+               ~D[2023-01-17],
+               ~D[2023-01-18],
+               ~D[2023-01-19],
+               ~D[2023-01-09]
+             ]
+    end
+
+    test "with datetime" do
+      s1 =
+        Series.from_list([
+          ~N[2023-01-17 20:00:56.576456],
+          ~N[2023-01-18 20:30:56.576456],
+          nil,
+          ~N[2023-01-09 21:00:56.576456]
+        ])
+
+      assert Series.fill_missing(s1, ~N[2023-01-19 20:00:56.576456]) |> Series.to_list() == [
+               ~N[2023-01-17 20:00:56.576456],
+               ~N[2023-01-18 20:30:56.576456],
+               ~N[2023-01-19 20:00:56.576456],
+               ~N[2023-01-09 21:00:56.576456]
+             ]
+    end
+
+    test "with forward strategy" do
+      s1 = Series.from_list([1, 2, nil, 4])
+      assert Series.fill_missing(s1, :forward) |> Series.to_list() == [1, 2, 2, 4]
+    end
+
+    test "with backward strategy" do
+      s1 = Series.from_list([1, 2, nil, 4])
+      assert Series.fill_missing(s1, :backward) |> Series.to_list() == [1, 2, 4, 4]
+    end
+
+    test "with max strategy" do
+      s1 = Series.from_list([1, 2, nil, 10, 5])
+      assert Series.fill_missing(s1, :max) |> Series.to_list() == [1, 2, 10, 10, 5]
+    end
+
+    test "boolean series with max strategy" do
+      s1 = Series.from_list([true, nil, false])
+      assert Series.fill_missing(s1, :max) |> Series.to_list() == [true, true, false]
+    end
+
+    test "date series with max strategy" do
+      s1 = Series.from_list([~D[2023-01-18], ~D[2023-01-17], nil, ~D[2023-01-09]])
+
+      assert Series.fill_missing(s1, :max) |> Series.to_list() == [
+               ~D[2023-01-18],
+               ~D[2023-01-17],
+               ~D[2023-01-18],
+               ~D[2023-01-09]
+             ]
+    end
+
+    test "datetime series with max strategy" do
+      s1 =
+        Series.from_list([
+          ~N[2023-01-17 20:00:56.576456],
+          ~N[2023-01-18 20:30:56.576456],
+          nil,
+          ~N[2023-01-09 21:00:56.576456],
+          ~N[2023-01-18 23:35:56.576456]
+        ])
+
+      assert Series.fill_missing(s1, :max) |> Series.to_list() == [
+               ~N[2023-01-17 20:00:56.576456],
+               ~N[2023-01-18 20:30:56.576456],
+               ~N[2023-01-18 23:35:56.576456],
+               ~N[2023-01-09 21:00:56.576456],
+               ~N[2023-01-18 23:35:56.576456]
+             ]
+    end
+
+    test "with min strategy" do
+      s1 = Series.from_list([1, 2, nil, 5])
+      assert Series.fill_missing(s1, :min) |> Series.to_list() == [1, 2, 1, 5]
+    end
+
+    test "boolean series with min strategy" do
+      s1 = Series.from_list([true, nil, false])
+      assert Series.fill_missing(s1, :min) |> Series.to_list() == [true, false, false]
+    end
+
+    test "date series with min strategy" do
+      s1 = Series.from_list([~D[2023-01-18], ~D[2023-01-17], nil, ~D[2023-01-09]])
+
+      assert Series.fill_missing(s1, :min) |> Series.to_list() == [
+               ~D[2023-01-18],
+               ~D[2023-01-17],
+               ~D[2023-01-09],
+               ~D[2023-01-09]
+             ]
+    end
+
+    test "datetime series with min strategy" do
+      s1 =
+        Series.from_list([
+          ~N[2023-01-17 20:00:56.576456],
+          ~N[2023-01-18 20:30:56.576456],
+          nil,
+          ~N[2023-01-09 21:00:56.576456],
+          ~N[2023-01-18 23:35:56.576456]
+        ])
+
+      assert Series.fill_missing(s1, :min) |> Series.to_list() == [
+               ~N[2023-01-17 20:00:56.576456],
+               ~N[2023-01-18 20:30:56.576456],
+               ~N[2023-01-09 21:00:56.576456],
+               ~N[2023-01-09 21:00:56.576456],
+               ~N[2023-01-18 23:35:56.576456]
+             ]
+    end
+
+    test "with mean strategy" do
+      s1 = Series.from_list([1, 3, nil, 5])
+      assert Series.fill_missing(s1, :mean) |> Series.to_list() == [1, 3, 3, 5]
+    end
+
+    test "date series with mean strategy" do
+      s1 = Series.from_list([~D[2023-01-18], ~D[2023-06-17], nil, ~D[2023-01-09]])
+
+      assert Series.fill_missing(s1, :mean) |> Series.to_list() == [
+               ~D[2023-01-18],
+               ~D[2023-06-17],
+               ~D[2023-03-06],
+               ~D[2023-01-09]
+             ]
+    end
+
+    test "datetime series with mean strategy" do
+      s1 =
+        Series.from_list([
+          ~N[2023-01-18 20:30:56.576456],
+          ~N[2023-06-17 20:00:56.576456],
+          nil,
+          ~N[2023-01-09 21:00:56.576456]
+        ])
+
+      assert Series.fill_missing(s1, :mean) |> Series.to_list() == [
+               ~N[2023-01-18 20:30:56.576456],
+               ~N[2023-06-17 20:00:56.576456],
+               ~N[2023-03-06 20:30:56.576456],
+               ~N[2023-01-09 21:00:56.576456]
+             ]
+    end
+
+    test "boolean series with mean strategy" do
+      s1 = Series.from_list([true, nil, false])
+
+      assert_raise RuntimeError, fn ->
+        Series.fill_missing(s1, :mean)
+      end
+    end
+
     test "with nan" do
       s1 = Series.from_list([1.0, 2.0, nil, 4.5])
       assert Series.fill_missing(s1, :nan) |> Series.to_list() == [1.0, 2.0, :nan, 4.5]
@@ -160,9 +334,7 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "fill_missing with :nan values require a :float series, got :integer",
-                   fn ->
-                     Series.fill_missing(s1, :nan)
-                   end
+                   fn -> Series.fill_missing(s1, :nan) end
     end
 
     test "with infinity" do
@@ -175,9 +347,7 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "fill_missing with :infinity values require a :float series, got :integer",
-                   fn ->
-                     Series.fill_missing(s1, :infinity)
-                   end
+                   fn -> Series.fill_missing(s1, :infinity) end
     end
 
     test "with neg_infinity" do
@@ -196,9 +366,7 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "fill_missing with :neg_infinity values require a :float series, got :integer",
-                   fn ->
-                     Series.fill_missing(s1, :neg_infinity)
-                   end
+                   fn -> Series.fill_missing(s1, :neg_infinity) end
     end
   end
 

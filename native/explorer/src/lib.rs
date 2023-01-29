@@ -255,6 +255,8 @@ rustler::init!(
         s_fill_missing_with_float,
         s_fill_missing_with_int,
         s_fill_missing_with_atom,
+        s_fill_missing_with_date,
+        s_fill_missing_with_datetime,
         s_greater,
         s_greater_equal,
         s_head,

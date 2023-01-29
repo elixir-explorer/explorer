@@ -436,33 +436,58 @@ pub fn s_fill_missing_with_atom(data: ExSeries, atom: &str) -> Result<ExSeries, 
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_int(data: ExSeries, strategy: i64) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_int(data: ExSeries, integer: i64) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
-    let s = s.i64()?.fill_null_with_values(strategy)?.into_series();
+    let s = s.i64()?.fill_null_with_values(integer)?.into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_float(data: ExSeries, strategy: f64) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_float(data: ExSeries, float: f64) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
-    let s = s.f64()?.fill_null_with_values(strategy)?.into_series();
+    let s = s.f64()?.fill_null_with_values(float)?.into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_bin(data: ExSeries, strategy: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_bin(data: ExSeries, binary: &str) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
-    let s = s.utf8()?.fill_null_with_values(strategy)?.into_series();
+    let s = s.utf8()?.fill_null_with_values(binary)?.into_series();
+    Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_fill_missing_with_date(data: ExSeries, date: ExDate) -> Result<ExSeries, ExplorerError> {
+    let s = data.clone_inner();
+    let s = s
+        .date()?
+        .fill_null_with_values(date.into())?
+        .cast(&DataType::Date)?
+        .into_series();
+    Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_fill_missing_with_datetime(
+    data: ExSeries,
+    datetime: ExDateTime,
+) -> Result<ExSeries, ExplorerError> {
+    let s = data.clone_inner();
+    let s = s
+        .datetime()?
+        .fill_null_with_values(datetime.into())?
+        .cast(s.dtype())?
+        .into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_fill_missing_with_boolean(
     data: ExSeries,
-    strategy: bool,
+    boolean: bool,
 ) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
-    let s = s.bool()?.fill_null_with_values(strategy)?.into_series();
+    let s = s.bool()?.fill_null_with_values(boolean)?.into_series();
     Ok(ExSeries::new(s))
 }
 
