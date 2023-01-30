@@ -430,11 +430,7 @@ pub fn df_describe(
     percentiles: Option<Vec<f64>>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = data.clone_inner();
-
-    let new_df = match percentiles {
-        Some(percentiles) => df.describe(Some(percentiles.as_slice())),
-        None => df.describe(None),
-    };
+    let new_df = df.describe(percentiles.as_deref());
 
     Ok(ExDataFrame::new(new_df))
 }
