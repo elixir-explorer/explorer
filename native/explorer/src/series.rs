@@ -465,9 +465,19 @@ pub fn s_fill_missing_with_float(data: ExSeries, float: f64) -> Result<ExSeries,
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_bin(data: ExSeries, binary: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_bin(data: ExSeries, binary: Binary) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
-    let s = s.utf8()?.fill_null_with_values(binary)?.into_series();
+    let s = match s.dtype() {
+        DataType::Utf8 => {
+            if let Ok(string) = std::str::from_utf8(&binary) {
+                s.utf8()?.fill_null_with_values(string)?.into_series()
+            } else {
+                return Err(ExplorerError::Other("cannot cast to string".into()));
+            }
+        }
+        DataType::Binary => s.binary()?.fill_null_with_values(&binary)?.into_series(),
+        dt => panic!("fill_missing/2 not implemented for {dt:?}"),
+    };
     Ok(ExSeries::new(s))
 }
 

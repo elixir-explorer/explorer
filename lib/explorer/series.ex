@@ -2322,8 +2322,10 @@ defmodule Explorer.Series do
   end
 
   defp sides_comparable?(%Series{dtype: :string}, right) when is_binary(right), do: true
+  defp sides_comparable?(%Series{dtype: :binary}, right) when is_binary(right), do: true
   defp sides_comparable?(%Series{dtype: :boolean}, right) when is_boolean(right), do: true
   defp sides_comparable?(left, %Series{dtype: :string}) when is_binary(left), do: true
+  defp sides_comparable?(left, %Series{dtype: :binary}) when is_binary(left), do: true
   defp sides_comparable?(left, %Series{dtype: :boolean}) when is_boolean(left), do: true
   defp sides_comparable?(_, _), do: false
 
