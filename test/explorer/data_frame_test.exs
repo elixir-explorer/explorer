@@ -1247,6 +1247,9 @@ defmodule Explorer.DataFrameTest do
       right = DF.new(b: [1, 2, 3])
       joined = DF.join(left, right, how: :cross)
       assert %DF{} = joined
+
+      assert DF.names(joined) == ["a", "b"]
+      assert DF.n_rows(joined) == 9
     end
 
     test "with a custom 'on'" do

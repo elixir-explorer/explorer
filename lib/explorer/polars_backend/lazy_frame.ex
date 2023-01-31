@@ -295,6 +295,42 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Shared.apply_dataframe(df, out_df, :lf_summarise_with, [groups_exprs, exprs])
   end
 
+  # Two or more tables 
+
+  @impl true
+  def join(%DF{} = left, %DF{} = right, %DF{} = out_df, on, how)
+      when is_list(on) and how in [:left, :inner, :cross, :outer] do
+    how = Atom.to_string(how)
+
+    {left_on, right_on} =
+      on
+      |> Enum.map(fn {left, right} -> {Native.expr_column(left), Native.expr_column(right)} end)
+      |> Enum.unzip()
+
+    Shared.apply_dataframe(left, out_df, :lf_join, [right.data, left_on, right_on, how])
+  end
+
+  @impl true
+  def join(%DF{} = left, %DF{} = right, %DF{} = out_df, on, :right)
+      when is_list(on) do
+    names = Enum.uniq(left.names ++ right.names)
+    with_suffixes = out_df.names -- names
+
+    # We need to first verify if we have any duplicated column that was renamed with suffix.
+    if with_suffixes != [] do
+      raise "right join with repeated columns is not supported for LazyFrames yet"
+    else
+      # Right join is the opposite of left join. So we swap the "on" keys, and swap the DFs
+      # in the join.
+      {left_on, right_on} =
+        on
+        |> Enum.map(fn {left, right} -> {Native.expr_column(right), Native.expr_column(left)} end)
+        |> Enum.unzip()
+
+      Shared.apply_dataframe(right, out_df, :lf_join, [left.data, left_on, right_on, "left"])
+    end
+  end
+
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.
   funs =
