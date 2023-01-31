@@ -173,3 +173,30 @@ pub fn lf_pivot_longer(
     let new_df = ldf.melt(melt_opts);
     Ok(ExLazyFrame::new(new_df))
 }
+
+#[rustler::nif]
+pub fn lf_join(
+    data: ExLazyFrame,
+    other: ExLazyFrame,
+    left_on: Vec<ExExpr>,
+    right_on: Vec<ExExpr>,
+    how: &str,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let how = match how {
+        "left" => JoinType::Left,
+        "inner" => JoinType::Inner,
+        "outer" => JoinType::Outer,
+        "cross" => JoinType::Cross,
+        _ => {
+            return Err(ExplorerError::Other(format!(
+                "Join method {how} not supported"
+            )))
+        }
+    };
+
+    let ldf = data.clone_inner();
+    let ldf1 = other.clone_inner();
+
+    let new_ldf = ldf.join(ldf1, ex_expr_to_exprs(left_on), ex_expr_to_exprs(right_on), how);
+    Ok(ExLazyFrame::new(new_ldf))
+}

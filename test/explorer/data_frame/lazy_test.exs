@@ -726,4 +726,207 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf.dtypes == df.dtypes
     end
   end
+
+  describe "join/3" do
+    test "raises if no overlapping columns" do
+      assert_raise ArgumentError,
+                   ~r"could not find any overlapping columns",
+                   fn ->
+                     left = DF.new([a: [1, 2, 3]], lazy: true)
+                     right = DF.new([b: [1, 2, 3]], lazy: true)
+                     DF.join(left, right)
+                   end
+    end
+
+    test "doesn't raise if no overlapping columns on cross join" do
+      left = DF.new([a: [1, 2, 3]], lazy: true)
+      right = DF.new([b: [1, 2, 3]], lazy: true)
+      joined = DF.join(left, right, how: :cross)
+
+      assert DF.to_lazy(joined) == joined
+      assert %DF{} = joined
+
+      assert DF.names(joined) == ["a", "b"]
+    end
+
+    test "with a custom 'on'" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"]], lazy: true)
+
+      ldf = DF.join(left, right, on: [{"a", "d"}])
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on right side - inner join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7]], lazy: true)
+
+      ldf = DF.join(left, right, on: [{"a", "d"}])
+      assert ldf.names == ["a", "b", "c", "a_right"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               a_right: [5, 6, 7]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on right side - left join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7]], lazy: true)
+
+      ldf = DF.join(left, right, on: [{"a", "d"}], how: :left)
+
+      assert ldf.names == ["a", "b", "c", "a_right"]
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               a_right: [5, 6, 7, nil]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on right side - outer join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7]], lazy: true)
+
+      ldf = DF.join(left, right, on: [{"a", "d"}], how: :outer)
+      assert ldf.names == ["a", "b", "c", "a_right"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               a_right: [5, 6, 7, nil]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on right side - cross join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7]], lazy: true)
+
+      ldf = DF.join(left, right, how: :cross)
+      assert ldf.names == ["a", "b", "d", "c", "a_right"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
+               a_right: [5, 6, 7, 5, 6, 7, 5, 6, 7],
+               b: ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
+               c: ["d", "e", "f", "d", "e", "f", "d", "e", "f"],
+               d: [1, 2, 2, 1, 2, 2, 1, 2, 2]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on right side - right join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7]], lazy: true)
+
+      ldf = DF.join(left, right, on: [{"a", "d"}], how: :right)
+      assert ldf.names == ["d", "c", "a", "b"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [5, 6, 7],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               d: [1, 2, 2]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on left side - inner join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"], d: [5, 6, 7]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"]], lazy: true)
+
+      ldf = DF.join(left, right, on: [{"a", "d"}])
+      assert ldf.names == ["a", "b", "d", "c"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               d: [5, 6, 6]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on left side - left join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"], d: [5, 6, 7]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"]], lazy: true)
+
+      ldf = DF.join(left, right, on: [{"a", "d"}], how: :left)
+      assert ldf.names == ["a", "b", "d", "c"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               d: [5, 6, 6, 7]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on left side - outer join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"], d: [5, 6, 7]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"]], lazy: true)
+
+      ldf = DF.join(left, right, on: [{"a", "d"}], how: :outer)
+      assert ldf.names == ["a", "b", "d", "c"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               d: [5, 6, 6, 7]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on left side - cross join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"], d: [5, 6, 7]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"]], lazy: true)
+
+      ldf = DF.join(left, right, how: :cross)
+      assert ldf.names == ["a", "b", "d", "d_right", "c"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
+               b: ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
+               c: ["d", "e", "f", "d", "e", "f", "d", "e", "f"],
+               d: [5, 5, 5, 6, 6, 6, 7, 7, 7],
+               d_right: [1, 2, 2, 1, 2, 2, 1, 2, 2]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on left side - right join" do
+      left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"], d: [5, 6, 7]], lazy: true)
+      right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"]], lazy: true)
+
+      assert_raise RuntimeError,
+                   "right join with repeated columns is not supported for LazyFrames yet",
+                   fn ->
+                     DF.join(left, right, on: [{"a", "d"}], how: :right)
+                   end
+    end
+  end
 end
