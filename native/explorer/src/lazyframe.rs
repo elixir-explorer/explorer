@@ -197,6 +197,11 @@ pub fn lf_join(
     let ldf = data.clone_inner();
     let ldf1 = other.clone_inner();
 
-    let new_ldf = ldf.join(ldf1, ex_expr_to_exprs(left_on), ex_expr_to_exprs(right_on), how);
+    let new_ldf = ldf.join(
+        ldf1,
+        ex_expr_to_exprs(left_on),
+        ex_expr_to_exprs(right_on),
+        how,
+    );
     Ok(ExLazyFrame::new(new_ldf))
 }
