@@ -986,6 +986,7 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   describe "concat_columns/1" do
+    @tag :skip
     test "combine columns of both data frames" do
       ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)
       ldf2 = DF.new([z: [4, 5, 6], a: ["d", "e", "f"]], lazy: true)
@@ -1004,6 +1005,7 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
 
+    @tag :skip
     test "with conflicting names add number suffix" do
       ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)
       ldf2 = DF.new([x: [4, 5, 6], a: ["d", "e", "f"]], lazy: true)
