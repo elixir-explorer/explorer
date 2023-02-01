@@ -986,12 +986,11 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   describe "concat_columns/1" do
-    @tag :skip
     test "combine columns of both data frames" do
       ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)
       ldf2 = DF.new([z: [4, 5, 6], a: ["d", "e", "f"]], lazy: true)
 
-      ldf = DF.concat_columns([ldf1, ldf2], check_n_rows: false)
+      ldf = DF.concat_columns([ldf1, ldf2])
 
       assert ldf.names == ["x", "y", "z", "a"]
 
@@ -1005,12 +1004,11 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
 
-    @tag :skip
     test "with conflicting names add number suffix" do
       ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)
       ldf2 = DF.new([x: [4, 5, 6], a: ["d", "e", "f"]], lazy: true)
 
-      ldf = DF.concat_columns([ldf1, ldf2], check_n_rows: false)
+      ldf = DF.concat_columns([ldf1, ldf2])
 
       assert ldf.names == ["x", "y", "x_1", "a"]
 
@@ -1020,6 +1018,24 @@ defmodule Explorer.DataFrame.LazyTest do
                x: [1, 2, 3],
                y: ["a", "b", "c"],
                x_1: [4, 5, 6],
+               a: ["d", "e", "f"]
+             }
+    end
+
+    test "with a bigger df in the right side removes the last row" do
+      ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)
+      ldf2 = DF.new([z: [4, 5, 6, 7], a: ["d", "e", "f", "g"]], lazy: true)
+
+      ldf = DF.concat_columns([ldf1, ldf2])
+
+      assert ldf.names == ["x", "y", "z", "a"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               x: [1, 2, 3],
+               y: ["a", "b", "c"],
+               z: [4, 5, 6],
                a: ["d", "e", "f"]
              }
     end

@@ -533,7 +533,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def concat_columns([head | tail], out_df) do
-    Shared.apply_dataframe(head, out_df, :df_concat_columns, [Enum.map(tail, & &1.data)])
+    n_rows = n_rows(head)
+
+    if Enum.all?(tail, &(n_rows(&1) == n_rows)) do
+      Shared.apply_dataframe(head, out_df, :df_concat_columns, [Enum.map(tail, & &1.data)])
+    else
+      raise ArgumentError, "all dataframes must have the same number of rows"
+    end
   end
 
   # Groups
