@@ -181,6 +181,7 @@ pub fn lf_join(
     left_on: Vec<ExExpr>,
     right_on: Vec<ExExpr>,
     how: &str,
+    suffix: &str,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let how = match how {
         "left" => JoinType::Left,
@@ -197,12 +198,15 @@ pub fn lf_join(
     let ldf = data.clone_inner();
     let ldf1 = other.clone_inner();
 
-    let new_ldf = ldf.join(
-        ldf1,
-        ex_expr_to_exprs(left_on),
-        ex_expr_to_exprs(right_on),
-        how,
-    );
+    let new_ldf = ldf
+        .join_builder()
+        .with(ldf1)
+        .how(how)
+        .left_on(ex_expr_to_exprs(left_on))
+        .right_on(ex_expr_to_exprs(right_on))
+        .suffix(suffix)
+        .finish();
+
     Ok(ExLazyFrame::new(new_ldf))
 }
 

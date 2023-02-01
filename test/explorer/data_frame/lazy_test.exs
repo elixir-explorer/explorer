@@ -922,11 +922,17 @@ defmodule Explorer.DataFrame.LazyTest do
       left = DF.new([a: [1, 2, 3], b: ["a", "b", "c"], d: [5, 6, 7]], lazy: true)
       right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"]], lazy: true)
 
-      assert_raise RuntimeError,
-                   "right join with repeated columns is not supported for LazyFrames yet",
-                   fn ->
-                     DF.join(left, right, on: [{"a", "d"}], how: :right)
-                   end
+      ldf = DF.join(left, right, on: [{"a", "d"}], how: :right)
+      assert ldf.names == ["d", "c", "b", "d_left"]
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               d: [1, 2, 2],
+               c: ["d", "e", "f"],
+               b: ["a", "b", "b"],
+               d_left: [5, 6, 6]
+             }
     end
   end
 
