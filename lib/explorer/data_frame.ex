@@ -4043,7 +4043,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Combine two or more dataframes column-wise.
 
-  Dataframes must have the same number of rows.
+  This function expects the dataframes to have the same number of rows,
+  otherwise rows may be silently discarded. Eager backends may check
+  whenever this happens and raise instead of silently fail. But this may not
+  be possible for lazy dataframes as the number of rows is not known upfront.
 
   When working with grouped dataframes, be aware that only groups from the first
   dataframe are kept in the resultant dataframe.
@@ -4078,32 +4081,26 @@ defmodule Explorer.DataFrame do
   @doc type: :multi
   @spec concat_columns([DataFrame.t()]) :: DataFrame.t()
   def concat_columns([%DataFrame{} = head | tail] = dfs) do
-    n_rows = n_rows(head)
-
-    if Enum.all?(tail, &(n_rows(&1) == n_rows)) do
-      {names, dtypes} =
-        Enum.reduce(Enum.with_index(tail, 1), {head.names, head.dtypes}, fn {df, idx},
-                                                                            {names, dtypes} ->
-          new_names_and_dtypes =
-            for name <- df.names do
-              if name in names do
-                {name <> "_#{idx}", df.dtypes[name]}
-              else
-                {name, df.dtypes[name]}
-              end
+    {names, dtypes} =
+      Enum.reduce(Enum.with_index(tail, 1), {head.names, head.dtypes}, fn {df, idx},
+                                                                          {names, dtypes} ->
+        new_names_and_dtypes =
+          for name <- df.names do
+            if name in names do
+              {name <> "_#{idx}", df.dtypes[name]}
+            else
+              {name, df.dtypes[name]}
             end
+          end
 
-          new_names = for {name, _} <- new_names_and_dtypes, do: name
+        new_names = for {name, _} <- new_names_and_dtypes, do: name
 
-          {names ++ new_names, Map.merge(dtypes, Map.new(new_names_and_dtypes))}
-        end)
+        {names ++ new_names, Map.merge(dtypes, Map.new(new_names_and_dtypes))}
+      end)
 
-      out_df = %{head | names: names, dtypes: dtypes}
+    out_df = %{head | names: names, dtypes: dtypes}
 
-      Shared.apply_impl(dfs, :concat_columns, [out_df])
-    else
-      raise ArgumentError, "all dataframes must have the same number of rows"
-    end
+    Shared.apply_impl(dfs, :concat_columns, [out_df])
   end
 
   @doc """

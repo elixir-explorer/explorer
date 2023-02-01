@@ -7,6 +7,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Shared
   alias Explorer.PolarsBackend.DataFrame, as: Eager
+  alias Explorer.PolarsBackend.LazyFrame, as: PolarsLazyFrame
 
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
 
@@ -307,28 +308,41 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       |> Enum.map(fn {left, right} -> {Native.expr_column(left), Native.expr_column(right)} end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(left, out_df, :lf_join, [right.data, left_on, right_on, how])
+    Shared.apply_dataframe(left, out_df, :lf_join, [right.data, left_on, right_on, how, "_right"])
   end
 
   @impl true
   def join(%DF{} = left, %DF{} = right, %DF{} = out_df, on, :right)
       when is_list(on) do
-    names = Enum.uniq(left.names ++ right.names)
-    with_suffixes = out_df.names -- names
+    # Right join is the opposite of left join. So we swap the "on" keys, and swap the DFs
+    # in the join.
+    {left_on, right_on} =
+      on
+      |> Enum.map(fn {left, right} -> {Native.expr_column(right), Native.expr_column(left)} end)
+      |> Enum.unzip()
 
-    # We need to first verify if we have any duplicated column that was renamed with suffix.
-    if with_suffixes != [] do
-      raise "right join with repeated columns is not supported for LazyFrames yet"
-    else
-      # Right join is the opposite of left join. So we swap the "on" keys, and swap the DFs
-      # in the join.
-      {left_on, right_on} =
-        on
-        |> Enum.map(fn {left, right} -> {Native.expr_column(right), Native.expr_column(left)} end)
-        |> Enum.unzip()
+    Shared.apply_dataframe(right, out_df, :lf_join, [
+      left.data,
+      left_on,
+      right_on,
+      "left",
+      "_left"
+    ])
+  end
 
-      Shared.apply_dataframe(right, out_df, :lf_join, [left.data, left_on, right_on, "left"])
+  @impl true
+  def concat_rows([%DF{} | _t] = dfs, %DF{} = out_df) do
+    polars_dfs = Enum.map(dfs, & &1.data)
+
+    case Native.lf_concat_rows(polars_dfs) do
+      {:ok, %PolarsLazyFrame{} = polars_df} -> %{out_df | data: polars_df}
+      {:error, error} -> raise "could not concat dataframe rows. Reason: #{inspect(error)}"
     end
+  end
+
+  @impl true
+  def concat_columns([%DF{} = head | tail], %DF{} = out_df) do
+    Shared.apply_dataframe(head, out_df, :lf_concat_columns, [Enum.map(tail, & &1.data)])
   end
 
   # TODO: Make the functions of non-implemented functions

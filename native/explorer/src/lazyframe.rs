@@ -181,6 +181,7 @@ pub fn lf_join(
     left_on: Vec<ExExpr>,
     right_on: Vec<ExExpr>,
     how: &str,
+    suffix: &str,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let how = match how {
         "left" => JoinType::Left,
@@ -197,11 +198,53 @@ pub fn lf_join(
     let ldf = data.clone_inner();
     let ldf1 = other.clone_inner();
 
-    let new_ldf = ldf.join(
-        ldf1,
-        ex_expr_to_exprs(left_on),
-        ex_expr_to_exprs(right_on),
-        how,
-    );
+    let new_ldf = ldf
+        .join_builder()
+        .with(ldf1)
+        .how(how)
+        .left_on(ex_expr_to_exprs(left_on))
+        .right_on(ex_expr_to_exprs(right_on))
+        .suffix(suffix)
+        .finish();
+
     Ok(ExLazyFrame::new(new_ldf))
+}
+
+#[rustler::nif]
+pub fn lf_concat_rows(lazy_frames: Vec<ExLazyFrame>) -> Result<ExLazyFrame, ExplorerError> {
+    let inputs: Vec<LazyFrame> = lazy_frames.iter().map(|lf| lf.clone_inner()).collect();
+    // Follows recommendation and rechunk.
+    let out_df = concat(inputs, true, false)?;
+
+    Ok(ExLazyFrame::new(out_df))
+}
+
+#[rustler::nif]
+pub fn lf_concat_columns(
+    data: ExLazyFrame,
+    others: Vec<ExLazyFrame>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let id_column = "__row_count_id__";
+    let first = data.clone_inner().with_row_count(id_column, None);
+
+    // We need to be able to handle arbitrary column name overlap.
+    // This builds up a join and suffixes conflicting names with _N where
+    // N is the index of the df in the join array.
+    let (out_df, _) = others
+        .iter()
+        .map(|data| data.clone_inner().with_row_count(id_column, None))
+        .fold((first, 1), |(acc_df, count), df| {
+            let suffix = format!("_{count}");
+            let new_df = acc_df
+                .join_builder()
+                .with(df)
+                .how(JoinType::Inner)
+                .left_on([col(id_column)])
+                .right_on([col(id_column)])
+                .suffix(suffix)
+                .finish();
+            (new_df, count + 1)
+        });
+
+    Ok(ExLazyFrame::new(out_df.drop_columns([id_column])))
 }

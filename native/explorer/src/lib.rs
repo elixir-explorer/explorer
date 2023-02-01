@@ -234,6 +234,8 @@ rustler::init!(
         lf_drop_nils,
         lf_pivot_longer,
         lf_join,
+        lf_concat_rows,
+        lf_concat_columns,
         // series
         s_add,
         s_and,
