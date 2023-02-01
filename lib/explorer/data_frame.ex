@@ -4048,6 +4048,19 @@ defmodule Explorer.DataFrame do
   When working with grouped dataframes, be aware that only groups from the first
   dataframe are kept in the resultant dataframe.
 
+  Note that for lazy frames it's not possible to check the number of rows, so
+  you need to pass the option `:check_n_rows` as `false`.
+
+  ## Options
+
+    * `:check_n_rows` - Controls if all dataframes must have the same number of rows.
+      This is `true` by default. When working with LazyFrames, this option
+      should be turned off because it's not possible to know the number of rows
+      of a LazyFrame.
+
+      Be aware that combining dataframes with different sizes may cause some rows to be lost,
+      since we use an inner join of the row indices to concat the data frames.
+
   ## Examples
 
       iex> df1 = Explorer.DataFrame.new(x: [1, 2, 3], y: ["a", "b", "c"])
@@ -4074,50 +4087,51 @@ defmodule Explorer.DataFrame do
         a string ["d", "e", "f"]
       >
 
+  `concat_columns(df1, df2)` is equivalent to `concat_columns([df1, df2])`.
+
   """
   @doc type: :multi
-  @spec concat_columns([DataFrame.t()]) :: DataFrame.t()
-  def concat_columns([%DataFrame{} = head | tail] = dfs) do
-    n_rows = n_rows(head)
+  @spec concat_columns([DataFrame.t()], Keyword.t()) :: DataFrame.t()
+  def concat_columns([%DataFrame{} = head | tail] = dfs, opts) when is_list(opts) do
+    opts = Keyword.validate!(opts, check_n_rows: true)
 
-    if Enum.all?(tail, &(n_rows(&1) == n_rows)) do
-      {names, dtypes} =
-        Enum.reduce(Enum.with_index(tail, 1), {head.names, head.dtypes}, fn {df, idx},
-                                                                            {names, dtypes} ->
-          new_names_and_dtypes =
-            for name <- df.names do
-              if name in names do
-                {name <> "_#{idx}", df.dtypes[name]}
-              else
-                {name, df.dtypes[name]}
-              end
-            end
+    if opts[:check_n_rows] do
+      n_rows = n_rows(head)
 
-          new_names = for {name, _} <- new_names_and_dtypes, do: name
-
-          {names ++ new_names, Map.merge(dtypes, Map.new(new_names_and_dtypes))}
-        end)
-
-      out_df = %{head | names: names, dtypes: dtypes}
-
-      Shared.apply_impl(dfs, :concat_columns, [out_df])
-    else
-      raise ArgumentError, "all dataframes must have the same number of rows"
+      if !Enum.all?(tail, &(n_rows(&1) == n_rows)) do
+        raise ArgumentError, "all dataframes must have the same number of rows"
+      end
     end
+
+    {names, dtypes} =
+      Enum.reduce(Enum.with_index(tail, 1), {head.names, head.dtypes}, fn {df, idx},
+                                                                          {names, dtypes} ->
+        new_names_and_dtypes =
+          for name <- df.names do
+            if name in names do
+              {name <> "_#{idx}", df.dtypes[name]}
+            else
+              {name, df.dtypes[name]}
+            end
+          end
+
+        new_names = for {name, _} <- new_names_and_dtypes, do: name
+
+        {names ++ new_names, Map.merge(dtypes, Map.new(new_names_and_dtypes))}
+      end)
+
+    out_df = %{head | names: names, dtypes: dtypes}
+
+    Shared.apply_impl(dfs, :concat_columns, [out_df])
   end
 
-  @doc """
-  Combine two dataframes column-wise.
+  def concat_columns(%DataFrame{} = df1, %DataFrame{} = df2),
+    do: concat_columns([df1, df2], [])
 
-  When working with grouped dataframes, be aware that only groups from the left-hand side
-  dataframe are kept in the resultant dataframe.
+  def concat_columns(%DataFrame{} = df, [%DataFrame{} | _] = dfs),
+    do: concat_columns([df | dfs], [])
 
-  `concat_columns(df1, df2)` is equivalent to `concat_columns([df1, df2])`.
-  """
-  @doc type: :multi
-  @spec concat_columns(DataFrame.t(), DataFrame.t()) :: DataFrame.t()
-  def concat_columns(%DataFrame{} = df1, %DataFrame{} = df2), do: concat_columns([df1, df2])
-  def concat_columns(%DataFrame{} = df, [%DataFrame{} | _] = dfs), do: concat_columns([df | dfs])
+  def concat_columns([%DataFrame{} | _] = dfs), do: concat_columns(dfs, [])
 
   @doc """
   Combine two or more dataframes row-wise (stack).

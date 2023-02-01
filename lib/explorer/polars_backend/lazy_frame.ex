@@ -342,6 +342,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     end
   end
 
+  @impl true
+  def concat_columns([%DF{} = head | tail], %DF{} = out_df) do
+    Shared.apply_dataframe(head, out_df, :lf_concat_columns, [Enum.map(tail, & &1.data)])
+  end
+
   # TODO: Make the functions of non-implemented functions
   # explicit once the lazy interface is ready.
   funs =

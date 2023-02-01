@@ -2272,4 +2272,37 @@ defmodule Explorer.DataFrameTest do
              }
     end
   end
+
+  describe "concat_columns/1" do
+    test "combine columns of both data frames" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(z: [4, 5, 6], a: ["d", "e", "f"])
+
+      df = DF.concat_columns([df1, df2])
+
+      assert df.names == ["x", "y", "z", "a"]
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               x: [1, 2, 3],
+               y: ["a", "b", "c"],
+               z: [4, 5, 6],
+               a: ["d", "e", "f"]
+             }
+    end
+
+    test "with conflicting names add number suffix" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(x: [4, 5, 6], a: ["d", "e", "f"])
+
+      df = DF.concat_columns([df1, df2])
+      assert df.names == ["x", "y", "x_1", "a"]
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               x: [1, 2, 3],
+               y: ["a", "b", "c"],
+               x_1: [4, 5, 6],
+               a: ["d", "e", "f"]
+             }
+    end
+  end
 end
