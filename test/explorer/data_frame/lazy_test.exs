@@ -929,4 +929,53 @@ defmodule Explorer.DataFrame.LazyTest do
                    end
     end
   end
+
+  describe "concat_rows/2" do
+    test "two simple DFs of the same dtypes" do
+      ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)
+      ldf2 = DF.new([x: [4, 5, 6], y: ["d", "e", "f"]], lazy: true)
+
+      ldf3 = DF.concat_rows(ldf1, ldf2)
+
+      assert ldf3.names == ["x", "y"]
+
+      df = DF.collect(ldf3)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               x: [1, 2, 3, 4, 5, 6],
+               y: ~w(a b c d e f)
+             }
+    end
+
+    test "two DFs with different numeric types" do
+      ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)
+      ldf2 = DF.new([x: [4.1, 5.2, 6.3, nil], y: ["d", "e", "f", "g"]], lazy: true)
+      ldf3 = DF.concat_rows(ldf1, ldf2)
+
+      df = DF.collect(ldf3)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               x: [1.0, 2.0, 3.0, 4.1, 5.2, 6.3, nil],
+               y: ~w(a b c d e f g)
+             }
+    end
+
+    test "errors" do
+      df1 = DF.new([x: [7, 8, 9], y: ["g", "h", nil]], lazy: true)
+
+      assert_raise ArgumentError,
+                   "dataframes must have the same columns",
+                   fn -> DF.concat_rows(df1, DF.new([z: [7, 8, 9]], lazy: true)) end
+
+      assert_raise ArgumentError,
+                   "dataframes must have the same columns",
+                   fn -> DF.concat_rows(df1, DF.new([x: [7, 8, 9], z: [7, 8, 9]], lazy: true)) end
+
+      assert_raise ArgumentError,
+                   "columns and dtypes must be identical for all dataframes",
+                   fn ->
+                     DF.concat_rows(df1, DF.new([x: [7, 8, 9], y: [10, 11, 12]], lazy: true))
+                   end
+    end
+  end
 end

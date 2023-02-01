@@ -7,6 +7,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Shared
   alias Explorer.PolarsBackend.DataFrame, as: Eager
+  alias Explorer.PolarsBackend.LazyFrame, as: PolarsLazyFrame
 
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
 
@@ -328,6 +329,16 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         |> Enum.unzip()
 
       Shared.apply_dataframe(right, out_df, :lf_join, [left.data, left_on, right_on, "left"])
+    end
+  end
+
+  @impl true
+  def concat_rows([%DF{} | _t] = dfs, %DF{} = out_df) do
+    polars_dfs = Enum.map(dfs, & &1.data)
+
+    case Native.lf_concat_rows(polars_dfs) do
+      {:ok, %PolarsLazyFrame{} = polars_df} -> %{out_df | data: polars_df}
+      {:error, error} -> raise "could not concat dataframe rows. Reason: #{inspect(error)}"
     end
   end
 

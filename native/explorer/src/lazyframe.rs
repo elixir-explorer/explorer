@@ -205,3 +205,12 @@ pub fn lf_join(
     );
     Ok(ExLazyFrame::new(new_ldf))
 }
+
+#[rustler::nif]
+pub fn lf_concat_rows(lazy_frames: Vec<ExLazyFrame>) -> Result<ExLazyFrame, ExplorerError> {
+    let inputs: Vec<LazyFrame> = lazy_frames.iter().map(|lf| lf.clone_inner()).collect();
+    // Follows recommendation and rechunk.
+    let out_df = concat(inputs, true, false)?;
+
+    Ok(ExLazyFrame::new(out_df))
+}
