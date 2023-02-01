@@ -4043,10 +4043,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Combine two or more dataframes column-wise.
 
-  Dataframes must have the same number of rows.
-  Due to the fact that lazy dataframes can't have the number of rows calculated,
-  this restriction is not valid for them. But notice that some rows may be removed
-  if the sizes differ. This is because we use an "inner join" to concat the dataframes.
+  This function expects the dataframes to have the same number of rows,
+  otherwise rows may be silently discarded. Eager backends may check
+  whenever this happens and raise instead of silently fail. But this may not
+  be possible for lazy dataframes as the number of rows is not known upfront.
 
   When working with grouped dataframes, be aware that only groups from the first
   dataframe are kept in the resultant dataframe.
