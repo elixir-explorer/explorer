@@ -17,6 +17,7 @@ use std::io::{BufReader, BufWriter, Cursor};
 use std::result::Result;
 
 use crate::dataframe::normalize_numeric_dtypes;
+use crate::datatypes::ExParquetCompression;
 use crate::{ExDataFrame, ExplorerError};
 
 fn finish_reader<R>(reader: impl SerReader<R>) -> Result<ExDataFrame, ExplorerError>
@@ -200,12 +201,12 @@ pub fn df_from_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
 pub fn df_to_parquet(
     data: ExDataFrame,
     filename: &str,
-    compression: Option<&str>,
-    compression_level: Option<i32>,
+    ex_compression: ExParquetCompression,
 ) -> Result<(), ExplorerError> {
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
-    let compression = parquet_compression(compression, compression_level)?;
+
+    let compression = ParquetCompression::try_from(ex_compression)?;
 
     ParquetWriter::new(&mut buf_writer)
         .with_compression(compression)
@@ -213,50 +214,15 @@ pub fn df_to_parquet(
     Ok(())
 }
 
-fn parquet_compression(
-    compression: Option<&str>,
-    compression_level: Option<i32>,
-) -> Result<ParquetCompression, ExplorerError> {
-    let compression_type = match (compression, compression_level) {
-        (Some("snappy"), _) => ParquetCompression::Snappy,
-        (Some("gzip"), level) => {
-            let level = match level {
-                Some(level) => Some(GzipLevel::try_new(u8::try_from(level)?)?),
-                None => None,
-            };
-            ParquetCompression::Gzip(level)
-        }
-        (Some("brotli"), level) => {
-            let level = match level {
-                Some(level) => Some(BrotliLevel::try_new(u32::try_from(level)?)?),
-                None => None,
-            };
-            ParquetCompression::Brotli(level)
-        }
-        (Some("zstd"), level) => {
-            let level = match level {
-                Some(level) => Some(ZstdLevel::try_new(level)?),
-                None => None,
-            };
-            ParquetCompression::Zstd(level)
-        }
-        (Some("lz4raw"), _) => ParquetCompression::Lz4Raw,
-        _ => ParquetCompression::Uncompressed,
-    };
-
-    Ok(compression_type)
-}
-
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_dump_parquet<'a>(
-    env: Env<'a>,
+pub fn df_dump_parquet(
+    env: Env,
     data: ExDataFrame,
-    compression: Option<&str>,
-    compression_level: Option<i32>,
-) -> Result<Binary<'a>, ExplorerError> {
+    ex_compression: ExParquetCompression,
+) -> Result<Binary, ExplorerError> {
     let mut buf = vec![];
 
-    let compression = parquet_compression(compression, compression_level)?;
+    let compression = ParquetCompression::try_from(ex_compression)?;
 
     ParquetWriter::new(&mut buf)
         .with_compression(compression)

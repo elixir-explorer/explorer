@@ -1,7 +1,8 @@
 use crate::atoms;
+use crate::ExplorerError;
 use chrono::prelude::*;
 use polars::prelude::*;
-use rustler::{Atom, NifStruct, ResourceArc};
+use rustler::{Atom, NifStruct, NifTaggedEnum, ResourceArc};
 use std::convert::TryInto;
 
 pub struct ExDataFrameRef(pub DataFrame);
@@ -305,5 +306,54 @@ impl From<NaiveTime> for ExTime {
             second: t.second(),
             microsecond: (microseconds_six_digits(microseconds.try_into().unwrap()), 6),
         }
+    }
+}
+
+// In Elixir this would be represented like this:
+// * `:uncompressed` for `ExParquetCompression::Uncompressed`
+// * `{:brotli, 7}` for `ExParquetCompression::Brotli(Some(7))`
+#[derive(NifTaggedEnum)]
+pub enum ExParquetCompression {
+    Brotli(Option<u32>),
+    Gzip(Option<u8>),
+    Lz4raw,
+    Snappy,
+    Uncompressed,
+    Zstd(Option<i32>),
+}
+
+impl TryFrom<ExParquetCompression> for ParquetCompression {
+    type Error = ExplorerError;
+
+    fn try_from(value: ExParquetCompression) -> Result<Self, Self::Error> {
+        let compression = match value {
+            ExParquetCompression::Brotli(level) => {
+                let brotli_level = match level.map(BrotliLevel::try_new) {
+                    // Cant' use map because of ?
+                    Some(result) => Some(result?),
+                    None => None,
+                };
+                ParquetCompression::Brotli(brotli_level)
+            }
+            ExParquetCompression::Gzip(level) => {
+                let gzip_level = match level.map(GzipLevel::try_new) {
+                    Some(result) => Some(result?),
+                    None => None,
+                };
+                ParquetCompression::Gzip(gzip_level)
+            }
+            ExParquetCompression::Lz4raw => ParquetCompression::Lz4Raw,
+            ExParquetCompression::Snappy => ParquetCompression::Snappy,
+            ExParquetCompression::Uncompressed => ParquetCompression::Uncompressed,
+            ExParquetCompression::Zstd(level) => {
+                let zstd_level = match level.map(ZstdLevel::try_new) {
+                    Some(result) => Some(result?),
+                    None => None,
+                };
+                ParquetCompression::Zstd(zstd_level)
+            }
+        };
+
+        Ok(compression)
     }
 }

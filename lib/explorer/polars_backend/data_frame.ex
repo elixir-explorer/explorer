@@ -185,7 +185,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_parquet(%DataFrame{data: df}, filename, {compression, compression_level}) do
-    case Native.df_to_parquet(df, filename, Atom.to_string(compression), compression_level) do
+    case Native.df_to_parquet(df, filename, parquet_compression(compression, compression_level)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -193,8 +193,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def dump_parquet(%DataFrame{data: df}, {compression, compression_level}) do
-    Native.df_dump_parquet(df, Atom.to_string(compression), compression_level)
+    Native.df_dump_parquet(df, parquet_compression(compression, compression_level))
   end
+
+  defp parquet_compression(nil, _), do: :uncompressed
+
+  defp parquet_compression(algorithm, level) when algorithm in ~w(gzip brotli zstd)a do
+    {algorithm, level}
+  end
+
+  defp parquet_compression(algorithm, _) when algorithm in ~w(snappy lz4raw)a, do: algorithm
 
   @impl true
   def load_parquet(contents) when is_binary(contents) do
