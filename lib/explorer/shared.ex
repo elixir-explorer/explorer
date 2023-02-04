@@ -135,8 +135,13 @@ defmodule Explorer.Shared do
   defp type(item, type) when is_float(item) and type == :integer, do: :numeric
   defp type(item, type) when is_number(item) and type == :numeric, do: :numeric
 
+  defp type(item, type)
+       when item in [:nan, :infinity, :neg_infinity] and type in [:integer, :float, :numeric],
+       do: :numeric
+
   defp type(item, _type) when is_integer(item), do: :integer
   defp type(item, _type) when is_float(item), do: :float
+  defp type(item, _type) when item in [:nan, :infinity, :neg_infinity], do: :float
   defp type(item, _type) when is_boolean(item), do: :boolean
 
   defp type(item, :binary) when is_binary(item), do: :binary
@@ -155,7 +160,7 @@ defmodule Explorer.Shared do
   def cast_numerics(list, type) when type == :numeric do
     data =
       Enum.map(list, fn
-        nil -> nil
+        item when is_atom(item) -> item
         item -> item / 1
       end)
 

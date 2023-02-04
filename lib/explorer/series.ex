@@ -170,6 +170,26 @@ defmodule Explorer.Series do
         float [1.0, 2.0]
       >
 
+  Floats series can accept NaN, Inf, and -Inf values:
+
+      iex> Explorer.Series.from_list([1.0, 2.0, :nan, 4.0])
+      #Explorer.Series<
+        Polars[4]
+        float [1.0, 2.0, NaN, 4.0]
+      >
+
+      iex> Explorer.Series.from_list([1.0, 2.0, :infinity, 4.0])
+      #Explorer.Series<
+        Polars[4]
+        float [1.0, 2.0, Inf, 4.0]
+      >
+
+      iex> Explorer.Series.from_list([1.0, 2.0, :neg_infinity, 4.0])
+      #Explorer.Series<
+        Polars[4]
+        float [1.0, 2.0, -Inf, 4.0]
+      >
+
   Trying to create a "nil" series will, by default, result in a series of floats:
 
       iex> Explorer.Series.from_list([nil, nil])
