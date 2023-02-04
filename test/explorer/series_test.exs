@@ -40,6 +40,24 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == :float
     end
 
+    test "with nan" do
+      s = Series.from_list([:nan, :nan, :nan])
+      assert Series.to_list(s) === [:nan, :nan, :nan]
+      assert Series.dtype(s) == :float
+    end
+
+    test "with infinity" do
+      s = Series.from_list([:infinity, :infinity, :infinity])
+      assert Series.to_list(s) === [:infinity, :infinity, :infinity]
+      assert Series.dtype(s) == :float
+    end
+
+    test "with negative infinity" do
+      s = Series.from_list([:neg_infinity, :neg_infinity, :neg_infinity])
+      assert Series.to_list(s) === [:neg_infinity, :neg_infinity, :neg_infinity]
+      assert Series.dtype(s) == :float
+    end
+
     test "with binaries" do
       s = Series.from_list([<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>], dtype: :binary)
       assert Series.to_list(s) === [<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>]
@@ -69,6 +87,66 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([<<228, 146, 51>>, "hello", <<42, 209, 236>>], dtype: :binary)
       assert Series.to_list(s) === [<<228, 146, 51>>, <<"hello">>, <<42, 209, 236>>]
       assert Series.dtype(s) == :binary
+    end
+
+    test "mixing floats and integers" do
+      s = Series.from_list([1, 2.4, 3])
+      assert Series.to_list(s) === [1.0, 2.4, 3.0]
+      assert Series.dtype(s) == :float
+    end
+
+    test "mixing integers and nan" do
+      s = Series.from_list([1, :nan, 3])
+      assert Series.to_list(s) === [1.0, :nan, 3.0]
+      assert Series.dtype(s) == :float
+    end
+
+    test "mixing integers and infinity" do
+      s = Series.from_list([1, :infinity, 3])
+      assert Series.to_list(s) === [1.0, :infinity, 3.0]
+      assert Series.dtype(s) == :float
+    end
+
+    test "mixing integers and negative infinity" do
+      s = Series.from_list([1, :neg_infinity, 3])
+      assert Series.to_list(s) === [1.0, :neg_infinity, 3.0]
+      assert Series.dtype(s) == :float
+    end
+
+    test "mixing floats and nan" do
+      s = Series.from_list([3.0, :nan, 0.5])
+      assert Series.to_list(s) === [3.0, :nan, 0.5]
+      assert Series.dtype(s) == :float
+    end
+
+    test "mixing floats and infinity" do
+      s = Series.from_list([1.0, :infinity, 3.0])
+      assert Series.to_list(s) === [1.0, :infinity, 3.0]
+      assert Series.dtype(s) == :float
+    end
+
+    test "mixing floats and negative infinity" do
+      s = Series.from_list([1.0, :neg_infinity, 3.0])
+      assert Series.to_list(s) === [1.0, :neg_infinity, 3.0]
+      assert Series.dtype(s) == :float
+    end
+
+    test "mixing floats, integers, nan, infinity and negative infinity" do
+      s = Series.from_list([1, :nan, 2.0, :infinity, :neg_infinity])
+      assert Series.to_list(s) === [1.0, :nan, 2.0, :infinity, :neg_infinity]
+      assert Series.dtype(s) == :float
+    end
+
+    test "mixing integers with an invalid atom" do
+      assert_raise ArgumentError, "unsupported datatype: :error", fn ->
+        Series.from_list([1, 2, :error, 4])
+      end
+    end
+
+    test "mixing floats with an invalid atom" do
+      assert_raise ArgumentError, "unsupported datatype: :error", fn ->
+        Series.from_list([1.0, 2.0, :error, 4.0])
+      end
     end
 
     test "mixing types" do
