@@ -28,20 +28,34 @@ defmodule Explorer.Shared do
   end
 
   @doc """
-  Gets the implementation of a dataframe or series.
+  Applies a function with args using the implementation of a dataframe or series.
   """
-  def impl!(%{data: %struct{}}), do: struct
+  def apply_impl(df_or_series_or_list, fun, args \\ []) do
+    impl = impl!(df_or_series_or_list)
+    apply(impl, fun, [df_or_series_or_list | args])
+  end
 
-  def impl!([%{data: %first_struct{}} | _] = dfs) when is_list(dfs),
-    do: Enum.reduce(dfs, first_struct, fn %{data: %struct{}}, acc -> pick_struct(acc, struct) end)
+  defp impl!(%{data: %struct{}}), do: struct
 
-  def impl!(%{data: %struct1{}}, %{data: %struct2{}}),
-    do: pick_struct(struct1, struct2)
+  defp impl!([%{data: %first_struct{}} | _] = dfs) when is_list(dfs),
+    do: Enum.reduce(dfs, first_struct, fn %{data: %struct{}}, acc -> pick_impl(acc, struct) end)
+
+  defp pick_impl(struct, struct), do: struct
+
+  defp pick_impl(struct1, struct2) do
+    raise "cannot invoke Explorer function because it relies on two incompatible implementations: " <>
+            "#{inspect(struct1)} and #{inspect(struct2)}"
+  end
 
   @doc """
-  Gets the implementation of maybe series.
+  Applies a function using the implementation of maybe series.
   """
-  def series_impl!(series_or_scalars) when is_list(series_or_scalars) do
+  def apply_series_impl(fun, series_or_scalars) when is_list(series_or_scalars) do
+    impl = series_impl!(series_or_scalars)
+    apply(impl, fun, series_or_scalars)
+  end
+
+  defp series_impl!(series_or_scalars) when is_list(series_or_scalars) do
     impl =
       Enum.reduce(series_or_scalars, nil, fn
         %{data: %struct{}}, nil -> struct
@@ -55,40 +69,6 @@ defmodule Explorer.Shared do
     end
 
     impl
-  end
-
-  @doc """
-  Applies a function with args using the implementation of a dataframe or series.
-  """
-  def apply_impl(df_or_series, fun, args \\ []) do
-    impl = impl!(df_or_series)
-    apply(impl, fun, [df_or_series | args])
-  end
-
-  @doc """
-  Applies a function using the implementation of maybe series.
-  """
-  def apply_series_impl(fun, series_or_scalars) when is_list(series_or_scalars) do
-    impl = series_impl!(series_or_scalars)
-
-    apply(impl, fun, series_or_scalars)
-  end
-
-  @doc """
-  Gets the implementation of a list of maybe dataframes or series.
-  """
-  def find_impl!(list) do
-    Enum.reduce(list, fn
-      %{data: %struct{}}, acc -> pick_struct(struct, acc)
-      _, acc -> acc
-    end)
-  end
-
-  defp pick_struct(struct, struct), do: struct
-
-  defp pick_struct(struct1, struct2) do
-    raise "cannot invoke Explorer function because it relies on two incompatible implementations: " <>
-            "#{inspect(struct1)} and #{inspect(struct2)}"
   end
 
   defp pick_series_impl(struct, struct), do: struct

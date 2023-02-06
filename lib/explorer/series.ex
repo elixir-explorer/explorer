@@ -2608,7 +2608,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   def all_equal(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: Shared.apply_impl(left, :all_equal, [right])
+    do: Shared.apply_series_impl(:all_equal, [left, right])
 
   def all_equal(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
       when left_dtype !=
@@ -3482,8 +3482,7 @@ defmodule Explorer.Series.Iterator do
   @moduledoc false
   defstruct [:series, :size, :impl]
 
-  def new(series) do
-    impl = Explorer.Shared.impl!(series)
+  def new(%{data: %impl{}} = series) do
     %__MODULE__{series: series, size: impl.size(series), impl: impl}
   end
 
