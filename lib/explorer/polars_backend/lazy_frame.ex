@@ -208,16 +208,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{groups: []} = df, filename, {compression, level}) do
+  def to_parquet(%DF{} = df, filename, {compression, level}) do
     case Native.lf_to_parquet(df.data, filename, Shared.parquet_compression(compression, level)) do
       {:ok, _} -> :ok
       {:error, _} = err -> err
     end
-  end
-
-  @impl true
-  def to_parquet(_df, _filename, _compression) do
-    raise "to_parquet/3 with groups is not supported yet for lazy frames"
   end
 
   @impl true
