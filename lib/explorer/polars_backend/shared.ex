@@ -151,4 +151,11 @@ defmodule Explorer.PolarsBackend.Shared do
 
   defp error_message({_err_type, error}) when is_binary(error), do: error
   defp error_message(error), do: inspect(error)
+
+  def parquet_compression(nil, _), do: :uncompressed
+
+  def parquet_compression(algorithm, level) when algorithm in ~w(gzip brotli zstd)a,
+    do: {algorithm, level}
+
+  def parquet_compression(algorithm, _) when algorithm in ~w(snappy lz4raw)a, do: algorithm
 end

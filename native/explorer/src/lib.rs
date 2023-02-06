@@ -236,6 +236,7 @@ rustler::init!(
         lf_join,
         lf_concat_rows,
         lf_concat_columns,
+        lf_to_parquet,
         // series
         s_add,
         s_and,

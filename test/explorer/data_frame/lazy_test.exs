@@ -164,6 +164,19 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   @tag :tmp_dir
+  test "to_parquet/2 - with defaults", %{ldf: ldf, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.parquet"])
+
+    ldf = DF.head(ldf, 15)
+    DF.to_parquet!(ldf, path)
+
+    df = DF.collect(ldf)
+    df1 = DF.from_parquet!(path)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
+
+  @tag :tmp_dir
   test "from_ndjson/2 - with defaults", %{df: df, tmp_dir: tmp_dir} do
     path = Path.join([tmp_dir, "fossil_fuels.ndjson"])
     df = DF.slice(df, 0, 10)

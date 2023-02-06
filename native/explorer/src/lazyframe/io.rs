@@ -2,12 +2,37 @@ use polars::prelude::*;
 use std::result::Result;
 
 use crate::dataframe::io::schema_from_dtypes_pairs;
+use crate::datatypes::ExParquetCompression;
 use crate::{ExLazyFrame, ExplorerError};
 
 #[rustler::nif]
 pub fn lf_from_parquet(filename: &str) -> Result<ExLazyFrame, ExplorerError> {
     let lf = LazyFrame::scan_parquet(filename, Default::default())?;
     Ok(ExLazyFrame::new(lf))
+}
+
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_to_parquet(
+    data: ExLazyFrame,
+    filename: &str,
+    ex_compression: ExParquetCompression,
+) -> Result<(), ExplorerError> {
+    let compression = ParquetCompression::try_from(ex_compression)?;
+    let options = ParquetWriteOptions {
+        compression,
+        statistics: false,
+        row_group_size: None,
+        data_pagesize_limit: None,
+        maintain_order: false,
+    };
+    let lf = data
+        .clone_inner()
+        .with_streaming(true)
+        .with_common_subplan_elimination(false);
+
+    lf.sink_parquet(filename.into(), options)?;
+
+    Ok(())
 }
 
 #[rustler::nif]
