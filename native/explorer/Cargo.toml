@@ -55,6 +55,7 @@ features = [
   "temporal",
   "to_dummies",
   "is_in",
+  "streaming",
   "strings",
   "round_series"
 ]
