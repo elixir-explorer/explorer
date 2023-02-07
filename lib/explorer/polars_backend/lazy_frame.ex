@@ -382,7 +382,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     @impl true
     def unquote(fun)(unquote_splicing(args)) do
       raise "the function `#{unquote(fun)}/#{unquote(arity)}` is not available for the Explorer.PolarsBackend.LazyFrame backend. " <>
-              "Please use Explorer.DataFrame.collect/1 and then call this function upon the resultant dataframe."
+              "Please use Explorer.DataFrame.collect/1 and then call this function upon the resultant dataframe"
     end
   end
 end
