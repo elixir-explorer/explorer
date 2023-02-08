@@ -85,7 +85,7 @@ pub fn df_concat_rows(
     data: ExDataFrame,
     others: Vec<ExDataFrame>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let mut out_df = data.clone_inner();
+    let mut out_df = data.clone();
     let names = out_df.get_column_names();
     let dfs = others
         .into_iter()
@@ -114,11 +114,11 @@ pub fn df_concat_columns(
     let (out_df, _) = others
         .iter()
         .map(|data| data.clone_inner().lazy().with_row_count(id_column, None))
-        .fold((first, 1), |(acc_df, count), df| {
+        .fold((first, 1), |(acc_df, count), lazy_df| {
             let suffix = format!("_{count}");
             let new_df = acc_df
                 .join_builder()
-                .with(df)
+                .with(lazy_df)
                 .how(JoinType::Inner)
                 .left_on([col(id_column)])
                 .right_on([col(id_column)])
@@ -179,15 +179,14 @@ pub fn df_mask(df: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, ExplorerE
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_filter_with(
-    data: ExDataFrame,
+    df: ExDataFrame,
     ex_expr: ExExpr,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let df = data.clone_inner();
     let exp = ex_expr.clone_inner();
 
     let new_df = if groups.is_empty() {
-        df.lazy().filter(exp).collect()?
+        df.clone_inner().lazy().filter(exp).collect()?
     } else {
         df.groupby_stable(groups)?
             .apply(|df| df.lazy().filter(exp.clone()).collect())?

@@ -5,7 +5,7 @@
 // wrapped in an Elixir struct.
 
 use chrono::{NaiveDate, NaiveDateTime};
-use polars::prelude::{col, when, DataFrame, IntoLazy, LiteralValue, SortOptions};
+use polars::prelude::{col, when, IntoLazy, LiteralValue, SortOptions};
 use polars::prelude::{DataType, Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
@@ -573,7 +573,7 @@ pub fn expr_unary_not(expr: ExExpr) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
-    let df: DataFrame = data.clone_inner();
+    let df = data.clone();
     let expressions = expr.clone_inner();
     df.lazy().filter(expressions).describe_plan()
 }

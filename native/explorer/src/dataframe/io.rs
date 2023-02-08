@@ -115,7 +115,7 @@ pub fn df_to_csv(
     CsvWriter::new(&mut buf_writer)
         .has_header(has_headers)
         .with_delimiter(delimiter)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
     Ok(())
 }
 
@@ -131,7 +131,7 @@ pub fn df_dump_csv(
     CsvWriter::new(&mut buf)
         .has_header(has_headers)
         .with_delimiter(delimiter)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);
@@ -210,7 +210,7 @@ pub fn df_to_parquet(
 
     ParquetWriter::new(&mut buf_writer)
         .with_compression(compression)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
     Ok(())
 }
 
@@ -226,7 +226,7 @@ pub fn df_dump_parquet(
 
     ParquetWriter::new(&mut buf)
         .with_compression(compression)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);
@@ -276,7 +276,7 @@ pub fn df_to_ipc(
     let mut buf_writer = BufWriter::new(file);
     IpcWriter::new(&mut buf_writer)
         .with_compression(compression)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
     Ok(())
 }
 
@@ -297,7 +297,7 @@ pub fn df_dump_ipc<'a>(
 
     IpcWriter::new(&mut buf)
         .with_compression(compression)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);
@@ -352,7 +352,7 @@ pub fn df_to_ipc_stream(
     let mut file = File::create(filename).expect("could not create file");
     IpcStreamWriter::new(&mut file)
         .with_compression(compression)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
     Ok(())
 }
 
@@ -373,7 +373,7 @@ pub fn df_dump_ipc_stream<'a>(
 
     IpcStreamWriter::new(&mut buf)
         .with_compression(compression)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);
@@ -422,7 +422,7 @@ pub fn df_to_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerErr
 
     JsonWriter::new(&mut buf_writer)
         .with_json_format(JsonFormat::JsonLines)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
     Ok(())
 }
 
@@ -433,7 +433,7 @@ pub fn df_dump_ndjson(env: Env, data: ExDataFrame) -> Result<Binary, ExplorerErr
 
     JsonWriter::new(&mut buf)
         .with_json_format(JsonFormat::JsonLines)
-        .finish(&mut data.clone_inner())?;
+        .finish(&mut data.clone())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
     values_binary.copy_from_slice(&buf);
