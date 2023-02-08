@@ -305,6 +305,7 @@ rustler::init!(
         s_peak_max,
         s_peak_min,
         s_select,
+        s_pow,
         s_pow_f_lhs,
         s_pow_f_rhs,
         s_pow_i_lhs,

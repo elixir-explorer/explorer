@@ -1022,6 +1022,15 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "pow/2" do
+    test "pow of a series with a series" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([3, 2, 1])
+
+      result = Series.pow(s1, s2)
+
+      assert Series.to_list(result) == [1, 4, 3]
+    end
+
     test "pow of a series with an integer scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 

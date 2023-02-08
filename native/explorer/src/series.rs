@@ -774,6 +774,29 @@ pub fn s_n_distinct(data: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_pow(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = &data.resource.0;
+    let s1 = &other.resource.0;
+
+    let iter1 = s.i64()?.into_iter();
+    match s1.strict_cast(&DataType::UInt32) {
+        Ok(s1) => {
+            let iter2 = s1.u32()?.into_iter();
+
+            let s = iter1
+                .zip(iter2)
+                .map(|(v1, v2)| v1.unwrap().pow(v2.unwrap()))
+                .collect();
+
+            Ok(ExSeries::new(s))
+        }
+        Err(_) => Err(ExplorerError::Other(String::from(
+            "negative exponent with an integer base",
+        ))),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_pow_f_rhs(data: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
     let s = s
