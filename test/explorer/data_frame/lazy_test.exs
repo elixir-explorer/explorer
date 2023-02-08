@@ -173,7 +173,7 @@ defmodule Explorer.DataFrame.LazyTest do
     df = DF.collect(ldf)
     df1 = DF.from_parquet!(path)
 
-    assert DF.to_columns(df1) == DF.to_columns(df)
+    assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
   end
 
   @tag :tmp_dir

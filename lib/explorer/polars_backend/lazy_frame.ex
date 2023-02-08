@@ -353,19 +353,36 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Shared.apply_dataframe(head, out_df, :lf_concat_columns, [Enum.map(tail, & &1.data)])
   end
 
-  # TODO: Make the functions of non-implemented functions
-  # explicit once the lazy interface is ready.
-  funs =
-    Explorer.Backend.DataFrame.behaviour_info(:callbacks) --
-      (Explorer.Backend.DataFrame.behaviour_info(:optional_callbacks) ++
-         Module.definitions_in(__MODULE__, :def))
+  not_available_funs = [
+    describe: 3,
+    dummies: 3,
+    dump_csv: 3,
+    dump_ipc: 2,
+    dump_ipc_stream: 2,
+    dump_ndjson: 1,
+    dump_parquet: 2,
+    from_ipc_stream: 2,
+    mask: 2,
+    n_rows: 1,
+    pivot_wider: 6,
+    pull: 2,
+    put: 4,
+    sample: 4,
+    slice: 2,
+    to_csv: 4,
+    to_ipc: 3,
+    to_ipc_stream: 3,
+    to_ndjson: 2,
+    to_rows: 2
+  ]
 
-  for {fun, arity} <- funs do
+  for {fun, arity} <- not_available_funs do
     args = Macro.generate_arguments(arity, __MODULE__)
 
     @impl true
     def unquote(fun)(unquote_splicing(args)) do
-      raise "cannot perform operation on an Explorer.PolarsBackend.LazyFrame"
+      raise "the function `#{unquote(fun)}/#{unquote(arity)}` is not available for the Explorer.PolarsBackend.LazyFrame backend. " <>
+              "Please use Explorer.DataFrame.collect/1 and then call this function upon the resultant dataframe"
     end
   end
 end
