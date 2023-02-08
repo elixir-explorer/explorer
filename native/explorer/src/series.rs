@@ -1,4 +1,5 @@
 use crate::{
+    atoms,
     datatypes::{timestamp_to_datetime, ExDate, ExDateTime, ExTime},
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -30,6 +31,10 @@ from_list!(s_from_list_str, String);
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_f64(name: &str, val: Term) -> ExSeries {
+    let nan = atoms::nan();
+    let infinity = atoms::infinity();
+    let neg_infinity = atoms::neg_infinity();
+
     ExSeries::new(Series::new(
         name,
         val.decode::<ListIterator>()
@@ -37,11 +42,14 @@ pub fn s_from_list_f64(name: &str, val: Term) -> ExSeries {
             .map(|item| match item.get_type() {
                 TermType::Number => Some(item.decode::<f64>().unwrap()),
                 TermType::Atom => {
-                    let atom = item.atom_to_string().unwrap();
-                    if atom.contains("nil") {
-                        None
+                    if nan.eq(&item) {
+                        Some(f64::NAN)
+                    } else if infinity.eq(&item) {
+                        Some(f64::INFINITY)
+                    } else if neg_infinity.eq(&item) {
+                        Some(f64::NEG_INFINITY)
                     } else {
-                        Some(cast_str_to_f64(atom.as_str()))
+                        None
                     }
                 }
                 term_type => panic!("from_list/2 not implemented for {term_type:?}"),
