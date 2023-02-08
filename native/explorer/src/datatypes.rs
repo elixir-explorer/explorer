@@ -4,12 +4,19 @@ use chrono::prelude::*;
 use polars::prelude::*;
 use rustler::{Atom, NifStruct, NifTaggedEnum, ResourceArc};
 use std::convert::TryInto;
+use std::ops::Deref;
 
 pub struct ExDataFrameRef(pub DataFrame);
 pub struct ExExprRef(pub Expr);
 pub struct ExLazyFrameRef(pub LazyFrame);
 pub struct ExSeriesRef(pub Series);
 
+// The structs that start with "Ex" are related to the modules in Elixir.
+// Some of them are just wrappers around Polars data structs.
+// For example, a "ExDataFrame" is a wrapper around Polars' "DataFrame".
+//
+// In order to facilitate the usage of these structs, we implement the
+// "Deref" trait that points to the Polars' equivalent.
 #[derive(NifStruct)]
 #[module = "Explorer.PolarsBackend.DataFrame"]
 pub struct ExDataFrame {
@@ -68,6 +75,15 @@ impl ExDataFrame {
     // Returns a clone of the DataFrame inside the ResourceArc container.
     pub fn clone_inner(&self) -> DataFrame {
         self.resource.0.clone()
+    }
+}
+
+// Implement Deref so we can call `DataFrame` functions directly from a `ExDataFrame` struct.
+impl Deref for ExDataFrame {
+    type Target = DataFrame;
+
+    fn deref(&self) -> &Self::Target {
+        &self.resource.0
     }
 }
 
