@@ -785,7 +785,7 @@ pub fn s_pow(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError>
 
             let s = iter1
                 .zip(iter2)
-                .map(|(v1, v2)| v1.map(|left| v2.map(|right| left.pow(right))).flatten())
+                .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.pow(right))))
                 .collect();
 
             Ok(ExSeries::new(s))
