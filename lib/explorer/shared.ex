@@ -160,7 +160,7 @@ defmodule Explorer.Shared do
   def cast_numerics(list, type) when type == :numeric do
     data =
       Enum.map(list, fn
-        item when is_atom(item) -> item
+        item when item in [nil, :infinity, :neg_infinity, :nan] -> item
         item -> item / 1
       end)
 
