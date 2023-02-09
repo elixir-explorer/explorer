@@ -490,9 +490,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
     }
 }
 
-pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError> {
-    let s = data.clone_inner();
-
+pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Boolean => series_to_list!(s, env, bool),
         DataType::Int64 => series_to_list!(s, env, i64),
@@ -501,10 +499,10 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError>
         DataType::Time => time_series_to_list(&s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(&s, *time_unit, env),
         DataType::Utf8 => {
-            generic_binary_series_to_list(&data.resource, s.utf8()?.downcast_iter(), env)
+            generic_binary_series_to_list(&s.resource, s.utf8()?.downcast_iter(), env)
         }
         DataType::Binary => {
-            generic_binary_series_to_list(&data.resource, s.binary()?.downcast_iter(), env)
+            generic_binary_series_to_list(&s.resource, s.binary()?.downcast_iter(), env)
         }
         DataType::Categorical(Some(mapping)) => categorical_series_to_list(&s, env, mapping),
         dt => panic!("to_list/1 not implemented for {dt:?}"),
@@ -512,9 +510,8 @@ pub fn list_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError>
 }
 
 #[allow(clippy::size_of_in_element_count)]
-pub fn iovec_from_series(data: ExSeries, env: Env) -> Result<Term, ExplorerError> {
-    let s = data.clone_inner();
-    let resource = &data.resource;
+pub fn iovec_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
+    let resource = &s.resource;
 
     match s.dtype() {
         DataType::Boolean => {
