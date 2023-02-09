@@ -269,16 +269,16 @@ pub fn df_arrange(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_arrange_with(
-    df: ExDataFrame,
+    data: ExDataFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
+    let df = data.clone_inner();
     let exprs = ex_expr_to_exprs(expressions);
 
     let new_df = if groups.is_empty() {
-        df.clone()
-            .lazy()
+        df.lazy()
             .sort_by_exprs(exprs, directions, false)
             .collect()?
     } else {
@@ -405,7 +405,7 @@ pub fn df_mutate_with_exprs(
 ) -> Result<ExDataFrame, ExplorerError> {
     let mutations = ex_expr_to_exprs(columns);
     let new_df = if groups.is_empty() {
-        df.clone().lazy().with_columns(mutations).collect()?
+        df.clone_inner().lazy().with_columns(mutations).collect()?
     } else {
         df.groupby_stable(groups)?
             .apply(|df| df.lazy().with_columns(&mutations).collect())?
@@ -469,7 +469,7 @@ pub fn df_summarise_with_exprs(
     let aggs = ex_expr_to_exprs(aggs);
 
     let new_df = df
-        .clone()
+        .clone_inner()
         .lazy()
         .groupby_stable(groups)
         .agg(aggs)
@@ -497,6 +497,6 @@ pub fn df_pivot_wider(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_to_lazy(df: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
-    let new_lf = df.clone().lazy();
+    let new_lf = df.clone_inner().lazy();
     Ok(ExLazyFrame::new(new_lf))
 }
