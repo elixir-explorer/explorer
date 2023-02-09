@@ -127,10 +127,8 @@ pub fn s_dtype(data: ExSeries) -> Result<String, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_slice(data: ExSeries, offset: i64, length: usize) -> Result<ExSeries, ExplorerError> {
-    let series = data.clone_inner().slice(offset, length);
-
-    Ok(ExSeries::new(series))
+pub fn s_slice(series: ExSeries, offset: i64, length: usize) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.slice(offset, length)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -142,11 +140,9 @@ pub fn s_concat(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerErr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_mask(data: ExSeries, filter: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s1 = filter.clone_inner();
-    if let Ok(ca) = s1.bool() {
-        let series = s.filter(ca)?;
+pub fn s_mask(series: ExSeries, filter: ExSeries) -> Result<ExSeries, ExplorerError> {
+    if let Ok(ca) = filter.bool() {
+        let series = series.filter(ca)?;
         Ok(ExSeries::new(series))
     } else {
         Err(ExplorerError::Other("Expected a boolean mask".into()))
@@ -182,10 +178,8 @@ pub fn s_divide(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerErr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_quotient(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s1 = other.clone_inner();
-    let div = s.checked_div(&s1)?;
+pub fn s_quotient(series: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let div = series.checked_div(&other)?;
 
     Ok(ExSeries::new(div))
 }
@@ -202,70 +196,62 @@ pub fn s_remainder(data: ExSeries, other: ExSeries) -> Result<ExSeries, Explorer
 }
 
 #[rustler::nif]
-pub fn s_head(data: ExSeries, length: Option<usize>) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(ExSeries::new(s.head(length)))
+pub fn s_head(series: ExSeries, length: Option<usize>) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.head(length)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_tail(data: ExSeries, length: Option<usize>) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(ExSeries::new(s.tail(length)))
+pub fn s_tail(series: ExSeries, length: Option<usize>) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.tail(length)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_shift(data: ExSeries, offset: i64) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(ExSeries::new(s.shift(offset)))
+pub fn s_shift(series: ExSeries, offset: i64) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.shift(offset)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sort(
-    data: ExSeries,
+    series: ExSeries,
     descending: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
     let opts = SortOptions {
         descending,
         nulls_last,
     };
-    Ok(ExSeries::new(s.sort_with(opts)))
+    Ok(ExSeries::new(series.sort_with(opts)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_argsort(
-    data: ExSeries,
+    series: ExSeries,
     descending: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
     let opts = SortOptions {
         descending,
         nulls_last,
     };
-    let indices = s.argsort(opts).cast(&DataType::Int64)?;
+    let indices = series.argsort(opts).cast(&DataType::Int64)?;
     Ok(ExSeries::new(indices))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_distinct(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let unique = s.take(&s.arg_unique()?)?;
+pub fn s_distinct(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let unique = series.take(&series.arg_unique()?)?;
     Ok(ExSeries::new(unique))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_unordered_distinct(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let unique = s.unique()?;
+pub fn s_unordered_distinct(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let unique = series.unique()?;
     Ok(ExSeries::new(unique))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_frequencies(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let s = data.clone_inner();
-    let mut df = s.value_counts(true, true)?;
+pub fn s_frequencies(series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
+    let mut df = series.value_counts(true, true)?;
     let df = df
         .try_apply("counts", |s| s.cast(&DataType::Int64))?
         .clone();
@@ -273,71 +259,60 @@ pub fn s_frequencies(data: ExSeries) -> Result<ExDataFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_slice_by_indices(data: ExSeries, indices: Vec<u32>) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
+pub fn s_slice_by_indices(series: ExSeries, indices: Vec<u32>) -> Result<ExSeries, ExplorerError> {
     let idx = UInt32Chunked::from_vec("idx", indices);
-    let s1 = s.take(&idx)?;
+    let s1 = series.take(&idx)?;
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_is_null(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(ExSeries::new(s.is_null().into_series()))
+pub fn s_is_null(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.is_null().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_is_not_null(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(ExSeries::new(s.is_not_null().into_series()))
+pub fn s_is_not_null(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.is_not_null().into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_is_finite(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(ExSeries::new(s.is_finite()?.into_series()))
+pub fn s_is_finite(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.is_finite()?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_is_infinite(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(ExSeries::new(s.is_infinite()?.into_series()))
+pub fn s_is_infinite(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.is_infinite()?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_is_nan(data: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(ExSeries::new(s.is_nan()?.into_series()))
+pub fn s_is_nan(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.is_nan()?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_at_every(data: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s1 = s.take_every(n);
-    Ok(ExSeries::new(s1))
+pub fn s_at_every(series: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.take_every(n)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_series_equal(
-    data: ExSeries,
+    series: ExSeries,
     other: ExSeries,
     null_equal: bool,
 ) -> Result<bool, ExplorerError> {
-    let s = data.clone_inner();
-    let s1 = other.clone_inner();
     let result = if null_equal {
-        s.series_equal_missing(&s1)
+        series.series_equal_missing(&other)
     } else {
-        s.series_equal(&s1)
+        series.series_equal(&other)
     };
+
     Ok(result)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s1 = rhs.clone_inner();
-    Ok(ExSeries::new(s.equal(&s1)?.into_series()))
+pub fn s_equal(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(lhs.clone_inner().equal(&rhs.clone_inner())?.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -376,10 +351,7 @@ pub fn s_less_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerE
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_in(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let rhs = rhs.clone_inner();
-
+pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = match s.dtype() {
         DataType::Boolean => s.bool()?.is_in(&rhs)?,
         DataType::Int64 => s.i64()?.is_in(&rhs)?,
@@ -397,35 +369,29 @@ pub fn s_in(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_and(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = lhs.clone_inner();
-    let s1 = rhs.clone_inner();
-    let and = s.bool()? & s1.bool()?;
+    let and = lhs.bool()? & rhs.bool()?;
     Ok(ExSeries::new(and.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_or(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = lhs.clone_inner();
-    let s1 = rhs.clone_inner();
-    let or = s.bool()? | s1.bool()?;
+    let or = lhs.bool()? | rhs.bool()?;
     Ok(ExSeries::new(or.into_series()))
 }
 
 #[rustler::nif]
-pub fn s_size(data: ExSeries) -> Result<usize, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(s.len())
+pub fn s_size(series: ExSeries) -> Result<usize, ExplorerError> {
+    Ok(series.len())
 }
 
 #[rustler::nif]
-pub fn s_nil_count(data: ExSeries) -> Result<usize, ExplorerError> {
-    let s = data.clone_inner();
-    Ok(s.null_count())
+pub fn s_nil_count(series: ExSeries) -> Result<usize, ExplorerError> {
+    Ok(series.null_count())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_fill_missing_with_strategy(
-    data: ExSeries,
+    series: ExSeries,
     strategy: &str,
 ) -> Result<ExSeries, ExplorerError> {
     let strat = match strategy {
@@ -437,54 +403,47 @@ pub fn s_fill_missing_with_strategy(
         s => return Err(ExplorerError::Other(format!("Strategy {s} not supported"))),
     };
 
-    let s = data.clone_inner();
-    let s1 = s.fill_null(strat)?;
-    Ok(ExSeries::new(s1))
+    Ok(ExSeries::new(series.fill_null(strat)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_atom(data: ExSeries, atom: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_fill_missing_with_atom(series: ExSeries, atom: &str) -> Result<ExSeries, ExplorerError> {
     let value = cast_str_to_f64(atom);
-    let s = data.clone_inner();
-    let s = s.f64()?.fill_null_with_values(value)?.into_series();
+    let s = series.f64()?.fill_null_with_values(value)?.into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_int(data: ExSeries, integer: i64) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s = s.i64()?.fill_null_with_values(integer)?.into_series();
+pub fn s_fill_missing_with_int(series: ExSeries, integer: i64) -> Result<ExSeries, ExplorerError> {
+    let s = series.i64()?.fill_null_with_values(integer)?.into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_float(data: ExSeries, float: f64) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s = s.f64()?.fill_null_with_values(float)?.into_series();
+pub fn s_fill_missing_with_float(series: ExSeries, float: f64) -> Result<ExSeries, ExplorerError> {
+    let s = series.f64()?.fill_null_with_values(float)?.into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_bin(data: ExSeries, binary: Binary) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s = match s.dtype() {
+pub fn s_fill_missing_with_bin(series: ExSeries, binary: Binary) -> Result<ExSeries, ExplorerError> {
+    let s = match series.dtype() {
         DataType::Utf8 => {
             if let Ok(string) = std::str::from_utf8(&binary) {
-                s.utf8()?.fill_null_with_values(string)?.into_series()
+                series.utf8()?.fill_null_with_values(string)?.into_series()
             } else {
                 return Err(ExplorerError::Other("cannot cast to string".into()));
             }
         }
-        DataType::Binary => s.binary()?.fill_null_with_values(&binary)?.into_series(),
+        DataType::Binary => series.binary()?.fill_null_with_values(&binary)?.into_series(),
         dt => panic!("fill_missing/2 not implemented for {dt:?}"),
     };
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_date(data: ExSeries, date: ExDate) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s = s
+pub fn s_fill_missing_with_date(series: ExSeries, date: ExDate) -> Result<ExSeries, ExplorerError> {
+    let s = series
         .date()?
         .fill_null_with_values(date.into())?
         .cast(&DataType::Date)?

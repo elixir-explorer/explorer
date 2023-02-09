@@ -17,6 +17,9 @@ pub struct ExSeriesRef(pub Series);
 //
 // In order to facilitate the usage of these structs, we implement the
 // "Deref" trait that points to the Polars' equivalent.
+//
+// See a detailed explanation in this chapter of the Rust Book:
+// https://doc.rust-lang.org/nightly/book/ch15-02-deref.html
 #[derive(NifStruct)]
 #[module = "Explorer.PolarsBackend.DataFrame"]
 pub struct ExDataFrame {
@@ -100,6 +103,15 @@ impl ExExpr {
     }
 }
 
+// Implement Deref so we can call `Expr` functions directly from a `ExExpr` struct.
+impl Deref for ExExpr {
+    type Target = Expr;
+
+    fn deref(&self) -> &Self::Target {
+        &self.resource.0
+    }
+}
+
 impl ExLazyFrame {
     pub fn new(df: LazyFrame) -> Self {
         Self {
@@ -110,6 +122,15 @@ impl ExLazyFrame {
     // Returns a clone of the LazyFrame inside the ResourceArc container.
     pub fn clone_inner(&self) -> LazyFrame {
         self.resource.0.clone()
+    }
+}
+
+// Implement Deref so we can call `LazyFrame` functions directly from a `ExLazyFrame` struct.
+impl Deref for ExLazyFrame {
+    type Target = LazyFrame;
+
+    fn deref(&self) -> &Self::Target {
+        &self.resource.0
     }
 }
 
@@ -124,13 +145,14 @@ impl ExSeries {
     pub fn clone_inner(&self) -> Series {
         self.resource.0.clone()
     }
+}
 
-    pub fn name(&self) -> &str {
-        self.resource.0.name()
-    }
+// Implement Deref so we can call `Series` functions directly from a `ExSeries` struct.
+impl Deref for ExSeries {
+    type Target = Series;
 
-    pub fn dtype(&self) -> &DataType {
-        self.resource.0.dtype()
+    fn deref(&self) -> &Self::Target {
+        &self.resource.0
     }
 }
 
