@@ -167,9 +167,7 @@ pub fn df_select(df: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame, E
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_mask(df: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let filter_series = mask.clone_inner();
-
-    if let Ok(ca) = filter_series.bool() {
+    if let Ok(ca) = mask.bool() {
         let new_df = df.filter(ca)?;
         Ok(ExDataFrame::new(new_df))
     } else {
@@ -212,7 +210,7 @@ pub fn df_slice_by_indices(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_slice_by_series(df: ExDataFrame, series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let cast = series.clone_inner().cast(&DataType::UInt32)?;
+    let cast = series.cast(&DataType::UInt32)?;
     Ok(ExDataFrame::new(df.take(cast.u32()?)?))
 }
 
