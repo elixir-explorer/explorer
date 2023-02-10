@@ -1450,4 +1450,41 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(categorized) == :category
     end
   end
+
+  describe "to_date/1" do
+    test "takes datetime series and convert it to date series" do
+      datetime_series =
+        Explorer.Series.from_list([
+          ~N[2023-01-15 00:00:00.000000],
+          ~N[2023-01-16 23:59:59.999999],
+          ~N[2023-01-20 12:00:00.000000],
+          nil
+        ])
+
+      date_series = Explorer.Series.to_date(datetime_series)
+
+      assert Series.to_list(date_series) == [~D[2023-01-15], ~D[2023-01-16], ~D[2023-01-20], nil]
+    end
+  end
+
+  describe "to_time/1" do
+    test "takes datetime series and convert it to time series" do
+      datetime_series =
+        Explorer.Series.from_list([
+          ~N[2023-01-15 00:00:00.000000],
+          ~N[2023-01-16 23:59:59.999999],
+          ~N[2023-01-20 12:00:00.000000],
+          nil
+        ])
+
+      time_series = Explorer.Series.to_time(datetime_series)
+
+      assert Series.to_list(time_series) == [
+               ~T[00:00:00.000000],
+               ~T[23:59:59.999999],
+               ~T[12:00:00.000000],
+               nil
+             ]
+    end
+  end
 end
