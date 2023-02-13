@@ -9,9 +9,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
 
-  @type t :: %__MODULE__{resource: binary(), reference: reference()}
+  defstruct resource: nil
 
-  defstruct resource: nil, reference: nil
+  @type t :: %__MODULE__{resource: reference()}
 
   @behaviour Explorer.Backend.DataFrame
   @default_infer_schema_length 1000

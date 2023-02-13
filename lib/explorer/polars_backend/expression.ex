@@ -8,9 +8,9 @@ defmodule Explorer.PolarsBackend.Expression do
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
 
-  defstruct resource: nil, reference: nil
+  defstruct resource: nil
 
-  @type t :: %__MODULE__{resource: binary(), reference: reference()}
+  @type t :: %__MODULE__{resource: reference()}
 
   @all_expressions [
     add: 2,

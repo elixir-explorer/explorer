@@ -6,9 +6,9 @@ defmodule Explorer.PolarsBackend.Series do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series
 
-  @type t :: %__MODULE__{resource: binary(), reference: term()}
+  @type t :: %__MODULE__{resource: reference()}
 
-  defstruct resource: nil, reference: nil
+  defstruct resource: nil
 
   @behaviour Explorer.Backend.Series
 
