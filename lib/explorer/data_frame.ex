@@ -1873,7 +1873,7 @@ defmodule Explorer.DataFrame do
 
   > #### Notice {: .notice}
   >
-  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
+  > This is a macro. You must `require  Explorer.DataFrame` before using it.
 
   Besides element-wise series operations, you can also use window functions
   and aggregations inside comparisons. In such cases, grouped dataframes
@@ -2027,7 +2027,7 @@ defmodule Explorer.DataFrame do
 
   > #### Notice {: .notice}
   >
-  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
+  > This is a macro. You must `require  Explorer.DataFrame` before using it.
 
   Besides element-wise series operations, you can also use window functions
   and aggregations inside mutations. In such cases, grouped dataframes
@@ -2455,7 +2455,7 @@ defmodule Explorer.DataFrame do
 
   > #### Notice {: .notice}
   >
-  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
+  > This is a macro. You must `require  Explorer.DataFrame` before using it.
 
   See `arrange_with/2` for a callback version of this function without
   `Explorer.Query`.
@@ -4363,7 +4363,7 @@ defmodule Explorer.DataFrame do
 
   > #### Notice {: .notice}
   >
-  > This is macro, therefore you must `require  Explorer.DataFrame` before using it.
+  > This is a macro. You must `require  Explorer.DataFrame` before using it.
 
   See `summarise_with/2` for a callback version of this function without
   `Explorer.Query`.
