@@ -489,6 +489,14 @@ defmodule Explorer.PolarsBackend.Series do
   def day_of_week(series),
     do: Shared.apply_series(series, :s_day_of_week)
 
+  @impl true
+  def to_date(series),
+    do: Shared.apply_series(series, :s_to_date)
+
+  @impl true
+  def to_time(series),
+    do: Shared.apply_series(series, :s_to_time)
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)
