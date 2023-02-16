@@ -248,5 +248,13 @@ if Code.ensure_loaded?(Nx) do
         fun.(tf[name], acc)
       end)
     end
+
+    def serialize(%TF{data: data, names: names, n_rows: n_rows}) do
+      {__MODULE__, Map.to_list(data), {names, n_rows}}
+    end
+
+    def deserialize(data, {names, n_rows}) do
+      %TF{data: Map.new(data), names: names, n_rows: n_rows}
+    end
   end
 end

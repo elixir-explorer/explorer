@@ -47,6 +47,11 @@ defmodule Explorer.TensorFrameTest do
       assert Enum.reverse(templates) == [Nx.template({3}, :s64), Nx.template({3}, :f64)]
     end
 
+    test "serialization" do
+      tf = tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])
+      assert Nx.deserialize(Nx.serialize(tf)) == tf
+    end
+
     defnp put_column(data) do
       TF.put(data, "d", data["a"] + TF.pull(data, "b"))
     end

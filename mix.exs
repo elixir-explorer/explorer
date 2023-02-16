@@ -39,7 +39,7 @@ defmodule Explorer.MixProject do
 
       ## Optional
       {:rustler, "~> 0.27.0", optional: Mix.env() == :prod},
-      {:nx, "~> 0.4.0", optional: true},
+      {:nx, "~> 0.4.0 or ~> 0.5.0", optional: true},
 
       ## Dev
       {:ex_doc, "~> 0.24", only: :dev},
