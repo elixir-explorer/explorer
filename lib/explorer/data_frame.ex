@@ -338,7 +338,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp check_dtypes!(dtypes) do
-    Enum.map(dtypes, fn
+    Map.new(dtypes, fn
       {key, value} when is_atom(key) ->
         {Atom.to_string(key), check_dtype!(key, value)}
 
@@ -1224,25 +1224,57 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates a new dataframe.
 
-  Accepts any tabular data adhering to the `Table.Reader` protocol, as well as a map or a keyword list with series.
+  It accepts any of:
+
+    * a map or keyword list of string/atom keys and series as values
+    * a map or keyword list of string/atom keys and tensors as values
+    * any data structure adhering to the `Table.Reader` protocol
 
   ## Options
 
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
-    * `:dtypes` - A list/map of `{column_name, dtype}` tuples. (default: `[]`)
+    * `:dtypes` - A list/map of `{column_name, dtype}` pairs. (default: `[]`)
 
   ## Examples
 
   From series:
 
-      iex> Explorer.DataFrame.new(%{floats: Explorer.Series.from_list([1.0, 2.0]), ints: Explorer.Series.from_list([1, nil])})
+      iex> Explorer.DataFrame.new(%{
+      ...>   floats: Explorer.Series.from_list([1.0, 2.0]),
+      ...>   ints: Explorer.Series.from_list([1, nil])
+      ...> })
       #Explorer.DataFrame<
         Polars[2 x 2]
         floats float [1.0, 2.0]
         ints integer [1, nil]
       >
 
-  From columnar data:
+  From tensors:
+
+      iex> Explorer.DataFrame.new(%{
+      ...>   floats: Nx.tensor([1.0, 2.0], type: :f64),
+      ...>   ints: Nx.tensor([3, 4])
+      ...> })
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        floats float [1.0, 2.0]
+        ints integer [3, 4]
+      >
+
+  Use dtypes to force a particular representation:
+
+      iex> Explorer.DataFrame.new(%{
+      ...>   floats: Nx.tensor([1.0, 2.0], type: :f64),
+      ...>   times: Nx.tensor([3, 4])
+      ...> }, dtypes: [times: :time])
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        floats float [1.0, 2.0]
+        times time [00:00:00.000003, 00:00:00.000004]
+      >
+
+  Tabular data can be either columnar or row-based.
+  Let's start with column data:
 
       iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, nil]})
       #Explorer.DataFrame<
@@ -1295,8 +1327,8 @@ defmodule Explorer.DataFrame do
         when series_pairs: %{column_name() => Series.t()} | [{column_name(), Series.t()}]
   def new(data, opts \\ []) do
     opts = Keyword.validate!(opts, lazy: false, backend: nil, dtypes: [])
-
     backend = backend_from_options!(opts)
+    dtypes = check_dtypes!(opts[:dtypes])
 
     case data do
       %DataFrame{data: %^backend{}} ->
@@ -1304,24 +1336,58 @@ defmodule Explorer.DataFrame do
 
       data ->
         case classify_data(data) do
-          {:series, series} -> backend.from_series(series)
-          {:other, tabular} -> backend.from_tabular(tabular, check_dtypes!(opts[:dtypes]))
+          :series ->
+            pairs =
+              for {name, series} <- data do
+                if not is_struct(series, Series) do
+                  raise ArgumentError,
+                        "expected a list or map of only series, got: #{inspect(series)}"
+                end
+
+                {to_column_name(name), series}
+              end
+
+            backend.from_series(pairs)
+
+          :tensor ->
+            s_backend = df_backend_to_s_backend(backend)
+
+            pairs =
+              for {name, tensor} <- data do
+                if not is_struct(tensor, Nx.Tensor) do
+                  raise ArgumentError,
+                        "expected a list or map of only tensors, got: #{inspect(tensor)}"
+                end
+
+                name = to_column_name(name)
+                dtype = dtypes[name]
+                opts = [backend: s_backend]
+                opts = if dtype, do: [dtype: dtype] ++ opts, else: opts
+                {name, Series.from_tensor(tensor, opts)}
+              end
+
+            backend.from_series(pairs)
+
+          :tabular ->
+            backend.from_tabular(data, dtypes)
         end
     end
   end
 
-  defp classify_data([{_, %Series{}} | _] = data), do: {:series, data}
+  defp classify_data([{_, %struct{}} | _]) when struct == Series, do: :series
+  defp classify_data([{_, %struct{}} | _]) when struct == Nx.Tensor, do: :tensor
 
-  defp classify_data(%_{} = data), do: {:other, data}
+  defp classify_data(%_{}), do: :tabular
 
   defp classify_data(data) when is_map(data) do
     case :maps.next(:maps.iterator(data)) do
-      {_key, %Series{}, _} -> {:series, data}
-      _ -> {:other, data}
+      {_key, %struct{}, _} when struct == Series -> :series
+      {_key, %struct{}, _} when struct == Nx.Tensor -> :tensor
+      _ -> :tabular
     end
   end
 
-  defp classify_data(data), do: {:other, data}
+  defp classify_data(_data), do: :tabular
 
   @doc """
   Converts a dataframe to a list of columns with lists as values.
@@ -2431,9 +2497,7 @@ defmodule Explorer.DataFrame do
     if dtype == nil and is_map_key(df.dtypes, name) do
       put(df, name, Series.replace(pull(df, name), arg), [])
     else
-      backend_df_string = Atom.to_string(df.data.__struct__)
-      backend_string = binary_part(backend_df_string, 0, byte_size(backend_df_string) - 10)
-      backend = String.to_atom(backend_string)
+      backend = df_backend_to_s_backend(df.data.__struct__)
 
       opts =
         if dtype == nil or dtype == :infer do
@@ -2444,6 +2508,12 @@ defmodule Explorer.DataFrame do
 
       put(df, name, apply(Series, fun, [arg, opts]), [])
     end
+  end
+
+  defp df_backend_to_s_backend(backend) do
+    backend_df_string = Atom.to_string(backend)
+    backend_string = binary_part(backend_df_string, 0, byte_size(backend_df_string) - 10)
+    String.to_atom(backend_string)
   end
 
   defp append_unless_present([name | tail], name), do: [name | tail]

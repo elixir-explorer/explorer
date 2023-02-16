@@ -29,7 +29,7 @@ defmodule Explorer.Backend.DataFrame do
   # IO: CSV
   @callback from_csv(
               filename :: String.t(),
-              dtypes :: list({column_name(), dtype()}),
+              dtypes,
               delimiter :: String.t(),
               null_character :: String.t(),
               skip_rows :: integer(),
@@ -46,7 +46,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback load_csv(
               contents :: String.t(),
-              dtypes :: list({column_name(), dtype()}),
+              dtypes,
               delimiter :: String.t(),
               null_character :: String.t(),
               skip_rows :: integer(),
@@ -120,8 +120,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback lazy() :: module()
   @callback to_lazy(df) :: df
   @callback collect(df) :: df
-  @callback from_tabular(Table.Reader.t(), dtypes :: list({column_name(), dtype()})) :: df
-  @callback from_series(map() | Keyword.t()) :: df
+  @callback from_tabular(Table.Reader.t(), dtypes) :: df
+  @callback from_series([{binary(), Series.t()}]) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
 
   # Introspection

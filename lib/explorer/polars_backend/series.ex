@@ -506,7 +506,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   defp apply_scalar_on_rhs(fun_name, %Series{} = left, scalar) when is_atom(fun_name) do
     df =
-      DataFrame.mutate_with(polars_df(left: left), fn ldf ->
+      DataFrame.mutate_with(polars_df([{"left", left}]), fn ldf ->
         [result: apply(Explorer.Series, fun_name, [ldf["left"], scalar])]
       end)
 
@@ -515,7 +515,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   defp apply_scalar_on_lhs(fun_name, scalar, %Series{} = right) when is_atom(fun_name) do
     df =
-      DataFrame.mutate_with(polars_df(right: right), fn ldf ->
+      DataFrame.mutate_with(polars_df([{"right", right}]), fn ldf ->
         [result: apply(Explorer.Series, fun_name, [scalar, ldf["right"]])]
       end)
 

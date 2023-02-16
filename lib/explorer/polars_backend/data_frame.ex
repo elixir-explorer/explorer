@@ -293,7 +293,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_tabular(tabular, dtypes) do
     {_, %{columns: keys}, _} = reader = init_reader!(tabular)
     columns = Table.to_columns(reader)
-    dtypes = Map.new(dtypes)
 
     keys
     |> Enum.map(fn key ->
@@ -312,11 +311,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_series(pairs) do
+  def from_series(pairs) when is_list(pairs) do
     pairs
-    |> Enum.map(fn {key, series} ->
-      column_name = to_column_name!(key)
-      PolarsSeries.rename(series, column_name)
+    |> Enum.map(fn {name, series} ->
+      PolarsSeries.rename(series, name)
     end)
     |> from_series_list()
   end
