@@ -150,7 +150,8 @@ if Code.ensure_loaded?(Nx) do
             "Explorer.TensorFrame only accepts atoms and strings as column names, got: #{inspect(name)}"
     end
 
-    defp put!(%{n_rows: n_rows, names: names, data: data} = tf, name, value) when is_binary(name) do
+    defp put!(%{n_rows: n_rows, names: names, data: data} = tf, name, value)
+         when is_binary(name) do
       names = if name in names, do: names, else: names ++ [name]
       data = Map.put(data, name, value |> Nx.to_tensor() |> broadcast!(n_rows))
       %{tf | names: names, data: data}
@@ -210,7 +211,7 @@ if Code.ensure_loaded?(Nx) do
   end
 
   defimpl Nx.LazyContainer, for: DF do
-    @supported [:boolean,:category,:date,:time,:datetime,:float,:integer]
+    @supported [:boolean, :category, :date, :time, :datetime, :float, :integer]
 
     def traverse(df, acc, fun) do
       n_rows = DF.n_rows(df)

@@ -825,7 +825,9 @@ pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
         "string" => Ok(DataType::Utf8),
         "binary" => Ok(DataType::Binary),
         "category" => Ok(DataType::Categorical(None)),
-        _ => Err(ExplorerError::Other(String::from("Cannot cast to dtype: ".to_owned() + str_type))),
+        _ => Err(ExplorerError::Other(
+            "Cannot cast to dtype: ".to_owned() + str_type,
+        )),
     }
 }
 
