@@ -746,6 +746,15 @@ defmodule Explorer.Series do
         datetime [2022-04-13 21:00:42.000000]
       >
 
+  You can also use `cast/2` to categorise a string:
+
+      iex> s = Explorer.Series.from_list(["apple", "banana",  "apple", "lemon"])
+      iex> Explorer.Series.cast(s, :category)
+      #Explorer.Series<
+        Polars[4]
+        category ["apple", "banana", "apple", "lemon"]
+      >
+
   `cast/2` will return the series as a no-op if you try to cast to the same dtype.
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
