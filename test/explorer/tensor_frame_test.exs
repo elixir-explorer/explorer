@@ -28,6 +28,25 @@ defmodule Explorer.TensorFrameTest do
       assert add_columns(df) == Nx.tensor([5.0, 7.0, 9.0], type: :f64)
     end
 
+    test "preserves name ordering" do
+      df = DF.new(c: [1, 2, 3], b: [4.0, 5.0, 6.0], a: ["a", "b", "c"])
+
+      {tf, templates} =
+        Nx.LazyContainer.traverse(df, [], fn template, fun, acc ->
+          {fun.(), [template | acc]}
+        end)
+
+      assert tf.names == ["c", "b"]
+      assert Enum.reverse(templates) == [Nx.template({3}, :s64), Nx.template({3}, :f64)]
+
+      templates =
+        Nx.Container.reduce(tf, [], fn tensor, acc ->
+          [Nx.to_template(tensor) | acc]
+        end)
+
+      assert Enum.reverse(templates) == [Nx.template({3}, :s64), Nx.template({3}, :f64)]
+    end
+
     defnp put_column(data) do
       TF.put(data, "d", data["a"] + TF.pull(data, "b"))
     end
@@ -40,6 +59,7 @@ defmodule Explorer.TensorFrameTest do
       assert tf["b"] == Nx.tensor([4.0, 5.0, 6.0], type: :f64)
       assert tf[:d] == Nx.tensor([5.0, 7.0, 9.0], type: :f64)
       assert tf["d"] == Nx.tensor([5.0, 7.0, 9.0], type: :f64)
+      assert tf.names == ["a", "b", "d"]
     end
   end
 

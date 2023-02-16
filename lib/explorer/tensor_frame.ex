@@ -65,15 +65,9 @@ if Code.ensure_loaded?(Nx) do
     to learn more about their internal representation.
     """
 
-    defstruct [:data, :n_rows]
+    @enforce_keys [:data, :names, :n_rows]
+    defstruct [:data, :names, :n_rows]
     @type t :: %__MODULE__{}
-
-    @doc false
-    def new(data, n_rows)
-        when is_map(data) and is_integer(n_rows) and n_rows > 0 do
-      %TF{data: data, n_rows: n_rows}
-    end
-
     @compile {:no_warn_undefined, Nx}
 
     ## Nx
@@ -126,10 +120,10 @@ if Code.ensure_loaded?(Nx) do
     end
 
     @impl Access
-    def pop(%TF{data: data} = tf, name) do
+    def pop(%TF{data: data, names: names} = tf, name) do
       name = to_column_name(name)
 
-      {fetch!(tf, name), %{tf | data: Map.delete(data, name)}}
+      {fetch!(tf, name), %{tf | data: Map.delete(data, name), names: names -- [name]}}
     end
 
     defp fetch!(%TF{data: data}, name) when is_binary(name) do
@@ -156,8 +150,10 @@ if Code.ensure_loaded?(Nx) do
             "Explorer.TensorFrame only accepts atoms and strings as column names, got: #{inspect(name)}"
     end
 
-    defp put!(%{n_rows: n_rows} = tf, name, value) when is_binary(name) do
-      put_in(tf.data[name], value |> Nx.to_tensor() |> broadcast!(n_rows))
+    defp put!(%{n_rows: n_rows, names: names, data: data} = tf, name, value) when is_binary(name) do
+      names = if name in names, do: names, else: names ++ [name]
+      data = Map.put(data, name, value |> Nx.to_tensor() |> broadcast!(n_rows))
+      %{tf | names: names, data: data}
     end
 
     defp broadcast!(%{shape: {}} = tensor, n_rows), do: Nx.broadcast(tensor, {n_rows})
@@ -214,32 +210,33 @@ if Code.ensure_loaded?(Nx) do
   end
 
   defimpl Nx.LazyContainer, for: DF do
-    @unsupported [:string]
+    @supported [:boolean,:category,:date,:time,:datetime,:float,:integer]
 
     def traverse(df, acc, fun) do
       n_rows = DF.n_rows(df)
 
       {data, acc} =
-        Enum.reduce(DF.dtypes(df), {[], acc}, fn
-          {_name, dtype}, {data, acc} when dtype in @unsupported ->
-            {data, acc}
+        Enum.flat_map_reduce(DF.names(df), acc, fn name, acc ->
+          series = df[name]
 
-          {name, _dtype}, {data, acc} ->
-            series = DF.pull(df, name)
+          if series.dtype in @supported do
             template = Nx.template({n_rows}, S.iotype(series))
             {result, acc} = fun.(template, fn -> S.to_tensor(series) end, acc)
-            {[{name, result} | data], acc}
+            {[{name, result}], acc}
+          else
+            {[], acc}
+          end
         end)
 
-      {TF.new(Map.new(data), n_rows), acc}
+      {%TF{data: Map.new(data), names: Enum.map(data, &elem(&1, 0)), n_rows: n_rows}, acc}
     end
   end
 
   defimpl Nx.Container, for: TF do
     def traverse(tf, acc, fun) do
       {data, acc} =
-        Enum.map_reduce(tf.data, acc, fn {name, contents}, acc ->
-          {contents, acc} = fun.(contents, acc)
+        Enum.map_reduce(tf.names, acc, fn name, acc ->
+          {contents, acc} = fun.(tf[name], acc)
           {{name, contents}, acc}
         end)
 
@@ -247,8 +244,8 @@ if Code.ensure_loaded?(Nx) do
     end
 
     def reduce(tf, acc, fun) do
-      Enum.reduce(tf.data, acc, fn {_name, contents}, acc ->
-        fun.(contents, acc)
+      Enum.reduce(tf.names, acc, fn name, acc ->
+        fun.(tf[name], acc)
       end)
     end
   end
