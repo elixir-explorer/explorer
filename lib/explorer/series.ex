@@ -767,7 +767,11 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec cast(series :: Series.t(), dtype :: dtype()) :: Series.t()
   def cast(%Series{dtype: dtype} = series, dtype), do: series
-  def cast(series, dtype), do: Shared.apply_impl(series, :cast, [dtype])
+
+  def cast(series, dtype) when K.in(dtype, @valid_dtypes),
+    do: Shared.apply_impl(series, :cast, [dtype])
+
+  def cast(_series, dtype), do: dtype_error("cast/2", dtype, @valid_dtypes)
 
   # Introspection
 

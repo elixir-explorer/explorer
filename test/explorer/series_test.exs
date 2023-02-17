@@ -1487,4 +1487,93 @@ defmodule Explorer.SeriesTest do
              ]
     end
   end
+
+  describe "cast/2" do
+    test "integer series to string" do
+      s = Series.from_list([1, 2, 3])
+      s1 = Series.cast(s, :string)
+
+      assert Series.to_list(s1) == ["1", "2", "3"]
+      assert Series.dtype(s1) == :string
+    end
+
+    test "integer series to float" do
+      s = Series.from_list([1, 2, 3])
+      s1 = Series.cast(s, :float)
+
+      assert Series.to_list(s1) == [1.0, 2.0, 3.0]
+      assert Series.dtype(s1) == :float
+    end
+
+    test "integer series to date" do
+      s = Series.from_list([1, 2, 3])
+      s1 = Series.cast(s, :date)
+
+      assert Series.to_list(s1) == [~D[1970-01-02], ~D[1970-01-03], ~D[1970-01-04]]
+      assert Series.dtype(s1) == :date
+    end
+
+    test "integer series to time" do
+      s = Series.from_list([1, 2, 3])
+      s1 = Series.cast(s, :time)
+
+      assert Series.to_list(s1) == [
+               ~T[00:00:00.000001],
+               ~T[00:00:00.000002],
+               ~T[00:00:00.000003]
+             ]
+
+      assert Series.dtype(s1) == :time
+
+      s2 = Series.from_list([86399 * 1_000 * 1_000])
+      s3 = Series.cast(s2, :time)
+
+      assert Series.to_list(s3) == [~T[23:59:59.000000]]
+      assert Series.dtype(s3) == :time
+    end
+
+    test "integer series to datetime" do
+      s = Series.from_list([1, 2, 3])
+      s1 = Series.cast(s, :datetime)
+
+      assert Series.to_list(s1) == [
+               ~N[1970-01-01 00:00:00.000001],
+               ~N[1970-01-01 00:00:00.000002],
+               ~N[1970-01-01 00:00:00.000003]
+             ]
+
+      assert Series.dtype(s1) == :datetime
+
+      s2 = Series.from_list([1_649_883_642 * 1_000 * 1_000])
+      s3 = Series.cast(s2, :datetime)
+
+      assert Series.to_list(s3) == [~N[2022-04-13 21:00:42.000000]]
+      assert Series.dtype(s3) == :datetime
+    end
+
+    test "string series to category" do
+      s = Series.from_list(["apple", "banana", "apple", "lemon"])
+      s1 = Series.cast(s, :category)
+
+      assert Series.to_list(s1) == ["apple", "banana", "apple", "lemon"]
+      assert Series.dtype(s1) == :category
+    end
+
+    test "no-op with the same dtype" do
+      s = Series.from_list([1, 2, 3])
+      s1 = Series.cast(s, :integer)
+
+      assert s == s1
+    end
+
+    test "error when casting with unknown dtype" do
+      error_message =
+        "Explorer.Series.cast/2 not implemented for dtype :money. " <>
+          "Valid dtypes are [:binary, :boolean, :category, :date, :time, :datetime, :float, :integer, :string]"
+
+      assert_raise ArgumentError, error_message, fn ->
+        Series.from_list([1, 2, 3]) |> Series.cast(:money)
+      end
+    end
+  end
 end

@@ -47,6 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Require version of Rustler to be `~> 0.27.0`, which mirrors the NIF requirement.
 
+### Fixed
+
+- Casting to an unknown dtype returns a better error message.
+
 ## [v0.5.0] - 2023-01-12
 
 ### Added
