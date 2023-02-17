@@ -176,8 +176,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(filename) do
-    case Native.df_from_parquet(filename) do
+  def from_parquet(filename, max_rows, columns) do
+    case Native.df_from_parquet(filename, max_rows, columns) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end

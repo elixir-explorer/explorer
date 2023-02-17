@@ -189,10 +189,17 @@ pub fn df_load_csv(
 // ============ Parquet ============ //
 
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_from_parquet(filename: &str) -> Result<ExDataFrame, ExplorerError> {
+pub fn df_from_parquet(
+    filename: &str,
+    stop_after_n_rows: Option<usize>,
+    column_names: Option<Vec<String>>,
+) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
-    let reader = ParquetReader::new(buf_reader);
+
+    let reader = ParquetReader::new(buf_reader)
+        .with_n_rows(stop_after_n_rows)
+        .with_columns(column_names);
 
     finish_reader(reader)
 }

@@ -113,8 +113,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     end
   end
 
+  # TODO
+
   @impl true
-  def from_parquet(filename) do
+  def from_parquet(
+        filename,
+        _max_rows,
+        _columns
+      ) do
     case Native.lf_from_parquet(filename) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
@@ -304,7 +310,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Shared.apply_dataframe(df, out_df, :lf_summarise_with, [groups_exprs, exprs])
   end
 
-  # Two or more tables 
+  # Two or more tables
 
   @impl true
   def join(%DF{} = left, %DF{} = right, %DF{} = out_df, on, how)

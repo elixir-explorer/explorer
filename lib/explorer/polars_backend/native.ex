@@ -64,7 +64,14 @@ defmodule Explorer.PolarsBackend.Native do
   def df_from_ipc(_filename, _columns, _projection), do: err()
   def df_from_ipc_stream(_filename, _columns, _projection), do: err()
   def df_from_ndjson(_filename, _infer_schema_length, _batch_size), do: err()
-  def df_from_parquet(_filename), do: err()
+
+  def df_from_parquet(
+        _filename,
+        _stop_after_n_rows,
+        _columns
+      ),
+      do: err()
+
   def df_from_series(_columns), do: err()
   def df_group_indices(_df, _column_names), do: err()
   def df_groups(_df, _column_names), do: err()

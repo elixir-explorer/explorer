@@ -36,6 +36,38 @@ defmodule Explorer.DataFrame.ParquetTest do
     assert File.read!(file_path) == File.read!(parquet)
   end
 
+  describe "from_parquet/2 options" do
+    test "max_rows" do
+      parquet = tmp_parquet_file!(Explorer.Datasets.iris())
+
+      {:ok, frame} = DF.from_parquet(parquet, max_rows: 1)
+
+      assert DF.n_rows(frame) == 1
+      assert DF.n_columns(frame) == 5
+    end
+
+    test "columns - str" do
+      parquet = tmp_parquet_file!(Explorer.Datasets.iris())
+      {:ok, frame} = DF.from_parquet(parquet, columns: ["sepal_length"])
+
+      assert DF.n_columns(frame) == 1
+    end
+
+    test "columns - atom" do
+      parquet = tmp_parquet_file!(Explorer.Datasets.iris())
+      {:ok, frame} = DF.from_parquet(parquet, columns: [:sepal_width, :petal_length])
+
+      assert DF.n_columns(frame) == 2
+    end
+
+    test "columns - integer" do
+      parquet = tmp_parquet_file!(Explorer.Datasets.iris())
+      {:ok, frame} = DF.from_parquet(parquet, columns: [3, 4])
+
+      assert DF.n_columns(frame) == 3
+    end
+  end
+
   test "load_parquet/2" do
     parquet = tmp_parquet_file!(Explorer.Datasets.iris())
     contents = File.read!(parquet)
