@@ -113,14 +113,9 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     end
   end
 
-  # TODO
-
   @impl true
-  def from_parquet(
-        filename,
-        _max_rows,
-        _columns
-      ) do
+  def from_parquet(filename, _max_rows, _columns) do
+    # TODO pass max_rows, columns down to lf_from_parquet and handle logic
     case Native.lf_from_parquet(filename) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}

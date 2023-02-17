@@ -51,6 +51,7 @@ defmodule Explorer.DataFrame.ParquetTest do
       {:ok, frame} = DF.from_parquet(parquet, columns: ["sepal_length"])
 
       assert DF.n_columns(frame) == 1
+      assert DF.names(frame) == ["sepal_length"]
     end
 
     test "columns - atom" do
@@ -58,13 +59,15 @@ defmodule Explorer.DataFrame.ParquetTest do
       {:ok, frame} = DF.from_parquet(parquet, columns: [:sepal_width, :petal_length])
 
       assert DF.n_columns(frame) == 2
+      assert DF.names(frame) == ["sepal_width", "petal_length"]
     end
 
-    test "columns - integer" do
+    test "columns - integer 0 indexed" do
       parquet = tmp_parquet_file!(Explorer.Datasets.iris())
-      {:ok, frame} = DF.from_parquet(parquet, columns: [3, 4])
+      {:ok, frame} = DF.from_parquet(parquet, columns: [2, 3, 4])
 
       assert DF.n_columns(frame) == 3
+      assert DF.names(frame) == ["petal_length", "petal_width", "species"]
     end
   end
 

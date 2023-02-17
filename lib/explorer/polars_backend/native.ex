@@ -68,7 +68,8 @@ defmodule Explorer.PolarsBackend.Native do
   def df_from_parquet(
         _filename,
         _stop_after_n_rows,
-        _columns
+        _columns,
+        _projection
       ),
       do: err()
 
