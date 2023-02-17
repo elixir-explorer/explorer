@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.1] - 2023-02-17
+
+### Added
+
+- Add boolean dtype to `Series.in/2`.
+- Add binary dtype to `Series.in/2`.
+- Add `Series.day_of_week/1`.
+
+- Allow `Series.fill_missing/2` to:
+  - receive `:infinity` and `:neg_infinity` values.
+  - receive date and datetime values.
+  - receive binary values.
+
+- Add support for `time` dtype.
+- Add version of `Series.pow/2` that accepts series on both sides.
+- Allow `Series.from_list/2` to receive `:nan`, `:infinity` and `:neg_infinity` atoms.
+- Add `Series.to_date/1` and `Series.to_time/1` for datetime series.
+- Allow casting of string series to category.
+- Accept tensors when creating a new dataframe.
+- Add compatibility with Nx v0.5.
+- Add support for Nx's serialize and deserialize.
+
+- Add the following function implementations for the Polars' Lazy dataframe backend:
+  - `arrange_with`
+  - `concat_columns`
+  - `concat_rows`
+  - `distinct`
+  - `drop_nil`
+  - `filter_with`
+  - `join`
+  - `mutate_with`
+  - `pivot_longer`
+  - `rename`
+  - `summarise_with`
+  - `to_parquet`
+
+  Only `summarise_with` supports groups for this version.
+
+### Changed
+
+- Require version of Rustler to be `~> 0.27.0`, which mirrors the NIF requirement.
+
 ## [v0.5.0] - 2023-01-12
 
 ### Added
@@ -247,6 +289,7 @@ properly compare floats.
 
 First release.
 
+[v0.5.1]: https://github.com/elixir-nx/explorer/compare/v0.5.0...v0.5.1
 [v0.5.0]: https://github.com/elixir-nx/explorer/compare/v0.4.0...v0.5.0
 [v0.4.0]: https://github.com/elixir-nx/explorer/compare/v0.3.1...v0.4.0
 [v0.3.1]: https://github.com/elixir-nx/explorer/compare/v0.3.0...v0.3.1
