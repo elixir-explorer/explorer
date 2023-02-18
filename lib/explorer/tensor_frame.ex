@@ -26,6 +26,37 @@ if Code.ensure_loaded?(Nx) do
     convert it to a TensorFrame. The TensorFrame will lazily
     build tensors out of the used dataframe fields.
 
+    ## Stack and concatenating
+
+    Due to the integration with Nx, you can also pass dataframes
+    into `Nx.stack/2` and `Nx.concatenate` and they will be automatically
+    converted to tensors. This makes it easy to pass dataframes into
+    neural networks and other computationally intensive algorithms:
+
+        iex> Nx.concatenate(Explorer.DataFrame.new(a: [11, 12], b: [21, 22]))
+        #Nx.Tensor<
+          s64[4]
+          [11, 12, 21, 22]
+        >
+
+        iex> Nx.stack(Explorer.DataFrame.new(a: [11, 12], b: [21, 22]))
+        #Nx.Tensor<
+          s64[2][2]
+          [
+            [11, 12],
+            [21, 22]
+          ]
+        >
+
+        iex> Nx.stack(Explorer.DataFrame.new(a: [11, 12], b: [21, 22]), axis: -1)
+        #Nx.Tensor<
+          s64[2][2]
+          [
+            [11, 21],
+            [12, 22]
+          ]
+        >
+
     ## Warning: returning TensorFrames
 
     It is not recommended to return a TensorFrame from a `defn`,
