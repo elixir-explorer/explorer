@@ -203,8 +203,11 @@ defmodule Explorer.PolarsBackend.Series do
   def subtract(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_subtract, [right.data])
 
-  def subtract(left, right) when is_number(right), do: apply_scalar_on_rhs(:subtract, left, right)
-  def subtract(left, right) when is_number(left), do: apply_scalar_on_lhs(:subtract, left, right)
+  def subtract(left, right) when is_number(right) or right in [:nan, :infinity, :neg_infinity],
+    do: apply_scalar_on_rhs(:subtract, left, right)
+
+  def subtract(left, right) when is_number(left) or left in [:nan, :infinity, :neg_infinity],
+    do: apply_scalar_on_lhs(:subtract, left, right)
 
   @impl true
   def multiply(%Series{} = left, %Series{} = right),
