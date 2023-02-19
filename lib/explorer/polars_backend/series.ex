@@ -223,8 +223,11 @@ defmodule Explorer.PolarsBackend.Series do
   def divide(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_divide, [right.data])
 
-  def divide(left, right) when is_number(right), do: apply_scalar_on_rhs(:divide, left, right)
-  def divide(left, right) when is_number(left), do: apply_scalar_on_lhs(:divide, left, right)
+  def divide(left, right) when is_number(right) or right in [:nan, :infinity, :neg_infinity],
+    do: apply_scalar_on_rhs(:divide, left, right)
+
+  def divide(left, right) when is_number(left) or left in [:nan, :infinity, :neg_infinity],
+    do: apply_scalar_on_lhs(:divide, left, right)
 
   @impl true
   def quotient(%Series{} = left, %Series{} = right),
