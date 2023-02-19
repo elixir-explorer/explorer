@@ -1988,6 +1988,33 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [1.0, 4.0, 9.0]
     end
 
+    test "pow of a series with a nan value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.pow(s1, :nan)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [1, :nan, :nan]
+    end
+
+    test "pow of a series with a infinity value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.pow(s1, :infinity)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [1.0, :infinity, :infinity]
+    end
+
+    test "pow of a series with a negative infinity value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.pow(s1, :neg_infinity)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [1.0, 0.0, 0.0]
+    end
+
     test "pow of a series with an integer scalar value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
@@ -2004,6 +2031,33 @@ defmodule Explorer.SeriesTest do
 
       assert result.dtype == :float
       assert Series.to_list(result) == [2.0, 4.0, 8.0]
+    end
+
+    test "pow of a series with a nan value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.pow(:nan, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:nan, :nan, :nan]
+    end
+
+    test "pow of a series with a infinity value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.pow(:infinity, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:infinity, :infinity, :infinity]
+    end
+
+    test "pow of a series with a negative infinity value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      s2 = Series.pow(:neg_infinity, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:neg_infinity, :infinity, :neg_infinity]
     end
 
     test "pow of a scalar value on the left-hand side to a series with a negative integer" do
