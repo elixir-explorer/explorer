@@ -213,8 +213,11 @@ defmodule Explorer.PolarsBackend.Series do
   def multiply(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_multiply, [right.data])
 
-  def multiply(left, right) when is_number(right), do: apply_scalar_on_rhs(:multiply, left, right)
-  def multiply(left, right) when is_number(left), do: apply_scalar_on_lhs(:multiply, left, right)
+  def multiply(left, right) when is_number(right) or right in [:nan, :infinity, :neg_infinity],
+    do: apply_scalar_on_rhs(:multiply, left, right)
+
+  def multiply(left, right) when is_number(left) or left in [:nan, :infinity, :neg_infinity],
+    do: apply_scalar_on_lhs(:multiply, left, right)
 
   @impl true
   def divide(%Series{} = left, %Series{} = right),
