@@ -2553,7 +2553,10 @@ defmodule Explorer.Series do
        do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, right)
-       when K.and(numeric_dtype?(dtype), is_number(right)),
+       when K.and(
+              numeric_dtype?(dtype),
+              K.or(is_number(right), K.in(right, [:nan, :infinity, :neg_infinity]))
+            ),
        do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: :date}, %Date{}), do: true
@@ -2561,7 +2564,10 @@ defmodule Explorer.Series do
   defp valid_for_bool_mask_operation?(%Series{dtype: :datetime}, %NaiveDateTime{}), do: true
 
   defp valid_for_bool_mask_operation?(left, %Series{dtype: dtype})
-       when K.and(numeric_dtype?(dtype), is_number(left)),
+       when K.and(
+              numeric_dtype?(dtype),
+              K.or(is_number(left), K.in(left, [:nan, :infinity, :neg_infinity]))
+            ),
        do: true
 
   defp valid_for_bool_mask_operation?(%Date{}, %Series{dtype: :date}), do: true
