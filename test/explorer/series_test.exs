@@ -618,6 +618,13 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.not_equal(s2) |> Series.to_list() == [false, false, true]
     end
 
+    test "compare float series" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+      s2 = Series.from_list([1.0, 3.0, :nan, :infinity, :neg_infinity])
+
+      assert s1 |> Series.not_equal(s2) |> Series.to_list() == [false, true, true, false, false]
+    end
+
     test "compare time series" do
       s1 = Series.from_list([~T[00:00:00.000000], ~T[12:00:00.000000], ~T[23:59:59.999999]])
       s2 = Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:59:59.999999]])
@@ -631,10 +638,78 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.not_equal(2) |> Series.to_list() == [true, true, false]
     end
 
+    test "compare float series with a float value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+      assert s1 |> Series.not_equal(2.5) |> Series.to_list() == [true, false, true, true, true]
+    end
+
+    test "compare float series with a nan value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+      assert s1 |> Series.not_equal(:nan) |> Series.to_list() == [true, true, true, true, true]
+    end
+
+    test "compare float series with an infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      assert s1 |> Series.not_equal(:infinity) |> Series.to_list() == [
+               true,
+               true,
+               true,
+               false,
+               true
+             ]
+    end
+
+    test "compare float series with an negative infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      assert s1 |> Series.not_equal(:neg_infinity) |> Series.to_list() == [
+               true,
+               true,
+               true,
+               true,
+               false
+             ]
+    end
+
     test "compare integer series with a scalar value on the left-hand side" do
       s1 = Series.from_list([1, 0, 2])
 
       assert 2 |> Series.not_equal(s1) |> Series.to_list() == [true, true, false]
+    end
+
+    test "compare float series with a float value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+      assert 2.5 |> Series.not_equal(s1) |> Series.to_list() == [true, false, true, true, true]
+    end
+
+    test "compare float series with a nan value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+      assert :nan |> Series.not_equal(s1) |> Series.to_list() == [true, true, true, true, true]
+    end
+
+    test "compare float series with an infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      assert :infinity |> Series.not_equal(s1) |> Series.to_list() == [
+               true,
+               true,
+               true,
+               false,
+               true
+             ]
+    end
+
+    test "compare float series with an negative infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      assert :neg_infinity |> Series.not_equal(s1) |> Series.to_list() == [
+               true,
+               true,
+               true,
+               true,
+               false
+             ]
     end
   end
 
