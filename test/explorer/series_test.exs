@@ -1533,6 +1533,16 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s3) == [-3, -3, -3]
     end
 
+    test "subtracting two float series together" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity, :infinity, :neg_infinity])
+      s2 = Series.from_list([4.0, 4.5, :nan, :infinity, :neg_infinity, :neg_infinity, :infinity])
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == :float
+      assert Series.to_list(s3) == [-3.0, -2.0, :nan, :nan, :nan, :infinity, :neg_infinity]
+    end
+
     test "subtracting a series with an integer scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
@@ -1559,6 +1569,33 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [-0.5, 0.5, 1.5]
     end
 
+    test "subtracting a series with a nan value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.subtract(s1, :nan)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
+    end
+
+    test "subtracting a series with a infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.subtract(s1, :infinity)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :nan, :neg_infinity]
+    end
+
+    test "subtracting a series with a negative infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.subtract(s1, :neg_infinity)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:infinity, :infinity, :nan, :infinity, :nan]
+    end
+
     test "subtracting a series with a float scalar value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
@@ -1566,6 +1603,33 @@ defmodule Explorer.SeriesTest do
       assert s2.dtype == :float
 
       assert Series.to_list(s2) == [0.5, -0.5, -1.5]
+    end
+
+    test "subtracting a series with a nan value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.subtract(:nan, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
+    end
+
+    test "subtracting a series with a infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.subtract(:infinity, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:infinity, :infinity, :nan, :nan, :infinity]
+    end
+
+    test "subtracting a series with a negative infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.subtract(:neg_infinity, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :neg_infinity, :nan]
     end
   end
 
