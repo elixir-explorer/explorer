@@ -831,6 +831,20 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.greater_equal(s2) |> Series.to_list() == [true, true, false]
     end
 
+    test "compare float series" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity, :infinity])
+      s2 = Series.from_list([1.0, 2.0, :nan, :infinity, :neg_infinity, :neg_infinity])
+
+      assert s1 |> Series.greater_equal(s2) |> Series.to_list() == [
+               true,
+               true,
+               false,
+               true,
+               true,
+               true
+             ]
+    end
+
     test "compare time series" do
       s1 = Series.from_list([~T[00:00:00.000000], ~T[12:00:00.000000], ~T[23:59:59.999999]])
       s2 = Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:50:59.999999]])
@@ -844,10 +858,106 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.greater_equal(2) |> Series.to_list() == [false, false, true, true]
     end
 
+    test "compare float series with a float value on the right-hand side" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      assert s1 |> Series.greater_equal(2.0) |> Series.to_list() == [
+               false,
+               true,
+               false,
+               true,
+               false
+             ]
+    end
+
+    test "compare float series with a nan value on the right-hand side" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      assert s1 |> Series.greater_equal(:nan) |> Series.to_list() == [
+               false,
+               false,
+               false,
+               false,
+               false
+             ]
+    end
+
+    test "compare float series with an infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      assert s1 |> Series.greater_equal(:infinity) |> Series.to_list() == [
+               false,
+               false,
+               false,
+               true,
+               false
+             ]
+    end
+
+    test "compare float series with an negative infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      assert s1 |> Series.greater_equal(:neg_infinity) |> Series.to_list() == [
+               true,
+               true,
+               false,
+               true,
+               true
+             ]
+    end
+
     test "compare integer series with a scalar value on the left-hand side" do
       s1 = Series.from_list([1, 0, 2, 3])
 
       assert 2 |> Series.greater_equal(s1) |> Series.to_list() == [true, true, true, false]
+    end
+
+    test "compare float series with a float value on the left-hand side" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      assert 2.5 |> Series.greater_equal(s1) |> Series.to_list() == [
+               true,
+               false,
+               false,
+               false,
+               true
+             ]
+    end
+
+    test "compare float series with a nan value on the left-hand side" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      assert :nan |> Series.greater_equal(s1) |> Series.to_list() == [
+               false,
+               false,
+               false,
+               false,
+               false
+             ]
+    end
+
+    test "compare float series with an infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      assert :infinity |> Series.greater_equal(s1) |> Series.to_list() == [
+               true,
+               true,
+               false,
+               true,
+               true
+             ]
+    end
+
+    test "compare float series with an negative infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      assert :neg_infinity |> Series.greater_equal(s1) |> Series.to_list() == [
+               false,
+               false,
+               false,
+               false,
+               true
+             ]
     end
   end
 
