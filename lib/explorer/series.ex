@@ -2209,11 +2209,17 @@ defmodule Explorer.Series do
     do: dtype_mismatch_error("#{operation}/2", left, right)
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right)
-       when K.and(numeric_dtype?(dtype), is_number(right)),
+       when K.and(
+              numeric_dtype?(dtype),
+              K.or(is_number(right), K.in(right, [:nan, :infinity, :neg_infinity]))
+            ),
        do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, left, %Series{dtype: dtype} = right)
-       when K.and(numeric_dtype?(dtype), is_number(left)),
+       when K.and(
+              numeric_dtype?(dtype),
+              K.or(is_number(left), K.in(left, [:nan, :infinity, :neg_infinity]))
+            ),
        do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, _, %Series{dtype: dtype}),
