@@ -1877,6 +1877,22 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [nil, 3, 2, 1]
     end
 
+    test "sort a float series in ascending order" do
+      s1 = Series.from_list([3.0, 1.0, :nan, nil, :infinity, :neg_infinity, 2.0])
+
+      result = Series.sort(s1)
+
+      assert Series.to_list(result) == [:neg_infinity, 1.0, 2.0, 3.0, :infinity, :nan, nil]
+    end
+
+    test "sort a float series in descending order" do
+      s1 = Series.from_list([3.0, 1.0, :nan, nil, :infinity, :neg_infinity, 2.0])
+
+      result = Series.sort(s1, direction: :desc)
+
+      assert Series.to_list(result) == [nil, :nan, :infinity, 3.0, 2.0, 1.0, :neg_infinity]
+    end
+
     test "sort a series in descending order, but with nils last" do
       s1 = Series.from_list([3, 1, nil, 2])
 
@@ -1891,6 +1907,22 @@ defmodule Explorer.SeriesTest do
       result = Series.sort(s1, nils: :first)
 
       assert Series.to_list(result) == [nil, 1, 2, 3]
+    end
+
+    test "sort a float series in descending order, but with nils last" do
+      s1 = Series.from_list([3.0, 1.0, :nan, nil, :infinity, :neg_infinity, 2.0])
+
+      result = Series.sort(s1, direction: :desc, nils: :last)
+
+      assert Series.to_list(result) == [:nan, :infinity, 3.0, 2.0, 1.0, :neg_infinity, nil]
+    end
+
+    test "sort a float series in ascending order, but nils first" do
+      s1 = Series.from_list([3.0, 1.0, :nan, nil, :infinity, :neg_infinity, 2.0])
+
+      result = Series.sort(s1, nils: :first)
+
+      assert Series.to_list(result) == [nil, :neg_infinity, 1.0, 2.0, 3.0, :infinity, :nan]
     end
   end
 
