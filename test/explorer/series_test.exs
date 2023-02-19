@@ -1253,10 +1253,10 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with float series" do
-      s1 = Series.from_list([1.0, 2.0, 3.0])
-      s2 = Series.from_list([1.0, 0.0, 3.0])
+      s1 = Series.from_list([1.0, 2.0, :nan, :infinity, :neg_infinity])
+      s2 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
 
-      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, true, true]
     end
 
     test "with binary series" do
