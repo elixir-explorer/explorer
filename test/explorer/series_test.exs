@@ -1756,6 +1756,16 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s3) == [4.0, 2.5, 2.0]
     end
 
+    test "dividing two float series together" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity, :infinity])
+      s2 = Series.from_list([4.0, 4.5, :nan, :infinity, :neg_infinity, :neg_infinity])
+
+      s3 = Series.divide(s1, s2)
+
+      assert s3.dtype == :float
+      assert Series.to_list(s3) == [0.25, 0.5555555555555556, :nan, :nan, :nan, :nan]
+    end
+
     test "dividing a series with an integer scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
@@ -1783,6 +1793,33 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [-0.4, -0.8, -1.2]
     end
 
+    test "dividing a series with a nan value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.divide(s1, :nan)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
+    end
+
+    test "dividing a series with a infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.divide(s1, :infinity)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [0.0, 0.0, :nan, :nan, :nan]
+    end
+
+    test "dividing a series with a negative infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.divide(s1, :neg_infinity)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [-0.0, -0.0, :nan, :nan, :nan]
+    end
+
     test "dividing a series with a float scalar value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
@@ -1790,6 +1827,33 @@ defmodule Explorer.SeriesTest do
 
       assert s2.dtype == :float
       assert Series.to_list(s2) == [-3.12, -1.56, -1.04]
+    end
+
+    test "dividing a series with a nan value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.divide(:nan, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
+    end
+
+    test "dividing a series with a infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.divide(:infinity, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:infinity, :infinity, :nan, :nan, :nan]
+    end
+
+    test "dividing a series with a negative infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.divide(:neg_infinity, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :nan, :nan]
     end
   end
 
