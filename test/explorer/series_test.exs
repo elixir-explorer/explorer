@@ -1386,7 +1386,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "float series" do
-      s = Series.from_list([1.2, 2.3, 3.4])
+      s = Series.from_list([1.2, 2.3, 3.4, :nan, :infinity, :neg_infinity])
       assert Series.iotype(s) == {:f, 64}
     end
 
