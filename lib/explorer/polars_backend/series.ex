@@ -252,7 +252,7 @@ defmodule Explorer.PolarsBackend.Series do
   def pow(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_pow, [right.data])
 
-  def pow(left, exponent) when is_float(exponent),
+  def pow(left, exponent) when is_float(exponent) or exponent in [:nan, :infinity, :neg_infinity],
     do: Shared.apply_series(left, :s_pow_f_rhs, [exponent])
 
   def pow(left, exponent) when is_integer(exponent) and exponent >= 0 do
@@ -262,8 +262,9 @@ defmodule Explorer.PolarsBackend.Series do
     end
   end
 
-  def pow(exponent, right) when is_float(exponent),
-    do: Shared.apply_series(right, :s_pow_f_lhs, [exponent])
+  def pow(exponent, right)
+      when is_float(exponent) or exponent in [:nan, :infinity, :neg_infinity],
+      do: Shared.apply_series(right, :s_pow_f_lhs, [exponent])
 
   def pow(exponent, right) when is_integer(exponent) and exponent >= 0 do
     cond do

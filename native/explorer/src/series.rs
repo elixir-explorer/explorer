@@ -768,21 +768,61 @@ pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_f_rhs(s: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
+pub fn s_pow_f_rhs(s: ExSeries, exponent: Term) -> Result<ExSeries, ExplorerError> {
+    let nan = atoms::nan();
+    let infinity = atoms::infinity();
+    let neg_infinity = atoms::neg_infinity();
+
+    let float = match exponent.get_type() {
+        TermType::Number => exponent.decode::<f64>().unwrap(),
+        TermType::Atom => {
+            if nan.eq(&exponent) {
+                f64::NAN
+            } else if infinity.eq(&exponent) {
+                f64::INFINITY
+            } else if neg_infinity.eq(&exponent) {
+                f64::NEG_INFINITY
+            } else {
+                panic!("pow/2 invalid float")
+            }
+        }
+        term_type => panic!("pow/2 not implemented for {term_type:?}"),
+    };
+
     let s = s
         .cast(&DataType::Float64)?
         .f64()?
-        .apply(|v| v.powf(exponent))
+        .apply(|v| v.powf(float))
         .into_series();
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_f_lhs(s: ExSeries, exponent: f64) -> Result<ExSeries, ExplorerError> {
+pub fn s_pow_f_lhs(s: ExSeries, exponent: Term) -> Result<ExSeries, ExplorerError> {
+    let nan = atoms::nan();
+    let infinity = atoms::infinity();
+    let neg_infinity = atoms::neg_infinity();
+
+    let float = match exponent.get_type() {
+        TermType::Number => exponent.decode::<f64>().unwrap(),
+        TermType::Atom => {
+            if nan.eq(&exponent) {
+                f64::NAN
+            } else if infinity.eq(&exponent) {
+                f64::INFINITY
+            } else if neg_infinity.eq(&exponent) {
+                f64::NEG_INFINITY
+            } else {
+                panic!("pow/2 invalid float")
+            }
+        }
+        term_type => panic!("pow/2 not implemented for {term_type:?}"),
+    };
+
     let s = s
         .cast(&DataType::Float64)?
         .f64()?
-        .apply(|v| exponent.powf(v))
+        .apply(|v| float.powf(v))
         .into_series();
     Ok(ExSeries::new(s))
 }
