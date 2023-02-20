@@ -12,6 +12,8 @@ defmodule Explorer.PolarsBackend.Series do
 
   @behaviour Explorer.Backend.Series
 
+  defguardp is_numerical(n) when is_number(n) or n in [:nan, :infinity, :neg_infinity]
+
   # Conversion
 
   @impl true
@@ -193,41 +195,37 @@ defmodule Explorer.PolarsBackend.Series do
   def add(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_add, [right.data])
 
-  def add(left, right) when is_number(right) or right in [:nan, :infinity, :neg_infinity],
-    do: apply_scalar_on_rhs(:add, left, right)
+  def add(left, right) when is_numerical(right), do: apply_scalar_on_rhs(:add, left, right)
 
-  def add(left, right) when is_number(left) or left in [:nan, :infinity, :neg_infinity],
-    do: apply_scalar_on_lhs(:add, left, right)
+  def add(left, right) when is_numerical(left), do: apply_scalar_on_lhs(:add, left, right)
 
   @impl true
   def subtract(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_subtract, [right.data])
 
-  def subtract(left, right) when is_number(right) or right in [:nan, :infinity, :neg_infinity],
+  def subtract(left, right) when is_numerical(right),
     do: apply_scalar_on_rhs(:subtract, left, right)
 
-  def subtract(left, right) when is_number(left) or left in [:nan, :infinity, :neg_infinity],
+  def subtract(left, right) when is_numerical(left),
     do: apply_scalar_on_lhs(:subtract, left, right)
 
   @impl true
   def multiply(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_multiply, [right.data])
 
-  def multiply(left, right) when is_number(right) or right in [:nan, :infinity, :neg_infinity],
+  def multiply(left, right) when is_numerical(right),
     do: apply_scalar_on_rhs(:multiply, left, right)
 
-  def multiply(left, right) when is_number(left) or left in [:nan, :infinity, :neg_infinity],
+  def multiply(left, right) when is_numerical(left),
     do: apply_scalar_on_lhs(:multiply, left, right)
 
   @impl true
   def divide(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_divide, [right.data])
 
-  def divide(left, right) when is_number(right) or right in [:nan, :infinity, :neg_infinity],
-    do: apply_scalar_on_rhs(:divide, left, right)
+  def divide(left, right) when is_numerical(right), do: apply_scalar_on_rhs(:divide, left, right)
 
-  def divide(left, right) when is_number(left) or left in [:nan, :infinity, :neg_infinity],
-    do: apply_scalar_on_lhs(:divide, left, right)
+  def divide(left, right) when is_numerical(left), do: apply_scalar_on_lhs(:divide, left, right)
 
   @impl true
   def quotient(%Series{} = left, %Series{} = right),
@@ -252,9 +250,6 @@ defmodule Explorer.PolarsBackend.Series do
   def pow(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_pow, [right.data])
 
-  def pow(left, exponent) when is_float(exponent) or exponent in [:nan, :infinity, :neg_infinity],
-    do: Shared.apply_series(left, :s_pow_f_rhs, [exponent])
-
   def pow(left, exponent) when is_integer(exponent) and exponent >= 0 do
     cond do
       Series.dtype(left) == :integer -> Shared.apply_series(left, :s_pow_i_rhs, [exponent])
@@ -262,9 +257,8 @@ defmodule Explorer.PolarsBackend.Series do
     end
   end
 
-  def pow(exponent, right)
-      when is_float(exponent) or exponent in [:nan, :infinity, :neg_infinity],
-      do: Shared.apply_series(right, :s_pow_f_lhs, [exponent])
+  def pow(left, exponent) when is_numerical(exponent),
+    do: Shared.apply_series(left, :s_pow_f_rhs, [exponent])
 
   def pow(exponent, right) when is_integer(exponent) and exponent >= 0 do
     cond do
@@ -272,6 +266,9 @@ defmodule Explorer.PolarsBackend.Series do
       Series.dtype(right) == :float -> Shared.apply_series(right, :s_pow_f_lhs, [exponent / 1])
     end
   end
+
+  def pow(exponent, right) when is_numerical(exponent),
+    do: Shared.apply_series(right, :s_pow_f_lhs, [exponent])
 
   # Comparisons
 

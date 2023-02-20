@@ -78,6 +78,7 @@ defmodule Explorer.Series do
   @behaviour Access
   @compile {:no_warn_undefined, Nx}
 
+  defguardp is_numerical(n) when K.or(is_number(n), K.in(n, [:nan, :infinity, :neg_infinity]))
   defguardp io_dtype?(dtype) when K.not(K.in(dtype, [:binary, :string]))
   defguardp numeric_dtype?(dtype) when K.in(dtype, [:float, :integer])
   defguardp numeric_or_bool_dtype?(dtype) when K.in(dtype, [:float, :integer, :boolean])
@@ -2209,17 +2210,11 @@ defmodule Explorer.Series do
     do: dtype_mismatch_error("#{operation}/2", left, right)
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right)
-       when K.and(
-              numeric_dtype?(dtype),
-              K.or(is_number(right), K.in(right, [:nan, :infinity, :neg_infinity]))
-            ),
+       when K.and(numeric_dtype?(dtype), is_numerical(right)),
        do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, left, %Series{dtype: dtype} = right)
-       when K.and(
-              numeric_dtype?(dtype),
-              K.or(is_number(left), K.in(left, [:nan, :infinity, :neg_infinity]))
-            ),
+       when K.and(numeric_dtype?(dtype), is_numerical(left)),
        do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, _, %Series{dtype: dtype}),
@@ -2559,10 +2554,7 @@ defmodule Explorer.Series do
        do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, right)
-       when K.and(
-              numeric_dtype?(dtype),
-              K.or(is_number(right), K.in(right, [:nan, :infinity, :neg_infinity]))
-            ),
+       when K.and(numeric_dtype?(dtype), is_numerical(right)),
        do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: :date}, %Date{}), do: true
@@ -2570,10 +2562,7 @@ defmodule Explorer.Series do
   defp valid_for_bool_mask_operation?(%Series{dtype: :datetime}, %NaiveDateTime{}), do: true
 
   defp valid_for_bool_mask_operation?(left, %Series{dtype: dtype})
-       when K.and(
-              numeric_dtype?(dtype),
-              K.or(is_number(left), K.in(left, [:nan, :infinity, :neg_infinity]))
-            ),
+       when K.and(numeric_dtype?(dtype), is_numerical(left)),
        do: true
 
   defp valid_for_bool_mask_operation?(%Date{}, %Series{dtype: :date}), do: true
