@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ELIXIR_VERSION: 1.13
-  OTP_VERSION: 24.2
+  ELIXIR_VERSION: 1.14
+  OTP_VERSION: 25.2
   EXPLORER_BUILD: true
   RUST_TOOLCHAIN_VERSION: nightly-2023-02-14
 
