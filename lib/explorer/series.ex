@@ -78,11 +78,12 @@ defmodule Explorer.Series do
   @behaviour Access
   @compile {:no_warn_undefined, Nx}
 
-  defguardp io_dtype?(dtype) when K.not(K.in(dtype, [:binary, :string]))
-  defguardp numeric_dtype?(dtype) when K.in(dtype, [:float, :integer])
-  defguardp numeric_or_bool_dtype?(dtype) when K.in(dtype, [:float, :integer, :boolean])
+  defguardp is_numerical(n) when K.or(is_number(n), K.in(n, [:nan, :infinity, :neg_infinity]))
+  defguardp is_io_dtype(dtype) when K.not(K.in(dtype, [:binary, :string]))
+  defguardp is_numeric_dtype(dtype) when K.in(dtype, [:float, :integer])
+  defguardp is_numeric_or_bool_dtype(dtype) when K.in(dtype, [:float, :integer, :boolean])
 
-  defguardp numeric_or_date_dtype?(dtype)
+  defguardp is_numeric_or_date_dtype(dtype)
             when K.in(dtype, [:float, :integer, :date, :time, :datetime])
 
   @impl true
@@ -619,7 +620,7 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec to_iovec(series :: Series.t()) :: [binary]
   def to_iovec(%Series{dtype: dtype} = series) do
-    if io_dtype?(dtype) do
+    if is_io_dtype(dtype) do
       Shared.apply_impl(series, :to_iovec)
     else
       raise ArgumentError, "cannot convert series of dtype #{inspect(dtype)} into iovec"
@@ -869,7 +870,7 @@ defmodule Explorer.Series do
   @doc type: :introspection
   @spec iotype(series :: Series.t()) :: {:s | :u | :f, non_neg_integer()} | :none
   def iotype(%Series{dtype: dtype} = series) do
-    if io_dtype?(dtype) do
+    if is_io_dtype(dtype) do
       Shared.apply_impl(series, :iotype)
     else
       :none
@@ -1067,7 +1068,7 @@ defmodule Explorer.Series do
     end
 
     cond do
-      K.and(numeric_dtype?(on_true_dtype), numeric_dtype?(on_false_dtype)) ->
+      K.and(is_numeric_dtype(on_true_dtype), is_numeric_dtype(on_false_dtype)) ->
         Shared.apply_impl(predicate, :select, [on_true, on_false])
 
       on_true_dtype == on_false_dtype ->
@@ -1443,7 +1444,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec sum(series :: Series.t()) :: number() | nil
-  def sum(%Series{dtype: dtype} = series) when numeric_or_bool_dtype?(dtype),
+  def sum(%Series{dtype: dtype} = series) when is_numeric_or_bool_dtype(dtype),
     do: Shared.apply_impl(series, :sum)
 
   def sum(%Series{dtype: dtype}), do: dtype_error("sum/1", dtype, [:integer, :float, :boolean])
@@ -1487,7 +1488,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec min(series :: Series.t()) :: number() | Date.t() | Time.t() | NaiveDateTime.t() | nil
-  def min(%Series{dtype: dtype} = series) when numeric_or_date_dtype?(dtype),
+  def min(%Series{dtype: dtype} = series) when is_numeric_or_date_dtype(dtype),
     do: Shared.apply_impl(series, :min)
 
   def min(%Series{dtype: dtype}),
@@ -1532,7 +1533,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec max(series :: Series.t()) :: number() | Date.t() | Time.t() | NaiveDateTime.t() | nil
-  def max(%Series{dtype: dtype} = series) when numeric_or_date_dtype?(dtype),
+  def max(%Series{dtype: dtype} = series) when is_numeric_or_date_dtype(dtype),
     do: Shared.apply_impl(series, :max)
 
   def max(%Series{dtype: dtype}),
@@ -1562,7 +1563,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec mean(series :: Series.t()) :: float() | nil
-  def mean(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+  def mean(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: Shared.apply_impl(series, :mean)
 
   def mean(%Series{dtype: dtype}), do: dtype_error("mean/1", dtype, [:integer, :float])
@@ -1591,7 +1592,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec median(series :: Series.t()) :: float() | nil
-  def median(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+  def median(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: Shared.apply_impl(series, :median)
 
   def median(%Series{dtype: dtype}), do: dtype_error("median/1", dtype, [:integer, :float])
@@ -1620,7 +1621,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec variance(series :: Series.t()) :: float() | nil
-  def variance(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+  def variance(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: Shared.apply_impl(series, :variance)
 
   def variance(%Series{dtype: dtype}), do: dtype_error("variance/1", dtype, [:integer, :float])
@@ -1649,7 +1650,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec standard_deviation(series :: Series.t()) :: float() | nil
-  def standard_deviation(%Series{dtype: dtype} = series) when numeric_dtype?(dtype),
+  def standard_deviation(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: Shared.apply_impl(series, :standard_deviation)
 
   def standard_deviation(%Series{dtype: dtype}),
@@ -1695,7 +1696,7 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
   def quantile(%Series{dtype: dtype} = series, quantile)
-      when numeric_or_date_dtype?(dtype),
+      when is_numeric_or_date_dtype(dtype),
       do: Shared.apply_impl(series, :quantile, [quantile])
 
   def quantile(%Series{dtype: dtype}, _),
@@ -1746,7 +1747,7 @@ defmodule Explorer.Series do
   def cumulative_max(series, opts \\ [])
 
   def cumulative_max(%Series{dtype: dtype} = series, opts)
-      when numeric_or_date_dtype?(dtype) do
+      when is_numeric_or_date_dtype(dtype) do
     opts = Keyword.validate!(opts, reverse: false)
     Shared.apply_impl(series, :cumulative_max, [opts[:reverse]])
   end
@@ -1797,7 +1798,7 @@ defmodule Explorer.Series do
   def cumulative_min(series, opts \\ [])
 
   def cumulative_min(%Series{dtype: dtype} = series, opts)
-      when numeric_or_date_dtype?(dtype) do
+      when is_numeric_or_date_dtype(dtype) do
     opts = Keyword.validate!(opts, reverse: false)
     Shared.apply_impl(series, :cumulative_min, [opts[:reverse]])
   end
@@ -1839,7 +1840,7 @@ defmodule Explorer.Series do
   def cumulative_sum(series, opts \\ [])
 
   def cumulative_sum(%Series{dtype: dtype} = series, opts)
-      when numeric_dtype?(dtype) do
+      when is_numeric_dtype(dtype) do
     opts = Keyword.validate!(opts, reverse: false)
     Shared.apply_impl(series, :cumulative_sum, [opts[:reverse]])
   end
@@ -1881,7 +1882,7 @@ defmodule Explorer.Series do
   def peaks(series, max_or_min \\ :max)
 
   def peaks(%Series{dtype: dtype} = series, max_or_min)
-      when numeric_or_date_dtype?(dtype),
+      when is_numeric_or_date_dtype(dtype),
       do: Shared.apply_impl(series, :peaks, [max_or_min])
 
   def peaks(%Series{dtype: dtype}, _),
@@ -2044,13 +2045,13 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec divide(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def divide(%Series{dtype: dtype} = left, right) when numeric_dtype?(dtype) do
+  def divide(%Series{dtype: dtype} = left, right) when is_numeric_dtype(dtype) do
     left = cast(left, :float)
 
     basic_numeric_operation(:divide, left, right)
   end
 
-  def divide(left, %Series{dtype: dtype} = right) when numeric_dtype?(dtype) do
+  def divide(left, %Series{dtype: dtype} = right) when is_numeric_dtype(dtype) do
     right = cast(right, :float)
 
     basic_numeric_operation(:divide, left, right)
@@ -2202,18 +2203,18 @@ defmodule Explorer.Series do
          %Series{dtype: left_dtype} = left,
          %Series{dtype: right_dtype} = right
        )
-       when K.and(numeric_dtype?(left_dtype), numeric_dtype?(right_dtype)),
+       when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
        do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, %Series{} = left, %Series{} = right),
     do: dtype_mismatch_error("#{operation}/2", left, right)
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right)
-       when K.and(numeric_dtype?(dtype), is_number(right)),
+       when K.and(is_numeric_dtype(dtype), is_numerical(right)),
        do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, left, %Series{dtype: dtype} = right)
-       when K.and(numeric_dtype?(dtype), is_number(left)),
+       when K.and(is_numeric_dtype(dtype), is_numerical(left)),
        do: Shared.apply_series_impl(operation, [left, right])
 
   defp basic_numeric_operation(operation, _, %Series{dtype: dtype}),
@@ -2549,11 +2550,11 @@ defmodule Explorer.Series do
     do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
-       when K.and(numeric_dtype?(left_dtype), numeric_dtype?(right_dtype)),
+       when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
        do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, right)
-       when K.and(numeric_dtype?(dtype), is_number(right)),
+       when K.and(is_numeric_dtype(dtype), is_numerical(right)),
        do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: :date}, %Date{}), do: true
@@ -2561,7 +2562,7 @@ defmodule Explorer.Series do
   defp valid_for_bool_mask_operation?(%Series{dtype: :datetime}, %NaiveDateTime{}), do: true
 
   defp valid_for_bool_mask_operation?(left, %Series{dtype: dtype})
-       when K.and(numeric_dtype?(dtype), is_number(left)),
+       when K.and(is_numeric_dtype(dtype), is_numerical(left)),
        do: true
 
   defp valid_for_bool_mask_operation?(%Date{}, %Series{dtype: :date}), do: true
