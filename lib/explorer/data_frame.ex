@@ -101,11 +101,11 @@ defmodule Explorer.DataFrame do
   to files in the formats above. `load_*` and `dump_*` versions are also available to read
   and write those formats directly in memory.
 
-  ## Access
+  ## Selecting columns and access
 
-  In addition to this "grammar" of data manipulation, you'll find useful functions for
-  slicing and dicing dataframes such as `pull/2`, `head/2`, `sample/3`, `slice/2`, and
-  `slice/3`.
+  Several functions in this module, such as `select/2`, `discard/2`, `drop_nil/2`, and so
+  forth accept a single or multiple columns as arguments. The columns can be specified in
+  a variety of formats, which we describe below.
 
   `Explorer.DataFrame` also implements the `Access` behaviour (also known as the brackets
   syntax). This should be familiar for users coming from other language with dataframes
@@ -118,8 +118,8 @@ defmodule Explorer.DataFrame do
         integer [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
       >
 
-  Accessing a dataframe will always return a column. You can pass either a string or
-  an atom, representing the column name. Or an integer representing the column order:
+  Accessing the dataframe with a column name either as a string or an atom, will return
+  the column. You can also pass an integer representing the column order:
 
       iex> df = Explorer.Datasets.wine()
       iex> df[0]
@@ -128,7 +128,8 @@ defmodule Explorer.DataFrame do
         integer [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
       >
 
-  Passing a list will return a dataframe with only the desired columns:
+  You can also pass a list, a range, or a regex to return a dataframe matching
+  the given data type. For example, by passing a list:
 
       iex> df = Explorer.Datasets.wine()
       iex> df[["class", "hue"]]
@@ -138,8 +139,29 @@ defmodule Explorer.DataFrame do
         hue float [1.04, 1.05, 1.03, 0.86, 1.04, ...]
       >
 
-  Given you can also access a series using its index, you can use multiple accesses to select
-  a column and row at the same time:
+  Or a range for the given positions:
+
+      iex> df = Explorer.Datasets.wine()
+      iex> df[0..2]
+      #Explorer.DataFrame<
+        Polars[178 x 3]
+        class integer [1, 1, 1, 1, 1, ...]
+        alcohol float [14.23, 13.2, 13.16, 14.37, 13.24, ...]
+        malic_acid float [1.71, 1.78, 2.36, 1.95, 2.59, ...]
+      >
+
+  Or a regex to keep only columns matching a given pattern:
+
+      iex> df = Explorer.Datasets.wine()
+      iex> df[~r/(class|hue)/]
+      #Explorer.DataFrame<
+        Polars[178 x 2]
+        class integer [1, 1, 1, 1, 1, ...]
+        hue float [1.04, 1.05, 1.03, 0.86, 1.04, ...]
+      >
+
+  Given you can also access a series using its index, you can use
+  multiple accesses to select a column and row at the same time:
 
       iex> df = Explorer.Datasets.wine()
       iex> df["class"][3]
@@ -175,6 +197,8 @@ defmodule Explorer.DataFrame do
     * a list of columns indexes or names as atoms and strings
 
     * a range
+
+    * a regex that keeps only the names matching the regex
 
     * a one-arity function that receives column names and returns
       true for column names to keep
@@ -234,14 +258,11 @@ defmodule Explorer.DataFrame do
     |> Enum.map_reduce(nil, fn
       {column, value}, maybe_map when is_integer(column) ->
         map = maybe_map || column_index_map(existing_columns)
-
         existing_column = fetch_column_at!(map, column)
-
         {{existing_column, value_fun.(value)}, map}
 
       {column, value}, maybe_map when is_atom(column) ->
         column = Atom.to_string(column)
-
         {{column, value_fun.(value)}, maybe_map}
 
       {column, value}, maybe_map when is_binary(column) ->
@@ -262,57 +283,9 @@ defmodule Explorer.DataFrame do
   defp column_index_map(names),
     do: for({name, idx} <- Enum.with_index(names), into: %{}, do: {idx, name})
 
-  # Normalize column names and raise if column does not exist.
-  defp to_existing_columns(df, columns) when is_list(columns) do
-    {columns, _cache} =
-      Enum.map_reduce(columns, nil, fn
-        column, maybe_map when is_integer(column) ->
-          map = maybe_map || column_index_map(df.names)
-          existing_column = fetch_column_at!(map, column)
-          {existing_column, map}
-
-        column, maybe_map when is_atom(column) ->
-          column = Atom.to_string(column)
-          maybe_raise_column_not_found(df, column)
-          {column, maybe_map}
-
-        column, maybe_map when is_binary(column) ->
-          maybe_raise_column_not_found(df, column)
-          {column, maybe_map}
-      end)
-
-    columns
-  end
-
-  defp to_existing_columns(%{names: names}, %Range{} = columns) do
-    Enum.slice(names, columns)
-  end
-
-  defp to_existing_columns(%{names: names}, callback) when is_function(callback, 1) do
-    Enum.filter(names, callback)
-  end
-
-  defp to_existing_columns(%{names: names, dtypes: dtypes}, callback)
-       when is_function(callback, 2) do
-    Enum.filter(names, fn name -> callback.(name, dtypes[name]) end)
-  end
-
-  defp to_existing_columns(_, other) do
-    raise ArgumentError, """
-    invalid columns specification. Columns may be specified as one of:
-
-      * a list of columns indexes or names as atoms and strings
-
-      * a range
-
-      * a one-arity function that receives column names and returns
-        true for column names to keep
-
-      * a two-arity function that receives column names and types and
-        returns true for column names to keep
-
-    Got: #{inspect(other)}
-    """
+  # Normalizes column names and raise if column does not exist.
+  defp to_existing_columns(df, columns) do
+    Explorer.Shared.to_existing_columns(df, columns)
   end
 
   # Normalizes the "columns" option for some IO operations.
@@ -1773,6 +1746,15 @@ defmodule Explorer.DataFrame do
         b integer [1, 2, 3]
       >
 
+  Or, if you prefer, a regex:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.select(df, ~r/^b$/)
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        b integer [1, 2, 3]
+      >
+
   Or a callback function that takes names and types:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
@@ -1835,7 +1817,7 @@ defmodule Explorer.DataFrame do
         c integer [4, 5, 6]
       >
 
-  Ranges and functions are also accepted in column names, as in `select/2`.
+  Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
 
   ## Grouped examples
 
@@ -2798,7 +2780,17 @@ defmodule Explorer.DataFrame do
         b integer [1]
       >
 
-  To select some columns:
+   To drop nils on a single column:
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3])
+      iex> Explorer.DataFrame.drop_nil(df, :a)
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        a integer [1, 2]
+        b integer [1, nil]
+      >
+
+  To drop some columns:
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
       iex> Explorer.DataFrame.drop_nil(df, [:a, :c])
@@ -2809,43 +2801,12 @@ defmodule Explorer.DataFrame do
         c integer [5]
       >
 
-  To select some columns by range:
-
-      iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
-      iex> Explorer.DataFrame.drop_nil(df, 0..1)
-      #Explorer.DataFrame<
-        Polars[1 x 3]
-        a integer [1]
-        b integer [1]
-        c integer [nil]
-      >
-
-  Or to select columns by a callback on the names:
-
-      iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5, 6])
-      iex> Explorer.DataFrame.drop_nil(df, fn name -> name == "a" or name == "b" end)
-      #Explorer.DataFrame<
-        Polars[1 x 3]
-        a integer [1]
-        b integer [1]
-        c integer [nil]
-      >
-
-  Or to select columns by a callback on the names and types:
-
-      iex> df = Explorer.DataFrame.new(a: [1, 2, nil], b: [1, nil, 3], c: [nil, 5.0, 6.0])
-      iex> Explorer.DataFrame.drop_nil(df, fn _name, type -> type == :float end)
-      #Explorer.DataFrame<
-        Polars[2 x 3]
-        a integer [2, nil]
-        b integer [nil, 3]
-        c float [5.0, 6.0]
-      >
+  Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
   """
   @doc type: :single
   @spec drop_nil(df :: DataFrame.t(), column() | columns()) ::
           DataFrame.t()
-  def drop_nil(df, columns_or_column \\ 0..-1)
+  def drop_nil(df, columns_or_column \\ 0..-1//1)
 
   def drop_nil(df, column) when is_column(column), do: drop_nil(df, [column])
 
@@ -2853,7 +2814,6 @@ defmodule Explorer.DataFrame do
 
   def drop_nil(df, columns) do
     columns = to_existing_columns(df, columns)
-
     Shared.apply_impl(df, :drop_nil, [columns])
   end
 
@@ -2917,7 +2877,7 @@ defmodule Explorer.DataFrame do
         old_dtypes = df.dtypes
 
         for {name, _} <- pairs do
-          maybe_raise_column_not_found(df, name)
+          Shared.maybe_raise_column_not_found(df, name)
         end
 
         new_dtypes =
@@ -3010,6 +2970,8 @@ defmodule Explorer.DataFrame do
         per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
+
+  Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
   """
   @doc type: :single
   @spec rename_with(df :: DataFrame.t(), columns :: columns(), callback :: function()) ::
@@ -3070,6 +3032,8 @@ defmodule Explorer.DataFrame do
         col_y_a integer [0, 1, 0, 0]
         col_y_d integer [0, 0, 0, 1]
       >
+
+  Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
   """
   @doc type: :single
   @spec dummies(df :: DataFrame.t(), column() | columns()) ::
@@ -3095,7 +3059,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Extracts a single column as a series.
 
-  This function is not going to consider groups when pulling series.
+  This is equivalent to `df[field]` for retrieving a single field.
 
   ## Examples
 
@@ -3453,9 +3417,9 @@ defmodule Explorer.DataFrame do
   `pivot_longer/3` "lengthens" data, increasing the number of rows and
   decreasing the number of columns. The inverse transformation is `pivot_wider/4`.
 
-  The second argument, `columns_to_pivot`, can be either list of column names to pivot
-  or a filter callback on the dataframe's names. These columns must always have the same
-  data type.
+  The second argument, `columns_to_pivot`, can be either list of column names to pivot.
+  Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
+  The selected columns must always have the same data type.
 
   In case the dataframe is using groups, the groups that are also in the list of columns
   to pivot will be removed from the resultant dataframe. See the examples below.
@@ -3463,12 +3427,12 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `:select` - Columns that are not in the list of pivot and should be kept in the dataframe.
-      May be a filter callback on the dataframe's column names.
+      Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
       Defaults to all columns except the ones to pivot.
 
     * `:discard` - Columns that are not in the list of pivot and should be dropped from the dataframe.
-      May be a filter callback on the dataframe's column names. This list of columns is going to be
-      subtracted from the list of `select`.
+      Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
+      This list of columns is going to be subtracted from the list of `select`.
       Defaults to an empty list.
 
     * `:names_to` - A string specifying the name of the column to create from the data stored
@@ -3648,7 +3612,7 @@ defmodule Explorer.DataFrame do
     Defaults to all columns in data except for the columns specified in `names_from` and `values_from`.
     Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated
     with existing variables. May accept a filter callback, a list or a range of column names.
-    Default value is `0..-1`. If an empty list is passed, or a range that results in a empty list of
+    Default value is `0..-1//1`. If an empty list is passed, or a range that results in a empty list of
     column names, it raises an error.
 
     ID columns cannot be of the float type and attempting so will raise an error.
@@ -3788,7 +3752,7 @@ defmodule Explorer.DataFrame do
             Keyword.t()
         ) :: DataFrame.t()
   def pivot_wider(df, names_from, values_from, opts \\ []) do
-    opts = Keyword.validate!(opts, id_columns: 0..-1, names_prefix: "")
+    opts = Keyword.validate!(opts, id_columns: 0..-1//1, names_prefix: "")
 
     [values_from, names_from] = to_existing_columns(df, [values_from, names_from])
     dtypes = df.dtypes
@@ -4278,7 +4242,7 @@ defmodule Explorer.DataFrame do
       if Enum.empty?(columns) do
         df
       else
-        mutate_with(ungroup(df, :all), fn ldf ->
+        mutate_with(ungroup(df), fn ldf ->
           for column <- columns, do: {column, Series.cast(ldf[column], :float)}
         end)
       end
@@ -4327,7 +4291,7 @@ defmodule Explorer.DataFrame do
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
-  Or you can group by multiple:
+  Or you can group by multiple columns in a given list:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.group_by(df, ["country", "year"])
@@ -4345,32 +4309,14 @@ defmodule Explorer.DataFrame do
         per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
-  """
-  @doc type: :single
-  @spec group_by(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
-          DataFrame.t()
-  def group_by(df, groups) when is_list(groups) do
-    groups = to_existing_columns(df, groups)
-    all_groups = Enum.uniq(df.groups ++ groups)
-    %{df | groups: all_groups}
-  end
 
-  def group_by(df, group) when is_column_name(group), do: group_by(df, [group])
-
-  @doc """
-  Removes grouping variables.
-
-  Accepts a list of group names. If groups is not specified, then all groups are
-  removed.
-
-  ## Examples
+  Or by a range:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> df = Explorer.DataFrame.group_by(df, ["country", "year"])
-      iex> Explorer.DataFrame.ungroup(df, ["country"])
+      iex> Explorer.DataFrame.group_by(df, 0..1)
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        Groups: ["year"]
+        Groups: ["year", "country"]
         year integer [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         total integer [2308, 1254, 32500, 141, 7924, ...]
@@ -4382,6 +4328,29 @@ defmodule Explorer.DataFrame do
         per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
+
+  Regexes and functions are also accepted in column names, as in `select/2`.
+  """
+  @doc type: :single
+  @spec group_by(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
+          DataFrame.t()
+  def group_by(df, group) when is_column(group), do: group_by(df, [group])
+
+  def group_by(df, groups) do
+    groups = to_existing_columns(df, groups)
+    all_groups = Enum.uniq(df.groups ++ groups)
+    %{df | groups: all_groups}
+  end
+
+  @doc """
+  Removes grouping variables.
+
+  Accepts a list of group names. If groups is not specified, then all groups are
+  removed.
+
+  ## Examples
+
+  Ungroups all by default:
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> df = Explorer.DataFrame.group_by(df, ["country", "year"])
@@ -4399,31 +4368,51 @@ defmodule Explorer.DataFrame do
         per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
+
+  Ungrouping a single column:
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> df = Explorer.DataFrame.group_by(df, ["country", "year"])
+      iex> Explorer.DataFrame.ungroup(df, "country")
+      #Explorer.DataFrame<
+        Polars[1094 x 10]
+        Groups: ["year"]
+        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+        total integer [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel integer [627, 117, 332, 0, 0, ...]
+        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel integer [74, 7, 14565, 0, 374, ...]
+        cement integer [5, 177, 2598, 0, 204, ...]
+        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+      >
+
+  Lists, ranges, regexes, and functions are also accepted in column names, as in `select/2`.
   """
   @doc type: :single
   @spec ungroup(df :: DataFrame.t(), groups_or_group :: column_names() | column_name() | :all) ::
           DataFrame.t()
-  def ungroup(df, groups \\ :all)
+  def ungroup(df, groups \\ 0..-1//1)
 
-  def ungroup(df, :all), do: %{df | groups: []}
+  def ungroup(df, 0..-1//1), do: %{df | groups: []}
 
-  def ungroup(df, groups) when is_list(groups) do
+  def ungroup(df, group) when is_column(group), do: ungroup(df, [group])
+
+  def ungroup(df, groups) do
     current_groups = groups(df)
     groups = to_existing_columns(df, groups)
 
     Enum.each(groups, fn group ->
-      if group not in current_groups,
-        do:
-          raise(
-            ArgumentError,
-            "could not find #{group} in current groups (#{current_groups})"
-          )
+      if group not in current_groups do
+        raise ArgumentError,
+              "could not find #{group} in current groups (#{current_groups})"
+      end
     end)
 
     %{df | groups: current_groups -- groups}
   end
-
-  def ungroup(df, group) when is_column_name(group), do: ungroup(df, [group])
 
   @doc """
   Summarise each group to a single row using `Explorer.Query`.
@@ -4642,14 +4631,6 @@ defmodule Explorer.DataFrame do
     end
   end
 
-  defp maybe_raise_column_not_found(df, name) do
-    unless Map.has_key?(df.dtypes, name) do
-      raise ArgumentError,
-            List.to_string([
-              "could not find column name \"#{name}\"" | Shared.did_you_mean(name, df.names)
-            ])
-    end
-  end
 
   defimpl Inspect do
     import Inspect.Algebra

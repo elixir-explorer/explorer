@@ -28,6 +28,91 @@ defmodule Explorer.Shared do
   end
 
   @doc """
+  Normalize column names and raise if column does not exist.
+  """
+  def to_existing_columns(df, columns) when is_list(columns) do
+    {columns, _cache} =
+      Enum.map_reduce(columns, nil, fn
+        column, maybe_map when is_integer(column) ->
+          map = maybe_map || column_index_map(df.names)
+          existing_column = fetch_column_at!(map, column)
+          {existing_column, map}
+
+        column, maybe_map when is_atom(column) ->
+          column = Atom.to_string(column)
+          maybe_raise_column_not_found(df, column)
+          {column, maybe_map}
+
+        column, maybe_map when is_binary(column) ->
+          maybe_raise_column_not_found(df, column)
+          {column, maybe_map}
+      end)
+
+    columns
+  end
+
+  def to_existing_columns(%{names: names}, %Range{} = columns) do
+    Enum.slice(names, columns)
+  end
+
+  def to_existing_columns(%{names: names}, %Regex{} = columns) do
+    Enum.filter(names, &Regex.match?(columns, &1))
+  end
+
+  def to_existing_columns(%{names: names}, callback) when is_function(callback, 1) do
+    Enum.filter(names, callback)
+  end
+
+  def to_existing_columns(%{names: names, dtypes: dtypes}, callback)
+       when is_function(callback, 2) do
+    Enum.filter(names, fn name -> callback.(name, dtypes[name]) end)
+  end
+
+  def to_existing_columns(_, other) do
+    raise ArgumentError, """
+    invalid columns specification. Columns may be specified as one of:
+
+      * a list of columns indexes or names as atoms and strings
+
+      * a range
+
+      * a regex that keeps only the names matching the regex
+
+      * a one-arity function that receives column names and returns
+        true for column names to keep
+
+      * a two-arity function that receives column names and types and
+        returns true for column names to keep
+
+    Got: #{inspect(other)}
+    """
+  end
+
+  defp fetch_column_at!(map, index) do
+    normalized = if index < 0, do: index + map_size(map), else: index
+
+    case map do
+      %{^normalized => column} -> column
+      %{} -> raise ArgumentError, "no column exists at index #{index}"
+    end
+  end
+
+  defp column_index_map(names),
+    do: for({name, idx} <- Enum.with_index(names), into: %{}, do: {idx, name})
+
+  @doc """
+  Raises if a column is not found.
+  """
+  def maybe_raise_column_not_found(df, name) do
+    unless Map.has_key?(df.dtypes, name) do
+      raise ArgumentError,
+            List.to_string([
+              "could not find column name \"#{name}\"" | did_you_mean(name, df.names)
+            ])
+    end
+  end
+
+  @doc """
   Applies a function with args using the implementation of a dataframe or series.
   """
   def apply_impl(df_or_series_or_list, fun, args \\ []) do
