@@ -4631,7 +4631,6 @@ defmodule Explorer.DataFrame do
     end
   end
 
-
   defimpl Inspect do
     import Inspect.Algebra
 

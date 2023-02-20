@@ -64,7 +64,7 @@ defmodule Explorer.Shared do
   end
 
   def to_existing_columns(%{names: names, dtypes: dtypes}, callback)
-       when is_function(callback, 2) do
+      when is_function(callback, 2) do
     Enum.filter(names, fn name -> callback.(name, dtypes[name]) end)
   end
 
