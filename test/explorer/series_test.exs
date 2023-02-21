@@ -2268,11 +2268,8 @@ defmodule Explorer.SeriesTest do
       on_true = [1.1, 1.2, 1.3] |> Series.from_list()
       on_false = [5, 3, 2] |> Series.from_list()
 
-      assert Series.select(true_predicate, on_true, on_false) |> Series.to_list() == [
-               1.1,
-               1.2,
-               1.3
-             ]
+      assert Series.select(true_predicate, on_true, on_false) |> Series.to_list() ==
+               [1.1, 1.2, 1.3]
 
       assert Series.select(false_predicate, on_true, on_false) |> Series.to_list() == [5, 3, 2]
     end
