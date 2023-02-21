@@ -2061,17 +2061,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec divide(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def divide(%Series{dtype: dtype} = left, right) when is_numeric_dtype(dtype) do
-    left = cast(left, :float)
-
-    basic_numeric_operation(:divide, left, right)
-  end
-
-  def divide(left, %Series{dtype: dtype} = right) when is_numeric_dtype(dtype) do
-    right = cast(right, :float)
-
-    basic_numeric_operation(:divide, left, right)
-  end
+  def divide(left, right), do: basic_numeric_operation(:divide, left, right)
 
   @doc """
   Raises a numeric series to the power of the exponent.

@@ -186,6 +186,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_to_parquet(_df, _filename, _compression), do: err()
 
   # Series
+  def s_as_str(_s), do: err()
   def s_add(_s, _other), do: err()
   def s_and(_s, _s2), do: err()
   def s_argsort(_s, _descending?, _nils_last?), do: err()

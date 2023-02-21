@@ -99,7 +99,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
 
-  @arithmetic_operations [:add, :subtract, :multiply, :divide, :pow, :quotient, :remainder]
+  @arithmetic_operations [:add, :subtract, :multiply, :pow, :quotient, :remainder]
 
   @aggregation_operations [
     :sum,
@@ -139,6 +139,13 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:cast, args, aggregations?(args))
 
     Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def divide(left, right) do
+    args = [data!(left), data!(right)]
+    data = new(:divide, args, aggregations?(args))
+    Backend.Series.new(data, :float)
   end
 
   @impl true

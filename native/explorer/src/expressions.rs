@@ -298,8 +298,8 @@ pub fn expr_subtract(left: ExExpr, right: ExExpr) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_divide(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr = left.clone_inner();
-    let right_expr = right.clone_inner();
+    let left_expr = left.clone_inner().cast(DataType::Float64);
+    let right_expr = right.clone_inner().cast(DataType::Float64);
 
     ExExpr::new(left_expr / right_expr)
 }

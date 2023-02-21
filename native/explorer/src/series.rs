@@ -6,6 +6,7 @@ use crate::{
 
 use chrono::Datelike;
 use polars::export::arrow::array::Utf8Array;
+use polars::export::arrow::temporal_conversions::date32_to_date;
 use polars::prelude::*;
 use rand::seq::IteratorRandom;
 use rand::{Rng, SeedableRng};
@@ -13,7 +14,10 @@ use rand_pcg::Pcg64;
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
-use polars::export::arrow::temporal_conversions::date32_to_date;
+#[rustler::nif]
+pub fn s_as_str(data: ExSeries) -> Result<String, ExplorerError> {
+    Ok(format!("{:?}", data.resource.0))
+}
 
 macro_rules! from_list {
     ($name:ident, $type:ty) => {
@@ -201,8 +205,8 @@ pub fn s_multiply(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerE
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_divide(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s1 = other.clone_inner();
+    let s = data.clone_inner().cast(&DataType::Float64)?;
+    let s1 = other.clone_inner().cast(&DataType::Float64)?;
     Ok(ExSeries::new(s / s1))
 }
 

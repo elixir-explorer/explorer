@@ -633,13 +633,8 @@ defmodule Explorer.SeriesTest do
     test "compare float series with an infinity value on the right-hand side" do
       s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
 
-      assert s1 |> Series.not_equal(:infinity) |> Series.to_list() == [
-               true,
-               true,
-               true,
-               false,
-               true
-             ]
+      assert s1 |> Series.not_equal(:infinity) |> Series.to_list() ==
+               [true, true, true, false, true]
     end
 
     test "compare float series with an negative infinity value on the right-hand side" do

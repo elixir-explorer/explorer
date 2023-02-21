@@ -489,10 +489,16 @@ defimpl Inspect, for: Explorer.PolarsBackend.Series do
   import Inspect.Algebra
 
   def inspect(s, _opts) do
-    concat([
-      "#Explorer.PolarsBackend.Series<",
-      nest(Explorer.PolarsBackend.Shared.apply_series(s, []), 2),
-      ">"
-    ])
+    doc =
+      case Explorer.PolarsBackend.Native.s_as_str(s) do
+        {:ok, str} -> str
+        {:error, _} -> inspect(s.resource)
+      end
+      |> String.split("\n")
+      |> Enum.intersperse(line())
+      |> then(&concat([line() | &1]))
+      |> nest(2)
+
+    concat(["#Explorer.PolarsBackend.Series<", doc, line(), ">"])
   end
 end
