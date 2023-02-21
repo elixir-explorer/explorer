@@ -217,7 +217,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def pow(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_pow, [right.data])
+    do: Shared.apply_series(matching_size!(left, right), :s_pow, [right.data])
 
   def pow(left, exponent) when is_integer(exponent) and exponent >= 0 do
     cond do
@@ -254,24 +254,22 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(to_series(left, right), :s_greater, [to_polars_series(right, left)])
 
   @impl true
-  def greater_equal(left, right),
-    do:
-      Shared.apply_series(to_series(left, right), :s_greater_equal, [
-        to_polars_series(right, left)
-      ])
-
-  @impl true
   def less(left, right),
     do: Shared.apply_series(to_series(left, right), :s_less, [to_polars_series(right, left)])
 
   @impl true
-  def less_equal(left, right),
-    do:
-      Shared.apply_series(to_series(left, right), :s_less_equal, [to_polars_series(right, left)])
+  def greater_equal(left, right) do
+    Shared.apply_series(to_series(left, right), :s_greater_equal, [to_polars_series(right, left)])
+  end
+
+  @impl true
+  def less_equal(left, right) do
+    Shared.apply_series(to_series(left, right), :s_less_equal, [to_polars_series(right, left)])
+  end
 
   @impl true
   def all_equal(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_series_equal, [right.data, true])
+    do: Shared.apply_series(matching_size!(left, right), :s_series_equal, [right.data, true])
 
   @impl true
   def binary_in(%Series{} = left, %Series{} = right),
@@ -279,11 +277,11 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def binary_and(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_and, [right.data])
+    do: Shared.apply_series(matching_size!(left, right), :s_and, [right.data])
 
   @impl true
   def binary_or(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_or, [right.data])
+    do: Shared.apply_series(matching_size!(left, right), :s_or, [right.data])
 
   # Float predicates
 
@@ -469,11 +467,32 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Helpers
 
+  defp to_series(%Series{} = series, %Series{} = other), do: matching_size!(series, other)
   defp to_series(%Series{} = series, _other), do: series
   defp to_series(series, other), do: to_mod_series(series, other, __MODULE__)
 
   defp to_polars_series(%Series{data: data}, _other), do: data
   defp to_polars_series(series, other), do: to_mod_series(series, other, Shared)
+
+  defp matching_size!(series, other) do
+    case size(series) do
+      1 ->
+        series
+
+      i ->
+        case size(other) do
+          1 ->
+            series
+
+          ^i ->
+            series
+
+          j ->
+            raise ArgumentError,
+                  "series must either have the same size or one of them must have size of 1, got: #{i} and #{j}"
+        end
+    end
+  end
 
   defp to_mod_series(value, %{dtype: :float}, mod) when is_integer(value),
     do: mod.from_list([1.0 * value], :float)

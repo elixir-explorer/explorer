@@ -2558,6 +2558,8 @@ defmodule Explorer.Series do
   @doc """
   Checks if each element of the series in the left exists in the series in the right, returning a boolean mask.
 
+  The series sizes do not have to match.
+
   ## Examples
 
       iex> left = Explorer.Series.from_list([1, 2, 3])
@@ -2627,6 +2629,9 @@ defmodule Explorer.Series do
   @doc """
   Returns a boolean mask of `left and right`, element-wise.
 
+  Both sizes must be series, the series must have the same
+  size or at last one of them must have size of 1.
+
   ## Examples
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
@@ -2645,6 +2650,9 @@ defmodule Explorer.Series do
 
   @doc """
   Returns a boolean mask of `left or right`, element-wise.
+
+  Both sizes must be series, the series must have the same
+  size or at last one of them must have size of 1.
 
   ## Examples
 
