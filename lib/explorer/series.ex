@@ -1069,10 +1069,10 @@ defmodule Explorer.Series do
 
     cond do
       K.and(is_numeric_dtype(on_true_dtype), is_numeric_dtype(on_false_dtype)) ->
-        Shared.apply_impl(predicate, :select, [on_true, on_false])
+        Shared.apply_series_impl(:select, [predicate, on_true, on_false])
 
       on_true_dtype == on_false_dtype ->
-        Shared.apply_impl(predicate, :select, [on_true, on_false])
+        Shared.apply_series_impl(:select, [predicate, on_true, on_false])
 
       true ->
         dtype_mismatch_error("select/3", on_true_dtype, on_false_dtype)

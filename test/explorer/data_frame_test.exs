@@ -867,6 +867,25 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "adds some columns with select broadcast functions" do
+      df = DF.new(b: [3, 4, 2], c: [6, 2, 1])
+
+      df1 =
+        DF.mutate_with(df, fn ldf ->
+          [
+            select1: Series.select(Series.from_list([true]), ldf["b"], ldf["c"]),
+            select2: Series.select(Series.from_list([false]), ldf["b"], ldf["c"])
+          ]
+        end)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               b: [3, 4, 2],
+               c: [6, 2, 1],
+               select1: [3, 4, 2],
+               select2: [6, 2, 1],
+             }
+    end
+
     test "adds some columns with slice and dice functions" do
       a = Series.from_list([1, nil, 3])
       b = Series.from_list([20.0, 40.0, 60.0])
