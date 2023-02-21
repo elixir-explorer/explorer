@@ -871,11 +871,11 @@ pub fn s_pow_i_rhs(s: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_i_lhs(s: ExSeries, base: u32) -> Result<ExSeries, ExplorerError> {
+pub fn s_pow_i_lhs(s: ExSeries, base: i64) -> Result<ExSeries, ExplorerError> {
     let s = s
         .i64()?
         .try_apply(|v| match u32::try_from(v) {
-            Ok(v) => Ok(base.pow(v).into()),
+            Ok(v) => Ok(base.pow(v)),
             Err(_) => Err(PolarsError::ComputeError(
                 "negative exponent with an integer base".into(),
             )),

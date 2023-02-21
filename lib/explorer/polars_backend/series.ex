@@ -245,7 +245,10 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(left, :s_pow, [right.data])
   end
 
-  def pow(left, exponent) when is_integer(exponent) and exponent >= 0 do
+  def pow(%Series{dtype: :integer}, exponent) when is_integer(exponent) and exponent < 0,
+    do: raise("negative exponent with an integer base")
+
+  def pow(left, exponent) when is_integer(exponent) do
     cond do
       Series.dtype(left) == :integer -> Shared.apply_series(left, :s_pow_i_rhs, [exponent])
       Series.dtype(left) == :float -> Shared.apply_series(left, :s_pow_f_rhs, [exponent / 1])
@@ -255,7 +258,7 @@ defmodule Explorer.PolarsBackend.Series do
   def pow(left, exponent) when is_numerical(exponent),
     do: Shared.apply_series(left, :s_pow_f_rhs, [exponent])
 
-  def pow(exponent, right) when is_integer(exponent) and exponent >= 0 do
+  def pow(exponent, right) when is_integer(exponent) do
     cond do
       Series.dtype(right) == :integer -> Shared.apply_series(right, :s_pow_i_lhs, [exponent])
       Series.dtype(right) == :float -> Shared.apply_series(right, :s_pow_f_lhs, [exponent / 1])
