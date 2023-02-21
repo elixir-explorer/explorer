@@ -246,7 +246,7 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   def pow(%Series{dtype: :integer}, exponent) when is_integer(exponent) and exponent < 0,
-    do: raise("negative exponent with an integer base")
+    do: raise("negative exponent with an integer base is not allowed (you may explicitly cast the exponent to float if desired)")
 
   def pow(left, exponent) when is_integer(exponent) do
     cond do
