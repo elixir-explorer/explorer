@@ -231,8 +231,19 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(to_series(left, right), :s_remainder, [to_polars_series(right, left)])
 
   @impl true
-  def pow(%Series{} = left, %Series{} = right),
+  def pow(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
     do: Shared.apply_series(matching_size!(left, right), :s_pow, [right.data])
+
+  def pow(%Series{dtype: :float} = left, %Series{dtype: :integer} = right) do
+    left = matching_size!(left, right)
+    right = Series.cast(right, :float)
+    Shared.apply_series(left, :s_pow, [right.data])
+  end
+
+  def pow(%Series{dtype: :integer} = left, %Series{dtype: :float} = right) do
+    left = Series.cast(matching_size!(left, right), :float)
+    Shared.apply_series(left, :s_pow, [right.data])
+  end
 
   def pow(left, exponent) when is_integer(exponent) and exponent >= 0 do
     cond do
