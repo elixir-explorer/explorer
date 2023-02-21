@@ -1806,9 +1806,9 @@ defmodule Explorer.SeriesTest do
     test "pow of an integer series with a negative integer scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
-      assert_raise RuntimeError, "negative exponent with an integer base", fn ->
-        Series.pow(s1, -2)
-      end
+      assert_raise RuntimeError,
+                   "negative exponent with an integer base is not allowed (you may explicitly cast the exponent to float if desired)",
+                   fn -> Series.pow(s1, -2) end
     end
 
     test "pow of an integer series with a float scalar value on the right-hand side" do
