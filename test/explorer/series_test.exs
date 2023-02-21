@@ -1725,43 +1725,76 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "pow/2" do
-    test "pow of a series with a series" do
+    test "pow of an integer series with an integer series" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([3, 2, 1])
 
       result = Series.pow(s1, s2)
 
+      assert result.dtype == :integer
       assert Series.to_list(result) == [1, 4, 3]
     end
 
-    test "pow of a series with a series and nil" do
+    test "pow of an integer series with an integer series that contains negative integer" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([1, -2, 3])
+
+      assert_raise RuntimeError, "negative exponent with an integer base", fn ->
+        Series.pow(s1, s2)
+      end
+    end
+
+    test "pow of an integer series with a float series" do
+      s1 = Series.from_list([1, 2, 3, 4, 5])
+      s2 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(s1, s2)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 11.313708498984761, :nan, :infinity, 0.0]
+    end
+
+    test "pow of an integer series with a float series that contains negative float" do
+      s1 = Series.from_list([1, 2, 3, 4, 5])
+      s2 = Series.from_list([1.0, -3.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(s1, s2)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 0.08838834764831845, :nan, :infinity, 0.0]
+    end
+
+    test "pow of an integer series with an integer series that contains nil" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([3, nil, 1])
 
       result = Series.pow(s1, s2)
 
+      assert result.dtype == :integer
       assert Series.to_list(result) == [1, nil, 3]
     end
 
-    test "pow of a series that contains nil with a series" do
+    test "pow of an integer series that contains nil with an integer series" do
       s1 = Series.from_list([1, nil, 3])
       s2 = Series.from_list([3, 2, 1])
 
       result = Series.pow(s1, s2)
 
+      assert result.dtype == :integer
       assert Series.to_list(result) == [1, nil, 3]
     end
 
-    test "pow of a series that contains nil with a series also with nil" do
+    test "pow of an integer series that contains nil with an integer series also with nil" do
       s1 = Series.from_list([1, nil, 3])
       s2 = Series.from_list([3, nil, 1])
 
       result = Series.pow(s1, s2)
 
+      assert result.dtype == :integer
       assert Series.to_list(result) == [1, nil, 3]
     end
 
-    test "pow of a series with an integer scalar value on the right-hand side" do
+    test "pow of an integer series with an integer scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       result = Series.pow(s1, 2)
@@ -1770,7 +1803,15 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [1, 4, 9]
     end
 
-    test "pow of a series with an float scalar value on the right-hand side" do
+    test "pow of an integer series with a negative integer scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      assert_raise RuntimeError, "negative exponent with an integer base", fn ->
+        Series.pow(s1, -2)
+      end
+    end
+
+    test "pow of an integer series with a float scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       result = Series.pow(s1, 2.0)
@@ -1779,7 +1820,16 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [1.0, 4.0, 9.0]
     end
 
-    test "pow of a series with a nan value on the right-hand side" do
+    test "pow of an integer series with a negative float scalar value on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      result = Series.pow(s1, -2.0)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 0.25, 0.1111111111111111]
+    end
+
+    test "pow of an integer series with a nan value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.pow(s1, :nan)
@@ -1788,7 +1838,7 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [1, :nan, :nan]
     end
 
-    test "pow of a series with a infinity value on the right-hand side" do
+    test "pow of an integer series with an infinity value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.pow(s1, :infinity)
@@ -1797,7 +1847,7 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [1.0, :infinity, :infinity]
     end
 
-    test "pow of a series with a negative infinity value on the right-hand side" do
+    test "pow of an integer series with a negative infinity value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.pow(s1, :neg_infinity)
@@ -1806,7 +1856,7 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [1.0, 0.0, 0.0]
     end
 
-    test "pow of a series with an integer scalar value on the left-hand side" do
+    test "pow of an integer series with an integer scalar value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       result = Series.pow(2, s1)
@@ -1815,7 +1865,24 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [2, 4, 8]
     end
 
-    test "pow of a series with an float scalar value on the left-hand side" do
+    test "pow of an integer series that contains negative integer with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1, -2, 3])
+
+      assert_raise RuntimeError, "negative exponent with an integer base", fn ->
+        Series.pow(2, s1)
+      end
+    end
+
+    test "pow of an integer series with a negative integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      result = Series.pow(-2, s1)
+
+      assert result.dtype == :integer
+      assert Series.to_list(result) == [-2, 4, -8]
+    end
+
+    test "pow of an integer series with a float scalar value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       result = Series.pow(2.0, s1)
@@ -1824,7 +1891,16 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [2.0, 4.0, 8.0]
     end
 
-    test "pow of a series with a nan value on the left-hand side" do
+    test "pow of an integer series with a negative float scalar value on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+
+      result = Series.pow(-2.0, s1)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [-2.0, 4.0, -8.0]
+    end
+
+    test "pow of an integer series with a nan value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.pow(:nan, s1)
@@ -1833,7 +1909,7 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [:nan, :nan, :nan]
     end
 
-    test "pow of a series with a infinity value on the left-hand side" do
+    test "pow of an integer series with an infinity value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.pow(:infinity, s1)
@@ -1842,7 +1918,7 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [:infinity, :infinity, :infinity]
     end
 
-    test "pow of a series with a negative infinity value on the left-hand side" do
+    test "pow of an integer series with a negative infinity value on the left-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.pow(:neg_infinity, s1)
@@ -1851,20 +1927,237 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s2) == [:neg_infinity, :infinity, :neg_infinity]
     end
 
-    test "pow of a scalar value on the left-hand side to a series with a negative integer" do
-      s1 = Series.from_list([1, -2, 3])
-
-      assert_raise RuntimeError, "negative exponent with an integer base", fn ->
-        Series.pow(2, s1)
-      end
-    end
-
     test "pow of a series with a series and different sizes" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([3, 2, 1, 4])
 
       assert_raise ArgumentError,
                    "series must either have the same size or one of them must have size of 1, got: 3 and 4",
+                   fn -> Series.pow(s1, s2) end
+
+      s1 = Series.from_list([1, 2, 3, 4])
+      s2 = Series.from_list([3, 2, 1])
+
+      assert_raise ArgumentError,
+                   "series must either have the same size or one of them must have size of 1, got: 4 and 3",
+                   fn -> Series.pow(s1, s2) end
+    end
+
+    test "pow of a float series with a float series" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+      s2 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(s1, s2)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 24.705294220065465, :nan, :infinity, 0.0]
+    end
+
+    test "pow of a float series with a float series that contains negative float" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+      s2 = Series.from_list([1.0, -3.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(s1, s2)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 0.040477154050155256, :nan, :infinity, 0.0]
+    end
+
+    test "pow of a float series with an integer series" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+      s2 = Series.from_list([1, 2, 3, 4, 5])
+
+      result = Series.pow(s1, s2)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 12.25, :nan, :infinity, :neg_infinity]
+    end
+
+    test "pow of a float series with an integer series that contains negative integer" do
+      s1 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
+      s2 = Series.from_list([1, -2, 3, 4, 5])
+
+      result = Series.pow(s1, s2)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 0.08163265306122448, :nan, :infinity, :neg_infinity]
+    end
+
+    test "pow of a float series with a float series that contains nil" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity, 4.5])
+      s2 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity, nil])
+
+      result = Series.pow(s1, s2)
+
+      assert Series.to_list(result) == [1.0, 24.705294220065465, :nan, :infinity, 0.0, nil]
+    end
+
+    test "pow of a float series that contains nil with a float series" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity, nil])
+      s2 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity, 4.5])
+
+      result = Series.pow(s1, s2)
+
+      assert Series.to_list(result) == [1.0, 24.705294220065465, :nan, :infinity, 0.0, nil]
+    end
+
+    test "pow of a float series that contains nil with a float series also with nil" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity, nil])
+      s2 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity, nil])
+
+      result = Series.pow(s1, s2)
+
+      assert Series.to_list(result) == [1.0, 24.705294220065465, :nan, :infinity, 0.0, nil]
+    end
+
+    test "pow of a float series with an integer scalar value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(s1, 2)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 6.25, :nan, :infinity, :infinity]
+    end
+
+    test "pow of a float series with a negative integer scalar value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(s1, -2)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 0.16, :nan, 0.0, 0.0]
+    end
+
+    test "pow of a float series with a float scalar value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(s1, 2.0)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 6.25, :nan, :infinity, :infinity]
+    end
+
+    test "pow of a float series with a negative float scalar value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(s1, -2.0)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [1.0, 0.16, :nan, 0.0, 0.0]
+    end
+
+    test "pow of a float series with a nan value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.pow(s1, :nan)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [1, :nan, :nan, :nan, :nan]
+    end
+
+    test "pow of a float series with an infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.pow(s1, :infinity)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [1.0, :infinity, :nan, :infinity, :infinity]
+    end
+
+    test "pow of a float series with a negative infinity value on the right-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.pow(s1, :neg_infinity)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [1.0, 0.0, :nan, 0.0, 0.0]
+    end
+
+    test "pow of a float series with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(2, s1)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [2.0, 5.656854249492381, :nan, :infinity, 0.0]
+    end
+
+    test "pow of a float series that contains negative float with an integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1.0, -2.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(2, s1)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [2.0, 0.1767766952966369, :nan, :infinity, 0.0]
+    end
+
+    test "pow of a float series with a negative integer scalar value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(-2, s1)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [-2.0, :nan, :nan, :infinity, 0.0]
+    end
+
+    test "pow of a float series with a float scalar value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(2.0, s1)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [2.0, 5.656854249492381, :nan, :infinity, 0.0]
+    end
+
+    test "pow of a float series with a negative float scalar value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      result = Series.pow(-2.0, s1)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [-2.0, :nan, :nan, :infinity, 0.0]
+    end
+
+    test "pow of a float series with a nan value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.pow(:nan, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
+    end
+
+    test "pow of a float series with an infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.pow(:infinity, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:infinity, :infinity, :nan, :infinity, 0.0]
+    end
+
+    test "pow of a float series with a negative infinity value on the left-hand side" do
+      s1 = Series.from_list([1.0, 2.5, :nan, :infinity, :neg_infinity])
+
+      s2 = Series.pow(:neg_infinity, s1)
+
+      assert s2.dtype == :float
+      assert Series.to_list(s2) == [:neg_infinity, :infinity, :nan, :infinity, 0.0]
+    end
+
+    test "pow of a float series with a float series and different sizes" do
+      s1 = Series.from_list([1.5, 2.3, 3.7])
+      s2 = Series.from_list([3.2, 2.5, 1.7, 4.4])
+
+      assert_raise ArgumentError,
+                   "series must either have the same size or one of them must have size of 1, got: 3 and 4",
+                   fn -> Series.pow(s1, s2) end
+
+      s1 = Series.from_list([1.5, 2.3, 3.7, 5.9])
+      s2 = Series.from_list([3.2, 2.5, 1.7])
+
+      assert_raise ArgumentError,
+                   "series must either have the same size or one of them must have size of 1, got: 4 and 3",
                    fn -> Series.pow(s1, s2) end
     end
   end
@@ -1975,7 +2268,12 @@ defmodule Explorer.SeriesTest do
       on_true = [1.1, 1.2, 1.3] |> Series.from_list()
       on_false = [5, 3, 2] |> Series.from_list()
 
-      assert Series.select(true_predicate, on_true, on_false) |> Series.to_list() == [1.1, 1.2, 1.3]
+      assert Series.select(true_predicate, on_true, on_false) |> Series.to_list() == [
+               1.1,
+               1.2,
+               1.3
+             ]
+
       assert Series.select(false_predicate, on_true, on_false) |> Series.to_list() == [5, 3, 2]
     end
   end
