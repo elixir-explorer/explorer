@@ -615,9 +615,9 @@ pub fn s_to_list(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_to_iovec(env: Env, series: ExSeries) -> Result<Term, ExplorerError> {
     if series.null_count() != 0 {
-        Err(ExplorerError::Other(String::from(
-            "cannot invoke to_iovec on series with nils",
-        )))
+        Err(ExplorerError::Other(
+            "cannot invoke to_iovec on series with nils".into(),
+        ))
     } else {
         encoding::iovec_from_series(series, env)
     }
@@ -783,9 +783,9 @@ pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
 
             Ok(ExSeries::new(s))
         }
-        Err(_) => Err(ExplorerError::Other(String::from(
-            "negative exponent with an integer base",
-        ))),
+        Err(_) => Err(ExplorerError::Other(
+            "negative exponent with an integer base".into(),
+        )),
     }
 }
 
