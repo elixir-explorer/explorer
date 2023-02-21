@@ -207,21 +207,39 @@ pub fn s_divide(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerErr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_quotient(series: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let div = series.checked_div(&other)?;
-
-    Ok(ExSeries::new(div))
+pub fn s_quotient(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(checked_div(data, other)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_remainder(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
     let s1 = other.clone_inner();
-    let div = s.checked_div(&s1)?;
+    let div = checked_div(data, other)?;
     let mult = s1 * div;
     let result = s - mult;
 
     Ok(ExSeries::new(result))
+}
+
+// There is a bug in Polars where broadcast is not applied to checked_div
+// and instead it discards values.
+fn checked_div(data: ExSeries, other: ExSeries) -> Result<Series, ExplorerError> {
+    match data.len() {
+        1 => {
+            let num = data.i64()?.get(0).unwrap();
+            Ok(Series::new(
+                data.name(),
+                other
+                    .i64()?
+                    .apply_on_opt(|v| v.and_then(|v| num.checked_div(v))),
+            ))
+        }
+        _ => match other.len() {
+            1 => Ok(data.checked_div_num(other.i64()?.get(0).unwrap())?),
+            _ => Ok(data.checked_div(&other)?),
+        },
+    }
 }
 
 #[rustler::nif]

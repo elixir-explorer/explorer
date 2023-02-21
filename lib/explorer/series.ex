@@ -1895,6 +1895,10 @@ defmodule Explorer.Series do
 
   When mixing floats and integers, the resulting series will have dtype `:float`.
 
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
+
   ## Supported dtypes
 
     * `:integer`
@@ -1934,6 +1938,10 @@ defmodule Explorer.Series do
   Subtracts right from left, element-wise.
 
   When mixing floats and integers, the resulting series will have dtype `:float`.
+
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
 
   ## Supported dtypes
 
@@ -1975,6 +1983,10 @@ defmodule Explorer.Series do
 
   When mixing floats and integers, the resulting series will have dtype `:float`.
 
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
+
   ## Supported dtypes
 
     * `:integer`
@@ -2005,6 +2017,10 @@ defmodule Explorer.Series do
   Divides left by right, element-wise.
 
   The resulting series will have the dtype as `:float`.
+
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
 
   ## Supported dtypes
 
@@ -2060,6 +2076,10 @@ defmodule Explorer.Series do
   @doc """
   Raises a numeric series to the power of the exponent.
 
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
+
   ## Supported dtypes
 
     * `:integer`
@@ -2109,6 +2129,10 @@ defmodule Explorer.Series do
   @doc """
   Element-wise integer division.
 
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
+
   ## Supported dtype
 
     * `:integer`
@@ -2154,6 +2178,10 @@ defmodule Explorer.Series do
 
   @doc """
   Computes the remainder of an element-wise integer division.
+
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
 
   ## Supported dtype
 
@@ -2228,6 +2256,10 @@ defmodule Explorer.Series do
   @doc """
   Returns boolean mask of `left == right`, element-wise.
 
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
+
   ## Examples
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
@@ -2292,6 +2324,10 @@ defmodule Explorer.Series do
 
   @doc """
   Returns boolean mask of `left != right`, element-wise.
+
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
 
   ## Examples
 
@@ -2366,6 +2402,10 @@ defmodule Explorer.Series do
   @doc """
   Returns boolean mask of `left > right`, element-wise.
 
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
+
   ## Supported dtypes
 
     * `:integer`
@@ -2406,6 +2446,10 @@ defmodule Explorer.Series do
   @doc """
   Returns boolean mask of `left >= right`, element-wise.
 
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
+
   ## Supported dtypes
 
     * `:integer`
@@ -2440,6 +2484,10 @@ defmodule Explorer.Series do
 
   @doc """
   Returns boolean mask of `left < right`, element-wise.
+
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
 
   ## Supported dtypes
 
@@ -2480,6 +2528,10 @@ defmodule Explorer.Series do
 
   @doc """
   Returns boolean mask of `left <= right`, element-wise.
+
+  At least one of the arguments must be a series. If both
+  sizes are series, the series must have the same size or
+  at last one of them must have size of 1.
 
   ## Supported dtypes
 

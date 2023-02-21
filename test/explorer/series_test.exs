@@ -473,12 +473,8 @@ defmodule Explorer.SeriesTest do
     test "with neg_infinity" do
       s1 = Series.from_list([1.0, 2.0, nil, 4.5])
 
-      assert Series.fill_missing(s1, :neg_infinity) |> Series.to_list() == [
-               1.0,
-               2.0,
-               :neg_infinity,
-               4.5
-             ]
+      assert Series.fill_missing(s1, :neg_infinity) |> Series.to_list() ==
+               [1.0, 2.0, :neg_infinity, 4.5]
     end
 
     test "non-float series with neg_infinity" do
@@ -580,6 +576,12 @@ defmodule Explorer.SeriesTest do
 
       assert :neg_infinity |> Series.equal(s1) |> Series.to_list() ==
                [false, false, false, false, true]
+    end
+
+    test "performs broadcasting" do
+      s1 = Series.from_list([-1, 0, 1])
+      s2 = Series.from_list([0])
+      assert s1 |> Series.equal(s2) |> Series.to_list() == [false, true, false]
     end
   end
 

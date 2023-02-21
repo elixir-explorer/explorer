@@ -192,59 +192,28 @@ defmodule Explorer.PolarsBackend.Series do
   # Arithmetic
 
   @impl true
-  def add(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_add, [right.data])
-
-  def add(left, right) when is_numerical(right), do: apply_scalar_on_rhs(:add, left, right)
-
-  def add(left, right) when is_numerical(left), do: apply_scalar_on_lhs(:add, left, right)
+  def add(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_add, [to_polars_series(right, left)])
 
   @impl true
-  def subtract(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_subtract, [right.data])
-
-  def subtract(left, right) when is_numerical(right),
-    do: apply_scalar_on_rhs(:subtract, left, right)
-
-  def subtract(left, right) when is_numerical(left),
-    do: apply_scalar_on_lhs(:subtract, left, right)
+  def subtract(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_subtract, [to_polars_series(right, left)])
 
   @impl true
-  def multiply(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_multiply, [right.data])
-
-  def multiply(left, right) when is_numerical(right),
-    do: apply_scalar_on_rhs(:multiply, left, right)
-
-  def multiply(left, right) when is_numerical(left),
-    do: apply_scalar_on_lhs(:multiply, left, right)
+  def multiply(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_multiply, [to_polars_series(right, left)])
 
   @impl true
-  def divide(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_divide, [right.data])
-
-  def divide(left, right) when is_numerical(right), do: apply_scalar_on_rhs(:divide, left, right)
-
-  def divide(left, right) when is_numerical(left), do: apply_scalar_on_lhs(:divide, left, right)
+  def divide(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_divide, [to_polars_series(right, left)])
 
   @impl true
-  def quotient(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_quotient, [right.data])
-
-  def quotient(left, right) when is_integer(right),
-    do: apply_scalar_on_rhs(:quotient, left, right)
-
-  def quotient(left, right) when is_integer(left), do: apply_scalar_on_lhs(:quotient, left, right)
+  def quotient(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_quotient, [to_polars_series(right, left)])
 
   @impl true
-  def remainder(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_remainder, [right.data])
-
-  def remainder(left, right) when is_integer(right),
-    do: apply_scalar_on_rhs(:remainder, left, right)
-
-  def remainder(left, right) when is_integer(left),
-    do: apply_scalar_on_lhs(:remainder, left, right)
+  def remainder(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_remainder, [to_polars_series(right, left)])
 
   @impl true
   def pow(%Series{} = left, %Series{} = right),
@@ -273,46 +242,32 @@ defmodule Explorer.PolarsBackend.Series do
   # Comparisons
 
   @impl true
-  def equal(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_equal, [right.data])
-
-  def equal(%Series{} = left, right), do: apply_scalar_on_rhs(:equal, left, right)
-  def equal(left, %Series{} = right), do: apply_scalar_on_lhs(:equal, left, right)
+  def equal(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_equal, [to_polars_series(right, left)])
 
   @impl true
-  def not_equal(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_not_equal, [right.data])
-
-  def not_equal(%Series{} = left, right), do: apply_scalar_on_rhs(:not_equal, left, right)
-  def not_equal(left, %Series{} = right), do: apply_scalar_on_lhs(:not_equal, left, right)
+  def not_equal(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_not_equal, [to_polars_series(right, left)])
 
   @impl true
-  def greater(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_greater, [right.data])
-
-  def greater(%Series{} = left, right), do: apply_scalar_on_rhs(:greater, left, right)
-  def greater(left, %Series{} = right), do: apply_scalar_on_lhs(:greater, left, right)
+  def greater(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_greater, [to_polars_series(right, left)])
 
   @impl true
-  def greater_equal(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_greater_equal, [right.data])
-
-  def greater_equal(%Series{} = left, right), do: apply_scalar_on_rhs(:greater_equal, left, right)
-  def greater_equal(left, %Series{} = right), do: apply_scalar_on_lhs(:greater_equal, left, right)
-
-  @impl true
-  def less(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_less, [right.data])
-
-  def less(%Series{} = left, right), do: apply_scalar_on_rhs(:less, left, right)
-  def less(left, %Series{} = right), do: apply_scalar_on_lhs(:less, left, right)
+  def greater_equal(left, right),
+    do:
+      Shared.apply_series(to_series(left, right), :s_greater_equal, [
+        to_polars_series(right, left)
+      ])
 
   @impl true
-  def less_equal(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_less_equal, [right.data])
+  def less(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_less, [to_polars_series(right, left)])
 
-  def less_equal(%Series{} = left, right), do: apply_scalar_on_rhs(:less_equal, left, right)
-  def less_equal(left, %Series{} = right), do: apply_scalar_on_lhs(:less_equal, left, right)
+  @impl true
+  def less_equal(left, right),
+    do:
+      Shared.apply_series(to_series(left, right), :s_less_equal, [to_polars_series(right, left)])
 
   @impl true
   def all_equal(%Series{} = left, %Series{} = right),
@@ -514,27 +469,20 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Helpers
 
-  defp apply_scalar_on_rhs(fun_name, %Series{} = left, scalar) when is_atom(fun_name) do
-    df =
-      DataFrame.mutate_with(polars_df([{"left", left}]), fn ldf ->
-        [result: apply(Explorer.Series, fun_name, [ldf["left"], scalar])]
-      end)
+  defp to_series(%Series{} = series, _other), do: series
+  defp to_series(series, other), do: to_mod_series(series, other, __MODULE__)
 
-    df["result"]
-  end
+  defp to_polars_series(%Series{data: data}, _other), do: data
+  defp to_polars_series(series, other), do: to_mod_series(series, other, Shared)
 
-  defp apply_scalar_on_lhs(fun_name, scalar, %Series{} = right) when is_atom(fun_name) do
-    df =
-      DataFrame.mutate_with(polars_df([{"right", right}]), fn ldf ->
-        [result: apply(Explorer.Series, fun_name, [scalar, ldf["right"]])]
-      end)
+  defp to_mod_series(value, %{dtype: :float}, mod) when is_integer(value),
+    do: mod.from_list([1.0 * value], :float)
 
-    df["result"]
-  end
+  defp to_mod_series(value, %{dtype: :integer}, mod) when is_float(value),
+    do: mod.from_list([value], :float)
 
-  defp polars_df(series) do
-    Explorer.PolarsBackend.DataFrame.from_series(series)
-  end
+  defp to_mod_series(value, %{dtype: dtype}, mod),
+    do: mod.from_list([value], dtype)
 end
 
 defimpl Inspect, for: Explorer.PolarsBackend.Series do
