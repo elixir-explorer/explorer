@@ -1968,6 +1968,16 @@ defmodule Explorer.SeriesTest do
         Series.select(predicate, on_true, on_false)
       end
     end
+
+    test "select broadcasts on predicate" do
+      true_predicate = [true] |> Series.from_list()
+      false_predicate = [false] |> Series.from_list()
+      on_true = [1.1, 1.2, 1.3] |> Series.from_list()
+      on_false = [5, 3, 2] |> Series.from_list()
+
+      assert Series.select(true_predicate, on_true, on_false) |> Series.to_list() == [1.1, 1.2, 1.3]
+      assert Series.select(false_predicate, on_true, on_false) |> Series.to_list() == [5, 3, 2]
+    end
   end
 
   describe "sort/2" do

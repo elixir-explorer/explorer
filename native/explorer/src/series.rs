@@ -999,19 +999,22 @@ pub fn s_select(
     on_true: ExSeries,
     on_false: ExSeries,
 ) -> Result<ExSeries, ExplorerError> {
-    if let Ok(ca) = pred.bool() {
-        let selected = on_true.zip_with(ca, &on_false)?;
-        Ok(ExSeries::new(selected))
-    } else {
-        Err(ExplorerError::Other("Expected a boolean mask".into()))
+    match pred.len() {
+        1 => match pred.bool().unwrap().get(0).unwrap() {
+            true => Ok(on_true),
+            false => Ok(on_false),
+        },
+        _ => {
+            let selected = on_true.zip_with(pred.bool().unwrap(), &on_false)?;
+            Ok(ExSeries::new(selected))
+        }
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_not(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
-        .bool()
-        .unwrap()
+        .bool()?
         .into_iter()
         .map(|opt_v| opt_v.map(|v| !v))
         .collect();

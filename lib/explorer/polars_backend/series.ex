@@ -133,8 +133,23 @@ defmodule Explorer.PolarsBackend.Series do
   def coalesce(s1, s2), do: Shared.apply_series(s1, :s_coalesce, [s2.data])
 
   @impl true
-  def select(predicate, %Series{} = on_true, %Series{} = on_false),
-    do: Shared.apply_series(predicate, :s_select, [on_true.data, on_false.data])
+  def select(%Series{} = predicate, %Series{} = on_true, %Series{} = on_false) do
+    predicate_size = size(predicate)
+    on_true_size = size(on_true)
+    on_false_size = size(on_false)
+
+    if on_true_size != on_false_size do
+      raise ArgumentError,
+            "series in select/3 must have the same size, got: #{on_true_size} and #{on_false_size}"
+    end
+
+    if predicate_size != 1 and predicate_size != on_true_size do
+      raise ArgumentError,
+            "predicate in select/3 must have size of 1 or have the same size as operands, got: #{predicate_size} and #{on_true_size}"
+    end
+
+    Shared.apply_series(predicate, :s_select, [on_true.data, on_false.data])
+  end
 
   # Aggregation
 
