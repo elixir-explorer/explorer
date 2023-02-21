@@ -516,6 +516,26 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf1.dtypes == df.dtypes
     end
 
+    test "adds literal columns" do
+      ldf = DF.new([d: ~w(a b c)], lazy: true)
+      ldf1 = DF.mutate_with(ldf, fn _ -> [a: 1, b: 2.0, c: true] end)
+
+      assert ldf1.names == ["d", "a", "b", "c"]
+      assert ldf1.dtypes == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 1, 1],
+               b: [2.0, 2.0, 2.0],
+               c: [true, true, true],
+               d: ["a", "b", "c"]
+             }
+
+      assert ldf1.names == df.names
+      assert ldf1.dtypes == df.dtypes
+    end
+
     test "changes a column" do
       ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
 
