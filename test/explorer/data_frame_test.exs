@@ -882,7 +882,7 @@ defmodule Explorer.DataFrameTest do
                b: [3, 4, 2],
                c: [6, 2, 1],
                select1: [3, 4, 2],
-               select2: [6, 2, 1],
+               select2: [6, 2, 1]
              }
     end
 
