@@ -771,21 +771,36 @@ pub fn s_n_distinct(s: ExSeries) -> Result<usize, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let iter1 = s.i64()?.into_iter();
-    match other.strict_cast(&DataType::UInt32) {
-        Ok(casted) => {
-            let iter2 = casted.u32()?.into_iter();
+    match s.dtype() {
+        DataType::Int64 => {
+            let iter1 = s.i64()?.into_iter();
+            match other.strict_cast(&DataType::UInt32) {
+                Ok(casted) => {
+                    let iter2 = casted.u32()?.into_iter();
 
+                    let s = iter1
+                        .zip(iter2)
+                        .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.pow(right))))
+                        .collect();
+
+                    Ok(ExSeries::new(s))
+                }
+                Err(_) => Err(ExplorerError::Other(
+                    "negative exponent with an integer base".into(),
+                )),
+            }
+        }
+        DataType::Float64 => {
+            let iter1 = s.f64()?.into_iter();
+            let iter2 = other.f64()?.into_iter();
             let s = iter1
                 .zip(iter2)
-                .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.pow(right))))
+                .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.powf(right))))
                 .collect();
 
             Ok(ExSeries::new(s))
         }
-        Err(_) => Err(ExplorerError::Other(
-            "negative exponent with an integer base".into(),
-        )),
+        dt => panic!("pow/2 not implemented for {dt:?}"),
     }
 }
 
@@ -856,11 +871,11 @@ pub fn s_pow_i_rhs(s: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_i_lhs(s: ExSeries, base: u32) -> Result<ExSeries, ExplorerError> {
+pub fn s_pow_i_lhs(s: ExSeries, base: i64) -> Result<ExSeries, ExplorerError> {
     let s = s
         .i64()?
         .try_apply(|v| match u32::try_from(v) {
-            Ok(v) => Ok(base.pow(v).into()),
+            Ok(v) => Ok(base.pow(v)),
             Err(_) => Err(PolarsError::ComputeError(
                 "negative exponent with an integer base".into(),
             )),
