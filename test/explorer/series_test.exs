@@ -2180,42 +2180,60 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [49, 77, 96, 19, 18]
     end
 
-    test "sample taking more than elements without replacement" do
+    test "sample taking more than elements without replace" do
       s = 1..10 |> Enum.to_list() |> Series.from_list()
 
       assert_raise ArgumentError,
-                   "in order to sample more elements than are in the series (10), sampling `replacement` must be true",
+                   "in order to sample more elements than are in the series (10), sampling `replace` must be true",
                    fn ->
                      Series.sample(s, 15)
                    end
     end
 
-    test "sample taking more than elements using fraction without replacement" do
+    test "sample taking more than elements using fraction without replace" do
       s = 1..10 |> Enum.to_list() |> Series.from_list()
 
       assert_raise ArgumentError,
-                   "in order to sample more elements than are in the series (10), sampling `replacement` must be true",
+                   "in order to sample more elements than are in the series (10), sampling `replace` must be true",
                    fn ->
                      Series.sample(s, 1.2)
                    end
     end
 
-    test "sample taking more than elements with replacement" do
+    test "sample taking more than elements with replace" do
       s = 1..10 |> Enum.to_list() |> Series.from_list()
 
-      result = Series.sample(s, 15, replacement: true, seed: 100)
+      result = Series.sample(s, 15, replace: true, seed: 100)
 
       assert Series.size(result) == 15
       assert Series.to_list(result) == [7, 1, 6, 7, 6, 8, 3, 6, 4, 9, 1, 7, 1, 1, 9]
     end
 
-    test "sample taking more than elements with fraction and replacement" do
+    test "sample taking more than elements with fraction and replace" do
       s = 1..10 |> Enum.to_list() |> Series.from_list()
 
-      result = Series.sample(s, 1.2, replacement: true, seed: 100)
+      result = Series.sample(s, 1.2, replace: true, seed: 100)
 
       assert Series.size(result) == 12
       assert Series.to_list(result) == [7, 1, 6, 7, 6, 8, 3, 6, 4, 9, 1, 7]
+    end
+
+    test "sample with the exact amount of elements, but shuffle off" do
+      s = 0..9 |> Enum.to_list() |> Series.from_list()
+
+      result = Series.sample(s, 1.0, seed: 100, shuffle: false)
+
+      assert Series.size(result) == 10
+      assert Series.to_list(result) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    end
+
+    test "sample with the exact amount of elements, but shuffle on" do
+      s = 0..9 |> Enum.to_list() |> Series.from_list()
+
+      result = Series.sample(s, 1.0, seed: 100, shuffle: true)
+
+      assert Series.size(result) == 10
+      assert Series.to_list(result) == [7, 9, 2, 0, 4, 1, 3, 8, 5, 6]
     end
   end
 

@@ -34,7 +34,13 @@ defmodule Explorer.Backend.Series do
 
   @callback head(s, n :: integer()) :: s
   @callback tail(s, n :: integer()) :: s
-  @callback sample(s, n_or_frac :: number(), replacement :: boolean(), seed :: integer()) :: s
+  @callback sample(
+              s,
+              n_or_frac :: number(),
+              replacement :: boolean(),
+              shuffle :: boolean(),
+              seed :: integer()
+            ) :: s
   @callback at(s, idx :: integer()) :: s
   @callback at_every(s, integer()) :: s
   @callback mask(s, mask :: s) :: s

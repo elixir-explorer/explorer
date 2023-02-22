@@ -59,8 +59,8 @@ defmodule Explorer.Backend.LazySeries do
     distinct: 1,
     unordered_distinct: 1,
     slice: 3,
-    sample_n: 4,
-    sample_frac: 4,
+    sample_n: 5,
+    sample_frac: 5,
     head: 2,
     tail: 2,
     shift: 3,
@@ -258,16 +258,16 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def sample(%Series{} = s, n, replacement, seed) when is_integer(n) do
-    args = [lazy_series!(s), n, replacement, seed]
+  def sample(%Series{} = s, n, replacement, shuffle, seed) when is_integer(n) do
+    args = [lazy_series!(s), n, replacement, shuffle, seed]
     data = new(:sample_n, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
 
   @impl true
-  def sample(%Series{} = s, frac, replacement, seed) when is_float(frac) do
-    args = [lazy_series!(s), frac, replacement, seed]
+  def sample(%Series{} = s, frac, replacement, shuffle, seed) when is_float(frac) do
+    args = [lazy_series!(s), frac, replacement, shuffle, seed]
     data = new(:sample_frac, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)

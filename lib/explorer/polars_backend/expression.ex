@@ -71,8 +71,8 @@ defmodule Explorer.PolarsBackend.Expression do
     head: 2,
     tail: 2,
     peaks: 2,
-    sample_n: 4,
-    sample_frac: 4,
+    sample_n: 5,
+    sample_frac: 5,
 
     # Window operations
     cumulative_max: 2,

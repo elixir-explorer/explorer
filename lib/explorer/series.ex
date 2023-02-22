@@ -1085,13 +1085,15 @@ defmodule Explorer.Series do
   If given an integer as the second argument, it will return N samples. If given a float, it will
   return that proportion of the series.
 
-  Can sample with or without replacement.
+  Can sample with or without replace.
 
   ## Options
 
-    * `:replacement` - If set to `true`, each sample will be independent and therefore values may repeat.
+    * `:replace` - If set to `true`, each sample will be independent and therefore values may repeat.
       Required to be `true` for `n` greater then the number of rows in the series or `frac` > 1.0. (default: `false`)
     * `:seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
+    * `:shuffle` - In case the sample is equal to the size of the series, shuffle tells if the resultant
+      series should be shuffled or if it should return the same series. (default: `false`).
 
   ## Examples
 
@@ -1110,37 +1112,54 @@ defmodule Explorer.Series do
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.sample(s, 7, seed: 100, replacement: true)
+      iex> Explorer.Series.sample(s, 7, seed: 100, replace: true)
       #Explorer.Series<
         Polars[7]
         integer [4, 1, 3, 4, 3, 4, 2]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.sample(s, 1.2, seed: 100, replacement: true)
+      iex> Explorer.Series.sample(s, 1.2, seed: 100, replace: true)
       #Explorer.Series<
         Polars[6]
         integer [4, 1, 3, 4, 3, 4]
       >
+
+      iex> s = 0..9 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.sample(s, 1.0, seed: 100, shuffle: false)
+      #Explorer.Series<
+        Polars[10]
+        integer [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      >
+
+      iex> s = 0..9 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.sample(s, 1.0, seed: 100, shuffle: true)
+      #Explorer.Series<
+        Polars[10]
+        integer [7, 9, 2, 0, 4, 1, 3, 8, 5, 6]
+      >
+
   """
   @doc type: :shape
   @spec sample(series :: Series.t(), n_or_frac :: number(), opts :: Keyword.t()) :: Series.t()
   def sample(series, n_or_frac, opts \\ []) when is_number(n_or_frac) do
-    opts = Keyword.validate!(opts, replacement: false, seed: Enum.random(1..1_000_000_000_000))
+    opts = Keyword.validate!(opts, replace: false, shuffle: false, seed: nil)
 
     size = size(series)
 
     # In case the series is lazy, we don't perform this check here.
     if K.and(
          is_integer(size),
-         K.and(opts[:replacement] == false, invalid_size_for_sample?(n_or_frac, size))
+         K.and(opts[:replace] == false, invalid_size_for_sample?(n_or_frac, size))
        ) do
       raise ArgumentError,
             "in order to sample more elements than are in the series (#{size}), sampling " <>
-              "`replacement` must be true"
+              "`replace` must be true"
     end
 
-    Shared.apply_impl(series, :sample, [n_or_frac, opts[:replacement], opts[:seed]])
+    seed = opts[:seed] || Enum.random(1..1_000_000_000_000)
+
+    Shared.apply_impl(series, :sample, [n_or_frac, opts[:replace], opts[:shuffle], seed])
   end
 
   defp invalid_size_for_sample?(n, size) when is_integer(n), do: n > size

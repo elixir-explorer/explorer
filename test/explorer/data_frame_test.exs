@@ -1070,9 +1070,9 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          b: sample(a, 5, seed: 100),
-          c: sample(a, 1.0, seed: 99),
-          d: sample(a, 3, seed: 98) |> concat(from_list([0, 0]))
+          b: sample(a, 5, seed: 100, shuffle: true),
+          c: sample(a, 1.0, seed: 99, shuffle: true),
+          d: sample(a, 3, seed: 98, shuffle: true) |> concat(from_list([0, 0]))
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
