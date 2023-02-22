@@ -1099,28 +1099,28 @@ defmodule Explorer.Series do
       iex> Explorer.Series.sample(s, 10, seed: 100)
       #Explorer.Series<
         Polars[10]
-        integer [72, 33, 15, 4, 16, 49, 23, 96, 45, 47]
+        integer [55, 51, 33, 26, 5, 32, 62, 31, 9, 25]
       >
 
       iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 0.05, seed: 100)
       #Explorer.Series<
         Polars[5]
-        integer [68, 24, 6, 8, 36]
+        integer [49, 77, 96, 19, 18]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 7, seed: 100, replacement: true)
       #Explorer.Series<
         Polars[7]
-        integer [5, 1, 2, 4, 5, 3, 1]
+        integer [4, 1, 3, 4, 3, 4, 2]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 1.2, seed: 100, replacement: true)
       #Explorer.Series<
         Polars[6]
-        integer [5, 1, 2, 4, 5, 3]
+        integer [4, 1, 3, 4, 3, 4]
       >
   """
   @doc type: :shape

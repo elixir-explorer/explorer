@@ -2168,7 +2168,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 10, seed: 100)
 
       assert Series.size(result) == 10
-      assert Series.to_list(result) == [72, 33, 15, 4, 16, 49, 23, 96, 45, 47]
+      assert Series.to_list(result) == [55, 51, 33, 26, 5, 32, 62, 31, 9, 25]
     end
 
     test "sample taking 5% of elements" do
@@ -2177,7 +2177,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 0.05, seed: 100)
 
       assert Series.size(result) == 5
-      assert Series.to_list(result) == [68, 24, 6, 8, 36]
+      assert Series.to_list(result) == [49, 77, 96, 19, 18]
     end
 
     test "sample taking more than elements without replacement" do
@@ -2206,7 +2206,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 15, replacement: true, seed: 100)
 
       assert Series.size(result) == 15
-      assert Series.to_list(result) == [1, 8, 10, 1, 3, 10, 9, 1, 10, 10, 4, 5, 9, 7, 6]
+      assert Series.to_list(result) == [7, 1, 6, 7, 6, 8, 3, 6, 4, 9, 1, 7, 1, 1, 9]
     end
 
     test "sample taking more than elements with fraction and replacement" do
@@ -2215,7 +2215,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 1.2, replacement: true, seed: 100)
 
       assert Series.size(result) == 12
-      assert Series.to_list(result) == [1, 8, 10, 1, 3, 10, 9, 1, 10, 10, 4, 5]
+      assert Series.to_list(result) == [7, 1, 6, 7, 6, 8, 3, 6, 4, 9, 1, 7]
     end
   end
 
