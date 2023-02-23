@@ -1168,6 +1168,35 @@ defmodule Explorer.Series do
     do: invalid_size_for_sample?(round(frac * size), size)
 
   @doc """
+  Change the elements order randomly.
+
+  ## Options
+
+    * `:seed` - An integer to be used as a random seed. If nil, a random value between 1
+      and 1e12 will be used. (default: `nil`)
+
+  ## Examples
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.shuffle(s, seed: 100)
+      #Explorer.Series<
+        Polars[10]
+        integer [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+      >
+
+  """
+  @doc type: :shape
+  @spec shuffle(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  def shuffle(series, opts \\ [])
+
+  def shuffle(series, opts) do
+    opts = Keyword.validate!(opts, seed: nil)
+    seed = opts[:seed] || Enum.random(1..1_000_000_000_000)
+
+    sample(series, 1.0, seed: seed, shuffle: true)
+  end
+
+  @doc """
   Takes every *n*th value in this series, returned as a new series.
 
   ## Examples

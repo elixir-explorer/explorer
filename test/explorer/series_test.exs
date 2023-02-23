@@ -2237,6 +2237,17 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "shuffle/2" do
+    test "change the order of the elements randomly" do
+      s = 0..9 |> Enum.to_list() |> Series.from_list()
+
+      result = Series.shuffle(s, seed: 100)
+
+      assert Series.size(result) == 10
+      assert Series.to_list(result) == [7, 9, 2, 0, 4, 1, 3, 8, 5, 6]
+    end
+  end
+
   describe "select/3" do
     test "select elements of the same type" do
       predicate = [true, false, false, true, false] |> Series.from_list()
