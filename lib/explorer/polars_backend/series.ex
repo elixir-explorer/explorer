@@ -2,7 +2,6 @@ defmodule Explorer.PolarsBackend.Series do
   @moduledoc false
 
   alias Explorer.DataFrame
-  alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series
 
@@ -91,21 +90,13 @@ defmodule Explorer.PolarsBackend.Series do
   def shift(series, offset, nil), do: Shared.apply_series(series, :s_shift, [offset])
 
   @impl true
-  def sample(series, n, replacement, seed) when is_integer(n) do
-    indices =
-      series
-      |> size()
-      |> Native.s_seedable_random_indices(n, replacement, seed)
-
-    slice(series, indices)
+  def sample(series, n, replacement, shuffle, seed) when is_integer(n) do
+    Shared.apply_series(series, :s_sample_n, [n, replacement, shuffle, seed])
   end
 
   @impl true
-  def sample(series, frac, replacement, seed) when is_float(frac) do
-    size = size(series)
-    n = round(frac * size)
-
-    sample(series, n, replacement, seed)
+  def sample(series, frac, replacement, shuffle, seed) when is_float(frac) do
+    Shared.apply_series(series, :s_sample_frac, [frac, replacement, shuffle, seed])
   end
 
   @impl true

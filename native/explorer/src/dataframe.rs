@@ -218,15 +218,16 @@ pub fn df_slice_by_series(df: ExDataFrame, series: ExSeries) -> Result<ExDataFra
 pub fn df_sample_n(
     df: ExDataFrame,
     n: usize,
-    with_replacement: bool,
+    replace: bool,
+    shuffle: bool,
     seed: Option<u64>,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let new_df = if groups.is_empty() {
-        df.sample_n(n, with_replacement, false, seed)?
+        df.sample_n(n, replace, shuffle, seed)?
     } else {
         df.groupby_stable(groups)?
-            .apply(|df| df.sample_n(n, with_replacement, false, seed))?
+            .apply(|df| df.sample_n(n, replace, shuffle, seed))?
     };
 
     Ok(ExDataFrame::new(new_df))
@@ -236,15 +237,16 @@ pub fn df_sample_n(
 pub fn df_sample_frac(
     df: ExDataFrame,
     frac: f64,
-    with_replacement: bool,
+    replace: bool,
+    shuffle: bool,
     seed: Option<u64>,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let new_df = if groups.is_empty() {
-        df.sample_frac(frac, with_replacement, false, seed)?
+        df.sample_frac(frac, replace, shuffle, seed)?
     } else {
         df.groupby_stable(groups)?
-            .apply(|df| df.sample_frac(frac, with_replacement, false, seed))?
+            .apply(|df| df.sample_frac(frac, replace, shuffle, seed))?
     };
 
     Ok(ExDataFrame::new(new_df))

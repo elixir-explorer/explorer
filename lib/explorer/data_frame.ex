@@ -3309,12 +3309,15 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:replacement` - If set to `true`, each sample will be independent and therefore
+    * `:replace` - If set to `true`, each sample will be independent and therefore
       values may repeat. Required to be `true` for `n` greater then the number of rows
       in the dataframe or `frac` > 1.0. (default: `false`)
 
-    * `:seed` - An integer to be used as a random seed. If nil, a random value between 1
-      and 1e12 will be used. (default: nil)
+    * `:seed` - An integer to be used as a random seed. If nil, a random value between 0
+      and 2^64 - 1 will be used. (default: `nil`)
+
+    * `:shuffle` - If set to `true`, the resultant dataframe is going to be shuffle
+      if the sample is equal to the size of the dataframe. (default: `false`)
 
   ## Examples
 
@@ -3395,20 +3398,59 @@ defmodule Explorer.DataFrame do
   def sample(df, n_or_frac, opts \\ [])
 
   def sample(df, n_or_frac, opts) when is_number(n_or_frac) do
-    opts = Keyword.validate!(opts, replacement: false, seed: Enum.random(1..1_000_000_000_000))
+    opts = Keyword.validate!(opts, replace: false, shuffle: false, seed: nil)
 
     if groups(df) == [] do
       n_rows = n_rows(df)
       n = if is_integer(n_or_frac), do: n_or_frac, else: round(n_or_frac * n_rows)
 
-      if n > n_rows && opts[:replacement] == false do
+      if n > n_rows && opts[:replace] == false do
         raise ArgumentError,
               "in order to sample more rows than are in the dataframe (#{n_rows}), sampling " <>
-                "`replacement` must be true"
+                "`replace` must be true"
       end
     end
 
-    Shared.apply_impl(df, :sample, [n_or_frac, opts[:replacement], opts[:seed]])
+    Shared.apply_impl(df, :sample, [n_or_frac, opts[:replace], opts[:shuffle], opts[:seed]])
+  end
+
+  @doc """
+  Change the order of the rows of a dataframe randomly.
+
+  This function is going to ignore groups.
+
+  ## Options
+
+    * `:seed` - An integer to be used as a random seed. If nil, a random value between 0
+      and 2^64 - 1 will be used. (default: `nil`)
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.shuffle(df, seed: 100)
+      #Explorer.DataFrame<
+        Polars[1094 x 10]
+        year integer [2014, 2014, 2014, 2012, 2010, ...]
+        country string ["ISRAEL", "ARGENTINA", "NETHERLANDS", "YEMEN", "GRENADA", ...]
+        total integer [17617, 55638, 45624, 5091, 71, ...]
+        solid_fuel integer [6775, 1588, 9070, 129, 0, ...]
+        liquid_fuel integer [6013, 25685, 18272, 4173, 71, ...]
+        gas_fuel integer [3930, 26368, 18010, 414, 0, ...]
+        cement integer [898, 1551, 272, 375, 0, ...]
+        gas_flaring integer [0, 446, 0, 0, 0, ...]
+        per_capita float [2.22, 1.29, 2.7, 0.2, 0.68, ...]
+        bunker_fuels integer [1011, 2079, 14210, 111, 4, ...]
+      >
+
+  """
+  @doc type: :rows
+  @spec shuffle(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def shuffle(df, opts \\ [])
+
+  def shuffle(df, opts) do
+    opts = Keyword.validate!(opts, seed: nil)
+
+    sample(df, 1.0, seed: opts[:seed], shuffle: true)
   end
 
   @doc """

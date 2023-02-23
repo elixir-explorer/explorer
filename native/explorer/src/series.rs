@@ -8,9 +8,6 @@ use chrono::Datelike;
 use polars::export::arrow::array::Utf8Array;
 use polars::export::arrow::temporal_conversions::date32_to_date;
 use polars::prelude::*;
-use rand::seq::IteratorRandom;
-use rand::{Rng, SeedableRng};
-use rand_pcg::Pcg64;
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
@@ -971,24 +968,29 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_seedable_random_indices(
-    length: usize,
-    n_samples: usize,
-    replacement: bool,
-    seed: u64,
-) -> Vec<usize> {
-    let mut rng: Pcg64 = SeedableRng::seed_from_u64(seed);
-    let range: Vec<usize> = (0..length).collect();
-    if replacement {
-        (0..n_samples).map(|_| rng.gen_range(0..length)).collect()
-    } else {
-        range
-            .iter()
-            .choose_multiple(&mut rng, n_samples)
-            .iter()
-            .map(|x| **x)
-            .collect()
-    }
+pub fn s_sample_n(
+    series: ExSeries,
+    n: usize,
+    replace: bool,
+    shuffle: bool,
+    seed: Option<u64>,
+) -> Result<ExSeries, ExplorerError> {
+    let new_s = series.sample_n(n, replace, shuffle, seed)?;
+
+    Ok(ExSeries::new(new_s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_sample_frac(
+    series: ExSeries,
+    frac: f64,
+    replace: bool,
+    shuffle: bool,
+    seed: Option<u64>,
+) -> Result<ExSeries, ExplorerError> {
+    let new_s = series.sample_frac(frac, replace, shuffle, seed)?;
+
+    Ok(ExSeries::new(new_s))
 }
 
 pub fn parse_quantile_interpol_options(strategy: &str) -> QuantileInterpolOptions {

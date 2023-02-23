@@ -12,6 +12,7 @@ defmodule Explorer.Backend.Series do
   @type df :: Explorer.DataFrame.t()
   @type dtype :: Explorer.Series.dtype()
   @type valid_types :: number() | boolean() | String.t() | Date.t() | Time.t() | NaiveDateTime.t()
+  @type option(type) :: type | nil
 
   # Conversion
 
@@ -34,7 +35,13 @@ defmodule Explorer.Backend.Series do
 
   @callback head(s, n :: integer()) :: s
   @callback tail(s, n :: integer()) :: s
-  @callback sample(s, n_or_frac :: number(), replacement :: boolean(), seed :: integer()) :: s
+  @callback sample(
+              s,
+              n_or_frac :: number(),
+              replacement :: boolean(),
+              shuffle :: boolean(),
+              seed :: option(integer())
+            ) :: s
   @callback at(s, idx :: integer()) :: s
   @callback at_every(s, integer()) :: s
   @callback mask(s, mask :: s) :: s

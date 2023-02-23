@@ -793,7 +793,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "sample more than the size from each group with replacement" do
       df = Datasets.iris()
       grouped = DF.group_by(df, "species")
-      grouped1 = DF.sample(grouped, 60, seed: 100, replacement: true)
+      grouped1 = DF.sample(grouped, 60, seed: 100, replace: true)
 
       assert DF.n_rows(grouped1) == 180
     end
@@ -801,7 +801,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "sample more than 100% from each group with replacement" do
       df = Datasets.iris()
       grouped = DF.group_by(df, "species")
-      grouped1 = DF.sample(grouped, 1.2, seed: 100, replacement: true)
+      grouped1 = DF.sample(grouped, 1.2, seed: 100, replace: true)
 
       assert DF.n_rows(grouped1) == 180
     end

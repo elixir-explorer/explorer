@@ -229,10 +229,16 @@ pub fn expr_shift(expr: ExExpr, offset: i64, _default: Option<ExExpr>) -> ExExpr
 }
 
 #[rustler::nif]
-pub fn expr_sample_n(expr: ExExpr, n: usize, with_replacement: bool, seed: Option<u64>) -> ExExpr {
+pub fn expr_sample_n(
+    expr: ExExpr,
+    n: usize,
+    with_replacement: bool,
+    shuffle: bool,
+    seed: Option<u64>,
+) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.sample_n(n, with_replacement, true, seed))
+    ExExpr::new(expr.sample_n(n, with_replacement, shuffle, seed))
 }
 
 #[rustler::nif]
@@ -240,11 +246,12 @@ pub fn expr_sample_frac(
     expr: ExExpr,
     frac: f64,
     with_replacement: bool,
+    shuffle: bool,
     seed: Option<u64>,
 ) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.sample_frac(frac, with_replacement, true, seed))
+    ExExpr::new(expr.sample_frac(frac, with_replacement, shuffle, seed))
 }
 
 #[rustler::nif]

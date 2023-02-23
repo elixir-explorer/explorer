@@ -440,13 +440,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_dataframe(df, out_df, :df_to_dummies, [names])
 
   @impl true
-  def sample(df, n, replacement, seed) when is_integer(n) do
-    Shared.apply_dataframe(df, df, :df_sample_n, [n, replacement, seed, df.groups])
+  def sample(df, n, replacement, shuffle, seed) when is_integer(n) do
+    Shared.apply_dataframe(df, df, :df_sample_n, [n, replacement, shuffle, seed, df.groups])
   end
 
   @impl true
-  def sample(df, frac, replacement, seed) when is_float(frac) do
-    Shared.apply_dataframe(df, df, :df_sample_frac, [frac, replacement, seed, df.groups])
+  def sample(df, frac, replacement, shuffle, seed) when is_float(frac) do
+    # Avoid grouping if the sample is of the entire DF.
+    groups = if frac == 1.0, do: [], else: df.groups
+
+    Shared.apply_dataframe(df, df, :df_sample_frac, [frac, replacement, shuffle, seed, groups])
   end
 
   @impl true
