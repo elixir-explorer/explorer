@@ -73,7 +73,7 @@ defmodule Explorer.Series do
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
   @enforce_keys [:data, :dtype]
-  defstruct [:data, :dtype]
+  defstruct [:data, :dtype, :name]
 
   @behaviour Access
   @compile {:no_warn_undefined, Nx}

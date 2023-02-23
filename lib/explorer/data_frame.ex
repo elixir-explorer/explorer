@@ -368,7 +368,7 @@ defmodule Explorer.DataFrame do
 
     new_df = put(df, column, new_value)
 
-    {current_value, new_df}
+    {%{current_value | name: column}, new_df}
   end
 
   # IO
@@ -3082,7 +3082,8 @@ defmodule Explorer.DataFrame do
   def pull(df, column) when is_column(column) do
     [column] = to_existing_columns(df, [column])
 
-    Shared.apply_impl(df, :pull, [column])
+    series = Shared.apply_impl(df, :pull, [column])
+    %{series | name: column}
   end
 
   @doc """

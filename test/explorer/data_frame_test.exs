@@ -1603,8 +1603,21 @@ defmodule Explorer.DataFrameTest do
         {current_value, Series.from_list([0, 0, 0])}
       end)
 
+    assert s.name == "a"
+
     assert Series.to_list(s) == [1, 2, 3]
     assert DF.to_columns(df2, atom_keys: true) == %{a: [0, 0, 0], b: ["a", "b", "c"]}
+  end
+
+  test "pull/2" do
+    df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+    s = DF.pull(df1, "b")
+
+    assert %Series{} = s
+    assert s.name == "b"
+
+    assert Series.to_list(s) == ~w(a b c)
   end
 
   test "concat_rows/2" do
