@@ -126,7 +126,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.from_csv!(path, lazy: true)
 
-    # no-op 
+    # no-op
     assert DF.to_lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
@@ -155,12 +155,38 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.from_parquet!(path, lazy: true)
 
-    # no-op 
+    # no-op
     assert DF.to_lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
+  end
+
+  describe "from_parquet/2 - with options" do
+    @tag :tmp_dir
+    test "max_rows", %{df: df, tmp_dir: tmp_dir} do
+      path = Path.join([tmp_dir, "fossil_fuels.parquet"])
+      DF.to_parquet!(df, path)
+
+      ldf = DF.from_parquet!(path, lazy: true, max_rows: 1)
+
+      df1 = DF.collect(ldf)
+
+      assert DF.n_rows(df1) == 1
+    end
+
+    @tag :tmp_dir
+    test "columns", %{df: df, tmp_dir: tmp_dir} do
+      path = Path.join([tmp_dir, "fossil_fuels.parquet"])
+      DF.to_parquet!(df, path)
+
+      assert_raise ArgumentError,
+                   "`columns` is not supported by Polars' lazy backend. Consider using `select/2` after reading the parquet file",
+                   fn ->
+                     DF.from_parquet!(path, lazy: true, columns: ["country", "year", "total"])
+                   end
+    end
   end
 
   @tag :tmp_dir
@@ -184,7 +210,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.from_ndjson!(path, lazy: true)
 
-    # no-op 
+    # no-op
     assert DF.to_lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
@@ -200,7 +226,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.from_ipc!(path, lazy: true)
 
-    # no-op 
+    # no-op
     assert DF.to_lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
@@ -227,7 +253,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.load_csv!(contents, lazy: true)
 
-    # no-op 
+    # no-op
     assert DF.to_lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
@@ -241,7 +267,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.load_parquet!(contents, lazy: true)
 
-    # no-op 
+    # no-op
     assert DF.to_lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
@@ -255,7 +281,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.load_ndjson!(contents, lazy: true)
 
-    # no-op 
+    # no-op
     assert DF.to_lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
@@ -269,7 +295,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.load_ipc!(contents, lazy: true)
 
-    # no-op 
+    # no-op
     assert DF.to_lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
@@ -283,7 +309,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.load_ipc_stream!(contents, lazy: true)
 
-    # no-op 
+    # no-op
     assert DF.to_lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)

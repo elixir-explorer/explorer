@@ -163,7 +163,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_slice(_df, _offset, _length), do: err()
   def lf_from_ipc(_filename), do: err()
   def lf_from_ndjson(_filename, _infer_schema_length, _batch_size), do: err()
-  def lf_from_parquet(_filename), do: err()
+  def lf_from_parquet(_filename, _stop_after_n_rows), do: err()
 
   def lf_from_csv(
         _filename,

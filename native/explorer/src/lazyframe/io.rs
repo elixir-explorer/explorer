@@ -6,9 +6,14 @@ use crate::datatypes::ExParquetCompression;
 use crate::{ExLazyFrame, ExplorerError};
 
 #[rustler::nif]
-pub fn lf_from_parquet(filename: &str) -> Result<ExLazyFrame, ExplorerError> {
-    let lf = LazyFrame::scan_parquet(filename, Default::default())?;
-    Ok(ExLazyFrame::new(lf))
+pub fn lf_from_parquet(
+  filename: &str,
+  stop_after_n_rows: Option<usize>,
+) -> Result<ExLazyFrame, ExplorerError> {
+  let options = ScanArgsParquet { n_rows: stop_after_n_rows, ..Default::default() };
+  let lf = LazyFrame::scan_parquet(filename, options)?;
+
+  Ok(ExLazyFrame::new(lf))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
