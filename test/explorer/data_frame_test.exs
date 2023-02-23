@@ -2394,4 +2394,17 @@ defmodule Explorer.DataFrameTest do
              }
     end
   end
+
+  describe "shuffle/2" do
+    test "shuffles the dataframe rows" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.shuffle(df, seed: 100)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
+               numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+             }
+    end
+  end
 end

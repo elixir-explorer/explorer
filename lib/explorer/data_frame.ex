@@ -3417,6 +3417,46 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Change the order of the rows of a dataframe randomly.
+
+  This function is going to ignore groups.
+
+  ## Options
+
+    * `:seed` - An integer to be used as a random seed. If nil, a random value between 1
+      and 1e12 will be used. (default: `nil`)
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> Explorer.DataFrame.shuffle(df, seed: 100)
+      #Explorer.DataFrame<
+        Polars[1094 x 10]
+        year integer [2014, 2014, 2014, 2012, 2010, ...]
+        country string ["ISRAEL", "ARGENTINA", "NETHERLANDS", "YEMEN", "GRENADA", ...]
+        total integer [17617, 55638, 45624, 5091, 71, ...]
+        solid_fuel integer [6775, 1588, 9070, 129, 0, ...]
+        liquid_fuel integer [6013, 25685, 18272, 4173, 71, ...]
+        gas_fuel integer [3930, 26368, 18010, 414, 0, ...]
+        cement integer [898, 1551, 272, 375, 0, ...]
+        gas_flaring integer [0, 446, 0, 0, 0, ...]
+        per_capita float [2.22, 1.29, 2.7, 0.2, 0.68, ...]
+        bunker_fuels integer [1011, 2079, 14210, 111, 4, ...]
+      >
+
+  """
+  @doc type: :rows
+  @spec shuffle(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def shuffle(df, opts \\ [])
+
+  def shuffle(df, opts) do
+    opts = Keyword.validate!(opts, seed: nil)
+    seed = opts[:seed] || Enum.random(1..1_000_000_000_000)
+
+    sample(df, 1.0, seed: seed, shuffle: true)
+  end
+
+  @doc """
   Pivot data from wide to long.
 
   `pivot_longer/3` "lengthens" data, increasing the number of rows and
