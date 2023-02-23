@@ -10,7 +10,7 @@ defmodule Explorer.SeriesTest do
       Code.fetch_docs(Explorer.Series)
 
     for {{:function, name, arity}, _ann, _signature, docs, metadata} <- entries,
-        is_map(docs) and map_size(docs) > 0,
+        is_map(docs) and map_size(docs) > 0 and name != :__struct__,
         metadata[:type] not in [
           :shape,
           :introspection,
