@@ -3062,7 +3062,7 @@ defmodule Explorer.DataFrame do
   Extracts a single column as a series.
 
   This is equivalent to `df[field]` for retrieving a single field.
-  The resultant series is going to have the column name in the `:name` field.
+  The returned series will have its `:name` field set to the column name.
 
   ## Examples
 
