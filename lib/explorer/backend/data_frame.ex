@@ -141,7 +141,13 @@ defmodule Explorer.Backend.DataFrame do
   @callback distinct(df, out_df :: df(), columns :: [column_name()]) :: df
   @callback rename(df, out_df :: df(), [{old :: column_name(), new :: column_name()}]) :: df
   @callback dummies(df, out_df :: df(), columns :: [column_name()]) :: df
-  @callback sample(df, n_or_frac :: number(), replacement :: boolean(), seed :: integer()) :: df
+  @callback sample(
+              df,
+              n_or_frac :: number(),
+              replace :: boolean(),
+              shuffle :: boolean(),
+              seed :: integer()
+            ) :: df
   @callback pull(df, column :: column_name()) :: series
   @callback slice(df, indices :: list(integer()) | %Range{}) :: df
   @callback slice(df, offset :: integer(), length :: integer()) :: df

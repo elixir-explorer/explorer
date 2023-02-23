@@ -2324,4 +2324,74 @@ defmodule Explorer.DataFrameTest do
              }
     end
   end
+
+  describe "sample/3" do
+    test "sampling by integer" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 3, seed: 100)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["e", "b", "d"],
+               numbers: [5, 2, 4]
+             }
+    end
+
+    test "sampling by fraction (float)" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 0.2, seed: 100)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["j", "b"],
+               numbers: [10, 2]
+             }
+    end
+
+    test "sampling by integer with same size of the dataframe" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 10, seed: 100)
+
+      # Without "shuffle", returns the same DF.
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ~w(a b c d e f g h i j),
+               numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+             }
+    end
+
+    test "sampling by integer with same size of the dataframe and with shuffle" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 10, seed: 100, shuffle: true)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
+               numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+             }
+    end
+
+    test "sampling by fraction the all rows of the dataframe" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 1.0, seed: 100)
+
+      # Without "shuffle", returns the same DF.
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ~w(a b c d e f g h i j),
+               numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+             }
+    end
+
+    test "sampling by fraction with all rows and with shuffle" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 1.0, seed: 100, shuffle: true)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
+               numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+             }
+    end
+  end
 end

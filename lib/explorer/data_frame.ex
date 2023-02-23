@@ -3309,12 +3309,15 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:replacement` - If set to `true`, each sample will be independent and therefore
+    * `:replace` - If set to `true`, each sample will be independent and therefore
       values may repeat. Required to be `true` for `n` greater then the number of rows
       in the dataframe or `frac` > 1.0. (default: `false`)
 
     * `:seed` - An integer to be used as a random seed. If nil, a random value between 1
-      and 1e12 will be used. (default: nil)
+      and 1e12 will be used. (default: `nil`)
+
+    * `:shuffle` - If set to `true`, the resultant dataframe is going to be shuffle
+      if the sample is equal to the size of the dataframe. (default: `false`)
 
   ## Examples
 
@@ -3395,20 +3398,22 @@ defmodule Explorer.DataFrame do
   def sample(df, n_or_frac, opts \\ [])
 
   def sample(df, n_or_frac, opts) when is_number(n_or_frac) do
-    opts = Keyword.validate!(opts, replacement: false, seed: Enum.random(1..1_000_000_000_000))
+    opts = Keyword.validate!(opts, replace: false, shuffle: false, seed: nil)
 
     if groups(df) == [] do
       n_rows = n_rows(df)
       n = if is_integer(n_or_frac), do: n_or_frac, else: round(n_or_frac * n_rows)
 
-      if n > n_rows && opts[:replacement] == false do
+      if n > n_rows && opts[:replace] == false do
         raise ArgumentError,
               "in order to sample more rows than are in the dataframe (#{n_rows}), sampling " <>
-                "`replacement` must be true"
+                "`replace` must be true"
       end
     end
 
-    Shared.apply_impl(df, :sample, [n_or_frac, opts[:replacement], opts[:seed]])
+    seed = opts[:seed] || Enum.random(1..1_000_000_000_000)
+
+    Shared.apply_impl(df, :sample, [n_or_frac, opts[:replace], opts[:shuffle], seed])
   end
 
   @doc """
