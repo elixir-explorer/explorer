@@ -6,19 +6,23 @@ defmodule Explorer.Series do
 
     * `:binary` - Binary
     * `:boolean` - Boolean
-    * `:category` - UTF-8 encoded binary, but as categories
+    * `:category` - UTF-8 encoded binary but represented internally as integers
     * `:date` - Date type that unwraps to `Elixir.Date`
-    * `:time` - Time type that unwraps to `Elixir.Time`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
     * `:float` - 64-bit floating point number
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
+    * `:time` - Time type that unwraps to `Elixir.Time`
 
   A series must consist of a single data type only. Series may have `nil` values in them.
+  The series `dtype` can be retrieved via the `dtype/1` function or directly accessed as
+  `series.dtype`. A `series.name` field is also available, but it is always `nil` unless
+  the series is retrieved from a dataframe.
 
-  Many functions only apply to certain dtypes. Where that is the case, you'll find a "Supported
-  dtypes" section in the function documentation and the function will raise an `ArgumentError` if
-  a series with an invalid dtype is used.
+  Many functions only apply to certain dtypes. These functions may appear on distinct
+  categories on the sidebar. Other functions may work on several datatypes, such as
+  comparison functions. In such cases, a "Supported dtypes" section will be available
+  in the function documentation.
 
   ## Creating series
 
@@ -72,12 +76,7 @@ defmodule Explorer.Series do
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
-  @doc """
-  The Series struct.
-
-  The fields `:dtype` and `:name` are public. `:name` is always `nil` unless
-  the series is retrieved from a dataframe.
-  """
+  @doc false
   @enforce_keys [:data, :dtype]
   defstruct [:data, :dtype, :name]
 
@@ -914,11 +913,16 @@ defmodule Explorer.Series do
   @doc """
   Apply categories to a series of integers.
 
-  It accepts both a series of categories or strings, or a list of strings.
-  Categories are indexed based in case a series of strings or a list is given.
+  The first argument is a series of integers which are indexes into the
+  second argument. The second argument can be one of:
 
-  If a categorical series is given, then the indexes of categories from that series
-  are going to be used.
+    * a series with dtype `:category`. The integers will be indexes into
+      the categories of the given series (returned by `categories/1`)
+
+    * a series with dtype `:string`. The integers will be indexes into
+      the series itself
+
+    * a list of strings. The integers will be indexes into the list
 
   ## Examples
 
@@ -3518,7 +3522,7 @@ defmodule Explorer.Series do
       >
   """
 
-  @doc type: :date_wise
+  @doc type: :datetime_wise
   @spec day_of_week(Series.t()) :: Series.t()
   def day_of_week(%Series{dtype: dtype} = series) when K.in(dtype, [:date, :datetime]),
     do: Shared.apply_series_impl(:day_of_week, [series])
@@ -3539,7 +3543,7 @@ defmodule Explorer.Series do
       >
   """
 
-  @doc type: :date_wise
+  @doc type: :datetime_wise
   @spec to_date(Series.t()) :: Series.t()
   def to_date(%Series{dtype: :datetime} = series),
     do: Shared.apply_series_impl(:to_date, [series])
@@ -3560,7 +3564,7 @@ defmodule Explorer.Series do
       >
   """
 
-  @doc type: :date_wise
+  @doc type: :datetime_wise
   @spec to_time(Series.t()) :: Series.t()
   def to_time(%Series{dtype: :datetime} = series),
     do: Shared.apply_series_impl(:to_time, [series])

@@ -10,7 +10,7 @@ defmodule Explorer.SeriesTest do
       Code.fetch_docs(Explorer.Series)
 
     for {{:function, name, arity}, _ann, _signature, docs, metadata} <- entries,
-        is_map(docs) and map_size(docs) > 0 and name != :__struct__,
+        is_map(docs) and map_size(docs) > 0,
         metadata[:type] not in [
           :shape,
           :introspection,
@@ -20,7 +20,7 @@ defmodule Explorer.SeriesTest do
           :element_wise,
           :float_wise,
           :string_wise,
-          :date_wise
+          :datetime_wise
         ] do
       flunk("invalid @doc type: #{inspect(metadata[:type])} for #{name}/#{arity}")
     end
