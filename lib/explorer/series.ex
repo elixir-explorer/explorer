@@ -72,6 +72,8 @@ defmodule Explorer.Series do
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
+  # The fields `:dtype` and `:name` are public. But `:name` is always `nil` unless
+  # the series is accessed through the dataframe.
   @enforce_keys [:data, :dtype]
   defstruct [:data, :dtype, :name]
 

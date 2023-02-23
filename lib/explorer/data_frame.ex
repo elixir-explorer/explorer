@@ -359,6 +359,8 @@ defmodule Explorer.DataFrame do
     {select(df, columns), discard(df, columns)}
   end
 
+  # Notice that the resultant series is going to have the `:name` field
+  # equals to the column name.
   @impl true
   def get_and_update(df, column, fun) when is_column(column) do
     [column] = to_existing_columns(df, [column])
@@ -3060,6 +3062,7 @@ defmodule Explorer.DataFrame do
   Extracts a single column as a series.
 
   This is equivalent to `df[field]` for retrieving a single field.
+  The resultant series is going to have the column name in the `:name` field.
 
   ## Examples
 
