@@ -1091,7 +1091,7 @@ defmodule Explorer.Series do
 
     * `:replace` - If set to `true`, each sample will be independent and therefore values may repeat.
       Required to be `true` for `n` greater then the number of rows in the series or `frac` > 1.0. (default: `false`)
-    * `:seed` - An integer to be used as a random seed. If nil, a random value between 1 and 1e12 will be used. (default: nil)
+    * `:seed` - An integer to be used as a random seed. If nil, a random value between 0 and 2^64 − 1 will be used. (default: nil)
     * `:shuffle` - In case the sample is equal to the size of the series, shuffle tells if the resultant
       series should be shuffled or if it should return the same series. (default: `false`).
 
@@ -1157,9 +1157,7 @@ defmodule Explorer.Series do
               "`replace` must be true"
     end
 
-    seed = opts[:seed] || Enum.random(1..1_000_000_000_000)
-
-    Shared.apply_impl(series, :sample, [n_or_frac, opts[:replace], opts[:shuffle], seed])
+    Shared.apply_impl(series, :sample, [n_or_frac, opts[:replace], opts[:shuffle], opts[:seed]])
   end
 
   defp invalid_size_for_sample?(n, size) when is_integer(n), do: n > size
@@ -1172,8 +1170,8 @@ defmodule Explorer.Series do
 
   ## Options
 
-    * `:seed` - An integer to be used as a random seed. If nil, a random value between 1
-      and 1e12 will be used. (default: `nil`)
+    * `:seed` - An integer to be used as a random seed. If nil,
+      a random value between 0 and 2^64 − 1 will be used. (default: nil)
 
   ## Examples
 
@@ -1191,9 +1189,8 @@ defmodule Explorer.Series do
 
   def shuffle(series, opts) do
     opts = Keyword.validate!(opts, seed: nil)
-    seed = opts[:seed] || Enum.random(1..1_000_000_000_000)
 
-    sample(series, 1.0, seed: seed, shuffle: true)
+    sample(series, 1.0, seed: opts[:seed], shuffle: true)
   end
 
   @doc """

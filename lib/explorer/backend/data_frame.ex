@@ -25,6 +25,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @type compression :: {algorithm :: atom() | nil, level :: integer() | nil}
   @type columns_for_io :: list(column_name()) | list(pos_integer()) | nil
+  @type option(type) :: type | nil
 
   # IO: CSV
   @callback from_csv(
@@ -146,7 +147,7 @@ defmodule Explorer.Backend.DataFrame do
               n_or_frac :: number(),
               replace :: boolean(),
               shuffle :: boolean(),
-              seed :: integer()
+              seed :: option(integer())
             ) :: df
   @callback pull(df, column :: column_name()) :: series
   @callback slice(df, indices :: list(integer()) | %Range{}) :: df
