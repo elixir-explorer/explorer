@@ -118,6 +118,9 @@ defmodule Explorer.PolarsBackend.Series do
   def at(series, idx), do: Shared.apply_series(series, :s_at, [idx])
 
   @impl true
+  def format(s1, s2), do: Shared.apply_series(matching_size!(s1, s2), :s_format, [s2.data])
+
+  @impl true
   def concat(s1, s2), do: Shared.apply_series(s1, :s_concat, [s2.data])
 
   @impl true

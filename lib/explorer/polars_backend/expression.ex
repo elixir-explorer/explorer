@@ -27,6 +27,7 @@ defmodule Explorer.PolarsBackend.Expression do
     equal: 2,
     fill_missing_with_value: 2,
     first: 1,
+    format: 2,
     greater: 2,
     greater_equal: 2,
     is_nil: 1,

@@ -47,6 +47,7 @@ defmodule Explorer.Backend.Series do
   @callback mask(s, mask :: s) :: s
   @callback slice(s, indices :: list()) :: s
   @callback slice(s, offset :: integer(), length :: integer()) :: s
+  @callback format(s, s) :: s
   @callback concat(s, s) :: s
   @callback coalesce(s, s) :: s
   @callback first(s) :: valid_types() | lazy_s()

@@ -39,6 +39,7 @@ defmodule Explorer.Backend.LazySeries do
     pow: 2,
     fill_missing_with_value: 2,
     fill_missing_with_strategy: 2,
+    format: 2,
     concat: 2,
     coalesce: 2,
     cast: 2,

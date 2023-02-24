@@ -2162,6 +2162,344 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "format/1" do
+    test "with two string series" do
+      s1 = Series.from_list(["a", "b"])
+      s2 = Series.from_list(["c", "d"])
+
+      assert Series.format([s1, s2]) |> Series.to_list() == ["ac", "bd"]
+    end
+
+    test "with two strings" do
+      assert Series.format(["a", "b"]) |> Series.to_list() == ["ab"]
+    end
+
+    test "with a string series and a string value" do
+      s1 = Series.from_list(["a", "b"])
+
+      assert Series.format([s1, "c"]) |> Series.to_list() == ["ac", "bc"]
+    end
+
+    test "with a string value and a string series" do
+      s1 = Series.from_list(["a", "b"])
+
+      assert Series.format(["c", s1]) |> Series.to_list() == ["ca", "cb"]
+    end
+
+    test "with many string series with separator" do
+      s1 = Series.from_list(["a", "b"])
+      s2 = Series.from_list(["c", "d"])
+      s3 = Series.from_list(["e", "f"])
+      s4 = Series.from_list(["g", "h"])
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() ==
+               ["a / c - e / g", "b / d - f / h"]
+    end
+
+    test "with two binary series" do
+      s1 = Series.from_list([<<1>>, <<2>>], dtype: :binary)
+      s2 = Series.from_list([<<3>>, <<4>>], dtype: :binary)
+
+      assert Series.format([s1, s2]) |> Series.to_list() == ["\x01\x03", "\x02\x04"]
+    end
+
+    test "with two binaries" do
+      assert Series.format([<<1>>, <<2>>]) |> Series.to_list() == ["\x01\x02"]
+    end
+
+    test "with a binary series and a binary value" do
+      s1 = Series.from_list([<<1>>, <<2>>], dtype: :binary)
+
+      assert Series.format([s1, <<3>>]) |> Series.to_list() == ["\x01\x03", "\x02\x03"]
+    end
+
+    test "with a binary value and a binary series" do
+      s1 = Series.from_list([<<1>>, <<2>>], dtype: :binary)
+
+      assert Series.format([<<3>>, s1]) |> Series.to_list() == ["\x03\x01", "\x03\x02"]
+    end
+
+    test "with many binary series with separator" do
+      s1 = Series.from_list([<<1>>, <<2>>], dtype: :binary)
+      s2 = Series.from_list([<<3>>, <<4>>], dtype: :binary)
+      s3 = Series.from_list([<<5>>, <<6>>], dtype: :binary)
+      s4 = Series.from_list([<<7>>, <<8>>], dtype: :binary)
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() ==
+               ["\x01 / \x03 - \x05 / \a", "\x02 / \x04 - \x06 / \b"]
+    end
+
+    test "with two binary series but with one binary which is an invalid string" do
+      s1 = Series.from_list([<<1>>, <<239, 191, 19>>], dtype: :binary)
+      s2 = Series.from_list([<<3>>, <<4>>], dtype: :binary)
+
+      assert_raise RuntimeError,
+                   "External error: invalid utf-8 sequence",
+                   fn -> Series.format([s1, s2]) end
+    end
+
+    test "with two integer series" do
+      s1 = Series.from_list([1, 2])
+      s2 = Series.from_list([3, 4])
+
+      assert Series.format([s1, s2]) |> Series.to_list() == ["13", "24"]
+    end
+
+    test "with two integers" do
+      assert Series.format([1, 2]) |> Series.to_list() == ["12"]
+    end
+
+    test "with an integer series and an integer value" do
+      s1 = Series.from_list([1, 2])
+
+      assert Series.format([s1, 3]) |> Series.to_list() == ["13", "23"]
+    end
+
+    test "with an integer value and an integer series" do
+      s1 = Series.from_list([1, 2])
+
+      assert Series.format([3, s1]) |> Series.to_list() == ["31", "32"]
+    end
+
+    test "with many integer series with separator" do
+      s1 = Series.from_list([1, 2])
+      s2 = Series.from_list([3, 4])
+      s3 = Series.from_list([5, 6])
+      s4 = Series.from_list([7, 8])
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() ==
+               ["1 / 3 - 5 / 7", "2 / 4 - 6 / 8"]
+    end
+
+    test "with two float series" do
+      s1 = Series.from_list([1.2, 2.6])
+      s2 = Series.from_list([3.1, 4.9])
+
+      assert Series.format([s1, s2]) |> Series.to_list() == ["1.23.1", "2.64.9"]
+    end
+
+    test "with two floats" do
+      assert Series.format([1.5, :nan]) |> Series.to_list() == ["1.5NaN"]
+    end
+
+    test "with a float series and a float value" do
+      s1 = Series.from_list([1.5, :nan])
+
+      assert Series.format([s1, :infinity]) |> Series.to_list() == ["1.5inf", "NaNinf"]
+    end
+
+    test "with a float value and a float series" do
+      s1 = Series.from_list([1.5, :nan])
+
+      assert Series.format([:neg_infinity, s1]) |> Series.to_list() == ["-inf1.5", "-infNaN"]
+    end
+
+    test "with many float series with separator" do
+      s1 = Series.from_list([1.5, 2.7])
+      s2 = Series.from_list([:nan, :infinity])
+      s3 = Series.from_list([:neg_infinity, 3.2])
+      s4 = Series.from_list([4.5, 5.3])
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() ==
+               ["1.5 / NaN - -inf / 4.5", "2.7 / inf - 3.2 / 5.3"]
+    end
+
+    test "with two boolean series" do
+      s1 = Series.from_list([true, false])
+      s2 = Series.from_list([true, false])
+
+      assert Series.format([s1, s2]) |> Series.to_list() == ["truetrue", "falsefalse"]
+    end
+
+    test "with two booleans" do
+      assert Series.format([true, false]) |> Series.to_list() == ["truefalse"]
+    end
+
+    test "with a boolean series and a boolean value" do
+      s1 = Series.from_list([true, false])
+
+      assert Series.format([s1, true]) |> Series.to_list() == ["truetrue", "falsetrue"]
+    end
+
+    test "with a boolean value and a boolean series" do
+      s1 = Series.from_list([true, false])
+
+      assert Series.format([true, s1]) |> Series.to_list() == ["truetrue", "truefalse"]
+    end
+
+    test "with many boolean series with separator" do
+      s1 = Series.from_list([true, false])
+      s2 = Series.from_list([true, false])
+      s3 = Series.from_list([true, false])
+      s4 = Series.from_list([true, false])
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() ==
+               ["true / true - true / true", "false / false - false / false"]
+    end
+
+    test "with two date series" do
+      s1 = Series.from_list([~D[2023-01-01], ~D[2023-01-02]])
+      s2 = Series.from_list([~D[2023-01-03], ~D[2023-01-04]])
+
+      assert Series.format([s1, s2]) |> Series.to_list() ==
+               ["2023-01-012023-01-03", "2023-01-022023-01-04"]
+    end
+
+    test "with two time series" do
+      s1 = Series.from_list([~T[01:00:00.000000], ~T[02:00:00.000000]])
+      s2 = Series.from_list([~T[03:00:00.000000], ~T[04:00:00.000000]])
+
+      assert Series.format([s1, s2]) |> Series.to_list() ==
+               ["360000000010800000000", "720000000014400000000"]
+    end
+
+    test "with two times" do
+      assert Series.format([~T[01:00:00.000000], ~T[02:00:00.000000]]) |> Series.to_list() ==
+               ["36000000007200000000"]
+    end
+
+    test "with a time series and a time value" do
+      s1 = Series.from_list([~T[01:00:00.000000], ~T[02:00:00.000000]])
+
+      assert Series.format([s1, ~T[03:00:00.000000]]) |> Series.to_list() ==
+               ["360000000010800000000", "720000000010800000000"]
+    end
+
+    test "with a time value and a time series" do
+      s1 = Series.from_list([~T[01:00:00.000000], ~T[02:00:00.000000]])
+
+      assert Series.format([~T[03:00:00.000000], s1]) |> Series.to_list() ==
+               ["108000000003600000000", "108000000007200000000"]
+    end
+
+    test "with many time series with separator" do
+      s1 = Series.from_list([~T[01:00:00.000000], ~T[02:00:00.000000]])
+      s2 = Series.from_list([~T[03:00:00.000000], ~T[04:00:00.000000]])
+      s3 = Series.from_list([~T[05:00:00.000000], ~T[06:00:00.000000]])
+      s4 = Series.from_list([~T[07:00:00.000000], ~T[08:00:00.000000]])
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() == [
+               "3600000000 / 10800000000 - 18000000000 / 25200000000",
+               "7200000000 / 14400000000 - 21600000000 / 28800000000"
+             ]
+    end
+
+    test "with two dates" do
+      assert Series.format([~D[2023-01-01], ~D[2023-01-02]]) |> Series.to_list() ==
+               ["2023-01-012023-01-02"]
+    end
+
+    test "with a date series and a date value" do
+      s1 = Series.from_list([~D[2023-01-01], ~D[2023-01-02]])
+
+      assert Series.format([s1, ~D[2023-01-03]]) |> Series.to_list() ==
+               ["2023-01-012023-01-03", "2023-01-022023-01-03"]
+    end
+
+    test "with a date value and a date series" do
+      s1 = Series.from_list([~D[2023-01-01], ~D[2023-01-02]])
+
+      assert Series.format([~D[2023-01-03], s1]) |> Series.to_list() ==
+               ["2023-01-032023-01-01", "2023-01-032023-01-02"]
+    end
+
+    test "with many date series with separator" do
+      s1 = Series.from_list([~D[2023-01-01], ~D[2023-01-02]])
+      s2 = Series.from_list([~D[2023-01-03], ~D[2023-01-04]])
+      s3 = Series.from_list([~D[2023-01-05], ~D[2023-01-06]])
+      s4 = Series.from_list([~D[2023-01-07], ~D[2023-01-08]])
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() == [
+               "2023-01-01 / 2023-01-03 - 2023-01-05 / 2023-01-07",
+               "2023-01-02 / 2023-01-04 - 2023-01-06 / 2023-01-08"
+             ]
+    end
+
+    test "with two datetime series" do
+      s1 = Series.from_list([~N[2023-01-01 01:00:00.000000], ~N[2023-01-02 02:00:00.000000]])
+      s2 = Series.from_list([~N[2023-01-03 03:00:00.000000], ~N[2023-01-04 04:00:00.000000]])
+
+      assert Series.format([s1, s2]) |> Series.to_list() == [
+               "2023-01-01 01:00:00.0000002023-01-03 03:00:00.000000",
+               "2023-01-02 02:00:00.0000002023-01-04 04:00:00.000000"
+             ]
+    end
+
+    test "with two datetimes" do
+      list = [~N[2023-01-01 01:00:00.000000], ~N[2023-01-02 02:00:00.000000]]
+
+      assert Series.format(list) |> Series.to_list() ==
+               ["2023-01-01 01:00:00.0000002023-01-02 02:00:00.000000"]
+    end
+
+    test "with a datetime series and a datetime value" do
+      s1 = Series.from_list([~N[2023-01-01 01:00:00.000000], ~N[2023-01-02 02:00:00.000000]])
+
+      assert Series.format([s1, ~N[2023-01-03 03:00:00.000000]]) |> Series.to_list() == [
+               "2023-01-01 01:00:00.0000002023-01-03 03:00:00.000000",
+               "2023-01-02 02:00:00.0000002023-01-03 03:00:00.000000"
+             ]
+    end
+
+    test "with a datetime value and a datetime series" do
+      s1 = Series.from_list([~N[2023-01-01 01:00:00.000000], ~N[2023-01-02 02:00:00.000000]])
+
+      assert Series.format([~N[2023-01-03 03:00:00.000000], s1]) |> Series.to_list() == [
+               "2023-01-03 03:00:00.0000002023-01-01 01:00:00.000000",
+               "2023-01-03 03:00:00.0000002023-01-02 02:00:00.000000"
+             ]
+    end
+
+    test "with many datetime series with separator" do
+      s1 = Series.from_list([~N[2023-01-01 01:00:00.000000], ~N[2023-01-02 02:00:00.000000]])
+      s2 = Series.from_list([~N[2023-01-03 03:00:00.000000], ~N[2023-01-04 04:00:00.000000]])
+      s3 = Series.from_list([~N[2023-01-05 01:00:00.000000], ~N[2023-01-06 02:00:00.000000]])
+      s4 = Series.from_list([~N[2023-01-07 03:00:00.000000], ~N[2023-01-08 04:00:00.000000]])
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() == [
+               "2023-01-01 01:00:00.000000 / 2023-01-03 03:00:00.000000 - 2023-01-05 01:00:00.000000 / 2023-01-07 03:00:00.000000",
+               "2023-01-02 02:00:00.000000 / 2023-01-04 04:00:00.000000 - 2023-01-06 02:00:00.000000 / 2023-01-08 04:00:00.000000"
+             ]
+    end
+
+    test "mixing types" do
+      s1 = Series.from_list(["a", "b"])
+      s2 = Series.from_list([1, 2])
+      s3 = Series.from_list([1.5, :infinity])
+      s4 = Series.from_list([true, false])
+      s5 = Series.from_list([~D[2023-01-01], ~D[2023-01-02]])
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4, " : ", s5]) |> Series.to_list() ==
+               ["a / 1 - 1.5 / true : 2023-01-01", "b / 2 - inf / false : 2023-01-02"]
+    end
+
+    test "with series that have nil value" do
+      s1 = Series.from_list(["a", "b", "c", "d"])
+      s2 = Series.from_list(["e", "f", "g", "h"])
+      s3 = Series.from_list(["i", "j", nil, "l"])
+      s4 = Series.from_list(["m", "n", "o", "p"])
+
+      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() ==
+               ["a / e - i / m", "b / f - j / n", nil, "d / h - l / p"]
+    end
+
+    test "with series that have different sizes" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([3, 2, 1, 4])
+
+      assert_raise ArgumentError,
+                   "series must either have the same size or one of them must have size of 1, got: 3 and 4",
+                   fn -> Series.pow(s1, s2) end
+
+      s1 = Series.from_list([1, 2, 3, 4])
+      s2 = Series.from_list([3, 2, 1])
+
+      assert_raise ArgumentError,
+                   "series must either have the same size or one of them must have size of 1, got: 4 and 3",
+                   fn -> Series.pow(s1, s2) end
+    end
+  end
+
   describe "sample/2" do
     test "sample taking 10 elements" do
       s = 1..100 |> Enum.to_list() |> Series.from_list()

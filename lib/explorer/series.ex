@@ -1370,6 +1370,55 @@ defmodule Explorer.Series do
   def at(series, idx), do: fetch!(series, idx)
 
   @doc """
+  Returns a string series with all values ​​concatenated.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list(["a", "b", "c"])
+      iex> s2 = Explorer.Series.from_list(["d", "e", "f"])
+      iex> s3 = Explorer.Series.from_list(["g", "h", "i"])
+      iex> Explorer.Series.format([s1, s2, s3])
+      #Explorer.Series<
+        Polars[3]
+        string ["adg", "beh", "cfi"]
+      >
+
+      iex> s1 = Explorer.Series.from_list(["a", "b", "c", "d"])
+      iex> s2 = Explorer.Series.from_list([1, 2, 3, 4])
+      iex> s3 = Explorer.Series.from_list([1.5, :nan, :infinity, :neg_infinity])
+      iex> Explorer.Series.format([s1, "/", s2, "/", s3])
+      #Explorer.Series<
+        Polars[4]
+        string ["a/1/1.5", "b/2/NaN", "c/3/inf", "d/4/-inf"]
+      >
+
+      iex> s1 = Explorer.Series.from_list([<<1>>, <<239, 191, 19>>], dtype: :binary)
+      iex> s2 = Explorer.Series.from_list([<<3>>, <<4>>], dtype: :binary)
+      iex> Explorer.Series.format([s1, s2])
+      ** (RuntimeError) External error: invalid utf-8 sequence
+  """
+  @doc type: :shape
+  @spec format([
+          Series.t() | number() | Date.t() | Time.t() | NaiveDateTime.t() | boolean() | String.t()
+        ]) :: Series.t()
+  def format([%Series{} = h | t] = _list), do: Enum.reduce(t, h, &format_reducer/2)
+
+  def format([h | t] = _list),
+    do: Enum.reduce(t, from_list([h], dtype: :string), &format_reducer/2)
+
+  defp format_reducer(%Series{} = s, %Series{dtype: :string} = acc),
+    do: Shared.apply_series_impl(:format, [acc, cast(s, :string)])
+
+  defp format_reducer(s, %Series{dtype: :string} = acc),
+    do: Shared.apply_series_impl(:format, [acc, from_list([s], dtype: :string)])
+
+  defp format_reducer(%Series{} = s, %Series{} = acc),
+    do: Shared.apply_series_impl(:format, [cast(acc, :string), cast(s, :string)])
+
+  defp format_reducer(s, %Series{} = acc),
+    do: Shared.apply_series_impl(:format, [cast(acc, :string), from_list([s], dtype: :string)])
+
+  @doc """
   Concatenate one or more series.
 
   The dtypes must match unless all are numeric, in which case all series will be downcast to float.

@@ -162,6 +162,11 @@ pub fn s_slice(series: ExSeries, offset: i64, length: usize) -> Result<ExSeries,
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_format(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(s.utf8()?.concat(other.utf8()?).into_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_concat(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let mut s = data.clone_inner();
     let s1 = other.clone_inner();
