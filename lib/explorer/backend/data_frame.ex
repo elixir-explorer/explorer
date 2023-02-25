@@ -60,7 +60,11 @@ defmodule Explorer.Backend.DataFrame do
             ) :: result(df)
 
   # IO: Parquet
-  @callback from_parquet(filename :: String.t()) :: result(df)
+  @callback from_parquet(
+              filename :: String.t(),
+              max_rows :: integer() | nil,
+              columns :: columns_for_io()
+            ) :: result(df)
   @callback to_parquet(
               df,
               filename :: String.t(),
