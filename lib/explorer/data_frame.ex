@@ -538,8 +538,11 @@ defmodule Explorer.DataFrame do
   Reads a parquet file into a dataframe.
 
   ## Options
+
     * `:max_rows` - Maximum number of lines to read. (default: `nil`)
-    * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
+
+    * `:columns` - A list of column names or indexes to keep. If present,
+      only these columns are read into the dataframe. (default: `nil`)
   """
   @doc type: :io
   @spec from_parquet(filename :: String.t(), opts :: Keyword.t()) ::
