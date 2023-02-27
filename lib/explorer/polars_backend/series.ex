@@ -118,7 +118,14 @@ defmodule Explorer.PolarsBackend.Series do
   def at(series, idx), do: Shared.apply_series(series, :s_at, [idx])
 
   @impl true
-  def format(s1, s2), do: Shared.apply_series(matching_size!(s1, s2), :s_format, [s2.data])
+  def format(list) do
+    polars_series = for s <- list, do: s.data
+
+    case Explorer.PolarsBackend.Native.s_format(polars_series) do
+      {:ok, %__MODULE__{} = new_series} -> Shared.create_series(new_series)
+      {:error, error} -> raise "Cannot concat series with Polars. Reason: #{inspect(error)}"
+    end
+  end
 
   @impl true
   def concat([%Series{} | _] = series) do

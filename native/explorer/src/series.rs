@@ -162,8 +162,13 @@ pub fn s_slice(series: ExSeries, offset: i64, length: usize) -> Result<ExSeries,
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_format(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s.utf8()?.concat(other.utf8()?).into_series()))
+pub fn s_format(list: Vec<ExSeries>) -> Result<ExSeries, ExplorerError> {
+    Ok(list
+        .into_iter()
+        .reduce(|acc, s2| {
+            ExSeries::new(acc.utf8().unwrap().concat(s2.utf8().unwrap()).into_series())
+        })
+        .unwrap())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

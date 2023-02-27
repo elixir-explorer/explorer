@@ -1401,22 +1401,15 @@ defmodule Explorer.Series do
   @spec format([
           Series.t() | number() | Date.t() | Time.t() | NaiveDateTime.t() | boolean() | String.t()
         ]) :: Series.t()
-  def format([%Series{} = h | t] = _list), do: Enum.reduce(t, h, &format_reducer/2)
+  def format([_ | _] = list), do: Shared.apply_series_impl(:format, [cast_to_string(list)])
 
-  def format([h | t] = _list),
-    do: Enum.reduce(t, from_list([h], dtype: :string), &format_reducer/2)
-
-  defp format_reducer(%Series{} = s, %Series{dtype: :string} = acc),
-    do: Shared.apply_series_impl(:format, [acc, cast(s, :string)])
-
-  defp format_reducer(s, %Series{dtype: :string} = acc),
-    do: Shared.apply_series_impl(:format, [acc, from_list([s], dtype: :string)])
-
-  defp format_reducer(%Series{} = s, %Series{} = acc),
-    do: Shared.apply_series_impl(:format, [cast(acc, :string), cast(s, :string)])
-
-  defp format_reducer(s, %Series{} = acc),
-    do: Shared.apply_series_impl(:format, [cast(acc, :string), from_list([s], dtype: :string)])
+  defp cast_to_string(list) do
+    Enum.map(list, fn
+      %Series{dtype: :string} = s -> s
+      %Series{} = s -> cast(s, :string)
+      value -> from_list([value], dtype: :string)
+    end)
+  end
 
   @doc """
   Concatenate one or more series.
