@@ -2986,4 +2986,52 @@ defmodule Explorer.SeriesTest do
       end
     end
   end
+
+  describe "concat/1" do
+    test "concat integer series" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([4, 5, 6])
+
+      s3 = Series.concat([s1, s2])
+
+      assert Series.size(s3) == 6
+      assert Series.to_list(s3) == [1, 2, 3, 4, 5, 6]
+      assert Series.dtype(s3) == :integer
+    end
+
+    test "concat float series" do
+      s1 = Series.from_list([1.0, 2.1, 3.2])
+      s2 = Series.from_list([4.3, 5.4, 6.5])
+
+      s3 = Series.concat([s1, s2])
+
+      assert Series.size(s3) == 6
+      assert Series.to_list(s3) == [1.0, 2.1, 3.2, 4.3, 5.4, 6.5]
+      assert Series.dtype(s3) == :float
+    end
+
+    test "concat integer and float series" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([4.3, 5.4, 6.5])
+
+      s3 = Series.concat([s1, s2])
+
+      assert Series.size(s3) == 6
+      assert Series.to_list(s3) == [1.0, 2.0, 3.0, 4.3, 5.4, 6.5]
+      assert Series.dtype(s3) == :float
+    end
+
+    test "concat incompatible dtypes" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list(["a", "b", "c"])
+
+      error_message =
+        "cannot concatenate series with mismatched dtypes: [:integer, :string]. " <>
+          "First cast the series to the desired dtype."
+
+      assert_raise ArgumentError, error_message, fn ->
+        Series.concat([s1, s2])
+      end
+    end
+  end
 end

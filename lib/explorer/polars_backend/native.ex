@@ -64,7 +64,15 @@ defmodule Explorer.PolarsBackend.Native do
   def df_from_ipc(_filename, _columns, _projection), do: err()
   def df_from_ipc_stream(_filename, _columns, _projection), do: err()
   def df_from_ndjson(_filename, _infer_schema_length, _batch_size), do: err()
-  def df_from_parquet(_filename), do: err()
+
+  def df_from_parquet(
+        _filename,
+        _stop_after_n_rows,
+        _columns,
+        _projection
+      ),
+      do: err()
+
   def df_from_series(_columns), do: err()
   def df_group_indices(_df, _column_names), do: err()
   def df_groups(_df, _column_names), do: err()
@@ -155,7 +163,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_slice(_df, _offset, _length), do: err()
   def lf_from_ipc(_filename), do: err()
   def lf_from_ndjson(_filename, _infer_schema_length, _batch_size), do: err()
-  def lf_from_parquet(_filename), do: err()
+  def lf_from_parquet(_filename, _stop_after_n_rows), do: err()
 
   def lf_from_csv(
         _filename,
@@ -194,7 +202,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_categories(_s), do: err()
   def s_categorise(_s, _s_categories), do: err()
   def s_coalesce(_s, _other), do: err()
-  def s_concat(_s, _other), do: err()
+  def s_concat(_series_list), do: err()
   def s_contains(_s, _pattern), do: err()
   def s_cumulative_max(_s, _reverse), do: err()
   def s_cumulative_min(_s, _reverse), do: err()

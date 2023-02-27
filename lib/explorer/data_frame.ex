@@ -511,13 +511,33 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Reads a parquet file into a dataframe.
+
+  ## Options
+
+    * `:max_rows` - Maximum number of lines to read. (default: `nil`)
+
+    * `:columns` - A list of column names or indexes to keep. If present,
+      only these columns are read into the dataframe. (default: `nil`)
   """
   @doc type: :io
   @spec from_parquet(filename :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_parquet(filename, opts \\ []) do
-    backend = backend_from_options!(opts)
-    backend.from_parquet(filename)
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+
+    opts =
+      Keyword.validate!(opts,
+        max_rows: nil,
+        columns: nil
+      )
+
+    backend = backend_from_options!(backend_opts)
+
+    backend.from_parquet(
+      filename,
+      opts[:max_rows],
+      to_columns_for_io(opts[:columns])
+    )
   end
 
   @doc """

@@ -40,7 +40,7 @@ defmodule Explorer.Backend.LazySeries do
     fill_missing_with_value: 2,
     fill_missing_with_strategy: 2,
     format: 2,
-    concat: 2,
+    concat: 1,
     coalesce: 2,
     cast: 2,
     select: 3,
@@ -411,18 +411,11 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def concat(%Series{} = left, %Series{} = right) do
-    args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
-    data = new(:concat, args, aggregations?(args))
+  def concat([%Series{} = head | _tail] = series) do
+    series_list = Enum.map(series, &series_or_lazy_series!/1)
+    data = new(:concat, [series_list], aggregations?(series_list))
 
-    dtype =
-      if left.dtype in [:float, :integer] do
-        resolve_numeric_dtype([left, right])
-      else
-        left.dtype
-      end
-
-    Backend.Series.new(data, dtype)
+    Backend.Series.new(data, head.dtype)
   end
 
   @impl true
@@ -525,15 +518,15 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def inspect(series, opts) do
-    import Inspect.Algebra
+    alias Inspect.Algebra, as: A
 
-    open = color("(", :list, opts)
-    close = color(")", :list, opts)
-    dtype = color("#{Series.dtype(series)}", :atom, opts)
+    open = A.color("(", :list, opts)
+    close = A.color(")", :list, opts)
+    dtype = A.color("#{Series.dtype(series)}", :atom, opts)
 
-    concat([
-      color("LazySeries[???]", :atom, opts),
-      line(),
+    A.concat([
+      A.color("LazySeries[???]", :atom, opts),
+      A.line(),
       dtype,
       " ",
       open,

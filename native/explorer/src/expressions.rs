@@ -457,11 +457,15 @@ pub fn expr_last(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_concat(left: ExExpr, right: ExExpr) -> ExExpr {
-    let left_expr = left.clone_inner();
-    let right_expr = right.clone_inner();
+pub fn expr_concat(exprs: Vec<ExExpr>) -> ExExpr {
+    let mut iter = exprs.iter();
+    let mut result = iter.next().unwrap().clone_inner();
 
-    ExExpr::new(left_expr.append(right_expr, false))
+    for expr in iter {
+        result = result.append(expr.clone_inner(), false);
+    }
+
+    ExExpr::new(result)
 }
 
 #[rustler::nif]

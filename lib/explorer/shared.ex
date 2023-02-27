@@ -140,6 +140,8 @@ defmodule Explorer.Shared do
     apply(impl, fun, series_or_scalars)
   end
 
+  defp series_impl!([[%{data: _} | _others] = series_list]), do: series_impl!(series_list)
+
   defp series_impl!(series_or_scalars) when is_list(series_or_scalars) do
     impl =
       Enum.reduce(series_or_scalars, nil, fn

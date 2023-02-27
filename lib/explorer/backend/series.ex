@@ -48,7 +48,7 @@ defmodule Explorer.Backend.Series do
   @callback slice(s, indices :: list()) :: s
   @callback slice(s, offset :: integer(), length :: integer()) :: s
   @callback format(s, s) :: s
-  @callback concat(s, s) :: s
+  @callback concat([s]) :: s
   @callback coalesce(s, s) :: s
   @callback first(s) :: valid_types() | lazy_s()
   @callback last(s) :: valid_types() | lazy_s()
@@ -178,7 +178,7 @@ defmodule Explorer.Backend.Series do
     %Explorer.Series{data: data, dtype: dtype}
   end
 
-  import Inspect.Algebra
+  alias Inspect.Algebra, as: A
   alias Explorer.Series
 
   @doc """
@@ -186,12 +186,12 @@ defmodule Explorer.Backend.Series do
   """
   def inspect(series, backend, n_rows, inspect_opts, opts \\ [])
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
-    open = color("[", :list, inspect_opts)
-    close = color("]", :list, inspect_opts)
-    dtype = color("#{Series.dtype(series)} ", :atom, inspect_opts)
+    open = A.color("[", :list, inspect_opts)
+    close = A.color("]", :list, inspect_opts)
+    dtype = A.color("#{Series.dtype(series)} ", :atom, inspect_opts)
 
     data =
-      container_doc(
+      A.container_doc(
         open,
         series |> Series.slice(0, inspect_opts.limit + 1) |> Series.to_list(),
         close,
@@ -199,12 +199,12 @@ defmodule Explorer.Backend.Series do
         &Explorer.Shared.to_string/2
       )
 
-    concat([
-      color(backend, :atom, inspect_opts),
+    A.concat([
+      A.color(backend, :atom, inspect_opts),
       open,
       "#{n_rows || "???"}",
       close,
-      line(),
+      A.line(),
       dtype,
       data
     ])

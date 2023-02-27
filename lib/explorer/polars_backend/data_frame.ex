@@ -176,8 +176,18 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(filename) do
-    case Native.df_from_parquet(filename) do
+  def from_parquet(filename, max_rows, columns) do
+    {columns, with_projection} = column_names_or_projection(columns)
+
+    df =
+      Native.df_from_parquet(
+        filename,
+        max_rows,
+        columns,
+        with_projection
+      )
+
+    case df do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
@@ -466,13 +476,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
     {:ok, group_indices} = Native.df_group_indices(df.data, df.groups)
 
     idx =
-      Enum.reduce(group_indices, Native.s_from_list_u32("idx", []), fn series, acc ->
+      Enum.map(group_indices, fn series ->
         {:ok, size} = Native.s_size(series)
         indices = Enum.slice(0..(size - 1)//1, range)
+
         {:ok, sliced} = Native.s_slice_by_indices(series, indices)
-        {:ok, acc} = Native.s_concat(acc, sliced)
-        acc
+        sliced
       end)
+
+    {:ok, idx} = Native.s_concat(idx)
 
     Shared.apply_dataframe(df, df, :df_slice_by_series, [idx])
   end
