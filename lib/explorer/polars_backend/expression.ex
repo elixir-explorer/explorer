@@ -19,7 +19,6 @@ defmodule Explorer.PolarsBackend.Expression do
     binary_or: 2,
     binary_in: 2,
     coalesce: 2,
-    concat: 2,
     count: 1,
     day_of_week: 1,
     distinct: 1,
@@ -99,6 +98,7 @@ defmodule Explorer.PolarsBackend.Expression do
     from_binary: 2,
     to_lazy: 1,
     shift: 3,
+    concat: 1,
     column: 1
   ]
 
@@ -140,6 +140,12 @@ defmodule Explorer.PolarsBackend.Expression do
 
   def to_expr(%LazySeries{op: :column, args: [name]}) do
     Native.expr_column(name)
+  end
+
+  def to_expr(%LazySeries{op: :concat, args: [series_list]}) when is_list(series_list) do
+    expr_list = Enum.map(series_list, &to_expr/1)
+
+    Native.expr_concat(expr_list)
   end
 
   for {op, _arity} <- @first_only_expressions do

@@ -1386,7 +1386,7 @@ defmodule Explorer.Series do
 
       iex> s1 = Explorer.Series.from_list([1, 2, 3])
       iex> s2 = Explorer.Series.from_list([4.0, 5.0, 6.4])
-      iex> Explorer.Series.concat(s1, s2)
+      iex> Explorer.Series.concat([s1, s2])
       #Explorer.Series<
         Polars[6]
         float [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
@@ -1394,12 +1394,27 @@ defmodule Explorer.Series do
   """
   @doc type: :shape
   @spec concat([Series.t()]) :: Series.t()
-  def concat([%Series{} = h | t] = _series) do
-    Enum.reduce(t, h, &concat_reducer/2)
+  def concat([%Series{} | _t] = series) do
+    dtypes = series |> Enum.map(& &1.dtype) |> Enum.uniq()
+
+    case dtypes do
+      [_dtype] ->
+        Shared.apply_series_impl(:concat, [series])
+
+      [a, b] when K.and(is_numeric_dtype(a), is_numeric_dtype(b)) ->
+        casted_series = Enum.map(series, &cast(&1, :float))
+
+        Shared.apply_series_impl(:concat, [casted_series])
+
+      incompatible ->
+        raise ArgumentError,
+              "cannot concatenate series with mismatched dtypes: #{inspect(incompatible)}. " <>
+                "First cast the series to the desired dtype."
+    end
   end
 
   @doc """
-  Concatenate one or more series.
+  Concatenate two series.
 
   `concat(s1, s2)` is equivalent to `concat([s1, s2])`.
   """
@@ -1407,20 +1422,6 @@ defmodule Explorer.Series do
   @spec concat(s1 :: Series.t(), s2 :: Series.t()) :: Series.t()
   def concat(%Series{} = s1, %Series{} = s2),
     do: concat([s1, s2])
-
-  defp concat_reducer(%Series{dtype: dtype} = s, %Series{dtype: dtype} = acc),
-    do: Shared.apply_series_impl(:concat, [acc, s])
-
-  defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
-       when K.and(s_dtype == :float, acc_dtype == :integer),
-       do: Shared.apply_series_impl(:concat, [cast(acc, :float), s])
-
-  defp concat_reducer(%Series{dtype: s_dtype} = s, %Series{dtype: acc_dtype} = acc)
-       when K.and(s_dtype == :integer, acc_dtype == :float),
-       do: Shared.apply_series_impl(:concat, [acc, cast(s, :float)])
-
-  defp concat_reducer(%Series{dtype: dtype1}, %Series{dtype: dtype2}),
-    do: raise(ArgumentError, "dtypes must match, found #{dtype1} and #{dtype2}")
 
   @doc """
   Finds the first non-missing element at each position.
