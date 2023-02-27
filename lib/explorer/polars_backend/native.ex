@@ -202,7 +202,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_categories(_s), do: err()
   def s_categorise(_s, _s_categories), do: err()
   def s_coalesce(_s, _other), do: err()
-  def s_concat(_s, _other), do: err()
+  def s_concat(_series_list), do: err()
   def s_contains(_s, _pattern), do: err()
   def s_cumulative_max(_s, _reverse), do: err()
   def s_cumulative_min(_s, _reverse), do: err()
