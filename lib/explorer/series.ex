@@ -1398,17 +1398,18 @@ defmodule Explorer.Series do
     dtypes = series |> Enum.map(& &1.dtype) |> Enum.uniq()
 
     case dtypes do
-      [_single] ->
+      [_dtype] ->
         Shared.apply_series_impl(:concat, [series])
 
       [a, b] when K.and(is_numeric_dtype(a), is_numeric_dtype(b)) ->
         casted_series = Enum.map(series, &cast(&1, :float))
+
         Shared.apply_series_impl(:concat, [casted_series])
 
       incompatible ->
         raise ArgumentError,
               "cannot concatenate series with mismatched dtypes: #{inspect(incompatible)}. " <>
-                "First cast the series to the desired dtypes."
+                "First cast the series to the desired dtype."
     end
   end
 

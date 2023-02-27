@@ -2689,7 +2689,7 @@ defmodule Explorer.SeriesTest do
 
       error_message =
         "cannot concatenate series with mismatched dtypes: [:integer, :string]. " <>
-          "First cast the series to the desired dtypes."
+          "First cast the series to the desired dtype."
 
       assert_raise ArgumentError, error_message, fn ->
         Series.concat([s1, s2])
