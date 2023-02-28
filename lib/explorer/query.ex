@@ -192,7 +192,20 @@ defmodule Explorer.Query do
   For example, to filter all entries have both sepal and petal length above
   average, using a filter on the column name, one could write:
 
-  # TODO: `filter(iris, for col <- across(), String.ends_with?(col.name, "_length") do col > mean(col) end`
+      iex> iris = Explorer.Datasets.iris()
+      iex> Explorer.DataFrame.filter(iris,
+      ...>   for col <- across(), String.ends_with?(col.name, "_length") do
+      ...>     col > mean(col)
+      ...>   end
+      ...> )
+      #Explorer.DataFrame<
+        Polars[70 x 5]
+        sepal_length float [7.0, 6.4, 6.9, 6.5, 6.3, ...]
+        sepal_width float [3.2, 3.2, 3.1, 2.8, 3.3, ...]
+        petal_length float [4.7, 4.5, 4.9, 4.6, 4.7, ...]
+        petal_width float [1.4, 1.5, 1.5, 1.5, 1.6, ...]
+        species string ["Iris-versicolor", "Iris-versicolor", "Iris-versicolor", "Iris-versicolor", "Iris-versicolor", ...]
+      >
 
   > ### Do not confuse comprehension and queries {: .warning}
   >
