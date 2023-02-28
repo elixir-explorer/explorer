@@ -1937,6 +1937,7 @@ defmodule Explorer.DataFrame do
 
   The query is compiled and runs efficiently against the dataframe.
   The query must return a boolean expression or a list of boolean expressions.
+  When a list is returned, they are joined as `and` expressions.
 
   > #### Notice {: .notice}
   >
