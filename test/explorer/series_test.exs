@@ -1330,7 +1330,7 @@ defmodule Explorer.SeriesTest do
 
     test "adding two numbers" do
       assert_raise ArgumentError,
-                   "expected at least a series for the :add operation, but instead got two numbers: add(1, 2)",
+                   "add/2 expect a series as one of its arguments, instead got two numbers: 1 and 2",
                    fn ->
                      Series.add(1, 2)
                    end

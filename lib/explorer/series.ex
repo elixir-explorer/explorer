@@ -2302,8 +2302,8 @@ defmodule Explorer.Series do
   defp basic_numeric_operation(operation, left, right)
        when K.and(is_numerical(left), is_numerical(right)) do
     raise ArgumentError,
-          "expected at least a series for the #{inspect(operation)} operation, " <>
-            "but instead got two numbers: #{operation}(#{inspect(left)}, #{inspect(right)})"
+          "#{operation}/2 expect a series as one of its arguments, " <>
+            "instead got two numbers: #{inspect(left)} and #{inspect(right)}"
   end
 
   # Comparisons
