@@ -2092,24 +2092,22 @@ defmodule Explorer.DataFrame do
           Enum.find(lazy_series, &(!match?(%Series{dtype: :boolean, data: %LazySeries{}}, &1)))
 
         if is_nil(first_non_boolean) do
-          series =
-            Enum.reduce(lazy_series, fn x, acc ->
-              Explorer.Backend.LazySeries.binary_and(acc, x)
-            end)
+          series = Enum.reduce(lazy_series, &Explorer.Backend.LazySeries.binary_and(&2, &1))
 
           Shared.apply_impl(df, :filter_with, [df, series.data])
         else
-          raise ArgumentError,
-                "expecting the function to return a single or a list of boolean LazySeries, " <>
-                  "but instead it contains:\n#{inspect(first_non_boolean)}\n" <>
-                  "that is of dtype #{inspect(first_non_boolean.dtype)}"
+          filter_without_boolean_series_error(first_non_boolean)
         end
 
       other ->
-        raise ArgumentError,
-              "expecting the function to return a LazySeries, but instead it returned " <>
-                inspect(other)
+        filter_without_boolean_series_error(other)
     end
+  end
+
+  defp filter_without_boolean_series_error(term) do
+    raise ArgumentError,
+          "expecting the function to return a single or a list of boolean LazySeries, " <>
+            "but instead it contains:\n#{inspect(term)}"
   end
 
   @doc """
