@@ -1,5 +1,5 @@
 defmodule Explorer.Query do
-  @moduledoc """
+  @moduledoc ~S"""
   High-level query for Explorer.
 
   Queries convert regular Elixir code which compile to efficient
@@ -71,6 +71,146 @@ defmodule Explorer.Query do
         unusual nums integer [3]
       >
 
+  ## Across and comprehensions
+
+  `Explorer.Query` leverages the power behind Elixir for-comprehensions
+  to provide a powerful syntax for traversing several columns in a dataframe
+  at once. For example, imagine you want to standardization the data on the
+  iris dataset, you could write this:
+
+      iex> iris = Explorer.Datasets.iris()
+      iex> Explorer.DataFrame.mutate(iris,
+      ...>   sepal_width: (sepal_width - mean(sepal_width)) / variance(sepal_width),
+      ...>   sepal_length: (sepal_length - mean(sepal_length)) / variance(sepal_length),
+      ...>   petal_length: (petal_length - mean(petal_length)) / variance(petal_length),
+      ...>   petal_width: (petal_width - mean(petal_width)) / variance(petal_width)
+      ...> )
+      #Explorer.DataFrame<
+        Polars[150 x 5]
+        sepal_length float [-1.0840606189132314, -1.3757361217598396, -1.6674116246064494, -1.8132493760297548, -1.2298983703365356, ...]
+        sepal_width float [2.372289612531505, -0.28722789030650403, 0.7765791108287006, 0.24467561026109824, 2.904193113099107, ...]
+        petal_length float [-0.7576391687443842, -0.7576391687443842, -0.7897606710936372, -0.725517666395131, -0.7576391687443842, ...]
+        petal_width float [-1.7147014356654704, -1.7147014356654704, -1.7147014356654704, -1.7147014356654704, -1.7147014356654704, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+      >
+
+  While the code above does its job, it is quite repetitive. With across and for-comprehensions,
+  we could instead write:
+
+      iex> iris = Explorer.Datasets.iris()
+      iex> Explorer.DataFrame.mutate(iris,
+      ...>   for col <- across(["sepal_width", "sepal_length", "petal_length", "petal_width"]) do
+      ...>     {col.name, (col - mean(col)) / variance(col)}
+      ...>   end
+      ...> )
+      #Explorer.DataFrame<
+        Polars[150 x 5]
+        sepal_length float [-1.0840606189132314, -1.3757361217598396, -1.6674116246064494, -1.8132493760297548, -1.2298983703365356, ...]
+        sepal_width float [2.372289612531505, -0.28722789030650403, 0.7765791108287006, 0.24467561026109824, 2.904193113099107, ...]
+        petal_length float [-0.7576391687443842, -0.7576391687443842, -0.7897606710936372, -0.725517666395131, -0.7576391687443842, ...]
+        petal_width float [-1.7147014356654704, -1.7147014356654704, -1.7147014356654704, -1.7147014356654704, -1.7147014356654704, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+      >
+
+  Which achieves the same result in a more concise and maintainable way.
+  `across/1` may receive any of the following input as arguments:
+
+    * a list of columns indexes or names as atoms and strings
+
+    * a range
+
+    * a regex that keeps only the names matching the regex
+
+  For example, since we know the width and length columns are the first four,
+  we could also have written (remember ranges in Elixir are inclusive):
+
+      Explorer.DataFrame.mutate(iris,
+        for col <- across(0..3) do
+          {col.name, (col - mean(col)) / variance(col)}
+        end
+      )
+
+  Or using a regex:
+
+      Explorer.DataFrame.mutate(iris,
+        for col <- across(~r/(sepal|petal)_(length|width)/) do
+          {col.name, (col - mean(col)) / variance(col)}
+        end
+      )
+
+  For those new to Elixir, for-comprehensions have the following format:
+
+      for PATTERN <- GENERATOR, FILTER do
+        EXPR
+      end
+
+  A comprehension filter is a mechanism that allows us to keep only columns
+  based on additional properties, such as its `dtype`. For instance, if
+  instead we wanted to apply standardization to all float columns,
+  we can use `across/0` to access all columns and then use a filter to
+  keep only float columns:
+
+      iex> iris = Explorer.Datasets.iris()
+      iex> Explorer.DataFrame.mutate(iris,
+      ...>   for col <- across(), col.dtype == :float do
+      ...>     {col.name, (col - mean(col)) / variance(col)}
+      ...>   end
+      ...> )
+      #Explorer.DataFrame<
+        Polars[150 x 5]
+        sepal_length float [-1.0840606189132314, -1.3757361217598396, -1.6674116246064494, -1.8132493760297548, -1.2298983703365356, ...]
+        sepal_width float [2.372289612531505, -0.28722789030650403, 0.7765791108287006, 0.24467561026109824, 2.904193113099107, ...]
+        petal_length float [-0.7576391687443842, -0.7576391687443842, -0.7897606710936372, -0.725517666395131, -0.7576391687443842, ...]
+        petal_width float [-1.7147014356654704, -1.7147014356654704, -1.7147014356654704, -1.7147014356654704, -1.7147014356654704, ...]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+      >
+
+  For-comprehensions works with all dataframe verbs. As we have seen
+  above, for mutations we must return tuples as pair with the mutation
+  name and its value. `summarise` works similarly. Note in both cases
+  the name could also be generated dynamically. For example, to compute
+  the mean per species, you could write:
+
+      iex> Explorer.Datasets.iris()
+      ...> |> Explorer.DataFrame.group_by("species")
+      ...> |> Explorer.DataFrame.summarise(
+      ...>   for col <- across(), col.dtype == :float do
+      ...>     {"#{col.name}_mean", mean(col)}
+      ...>   end
+      ...> )
+      #Explorer.DataFrame<
+        Polars[3 x 5]
+        species string ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
+        sepal_length_mean float [5.005999999999999, 5.936, 6.587999999999998]
+        sepal_width_mean float [3.4180000000000006, 2.7700000000000005, 2.9739999999999998]
+        petal_length_mean float [1.464, 4.26, 5.552]
+        petal_width_mean float [0.2439999999999999, 1.3259999999999998, 2.026]
+      >
+
+  `arrange` expects a list of columns to sort by, while for-comprehensions
+  in `filter` generate a list of conditions, which are joined using `and`.
+  For example, to filter all entries have both sepal and petal length above
+  average, using a filter on the column name, one could write:
+
+  # TODO: `filter(iris, for col <- across(), String.ends_with?(col.name, "_length") do col > mean(col) end`
+
+  > ### Do not confuse comprehension and queries {: .warning}
+  >
+  > The filter inside a for-comprehension works at the meta level:
+  > it can only filter columns based on their names and dtypes, but
+  > not on their values. For example, this code does not make any
+  > sense and it will fail to compile:
+  >
+  >     |> Explorer.DataFrame.filter(
+  >       for col <- across(), col > mean(col) do
+  >         col
+  >       end
+  >     end)
+  >
+  > Another way to think about it, the comprehensions traverse on the
+  > columns themselves, the contents inside the comprehension do-block
+  > traverse on the values inside the columns.
+
   ## Implementation details
 
   Queries simply become lazy dataframe operations at runtime.
@@ -80,7 +220,7 @@ defmodule Explorer.Query do
 
   is equivalent to
 
-      Explorer.DataFrame.filter_with(df, fn df -> df["nums"] > 2 end)
+      Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["nums"], 2) end)
 
   This means that, whenever you want to generate queries programatically,
   you can fallback to the regular `_with` APIs.
@@ -117,26 +257,92 @@ defmodule Explorer.Query do
   """
   defmacro query(expression) do
     df = df_var()
-    {query, vars} = traverse(expression, [], %{df: df})
 
     quote do
       fn unquote(df) ->
+        unquote(traverse(expression, df))
+      end
+    end
+  end
+
+  defp traverse({:for, meta, [_ | _] = args}, df) do
+    {args, [opts]} = Enum.split(args, Kernel.-(1))
+
+    block =
+      Keyword.get(opts, :do) || raise ArgumentError, "expected do-block in for-comprehension"
+
+    {args, known_vars} =
+      Enum.map_reduce(args, %{}, fn
+        {:<-, meta, [pattern, generator]}, acc ->
+          generator = traverse_for(generator, df, acc)
+          {{:<-, meta, [pattern, generator]}, collect_pattern_vars(pattern, acc)}
+
+        other, acc ->
+          {traverse_for(other, df, acc), acc}
+      end)
+
+    {query, vars} =
+      traverse(block, [], %{df: df, known_vars: known_vars, collect_pins_and_vars: true})
+
+    block =
+      quote do
         unquote_splicing(Enum.reverse(vars))
         import Kernel, only: unquote(@kernel_only)
         import Explorer.Query, except: [query: 1]
         import Explorer.Series
         unquote(query)
       end
+
+    for = {:for, meta, args ++ [Keyword.put(opts, :do, block)]}
+
+    quote do
+      import Explorer.Query, only: [across: 0, across: 1]
+      unquote(for)
     end
   end
 
-  defp traverse({:^, meta, [expr]}, vars, _state) do
-    var = Macro.unique_var(:pin, __MODULE__)
-    {var, [{:=, meta, [var, expr]} | vars]}
+  defp traverse(expression, df) do
+    {query, vars} =
+      traverse(expression, [], %{df: df, known_vars: %{}, collect_pins_and_vars: true})
+
+    quote do
+      unquote_splicing(Enum.reverse(vars))
+      import Kernel, only: unquote(@kernel_only)
+      import Explorer.Query, except: [query: 1]
+      import Explorer.Series
+      unquote(query)
+    end
   end
 
-  defp traverse({var, meta, ctx}, vars, state) when is_atom(var) and is_atom(ctx) do
-    {{{:., meta, [Explorer.DataFrame, :pull]}, meta, [state.df, var]}, vars}
+  defp traverse({:^, meta, [expr]}, vars, state) do
+    if state.collect_pins_and_vars do
+      var = Macro.unique_var(:pin, __MODULE__)
+      {var, [{:=, meta, [var, expr]} | vars]}
+    else
+      {expr, vars}
+    end
+  end
+
+  defp traverse({:for, _meta, [_ | _]}, _vars, _state) do
+    raise ArgumentError, "for-comprehensions are only supported at the root of queries"
+  end
+
+  defp traverse({:"::", meta, [left, right]}, vars, state) do
+    {left, vars} = traverse(left, vars, state)
+    {{:"::", meta, [left, right]}, vars}
+  end
+
+  defp traverse({var, meta, ctx} = expr, vars, state) when is_atom(var) and is_atom(ctx) do
+    cond do
+      Map.has_key?(state.known_vars, {var, ctx}) ->
+        {expr, vars}
+
+      state.collect_pins_and_vars ->
+        {{{:., meta, [Explorer.DataFrame, :pull]}, meta, [state.df, var]}, vars}
+
+      true ->
+        raise ArgumentError, "undefined variable \"#{Macro.to_string(expr)}\""
+    end
   end
 
   defp traverse({left, meta, right}, vars, state) do
@@ -164,11 +370,42 @@ defmodule Explorer.Query do
   defp special_form_defines_var?(:=, [_, _]), do: true
   defp special_form_defines_var?(:case, [_, _]), do: true
   defp special_form_defines_var?(:cond, [_]), do: true
-  defp special_form_defines_var?(:for, [_ | _]), do: true
   defp special_form_defines_var?(:receive, [_]), do: true
   defp special_form_defines_var?(:try, [_]), do: true
   defp special_form_defines_var?(:with, [_ | _]), do: true
   defp special_form_defines_var?(_, _), do: false
+
+  defp traverse_for(expr, df, known_vars) do
+    {expr, []} =
+      traverse(expr, [], %{df: df, known_vars: known_vars, collect_pins_and_vars: false})
+
+    expr
+  end
+
+  defp collect_pattern_vars({:when, _, [pattern, _]}, known_vars) do
+    collect_pattern_vars(pattern, known_vars)
+  end
+
+  defp collect_pattern_vars(expr, known_vars) do
+    expr
+    |> Macro.prewalk(known_vars, fn
+      {:"::", _, [left, _right]}, acc ->
+        {left, acc}
+
+      {skip, _, [_ | _]}, acc when skip in [:^, :@, :quote] ->
+        {:ok, acc}
+
+      {:_, _, context}, acc when is_atom(context) ->
+        {:ok, acc}
+
+      {name, _meta, context}, acc when is_atom(name) and is_atom(context) ->
+        {:ok, Map.put(acc, {name, context}, true)}
+
+      node, acc ->
+        {node, acc}
+    end)
+    |> elem(1)
+  end
 
   # and and or are sent as is to queries
   binary_delegates = [
@@ -211,13 +448,71 @@ defmodule Explorer.Query do
   def +series when is_struct(series, Explorer.Series), do: series
 
   @doc """
-  Access a column programatically.
+  Accesses a column by name.
+
+  If your column name contains whitespace or start with
+  uppercase letters, you can still access its name by
+  using this macro:
+
+      iex> df = Explorer.DataFrame.new("unusual nums": [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, col("unusual nums") > 2)
+      #Explorer.DataFrame<
+        Polars[1 x 1]
+        unusual nums integer [3]
+      >
 
   `name` must be an atom, a string, or an integer.
   It is equivalent to `df[name]` but inside a query.
+
+  This can also be used if you want to access a column
+  programatically, for example:
+
+      iex> df = Explorer.DataFrame.new(nums: [1, 2, 3])
+      iex> name = :nums
+      iex> Explorer.DataFrame.filter(df, col(^name) > 2)
+      #Explorer.DataFrame<
+        Polars[1 x 1]
+        nums integer [3]
+      >
+
+  For traversing multiple columns programatically,
+  see `across/0` and `across/1`.
   """
   defmacro col(name) do
     quote do: Explorer.DataFrame.pull(unquote(df_var()), unquote(name))
+  end
+
+  @doc """
+  Accesses all columns in the dataframe.
+
+  This is the equivalent to `across(0..-1//1)`.
+
+  See the module docs for more information.
+  """
+  defmacro across() do
+    quote do
+      Explorer.Query.__across__(unquote(df_var()), 0..-1//1)
+    end
+  end
+
+  @doc """
+  Accesses the columns given by `selector` in the dataframe.
+
+  `across/1` is used as the generator inside for-comprehensions.
+
+  See the module docs for more information.
+  """
+  defmacro across(selector) do
+    quote do
+      Explorer.Query.__across__(unquote(df_var()), unquote(selector))
+    end
+  end
+
+  @doc false
+  def __across__(df, selector) do
+    df
+    |> Explorer.Shared.to_existing_columns(selector)
+    |> Enum.map(&%{Explorer.Shared.apply_impl(df, :pull, [&1]) | name: &1})
   end
 
   defp df_var(), do: quote(do: var!(df, Explorer.Query))

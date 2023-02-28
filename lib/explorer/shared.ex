@@ -51,6 +51,10 @@ defmodule Explorer.Shared do
     columns
   end
 
+  def to_existing_columns(%{names: names}, 0..-1//1) do
+    names
+  end
+
   def to_existing_columns(%{names: names}, %Range{} = columns) do
     Enum.slice(names, columns)
   end

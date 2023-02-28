@@ -351,7 +351,7 @@ defmodule Explorer.DataFrame do
   @impl true
   def pop(df, column) when is_column(column) do
     [column] = to_existing_columns(df, [column])
-    {pull(df, column), discard(df, [column])}
+    {pull_existing(df, column), discard(df, [column])}
   end
 
   def pop(df, columns) do
@@ -364,12 +364,9 @@ defmodule Explorer.DataFrame do
   @impl true
   def get_and_update(df, column, fun) when is_column(column) do
     [column] = to_existing_columns(df, [column])
-
-    value = pull(df, column)
+    value = pull_existing(df, column)
     {current_value, new_value} = fun.(value)
-
     new_df = put(df, column, new_value)
-
     {%{current_value | name: column}, new_df}
   end
 
@@ -3104,7 +3101,10 @@ defmodule Explorer.DataFrame do
   @spec pull(df :: DataFrame.t(), column :: column()) :: Series.t()
   def pull(df, column) when is_column(column) do
     [column] = to_existing_columns(df, [column])
+    pull_existing(df, column)
+  end
 
+  defp pull_existing(df, column) do
     series = Shared.apply_impl(df, :pull, [column])
     %{series | name: column}
   end
