@@ -1056,8 +1056,6 @@ defmodule Explorer.Series do
       when is_integer(offset),
       do: Shared.apply_impl(series, :shift, [offset, nil])
 
-  def shift(_series, dtype), do: dtype_error("shift/2", dtype, [:integer])
-
   @doc """
   Returns a series from two series, based on a predicate.
 
