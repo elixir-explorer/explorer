@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.2] - 2023-02-28
+
+### Added
+
+- Add `across` and comprehensions to `Explorer.Query`. These features allow a
+  more flexible and elegant way to work with multiple columns at once. Example:
+
+  ```elixir
+  iris = Explorer.Datasets.iris()
+  Explorer.DataFrame.mutate(iris,
+   for col <- across(["sepal_width", "sepal_length", "petal_length", "petal_width"]) do
+     {col.name, (col - mean(col)) / variance(col)}
+   end
+  )
+  ```
+
+  See the `Explorer.Query` documentation for further details.
+
+- Add support for regexes to select columns of a dataframe. Example:
+
+  ```elixir
+  df = Explorer.Datasets.wine()
+  df[~r/(class|hue)/]
+  ```
+
+- Add the `:max_rows` and `:columns` options to `Explorer.DataFrame.from_parquet/2`. This mirrors
+  the `from_csv/2` function.
+
+- Allow `Explorer.Series` functions that accept floats to work with `:nan`, `:infinity`
+  and `:neg_infinity` values.
+
+- Add `Explorer.DataFrame.shuffle/2` and `Explorer.Series.shuffle/2`.
+
+- Add support for a list of filters in `Explorer.DataFrame.filter/2`. These filters are
+  joined as `and` expressions.
+
+### Fixed
+
+- Add `is_integer/1` guard to `Explorer.Series.shift/2`.
+- Raise if series sizes do not match for binary operations.
+
+### Changed
+
+- Rename the option `:replacement` to `:replace` for `Explorer.DataFrame.sample/3` and
+  `Explorer.Series.sample/3`.
+
+- Change the default behaviour of sampling to not shuffle by default. A new option
+  named `:shuffle` was added to control that.
+
 ## [v0.5.1] - 2023-02-17
 
 ### Added
@@ -293,6 +342,7 @@ properly compare floats.
 
 First release.
 
+[v0.5.2]: https://github.com/elixir-nx/explorer/compare/v0.5.1...v0.5.2
 [v0.5.1]: https://github.com/elixir-nx/explorer/compare/v0.5.0...v0.5.1
 [v0.5.0]: https://github.com/elixir-nx/explorer/compare/v0.4.0...v0.5.0
 [v0.4.0]: https://github.com/elixir-nx/explorer/compare/v0.3.1...v0.4.0
