@@ -123,7 +123,7 @@ defmodule Explorer.PolarsBackend.Series do
 
     case Explorer.PolarsBackend.Native.s_format(polars_series) do
       {:ok, %__MODULE__{} = new_series} -> Shared.create_series(new_series)
-      {:error, error} -> raise "Cannot concat series with Polars. Reason: #{inspect(error)}"
+      {:error, error} -> raise "cannot format series with Polars, reason: #{inspect(error)}"
     end
   end
 
@@ -133,7 +133,7 @@ defmodule Explorer.PolarsBackend.Series do
 
     case Explorer.PolarsBackend.Native.s_concat(polars_series) do
       {:ok, %__MODULE__{} = new_series} -> Shared.create_series(new_series)
-      {:error, error} -> raise "Cannot concat series with Polars. Reason: #{inspect(error)}"
+      {:error, error} -> raise "cannot concat series with Polars, reason: #{inspect(error)}"
     end
   end
 
