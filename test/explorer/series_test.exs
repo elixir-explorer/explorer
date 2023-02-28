@@ -1327,6 +1327,14 @@ defmodule Explorer.SeriesTest do
       assert s2.dtype == :float
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :nan, :neg_infinity]
     end
+
+    test "adding two numbers" do
+      assert_raise ArgumentError,
+                   "add/2 expect a series as one of its arguments, instead got two numbers: 1 and 2",
+                   fn ->
+                     Series.add(1, 2)
+                   end
+    end
   end
 
   describe "subtract/2" do

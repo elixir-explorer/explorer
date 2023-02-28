@@ -241,7 +241,9 @@ defmodule Explorer.DataFrameTest do
 
     test "raise an error if the function is not returning a lazy series" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
-      message = "expecting the function to return a LazySeries, but instead it returned :foo"
+
+      message =
+        "expecting the function to return a single or a list of boolean LazySeries, but instead it contains:\n:foo"
 
       assert_raise ArgumentError, message, fn ->
         DF.filter_with(df, fn _ldf -> :foo end)
@@ -484,6 +486,26 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.groups(df1) == []
+    end
+
+    test "filter with a list of predicates forming an AND" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 = DF.filter(df, [a > 4, b < 4])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [5], b: [3]}
+    end
+
+    test "filter with a list of predicates, but one is not boolean" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      error_message =
+        "expecting the function to return a single or a list of boolean LazySeries, but instead it contains:\n" <>
+          "#Explorer.Series<\n  LazySeries[???]\n  integer (column(\"a\") + column(\"b\"))\n>"
+
+      assert_raise ArgumentError, error_message, fn ->
+        DF.filter(df, [a > 4, b < 4, a + b])
+      end
     end
   end
 
