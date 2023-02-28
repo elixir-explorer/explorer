@@ -145,10 +145,10 @@ defmodule Explorer.Query do
       end
 
   A comprehension filter is a mechanism that allows us to keep only columns
-  based on additional properties, such as its `dtype`. For instance, if
-  instead we wanted to apply standardization to all float columns,
-  we can use `across/0` to access all columns and then use a filter to
-  keep only float columns:
+  based on additional properties, such as its `dtype`. A for-comprehension can
+  have multiple generators and filters. For instance, if you want to apply
+  standardization to all float columns, we can use `across/0` to access all
+  columns and then use a filter to keep only the float ones:
 
       iex> iris = Explorer.Datasets.iris()
       iex> Explorer.DataFrame.mutate(iris,
