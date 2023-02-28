@@ -6,8 +6,11 @@ defmodule Explorer.Backend.DataFrame do
   @type t :: struct()
 
   @type df :: Explorer.DataFrame.t()
+
+  @type option(type) :: type | nil
   @type ok_result :: :ok | {:error, term()}
   @type result(t) :: {:ok, t} | {:error, term()}
+
   @type series :: Explorer.Series.t()
   @type column_name :: String.t()
   @type dtype :: Explorer.Series.dtype()
@@ -23,9 +26,8 @@ defmodule Explorer.Backend.DataFrame do
   @type lazy_frame :: Explorer.Backend.LazyFrame.t()
   @type lazy_series :: Explorer.Backend.LazySeries.t()
 
-  @type compression :: {algorithm :: atom() | nil, level :: integer() | nil}
+  @type compression :: {algorithm :: option(atom()), level :: option(integer())}
   @type columns_for_io :: list(column_name()) | list(pos_integer()) | nil
-  @type option(type) :: type | nil
 
   # IO: CSV
   @callback from_csv(
@@ -36,9 +38,9 @@ defmodule Explorer.Backend.DataFrame do
               skip_rows :: integer(),
               header? :: boolean(),
               encoding :: String.t(),
-              max_rows :: integer() | nil,
+              max_rows :: option(integer()),
               columns :: columns_for_io(),
-              infer_schema_length :: integer() | nil,
+              infer_schema_length :: option(integer()),
               parse_dates :: boolean()
             ) :: result(df)
   @callback to_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
@@ -53,16 +55,16 @@ defmodule Explorer.Backend.DataFrame do
               skip_rows :: integer(),
               header? :: boolean(),
               encoding :: String.t(),
-              max_rows :: integer() | nil,
+              max_rows :: option(integer()),
               columns :: columns_for_io(),
-              infer_schema_length :: integer() | nil,
+              infer_schema_length :: option(integer()),
               parse_dates :: boolean()
             ) :: result(df)
 
   # IO: Parquet
   @callback from_parquet(
               filename :: String.t(),
-              max_rows :: integer() | nil,
+              max_rows :: option(integer()),
               columns :: columns_for_io()
             ) :: result(df)
   @callback to_parquet(
@@ -174,7 +176,7 @@ defmodule Explorer.Backend.DataFrame do
               values_to :: column_name()
             ) :: df
   @callback put(df, out_df :: df(), column_name(), series()) :: df
-  @callback describe(df, out_df :: df(), percentiles :: list(float()) | nil) :: df()
+  @callback describe(df, out_df :: df(), percentiles :: option(list(float()))) :: df()
 
   # Two or more table verbs
 
