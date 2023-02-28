@@ -1936,7 +1936,7 @@ defmodule Explorer.DataFrame do
   Picks rows based on `Explorer.Query`.
 
   The query is compiled and runs efficiently against the dataframe.
-  The query must return a boolean expression.
+  The query must return a boolean expression or a list of boolean expressions.
 
   > #### Notice {: .notice}
   >
@@ -1966,6 +1966,14 @@ defmodule Explorer.DataFrame do
         Polars[1 x 2]
         col1 string ["b"]
         col2 integer [2]
+      >
+
+      iex> df = Explorer.DataFrame.new(col1: [5, 4, 3], col2: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, [col1 > 3, col2 < 3])
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        col1 integer [5, 4]
+        col2 integer [1, 2]
       >
 
   Returning a non-boolean expression errors:
@@ -2017,7 +2025,7 @@ defmodule Explorer.DataFrame do
   Picks rows based on a callback function.
 
   The callback receives a lazy dataframe. A lazy dataframe does
-  hold any values, instead it stores all operations in order to
+  not hold any values, instead it stores all operations in order to
   execute all filtering performantly.
 
   This is a callback version of `filter/2`.
@@ -2077,6 +2085,24 @@ defmodule Explorer.DataFrame do
               "expecting the function to return a boolean LazySeries, " <>
                 "but instead it returned a LazySeries of type " <>
                 inspect(dtype)
+
+      [%Series{dtype: :boolean, data: %LazySeries{}} | _rest] = lazy_series ->
+        first_non_boolean =
+          Enum.find(lazy_series, &(!match?(%Series{dtype: :boolean, data: %LazySeries{}}, &1)))
+
+        if is_nil(first_non_boolean) do
+          series =
+            Enum.reduce(lazy_series, fn x, acc ->
+              Explorer.Backend.LazySeries.binary_and(acc, x)
+            end)
+
+          Shared.apply_impl(df, :filter_with, [df, series.data])
+        else
+          raise ArgumentError,
+                "expecting the function to return a single or a list of boolean LazySeries, " <>
+                  "but instead it contains:\n#{inspect(first_non_boolean)}\n" <>
+                  "that is of dtype #{inspect(first_non_boolean.dtype)}"
+        end
 
       other ->
         raise ArgumentError,

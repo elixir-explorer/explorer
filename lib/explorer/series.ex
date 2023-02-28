@@ -2299,6 +2299,13 @@ defmodule Explorer.Series do
   defp basic_numeric_operation(operation, %Series{dtype: dtype}, _),
     do: dtype_error("#{operation}/2", dtype, [:integer, :float])
 
+  defp basic_numeric_operation(operation, left, right)
+       when K.and(is_numerical(left), is_numerical(right)) do
+    raise ArgumentError,
+          "expected at least a series for the #{inspect(operation)} operation, but instead got two numbers: #{operation}(" <>
+            inspect(left) <> ", " <> inspect(right) <> ")"
+  end
+
   # Comparisons
 
   @doc """
