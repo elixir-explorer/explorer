@@ -1052,7 +1052,9 @@ defmodule Explorer.Series do
   """
   @doc type: :shape
   @spec shift(series :: Series.t(), offset :: integer()) :: Series.t()
-  def shift(series, offset), do: Shared.apply_impl(series, :shift, [offset, nil])
+  def shift(series, offset)
+      when is_integer(offset),
+      do: Shared.apply_impl(series, :shift, [offset, nil])
 
   @doc """
   Returns a series from two series, based on a predicate.
