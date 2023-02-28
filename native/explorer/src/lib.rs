@@ -172,6 +172,7 @@ rustler::init!(
         expr_subtract,
         // slice and dice expressions
         expr_coalesce,
+        expr_format,
         expr_concat,
         expr_select,
         // agg expressions

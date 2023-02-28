@@ -29,6 +29,7 @@ version = "0.26.1"
 default-features = false
 features = [
   "checked_arithmetic",
+  "concat_str",
   "cross_join",
   "cum_agg",
   "csv-file",

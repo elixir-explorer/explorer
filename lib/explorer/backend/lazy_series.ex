@@ -39,7 +39,7 @@ defmodule Explorer.Backend.LazySeries do
     pow: 2,
     fill_missing_with_value: 2,
     fill_missing_with_strategy: 2,
-    format: 2,
+    format: 1,
     concat: 1,
     coalesce: 2,
     cast: 2,
@@ -408,6 +408,14 @@ defmodule Explorer.Backend.LazySeries do
       end
 
     Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def format(list) do
+    series_list = Enum.map(list, &series_or_lazy_series!/1)
+    data = new(:format, [series_list], aggregations?(series_list))
+
+    Backend.Series.new(data, :string)
   end
 
   @impl true
