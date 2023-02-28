@@ -1056,6 +1056,11 @@ defmodule Explorer.Series do
       when is_integer(offset),
       do: Shared.apply_impl(series, :shift, [offset, nil])
 
+  def shift(_series, offset) do
+    raise ArgumentError,
+          "shift/2 offset requires an :integer, got #{inspect(offset)}"
+  end
+
   @doc """
   Returns a series from two series, based on a predicate.
 
