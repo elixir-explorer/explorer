@@ -1398,16 +1398,23 @@ defmodule Explorer.Series do
       ** (RuntimeError) External error: invalid utf-8 sequence
   """
   @doc type: :shape
-  @spec format([
-          Series.t() | number() | Date.t() | Time.t() | NaiveDateTime.t() | boolean() | String.t()
-        ]) :: Series.t()
+  @spec format([Series.t() | String.t()]) :: Series.t()
   def format([_ | _] = list), do: Shared.apply_series_impl(:format, [cast_to_string(list)])
 
   defp cast_to_string(list) do
     Enum.map(list, fn
-      %Series{dtype: :string} = s -> s
-      %Series{} = s -> cast(s, :string)
-      value -> from_list([value], dtype: :string)
+      %Series{dtype: :string} = s ->
+        s
+
+      %Series{} = s ->
+        cast(s, :string)
+
+      value when is_binary(value) ->
+        from_list([value], dtype: :string)
+
+      other ->
+        raise ArgumentError,
+              "format/1 expects a list of series or strings, got: #{inspect(other)}"
     end)
   end
 
