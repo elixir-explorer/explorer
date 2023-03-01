@@ -199,7 +199,7 @@ defmodule Explorer.Shared do
         end
       end)
 
-    type || :float
+    type || preferable_type || :float
   end
 
   defp type(item, type) when is_integer(item) and type == :float, do: :numeric
