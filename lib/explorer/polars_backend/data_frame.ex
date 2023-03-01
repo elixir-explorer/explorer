@@ -309,7 +309,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
       column_name = to_column_name!(key)
       values = Enum.to_list(columns[key])
       dtype = Map.get(dtypes, column_name)
-      series_from_list!(column_name, values, dtype)
+
+      column_name
+      |> series_from_list!(values, dtype)
+      |> then(fn series ->
+        if not is_nil(dtype) and series.dtype != dtype do
+          PolarsSeries.cast(series, dtype)
+        else
+          series
+        end
+      end)
     end)
     |> from_series_list()
   end

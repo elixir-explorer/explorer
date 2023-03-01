@@ -167,6 +167,13 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s) === ["a", "b", "c"]
       assert Series.dtype(s) == :category
     end
+
+    test "with nils series as string series" do
+      s = Series.from_list([nil, nil, nil], dtype: :string)
+
+      assert Series.to_list(s) === [nil, nil, nil]
+      assert Series.dtype(s) == :string
+    end
   end
 
   describe "fetch/2" do

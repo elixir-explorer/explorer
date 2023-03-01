@@ -176,6 +176,45 @@ defmodule Explorer.DataFrameTest do
         DF.new(%{binaries: [<<228, 146, 51>>, <<22, 197, 116>>, <<42, 209, 236>>]})
       end
     end
+
+    test "with series of nils and dtype string" do
+      df =
+        DF.new(%{strings: [nil, nil, nil]},
+          dtypes: [{:strings, :string}]
+        )
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               strings: [nil, nil, nil]
+             }
+
+      assert DF.dtypes(df) == %{"strings" => :string}
+    end
+
+    test "with series of nils and dtype integer" do
+      df =
+        DF.new(%{integers: [nil, nil, nil]},
+          dtypes: [{:integers, :integer}]
+        )
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               integers: [nil, nil, nil]
+             }
+
+      assert DF.dtypes(df) == %{"integers" => :integer}
+    end
+
+    test "with series of integers and dtype string" do
+      df =
+        DF.new(%{strings: [1, 2, 3]},
+          dtypes: [{:strings, :string}]
+        )
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               strings: ["1", "2", "3"]
+             }
+
+      assert DF.dtypes(df) == %{"strings" => :string}
+    end
   end
 
   describe "mask/2" do
