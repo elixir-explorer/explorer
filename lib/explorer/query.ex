@@ -207,7 +207,7 @@ defmodule Explorer.Query do
         species string ["Iris-versicolor", "Iris-versicolor", "Iris-versicolor", "Iris-versicolor", "Iris-versicolor", ...]
       >
 
-  > ### Do not confuse comprehension and queries {: .warning}
+  > #### Do not mix comprehension and queries {: .warning}
   >
   > The filter inside a for-comprehension works at the meta level:
   > it can only filter columns based on their names and dtypes, but
