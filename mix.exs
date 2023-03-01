@@ -4,6 +4,7 @@ defmodule Explorer.MixProject do
   @source_url "https://github.com/elixir-nx/explorer"
   @version "0.5.2"
   @dev? String.ends_with?(@version, "-dev")
+  @force_build? System.get_env("EXPLORER_BUILD") in ["1", "true"]
 
   def project do
     [
@@ -39,7 +40,7 @@ defmodule Explorer.MixProject do
       {:table_rex, "~> 3.1.1"},
 
       ## Optional
-      {:rustler, "~> 0.27.0", optional: not @dev?},
+      {:rustler, "~> 0.27.0", optional: not (@dev? or @force_build?)},
       {:nx, "~> 0.4.0 or ~> 0.5.0", optional: true},
 
       ## Dev
