@@ -160,6 +160,24 @@ defmodule Explorer.QueryTest do
     end
   end
 
+  describe "<>" do
+    test "concatenates strings" do
+      assert DF.new(a: [1, 2, 3])
+             |> DF.mutate(a: "foo" <> "bar")
+             |> DF.to_columns(atom_keys: true) == %{
+               a: ~w(foobar foobar foobar)
+             }
+    end
+
+    test "concatenates strings and series" do
+      assert DF.new(a: ~w(bar baz bat))
+             |> DF.mutate(a: "foo" <> a)
+             |> DF.to_columns(atom_keys: true) == %{
+               a: ~w(foobar foobaz foobat)
+             }
+    end
+  end
+
   test "raises on special forms" do
     assert_raise ArgumentError, "=/2 is not currently supported in Explorer.Query", fn ->
       Code.eval_quoted(

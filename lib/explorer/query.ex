@@ -461,6 +461,69 @@ defmodule Explorer.Query do
   def +series when is_struct(series, Explorer.Series), do: series
 
   @doc """
+  String concatenation operator.
+
+  Works with strings and series of strings.
+
+  ## Examples
+
+      DF.mutate(df, name: first_name <> " " <> last_name)
+
+  If you want to convert concatenate non-string
+  series, you can explicitly cast them to string
+  before:
+
+      DF.mutate(df, name: cast(year, :string) <> "-" <> cast(month, :string))
+
+  Or use format:
+
+      DF.mutate(df, name: format([year, "-", month]))
+  """
+  defmacro left <> right do
+    parts = [left | extract_concatenations(right)]
+
+    quote do
+      unquote(__MODULE__).__concatenate__(unquote(parts))
+    end
+  end
+
+  defp extract_concatenations({:<>, _, [left, right]}), do: [left | extract_concatenations(right)]
+  defp extract_concatenations(other), do: [other]
+
+  @doc false
+  def __concatenate__(parts) do
+    case validate_concatenation(parts, true) do
+      true -> IO.iodata_to_binary(parts)
+      false -> Explorer.Series.format(parts)
+    end
+  end
+
+  @error_message "the string concatenation operator (<>) inside Explorer.Query expects either " <>
+                   "an Elixir string or a Series with :string dtype, got: "
+
+  defp validate_concatenation([%Explorer.Series{dtype: :string} | parts], _all_binary?) do
+    validate_concatenation(parts, false)
+  end
+
+  defp validate_concatenation([%Explorer.Series{} = part | _parts], _all_binary?) do
+    raise ArgumentError,
+          <<@error_message, inspect(part)::binary,
+            " (use cast(series, :string) to convert an existing series)"::binary>>
+  end
+
+  defp validate_concatenation([part | parts], all_binary?) when is_binary(part) do
+    validate_concatenation(parts, all_binary?)
+  end
+
+  defp validate_concatenation([part | _parts], _all_binary?) do
+    raise ArgumentError,
+          <<@error_message, inspect(part)::binary,
+            " (use Kernel.to_string(value) to convert an existing value to string)">>
+  end
+
+  defp validate_concatenation([], all_binary?), do: all_binary?
+
+  @doc """
   Accesses a column by name.
 
   If your column name contains whitespace or start with
