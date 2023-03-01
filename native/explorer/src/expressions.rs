@@ -5,7 +5,7 @@
 // wrapped in an Elixir struct.
 
 use chrono::{NaiveDate, NaiveDateTime};
-use polars::prelude::{col, when, IntoLazy, LiteralValue, SortOptions};
+use polars::prelude::{col, concat_str, when, IntoLazy, LiteralValue, SortOptions};
 use polars::prelude::{DataType, Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
@@ -454,6 +454,11 @@ pub fn expr_last(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
     ExExpr::new(expr.last())
+}
+
+#[rustler::nif]
+pub fn expr_format(exprs: Vec<ExExpr>) -> ExExpr {
+    ExExpr::new(concat_str(ex_expr_to_exprs(exprs), ""))
 }
 
 #[rustler::nif]

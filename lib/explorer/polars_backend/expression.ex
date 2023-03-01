@@ -26,6 +26,7 @@ defmodule Explorer.PolarsBackend.Expression do
     equal: 2,
     fill_missing_with_value: 2,
     first: 1,
+    format: 1,
     greater: 2,
     greater_equal: 2,
     is_nil: 1,
@@ -146,6 +147,12 @@ defmodule Explorer.PolarsBackend.Expression do
     expr_list = Enum.map(series_list, &to_expr/1)
 
     Native.expr_concat(expr_list)
+  end
+
+  def to_expr(%LazySeries{op: :format, args: [series_list]}) when is_list(series_list) do
+    expr_list = Enum.map(series_list, &to_expr/1)
+
+    Native.expr_format(expr_list)
   end
 
   for {op, _arity} <- @first_only_expressions do

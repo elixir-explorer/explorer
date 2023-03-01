@@ -1372,6 +1372,55 @@ defmodule Explorer.Series do
   def at(series, idx), do: fetch!(series, idx)
 
   @doc """
+  Returns a string series with all values ​​concatenated.
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list(["a", "b", "c"])
+      iex> s2 = Explorer.Series.from_list(["d", "e", "f"])
+      iex> s3 = Explorer.Series.from_list(["g", "h", "i"])
+      iex> Explorer.Series.format([s1, s2, s3])
+      #Explorer.Series<
+        Polars[3]
+        string ["adg", "beh", "cfi"]
+      >
+
+      iex> s1 = Explorer.Series.from_list(["a", "b", "c", "d"])
+      iex> s2 = Explorer.Series.from_list([1, 2, 3, 4])
+      iex> s3 = Explorer.Series.from_list([1.5, :nan, :infinity, :neg_infinity])
+      iex> Explorer.Series.format([s1, "/", s2, "/", s3])
+      #Explorer.Series<
+        Polars[4]
+        string ["a/1/1.5", "b/2/NaN", "c/3/inf", "d/4/-inf"]
+      >
+
+      iex> s1 = Explorer.Series.from_list([<<1>>, <<239, 191, 19>>], dtype: :binary)
+      iex> s2 = Explorer.Series.from_list([<<3>>, <<4>>], dtype: :binary)
+      iex> Explorer.Series.format([s1, s2])
+      ** (RuntimeError) External error: invalid utf-8 sequence
+  """
+  @doc type: :shape
+  @spec format([Series.t() | String.t()]) :: Series.t()
+  def format([_ | _] = list), do: Shared.apply_series_impl(:format, [cast_to_string(list)])
+
+  defp cast_to_string(list) do
+    Enum.map(list, fn
+      %Series{dtype: :string} = s ->
+        s
+
+      %Series{} = s ->
+        cast(s, :string)
+
+      value when is_binary(value) ->
+        from_list([value], dtype: :string)
+
+      other ->
+        raise ArgumentError,
+              "format/1 expects a list of series or strings, got: #{inspect(other)}"
+    end)
+  end
+
+  @doc """
   Concatenate one or more series.
 
   The dtypes must match unless all are numeric, in which case all series will be downcast to float.
