@@ -475,8 +475,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def pull(df, column), do: Shared.apply_dataframe(df, :df_pull, [column])
 
   @impl true
-  def slice(%DataFrame{} = df, row_indices) when is_list(row_indices),
-    do: Shared.apply_dataframe(df, df, :df_slice_by_indices, [row_indices, df.groups])
+  def slice(%DataFrame{} = df, row_indices) when is_list(row_indices) do
+    Shared.apply_dataframe(df, df, :df_slice_by_indices, [row_indices, df.groups])
+  end
+
+  @impl true
+  def slice(%DataFrame{} = df, %Series{dtype: :integer} = row_indices) do
+    Shared.apply_dataframe(df, df, :df_slice_by_series, [row_indices.data, df.groups])
+  end
 
   # TODO: If we expose group_indices at the Explorer.DataFrame level,
   # then we can implement this in pure Elixir.
@@ -495,7 +501,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     {:ok, idx} = Native.s_concat(idx)
 
-    Shared.apply_dataframe(df, df, :df_slice_by_series, [idx])
+    Shared.apply_dataframe(df, df, :df_slice_by_series, [idx, []])
   end
 
   @impl true

@@ -209,9 +209,27 @@ pub fn df_slice_by_indices(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_slice_by_series(df: ExDataFrame, series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let cast = series.cast(&DataType::UInt32)?;
-    Ok(ExDataFrame::new(df.take(cast.u32()?)?))
+pub fn df_slice_by_series(
+    df: ExDataFrame,
+    series: ExSeries,
+    groups: Vec<&str>,
+) -> Result<ExDataFrame, ExplorerError> {
+    match series.strict_cast(&DataType::UInt32) {
+        Ok(casted) => {
+            let idx = casted.u32()?;
+
+            let new_df = if groups.is_empty() {
+                df.take(idx)?
+            } else {
+                df.groupby_stable(groups)?.apply(|df| df.take(idx))?
+            };
+
+            Ok(ExDataFrame::new(new_df))
+        }
+        Err(_) => Err(ExplorerError::Other(
+            "slice/2 expects a series of positive integers".into(),
+        )),
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

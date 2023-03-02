@@ -156,7 +156,7 @@ defmodule Explorer.Backend.DataFrame do
               seed :: option(integer())
             ) :: df
   @callback pull(df, column :: column_name()) :: series
-  @callback slice(df, indices :: list(integer()) | %Range{}) :: df
+  @callback slice(df, indices :: list(integer()) | series() | %Range{}) :: df
   @callback slice(df, offset :: integer(), length :: integer()) :: df
   @callback drop_nil(df, columns :: [column_name()]) :: df
   @callback pivot_wider(
