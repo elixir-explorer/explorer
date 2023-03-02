@@ -3335,7 +3335,7 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :slice, [row_indices])
   end
 
-  def slice(%DataFrame{} = df, %Series{} = indices) do
+  def slice(%DataFrame{} = df, %Series{dtype: :integer} = indices) do
     Shared.apply_impl(df, :slice, [indices])
   end
 
