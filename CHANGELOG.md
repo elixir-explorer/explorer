@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add the `Explorer.Series.format/1` function that concatenates multiple series together,
+  always returning a string series.
+
+- With the addition of `format/1`, we also have a new operator for string concatenation
+  inside `Explorer.Query`. It is the `<>` operator, that is similar to what the `Kernel.<>/2`
+  operator does, but instead of concatenating strings, it concatenates two series, returning
+  a string series - it is using `format/1` underneath.
+
+- Add support for slicing by series in dataframes and other series.
+
+### Fixed
+
+- Fix `Explorer.DataFrame.new/2` to respect the selected dtype when an entire series is nil.
+
 ## [v0.5.2] - 2023-02-28
 
 ### Added

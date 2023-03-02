@@ -1378,7 +1378,7 @@ defmodule Explorer.Series do
   def at(series, idx), do: fetch!(series, idx)
 
   @doc """
-  Returns a string series with all values ​​concatenated.
+  Returns a string series with all values concatenated.
 
   ## Examples
 
