@@ -334,7 +334,7 @@ pub fn s_slice_by_series(series: ExSeries, indices: ExSeries) -> Result<ExSeries
     match indices.strict_cast(&DataType::UInt32) {
         Ok(casted) => {
             let idx = casted.u32()?;
-            match series.take(&idx) {
+            match series.take(idx) {
                 Ok(s1) => Ok(ExSeries::new(s1)),
                 Err(_) => Err(ExplorerError::Other(
                     "slice/2 cannot select from indices that are out-of-bounds".into(),
