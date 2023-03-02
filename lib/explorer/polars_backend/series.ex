@@ -112,6 +112,10 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_slice_by_indices, [indices])
 
   @impl true
+  def slice(series, %Series{} = indices),
+    do: Shared.apply_series(series, :s_slice_by_series, [indices.data])
+
+  @impl true
   def slice(series, offset, length), do: Shared.apply_series(series, :s_slice, [offset, length])
 
   @impl true

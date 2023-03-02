@@ -45,7 +45,7 @@ defmodule Explorer.Backend.Series do
   @callback at(s, idx :: integer()) :: s
   @callback at_every(s, integer()) :: s
   @callback mask(s, mask :: s) :: s
-  @callback slice(s, indices :: list()) :: s
+  @callback slice(s, indices :: list() | s()) :: s
   @callback slice(s, offset :: integer(), length :: integer()) :: s
   @callback format(list(s)) :: s
   @callback concat(list(s)) :: s

@@ -1332,9 +1332,15 @@ defmodule Explorer.Series do
 
   """
   @doc type: :shape
-  @spec slice(series :: Series.t(), indices :: [integer()] | Range.t()) :: Series.t()
+  @spec slice(series :: Series.t(), indices :: [integer()] | Range.t() | Series.t()) :: Series.t()
   def slice(series, indices) when is_list(indices),
     do: Shared.apply_impl(series, :slice, [indices])
+
+  def slice(series, %Series{dtype: :integer} = indices),
+    do: Shared.apply_impl(series, :slice, [indices])
+
+  def slice(_series, %Series{dtype: invalid_dtype}),
+    do: dtype_error("slice/2", invalid_dtype, [:integer])
 
   def slice(series, first..last//1) do
     first = if first < 0, do: first + size(series), else: first

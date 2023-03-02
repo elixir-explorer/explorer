@@ -2938,4 +2938,58 @@ defmodule Explorer.SeriesTest do
       end
     end
   end
+
+  describe "slice/2" do
+    test "from a list of indices" do
+      s = Series.from_list(["a", "b", "c"])
+      s1 = Series.slice(s, [0, 2])
+      assert Series.to_list(s1) == ["a", "c"]
+    end
+
+    test "from a range" do
+      s = Series.from_list(["a", "b", "c"])
+      s1 = Series.slice(s, 1..2)
+
+      assert Series.to_list(s1) == ["b", "c"]
+    end
+
+    test "from a range with negative numbers" do
+      s = Series.from_list(["a", "b", "c"])
+      s1 = Series.slice(s, -2..-1)
+
+      assert Series.to_list(s1) == ["b", "c"]
+    end
+
+    test "from a range that is out of bounds" do
+      s = Series.from_list(["a", "b", "c"])
+      s1 = Series.slice(s, 3..2)
+
+      assert Series.to_list(s1) == []
+    end
+
+    test "from a series of indices" do
+      s = Series.from_list(["a", "b", "c"])
+      s1 = Series.slice(s, Series.from_list([0, 2]))
+
+      assert Series.to_list(s1) == ["a", "c"]
+    end
+
+    test "from a series of indices with a negative number" do
+      s = Series.from_list(["a", "b", "c"])
+
+      assert_raise RuntimeError, "slice/2 expects a series of positive integers", fn ->
+        Series.slice(s, Series.from_list([0, 2, -1]))
+      end
+    end
+
+    test "from a series of indices out-of-bounds" do
+      s = Series.from_list(["a", "b", "c"])
+
+      assert_raise RuntimeError,
+                   "slice/2 cannot select from indices that are out-of-bounds",
+                   fn ->
+                     Series.slice(s, Series.from_list([0, 2, 20]))
+                   end
+    end
+  end
 end
