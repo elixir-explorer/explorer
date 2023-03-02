@@ -117,7 +117,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_shape(_df), do: err()
   def df_slice(_df, _offset, _length, _groups), do: err()
   def df_slice_by_indices(_df, _indices, _groups), do: err()
-  def df_slice_by_series(_df, _series), do: err()
+  def df_slice_by_series(_df, _series, _groups), do: err()
   def df_summarise_with_exprs(_df, _groups_exprs, _aggs_pairs), do: err()
   def df_tail(_df, _length, _groups), do: err()
   def df_to_csv(_df, _filename, _has_headers, _delimiter), do: err()
@@ -131,12 +131,17 @@ defmodule Explorer.PolarsBackend.Native do
   def df_describe(_df, _percentiles), do: err()
 
   # Expressions (for lazy queries)
+  @multi_arity_expressions [slice: 2, slice: 3]
+
   # We first generate functions for known operations.
-  for {op, arity} <- Explorer.Backend.LazySeries.operations() do
+  for {op, arity} <- Explorer.Backend.LazySeries.operations() -- @multi_arity_expressions do
     args = Macro.generate_arguments(arity, __MODULE__)
     expr_op = :"expr_#{op}"
     def unquote(expr_op)(unquote_splicing(args)), do: err()
   end
+
+  def expr_slice(_lazy_series, _offset, _length), do: err()
+  def expr_slice_by_indices(_lazy_series, _series), do: err()
 
   # Then we generate for some specific expressions
   def expr_alias(_ex_expr, _alias_name), do: err()
@@ -281,6 +286,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_size(_s), do: err()
   def s_slice(_s, _offset, _length), do: err()
   def s_slice_by_indices(_s, _indices), do: err()
+  def s_slice_by_series(_s, _series), do: err()
   def s_sort(_s, _descending?, _nils_last?), do: err()
   def s_standard_deviation(_s), do: err()
   def s_trim(_s), do: err()

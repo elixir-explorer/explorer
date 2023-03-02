@@ -330,6 +330,24 @@ pub fn s_slice_by_indices(series: ExSeries, indices: Vec<u32>) -> Result<ExSerie
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_slice_by_series(series: ExSeries, indices: ExSeries) -> Result<ExSeries, ExplorerError> {
+    match indices.strict_cast(&DataType::UInt32) {
+        Ok(casted) => {
+            let idx = casted.u32()?;
+            match series.take(idx) {
+                Ok(s1) => Ok(ExSeries::new(s1)),
+                Err(_) => Err(ExplorerError::Other(
+                    "slice/2 cannot select from indices that are out-of-bounds".into(),
+                )),
+            }
+        }
+        Err(_) => Err(ExplorerError::Other(
+            "slice/2 expects a series of positive integers".into(),
+        )),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_is_null(series: ExSeries) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(series.is_null().into_series()))
 }

@@ -827,6 +827,25 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.groups(grouped1) == ["species"]
     end
 
+    test "take two by series of indices of each group" do
+      df = Datasets.iris()
+      grouped = DF.group_by(df, "species")
+      grouped1 = DF.slice(grouped, Series.from_list([0, 2]))
+
+      assert DF.n_rows(grouped1) == 6
+
+      assert Series.to_list(grouped1["species"]) == [
+               "Iris-setosa",
+               "Iris-setosa",
+               "Iris-versicolor",
+               "Iris-versicolor",
+               "Iris-virginica",
+               "Iris-virginica"
+             ]
+
+      assert DF.groups(grouped1) == ["species"]
+    end
+
     test "take the range of zero to two per group" do
       df = Datasets.iris()
       grouped = DF.group_by(df, "species")

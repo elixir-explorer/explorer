@@ -1173,6 +1173,40 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{"a" => :boolean, "b" => :boolean}
     end
 
+    test "adds a slice of another column with a list of indices" do
+      df = DF.new(a: [1, 2, 4])
+
+      # nil is needed to make the column equals the size of the df.
+      df1 = DF.mutate(df, b: slice(a, [1, 2, nil]))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 4],
+               b: [2, 4, nil]
+             }
+
+      assert DF.dtypes(df1) == %{
+               "a" => :integer,
+               "b" => :integer
+             }
+    end
+
+    test "adds a slice of another column with a series of indices" do
+      df = DF.new(a: [1, 2, 4])
+
+      # nil is needed to make the column equals the size of the df.
+      df1 = DF.mutate(df, b: slice(a, from_list([1, 2, nil])))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 4],
+               b: [2, 4, nil]
+             }
+
+      assert DF.dtypes(df1) == %{
+               "a" => :integer,
+               "b" => :integer
+             }
+    end
+
     test "raises when adding eager series" do
       df = DF.new(a: [1, 2, 3])
       series = Series.from_list([4, 5, 6])
@@ -1288,10 +1322,19 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "slice/2" do
-    test "slice with indexes" do
+    test "slice with integer indices" do
       df = DF.new(a: [1, 2, 3, 4, 5])
 
       df1 = DF.slice(df, [2, 4])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
+    end
+
+    test "slice with series of integers indices" do
+      df = DF.new(a: [1, 2, 3, 4, 5])
+      series = Series.from_list([2, 4])
+
+      df1 = DF.slice(df, series)
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
     end

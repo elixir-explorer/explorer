@@ -3231,7 +3231,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Slices rows at the given indices as a new dataframe.
 
-  The indices may be either a list of indices or a range.
+  The indices may be a list or series of indices, or a range.
   A list of indices does not support negative numbers.
   Ranges may be negative on either end, which are then
   normalized. Note ranges in Elixir are inclusive.
@@ -3240,10 +3240,23 @@ defmodule Explorer.DataFrame do
   It is going to consider the indices of each group
   instead of the entire dataframe. See the examples below.
 
+  If your intention is to grab a portion of each group,
+  prefer to use `sample/3` instead.
+
   ## Examples
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> Explorer.DataFrame.slice(df, [0, 2])
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        a integer [1, 3]
+        b string ["a", "c"]
+      >
+
+  With a series
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      iex> Explorer.DataFrame.slice(df, Explorer.Series.from_list([0, 2]))
       #Explorer.DataFrame<
         Polars[2 x 2]
         a integer [1, 3]
@@ -3320,6 +3333,10 @@ defmodule Explorer.DataFrame do
     end)
 
     Shared.apply_impl(df, :slice, [row_indices])
+  end
+
+  def slice(%DataFrame{} = df, %Series{dtype: :integer} = indices) do
+    Shared.apply_impl(df, :slice, [indices])
   end
 
   def slice(%DataFrame{groups: []} = df, first..last//1) do

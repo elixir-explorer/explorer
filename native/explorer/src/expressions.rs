@@ -208,6 +208,13 @@ pub fn expr_slice(expr: ExExpr, offset: i64, length: u32) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_slice_by_indices(expr: ExExpr, indices_expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.take(indices_expr.clone_inner()))
+}
+
+#[rustler::nif]
 pub fn expr_head(expr: ExExpr, length: usize) -> ExExpr {
     let expr = expr.clone_inner();
 
