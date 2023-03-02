@@ -99,6 +99,7 @@ defmodule Explorer.PolarsBackend.Expression do
     from_binary: 2,
     to_lazy: 1,
     shift: 3,
+    slice_by_indices: 2,
     concat: 1,
     column: 1
   ]
@@ -153,6 +154,17 @@ defmodule Explorer.PolarsBackend.Expression do
     expr_list = Enum.map(series_list, &to_expr/1)
 
     Native.expr_format(expr_list)
+  end
+
+  def to_expr(%LazySeries{op: :slice_by_indices, args: [lazy_series, lazy_series_or_list]}) do
+    indices =
+      if is_list(lazy_series_or_list) do
+        Explorer.PolarsBackend.Shared.from_list(lazy_series_or_list, :integer)
+      else
+        lazy_series_or_list
+      end
+
+    Native.expr_slice_by_indices(to_expr(lazy_series), to_expr(indices))
   end
 
   for {op, _arity} <- @first_only_expressions do

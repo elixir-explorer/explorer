@@ -141,6 +141,7 @@ rustler::init!(
         expr_series,
         expr_shift,
         expr_slice,
+        expr_slice_by_indices,
         expr_string,
         expr_tail,
         // sort

@@ -60,6 +60,7 @@ defmodule Explorer.Backend.LazySeries do
     distinct: 1,
     unordered_distinct: 1,
     slice: 3,
+    slice_by_indices: 2,
     sample_n: 5,
     sample_frac: 5,
     head: 2,
@@ -206,6 +207,22 @@ defmodule Explorer.Backend.LazySeries do
   def slice(%Series{} = s, offset, length) do
     args = [lazy_series!(s), offset, length]
     data = new(:slice, args, aggregations?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def slice(%Series{} = s, indices) when is_list(indices) do
+    args = [lazy_series!(s), indices]
+    data = new(:slice_by_indices, args, aggregations?(args))
+
+    Backend.Series.new(data, s.dtype)
+  end
+
+  @impl true
+  def slice(%Series{} = s, %Series{} = indices) do
+    args = [lazy_series!(s), series_or_lazy_series!(indices)]
+    data = new(:slice_by_indices, args, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)
   end
@@ -664,7 +681,6 @@ defmodule Explorer.Backend.LazySeries do
     categorise: 2,
     frequencies: 1,
     mask: 2,
-    slice: 2,
     to_iovec: 1,
     to_list: 1
   ]
