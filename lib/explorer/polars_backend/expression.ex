@@ -67,7 +67,6 @@ defmodule Explorer.PolarsBackend.Expression do
     quantile: 2,
     argsort: 3,
     sort: 3,
-    slice: 3,
     head: 2,
     tail: 2,
     peaks: 2,
@@ -99,7 +98,8 @@ defmodule Explorer.PolarsBackend.Expression do
     from_binary: 2,
     to_lazy: 1,
     shift: 3,
-    slice_by_indices: 2,
+    slice: 2,
+    slice: 3,
     concat: 1,
     column: 1
   ]
@@ -156,7 +156,7 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_format(expr_list)
   end
 
-  def to_expr(%LazySeries{op: :slice_by_indices, args: [lazy_series, lazy_series_or_list]}) do
+  def to_expr(%LazySeries{op: :slice, args: [lazy_series, lazy_series_or_list]}) do
     indices =
       if is_list(lazy_series_or_list) do
         Explorer.PolarsBackend.Shared.from_list(lazy_series_or_list, :integer)
@@ -165,6 +165,12 @@ defmodule Explorer.PolarsBackend.Expression do
       end
 
     Native.expr_slice_by_indices(to_expr(lazy_series), to_expr(indices))
+  end
+
+  def to_expr(%LazySeries{op: :slice, args: [lazy_series, offset, length]}) do
+    expr = to_expr(lazy_series)
+
+    Native.expr_slice(expr, offset, length)
   end
 
   for {op, _arity} <- @first_only_expressions do

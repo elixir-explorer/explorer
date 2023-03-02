@@ -131,12 +131,17 @@ defmodule Explorer.PolarsBackend.Native do
   def df_describe(_df, _percentiles), do: err()
 
   # Expressions (for lazy queries)
+  @multi_arity_expressions [slice: 2, slice: 3]
+
   # We first generate functions for known operations.
-  for {op, arity} <- Explorer.Backend.LazySeries.operations() do
+  for {op, arity} <- Explorer.Backend.LazySeries.operations() -- @multi_arity_expressions do
     args = Macro.generate_arguments(arity, __MODULE__)
     expr_op = :"expr_#{op}"
     def unquote(expr_op)(unquote_splicing(args)), do: err()
   end
+
+  def expr_slice(_lazy_series, _offset, _length), do: err()
+  def expr_slice_by_indices(_lazy_series, _series), do: err()
 
   # Then we generate for some specific expressions
   def expr_alias(_ex_expr, _alias_name), do: err()
