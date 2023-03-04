@@ -2543,13 +2543,8 @@ defmodule Explorer.Series do
     if valid_for_bool_mask_operation?(left, right) do
       Shared.apply_series_impl(:greater, [left, right])
     else
-      dtype_error("greater/2", dtype_from_sides(left, right), [
-        :integer,
-        :float,
-        :date,
-        :time,
-        :datetime
-      ])
+      dtypes = [:integer, :float, :date, :time, :datetime]
+      dtype_mismatch_error("greater/2", left, right, dtypes)
     end
   end
 
@@ -2588,7 +2583,7 @@ defmodule Explorer.Series do
       Shared.apply_series_impl(:greater_equal, [left, right])
     else
       types = [:integer, :float, :date, :time, :datetime]
-      dtype_error("greater_equal/2", dtype_from_sides(left, right), types)
+      dtype_mismatch_error("greater_equal/2", left, right, types)
     end
   end
 
@@ -2626,13 +2621,8 @@ defmodule Explorer.Series do
     if valid_for_bool_mask_operation?(left, right) do
       Shared.apply_series_impl(:less, [left, right])
     else
-      dtype_error("less/2", dtype_from_sides(left, right), [
-        :integer,
-        :float,
-        :date,
-        :time,
-        :datetime
-      ])
+      dtypes = [:integer, :float, :date, :time, :datetime]
+      dtype_mismatch_error("less/2", left, right, dtypes)
     end
   end
 
@@ -2671,7 +2661,7 @@ defmodule Explorer.Series do
       Shared.apply_series_impl(:less_equal, [left, right])
     else
       types = [:integer, :float, :date, :time, :datetime]
-      dtype_error("less_equal/2", dtype_from_sides(left, right), types)
+      dtype_mismatch_error("less_equal/2", left, right, types)
     end
   end
 
@@ -2734,17 +2724,6 @@ defmodule Explorer.Series do
   defp valid_for_bool_mask_operation?(%NaiveDateTime{}, %Series{dtype: :datetime}), do: true
 
   defp valid_for_bool_mask_operation?(_, _), do: false
-
-  defp dtype_from_sides(%Series{} = left, _right), do: left.dtype
-  defp dtype_from_sides(_left, %Series{} = right), do: right.dtype
-
-  defp dtype_from_sides(left, right),
-    do:
-      raise(
-        ArgumentError,
-        "expecting series for one of the sides, but got: " <>
-          "#{inspect(left)} (lhs) and #{inspect(right)} (rhs)"
-      )
 
   @doc """
   Returns a boolean mask of `left and right`, element-wise.
@@ -3677,24 +3656,60 @@ defmodule Explorer.Series do
     :"#{backend}.Series"
   end
 
-  defp dtype_error(function, dtype, valid_dtypes),
-    do:
-      raise(
-        ArgumentError,
-        "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. Valid " <>
-          "dtypes are #{inspect(valid_dtypes)}"
-      )
+  defp dtype_error(function, dtype, valid_dtypes) do
+    raise(
+      ArgumentError,
+      "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. Valid " <>
+        "dtypes are #{inspect(valid_dtypes)}"
+    )
+  end
 
-  defp dtype_mismatch_error(function, left, right),
-    do:
-      raise(
-        ArgumentError,
-        "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{dtype_or_inspect(left)} and " <>
-          "#{dtype_or_inspect(right)}"
-      )
+  defp dtype_mismatch_error(function, left, right, valid) do
+    left_series? = match?(%Series{}, left)
+    right_series? = match?(%Series{}, right)
+
+    cond do
+      Kernel.and(left_series?, Kernel.not(Enum.member?(valid, left.dtype))) ->
+        dtype_error(function, left.dtype, valid)
+
+      Kernel.and(right_series?, Kernel.not(Enum.member?(valid, right.dtype))) ->
+        dtype_error(function, right.dtype, valid)
+
+      Kernel.or(left_series?, right_series?) ->
+        dtype_mismatch_error(function, left, right)
+
+      true ->
+        raise(
+          ArgumentError,
+          "expecting series for one of the sides, but got: " <>
+            "#{dtype_or_inspect(left)} (lhs) and #{dtype_or_inspect(right)} (rhs)" <>
+            maybe_hint([left, right])
+        )
+    end
+  end
+
+  defp dtype_mismatch_error(function, left, right) do
+    raise(
+      ArgumentError,
+      "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{dtype_or_inspect(left)} and " <>
+        "#{dtype_or_inspect(right)}" <> maybe_hint([left, right])
+    )
+  end
 
   defp dtype_or_inspect(%Series{dtype: dtype}), do: inspect(dtype)
   defp dtype_or_inspect(value), do: inspect(value)
+
+  defp maybe_hint(values) do
+    atom = Enum.find(values, &is_atom(&1))
+
+    if Kernel.and(atom != nil, String.starts_with?(Atom.to_string(atom), "Elixir.")) do
+      "\n\nHINT: we have noticed that one of the values is the atom #{inspect(atom)}. " <>
+        "If you are inside Explorer.Query and you want to access a column starting in uppercase, " <>
+        "you must write instead: col(\"#{inspect(atom)}\")"
+    else
+      ""
+    end
+  end
 
   defp check_dtypes_for_coalesce!(%Series{} = s1, %Series{} = s2) do
     case {s1.dtype, s2.dtype} do

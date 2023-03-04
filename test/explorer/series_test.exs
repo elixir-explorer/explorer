@@ -1004,6 +1004,16 @@ defmodule Explorer.SeriesTest do
       assert :neg_infinity |> Series.less(s1) |> Series.to_list() ==
                [true, true, false, true, false]
     end
+
+    test "raises on value mismatch" do
+      assert_raise ArgumentError,
+                   "cannot invoke Explorer.Series.less/2 with mismatched dtypes: :float and nil",
+                   fn -> Series.less(Series.from_list([]), nil) end
+
+      assert_raise ArgumentError,
+                   ~r"HINT: we have noticed that one of the values is the atom Foo",
+                   fn -> Series.less(Series.from_list([]), Foo) end
+    end
   end
 
   describe "less_equal/2" do
