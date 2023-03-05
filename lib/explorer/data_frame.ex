@@ -1229,7 +1229,10 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-  From series:
+  ### From series
+
+  Series can be given either as keyword lists or maps
+  where the keys are the name and the values are series:
 
       iex> Explorer.DataFrame.new(%{
       ...>   floats: Explorer.Series.from_list([1.0, 2.0]),
@@ -1241,7 +1244,27 @@ defmodule Explorer.DataFrame do
         ints integer [1, nil]
       >
 
-  From tensors:
+  ### From tensors
+
+  To create dataframe from tensors, you can pass a matrix as argument.
+  Each matrix column becomes a dataframe column with names x1, x2, x3,
+  etc:
+
+      iex> Explorer.DataFrame.new(Nx.tensor([
+      ...>   [1, 2, 3],
+      ...>   [4, 5, 6]
+      ...> ]))
+      #Explorer.DataFrame<
+        Polars[2 x 3]
+        x1 integer [1, 4]
+        x2 integer [2, 5]
+        x3 integer [3, 6]
+      >
+
+  Explorer expects tensors to have certain types, so you may need to cast
+  the data accordingly. See `Explorer.Series.from_tensor/2` for more info.
+
+  You can also pass a keyword list or maps of vectors (rank 1 tensors):
 
       iex> Explorer.DataFrame.new(%{
       ...>   floats: Nx.tensor([1.0, 2.0], type: :f64),
@@ -1264,6 +1287,8 @@ defmodule Explorer.DataFrame do
         floats float [1.0, 2.0]
         times time [00:00:00.000003, 00:00:00.000004]
       >
+
+  ### From tabular
 
   Tabular data can be either columnar or row-based.
   Let's start with column data:
@@ -1328,7 +1353,7 @@ defmodule Explorer.DataFrame do
 
       data ->
         case classify_data(data) do
-          :series ->
+          {:series, data} ->
             pairs =
               for {name, series} <- data do
                 if not is_struct(series, Series) do
@@ -1341,7 +1366,7 @@ defmodule Explorer.DataFrame do
 
             backend.from_series(pairs)
 
-          :tensor ->
+          {:tensor, data} ->
             s_backend = df_backend_to_s_backend(backend)
 
             pairs =
@@ -1360,26 +1385,39 @@ defmodule Explorer.DataFrame do
 
             backend.from_series(pairs)
 
-          :tabular ->
+          {:tabular, data} ->
             backend.from_tabular(data, dtypes)
         end
     end
   end
 
-  defp classify_data([{_, %struct{}} | _]) when struct == Series, do: :series
-  defp classify_data([{_, %struct{}} | _]) when struct == Nx.Tensor, do: :tensor
+  defp classify_data([{_, %struct{}} | _] = data) when struct == Series, do: {:series, data}
+  defp classify_data([{_, %struct{}} | _] = data) when struct == Nx.Tensor, do: {:tensor, data}
 
-  defp classify_data(%_{}), do: :tabular
+  defp classify_data(%struct{} = data) do
+    if struct == Nx.Tensor do
+      case data.shape do
+        {_, cols} ->
+          {:tensor, Enum.map(1..cols, fn i -> {"x#{i}", data[[.., i - 1]]} end)}
 
-  defp classify_data(data) when is_map(data) do
-    case :maps.next(:maps.iterator(data)) do
-      {_key, %struct{}, _} when struct == Series -> :series
-      {_key, %struct{}, _} when struct == Nx.Tensor -> :tensor
-      _ -> :tabular
+        _ ->
+          raise ArgumentError,
+                "Explorer.DataFrame.new/2 only accepts tensor of rank 2, got: #{inspect(data)}"
+      end
+    else
+      {:tabular, data}
     end
   end
 
-  defp classify_data(_data), do: :tabular
+  defp classify_data(data) when is_map(data) do
+    case :maps.next(:maps.iterator(data)) do
+      {_key, %struct{}, _} when struct == Series -> {:series, data}
+      {_key, %struct{}, _} when struct == Nx.Tensor -> {:tensor, data}
+      _ -> {:tabular, data}
+    end
+  end
+
+  defp classify_data(data), do: {:tabular, data}
 
   @doc """
   Converts a dataframe to a list of columns with lists as values.
