@@ -546,6 +546,36 @@ defmodule Explorer.DataFrameTest do
         DF.filter(df, [a > 4, b < 4, a + b])
       end
     end
+
+    test "filter a binary column with a binary value" do
+      df =
+        DF.new([a: [1, 2, 3, 4, 5], key: [<<1>>, <<2>>, <<1>>, <<1>>, <<2>>]],
+          dtypes: [key: :binary]
+        )
+
+      df1 = DF.filter(df, key == <<2>>)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 5], key: [<<2>>, <<2>>]}
+    end
+
+    test "filter a binary column with a binary value from a string" do
+      df =
+        DF.new([a: [1, 2, 3, 4, 5], key: [<<1>>, <<2>>, <<1>>, <<1>>, <<2>>]],
+          dtypes: [key: :binary]
+        )
+
+      df1 = DF.filter(df, key == "foo")
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [], key: []}
+    end
+
+    test "filter with a multiplication with the scalar on the left" do
+      df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
+
+      df1 = DF.filter(df, b > 2 * a)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3], b: [9, 8, 7]}
+    end
   end
 
   describe "mutate_with/2" do
