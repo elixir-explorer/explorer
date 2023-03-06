@@ -19,9 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add support for slicing by series in dataframes and other series.
 
+- Add support for 2D tensors in `Explorer.DataFrame.new/2`.
+
 ### Fixed
 
 - Fix `Explorer.DataFrame.new/2` to respect the selected dtype when an entire series is nil.
+
+- Improve error message for mismatched dtypes in series operations.
+
+- Fix lazy series operations of binary series and binary values. This is going to wrap binary
+  values in the correct dtype, in order to pass down to Polars.
 
 ## [v0.5.2] - 2023-02-28
 
