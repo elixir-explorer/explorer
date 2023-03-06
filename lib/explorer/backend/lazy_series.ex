@@ -293,13 +293,37 @@ defmodule Explorer.Backend.LazySeries do
 
   # Implements all the comparison operations that
   # accepts Series or number on both sides.
+  #
+  # It also handles the case for binaries and strings, creating
+  # a one element series when binaries are present on either sides.
   for op <- @comparison_operations do
     @impl true
     def unquote(op)(left, right) do
-      args = [data!(left), data!(right)]
+      args = binary_args(left, right)
       data = new(unquote(op), args, aggregations?(args))
 
       Backend.Series.new(data, :boolean)
+    end
+  end
+
+  defp binary_args(left, right) do
+    case {left, right} do
+      {%Series{}, %Series{}} ->
+        [left.data, right.data]
+
+      {%Series{dtype: dtype}, value}
+      when dtype in [:binary, :string, :category] and is_binary(value) ->
+        [left.data, from_list([value], dtype).data]
+
+      {value, %Series{dtype: dtype}}
+      when dtype in [:binary, :string, :category] and is_binary(value) ->
+        [from_list([value], dtype).data, right.data]
+
+      {%Series{}, other} ->
+        [left.data, other]
+
+      {other, %Series{}} ->
+        [other, right.data]
     end
   end
 
