@@ -504,7 +504,8 @@ pub fn df_pivot_wider(
     pivot_column: &str,
     values_column: &str,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = pivot_stable(
+    let original_names = df.get_column_names();
+    let mut new_df = pivot_stable(
         &df,
         [values_column],
         id_columns,
@@ -512,6 +513,12 @@ pub fn df_pivot_wider(
         PivotAgg::First,
         false,
     )?;
+
+    // Rename possible "null" column to "nil".
+    if new_df.get_column_names().contains(&"null") && !original_names.contains(&"null") {
+        new_df.rename("null", "nil")?;
+    }
+
     Ok(ExDataFrame::new(new_df))
 }
 

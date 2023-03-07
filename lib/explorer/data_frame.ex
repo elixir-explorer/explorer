@@ -3926,7 +3926,13 @@ defmodule Explorer.DataFrame do
       df[names_from]
       |> Series.distinct()
       |> Series.to_list()
-      |> Enum.map(&String.replace_prefix(&1, "", opts[:names_prefix]))
+      |> Enum.map(
+        &String.replace_prefix(
+          &1 || "nil",
+          "",
+          opts[:names_prefix]
+        )
+      )
 
     out_columns = id_columns ++ distinct_pivot_columns
 

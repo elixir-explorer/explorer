@@ -1986,6 +1986,19 @@ defmodule Explorer.DataFrameTest do
       assert df4.names == ["id", "column_1", "column_2"]
     end
 
+    test "with a single id but with a nil value in the variable series" do
+      df1 = DF.new(id: [1, 1, 1], variable: ["a", "b", nil], value: [1, 2, 3])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2) == %{
+               "id" => [1],
+               "a" => [1],
+               "b" => [2],
+               "nil" => [3]
+             }
+    end
+
     test "with multiple id columns" do
       df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
       df1 = DF.pivot_wider(df, "variable", "value")
