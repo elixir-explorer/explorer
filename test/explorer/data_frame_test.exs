@@ -2014,6 +2014,20 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "with multiple id columns and one id equal to a variable name" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], b: [4, 5])
+      df1 = DF.pivot_wider(df, "variable", "value")
+
+      assert DF.names(df1) == ["id", "b", "a", "b_1"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id: [1, 1],
+               b: [4, 5],
+               a: [1, nil],
+               b_1: [nil, 2]
+             }
+    end
+
     test "with a single id column ignoring other columns" do
       df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
 

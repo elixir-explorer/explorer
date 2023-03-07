@@ -1,6 +1,7 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
+use std::collections::HashMap;
 use std::result::Result;
 
 use crate::ex_expr_to_exprs;
@@ -505,6 +506,8 @@ pub fn df_pivot_wider(
     values_column: &str,
     names_prefix: Option<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
+    let mut counter: HashMap<String, u16> = HashMap::new();
+
     let mut new_df = pivot_stable(
         &df,
         [values_column],
@@ -515,21 +518,38 @@ pub fn df_pivot_wider(
     )?;
     let mut new_names = new_df.get_column_names_owned();
 
-    new_names.retain(|name| !&id_columns.contains(&name.as_str()));
-    let null = "null";
-
-    // Rename possible "null" column to "nil".
     for name in new_names.iter_mut() {
-        if name == &null {
-            new_df.rename(null, "nil")?;
-            *name = "nil".to_string();
-        }
+        let original_name = name.clone();
 
-        if let Some(prefix) = names_prefix {
-            let new_name = format!("{}{}", prefix, name);
-            new_df.rename(&name, &new_name)?;
+        if let Some(count) = counter.get(name) {
+            if let Some(prefix) = names_prefix {
+                *name = format!("{}{}", prefix, name);
+            }
+
+            if original_name == name.clone() {
+                *name = format!("{}_{}", name, count);
+            }
+
+            counter
+                .entry(name.clone())
+                .and_modify(|c| *c += 1)
+                .or_insert(1);
+        } else {
+            if !id_columns.contains(&original_name.as_str()) {
+                if name == "null" {
+                    *name = "nil".to_string();
+                }
+
+                if let Some(prefix) = names_prefix {
+                    *name = format!("{}{}", prefix, name);
+                }
+            }
+
+            counter.insert(name.clone(), 1);
         }
     }
+
+    new_df.set_column_names(&new_names)?;
 
     Ok(ExDataFrame::new(new_df))
 }
