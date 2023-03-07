@@ -503,20 +503,32 @@ pub fn df_pivot_wider(
     id_columns: Vec<&str>,
     pivot_column: &str,
     values_column: &str,
+    names_prefix: Option<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let original_names = df.get_column_names();
     let mut new_df = pivot_stable(
         &df,
         [values_column],
-        id_columns,
+        id_columns.clone(),
         [pivot_column],
         PivotAgg::First,
         false,
     )?;
+    let mut new_names = new_df.get_column_names_owned();
+
+    new_names.retain(|name| !&id_columns.contains(&name.as_str()));
+    let null = "null";
 
     // Rename possible "null" column to "nil".
-    if new_df.get_column_names().contains(&"null") && !original_names.contains(&"null") {
-        new_df.rename("null", "nil")?;
+    for name in new_names.iter_mut() {
+        if name == &null {
+            new_df.rename(null, "nil")?;
+            *name = "nil".to_string();
+        }
+
+        if let Some(prefix) = names_prefix {
+            let new_name = format!("{}{}", prefix, name);
+            new_df.rename(&name, &new_name)?;
+        }
     }
 
     Ok(ExDataFrame::new(new_df))

@@ -3898,7 +3898,7 @@ defmodule Explorer.DataFrame do
             Keyword.t()
         ) :: DataFrame.t()
   def pivot_wider(df, names_from, values_from, opts \\ []) do
-    opts = Keyword.validate!(opts, id_columns: 0..-1//1, names_prefix: "")
+    opts = Keyword.validate!(opts, id_columns: 0..-1//1, names_prefix: nil)
 
     [values_from, names_from] = to_existing_columns(df, [values_from, names_from])
     dtypes = df.dtypes
@@ -3922,34 +3922,7 @@ defmodule Explorer.DataFrame do
       end
     end
 
-    distinct_pivot_columns =
-      df[names_from]
-      |> Series.distinct()
-      |> Series.to_list()
-      |> Enum.map(
-        &String.replace_prefix(
-          &1 || "nil",
-          "",
-          opts[:names_prefix]
-        )
-      )
-
-    out_columns = id_columns ++ distinct_pivot_columns
-
-    new_dtypes =
-      for column <- distinct_pivot_columns, into: %{}, do: {column, df.dtypes[values_from]}
-
-    out_dtypes =
-      df.dtypes
-      |> Map.drop([names_from, values_from])
-      |> Map.merge(new_dtypes)
-
-    out_groups = df.groups -- [names_from, values_from]
-
-    out_df = %{df | dtypes: out_dtypes, names: out_columns, groups: out_groups}
-
     Shared.apply_impl(df, :pivot_wider, [
-      out_df,
       id_columns,
       names_from,
       values_from,
