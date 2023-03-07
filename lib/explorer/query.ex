@@ -2,13 +2,21 @@ defmodule Explorer.Query do
   @moduledoc ~S"""
   High-level query for Explorer.
 
+  > #### Explorer.DataFrame vs DF {: .tip}
+  >
+  > All examples below assume you have defined aliased
+  > `Explorer.DataFrame` to `DF` as shown below:
+  >
+  >     alias Explorer.DataFrame, as: DF
+  >
+
   Queries convert regular Elixir code which compile to efficient
   dataframes operations. Inside a query, only the limited set of
   Series operations are available and identifiers, such as `strs`
   and `nums`, represent dataframe column names:
 
-      iex> df = Explorer.DataFrame.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, nums > 2)
+      iex> df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      iex> DF.filter(df, nums > 2)
       #Explorer.DataFrame<
         Polars[1 x 2]
         strs string ["c"]
@@ -18,8 +26,8 @@ defmodule Explorer.Query do
   If a column has unusual format, you can either rename it before-hand,
   or use `col/1` inside queries:
 
-      iex> df = Explorer.DataFrame.new("unusual nums": [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, col("unusual nums") > 2)
+      iex> df = DF.new("unusual nums": [1, 2, 3])
+      iex> DF.filter(df, col("unusual nums") > 2)
       #Explorer.DataFrame<
         Polars[1 x 1]
         unusual nums integer [3]
@@ -44,8 +52,8 @@ defmodule Explorer.Query do
   or get access to all Elixir constructs, you must use `^`:
 
       iex> min = 2
-      iex> df = Explorer.DataFrame.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, nums > ^min)
+      iex> df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      iex> DF.filter(df, nums > ^min)
       #Explorer.DataFrame<
         Polars[1 x 2]
         strs string ["c"]
@@ -53,8 +61,8 @@ defmodule Explorer.Query do
       >
 
       iex> min = 2
-      iex> df = Explorer.DataFrame.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, nums < ^if(min > 0, do: 10, else: -10))
+      iex> df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      iex> DF.filter(df, nums < ^if(min > 0, do: 10, else: -10))
       #Explorer.DataFrame<
         Polars[3 x 2]
         strs string ["a", "b", "c"]
@@ -63,9 +71,9 @@ defmodule Explorer.Query do
 
   `^` can be used with `col` to access columns dynamically:
 
-      iex> df = Explorer.DataFrame.new("unusual nums": [1, 2, 3])
+      iex> df = DF.new("unusual nums": [1, 2, 3])
       iex> name = "unusual nums"
-      iex> Explorer.DataFrame.filter(df, col(^name) > 2)
+      iex> DF.filter(df, col(^name) > 2)
       #Explorer.DataFrame<
         Polars[1 x 1]
         unusual nums integer [3]
@@ -79,7 +87,7 @@ defmodule Explorer.Query do
   iris dataset, you could write this:
 
       iex> iris = Explorer.Datasets.iris()
-      iex> Explorer.DataFrame.mutate(iris,
+      iex> DF.mutate(iris,
       ...>   sepal_width: (sepal_width - mean(sepal_width)) / variance(sepal_width),
       ...>   sepal_length: (sepal_length - mean(sepal_length)) / variance(sepal_length),
       ...>   petal_length: (petal_length - mean(petal_length)) / variance(petal_length),
@@ -98,7 +106,7 @@ defmodule Explorer.Query do
   we could instead write:
 
       iex> iris = Explorer.Datasets.iris()
-      iex> Explorer.DataFrame.mutate(iris,
+      iex> DF.mutate(iris,
       ...>   for col <- across(["sepal_width", "sepal_length", "petal_length", "petal_width"]) do
       ...>     {col.name, (col - mean(col)) / variance(col)}
       ...>   end
@@ -124,7 +132,7 @@ defmodule Explorer.Query do
   For example, since we know the width and length columns are the first four,
   we could also have written (remember ranges in Elixir are inclusive):
 
-      Explorer.DataFrame.mutate(iris,
+      DF.mutate(iris,
         for col <- across(0..3) do
           {col.name, (col - mean(col)) / variance(col)}
         end
@@ -132,7 +140,7 @@ defmodule Explorer.Query do
 
   Or using a regex:
 
-      Explorer.DataFrame.mutate(iris,
+      DF.mutate(iris,
         for col <- across(~r/(sepal|petal)_(length|width)/) do
           {col.name, (col - mean(col)) / variance(col)}
         end
@@ -151,7 +159,7 @@ defmodule Explorer.Query do
   columns and then use a filter to keep only the float ones:
 
       iex> iris = Explorer.Datasets.iris()
-      iex> Explorer.DataFrame.mutate(iris,
+      iex> DF.mutate(iris,
       ...>   for col <- across(), col.dtype == :float do
       ...>     {col.name, (col - mean(col)) / variance(col)}
       ...>   end
@@ -172,8 +180,8 @@ defmodule Explorer.Query do
   the mean per species, you could write:
 
       iex> Explorer.Datasets.iris()
-      ...> |> Explorer.DataFrame.group_by("species")
-      ...> |> Explorer.DataFrame.summarise(
+      ...> |> DF.group_by("species")
+      ...> |> DF.summarise(
       ...>   for col <- across(), col.dtype == :float do
       ...>     {"#{col.name}_mean", mean(col)}
       ...>   end
@@ -193,7 +201,7 @@ defmodule Explorer.Query do
   average, using a filter on the column name, one could write:
 
       iex> iris = Explorer.Datasets.iris()
-      iex> Explorer.DataFrame.filter(iris,
+      iex> DF.filter(iris,
       ...>   for col <- across(), String.ends_with?(col.name, "_length") do
       ...>     col > mean(col)
       ...>   end
@@ -214,7 +222,7 @@ defmodule Explorer.Query do
   > not on their values. For example, this code does not make any
   > sense and it will fail to compile:
   >
-  >     |> Explorer.DataFrame.filter(
+  >     |> DF.filter(
   >       for col <- across(), col > mean(col) do
   >         col
   >       end
