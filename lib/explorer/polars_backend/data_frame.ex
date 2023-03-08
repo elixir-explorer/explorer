@@ -534,8 +534,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
            names_prefix_optional
          ) do
       {:ok, %__MODULE__{} = polars_df} ->
-        out_df = Shared.create_dataframe(polars_df)
-        %{out_df | groups: df.groups -- [names_from, values_from]}
+        Shared.create_dataframe(polars_df)
 
       {:error, error} ->
         raise "cannot pivot wider due to Polars error: #{inspect(error)}"

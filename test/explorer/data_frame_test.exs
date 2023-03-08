@@ -1971,6 +1971,18 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "with a single id discarding any other column" do
+      df1 = DF.new(id: [1, 1], x: [6, 12], variable: ["a", "b"], value: [1, 2])
+
+      df2 = DF.pivot_wider(df1, "variable", "value", id_columns: [:id])
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [1],
+               b: [2]
+             }
+    end
+
     test "with a single id and names prefix" do
       df1 = DF.new(id: [1, 1], variable: ["1", "2"], value: [1.0, 2.0])
 

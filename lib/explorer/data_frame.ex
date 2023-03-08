@@ -3848,10 +3848,45 @@ defmodule Explorer.DataFrame do
         | C        | 15        |           | 10        | 14        |           |
         +----------+-----------+-----------+-----------+-----------+-----------+
 
+  Pivot wider can create unpredictable column names, and sometimes they can conflict with ID columns.
+  In that scenario, we add a number as suffix to duplicated column names. Here is an example:
+
+      iex> df = Explorer.DataFrame.new(
+      iex>   product_id: [1, 1, 1, 1, 2, 2, 2, 2],
+      iex>   property: ["product_id", "width_cm", "height_cm", "length_cm", "product_id", "width_cm", "height_cm", "length_cm"],
+      iex>   property_value: [1, 42, 40, 64, 2, 35, 20, 40]
+      iex> )
+      iex> Explorer.DataFrame.pivot_wider(df, "property", "property_value")
+      #Explorer.DataFrame<
+        Polars[2 x 5]
+        product_id integer [1, 2]
+        product_id_1 integer [1, 2]
+        width_cm integer [42, 35]
+        height_cm integer [40, 20]
+        length_cm integer [64, 40]
+      >
+
+  But if the option `:names_prefix` is used, that suffix is not added:
+
+      iex> df = Explorer.DataFrame.new(
+      iex>   product_id: [1, 1, 1, 1, 2, 2, 2, 2],
+      iex>   property: ["product_id", "width_cm", "height_cm", "length_cm", "product_id", "width_cm", "height_cm", "length_cm"],
+      iex>   property_value: [1, 42, 40, 64, 2, 35, 20, 40]
+      iex> )
+      iex> Explorer.DataFrame.pivot_wider(df, "property", "property_value", names_prefix: "col_")
+      #Explorer.DataFrame<
+        Polars[2 x 5]
+        product_id integer [1, 2]
+        col_product_id integer [1, 2]
+        col_width_cm integer [42, 35]
+        col_height_cm integer [40, 20]
+        col_length_cm integer [64, 40]
+      >
+
   ## Grouped examples
 
   Now using the same idea, we can see that there is not much difference for grouped dataframes.
-  The only detail is that groups related to the pivoting columns are going to be removed.
+  The only detail is that groups that are not ID columns are discarded.
 
       iex> df = Explorer.DataFrame.new(
       iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
@@ -3922,12 +3957,15 @@ defmodule Explorer.DataFrame do
               "Note that float columns are discarded from the selection."
     end
 
-    Shared.apply_impl(df, :pivot_wider, [
-      id_columns,
-      names_from,
-      values_from,
-      opts[:names_prefix]
-    ])
+    out_df =
+      Shared.apply_impl(df, :pivot_wider, [
+        id_columns,
+        names_from,
+        values_from,
+        opts[:names_prefix]
+      ])
+
+    %{out_df | groups: Enum.filter(df.groups, &(&1 in id_columns))}
   end
 
   # Two table verbs
