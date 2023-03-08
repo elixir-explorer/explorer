@@ -1,6 +1,7 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
+use std::collections::HashMap;
 use std::result::Result;
 
 use crate::ex_expr_to_exprs;
@@ -503,15 +504,53 @@ pub fn df_pivot_wider(
     id_columns: Vec<&str>,
     pivot_column: &str,
     values_column: &str,
+    names_prefix: Option<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = pivot_stable(
+    let mut counter: HashMap<String, u16> = HashMap::new();
+
+    let mut new_df = pivot_stable(
         &df,
         [values_column],
-        id_columns,
+        id_columns.clone(),
         [pivot_column],
         PivotAgg::First,
         false,
     )?;
+    let mut new_names = new_df.get_column_names_owned();
+
+    for name in new_names.iter_mut() {
+        let original_name = name.clone();
+
+        if let Some(count) = counter.get(name) {
+            if let Some(prefix) = names_prefix {
+                *name = format!("{}{}", prefix, name);
+            }
+
+            if original_name == name.clone() {
+                *name = format!("{}_{}", name, count);
+            }
+
+            counter
+                .entry(name.clone())
+                .and_modify(|c| *c += 1)
+                .or_insert(1);
+        } else {
+            if !id_columns.contains(&original_name.as_str()) {
+                if name == "null" {
+                    *name = "nil".to_string();
+                }
+
+                if let Some(prefix) = names_prefix {
+                    *name = format!("{}{}", prefix, name);
+                }
+            }
+
+            counter.insert(name.clone(), 1);
+        }
+    }
+
+    new_df.set_column_names(&new_names)?;
+
     Ok(ExDataFrame::new(new_df))
 }
 

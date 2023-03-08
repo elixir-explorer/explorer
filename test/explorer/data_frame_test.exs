@@ -1969,21 +1969,48 @@ defmodule Explorer.DataFrameTest do
                a: [1],
                b: [2]
              }
+    end
 
-      df3 = DF.new(id: [1, 1], variable: ["1", "2"], value: [1.0, 2.0])
+    test "with a single id discarding any other column" do
+      df1 = DF.new(id: [1, 1], x: [6, 12], variable: ["a", "b"], value: [1, 2])
 
-      df4 =
-        DF.pivot_wider(df3, "variable", "value",
+      df2 = DF.pivot_wider(df1, "variable", "value", id_columns: [:id])
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [1],
+               b: [2]
+             }
+    end
+
+    test "with a single id and names prefix" do
+      df1 = DF.new(id: [1, 1], variable: ["1", "2"], value: [1.0, 2.0])
+
+      df2 =
+        DF.pivot_wider(df1, "variable", "value",
           id_columns: ["id"],
           names_prefix: "column_"
         )
 
       assert DF.to_columns(
-               df4,
+               df2,
                atom_keys: true
              ) == %{id: [1], column_1: [1.0], column_2: [2.0]}
 
-      assert df4.names == ["id", "column_1", "column_2"]
+      assert df2.names == ["id", "column_1", "column_2"]
+    end
+
+    test "with a single id but with a nil value in the variable series" do
+      df1 = DF.new(id: [1, 1, 1], variable: ["a", "b", nil], value: [1, 2, 3])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2) == %{
+               "id" => [1],
+               "a" => [1],
+               "b" => [2],
+               "nil" => [3]
+             }
     end
 
     test "with multiple id columns" do
@@ -1998,6 +2025,34 @@ defmodule Explorer.DataFrameTest do
                other_id: [4, 5],
                a: [1, nil],
                b: [nil, 2]
+             }
+    end
+
+    test "with multiple id columns and one id equal to a variable name" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], b: [4, 5])
+      df1 = DF.pivot_wider(df, "variable", "value")
+
+      assert DF.names(df1) == ["id", "b", "a", "b_1"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id: [1, 1],
+               b: [4, 5],
+               a: [1, nil],
+               b_1: [nil, 2]
+             }
+    end
+
+    test "with multiple id columns and one id equal to a variable name, but with prefix option" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], b: [4, 5])
+      df1 = DF.pivot_wider(df, "variable", "value", names_prefix: "col_")
+
+      assert DF.names(df1) == ["id", "b", "col_a", "col_b"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id: [1, 1],
+               b: [4, 5],
+               col_a: [1, nil],
+               col_b: [nil, 2]
              }
     end
 
@@ -2064,7 +2119,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
 
       assert_raise ArgumentError,
-                   "id_columns must select at least one existing column, but [] selects none",
+                   "id_columns must select at least one existing column, but [] selects none. Note that float columns are discarded from the selection.",
                    fn ->
                      DF.pivot_wider(df, "variable", "value", id_columns: [])
                    end
@@ -2082,13 +2137,13 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(float_id: [1.5, 1.6], variable: ["a", "b"], value: [1, 2])
 
       assert_raise ArgumentError,
-                   "id_columns cannot have columns of the type float, but \"float_id\" column is float",
+                   "id_columns must select at least one existing column, but 0..-1//1 selects none. Note that float columns are discarded from the selection.",
                    fn ->
                      DF.pivot_wider(df, "variable", "value")
                    end
 
       assert_raise ArgumentError,
-                   "id_columns cannot have columns of the type float, but \"float_id\" column is float",
+                   "id_columns must select at least one existing column, but [:float_id] selects none. Note that float columns are discarded from the selection.",
                    fn ->
                      DF.pivot_wider(df, "variable", "value", id_columns: [:float_id])
                    end

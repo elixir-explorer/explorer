@@ -1051,6 +1051,33 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert DF.groups(pivoted) == []
     end
+
+    test "remove groups that are not in the list of id_columns" do
+      df =
+        DF.new(
+          weekday: [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday"
+          ],
+          team: ["A", "B", "C", "A", "B", "C", "A", "B", "C", "A"],
+          other: [1, 2, 1, 2, 1, 2, 1, 2, 1, 2],
+          hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
+        )
+
+      grouped = DF.group_by(df, ["team", "other"])
+      pivoted = DF.pivot_wider(grouped, "weekday", "hour", id_columns: ["team"])
+
+      assert DF.names(pivoted) == ["team", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+      assert DF.groups(pivoted) == ["team"]
+    end
   end
 
   describe "dummies/2" do

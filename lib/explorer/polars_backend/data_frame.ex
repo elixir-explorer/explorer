@@ -523,16 +523,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def pivot_wider(df, out_df, id_columns, names_from, values_from, names_prefix) do
-    result =
-      Shared.apply_dataframe(df, out_df, :df_pivot_wider, [id_columns, names_from, values_from])
+  def pivot_wider(df, id_columns, names_from, values_from, names_prefix) do
+    names_prefix_optional = unless names_prefix == "", do: names_prefix
 
-    if names_prefix == "" do
-      result
-    else
-      new_names = Shared.apply_dataframe(result, :df_names, []) -- id_columns
-      rename_pairs = for new_name <- new_names, do: {new_name, names_prefix <> new_name}
-      rename(result, out_df, rename_pairs)
+    case Native.df_pivot_wider(
+           df.data,
+           id_columns,
+           names_from,
+           values_from,
+           names_prefix_optional
+         ) do
+      {:ok, %__MODULE__{} = polars_df} ->
+        Shared.create_dataframe(polars_df)
+
+      {:error, error} ->
+        raise "cannot pivot wider due to Polars error: #{inspect(error)}"
     end
   end
 

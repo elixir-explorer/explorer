@@ -370,7 +370,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     from_ipc_stream: 2,
     mask: 2,
     n_rows: 1,
-    pivot_wider: 6,
+    pivot_wider: 5,
     pull: 2,
     put: 4,
     sample: 5,

@@ -3755,13 +3755,16 @@ defmodule Explorer.DataFrame do
   ## Options
 
   * `:id_columns` - A set of columns that uniquely identifies each observation.
-    Defaults to all columns in data except for the columns specified in `names_from` and `values_from`.
+
+    Defaults to all columns in data except for the columns specified in `names_from` and `values_from`,
+    and columns that are of the `:float` dtype.
+
     Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated
     with existing variables. May accept a filter callback, a list or a range of column names.
     Default value is `0..-1//1`. If an empty list is passed, or a range that results in a empty list of
     column names, it raises an error.
 
-    ID columns cannot be of the float type and attempting so will raise an error.
+    ID columns cannot be of the float type and any columns of this dtype is discarded.
     If you need to use float columns as IDs, you must carefully consider rounding
     or truncating the column and converting it to integer, as long as doing so
     preserves the properties of the column.
@@ -3845,10 +3848,45 @@ defmodule Explorer.DataFrame do
         | C        | 15        |           | 10        | 14        |           |
         +----------+-----------+-----------+-----------+-----------+-----------+
 
+  Pivot wider can create unpredictable column names, and sometimes they can conflict with ID columns.
+  In that scenario, we add a number as suffix to duplicated column names. Here is an example:
+
+      iex> df = Explorer.DataFrame.new(
+      iex>   product_id: [1, 1, 1, 1, 2, 2, 2, 2],
+      iex>   property: ["product_id", "width_cm", "height_cm", "length_cm", "product_id", "width_cm", "height_cm", "length_cm"],
+      iex>   property_value: [1, 42, 40, 64, 2, 35, 20, 40]
+      iex> )
+      iex> Explorer.DataFrame.pivot_wider(df, "property", "property_value")
+      #Explorer.DataFrame<
+        Polars[2 x 5]
+        product_id integer [1, 2]
+        product_id_1 integer [1, 2]
+        width_cm integer [42, 35]
+        height_cm integer [40, 20]
+        length_cm integer [64, 40]
+      >
+
+  But if the option `:names_prefix` is used, that suffix is not added:
+
+      iex> df = Explorer.DataFrame.new(
+      iex>   product_id: [1, 1, 1, 1, 2, 2, 2, 2],
+      iex>   property: ["product_id", "width_cm", "height_cm", "length_cm", "product_id", "width_cm", "height_cm", "length_cm"],
+      iex>   property_value: [1, 42, 40, 64, 2, 35, 20, 40]
+      iex> )
+      iex> Explorer.DataFrame.pivot_wider(df, "property", "property_value", names_prefix: "col_")
+      #Explorer.DataFrame<
+        Polars[2 x 5]
+        product_id integer [1, 2]
+        col_product_id integer [1, 2]
+        col_width_cm integer [42, 35]
+        col_height_cm integer [40, 20]
+        col_length_cm integer [64, 40]
+      >
+
   ## Grouped examples
 
   Now using the same idea, we can see that there is not much difference for grouped dataframes.
-  The only detail is that groups related to the pivoting columns are going to be removed.
+  The only detail is that groups that are not ID columns are discarded.
 
       iex> df = Explorer.DataFrame.new(
       iex>   weekday: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
@@ -3908,47 +3946,26 @@ defmodule Explorer.DataFrame do
             "the values_from column must be numeric, but found #{dtypes[values_from]}"
     end
 
-    id_columns = to_existing_columns(df, opts[:id_columns]) -- [names_from, values_from]
+    id_columns =
+      for column_name <- to_existing_columns(df, opts[:id_columns]) -- [names_from, values_from],
+          df.dtypes[column_name] != :float,
+          do: column_name
 
     if id_columns == [] do
       raise ArgumentError,
-            "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none"
+            "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none. " <>
+              "Note that float columns are discarded from the selection."
     end
 
-    for column_name <- id_columns do
-      if df.dtypes[column_name] == :float do
-        raise ArgumentError,
-              "id_columns cannot have columns of the type float, but #{inspect(column_name)} column is float"
-      end
-    end
+    out_df =
+      Shared.apply_impl(df, :pivot_wider, [
+        id_columns,
+        names_from,
+        values_from,
+        opts[:names_prefix]
+      ])
 
-    distinct_pivot_columns =
-      df[names_from]
-      |> Series.distinct()
-      |> Series.to_list()
-      |> Enum.map(&String.replace_prefix(&1, "", opts[:names_prefix]))
-
-    out_columns = id_columns ++ distinct_pivot_columns
-
-    new_dtypes =
-      for column <- distinct_pivot_columns, into: %{}, do: {column, df.dtypes[values_from]}
-
-    out_dtypes =
-      df.dtypes
-      |> Map.drop([names_from, values_from])
-      |> Map.merge(new_dtypes)
-
-    out_groups = df.groups -- [names_from, values_from]
-
-    out_df = %{df | dtypes: out_dtypes, names: out_columns, groups: out_groups}
-
-    Shared.apply_impl(df, :pivot_wider, [
-      out_df,
-      id_columns,
-      names_from,
-      values_from,
-      opts[:names_prefix]
-    ])
+    %{out_df | groups: Enum.filter(df.groups, &(&1 in id_columns))}
   end
 
   # Two table verbs

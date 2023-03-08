@@ -161,7 +161,6 @@ defmodule Explorer.Backend.DataFrame do
   @callback drop_nil(df, columns :: [column_name()]) :: df
   @callback pivot_wider(
               df,
-              out_df :: df(),
               id_columns :: [column_name()],
               names_from :: column_name(),
               values_from :: column_name(),
