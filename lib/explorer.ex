@@ -1,10 +1,8 @@
 defmodule Explorer do
-  @moduledoc """
-  Explorer brings series (one-dimensional) and dataframes (two-dimensional)
-  for fast data exploration to Elixir.
+  @external_resource "README.md"
 
-  Most of the functionality in `Explorer` is in `Explorer.DataFrame` and
-  `Explorer.Series`. To write elegant and expressive queries, see
-  `Explorer.Query`. Refer to those modules for more in-depth documentation.
-  """
+  @moduledoc "README.md"
+             |> File.read!()
+             |> String.split("<!-- MDOC -->")
+             |> Enum.fetch!(1)
 end
