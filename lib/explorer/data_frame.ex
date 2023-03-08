@@ -3755,13 +3755,16 @@ defmodule Explorer.DataFrame do
   ## Options
 
   * `:id_columns` - A set of columns that uniquely identifies each observation.
-    Defaults to all columns in data except for the columns specified in `names_from` and `values_from`.
+
+    Defaults to all columns in data except for the columns specified in `names_from` and `values_from`,
+    and columns that are of the `:float` dtype.
+
     Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated
     with existing variables. May accept a filter callback, a list or a range of column names.
     Default value is `0..-1//1`. If an empty list is passed, or a range that results in a empty list of
     column names, it raises an error.
 
-    ID columns cannot be of the float type and attempting so will raise an error.
+    ID columns cannot be of the float type and any columns of this dtype is discarded.
     If you need to use float columns as IDs, you must carefully consider rounding
     or truncating the column and converting it to integer, as long as doing so
     preserves the properties of the column.
@@ -3898,7 +3901,7 @@ defmodule Explorer.DataFrame do
             Keyword.t()
         ) :: DataFrame.t()
   def pivot_wider(df, names_from, values_from, opts \\ []) do
-    opts = Keyword.validate!(opts, id_columns: 0..-1//1, names_prefix: nil)
+    opts = Keyword.validate!(opts, id_columns: 0..-1//1, names_prefix: "")
 
     [values_from, names_from] = to_existing_columns(df, [values_from, names_from])
     dtypes = df.dtypes
@@ -3908,18 +3911,15 @@ defmodule Explorer.DataFrame do
             "the values_from column must be numeric, but found #{dtypes[values_from]}"
     end
 
-    id_columns = to_existing_columns(df, opts[:id_columns]) -- [names_from, values_from]
+    id_columns =
+      for column_name <- to_existing_columns(df, opts[:id_columns]) -- [names_from, values_from],
+          df.dtypes[column_name] != :float,
+          do: column_name
 
     if id_columns == [] do
       raise ArgumentError,
-            "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none"
-    end
-
-    for column_name <- id_columns do
-      if df.dtypes[column_name] == :float do
-        raise ArgumentError,
-              "id_columns cannot have columns of the type float, but #{inspect(column_name)} column is float"
-      end
+            "id_columns must select at least one existing column, but #{inspect(opts[:id_columns])} selects none. " <>
+              "Note that float columns are discarded from the selection."
     end
 
     Shared.apply_impl(df, :pivot_wider, [

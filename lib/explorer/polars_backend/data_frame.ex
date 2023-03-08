@@ -524,7 +524,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def pivot_wider(df, id_columns, names_from, values_from, names_prefix) do
-    case Native.df_pivot_wider(df.data, id_columns, names_from, values_from, names_prefix) do
+    names_prefix_optional = unless names_prefix == "", do: names_prefix
+
+    case Native.df_pivot_wider(
+           df.data,
+           id_columns,
+           names_from,
+           values_from,
+           names_prefix_optional
+         ) do
       {:ok, %__MODULE__{} = polars_df} ->
         out_df = Shared.create_dataframe(polars_df)
         %{out_df | groups: df.groups -- [names_from, values_from]}
