@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.5.3] - 2023-03-08
+
 ### Added
 
 - Add the `Explorer.Series.format/1` function that concatenates multiple series together,
@@ -29,6 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix lazy series operations of binary series and binary values. This is going to wrap binary
   values in the correct dtype, in order to pass down to Polars.
+
+- Fix two bugs in `Explorer.DataFrame.pivot_wider/3`: `nil` values in the series that is
+  used for new column names is now correctly creating a `nil` column. We also fixed the problem
+  of a duplicated column created after pivoting, and possibly conflicting with an existing
+  ID column. We add a suffix for these columns.
 
 ## [v0.5.2] - 2023-02-28
 
@@ -367,7 +374,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.5.3...HEAD
+[v0.5.3]: https://github.com/elixir-nx/explorer/compare/v0.5.2...v0.5.3
 [v0.5.2]: https://github.com/elixir-nx/explorer/compare/v0.5.1...v0.5.2
 [v0.5.1]: https://github.com/elixir-nx/explorer/compare/v0.5.0...v0.5.1
 [v0.5.0]: https://github.com/elixir-nx/explorer/compare/v0.4.0...v0.5.0
