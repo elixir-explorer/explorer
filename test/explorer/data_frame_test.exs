@@ -1969,21 +1969,23 @@ defmodule Explorer.DataFrameTest do
                a: [1],
                b: [2]
              }
+    end
 
-      df3 = DF.new(id: [1, 1], variable: ["1", "2"], value: [1.0, 2.0])
+    test "with a single id and names prefix" do
+      df1 = DF.new(id: [1, 1], variable: ["1", "2"], value: [1.0, 2.0])
 
-      df4 =
-        DF.pivot_wider(df3, "variable", "value",
+      df2 =
+        DF.pivot_wider(df1, "variable", "value",
           id_columns: ["id"],
           names_prefix: "column_"
         )
 
       assert DF.to_columns(
-               df4,
+               df2,
                atom_keys: true
              ) == %{id: [1], column_1: [1.0], column_2: [2.0]}
 
-      assert df4.names == ["id", "column_1", "column_2"]
+      assert df2.names == ["id", "column_1", "column_2"]
     end
 
     test "with a single id but with a nil value in the variable series" do
@@ -2025,6 +2027,20 @@ defmodule Explorer.DataFrameTest do
                b: [4, 5],
                a: [1, nil],
                b_1: [nil, 2]
+             }
+    end
+
+    test "with multiple id columns and one id equal to a variable name, but with prefix option" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], b: [4, 5])
+      df1 = DF.pivot_wider(df, "variable", "value", names_prefix: "col_")
+
+      assert DF.names(df1) == ["id", "b", "col_a", "col_b"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id: [1, 1],
+               b: [4, 5],
+               col_a: [1, nil],
+               col_b: [nil, 2]
              }
     end
 
