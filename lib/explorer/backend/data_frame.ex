@@ -175,7 +175,7 @@ defmodule Explorer.Backend.DataFrame do
               values_to :: column_name()
             ) :: df
   @callback put(df, out_df :: df(), column_name(), series()) :: df
-  @callback describe(df, out_df :: df(), percentiles :: option(list(float()))) :: df()
+  @callback describe(df, percentiles :: option(list(float()))) :: df()
 
   # Two or more table verbs
 

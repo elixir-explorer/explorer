@@ -426,8 +426,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def describe(%DataFrame{} = df, %DataFrame{} = out_df, percentiles) do
-    Shared.apply_dataframe(df, out_df, :df_describe, [percentiles])
+  def describe(%DataFrame{} = df, percentiles) do
+    case Native.df_describe(df.data, percentiles) do
+      {:ok, polars_df} -> Shared.create_dataframe(polars_df)
+      {:error, error} -> raise "cannot describe dataframe. Reason: #{inspect(error)}"
+    end
   end
 
   @impl true

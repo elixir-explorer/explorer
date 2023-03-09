@@ -25,7 +25,7 @@ thiserror = "1"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.26.1"
+version = "0.27.2"
 default-features = false
 features = [
   "checked_arithmetic",
@@ -45,6 +45,7 @@ features = [
   # JSON won't compile on RISCV and ARM 32 bits targets, so we disable in the "release" workflow.
   "json",
   "lazy",
+  "lazy_regex",
   "parquet",
   "performant",
   "pivot",
@@ -62,4 +63,4 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.26.1"
+version = "0.27.2"

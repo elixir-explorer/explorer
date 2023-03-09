@@ -558,6 +558,7 @@ pub fn expr_sort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
     let opts = SortOptions {
         descending,
         nulls_last,
+        multithreaded: false,
     };
 
     ExExpr::new(expr.sort_with(opts))
@@ -569,6 +570,7 @@ pub fn expr_argsort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr 
     let opts = SortOptions {
         descending,
         nulls_last,
+        multithreaded: false,
     };
 
     ExExpr::new(expr.arg_sort(opts).cast(DataType::Int64))
@@ -604,7 +606,7 @@ pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
 #[rustler::nif]
 pub fn expr_contains(expr: ExExpr, pattern: &str) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().contains(pattern))
+    ExExpr::new(expr.str().contains_literal(pattern.lit()))
 }
 
 #[rustler::nif]
