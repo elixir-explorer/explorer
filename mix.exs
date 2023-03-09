@@ -2,7 +2,7 @@ defmodule Explorer.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-nx/explorer"
-  @version "0.6.0-dev"
+  @version "0.5.4"
   @dev? String.ends_with?(@version, "-dev")
   @force_build? System.get_env("EXPLORER_BUILD") in ["1", "true"]
 
@@ -99,6 +99,7 @@ defmodule Explorer.MixProject do
         "datasets",
         "checksum-*.exs",
         "mix.exs",
+        "README.md",
         "LICENSE"
       ],
       licenses: ["MIT"],
