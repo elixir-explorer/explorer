@@ -503,14 +503,14 @@ pub fn df_pivot_wider(
     df: ExDataFrame,
     id_columns: Vec<&str>,
     pivot_column: &str,
-    values_column: &str,
+    values_column: Vec<&str>,
     names_prefix: Option<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let mut counter: HashMap<String, u16> = HashMap::new();
 
     let mut new_df = pivot_stable(
         &df,
-        [values_column],
+        values_column,
         id_columns.clone(),
         [pivot_column],
         PivotAgg::First,

@@ -2115,6 +2115,20 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "with multiple value columns expand the new column names" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], another_value: [6, 9])
+
+      df2 = DF.pivot_wider(df1, "variable", ["value", "another_value"])
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               value_a: [1],
+               value_b: [2],
+               another_value_a: [6],
+               another_value_b: [9]
+             }
+    end
+
     test "without an id column" do
       df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
 
