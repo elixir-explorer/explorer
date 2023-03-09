@@ -690,7 +690,7 @@ defmodule Explorer.Series do
   def to_tensor(series, tensor_opts \\ []) do
     case iotype(series) do
       {_, _} = type -> Nx.from_binary(to_binary(series), type, tensor_opts)
-      other -> raise ArgumentError, "cannot convert #{inspect(other)} series to tensor"
+      :none -> raise ArgumentError, "cannot convert #{inspect(series.dtype)} series to tensor"
     end
   end
 
@@ -911,10 +911,11 @@ defmodule Explorer.Series do
   def categories(%Series{dtype: dtype}), do: dtype_error("categories/1", dtype, [:category])
 
   @doc """
-  Apply categories to a series of integers.
+  Categorise a series of integers according to `categories`.
 
-  The first argument is a series of integers which are indexes into the
-  second argument. The second argument can be one of:
+  This function receives a series of integers and convert them into the
+  categories specified by the second argument. The second argument can
+  be one of:
 
     * a series with dtype `:category`. The integers will be indexes into
       the categories of the given series (returned by `categories/1`)
@@ -924,9 +925,26 @@ defmodule Explorer.Series do
 
     * a list of strings. The integers will be indexes into the list
 
+  If you have a series of strings and you want to convert them into categories,
+  invoke `cast(series, :category)` instead.
+
   ## Examples
 
-      iex> categories = Explorer.Series.from_list(["a", "b", "c"], dtype: :category)
+  If a categorical series is given as second argument, we will extract its
+  categories and map the integers into it:
+
+      iex> categories = Explorer.Series.from_list(["a", "b", "c", nil, "a"], dtype: :category)
+      iex> indexes = Explorer.Series.from_list([0, 2, 1, 0, 2])
+      iex> Explorer.Series.categorise(indexes, categories)
+      #Explorer.Series<
+        Polars[5]
+        category ["a", "c", "b", "a", "c"]
+      >
+
+  Otherwise, if a list of strings or a series of strings is given, they are
+  considered to be the categories series itself:
+
+      iex> categories = Explorer.Series.from_list(["a", "b", "c"])
       iex> indexes = Explorer.Series.from_list([0, 2, 1, 0, 2])
       iex> Explorer.Series.categorise(indexes, categories)
       #Explorer.Series<
@@ -943,21 +961,11 @@ defmodule Explorer.Series do
 
   Elements that are not mapped to a category will become `nil`:
 
-      iex> indexes = Explorer.Series.from_list([0, 2, 1, 0, 2, 7])
+      iex> indexes = Explorer.Series.from_list([0, 2, nil, 0, 2, 7])
       iex> Explorer.Series.categorise(indexes, ["a", "b", "c"])
       #Explorer.Series<
         Polars[6]
-        category ["a", "c", "b", "a", "c", nil]
-      >
-
-  A categorical series can have duplicated and nil values:
-
-      iex> categories = Explorer.Series.from_list(["a", "b", "c", nil, "a"], dtype: :category)
-      iex> indexes = Explorer.Series.from_list([0, 2, 1, 0, 2])
-      iex> Explorer.Series.categorise(indexes, categories)
-      #Explorer.Series<
-        Polars[5]
-        category ["a", "c", "b", "a", "c"]
+        category ["a", "c", nil, "a", "c", nil]
       >
 
   """
