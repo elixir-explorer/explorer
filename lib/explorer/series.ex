@@ -687,10 +687,17 @@ defmodule Explorer.Series do
   """
   @doc type: :conversion
   @spec to_tensor(series :: Series.t(), tensor_opts :: Keyword.t()) :: Nx.Tensor.t()
-  def to_tensor(series, tensor_opts \\ []) do
+  def to_tensor(%Series{dtype: dtype} = series, tensor_opts \\ []) do
     case iotype(series) do
-      {_, _} = type -> Nx.from_binary(to_binary(series), type, tensor_opts)
-      :none -> raise ArgumentError, "cannot convert #{inspect(series.dtype)} series to tensor"
+      {_, _} = type ->
+        Nx.from_binary(to_binary(series), type, tensor_opts)
+
+      :none when Kernel.in(dtype, [:string, :binary]) ->
+        raise ArgumentError,
+              "cannot convert #{inspect(dtype)} series to tensor (consider casting the series to a :category type before)"
+
+      :none ->
+        raise ArgumentError, "cannot convert #{inspect(dtype)} series to tensor"
     end
   end
 
