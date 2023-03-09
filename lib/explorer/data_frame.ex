@@ -3883,6 +3883,31 @@ defmodule Explorer.DataFrame do
         col_length_cm integer [64, 40]
       >
 
+  Multiple columns are accepted for the `values_from` parameter, but the behaviour is slightly
+  different for the naming of new columns in the resultant dataframe. The new columns are going
+  to be prefixed by the name of the original value column, followed by an underscore and the
+  name of the variable.
+
+      iex> df = Explorer.DataFrame.new(
+      iex>   product_id: [1, 1, 1, 1, 2, 2, 2, 2],
+      iex>   property: ["product_id", "width_cm", "height_cm", "length_cm", "product_id", "width_cm", "height_cm", "length_cm"],
+      iex>   property_value: [1, 42, 40, 64, 2, 35, 20, 40],
+      iex>   another_value: [1, 43, 41, 65, 2, 36, 21, 42]
+      iex> )
+      iex> Explorer.DataFrame.pivot_wider(df, "property", ["property_value", "another_value"])
+      #Explorer.DataFrame<
+        Polars[2 x 9]
+        product_id integer [1, 2]
+        property_value_product_id integer [1, 2]
+        property_value_width_cm integer [42, 35]
+        property_value_height_cm integer [40, 20]
+        property_value_length_cm integer [64, 40]
+        another_value_product_id integer [1, 2]
+        another_value_width_cm integer [43, 36]
+        another_value_height_cm integer [41, 21]
+        another_value_length_cm integer [65, 42]
+      >
+
   ## Grouped examples
 
   Now using the same idea, we can see that there is not much difference for grouped dataframes.
@@ -3931,23 +3956,32 @@ defmodule Explorer.DataFrame do
   @spec pivot_wider(
           df :: DataFrame.t(),
           names_from :: column(),
-          values_from :: column(),
+          values_from :: column() | columns(),
           opts ::
             Keyword.t()
         ) :: DataFrame.t()
-  def pivot_wider(df, names_from, values_from, opts \\ []) do
+
+  def pivot_wider(df, names_from, values_from, opts \\ [])
+
+  def pivot_wider(df, names_from, values_from, opts) when is_column(values_from) do
+    pivot_wider(df, names_from, [values_from], opts)
+  end
+
+  def pivot_wider(df, names_from, values_from, opts) when is_list(values_from) do
     opts = Keyword.validate!(opts, id_columns: 0..-1//1, names_prefix: "")
 
-    [values_from, names_from] = to_existing_columns(df, [values_from, names_from])
+    [names_from | values_from] = to_existing_columns(df, [names_from | values_from])
     dtypes = df.dtypes
 
-    unless dtypes[values_from] in [:integer, :float, :date, :datetime] do
-      raise ArgumentError,
-            "the values_from column must be numeric, but found #{dtypes[values_from]}"
+    for column <- values_from do
+      unless dtypes[column] in [:integer, :float, :date, :datetime] do
+        raise ArgumentError,
+              "the values_from column must be numeric, but found #{dtypes[values_from]}"
+      end
     end
 
     id_columns =
-      for column_name <- to_existing_columns(df, opts[:id_columns]) -- [names_from, values_from],
+      for column_name <- to_existing_columns(df, opts[:id_columns]) -- [names_from | values_from],
           df.dtypes[column_name] != :float,
           do: column_name
 
