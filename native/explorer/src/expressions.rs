@@ -9,7 +9,7 @@ use polars::prelude::{col, concat_str, when, IntoLazy, LiteralValue, SortOptions
 use polars::prelude::{DataType, Expr, Literal};
 
 use crate::datatypes::{ExDate, ExDateTime};
-use crate::series::{cast_str_to_dtype, cast_str_to_f64, rolling_opts};
+use crate::series::{cast_str_to_dtype, cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 
 // Useful to get an ExExpr vec into a vec of expressions.
@@ -543,6 +543,19 @@ pub fn expr_cumulative_max(data: ExExpr, reverse: bool) -> ExExpr {
 pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
     ExExpr::new(expr.cumsum(reverse))
+}
+
+#[rustler::nif]
+pub fn ewm_mean(
+    data: ExExpr,
+    alpha: f64,
+    adjust: bool,
+    min_periods: usize,
+    ignore_nulls: bool,
+) -> ExExpr {
+    let expr = data.clone_inner();
+    let opts = ewm_opts(alpha, adjust, min_periods, ignore_nulls);
+    ExExpr::new(expr.ewm_mean(opts))
 }
 
 #[rustler::nif]

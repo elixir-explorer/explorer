@@ -646,6 +646,29 @@ pub fn rolling_opts(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_ewm_mean(
+    series: ExSeries,
+    alpha: f64,
+    adjust: bool,
+    min_periods: usize,
+    ignore_nulls: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let opts = ewm_opts(alpha, adjust, min_periods, ignore_nulls);
+    let s1 = series.ewm_mean(opts)?;
+    Ok(ExSeries::new(s1))
+}
+
+pub fn ewm_opts(alpha: f64, adjust: bool, min_periods: usize, ignore_nulls: bool) -> EWMOptions {
+    EWMOptions {
+        alpha,
+        adjust,
+        min_periods,
+        ignore_nulls,
+        ..Default::default()
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_to_list(env: Env, data: ExSeries) -> Result<Term, ExplorerError> {
     encoding::list_from_series(data, env)
 }

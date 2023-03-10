@@ -3149,6 +3149,48 @@ defmodule Explorer.Series do
     Keyword.merge(defaults, opts, fn _key, _left, right -> right end)
   end
 
+  @doc """
+  Calculate the exponentially weighted moving average, given smoothing factor alpha.
+
+  ## Options
+
+    * `:alpha` - Optional smoothing factor which specifies the imporance given
+      to most recent observations. It is a value such that, 0 < alpha <= 1. Defaults to 0.5.
+
+    * `:adjust` - If set to true, it corrects the bias introduced by smoothing process.
+      Defaults to `true`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. Defaults to `1`.
+
+    * `:ignore_nulls` - If set to true, it ignore nulls in the calculation. Defaults to `true`.
+
+  ## Examples
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.ewm_mean(s)
+      #Explorer.Series<
+        Polars[10]
+        float [1.0, 1.6666666666666667, 2.4285714285714284, 3.2666666666666666, 4.161290322580645, 5.095238095238095, 6.05511811023622, 7.031372549019608, 8.017612524461839, 9.009775171065494]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.ewm_mean(s, alpha: 0.1)
+      #Explorer.Series<
+        Polars[10]
+        float [1.0, 1.5263157894736843, 2.070110701107011, 2.6312881651642916, 3.2097140484969833, 3.805217699371904, 4.4175932632947745, 5.04660125012293, 5.6919703293830874, 6.3533993278762955]
+      >
+  """
+  @doc type: :window
+  def ewm_mean(series, opts \\ []),
+    do: Shared.apply_impl(series, :ewm_mean, [ewm_opts_with_defaults(opts)])
+
+  defp ewm_opts_with_defaults(opts) do
+    defaults = [alpha: 0.5, adjust: true, min_periods: 1, ignore_nulls: true]
+
+    Keyword.merge(defaults, opts, fn _key, _left, right -> right end)
+  end
+
   # Missing values
 
   @doc """
