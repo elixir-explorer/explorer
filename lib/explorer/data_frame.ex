@@ -4790,30 +4790,29 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df)
       #Explorer.DataFrame<
-        Polars[8 x 4]
-        describe string ["count", "mean", "std", "min", "25%", ...]
-        a float [3.0, nil, nil, nil, nil, ...]
-        b float [3.0, 2.0, 1.0, 1.0, 1.5, ...]
-        c float [3.0, nil, nil, nil, nil, ...]
+        Polars[9 x 4]
+        describe string ["count", "null_count", "mean", "std", "min", ...]
+        a string ["3", "1", nil, nil, "d", ...]
+        b float [3.0, 0.0, 2.0, 1.0, 1.0, ...]
+        c string ["3", "0", nil, nil, "a", ...]
       >
 
       iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df, percentiles: [0.3, 0.5, 0.8])
       #Explorer.DataFrame<
-        Polars[8 x 4]
-        describe string ["count", "mean", "std", "min", "30%", ...]
-        a float [3.0, nil, nil, nil, nil, ...]
-        b float [3.0, 2.0, 1.0, 1.0, 1.6, ...]
-        c float [3.0, nil, nil, nil, nil, ...]
+        Polars[9 x 4]
+        describe string ["count", "null_count", "mean", "std", "min", ...]
+        a string ["3", "1", nil, nil, "d", ...]
+        b float [3.0, 0.0, 2.0, 1.0, 1.0, ...]
+        c string ["3", "0", nil, nil, "a", ...]
       >
   """
   @doc type: :single
   @spec describe(df :: DataFrame.t(), Keyword.t()) :: DataFrame.t()
   def describe(df, opts \\ []) do
     opts = Keyword.validate!(opts, percentiles: nil)
-    types = for name <- df.names, into: %{"describe" => :string}, do: {name, :float}
-    out_df = %{df | names: ["describe" | df.names], dtypes: types, groups: []}
-    Shared.apply_impl(df, :describe, [out_df, opts[:percentiles]])
+
+    Shared.apply_impl(df, :describe, [opts[:percentiles]])
   end
 
   # Helpers

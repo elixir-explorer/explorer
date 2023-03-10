@@ -19,6 +19,8 @@ use std::result::Result;
 use crate::dataframe::normalize_numeric_dtypes;
 use crate::datatypes::ExParquetCompression;
 use crate::{ExDataFrame, ExplorerError};
+// Note that we have two types of "Compression" for IPC: this one and IpcCompresion.
+use polars::export::arrow::io::ipc::write::Compression;
 
 fn finish_reader<R>(reader: impl SerReader<R>) -> Result<ExDataFrame, ExplorerError>
 where
@@ -82,7 +84,7 @@ pub fn schema_from_dtypes_pairs(dtypes: Vec<(&str, &str)>) -> Result<Schema, Exp
     let mut schema = Schema::new();
     for (name, dtype_str) in dtypes {
         let dtype = dtype_from_str(dtype_str)?;
-        schema.with_column(name.to_string(), dtype)
+        schema.with_column(name.to_string(), dtype);
     }
     Ok(schema)
 }
@@ -353,8 +355,8 @@ pub fn df_to_ipc_stream(
 ) -> Result<(), ExplorerError> {
     // Select the compression algorithm.
     let compression = match compression {
-        Some("lz4") => Some(IpcCompression::LZ4),
-        Some("zstd") => Some(IpcCompression::ZSTD),
+        Some("lz4") => Some(Compression::LZ4),
+        Some("zstd") => Some(Compression::ZSTD),
         _ => None,
     };
 
@@ -375,8 +377,8 @@ pub fn df_dump_ipc_stream<'a>(
 
     // Select the compression algorithm.
     let compression = match compression {
-        Some("lz4") => Some(IpcCompression::LZ4),
-        Some("zstd") => Some(IpcCompression::ZSTD),
+        Some("lz4") => Some(Compression::LZ4),
+        Some("zstd") => Some(Compression::ZSTD),
         _ => None,
     };
 

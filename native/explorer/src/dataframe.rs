@@ -391,7 +391,7 @@ pub fn df_distinct(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_to_dummies(df: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
-    let dummies = df.select(selection).and_then(|df| df.to_dummies())?;
+    let dummies = df.select(selection).and_then(|df| df.to_dummies(None))?;
     let series = dummies
         .iter()
         .map(|series| series.cast(&DataType::Int64).unwrap())
@@ -413,7 +413,7 @@ pub fn df_describe(
     df: ExDataFrame,
     percentiles: Option<Vec<f64>>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = df.describe(percentiles.as_deref());
+    let new_df = df.describe(percentiles.as_deref())?;
 
     Ok(ExDataFrame::new(new_df))
 }
@@ -515,6 +515,7 @@ pub fn df_pivot_wider(
         [pivot_column],
         PivotAgg::First,
         false,
+        None,
     )?;
     let mut new_names = new_df.get_column_names_owned();
 

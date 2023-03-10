@@ -360,7 +360,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   not_available_funs = [
-    describe: 3,
+    describe: 2,
     dummies: 3,
     dump_csv: 3,
     dump_ipc: 2,

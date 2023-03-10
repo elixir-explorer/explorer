@@ -283,6 +283,7 @@ pub fn s_sort(
     let opts = SortOptions {
         descending,
         nulls_last,
+        multithreaded: false,
     };
     Ok(ExSeries::new(series.sort_with(opts)))
 }
@@ -296,6 +297,7 @@ pub fn s_argsort(
     let opts = SortOptions {
         descending,
         nulls_last,
+        multithreaded: false,
     };
     let indices = series.argsort(opts).cast(&DataType::Int64)?;
     Ok(ExSeries::new(indices))
@@ -516,8 +518,13 @@ pub fn s_fill_missing_with_bin(
 ) -> Result<ExSeries, ExplorerError> {
     let s = match series.dtype() {
         DataType::Utf8 => {
-            if let Ok(string) = std::str::from_utf8(&binary) {
-                series.utf8()?.fill_null_with_values(string)?.into_series()
+            if let Ok(_string) = std::str::from_utf8(&binary) {
+                // This casting is necessary just because it's not possible to fill UTF8 series.
+                series
+                    .cast(&DataType::Binary)?
+                    .binary()?
+                    .fill_null_with_values(&binary)?
+                    .cast(&DataType::Utf8)?
             } else {
                 return Err(ExplorerError::Other("cannot cast to string".into()));
             }
