@@ -3163,7 +3163,7 @@ defmodule Explorer.Series do
     * `:min_periods` - The number of values in the window that should be non-nil
       before computing a result. Defaults to `1`.
 
-    * `:ignore_nulls` - If set to true, it ignore nulls in the calculation. Defaults to `true`.
+    * `:ignore_nils` - If set to true, it ignore nulls in the calculation. Defaults to `true`.
 
   ## Examples
 
@@ -3186,9 +3186,8 @@ defmodule Explorer.Series do
     do: Shared.apply_impl(series, :ewm_mean, [ewm_opts_with_defaults(opts)])
 
   defp ewm_opts_with_defaults(opts) do
-    defaults = [alpha: 0.5, adjust: true, min_periods: 1, ignore_nulls: true]
-
-    Keyword.merge(defaults, opts, fn _key, _left, right -> right end)
+    defaults = [alpha: 0.5, adjust: true, min_periods: 1, ignore_nils: true]
+    Keyword.validate!(opts, defaults)
   end
 
   # Missing values

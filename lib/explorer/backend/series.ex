@@ -145,7 +145,7 @@ defmodule Explorer.Backend.Series do
           {:alpha, float()}
           | {:adjust, boolean()}
           | {:min_periods, integer()}
-          | {:ignore_nulls, boolean()}
+          | {:ignore_nils, boolean()}
 
   @callback ewm_mean(s, [ewm_option()]) :: s
 

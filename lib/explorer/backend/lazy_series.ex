@@ -494,9 +494,9 @@ defmodule Explorer.Backend.LazySeries do
     alpha = Keyword.fetch!(opts, :alpha)
     adjust = Keyword.fetch!(opts, :adjust)
     min_periods = Keyword.fetch!(opts, :min_periods)
-    ignore_nulls = Keyword.fetch!(opts, :ignore_nulls)
+    ignore_nils = Keyword.fetch!(opts, :ignore_nils)
 
-    args = [lazy_series!(series), alpha, adjust, min_periods, ignore_nulls]
+    args = [lazy_series!(series), alpha, adjust, min_periods, ignore_nils]
 
     if aggregations?(args), do: raise_agg_inside_window(:ewm_mean)
 
