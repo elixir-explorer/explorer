@@ -3145,8 +3145,7 @@ defmodule Explorer.Series do
 
   defp window_opts_with_defaults(opts) do
     defaults = [weights: nil, min_periods: 1, center: false]
-
-    Keyword.merge(defaults, opts, fn _key, _left, right -> right end)
+    Keyword.validate!(opts, defaults)
   end
 
   # Missing values
