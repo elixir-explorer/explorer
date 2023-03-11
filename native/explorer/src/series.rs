@@ -520,11 +520,13 @@ pub fn s_fill_missing_with_bin(
         DataType::Utf8 => {
             if let Ok(_string) = std::str::from_utf8(&binary) {
                 // This casting is necessary just because it's not possible to fill UTF8 series.
-                series
-                    .cast(&DataType::Binary)?
-                    .binary()?
-                    .fill_null_with_values(&binary)?
-                    .cast(&DataType::Utf8)?
+                unsafe {
+                    series
+                        .cast_unchecked(&DataType::Binary)?
+                        .binary()?
+                        .fill_null_with_values(&binary)?
+                        .cast_unchecked(&DataType::Utf8)?
+                }
             } else {
                 return Err(ExplorerError::Other("cannot cast to string".into()));
             }
