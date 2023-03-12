@@ -3167,18 +3167,18 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.ewm_mean(s)
       #Explorer.Series<
-        Polars[10]
-        float [1.0, 1.6666666666666667, 2.4285714285714284, 3.2666666666666666, 4.161290322580645, 5.095238095238095, 6.05511811023622, 7.031372549019608, 8.017612524461839, 9.009775171065494]
+        Polars[5]
+        float [1.0, 1.6666666666666667, 2.4285714285714284, 3.2666666666666666, 4.161290322580645]
       >
 
-      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.ewm_mean(s, alpha: 0.1)
       #Explorer.Series<
-        Polars[10]
-        float [1.0, 1.5263157894736843, 2.070110701107011, 2.6312881651642916, 3.2097140484969833, 3.805217699371904, 4.4175932632947745, 5.04660125012293, 5.6919703293830874, 6.3533993278762955]
+        Polars[5]
+        float [1.0, 1.5263157894736843, 2.070110701107011, 2.6312881651642916, 3.2097140484969833]
       >
   """
   @doc type: :window
