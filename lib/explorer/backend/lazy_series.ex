@@ -365,11 +365,7 @@ defmodule Explorer.Backend.LazySeries do
 
   for op <- @window_fun_operations do
     @impl true
-    def unquote(op)(%Series{} = series, window_size, opts) do
-      weights = Keyword.fetch!(opts, :weights)
-      min_periods = Keyword.fetch!(opts, :min_periods)
-      center = Keyword.fetch!(opts, :center)
-
+    def unquote(op)(%Series{} = series, window_size, weights, min_periods, center) do
       args = [lazy_series!(series), window_size, weights, min_periods, center]
 
       if aggregations?(args), do: raise_agg_inside_window(unquote(op))
