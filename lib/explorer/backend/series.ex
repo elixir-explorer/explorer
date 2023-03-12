@@ -129,15 +129,34 @@ defmodule Explorer.Backend.Series do
 
   # Rolling
 
-  @type window_option ::
-          {:weights, [float()] | nil}
-          | {:min_periods, integer() | nil}
-          | {:center, boolean()}
-
-  @callback window_sum(s, window_size :: integer(), [window_option()]) :: s
-  @callback window_min(s, window_size :: integer(), [window_option()]) :: s
-  @callback window_max(s, window_size :: integer(), [window_option()]) :: s
-  @callback window_mean(s, window_size :: integer(), [window_option()]) :: s
+  @callback window_sum(
+              s,
+              window_size :: integer(),
+              weights :: [float()] | nil,
+              min_periods :: integer() | nil,
+              center :: boolean()
+            ) :: s
+  @callback window_min(
+              s,
+              window_size :: integer(),
+              weights :: [float()] | nil,
+              min_periods :: integer() | nil,
+              center :: boolean()
+            ) :: s
+  @callback window_max(
+              s,
+              window_size :: integer(),
+              weights :: [float()] | nil,
+              min_periods :: integer() | nil,
+              center :: boolean()
+            ) :: s
+  @callback window_mean(
+              s,
+              window_size :: integer(),
+              weights :: [float()] | nil,
+              min_periods :: integer() | nil,
+              center :: boolean()
+            ) :: s
 
   # Exponentially weighted windows
 

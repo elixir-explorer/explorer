@@ -3042,7 +3042,7 @@ defmodule Explorer.Series do
   """
   @doc type: :window
   def window_sum(series, window_size, opts \\ []),
-    do: Shared.apply_impl(series, :window_sum, [window_size, window_opts_with_defaults(opts)])
+    do: Shared.apply_impl(series, :window_sum, [window_size | window_args(opts)])
 
   @doc """
   Calculate the rolling mean, given a window size and optional list of weights.
@@ -3075,7 +3075,7 @@ defmodule Explorer.Series do
   """
   @doc type: :window
   def window_mean(series, window_size, opts \\ []),
-    do: Shared.apply_impl(series, :window_mean, [window_size, window_opts_with_defaults(opts)])
+    do: Shared.apply_impl(series, :window_mean, [window_size | window_args(opts)])
 
   @doc """
   Calculate the rolling min, given a window size and optional list of weights.
@@ -3108,7 +3108,7 @@ defmodule Explorer.Series do
   """
   @doc type: :window
   def window_min(series, window_size, opts \\ []),
-    do: Shared.apply_impl(series, :window_min, [window_size, window_opts_with_defaults(opts)])
+    do: Shared.apply_impl(series, :window_min, [window_size | window_args(opts)])
 
   @doc """
   Calculate the rolling max, given a window size and optional list of weights.
@@ -3141,11 +3141,11 @@ defmodule Explorer.Series do
   """
   @doc type: :window
   def window_max(series, window_size, opts \\ []),
-    do: Shared.apply_impl(series, :window_max, [window_size, window_opts_with_defaults(opts)])
+    do: Shared.apply_impl(series, :window_max, [window_size | window_args(opts)])
 
-  defp window_opts_with_defaults(opts) do
-    defaults = [weights: nil, min_periods: 1, center: false]
-    Keyword.validate!(opts, defaults)
+  defp window_args(opts) do
+    opts = Keyword.validate!(opts, weights: nil, min_periods: 1, center: false)
+    [opts[:weights], opts[:min_periods], opts[:center]]
   end
 
   @doc """

@@ -376,30 +376,26 @@ defmodule Explorer.PolarsBackend.Series do
   # Window
 
   @impl true
-  def window_max(series, window_size, opts) do
-    window_function(:s_window_max, series, window_size, opts)
+  def window_max(series, window_size, weights, min_periods, center) do
+    window_function(:s_window_max, series, window_size, weights, min_periods, center)
   end
 
   @impl true
-  def window_mean(series, window_size, opts) do
-    window_function(:s_window_mean, series, window_size, opts)
+  def window_mean(series, window_size, weights, min_periods, center) do
+    window_function(:s_window_mean, series, window_size, weights, min_periods, center)
   end
 
   @impl true
-  def window_min(series, window_size, opts) do
-    window_function(:s_window_min, series, window_size, opts)
+  def window_min(series, window_size, weights, min_periods, center) do
+    window_function(:s_window_min, series, window_size, weights, min_periods, center)
   end
 
   @impl true
-  def window_sum(series, window_size, opts) do
-    window_function(:s_window_sum, series, window_size, opts)
+  def window_sum(series, window_size, weights, min_periods, center) do
+    window_function(:s_window_sum, series, window_size, weights, min_periods, center)
   end
 
-  defp window_function(operation, series, window_size, opts) do
-    weights = Keyword.fetch!(opts, :weights)
-    min_periods = Keyword.fetch!(opts, :min_periods)
-    center = Keyword.fetch!(opts, :center)
-
+  defp window_function(operation, series, window_size, weights, min_periods, center) do
     Shared.apply_series(series, operation, [window_size, weights, min_periods, center])
   end
 
