@@ -3148,6 +3148,50 @@ defmodule Explorer.Series do
     Keyword.validate!(opts, defaults)
   end
 
+  @doc """
+  Calculate the exponentially weighted moving average, given smoothing factor alpha.
+
+  ## Options
+
+    * `:alpha` - Optional smoothing factor which specifies the imporance given
+      to most recent observations. It is a value such that, 0 < alpha <= 1. Defaults to 0.5.
+
+    * `:adjust` - If set to true, it corrects the bias introduced by smoothing process.
+      Defaults to `true`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. Defaults to `1`.
+
+    * `:ignore_nils` - If set to true, it ignore nulls in the calculation. Defaults to `true`.
+
+  ## Examples
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.ewm_mean(s)
+      #Explorer.Series<
+        Polars[5]
+        float [1.0, 1.6666666666666667, 2.4285714285714284, 3.2666666666666666, 4.161290322580645]
+      >
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.ewm_mean(s, alpha: 0.1)
+      #Explorer.Series<
+        Polars[5]
+        float [1.0, 1.5263157894736843, 2.070110701107011, 2.6312881651642916, 3.2097140484969833]
+      >
+  """
+  @doc type: :window
+  def ewm_mean(series, opts \\ []) do
+    opts = Keyword.validate!(opts, alpha: 0.5, adjust: true, min_periods: 1, ignore_nils: true)
+
+    Shared.apply_impl(series, :ewm_mean, [
+      opts[:alpha],
+      opts[:adjust],
+      opts[:min_periods],
+      opts[:ignore_nils]
+    ])
+  end
+
   # Missing values
 
   @doc """

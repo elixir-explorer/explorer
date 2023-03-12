@@ -139,6 +139,16 @@ defmodule Explorer.Backend.Series do
   @callback window_max(s, window_size :: integer(), [window_option()]) :: s
   @callback window_mean(s, window_size :: integer(), [window_option()]) :: s
 
+  # Exponentially weighted windows
+
+  @callback ewm_mean(
+              s,
+              alpha :: float(),
+              adjust :: boolean(),
+              min_periods :: integer(),
+              ignore_nils :: boolean()
+            ) :: s
+
   # Nulls
 
   @callback fill_missing_with_strategy(s, :backward | :forward | :min | :max | :mean) :: s

@@ -81,6 +81,7 @@ defmodule Explorer.PolarsBackend.Expression do
     window_mean: 5,
     window_min: 5,
     window_sum: 5,
+    ewm_mean: 5,
 
     # Strings
     contains: 2,

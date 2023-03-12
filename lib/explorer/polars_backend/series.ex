@@ -403,6 +403,11 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, operation, [window_size, weights, min_periods, center])
   end
 
+  @impl true
+  def ewm_mean(series, alpha, adjust, min_periods, ignore_nils) do
+    Shared.apply_series(series, :s_ewm_mean, [alpha, adjust, min_periods, ignore_nils])
+  end
+
   # Missing values
 
   @impl true

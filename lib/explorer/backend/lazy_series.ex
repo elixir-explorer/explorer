@@ -52,6 +52,7 @@ defmodule Explorer.Backend.LazySeries do
     window_mean: 5,
     window_min: 5,
     window_sum: 5,
+    ewm_mean: 5,
     # Transformation
     column: 1,
     reverse: 1,
@@ -486,6 +487,17 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:to_time, [lazy_series!(s)])
 
     Backend.Series.new(data, :time)
+  end
+
+  @impl true
+  def ewm_mean(%Series{} = series, alpha, adjust, min_periods, ignore_nils) do
+    args = [lazy_series!(series), alpha, adjust, min_periods, ignore_nils]
+
+    if aggregations?(args), do: raise_agg_inside_window(:ewm_mean)
+
+    data = new(:ewm_mean, args, false)
+
+    Backend.Series.new(data, :float)
   end
 
   defp dtype_for_agg_operation(op, _) when op in [:count, :nil_count, :n_distinct], do: :integer
