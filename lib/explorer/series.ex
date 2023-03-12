@@ -3182,12 +3182,15 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :window
-  def ewm_mean(series, opts \\ []),
-    do: Shared.apply_impl(series, :ewm_mean, [ewm_opts_with_defaults(opts)])
+  def ewm_mean(series, opts \\ []) do
+    opts = Keyword.validate!(opts, alpha: 0.5, adjust: true, min_periods: 1, ignore_nils: true)
 
-  defp ewm_opts_with_defaults(opts) do
-    defaults = [alpha: 0.5, adjust: true, min_periods: 1, ignore_nils: true]
-    Keyword.validate!(opts, defaults)
+    Shared.apply_impl(series, :ewm_mean, [
+      opts[:alpha],
+      opts[:adjust],
+      opts[:min_periods],
+      opts[:ignore_nils]
+    ])
   end
 
   # Missing values

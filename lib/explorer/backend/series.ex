@@ -141,13 +141,13 @@ defmodule Explorer.Backend.Series do
 
   # Exponentially weighted windows
 
-  @type ewm_option() ::
-          {:alpha, float()}
-          | {:adjust, boolean()}
-          | {:min_periods, integer()}
-          | {:ignore_nils, boolean()}
-
-  @callback ewm_mean(s, [ewm_option()]) :: s
+  @callback ewm_mean(
+              s,
+              alpha :: float(),
+              adjust :: boolean(),
+              min_periods :: integer(),
+              ignore_nils :: boolean()
+            ) :: s
 
   # Nulls
 

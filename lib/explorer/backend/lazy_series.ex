@@ -490,12 +490,7 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def ewm_mean(%Series{} = series, opts) do
-    alpha = Keyword.fetch!(opts, :alpha)
-    adjust = Keyword.fetch!(opts, :adjust)
-    min_periods = Keyword.fetch!(opts, :min_periods)
-    ignore_nils = Keyword.fetch!(opts, :ignore_nils)
-
+  def ewm_mean(%Series{} = series, alpha, adjust, min_periods, ignore_nils) do
     args = [lazy_series!(series), alpha, adjust, min_periods, ignore_nils]
 
     if aggregations?(args), do: raise_agg_inside_window(:ewm_mean)

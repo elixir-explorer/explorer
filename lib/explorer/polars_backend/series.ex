@@ -404,12 +404,7 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def ewm_mean(series, opts) do
-    alpha = Keyword.fetch!(opts, :alpha)
-    adjust = Keyword.fetch!(opts, :adjust)
-    min_periods = Keyword.fetch!(opts, :min_periods)
-    ignore_nils = Keyword.fetch!(opts, :ignore_nils)
-
+  def ewm_mean(series, alpha, adjust, min_periods, ignore_nils) do
     Shared.apply_series(series, :s_ewm_mean, [alpha, adjust, min_periods, ignore_nils])
   end
 
