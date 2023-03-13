@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.5.5] - 2023-03-13
+
+### Added
+
+- Add support for multiple value columns in pivot wider.
+  The resultant dataframe that is created from this type of pivoting is going
+  to have columns with the names prefixed by the original value column, followed
+  by an underscore and the name of the variable.
+
+- Add `Explorer.Series.ewm_mean/2` for calculating exponentially weighted moving
+  average.
+
+### Changed
+
+- Change the `Explorer.Backend.DataFrame`'s `pivot_wider` callback to work with
+  multiple columns instead of only one.
+
+- Change the `Explorer.Backend.DataFrame`'s `window_*` callbacks to work with
+  variables instead of keyword args. This is needed to make explicit when a backend
+  is not implementing an option.
+
+- Change the `Explorer.Backend.DataFrame`'s `describe` callback and remove the
+  need for an "out df", since we won't have a lazy version of that funcion.
+
+- This shouldn't affect the API, but we had an update in Polars.
+  It is now using `v0.27.2`. For further details, see:
+  [Rust Polars 0.27.0](https://github.com/pola-rs/polars/releases/tag/rs-0.27.0).
+
+### Fixed
+
+- Provide hints when converting string/binary series to tensors.
+
+- Add libatomic as a link to the generated NIF. This is needed to fix the load
+  of the Explorer NIF when running on ARM 32 bits machines like the Pi 3.
+  See the [original issue](https://github.com/philss/rustler_precompiled/issues/53)
+
 ## [v0.5.4] - 2023-03-09
 
 ### Fixed
@@ -382,7 +418,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.5.4...HEAD
+[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.5.5...HEAD
+[v0.5.5]: https://github.com/elixir-nx/explorer/compare/v0.5.4...v0.5.5
 [v0.5.4]: https://github.com/elixir-nx/explorer/compare/v0.5.3...v0.5.4
 [v0.5.3]: https://github.com/elixir-nx/explorer/compare/v0.5.2...v0.5.3
 [v0.5.2]: https://github.com/elixir-nx/explorer/compare/v0.5.1...v0.5.2
