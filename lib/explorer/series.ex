@@ -1079,7 +1079,7 @@ defmodule Explorer.Series do
   `on_true` or `on_false`.
 
   `predicate` must be a boolean series. `on_true` and `on_false` must be
-  a series of the same length as `pred`.
+  a series of the same size as `pred` or one of them can be a series of size 1.
   """
   @doc type: :element_wise
   @spec select(predicate :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) ::

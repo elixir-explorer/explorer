@@ -150,14 +150,14 @@ defmodule Explorer.PolarsBackend.Series do
     on_true_size = size(on_true)
     on_false_size = size(on_false)
 
-    if on_true_size != on_false_size do
+    if on_true_size != on_false_size and on_true_size != 1 and on_false_size != 1 do
       raise ArgumentError,
-            "series in select/3 must have the same size, got: #{on_true_size} and #{on_false_size}"
+            "series in select/3 must have the same size or size of 1, got: #{on_true_size} and #{on_false_size}"
     end
 
-    if predicate_size != 1 and predicate_size != on_true_size do
+    if predicate_size != 1 and predicate_size != on_true_size and predicate_size != on_false_size do
       raise ArgumentError,
-            "predicate in select/3 must have size of 1 or have the same size as operands, got: #{predicate_size} and #{on_true_size}"
+            "predicate in select/3 must have size of 1 or have the same size as operands, got: #{predicate_size} and #{Enum.max([on_true_size, on_false_size])}"
     end
 
     Shared.apply_series(predicate, :s_select, [on_true.data, on_false.data])

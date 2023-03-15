@@ -2601,6 +2601,24 @@ defmodule Explorer.SeriesTest do
 
       assert Series.select(false_predicate, on_true, on_false) |> Series.to_list() == [5, 3, 2]
     end
+
+    test "select errors if on_true or on_false is not same size as predicate" do
+      predicate = Series.from_list([true, false, true, false])
+      on_true = Series.from_list([1, 2, 3, 4])
+      on_false = Series.from_list([5, 4, 3, 2, 1])
+
+      assert_raise ArgumentError, fn ->
+        Series.select(predicate, on_true, on_false)
+      end
+    end
+
+    test "select allows if on_true or on_false is not same size as predicate, but one of them is of size 1" do
+      predicate = Series.from_list([true, false, true, false])
+      on_true = Series.from_list([1, 2, 3, 4])
+      on_false = Series.from_list([0])
+
+      assert Series.select(predicate, on_true, on_false) |> Series.to_list() == [1, 0, 3, 0]
+    end
   end
 
   describe "sort/2" do
