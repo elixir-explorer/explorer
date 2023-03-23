@@ -713,6 +713,7 @@ defmodule Explorer.Backend.LazySeries do
     categorise: 2,
     frequencies: 1,
     mask: 2,
+    log: 2,
     to_iovec: 1,
     to_list: 1
   ]

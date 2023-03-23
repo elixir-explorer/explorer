@@ -33,6 +33,7 @@ use expressions::*;
 use lazyframe::io::*;
 use lazyframe::*;
 use series::*;
+use series::log::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExDataFrameRef, env);
@@ -290,6 +291,8 @@ rustler::init!(
         s_name,
         s_nil_count,
         s_not,
+        s_log_f_rhs,
+        s_log_i_rhs,
         s_from_list_bool,
         s_from_list_date,
         s_from_list_time,

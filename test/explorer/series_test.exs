@@ -2234,6 +2234,42 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "log/2" do
+    test "log of an integer argument series with an integer base" do
+      args = Series.from_list([1, 8, 16, nil, 32])
+
+      result = Series.log(args, 2)
+
+      assert result.dtype == :integer
+      assert Series.to_list(result) == [0, 3, 4, nil, 5]
+    end
+
+    test "log of an integer argument series with float base" do
+      args = Series.from_list([8, 16, 32])
+
+      result = Series.log(args, 2.0)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [3.0, 4.0, 5.0]
+    end
+
+    test "log to the base of 0" do
+      args = Series.from_list([1, 8, 16, nil, 32])
+
+      assert_raise ArgumentError, "base must be a positive, non-zero, number", fn ->
+        Series.log(args, 0)
+      end
+    end
+
+    test "log to the base of 1" do
+      args = Series.from_list([1, 8, 16, nil, 32])
+
+      assert_raise ArgumentError, "base cannot be equal to 1", fn ->
+        Series.log(args, 1)
+      end
+    end
+  end
+
   describe "format/1" do
     test "with two string series" do
       s1 = Series.from_list(["a", "b"])

@@ -46,6 +46,7 @@ features = [
   "json",
   "lazy",
   "lazy_regex",
+  "log",
   "parquet",
   "performant",
   "pivot",

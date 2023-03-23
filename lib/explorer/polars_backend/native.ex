@@ -271,6 +271,9 @@ defmodule Explorer.PolarsBackend.Native do
   def s_pow_f_rhs(_s, _exponent), do: err()
   def s_pow_i_lhs(_s, _exponent), do: err()
   def s_pow_i_rhs(_s, _exponent), do: err()
+
+  def s_log_f_rhs(_s_argument, _base_as_float), do: err()
+  def s_log_i_rhs(_s_argument, _base_as_int), do: err()
   def s_quantile(_s, _quantile, _strategy), do: err()
   def s_quotient(_s, _rhs), do: err()
   def s_remainder(_s, _rhs), do: err()

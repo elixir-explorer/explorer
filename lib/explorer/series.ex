@@ -2245,6 +2245,44 @@ defmodule Explorer.Series do
   def pow(left, right), do: basic_numeric_operation(:pow, left, right)
 
   @doc """
+  Calculate the exponent of a logarithm.
+
+  The resultant series is going to be of dtype :integer
+  if the series and the base are both integers. Otherwise
+  the it is going to be a float series.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([8, 16, 32])
+      iex> Explorer.Series.log(s, 2)
+      #Explorer.Series<
+        Polars[3]
+        integer [3, 4, 5]
+      >
+
+      iex> s = Explorer.Series.from_list([8, 16, 32])
+      iex> Explorer.Series.log(s, 2.0)
+      #Explorer.Series<
+        Polars[3]
+        float [3.0, 4.0, 5.0]
+      >
+
+  """
+  @doc type: :element_wise
+  @spec log(argument :: Series.t(), base :: number()) :: Series.t()
+  def log(argument, base \\ 2) when is_number(base) do 
+    if base <= 0, do: raise ArgumentError, "base must be a positive, non-zero, number"
+    if base == 1, do: raise ArgumentError, "base cannot be equal to 1"
+
+    basic_numeric_operation(:log, argument, base)
+  end
+
+  @doc """
   Element-wise integer division.
 
   At least one of the arguments must be a series. If both
