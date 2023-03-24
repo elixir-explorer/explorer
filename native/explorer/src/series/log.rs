@@ -32,8 +32,14 @@ pub fn s_log_f_rhs(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_log_i_rhs(s: ExSeries, base: u32) -> Result<ExSeries, ExplorerError> {
-    let base = f64::try_from(base).expect("base should be convertable to float");
+    let base = f64::try_from(base)
+        .map_err(|_| ExplorerError::Other("base should be convertable to float".into()))?;
 
     let s = s.log(base).strict_cast(&DataType::Int64)?;
     Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_exponential(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(s.exp()))
 }

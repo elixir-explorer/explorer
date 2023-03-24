@@ -88,6 +88,7 @@ defmodule Explorer.Backend.Series do
   @callback remainder(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
   @callback pow(s | number(), s | number()) :: s
   @callback log(argument :: s, base :: number()) :: s
+  @callback exponential(s) :: s
 
   # Comparisons
 

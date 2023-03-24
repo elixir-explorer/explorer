@@ -24,6 +24,7 @@ defmodule Explorer.PolarsBackend.Expression do
     distinct: 1,
     divide: 2,
     equal: 2,
+    exponential: 1,
     fill_missing_with_value: 2,
     first: 1,
     format: 1,
@@ -72,6 +73,7 @@ defmodule Explorer.PolarsBackend.Expression do
     peaks: 2,
     sample_n: 5,
     sample_frac: 5,
+    exponential: 1,
 
     # Window operations
     cumulative_max: 2,

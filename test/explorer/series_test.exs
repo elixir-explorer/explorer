@@ -2270,6 +2270,16 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "exponential/1" do
+    test "calculates the exponential of all elements in the series" do
+      s = Series.from_list([1.0, 2.5])
+
+      series = Series.exponential(s)
+
+      assert Series.to_list(series) == [2.718281828459045, 12.182493960703473]
+    end
+  end
+
   describe "format/1" do
     test "with two string series" do
       s1 = Series.from_list(["a", "b"])

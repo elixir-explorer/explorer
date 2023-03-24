@@ -2275,12 +2275,19 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec log(argument :: Series.t(), base :: number()) :: Series.t()
-  def log(argument, base \\ 2) when is_number(base) do 
-    if base <= 0, do: raise ArgumentError, "base must be a positive, non-zero, number"
-    if base == 1, do: raise ArgumentError, "base cannot be equal to 1"
+  def log(argument, base \\ 2) when is_number(base) do
+    if base <= 0, do: raise(ArgumentError, "base must be a positive, non-zero, number")
+    if base == 1, do: raise(ArgumentError, "base cannot be equal to 1")
 
     basic_numeric_operation(:log, argument, base)
   end
+
+  @doc """
+  Calculate the exponential of all elements.
+  """
+  @doc type: :element_wise
+  @spec exponential(Series.t()) :: Series.t()
+  def exponential(%Series{} = s), do: Shared.apply_impl(s, :exponential)
 
   @doc """
   Element-wise integer division.

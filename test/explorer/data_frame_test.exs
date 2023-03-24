@@ -1245,7 +1245,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [8, 16, 64],
                b: [3, 4, 6],
-               c: [3.0, 4.0, 6.0],
+               c: [3.0, 4.0, 6.0]
              }
 
       assert df1.names == ["a", "b", "c"]
@@ -1253,7 +1253,25 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{
                "a" => :integer,
                "b" => :integer,
-               "c" => :float,
+               "c" => :float
+             }
+    end
+
+    test "adds a column with the exponential of all elements of another one" do
+      df = DF.new(a: [1, 2, 3])
+
+      df1 = DF.mutate(df, b: exponential(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [2.718281828459045, 7.38905609893065, 20.085536923187668]
+             }
+
+      assert df1.names == ["a", "b"]
+
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "b" => :float
              }
     end
 

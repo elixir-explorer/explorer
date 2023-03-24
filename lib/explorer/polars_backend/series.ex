@@ -293,6 +293,9 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(argument, :s_log_f_rhs, [base])
   end
 
+  @impl true
+  def exponential(%Series{} = s), do: Shared.apply_series(s, :s_exponential, [])
+
   # Comparisons
 
   @impl true

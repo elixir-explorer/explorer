@@ -38,6 +38,7 @@ defmodule Explorer.Backend.LazySeries do
     remainder: 2,
     pow: 2,
     log: 2,
+    exponential: 1,
     fill_missing_with_value: 2,
     fill_missing_with_strategy: 2,
     format: 1,
@@ -576,11 +577,18 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def log(%Series{} = series, base) do
-    dtype = if series.dtype == :integer && is_integer(base), do: :integer, else: :float 
+    dtype = if series.dtype == :integer && is_integer(base), do: :integer, else: :float
 
     data = new(:log, [lazy_series!(series), base, dtype])
 
     Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def exponential(%Series{} = series) do
+    data = new(:exponential, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
   end
 
   @impl true
