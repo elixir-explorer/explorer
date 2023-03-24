@@ -1240,27 +1240,25 @@ defmodule Explorer.DataFrameTest do
     test "adds a column with the log of another one" do
       df = DF.new(a: [8, 16, 64])
 
-      df1 = DF.mutate(df, b: log(a, 2), c: log(a, 2.0))
+      df1 = DF.mutate(df, b: log(a, 2))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [8, 16, 64],
-               b: [3, 4, 6],
-               c: [3.0, 4.0, 6.0]
+               b: [3.0, 4.0, 6.0]
              }
 
-      assert df1.names == ["a", "b", "c"]
+      assert df1.names == ["a", "b"]
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "b" => :integer,
-               "c" => :float
+               "b" => :float
              }
     end
 
     test "adds a column with the exponential of all elements of another one" do
       df = DF.new(a: [1, 2, 3])
 
-      df1 = DF.mutate(df, b: exponential(a))
+      df1 = DF.mutate(df, b: exp(a))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],

@@ -371,7 +371,7 @@ pub fn expr_log(left: ExExpr, base: f64) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_exponential(expr: ExExpr) -> ExExpr {
+pub fn expr_exp(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
     ExExpr::new(expr.exp())

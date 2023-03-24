@@ -5,7 +5,7 @@ use rustler::{Term, TermType};
 use std::result::Result;
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_log_f_rhs(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {
+pub fn s_log(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {
     let nan = atoms::nan();
     let infinity = atoms::infinity();
     let neg_infinity = atoms::neg_infinity();
@@ -20,10 +20,14 @@ pub fn s_log_f_rhs(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {
             } else if neg_infinity.eq(&base) {
                 f64::NEG_INFINITY
             } else {
-                panic!("log/2 invalid float")
+                return Err(ExplorerError::Other("log/2 invalid float".into()));
             }
         }
-        term_type => panic!("log/2 not implemented for {term_type:?}"),
+        term_type => {
+            return Err(ExplorerError::Other(format!(
+                "log/2 not implemented for {term_type:?}"
+            )))
+        }
     };
 
     let s = s.log(float);
@@ -31,15 +35,6 @@ pub fn s_log_f_rhs(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_log_i_rhs(s: ExSeries, base: u32) -> Result<ExSeries, ExplorerError> {
-    let base = f64::try_from(base)
-        .map_err(|_| ExplorerError::Other("base should be convertable to float".into()))?;
-
-    let s = s.log(base).strict_cast(&DataType::Int64)?;
-    Ok(ExSeries::new(s))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_exponential(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_exp(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(s.exp()))
 }

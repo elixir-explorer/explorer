@@ -2244,12 +2244,37 @@ defmodule Explorer.Series do
   @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
   def pow(left, right), do: basic_numeric_operation(:pow, left, right)
 
-  @doc """
-  Calculate the exponent of a logarithm.
+  @euler_number 2.718281828459045
 
-  The resultant series is going to be of dtype :integer
-  if the series and the base are both integers. Otherwise
-  the it is going to be a float series.
+  @doc """
+  Calculates the natural logarithm.
+
+  The resultant series is going to be of dtype `:float`.
+  See `log/2` for passing a custom base. 
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, nil, 4])
+      iex> Explorer.Series.log(s)
+      #Explorer.Series<
+        Polars[5]
+        float [0.0, 0.6931471805599453, 1.0986122886681098, nil, 1.3862943611198906]
+      >
+
+  """
+  @doc type: :element_wise
+  @spec log(argument :: Series.t()) :: Series.t()
+  def log(argument), do: log(argument, @euler_number)
+
+  @doc """
+  Calculates the logarithm on a given base.
+
+  The resultant series is going to be of dtype `:float`.
 
   ## Supported dtypes
 
@@ -2262,32 +2287,27 @@ defmodule Explorer.Series do
       iex> Explorer.Series.log(s, 2)
       #Explorer.Series<
         Polars[3]
-        integer [3, 4, 5]
-      >
-
-      iex> s = Explorer.Series.from_list([8, 16, 32])
-      iex> Explorer.Series.log(s, 2.0)
-      #Explorer.Series<
-        Polars[3]
         float [3.0, 4.0, 5.0]
       >
 
   """
   @doc type: :element_wise
   @spec log(argument :: Series.t(), base :: number()) :: Series.t()
-  def log(argument, base \\ 2) when is_number(base) do
-    if base <= 0, do: raise(ArgumentError, "base must be a positive, non-zero, number")
+  def log(argument, base) when is_number(base) do
+    if base <= 0, do: raise(ArgumentError, "base must be a positive, number")
     if base == 1, do: raise(ArgumentError, "base cannot be equal to 1")
+
+    base = if is_integer(base), do: base / 1.0, else: base
 
     basic_numeric_operation(:log, argument, base)
   end
 
   @doc """
-  Calculate the exponential of all elements.
+  Calculates the exponential of all elements.
   """
   @doc type: :element_wise
-  @spec exponential(Series.t()) :: Series.t()
-  def exponential(%Series{} = s), do: Shared.apply_impl(s, :exponential)
+  @spec exp(Series.t()) :: Series.t()
+  def exp(%Series{} = s), do: Shared.apply_impl(s, :exp)
 
   @doc """
   Element-wise integer division.
