@@ -2234,6 +2234,70 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "log/1" do
+    test "calculates the natural logarithm" do
+      args = Series.from_list([1, 2, 3, nil, 4])
+
+      result = Series.log(args)
+
+      assert result.dtype == :float
+
+      assert Series.to_list(result) == [
+               0.0,
+               0.6931471805599453,
+               1.0986122886681098,
+               nil,
+               1.3862943611198906
+             ]
+    end
+  end
+
+  describe "log/2" do
+    test "log of an integer argument series with an integer base" do
+      args = Series.from_list([1, 8, 16, nil, 32])
+
+      result = Series.log(args, 2)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [0.0, 3.0, 4.0, nil, 5.0]
+    end
+
+    test "log of an integer argument series with float base" do
+      args = Series.from_list([8, 16, 32])
+
+      result = Series.log(args, 2.0)
+
+      assert result.dtype == :float
+      assert Series.to_list(result) == [3.0, 4.0, 5.0]
+    end
+
+    test "log to the base of 0" do
+      args = Series.from_list([1, 8, 16, nil, 32])
+
+      assert_raise ArgumentError, "base must be a positive number", fn ->
+        Series.log(args, 0)
+      end
+    end
+
+    test "log to the base of 1" do
+      args = Series.from_list([1, 8, 16, nil, 32])
+
+      assert_raise ArgumentError, "base cannot be equal to 1", fn ->
+        Series.log(args, 1)
+      end
+    end
+  end
+
+  describe "exp/1" do
+    test "calculates the exponential of all elements in the series" do
+      s = Series.from_list([1.0, 2.5])
+
+      series = Series.exp(s)
+
+      assert Series.to_list(series) == [2.718281828459045, 12.182493960703473]
+    end
+  end
+
   describe "format/1" do
     test "with two string series" do
       s1 = Series.from_list(["a", "b"])

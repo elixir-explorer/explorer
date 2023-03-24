@@ -32,6 +32,7 @@ pub use error::ExplorerError;
 use expressions::*;
 use lazyframe::io::*;
 use lazyframe::*;
+use series::log::*;
 use series::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
@@ -168,6 +169,9 @@ rustler::init!(
         expr_divide,
         expr_multiply,
         expr_pow,
+        expr_log,
+        expr_log_natural,
+        expr_exp,
         expr_quotient,
         expr_remainder,
         expr_subtract,
@@ -260,6 +264,7 @@ rustler::init!(
         s_divide,
         s_dtype,
         s_equal,
+        s_exp,
         s_fill_missing_with_strategy,
         s_fill_missing_with_bin,
         s_fill_missing_with_boolean,
@@ -290,6 +295,8 @@ rustler::init!(
         s_name,
         s_nil_count,
         s_not,
+        s_log,
+        s_log_natural,
         s_from_list_bool,
         s_from_list_date,
         s_from_list_time,

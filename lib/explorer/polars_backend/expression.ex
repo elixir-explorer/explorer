@@ -24,6 +24,7 @@ defmodule Explorer.PolarsBackend.Expression do
     distinct: 1,
     divide: 2,
     equal: 2,
+    exp: 1,
     fill_missing_with_value: 2,
     first: 1,
     format: 1,
@@ -72,6 +73,7 @@ defmodule Explorer.PolarsBackend.Expression do
     peaks: 2,
     sample_n: 5,
     sample_frac: 5,
+    exp: 1,
 
     # Window operations
     cumulative_max: 2,
@@ -97,6 +99,8 @@ defmodule Explorer.PolarsBackend.Expression do
     fill_missing_with_strategy: 2,
     from_list: 2,
     from_binary: 2,
+    log: 1,
+    log: 2,
     to_lazy: 1,
     shift: 3,
     slice: 2,
@@ -172,6 +176,18 @@ defmodule Explorer.PolarsBackend.Expression do
     expr = to_expr(lazy_series)
 
     Native.expr_slice(expr, offset, length)
+  end
+
+  def to_expr(%LazySeries{op: :log, args: [lazy_series]}) do
+    expr = to_expr(lazy_series)
+
+    Native.expr_log_natural(expr)
+  end
+
+  def to_expr(%LazySeries{op: :log, args: [lazy_series, base]}) do
+    expr = to_expr(lazy_series)
+
+    Native.expr_log(expr, base)
   end
 
   for {op, _arity} <- @first_only_expressions do

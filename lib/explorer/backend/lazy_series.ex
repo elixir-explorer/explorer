@@ -37,6 +37,9 @@ defmodule Explorer.Backend.LazySeries do
     quotient: 2,
     remainder: 2,
     pow: 2,
+    log: 1,
+    log: 2,
+    exp: 1,
     fill_missing_with_value: 2,
     fill_missing_with_strategy: 2,
     format: 1,
@@ -571,6 +574,27 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:unary_not, [lazy_series!(series)])
 
     Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def log(%Series{} = series) do
+    data = new(:log, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def log(%Series{} = series, base) do
+    data = new(:log, [lazy_series!(series), base])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def exp(%Series{} = series) do
+    data = new(:exp, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
   end
 
   @impl true

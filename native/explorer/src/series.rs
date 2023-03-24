@@ -11,6 +11,8 @@ use polars::prelude::*;
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
+pub mod log;
+
 #[rustler::nif]
 pub fn s_as_str(data: ExSeries) -> Result<String, ExplorerError> {
     Ok(format!("{:?}", data.resource.0))
