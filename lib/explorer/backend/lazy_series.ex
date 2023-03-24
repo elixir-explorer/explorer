@@ -37,6 +37,7 @@ defmodule Explorer.Backend.LazySeries do
     quotient: 2,
     remainder: 2,
     pow: 2,
+    log: 2,
     fill_missing_with_value: 2,
     fill_missing_with_strategy: 2,
     format: 1,
@@ -574,6 +575,15 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def log(%Series{} = series, base) do
+    dtype = if series.dtype == :integer && is_integer(base), do: :integer, else: :float 
+
+    data = new(:log, [lazy_series!(series), base, dtype])
+
+    Backend.Series.new(data, dtype)
+  end
+
+  @impl true
   def inspect(series, opts) do
     alias Inspect.Algebra, as: A
 
@@ -713,7 +723,6 @@ defmodule Explorer.Backend.LazySeries do
     categorise: 2,
     frequencies: 1,
     mask: 2,
-    log: 2,
     to_iovec: 1,
     to_list: 1
   ]

@@ -364,6 +364,13 @@ pub fn expr_pow(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_log(left: ExExpr, base: f64) -> ExExpr {
+    let left_expr = left.clone_inner();
+
+    ExExpr::new(left_expr.log(base))
+}
+
+#[rustler::nif]
 pub fn expr_sum(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 

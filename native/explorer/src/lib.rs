@@ -32,8 +32,8 @@ pub use error::ExplorerError;
 use expressions::*;
 use lazyframe::io::*;
 use lazyframe::*;
-use series::*;
 use series::log::*;
+use series::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExDataFrameRef, env);
@@ -169,6 +169,7 @@ rustler::init!(
         expr_divide,
         expr_multiply,
         expr_pow,
+        expr_log,
         expr_quotient,
         expr_remainder,
         expr_subtract,

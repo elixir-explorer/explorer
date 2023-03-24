@@ -1,8 +1,8 @@
+use crate::atoms;
 use crate::{ExSeries, ExplorerError};
 use polars::prelude::*;
-use std::result::Result;
 use rustler::{Term, TermType};
-use crate::atoms;
+use std::result::Result;
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_log_f_rhs(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {
