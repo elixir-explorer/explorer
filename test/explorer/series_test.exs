@@ -3266,4 +3266,221 @@ defmodule Explorer.SeriesTest do
              ]
     end
   end
+
+  describe "mean/1" do
+    test "returns the mean of an integer series" do
+      s = Series.from_list([1, 2, nil, 3])
+      assert Series.mean(s) == 2.0
+    end
+
+    test "returns the mean of a float series" do
+      s = Series.from_list([1.2, 2.4, nil, 3.9])
+      assert Series.mean(s) == 2.5
+    end
+
+    test "returns the mean of a float series with an infinity number" do
+      s = Series.from_list([1.2, 2.4, nil, 3.9, :infinity])
+      assert Series.mean(s) == :infinity
+    end
+
+    test "returns the mean of a float series with an infinity number and a nan" do
+      s = Series.from_list([1.2, 2.4, nil, 3.9, :infinity, :nan])
+      assert Series.mean(s) == :nan
+    end
+  end
+
+  describe "median/1" do
+    test "returns the median of an integer series" do
+      s = Series.from_list([1, 2, nil, 3])
+      assert Series.median(s) == 2.0
+    end
+
+    test "returns the median of a float series" do
+      s = Series.from_list([1.2, 2.4, nil, 3.9])
+      assert Series.median(s) == 2.4
+    end
+
+    test "returns the median of a float series with an infinity number" do
+      s = Series.from_list([1.2, 2.4, nil, 3.9, :infinity])
+      assert Series.median(s) == 3.15
+    end
+
+    test "returns the median of a float series with an infinity number and nan" do
+      s = Series.from_list([1.2, 2.4, nil, 3.9, :infinity, :nan])
+      assert Series.median(s) == 3.9
+    end
+  end
+
+  describe "sum/1" do
+    test "sum of integers" do
+      s = Series.from_list([1, 2, nil, 3])
+      assert Series.sum(s) === 6
+    end
+
+    test "sum of floats" do
+      s = Series.from_list([1.0, 2.0, nil, 3.0])
+      assert Series.sum(s) === 6.0
+    end
+
+    test "sum of floats with nan" do
+      s = Series.from_list([1.0, 2.0, nil, :nan, 3.0])
+      assert Series.sum(s) == :nan
+    end
+
+    test "sum of floats with infinity" do
+      s = Series.from_list([1.0, 2.0, nil, :infinity, 3.0])
+      assert Series.sum(s) == :infinity
+    end
+
+    test "sum of floats with infinity and nan" do
+      s = Series.from_list([1.0, :nan, 2.0, nil, :infinity, 3.0])
+      assert Series.sum(s) == :nan
+    end
+
+    test "sum of boolean values" do
+      s = Series.from_list([true, false, true])
+      assert Series.sum(s) === 2
+    end
+  end
+
+  describe "min/1" do
+    test "min of an integer series" do
+      s = Series.from_list([-3, 1, 2, nil, -2, -42, 3])
+      assert Series.min(s) === -42
+    end
+
+    test "min of a float series" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, 3.9])
+      assert Series.min(s) === -12.6
+    end
+
+    test "min of a float series with a nan" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
+      assert Series.min(s) === -12.6
+    end
+
+    test "min of a float series with infinity positive" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
+      assert Series.min(s) === -12.6
+    end
+
+    test "min of a float series with infinity negative" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
+      assert Series.min(s) === :neg_infinity
+    end
+  end
+
+  describe "max/1" do
+    test "max of an integer series" do
+      s = Series.from_list([-3, 1, 2, nil, -2, -42, 3])
+      assert Series.max(s) === 3
+    end
+
+    test "max of a float series" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, 3.9])
+      assert Series.max(s) === 3.9
+    end
+
+    test "max of a float series with a nan" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
+      assert Series.max(s) === 3.9
+    end
+
+    test "max of a float series with infinity positive" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
+      assert Series.max(s) === :infinity
+    end
+
+    test "max of a float series with infinity negative" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
+      assert Series.max(s) === 3.9
+    end
+  end
+
+  describe "variance/1" do
+    test "variance of an integer series" do
+      s = Series.from_list([1, 2, nil, 3])
+      assert Series.variance(s) === 1.0
+    end
+
+    test "variance of a float series" do
+      s = Series.from_list([1.0, 2.0, nil, 3.0])
+      assert Series.variance(s) === 1.0
+    end
+
+    test "variance of a float series with a nan" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
+      assert Series.variance(s) == :nan
+    end
+
+    test "variance of a float series with infinity positive" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
+      assert Series.variance(s) === :nan
+    end
+
+    test "variance of a float series with infinity negative" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
+      assert Series.variance(s) === :nan
+    end
+  end
+
+  describe "standard_deviation/1" do
+    test "standard deviation of an integer series" do
+      s = Series.from_list([1, 2, nil, 3])
+      assert Series.standard_deviation(s) === 1.0
+    end
+
+    test "standard deviation of a float series" do
+      s = Series.from_list([1.0, 2.0, nil, 3.0])
+      assert Series.standard_deviation(s) === 1.0
+    end
+
+    test "standard deviation of a float series with a nan" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
+      assert Series.standard_deviation(s) == :nan
+    end
+
+    test "standard deviation of a float series with infinity positive" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
+      assert Series.standard_deviation(s) === :nan
+    end
+
+    test "standard deviation of a float series with infinity negative" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
+      assert Series.standard_deviation(s) === :nan
+    end
+  end
+
+  describe "quantile/1" do
+    test "quantile of an integer series" do
+      s = Series.from_list([1, 2, nil, 3])
+      assert Series.quantile(s, 0.2) === 1
+    end
+
+    test "quantile of a float series" do
+      s = Series.from_list([1.0, 2.0, nil, 3.0])
+      assert Series.quantile(s, 0.2) === 1.0
+    end
+
+    test "quantile of a float series with a nan" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
+
+      assert Series.quantile(s, 0.2) == -3.1
+      assert Series.quantile(s, 0.9) == :nan
+    end
+
+    test "quantile of a float series with infinity positive" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
+
+      assert Series.quantile(s, 0.2) == -3.1
+      assert Series.quantile(s, 0.9) == :infinity
+    end
+
+    test "quantile of a float series with infinity negative" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
+
+      assert Series.quantile(s, 0.2) == -12.6
+      assert Series.quantile(s, 0.1) == :neg_infinity
+    end
+  end
 end
