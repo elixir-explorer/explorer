@@ -2294,7 +2294,7 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec log(argument :: Series.t(), base :: number()) :: Series.t()
   def log(argument, base) when is_number(base) do
-    if base <= 0, do: raise(ArgumentError, "base must be a positive, number")
+    if base <= 0, do: raise(ArgumentError, "base must be a positive number")
     if base == 1, do: raise(ArgumentError, "base cannot be equal to 1")
 
     base = if is_integer(base), do: base / 1.0, else: base

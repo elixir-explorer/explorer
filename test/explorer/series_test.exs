@@ -2274,7 +2274,7 @@ defmodule Explorer.SeriesTest do
     test "log to the base of 0" do
       args = Series.from_list([1, 8, 16, nil, 32])
 
-      assert_raise ArgumentError, "base must be a positive, number", fn ->
+      assert_raise ArgumentError, "base must be a positive number", fn ->
         Series.log(args, 0)
       end
     end
