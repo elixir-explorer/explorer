@@ -87,6 +87,7 @@ defmodule Explorer.Backend.Series do
   @callback quotient(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
   @callback remainder(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
   @callback pow(s | number(), s | number()) :: s
+  @callback log(argument :: s) :: s
   @callback log(argument :: s, base :: float()) :: s
   @callback exp(s) :: s
 

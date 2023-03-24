@@ -371,6 +371,13 @@ pub fn expr_log(left: ExExpr, base: f64) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_log_natural(left: ExExpr) -> ExExpr {
+    let left_expr = left.clone_inner();
+
+    ExExpr::new(left_expr.log(std::f64::consts::E))
+}
+
+#[rustler::nif]
 pub fn expr_exp(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 

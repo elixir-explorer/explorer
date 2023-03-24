@@ -284,6 +284,9 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(right, :s_pow_f_lhs, [exponent])
 
   @impl true
+  def log(%Series{} = argument), do: Shared.apply_series(argument, :s_log_natural, [])
+
+  @impl true
   def log(%Series{} = argument, base) when is_numerical(base) do
     Shared.apply_series(argument, :s_log, [base])
   end

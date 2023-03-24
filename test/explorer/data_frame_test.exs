@@ -1240,18 +1240,20 @@ defmodule Explorer.DataFrameTest do
     test "adds a column with the log of another one" do
       df = DF.new(a: [8, 16, 64])
 
-      df1 = DF.mutate(df, b: log(a, 2))
+      df1 = DF.mutate(df, b: log(a, 2), c: log(a))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [8, 16, 64],
-               b: [3.0, 4.0, 6.0]
+               b: [3.0, 4.0, 6.0],
+               c: [2.0794415416798357, 2.772588722239781, 4.1588830833596715]
              }
 
-      assert df1.names == ["a", "b"]
+      assert df1.names == ["a", "b", "c"]
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "b" => :float
+               "b" => :float,
+               "c" => :float
              }
     end
 

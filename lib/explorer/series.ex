@@ -2244,8 +2244,6 @@ defmodule Explorer.Series do
   @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
   def pow(left, right), do: basic_numeric_operation(:pow, left, right)
 
-  @euler_number 2.718281828459045
-
   @doc """
   Calculates the natural logarithm.
 
@@ -2269,7 +2267,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec log(argument :: Series.t()) :: Series.t()
-  def log(argument), do: log(argument, @euler_number)
+  def log(%Series{} = s), do: Shared.apply_impl(s, :log, [])
 
   @doc """
   Calculates the logarithm on a given base.
@@ -2307,7 +2305,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec exp(Series.t()) :: Series.t()
-  def exp(%Series{} = s), do: Shared.apply_impl(s, :exp)
+  def exp(%Series{} = s), do: Shared.apply_impl(s, :exp, [])
 
   @doc """
   Element-wise integer division.

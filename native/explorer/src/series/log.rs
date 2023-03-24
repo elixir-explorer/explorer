@@ -2,6 +2,7 @@ use crate::atoms;
 use crate::{ExSeries, ExplorerError};
 use polars::prelude::*;
 use rustler::{Term, TermType};
+use std::f64::consts::E;
 use std::result::Result;
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -32,6 +33,11 @@ pub fn s_log(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {
 
     let s = s.log(float);
     Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_log_natural(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(s.log(E)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

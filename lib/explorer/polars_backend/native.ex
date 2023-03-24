@@ -131,7 +131,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_describe(_df, _percentiles), do: err()
 
   # Expressions (for lazy queries)
-  @multi_arity_expressions [slice: 2, slice: 3]
+  @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
 
   # We first generate functions for known operations.
   for {op, arity} <- Explorer.Backend.LazySeries.operations() -- @multi_arity_expressions do
@@ -142,6 +142,9 @@ defmodule Explorer.PolarsBackend.Native do
 
   def expr_slice(_lazy_series, _offset, _length), do: err()
   def expr_slice_by_indices(_lazy_series, _series), do: err()
+
+  def expr_log(_lazy_series, _base), do: err()
+  def expr_log_natural(_lazy_series), do: err()
 
   # Then we generate for some specific expressions
   def expr_alias(_ex_expr, _alias_name), do: err()
@@ -272,6 +275,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_pow_f_rhs(_s, _exponent), do: err()
   def s_pow_i_lhs(_s, _exponent), do: err()
   def s_pow_i_rhs(_s, _exponent), do: err()
+  def s_log_natural(_s_argument), do: err()
   def s_log(_s_argument, _base_as_float), do: err()
   def s_quantile(_s, _quantile, _strategy), do: err()
   def s_quotient(_s, _rhs), do: err()
