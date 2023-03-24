@@ -481,12 +481,25 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
         AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
         AnyValue::Int64(v) => Ok(Some(v).encode(env)),
-        AnyValue::Float64(v) => Ok(Some(v).encode(env)),
+        AnyValue::Float64(v) => Ok(Some(term_from_float(v, env)).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Time(v) => encode_time(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
         AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
         dt => panic!("cannot encode value {dt:?} to term"),
+    }
+}
+
+// Useful for series functions that can return float.
+pub fn term_from_float(float: f64, env: Env<'_>) -> Term<'_> {
+    if float.is_finite() {
+        float.encode(env)
+    } else {
+        match (float.is_nan(), float.is_sign_negative()) {
+            (true, _) => nan().encode(env),
+            (false, true) => neg_infinity().encode(env),
+            (false, false) => infinity().encode(env),
+        }
     }
 }
 

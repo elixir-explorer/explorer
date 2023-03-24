@@ -12,6 +12,7 @@ defmodule Explorer.Backend.Series do
   @type df :: Explorer.DataFrame.t()
   @type dtype :: Explorer.Series.dtype()
   @type valid_types :: number() | boolean() | String.t() | Date.t() | Time.t() | NaiveDateTime.t()
+  @type special_float :: Explorer.Series.special_float()
   @type option(type) :: type | nil
 
   # Conversion
@@ -58,14 +59,15 @@ defmodule Explorer.Backend.Series do
   # Aggregation
 
   @callback count(s) :: number() | lazy_s()
-  @callback sum(s) :: number() | lazy_s() | nil
-  @callback min(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
-  @callback max(s) :: number() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
-  @callback mean(s) :: float() | lazy_s() | nil
-  @callback median(s) :: float() | lazy_s() | nil
-  @callback variance(s) :: float() | lazy_s() | nil
-  @callback standard_deviation(s) :: float() | lazy_s() | nil
-  @callback quantile(s, float()) :: number | Date.t() | NaiveDateTime.t() | lazy_s() | nil
+  @callback sum(s) :: number() | special_float() | lazy_s() | nil
+  @callback min(s) :: number() | special_float() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
+  @callback max(s) :: number() | special_float() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
+  @callback mean(s) :: float() | special_float() | lazy_s() | nil
+  @callback median(s) :: float() | special_float() | lazy_s() | nil
+  @callback variance(s) :: float() | special_float() | lazy_s() | nil
+  @callback standard_deviation(s) :: float() | special_float() | lazy_s() | nil
+  @callback quantile(s, float()) ::
+              number() | special_float() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
   @callback nil_count(s) :: number() | lazy_s()
 
   # Cumulative
