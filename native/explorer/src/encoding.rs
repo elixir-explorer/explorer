@@ -491,7 +491,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
 }
 
 // Useful for series functions that can return float.
-pub fn term_from_float<'b>(float: f64, env: Env<'b>) -> Term<'b> {
+pub fn term_from_float(float: f64, env: Env<'_>) -> Term<'_> {
     if float.is_finite() {
         float.encode(env)
     } else {
