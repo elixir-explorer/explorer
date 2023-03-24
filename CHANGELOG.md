@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.5.6] - 2023-03-24
+
+### Added
+
+- Add the following functions to the `Explorer.Series` module: `log/1`, `log/2`
+  and `exp/1`. They compute the logarithm and exponential of a series.
+
+### Fixed
+
+- Allow `Explorer.Series.select/3` to receive series of size 1 for both the
+  `on_true` and `on_false` arguments.
+
+- Fix the encoding of special float values that may return from some series
+  functions. This is going to encode the atoms for NaN and infinity values.
+
 ## [v0.5.5] - 2023-03-13
 
 ### Added
@@ -418,7 +433,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.5.5...HEAD
+[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.5.6...HEAD
+[v0.5.6]: https://github.com/elixir-nx/explorer/compare/v0.5.5...v0.5.6
 [v0.5.5]: https://github.com/elixir-nx/explorer/compare/v0.5.4...v0.5.5
 [v0.5.4]: https://github.com/elixir-nx/explorer/compare/v0.5.3...v0.5.4
 [v0.5.3]: https://github.com/elixir-nx/explorer/compare/v0.5.2...v0.5.3

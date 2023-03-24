@@ -76,7 +76,7 @@ defmodule Explorer.Series do
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
-  @type special_float :: :nan | :infinity | :neg_infinity
+  @type non_finite :: :nan | :infinity | :neg_infinity
 
   @doc false
   @enforce_keys [:data, :dtype]
@@ -1573,7 +1573,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.sum/1 not implemented for dtype :date. Valid dtypes are [:integer, :float, :boolean]
   """
   @doc type: :aggregation
-  @spec sum(series :: Series.t()) :: number() | special_float() | nil
+  @spec sum(series :: Series.t()) :: number() | non_finite() | nil
   def sum(%Series{dtype: dtype} = series) when is_numeric_or_bool_dtype(dtype),
     do: Shared.apply_impl(series, :sum)
 
@@ -1618,7 +1618,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec min(series :: Series.t()) ::
-          number() | special_float() | Date.t() | Time.t() | NaiveDateTime.t() | nil
+          number() | non_finite() | Date.t() | Time.t() | NaiveDateTime.t() | nil
   def min(%Series{dtype: dtype} = series) when is_numeric_or_date_dtype(dtype),
     do: Shared.apply_impl(series, :min)
 
@@ -1664,7 +1664,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec max(series :: Series.t()) ::
-          number() | special_float() | Date.t() | Time.t() | NaiveDateTime.t() | nil
+          number() | non_finite() | Date.t() | Time.t() | NaiveDateTime.t() | nil
   def max(%Series{dtype: dtype} = series) when is_numeric_or_date_dtype(dtype),
     do: Shared.apply_impl(series, :max)
 
@@ -1694,7 +1694,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
-  @spec mean(series :: Series.t()) :: float() | special_float() | nil
+  @spec mean(series :: Series.t()) :: float() | non_finite() | nil
   def mean(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: Shared.apply_impl(series, :mean)
 
@@ -1723,7 +1723,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
-  @spec median(series :: Series.t()) :: float() | special_float() | nil
+  @spec median(series :: Series.t()) :: float() | non_finite() | nil
   def median(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: Shared.apply_impl(series, :median)
 
@@ -1752,7 +1752,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype :datetime. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
-  @spec variance(series :: Series.t()) :: float() | special_float() | nil
+  @spec variance(series :: Series.t()) :: float() | non_finite() | nil
   def variance(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: Shared.apply_impl(series, :variance)
 
@@ -1781,7 +1781,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.standard_deviation/1 not implemented for dtype :string. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
-  @spec standard_deviation(series :: Series.t()) :: float() | special_float() | nil
+  @spec standard_deviation(series :: Series.t()) :: float() | non_finite() | nil
   def standard_deviation(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: Shared.apply_impl(series, :standard_deviation)
 
