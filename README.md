@@ -164,8 +164,7 @@ details.
 
 Explorer high-level features are:
 
-- Simply typed series: `:float`, `:integer`, `:boolean`, `:string`, `:binary`, `:category`,
-  `:date` and `:datetime`.
+- Simply typed series: `:binary`, `:boolean`, `:category`, `:date`, `:datetime`, `:float`, `:integer`, `:string`, and `:time`.
 
 - A powerful but constrained and opinionated API, so you spend less time looking
   for the right function and more time doing data manipulation.
