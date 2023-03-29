@@ -2675,6 +2675,8 @@ defmodule Explorer.DataFrame do
 
   This is a callback version of `arrange/2`.
 
+  Sorting is stable by default.
+
   ## Examples
 
   A single column name will sort ascending by that column:

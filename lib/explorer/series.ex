@@ -2901,6 +2901,8 @@ defmodule Explorer.Series do
   @doc """
   Sorts the series.
 
+  Sorting is stable by default.
+
   ## Options
 
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
