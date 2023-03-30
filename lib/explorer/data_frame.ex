@@ -101,6 +101,28 @@ defmodule Explorer.DataFrame do
   to files in the formats above. `load_*` and `dump_*` versions are also available to read
   and write those formats directly in memory.
 
+  It's possible to read files from services like AWS S3, by using URLs (or URIs) instead
+  of local files paths in the `from_*` functions.
+
+  As of today, we support AWS S3 - and all compatible services, and the way to pass credentials
+  to the reader functions is by using the `:credentials` option as a keyword list.
+
+  We are going to read the following options for S3:
+
+  - `:access_key_id`
+  - `:secret_access_key`
+  - `:region`
+  - `:bucket_name`
+  - `:token`
+  - `:endpoint`
+  - `:metadata_endpoint`
+
+  But if the URL passed is a one from S3 and credentials is not present, we
+  are going to try to load each value from the system's environment variables.
+
+  For example, we are going to try reading the env var "AWS_ACCESS_KEY_ID" for the
+  `:access_key_id` field.
+
   ## Selecting columns and access
 
   Several functions in this module, such as `select/2`, `discard/2`, `drop_nil/2`, and so
@@ -380,15 +402,29 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
-    * `:dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
-      imputed from the first 1000 rows. (default: `[]`)
+
+    * `:dtypes` - A list or map of `{"column_name", dtype}` tuples. Any non-specified column
+      has its type imputed from the first 1000 rows. (default: `[]`)
+
     * `:header` - Does the file have a header of column names as the first row or not? (default: `true`)
+
     * `:max_rows` - Maximum number of lines to read. (default: `nil`)
+
     * `:null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
+
     * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
+
     * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
+
     * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
+
     * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
+
+    * `:credentials` - A keyword list with credentials used to fetch data from S3, HTTP(s) or anything
+      that uses the network. This is going to be different for each service. Right now, only S3 is
+      supported. See the [IO operations](#module-io-operations) section for the list of supported options.
+      If nothing is passed to this option, then we try to read from the environment variables. Defaults to `nil`.
+
   """
   @doc type: :io
   @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
