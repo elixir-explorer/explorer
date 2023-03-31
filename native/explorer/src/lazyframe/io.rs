@@ -9,6 +9,7 @@ use crate::{ExLazyFrame, ExplorerError};
 pub fn lf_from_parquet(
     filename: &str,
     stop_after_n_rows: Option<usize>,
+    _credentials: Option<Vec<(&str, String)>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let options = ScanArgsParquet {
         n_rows: stop_after_n_rows,

@@ -65,7 +65,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback from_parquet(
               filename :: String.t(),
               max_rows :: option(integer()),
-              columns :: columns_for_io()
+              columns :: columns_for_io(),
+              credentials :: Keyword.t()
             ) :: result(df)
   @callback to_parquet(
               df,

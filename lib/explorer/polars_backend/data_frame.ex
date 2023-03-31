@@ -176,7 +176,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(filename, max_rows, columns) do
+  def from_parquet(filename, max_rows, columns, _credentials) do
     {columns, with_projection} = column_names_or_projection(columns)
 
     df =

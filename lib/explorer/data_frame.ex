@@ -420,11 +420,6 @@ defmodule Explorer.DataFrame do
 
     * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
 
-    * `:credentials` - A keyword list with credentials used to fetch data from S3, HTTP(s) or anything
-      that uses the network. This is going to be different for each service. Right now, only S3 is
-      supported. See the [IO operations](#module-io-operations) section for the list of supported options.
-      If nothing is passed to this option, then we try to read from the environment variables. Defaults to `nil`.
-
   """
   @doc type: :io
   @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
@@ -434,6 +429,7 @@ defmodule Explorer.DataFrame do
 
     opts =
       Keyword.validate!(opts,
+        credentials: nil,
         delimiter: ",",
         dtypes: [],
         encoding: "utf8",
@@ -551,6 +547,12 @@ defmodule Explorer.DataFrame do
 
     * `:columns` - A list of column names or indexes to keep. If present,
       only these columns are read into the dataframe. (default: `nil`)
+
+    * `:credentials` - A keyword list with credentials used to fetch data from S3, HTTP(s) or anything
+      that uses the network. This is going to be different for each service. Right now, only S3 is
+      supported. See the [IO operations](#module-io-operations) section for the list of supported options.
+      If nothing is passed to this option, then we try to read from the environment variables. Defaults to `nil`.
+
   """
   @doc type: :io
   @spec from_parquet(filename :: String.t(), opts :: Keyword.t()) ::
@@ -561,7 +563,8 @@ defmodule Explorer.DataFrame do
     opts =
       Keyword.validate!(opts,
         max_rows: nil,
-        columns: nil
+        columns: nil,
+        credentials: nil
       )
 
     backend = backend_from_options!(backend_opts)
@@ -569,7 +572,8 @@ defmodule Explorer.DataFrame do
     backend.from_parquet(
       filename,
       opts[:max_rows],
-      to_columns_for_io(opts[:columns])
+      to_columns_for_io(opts[:columns]),
+      opts[:credentials]
     )
   end
 

@@ -114,16 +114,34 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_parquet(filename, max_rows, columns) do
+  def from_parquet(filename, max_rows, columns, credentials) do
     if columns do
       raise ArgumentError,
             "`columns` is not supported by Polars' lazy backend. " <>
               "Consider using `select/2` after reading the parquet file"
     end
 
-    case Native.lf_from_parquet(filename, max_rows) do
+    # Não vai dar pra usar aqui, então vamos ter que usar nos scan_*
+    # Aqui é a crate que a gente tem que ficar de olho: https://crates.io/crates/object_store
+    # Aqui ajuda também: https://docs.rs/object_store/0.5.5/object_store/aws/struct.AmazonS3Builder.html
+    credentials =
+      if String.starts_with?(filename, "s3://"), do: normalize_credentials(credentials)
+
+    case Native.lf_from_parquet(filename, max_rows, credentials) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
+    end
+  end
+
+  @valid_s3_options ~w(access_key_id secret_access_key region bucket_name token endpoint metadata_endpoint)a
+
+  defp normalize_credentials(credentials) do
+    for {key, value} <- credentials do
+      if key in @valid_s3_options do
+        {Atom.to_string(key), value}
+      else
+        raise "Option #{inspect(key)} is not a valid S3 credentials option"
+      end
     end
   end
 
