@@ -149,13 +149,15 @@ defmodule Explorer.PolarsBackend.Series do
     predicate_size = size(predicate)
     on_true_size = size(on_true)
     on_false_size = size(on_false)
+    singleton_condition = on_true_size == 1 or on_false_size == 1
 
-    if on_true_size != on_false_size and on_true_size != 1 and on_false_size != 1 do
+    if on_true_size != on_false_size and not singleton_condition do
       raise ArgumentError,
             "series in select/3 must have the same size or size of 1, got: #{on_true_size} and #{on_false_size}"
     end
 
-    if predicate_size != 1 and predicate_size != on_true_size and predicate_size != on_false_size do
+    if predicate_size != 1 and predicate_size != on_true_size and predicate_size != on_false_size and
+         not singleton_condition do
       raise ArgumentError,
             "predicate in select/3 must have size of 1 or have the same size as operands, got: #{predicate_size} and #{Enum.max([on_true_size, on_false_size])}"
     end
