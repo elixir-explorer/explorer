@@ -1251,7 +1251,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "adds a column with the log of another one" do
+    test "adds a column with log" do
       df = DF.new(a: [8, 16, 64])
 
       df1 = DF.mutate(df, b: log(a, 2), c: log(a))
@@ -1271,7 +1271,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "adds a column with the exponential of all elements of another one" do
+    test "adds a column with exponential" do
       df = DF.new(a: [1, 2, 3])
 
       df1 = DF.mutate(df, b: exp(a))
