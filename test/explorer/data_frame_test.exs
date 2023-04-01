@@ -1027,7 +1027,8 @@ defmodule Explorer.DataFrameTest do
           f: cumulative_max(a),
           g: cumulative_min(a),
           h: cumulative_sum(a),
-          i: cumulative_max(a, reverse: true)
+          i: cumulative_max(a, reverse: true),
+          j: ewm_mean(a)
         )
 
       assert df1.dtypes == %{
@@ -1039,7 +1040,8 @@ defmodule Explorer.DataFrameTest do
                "f" => :integer,
                "g" => :integer,
                "h" => :integer,
-               "i" => :integer
+               "i" => :integer,
+               "j" => :float
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1051,7 +1053,19 @@ defmodule Explorer.DataFrameTest do
                f: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                g: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                h: [1, 3, 6, 10, 15, 21, 28, 36, 45, 55],
-               i: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+               i: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+               j: [
+                 1.0,
+                 1.6666666666666667,
+                 2.4285714285714284,
+                 3.2666666666666666,
+                 4.161290322580645,
+                 5.095238095238095,
+                 6.05511811023622,
+                 7.031372549019608,
+                 8.017612524461839,
+                 9.009775171065494
+               ]
              }
     end
 
