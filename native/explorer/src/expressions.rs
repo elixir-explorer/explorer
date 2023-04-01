@@ -567,7 +567,7 @@ pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn ewm_mean(
+pub fn expr_ewm_mean(
     data: ExExpr,
     alpha: f64,
     adjust: bool,

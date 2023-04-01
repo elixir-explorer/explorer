@@ -203,6 +203,7 @@ rustler::init!(
         expr_window_mean,
         expr_window_min,
         expr_window_sum,
+        expr_ewm_mean,
         // inspect expressions
         expr_describe_filter_plan,
         // string expressions
