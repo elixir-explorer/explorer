@@ -1081,7 +1081,7 @@ defmodule Explorer.Series do
   `on_true` or `on_false`.
 
   `predicate` must be a boolean series. `on_true` and `on_false` must be
-  a series of the same size as `pred` or one of them can be a series of size 1.
+  a series of the same size as `predicate` or a series of size 1.
   """
   @doc type: :element_wise
   @spec select(predicate :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) ::
@@ -2252,7 +2252,7 @@ defmodule Explorer.Series do
   Calculates the natural logarithm.
 
   The resultant series is going to be of dtype `:float`.
-  See `log/2` for passing a custom base. 
+  See `log/2` for passing a custom base.
 
   ## Supported dtypes
 
