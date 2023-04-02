@@ -296,6 +296,11 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def exp(%Series{} = s), do: Shared.apply_series(s, :s_exp, [])
 
+  # Trigonometry
+
+  @impl true
+  def sin(%Series{} = s), do: Shared.apply_series(s, :s_sin, [])
+
   # Comparisons
 
   @impl true

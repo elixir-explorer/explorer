@@ -2411,6 +2411,33 @@ defmodule Explorer.Series do
   def remainder(left, %Series{dtype: :integer} = right) when is_integer(left),
     do: Shared.apply_series_impl(:remainder, [left, right])
 
+  @doc """
+  Computes the the sine of a number (in radians).
+  The resultant series is going to be of dtype `:float`, with values between 1 and -1.
+
+  ## Supported dtype
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> pi = :math.pi()
+      iex> s = [-pi * 3/2, -pi, -pi / 2, -pi / 4, 0, pi / 4, pi / 2, pi, pi * 3/2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.sin(s)
+      #Explorer.Series<
+        Polars[9]
+        float [1.0, -1.2246467991473532e-16, -1.0, -0.7071067811865475, 0.0, 0.7071067811865475, 1.0, 1.2246467991473532e-16, -1.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec sin(series :: Series.t()) :: Series.t()
+  def sin(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+    do: Shared.apply_impl(series, :sin)
+
+  def sin(%Series{dtype: dtype}),
+    do: dtype_error("sin/1", dtype, [:float, :integer])
+
   defp basic_numeric_operation(
          operation,
          %Series{dtype: left_dtype} = left,

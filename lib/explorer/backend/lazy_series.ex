@@ -40,6 +40,7 @@ defmodule Explorer.Backend.LazySeries do
     log: 1,
     log: 2,
     exp: 1,
+    sin: 1,
     fill_missing_with_value: 2,
     fill_missing_with_strategy: 2,
     format: 1,
@@ -593,6 +594,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def exp(%Series{} = series) do
     data = new(:exp, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def sin(%Series{} = series) do
+    data = new(:sin, [lazy_series!(series)])
 
     Backend.Series.new(data, :float)
   end

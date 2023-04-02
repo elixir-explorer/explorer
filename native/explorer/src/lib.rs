@@ -175,6 +175,8 @@ rustler::init!(
         expr_quotient,
         expr_remainder,
         expr_subtract,
+        // trigonometric expressions
+        expr_sin,
         // slice and dice expressions
         expr_coalesce,
         expr_format,
@@ -332,6 +334,7 @@ rustler::init!(
         s_sample_frac,
         s_series_equal,
         s_shift,
+        s_sin,
         s_size,
         s_slice,
         s_slice_by_indices,

@@ -93,6 +93,10 @@ defmodule Explorer.Backend.Series do
   @callback log(argument :: s, base :: float()) :: s
   @callback exp(s) :: s
 
+  # Trigonometry
+
+  @callback sin(s) :: s
+
   # Comparisons
 
   @callback equal(s | valid_types(), s | valid_types()) :: s

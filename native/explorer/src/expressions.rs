@@ -690,3 +690,10 @@ pub fn expr_ceil(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.ceil())
 }
+
+#[rustler::nif]
+pub fn expr_sin(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.sin())
+}

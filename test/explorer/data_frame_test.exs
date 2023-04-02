@@ -1289,6 +1289,25 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "add columns with trignometric functions" do
+      pi = :math.pi()
+      df = DF.new(a: [0, pi / 2, pi])
+
+      df1 = DF.mutate(df, b: sin(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [0, pi / 2, pi],
+               b: [0, 1, 1.2246467991473532e-16]
+             }
+
+      assert df1.names == ["a", "b"]
+
+      assert df1.dtypes == %{
+               "a" => :float,
+               "b" => :float
+             }
+    end
+
     test "raises when adding eager series" do
       df = DF.new(a: [1, 2, 3])
       series = Series.from_list([4, 5, 6])
