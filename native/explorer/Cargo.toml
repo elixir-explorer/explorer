@@ -57,6 +57,7 @@ features = [
   "sort_multiple",
   "temporal",
   "to_dummies",
+  "trigonometry",
   "is_in",
   "streaming",
   "strings",

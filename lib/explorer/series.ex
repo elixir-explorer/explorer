@@ -2411,6 +2411,87 @@ defmodule Explorer.Series do
   def remainder(left, %Series{dtype: :integer} = right) when is_integer(left),
     do: Shared.apply_series_impl(:remainder, [left, right])
 
+  @doc """
+  Computes the the sine of a number (in radians).
+  The resultant series is going to be of dtype `:float`, with values between 1 and -1.
+
+  ## Supported dtype
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> pi = :math.pi()
+      iex> s = [-pi * 3/2, -pi, -pi / 2, -pi / 4, 0, pi / 4, pi / 2, pi, pi * 3/2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.sin(s)
+      #Explorer.Series<
+        Polars[9]
+        float [1.0, -1.2246467991473532e-16, -1.0, -0.7071067811865475, 0.0, 0.7071067811865475, 1.0, 1.2246467991473532e-16, -1.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec sin(series :: Series.t()) :: Series.t()
+  def sin(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+    do: Shared.apply_impl(series, :sin)
+
+  def sin(%Series{dtype: dtype}),
+    do: dtype_error("sin/1", dtype, [:float, :integer])
+
+  @doc """
+  Computes the the cosine of a number (in radians).
+  The resultant series is going to be of dtype `:float`, with values between 1 and -1.
+
+  ## Supported dtype
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> pi = :math.pi()
+      iex> s = [-pi * 3/2, -pi, -pi / 2, -pi / 4, 0, pi / 4, pi / 2, pi, pi * 3/2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cos(s)
+      #Explorer.Series<
+        Polars[9]
+        float [-1.8369701987210297e-16, -1.0, 6.123233995736766e-17, 0.7071067811865476, 1.0, 0.7071067811865476, 6.123233995736766e-17, -1.0, -1.8369701987210297e-16]
+      >
+  """
+  @doc type: :element_wise
+  @spec cos(series :: Series.t()) :: Series.t()
+  def cos(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+    do: Shared.apply_impl(series, :cos)
+
+  def cos(%Series{dtype: dtype}),
+    do: dtype_error("cos/1", dtype, [:float, :integer])
+
+  @doc """
+  Computes the tangent of a number (in radians).
+  The resultant series is going to be of dtype `:float`.
+
+  ## Supported dtype
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> pi = :math.pi()
+      iex> s = [-pi * 3/2, -pi, -pi / 2, -pi / 4, 0, pi / 4, pi / 2, pi, pi * 3/2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.tan(s)
+      #Explorer.Series<
+        Polars[9]
+        float [-5443746451065123.0, 1.2246467991473532e-16, -1.633123935319537e16, -0.9999999999999999, 0.0, 0.9999999999999999, 1.633123935319537e16, -1.2246467991473532e-16, 5443746451065123.0]
+      >
+  """
+  @doc type: :element_wise
+  @spec tan(series :: Series.t()) :: Series.t()
+  def tan(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+    do: Shared.apply_impl(series, :tan)
+
+  def tan(%Series{dtype: dtype}),
+    do: dtype_error("tan/1", dtype, [:float, :integer])
+
   defp basic_numeric_operation(
          operation,
          %Series{dtype: left_dtype} = left,

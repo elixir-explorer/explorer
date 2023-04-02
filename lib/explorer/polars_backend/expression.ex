@@ -55,6 +55,9 @@ defmodule Explorer.PolarsBackend.Expression do
     floor: 1,
     ceil: 1,
     select: 3,
+    sin: 1,
+    cos: 1,
+    tan: 1,
     standard_deviation: 1,
     subtract: 2,
     sum: 1,
@@ -74,6 +77,11 @@ defmodule Explorer.PolarsBackend.Expression do
     sample_n: 5,
     sample_frac: 5,
     exp: 1,
+
+    # Trigonometric operations
+    cos: 1,
+    sin: 1,
+    tan: 1,
 
     # Window operations
     cumulative_max: 2,

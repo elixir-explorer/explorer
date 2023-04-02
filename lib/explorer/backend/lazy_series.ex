@@ -47,6 +47,12 @@ defmodule Explorer.Backend.LazySeries do
     coalesce: 2,
     cast: 2,
     select: 3,
+
+    # Trigonometric functions
+    cos: 1,
+    sin: 1,
+    tan: 1,
+
     # Window functions
     cumulative_max: 2,
     cumulative_min: 2,
@@ -593,6 +599,27 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def exp(%Series{} = series) do
     data = new(:exp, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def sin(%Series{} = series) do
+    data = new(:sin, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def cos(%Series{} = series) do
+    data = new(:cos, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def tan(%Series{} = series) do
+    data = new(:tan, [lazy_series!(series)])
 
     Backend.Series.new(data, :float)
   end
