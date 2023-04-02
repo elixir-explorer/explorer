@@ -697,3 +697,10 @@ pub fn expr_sin(expr: ExExpr) -> ExExpr {
 
     ExExpr::new(expr.sin())
 }
+
+#[rustler::nif]
+pub fn expr_cos(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.cos())
+}

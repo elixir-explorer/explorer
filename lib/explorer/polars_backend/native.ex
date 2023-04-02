@@ -319,6 +319,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_to_date(_s), do: err()
   def s_to_time(_s), do: err()
   def s_sin(_s), do: err()
+  def s_cos(_s), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

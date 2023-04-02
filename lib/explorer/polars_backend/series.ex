@@ -301,6 +301,9 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def sin(%Series{} = s), do: Shared.apply_series(s, :s_sin, [])
 
+  @impl true
+  def cos(%Series{} = s), do: Shared.apply_series(s, :s_cos, [])
+
   # Comparisons
 
   @impl true

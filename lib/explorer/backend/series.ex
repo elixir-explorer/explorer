@@ -95,6 +95,7 @@ defmodule Explorer.Backend.Series do
 
   # Trigonometry
 
+  @callback cos(s) :: s
   @callback sin(s) :: s
 
   # Comparisons

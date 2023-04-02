@@ -2309,6 +2309,17 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "cos/1" do
+    test "calculates the cosine of all elements in the series" do
+      pi = :math.pi()
+      s = Explorer.Series.from_list([0, pi / 2, pi, 2 * pi])
+
+      series = Series.cos(s)
+
+      assert Series.to_list(series) == [1.0, 6.123233995736766e-17, -1.0, 1.0]
+    end
+  end
+
   describe "format/1" do
     test "with two string series" do
       s1 = Series.from_list(["a", "b"])

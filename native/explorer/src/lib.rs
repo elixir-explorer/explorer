@@ -176,6 +176,7 @@ rustler::init!(
         expr_remainder,
         expr_subtract,
         // trigonometric expressions
+        expr_cos,
         expr_sin,
         // slice and dice expressions
         expr_coalesce,
@@ -257,6 +258,7 @@ rustler::init!(
         s_coalesce,
         s_concat,
         s_contains,
+        s_cos,
         s_upcase,
         s_day_of_week,
         s_downcase,

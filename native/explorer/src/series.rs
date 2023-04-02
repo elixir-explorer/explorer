@@ -1219,3 +1219,9 @@ pub fn s_sin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.sin()).into();
     Ok(ExSeries::new(s1))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_cos(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.f64()?.apply(|o| o.cos()).into();
+    Ok(ExSeries::new(s1))
+}
