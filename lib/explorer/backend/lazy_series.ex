@@ -51,6 +51,7 @@ defmodule Explorer.Backend.LazySeries do
     # Trigonometric functions
     cos: 1,
     sin: 1,
+    tan: 1,
 
     # Window functions
     cumulative_max: 2,
@@ -612,6 +613,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def cos(%Series{} = series) do
     data = new(:cos, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def tan(%Series{} = series) do
+    data = new(:tan, [lazy_series!(series)])
 
     Backend.Series.new(data, :float)
   end

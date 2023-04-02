@@ -1293,20 +1293,22 @@ defmodule Explorer.DataFrameTest do
       pi = :math.pi()
       df = DF.new(a: [0, pi / 2, pi])
 
-      df1 = DF.mutate(df, b: sin(a), c: cos(a))
+      df1 = DF.mutate(df, b: sin(a), c: cos(a), d: tan(a))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [0, pi / 2, pi],
                b: [0, 1, 1.2246467991473532e-16],
-               c: [1.0, 6.123233995736766e-17, -1.0]
+               c: [1.0, 6.123233995736766e-17, -1.0],
+               d: [0.0, 1.633123935319537e16, -1.2246467991473532e-16]
              }
 
-      assert df1.names == ["a", "b", "c"]
+      assert df1.names == ["a", "b", "c", "d"]
 
       assert df1.dtypes == %{
                "a" => :float,
                "b" => :float,
-               "c" => :float
+               "c" => :float,
+               "d" => :float
              }
     end
 

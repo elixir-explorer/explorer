@@ -97,6 +97,7 @@ defmodule Explorer.Backend.Series do
 
   @callback cos(s) :: s
   @callback sin(s) :: s
+  @callback tan(s) :: s
 
   # Comparisons
 

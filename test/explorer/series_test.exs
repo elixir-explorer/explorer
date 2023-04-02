@@ -2320,6 +2320,22 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "tan/1" do
+    test "calculates the tangent of all elements in the series" do
+      pi = :math.pi()
+      s = Explorer.Series.from_list([0, pi / 2, pi, 2 * pi])
+
+      series = Series.tan(s)
+
+      assert Series.to_list(series) == [
+               0.0,
+               1.633123935319537e16,
+               -1.2246467991473532e-16,
+               -2.4492935982947064e-16
+             ]
+    end
+  end
+
   describe "format/1" do
     test "with two string series" do
       s1 = Series.from_list(["a", "b"])

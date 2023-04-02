@@ -178,6 +178,7 @@ rustler::init!(
         // trigonometric expressions
         expr_cos,
         expr_sin,
+        expr_tan,
         // slice and dice expressions
         expr_coalesce,
         expr_format,
@@ -343,6 +344,7 @@ rustler::init!(
         s_slice_by_series,
         s_sort,
         s_standard_deviation,
+        s_tan,
         s_trim,
         s_subtract,
         s_sum,
