@@ -9,13 +9,22 @@ use crate::{ExLazyFrame, ExplorerError};
 pub fn lf_from_parquet(
     filename: &str,
     stop_after_n_rows: Option<usize>,
-    _credentials: Option<Vec<(&str, String)>>,
+    credentials: Option<Vec<(&str, String)>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    let options = ScanArgsParquet {
+    let mut options = ScanArgsParquet {
         n_rows: stop_after_n_rows,
         ..Default::default()
     };
-    let lf = LazyFrame::scan_parquet(filename, options)?;
+
+    if let Some(credentials_pairs) = credentials {
+        let cloud_options = cloud::CloudOptions::from_untyped_config(filename, credentials_pairs)?;
+        options.cloud_options = Some(cloud_options);
+    }
+
+    let lf = LazyFrame::scan_parquet(filename, options)?
+        .with_streaming(true)
+        .with_common_subplan_elimination(false)
+        .select([col("*")]);
 
     Ok(ExLazyFrame::new(lf))
 }
