@@ -711,3 +711,24 @@ pub fn expr_tan(expr: ExExpr) -> ExExpr {
 
     ExExpr::new(expr.tan())
 }
+
+#[rustler::nif]
+pub fn expr_asin(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.arcsin())
+}
+
+#[rustler::nif]
+pub fn expr_acos(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.arccos())
+}
+
+#[rustler::nif]
+pub fn expr_atan(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.arctan())
+}
