@@ -95,6 +95,7 @@ defmodule Explorer.Backend.Series do
 
   # Trigonometry
 
+  @callback acos(s) :: s
   @callback asin(s) :: s
   @callback cos(s) :: s
   @callback sin(s) :: s

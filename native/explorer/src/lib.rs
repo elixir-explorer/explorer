@@ -176,6 +176,7 @@ rustler::init!(
         expr_remainder,
         expr_subtract,
         // trigonometric expressions
+        expr_acos,
         expr_asin,
         expr_cos,
         expr_sin,
@@ -254,6 +255,7 @@ rustler::init!(
         s_add,
         s_and,
         s_argsort,
+        s_acos,
         s_asin,
         s_cast,
         s_categories,

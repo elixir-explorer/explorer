@@ -310,6 +310,9 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def asin(%Series{} = s), do: Shared.apply_series(s, :s_asin, [])
 
+  @impl true
+  def acos(%Series{} = s), do: Shared.apply_series(s, :s_acos, [])
+
   # Comparisons
 
   @impl true
