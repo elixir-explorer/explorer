@@ -2417,7 +2417,6 @@ defmodule Explorer.Series do
 
   ## Supported dtype
 
-    * `:integer`
     * `:float`
 
   ## Examples
@@ -2432,11 +2431,11 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec sin(series :: Series.t()) :: Series.t()
-  def sin(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+  def sin(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :sin)
 
   def sin(%Series{dtype: dtype}),
-    do: dtype_error("sin/1", dtype, [:float, :integer])
+    do: dtype_error("sin/1", dtype, [:float])
 
   @doc """
   Computes the the cosine of a number (in radians).
@@ -2444,7 +2443,6 @@ defmodule Explorer.Series do
 
   ## Supported dtype
 
-    * `:integer`
     * `:float`
 
   ## Examples
@@ -2459,11 +2457,11 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec cos(series :: Series.t()) :: Series.t()
-  def cos(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+  def cos(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :cos)
 
   def cos(%Series{dtype: dtype}),
-    do: dtype_error("cos/1", dtype, [:float, :integer])
+    do: dtype_error("cos/1", dtype, [:float])
 
   @doc """
   Computes the tangent of a number (in radians).
@@ -2471,7 +2469,6 @@ defmodule Explorer.Series do
 
   ## Supported dtype
 
-    * `:integer`
     * `:float`
 
   ## Examples
@@ -2486,11 +2483,11 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec tan(series :: Series.t()) :: Series.t()
-  def tan(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+  def tan(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :tan)
 
   def tan(%Series{dtype: dtype}),
-    do: dtype_error("tan/1", dtype, [:float, :integer])
+    do: dtype_error("tan/1", dtype, [:float])
 
   @doc """
   Computes the the arcsine of a number.
