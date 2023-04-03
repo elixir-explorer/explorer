@@ -60,6 +60,7 @@ defmodule Explorer.PolarsBackend.Expression do
     tan: 1,
     asin: 1,
     acos: 1,
+    atan: 1,
     standard_deviation: 1,
     subtract: 2,
     sum: 1,
@@ -83,6 +84,7 @@ defmodule Explorer.PolarsBackend.Expression do
     # Trigonometric operations
     acos: 1,
     asin: 1,
+    atan: 1,
     cos: 1,
     sin: 1,
     tan: 1,

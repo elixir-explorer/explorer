@@ -51,6 +51,7 @@ defmodule Explorer.Backend.LazySeries do
     # Trigonometric functions
     acos: 1,
     asin: 1,
+    atan: 1,
     cos: 1,
     sin: 1,
     tan: 1,
@@ -636,6 +637,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def acos(%Series{} = series) do
     data = new(:acos, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def atan(%Series{} = series) do
+    data = new(:atan, [lazy_series!(series)])
 
     Backend.Series.new(data, :float)
   end

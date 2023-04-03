@@ -178,6 +178,7 @@ rustler::init!(
         // trigonometric expressions
         expr_acos,
         expr_asin,
+        expr_atan,
         expr_cos,
         expr_sin,
         expr_tan,
@@ -257,6 +258,7 @@ rustler::init!(
         s_argsort,
         s_acos,
         s_asin,
+        s_atan,
         s_cast,
         s_categories,
         s_categorise,

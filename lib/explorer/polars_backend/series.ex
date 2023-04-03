@@ -313,6 +313,9 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def acos(%Series{} = s), do: Shared.apply_series(s, :s_acos, [])
 
+  @impl true
+  def atan(%Series{} = s), do: Shared.apply_series(s, :s_atan, [])
+
   # Comparisons
 
   @impl true

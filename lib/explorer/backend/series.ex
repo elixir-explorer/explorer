@@ -97,6 +97,7 @@ defmodule Explorer.Backend.Series do
 
   @callback acos(s) :: s
   @callback asin(s) :: s
+  @callback atan(s) :: s
   @callback cos(s) :: s
   @callback sin(s) :: s
   @callback tan(s) :: s

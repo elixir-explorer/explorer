@@ -1294,7 +1294,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [0, pi / 2, pi])
 
       df1 = DF.mutate(df, b: sin(a), c: cos(a), d: tan(a))
-      df2 = DF.mutate(df1, e: asin(b), f: acos(c))
+      df2 = DF.mutate(df1, e: asin(b), f: acos(c), g: atan(d))
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                a: [0, pi / 2, pi],
@@ -1302,10 +1302,11 @@ defmodule Explorer.DataFrameTest do
                c: [1.0, 6.123233995736766e-17, -1.0],
                d: [0.0, 1.633123935319537e16, -1.2246467991473532e-16],
                e: [0, pi / 2, 1.2246467991473532e-16],
-               f: [0, pi / 2, pi]
+               f: [0, pi / 2, pi],
+               g: [0, pi / 2, -1.2246467991473532e-16]
              }
 
-      assert df2.names == ["a", "b", "c", "d", "e", "f"]
+      assert df2.names == ["a", "b", "c", "d", "e", "f", "g"]
 
       assert df2.dtypes == %{
                "a" => :float,
@@ -1313,7 +1314,8 @@ defmodule Explorer.DataFrameTest do
                "c" => :float,
                "d" => :float,
                "e" => :float,
-               "f" => :float
+               "f" => :float,
+               "g" => :float
              }
     end
 

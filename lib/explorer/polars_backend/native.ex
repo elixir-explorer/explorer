@@ -323,6 +323,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_tan(_s), do: err()
   def s_asin(_s), do: err()
   def s_acos(_s), do: err()
+  def s_atan(_s), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

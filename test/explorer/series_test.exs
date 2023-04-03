@@ -2356,6 +2356,16 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "atan/1" do
+    test "calculates the arctangent of all elements in the series" do
+      s = Explorer.Series.from_list([0.0, 1.0])
+
+      series = Series.atan(s)
+
+      assert Series.to_list(series) == [0.0, 0.7853981633974483]
+    end
+  end
+
   describe "format/1" do
     test "with two string series" do
       s1 = Series.from_list(["a", "b"])

@@ -1243,3 +1243,9 @@ pub fn s_acos(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.acos()).into();
     Ok(ExSeries::new(s1))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.f64()?.apply(|o| o.atan()).into();
+    Ok(ExSeries::new(s1))
+}
