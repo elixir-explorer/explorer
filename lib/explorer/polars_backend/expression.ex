@@ -58,6 +58,7 @@ defmodule Explorer.PolarsBackend.Expression do
     sin: 1,
     cos: 1,
     tan: 1,
+    asin: 1,
     standard_deviation: 1,
     subtract: 2,
     sum: 1,
@@ -79,6 +80,7 @@ defmodule Explorer.PolarsBackend.Expression do
     exp: 1,
 
     # Trigonometric operations
+    asin: 1,
     cos: 1,
     sin: 1,
     tan: 1,

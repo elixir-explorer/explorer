@@ -2492,6 +2492,31 @@ defmodule Explorer.Series do
   def tan(%Series{dtype: dtype}),
     do: dtype_error("tan/1", dtype, [:float, :integer])
 
+  @doc """
+  Computes the the arcsine of a number.
+  The resultant series is going to be of dtype `:float`, in radians, with values between -pi/2 and pi/2.
+
+  ## Supported dtype
+
+    * `:float`
+
+  ## Examples
+
+      iex> s = [1.0, 0.0, -1.0, -0.7071067811865475, 0.7071067811865475] |> Explorer.Series.from_list()
+      iex> Explorer.Series.asin(s)
+      #Explorer.Series<
+        Polars[5]
+        float [1.5707963267948966, 0.0, -1.5707963267948966, -0.7853981633974482, 0.7853981633974482]
+      >
+  """
+  @doc type: :element_wise
+  @spec asin(series :: Series.t()) :: Series.t()
+  def asin(%Series{dtype: :float} = series),
+    do: Shared.apply_impl(series, :asin)
+
+  def asin(%Series{dtype: dtype}),
+    do: dtype_error("asin/1", dtype, [:float])
+
   defp basic_numeric_operation(
          operation,
          %Series{dtype: left_dtype} = left,

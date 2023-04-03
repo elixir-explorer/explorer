@@ -1231,3 +1231,9 @@ pub fn s_tan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.tan()).into();
     Ok(ExSeries::new(s1))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_asin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.f64()?.apply(|o| o.asin()).into();
+    Ok(ExSeries::new(s1))
+}
