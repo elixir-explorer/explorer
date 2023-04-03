@@ -5,7 +5,7 @@ use crate::dataframe::io::schema_from_dtypes_pairs;
 use crate::datatypes::ExParquetCompression;
 use crate::{ExLazyFrame, ExplorerError};
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 pub fn lf_from_parquet(
     filename: &str,
     stop_after_n_rows: Option<usize>,

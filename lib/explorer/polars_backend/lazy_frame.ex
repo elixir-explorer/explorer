@@ -121,9 +121,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
               "Consider using `select/2` after reading the parquet file"
     end
 
-    # Não vai dar pra usar aqui, então vamos ter que usar nos scan_*
-    # Aqui é a crate que a gente tem que ficar de olho: https://crates.io/crates/object_store
-    # Aqui ajuda também: https://docs.rs/object_store/0.5.5/object_store/aws/struct.AmazonS3Builder.html
     credentials =
       if String.starts_with?(filename, "s3://"), do: normalize_credentials(credentials)
 
@@ -135,7 +132,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @valid_s3_options ~w(access_key_id secret_access_key region bucket_name token endpoint metadata_endpoint)a
 
-  defp normalize_credentials(credentials) do
+  # TODO: read from env vars first.
+  defp normalize_credentials(credentials) when is_list(credentials) do
     for {key, value} <- credentials do
       if key in @valid_s3_options do
         {Atom.to_string(key), value}
