@@ -4706,7 +4706,7 @@ defmodule Explorer.DataFrame do
           %Series{data: %LazySeries{aggregation: true}} ->
             value
 
-          %Series{data: %LazySeries{op: op}} = series ->
+          %Series{data: %LazySeries{}} = series ->
             raise "expecting summarise with an aggregation operation, " <>
                     "but no aggregation was found in: #{inspect(series)}"
 
