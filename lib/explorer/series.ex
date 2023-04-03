@@ -2429,7 +2429,7 @@ defmodule Explorer.Series do
         float [1.0, -1.2246467991473532e-16, -1.0, -0.7071067811865475, 0.0, 0.7071067811865475, 1.0, 1.2246467991473532e-16, -1.0]
       >
   """
-  @doc type: :element_wise
+  @doc type: :float_wise
   @spec sin(series :: Series.t()) :: Series.t()
   def sin(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :sin)
@@ -2455,7 +2455,7 @@ defmodule Explorer.Series do
         float [-1.8369701987210297e-16, -1.0, 6.123233995736766e-17, 0.7071067811865476, 1.0, 0.7071067811865476, 6.123233995736766e-17, -1.0, -1.8369701987210297e-16]
       >
   """
-  @doc type: :element_wise
+  @doc type: :float_wise
   @spec cos(series :: Series.t()) :: Series.t()
   def cos(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :cos)
@@ -2481,7 +2481,7 @@ defmodule Explorer.Series do
         float [-5443746451065123.0, 1.2246467991473532e-16, -1.633123935319537e16, -0.9999999999999999, 0.0, 0.9999999999999999, 1.633123935319537e16, -1.2246467991473532e-16, 5443746451065123.0]
       >
   """
-  @doc type: :element_wise
+  @doc type: :float_wise
   @spec tan(series :: Series.t()) :: Series.t()
   def tan(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :tan)
@@ -2506,7 +2506,7 @@ defmodule Explorer.Series do
         float [1.5707963267948966, 0.0, -1.5707963267948966, -0.7853981633974482, 0.7853981633974482]
       >
   """
-  @doc type: :element_wise
+  @doc type: :float_wise
   @spec asin(series :: Series.t()) :: Series.t()
   def asin(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :asin)
@@ -2531,7 +2531,7 @@ defmodule Explorer.Series do
         float [0.0, 1.5707963267948966, 3.141592653589793, 2.356194490192345, 0.7853981633974484]
       >
   """
-  @doc type: :element_wise
+  @doc type: :float_wise
   @spec acos(series :: Series.t()) :: Series.t()
   def acos(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :acos)
@@ -2556,7 +2556,7 @@ defmodule Explorer.Series do
         float [0.7853981633974483, 0.0, -0.7853981633974483, -0.6154797086703873, 0.6154797086703873]
       >
   """
-  @doc type: :element_wise
+  @doc type: :float_wise
   @spec atan(series :: Series.t()) :: Series.t()
   def atan(%Series{dtype: :float} = series),
     do: Shared.apply_impl(series, :atan)
