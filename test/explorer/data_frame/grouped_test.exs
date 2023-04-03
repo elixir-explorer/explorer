@@ -379,7 +379,12 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
 
     test "with one group but no aggregation", %{df: df} do
-      message = "expecting summarise with an aggregation operation inside, got: :add"
+      message = """
+      expecting summarise with an aggregation operation, but no aggregation was found in: #Explorer.Series<
+        LazySeries[???]
+        integer (column("solid_fuel") + 50)
+      >\
+      """
 
       assert_raise RuntimeError, message, fn ->
         df

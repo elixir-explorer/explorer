@@ -2,8 +2,6 @@ defmodule Explorer.Shared do
   # A collection of **private** helpers shared in Explorer.
   @moduledoc false
 
-  alias Explorer.Backend.LazySeries
-
   @doc """
   All supported dtypes.
   """
@@ -132,41 +130,6 @@ defmodule Explorer.Shared do
   defp pick_impl(struct, struct), do: struct
 
   defp pick_impl(struct1, struct2) do
-    raise "cannot invoke Explorer function because it relies on two incompatible implementations: " <>
-            "#{inspect(struct1)} and #{inspect(struct2)}"
-  end
-
-  @doc """
-  Applies a function using the implementation of maybe series.
-  """
-  def apply_series_impl(fun, series_or_scalars) when is_list(series_or_scalars) do
-    impl = series_impl!(series_or_scalars)
-    apply(impl, fun, series_or_scalars)
-  end
-
-  defp series_impl!([[%{data: _} | _others] = series_list]), do: series_impl!(series_list)
-
-  defp series_impl!(series_or_scalars) when is_list(series_or_scalars) do
-    impl =
-      Enum.reduce(series_or_scalars, nil, fn
-        %{data: %struct{}}, nil -> struct
-        %{data: %struct{}}, impl -> pick_series_impl(impl, struct)
-        _scalar, impl -> impl
-      end)
-
-    if impl == nil do
-      raise ArgumentError,
-            "expected at least one series to be given as argument, got: #{inspect(series_or_scalars)}"
-    end
-
-    impl
-  end
-
-  defp pick_series_impl(struct, struct), do: struct
-  defp pick_series_impl(LazySeries, _), do: LazySeries
-  defp pick_series_impl(_, LazySeries), do: LazySeries
-
-  defp pick_series_impl(struct1, struct2) do
     raise "cannot invoke Explorer function because it relies on two incompatible implementations: " <>
             "#{inspect(struct1)} and #{inspect(struct2)}"
   end
