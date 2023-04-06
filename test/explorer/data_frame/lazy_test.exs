@@ -189,6 +189,33 @@ defmodule Explorer.DataFrame.LazyTest do
     end
   end
 
+  describe "from_parquet/2 - from the web" do
+    setup do
+      bypass = Bypass.open()
+
+      {:ok, bypass: bypass}
+    end
+
+    @tag :tmp_dir
+    @tag :skip
+    test "fetching from HTTP", %{df: df, tmp_dir: tmp_dir, bypass: bypass} do
+      endpoint = "http://localhost:#{bypass.port}/"
+
+      path = Path.join([tmp_dir, "fossil_fuels.parquet"])
+      DF.to_parquet!(df, path)
+
+      Bypass.expect_once(bypass, "GET", "/bucket/data.parquet", fn conn ->
+        Plug.Conn.resp(conn, 200, File.read!(path))
+      end)
+
+      assert {:ok, df} = DF.from_parquet(endpoint <> "bucket/data.parquet", lazy: true)
+
+      df1 = DF.collect(df)
+
+      assert DF.n_rows(df1) == 19
+    end
+  end
+
   @tag :tmp_dir
   test "to_parquet/2 - with defaults", %{ldf: ldf, tmp_dir: tmp_dir} do
     path = Path.join([tmp_dir, "fossil_fuels.parquet"])

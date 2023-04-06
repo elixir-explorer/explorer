@@ -122,7 +122,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     end
 
     credentials =
-      if String.starts_with?(filename, "s3://"), do: normalize_credentials(credentials)
+      if String.starts_with?(filename, "s3://"), do: normalize_s3_credentials(credentials)
 
     case Native.lf_from_parquet(filename, max_rows, credentials) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
@@ -132,14 +132,27 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @valid_s3_options ~w(access_key_id secret_access_key region bucket_name token endpoint metadata_endpoint)a
 
-  # TODO: read from env vars first.
-  defp normalize_credentials(credentials) when is_list(credentials) do
-    for {key, value} <- credentials do
-      if key in @valid_s3_options do
-        {Atom.to_string(key), value}
-      else
-        raise "Option #{inspect(key)} is not a valid S3 credentials option"
-      end
+  # Take config from credentials or system env.
+  defp normalize_s3_credentials(credentials) when is_list(credentials) do
+    {remaining_opts, normalized_creds} =
+      Enum.reduce(@valid_s3_options, {credentials, []}, fn key, {creds, normalized} ->
+        {value, rest} = Keyword.pop(creds, key)
+
+        key = Atom.to_string(key)
+        value = value || System.get_env(String.upcase(key))
+
+        if value do
+          {rest, [{key, value} | normalized]}
+        else
+          {rest, normalized}
+        end
+      end)
+
+    if remaining_opts != [] do
+      raise ArgumentError,
+            "the following keys are not valid S3 options: #{inspect(remaining_opts)}"
+    else
+      normalized_creds
     end
   end
 
