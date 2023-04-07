@@ -1203,18 +1203,28 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["e", "c", "a", "d", "b"]
     end
 
-    test "negate boolean column" do
-      df = DF.new(a: [true, false, true, nil])
+    test "operations on boolean column" do
+      df = DF.new(a: [true, false, true, nil], b: [true, false, false, true])
 
-      df1 = DF.mutate(df, b: not a)
+      df1 = DF.mutate(df, c: not a, d: a and b, e: a or b)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true, nil],
-               b: [false, true, false, nil]
+               b: [true, false, false, true],
+               c: [false, true, false, nil],
+               d: [true, false, false, nil],
+               e: [true, false, true, true]
              }
 
-      assert df1.names == ["a", "b"]
-      assert df1.dtypes == %{"a" => :boolean, "b" => :boolean}
+      assert df1.names == ["a", "b", "c", "d", "e"]
+
+      assert df1.dtypes == %{
+               "a" => :boolean,
+               "b" => :boolean,
+               "c" => :boolean,
+               "d" => :boolean,
+               "e" => :boolean
+             }
     end
 
     test "adds a slice of another column with a list of indices" do
