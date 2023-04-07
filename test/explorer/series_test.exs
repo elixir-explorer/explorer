@@ -2935,6 +2935,22 @@ defmodule Explorer.SeriesTest do
     assert Series.to_list(result) == [false, true, true, nil, false]
   end
 
+  test "and/2 calculates element-wise and of two boolean series" do
+    s1 = Series.from_list([true, false, false, nil, false])
+    s2 = Series.from_list([true, true, false, true, true])
+    result = Series.and(s1, s2)
+
+    assert Series.to_list(result) == [true, false, false, nil, false]
+  end
+
+  test "or/2 calculates element-wise or of two boolean series" do
+    s1 = Series.from_list([true, false, false, nil, false])
+    s2 = Series.from_list([true, true, false, true, true])
+    result = Series.or(s1, s2)
+
+    assert Series.to_list(result) == [true, true, false, true, true]
+  end
+
   test "nil_count/1" do
     s1 = Explorer.Series.from_list(["a", nil, "c", nil, nil])
     s2 = Explorer.Series.from_list([1, nil, 3, nil, nil, 6, 7, nil])

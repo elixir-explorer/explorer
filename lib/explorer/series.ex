@@ -2981,8 +2981,11 @@ defmodule Explorer.Series do
 
   """
   @doc type: :element_wise
-  def (%Series{} = left) and (%Series{} = right),
+  def (%Series{dtype: :boolean} = left) and (%Series{dtype: :boolean} = right),
     do: apply_series_list(:binary_and, [left, right])
+
+  def (%Series{} = left) and (%Series{} = right),
+    do: dtype_mismatch_error("and/2", left, right, [:boolean])
 
   @doc """
   Returns a boolean mask of `left or right`, element-wise.
@@ -3003,8 +3006,11 @@ defmodule Explorer.Series do
 
   """
   @doc type: :element_wise
-  def (%Series{} = left) or (%Series{} = right),
+  def (%Series{dtype: :boolean} = left) or (%Series{dtype: :boolean} = right),
     do: apply_series_list(:binary_or, [left, right])
+
+  def (%Series{} = left) or (%Series{} = right),
+    do: dtype_mismatch_error("or/2", left, right, [:boolean])
 
   @doc """
   Checks equality between two entire series.
@@ -3050,6 +3056,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   def not (%Series{dtype: :boolean} = series), do: apply_series(series, :unary_not, [])
+  def not %Series{dtype: dtype}, do: dtype_error("not/1", dtype, [:boolean])
 
   # Sort
 
