@@ -1398,7 +1398,7 @@ defmodule Explorer.DataFrame do
     if struct == Nx.Tensor do
       case data.shape do
         {_, cols} ->
-          {:tensor, Enum.map(1..cols, fn i -> {"x#{i}", data[[.., i - 1]]} end)}
+          {:tensor, Enum.map(1..cols, fn i -> {"x#{i}", data[[0..-1//1, i - 1]]} end)}
 
         _ ->
           raise ArgumentError,
