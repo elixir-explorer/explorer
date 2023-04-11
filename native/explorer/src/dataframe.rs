@@ -10,6 +10,9 @@ use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
 
+// Experimental IO
+pub mod experimental_io;
+
 // Helper to normalize integers and float column dtypes.
 pub fn normalize_numeric_dtypes(df: &mut DataFrame) -> Result<DataFrame, crate::ExplorerError> {
     let dtypes = df.dtypes().into_iter().enumerate();

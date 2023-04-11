@@ -22,6 +22,7 @@ mod expressions;
 mod lazyframe;
 mod series;
 
+use dataframe::experimental_io::*;
 use dataframe::io::*;
 use dataframe::*;
 pub use datatypes::{
@@ -119,6 +120,7 @@ rustler::init!(
         df_to_dummies,
         df_to_ipc,
         df_to_ipc_stream,
+        df_to_ipc_via_pid,
         df_to_lazy,
         df_to_ndjson,
         df_to_parquet,

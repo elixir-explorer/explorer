@@ -124,6 +124,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_to_dummies(_df, _columns), do: err()
   def df_to_ipc(_df, _filename, _compression), do: err()
   def df_to_ipc_stream(_df, _filename, _compression), do: err()
+  def df_to_ipc_via_pid(_df, _pid, _compression), do: err()
   def df_to_lazy(_df), do: err()
   def df_to_ndjson(_df, _filename), do: err()
   def df_to_parquet(_df, _filename, _compression), do: err()
