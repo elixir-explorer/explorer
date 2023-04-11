@@ -15,6 +15,7 @@ use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Cursor};
 use std::result::Result;
+use std::sync::Arc;
 
 use crate::dataframe::normalize_numeric_dtypes;
 use crate::datatypes::ExParquetCompression;
@@ -57,7 +58,7 @@ pub fn df_from_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let schema: Option<Schema> = match dtypes {
+    let schema = match dtypes {
         Some(dtypes) => Some(schema_from_dtypes_pairs(dtypes)?),
 
         None => None,
@@ -66,7 +67,7 @@ pub fn df_from_csv(
     let reader = CsvReader::from_path(filename)?
         .infer_schema(infer_schema_length)
         .has_header(has_header)
-        .with_parse_dates(parse_dates)
+        .with_try_parse_dates(parse_dates)
         .with_n_rows(stop_after_n_rows)
         .with_delimiter(delimiter_as_byte)
         .with_skip_rows(skip_rows)
@@ -74,19 +75,19 @@ pub fn df_from_csv(
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
         .with_columns(column_names)
-        .with_dtypes(schema.as_ref())
+        .with_dtypes(schema)
         .with_null_values(Some(NullValues::AllColumns(vec![null_char])));
 
     finish_reader(reader)
 }
 
-pub fn schema_from_dtypes_pairs(dtypes: Vec<(&str, &str)>) -> Result<Schema, ExplorerError> {
+pub fn schema_from_dtypes_pairs(dtypes: Vec<(&str, &str)>) -> Result<Arc<Schema>, ExplorerError> {
     let mut schema = Schema::new();
     for (name, dtype_str) in dtypes {
         let dtype = dtype_from_str(dtype_str)?;
-        schema.with_column(name.to_string(), dtype);
+        schema.with_column(name.into(), dtype);
     }
-    Ok(schema)
+    Ok(Arc::new(schema))
 }
 
 fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
@@ -163,7 +164,7 @@ pub fn df_load_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let schema: Option<Schema> = match dtypes {
+    let schema = match dtypes {
         Some(dtypes) => Some(schema_from_dtypes_pairs(dtypes)?),
 
         None => None,
@@ -174,7 +175,7 @@ pub fn df_load_csv(
     let reader = CsvReader::new(cursor)
         .infer_schema(infer_schema_length)
         .has_header(has_header)
-        .with_parse_dates(parse_dates)
+        .with_try_parse_dates(parse_dates)
         .with_n_rows(stop_after_n_rows)
         .with_delimiter(delimiter_as_byte)
         .with_skip_rows(skip_rows)
@@ -182,7 +183,7 @@ pub fn df_load_csv(
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
         .with_columns(column_names)
-        .with_dtypes(schema.as_ref())
+        .with_dtypes(schema)
         .with_null_values(Some(NullValues::AllColumns(vec![null_char])));
 
     finish_reader(reader)

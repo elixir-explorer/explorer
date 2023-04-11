@@ -70,7 +70,7 @@ pub fn lf_from_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let schema: Option<Schema> = match dtypes {
+    let schema = match dtypes {
         Some(dtypes) => Some(schema_from_dtypes_pairs(dtypes)?),
 
         None => None,
@@ -79,13 +79,13 @@ pub fn lf_from_csv(
     let df = LazyCsvReader::new(filename)
         .with_infer_schema_length(infer_schema_length)
         .has_header(has_header)
-        .with_parse_dates(parse_dates)
+        .with_try_parse_dates(parse_dates)
         .with_n_rows(stop_after_n_rows)
         .with_delimiter(delimiter_as_byte)
         .with_skip_rows(skip_rows)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
-        .with_dtype_overwrite(schema.as_ref())
+        .with_dtype_overwrite(schema.as_deref())
         .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
         .finish()?;
 

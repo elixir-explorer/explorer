@@ -16,10 +16,10 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
 
       assert %Expression{} = expr = Expression.to_expr(lazy)
 
-      assert Expression.describe_filter_plan(df, expr) == """
-               FILTER [(col("col_a")) == (5i64)] FROM
-                 DF ["col_a", "col_b"]; PROJECT */2 COLUMNS; SELECTION: "None"
-             """
+      assert Expression.describe_filter_plan(df, expr) ==
+               String.trim("""
+               FILTER [(col("col_a")) == (5)] FROMDF ["col_a", "col_b"]; PROJECT */2 COLUMNS; SELECTION: "None"
+               """)
     end
 
     test "with basic float value" do
@@ -81,10 +81,10 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
 
       assert %Expression{} = expr = Expression.to_expr(lazy)
 
-      assert Expression.describe_filter_plan(df, expr) == """
-               FILTER [(col("col_a")) == (col("col_b"))] FROM
-                 DF ["col_a", "col_b"]; PROJECT */2 COLUMNS; SELECTION: "None"
-             """
+      assert Expression.describe_filter_plan(df, expr) ==
+               String.trim("""
+               FILTER [(col("col_a")) == (col("col_b"))] FROMDF ["col_a", "col_b"]; PROJECT */2 COLUMNS; SELECTION: "None"
+               """)
     end
   end
 end
