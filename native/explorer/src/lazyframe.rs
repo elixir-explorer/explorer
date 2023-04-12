@@ -1,4 +1,7 @@
-use crate::{expressions::ex_expr_to_exprs, ExDataFrame, ExExpr, ExLazyFrame, ExplorerError};
+use crate::{
+    dataframe::to_smart_strings, expressions::ex_expr_to_exprs, ExDataFrame, ExExpr, ExLazyFrame,
+    ExplorerError,
+};
 use polars::prelude::*;
 use std::result::Result;
 
@@ -42,7 +45,13 @@ pub fn lf_tail(data: ExLazyFrame, length: u32) -> Result<ExLazyFrame, ExplorerEr
 #[rustler::nif]
 pub fn lf_names(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
     let lf = data.clone_inner();
-    Ok(lf.schema()?.iter_names().cloned().collect())
+    let names = lf
+        .schema()?
+        .iter_names()
+        .map(|smart_string| smart_string.to_string())
+        .collect();
+
+    Ok(names)
 }
 
 #[rustler::nif]
@@ -158,17 +167,18 @@ pub fn lf_drop_nils(
 #[rustler::nif]
 pub fn lf_pivot_longer(
     data: ExLazyFrame,
-    id_vars: Vec<String>,
-    value_vars: Vec<String>,
+    id_vars: Vec<&str>,
+    value_vars: Vec<&str>,
     names_to: String,
     values_to: String,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
     let melt_opts = MeltArgs {
-        id_vars,
-        value_vars,
-        variable_name: Some(names_to),
-        value_name: Some(values_to),
+        id_vars: to_smart_strings(id_vars),
+        value_vars: to_smart_strings(value_vars),
+        variable_name: Some(names_to.into()),
+        value_name: Some(values_to.into()),
+        streamable: true,
     };
     let new_df = ldf.melt(melt_opts);
     Ok(ExLazyFrame::new(new_df))

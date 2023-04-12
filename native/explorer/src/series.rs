@@ -301,7 +301,7 @@ pub fn s_argsort(
         nulls_last,
         multithreaded: false,
     };
-    let indices = series.argsort(opts).cast(&DataType::Int64)?;
+    let indices = series.arg_sort(opts).cast(&DataType::Int64)?;
     Ok(ExSeries::new(indices))
 }
 
@@ -1118,7 +1118,8 @@ pub fn s_not(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_contains(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s1.utf8()?.contains(pattern)?.into()))
+    // TODO: maybe have "strict" as an option.
+    Ok(ExSeries::new(s1.utf8()?.contains(pattern, true)?.into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

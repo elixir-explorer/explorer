@@ -18,6 +18,7 @@ rand = { version = "0.8.5", features = ["alloc"] }
 rand_pcg = "0.3.1"
 rustler = "0.27.0"
 thiserror = "1"
+smartstring = "1"
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
@@ -25,7 +26,7 @@ thiserror = "1"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.27.2"
+version = "0.28"
 default-features = false
 features = [
   "checked_arithmetic",
@@ -38,7 +39,6 @@ features = [
   "dtype-date",
   "dtype-time",
   "dtype-datetime",
-  "dtype-binary",
   "dtype-categorical",
   "ipc",
   "ipc_streaming",
@@ -66,4 +66,4 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.27.2"
+version = "0.28"

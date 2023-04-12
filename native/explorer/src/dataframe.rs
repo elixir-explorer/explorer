@@ -6,6 +6,7 @@ use std::result::Result;
 
 use crate::ex_expr_to_exprs;
 use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
+use smartstring::alias::String as SmartString;
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
@@ -28,6 +29,14 @@ pub fn normalize_numeric_dtypes(df: &mut DataFrame) -> Result<DataFrame, crate::
     }
 
     Ok(df.clone())
+}
+
+fn to_string_names(names: Vec<&str>) -> Vec<String> {
+    names.into_iter().map(|s| s.to_string()).collect()
+}
+
+pub fn to_smart_strings(slices: Vec<&str>) -> Vec<SmartString> {
+    slices.into_iter().map(|s| s.into()).collect()
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -57,7 +66,8 @@ pub fn df_join(
 
 #[rustler::nif]
 pub fn df_names(df: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
-    Ok(df.get_column_names_owned())
+    let names = to_string_names(df.get_column_names());
+    Ok(names)
 }
 
 #[rustler::nif]
@@ -360,16 +370,17 @@ pub fn df_tail(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_pivot_longer(
     df: ExDataFrame,
-    id_vars: Vec<String>,
-    value_vars: Vec<String>,
+    id_vars: Vec<&str>,
+    value_vars: Vec<&str>,
     names_to: String,
     values_to: String,
 ) -> Result<ExDataFrame, ExplorerError> {
     let melt_opts = MeltArgs {
-        id_vars,
-        value_vars,
-        variable_name: Some(names_to),
-        value_name: Some(values_to),
+        id_vars: to_smart_strings(id_vars),
+        value_vars: to_smart_strings(value_vars),
+        variable_name: Some(names_to.into()),
+        value_name: Some(values_to.into()),
+        streamable: true,
     };
     let new_df = df.melt2(melt_opts)?;
     Ok(ExDataFrame::new(new_df))
@@ -381,7 +392,7 @@ pub fn df_distinct(
     subset: Vec<String>,
     columns_to_keep: Option<Vec<&str>>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = df.unique_stable(Some(&subset), UniqueKeepStrategy::First)?;
+    let new_df = df.unique_stable(Some(&subset), UniqueKeepStrategy::First, None)?;
 
     match columns_to_keep {
         Some(columns) => Ok(ExDataFrame::new(new_df.select(columns)?)),
@@ -513,11 +524,12 @@ pub fn df_pivot_wider(
         values_column,
         id_columns.clone(),
         [pivot_column],
-        PivotAgg::First,
         false,
+        Some(PivotAgg::First),
         None,
     )?;
-    let mut new_names = new_df.get_column_names_owned();
+
+    let mut new_names = to_string_names(new_df.get_column_names());
 
     for name in new_names.iter_mut() {
         let original_name = name.clone();
@@ -546,7 +558,7 @@ pub fn df_pivot_wider(
                 }
             }
 
-            counter.insert(name.clone(), 1);
+            counter.insert(name.to_string(), 1);
         }
     }
 
