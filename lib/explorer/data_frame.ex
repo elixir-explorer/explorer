@@ -1525,6 +1525,40 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :to_rows, [opts[:atom_keys]])
   end
 
+  @doc """
+  Converts a dataframe to a stream of maps (rows).
+
+  > #### Warning {: .warning}
+  >
+  > This is an expensive operation since data is stored in a columnar format.
+  > Prefer to use the operations in this module rather than the ones in `Enum`
+  > whenever possible, as this module is optimized for large series.
+
+  ## Options
+
+    * `:atom_keys` - Configure if the resultant maps should have atom keys. (default: `false`)
+    * `:buffer_size` - The number of rows that are buffered internally while iterating over the data. (default: `1000`)
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
+      iex> Explorer.DataFrame.to_rows_stream(df) |> Enum.map(& &1)
+      [%{"floats" => 1.0, "ints" => 1}, %{"floats" => 2.0 ,"ints" => nil}]
+
+      iex> df = Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
+      iex> Explorer.DataFrame.to_rows_stream(df, atom_keys: true) |> Enum.map(& &1)
+      [%{floats: 1.0, ints: 1}, %{floats: 2.0, ints: nil}]
+  """
+  @doc type: :conversion
+  @spec to_rows_stream(df :: DataFrame.t(), Keyword.t()) :: Stream.t()
+  def to_rows_stream(df, opts \\ []) do
+    opts = Keyword.validate!(opts, atom_keys: false, buffer_size: 1_000)
+
+    Range.new(0, n_rows(df) - 1, opts[:buffer_size])
+    |> Stream.map(&slice(df, &1, opts[:buffer_size]))
+    |> Stream.flat_map(&to_rows(&1, atom_keys: opts[:atom_keys]))
+  end
+
   # Introspection
 
   @doc """
