@@ -1532,8 +1532,7 @@ dependencies = [
 [[package]]
 name = "simd-json"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e3375b6c3d8c048ba09c8b4b6c3f1d3f35e06b71db07d231c323943a949e1b8"
+source = "git+https://github.com/ritchie46/simd-json?branch=alignment#cbd37361769d900620944618a39123f37edf3d83"
 dependencies = [
  "halfbrown",
  "lexical-core",
