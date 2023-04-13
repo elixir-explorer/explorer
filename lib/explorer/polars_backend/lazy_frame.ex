@@ -379,7 +379,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     to_ipc: 3,
     to_ipc_stream: 3,
     to_ndjson: 2,
-    to_rows: 2
+    to_rows: 2,
+    to_rows_stream: 3
   ]
 
   for {fun, arity} <- not_available_funs do

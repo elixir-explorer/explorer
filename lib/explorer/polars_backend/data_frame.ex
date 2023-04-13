@@ -377,6 +377,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> Enum.zip_with(fn row -> keys |> Enum.zip(row) |> Map.new() end)
   end
 
+  @impl true
+  def to_rows_stream(%DataFrame{} = df, atom_keys?, chunk_size) do
+    Range.new(0, n_rows(df) - 1, chunk_size)
+    |> Stream.map(&slice(df, &1, chunk_size))
+    |> Stream.flat_map(&to_rows(&1, atom_keys?))
+  end
+
   # Introspection
 
   @impl true

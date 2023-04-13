@@ -130,6 +130,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback from_tabular(Table.Reader.t(), dtypes) :: df
   @callback from_series([{binary(), Series.t()}]) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
+  @callback to_rows_stream(df, atom_keys? :: boolean(), chunk_size :: integer()) :: Stream.t()
 
   # Introspection
 
