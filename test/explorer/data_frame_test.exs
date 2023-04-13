@@ -2410,7 +2410,7 @@ defmodule Explorer.DataFrameTest do
              ] == Enum.to_list(stream)
     end
 
-    test "converts rows to maps with atom keys" do
+    test "converts rows stream of maps with atom keys" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
       stream = DF.to_rows_stream(df, atom_keys: true)
 
