@@ -2370,15 +2370,6 @@ defmodule Explorer.DataFrameTest do
     assert %Explorer.PolarsBackend.LazyFrame{} = DF.to_lazy(df).data
   end
 
-  # to_columns
-  # to_series
-  # names
-  # dtypes
-  # shape
-  # n_rows
-  # n_columns
-  # groups
-
   describe "to_rows/2" do
     test "converts rows to maps" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
@@ -2516,8 +2507,6 @@ defmodule Explorer.DataFrameTest do
       end
     end
   end
-
-  # mask
 
   describe "head/2" do
     test "selects the first 5 rows by default", %{df: df} do
