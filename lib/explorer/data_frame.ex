@@ -1537,7 +1537,7 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `:atom_keys` - Configure if the resultant maps should have atom keys. (default: `false`)
-    * `:buffer_size` - The number of rows that are buffered internally while iterating over the data. (default: `1000`)
+    * `:chunk_size` - Number of rows passed to `to_rows/2` while streaming over the data. (default: `1000`)
 
   ## Examples
 
@@ -1552,11 +1552,13 @@ defmodule Explorer.DataFrame do
   @doc type: :conversion
   @spec to_rows_stream(df :: DataFrame.t(), Keyword.t()) :: Stream.t()
   def to_rows_stream(df, opts \\ []) do
-    opts = Keyword.validate!(opts, atom_keys: false, buffer_size: 1_000)
+    opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000)
+    atom_keys = opts[:atom_keys]
+    chunk_size = opts[:chunk_size]
 
-    Range.new(0, n_rows(df) - 1, opts[:buffer_size])
-    |> Stream.map(&slice(df, &1, opts[:buffer_size]))
-    |> Stream.flat_map(&to_rows(&1, atom_keys: opts[:atom_keys]))
+    Range.new(0, n_rows(df) - 1, chunk_size)
+    |> Stream.map(&slice(df, &1, chunk_size))
+    |> Stream.flat_map(&to_rows(&1, atom_keys: atom_keys))
   end
 
   # Introspection

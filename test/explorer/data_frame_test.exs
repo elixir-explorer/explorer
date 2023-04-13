@@ -2370,6 +2370,69 @@ defmodule Explorer.DataFrameTest do
     assert %Explorer.PolarsBackend.LazyFrame{} = DF.to_lazy(df).data
   end
 
+  # to_columns
+  # to_series
+  # names
+  # dtypes
+  # shape
+  # n_rows
+  # n_columns
+  # groups
+
+  describe "to_rows/2" do
+    test "converts rows to maps" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+
+      assert [
+               %{"a" => "a", "b" => 1},
+               %{"a" => "b", "b" => 2},
+               %{"a" => "c", "b" => 3}
+             ] == DF.to_rows(df)
+    end
+
+    test "converts rows to maps with atom keys" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+
+      assert [
+               %{a: "a", b: 1},
+               %{a: "b", b: 2},
+               %{a: "c", b: 3}
+             ] == DF.to_rows(df, atom_keys: true)
+    end
+  end
+
+  defp lazy?(stream) do
+    match?(%Stream{}, stream) or is_function(stream, 2)
+  end
+
+  describe "to_rows_stream/2" do
+    test "converts rows to stream of maps" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      stream = DF.to_rows_stream(df)
+
+      assert lazy?(stream)
+
+      assert [
+               %{"a" => "a", "b" => 1},
+               %{"a" => "b", "b" => 2},
+               %{"a" => "c", "b" => 3}
+             ] == Enum.to_list(stream)
+    end
+
+    test "converts rows to maps with atom keys" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      stream = DF.to_rows_stream(df, atom_keys: true)
+
+      assert lazy?(stream)
+
+      assert [
+               %{a: "a", b: 1},
+               %{a: "b", b: 2},
+               %{a: "c", b: 3}
+             ] == Enum.to_list(stream)
+    end
+  end
+
   describe "select/2" do
     test "keep column names" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
@@ -2453,6 +2516,8 @@ defmodule Explorer.DataFrameTest do
       end
     end
   end
+
+  # mask
 
   describe "head/2" do
     test "selects the first 5 rows by default", %{df: df} do
