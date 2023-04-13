@@ -1553,12 +1553,8 @@ defmodule Explorer.DataFrame do
   @spec to_rows_stream(df :: DataFrame.t(), Keyword.t()) :: Stream.t()
   def to_rows_stream(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000)
-    atom_keys = opts[:atom_keys]
-    chunk_size = opts[:chunk_size]
 
-    Range.new(0, n_rows(df) - 1, chunk_size)
-    |> Stream.map(&slice(df, &1, chunk_size))
-    |> Stream.flat_map(&to_rows(&1, atom_keys: atom_keys))
+    Shared.apply_impl(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size]])
   end
 
   # Introspection
