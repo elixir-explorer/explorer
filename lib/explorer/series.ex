@@ -659,7 +659,7 @@ defmodule Explorer.Series do
   Converts a series to a `t:Nx.Tensor.t/0`.
 
   Note that `Explorer.Series` are automatically converted
-  to tensors once give to numerical definitions.
+  to tensors when passed to numerical definitions.
   The tensor type is given by `iotype/1`.
 
   > #### Warning {: .warning}
