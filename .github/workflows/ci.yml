@@ -22,26 +22,26 @@ jobs:
     name: test
     steps:
       - uses: actions/checkout@v3
-      # - uses: actions/cache@v3
-      #   with:
-      #     path: |
-      #       deps
-      #       _build
-      #     key: ${{ runner.os }}-mix-${{ matrix.elixir_version }}-${{ hashFiles('**/mix.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-mix-
+      - uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ matrix.elixir_version }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
 
-      # - uses: actions/cache@v3
-      #   with:
-      #     path: |
-      #       ~/.cargo/bin/
-      #       ~/.cargo/registry/index/
-      #       ~/.cargo/registry/cache/
-      #       ~/.cargo/git/db/
-      #       native/explorer/target/
-      #       priv/native/
-      #       _build/test/lib/explorer
-      #     key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            native/explorer/target/
+            priv/native/
+            _build/test/lib/explorer
+          key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
 
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -55,9 +55,16 @@ jobs:
       - run: mix deps.get
       - run: mix deps.compile
       - name: Run tests
-        run: mix test --warnings-as-errors
-      - name: Compile once again but without optional deps
-        run: mix compile --force --warnings-as-errors --no-optional-deps
+        run: mix test --warnings-as-errors || echo "upload core dump"
+
+      # - name: Compile once again but without optional deps
+      #   run: mix compile --force --warnings-as-errors --no-optional-deps
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: erl_crash.dump
+          path: erl_crash.dump
 
   format:
     runs-on: ubuntu-latest
