@@ -8,7 +8,7 @@ on:
 
 env:
   EXPLORER_BUILD: true
-  RUST_TOOLCHAIN_VERSION: nightly-2023-04-11
+  RUST_TOOLCHAIN_VERSION: nightly-2023-04-17
   MIX_ENV: test
 
 jobs:
