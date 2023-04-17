@@ -59,14 +59,14 @@ jobs:
 
       # - name: Compile once again but without optional deps
       #   run: mix compile --force --warnings-as-errors --no-optional-deps
-      #
       - run: ls -lah
 
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
         with:
           name: erl_crash.dump
-          path: *.dump
+          path: |
+            '*.dump'
 
   format:
     runs-on: ubuntu-latest
