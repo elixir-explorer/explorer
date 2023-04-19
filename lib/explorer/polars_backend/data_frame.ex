@@ -115,7 +115,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         infer_schema_length,
         parse_dates,
         eol_char
-        ) do
+      ) do
     infer_schema_length =
       if infer_schema_length == nil,
         do: max_rows || @default_infer_schema_length,

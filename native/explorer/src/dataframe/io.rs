@@ -52,7 +52,7 @@ pub fn df_from_csv(
     encoding: &str,
     null_char: String,
     parse_dates: bool,
-    eol_char: Option<u8>
+    eol_char: Option<u8>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
@@ -160,7 +160,7 @@ pub fn df_load_csv(
     encoding: &str,
     null_char: String,
     parse_dates: bool,
-    eol_char: Option<u8>
+    eol_char: Option<u8>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
