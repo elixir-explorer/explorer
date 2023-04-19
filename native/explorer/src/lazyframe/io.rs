@@ -64,6 +64,7 @@ pub fn lf_from_csv(
     encoding: &str,
     null_char: String,
     parse_dates: bool,
+    eol_char: Option<u8>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
@@ -87,6 +88,7 @@ pub fn lf_from_csv(
         .with_encoding(encoding)
         .with_dtype_overwrite(schema.as_deref())
         .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
+        .with_end_of_line_char(eol_char.unwrap_or(b'\n'))
         .finish()?;
 
     Ok(ExLazyFrame::new(df))

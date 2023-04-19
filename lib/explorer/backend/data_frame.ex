@@ -41,7 +41,8 @@ defmodule Explorer.Backend.DataFrame do
               max_rows :: option(integer()),
               columns :: columns_for_io(),
               infer_schema_length :: option(integer()),
-              parse_dates :: boolean()
+              parse_dates :: boolean(),
+              eol_char :: option(String.t())
             ) :: result(df)
   @callback to_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
               ok_result()
@@ -58,7 +59,8 @@ defmodule Explorer.Backend.DataFrame do
               max_rows :: option(integer()),
               columns :: columns_for_io(),
               infer_schema_length :: option(integer()),
-              parse_dates :: boolean()
+              parse_dates :: boolean(),
+              eol_char :: option(String.t())
             ) :: result(df)
 
   # IO: Parquet

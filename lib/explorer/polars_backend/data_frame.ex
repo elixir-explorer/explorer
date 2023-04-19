@@ -30,7 +30,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         max_rows,
         columns,
         infer_schema_length,
-        parse_dates
+        parse_dates,
+        eol_char
       ) do
     infer_schema_length =
       if infer_schema_length == nil,
@@ -58,7 +59,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         dtypes,
         encoding,
         null_character,
-        parse_dates
+        parse_dates,
+        eol_char
       )
 
     case df do
@@ -111,8 +113,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
         max_rows,
         columns,
         infer_schema_length,
-        parse_dates
-      ) do
+        parse_dates,
+        eol_char
+        ) do
     infer_schema_length =
       if infer_schema_length == nil,
         do: max_rows || @default_infer_schema_length,
@@ -139,7 +142,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         dtypes,
         encoding,
         null_character,
-        parse_dates
+        parse_dates,
+        eol_char
       )
 
     case df do

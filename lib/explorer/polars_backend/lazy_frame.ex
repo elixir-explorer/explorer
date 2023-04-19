@@ -74,7 +74,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         max_rows,
         columns,
         infer_schema_length,
-        parse_dates
+        parse_dates,
+        eol_char
       ) do
     if columns do
       raise ArgumentError,
@@ -104,7 +105,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         dtypes,
         encoding,
         null_character,
-        parse_dates
+        parse_dates,
+        eol_char
       )
 
     case df do
@@ -161,7 +163,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         max_rows,
         columns,
         infer_schema_length,
-        parse_dates
+        parse_dates,
+        eol_char
       ) do
     case Eager.load_csv(
            contents,
@@ -174,7 +177,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
            max_rows,
            columns,
            infer_schema_length,
-           parse_dates
+           parse_dates,
+           eol_char
          ) do
       {:ok, df} -> {:ok, Eager.to_lazy(df)}
       {:error, error} -> {:error, error}
