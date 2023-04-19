@@ -168,7 +168,7 @@ fn datetime_to_microseconds(v: i64, time_unit: TimeUnit) -> i64 {
 }
 
 #[inline]
-fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Result<Term, ExplorerError> {
+pub fn encode_datetime(v: i64, time_unit: TimeUnit, env: Env) -> Result<Term, ExplorerError> {
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();

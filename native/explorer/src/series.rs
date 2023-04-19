@@ -1,12 +1,11 @@
 use crate::{
     atoms,
-    datatypes::{timestamp_to_datetime, ExDate, ExDateTime, ExTime},
+    datatypes::{ExDate, ExDateTime, ExTime},
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
-use chrono::Datelike;
+use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
-use polars::export::arrow::temporal_conversions::date32_to_date;
 use polars::prelude::*;
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
@@ -705,9 +704,10 @@ pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Float64 => Ok(term_from_optional_float(s.min::<f64>(), env)),
         DataType::Date => Ok(s.min::<i32>().map(ExDate::from).encode(env)),
         DataType::Time => Ok(s.min::<i64>().map(ExTime::from).encode(env)),
-        DataType::Datetime(TimeUnit::Microseconds, None) => {
-            Ok(s.min::<i64>().map(ExDateTime::from).encode(env))
-        }
+        DataType::Datetime(unit, None) => Ok(s
+            .min::<i64>()
+            .map(|v| encode_datetime(v, *unit, env).unwrap())
+            .encode(env)),
         dt => panic!("min/1 not implemented for {dt:?}"),
     }
 }
@@ -719,9 +719,10 @@ pub fn s_max(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Float64 => Ok(term_from_optional_float(s.max::<f64>(), env)),
         DataType::Date => Ok(s.max::<i32>().map(ExDate::from).encode(env)),
         DataType::Time => Ok(s.max::<i64>().map(ExTime::from).encode(env)),
-        DataType::Datetime(TimeUnit::Microseconds, None) => {
-            Ok(s.max::<i64>().map(ExDateTime::from).encode(env))
-        }
+        DataType::Datetime(unit, None) => Ok(s
+            .max::<i64>()
+            .map(|v| encode_datetime(v, *unit, env).unwrap())
+            .encode(env)),
         dt => panic!("max/1 not implemented for {dt:?}"),
     }
 }
@@ -808,12 +809,12 @@ pub fn s_quantile<'a>(
             None => Ok(None::<ExTime>.encode(env)),
             Some(microseconds) => Ok(ExTime::from(microseconds as i64).encode(env)),
         },
-        DataType::Datetime(TimeUnit::Microseconds, None) => {
-            match s.datetime()?.quantile(quantile, strategy)? {
-                None => Ok(None::<ExDateTime>.encode(env)),
-                Some(microseconds) => Ok(ExDateTime::from(microseconds as i64).encode(env)),
-            }
-        }
+        DataType::Datetime(unit, None) => match s.datetime()?.quantile(quantile, strategy)? {
+            None => Ok(None::<ExDateTime>.encode(env)),
+            Some(time) => Ok(encode_datetime(time as i64, *unit, env)
+                .unwrap()
+                .encode(env)),
+        },
         _ => encoding::term_from_value(
             s.quantile_as_series(quantile, strategy)?
                 .cast(dtype)?
@@ -1169,22 +1170,11 @@ pub fn s_ceil(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_day_of_week(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s2 = match s.dtype() {
-        DataType::Date => s
-            .date()?
-            .into_iter()
-            .map(|v| v.map(|d| (date32_to_date(d).weekday().number_from_monday()) as i64))
-            .collect(),
+    let s1 = s
+            .weekday()?
+            .cast(&DataType::Int64)?;
 
-        DataType::Datetime(TimeUnit::Microseconds, None) => s
-            .datetime()?
-            .into_iter()
-            .map(|v| v.map(|d| (timestamp_to_datetime(d).weekday().number_from_monday()) as i64))
-            .collect(),
-        dt => panic!("day_of_week/1 not implemented for {dt:?}"),
-    };
-
-    Ok(ExSeries::new(s2))
+    Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
