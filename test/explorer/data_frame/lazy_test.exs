@@ -190,6 +190,19 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   @tag :tmp_dir
+  test "to_ipc/2 - with defaults", %{ldf: ldf, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.ipc"])
+
+    ldf = DF.head(ldf, 15)
+    DF.to_ipc!(ldf, path)
+
+    df = DF.collect(ldf)
+    df1 = DF.from_ipc!(path)
+
+    assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
+  end
+
+  @tag :tmp_dir
   test "to_parquet/2 - with defaults", %{ldf: ldf, tmp_dir: tmp_dir} do
     path = Path.join([tmp_dir, "fossil_fuels.parquet"])
 

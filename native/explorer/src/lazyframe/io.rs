@@ -50,6 +50,32 @@ pub fn lf_from_ipc(filename: &str) -> Result<ExLazyFrame, ExplorerError> {
     Ok(ExLazyFrame::new(lf))
 }
 
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_to_ipc(
+    data: ExLazyFrame,
+    filename: &str,
+    compression: Option<&str>,
+) -> Result<(), ExplorerError> {
+    // Select the compression algorithm.
+    let compression = match compression {
+        Some("lz4") => Some(IpcCompression::LZ4),
+        Some("zstd") => Some(IpcCompression::ZSTD),
+        _ => None,
+    };
+    let options = IpcWriterOptions {
+        compression,
+        maintain_order: false,
+    };
+    let lf = data
+        .clone_inner()
+        .with_streaming(true)
+        .with_common_subplan_elimination(false);
+
+    lf.sink_ipc(filename.into(), options)?;
+
+    Ok(())
+}
+
 #[rustler::nif]
 #[allow(clippy::too_many_arguments)]
 pub fn lf_from_csv(

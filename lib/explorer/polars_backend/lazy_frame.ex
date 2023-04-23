@@ -222,6 +222,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
+  def to_ipc(%DF{} = df, filename, {compression, _level}) do
+    case Native.lf_to_ipc(df.data, filename, Atom.to_string(compression)) do
+      {:ok, _} -> :ok
+      {:error, _} = err -> err
+    end
+  end
+
+  @impl true
   def filter_with(
         %DF{},
         %DF{groups: [_ | _]},
@@ -376,7 +384,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     sample: 5,
     slice: 2,
     to_csv: 4,
-    to_ipc: 3,
     to_ipc_stream: 3,
     to_ndjson: 2,
     to_rows: 2,

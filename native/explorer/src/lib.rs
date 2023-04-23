@@ -251,6 +251,7 @@ rustler::init!(
         lf_concat_rows,
         lf_concat_columns,
         lf_to_parquet,
+        lf_to_ipc,
         // series
         s_as_str,
         s_add,
