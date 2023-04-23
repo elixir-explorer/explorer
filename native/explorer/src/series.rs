@@ -1170,9 +1170,7 @@ pub fn s_ceil(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_day_of_week(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s
-            .weekday()?
-            .cast(&DataType::Int64)?;
+    let s1 = s.weekday()?.cast(&DataType::Int64)?;
 
     Ok(ExSeries::new(s1))
 }
