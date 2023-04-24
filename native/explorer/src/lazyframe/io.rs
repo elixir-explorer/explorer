@@ -1,4 +1,6 @@
 use polars::prelude::*;
+use std::fs::File;
+use std::io::BufWriter;
 use std::result::Result;
 
 use crate::dataframe::io::schema_from_dtypes_pairs;
@@ -24,23 +26,36 @@ pub fn lf_to_parquet(
     data: ExLazyFrame,
     filename: &str,
     ex_compression: ExParquetCompression,
+    streaming: bool,
 ) -> Result<(), ExplorerError> {
     let compression = ParquetCompression::try_from(ex_compression)?;
-    let options = ParquetWriteOptions {
-        compression,
-        statistics: false,
-        row_group_size: None,
-        data_pagesize_limit: None,
-        maintain_order: false,
-    };
-    let lf = data
-        .clone_inner()
-        .with_streaming(true)
-        .with_common_subplan_elimination(false);
 
-    lf.sink_parquet(filename.into(), options)?;
+    let lf = data.clone_inner();
 
-    Ok(())
+    if streaming {
+        let options = ParquetWriteOptions {
+            compression,
+            statistics: false,
+            row_group_size: None,
+            data_pagesize_limit: None,
+            maintain_order: false,
+        };
+
+        lf.with_common_subplan_elimination(false)
+            .sink_parquet(filename.into(), options)?;
+        Ok(())
+    } else {
+        let mut df = lf.collect()?;
+
+        let file = File::create(filename)?;
+        let mut buf_writer = BufWriter::new(file);
+
+        ParquetWriter::new(&mut buf_writer)
+            .with_compression(compression)
+            .finish(&mut df)?;
+
+        Ok(())
+    }
 }
 
 #[rustler::nif]
@@ -55,6 +70,7 @@ pub fn lf_to_ipc(
     data: ExLazyFrame,
     filename: &str,
     compression: Option<&str>,
+    streaming: bool,
 ) -> Result<(), ExplorerError> {
     // Select the compression algorithm.
     let compression = match compression {
@@ -62,18 +78,26 @@ pub fn lf_to_ipc(
         Some("zstd") => Some(IpcCompression::ZSTD),
         _ => None,
     };
-    let options = IpcWriterOptions {
-        compression,
-        maintain_order: false,
-    };
-    let lf = data
-        .clone_inner()
-        .with_streaming(true)
-        .with_common_subplan_elimination(false);
 
-    lf.sink_ipc(filename.into(), options)?;
+    let lf = data.clone_inner();
 
-    Ok(())
+    if streaming {
+        let options = IpcWriterOptions {
+            compression,
+            maintain_order: false,
+        };
+        lf.with_common_subplan_elimination(false)
+            .sink_ipc(filename.into(), options)?;
+        Ok(())
+    } else {
+        let mut df = lf.collect()?;
+        let file = File::create(filename)?;
+        let mut buf_writer = BufWriter::new(file);
+        IpcWriter::new(&mut buf_writer)
+            .with_compression(compression)
+            .finish(&mut df)?;
+        Ok(())
+    }
 }
 
 #[rustler::nif]

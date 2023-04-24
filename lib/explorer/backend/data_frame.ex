@@ -70,7 +70,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback to_parquet(
               df,
               filename :: String.t(),
-              compression()
+              compression(),
+              streaming :: boolean()
             ) ::
               ok_result()
   @callback dump_parquet(df, compression()) :: result(binary())
@@ -81,7 +82,7 @@ defmodule Explorer.Backend.DataFrame do
               filename :: String.t(),
               columns :: columns_for_io()
             ) :: result(df)
-  @callback to_ipc(df, filename :: String.t(), compression()) ::
+  @callback to_ipc(df, filename :: String.t(), compression(), streaming :: boolean()) ::
               ok_result()
   @callback dump_ipc(df, compression()) :: result(binary())
   @callback load_ipc(

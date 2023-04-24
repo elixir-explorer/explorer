@@ -214,16 +214,21 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = df, filename, {compression, level}) do
-    case Native.lf_to_parquet(df.data, filename, Shared.parquet_compression(compression, level)) do
+  def to_parquet(%DF{} = df, filename, {compression, level}, streaming) do
+    case Native.lf_to_parquet(
+           df.data,
+           filename,
+           Shared.parquet_compression(compression, level),
+           streaming
+         ) do
       {:ok, _} -> :ok
       {:error, _} = err -> err
     end
   end
 
   @impl true
-  def to_ipc(%DF{} = df, filename, {compression, _level}) do
-    case Native.lf_to_ipc(df.data, filename, Atom.to_string(compression)) do
+  def to_ipc(%DF{} = df, filename, {compression, _level}, streaming) do
+    case Native.lf_to_ipc(df.data, filename, Atom.to_string(compression), streaming) do
       {:ok, _} -> :ok
       {:error, _} = err -> err
     end
