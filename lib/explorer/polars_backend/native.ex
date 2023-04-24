@@ -199,8 +199,8 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
   def lf_concat_rows(_dfs), do: err()
   def lf_concat_columns(_df, _others), do: err()
-  def lf_to_parquet(_df, _filename, _compression), do: err()
-  def lf_to_ipc(_df, _filename, _compression), do: err()
+  def lf_to_parquet(_df, _filename, _compression, _streaming), do: err()
+  def lf_to_ipc(_df, _filename, _compression, _streaming), do: err()
 
   # Series
   def s_as_str(_s), do: err()

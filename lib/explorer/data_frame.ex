@@ -567,14 +567,21 @@ defmodule Explorer.DataFrame do
         * `:zstd` (with levels -7-22)
         * `:lz4raw`.
 
+    * `:streaming` - Tells the backend if it should use streaming, which means
+      that the dataframe is not loaded to the memory at once, and instead it is
+      written in chunks from a lazy dataframe.
+
+      This option has no effect on eager - the default - dataframes.
+      It defaults to `true`.
+
   """
   @doc type: :io
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
           :ok | {:error, term()}
   def to_parquet(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, compression: nil)
+    opts = Keyword.validate!(opts, compression: nil, streaming: true)
     compression = parquet_compression(opts[:compression])
-    Shared.apply_impl(df, :to_parquet, [filename, compression])
+    Shared.apply_impl(df, :to_parquet, [filename, compression, opts[:streaming]])
   end
 
   defp parquet_compression(nil), do: {nil, nil}
@@ -729,15 +736,22 @@ defmodule Explorer.DataFrame do
         * `:zstd`
         * `:lz4`.
 
+    * `:streaming` - Tells the backend if it should use streaming, which means
+      that the dataframe is not loaded to the memory at once, and instead it is
+      written in chunks from a lazy dataframe.
+
+      This option has no effect on eager - the default - dataframes.
+      It defaults to `true`.
+
   """
   @doc type: :io
   @spec to_ipc(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
           :ok | {:error, term()}
   def to_ipc(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, compression: nil)
+    opts = Keyword.validate!(opts, compression: nil, streaming: true)
     compression = ipc_compression(opts[:compression])
 
-    Shared.apply_impl(df, :to_ipc, [filename, compression])
+    Shared.apply_impl(df, :to_ipc, [filename, compression, opts[:streaming]])
   end
 
   defp ipc_compression(nil), do: {nil, nil}
