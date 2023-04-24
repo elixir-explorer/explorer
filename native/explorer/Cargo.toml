@@ -14,9 +14,9 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1"
 chrono = "0.4"
-rand = { version = "0.8.5", features = ["alloc"] }
-rand_pcg = "0.3.1"
-rustler = "0.27.0"
+rand = { version = "0.8", features = ["alloc"] }
+rand_pcg = "0.3"
+rustler = "0.28"
 thiserror = "1"
 smartstring = "1"
 
