@@ -3033,6 +3033,46 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "date_diff/2" do
+    test "can take date diff in days of two series" do
+      s1 =
+        Explorer.Series.from_list([
+          ~D[2023-01-15],
+          ~D[2023-01-16],
+          ~D[2023-01-20],
+          nil
+        ])
+
+      s2 =
+        Explorer.Series.from_list([
+          ~D[2023-01-16],
+          ~D[2023-01-15],
+          ~D[2023-01-20],
+          ~D[2023-01-20]
+        ])
+
+      assert Series.date_diff(s1, s2) |> Series.to_list() == [-1, 1, 0, nil]
+    end
+
+    test "fails if not using date" do
+      s1 =
+        Explorer.Series.from_list([
+          ~N[2023-01-15 00:00:00.000000]
+        ])
+
+      s2 =
+        Explorer.Series.from_list([
+          ~N[2023-01-15 00:00:00.000000]
+        ])
+
+      assert_raise ArgumentError,
+                   "date_diff/2 expect a series of type :date for both its arguments",
+                   fn ->
+                     Series.date_diff(s1, s2)
+                   end
+    end
+  end
+
   describe "cast/2" do
     test "integer series to string" do
       s = Series.from_list([1, 2, 3])

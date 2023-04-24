@@ -211,6 +211,7 @@ defmodule Explorer.Backend.Series do
   @callback day_of_week(s) :: s
   @callback to_date(s) :: s
   @callback to_time(s) :: s
+  @callback date_diff(s, s) :: s
 
   # Functions
 

@@ -498,6 +498,13 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def date_diff(%Series{} = s1, %Series{} = s2) do
+    data = new(:date_diff, [lazy_series!(s1), lazy_series!(s2)])
+
+    Backend.Series.new(data, :integer)
+  end
+
+  @impl true
   def ewm_mean(%Series{} = series, alpha, adjust, min_periods, ignore_nils) do
     args = [lazy_series!(series), alpha, adjust, min_periods, ignore_nils]
 

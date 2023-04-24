@@ -2414,6 +2414,25 @@ defmodule Explorer.Series do
     do: apply_series_list(:remainder, [left, right])
 
   @doc """
+  Takes the day difference between left and right
+
+  ## Supported dtypes
+    * `:date`
+
+  ## Examples
+  """
+  @doc type: :element_wise
+  @spec date_diff(left :: Series.t() | Date.t(), right :: Series.t() | Date.t()) :: Series.t()
+  def date_diff(%Series{dtype: :date} = left, %Series{dtype: :date} = right) do
+    apply_series_list(:date_diff, [left, right])
+  end
+
+  def date_diff(_left, _right) do
+    raise ArgumentError,
+          "date_diff/2 expect a series of type :date for both its arguments"
+  end
+
+  @doc """
   Computes the the sine of a number (in radians).
   The resultant series is going to be of dtype `:float`, with values between 1 and -1.
 

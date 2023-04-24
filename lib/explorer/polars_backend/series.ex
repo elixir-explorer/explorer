@@ -538,6 +538,10 @@ defmodule Explorer.PolarsBackend.Series do
   def to_time(series),
     do: Shared.apply_series(series, :s_to_time)
 
+  @impl true
+  def date_diff(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_date_diff, [to_polars_series(right, left)])
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

@@ -373,6 +373,7 @@ rustler::init!(
         s_round,
         s_floor,
         s_ceil,
+        s_date_diff,
     ],
     load = on_load
 );

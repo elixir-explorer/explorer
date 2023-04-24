@@ -1216,6 +1216,24 @@ pub fn s_to_time(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_date_diff(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s = data.clone_inner();
+    let s1 = other.clone_inner();
+
+    let res = (s - s1)
+        .duration()?
+        .into_iter()
+        .map(|d| match d {
+            Some(d) => Some(d / 86400000),
+            None => None,
+        })
+        .collect::<Int64Chunked>()
+        .into_series();
+
+    Ok(ExSeries::new(res))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.sin()).into();
     Ok(ExSeries::new(s1))
