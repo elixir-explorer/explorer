@@ -496,7 +496,7 @@ defmodule Explorer.DataFrame do
       to_columns_for_io(opts[:columns]),
       opts[:infer_schema_length],
       opts[:parse_dates],
-      opts[:eol_char]
+      opts[:eol_delimiter]
     )
   end
 
