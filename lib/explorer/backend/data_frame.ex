@@ -42,7 +42,7 @@ defmodule Explorer.Backend.DataFrame do
               columns :: columns_for_io(),
               infer_schema_length :: option(integer()),
               parse_dates :: boolean(),
-              eol_char :: option(String.t())
+              eol_delimiter :: option(String.t())
             ) :: result(df)
   @callback to_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
               ok_result()
