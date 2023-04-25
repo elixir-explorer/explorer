@@ -52,7 +52,7 @@ pub fn df_from_csv(
     encoding: &str,
     null_char: String,
     parse_dates: bool,
-    eol_char: Option<u8>,
+    eol_delimiter: Option<u8>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
@@ -78,7 +78,7 @@ pub fn df_from_csv(
         .with_columns(column_names)
         .with_dtypes(schema)
         .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
-        .with_end_of_line_char(eol_char.unwrap_or(b'\n'));
+        .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
 
     finish_reader(reader)
 }
