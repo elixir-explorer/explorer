@@ -286,6 +286,22 @@ defmodule Explorer.DataFrame.LazyTest do
                  end
   end
 
+  @tag :tmp_dir
+  test "from_ipc_stream/2 - with defaults", %{df: df, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.ipc"])
+    df = DF.slice(df, 0, 10)
+    DF.to_ipc_stream!(df, path)
+
+    ldf = DF.from_ipc_stream!(path, lazy: true)
+
+    # no-op
+    assert DF.to_lazy(ldf) == ldf
+
+    df1 = DF.collect(ldf)
+
+    assert DF.to_columns(df1) == DF.to_columns(df)
+  end
+
   test "load_csv/2 - with defaults", %{df: df} do
     df = DF.slice(df, 0, 10)
     contents = DF.dump_csv!(df)

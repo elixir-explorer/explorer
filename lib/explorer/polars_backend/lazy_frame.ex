@@ -150,6 +150,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
+  def from_ipc_stream(filename, columns) do
+    case Eager.from_ipc_stream(filename, columns) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def load_csv(
         contents,
         dtypes,
@@ -380,7 +388,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     dump_ipc_stream: 2,
     dump_ndjson: 1,
     dump_parquet: 2,
-    from_ipc_stream: 2,
     mask: 2,
     n_rows: 1,
     pivot_wider: 5,
