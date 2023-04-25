@@ -60,7 +60,7 @@ defmodule Explorer.Backend.DataFrame do
               columns :: columns_for_io(),
               infer_schema_length :: option(integer()),
               parse_dates :: boolean(),
-              eol_char :: option(String.t())
+              eol_delimiter :: option(String.t())
             ) :: result(df)
 
   # IO: Parquet
