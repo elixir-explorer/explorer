@@ -389,7 +389,7 @@ defmodule Explorer.DataFrame.CSVTest do
 
       csv = tmp_csv(config.tmp_dir, data)
 
-      df = DF.from_csv!(csv, eol_char: "\r", dtypes: %{a: :float})
+      df = DF.from_csv!(csv, eol_delimiter: "\r", dtypes: %{a: :float})
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [0.1, :nan, 4.2, :infinity, :neg_infinity, 8.1]
