@@ -74,7 +74,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         max_rows,
         columns,
         infer_schema_length,
-        parse_dates
+        parse_dates,
+        eol_delimiter
       ) do
     if columns do
       raise ArgumentError,
@@ -104,7 +105,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         dtypes,
         encoding,
         null_character,
-        parse_dates
+        parse_dates,
+        char_byte(eol_delimiter)
       )
 
     case df do
@@ -112,6 +114,9 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       {:error, error} -> {:error, error}
     end
   end
+
+  defp char_byte(nil), do: nil
+  defp char_byte(<<char::utf8>>), do: char
 
   @impl true
   def from_parquet(filename, max_rows, columns) do
@@ -169,7 +174,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         max_rows,
         columns,
         infer_schema_length,
-        parse_dates
+        parse_dates,
+        eol_delimiter
       ) do
     case Eager.load_csv(
            contents,
@@ -182,7 +188,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
            max_rows,
            columns,
            infer_schema_length,
-           parse_dates
+           parse_dates,
+           eol_delimiter
          ) do
       {:ok, df} -> {:ok, Eager.to_lazy(df)}
       {:error, error} -> {:error, error}

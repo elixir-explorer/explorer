@@ -369,5 +369,31 @@ defmodule Explorer.DataFrame.CSVTest do
                a: [0.1, :nan, 4.2, :infinity, :neg_infinity, 8.1]
              }
     end
+
+    @tag :tmp_dir
+    test "custom newline delimiter", config do
+      data =
+        String.replace(
+          """
+          a
+          0.1
+          NaN
+          4.2
+          Inf
+          -Inf
+          8.1
+          """,
+          "\n",
+          "\r"
+        )
+
+      csv = tmp_csv(config.tmp_dir, data)
+
+      df = DF.from_csv!(csv, eol_delimiter: "\r", dtypes: %{a: :float})
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [0.1, :nan, 4.2, :infinity, :neg_infinity, 8.1]
+             }
+    end
   end
 end

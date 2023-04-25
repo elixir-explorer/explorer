@@ -389,6 +389,7 @@ defmodule Explorer.DataFrame do
     * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
     * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
     * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
+    * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
   """
   @doc type: :io
   @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
@@ -407,7 +408,8 @@ defmodule Explorer.DataFrame do
         skip_rows: 0,
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
-        parse_dates: false
+        parse_dates: false,
+        eol_delimiter: nil
       )
 
     backend = backend_from_options!(backend_opts)
@@ -423,7 +425,8 @@ defmodule Explorer.DataFrame do
       opts[:max_rows],
       to_columns_for_io(opts[:columns]),
       opts[:infer_schema_length],
-      opts[:parse_dates]
+      opts[:parse_dates],
+      opts[:eol_delimiter]
     )
   end
 
@@ -456,6 +459,7 @@ defmodule Explorer.DataFrame do
     * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
     * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
     * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
+    * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
   """
   @doc type: :io
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
@@ -474,7 +478,8 @@ defmodule Explorer.DataFrame do
         skip_rows: 0,
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
-        parse_dates: false
+        parse_dates: false,
+        eol_delimiter: nil
       )
 
     backend = backend_from_options!(backend_opts)
@@ -490,7 +495,8 @@ defmodule Explorer.DataFrame do
       opts[:max_rows],
       to_columns_for_io(opts[:columns]),
       opts[:infer_schema_length],
-      opts[:parse_dates]
+      opts[:parse_dates],
+      opts[:eol_delimiter]
     )
   end
 

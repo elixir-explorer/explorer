@@ -57,7 +57,8 @@ defmodule Explorer.PolarsBackend.Native do
         _dtypes,
         _encoding,
         _null_char,
-        _parse_dates
+        _parse_dates,
+        _eol_delimiter
       ),
       do: err()
 
@@ -92,7 +93,8 @@ defmodule Explorer.PolarsBackend.Native do
         _dtypes,
         _encoding,
         _null_char,
-        _parse_dates
+        _parse_dates,
+        _eol_delimiter
       ),
       do: err()
 
@@ -184,7 +186,8 @@ defmodule Explorer.PolarsBackend.Native do
         _dtypes,
         _encoding,
         _null_char,
-        _parse_dates
+        _parse_dates,
+        _eol_delimiter
       ),
       do: err()
 
