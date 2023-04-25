@@ -88,7 +88,7 @@ pub fn lf_from_csv(
         .with_encoding(encoding)
         .with_dtype_overwrite(schema.as_deref())
         .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
-        .with_end_of_line_char(eol_char.unwrap_or(b'\n'))
+        .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'))
         .finish()?;
 
     Ok(ExLazyFrame::new(df))
