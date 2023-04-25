@@ -459,7 +459,7 @@ defmodule Explorer.DataFrame do
     * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
     * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
     * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
-    * `:eol_char` - A single character used to represent new lines. (default: `"\n"`)
+    * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
   """
   @doc type: :io
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
