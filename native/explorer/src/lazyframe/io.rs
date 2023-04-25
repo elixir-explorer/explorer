@@ -64,7 +64,7 @@ pub fn lf_from_csv(
     encoding: &str,
     null_char: String,
     parse_dates: bool,
-    eol_char: Option<u8>,
+    eol_delimiter: Option<u8>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
