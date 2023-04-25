@@ -60,7 +60,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         encoding,
         null_character,
         parse_dates,
-        eol_char
+        char_byte(eol_char)
       )
 
     case df do
@@ -143,7 +143,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         encoding,
         null_character,
         parse_dates,
-        eol_char
+        char_byte(eol_char)
       )
 
     case df do
@@ -151,6 +151,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
       {:error, error} -> {:error, error}
     end
   end
+
+  defp char_byte(nil), do: nil
+  defp char_byte(<<char::utf8>>), do: char
 
   @impl true
   def from_ndjson(filename, infer_schema_length, batch_size) do

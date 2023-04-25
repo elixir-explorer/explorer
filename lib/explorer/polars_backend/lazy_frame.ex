@@ -106,7 +106,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         encoding,
         null_character,
         parse_dates,
-        eol_char
+        char_byte(eol_char)
       )
 
     case df do
@@ -114,6 +114,9 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       {:error, error} -> {:error, error}
     end
   end
+
+  defp char_byte(nil), do: nil
+  defp char_byte(<<char::utf8>>), do: char
 
   @impl true
   def from_parquet(filename, max_rows, columns) do
