@@ -686,7 +686,9 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
+    * `:columns` - List with the name or index of columns to be selected.
+      Defaults to all columns.
+
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t(), opts :: Keyword.t()) ::
@@ -851,9 +853,15 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads an IPC Streaming file into a dataframe.
 
+  It's possible to read from an IPC Streaming file using the lazy Polars
+  backend, but the implementation is not truly lazy. We are going to read it
+  first using the eager backend, and then convert the dataframe to lazy.
+
   ## Options
 
-    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
+    * `:columns` - List with the name or index of columns to be selected.
+      Defaults to all columns.
+
   """
   @doc type: :io
   @spec from_ipc_stream(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
@@ -903,6 +911,18 @@ defmodule Explorer.DataFrame do
     compression = ipc_compression(opts[:compression])
 
     Shared.apply_impl(df, :to_ipc_stream, [filename, compression])
+  end
+
+  @doc """
+  Similar to `to_ipc_stream/3`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec to_ipc_stream!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
+  def to_ipc_stream!(df, filename, opts \\ []) do
+    case to_ipc_stream(df, filename, opts) do
+      :ok -> :ok
+      {:error, error} -> raise "to_ipc_stream failed: #{inspect(error)}"
+    end
   end
 
   @doc """
