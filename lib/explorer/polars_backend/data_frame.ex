@@ -31,7 +31,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         columns,
         infer_schema_length,
         parse_dates,
-        eol_char
+        eol_delimiter
       ) do
     infer_schema_length =
       if infer_schema_length == nil,
