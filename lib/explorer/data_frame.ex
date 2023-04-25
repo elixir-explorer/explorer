@@ -409,7 +409,7 @@ defmodule Explorer.DataFrame do
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
         parse_dates: false,
-        eol_char: nil
+        eol_delimiter: nil
       )
 
     backend = backend_from_options!(backend_opts)
