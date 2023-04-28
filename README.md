@@ -210,6 +210,16 @@ to Explorer.
 
 We require Rust Nightly, which can be installed with [Rustup](https://rust-lang.github.io/rustup/installation/index.html).
 
+```sh
+rustup toolchain install nightly-2023-02-14
+```
+
+You can also use [asdf](https://asdf-vm.com/):
+
+```sh
+asdf install rust nightly-2023-02-14
+```
+
 Once you have made your changes, run `mix ci`, to lint and format both Elixir
 and Rust code.
 
