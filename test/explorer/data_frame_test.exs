@@ -2063,6 +2063,16 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "with a category" do
+      df1 =
+        DF.new(id: [1, 1, 1])
+        |> DF.put(:category, Series.from_list(["a", "b", "a"], dtype: :category))
+        |> DF.pivot_wider("category", "category")
+
+      assert DF.dtypes(df1) == %{"a" => :category, "b" => :category, "id" => :integer}
+      assert DF.to_columns(df1, atom_keys: true) == %{id: [1], a: ["a"], b: ["b"]}
+    end
+
     test "with a single id discarding any other column" do
       df1 = DF.new(id: [1, 1], x: [6, 12], variable: ["a", "b"], value: [1, 2])
 

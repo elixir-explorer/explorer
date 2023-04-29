@@ -4048,7 +4048,7 @@ defmodule Explorer.DataFrame do
     dtypes = df.dtypes
 
     for column <- values_from do
-      unless dtypes[column] in [:integer, :float, :date, :datetime] do
+      unless dtypes[column] in [:integer, :float, :date, :datetime, :category] do
         raise ArgumentError,
               "the values_from column must be numeric, but found #{dtypes[values_from]}"
       end
