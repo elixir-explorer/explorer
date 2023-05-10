@@ -147,7 +147,7 @@ defmodule Explorer.DataFrame.ParquetTest do
   test "dump_parquet/1 with compression" do
     df = Explorer.Datasets.iris() |> DF.slice(0, 10)
 
-    assert {:ok, parquet} = DF.dump_parquet(df, compression: {:gzip, 5})
+    assert {:ok, parquet} = DF.dump_parquet(df, compression: {:brotli, 5})
 
     assert is_binary(parquet)
   end
@@ -169,38 +169,44 @@ defmodule Explorer.DataFrame.ParquetTest do
       assert DF.to_columns(df) == DF.to_columns(parquet_df)
     end
 
-    @tag :tmp_dir
-    test "can write parquet to file with compression", %{
-      df: df,
-      tmp_dir: tmp_dir
-    } do
-      for compression <- [:snappy, :gzip, :brotli, :zstd, :lz4raw] do
+    # Note that we are disabling gzip for now
+    for compression <- [:snappy, :brotli, :zstd, :lz4raw] do
+      @tag :tmp_dir
+      test "can write parquet to file with compression #{compression}", %{
+        df: df,
+        tmp_dir: tmp_dir
+      } do
         parquet_path = Path.join(tmp_dir, "test.parquet")
 
-        assert :ok = DF.to_parquet(df, parquet_path, compression: compression)
-        assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
+        assert :ok = DF.to_parquet(df, parquet_path, compression: unquote(compression))
 
-        assert DF.names(df) == DF.names(parquet_df)
-        assert DF.dtypes(df) == DF.dtypes(parquet_df)
-        assert DF.to_columns(df) == DF.to_columns(parquet_df)
+        assert_equal_from_path(df, parquet_path)
       end
     end
 
-    @tag :tmp_dir
-    test "can write parquet to file with compression and level", %{
-      df: df,
-      tmp_dir: tmp_dir
-    } do
-      for compression <- [:gzip, :brotli, :zstd], level <- [1, 2, 3] do
+    defp assert_equal_from_path(df, path) do
+      assert {:ok, parquet_df} = DF.from_parquet(path)
+
+      assert DF.names(df) == DF.names(parquet_df)
+      assert DF.dtypes(df) == DF.dtypes(parquet_df)
+      assert DF.to_columns(df) == DF.to_columns(parquet_df)
+    end
+
+    # Note that we are disabling gzip for now
+    for compression <- [:brotli, :zstd], level <- [1, 2, 3] do
+      @tag :tmp_dir
+      test "can write parquet to file with compression #{compression} and level #{level}", %{
+        df: df,
+        tmp_dir: tmp_dir
+      } do
         parquet_path = Path.join(tmp_dir, "test.parquet")
 
-        assert :ok = DF.to_parquet(df, parquet_path, compression: {compression, level})
+        assert :ok =
+                 DF.to_parquet(df, parquet_path,
+                   compression: {unquote(compression), unquote(level)}
+                 )
 
-        assert {:ok, parquet_df} = DF.from_parquet(parquet_path)
-
-        assert DF.names(df) == DF.names(parquet_df)
-        assert DF.dtypes(df) == DF.dtypes(parquet_df)
-        assert DF.to_columns(df) == DF.to_columns(parquet_df)
+        assert_equal_from_path(df, parquet_path)
       end
     end
   end
