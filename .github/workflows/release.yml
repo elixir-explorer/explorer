@@ -20,15 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nif: ["2.16", "2.15"]
+        nif: ["2.17", "2.16", "2.15"]
         job:
-          # Disabling for the moment, since polars v0.28 breaks for ARM 32.
-          # - {
-          #     target: arm-unknown-linux-gnueabihf,
-          #     os: ubuntu-20.04,
-          #     use-cross: true,
-          #     disable-polars-json-feature: true,
-          #   }
           - { target: aarch64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
           - { target: aarch64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
           - { target: aarch64-apple-darwin, os: macos-11 }
