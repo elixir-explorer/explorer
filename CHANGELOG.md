@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Allow `Explorer.Series.select/3` to receive series of size 1 in both sides.
+
+- Add trigonometric functions `sin/1`, `cos/1`, `tan/1`, `asin/1`, `acos/1` and
+  `atan/1` to `Explorer.Series`.
+
+- Add `Explorer.DataFrame.to_rows_stream/2` function. This is useful to traverse
+  dataframes with large series, but is not recommended since it can be an expensive
+  operation.
+
+- Add LazyFrame version of `Explorer.DataFrame.to_ipc/3`.
+
+- Add options to control streaming when writing lazy dataframes. Now users can
+  toggle streaming for the `to_ipc/3` and `to_parquet/3` functions.
+
+- Add `Explorer.DataFrame.from_ipc_stream/2` lazy, but using the eager implementation
+  underneath.
+
+- Add option to control the end of line (EOF) char when reading CSV files.
+  We call this new option `:eol_delimiter`, and it's available for the `from_csv/2`
+  and `load_csv/2` functions in the `Explorer.DataFrame` module.
+
+- Allow `Explorer.DataFrame.pivot_wider/4` to use category fields. 
+
+### Fixed
+
+- Fix `nif_not_loaded` error when `Explorer.Series.ewm_mean/2` is called from query.
+
+- Type check arguments for boolean series operations, only allowing series of
+  the `boolean` dtype.
+
+- Do not use `../0` in order to keep compatible with Elixir 1.13
+
+### Removed
+
+- Temporarely remove support for ARM 32 bits computers in the precompilation
+  workflow.
+
 ## [v0.5.6] - 2023-03-24
 
 ### Added
