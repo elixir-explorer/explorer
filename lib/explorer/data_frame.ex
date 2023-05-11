@@ -3960,7 +3960,7 @@ defmodule Explorer.DataFrame do
   Multiple columns are accepted for the `values_from` parameter, but the behaviour is slightly
   different for the naming of new columns in the resultant dataframe. The new columns are going
   to be prefixed by the name of the original value column, followed by an underscore and the
-  name of the variable.
+  original column name, followed by the name of the variable.
 
       iex> df = Explorer.DataFrame.new(
       iex>   product_id: [1, 1, 1, 1, 2, 2, 2, 2],
@@ -3972,14 +3972,14 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 9]
         product_id integer [1, 2]
-        property_value_product_id integer [1, 2]
-        property_value_width_cm integer [42, 35]
-        property_value_height_cm integer [40, 20]
-        property_value_length_cm integer [64, 40]
-        another_value_product_id integer [1, 2]
-        another_value_width_cm integer [43, 36]
-        another_value_height_cm integer [41, 21]
-        another_value_length_cm integer [65, 42]
+        property_value_property_product_id integer [1, 2]
+        property_value_property_width_cm integer [42, 35]
+        property_value_property_height_cm integer [40, 20]
+        property_value_property_length_cm integer [64, 40]
+        another_value_property_product_id integer [1, 2]
+        another_value_property_width_cm integer [43, 36]
+        another_value_property_height_cm integer [41, 21]
+        another_value_property_length_cm integer [65, 42]
       >
 
   ## Grouped examples
