@@ -169,8 +169,7 @@ defmodule Explorer.DataFrame.ParquetTest do
       assert DF.to_columns(df) == DF.to_columns(parquet_df)
     end
 
-    # Note that we are disabling gzip for now
-    for compression <- [:snappy, :brotli, :zstd, :lz4raw] do
+    for compression <- [:gzip, :snappy, :brotli, :zstd, :lz4raw] do
       @tag :tmp_dir
       test "can write parquet to file with compression #{compression}", %{
         df: df,
@@ -192,8 +191,7 @@ defmodule Explorer.DataFrame.ParquetTest do
       assert DF.to_columns(df) == DF.to_columns(parquet_df)
     end
 
-    # Note that we are disabling gzip for now
-    for compression <- [:brotli, :zstd], level <- [1, 2, 3] do
+    for compression <- [:gzip, :brotli, :zstd], level <- [1, 2, 3] do
       @tag :tmp_dir
       test "can write parquet to file with compression #{compression} and level #{level}", %{
         df: df,
