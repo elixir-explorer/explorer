@@ -1590,7 +1590,7 @@ defmodule Explorer.DataFrame do
       [%{floats: 1.0, ints: 1}, %{floats: 2.0, ints: nil}]
   """
   @doc type: :conversion
-  @spec to_rows_stream(df :: DataFrame.t(), Keyword.t()) :: Stream.t()
+  @spec to_rows_stream(df :: DataFrame.t(), Keyword.t()) :: Enumerable.t()
   def to_rows_stream(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000)
 
