@@ -2514,23 +2514,14 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with two time series" do
-      s1 = Series.from_list([~T[01:00:00.000000], ~T[02:00:00.000000]])
-      s2 = Series.from_list([~T[03:00:00.000000], ~T[04:00:00.000000]])
+      # Notice that Polars drops the microseconds part when converting
+      # a Time series to String series.
+      # See: https://github.com/pola-rs/polars/pull/8351
+      s1 = Series.from_list([~T[01:00:00.000543], ~T[02:00:00.000000]])
+      s2 = Series.from_list([~T[03:00:00.000000], ~T[04:00:00.000201]])
 
-      assert Series.format([s1, s2]) |> Series.to_list() ==
-               ["360000000010800000000", "720000000014400000000"]
-    end
-
-    test "with many time series with separator" do
-      s1 = Series.from_list([~T[01:00:00.000000], ~T[02:00:00.000000]])
-      s2 = Series.from_list([~T[03:00:00.000000], ~T[04:00:00.000000]])
-      s3 = Series.from_list([~T[05:00:00.000000], ~T[06:00:00.000000]])
-      s4 = Series.from_list([~T[07:00:00.000000], ~T[08:00:00.000000]])
-
-      assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() == [
-               "3600000000 / 10800000000 - 18000000000 / 25200000000",
-               "7200000000 / 14400000000 - 21600000000 / 28800000000"
-             ]
+      assert Series.format([s1, " <=> ", s2]) |> Series.to_list() ==
+               ["3600000543000 <=> 10800000000000", "7200000000000 <=> 14400000201000"]
     end
 
     test "with two datetime series" do
@@ -3059,7 +3050,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "integer series to time" do
-      s = Series.from_list([1, 2, 3])
+      s = Series.from_list([1, 2, 3]) |> Series.multiply(1_000)
       s1 = Series.cast(s, :time)
 
       assert Series.to_list(s1) == [
@@ -3070,7 +3061,7 @@ defmodule Explorer.SeriesTest do
 
       assert Series.dtype(s1) == :time
 
-      s2 = Series.from_list([86399 * 1_000 * 1_000])
+      s2 = Series.from_list([86399 * 1_000 * 1_000 * 1_000])
       s3 = Series.cast(s2, :time)
 
       assert Series.to_list(s3) == [~T[23:59:59.000000]]
