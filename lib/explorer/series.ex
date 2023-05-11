@@ -253,9 +253,9 @@ defmodule Explorer.Series do
         datetime [2022-04-13 21:00:42.000000]
       >
 
-  It is possible to create a series of `:time` from a list of microseconds since midnight.
+  It is possible to create a series of `:time` from a list of nanoseconds since midnight.
 
-      iex> Explorer.Series.from_list([123 * 1_000 * 1_000], dtype: :time)
+      iex> Explorer.Series.from_list([123 * 1_000 * 1_000 * 1_000], dtype: :time)
       #Explorer.Series<
         Polars[1]
         time [00:02:03.000000]
@@ -333,9 +333,9 @@ defmodule Explorer.Series do
         date [0001-01-01, 1970-01-01, 1986-10-13]
       >
 
-  Times are encoded as i64 representing microseconds from midnight:
+  Times are encoded as i64 representing nanoseconds from midnight:
 
-      iex> binary = <<0::signed-64-native, 86399999999::signed-64-native>>
+      iex> binary = <<0::signed-64-native, 86399999999000::signed-64-native>>
       iex> Explorer.Series.from_binary(binary, :time)
       #Explorer.Series<
         Polars[2]
@@ -416,9 +416,10 @@ defmodule Explorer.Series do
         date [0001-01-01, 1970-01-01, 1986-10-13]
       >
 
-  Times are signed 64-bit and therefore must have their dtype explicitly given:
+  Times are signed 64-bit representing nanoseconds from midnight and
+  therefore must have their dtype explicitly given:
 
-      iex> tensor = Nx.tensor([0, 86399999999])
+      iex> tensor = Nx.tensor([0, 86399999999000])
       iex> Explorer.Series.from_tensor(tensor, dtype: :time)
       #Explorer.Series<
         Polars[2]
@@ -597,11 +598,11 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<-719162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>]
 
-  Times are encoded as i64 representing microseconds from midnight:
+  Times are encoded as i64 representing nanoseconds from midnight:
 
       iex> series = Explorer.Series.from_list([~T[00:00:00.000000], ~T[23:59:59.999999]])
       iex> Explorer.Series.to_iovec(series)
-      [<<0::signed-64-native, 86399999999::signed-64-native>>]
+      [<<0::signed-64-native, 86399999999000::signed-64-native>>]
 
   Datetimes are encoded as i64 representing microseconds from the Unix epoch (1970-01-01):
 
@@ -729,16 +730,18 @@ defmodule Explorer.Series do
         date [1970-01-02, 1970-01-03, 1970-01-04]
       >
 
-  Note that `time` is represented as an integer of microseconds since midnight.
+  Note that `time` is represented as an integer of nanoseconds since midnight.
+  In Elixir we can't represent nanoseconds, only microseconds. So be aware that
+  information can be lost if a conversion is needed (e.g. calling `to_list/1`).
 
-      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> s = Explorer.Series.from_list([1_000, 2_000, 3_000])
       iex> Explorer.Series.cast(s, :time)
       #Explorer.Series<
         Polars[3]
         time [00:00:00.000001, 00:00:00.000002, 00:00:00.000003]
       >
 
-      iex> s = Explorer.Series.from_list([86399 * 1_000 * 1_000])
+      iex> s = Explorer.Series.from_list([86399 * 1_000 * 1_000 * 1_000])
       iex> Explorer.Series.cast(s, :time)
       #Explorer.Series<
         Polars[1]
@@ -1610,9 +1613,9 @@ defmodule Explorer.Series do
       iex> Explorer.Series.min(s)
       ~N[1999-12-31 00:00:00.000000]
 
-      iex> s = Explorer.Series.from_list([~T[00:02:03.000000], ~T[00:05:04.000000]])
+      iex> s = Explorer.Series.from_list([~T[00:02:03.000451], ~T[00:05:04.000134]])
       iex> Explorer.Series.min(s)
-      ~T[00:02:03.000000]
+      ~T[00:02:03.000451]
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.min(s)
@@ -1656,9 +1659,9 @@ defmodule Explorer.Series do
       iex> Explorer.Series.max(s)
       ~N[2021-01-01 00:00:00.000000]
 
-      iex> s = Explorer.Series.from_list([~T[00:02:03.000000], ~T[00:05:04.000000]])
+      iex> s = Explorer.Series.from_list([~T[00:02:03.000212], ~T[00:05:04.000456]])
       iex> Explorer.Series.max(s)
-      ~T[00:05:04.000000]
+      ~T[00:05:04.000456]
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.max(s)
@@ -1819,9 +1822,9 @@ defmodule Explorer.Series do
       iex> Explorer.Series.quantile(s, 0.5)
       ~N[2021-01-01 00:00:00.000000]
 
-      iex> s = Explorer.Series.from_list([~T[01:55:00.000000], ~T[15:35:00.000000], ~T[23:00:00.000000]])
+      iex> s = Explorer.Series.from_list([~T[01:55:00], ~T[15:35:00], ~T[23:00:00]])
       iex> Explorer.Series.quantile(s, 0.5)
-      ~T[15:35:00.000000]
+      ~T[15:35:00]
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)

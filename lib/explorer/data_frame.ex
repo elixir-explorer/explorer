@@ -1320,7 +1320,7 @@ defmodule Explorer.DataFrame do
 
       iex> Explorer.DataFrame.new(%{
       ...>   floats: Nx.tensor([1.0, 2.0], type: :f64),
-      ...>   times: Nx.tensor([3, 4])
+      ...>   times: Nx.tensor([3_000, 4_000])
       ...> }, dtypes: [times: :time])
       #Explorer.DataFrame<
         Polars[2 x 2]

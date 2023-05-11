@@ -10,7 +10,7 @@ use crate::atoms::{
     year,
 };
 use crate::datatypes::{
-    days_to_date, timestamp_to_datetime, timestamp_to_time, ExSeries, ExSeriesRef,
+    days_to_date, time64ns_to_time, timestamp_to_datetime, ExSeries, ExSeriesRef,
 };
 use crate::ExplorerError;
 
@@ -213,18 +213,8 @@ fn datetime_series_to_list<'b>(
 
 macro_rules! unsafe_encode_time {
     ($v: expr, $naive_time_struct_keys: ident, $calendar_iso_module: ident, $time_module: ident, $env: ident) => {{
-        let t = timestamp_to_time($v);
-        let duration =
-            NaiveTime::from_hms_micro_opt(t.hour(), t.minute(), t.second(), t.nanosecond() / 1_000)
-                .unwrap()
-                .signed_duration_since(
-                    NaiveTime::from_hms_opt(t.hour(), t.minute(), t.second()).unwrap(),
-                );
-
-        let microseconds = match duration.num_microseconds() {
-            Some(us) => us,
-            None => duration.num_milliseconds() * 1_000,
-        };
+        let t = time64ns_to_time($v);
+        let microseconds = t.nanosecond() / 1_000;
 
         // Limit the number of digits in the microsecond part of a timestamp to 6.
         // This is necessary because the microsecond part of Elixir is only 6 digits.
