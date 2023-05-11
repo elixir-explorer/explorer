@@ -2521,7 +2521,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list([~T[03:00:00.000000], ~T[04:00:00.000201]])
 
       assert Series.format([s1, " <=> ", s2]) |> Series.to_list() ==
-               ["01:00:00 <=> 03:00:00", "02:00:00 <=> 04:00:00"]
+               ["3600000543000 <=> 10800000000000", "7200000000000 <=> 14400000201000"]
     end
 
     test "with two datetime series" do
