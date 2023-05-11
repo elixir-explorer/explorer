@@ -301,7 +301,6 @@ pub struct ExTime {
     pub microsecond: (u32, u32),
 }
 
-// pub use polars::export::arrow::temporal_conversions::time64us_to_time as timestamp_to_time;
 pub use polars::export::arrow::temporal_conversions::time64ns_to_time;
 
 impl From<i64> for ExTime {
