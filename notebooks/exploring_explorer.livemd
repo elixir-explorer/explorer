@@ -3,7 +3,7 @@
 ```elixir
 Mix.install([
   {:explorer, "~> 0.5.0"},
-  {:kino, "~> 0.8.0"}
+  {:kino, "~> 0.9.0"}
 ])
 ```
 
@@ -562,10 +562,10 @@ DF.slice(df, 12..42)
 
 We can `pivot_longer/3` and `pivot_wider/4`. These are inspired by [tidyr](https://tidyr.tidyverse.org/articles/pivot.html).
 
-There are some shortcomings in `pivot_wider/4` related to `polars`. The `values_from` column must be a numeric type.
+There are some shortcomings in `pivot_wider/4` related to `polars`. The `select` option must select only columns of numeric type.
 
 ```elixir
-DF.pivot_longer(df, ["year", "country"], value_columns: &String.ends_with?(&1, "fuel"))
+DF.pivot_longer(df, ["year", "country"], select: &String.ends_with?(&1, "fuel"))
 ```
 
 ```elixir
