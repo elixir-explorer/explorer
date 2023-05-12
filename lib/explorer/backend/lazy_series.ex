@@ -107,9 +107,7 @@ defmodule Explorer.Backend.LazySeries do
     floor: 1,
     ceil: 1,
     # Date functions
-    day_of_week: 1,
-    to_date: 1,
-    to_time: 1
+    day_of_week: 1
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -481,20 +479,6 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:day_of_week, [lazy_series!(s)])
 
     Backend.Series.new(data, :integer)
-  end
-
-  @impl true
-  def to_date(%Series{} = s) do
-    data = new(:to_date, [lazy_series!(s)])
-
-    Backend.Series.new(data, :date)
-  end
-
-  @impl true
-  def to_time(%Series{} = s) do
-    data = new(:to_time, [lazy_series!(s)])
-
-    Backend.Series.new(data, :time)
   end
 
   @impl true

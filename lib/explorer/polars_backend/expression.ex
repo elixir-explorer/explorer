@@ -64,8 +64,6 @@ defmodule Explorer.PolarsBackend.Expression do
     standard_deviation: 1,
     subtract: 2,
     sum: 1,
-    to_date: 1,
-    to_time: 1,
     unordered_distinct: 1,
     variance: 1
   ]

@@ -209,8 +209,6 @@ defmodule Explorer.Backend.Series do
   # Date / DateTime
 
   @callback day_of_week(s) :: s
-  @callback to_date(s) :: s
-  @callback to_time(s) :: s
 
   # Functions
 

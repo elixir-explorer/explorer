@@ -310,8 +310,8 @@ impl From<i64> for ExTime {
 }
 
 // In Polars, Time is represented as an i64 in nanoseconds.
-// Since we don't have nanoseconds precision in Elixir, we just ignore the extra
-// precision when is available.
+// Since we don't have nanoseconds precision in Elixir,
+// we just ignore the extra precision when is available.
 impl From<ExTime> for i64 {
     fn from(t: ExTime) -> i64 {
         let midnight = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
@@ -319,12 +319,10 @@ impl From<ExTime> for i64 {
             .unwrap()
             .signed_duration_since(midnight);
 
-        duration.num_nanoseconds().unwrap_or_else(|| {
-            duration
-                .num_microseconds()
-                .unwrap_or_else(|| duration.num_milliseconds() * 1_000)
-                * 1_000
-        })
+        match duration.num_microseconds() {
+            Some(us) => us * 1000,
+            None => duration.num_milliseconds() * 1_000 * 1000,
+        }
     }
 }
 

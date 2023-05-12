@@ -3866,44 +3866,16 @@ defmodule Explorer.Series do
   def day_of_week(%Series{dtype: dtype}),
     do: dtype_error("day_of_week/1", dtype, [:date, :datetime])
 
-  @doc """
-  Returns date component from the datetime series
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00.000000], ~N[2023-01-16 23:59:59.999999], ~N[2023-01-20 12:00:00.000000], nil])
-      iex> Explorer.Series.to_date(s)
-      #Explorer.Series<
-        Polars[4]
-        date [2023-01-15, 2023-01-16, 2023-01-20, nil]
-      >
-  """
-
-  @doc type: :datetime_wise
-  @spec to_date(Series.t()) :: Series.t()
+  @deprecated "Use cast(:date) instead"
   def to_date(%Series{dtype: :datetime} = series),
-    do: apply_series_list(:to_date, [series])
+    do: cast(series, :date)
 
   def to_date(%Series{dtype: dtype}),
     do: dtype_error("to_date/1", dtype, [:datetime])
 
-  @doc """
-  Returns time component from the datetime series
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00.000000], ~N[2023-01-16 23:59:59.999999], ~N[2023-01-20 12:00:00.000000], nil])
-      iex> Explorer.Series.to_time(s)
-      #Explorer.Series<
-        Polars[4]
-        time [00:00:00.000000, 23:59:59.999999, 12:00:00.000000, nil]
-      >
-  """
-
-  @doc type: :datetime_wise
-  @spec to_time(Series.t()) :: Series.t()
+  @deprecated "Use cast(:time) instead"
   def to_time(%Series{dtype: :datetime} = series),
-    do: apply_series_list(:to_time, [series])
+    do: cast(series, :time)
 
   def to_time(%Series{dtype: dtype}),
     do: dtype_error("to_time/1", dtype, [:datetime])

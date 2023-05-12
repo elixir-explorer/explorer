@@ -1176,34 +1176,6 @@ pub fn s_day_of_week(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_to_date(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s
-        .datetime()?
-        .as_datetime_iter()
-        .map(|o| o.map(|v| ExDate::from(v.date()).into()))
-        .collect::<Int32Chunked>()
-        .into_series()
-        .cast(&DataType::Date)
-        .unwrap();
-
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_to_time(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s
-        .datetime()?
-        .as_datetime_iter()
-        .map(|o| o.map(|v| ExTime::from(v.time()).into()))
-        .collect::<Int64Chunked>()
-        .into_series()
-        .cast(&DataType::Time)
-        .unwrap();
-
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.sin()).into();
     Ok(ExSeries::new(s1))
