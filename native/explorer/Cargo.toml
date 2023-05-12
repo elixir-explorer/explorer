@@ -26,14 +26,14 @@ smartstring = "1"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.28"
+version = "0.29"
 default-features = false
 features = [
   "checked_arithmetic",
   "concat_str",
   "cross_join",
   "cum_agg",
-  "csv-file",
+  "csv",
   "decompress",
   "describe",
   "dtype-date",
@@ -66,4 +66,4 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.28"
+version = "0.29"
