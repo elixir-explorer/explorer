@@ -1218,12 +1218,14 @@ pub fn s_to_arrow(env: Env, s: ExSeries) -> Result<Binary, ExplorerError> {
     let res = &s.resource;
     let s = s.rechunk();
     let array = s.to_arrow(0);
-    let c_array = Box::new(ffi::export_array_to_c(array));
-    let array_ptr: *const ffi::ArrowArray = &*c_array;
+    let c_array = ffi::export_array_to_c(array);
+    let array_ptr: *const ffi::ArrowArray = &c_array;
 
     // https://stackoverflow.com/questions/28127165/how-to-convert-struct-to-u8
     let transmuted: &[u8] =
         unsafe { slice::from_raw_parts(array_ptr as *const u8, mem::size_of::<ffi::ArrowArray>()) };
+
+    // println!("{:?}", transmuted);
 
     let bin = unsafe { res.make_binary_unsafe(env, |_| transmuted) };
 

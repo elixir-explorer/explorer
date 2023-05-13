@@ -135,8 +135,11 @@ defmodule Explorer.PolarsBackend.Series do
     p_series = series.data
 
     case Explorer.PolarsBackend.Native.s_to_arrow(p_series) do
-      {:ok, datum} -> datum
-      {:error, error} -> raise "cannot transform series into arrow format, reason: #{inspect(error)}"
+      {:ok, datum} ->
+        datum
+
+      {:error, error} ->
+        raise "cannot transform series into arrow format, reason: #{inspect(error)}"
     end
   end
 
