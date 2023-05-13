@@ -372,6 +372,7 @@ rustler::init!(
         s_round,
         s_floor,
         s_ceil,
+        s_to_arrow,
     ],
     load = on_load
 );
