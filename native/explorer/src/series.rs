@@ -4,10 +4,12 @@ use crate::{
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
+use arrow2::ffi;
 use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
 use polars::prelude::*;
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
+use std::{mem, slice};
 use std::{result::Result, slice};
 
 pub mod log;
@@ -1209,4 +1211,20 @@ pub fn s_acos(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.atan()).into();
     Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_to_arrow(env: Env, s: ExSeries) -> Result<(), ExplorerError> {
+    let res = s.resource;
+    let s = s.rechunk();
+    let array = s.to_arrow(0);
+    let c_array = Box::new(ffi::export_array_to_c(array));
+    let array_ptr: *const ffi::ArrowArray = &*c_array;
+
+    let transmuted = unsafe { slice::from_raw_parts(array_ptr, mem::size_of::<ffi::ArrowArray>()) };
+
+    // Incompatible types.
+    let bin = unsafe { res.make_binary_unsafe(env, |_| transmuted) };
+
+    Ok(())
 }

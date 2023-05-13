@@ -3912,6 +3912,10 @@ defmodule Explorer.Series do
     apply_series(series, :transform, [fun])
   end
 
+  def to_arrow(series) do
+    apply_series(series, :to_arrow, [])
+  end
+
   # Helpers
 
   defp apply_series(series, fun, args \\ []) do

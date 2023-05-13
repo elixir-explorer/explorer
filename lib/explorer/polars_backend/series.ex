@@ -131,6 +131,15 @@ defmodule Explorer.PolarsBackend.Series do
     end
   end
 
+  def to_arrow(series) do
+    p_series = series.data
+
+    case Explorer.PolarsBackend.Native.s_to_arrow(p_series) do
+      {:ok, datum} -> datum
+      {:error, error} -> raise "cannot transform series into arrow format, reason: #{inspect(error)}"
+    end
+  end
+
   @impl true
   def concat([%Series{} | _] = series) do
     polars_series = for s <- series, do: s.data

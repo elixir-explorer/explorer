@@ -419,6 +419,7 @@ name = "explorer"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "arrow2",
  "chrono",
  "mimalloc",
  "polars",
