@@ -2341,7 +2341,7 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates or modifies columns using a callback function.
 
-  The callback receives a lazy dataframe. A lazy dataframe does
+  The callback receives a lazy dataframe. A lazy dataframe doesn't
   hold any values, instead it stores all operations in order to
   execute all mutations performantly.
 
