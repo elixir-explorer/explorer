@@ -1236,10 +1236,16 @@ fn from_arrow(_env: Env, bin: Binary) -> Result<i64, ExplorerError> {
     let array_ref: &ffi::ArrowArray = unsafe { &*array_ptr };
     let array: ffi::ArrowArray = unsafe { std::ptr::read(array_ref) };
 
-    let my_box = mem::ManuallyDrop::new(unsafe {
-        ffi::import_array_from_c(array, arrow2::datatypes::DataType::Int64).unwrap()
-    });
+    let my_box =
+        unsafe { ffi::import_array_from_c(array, arrow2::datatypes::DataType::Int64).unwrap() };
 
     println!("{:?}", my_box);
+
+    // We tell the compiler to forget about this box, and therefore don't
+    // call the destructor (drop). This will keep the array in memory, without
+    // causing a segfault. But it's probably considered a leak.
+    // See: https://doc.rust-lang.org/std/mem/fn.forget.html
+    mem::forget(my_box);
+
     Ok(42)
 }
