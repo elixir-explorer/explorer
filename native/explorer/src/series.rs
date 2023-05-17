@@ -1214,20 +1214,32 @@ pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_to_arrow(env: Env, s: ExSeries) -> Result<Binary, ExplorerError> {
+pub fn s_to_arrow(env: Env, s: ExSeries) -> Result<i64, ExplorerError> {
     let res = &s.resource;
     let s = s.rechunk();
     let array = s.to_arrow(0);
-    let c_array = ffi::export_array_to_c(array);
-    let array_ptr: *const ffi::ArrowArray = &c_array;
+    let c_array = Box::new(ffi::export_array_to_c(array));
+    let array_ptr: *const ffi::ArrowArray = &*c_array;
 
     // https://stackoverflow.com/questions/28127165/how-to-convert-struct-to-u8
     let transmuted: &[u8] =
         unsafe { slice::from_raw_parts(array_ptr as *const u8, mem::size_of::<ffi::ArrowArray>()) };
 
-    // println!("{:?}", transmuted);
-
     let bin = unsafe { res.make_binary_unsafe(env, |_| transmuted) };
 
-    Ok(bin)
+    // Ok(bin)
+    from_arrow(env, bin)
+}
+
+fn from_arrow(_env: Env, bin: Binary) -> Result<i64, ExplorerError> {
+    let array_ptr = bin.as_ptr() as *const ffi::ArrowArray;
+    let array_ref: &ffi::ArrowArray = unsafe { &*array_ptr };
+    let array: ffi::ArrowArray = unsafe { std::ptr::read(array_ref) };
+
+    let my_box = mem::ManuallyDrop::new(unsafe {
+        ffi::import_array_from_c(array, arrow2::datatypes::DataType::Int64).unwrap()
+    });
+
+    println!("{:?}", my_box);
+    Ok(42)
 }
