@@ -135,11 +135,21 @@ defmodule Explorer.PolarsBackend.Series do
     p_series = series.data
 
     case Explorer.PolarsBackend.Native.s_to_arrow(p_series) do
-      {:ok, datum} ->
-        datum
+      {:ok, binary} ->
+        binary
 
       {:error, error} ->
         raise "cannot transform series into arrow format, reason: #{inspect(error)}"
+    end
+  end
+
+  def from_arrow(pointer_as_binary) when is_binary(pointer_as_binary) do
+    case Explorer.PolarsBackend.Native.s_from_arrow(pointer_as_binary) do
+      {:ok, %__MODULE__{} = new_series} ->
+        Shared.create_series(new_series)
+
+      {:error, error} ->
+        raise "cannot create series from arrow binary pointer, reason: #{inspect(error)}"
     end
   end
 

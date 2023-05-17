@@ -3916,6 +3916,13 @@ defmodule Explorer.Series do
     apply_series(series, :to_arrow, [])
   end
 
+  def from_arrow(arrow_pointer, opts \\ []) do
+    opts = Keyword.validate!(opts, [:dtype, :backend])
+    backend = backend_from_options!(opts)
+
+    backend.from_arrow(arrow_pointer)
+  end
+
   # Helpers
 
   defp apply_series(series, fun, args \\ []) do

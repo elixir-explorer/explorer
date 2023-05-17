@@ -327,6 +327,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_atan(_s), do: err()
 
   def s_to_arrow(_s), do: err()
+  def s_from_arrow(_bin_pointer), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

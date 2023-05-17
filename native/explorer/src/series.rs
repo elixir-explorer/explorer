@@ -1214,7 +1214,7 @@ pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_to_arrow(env: Env, s: ExSeries) -> Result<i64, ExplorerError> {
+pub fn s_to_arrow(env: Env, s: ExSeries) -> Result<Binary, ExplorerError> {
     let res = &s.resource;
     let s = s.rechunk();
     let array = s.to_arrow(0);
@@ -1227,11 +1227,17 @@ pub fn s_to_arrow(env: Env, s: ExSeries) -> Result<i64, ExplorerError> {
 
     let bin = unsafe { res.make_binary_unsafe(env, |_| transmuted) };
 
-    // Ok(bin)
-    from_arrow(env, bin)
+    // We tell the compiler to forget about this box, and therefore don't
+    // call the destructor (drop). This will keep the array in memory, without
+    // causing a segfault. But it's probably considered a leak.
+    // See: https://doc.rust-lang.org/std/mem/fn.forget.html
+    mem::forget(c_array);
+
+    Ok(bin)
 }
 
-fn from_arrow(_env: Env, bin: Binary) -> Result<i64, ExplorerError> {
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_arrow(bin: Binary) -> Result<ExSeries, ExplorerError> {
     let array_ptr = bin.as_ptr() as *const ffi::ArrowArray;
     let array_ref: &ffi::ArrowArray = unsafe { &*array_ptr };
     let array: ffi::ArrowArray = unsafe { std::ptr::read(array_ref) };
@@ -1241,11 +1247,7 @@ fn from_arrow(_env: Env, bin: Binary) -> Result<i64, ExplorerError> {
 
     println!("{:?}", my_box);
 
-    // We tell the compiler to forget about this box, and therefore don't
-    // call the destructor (drop). This will keep the array in memory, without
-    // causing a segfault. But it's probably considered a leak.
-    // See: https://doc.rust-lang.org/std/mem/fn.forget.html
-    mem::forget(my_box);
+    let series = Series::try_from(("", my_box))?;
 
-    Ok(42)
+    Ok(ExSeries::new(series))
 }
