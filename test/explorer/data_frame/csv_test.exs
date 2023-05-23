@@ -132,6 +132,8 @@ defmodule Explorer.DataFrame.CSVTest do
   end
 
   describe "from_csv/2 options" do
+    @default_infer_schema_length 1_000
+
     @tag :tmp_dir
     test "delimiter", config do
       csv =
@@ -209,6 +211,84 @@ defmodule Explorer.DataFrame.CSVTest do
                b: [2, 4],
                c: ["2020-10-15 00:00:01", "2020-10-15 00:00:18"]
              }
+    end
+
+    @tag :tmp_dir
+    test "infer_schema_length - when not set, use default number of rows for schema inference",
+         config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a
+        #{1..(@default_infer_schema_length - 1) |> Enum.join("\n")}
+        1.0
+        """)
+
+      df = DF.from_csv!(csv)
+      assert %{"a" => :float} = Explorer.DataFrame.dtypes(df)
+
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a
+        #{1..@default_infer_schema_length |> Enum.join("\n")}
+        1.0
+        """)
+
+      assert_raise RuntimeError, ~r/from_csv failed:/, fn ->
+        DF.from_csv!(csv)
+      end
+    end
+
+    @tag :tmp_dir
+    test "infer_schema_length - when set to n, use n rows for schema inference",
+         config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a
+        #{1..@default_infer_schema_length |> Enum.join("\n")}
+        1.0
+        """)
+
+      df = DF.from_csv!(csv, infer_schema_length: @default_infer_schema_length + 1)
+      assert %{"a" => :float} = Explorer.DataFrame.dtypes(df)
+    end
+
+    @tag :tmp_dir
+    test "infer_schema_length - when set to `nil`, use all rows for schema inference",
+         config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a
+        #{1..@default_infer_schema_length |> Enum.join("\n")}
+        1.0
+        """)
+
+      df = DF.from_csv!(csv, infer_schema_length: nil)
+      assert %{"a" => :float} = Explorer.DataFrame.dtypes(df)
+    end
+
+    @tag :tmp_dir
+    test "infer_schema_length - when set to `nil` and max_rows is set, use max_rows for schema inference",
+         config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a
+        #{1..@default_infer_schema_length |> Enum.join("\n")}
+        1.0
+        """)
+
+      df = DF.from_csv!(csv, infer_schema_length: nil, max_rows: @default_infer_schema_length + 1)
+      assert %{"a" => :float} = Explorer.DataFrame.dtypes(df)
+
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a
+        #{1..10 |> Enum.join("\n")}
+        1.0
+        """)
+
+      assert_raise RuntimeError, ~r/from_csv failed:/, fn ->
+        DF.from_csv!(csv, infer_schema_length: nil, max_rows: 10)
+      end
     end
 
     @tag :tmp_dir

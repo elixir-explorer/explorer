@@ -14,7 +14,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @type t :: %__MODULE__{resource: reference()}
 
   @behaviour Explorer.Backend.DataFrame
-  @default_infer_schema_length 1000
 
   # IO
 
@@ -35,7 +34,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       ) do
     infer_schema_length =
       if infer_schema_length == nil,
-        do: max_rows || @default_infer_schema_length,
+        do: max_rows,
         else: infer_schema_length
 
     dtypes =
@@ -118,7 +117,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       ) do
     infer_schema_length =
       if infer_schema_length == nil,
-        do: max_rows || @default_infer_schema_length,
+        do: max_rows,
         else: infer_schema_length
 
     dtypes =
