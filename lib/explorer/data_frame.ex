@@ -4691,8 +4691,8 @@ defmodule Explorer.DataFrame do
   To summarise, you must perform aggregation, defined in `Explorer.Series`,
   on the desired columns. The query is compiled and runs efficiently
   against the dataframe. This function performs aggregations based on groups,
-  so at least one group is expected, and the query must contain at least one
-  aggregation. It implicitly ungroups the resultant dataframe.
+  and the query must contain at least one aggregation.
+  It implicitly ungroups the resultant dataframe.
 
   > #### Notice {: .notice}
   >
@@ -4725,6 +4725,16 @@ defmodule Explorer.DataFrame do
         mean_petal_length float [1.464, 4.26, 5.552]
       >
 
+  In case aggregations for all the dataframe is what you want, you can use ungrouped
+  dataframes:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> Explorer.DataFrame.summarise(df, mean_petal_length: mean(petal_length))
+      #Explorer.DataFrame<
+        Polars[1 x 1]
+        mean_petal_length float [3.758666666666667]
+      >
+
   """
   @doc type: :single
   defmacro summarise(df, query) do
@@ -4737,7 +4747,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Summarise each group to a single row using a callback function.
 
-  The callback receives a lazy dataframe. A lazy dataframe does
+  In case no group is set, the entire dataframe will be considered.
+  The callback receives a lazy dataframe. A lazy dataframe does not
   hold any values, instead it stores all operations in order to
   execute all summarizations performantly.
 
@@ -4754,19 +4765,22 @@ defmodule Explorer.DataFrame do
         total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
         countries integer [217, 217, 220, 220, 220]
       >
+
+      iex> alias Explorer.{DataFrame, Series}
+      iex> df = Explorer.Datasets.fossil_fuels()
+      iex> DataFrame.summarise_with(df, &[total_max: Series.max(&1["total"]), countries: Series.n_distinct(&1["country"])])
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        total_max integer [2806634]
+        countries integer [222]
+      >
+
   """
   @doc type: :single
   @spec summarise_with(
           df :: DataFrame.t(),
           callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
         ) :: DataFrame.t()
-  def summarise_with(%DataFrame{groups: []}, _),
-    do:
-      raise(
-        ArgumentError,
-        "dataframe must be grouped in order to perform summarisation"
-      )
-
   def summarise_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
     ldf = Explorer.Backend.LazyFrame.new(df)
 

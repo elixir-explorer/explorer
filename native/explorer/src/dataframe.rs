@@ -500,13 +500,15 @@ pub fn df_summarise_with_exprs(
     let groups = ex_expr_to_exprs(groups);
     let aggs = ex_expr_to_exprs(aggs);
 
-    let new_df = df
-        .clone_inner()
-        .lazy()
-        .groupby_stable(groups)
-        .agg(aggs)
-        .collect()?;
-    Ok(ExDataFrame::new(new_df))
+    let lf = df.clone_inner().lazy();
+
+    let new_lf = if groups.is_empty() {
+        lf.with_columns(aggs).first()
+    } else {
+        lf.groupby_stable(groups).agg(aggs)
+    };
+
+    Ok(ExDataFrame::new(new_lf.collect()?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
