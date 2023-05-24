@@ -60,8 +60,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   # IO
 
-  @default_infer_schema_length 1000
-
   @impl true
   def from_csv(
         filename,
@@ -85,7 +83,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
     infer_schema_length =
       if infer_schema_length == nil,
-        do: max_rows || @default_infer_schema_length,
+        do: max_rows,
         else: infer_schema_length
 
     dtypes =
