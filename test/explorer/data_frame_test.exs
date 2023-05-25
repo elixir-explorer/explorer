@@ -25,7 +25,7 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  # Tests for summarize, group, ungroup are available in grouped_test.exs
+  # Tests for summarise, group, ungroup are available in grouped_test.exs
 
   describe "new/1" do
     test "from series" do
@@ -2780,6 +2780,33 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{
                letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
                numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+             }
+    end
+  end
+
+  describe "summarise/2" do
+    test "one column with aggregation and without groups", %{df: df} do
+      df1 =
+        DF.summarise(df,
+          total: count(total),
+          solid_fuel_mean: mean(solid_fuel),
+          gas_fuel_max: max(gas_fuel)
+        )
+
+      assert DF.names(df1) == ["total", "solid_fuel_mean", "gas_fuel_max"]
+
+      assert DF.dtypes(df1) == %{
+               "total" => :integer,
+               "solid_fuel_mean" => :float,
+               "gas_fuel_max" => :integer
+             }
+
+      assert DF.groups(df1) == []
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               total: [1094],
+               gas_fuel_max: [390_719],
+               solid_fuel_mean: [18212.27970749543]
              }
     end
   end
