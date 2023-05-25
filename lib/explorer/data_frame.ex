@@ -27,7 +27,7 @@ defmodule Explorer.DataFrame do
 
   ## Creating dataframes
 
-  Dataframes can be created from normal Elixir objects. The main way you might do this is
+  Dataframes can be created from normal Elixir terms. The main way you might do this is
   with the `new/1` function. For example:
 
       iex> Explorer.DataFrame.new(a: ["a", "b"], b: [1, 2])
