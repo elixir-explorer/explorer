@@ -28,6 +28,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           env-vars: "RUST_TOOLCHAIN_VERSION"
+          workspaces: |
+            "native/explorer"
 
       - uses: dtolnay/rust-toolchain@master
         with:
