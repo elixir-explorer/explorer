@@ -16,8 +16,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - otp_version: 25.2
+          - otp_version: 25.3
             elixir_version: 1.14
+
+          - otp_version: 26.0
+            elixir_version: "1.15.0-rc.1"
+
     runs-on: ubuntu-latest
     name: test
     steps:
@@ -66,6 +70,6 @@ jobs:
       - uses: actions/checkout@v3
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: 25.2
+          otp-version: 26.0
           elixir-version: 1.14
       - run: mix format --check-formatted
