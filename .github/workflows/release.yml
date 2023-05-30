@@ -20,16 +20,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nif: ["2.17", "2.16", "2.15"]
+        # nif: ["2.17", "2.16", "2.15"]
+        nif: ["2.15"]
         job:
           - { target: aarch64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
-          - { target: aarch64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
-          - { target: aarch64-apple-darwin, os: macos-11 }
-          - { target: x86_64-apple-darwin, os: macos-11 }
-          - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04 }
-          - { target: x86_64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
-          - { target: riscv64gc-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true, disable-polars-json-feature: true }
-          - { target: x86_64-pc-windows-gnu, os: windows-2019 }
+          # - { target: aarch64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
+          # - { target: aarch64-apple-darwin, os: macos-11 }
+          # - { target: x86_64-apple-darwin, os: macos-11 }
+          # - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04 }
+          # - { target: x86_64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
+          # - { target: riscv64gc-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true, disable-polars-json-feature: true }
+          # - { target: x86_64-pc-windows-gnu, os: windows-2019 }
           - { target: x86_64-pc-windows-msvc, os: windows-2019 }
 
     steps:
@@ -47,6 +48,11 @@ jobs:
         with:
           toolchain: nightly-2023-02-14
           targets: ${{ matrix.job.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            native/explorer
 
       - name: Disable JSON feature from Polars that won't compile on certain targets
         if: ${{ matrix.job.disable-polars-json-feature }}
