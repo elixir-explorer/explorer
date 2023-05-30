@@ -20,26 +20,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      # We have a different key for this cache because we run in a different mix env.
       - uses: actions/cache@v3
         with:
           path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ env.ELIXIR_VERSION }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-
-      - uses: actions/cache@v3
-        with:
-          path: |
+            _build/dev/lib/explorer/native/explorer
             ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            native/explorer/target/
-            priv/native/
-          key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+          key: dev-native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('native/**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            dev-native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}
 
       - uses: dtolnay/rust-toolchain@master
         with:

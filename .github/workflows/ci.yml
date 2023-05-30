@@ -16,8 +16,8 @@ jobs:
     strategy:
       matrix:
         include:
-          # - otp_version: 25.3
-          #   elixir_version: 1.14
+          - otp_version: 25.3
+            elixir_version: 1.14
 
           - otp_version: 26.0
             elixir_version: "1.15.0-rc.1"
@@ -31,10 +31,13 @@ jobs:
         with:
           path: |
             _build/test/lib/explorer/native/explorer
-            ~/.cargo
-          key: native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('native/**/Cargo.lock') }}
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: test-native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('native/**/Cargo.lock') }}
           restore-keys: |
-            native-${{ runner.os }}
+            test-native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}
 
       - uses: dtolnay/rust-toolchain@master
         with:
