@@ -1318,10 +1318,10 @@ defmodule Explorer.DataFrame do
 
   Use dtypes to force a particular representation:
 
-      iex> Explorer.DataFrame.new(%{
+      iex> Explorer.DataFrame.new([
       ...>   floats: Nx.tensor([1.0, 2.0], type: :f64),
       ...>   times: Nx.tensor([3_000, 4_000])
-      ...> }, dtypes: [times: :time])
+      ...> ], dtypes: [times: :time])
       #Explorer.DataFrame<
         Polars[2 x 2]
         floats float [1.0, 2.0]
@@ -1347,12 +1347,12 @@ defmodule Explorer.DataFrame do
         ints integer [1, nil]
       >
 
-      iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, nil], binaries: [<<239, 191, 19>>, nil]}, dtypes: [{:binaries, :binary}])
+      iex> Explorer.DataFrame.new([floats: [1.0, 2.0], ints: [1, nil], binaries: [<<239, 191, 19>>, nil]], dtypes: [{:binaries, :binary}])
       #Explorer.DataFrame<
         Polars[2 x 3]
-        binaries binary [<<239, 191, 19>>, nil]
         floats float [1.0, 2.0]
         ints integer [1, nil]
+        binaries binary [<<239, 191, 19>>, nil]
       >
 
       iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, "wrong"]})
