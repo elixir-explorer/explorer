@@ -12,6 +12,10 @@ on:
     tags:
       # Tags will always run.
       - "*"
+  pull_request:
+    paths:
+      # In PRs, only run with this file changes.
+      - ".github/workflows/release.yml"
   workflow_dispatch:
 
 jobs:
