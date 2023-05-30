@@ -26,14 +26,24 @@ jobs:
     name: test
     steps:
       - uses: actions/checkout@v3
-      # - uses: actions/cache@v3
-      #   with:
-      #     path: |
-      #       deps
-      #       _build
-      #     key: ${{ runner.os }}-mix-${{ matrix.elixir_version }}-${{ hashFiles('**/mix.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-mix-
+      - uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+            !_build/test/lib/explorer/native/explorer
+          key: mix-deps-${{ runner.os }}-${{ matrix.elixir_version }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            mix-deps-${{ runner.os }}
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            _build/test/lib/explorer/native/explorer
+            ~/.cargo
+          key: native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            native-${{ runner.os }}
 
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -43,15 +53,6 @@ jobs:
         with:
           otp-version: ${{ matrix.otp_version }}
           elixir-version: ${{ matrix.elixir_version }}
-
-      - name: Create a link so we reuse the artifacts
-        run: ln -s "$PWD/_build/test/lib/explorer/native/explorer" native/explorer/target
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          env-vars: "RUST_TOOLCHAIN_VERSION"
-          workspaces: |
-            native/explorer
 
       - run: mix deps.get
       - run: mix deps.compile
