@@ -24,24 +24,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            native/explorer/target/
-            priv/native/
-            _build/test/lib/explorer
-          key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
 
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
           components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          env-vars: "RUST_TOOLCHAIN_VERSION"
+          workspaces: |
+            native/explorer
 
       - name: run rustfmt
         run: cargo fmt --manifest-path=${{ matrix.manifest }} --all -- --check

@@ -26,26 +26,18 @@ jobs:
     name: test
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v3
-        with:
-          path: |
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ matrix.elixir_version }}-${{ hashFiles('**/mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-
 
       - uses: actions/cache@v3
         with:
           path: |
+            _build/test/lib/explorer/native/explorer
             ~/.cargo/bin/
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            native/explorer/target/
-            priv/native/
-            _build/test/lib/explorer
-          key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
+          key: test-native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('native/**/Cargo.lock') }}
+          restore-keys: |
+            test-native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}
 
       - uses: dtolnay/rust-toolchain@master
         with:

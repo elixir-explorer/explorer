@@ -1,4 +1,4 @@
-name: Build precompiled NIFs
+name: Precomp NIFs
 
 on:
   push:
@@ -12,6 +12,11 @@ on:
     tags:
       # Tags will always run.
       - "*"
+  pull_request:
+    paths:
+      # In PRs we only run if this file changes.
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
 
 jobs:
   build_release:
@@ -20,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        nif: ["2.17", "2.16", "2.15"]
+        nif: ["2.16", "2.15"]
         job:
           - { target: aarch64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
           - { target: aarch64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
@@ -47,6 +52,13 @@ jobs:
         with:
           toolchain: nightly-2023-02-14
           targets: ${{ matrix.job.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: v0-precomp
+          shared-key: ${{ matrix.job.target }}-${{ matrix.nif }}
+          workspaces: |
+            native/explorer
 
       - name: Disable JSON feature from Polars that won't compile on certain targets
         if: ${{ matrix.job.disable-polars-json-feature }}
