@@ -16,8 +16,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - otp_version: 25.3
-            elixir_version: 1.14
+          # - otp_version: 25.3
+          #   elixir_version: 1.14
 
           - otp_version: 26.0
             elixir_version: "1.15.0-rc.1"
@@ -44,9 +44,14 @@ jobs:
           otp-version: ${{ matrix.otp_version }}
           elixir-version: ${{ matrix.elixir_version }}
 
+      - name: Create a link so we reuse the artifacts
+        run: ln -s "$PWD/_build/test/lib/explorer/native/explorer" native/explorer/target
+
       - uses: Swatinem/rust-cache@v2
         with:
           env-vars: "RUST_TOOLCHAIN_VERSION"
+          workspaces: |
+            native/explorer
 
       - run: mix deps.get
       - run: mix deps.compile
