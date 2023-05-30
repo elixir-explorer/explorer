@@ -16,8 +16,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - otp_version: 26.0
+          - otp_version: 25.0
             elixir_version: 1.14
+
+          - otp_version: 26.0
+            elixir_version: "1.15.0-rc.1"
+
     runs-on: ubuntu-latest
     name: test
     steps:
