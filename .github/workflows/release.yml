@@ -55,6 +55,8 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
         with:
+          prefix-key: v0-precomp
+          shared-key: ${{ matrix.job.target }}-${{ matrix.nif }}
           workspaces: |
             native/explorer
 
