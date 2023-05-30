@@ -24,19 +24,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/cache@v3
+
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            native/explorer/target/
-            priv/native/
-            _build/test/lib/explorer
-          key: ${{ runner.os }}-cargo-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          env-vars: "RUST_TOOLCHAIN_VERSION"
 
       - uses: dtolnay/rust-toolchain@master
         with:
