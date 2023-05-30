@@ -12,6 +12,7 @@ on:
     tags:
       # Tags will always run.
       - "*"
+  workflow_dispatch:
 
 jobs:
   build_release:
