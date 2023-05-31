@@ -3,6 +3,7 @@ use polars_ops::pivot::{pivot_stable, PivotAgg};
 
 use std::collections::HashMap;
 use std::result::Result;
+use polars::export::arrow::ffi;
 
 use crate::ex_expr_to_exprs;
 use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
@@ -279,6 +280,20 @@ pub fn df_sample_frac(
     };
 
     Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif]
+fn df_experiment(func_ptr: u64, resource_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
+    let ptr = func_ptr as *const ();
+    let code: extern "C" fn(u64) -> *mut ffi::ArrowArrayStream = unsafe { std::mem::transmute(ptr) };
+    let stream_ptr = (code)(resource_ptr);
+    if stream_ptr.is_null() {
+        Err(ExplorerError::Other("error during donation".into()))
+    } else {
+        let stream_box = unsafe { Box::from_raw(stream_ptr) };
+        unsafe { ffi::ArrowArrayStreamReader::try_new(stream_box) };
+        Ok("123".to_string())
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
