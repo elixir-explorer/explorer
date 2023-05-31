@@ -29,6 +29,7 @@ defmodule Explorer.PolarsBackend.Native do
 
   defstruct [:inner]
 
+  def df_experiment(_function_ptr, _resource_ptr, _ref), do: err()
   def df_arrange(_df, _by, _reverse, _groups), do: err()
   def df_arrange_with(_df, _expressions, _directions, _groups), do: err()
   def df_concat_columns(_df, _others), do: err()
