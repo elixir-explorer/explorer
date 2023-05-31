@@ -34,7 +34,7 @@ features = [
   "cross_join",
   "cum_agg",
   "csv",
-  "decompress",
+  "decompress-fast",
   "describe",
   "dtype-date",
   "dtype-time",
