@@ -285,57 +285,19 @@ pub fn df_sample_frac(
 /// NOTE: The '_ref' parameter is needed to prevent the BEAM GC from collecting the stream too soon.
 #[rustler::nif]
 fn df_experiment(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
-    let stream_ptr = stream_ptr as *const ffi::ArrowArrayStream;
-    if stream_ptr.is_null() {
-        Err(ExplorerError::Other("Incorrect stream pointer".into()))
-    } else {
-        let stream_box = Box::new(make_non_owned_array_stream(stream_ptr));
-        let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_box) }.expect("Could not create an ArrowArrayStreamReader");
-        while let Some(Ok(val)) = unsafe { res.next() } {
-            println!("{:?}", val);
+    let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
+    match unsafe { stream_ptr.as_mut() } {
+        None => Err(ExplorerError::Other("Incorrect stream pointer".into())),
+        Some(stream_ref) => {
+            let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_ref) }.expect("Could not create an ArrowArrayStreamReader");
+            while let Some(Ok(val)) = unsafe { res.next() } {
+                println!("{:?}", val);
+            }
+            Ok("123".to_string())
         }
-        Ok("123".to_string())
     }
 }
 
-/// Creates a copy of a remote ArrowArrayStream,
-/// whose `release` callback has been changed to a no-op
-/// such that when it is relinquished, the original ArrowArrayStream remains valid.
-fn make_non_owned_array_stream(stream_ptr: *const ffi::ArrowArrayStream) -> ffi::ArrowArrayStream {
-    let stream_copy: ffi::ArrowArrayStream = unsafe { std::ptr::read(stream_ptr) };
-    let mut stream_copy: ArrowArrayStreamStruct = unsafe { std::mem::transmute(stream_copy) };
-    stream_copy.release = Some(no_op_release);
-    let stream_copy: ffi::ArrowArrayStream = unsafe { std::mem::transmute(stream_copy) };
-    stream_copy
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn no_op_release(_arg1: *mut ffi::ArrowArrayStream) {
-    println!("Do no cleanup ;-)");
-}
-
-
-#[repr(C)]
-#[derive(Debug)]
-struct ArrowArrayStreamStruct {
-    pub(super) get_schema: ::std::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut ffi::ArrowArrayStream,
-            out: *mut ffi::ArrowSchema,
-        ) -> ::std::os::raw::c_int,
-        >,
-    pub(super) get_next: ::std::option::Option<
-        unsafe extern "C" fn(
-            arg1: *mut ffi::ArrowArrayStream,
-            out: *mut ffi::ArrowArray,
-        ) -> ::std::os::raw::c_int,
-        >,
-    pub(super) get_last_error: ::std::option::Option<
-        unsafe extern "C" fn(arg1: *mut ffi::ArrowArrayStream) -> *const ::std::os::raw::c_char,
-        >,
-    pub(super) release: ::std::option::Option<unsafe extern "C" fn(arg1: *mut ffi::ArrowArrayStream)>,
-    pub(super) private_data: *mut ::std::os::raw::c_void,
-}
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_arrange(
     df: ExDataFrame,

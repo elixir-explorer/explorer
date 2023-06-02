@@ -69,4 +69,4 @@ features = [
 version = "0.28"
 
 [patch.crates-io]
-arrow2 = { path = "vendor/arrow2" }
+arrow2 = { path = "../../../arrow2" }
