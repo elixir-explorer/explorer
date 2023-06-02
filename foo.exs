@@ -22,8 +22,12 @@ Statement.set_sql_query(statement, "SELECT * FROM foo")
 :ok = Statement.prepare(statement)
 {:ok, stream, _row_affected} = Statement.execute_query(statement)
 
-func_ptr = Adbc.get_function_pointer("adbc_arrow_array_stream_donate")
+# func_ptr = Adbc.get_function_pointer("adbc_arrow_array_stream_donate")
+stream_ptr = Adbc.Nif.adbc_arrow_array_stream_get_pointer(stream.reference) |> IO.inspect
 resource_ptr = Adbc.Nif.adbc_arrow_array_stream_get_nif_resource_pointer(stream.reference) |> IO.inspect
 
-IO.inspect Explorer.PolarsBackend.Native.df_experiment(func_ptr, resource_ptr, stream)
-IO.inspect Explorer.PolarsBackend.Native.df_experiment(func_ptr, resource_ptr, stream)
+IO.inspect Explorer.PolarsBackend.Native.df_experiment(stream_ptr, stream)
+IO.inspect Explorer.PolarsBackend.Native.df_experiment(stream_ptr, stream)
+IO.inspect Explorer.PolarsBackend.Native.df_experiment(stream_ptr, stream)
+IO.inspect Explorer.PolarsBackend.Native.df_experiment(stream_ptr, stream)
+IO.inspect Explorer.PolarsBackend.Native.df_experiment(stream_ptr, stream)
