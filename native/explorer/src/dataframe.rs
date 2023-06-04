@@ -285,13 +285,15 @@ pub fn df_sample_frac(
 /// NOTE: The '_ref' parameter is needed to prevent the BEAM GC from collecting the stream too soon.
 #[rustler::nif]
 fn df_experiment(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
-    df_experiment_borrowed(stream_ptr, _ref)
-    // df_experiment_stolen(stream_ptr, _ref)
+    // Choose one of these:
+    df_experiment_borrowing(stream_ptr, _ref)
+    // df_experiment_stealing(stream_ptr, _ref)
 }
 
-/// Builds the StreamReader from a `&mut Stream`
-/// so no cleanup happens in Rust (The Erlang GC cleans up when the resource goes out of scope)
-fn df_experiment_borrowed(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
+/// Builds the StreamReader from a borrowed `&mut Stream`
+/// so no cleanup happens in Rust
+/// (The Erlang GC cleans it up when the #Reference<...> goes out of scope on the Elixir side)
+fn df_experiment_borrowing(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
     let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
     match unsafe { stream_ptr.as_mut() } {
         None => Err(ExplorerError::Other("Incorrect stream pointer".into())),
@@ -305,21 +307,23 @@ fn df_experiment_borrowed(stream_ptr: u64, _ref: rustler::Term) -> Result<String
                 println!("{:?}", val);
             }
             Ok("123".to_string())
+            // <- No cleanup, since we only borrowed the stream
         }
     }
 }
 
-/// *Steals* the contents of the stream by swapping it with an owned empty one, Indiana Jones style.
+/// *Steals* the contents of the Stream by swapping it with an owned empty one, Indiana Jones style.
 /// Cleanup happens when Rust is done with the stream
-/// (The Erlang GC will 'clean' an empty stream later)
-fn df_experiment_stolen(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
+/// (The #Reference<...> now contains just an empty stream)
+fn df_experiment_stealing(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
     let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
     match unsafe { stream_ptr.as_mut() } {
         None => Err(ExplorerError::Other("Incorrect stream pointer".into())),
         Some(stream_ref) => {
-            // Swapping the stream with our own:
+            // Swapping the passed stream with our own:
             let mut owned_stream = Box::new(ffi::ArrowArrayStream::empty());
             std::mem::swap(stream_ref, &mut *owned_stream);
+            // ^ stream_ref is now an empty stream.
 
             // Build the Reader from our owned Box<ArrowArrayStream>:
             let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(owned_stream) }
@@ -330,9 +334,9 @@ fn df_experiment_stolen(stream_ptr: u64, _ref: rustler::Term) -> Result<String, 
                 println!("{:?}", val);
             }
             Ok("123".to_string())
+            // <- owned_stream is cleaned up here (when `res` goes out of scope)
         }
     }
-    // <- owned_stream is cleaned up here
 }
 
 fn arrow_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
