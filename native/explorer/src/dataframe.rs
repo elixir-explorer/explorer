@@ -285,7 +285,7 @@ pub fn df_sample_frac(
 /// NOTE: The '_ref' parameter is needed to prevent the BEAM GC from collecting the stream too soon.
 #[rustler::nif]
 fn df_experiment(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
-    // df_experiment_borrowed(stream_ptr, _ref)
+    df_experiment_borrowed(stream_ptr, _ref)
     // df_experiment_stolen(stream_ptr, _ref)
 }
 
@@ -296,7 +296,7 @@ fn df_experiment_borrowed(stream_ptr: u64, _ref: rustler::Term) -> Result<String
     match unsafe { stream_ptr.as_mut() } {
         None => Err(ExplorerError::Other("Incorrect stream pointer".into())),
         Some(stream_ref) => {
-            // Build the Reader:
+            // Build the Reader from the borrowed &mut ArrowArrayStream:
             let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_ref) }
                 .map_err(arrow_to_explorer_error)?;
 
@@ -321,8 +321,8 @@ fn df_experiment_stolen(stream_ptr: u64, _ref: rustler::Term) -> Result<String, 
             let mut owned_stream = Box::new(ffi::ArrowArrayStream::empty());
             std::mem::swap(stream_ref, &mut *owned_stream);
 
-            // Build the Reader:
-            let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_ref) }
+            // Build the Reader from our owned Box<ArrowArrayStream>:
+            let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(owned_stream) }
                 .map_err(arrow_to_explorer_error)?;
 
             // Use the Reader:
