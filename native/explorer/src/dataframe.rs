@@ -1,9 +1,9 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
+use polars::export::arrow::ffi;
 use std::collections::HashMap;
 use std::result::Result;
-use polars::export::arrow::ffi;
 
 use crate::ex_expr_to_exprs;
 use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
@@ -285,17 +285,58 @@ pub fn df_sample_frac(
 /// NOTE: The '_ref' parameter is needed to prevent the BEAM GC from collecting the stream too soon.
 #[rustler::nif]
 fn df_experiment(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
+    // df_experiment_borrowed(stream_ptr, _ref)
+    // df_experiment_stolen(stream_ptr, _ref)
+}
+
+/// Builds the StreamReader from a `&mut Stream`
+/// so no cleanup happens in Rust (The Erlang GC cleans up when the resource goes out of scope)
+fn df_experiment_borrowed(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
     let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
     match unsafe { stream_ptr.as_mut() } {
         None => Err(ExplorerError::Other("Incorrect stream pointer".into())),
         Some(stream_ref) => {
-            let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_ref) }.expect("Could not create an ArrowArrayStreamReader");
+            // Build the Reader:
+            let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_ref) }
+                .map_err(arrow_to_explorer_error)?;
+
+            // Use the Reader:
             while let Some(Ok(val)) = unsafe { res.next() } {
                 println!("{:?}", val);
             }
             Ok("123".to_string())
         }
     }
+}
+
+/// *Steals* the contents of the stream by swapping it with an owned empty one, Indiana Jones style.
+/// Cleanup happens when Rust is done with the stream
+/// (The Erlang GC will 'clean' an empty stream later)
+fn df_experiment_stolen(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
+    let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
+    match unsafe { stream_ptr.as_mut() } {
+        None => Err(ExplorerError::Other("Incorrect stream pointer".into())),
+        Some(stream_ref) => {
+            // Swapping the stream with our own:
+            let mut owned_stream = Box::new(ffi::ArrowArrayStream::empty());
+            std::mem::swap(stream_ref, &mut *owned_stream);
+
+            // Build the Reader:
+            let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_ref) }
+                .map_err(arrow_to_explorer_error)?;
+
+            // Use the Reader:
+            while let Some(Ok(val)) = unsafe { res.next() } {
+                println!("{:?}", val);
+            }
+            Ok("123".to_string())
+        }
+    }
+    // <- owned_stream is cleaned up here
+}
+
+fn arrow_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
+    ExplorerError::Other(format!("Internal Arrow error: #{:?}", error))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
