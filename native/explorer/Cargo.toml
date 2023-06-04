@@ -69,4 +69,4 @@ features = [
 version = "0.28"
 
 [patch.crates-io]
-arrow2 = { path = "../../../arrow2" }
+arrow2 = { git = "https://github.com/Qqwy/rust-arrow2.git", branch = "pr_combi" }
