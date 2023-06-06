@@ -73,3 +73,7 @@ version = "0.29"
 
 [dependencies.polars-algo]
 version = "0.29"
+
+[patch.crates-io]
+arrow2 = { git = "https://github.com/Qqwy/rust-arrow2.git", branch = "pr_combi" }
+# arrow2 = { git = "https://github.com/Qqwy/rust-arrow2.git", commit = "b33b6ffd2193be576ca923d53cfa65bd7e0b3b13" }
