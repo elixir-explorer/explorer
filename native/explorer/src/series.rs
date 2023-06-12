@@ -801,6 +801,11 @@ pub fn s_cumulative_min(series: ExSeries, reverse: bool) -> Result<ExSeries, Exp
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_cumulative_product(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(series.cumprod(reverse)))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_quantile<'a>(
     env: Env<'a>,
     s: ExSeries,

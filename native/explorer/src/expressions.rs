@@ -574,6 +574,12 @@ pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_cumulative_product(data: ExExpr, reverse: bool) -> ExExpr {
+    let expr = data.clone_inner();
+    ExExpr::new(expr.cumprod(reverse))
+}
+
+#[rustler::nif]
 pub fn expr_ewm_mean(
     data: ExExpr,
     alpha: f64,

@@ -60,6 +60,7 @@ defmodule Explorer.Backend.LazySeries do
     cumulative_max: 2,
     cumulative_min: 2,
     cumulative_sum: 2,
+    cumulative_product: 2,
     window_max: 5,
     window_mean: 5,
     window_min: 5,
@@ -133,7 +134,7 @@ defmodule Explorer.Backend.LazySeries do
   ]
 
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
-  @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum]
+  @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum, :cumulative_product]
 
   @float_predicates [:is_finite, :is_infinite, :is_nan]
 
