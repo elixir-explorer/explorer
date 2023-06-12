@@ -62,7 +62,8 @@ features = [
   "streaming",
   "strings",
   "round_series",
-  "ewma"
+  "ewma",
+  "product"
 ]
 
 [dependencies.polars-ops]

@@ -48,6 +48,7 @@ defmodule Explorer.PolarsBackend.Expression do
     not_equal: 2,
     unary_not: 1,
     pow: 2,
+    product: 1,
     quotient: 2,
     remainder: 2,
     reverse: 1,

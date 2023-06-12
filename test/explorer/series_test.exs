@@ -3389,6 +3389,53 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "product/1" do
+    test "product of integers" do
+      s = Series.from_list([1, 2, 3])
+      assert Series.product(s) === 6
+    end
+
+    test "product of integers with nil" do
+      s = Series.from_list([1, 2, nil, 3])
+      assert Series.product(s) === nil
+    end
+
+    test "product of a series with a single value" do
+      s = Series.from_list([5])
+      assert Series.product(s) === 5
+    end
+
+    test "product of floats" do
+      s = Series.from_list([1.0, 2.0, 3.0])
+      assert Series.product(s) === 6.0
+    end
+
+    test "product of a series with negative integers" do
+      s = Series.from_list([-2, 4, -3])
+      assert Series.product(s) === 24
+    end
+
+    test "product of an empty series" do
+      s = Series.from_list([])
+      assert Series.product(s) === nil
+    end
+
+    test "product of a series with zero" do
+      s = Series.from_list([1, 0, 2])
+      assert Series.product(s) === 0
+    end
+
+    test "product of a series with NaN" do
+      s = Series.from_list([1.0, :nan, 2.0])
+      assert Series.product(s) === :nan
+    end
+
+    test "product of a series with infinity" do
+      s = Series.from_list([2.0, :infinity, 3.0])
+      assert Series.product(s) === :infinity
+    end
+  end
+
   describe "min/1" do
     test "min of an integer series" do
       s = Series.from_list([-3, 1, 2, nil, -2, -42, 3])
