@@ -3619,6 +3619,50 @@ defmodule Explorer.Series do
   @spec is_not_nil(Series.t()) :: Series.t()
   def is_not_nil(series), do: apply_series(series, :is_not_nil)
 
+  @doc """
+  Gets the series absolute values.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, -1, -3])
+      iex> Explorer.Series.abs(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 2, 1, 3]
+      >
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, -1.0, -3.0])
+      iex> Explorer.Series.abs(s)
+      #Explorer.Series<
+        Polars[4]
+        float [1.0, 2.0, 1.0, 3.0]
+      >
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, nil, -3.0])
+      iex> Explorer.Series.abs(s)
+      #Explorer.Series<
+        Polars[4]
+        float [1.0, 2.0, nil, 3.0]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.abs(s)
+      ** (ArgumentError) Explorer.Series.abs/1 not implemented for dtype :string. Valid dtypes are [:integer, :float]
+  """
+  @doc type: :element_wise
+  @spec abs(series :: Series.t()) ::
+          number() | non_finite() | Date.t() | Time.t() | NaiveDateTime.t() | nil
+  def abs(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+    do: apply_series(series, :abs)
+
+  def abs(%Series{dtype: dtype}),
+    do: dtype_error("abs/1", dtype, [:integer, :float])
+
   # Strings
 
   @doc """

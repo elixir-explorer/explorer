@@ -25,6 +25,7 @@ defmodule Explorer.PolarsBackend.Expression do
     divide: 2,
     equal: 2,
     exp: 1,
+    abs: 1,
     fill_missing_with_value: 2,
     first: 1,
     format: 1,

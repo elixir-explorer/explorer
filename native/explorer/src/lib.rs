@@ -166,6 +166,7 @@ rustler::init!(
         expr_not_equal,
         // arithmetic expressions
         expr_add,
+        expr_abs,
         expr_divide,
         expr_multiply,
         expr_pow,
@@ -255,6 +256,7 @@ rustler::init!(
         lf_to_ipc,
         // series
         s_as_str,
+        s_abs,
         s_add,
         s_and,
         s_argsort,
