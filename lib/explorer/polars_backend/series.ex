@@ -198,6 +198,9 @@ defmodule Explorer.PolarsBackend.Series do
   def quantile(series, quantile),
     do: Shared.apply_series(series, :s_quantile, [quantile, "nearest"])
 
+  @impl true
+  def product(series), do: Shared.apply_series(series, :s_product)
+
   # Cumulative
 
   @impl true

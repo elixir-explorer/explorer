@@ -69,6 +69,7 @@ defmodule Explorer.Backend.Series do
   @callback quantile(s, float()) ::
               number() | non_finite() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
   @callback nil_count(s) :: number() | lazy_s()
+  @callback product(s) :: float() | non_finite() | lazy_s() | nil
 
   # Cumulative
 

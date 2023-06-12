@@ -538,11 +538,11 @@ pub fn df_pivot_wider(
 
         if let Some(count) = counter.get(name) {
             if let Some(prefix) = names_prefix {
-                *name = format!("{}{}", prefix, name);
+                *name = format!("{prefix}{name}");
             }
 
             if original_name == name.clone() {
-                *name = format!("{}_{}", name, count);
+                *name = format!("{name}_{count}");
             }
 
             counter
@@ -556,7 +556,7 @@ pub fn df_pivot_wider(
                 }
 
                 if let Some(prefix) = names_prefix {
-                    *name = format!("{}{}", prefix, name);
+                    *name = format!("{prefix}{name}");
                 }
             }
 

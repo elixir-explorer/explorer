@@ -202,6 +202,7 @@ rustler::init!(
         expr_standard_deviation,
         expr_sum,
         expr_variance,
+        expr_product,
         // window expressions
         expr_cumulative_max,
         expr_cumulative_min,
@@ -302,6 +303,7 @@ rustler::init!(
         s_max,
         s_mean,
         s_median,
+        s_product,
         s_min,
         s_multiply,
         s_n_distinct,

@@ -1794,6 +1794,31 @@ defmodule Explorer.Series do
     do: dtype_error("standard_deviation/1", dtype, [:integer, :float])
 
   @doc """
+  Reduce this Series to the product value.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.product(s)
+      6
+
+      iex> s = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.product(s)
+      ** (ArgumentError) Explorer.Series.product/1 not implemented for dtype :boolean. Valid dtypes are [:integer, :float]
+  """
+  @doc type: :aggregation
+  @spec product(series :: Series.t()) :: float() | non_finite() | nil
+  def product(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+    do: at(apply_series(series, :product), 0)
+
+  def product(%Series{dtype: dtype}), do: dtype_error("product/1", dtype, [:integer, :float])
+
+  @doc """
   Gets the given quantile of the series.
 
   ## Supported dtypes

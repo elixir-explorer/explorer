@@ -747,6 +747,15 @@ pub fn s_median(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    match s.dtype() {
+        DataType::Int64 => Ok(ExSeries::new(s.product())),
+        DataType::Float64 => Ok(ExSeries::new(s.product())),
+        dt => panic!("product/1 not implemented for {dt:?}"),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_variance(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Int64 => Ok(s.i64()?.var(1).encode(env)),
