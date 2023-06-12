@@ -84,7 +84,7 @@ dependencies = [
 [[package]]
 name = "arrow2"
 version = "0.17.1"
-source = "git+https://github.com/Qqwy/rust-arrow2.git?branch=pr_combi#b33b6ffd2193be576ca923d53cfa65bd7e0b3b13"
+source = "git+https://github.com/jorgecarleitao/arrow2.git#99e30d3549219934adfee00a60f15f6c0ffb06e4"
 dependencies = [
  "ahash",
  "arrow-format",
