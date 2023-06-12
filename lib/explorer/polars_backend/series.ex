@@ -215,6 +215,10 @@ defmodule Explorer.PolarsBackend.Series do
   def cumulative_sum(series, reverse?),
     do: Shared.apply_series(series, :s_cumulative_sum, [reverse?])
 
+  @impl true
+  def cumulative_product(series, reverse?),
+    do: Shared.apply_series(series, :s_cumulative_product, [reverse?])
+
   # Local minima/maxima
 
   @impl true

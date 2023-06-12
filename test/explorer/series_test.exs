@@ -3436,6 +3436,62 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "cumulative_product/1" do
+    test "cumulative product of integers" do
+      s = Series.from_list([1, 2, 3])
+      p = Series.cumulative_product(s)
+      assert Series.to_list(p) === [1, 2, 6]
+    end
+
+    test "cumulative product of integers with nil" do
+      s = Series.from_list([1, 2, nil, 3])
+      p = Series.cumulative_product(s)
+      assert Series.to_list(p) === [1, 2, nil, 6]
+    end
+
+    test "cumulative product of a series with a single value" do
+      s = Series.from_list([1])
+      p = Series.cumulative_product(s)
+      assert Series.to_list(p) === [1]
+    end
+
+    test "cumulative product of floats" do
+      s = Series.from_list([1.0, 2.0, 3.0])
+      p = Series.cumulative_product(s)
+      assert Series.to_list(p) === [1.0, 2.0, 6.0]
+    end
+
+    test "cumulative product of a series with negative integers" do
+      s = Series.from_list([-2, 4, -3])
+      p = Series.cumulative_product(s)
+      assert Series.to_list(p) === [-2, -8, 24]
+    end
+
+    test "cumulative product of an empty series" do
+      s = Series.from_list([])
+      p = Series.cumulative_product(s)
+      assert Series.to_list(p) === []
+    end
+
+    test "cumulative product of a series with zero" do
+      s = Series.from_list([1, 2, 0, 3])
+      p = Series.cumulative_product(s)
+      assert Series.to_list(p) === [1, 2, 0, 0]
+    end
+
+    test "cumulative product of a series with NaN" do
+      s = Series.from_list([1, 2, :nan, 3])
+      p = Series.cumulative_product(s)
+      assert Series.to_list(p) === [1.0, 2.0, :nan, :nan]
+    end
+
+    test "cumulative product of a series with infinity" do
+      s = Series.from_list([1, 2, :infinity, 3])
+      p = Series.cumulative_product(s)
+      assert Series.to_list(p) === [1.0, 2.0, :infinity, :infinity]
+    end
+  end
+
   describe "min/1" do
     test "min of an integer series" do
       s = Series.from_list([-3, 1, 2, nil, -2, -42, 3])
