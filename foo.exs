@@ -25,7 +25,13 @@ Statement.set_sql_query(statement, "SELECT * FROM foo")
 stream_ptr = Adbc.Nif.adbc_arrow_array_stream_get_pointer(stream.reference) |> IO.inspect()
 
 # First time runs the stream:
-Explorer.PolarsBackend.Native.df_experiment(stream_ptr, stream) |> IO.inspect()
+Explorer.PolarsBackend.Native.df_experiment(stream_ptr, stream)
+|> elem(1)
+|> Explorer.PolarsBackend.Shared.create_dataframe()
+|> IO.inspect()
 
 # Second time works OK without crashing (stream is now empty)
-Explorer.PolarsBackend.Native.df_experiment(stream_ptr, stream) |> IO.inspect()
+Explorer.PolarsBackend.Native.df_experiment(stream_ptr, stream)
+|> elem(1)
+|> Explorer.PolarsBackend.Shared.create_dataframe()
+|> IO.inspect()

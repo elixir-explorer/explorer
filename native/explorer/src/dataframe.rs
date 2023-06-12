@@ -1,7 +1,7 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
-use polars::export::arrow::ffi;
+use polars::export::{arrow, arrow::ffi};
 use std::collections::HashMap;
 use std::result::Result;
 
@@ -284,7 +284,7 @@ pub fn df_sample_frac(
 
 /// NOTE: The '_ref' parameter is needed to prevent the BEAM GC from collecting the stream too soon.
 #[rustler::nif]
-fn df_experiment(stream_ptr: u64, _ref: rustler::Term) -> Result<String, ExplorerError> {
+fn df_experiment(stream_ptr: u64, _ref: rustler::Term) -> Result<ExDataFrame, ExplorerError> {
     let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
     match unsafe { stream_ptr.as_mut() } {
         None => Err(ExplorerError::Other("Incorrect stream pointer".into())),
@@ -292,13 +292,32 @@ fn df_experiment(stream_ptr: u64, _ref: rustler::Term) -> Result<String, Explore
             let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_ref) }
                 .map_err(arrow_to_explorer_error)?;
 
-            while let Some(Ok(val)) = unsafe { res.next() } {
-                println!("{:?}", val);
-            }
+            let df = match unsafe { res.next() } {
+                None => DataFrame::empty(),
+                Some(maybe) => {
+                    let mut acc = array_to_dataframe(maybe);
 
-            Ok("123".to_string())
+                    while let Some(maybe) = unsafe { res.next() } {
+                        let df = array_to_dataframe(maybe);
+                        acc.vstack_mut(&df)?;
+                    }
+
+                    acc.rechunk();
+                    acc
+                }
+            };
+
+            Ok(ExDataFrame::new(df))
         }
     }
+}
+
+fn array_to_dataframe(
+    maybe: Result<Box<dyn arrow::array::Array>, polars::error::ArrowError>,
+) -> DataFrame {
+    let ok = maybe.unwrap();
+    let sa = ok.as_any().downcast_ref::<StructArray>().unwrap();
+    DataFrame::try_from(sa.clone()).unwrap()
 }
 
 fn arrow_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
