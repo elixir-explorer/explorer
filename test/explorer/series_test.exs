@@ -2298,6 +2298,40 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "abs/1" do
+    test "calculates the absolute value of all elements in the series (float)" do
+      s = Series.from_list([1.0, -2.0, 3.0])
+
+      series = Series.abs(s)
+
+      assert Series.to_list(series) == [1.0, 2.0, 3.0]
+    end
+
+    test "calculates the absolute value of all elements in the series (integer)" do
+      s = Series.from_list([1, -2, 3])
+
+      series = Series.abs(s)
+
+      assert Series.to_list(series) == [1, 2, 3]
+    end
+
+    test "calculates the absolute value of all elements in the series with NaN" do
+      s = Series.from_list([1, -2, :nan])
+
+      series = Series.abs(s)
+
+      assert Series.to_list(series) == [1, 2, :nan]
+    end
+
+    test "calculates the absolute value of all elements in the series with Infinity" do
+      s = Series.from_list([1, -2, :infinity])
+
+      series = Series.abs(s)
+
+      assert Series.to_list(series) == [1, 2, :infinity]
+    end
+  end
+
   describe "sin/1" do
     test "calculates the sine of all elements in the series" do
       pi = :math.pi()
