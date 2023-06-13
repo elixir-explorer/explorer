@@ -2010,6 +2010,47 @@ defmodule Explorer.Series do
   def cumulative_sum(%Series{dtype: dtype}, _),
     do: dtype_error("cumulative_sum/2", dtype, [:integer, :float])
 
+  @doc """
+  Calculates the cumulative product of the series.
+
+  Optionally, can accumulate in reverse.
+
+  Does not fill nil values. See `fill_missing/2`.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = [1, 2, 3, 2] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cumulative_product(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 2, 6, 12]
+      >
+
+      iex> s = [1, 2, nil, 4] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cumulative_product(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 2, nil, 8]
+      >
+  """
+  @doc type: :window
+  @spec cumulative_product(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  def cumulative_product(series, opts \\ [])
+
+  def cumulative_product(%Series{dtype: dtype} = series, opts)
+      when is_numeric_dtype(dtype) do
+    opts = Keyword.validate!(opts, reverse: false)
+    apply_series(series, :cumulative_product, [opts[:reverse]])
+  end
+
+  def cumulative_product(%Series{dtype: dtype}, _),
+    do: dtype_error("cumulative_product/2", dtype, [:integer, :float])
+
   # Local minima/maxima
 
   @doc """
