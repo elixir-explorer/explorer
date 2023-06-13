@@ -1045,7 +1045,7 @@ defmodule Explorer.DataFrameTest do
                "i" => :integer,
                "j" => :float,
                "k" => :integer,
-              "l" => :float
+               "l" => :float
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1070,8 +1070,8 @@ defmodule Explorer.DataFrameTest do
                  8.017612524461839,
                  9.009775171065494
                ],
-              k: [1, 2, 6, 24, 120, 720, 5040, 40320, 362_880, 3_628_800],
-              l: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+               k: [1, 2, 6, 24, 120, 720, 5040, 40320, 362_880, 3_628_800],
+               l: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
              }
     end
 
