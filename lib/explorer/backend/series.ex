@@ -94,6 +94,7 @@ defmodule Explorer.Backend.Series do
   @callback log(argument :: s) :: s
   @callback log(argument :: s, base :: float()) :: s
   @callback exp(s) :: s
+  @callback abs(s) :: s
 
   # Trigonometry
 
