@@ -97,6 +97,7 @@ defmodule Explorer.Backend.LazySeries do
     last: 1,
     count: 1,
     nil_count: 1,
+    skew: 2,
     # Strings
     contains: 2,
     trim_leading: 1,
@@ -130,7 +131,8 @@ defmodule Explorer.Backend.LazySeries do
     :size,
     :first,
     :last,
-    :n_distinct
+    :n_distinct,
+    :skew
   ]
 
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]

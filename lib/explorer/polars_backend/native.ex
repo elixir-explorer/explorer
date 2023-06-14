@@ -219,6 +219,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_cumulative_min(_s, _reverse), do: err()
   def s_cumulative_sum(_s, _reverse), do: err()
   def s_cumulative_product(_s, _reverse), do: err()
+  def s_skew(_s, _bias), do: err()
   def s_distinct(_s), do: err()
   def s_divide(_s, _other), do: err()
   def s_dtype(_s), do: err()

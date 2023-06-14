@@ -3546,6 +3546,18 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "skew/1" do
+    test "returns the skew of an integer series" do
+      s = Series.from_list([1, 2, nil, 3])
+      assert Series.skew(s) == 0.0
+    end
+
+    test "returns the skew of a float series" do
+      s = Series.from_list([1.2, 2.4, nil, 3.9])
+      assert Series.skew(s) == 0.13506152278474048
+    end
+  end
+
   describe "variance/1" do
     test "variance of an integer series" do
       s = Series.from_list([1, 2, nil, 3])
