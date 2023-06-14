@@ -1865,7 +1865,7 @@ defmodule Explorer.Series do
     do: dtype_error("quantile/2", dtype, [:integer, :float, :date, :time, :datetime])
 
   @doc """
-  Compute the sample skewness of a data set.
+  Compute the sample skewness of a series.
 
   For normally distributed data, the skewness should be about zero.
   For unimodal continuous distributions, a skewness value greater
