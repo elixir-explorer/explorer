@@ -47,6 +47,7 @@ defmodule Explorer.Backend.LazySeries do
     coalesce: 2,
     cast: 2,
     select: 3,
+    abs: 1,
 
     # Trigonometric functions
     acos: 1,
@@ -591,6 +592,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def exp(%Series{} = series) do
     data = new(:exp, [lazy_series!(series)])
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def abs(%Series{} = series) do
+    data = new(:abs, [lazy_series!(series)])
 
     Backend.Series.new(data, :float)
   end
