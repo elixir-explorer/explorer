@@ -1901,7 +1901,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.skew/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
-  @spec skew(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  @spec skew(series :: Series.t(), opts :: Keyword.t()) :: float() | non_finite() | nil
   def skew(series, opts \\ [])
 
   def skew(%Series{dtype: dtype} = series, opts)

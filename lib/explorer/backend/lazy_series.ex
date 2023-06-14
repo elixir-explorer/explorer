@@ -132,12 +132,16 @@ defmodule Explorer.Backend.LazySeries do
     :size,
     :first,
     :last,
-    :n_distinct,
-    :skew
+    :n_distinct
   ]
 
   @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
-  @cumulative_operations [:cumulative_max, :cumulative_min, :cumulative_sum, :cumulative_product]
+  @cumulative_operations [
+    :cumulative_max,
+    :cumulative_min,
+    :cumulative_sum,
+    :cumulative_product
+  ]
 
   @float_predicates [:is_finite, :is_infinite, :is_nan]
 
@@ -425,6 +429,14 @@ defmodule Explorer.Backend.LazySeries do
   def quantile(%Series{} = series, float) when is_float(float) do
     args = [lazy_series!(series), float]
     data = new(:quantile, args, true)
+
+    Backend.Series.new(data, series.dtype)
+  end
+
+  @impl true
+  def skew(%Series{} = series, bias) do
+    args = [series_or_lazy_series!(series), bias]
+    data = new(:skew, args, true)
 
     Backend.Series.new(data, series.dtype)
   end

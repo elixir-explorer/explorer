@@ -81,6 +81,7 @@ defmodule Explorer.PolarsBackend.Expression do
     sample_n: 5,
     sample_frac: 5,
     exp: 1,
+    skew: 2,
 
     # Trigonometric operations
     acos: 1,
