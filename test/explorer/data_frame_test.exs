@@ -1952,7 +1952,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "relocate/2" do
-    test "single column relative" do
+    test "with single column and relative" do
       df =
         DF.new(
           first: ["a", "b", "a"],
@@ -1976,7 +1976,7 @@ defmodule Explorer.DataFrameTest do
       assert df3.names == ["second", "third", "last", "first"]
     end
 
-    test "multiple columns relative" do
+    test "with multiple columns and relative" do
       df =
         DF.new(
           first: ["a", "b", "a"],
@@ -1998,7 +1998,7 @@ defmodule Explorer.DataFrameTest do
       assert df4.names == ["first", "third", "second", "last"]
     end
 
-    test "using atom for last" do
+    test "with the :last atom" do
       df =
         DF.new(
           a: ["a value", "some other value", "a third value!"],
@@ -2016,7 +2016,7 @@ defmodule Explorer.DataFrameTest do
       assert df3.names == ["b", "c", "a"]
     end
 
-    test "using atom for first" do
+    test "with the :first atom" do
       df =
         DF.new(
           a: ["a value", "some other value", "a third value!"],
@@ -2032,6 +2032,23 @@ defmodule Explorer.DataFrameTest do
 
       df3 = DF.relocate(df, ["b", "a"], after: :first)
       assert df3.names == ["b", "a", "c"]
+    end
+
+    test "ordered DataFrame output after relocation" do
+      df1 =
+        Explorer.DataFrame.new(
+          a: [1, 2],
+          b: [5.1, 5.2],
+          c: [4, 5],
+          d: ["yes", "no"],
+          e: [4, 1]
+        )
+
+      df2 = DF.relocate(df1, [4, 0], before: 2)
+      assert df2.names == ["b", "e", "a", "c", "d"]
+
+      assert DF.dump_csv(df2) ==
+               {:ok, "b,e,a,c,d\n5.1,4,1,4,yes\n5.2,1,2,5,no\n"}
     end
   end
 

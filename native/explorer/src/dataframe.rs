@@ -461,25 +461,35 @@ pub fn df_relocate(
     columns: Vec<&str>,
     position: u64,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let mut first_series = df.get_columns().to_owned();
-    let second_series = first_series.split_off(position as usize);
-
-    let (first_series, first_to_relocate): (Vec<Series>, Vec<Series>) = first_series
+    let column_indexes: HashMap<&str, usize> = columns
         .into_iter()
-        .partition(|series| !columns.contains(&series.name()));
-
-    let (second_series, second_to_relocate): (Vec<Series>, Vec<Series>) = second_series
-        .into_iter()
-        .partition(|series| !columns.contains(&series.name()));
-
-    let series = first_series
-        .into_iter()
-        .chain(first_to_relocate.into_iter())
-        .chain(second_to_relocate.into_iter())
-        .chain(second_series.into_iter())
+        .enumerate()
+        .map(|(index, col)| (col, index))
         .collect();
 
-    let df = DataFrame::new(series)?;
+    let mut columns = df.get_columns().to_owned();
+    let right_columns = columns.split_off(position as usize);
+
+    let (mut columns, mut to_relocate): (Vec<Series>, Vec<Series>) = columns
+        .into_iter()
+        .partition(|series| !column_indexes.contains_key(&series.name()));
+
+    let (mut right_columns, mut rest_relocate): (Vec<Series>, Vec<Series>) = right_columns
+        .into_iter()
+        .partition(|series| !column_indexes.contains_key(&series.name()));
+
+    // Ensure that the columns we want to relocate are sorted by the order the caller specifies
+    to_relocate.append(&mut rest_relocate);
+    to_relocate.sort_by_key(|series| {
+        column_indexes
+            .get(series.name())
+            .expect("column should exist")
+    });
+
+    columns.append(&mut to_relocate);
+    columns.append(&mut right_columns);
+
+    let df = DataFrame::new(columns)?;
 
     Ok(ExDataFrame::new(df))
 }
