@@ -82,6 +82,7 @@ jobs:
           target: ${{ matrix.job.target }}
           nif-version: ${{ matrix.nif }}
           use-cross: ${{ matrix.job.use-cross }}
+          cross-version: v0.2.5
           project-dir: "native/explorer"
 
       - name: Artifact upload
