@@ -13,7 +13,7 @@
   outputs = { self, nixpkgs, flake-utils, fenix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
-        overlays = [ fenix.overlay ];
+        overlays = [ fenix.overlays.default ];
         pkgs = import nixpkgs { inherit overlays system; };
         toolchain = "latest";
         rustPkg = fenix.packages.${system}.${toolchain}.withComponents [
@@ -37,6 +37,7 @@
             pkg-config
             rustPkg
             rust-analyzer-nightly
+            cmake
           ] ++ lib.optionals stdenv.isDarwin [
             darwin.apple_sdk.frameworks.Security
           ];
