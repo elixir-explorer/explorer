@@ -3580,6 +3580,28 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "skew/2" do
+    test "returns the skew of an integer series" do
+      s = Series.from_list([1, 2, 3, nil, 1])
+      assert Series.skew(s) - 0.8545630383279711 < 1.0e-4
+    end
+
+    test "returns the skew of a float series" do
+      s = Series.from_list([1.0, 2.0, 3.0, nil, 1.0])
+      assert Series.skew(s, bias: true) - 0.49338220021815865 < 1.0e-4
+    end
+
+    test "returns the skew of an integer series (bias true)" do
+      s = Series.from_list([1, 2, 3, 4, 5, 23])
+      assert Series.skew(s, bias: true) - 1.6727687946848508 < 1.0e-4
+    end
+
+    test "returns the skew of an integer series (bias false)" do
+      s = Series.from_list([1, 2, 3, 4, 5, 23])
+      assert Series.skew(s, bias: false) - 2.2905330058490514 < 1.0e-4
+    end
+  end
+
   describe "variance/1" do
     test "variance of an integer series" do
       s = Series.from_list([1, 2, nil, 3])

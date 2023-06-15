@@ -204,6 +204,7 @@ rustler::init!(
         expr_sum,
         expr_variance,
         expr_product,
+        expr_skew,
         // window expressions
         expr_cumulative_max,
         expr_cumulative_min,
@@ -308,6 +309,7 @@ rustler::init!(
         s_mean,
         s_median,
         s_product,
+        s_skew,
         s_min,
         s_multiply,
         s_n_distinct,

@@ -201,6 +201,10 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def product(series), do: Shared.apply_series(series, :s_product)
 
+  @impl true
+  def skew(series, bias?),
+    do: Shared.apply_series(series, :s_skew, [bias?])
+
   # Cumulative
 
   @impl true
