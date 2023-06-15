@@ -359,14 +359,14 @@ fn categorical_series_to_list<'b>(
     let cat_size = mapping.len();
     let mut terms: Vec<NIF_TERM> = vec![nil_as_c_arg; cat_size];
 
-    for index in 0..cat_size {
+    for (index, term) in terms.iter_mut().enumerate() {
         if let Some(existing_str) = mapping.get_optional(index as u32) {
             let mut binary = NewBinary::new(env, existing_str.len());
             binary.copy_from_slice(existing_str.as_bytes());
 
             let binary_term: Term = binary.into();
 
-            terms[index] = binary_term.as_c_arg();
+            *term = binary_term.as_c_arg();
         }
     }
 
