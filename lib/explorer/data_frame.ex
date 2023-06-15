@@ -3066,74 +3066,6 @@ defmodule Explorer.DataFrame do
         )
   end
 
-  @doc type: :single
-  @spec relocate(
-          df :: DataFrame.t(),
-          columns :: [column_name()] | column_name(),
-          opts :: Keyword.t()
-        ) :: DataFrame.t()
-
-  def relocate(df, columns_or_column, opts)
-
-  def relocate(df, column, opts) when is_column(column),
-    do: relocate(df, [column], opts)
-
-  def relocate(df, columns, opts) do
-    opts = Keyword.validate!(opts, before: nil, after: nil)
-
-    columns_to_relocate = to_existing_columns(df, columns)
-
-    {direction, col_index, new_names} =
-      case {opts[:before], opts[:after]} do
-        {nil, nil} ->
-          {:before, 0, columns ++ Enum.reject(df.names, fn col -> col in columns_to_relocate end)}
-
-        {:first, nil} ->
-          {:before, 0, columns ++ Enum.reject(df.names, fn col -> col in columns_to_relocate end)}
-
-        {nil, :after} ->
-          {:after, length(df.names),
-           Enum.reject(df.names, fn col -> col in columns_to_relocate end) ++ columns_to_relocate}
-
-        {before_col, nil} ->
-          index = Enum.find_index(df.names, fn col -> col == before_col end)
-          {:before, index, relocate_columns(df, columns_to_relocate, {:before, index})}
-
-        {nil, after_col} ->
-          index = Enum.find_index(df.names, fn col -> col == after_col end)
-          {:after, index, relocate_columns(df, columns_to_relocate, {:after, index})}
-
-        {before_col, after_col} ->
-          raise(
-            ArgumentError,
-            "only one location must be given. Got both " <>
-              "before: #{inspect(before_col)} and after: #{inspect(after_col)}"
-          )
-      end
-
-    out_df = %{df | names: new_names}
-
-    Shared.apply_impl(df, :relocate, [out_df, columns, direction, col_index])
-  end
-
-  defp relocate_columns(df, columns_to_relocate, {:before, col_index}) do
-    df.names
-    |> Enum.split(col_index)
-    |> Kernel.then(fn {before_cols, after_cols} ->
-      Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
-        columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
-    end)
-  end
-
-  defp relocate_columns(df, columns_to_relocate, {:after, col_index}) do
-    df.names
-    |> Enum.split(col_index + 1)
-    |> Kernel.then(fn {before_cols, after_cols} ->
-      Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
-        columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
-    end)
-  end
-
   @doc """
   Renames columns with a function.
 
@@ -3212,6 +3144,107 @@ defmodule Explorer.DataFrame do
     columns = to_existing_columns(df, columns)
     renames = for name <- df.names, name in columns, do: {name, callback.(name)}
     rename(df, renames)
+  end
+
+  @doc """
+  Relocates columns.
+
+  Relocate columns to new positions in the DataFrame.
+
+  ## Examples
+
+  Relocate a single column
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1], c: [nil, 5, 6])
+      iex> Explorer.DataFrame.relocate(df, "a", after: "c")
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        b integer [1, 3, 1]
+        c integer [nil, 5, 6]
+        a string ["a", "b", "a"]
+      >
+
+  Relocate multiple columns
+
+    iex> df = Explorer.DataFrame.new(a: [1, 2], b: [5.1, 5.2], c: [4, 5], d: ["yes", "no"])
+    iex> Explorer.DataFrame.relocate(df, ["b","d"], before: "a")
+    #Explorer.DataFrame<
+      Polars[2 x 4]
+      b float [5.1, 5.2]
+      d string ["yes", "no"]
+      a integer [1, 2]
+      c integer [4, 5]
+    >
+  """
+
+  @doc type: :single
+  @spec relocate(
+          df :: DataFrame.t(),
+          columns :: [column_name()] | column_name(),
+          opts :: Keyword.t()
+        ) :: DataFrame.t()
+
+  def relocate(df, columns_or_column, opts)
+
+  def relocate(df, column, opts) when is_column(column),
+    do: relocate(df, [column], opts)
+
+  def relocate(df, columns, opts) do
+    opts = Keyword.validate!(opts, before: nil, after: nil)
+
+    columns_to_relocate = to_existing_columns(df, columns)
+
+    {direction, col_index, new_names} =
+      case {opts[:before], opts[:after]} do
+        {nil, nil} ->
+          {"before", 0,
+           columns ++ Enum.reject(df.names, fn col -> col in columns_to_relocate end)}
+
+        {:first, nil} ->
+          {"before", 0,
+           columns ++ Enum.reject(df.names, fn col -> col in columns_to_relocate end)}
+
+        {nil, :after} ->
+          {"after", length(df.names),
+           Enum.reject(df.names, fn col -> col in columns_to_relocate end) ++ columns_to_relocate}
+
+        {before_col, nil} ->
+          index = Enum.find_index(df.names, fn col -> col == before_col end)
+          {"before", index, relocate_columns(df, columns_to_relocate, {:before, index})}
+
+        {nil, after_col} ->
+          index = Enum.find_index(df.names, fn col -> col == after_col end)
+          {"after", index, relocate_columns(df, columns_to_relocate, {:after, index})}
+
+        {before_col, after_col} ->
+          raise(
+            ArgumentError,
+            "only one location must be given. Got both " <>
+              "before: #{inspect(before_col)} and after: #{inspect(after_col)}"
+          )
+      end
+
+    out_df = %{df | names: new_names}
+
+    Shared.apply_impl(df, :relocate, [out_df, columns, direction, col_index])
+  end
+
+  defp relocate_columns(df, columns_to_relocate, {:before, col_index}) do
+    df.names
+    |> Enum.split(col_index)
+    |> Kernel.then(fn {before_cols, after_cols} ->
+      Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
+        columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
+    end)
+  end
+
+  defp relocate_columns(df, columns_to_relocate, {:after, col_index}) do
+    df.names
+    |> Enum.split(col_index + 1)
+    |> Kernel.then(fn {before_cols, after_cols} ->
+      Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
+        columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
+    end)
   end
 
   @doc """

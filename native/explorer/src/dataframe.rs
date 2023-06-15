@@ -1,6 +1,5 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
-use rustler::Atom;
 
 use std::collections::HashMap;
 use std::result::Result;
@@ -473,13 +472,41 @@ pub fn df_rename_columns(
 pub fn df_relocate(
     df: ExDataFrame,
     columns: Vec<&str>,
-    direction: Atom,
+    direction: &str,
     position: u64,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let df2: DataFrame = df.clone();
-    dbg!(direction == "before");
+    let position = position
+        + match direction {
+            "before" => 0,
+            "after" => 1,
+            _ => {
+                return Err(ExplorerError::Other(format!(
+                    "invalid direction {direction} given to relocate"
+                )))
+            }
+        };
 
-    Ok(df)
+    let mut first_series = df.get_columns().to_owned();
+    let second_series = first_series.split_off(position as usize);
+
+    let (first_series, first_to_relocate): (Vec<Series>, Vec<Series>) = first_series
+        .into_iter()
+        .partition(|series| !columns.contains(&series.name()));
+
+    let (second_series, second_to_relocate): (Vec<Series>, Vec<Series>) = second_series
+        .into_iter()
+        .partition(|series| !columns.contains(&series.name()));
+
+    let series = first_series
+        .into_iter()
+        .chain(first_to_relocate.into_iter())
+        .chain(second_to_relocate.into_iter())
+        .chain(second_series.into_iter())
+        .collect();
+
+    let df = DataFrame::new(series)?;
+
+    Ok(ExDataFrame::new(df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
