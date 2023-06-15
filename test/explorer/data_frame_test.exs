@@ -1951,6 +1951,90 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
   end
 
+  describe "relocate/2" do
+    test "single column relative" do
+      df =
+        DF.new(
+          first: ["a", "b", "a"],
+          second: ["x", "y", "z"],
+          third: [2.2, 3.3, nil],
+          last: [1, 3, 1]
+        )
+
+      df1 = DF.relocate(df, "first", after: "second")
+
+      assert df1.names == ["second", "first", "third", "last"]
+      assert Series.to_list(df1["first"]) == Series.to_list(df["first"])
+      assert Series.to_list(df1["second"]) == Series.to_list(df["second"])
+      assert Series.to_list(df1["third"]) == Series.to_list(df["third"])
+      assert Series.to_list(df1["last"]) == Series.to_list(df["last"])
+
+      df2 = DF.relocate(df, "second", before: "last")
+      assert df2.names == ["first", "third", "second", "last"]
+
+      df3 = DF.relocate(df, 0, after: 3)
+      assert df3.names == ["second", "third", "last", "first"]
+    end
+
+    test "multiple columns relative" do
+      df =
+        DF.new(
+          first: ["a", "b", "a"],
+          second: ["x", "y", "z"],
+          third: [2.2, 3.3, nil],
+          last: [1, 3, 1]
+        )
+
+      df1 = DF.relocate(df, ["third", 1], before: -1)
+      assert df1.names == ["first", "third", "second", "last"]
+
+      df2 = DF.relocate(df, ["first", "last"], after: "third")
+      assert df2.names == ["second", "third", "first", "last"]
+
+      df3 = DF.relocate(df, ["second", "last"], before: 0)
+      assert df3.names == ["second", "last", "first", "third"]
+
+      df4 = DF.relocate(df, ["third", "second"], after: "second")
+      assert df4.names == ["first", "third", "second", "last"]
+    end
+
+    test "using atom for last" do
+      df =
+        DF.new(
+          a: ["a value", "some other value", "a third value!"],
+          b: [0, 5, -2],
+          c: [nil, nil, nil]
+        )
+
+      df1 = DF.relocate(df, "a", after: :last)
+      assert df1.names == ["b", "c", "a"]
+
+      df2 = DF.relocate(df, 0, before: :last)
+      assert df2.names == ["b", "a", "c"]
+
+      df3 = DF.relocate(df, [2, "a"], after: :last)
+      assert df3.names == ["b", "c", "a"]
+    end
+
+    test "using atom for first" do
+      df =
+        DF.new(
+          a: ["a value", "some other value", "a third value!"],
+          b: [0, 5, -2],
+          c: [nil, nil, nil]
+        )
+
+      df1 = DF.relocate(df, "c", after: :first)
+      assert df1.names == ["a", "c", "b"]
+
+      df2 = DF.relocate(df, 2, before: :first)
+      assert df2.names == ["c", "a", "b"]
+
+      df3 = DF.relocate(df, ["b", "a"], after: :first)
+      assert df3.names == ["b", "a", "c"]
+    end
+  end
+
   describe "rename/2" do
     test "with lists" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
@@ -2056,90 +2140,6 @@ defmodule Explorer.DataFrameTest do
       df2 = DF.rename_with(df, &String.starts_with?(&1, "non-existent"), &String.upcase/1)
 
       assert df2 == df
-    end
-  end
-
-  describe "relocate/2" do
-    test "single column relative" do
-      df =
-        DF.new(
-          first: ["a", "b", "a"],
-          second: ["x", "y", "z"],
-          third: [2.2, 3.3, nil],
-          last: [1, 3, 1]
-        )
-
-      df1 = DF.relocate(df, "first", after: "second")
-
-      assert df1.names == ["second", "first", "third", "last"]
-      assert Series.to_list(df1["first"]) == Series.to_list(df["first"])
-      assert Series.to_list(df1["second"]) == Series.to_list(df["second"])
-      assert Series.to_list(df1["third"]) == Series.to_list(df["third"])
-      assert Series.to_list(df1["last"]) == Series.to_list(df["last"])
-
-      df2 = DF.relocate(df, "second", before: "last")
-      assert df2.names == ["first", "third", "second", "last"]
-
-      df3 = DF.relocate(df, 0, after: 3)
-      assert df3.names == ["second", "third", "last", "first"]
-    end
-
-    test "multiple columns relative" do
-      df =
-        DF.new(
-          first: ["a", "b", "a"],
-          second: ["x", "y", "z"],
-          third: [2.2, 3.3, nil],
-          last: [1, 3, 1]
-        )
-
-      df1 = DF.relocate(df, ["third", 1], before: -1)
-      assert df1.names == ["first", "third", "second", "last"]
-
-      df2 = DF.relocate(df, ["first", "last"], after: "third")
-      assert df2.names == ["second", "third", "first", "last"]
-
-      df3 = DF.relocate(df, ["second", "last"], before: 0)
-      assert df3.names == ["second", "last", "first", "third"]
-
-      df4 = DF.relocate(df, ["third", "second"], after: "second")
-      assert df4.names == ["first", "third", "second", "last"]
-    end
-
-    test "using atom for last" do
-      df =
-        DF.new(
-          a: ["a value", "some other value", "a third value!"],
-          b: [0, 5, -2],
-          c: [nil, nil, nil]
-        )
-
-      df1 = DF.relocate(df, "a", after: :last)
-      assert df1.names == ["b", "c", "a"]
-
-      df2 = DF.relocate(df, 0, before: :last)
-      assert df2.names == ["b", "a", "c"]
-
-      df3 = DF.relocate(df, [2, "a"], after: :last)
-      assert df3.names == ["b", "c", "a"]
-    end
-
-    test "using atom for first" do
-      df =
-        DF.new(
-          a: ["a value", "some other value", "a third value!"],
-          b: [0, 5, -2],
-          c: [nil, nil, nil]
-        )
-
-      df1 = DF.relocate(df, "c", after: :first)
-      assert df1.names == ["a", "c", "b"]
-
-      df2 = DF.relocate(df, 2, before: :first)
-      assert df2.names == ["c", "a", "b"]
-
-      df3 = DF.relocate(df, ["b", "a"], after: :first)
-      assert df3.names == ["b", "a", "c"]
     end
   end
 

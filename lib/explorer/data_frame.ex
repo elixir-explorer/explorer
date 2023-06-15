@@ -2974,6 +2974,126 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Relocates columns.
+
+  Change column order within a DataFrame. The `after` and `before` options are mutually exclusive.
+  Providing no options will relocate the columns to beginning of the DataFrame.
+
+  ## Options
+
+    * `:before` - Specifies to relocate before the given column name. You can also pass `:first` and `:last` to relocate to the beginning or end of the DataFrame.
+
+    * `:after` - Specifies to relocate after the given column name. You can also pass `:first` and `:last` to relocate to the beginning or end of the DataFrame.
+
+  ## Examples
+
+  Relocate a single column
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1], c: [nil, 5, 6])
+      iex> Explorer.DataFrame.relocate(df, "a", after: "c")
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        b integer [1, 3, 1]
+        c integer [nil, 5, 6]
+        a string ["a", "b", "a"]
+      >
+
+  Relocate (and reorder) multiple columns to the beginning
+
+    iex> df = Explorer.DataFrame.new(a: [1, 2], b: [5.1, 5.2], c: [4, 5], d: ["yes", "no"])
+    iex> Explorer.DataFrame.relocate(df, ["d", 1], before: :first)
+    #Explorer.DataFrame<
+      Polars[2 x 4]
+      d string ["yes", "no"]
+      b float [5.1, 5.2]
+      a integer [1, 2]
+      c integer [4, 5]
+    >
+
+  Relocate before another column
+
+    iex> df = Explorer.DataFrame.new(a: [1, 2], b: [5.1, 5.2], c: [4, 5], d: ["yes", "no"])
+    iex> Explorer.DataFrame.relocate(df, ["a", "c"], before: "b")
+    #Explorer.DataFrame<
+      Polars[2 x 4]
+      a integer [1, 2]
+      c integer [4, 5]
+      b float [5.1, 5.2]
+      d string ["yes", "no"]
+    >
+  """
+
+  @doc type: :single
+  @spec relocate(
+          df :: DataFrame.t(),
+          columns :: [column()] | column(),
+          opts :: Keyword.t()
+        ) :: DataFrame.t()
+
+  def relocate(df, columns_or_column, opts)
+
+  def relocate(df, column, opts) when is_column(column),
+    do: relocate(df, [column], opts)
+
+  def relocate(df, columns, opts) do
+    opts = Keyword.validate!(opts, before: nil, after: nil)
+
+    columns = to_existing_columns(df, columns)
+
+    {new_names, col_index} =
+      case {opts[:before], opts[:after]} do
+        {nil, nil} ->
+          {:before, :first}
+
+        {before_col, nil} ->
+          {:before, before_col}
+
+        {nil, after_col} ->
+          {:after, after_col}
+
+        {before_col, after_col} ->
+          raise(
+            ArgumentError,
+            "only one location must be given. Got both " <>
+              "before: #{inspect(before_col)} and after: #{inspect(after_col)}"
+          )
+      end
+      |> relocate_columns(df, columns)
+
+    out_df = %{df | names: new_names}
+
+    Shared.apply_impl(df, :relocate, [out_df, columns, col_index])
+  end
+
+  defp relocate_columns({direction, :first}, df, columns_to_relocate),
+    do: relocate_columns({direction, 0}, df, columns_to_relocate)
+
+  defp relocate_columns({direction, :last}, df, columns_to_relocate),
+    do: relocate_columns({direction, length(df.names) - 1}, df, columns_to_relocate)
+
+  defp relocate_columns({direction, target_column}, df, columns_to_relocate) do
+    [target_column] = to_existing_columns(df, [target_column])
+
+    offset =
+      case direction do
+        :before -> 0
+        :after -> 1
+      end
+
+    target_index = Enum.find_index(df.names, fn col -> col == target_column end) + offset
+
+    new_names =
+      df.names
+      |> Enum.split(target_index)
+      |> Kernel.then(fn {before_cols, after_cols} ->
+        Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
+          columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
+      end)
+
+    {new_names, target_index}
+  end
+
+  @doc """
   Renames columns.
 
   Renaming a column that is also a group is going to rename the group as well.
@@ -3144,126 +3264,6 @@ defmodule Explorer.DataFrame do
     columns = to_existing_columns(df, columns)
     renames = for name <- df.names, name in columns, do: {name, callback.(name)}
     rename(df, renames)
-  end
-
-  @doc """
-  Relocates columns.
-
-  Change column order within a DataFrame. The `after` and `before` options are mutually exclusive.
-  Providing no options will relocate the columns to beginning of the DataFrame.
-
-  ## Options
-
-    * `:before` - Specifies to relocate before the given column name. You can also pass `:first` and `:last` to relocate to the beginning or end of the DataFrame.
-
-    * `:after` - Specifies to relocate after the given column name. You can also pass `:first` and `:last` to relocate to the beginning or end of the DataFrame.
-
-  ## Examples
-
-  Relocate a single column
-
-      iex> df = Explorer.DataFrame.new(a: ["a", "b", "a"], b: [1, 3, 1], c: [nil, 5, 6])
-      iex> Explorer.DataFrame.relocate(df, "a", after: "c")
-      #Explorer.DataFrame<
-        Polars[3 x 3]
-        b integer [1, 3, 1]
-        c integer [nil, 5, 6]
-        a string ["a", "b", "a"]
-      >
-
-  Relocate (and reorder) multiple columns to the beginning
-
-    iex> df = Explorer.DataFrame.new(a: [1, 2], b: [5.1, 5.2], c: [4, 5], d: ["yes", "no"])
-    iex> Explorer.DataFrame.relocate(df, ["d", 1], before: :first)
-    #Explorer.DataFrame<
-      Polars[2 x 4]
-      d string ["yes", "no"]
-      b float [5.1, 5.2]
-      a integer [1, 2]
-      c integer [4, 5]
-    >
-
-  Relocate before another column
-
-    iex> df = Explorer.DataFrame.new(a: [1, 2], b: [5.1, 5.2], c: [4, 5], d: ["yes", "no"])
-    iex> Explorer.DataFrame.relocate(df, ["a", "c"], before: "b")
-    #Explorer.DataFrame<
-      Polars[2 x 4]
-      a integer [1, 2]
-      c integer [4, 5]
-      b float [5.1, 5.2]
-      d string ["yes", "no"]
-    >
-  """
-
-  @doc type: :single
-  @spec relocate(
-          df :: DataFrame.t(),
-          columns :: [column()] | column(),
-          opts :: Keyword.t()
-        ) :: DataFrame.t()
-
-  def relocate(df, columns_or_column, opts)
-
-  def relocate(df, column, opts) when is_column(column),
-    do: relocate(df, [column], opts)
-
-  def relocate(df, columns, opts) do
-    opts = Keyword.validate!(opts, before: nil, after: nil)
-
-    columns = to_existing_columns(df, columns)
-
-    {new_names, col_index} =
-      case {opts[:before], opts[:after]} do
-        {nil, nil} ->
-          {:before, :first}
-
-        {before_col, nil} ->
-          {:before, before_col}
-
-        {nil, after_col} ->
-          {:after, after_col}
-
-        {before_col, after_col} ->
-          raise(
-            ArgumentError,
-            "only one location must be given. Got both " <>
-              "before: #{inspect(before_col)} and after: #{inspect(after_col)}"
-          )
-      end
-      |> relocate_columns(df, columns)
-
-    out_df = %{df | names: new_names}
-
-    Shared.apply_impl(df, :relocate, [out_df, columns, col_index])
-  end
-
-  defp relocate_columns({direction, :first}, df, columns_to_relocate),
-    do: relocate_columns({direction, 0}, df, columns_to_relocate)
-
-  defp relocate_columns({direction, :last}, df, columns_to_relocate),
-    do: relocate_columns({direction, length(df.names) - 1}, df, columns_to_relocate)
-
-  defp relocate_columns({direction, target_column}, df, columns_to_relocate) do
-    [target_column] = to_existing_columns(df, [target_column])
-
-    offset =
-      case direction do
-        :before -> 0
-        :after -> 1
-      end
-
-    target_index = Enum.find_index(df.names, fn col -> col == target_column end) + offset
-
-    new_names =
-      df.names
-      |> Enum.split(target_index)
-      |> Kernel.then(fn {before_cols, after_cols} ->
-        Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
-          columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
-      end)
-
-    {new_names, target_index}
   end
 
   @doc """

@@ -456,19 +456,6 @@ pub fn df_from_series(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerErr
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_rename_columns(
-    df: ExDataFrame,
-    renames: Vec<(&str, &str)>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let mut df = df.clone();
-    for (original, new_name) in renames {
-        df.rename(original, new_name).expect("should rename");
-    }
-
-    Ok(ExDataFrame::new(df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_relocate(
     df: ExDataFrame,
     columns: Vec<&str>,
@@ -493,6 +480,19 @@ pub fn df_relocate(
         .collect();
 
     let df = DataFrame::new(series)?;
+
+    Ok(ExDataFrame::new(df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_rename_columns(
+    df: ExDataFrame,
+    renames: Vec<(&str, &str)>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let mut df = df.clone();
+    for (original, new_name) in renames {
+        df.rename(original, new_name).expect("should rename");
+    }
 
     Ok(ExDataFrame::new(df))
 }
