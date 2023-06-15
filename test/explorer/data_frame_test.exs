@@ -907,7 +907,8 @@ defmodule Explorer.DataFrameTest do
           f: Series.median(a),
           g: Series.sum(a),
           h: Series.min(a) |> Series.add(a),
-          i: Series.quantile(a, 0.2)
+          i: Series.quantile(a, 0.2),
+          j: Series.skew(a)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -919,10 +920,11 @@ defmodule Explorer.DataFrameTest do
                f: [2.0, 2.0, 2.0],
                g: [6, 6, 6],
                h: [2, 3, 4],
-               i: [1, 1, 1]
+               i: [1, 1, 1],
+               j: [0, 0, 0]
              }
 
-      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 
       assert df1.dtypes == %{
                "a" => :integer,
@@ -933,7 +935,8 @@ defmodule Explorer.DataFrameTest do
                "f" => :float,
                "g" => :integer,
                "h" => :integer,
-               "i" => :integer
+               "i" => :integer,
+               "j" => :integer
              }
     end
 

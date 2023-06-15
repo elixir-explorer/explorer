@@ -63,7 +63,8 @@ features = [
   "strings",
   "round_series",
   "ewma",
-  "product"
+  "product",
+  "moment"
 ]
 
 [dependencies.polars-ops]

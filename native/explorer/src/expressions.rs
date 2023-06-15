@@ -455,6 +455,12 @@ pub fn expr_quantile(expr: ExExpr, quantile: f64) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_skew(data: ExExpr, bias: bool) -> ExExpr {
+    let expr = data.clone_inner();
+    ExExpr::new(expr.skew(bias))
+}
+
+#[rustler::nif]
 pub fn expr_alias(expr: ExExpr, name: &str) -> ExExpr {
     let expr = expr.clone_inner();
 

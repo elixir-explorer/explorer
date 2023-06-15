@@ -773,6 +773,16 @@ pub fn s_standard_deviation(env: Env, s: ExSeries) -> Result<Term, ExplorerError
     }
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_skew(env: Env, s: ExSeries, bias: bool) -> Result<Term, ExplorerError> {
+    match s.dtype() {
+        DataType::Float64 => Ok(s.skew(bias)?.encode(env)),
+        DataType::Int64 => Ok(s.skew(bias)?.encode(env)),
+        // DataType::Float64 => Ok(term_from_optional_float(s.skew(bias), env)),
+        dt => panic!("skew/2 not implemented for {dt:?}"),
+    }
+}
+
 fn term_from_optional_float(option: Option<f64>, env: Env<'_>) -> Term<'_> {
     match option {
         Some(float) => encoding::term_from_float(float, env),

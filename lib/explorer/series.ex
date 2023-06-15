@@ -1864,6 +1864,55 @@ defmodule Explorer.Series do
   def quantile(%Series{dtype: dtype}, _),
     do: dtype_error("quantile/2", dtype, [:integer, :float, :date, :time, :datetime])
 
+  @doc """
+  Compute the sample skewness of a series.
+
+  For normally distributed data, the skewness should be about zero.
+
+  For unimodal continuous distributions, a skewness value greater
+  than zero means that there is more weight in the right tail of the
+  distribution.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5, 23])
+      iex> Explorer.Series.skew(s)
+      1.6727687946848508
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5, 23])
+      iex> Explorer.Series.skew(s, bias: false)
+      2.2905330058490514
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, nil, 1])
+      iex> Explorer.Series.skew(s, bias: false)
+      0.8545630383279712
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, nil, 1])
+      iex> Explorer.Series.skew(s)
+      0.49338220021815865
+
+      iex> s = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.skew(s, false)
+      ** (ArgumentError) Explorer.Series.skew/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float]
+  """
+  @doc type: :aggregation
+  @spec skew(series :: Series.t(), opts :: Keyword.t()) :: float() | non_finite() | nil
+  def skew(series, opts \\ [])
+
+  def skew(%Series{dtype: dtype} = series, opts)
+      when is_numeric_or_date_dtype(dtype) do
+    opts = Keyword.validate!(opts, bias: true)
+    apply_series(series, :skew, [opts[:bias]])
+  end
+
+  def skew(%Series{dtype: dtype}, _),
+    do: dtype_error("skew/2", dtype, [:integer, :float])
+
   # Cumulative
 
   @doc """

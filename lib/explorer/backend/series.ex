@@ -70,6 +70,7 @@ defmodule Explorer.Backend.Series do
               number() | non_finite() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
   @callback nil_count(s) :: number() | lazy_s()
   @callback product(s) :: float() | non_finite() | lazy_s() | nil
+  @callback skew(s, bias? :: boolean()) :: float() | non_finite() | lazy_s() | nil
 
   # Cumulative
 

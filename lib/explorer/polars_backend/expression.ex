@@ -67,7 +67,8 @@ defmodule Explorer.PolarsBackend.Expression do
     subtract: 2,
     sum: 1,
     unordered_distinct: 1,
-    variance: 1
+    variance: 1,
+    skew: 2
   ]
 
   @first_only_expressions [
@@ -80,6 +81,7 @@ defmodule Explorer.PolarsBackend.Expression do
     sample_n: 5,
     sample_frac: 5,
     exp: 1,
+    skew: 2,
 
     # Trigonometric operations
     acos: 1,
