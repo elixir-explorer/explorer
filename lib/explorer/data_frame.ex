@@ -3149,7 +3149,14 @@ defmodule Explorer.DataFrame do
   @doc """
   Relocates columns.
 
-  Relocate columns to new positions in the DataFrame.
+  Change column order within a DataFrame. The `after` and `before` options are mutually exclusive.
+  Providing no options will relocate the columns to beginning of the DataFrame.
+
+  ## Options
+
+    * `:before` - Specifies to relocate before the given column name. You can also pass `:first` and `:last` to relocate to the beginning or end of the DataFrame.
+
+    * `:after` - Specifies to relocate after the given column name. You can also pass `:first` and `:last` to relocate to the beginning or end of the DataFrame.
 
   ## Examples
 
@@ -3164,16 +3171,28 @@ defmodule Explorer.DataFrame do
         a string ["a", "b", "a"]
       >
 
-  Relocate multiple columns
+  Relocate (and reorder) multiple columns to the beginning
 
     iex> df = Explorer.DataFrame.new(a: [1, 2], b: [5.1, 5.2], c: [4, 5], d: ["yes", "no"])
-    iex> Explorer.DataFrame.relocate(df, ["b","d"], before: "a")
+    iex> Explorer.DataFrame.relocate(df, ["d","b"], before: :first)
     #Explorer.DataFrame<
       Polars[2 x 4]
-      b float [5.1, 5.2]
       d string ["yes", "no"]
+      b float [5.1, 5.2]
       a integer [1, 2]
       c integer [4, 5]
+    >
+
+  Relocate before another column
+
+    iex> df = Explorer.DataFrame.new(a: [1, 2], b: [5.1, 5.2], c: [4, 5], d: ["yes", "no"])
+    iex> Explorer.DataFrame.relocate(df, ["a", "c"], before: "b")
+    #Explorer.DataFrame<
+      Polars[2 x 4]
+      a integer [1, 2]
+      c integer [4, 5]
+      b float [5.1, 5.2]
+      d string ["yes", "no"]
     >
   """
 
