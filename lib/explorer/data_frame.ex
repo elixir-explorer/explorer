@@ -3069,7 +3069,7 @@ defmodule Explorer.DataFrame do
     do: relocate_columns({direction, 0}, df, columns_to_relocate)
 
   defp relocate_columns({direction, :last}, df, columns_to_relocate),
-    do: relocate_columns({direction, length(df.names) - 1}, df, columns_to_relocate)
+    do: relocate_columns({direction, -1}, df, columns_to_relocate)
 
   defp relocate_columns({direction, target_column}, df, columns_to_relocate) do
     [target_column] = to_existing_columns(df, [target_column])
