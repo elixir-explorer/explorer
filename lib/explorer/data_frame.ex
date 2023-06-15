@@ -3194,27 +3194,18 @@ defmodule Explorer.DataFrame do
 
     columns_to_relocate = to_existing_columns(df, columns)
 
-    {direction, col_index, new_names} =
+    {new_names, direction, col_index} =
       case {opts[:before], opts[:after]} do
         {nil, nil} ->
-          {"before", 0,
-           columns ++ Enum.reject(df.names, fn col -> col in columns_to_relocate end)}
-
-        {:first, nil} ->
-          {"before", 0,
-           columns ++ Enum.reject(df.names, fn col -> col in columns_to_relocate end)}
-
-        {nil, :after} ->
-          {"after", length(df.names),
-           Enum.reject(df.names, fn col -> col in columns_to_relocate end) ++ columns_to_relocate}
+          {:before, :first}
 
         {before_col, nil} ->
-          index = Enum.find_index(df.names, fn col -> col == before_col end)
-          {"before", index, relocate_columns(df, columns_to_relocate, {:before, index})}
+          index = Enum.find_index(df.names, fn col -> col == before_col end) || before_col
+          {:before, index}
 
         {nil, after_col} ->
-          index = Enum.find_index(df.names, fn col -> col == after_col end)
-          {"after", index, relocate_columns(df, columns_to_relocate, {:after, index})}
+          index = Enum.find_index(df.names, fn col -> col == after_col end) || after_col
+          {:after, index}
 
         {before_col, after_col} ->
           raise(
@@ -3223,28 +3214,36 @@ defmodule Explorer.DataFrame do
               "before: #{inspect(before_col)} and after: #{inspect(after_col)}"
           )
       end
+      |> relocate_columns(df, columns_to_relocate)
 
     out_df = %{df | names: new_names}
 
-    Shared.apply_impl(df, :relocate, [out_df, columns, direction, col_index])
+    Shared.apply_impl(df, :relocate, [out_df, columns, Atom.to_string(direction), col_index])
   end
 
-  defp relocate_columns(df, columns_to_relocate, {:before, col_index}) do
-    df.names
-    |> Enum.split(col_index)
-    |> Kernel.then(fn {before_cols, after_cols} ->
-      Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
-        columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
-    end)
-  end
+  defp relocate_columns({direction, :first}, df, columns_to_relocate),
+    do: relocate_columns({direction, 0}, df, columns_to_relocate)
 
-  defp relocate_columns(df, columns_to_relocate, {:after, col_index}) do
-    df.names
-    |> Enum.split(col_index + 1)
-    |> Kernel.then(fn {before_cols, after_cols} ->
-      Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
-        columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
-    end)
+  defp relocate_columns({direction, :last}, df, columns_to_relocate),
+    do: relocate_columns({direction, length(df.names) - 1}, df, columns_to_relocate)
+
+  defp relocate_columns({direction, col_index}, df, columns_to_relocate) do
+    index =
+      col_index +
+        case direction do
+          :before -> 0
+          :after -> 1
+        end
+
+    new_names =
+      df.names
+      |> Enum.split(index)
+      |> Kernel.then(fn {before_cols, after_cols} ->
+        Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
+          columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
+      end)
+
+    {new_names, direction, col_index}
   end
 
   @doc """
