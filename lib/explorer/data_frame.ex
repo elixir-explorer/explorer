@@ -3174,7 +3174,7 @@ defmodule Explorer.DataFrame do
   Relocate (and reorder) multiple columns to the beginning
 
     iex> df = Explorer.DataFrame.new(a: [1, 2], b: [5.1, 5.2], c: [4, 5], d: ["yes", "no"])
-    iex> Explorer.DataFrame.relocate(df, ["d","b"], before: :first)
+    iex> Explorer.DataFrame.relocate(df, ["d", 1], before: :first)
     #Explorer.DataFrame<
       Polars[2 x 4]
       d string ["yes", "no"]
@@ -3199,7 +3199,7 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec relocate(
           df :: DataFrame.t(),
-          columns :: [column_name()] | column_name(),
+          columns :: [column()] | column(),
           opts :: Keyword.t()
         ) :: DataFrame.t()
 
@@ -3211,20 +3211,18 @@ defmodule Explorer.DataFrame do
   def relocate(df, columns, opts) do
     opts = Keyword.validate!(opts, before: nil, after: nil)
 
-    columns_to_relocate = to_existing_columns(df, columns)
+    columns = to_existing_columns(df, columns)
 
-    {new_names, direction, col_index} =
+    {new_names, col_index} =
       case {opts[:before], opts[:after]} do
         {nil, nil} ->
           {:before, :first}
 
         {before_col, nil} ->
-          index = Enum.find_index(df.names, fn col -> col == before_col end) || before_col
-          {:before, index}
+          {:before, before_col}
 
         {nil, after_col} ->
-          index = Enum.find_index(df.names, fn col -> col == after_col end) || after_col
-          {:after, index}
+          {:after, after_col}
 
         {before_col, after_col} ->
           raise(
@@ -3233,11 +3231,11 @@ defmodule Explorer.DataFrame do
               "before: #{inspect(before_col)} and after: #{inspect(after_col)}"
           )
       end
-      |> relocate_columns(df, columns_to_relocate)
+      |> relocate_columns(df, columns)
 
     out_df = %{df | names: new_names}
 
-    Shared.apply_impl(df, :relocate, [out_df, columns, Atom.to_string(direction), col_index])
+    Shared.apply_impl(df, :relocate, [out_df, columns, col_index])
   end
 
   defp relocate_columns({direction, :first}, df, columns_to_relocate),
@@ -3246,23 +3244,26 @@ defmodule Explorer.DataFrame do
   defp relocate_columns({direction, :last}, df, columns_to_relocate),
     do: relocate_columns({direction, length(df.names) - 1}, df, columns_to_relocate)
 
-  defp relocate_columns({direction, col_index}, df, columns_to_relocate) do
-    index =
-      col_index +
-        case direction do
-          :before -> 0
-          :after -> 1
-        end
+  defp relocate_columns({direction, target_column}, df, columns_to_relocate) do
+    [target_column] = to_existing_columns(df, [target_column])
+
+    offset =
+      case direction do
+        :before -> 0
+        :after -> 1
+      end
+
+    target_index = Enum.find_index(df.names, fn col -> col == target_column end) + offset
 
     new_names =
       df.names
-      |> Enum.split(index)
+      |> Enum.split(target_index)
       |> Kernel.then(fn {before_cols, after_cols} ->
         Enum.reject(before_cols, &(&1 in columns_to_relocate)) ++
           columns_to_relocate ++ Enum.reject(after_cols, &(&1 in columns_to_relocate))
       end)
 
-    {new_names, direction, col_index}
+    {new_names, target_index}
   end
 
   @doc """

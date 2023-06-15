@@ -155,7 +155,6 @@ defmodule Explorer.Backend.DataFrame do
               df,
               out_df :: df(),
               columns :: [column_name()] | column_name(),
-              direction :: :before | :after,
               position :: :first | :last | column_name()
             ) :: df
   @callback dummies(df, out_df :: df(), columns :: [column_name()]) :: df

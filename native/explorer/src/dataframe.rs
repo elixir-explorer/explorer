@@ -472,20 +472,8 @@ pub fn df_rename_columns(
 pub fn df_relocate(
     df: ExDataFrame,
     columns: Vec<&str>,
-    direction: &str,
     position: u64,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let position = position
-        + match direction {
-            "before" => 0,
-            "after" => 1,
-            _ => {
-                return Err(ExplorerError::Other(format!(
-                    "invalid direction {direction} given to relocate"
-                )))
-            }
-        };
-
     let mut first_series = df.get_columns().to_owned();
     let second_series = first_series.split_off(position as usize);
 

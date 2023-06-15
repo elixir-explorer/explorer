@@ -2065,23 +2065,23 @@ defmodule Explorer.DataFrameTest do
         DF.new(
           first: ["a", "b", "a"],
           second: ["x", "y", "z"],
-          middle: [2.2, 3.3, nil],
+          third: [2.2, 3.3, nil],
           last: [1, 3, 1]
         )
 
       df1 = DF.relocate(df, "first", after: "second")
 
-      assert df1.names == ["second", "first", "middle", "last"]
+      assert df1.names == ["second", "first", "third", "last"]
       assert Series.to_list(df1["first"]) == Series.to_list(df["first"])
       assert Series.to_list(df1["second"]) == Series.to_list(df["second"])
-      assert Series.to_list(df1["middle"]) == Series.to_list(df["middle"])
+      assert Series.to_list(df1["third"]) == Series.to_list(df["third"])
       assert Series.to_list(df1["last"]) == Series.to_list(df["last"])
 
       df2 = DF.relocate(df, "second", before: "last")
-      assert df2.names == ["first", "middle", "second", "last"]
+      assert df2.names == ["first", "third", "second", "last"]
 
-      df3 = DF.relocate(df, "first", after: "last")
-      assert df3.names == ["second", "middle", "last", "first"]
+      df3 = DF.relocate(df, 0, after: 3)
+      assert df3.names == ["second", "third", "last", "first"]
     end
 
     test "multiple columns relative" do
@@ -2089,21 +2089,21 @@ defmodule Explorer.DataFrameTest do
         DF.new(
           first: ["a", "b", "a"],
           second: ["x", "y", "z"],
-          middle: [2.2, 3.3, nil],
+          third: [2.2, 3.3, nil],
           last: [1, 3, 1]
         )
 
-      df1 = DF.relocate(df, ["middle", "second"], before: "last")
-      assert df1.names == ["first", "middle", "second", "last"]
+      df1 = DF.relocate(df, ["third", 1], before: -1)
+      assert df1.names == ["first", "third", "second", "last"]
 
-      df2 = DF.relocate(df, ["first", "last"], after: "middle")
-      assert df2.names == ["second", "middle", "first", "last"]
+      df2 = DF.relocate(df, ["first", "last"], after: "third")
+      assert df2.names == ["second", "third", "first", "last"]
 
-      df3 = DF.relocate(df, ["second", "last"], before: "first")
-      assert df3.names == ["second", "last", "first", "middle"]
+      df3 = DF.relocate(df, ["second", "last"], before: 0)
+      assert df3.names == ["second", "last", "first", "third"]
 
-      df4 = DF.relocate(df, ["middle", "second"], after: "second")
-      assert df4.names == ["first", "middle", "second", "last"]
+      df4 = DF.relocate(df, ["third", "second"], after: "second")
+      assert df4.names == ["first", "third", "second", "last"]
     end
 
     test "using atom for last" do
@@ -2117,10 +2117,10 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.relocate(df, "a", after: :last)
       assert df1.names == ["b", "c", "a"]
 
-      df2 = DF.relocate(df, "a", before: :last)
+      df2 = DF.relocate(df, 0, before: :last)
       assert df2.names == ["b", "a", "c"]
 
-      df3 = DF.relocate(df, ["c", "a"], after: :last)
+      df3 = DF.relocate(df, [2, "a"], after: :last)
       assert df3.names == ["b", "c", "a"]
     end
 
@@ -2135,7 +2135,7 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.relocate(df, "c", after: :first)
       assert df1.names == ["a", "c", "b"]
 
-      df2 = DF.relocate(df, "c", before: :first)
+      df2 = DF.relocate(df, 2, before: :first)
       assert df2.names == ["c", "a", "b"]
 
       df3 = DF.relocate(df, ["b", "a"], after: :first)

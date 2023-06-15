@@ -111,7 +111,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_pull(_df, _name), do: err()
   def df_put_column(_df, _series), do: err()
   def df_rename_columns(_df, _old_new_pairs), do: err()
-  def df_relocate(_df, _columns, _direction, _position), do: err()
+  def df_relocate(_df, _columns, _position), do: err()
   def df_sample_frac(_df, _frac, _with_replacement, _shuffle, _seed, _groups), do: err()
   def df_sample_n(_df, _n, _with_replacement, _shuffle, _seed, _groups), do: err()
   def df_select(_df, _selection), do: err()
