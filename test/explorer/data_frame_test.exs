@@ -2059,6 +2059,90 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "relocate/2" do
+    test "single column relative" do
+      df =
+        DF.new(
+          first: ["a", "b", "a"],
+          second: ["x", "y", "z"],
+          middle: [2.2, 3.3, nil],
+          last: [1, 3, 1]
+        )
+
+      df1 = DF.relocate(df, "first", after: "second")
+
+      assert df1.names == ["second", "first", "middle", "last"]
+      assert Series.to_list(df1["first"]) == Series.to_list(df["first"])
+      assert Series.to_list(df1["second"]) == Series.to_list(df["second"])
+      assert Series.to_list(df1["middle"]) == Series.to_list(df["middle"])
+      assert Series.to_list(df1["last"]) == Series.to_list(df["last"])
+
+      df2 = DF.relocate(df, "second", before: "last")
+      assert df2.names == ["first", "middle", "second", "last"]
+
+      df3 = DF.relocate(df, "first", after: "last")
+      assert df3.names == ["second", "middle", "last", "first"]
+    end
+
+    test "multiple columns relative" do
+      df =
+        DF.new(
+          first: ["a", "b", "a"],
+          second: ["x", "y", "z"],
+          middle: [2.2, 3.3, nil],
+          last: [1, 3, 1]
+        )
+
+      df1 = DF.relocate(df, ["middle", "second"], before: "last")
+      assert df1.names == ["first", "middle", "second", "last"]
+
+      df2 = DF.relocate(df, ["first", "last"], after: "middle")
+      assert df2.names == ["second", "middle", "first", "last"]
+
+      df3 = DF.relocate(df, ["second", "last"], before: "first")
+      assert df3.names == ["second", "last", "first", "middle"]
+
+      df4 = DF.relocate(df, ["middle", "second"], after: "second")
+      assert df4.names == ["first", "middle", "second", "last"]
+    end
+
+    test "using atom for last" do
+      df =
+        DF.new(
+          a: ["a value", "some other value", "a third value!"],
+          b: [0, 5, -2],
+          c: [nil, nil, nil]
+        )
+
+      df1 = DF.relocate(df, "a", after: :last)
+      assert df1.names == ["b", "c", "a"]
+
+      df2 = DF.relocate(df, "a", before: :last)
+      assert df2.names == ["b", "a", "c"]
+
+      df3 = DF.relocate(df, ["c", "a"], after: :last)
+      assert df3.names == ["b", "c", "a"]
+    end
+
+    test "using atom for first" do
+      df =
+        DF.new(
+          a: ["a value", "some other value", "a third value!"],
+          b: [0, 5, -2],
+          c: [nil, nil, nil]
+        )
+
+      df1 = DF.relocate(df, "c", after: :first)
+      assert df1.names == ["a", "c", "b"]
+
+      df2 = DF.relocate(df, "c", before: :first)
+      assert df2.names == ["c", "a", "b"]
+
+      df3 = DF.relocate(df, ["b", "a"], after: :first)
+      assert df3.names == ["b", "a", "c"]
+    end
+  end
+
   describe "pivot_wider/4" do
     test "with a single id" do
       df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
