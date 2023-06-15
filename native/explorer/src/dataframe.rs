@@ -1,5 +1,6 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
+use rustler::Atom;
 
 use std::collections::HashMap;
 use std::result::Result;
@@ -466,6 +467,19 @@ pub fn df_rename_columns(
     }
 
     Ok(ExDataFrame::new(df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_relocate(
+    df: ExDataFrame,
+    columns: Vec<&str>,
+    direction: Atom,
+    position: u64,
+) -> Result<ExDataFrame, ExplorerError> {
+    let df2: DataFrame = df.clone();
+    dbg!(direction == "before");
+
+    Ok(df)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

@@ -471,6 +471,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_dataframe(df, out_df, :df_rename_columns, [pairs])
 
   @impl true
+  def relocate(%DataFrame{} = df, %DataFrame{} = out_df, columns, direction, position),
+    do: Shared.apply_dataframe(df, out_df, :df_relocate, [columns, direction, position])
+
+  @impl true
   def dummies(df, out_df, names),
     do: Shared.apply_dataframe(df, out_df, :df_to_dummies, [names])
 
