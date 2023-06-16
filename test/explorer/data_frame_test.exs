@@ -1996,6 +1996,9 @@ defmodule Explorer.DataFrameTest do
 
       df4 = DF.relocate(df, ["third", "second"], after: "second")
       assert df4.names == ["first", "third", "second", "last"]
+
+      df5 = DF.relocate(df, [], after: "second")
+      assert df5.names == ["first", "second", "third", "last"]
     end
 
     test "with negative index" do
