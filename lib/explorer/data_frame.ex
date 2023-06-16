@@ -2981,9 +2981,9 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:before` - Specifies to relocate before the given column. You can also pass `:first` and `:last` to relocate to the beginning or end of the DataFrame.
+    * `:before` - Specifies to relocate before the given column.
 
-    * `:after` - Specifies to relocate after the given column. You can also pass `:first` and `:last` to relocate to the beginning or end of the DataFrame.
+    * `:after` - Specifies to relocate after the given column.
 
   ## Examples
 
@@ -3001,7 +3001,7 @@ defmodule Explorer.DataFrame do
   Relocate (and reorder) multiple columns to the beginning
 
       iex> df = Explorer.DataFrame.new(a: [1, 2], b: [5.1, 5.2], c: [4, 5], d: ["yes", "no"])
-      iex> Explorer.DataFrame.relocate(df, ["d", 1], before: :first)
+      iex> Explorer.DataFrame.relocate(df, ["d", 1], before: 0)
       #Explorer.DataFrame<
         Polars[2 x 4]
         d string ["yes", "no"]
@@ -3042,9 +3042,6 @@ defmodule Explorer.DataFrame do
 
     {new_names, col_index} =
       case {opts[:before], opts[:after]} do
-        {nil, nil} ->
-          {:before, :first}
-
         {before_col, nil} ->
           {:before, before_col}
 
@@ -3064,12 +3061,6 @@ defmodule Explorer.DataFrame do
 
     Shared.apply_impl(df, :relocate, [out_df, columns, col_index])
   end
-
-  defp relocate_columns({direction, :first}, df, columns_to_relocate),
-    do: relocate_columns({direction, 0}, df, columns_to_relocate)
-
-  defp relocate_columns({direction, :last}, df, columns_to_relocate),
-    do: relocate_columns({direction, -1}, df, columns_to_relocate)
 
   defp relocate_columns({direction, target_column}, df, columns_to_relocate) do
     [target_column] = to_existing_columns(df, [target_column])

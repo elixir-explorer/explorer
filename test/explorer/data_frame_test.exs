@@ -1998,7 +1998,7 @@ defmodule Explorer.DataFrameTest do
       assert df4.names == ["first", "third", "second", "last"]
     end
 
-    test "with the :last atom" do
+    test "with negative index" do
       df =
         DF.new(
           a: ["a value", "some other value", "a third value!"],
@@ -2006,17 +2006,17 @@ defmodule Explorer.DataFrameTest do
           c: [nil, nil, nil]
         )
 
-      df1 = DF.relocate(df, "a", after: :last)
+      df1 = DF.relocate(df, "a", after: -1)
       assert df1.names == ["b", "c", "a"]
 
-      df2 = DF.relocate(df, 0, before: :last)
+      df2 = DF.relocate(df, 0, before: -1)
       assert df2.names == ["b", "a", "c"]
 
-      df3 = DF.relocate(df, [2, "a"], after: :last)
+      df3 = DF.relocate(df, [2, "a"], after: -1)
       assert df3.names == ["b", "c", "a"]
     end
 
-    test "with the :first atom" do
+    test "with index at start" do
       df =
         DF.new(
           a: ["a value", "some other value", "a third value!"],
@@ -2024,14 +2024,26 @@ defmodule Explorer.DataFrameTest do
           c: [nil, nil, nil]
         )
 
-      df1 = DF.relocate(df, "c", after: :first)
+      df1 = DF.relocate(df, "c", after: 0)
       assert df1.names == ["a", "c", "b"]
 
-      df2 = DF.relocate(df, 2, before: :first)
+      df2 = DF.relocate(df, 2, before: 0)
       assert df2.names == ["c", "a", "b"]
 
-      df3 = DF.relocate(df, ["b", "a"], after: :first)
+      df3 = DF.relocate(df, ["b", "a"], after: 0)
       assert df3.names == ["b", "a", "c"]
+    end
+
+    test "with both positioning parameters" do
+      df =
+        DF.new(
+          a: [0, 5, -2],
+          b: [nil, nil, nil]
+        )
+
+      assert_raise ArgumentError,
+                   "only one location must be given. Got both before: \"a\" and after: 1",
+                   fn -> DF.relocate(df, 0, before: "a", after: 1) end
     end
 
     test "ordered DataFrame output after relocation" do
