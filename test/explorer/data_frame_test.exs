@@ -1951,6 +1951,122 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
   end
 
+  describe "relocate/2" do
+    test "with single column and relative" do
+      df =
+        DF.new(
+          first: ["a", "b", "a"],
+          second: ["x", "y", "z"],
+          third: [2.2, 3.3, nil],
+          last: [1, 3, 1]
+        )
+
+      df1 = DF.relocate(df, "first", after: "second")
+
+      assert df1.names == ["second", "first", "third", "last"]
+      assert Series.to_list(df1["first"]) == Series.to_list(df["first"])
+      assert Series.to_list(df1["second"]) == Series.to_list(df["second"])
+      assert Series.to_list(df1["third"]) == Series.to_list(df["third"])
+      assert Series.to_list(df1["last"]) == Series.to_list(df["last"])
+
+      df2 = DF.relocate(df, "second", before: "last")
+      assert df2.names == ["first", "third", "second", "last"]
+
+      df3 = DF.relocate(df, 0, after: 3)
+      assert df3.names == ["second", "third", "last", "first"]
+    end
+
+    test "with multiple columns and relative" do
+      df =
+        DF.new(
+          first: ["a", "b", "a"],
+          second: ["x", "y", "z"],
+          third: [2.2, 3.3, nil],
+          last: [1, 3, 1]
+        )
+
+      df1 = DF.relocate(df, ["third", 1], before: -1)
+      assert df1.names == ["first", "third", "second", "last"]
+
+      df2 = DF.relocate(df, ["first", "last"], after: "third")
+      assert df2.names == ["second", "third", "first", "last"]
+
+      df3 = DF.relocate(df, ["second", "last"], before: 0)
+      assert df3.names == ["second", "last", "first", "third"]
+
+      df4 = DF.relocate(df, ["third", "second"], after: "second")
+      assert df4.names == ["first", "third", "second", "last"]
+
+      df5 = DF.relocate(df, [], after: "second")
+      assert df5.names == ["first", "second", "third", "last"]
+    end
+
+    test "with negative index" do
+      df =
+        DF.new(
+          a: ["a value", "some other value", "a third value!"],
+          b: [0, 5, -2],
+          c: [nil, nil, nil]
+        )
+
+      df1 = DF.relocate(df, "a", after: -1)
+      assert df1.names == ["b", "c", "a"]
+
+      df2 = DF.relocate(df, 0, before: -1)
+      assert df2.names == ["b", "a", "c"]
+
+      df3 = DF.relocate(df, [2, "a"], after: -1)
+      assert df3.names == ["b", "c", "a"]
+    end
+
+    test "with index at start" do
+      df =
+        DF.new(
+          a: ["a value", "some other value", "a third value!"],
+          b: [0, 5, -2],
+          c: [nil, nil, nil]
+        )
+
+      df1 = DF.relocate(df, "c", after: 0)
+      assert df1.names == ["a", "c", "b"]
+
+      df2 = DF.relocate(df, 2, before: 0)
+      assert df2.names == ["c", "a", "b"]
+
+      df3 = DF.relocate(df, ["b", "a"], after: 0)
+      assert df3.names == ["b", "a", "c"]
+    end
+
+    test "with both positioning parameters" do
+      df =
+        DF.new(
+          a: [0, 5, -2],
+          b: [nil, nil, nil]
+        )
+
+      assert_raise ArgumentError,
+                   "only one location must be given. Got both before: \"a\" and after: 1",
+                   fn -> DF.relocate(df, 0, before: "a", after: 1) end
+    end
+
+    test "ordered DataFrame output after relocation" do
+      df1 =
+        Explorer.DataFrame.new(
+          a: [1, 2],
+          b: [5.1, 5.2],
+          c: [4, 5],
+          d: ["yes", "no"],
+          e: [4, 1]
+        )
+
+      df2 = DF.relocate(df1, [4, 0], before: 2)
+      assert df2.names == ["b", "e", "a", "c", "d"]
+
+      assert DF.dump_csv(df2) ==
+               {:ok, "b,e,a,c,d\n5.1,4,1,4,yes\n5.2,1,2,5,no\n"}
+    end
+  end
+
   describe "rename/2" do
     test "with lists" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
