@@ -2982,8 +2982,10 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `:before` - Specifies to relocate before the given column.
+      It can be an index or a column name.
 
     * `:after` - Specifies to relocate after the given column.
+      It can be an index or a column name.
 
   ## Examples
 
