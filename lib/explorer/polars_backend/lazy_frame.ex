@@ -398,7 +398,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     pivot_wider: 5,
     pull: 2,
     put: 4,
-    relocate: 4,
     sample: 5,
     slice: 2,
     to_csv: 4,

@@ -104,7 +104,6 @@ rustler::init!(
         df_pivot_wider,
         df_pull,
         df_put_column,
-        df_relocate,
         df_rename_columns,
         df_sample_frac,
         df_sample_n,

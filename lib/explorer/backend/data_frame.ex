@@ -151,12 +151,6 @@ defmodule Explorer.Backend.DataFrame do
   @callback arrange_with(df, out_df :: df(), directions :: [{:asc | :desc, lazy_series()}]) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()]) :: df
   @callback rename(df, out_df :: df(), [{old :: column_name(), new :: column_name()}]) :: df
-  @callback relocate(
-              df,
-              out_df :: df(),
-              columns :: [column_name()] | column_name(),
-              position :: :first | :last | column_name()
-            ) :: df
   @callback dummies(df, out_df :: df(), columns :: [column_name()]) :: df
   @callback sample(
               df,
