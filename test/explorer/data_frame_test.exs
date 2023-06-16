@@ -1951,8 +1951,8 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
   end
 
-  describe "relocate/2" do
-    test "with single column and relative" do
+  describe "relocate/3" do
+    test "with single column" do
       df =
         DF.new(
           first: ["a", "b", "a"],
@@ -1976,7 +1976,7 @@ defmodule Explorer.DataFrameTest do
       assert df3.names == ["second", "third", "last", "first"]
     end
 
-    test "with multiple columns and relative" do
+    test "with multiple columns" do
       df =
         DF.new(
           first: ["a", "b", "a"],

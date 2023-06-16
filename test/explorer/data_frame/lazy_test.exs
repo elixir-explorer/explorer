@@ -697,6 +697,27 @@ defmodule Explorer.DataFrame.LazyTest do
     end
   end
 
+  describe "relocate/3" do
+    test "with multiple columns" do
+      ldf =
+        DF.new(
+          [
+            first: ["a", "b", "a"],
+            second: ["x", "y", "z"],
+            third: [2.2, 3.3, nil],
+            last: [1, 3, 1]
+          ],
+          lazy: true
+        )
+
+      ldf1 = DF.relocate(ldf, ["third", "second"], before: "first")
+      assert ldf1.names == ["third", "second", "first", "last"]
+
+      df = DF.collect(ldf1)
+      assert DF.dump_csv(df) == {:ok, "third,second,first,last\n2.2,x,a,1\n3.3,y,b,3\n,z,a,1\n"}
+    end
+  end
+
   describe "rename/2" do
     test "renames a column" do
       ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
