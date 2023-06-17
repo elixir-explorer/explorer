@@ -442,6 +442,18 @@ defmodule Explorer.PolarsBackend.Series do
     window_function(:s_window_sum, series, window_size, weights, min_periods, center)
   end
 
+  @impl true
+  def window_standard_deviation(series, window_size, weights, min_periods, center) do
+    window_function(
+      :s_window_standard_deviation,
+      series,
+      window_size,
+      weights,
+      min_periods,
+      center
+    )
+  end
+
   defp window_function(operation, series, window_size, weights, min_periods, center) do
     Shared.apply_series(series, operation, [window_size, weights, min_periods, center])
   end

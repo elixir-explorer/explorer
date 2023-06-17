@@ -3656,6 +3656,68 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "window_standard_deviation/2" do
+    test "window standard deviation of an integer series" do
+      s = Series.from_list([1, 2, nil, 3])
+      ws = Series.window_standard_deviation(s, 2)
+      assert Series.to_list(ws) === [0.0, 0.7071067811865476, 0.0, 0.0]
+    end
+
+    test "window standard deviation of a float series" do
+      s = Series.from_list([1.0, 2.0, nil, 3.0])
+      ws = Series.window_standard_deviation(s, 2)
+      assert Series.to_list(ws) === [0.0, 0.7071067811865476, 0.0, 0.0]
+    end
+
+    test "window standard deviation of a float series with a nan" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
+      ws = Series.window_standard_deviation(s, 2)
+
+      assert Series.to_list(ws) === [
+               0.0,
+               3.0405591591021546,
+               0.7778174593052014,
+               0.0,
+               0.0,
+               7.212489168102784,
+               :nan,
+               :nan
+             ]
+    end
+
+    test "window standard deviation of a float series with infinity positive" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
+      ws = Series.window_standard_deviation(s, 2)
+
+      assert Series.to_list(ws) === [
+               0.0,
+               3.0405591591021546,
+               0.7778174593052014,
+               0.0,
+               0.0,
+               7.212489168102784,
+               :nan,
+               :nan
+             ]
+    end
+
+    test "window standard deviation of a float series with infinity negative" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
+      ws = Series.window_standard_deviation(s, 2)
+
+      assert Series.to_list(ws) === [
+               0.0,
+               3.0405591591021546,
+               0.7778174593052014,
+               0.0,
+               0.0,
+               7.212489168102784,
+               :nan,
+               :nan
+             ]
+    end
+  end
+
   describe "quantile/1" do
     test "quantile of an integer series" do
       s = Series.from_list([1, 2, nil, 3])
