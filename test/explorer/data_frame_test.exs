@@ -662,7 +662,7 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "adds new columns ordering, sorting and negating" do
-      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [1.3, 5.4, 2.6])
 
       df1 =
         DF.mutate(df,
@@ -671,7 +671,9 @@ defmodule Explorer.DataFrameTest do
           e: sort(b, direction: :desc),
           f: distinct(a),
           g: unordered_distinct(a),
-          h: -a
+          h: -a,
+          i: rank(a, method: "ordinal"),
+          j: rank(c)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -682,10 +684,12 @@ defmodule Explorer.DataFrameTest do
                e: ["c", "b", "a"],
                f: [1, 2, 3],
                g: [1, 2, 3],
-               h: [-1, -2, -3]
+               h: [-1, -2, -3],
+               i: [1, 2, 3],
+               j: [1.0, 3.0, 2.0]
              }
 
-      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h"]
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 
       assert df1.dtypes == %{
                "a" => :integer,
@@ -695,7 +699,9 @@ defmodule Explorer.DataFrameTest do
                "e" => :string,
                "f" => :integer,
                "g" => :integer,
-               "h" => :integer
+               "h" => :integer,
+               "i" => :integer,
+               "j" => :float
              }
     end
 
@@ -936,7 +942,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :integer,
                "h" => :integer,
                "i" => :integer,
-               "j" => :integer
+               "j" => :float
              }
     end
 

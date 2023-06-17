@@ -55,7 +55,12 @@ defmodule Explorer.Backend.Series do
   @callback last(s) :: valid_types() | lazy_s()
   @callback select(predicate :: s, s, s) :: s
   @callback shift(s, offset :: integer, default :: nil) :: s
-
+  @callback rank(
+              s,
+              method :: String.t(),
+              descending :: boolean(),
+              seed :: option(integer())
+            ) :: s | lazy_s()
   # Aggregation
 
   @callback count(s) :: number() | lazy_s()

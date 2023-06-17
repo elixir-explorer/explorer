@@ -64,7 +64,8 @@ features = [
   "round_series",
   "ewma",
   "product",
-  "moment"
+  "moment",
+  "rank"
 ]
 
 [dependencies.polars-ops]

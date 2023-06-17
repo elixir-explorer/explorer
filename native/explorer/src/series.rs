@@ -1095,6 +1095,68 @@ pub fn s_sample_frac(
     Ok(ExSeries::new(new_s))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_rank(
+    series: ExSeries,
+    method: &str,
+    descending: bool,
+    seed: Option<u64>,
+) -> Result<ExSeries, ExplorerError> {
+    let rank_method = parse_rank_method_options(method, descending);
+
+    match rank_method.method {
+        RankMethod::Average => {
+            let new_s = series
+                .rank(rank_method, seed)
+                .cast(&DataType::Float64)?
+                .into_series();
+
+            Ok(ExSeries::new(new_s))
+        }
+        _ => {
+            let new_s = series
+                .rank(rank_method, seed)
+                .cast(&DataType::Int64)?
+                .into_series();
+
+            Ok(ExSeries::new(new_s))
+        }
+    }
+}
+
+pub fn parse_rank_method_options(strategy: &str, descending: bool) -> RankOptions {
+    match strategy {
+        "ordinal" => RankOptions {
+            method: RankMethod::Ordinal,
+            descending,
+        },
+        "random" => RankOptions {
+            method: RankMethod::Random,
+            descending,
+        },
+        "average" => RankOptions {
+            method: RankMethod::Average,
+            descending,
+        },
+        "min" => RankOptions {
+            method: RankMethod::Min,
+            descending,
+        },
+        "max" => RankOptions {
+            method: RankMethod::Max,
+            descending,
+        },
+        "dense" => RankOptions {
+            method: RankMethod::Dense,
+            descending,
+        },
+        _ => RankOptions {
+            method: RankMethod::Average,
+            descending,
+        },
+    }
+}
+
 pub fn parse_quantile_interpol_options(strategy: &str) -> QuantileInterpolOptions {
     match strategy {
         "nearest" => QuantileInterpolOptions::Nearest,

@@ -100,6 +100,11 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
+  def rank(series, method, descending, seed) do
+    Shared.apply_series(series, :s_rank, [method, descending, seed])
+  end
+
+  @impl true
   def at_every(series, every_n),
     do: Shared.apply_series(series, :s_at_every, [every_n])
 

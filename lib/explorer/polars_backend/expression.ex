@@ -78,6 +78,7 @@ defmodule Explorer.PolarsBackend.Expression do
     head: 2,
     tail: 2,
     peaks: 2,
+    rank: 4,
     sample_n: 5,
     sample_frac: 5,
     exp: 1,

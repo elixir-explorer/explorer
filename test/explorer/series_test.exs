@@ -3580,6 +3580,87 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "rank/2" do
+    test "rank of a series of integers" do
+      s = Series.from_list([1, 2, 0, 3])
+      r = Series.rank(s)
+      assert Series.to_list(r) === [2.0, 3.0, 1.0, 4.0]
+    end
+
+    test "rank of a series of floats" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, 3.9])
+      r = Series.rank(s)
+      assert Series.to_list(r) === [2.0, 4.0, 5.0, nil, 3.0, 1.0, 6.0]
+    end
+
+    test "rank of a series of dates" do
+      s =
+        Series.from_list([
+          ~N[2022-07-07 17:44:13.020548],
+          ~N[2022-07-07 17:43:08.473561],
+          ~N[2022-07-07 17:45:00.116337]
+        ])
+
+      r = Series.rank(s)
+      assert Series.to_list(r) === [2.0, 1.0, 3.0]
+    end
+
+    test "rank of a series of strings" do
+      s = Series.from_list(~w[I love elixir])
+
+      r = Series.rank(s)
+      assert Series.to_list(r) === [1.0, 3.0, 2.0]
+    end
+
+    test "rank of a series of floats (method: ordinal)" do
+      s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
+      r = Series.rank(s, method: "ordinal")
+      assert Series.to_list(r) === [8, 2, 5, 3, 9, 10, 6, 7, 1, 4]
+    end
+
+    test "rank of a series of floats (method: min)" do
+      s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
+      r = Series.rank(s, method: "min")
+      assert Series.to_list(r) === [8, 2, 5, 3, 9, 10, 6, 6, 1, 3]
+    end
+
+    test "rank of a series of floats (method: max)" do
+      s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
+      r = Series.rank(s, method: "max")
+      assert Series.to_list(r) === [8, 2, 5, 4, 9, 10, 7, 7, 1, 4]
+    end
+
+    test "rank of a series of floats (method: dense)" do
+      s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
+      r = Series.rank(s, method: "dense")
+      assert Series.to_list(r) === [6, 2, 4, 3, 7, 8, 5, 5, 1, 3]
+    end
+
+    test "rank of a series of floats (method: random)" do
+      s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
+      r = Series.rank(s, method: "random", seed: 4242)
+      assert Series.to_list(r) === [8, 2, 5, 4, 9, 10, 7, 6, 1, 3]
+    end
+
+    test "rank of a float series with a nan" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
+      r = Series.rank(s)
+      assert Series.to_list(r) === [2.0, 4.0, 5.0, nil, 3.0, 1.0, 8.0, 6.0]
+    end
+
+    test "rank of a float series with infinity positive" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
+      r = Series.rank(s)
+      assert Series.to_list(r) === [2.0, 4.0, 5.0, nil, 3.0, 1.0, 8.0, 6.0]
+    end
+
+    test "rank of a float series with infinity negative" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
+      r = Series.rank(s)
+      assert Series.to_list(r) === [3.0, 5.0, 6.0, nil, 4.0, 2.0, 1.0, 7.0]
+    end
+  end
+
   describe "skew/2" do
     test "returns the skew of an integer series" do
       s = Series.from_list([1, 2, 3, nil, 1])
