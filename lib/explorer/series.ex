@@ -1268,7 +1268,19 @@ defmodule Explorer.Series do
   def mask(series, %Series{} = mask), do: apply_series(series, :mask, [mask])
 
   @doc """
-  Assign ranks to data, dealing with ties appropriately.
+  Assign ranks to data with appropriate handling of tied values.
+
+  ## Options
+
+  * `:method` - Determine how ranks are assigned to tied elements. The following methods are available:
+    - `"average"` : Each value receives the average rank that would be assigned to all tied values. (default)
+    - `"min"` : Tied values are assigned the minimum rank. Also known as "competition" ranking.
+    - `"max"` : Tied values are assigned the maximum of their ranks.
+    - `"dense"` : Similar to `"min"`, but the rank of the next highest element is assigned the rank immediately after those assigned to the tied elements.
+    - `"ordinal"` : Each value is given a distinct rank based on its occurrence in the series.
+    - `"random"` : Similar to `"ordinal"`, but the rank for ties is not dependent on the order that the values occur in the Series.
+  * `:descending` - Rank in descending order.
+  * `:seed` - An integer to be used as a random seed. If nil, a random value between 0 and 2^64 − 1 will be used. (default: nil)
 
   ## Examples
 
