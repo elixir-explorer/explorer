@@ -946,6 +946,30 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "valid skew dtype" do
+      df = DF.new(a: [1, 2, 3, 1, 2, 23, 30])
+
+      df1 = DF.mutate(df, c: skew(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 1, 2, 23, 30],
+               c: [
+                 1.0273558639184455,
+                 1.0273558639184455,
+                 1.0273558639184455,
+                 1.0273558639184455,
+                 1.0273558639184455,
+                 1.0273558639184455,
+                 1.0273558639184455
+               ]
+             }
+
+      assert df1.dtypes == %{
+               "a" => :integer,
+               "c" => :float
+             }
+    end
+
     test "adds some columns with select functions" do
       a = Series.from_list([true, false, true])
       b = Series.from_list([3, 4, 2])
