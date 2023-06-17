@@ -410,8 +410,6 @@ defmodule Explorer.Backend.LazySeries do
 
     if aggregations?(args), do: raise_agg_inside_window(:window_standard_deviation)
 
-    dtype = resolve_numeric_dtype(:window_standard_deviation, [series | List.wrap(weights)])
-
     data = new(:window_standard_deviation, args, false)
 
     Backend.Series.new(data, :float)
