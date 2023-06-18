@@ -149,7 +149,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:integer), do: "i64"
   def internal_from_dtype(:string), do: "str"
 
-  defp error_message({_err_type, error}) when is_binary(error), do: error
+  defp error_message(error) when is_binary(error), do: error
   defp error_message(error), do: inspect(error)
 
   def parquet_compression(nil, _), do: :uncompressed

@@ -1423,7 +1423,7 @@ defmodule Explorer.Series do
       iex> s1 = Explorer.Series.from_list([<<1>>, <<239, 191, 19>>], dtype: :binary)
       iex> s2 = Explorer.Series.from_list([<<3>>, <<4>>], dtype: :binary)
       iex> Explorer.Series.format([s1, s2])
-      ** (RuntimeError) External error: invalid utf-8 sequence
+      ** (RuntimeError) Polars Error: External error: invalid utf-8 sequence
   """
   @doc type: :shape
   @spec format([Series.t() | String.t()]) :: Series.t()
