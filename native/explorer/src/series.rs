@@ -625,6 +625,19 @@ pub fn s_window_min(
     Ok(ExSeries::new(s1))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_window_standard_deviation(
+    series: ExSeries,
+    window_size: usize,
+    weights: Option<Vec<f64>>,
+    min_periods: Option<usize>,
+    center: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let s1 = series.rolling_std(opts.into())?;
+    Ok(ExSeries::new(s1))
+}
+
 // Used for rolling functions - also see "expressions" module
 pub fn rolling_opts(
     window_size: usize,

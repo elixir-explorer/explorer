@@ -568,6 +568,19 @@ init_window_expr_fun!(expr_window_min, rolling_min);
 init_window_expr_fun!(expr_window_sum, rolling_sum);
 init_window_expr_fun!(expr_window_mean, rolling_mean);
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn expr_window_standard_deviation(
+    data: ExExpr,
+    window_size: usize,
+    weights: Option<Vec<f64>>,
+    min_periods: Option<usize>,
+    center: bool,
+) -> ExExpr {
+    let expr = data.clone_inner();
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    ExExpr::new(expr.rolling_std(opts).cast(DataType::Float64))
+}
+
 #[rustler::nif]
 pub fn expr_cumulative_min(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();

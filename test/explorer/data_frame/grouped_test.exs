@@ -553,7 +553,8 @@ defmodule Explorer.DataFrame.GroupedTest do
             f: Series.cumulative_max(a),
             g: Series.cumulative_min(a),
             h: Series.cumulative_sum(a),
-            i: Series.cumulative_max(a, reverse: true)
+            i: Series.cumulative_max(a, reverse: true),
+            j: Series.window_standard_deviation(a, 2)
           ]
         end)
 
@@ -567,6 +568,18 @@ defmodule Explorer.DataFrame.GroupedTest do
                g: [1, 1, 1, 1, 1, 6, 6, 6, 6, 6],
                h: [1, 3, 6, 10, 15, 6, 13, 21, 30, 40],
                i: [5, 5, 5, 5, 5, 10, 10, 10, 10, 10],
+               j: [
+                 0.0,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.0,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476
+               ],
                z: [1, 1, 1, 1, 1, 2, 2, 2, 2, 2]
              }
     end
