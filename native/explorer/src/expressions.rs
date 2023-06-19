@@ -262,6 +262,14 @@ pub fn expr_sample_frac(
 }
 
 #[rustler::nif]
+pub fn expr_rank(expr: ExExpr, method: &str, descending: bool, seed: Option<u64>) -> ExExpr {
+    let expr = expr.clone_inner();
+    let rank_options = crate::parse_rank_method_options(method, descending);
+
+    ExExpr::new(expr.rank(rank_options, seed).cast(DataType::Float64))
+}
+
+#[rustler::nif]
 pub fn expr_peaks(data: ExExpr, min_or_max: &str) -> ExExpr {
     let expr = data.clone_inner();
     let type_expr = if min_or_max == "min" {
