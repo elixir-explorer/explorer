@@ -1423,7 +1423,7 @@ defmodule Explorer.Series do
       iex> s1 = Explorer.Series.from_list([<<1>>, <<239, 191, 19>>], dtype: :binary)
       iex> s2 = Explorer.Series.from_list([<<3>>, <<4>>], dtype: :binary)
       iex> Explorer.Series.format([s1, s2])
-      ** (RuntimeError) External error: invalid utf-8 sequence
+      ** (RuntimeError) Polars Error: External error: invalid utf-8 sequence
   """
   @doc type: :shape
   @spec format([Series.t() | String.t()]) :: Series.t()
@@ -3491,6 +3491,40 @@ defmodule Explorer.Series do
   @doc type: :window
   def window_max(series, window_size, opts \\ []),
     do: apply_series(series, :window_max, [window_size | window_args(opts)])
+
+  @doc """
+  Calculate the rolling standard deviation, given a window size and optional list of weights.
+
+  ## Options
+
+    * `:weights` - An optional list of weights with the same length as the window
+      that will be multiplied elementwise with the values in the window. Defaults to `nil`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. If `nil`, it will be set equal to window size. Defaults to `1`.
+
+    * `:center` - Set the labels at the center of the window. Defaults to `false`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, 2, 1])
+      iex> Explorer.Series.window_standard_deviation(s, 2)
+      #Explorer.Series<
+        Polars[5]
+        float [0.0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476]
+      >
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, 2, 1])
+      iex> Explorer.Series.window_standard_deviation(s, 2, weights: [1.0, 2.0])
+      #Explorer.Series<
+        Polars[5]
+        float [NaN, 2.1213203435596424, 2.8284271247461903, 0.7071067811865476, 0.0]
+      >
+  """
+  @doc type: :window
+  def window_standard_deviation(series, window_size, opts \\ []) do
+    apply_series(series, :window_standard_deviation, [window_size | window_args(opts)])
+  end
 
   defp window_args(opts) do
     opts = Keyword.validate!(opts, weights: nil, min_periods: 1, center: false)

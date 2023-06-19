@@ -214,6 +214,7 @@ rustler::init!(
         expr_window_mean,
         expr_window_min,
         expr_window_sum,
+        expr_window_standard_deviation,
         expr_ewm_mean,
         // inspect expressions
         expr_describe_filter_plan,
@@ -375,6 +376,7 @@ rustler::init!(
         s_window_mean,
         s_window_min,
         s_window_sum,
+        s_window_standard_deviation,
         s_ewm_mean,
         s_in,
         s_round,

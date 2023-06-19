@@ -334,7 +334,7 @@ defmodule Explorer.SeriesTest do
     test "mixing string series with a binary that is an invalid string" do
       s1 = Series.from_list(["1", "2", nil, "4"])
 
-      assert_raise RuntimeError, "cannot cast to string", fn ->
+      assert_raise RuntimeError, "Generic Error: cannot cast to string", fn ->
         Series.fill_missing(s1, <<239, 191, 19>>)
       end
     end
@@ -493,9 +493,9 @@ defmodule Explorer.SeriesTest do
     test "boolean series with mean strategy" do
       s1 = Series.from_list([true, nil, false])
 
-      assert_raise RuntimeError, fn ->
-        Series.fill_missing(s1, :mean)
-      end
+      assert_raise RuntimeError,
+                   "Polars Error: invalid operation: `mean` operation not supported for dtype `Boolean`",
+                   fn -> Series.fill_missing(s1, :mean) end
     end
 
     test "with nan" do
@@ -1811,7 +1811,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, -2, 3])
 
-      assert_raise RuntimeError, "negative exponent with an integer base", fn ->
+      assert_raise RuntimeError, "Generic Error: negative exponent with an integer base", fn ->
         Series.pow(s1, s2)
       end
     end
@@ -1940,7 +1940,7 @@ defmodule Explorer.SeriesTest do
     test "pow of an integer series that contains negative integer with an integer scalar value on the left-hand side" do
       s1 = Series.from_list([1, -2, 3])
 
-      assert_raise RuntimeError, "negative exponent with an integer base", fn ->
+      assert_raise RuntimeError, "Polars Error: negative exponent with an integer base", fn ->
         Series.pow(2, s1)
       end
     end
@@ -2472,7 +2472,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list([<<3>>, <<4>>], dtype: :binary)
 
       assert_raise RuntimeError,
-                   "External error: invalid utf-8 sequence",
+                   "Polars Error: External error: invalid utf-8 sequence",
                    fn -> Series.format([s1, s2]) end
     end
 
@@ -3196,16 +3196,18 @@ defmodule Explorer.SeriesTest do
     test "from a series of indices with a negative number" do
       s = Series.from_list(["a", "b", "c"])
 
-      assert_raise RuntimeError, "slice/2 expects a series of positive integers", fn ->
-        Series.slice(s, Series.from_list([0, 2, -1]))
-      end
+      assert_raise RuntimeError,
+                   "Generic Error: slice/2 expects a series of positive integers",
+                   fn ->
+                     Series.slice(s, Series.from_list([0, 2, -1]))
+                   end
     end
 
     test "from a series of indices out-of-bounds" do
       s = Series.from_list(["a", "b", "c"])
 
       assert_raise RuntimeError,
-                   "slice/2 cannot select from indices that are out-of-bounds",
+                   "Generic Error: slice/2 cannot select from indices that are out-of-bounds",
                    fn ->
                      Series.slice(s, Series.from_list([0, 2, 20]))
                    end
@@ -3653,6 +3655,68 @@ defmodule Explorer.SeriesTest do
     test "standard deviation of a float series with infinity negative" do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
       assert Series.standard_deviation(s) === :nan
+    end
+  end
+
+  describe "window_standard_deviation/2" do
+    test "window standard deviation of an integer series" do
+      s = Series.from_list([1, 2, nil, 3])
+      ws = Series.window_standard_deviation(s, 2)
+      assert Series.to_list(ws) === [0.0, 0.7071067811865476, 0.0, 0.0]
+    end
+
+    test "window standard deviation of a float series" do
+      s = Series.from_list([1.0, 2.0, nil, 3.0])
+      ws = Series.window_standard_deviation(s, 2)
+      assert Series.to_list(ws) === [0.0, 0.7071067811865476, 0.0, 0.0]
+    end
+
+    test "window standard deviation of a float series with a nan" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
+      ws = Series.window_standard_deviation(s, 2)
+
+      assert Series.to_list(ws) === [
+               0.0,
+               3.0405591591021546,
+               0.7778174593052014,
+               0.0,
+               0.0,
+               7.212489168102784,
+               :nan,
+               :nan
+             ]
+    end
+
+    test "window standard deviation of a float series with infinity positive" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
+      ws = Series.window_standard_deviation(s, 2)
+
+      assert Series.to_list(ws) === [
+               0.0,
+               3.0405591591021546,
+               0.7778174593052014,
+               0.0,
+               0.0,
+               7.212489168102784,
+               :nan,
+               :nan
+             ]
+    end
+
+    test "window standard deviation of a float series with infinity negative" do
+      s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
+      ws = Series.window_standard_deviation(s, 2)
+
+      assert Series.to_list(ws) === [
+               0.0,
+               3.0405591591021546,
+               0.7778174593052014,
+               0.0,
+               0.0,
+               7.212489168102784,
+               :nan,
+               :nan
+             ]
     end
   end
 

@@ -66,6 +66,7 @@ defmodule Explorer.Backend.LazySeries do
     window_mean: 5,
     window_min: 5,
     window_sum: 5,
+    window_standard_deviation: 5,
     ewm_mean: 5,
     # Transformation
     column: 1,
@@ -135,7 +136,12 @@ defmodule Explorer.Backend.LazySeries do
     :n_distinct
   ]
 
-  @window_fun_operations [:window_max, :window_mean, :window_min, :window_sum]
+  @window_fun_operations [
+    :window_max,
+    :window_mean,
+    :window_min,
+    :window_sum
+  ]
   @cumulative_operations [
     :cumulative_max,
     :cumulative_min,
@@ -396,6 +402,17 @@ defmodule Explorer.Backend.LazySeries do
 
       Backend.Series.new(data, dtype)
     end
+  end
+
+  @impl true
+  def window_standard_deviation(%Series{} = series, window_size, weights, min_periods, center) do
+    args = [lazy_series!(series), window_size, weights, min_periods, center]
+
+    if aggregations?(args), do: raise_agg_inside_window(:window_standard_deviation)
+
+    data = new(:window_standard_deviation, args, false)
+
+    Backend.Series.new(data, :float)
   end
 
   for op <- @cumulative_operations do
