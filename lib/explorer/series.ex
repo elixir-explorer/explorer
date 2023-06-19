@@ -1268,6 +1268,76 @@ defmodule Explorer.Series do
   def mask(series, %Series{} = mask), do: apply_series(series, :mask, [mask])
 
   @doc """
+  Assign ranks to data with appropriate handling of tied values.
+
+  ## Options
+
+  * `:method` - Determine how ranks are assigned to tied elements. The following methods are available:
+    - `"average"` : Each value receives the average rank that would be assigned to all tied values. (default)
+    - `"min"` : Tied values are assigned the minimum rank. Also known as "competition" ranking.
+    - `"max"` : Tied values are assigned the maximum of their ranks.
+    - `"dense"` : Similar to `"min"`, but the rank of the next highest element is assigned the rank immediately after those assigned to the tied elements.
+    - `"ordinal"` : Each value is given a distinct rank based on its occurrence in the series.
+    - `"random"` : Similar to `"ordinal"`, but the rank for ties is not dependent on the order that the values occur in the Series.
+  * `:descending` - Rank in descending order.
+  * `:seed` - An integer to be used as a random seed. If nil, a random value between 0 and 2^64 − 1 will be used. (default: nil)
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([3, 6, 1, 1, 6])
+      iex> Explorer.Series.rank(s)
+      #Explorer.Series<
+        Polars[5]
+        float [3.0, 4.5, 1.5, 1.5, 4.5]
+      >
+
+      iex> s = Explorer.Series.from_list([1.1, 2.4, 3.2])
+      iex> Explorer.Series.rank(s, method: "ordinal")
+      #Explorer.Series<
+        Polars[3]
+        integer [1, 2, 3]
+      >
+
+      iex> s = Explorer.Series.from_list([ ~N[2022-07-07 17:44:13.020548], ~N[2022-07-07 17:43:08.473561], ~N[2022-07-07 17:45:00.116337] ])
+      iex> Explorer.Series.rank(s, method: "average")
+      #Explorer.Series<
+        Polars[3]
+        float [2.0, 1.0, 3.0]
+      >
+
+      iex> s = Explorer.Series.from_list([3, 6, 1, 1, 6])
+      iex> Explorer.Series.rank(s, method: "min")
+      #Explorer.Series<
+        Polars[5]
+        integer [3, 4, 1, 1, 4]
+      >
+
+      iex> s = Explorer.Series.from_list([3, 6, 1, 1, 6])
+      iex> Explorer.Series.rank(s, method: "dense")
+      #Explorer.Series<
+        Polars[5]
+        integer [2, 3, 1, 1, 3]
+      >
+
+
+      iex> s = Explorer.Series.from_list([3, 6, 1, 1, 6])
+      iex> Explorer.Series.rank(s, method: "random", seed: 42)
+      #Explorer.Series<
+        Polars[5]
+        integer [3, 4, 2, 1, 5]
+      >
+  """
+  @doc type: :element_wise
+  @spec rank(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  def rank(series, opts \\ [])
+
+  def rank(series, opts) do
+    opts = Keyword.validate!(opts, method: "average", descending: false, seed: nil)
+
+    apply_series(series, :rank, [opts[:method], opts[:descending], opts[:seed]])
+  end
+
+  @doc """
   Returns a slice of the series, with `size` elements starting at `offset`.
 
   ## Examples

@@ -94,6 +94,7 @@ defmodule Explorer.Backend.LazySeries do
     variance: 1,
     standard_deviation: 1,
     quantile: 2,
+    rank: 4,
     product: 1,
     first: 1,
     last: 1,
@@ -451,11 +452,19 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def rank(%Series{} = series, method, descending, seed) do
+    args = [series_or_lazy_series!(series), method, descending, seed]
+    data = new(:rank, args, true)
+
+    Backend.Series.new(data, series.dtype)
+  end
+
+  @impl true
   def skew(%Series{} = series, bias) do
     args = [series_or_lazy_series!(series), bias]
     data = new(:skew, args, true)
 
-    Backend.Series.new(data, series.dtype)
+    Backend.Series.new(data, :float)
   end
 
   @impl true
