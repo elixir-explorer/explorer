@@ -779,3 +779,45 @@ pub fn expr_atan(expr: ExExpr) -> ExExpr {
 
     ExExpr::new(expr.arctan())
 }
+
+#[rustler::nif]
+pub fn expr_day_of_week(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().weekday().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_month(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().month().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_year(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().year().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_hour(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().hour().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_minute(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().minute().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_second(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().second().cast(DataType::Int64))
+}

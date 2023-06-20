@@ -4100,6 +4100,124 @@ defmodule Explorer.Series do
   # Date / DateTime
 
   @doc """
+  Returns the month number starting from 1. The return value ranges from 1 to 12.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil])
+      iex> Explorer.Series.month(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 2, 3, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-02-16 23:59:59.999999], ~N[2023-03-20 12:00:00], nil])
+      iex> Explorer.Series.month(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 2, 3, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec month(Series.t()) :: Series.t()
+  def month(%Series{dtype: dtype} = series) when K.in(dtype, [:date, :datetime]),
+    do: apply_series_list(:month, [series])
+
+  def month(%Series{dtype: dtype}),
+    do: dtype_error("month/1", dtype, [:date, :datetime])
+
+  @doc """
+  Returns the year number in the calendar date.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil])
+      iex> Explorer.Series.year(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [2023, 2022, 2021, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.year(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [2023, 2022, 2021, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec year(Series.t()) :: Series.t()
+  def year(%Series{dtype: dtype} = series) when K.in(dtype, [:date, :datetime]),
+    do: apply_series_list(:year, [series])
+
+  def year(%Series{dtype: dtype}),
+    do: dtype_error("year/1", dtype, [:date, :datetime])
+
+  @doc """
+  Returns the hour number from 0 to 23.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.hour(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [0, 23, 12, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec hour(Series.t()) :: Series.t()
+  def hour(%Series{dtype: :datetime} = series),
+    do: apply_series_list(:hour, [series])
+
+  def hour(%Series{dtype: dtype}),
+    do: dtype_error("hour/1", dtype, [:datetime])
+
+  @doc """
+  Returns the minute number from 0 to 59.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.minute(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [0, 59, 0, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec minute(Series.t()) :: Series.t()
+  def minute(%Series{dtype: :datetime} = series),
+    do: apply_series_list(:minute, [series])
+
+  def minute(%Series{dtype: dtype}),
+    do: dtype_error("minute/1", dtype, [:datetime])
+
+  @doc """
+  Returns the second number from 0 to 59.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.second(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [0, 59, 0, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec second(Series.t()) :: Series.t()
+  def second(%Series{dtype: :datetime} = series),
+    do: apply_series_list(:second, [series])
+
+  def second(%Series{dtype: dtype}),
+    do: dtype_error("minute/1", dtype, [:datetime])
+
+  @doc """
   Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
 
   ## Examples
