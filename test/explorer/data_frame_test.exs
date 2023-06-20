@@ -1406,6 +1406,50 @@ defmodule Explorer.DataFrameTest do
         DF.mutate(df, b: ^series)
       end
     end
+
+    test "add columns with date and datetime operations" do
+      df =
+        DF.new(
+          a: [~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil],
+          b: [
+            ~N[2023-01-15 00:00:00],
+            ~N[2023-02-16 00:00:00],
+            ~N[2023-03-20 00:00:00.000000],
+            nil
+          ]
+        )
+
+      df1 =
+        DF.mutate(df,
+          c: day_of_week(a),
+          d: day_of_week(b),
+          e: month(a),
+          f: month(b)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil],
+               b: [
+                 ~N[2023-01-15 00:00:00.000000],
+                 ~N[2023-02-16 00:00:00.000000],
+                 ~N[2023-03-20 00:00:00.000000],
+                 nil
+               ],
+               c: [7, 4, 1, nil],
+               d: [7, 4, 1, nil],
+               e: [1, 2, 3, nil],
+               f: [1, 2, 3, nil]
+             }
+
+      assert df1.dtypes == %{
+               "a" => :date,
+               "b" => :datetime,
+               "c" => :integer,
+               "d" => :integer,
+               "e" => :integer,
+               "f" => :integer
+             }
+    end
   end
 
   describe "arrange/3" do

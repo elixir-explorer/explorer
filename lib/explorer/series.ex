@@ -4100,6 +4100,35 @@ defmodule Explorer.Series do
   # Date / DateTime
 
   @doc """
+  Returns the month number starting from 1. The return value ranges from 1 to 12.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil])
+      iex> Explorer.Series.month(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 2, 3, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-02-16 23:59:59.999999], ~N[2023-03-20 12:00:00], nil])
+      iex> Explorer.Series.month(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 2, 3, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec month(Series.t()) :: Series.t()
+  def month(%Series{dtype: dtype} = series) when K.in(dtype, [:date, :datetime]),
+    do: apply_series_list(:month, [series])
+
+  def month(%Series{dtype: dtype}),
+    do: dtype_error("month/1", dtype, [:date, :datetime])
+
+  @doc """
   Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
 
   ## Examples

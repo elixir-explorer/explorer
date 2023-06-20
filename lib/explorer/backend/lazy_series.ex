@@ -113,7 +113,8 @@ defmodule Explorer.Backend.LazySeries do
     floor: 1,
     ceil: 1,
     # Date functions
-    day_of_week: 1
+    day_of_week: 1,
+    month: 1
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -521,6 +522,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def day_of_week(%Series{} = s) do
     data = new(:day_of_week, [lazy_series!(s)])
+
+    Backend.Series.new(data, :integer)
+  end
+
+  @impl true
+  def month(%Series{} = s) do
+    data = new(:month, [lazy_series!(s)])
 
     Backend.Series.new(data, :integer)
   end

@@ -225,6 +225,7 @@ defmodule Explorer.Backend.Series do
   # Date / DateTime
 
   @callback day_of_week(s) :: s
+  @callback month(s) :: s
 
   # Functions
 

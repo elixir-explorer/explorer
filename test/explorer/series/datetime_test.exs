@@ -26,5 +26,9 @@ defmodule Explorer.Series.DateTimeTest do
     test "day_of_week", %{series: series} do
       assert Series.day_of_week(series) |> Series.to_list() == [4, 3, 5]
     end
+
+    test "month", %{series: series} do
+      assert Series.month(series) |> Series.to_list() == [4, 4, 4]
+    end
   end
 end
