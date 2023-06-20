@@ -4100,11 +4100,6 @@ defmodule Explorer.Series do
   # Date / DateTime
 
   @doc """
-  <<<<<<< Updated upstream
-  =======
-  <<<<<<< Updated upstream
-  =======
-  >>>>>>> Stashed changes
   Returns the month number starting from 1. The return value ranges from 1 to 12.
 
   ## Examples
@@ -4134,8 +4129,6 @@ defmodule Explorer.Series do
     do: dtype_error("month/1", dtype, [:date, :datetime])
 
   @doc """
-  <<<<<<< Updated upstream
-  =======
   Returns the year number in the calendar date.
 
   ## Examples
