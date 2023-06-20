@@ -4211,11 +4211,11 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec second(Series.t()) :: Series.t()
-  def second(%Series{dtype: dtype} = series) when K.in(dtype, [:datetime]),
+  def second(%Series{dtype: :datetime} = series),
     do: apply_series_list(:second, [series])
 
   def second(%Series{dtype: dtype}),
-    do: dtype_error("second/1", dtype, [:datetime])
+    do: dtype_error("minute/1", dtype, [:datetime])
 
   @doc """
   Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
