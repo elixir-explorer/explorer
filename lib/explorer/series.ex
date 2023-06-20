@@ -4198,8 +4198,6 @@ defmodule Explorer.Series do
     do: dtype_error("minute/1", dtype, [:datetime])
 
   @doc """
-  >>>>>>> Stashed changes
-  >>>>>>> Stashed changes
   Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
 
   ## Examples
