@@ -4191,7 +4191,7 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec minute(Series.t()) :: Series.t()
-  def minute(%Series{dtype: dtype} = series) when K.in(dtype, [:datetime]),
+  def minute(%Series{dtype: :datetime} = series),
     do: apply_series_list(:minute, [series])
 
   def minute(%Series{dtype: dtype}),
