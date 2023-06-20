@@ -1308,6 +1308,13 @@ pub fn s_minute(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.second()?.cast(&DataType::Int64)?;
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.sin()).into();
     Ok(ExSeries::new(s1))

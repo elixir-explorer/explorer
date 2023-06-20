@@ -814,3 +814,10 @@ pub fn expr_minute(expr: ExExpr) -> ExExpr {
 
     ExExpr::new(expr.dt().minute().cast(DataType::Int64))
 }
+
+#[rustler::nif]
+pub fn expr_second(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().second().cast(DataType::Int64))
+}

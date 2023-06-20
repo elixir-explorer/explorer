@@ -1428,7 +1428,8 @@ defmodule Explorer.DataFrameTest do
           g: year(a),
           h: year(b),
           i: hour(b),
-          j: minute(b)
+          j: minute(b),
+          k: second(b)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1446,7 +1447,8 @@ defmodule Explorer.DataFrameTest do
                g: [2023, 2022, 2021, nil],
                h: [2023, 2022, 2021, nil],
                i: [1, 2, 3, nil],
-               j: [1, 2, 3, nil]
+               j: [1, 2, 3, nil],
+               k: [1, 2, 3, nil]
              }
 
       assert df1.dtypes == %{
@@ -1459,7 +1461,8 @@ defmodule Explorer.DataFrameTest do
                "g" => :integer,
                "h" => :integer,
                "i" => :integer,
-               "j" => :integer
+               "j" => :integer,
+               "k" => :integer
              }
     end
   end

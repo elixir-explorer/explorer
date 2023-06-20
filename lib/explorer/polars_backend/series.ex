@@ -577,6 +577,10 @@ defmodule Explorer.PolarsBackend.Series do
   def minute(series),
     do: Shared.apply_series(series, :s_minute)
 
+  @impl true
+  def second(series),
+    do: Shared.apply_series(series, :s_second)
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

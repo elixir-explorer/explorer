@@ -4198,6 +4198,26 @@ defmodule Explorer.Series do
     do: dtype_error("minute/1", dtype, [:datetime])
 
   @doc """
+  Returns the second number from 0 to 59.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.second(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [0, 59, 0, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec second(Series.t()) :: Series.t()
+  def second(%Series{dtype: dtype} = series) when K.in(dtype, [:datetime]),
+    do: apply_series_list(:second, [series])
+
+  def second(%Series{dtype: dtype}),
+    do: dtype_error("second/1", dtype, [:datetime])
+
+  @doc """
   Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
 
   ## Examples
