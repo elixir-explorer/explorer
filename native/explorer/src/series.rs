@@ -1287,6 +1287,27 @@ pub fn s_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.year()?.cast(&DataType::Int64)?;
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_hour(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.hour()?.cast(&DataType::Int64)?;
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_minute(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.minute()?.cast(&DataType::Int64)?;
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.sin()).into();
     Ok(ExSeries::new(s1))

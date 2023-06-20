@@ -1410,11 +1410,11 @@ defmodule Explorer.DataFrameTest do
     test "add columns with date and datetime operations" do
       df =
         DF.new(
-          a: [~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil],
+          a: [~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil],
           b: [
-            ~N[2023-01-15 00:00:00],
-            ~N[2023-02-16 00:00:00],
-            ~N[2023-03-20 00:00:00.000000],
+            ~N[2023-01-15 01:01:01],
+            ~N[2022-02-16 02:02:02],
+            ~N[2021-03-20 03:03:03.003030],
             nil
           ]
         )
@@ -1424,21 +1424,29 @@ defmodule Explorer.DataFrameTest do
           c: day_of_week(a),
           d: day_of_week(b),
           e: month(a),
-          f: month(b)
+          f: month(b),
+          g: year(a),
+          h: year(b),
+          i: hour(b),
+          j: minute(b)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               a: [~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil],
+               a: [~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil],
                b: [
-                 ~N[2023-01-15 00:00:00.000000],
-                 ~N[2023-02-16 00:00:00.000000],
-                 ~N[2023-03-20 00:00:00.000000],
+                 ~N[2023-01-15 01:01:01.000000],
+                 ~N[2022-02-16 02:02:02.000000],
+                 ~N[2021-03-20 03:03:03.003030],
                  nil
                ],
-               c: [7, 4, 1, nil],
-               d: [7, 4, 1, nil],
+               c: [7, 3, 6, nil],
+               d: [7, 3, 6, nil],
                e: [1, 2, 3, nil],
-               f: [1, 2, 3, nil]
+               f: [1, 2, 3, nil],
+               g: [2023, 2022, 2021, nil],
+               h: [2023, 2022, 2021, nil],
+               i: [1, 2, 3, nil],
+               j: [1, 2, 3, nil]
              }
 
       assert df1.dtypes == %{
@@ -1447,7 +1455,11 @@ defmodule Explorer.DataFrameTest do
                "c" => :integer,
                "d" => :integer,
                "e" => :integer,
-               "f" => :integer
+               "f" => :integer,
+               "g" => :integer,
+               "h" => :integer,
+               "i" => :integer,
+               "j" => :integer
              }
     end
   end

@@ -565,6 +565,18 @@ defmodule Explorer.PolarsBackend.Series do
   def month(series),
     do: Shared.apply_series(series, :s_month)
 
+  @impl true
+  def year(series),
+    do: Shared.apply_series(series, :s_year)
+
+  @impl true
+  def hour(series),
+    do: Shared.apply_series(series, :s_hour)
+
+  @impl true
+  def minute(series),
+    do: Shared.apply_series(series, :s_minute)
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

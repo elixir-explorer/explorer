@@ -30,5 +30,17 @@ defmodule Explorer.Series.DateTimeTest do
     test "month", %{series: series} do
       assert Series.month(series) |> Series.to_list() == [4, 4, 4]
     end
+
+    test "year", %{series: series} do
+      assert Series.year(series) |> Series.to_list() == [2023, 2023, 2023]
+    end
+
+    test "hour", %{series: series} do
+      assert Series.hour(series) |> Series.to_list() == [16, 16, 16]
+    end
+
+    test "minute", %{series: series} do
+      assert Series.minute(series) |> Series.to_list() == [14, 14, 14]
+    end
   end
 end
