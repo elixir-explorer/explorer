@@ -800,7 +800,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.strptime(s, "%Y-%m-%d %H:%M:%S")
       #Explorer.Series<
         Polars[3]
-        datetime [~N[2023-01-05 12:34:56.000000], nil, nil]
+        datetime [2023-01-05 12:34:56.000000, nil, nil]
       >
   """
   @doc type: :element_wise
