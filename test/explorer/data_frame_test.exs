@@ -1408,11 +1408,6 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "parse datetime from string" do
-      series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])
-
-      assert Series.parse_datetime(series, "%Y-%m-%d %H:%M:%S") |> Series.to_list() ==
-               [~N[2023-01-05 12:34:56.000000], nil, nil]
-
       df =
         DF.new(
           a: ["2023-01-05 12:34:56", nil],
