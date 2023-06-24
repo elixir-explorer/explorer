@@ -1407,7 +1407,6 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
-    @tag this: true
     test "parse datetime from string" do
       series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])
 
