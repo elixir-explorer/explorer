@@ -794,6 +794,8 @@ defmodule Explorer.Series do
   @doc """
   Converts a string to datetime.
 
+  For the format string specification, refer to the [chrono crate documentation](https://docs.rs/chrono/latest/chrono/format/strftime/index.html).
+
   ## Examples
 
       iex> s = Explorer.Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])
