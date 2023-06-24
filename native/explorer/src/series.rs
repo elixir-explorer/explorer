@@ -1316,21 +1316,17 @@ pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, ExplorerError> {
-    // Can't use `.as_datetime_not_exact(Some(format_string), TimeUnit::Microseconds, None)?`
-    // because it is strict, and the NIF panics.
     let s1 = s
         .utf8()?
-        .into_iter()
-        .map(|d| match d {
-            Some(dt_str) => match chrono::NaiveDateTime::parse_from_str(dt_str, format_string) {
-                Ok(dt) => Some(dt.timestamp_micros()),
-                _ => None,
-            },
-            _ => None,
-        })
-        .collect::<Int64Chunked>()
-        .into_series()
-        .cast(&DataType::Datetime(TimeUnit::Microseconds, None))?;
+        .as_datetime(
+            Some(format_string),
+            TimeUnit::Microseconds,
+            true,
+            false,
+            false,
+            None,
+        )?
+        .into_series();
     Ok(ExSeries::new(s1))
 }
 
