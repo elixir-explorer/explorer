@@ -795,12 +795,12 @@ defmodule Explorer.Series do
     TODO
   """
   @doc type: :element_wise
-  @spec parse_datetime(series :: Series.t(), format_string :: String.t()) :: Series.t()
-  def parse_datetime(%Series{dtype: dtype} = series, format_string) when K.in(dtype, [:string]),
-    do: apply_series(series, :parse_datetime, [format_string])
+  @spec strptime(series :: Series.t(), format_string :: String.t()) :: Series.t()
+  def strptime(%Series{dtype: dtype} = series, format_string) when K.in(dtype, [:string]),
+    do: apply_series(series, :strptime, [format_string])
 
-  def parse_datetime(%Series{dtype: dtype}, _format_string),
-    do: dtype_error("parse_datetime/2", dtype, [:string])
+  def strptime(%Series{dtype: dtype}, _format_string),
+    do: dtype_error("strptime/2", dtype, [:string])
 
   # Introspection
 

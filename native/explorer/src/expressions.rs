@@ -781,7 +781,7 @@ pub fn expr_atan(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_parse_datetime(expr: ExExpr, format_string: &str) -> ExExpr {
+pub fn expr_strptime(expr: ExExpr, format_string: &str) -> ExExpr {
     let options = StrptimeOptions {
         format: Some(format_string.to_string()),
         strict: false,

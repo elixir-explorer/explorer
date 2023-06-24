@@ -227,7 +227,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_equal(_s, _rhs), do: err()
   def s_exp(_s), do: err()
   def s_abs(_s), do: err()
-  def s_parse_datetime(_s, _format_string), do: err()
+  def s_strptime(_s, _format_string), do: err()
   def s_fill_missing_with_strategy(_s, _strategy), do: err()
   def s_fill_missing_with_boolean(_s, _value), do: err()
   def s_fill_missing_with_bin(_s, _value), do: err()

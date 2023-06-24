@@ -48,7 +48,7 @@ defmodule Explorer.Backend.LazySeries do
     cast: 2,
     select: 3,
     abs: 1,
-    parse_datetime: 2,
+    strptime: 2,
 
     # Trigonometric functions
     acos: 1,
@@ -683,8 +683,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def parse_datetime(%Series{} = series, format_string) do
-    data = new(:parse_datetime, [lazy_series!(series), format_string])
+  def strptime(%Series{} = series, format_string) do
+    data = new(:strptime, [lazy_series!(series), format_string])
 
     Backend.Series.new(data, :datetime)
   end

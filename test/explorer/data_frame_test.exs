@@ -1416,8 +1416,8 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          c: parse_datetime(a, "%Y-%m-%d %H:%M:%S"),
-          d: parse_datetime(b, "%Y/%d/%m %H:%M:%S")
+          c: strptime(a, "%Y-%m-%d %H:%M:%S"),
+          d: strptime(b, "%Y/%d/%m %H:%M:%S")
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{

@@ -110,7 +110,7 @@ defmodule Explorer.PolarsBackend.Expression do
     ewm_mean: 5,
 
     # Conversions
-    parse_datetime: 2,
+    strptime: 2,
 
     # Strings
     contains: 2,

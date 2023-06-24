@@ -1315,7 +1315,7 @@ pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_parse_datetime(s: ExSeries, format_string: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, ExplorerError> {
     // Can't use `.as_datetime_not_exact(Some(format_string), TimeUnit::Microseconds, None)?`
     // because it is strict, and the NIF panics.
     let s1 = s
