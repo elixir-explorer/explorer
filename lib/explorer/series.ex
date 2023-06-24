@@ -792,7 +792,16 @@ defmodule Explorer.Series do
   def cast(_series, dtype), do: dtype_error("cast/2", dtype, @valid_dtypes)
 
   @doc """
-    TODO
+  Converts a string to datetime.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])
+      iex> Explorer.Series.strptime(s, "%Y-%m-%d %H:%M:%S")
+      #Explorer.Series<
+        Polars[3]
+        datetime [~N[2023-01-05 12:34:56.000000], nil, nil]
+      >
   """
   @doc type: :element_wise
   @spec strptime(series :: Series.t(), format_string :: String.t()) :: Series.t()
