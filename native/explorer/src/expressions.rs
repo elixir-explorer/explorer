@@ -781,9 +781,9 @@ pub fn expr_atan(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_strptime(expr: ExExpr, format_string: &str) -> ExExpr {
+pub fn expr_strptime(expr: ExExpr, format_string: Option<&str>) -> ExExpr {
     let options = StrptimeOptions {
-        format: Some(format_string.to_string()),
+        format: format_string.map(|format_str| format_str.to_string()),
         strict: false,
         exact: true,
         cache: true,

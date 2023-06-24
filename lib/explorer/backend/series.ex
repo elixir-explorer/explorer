@@ -23,7 +23,7 @@ defmodule Explorer.Backend.Series do
   @callback to_iovec(s) :: [binary()]
   @callback cast(s, dtype) :: s
   @callback categorise(s, s) :: s
-  @callback strptime(s, String.t()) :: s
+  @callback strptime(s, String.t() | nil) :: s
 
   # Introspection
 
