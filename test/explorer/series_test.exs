@@ -3841,5 +3841,18 @@ defmodule Explorer.SeriesTest do
       assert Series.strptime(series, "%Y-%m-%d %H:%M:%S") |> Series.to_list() ==
                [~N[2023-01-05 12:34:56.000000], nil, nil]
     end
+
+    @tag this: true
+    test "ensure compatibility with chrono's format" do
+      for {dt, dt_str, format_string} <- [
+            {~N[2001-07-08 00:00:00.000000], "07/08/01", "%D"},
+            {~N[2000-11-03 00:00:00.000000], "11/03/00 % \t \n", "%D %% %t %n"},
+            {~N[1987-06-05 00:35:00.026000], "1987-06-05 00:34:60.026", "%F %X%.3f"},
+            {~N[1999-03-01 00:00:00.000000], "1999/3/1", "%Y/%-m/%-d"}
+          ] do
+        series = Series.from_list([dt_str])
+        assert Series.strptime(series, format_string) |> Series.to_list() == [dt]
+      end
+    end
   end
 end

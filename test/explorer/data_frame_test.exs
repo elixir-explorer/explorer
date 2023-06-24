@@ -1407,6 +1407,7 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
+    @tag this: true
     test "parse datetime from string" do
       df =
         DF.new(
