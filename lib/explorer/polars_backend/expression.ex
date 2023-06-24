@@ -109,6 +109,9 @@ defmodule Explorer.PolarsBackend.Expression do
     window_standard_deviation: 5,
     ewm_mean: 5,
 
+    # Conversions
+    parse_datetime: 2,
+
     # Strings
     contains: 2,
     trim: 1,

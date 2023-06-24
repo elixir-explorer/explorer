@@ -1315,6 +1315,24 @@ pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_parse_datetime(s: ExSeries, format_string: &str) -> Result<ExSeries, ExplorerError> {
+    let s1 = s
+        .utf8()?
+        .into_iter()
+        .map(|d| match d {
+            Some(dt_str) => match chrono::NaiveDateTime::parse_from_str(dt_str, format_string) {
+                Ok(dt) => Some(dt.timestamp_micros()),
+                _ => None,
+            },
+            _ => None,
+        })
+        .collect::<Int64Chunked>()
+        .into_series()
+        .cast(&DataType::Datetime(TimeUnit::Microseconds, None))?;
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.sin()).into();
     Ok(ExSeries::new(s1))

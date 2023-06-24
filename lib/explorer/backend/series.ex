@@ -23,6 +23,7 @@ defmodule Explorer.Backend.Series do
   @callback to_iovec(s) :: [binary()]
   @callback cast(s, dtype) :: s
   @callback categorise(s, s) :: s
+  @callback parse_datetime(s, String.t()) :: s
 
   # Introspection
 
