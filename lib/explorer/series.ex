@@ -792,9 +792,12 @@ defmodule Explorer.Series do
   def cast(_series, dtype), do: dtype_error("cast/2", dtype, @valid_dtypes)
 
   @doc """
-  Converts a string series to a datetime series.
+  Converts a string series to a datetime series with a given `format_string`.
 
-  For the format string specification, refer to the [chrono crate documentation](https://docs.rs/chrono/latest/chrono/format/strftime/index.html).
+  For the format string specification, refer to the
+  [chrono crate documentation](https://docs.rs/chrono/latest/chrono/format/strftime/).
+
+  Use `cast(series, :datetime)` if you prefer the format to be inferred (if possible).
 
   ## Examples
 
