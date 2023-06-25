@@ -3842,13 +3842,6 @@ defmodule Explorer.SeriesTest do
                [~N[2023-01-05 12:34:56.000000], nil, nil]
     end
 
-    test "parse datetime from string with inferred format" do
-      series = Series.from_list(["2021/12/31 12:54:98", "2020/11/30 11:53:97", "XYZ"])
-
-      assert Series.strptime(series) |> Series.to_list() ==
-               [~N[2021-12-31 00:00:00.000000], ~N[2020-11-30 00:00:00.000000], nil]
-    end
-
     test "ensure compatibility with chrono's format" do
       for {dt, dt_str, format_string} <- [
             {~N[2001-07-08 00:00:00.000000], "07/08/01", "%D"},

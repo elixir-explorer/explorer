@@ -1315,11 +1315,11 @@ pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_strptime(s: ExSeries, format_string: Option<&str>) -> Result<ExSeries, ExplorerError> {
+pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, ExplorerError> {
     let s1 = s
         .utf8()?
         .as_datetime(
-            format_string,
+            Some(format_string),
             TimeUnit::Microseconds,
             true,
             false,

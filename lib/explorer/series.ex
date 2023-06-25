@@ -807,8 +807,6 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec strptime(series :: Series.t(), format_string :: String.t() | nil) :: Series.t()
-  def strptime(series, format_string \\ nil)
-
   def strptime(%Series{dtype: dtype} = series, format_string) when K.in(dtype, [:string]),
     do: apply_series(series, :strptime, [format_string])
 
