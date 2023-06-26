@@ -816,6 +816,31 @@ defmodule Explorer.Series do
   def strptime(%Series{dtype: dtype}, _format_string),
     do: dtype_error("strptime/2", dtype, [:string])
 
+  @doc """
+  Converts a datetime series to a string series.
+
+  For the format string specification, refer to the
+  [chrono crate documentation](https://docs.rs/chrono/latest/chrono/format/strftime/index.html).
+
+  Use `cast(series, :string)` for the default `"%Y-%m-%d %H:%M:%S%.6f"` format.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-05 12:34:56], nil])
+      iex> Explorer.Series.strftime(s, "%Y/%m/%d %H:%M:%S")
+      #Explorer.Series<
+        Polars[2]
+        string ["2023/01/05 12:34:56", nil]
+      >
+  """
+  @doc type: :element_wise
+  @spec strftime(series :: Series.t(), format_string :: String.t()) :: Series.t()
+  def strftime(%Series{dtype: dtype} = series, format_string) when K.in(dtype, [:datetime]),
+    do: apply_series(series, :strftime, [format_string])
+
+  def strftime(%Series{dtype: dtype}, _format_string),
+    do: dtype_error("strftime/2", dtype, [:datetime])
+
   # Introspection
 
   @doc """

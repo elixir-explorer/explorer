@@ -3834,7 +3834,7 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "strptime/2" do
+  describe "strptime/2 and strftime/2" do
     test "parse datetime from string" do
       series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])
 
@@ -3842,15 +3842,24 @@ defmodule Explorer.SeriesTest do
                [~N[2023-01-05 12:34:56.000000], nil, nil]
     end
 
+    test "convert datetime to string" do
+      series = Series.from_list([~N[2023-01-05 12:34:56], nil])
+
+      assert Series.strftime(series, "%Y-%m-%d %H:%M:%S") |> Series.to_list() ==
+               ["2023-01-05 12:34:56", nil]
+    end
+
     test "ensure compatibility with chrono's format" do
       for {dt, dt_str, format_string} <- [
             {~N[2001-07-08 00:00:00.000000], "07/08/01", "%D"},
             {~N[2000-11-03 00:00:00.000000], "11/03/00 % \t \n", "%D %% %t %n"},
-            {~N[1987-06-05 00:35:00.026000], "1987-06-05 00:34:60.026", "%F %X%.3f"},
+            {~N[1987-06-05 00:35:00.026000], "1987-06-05 00:35:00.026", "%F %X%.3f"},
             {~N[1999-03-01 00:00:00.000000], "1999/3/1", "%Y/%-m/%-d"}
           ] do
         series = Series.from_list([dt_str])
         assert Series.strptime(series, format_string) |> Series.to_list() == [dt]
+        series = Series.from_list([dt])
+        assert Series.strftime(series, format_string) |> Series.to_list() == [dt_str]
       end
     end
   end
