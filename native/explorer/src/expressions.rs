@@ -6,7 +6,7 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{col, concat_str, when, IntoLazy, LiteralValue, SortOptions};
-use polars::prelude::{DataType, Expr, Literal};
+use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
 use crate::datatypes::{ExDate, ExDateTime};
 use crate::series::{cast_str_to_dtype, cast_str_to_f64, ewm_opts, rolling_opts};
@@ -778,6 +778,23 @@ pub fn expr_atan(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
     ExExpr::new(expr.arctan())
+}
+
+#[rustler::nif]
+pub fn expr_strptime(expr: ExExpr, format_string: &str) -> ExExpr {
+    let options = StrptimeOptions {
+        format: Some(format_string.to_string()),
+        strict: false,
+        exact: true,
+        cache: true,
+        tz_aware: false,
+        utc: false,
+    };
+    ExExpr::new(
+        expr.clone_inner()
+            .str()
+            .to_datetime(Some(TimeUnit::Microseconds), None, options),
+    )
 }
 
 #[rustler::nif]

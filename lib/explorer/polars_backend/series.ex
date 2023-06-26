@@ -36,6 +36,11 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def cast(series, dtype), do: Shared.apply_series(series, :s_cast, [Atom.to_string(dtype)])
 
+  @impl true
+  def strptime(%Series{} = series, format_string) do
+    Shared.apply_series(series, :s_strptime, [format_string])
+  end
+
   # Introspection
 
   @impl true
