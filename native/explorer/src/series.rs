@@ -1331,6 +1331,12 @@ pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, Explorer
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_strftime(s: ExSeries, format_string: &str) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.strftime(format_string)?;
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply(|o| o.sin()).into();
     Ok(ExSeries::new(s1))

@@ -24,6 +24,7 @@ defmodule Explorer.Backend.Series do
   @callback cast(s, dtype) :: s
   @callback categorise(s, s) :: s
   @callback strptime(s, String.t()) :: s
+  @callback strftime(s, String.t()) :: s
 
   # Introspection
 

@@ -1407,11 +1407,13 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
-    test "parse datetime from string" do
+    test "conversion between string and datetime" do
       df =
         DF.new(
           a: ["2023-01-05 12:34:56", nil],
-          b: ["2023/30/01 00:11:22", "XYZ"]
+          b: ["2023/30/01 00:11:22", "XYZ"],
+          c: [~N[2023-01-05 12:34:56.000000], nil],
+          d: [~N[2023-01-30 00:11:22.000000], nil]
         )
 
       df1 =
@@ -1423,6 +1425,19 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: ["2023-01-05 12:34:56", nil],
                b: ["2023/30/01 00:11:22", "XYZ"],
+               c: [~N[2023-01-05 12:34:56.000000], nil],
+               d: [~N[2023-01-30 00:11:22.000000], nil]
+             }
+
+      df1 =
+        DF.mutate(df,
+          a: strftime(c, "%Y-%m-%d %H:%M:%S"),
+          b: strftime(d, "%Y/%d/%m %H:%M:%S")
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["2023-01-05 12:34:56", nil],
+               b: ["2023/30/01 00:11:22", nil],
                c: [~N[2023-01-05 12:34:56.000000], nil],
                d: [~N[2023-01-30 00:11:22.000000], nil]
              }

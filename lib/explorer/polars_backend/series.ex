@@ -41,6 +41,11 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_strptime, [format_string])
   end
 
+  @impl true
+  def strftime(%Series{} = series, format_string) do
+    Shared.apply_series(series, :s_strftime, [format_string])
+  end
+
   # Introspection
 
   @impl true

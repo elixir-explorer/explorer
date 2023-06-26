@@ -798,6 +798,11 @@ pub fn expr_strptime(expr: ExExpr, format_string: &str) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_strftime(expr: ExExpr, format_string: &str) -> ExExpr {
+    ExExpr::new(expr.clone_inner().dt().strftime(format_string))
+}
+
+#[rustler::nif]
 pub fn expr_day_of_week(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
