@@ -3540,25 +3540,46 @@ defmodule Explorer.Series do
   def frequencies(series), do: apply_series(series, :frequencies)
 
   @doc """
-    TODO
+  Bins values into discrete values.
+
+  Given a `bins` length of N, there will be N+1 categories.
+
+  ## Options
+
+    * `:labels` - The labels assigned to the bins. Given `bins` of
+      length N, `:labels` must be of length N+1. Defaults to the bin
+      bounds (e.g. `(-inf -1.0]`, `(-1.0, 1.0]`, `(1.0, inf]`)
+
+    * `:break_point_label` - The name given to the breakpoint column.
+      Defaults to `break_point`.
+
+    * `:category_label` - The name given to the category column.
+      Defaults to `category`.
+
+    * `:maintain_order` - The name given to the category column.
+      Defaults to `false`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0])
+      iex> Explorer.Series.cut(s, [1.5, 2.5])
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+         float [1.0, 2.0, 3.0]
+        break_point float [1.5, 2.5, Inf]
+        category category ["(-inf, 1.5]", "(1.5, 2.5]", "(2.5, inf]"]
+      >
   """
   @doc type: :aggregation
-  def cut(
-        series,
-        bins,
-        labels \\ nil,
-        break_point_label \\ nil,
-        category_label \\ nil,
-        maintain_order \\ false
-      ),
-      do:
-        apply_series(series, :cut, [
-          Enum.map(bins, &(&1 / 1.0)),
-          labels,
-          break_point_label,
-          category_label,
-          maintain_order
-        ])
+  def cut(series, bins, opts \\ []) do
+    apply_series(series, :cut, [
+      Enum.map(bins, &(&1 / 1.0)),
+      Keyword.get(opts, :labels),
+      Keyword.get(opts, :break_point_label),
+      Keyword.get(opts, :category_label),
+      Keyword.get(opts, :maintain_order, false)
+    ])
+  end
 
   @doc """
   Counts the number of elements in a series.

@@ -3885,16 +3885,35 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "categorisation functions" do
-    test "cut/6" do
+    test "cut/6 with no nils" do
       series = -30..30//5 |> Enum.map(&(&1 / 10)) |> Enum.to_list() |> Series.from_list()
       df = Series.cut(series, [-1, 1])
       freqs = Series.frequencies(df[:category])
       assert Series.to_list(freqs[:values]) == ["(-inf, -1.0]", "(-1.0, 1.0]", "(1.0, inf]"]
       assert Series.to_list(freqs[:counts]) == [5, 4, 4]
+    end
 
+    test "cut/6 with nils" do
       series = Series.from_list([1, 2, 3, nil, nil])
       df = Series.cut(series, [2])
       assert [_, _, _, nil, nil] = Series.to_list(df[:category])
+    end
+
+    test "cut/6 options" do
+      series = Series.from_list([1, 2, 3])
+
+      assert_raise RuntimeError,
+                   "Polars Error: lengths don't match: labels count must equal bins count",
+                   fn -> Series.cut(series, [2], labels: ["x"]) end
+
+      df =
+        Series.cut(series, [2],
+          labels: ["x", "y"],
+          break_point_label: "bp",
+          category_label: "cat"
+        )
+
+      assert Explorer.DataFrame.names(df) == ["", "bp", "cat"]
     end
   end
 end
