@@ -3834,6 +3834,36 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "argmax/1 and argmin/1" do
+    test "argmax and argmin for different dtypes" do
+      quads = [
+        {[1, 2, 3, nil], 2, 3, 0},
+        {[1.3, nil, 5.4, 2.6], 2, 1, 0},
+        {[nil, ~D[2023-01-01], ~D[2022-01-01], ~D[2021-01-01]], 1, 0, 3},
+        {[
+           ~N[2023-01-01 00:00:00],
+           ~N[2022-01-01 00:00:00],
+           ~N[2021-01-01 00:00:00],
+           nil
+         ], 0, 3, 2},
+        {[
+           ~N[2023-01-01 10:00:00],
+           ~N[2022-01-01 01:00:00],
+           ~N[2021-01-01 00:10:00],
+           nil
+         ], 0, 3, 2},
+        {[1.0, :infinity, :neg_infinity, nil], 1, 3, 2}
+      ]
+
+      for {list, exp_argmax, exp_argmin, exp_argmin_filled} <- quads do
+        series = Series.from_list(list)
+        assert Series.argmax(series) == exp_argmax
+        assert Series.argmin(series) == exp_argmin
+        assert Series.argmin(Series.fill_missing(series, :max)) == exp_argmin_filled
+      end
+    end
+  end
+
   describe "strptime/2 and strftime/2" do
     test "parse datetime from string" do
       series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])

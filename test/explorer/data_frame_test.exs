@@ -3117,12 +3117,12 @@ defmodule Explorer.DataFrameTest do
 
       df2 =
         DF.summarise(df,
-          a: argmin(a),
-          b: argmin(b),
-          c: argmin(c),
-          d: argmin(d),
-          e: argmin(e),
-          f: argmin(f)
+          a: argmin(fill_missing(a, :max)),
+          b: argmin(fill_missing(b, :max)),
+          c: argmin(fill_missing(c, :max)),
+          d: argmin(fill_missing(d, :max)),
+          e: argmin(fill_missing(e, :max)),
+          f: argmin(fill_missing(f, :max))
         )
 
       assert DF.to_columns(df2, atom_keys: true) == %{
@@ -3132,6 +3132,25 @@ defmodule Explorer.DataFrameTest do
                d: [2],
                e: [2],
                f: [2]
+             }
+
+      df3 =
+        DF.summarise(df,
+          a: argmin(a),
+          b: argmin(b),
+          c: argmin(c),
+          d: argmin(d),
+          e: argmin(e),
+          f: argmin(f)
+        )
+
+      assert DF.to_columns(df3, atom_keys: true) == %{
+               a: [3],
+               b: [1],
+               c: [0],
+               d: [3],
+               e: [3],
+               f: [3]
              }
     end
   end
