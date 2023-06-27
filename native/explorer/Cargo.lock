@@ -383,6 +383,7 @@ dependencies = [
  "chrono",
  "mimalloc",
  "polars",
+ "polars-algo",
  "polars-ops",
  "rand",
  "rand_pcg",
@@ -1029,6 +1030,17 @@ dependencies = [
  "polars-sql",
  "polars-time",
  "version_check",
+]
+
+[[package]]
+name = "polars-algo"
+version = "0.29.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51197645c231af62aa06c224aca357a09a836c2d2cc1342cd06884b1edc7d840"
+dependencies = [
+ "polars-core",
+ "polars-lazy",
+ "polars-ops",
 ]
 
 [[package]]

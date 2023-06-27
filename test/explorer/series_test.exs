@@ -3883,4 +3883,18 @@ defmodule Explorer.SeriesTest do
       end
     end
   end
+
+  describe "categorisation functions" do
+    test "cut/6" do
+      series = -30..30//5 |> Enum.map(&(&1 / 10)) |> Enum.to_list() |> Series.from_list()
+      df = Series.cut(series, [-1, 1])
+      freqs = Series.frequencies(df[:category])
+      assert Series.to_list(freqs[:values]) == ["(-inf, -1.0]", "(-1.0, 1.0]", "(1.0, inf]"]
+      assert Series.to_list(freqs[:counts]) == [5, 4, 4]
+
+      series = Series.from_list([1, 2, 3, nil, nil])
+      df = Series.cut(series, [2])
+      assert [_, _, _, nil, nil] = Series.to_list(df[:category])
+    end
+  end
 end

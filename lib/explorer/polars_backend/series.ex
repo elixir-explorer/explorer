@@ -441,6 +441,21 @@ defmodule Explorer.PolarsBackend.Series do
     |> DataFrame.rename(["values", "counts"])
   end
 
+  # Categorisation
+
+  @impl true
+  def cut(series, bins, labels, break_point_label, category_label, maintain_order) do
+    Shared.apply(:s_cut, [
+      series.data,
+      bins,
+      labels,
+      break_point_label,
+      category_label,
+      maintain_order
+    ])
+    |> Shared.create_dataframe()
+  end
+
   # Window
 
   @impl true

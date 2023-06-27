@@ -321,6 +321,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_upcase(_s), do: err()
   def s_unordered_distinct(_s), do: err()
   def s_frequencies(_s), do: err()
+  def s_cut(_s, _bins, _labels, _break_point_label, _category_label, _maintain_order), do: err()
   def s_variance(_s), do: err()
   def s_window_max(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_mean(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()

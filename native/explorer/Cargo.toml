@@ -70,3 +70,6 @@ features = [
 
 [dependencies.polars-ops]
 version = "0.29"
+
+[dependencies.polars-algo]
+version = "0.29"

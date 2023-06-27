@@ -3540,6 +3540,27 @@ defmodule Explorer.Series do
   def frequencies(series), do: apply_series(series, :frequencies)
 
   @doc """
+    TODO
+  """
+  @doc type: :aggregation
+  def cut(
+        series,
+        bins,
+        labels \\ nil,
+        break_point_label \\ nil,
+        category_label \\ nil,
+        maintain_order \\ false
+      ),
+      do:
+        apply_series(series, :cut, [
+          Enum.map(bins, &(&1 / 1.0)),
+          labels,
+          break_point_label,
+          category_label,
+          maintain_order
+        ])
+
+  @doc """
   Counts the number of elements in a series.
 
   In the context of lazy series and `Explorer.Query`,

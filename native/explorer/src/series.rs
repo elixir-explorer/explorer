@@ -7,6 +7,7 @@ use crate::{
 use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
 use polars::prelude::*;
+use polars_algo::cut;
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
@@ -322,6 +323,28 @@ pub fn s_frequencies(series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let df = df
         .try_apply("counts", |s| s.cast(&DataType::Int64))?
         .clone();
+    Ok(ExDataFrame::new(df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_cut(
+    series: ExSeries,
+    bins: Vec<f64>,
+    labels: Option<Vec<&str>>,
+    break_point_label: Option<&str>,
+    category_label: Option<&str>,
+    maintain_order: bool,
+) -> Result<ExDataFrame, ExplorerError> {
+    let series = series.clone_inner();
+    let bins = Series::new("", bins);
+    let df = cut(
+        &series,
+        bins,
+        labels,
+        break_point_label,
+        category_label,
+        maintain_order,
+    )?;
     Ok(ExDataFrame::new(df))
 }
 
