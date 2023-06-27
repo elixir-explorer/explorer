@@ -15,6 +15,8 @@ defmodule Explorer.PolarsBackend.Expression do
   @all_expressions [
     add: 2,
     all_equal: 2,
+    argmax: 1,
+    argmin: 1,
     binary_and: 2,
     binary_or: 2,
     binary_in: 2,

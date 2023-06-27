@@ -90,6 +90,8 @@ defmodule Explorer.Backend.LazySeries do
     sum: 1,
     min: 1,
     max: 1,
+    argmin: 1,
+    argmax: 1,
     mean: 1,
     median: 1,
     n_distinct: 1,
@@ -131,6 +133,8 @@ defmodule Explorer.Backend.LazySeries do
     :sum,
     :min,
     :max,
+    :argmin,
+    :argmax,
     :mean,
     :median,
     :variance,
@@ -580,8 +584,9 @@ defmodule Explorer.Backend.LazySeries do
 
   defp dtype_for_agg_operation(op, _) when op in [:count, :nil_count, :n_distinct], do: :integer
 
-  defp dtype_for_agg_operation(op, series) when op in [:first, :last, :sum, :min, :max],
-    do: series.dtype
+  defp dtype_for_agg_operation(op, series)
+       when op in [:first, :last, :sum, :min, :max, :argmin, :argmax],
+       do: series.dtype
 
   defp dtype_for_agg_operation(_, _), do: :float
 

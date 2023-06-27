@@ -1797,6 +1797,98 @@ defmodule Explorer.Series do
     do: dtype_error("max/1", dtype, [:integer, :float, :date, :time, :datetime])
 
   @doc """
+  Gets the index of the maximum value of the series.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+    * `:date`
+    * `:time`
+    * `:datetime`
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, nil, 3])
+      iex> Explorer.Series.argmax(s)
+      3
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 3.0])
+      iex> Explorer.Series.argmax(s)
+      3
+
+      iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
+      iex> Explorer.Series.argmax(s)
+      0
+
+      iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
+      iex> Explorer.Series.argmax(s)
+      0
+
+      iex> s = Explorer.Series.from_list([~T[00:02:03.000212], ~T[00:05:04.000456]])
+      iex> Explorer.Series.argmax(s)
+      1
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.argmax(s)
+      ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :time, :datetime]
+  """
+  @doc type: :aggregation
+  @spec argmax(series :: Series.t()) :: number() | non_finite() | nil
+  def argmax(%Series{dtype: dtype} = series) when is_numeric_or_date_dtype(dtype),
+    do: apply_series(series, :argmax)
+
+  def argmax(%Series{dtype: dtype}),
+    do: dtype_error("argmax/1", dtype, [:integer, :float, :date, :time, :datetime])
+
+  @doc """
+  Gets the index of the minimum value of the series.
+
+  Note that `nil` is treated as a minimum value.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+    * `:date`
+    * `:time`
+    * `:datetime`
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, nil, 3])
+      iex> Explorer.Series.argmin(s)
+      2
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 3.0])
+      iex> Explorer.Series.argmin(s)
+      2
+
+      iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
+      iex> Explorer.Series.argmin(s)
+      1
+
+      iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
+      iex> Explorer.Series.argmin(s)
+      1
+
+      iex> s = Explorer.Series.from_list([~T[00:02:03.000212], ~T[00:05:04.000456]])
+      iex> Explorer.Series.argmin(s)
+      0
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.argmin(s)
+      ** (ArgumentError) Explorer.Series.argmin/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :time, :datetime]
+  """
+  @doc type: :aggregation
+  @spec argmin(series :: Series.t()) :: number() | non_finite() | nil
+  def argmin(%Series{dtype: dtype} = series) when is_numeric_or_date_dtype(dtype),
+    do: apply_series(series, :argmin)
+
+  def argmin(%Series{dtype: dtype}),
+    do: dtype_error("argmin/1", dtype, [:integer, :float, :date, :time, :datetime])
+
+  @doc """
   Gets the mean value of the series.
 
   ## Supported dtypes

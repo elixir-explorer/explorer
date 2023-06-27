@@ -3073,5 +3073,85 @@ defmodule Explorer.DataFrameTest do
                solid_fuel_mean: [18212.27970749543]
              }
     end
+
+    test "argmax/1 and argmin/1" do
+      df =
+        DF.new(
+          a: [1, 2, 3, nil],
+          b: [1.3, nil, 5.4, 2.6],
+          c: [nil, ~D[2023-01-01], ~D[2022-01-01], ~D[2021-01-01]],
+          d: [
+            ~N[2023-01-01 00:00:00],
+            ~N[2022-01-01 00:00:00],
+            ~N[2021-01-01 00:00:00],
+            nil
+          ],
+          e: [
+            ~N[2023-01-01 10:00:00],
+            ~N[2022-01-01 01:00:00],
+            ~N[2021-01-01 00:10:00],
+            nil
+          ],
+          f: [1.0, :infinity, :neg_infinity, nil]
+        )
+        |> DF.mutate(e: cast(e, :time))
+
+      df1 =
+        DF.summarise(df,
+          a: argmax(a),
+          b: argmax(b),
+          c: argmax(c),
+          d: argmax(d),
+          e: argmax(e),
+          f: argmax(f)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [2],
+               b: [2],
+               c: [1],
+               d: [0],
+               e: [0],
+               f: [1]
+             }
+
+      df2 =
+        DF.summarise(df,
+          a: argmin(fill_missing(a, :max)),
+          b: argmin(fill_missing(b, :max)),
+          c: argmin(fill_missing(c, :max)),
+          d: argmin(fill_missing(d, :max)),
+          e: argmin(fill_missing(e, :max)),
+          f: argmin(fill_missing(f, :max))
+        )
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [0],
+               b: [0],
+               c: [3],
+               d: [2],
+               e: [2],
+               f: [2]
+             }
+
+      df3 =
+        DF.summarise(df,
+          a: argmin(a),
+          b: argmin(b),
+          c: argmin(c),
+          d: argmin(d),
+          e: argmin(e),
+          f: argmin(f)
+        )
+
+      assert DF.to_columns(df3, atom_keys: true) == %{
+               a: [3],
+               b: [1],
+               c: [0],
+               d: [3],
+               e: [3],
+               f: [3]
+             }
+    end
   end
 end

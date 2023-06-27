@@ -199,6 +199,8 @@ rustler::init!(
         expr_select,
         // agg expressions
         expr_alias,
+        expr_argmax,
+        expr_argmin,
         expr_count,
         expr_first,
         expr_last,
@@ -271,6 +273,8 @@ rustler::init!(
         s_abs,
         s_add,
         s_and,
+        s_argmax,
+        s_argmin,
         s_argsort,
         s_acos,
         s_asin,

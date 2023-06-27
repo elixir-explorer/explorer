@@ -198,6 +198,12 @@ defmodule Explorer.PolarsBackend.Series do
   def max(series), do: Shared.apply_series(series, :s_max)
 
   @impl true
+  def argmin(series), do: Shared.apply_series(series, :s_argmin)
+
+  @impl true
+  def argmax(series), do: Shared.apply_series(series, :s_argmax)
+
+  @impl true
   def mean(series), do: Shared.apply_series(series, :s_mean)
 
   @impl true

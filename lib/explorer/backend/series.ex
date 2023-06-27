@@ -69,6 +69,8 @@ defmodule Explorer.Backend.Series do
   @callback sum(s) :: number() | non_finite() | lazy_s() | nil
   @callback min(s) :: number() | non_finite() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
   @callback max(s) :: number() | non_finite() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
+  @callback argmin(s) :: number() | non_finite() | lazy_s() | nil
+  @callback argmax(s) :: number() | non_finite() | lazy_s() | nil
   @callback mean(s) :: float() | non_finite() | lazy_s() | nil
   @callback median(s) :: float() | non_finite() | lazy_s() | nil
   @callback variance(s) :: float() | non_finite() | lazy_s() | nil
