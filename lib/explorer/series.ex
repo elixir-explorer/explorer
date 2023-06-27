@@ -3565,7 +3565,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.cut(s, [1.5, 2.5])
       #Explorer.DataFrame<
         Polars[3 x 3]
-         float [1.0, 2.0, 3.0]
+        values float [1.0, 2.0, 3.0]
         break_point float [1.5, 2.5, Inf]
         category category ["(-inf, 1.5]", "(1.5, 2.5]", "(2.5, inf]"]
       >
@@ -3608,7 +3608,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.qcut(s, [0.25, 0.75])
       #Explorer.DataFrame<
         Polars[5 x 3]
-         float [1.0, 2.0, 3.0, 4.0, 5.0]
+        values float [1.0, 2.0, 3.0, 4.0, 5.0]
         break_point float [2.0, 2.0, 4.0, 4.0, Inf]
         category category ["(-inf, 2.0]", "(-inf, 2.0]", "(2.0, 4.0]", "(2.0, 4.0]", "(4.0, inf]"]
       >

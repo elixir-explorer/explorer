@@ -3913,7 +3913,7 @@ defmodule Explorer.SeriesTest do
           category_label: "cat"
         )
 
-      assert Explorer.DataFrame.names(df) == ["", "bp", "cat"]
+      assert Explorer.DataFrame.names(df) == ["values", "bp", "cat"]
     end
 
     test "qcut/6" do

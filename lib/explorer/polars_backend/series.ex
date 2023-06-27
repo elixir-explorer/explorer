@@ -454,6 +454,7 @@ defmodule Explorer.PolarsBackend.Series do
       maintain_order
     ])
     |> Shared.create_dataframe()
+    |> DataFrame.rename(%{"" => "values"})
   end
 
   @impl true
@@ -467,6 +468,7 @@ defmodule Explorer.PolarsBackend.Series do
       maintain_order
     ])
     |> Shared.create_dataframe()
+    |> DataFrame.rename(%{"" => "values"})
   end
 
   # Window
