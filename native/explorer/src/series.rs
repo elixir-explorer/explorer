@@ -741,6 +741,16 @@ pub fn s_max(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_argmax(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
+    Ok(s.arg_max().encode(env))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_argmin(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
+    Ok(s.arg_min().encode(env))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_mean(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Boolean => Ok(s.mean().encode(env)),

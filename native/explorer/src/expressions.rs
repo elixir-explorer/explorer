@@ -414,6 +414,20 @@ pub fn expr_max(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_argmax(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.arg_max().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_argmin(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.arg_min().cast(DataType::Int64))
+}
+
+#[rustler::nif]
 pub fn expr_mean(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 

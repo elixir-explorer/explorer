@@ -1797,6 +1797,28 @@ defmodule Explorer.Series do
     do: dtype_error("max/1", dtype, [:integer, :float, :date, :time, :datetime])
 
   @doc """
+    TODO
+  """
+  @doc type: :aggregation
+  @spec argmax(series :: Series.t()) :: number() | non_finite() | nil
+  def argmax(%Series{dtype: dtype} = series) when is_numeric_or_date_dtype(dtype),
+    do: apply_series(series, :argmax)
+
+  def argmax(%Series{dtype: dtype}),
+    do: dtype_error("argmax/1", dtype, [:integer, :float, :date, :time, :datetime])
+
+  @doc """
+    TODO
+  """
+  @doc type: :aggregation
+  @spec argmin(series :: Series.t()) :: number() | non_finite() | nil
+  def argmin(%Series{dtype: dtype} = series) when is_numeric_or_date_dtype(dtype),
+    do: apply_series(series, :argmin)
+
+  def argmin(%Series{dtype: dtype}),
+    do: dtype_error("argmin/1", dtype, [:integer, :float, :date, :time, :datetime])
+
+  @doc """
   Gets the mean value of the series.
 
   ## Supported dtypes
