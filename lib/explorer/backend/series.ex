@@ -158,6 +158,8 @@ defmodule Explorer.Backend.Series do
 
   @callback cut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil, boolean()) ::
               df
+  @callback qcut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil, boolean()) ::
+              df
 
   # Rolling
 

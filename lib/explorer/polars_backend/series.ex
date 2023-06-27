@@ -456,6 +456,19 @@ defmodule Explorer.PolarsBackend.Series do
     |> Shared.create_dataframe()
   end
 
+  @impl true
+  def qcut(series, quantiles, labels, break_point_label, category_label, maintain_order) do
+    Shared.apply(:s_qcut, [
+      series.data,
+      quantiles,
+      labels,
+      break_point_label,
+      category_label,
+      maintain_order
+    ])
+    |> Shared.create_dataframe()
+  end
+
   # Window
 
   @impl true

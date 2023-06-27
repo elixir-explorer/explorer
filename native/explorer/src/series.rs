@@ -7,7 +7,7 @@ use crate::{
 use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
 use polars::prelude::*;
-use polars_algo::cut;
+use polars_algo::{cut, qcut};
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
@@ -340,6 +340,27 @@ pub fn s_cut(
     let df = cut(
         &series,
         bins,
+        labels,
+        break_point_label,
+        category_label,
+        maintain_order,
+    )?;
+    Ok(ExDataFrame::new(df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_qcut(
+    series: ExSeries,
+    quantiles: Vec<f64>,
+    labels: Option<Vec<&str>>,
+    break_point_label: Option<&str>,
+    category_label: Option<&str>,
+    maintain_order: bool,
+) -> Result<ExDataFrame, ExplorerError> {
+    let series = series.clone_inner();
+    let df = qcut(
+        &series,
+        &quantiles,
         labels,
         break_point_label,
         category_label,

@@ -3915,5 +3915,20 @@ defmodule Explorer.SeriesTest do
 
       assert Explorer.DataFrame.names(df) == ["", "bp", "cat"]
     end
+
+    test "qcut/6" do
+      series = Enum.to_list(-5..3) |> Series.from_list()
+      df = Series.qcut(series, [0.0, 0.25, 0.75])
+      freqs = Series.frequencies(df[:category])
+
+      assert Series.to_list(freqs[:values]) == [
+               "(-3.0, 1.0]",
+               "(-5.0, -3.0]",
+               "(1.0, inf]",
+               "(-inf, -5.0]"
+             ]
+
+      assert Series.to_list(freqs[:counts]) == [4, 2, 2, 1]
+    end
   end
 end

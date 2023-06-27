@@ -393,6 +393,7 @@ rustler::init!(
         s_unordered_distinct,
         s_frequencies,
         s_cut,
+        s_qcut,
         s_variance,
         s_window_max,
         s_window_mean,
