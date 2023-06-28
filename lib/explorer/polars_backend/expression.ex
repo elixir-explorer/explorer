@@ -76,7 +76,6 @@ defmodule Explorer.PolarsBackend.Expression do
     unordered_distinct: 1,
     variance: 1,
     skew: 2,
-    corr: 3,
     cov: 2
   ]
 
@@ -138,7 +137,8 @@ defmodule Explorer.PolarsBackend.Expression do
     slice: 2,
     slice: 3,
     concat: 1,
-    column: 1
+    column: 1,
+    corr: 3
   ]
 
   missing =
@@ -185,6 +185,10 @@ defmodule Explorer.PolarsBackend.Expression do
     expr_list = Enum.map(series_list, &to_expr/1)
 
     Native.expr_concat(expr_list)
+  end
+
+  def to_expr(%LazySeries{op: :corr, args: [series1, series2, ddof]}) do
+    Native.expr_corr(to_expr(series1), to_expr(series2), ddof)
   end
 
   def to_expr(%LazySeries{op: :format, args: [series_list]}) when is_list(series_list) do

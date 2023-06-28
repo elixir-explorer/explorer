@@ -2131,7 +2131,10 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec corr(left :: Series.t(), right :: Series.t(), ddof :: non_neg_integer()) ::
           float() | non_finite() | nil
-  def corr(left, right, ddof), do: apply_series_list(:corr, [left, right, ddof])
+  def corr(left, right, ddof \\ 1) do
+    impl = impl!([left, right])
+    apply(impl, :corr, [left, right, ddof])
+  end
 
   @doc """
   TODO:
