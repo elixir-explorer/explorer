@@ -441,6 +441,36 @@ defmodule Explorer.PolarsBackend.Series do
     |> DataFrame.rename(["values", "counts"])
   end
 
+  # Categorisation
+
+  @impl true
+  def cut(series, bins, labels, break_point_label, category_label, maintain_order) do
+    Shared.apply(:s_cut, [
+      series.data,
+      bins,
+      labels,
+      break_point_label,
+      category_label,
+      maintain_order
+    ])
+    |> Shared.create_dataframe()
+    |> DataFrame.rename(%{"" => "values"})
+  end
+
+  @impl true
+  def qcut(series, quantiles, labels, break_point_label, category_label, maintain_order) do
+    Shared.apply(:s_qcut, [
+      series.data,
+      quantiles,
+      labels,
+      break_point_label,
+      category_label,
+      maintain_order
+    ])
+    |> Shared.create_dataframe()
+    |> DataFrame.rename(%{"" => "values"})
+  end
+
   # Window
 
   @impl true

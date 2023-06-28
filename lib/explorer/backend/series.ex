@@ -154,6 +154,13 @@ defmodule Explorer.Backend.Series do
   @callback n_distinct(s) :: integer() | lazy_s()
   @callback frequencies(s) :: df
 
+  # Categorisation
+
+  @callback cut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil, boolean()) ::
+              df
+  @callback qcut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil, boolean()) ::
+              df
+
   # Rolling
 
   @callback window_sum(

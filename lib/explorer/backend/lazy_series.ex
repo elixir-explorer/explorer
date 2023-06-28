@@ -883,6 +883,8 @@ defmodule Explorer.Backend.LazySeries do
     categories: 1,
     categorise: 2,
     frequencies: 1,
+    cut: 6,
+    qcut: 6,
     mask: 2,
     to_iovec: 1,
     to_list: 1
