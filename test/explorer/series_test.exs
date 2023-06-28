@@ -3712,12 +3712,42 @@ defmodule Explorer.SeriesTest do
         assert abs(Series.corr(s1, s2) - exp_cov) < 1.0e-4
         assert abs(Series.cov(s1, s2) - exp_corr) < 1.0e-4
       end
+    end
 
-      # TODO: should return scalar and not Series
+    test "impossible correlation and covariance" do
+      s1 = Series.from_list([], dtype: :float)
+      s2 = Series.from_list([], dtype: :float)
+      assert Series.corr(s1, s2) == nil
+      assert Series.cov(s1, s2) == nil
+
       s1 = Series.from_list([1.0])
       s2 = Series.from_list([2.0])
       assert Series.corr(s1, s2) == :nan
       assert Series.cov(s1, s2) == :nan
+
+      s1 = Series.from_list([1.0, 2.0])
+      s2 = Series.from_list([2.0, 3.0, 4.0])
+
+      assert_raise ArgumentError,
+                   ~r/series must either have the same size/,
+                   fn -> Series.corr(s1, s2) end
+
+      assert_raise ArgumentError,
+                   ~r/series must either have the same size/,
+                   fn -> Series.cov(s1, s2) end
+
+      s1 = Series.from_list([1.0, 2.0])
+      s2 = Series.from_list(["a", "b"])
+
+      assert_raise ArgumentError,
+                   "Explorer.Series.corr/3 not implemented for dtype :string. " <>
+                     "Valid dtypes are [:integer, :float]",
+                   fn -> Series.corr(s1, s2) end
+
+      assert_raise ArgumentError,
+                   "Explorer.Series.cov/3 not implemented for dtype :string. " <>
+                     "Valid dtypes are [:integer, :float]",
+                   fn -> Series.cov(s1, s2) end
     end
   end
 

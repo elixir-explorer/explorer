@@ -2126,22 +2126,68 @@ defmodule Explorer.Series do
     do: dtype_error("skew/2", dtype, [:integer, :float])
 
   @doc """
-  TODO:
+  Compute the Pearson's correlation between two series.
+
+  The parameter `ddof` refers to the 'delta degrees of freedom' - the divisor
+  used in the correlation calculation. Defaults to 1.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s1 = Series.from_list([1, 8, 3])
+      iex> s2 = Series.from_list([4, 5, 2])
+      iex> Series.corr(s1, s2)
+      0.5447047794019223
   """
-  @doc type: :element_wise
+  @doc type: :aggregation
   @spec corr(left :: Series.t(), right :: Series.t(), ddof :: non_neg_integer()) ::
           float() | non_finite() | nil
-  def corr(left, right, ddof \\ 1) do
+  def corr(left, right, ddof \\ 1)
+
+  def corr(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right, ddof)
+      when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)) do
     impl = impl!([left, right])
     apply(impl, :corr, [left, right, ddof])
   end
 
+  def corr(%Series{dtype: dtype}, _right, _ddof)
+      when K.not(is_numeric_dtype(dtype)),
+      do: dtype_error("corr/3", dtype, [:integer, :float])
+
+  def corr(_left, %Series{dtype: dtype}, _ddof),
+    do: dtype_error("corr/3", dtype, [:integer, :float])
+
   @doc """
-  TODO:
+  Compute the covariance between two series.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s1 = Series.from_list([1, 8, 3])
+      iex> s2 = Series.from_list([4, 5, 2])
+      iex> Series.cov(s1, s2)
+      3.0
   """
-  @doc type: :element_wise
+  @doc type: :aggregation
   @spec cov(left :: Series.t(), right :: Series.t()) :: float() | non_finite() | nil
-  def cov(left, right), do: apply_series_list(:cov, [left, right])
+  def cov(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
+      when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
+      do: apply_series_list(:cov, [left, right])
+
+  def cov(%Series{dtype: dtype}, _right)
+      when K.not(is_numeric_dtype(dtype)),
+      do: dtype_error("cov/3", dtype, [:integer, :float])
+
+  def cov(_left, %Series{dtype: dtype}),
+    do: dtype_error("cov/3", dtype, [:integer, :float])
 
   # Cumulative
 
