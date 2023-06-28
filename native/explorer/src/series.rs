@@ -852,23 +852,19 @@ pub fn s_skew(env: Env, s: ExSeries, bias: bool) -> Result<Term, ExplorerError> 
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_corr(s1: ExSeries, s2: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
+pub fn s_corr(env: Env, s1: ExSeries, s2: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
-    Ok(ExSeries::new(Series::new(
-        "corr",
-        &[pearson_corr_f(s1.f64()?, s2.f64()?, ddof)],
-    )))
+    let corr = pearson_corr_f(s1.f64()?, s2.f64()?, ddof);
+    Ok(term_from_optional_float(corr, env))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_cov(s1: ExSeries, s2: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_cov(env: Env, s1: ExSeries, s2: ExSeries) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
-    Ok(ExSeries::new(Series::new(
-        "cov",
-        &[cov_f(s1.f64()?, s2.f64()?)],
-    )))
+    let cov = cov_f(s1.f64()?, s2.f64()?);
+    Ok(term_from_optional_float(cov, env))
 }
 
 fn term_from_optional_float(option: Option<f64>, env: Env<'_>) -> Term<'_> {

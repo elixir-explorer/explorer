@@ -3685,6 +3685,42 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "corr/2 and cov/2" do
+    test "correlation and covariance of different dtypes and edge cases" do
+      for {values1, values2, exp_cov, exp_corr} <- [
+            [
+              [1, 8, 3],
+              [4, 5, 2],
+              3.0,
+              0.5447047794019223
+            ],
+            [
+              [1, 8, 3, nil],
+              [4, 5, 2, nil],
+              3.0,
+              0.5447047794019223
+            ],
+            [
+              [1, 8, 3, :nan],
+              [4, 5, 2, :nan],
+              3.0,
+              0.5447047794019223
+            ]
+          ] do
+        s1 = Series.from_list(values1)
+        s2 = Series.from_list(values2)
+        assert abs(Series.corr(s1, s2) - exp_cov) < 1.0e-4
+        assert abs(Series.cov(s1, s2) - exp_corr) < 1.0e-4
+      end
+
+      # TODO: should return scalar and not Series
+      s1 = Series.from_list([1.0])
+      s2 = Series.from_list([2.0])
+      assert Series.corr(s1, s2) == :nan
+      assert Series.cov(s1, s2) == :nan
+    end
+  end
+
   describe "variance/1" do
     test "variance of an integer series" do
       s = Series.from_list([1, 2, nil, 3])
