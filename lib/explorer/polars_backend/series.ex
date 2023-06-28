@@ -226,6 +226,15 @@ defmodule Explorer.PolarsBackend.Series do
   def skew(series, bias?),
     do: Shared.apply_series(series, :s_skew, [bias?])
 
+  @impl true
+  def corr(left, right, ddof),
+    do:
+      Shared.apply_series(to_series(left, right), :s_corr, [to_polars_series(right, left), ddof])
+
+  @impl true
+  def cov(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_cov, [to_polars_series(right, left)])
+
   # Cumulative
 
   @impl true

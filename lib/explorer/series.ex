@@ -2125,6 +2125,21 @@ defmodule Explorer.Series do
   def skew(%Series{dtype: dtype}, _),
     do: dtype_error("skew/2", dtype, [:integer, :float])
 
+  @doc """
+  TODO:
+  """
+  @doc type: :element_wise
+  @spec corr(left :: Series.t(), right :: Series.t(), ddof :: non_neg_integer()) ::
+          float() | non_finite() | nil
+  def corr(left, right, ddof), do: apply_series_list(:corr, [left, right, ddof])
+
+  @doc """
+  TODO:
+  """
+  @doc type: :element_wise
+  @spec cov(left :: Series.t(), right :: Series.t()) :: float() | non_finite() | nil
+  def cov(left, right), do: apply_series_list(:cov, [left, right])
+
   # Cumulative
 
   @doc """

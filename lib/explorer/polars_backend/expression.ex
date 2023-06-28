@@ -75,7 +75,9 @@ defmodule Explorer.PolarsBackend.Expression do
     sum: 1,
     unordered_distinct: 1,
     variance: 1,
-    skew: 2
+    skew: 2,
+    corr: 3,
+    cov: 2
   ]
 
   @first_only_expressions [

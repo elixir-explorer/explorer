@@ -80,6 +80,8 @@ defmodule Explorer.Backend.Series do
   @callback nil_count(s) :: number() | lazy_s()
   @callback product(s) :: float() | non_finite() | lazy_s() | nil
   @callback skew(s, bias? :: boolean()) :: float() | non_finite() | lazy_s() | nil
+  @callback corr(s, s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
+  @callback cov(s, s) :: float() | non_finite() | lazy_s() | nil
 
   # Cumulative
 
