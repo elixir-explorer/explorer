@@ -978,14 +978,13 @@ defmodule Explorer.DataFrameTest do
                %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
 
       df2 =
-        df
-        |> DF.concat_rows(DF.new(a: [nil], b: [nil]))
+        DF.new(a: [1, 8, 3, nil], b: [4, 5, 2, nil])
         |> DF.mutate(c: cov(a, b), d: corr(a, b))
 
       assert df2 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
-               %{a: [1], b: [4], c: [:nan], d: [:nan]}
+               %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
 
-      df3 = df |> DF.head(1) |> DF.mutate(c: cov(a, a), d: corr(a, a))
+      df3 = DF.new(a: [1], b: [4]) |> DF.mutate(c: cov(a, a), d: corr(a, a))
 
       assert df3 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
                %{a: [1], b: [4], c: [:nan], d: [:nan]}
