@@ -978,7 +978,8 @@ defmodule Explorer.DataFrameTest do
                %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
 
       df2 =
-        DF.new(a: [1, 8, 3, nil], b: [4, 5, 2, nil])
+        DF.new(a: [1, 8, 3], b: [4, 5, 2])
+        |> DF.concat_rows(DF.new(a: [nil], b: [nil]))
         |> DF.mutate(c: covariance(a, b), d: correlation(a, b))
 
       assert df2 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
