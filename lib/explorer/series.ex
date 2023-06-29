@@ -850,7 +850,47 @@ defmodule Explorer.Series do
     do: dtype_error("strftime/2", dtype, [:datetime])
 
   @doc """
-  TODO
+  Clip (or clamp) the values in a series.
+
+  Values that fall outside of the interval defined by the min and max bounds
+  are clipped to the bounds.
+
+  ## Options
+
+  One of the bounds must be specified.
+
+    * `:min` - the minimum bound. Defaults to `nil` or no minimum clipping.
+    * `:max` - the maximum bound. Defaults to `nil` or no maximum clipping.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  Clipping other dtypes are possible using select/3.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([-50, 5, nil, 50])
+      iex> Explorer.Series.clip(s, min: 1, max: 10)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 5, nil, 10]
+      >
+
+      iex> s = Explorer.Series.from_list([-50, 5, nil, 50])
+      iex> Explorer.Series.clip(s, min: 1)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 5, nil, 50]
+      >
+
+      iex> s = Explorer.Series.from_list([-50, 5, nil, 50])
+      iex> Explorer.Series.clip(s, max: 10)
+      #Explorer.Series<
+        Polars[4]
+        integer [-50, 5, nil, 10]
+      >
   """
   @doc type: :element_wise
   @spec clip(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
