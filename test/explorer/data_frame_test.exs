@@ -972,19 +972,19 @@ defmodule Explorer.DataFrameTest do
 
     test "correlation and covariance" do
       df = DF.new(a: [1, 8, 3], b: [4, 5, 2])
-      df1 = DF.mutate(df, c: cov(a, b), d: corr(a, b))
+      df1 = DF.mutate(df, c: covariance(a, b), d: correlation(a, b))
 
       assert df1 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
                %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
 
       df2 =
         DF.new(a: [1, 8, 3, nil], b: [4, 5, 2, nil])
-        |> DF.mutate(c: cov(a, b), d: corr(a, b))
+        |> DF.mutate(c: covariance(a, b), d: correlation(a, b))
 
       assert df2 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
                %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
 
-      df3 = DF.new(a: [1], b: [4]) |> DF.mutate(c: cov(a, a), d: corr(a, a))
+      df3 = DF.new(a: [1], b: [4]) |> DF.mutate(c: covariance(a, a), d: correlation(a, a))
 
       assert df3 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
                %{a: [1], b: [4], c: [:nan], d: [:nan]}

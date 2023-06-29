@@ -485,14 +485,14 @@ pub fn expr_skew(data: ExExpr, bias: bool) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_corr(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
+pub fn expr_correlation(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
     ExExpr::new(pearson_corr(left_expr, right_expr, ddof))
 }
 
 #[rustler::nif]
-pub fn expr_cov(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_covariance(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
     ExExpr::new(cov(left_expr, right_expr))

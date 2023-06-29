@@ -852,7 +852,12 @@ pub fn s_skew(env: Env, s: ExSeries, bias: bool) -> Result<Term, ExplorerError> 
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_corr(env: Env, s1: ExSeries, s2: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
+pub fn s_correlation(
+    env: Env,
+    s1: ExSeries,
+    s2: ExSeries,
+    ddof: u8,
+) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
     let corr = pearson_corr_f(s1.f64()?, s2.f64()?, ddof);
@@ -860,7 +865,7 @@ pub fn s_corr(env: Env, s1: ExSeries, s2: ExSeries, ddof: u8) -> Result<Term, Ex
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_cov(env: Env, s1: ExSeries, s2: ExSeries) -> Result<Term, ExplorerError> {
+pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
     let cov = cov_f(s1.f64()?, s2.f64()?);

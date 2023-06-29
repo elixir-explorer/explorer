@@ -2140,26 +2140,26 @@ defmodule Explorer.Series do
 
       iex> s1 = Series.from_list([1, 8, 3])
       iex> s2 = Series.from_list([4, 5, 2])
-      iex> Series.corr(s1, s2)
+      iex> Series.correlation(s1, s2)
       0.5447047794019223
   """
   @doc type: :aggregation
-  @spec corr(left :: Series.t(), right :: Series.t(), ddof :: non_neg_integer()) ::
+  @spec correlation(left :: Series.t(), right :: Series.t(), ddof :: non_neg_integer()) ::
           float() | non_finite() | nil
-  def corr(left, right, ddof \\ 1)
+  def correlation(left, right, ddof \\ 1)
 
-  def corr(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right, ddof)
+  def correlation(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right, ddof)
       when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)) do
     impl = impl!([left, right])
-    apply(impl, :corr, [left, right, ddof])
+    apply(impl, :correlation, [left, right, ddof])
   end
 
-  def corr(%Series{dtype: dtype}, _right, _ddof)
+  def correlation(%Series{dtype: dtype}, _right, _ddof)
       when K.not(is_numeric_dtype(dtype)),
-      do: dtype_error("corr/3", dtype, [:integer, :float])
+      do: dtype_error("correlation/3", dtype, [:integer, :float])
 
-  def corr(_left, %Series{dtype: dtype}, _ddof),
-    do: dtype_error("corr/3", dtype, [:integer, :float])
+  def correlation(_left, %Series{dtype: dtype}, _ddof),
+    do: dtype_error("correlation/3", dtype, [:integer, :float])
 
   @doc """
   Compute the covariance between two series.
@@ -2173,21 +2173,21 @@ defmodule Explorer.Series do
 
       iex> s1 = Series.from_list([1, 8, 3])
       iex> s2 = Series.from_list([4, 5, 2])
-      iex> Series.cov(s1, s2)
+      iex> Series.covariance(s1, s2)
       3.0
   """
   @doc type: :aggregation
-  @spec cov(left :: Series.t(), right :: Series.t()) :: float() | non_finite() | nil
-  def cov(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
+  @spec covariance(left :: Series.t(), right :: Series.t()) :: float() | non_finite() | nil
+  def covariance(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
       when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
-      do: apply_series_list(:cov, [left, right])
+      do: apply_series_list(:covariance, [left, right])
 
-  def cov(%Series{dtype: dtype}, _right)
+  def covariance(%Series{dtype: dtype}, _right)
       when K.not(is_numeric_dtype(dtype)),
-      do: dtype_error("cov/3", dtype, [:integer, :float])
+      do: dtype_error("covariance/3", dtype, [:integer, :float])
 
-  def cov(_left, %Series{dtype: dtype}),
-    do: dtype_error("cov/3", dtype, [:integer, :float])
+  def covariance(_left, %Series{dtype: dtype}),
+    do: dtype_error("covariance/3", dtype, [:integer, :float])
 
   # Cumulative
 
