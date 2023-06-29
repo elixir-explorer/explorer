@@ -91,6 +91,7 @@ defmodule Explorer.PolarsBackend.Expression do
     exp: 1,
     skew: 2,
     round: 2,
+    clip: 3,
 
     # Trigonometric operations
     acos: 1,

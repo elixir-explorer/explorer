@@ -849,6 +849,29 @@ defmodule Explorer.Series do
   def strftime(%Series{dtype: dtype}, _format_string),
     do: dtype_error("strftime/2", dtype, [:datetime])
 
+  @doc """
+  TODO
+  """
+  @doc type: :element_wise
+  @spec clip(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  def clip(_series, []) do
+    raise(
+      ArgumentError,
+      "Explorer.Series.clip/2 expects one of the minimum or the maximum " <>
+        "bounds to be specified"
+    )
+  end
+
+  def clip(%Series{dtype: dtype} = series, opts) when is_numeric_dtype(dtype) do
+    opts = Keyword.validate!(opts, min: nil, max: nil)
+    min = if is_integer(opts[:min]), do: opts[:min] / 1.0, else: opts[:min]
+    max = if is_integer(opts[:max]), do: opts[:max] / 1.0, else: opts[:max]
+    apply_series(series, :clip, [min, max])
+  end
+
+  def clip(%Series{dtype: dtype}, _opts),
+    do: dtype_error("clip/2", dtype, [:integer, :float])
+
   # Introspection
 
   @doc """

@@ -3695,6 +3695,25 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "clip/2" do
+    for {values, min, max, exp_clipped} <- [
+          [[-50, 5, nil, 50], 1, 10, [1, 5, nil, 10]],
+          [[-50.0, 5.0, nil, 50.0], 1.0, 10.0, [1.0, 5.0, nil, 10.0]]
+        ] do
+      s = Series.from_list(values)
+      assert Series.clip(s, min: min, max: max) |> Series.to_list() == exp_clipped
+    end
+
+    assert_raise ArgumentError,
+                 ~r"expects one of the minimum or the maximum",
+                 fn -> Series.clip(Series.from_list([1]), []) end
+
+    assert_raise ArgumentError,
+                 "Explorer.Series.clip/2 not implemented for dtype :string. " <>
+                   "Valid dtypes are [:integer, :float]",
+                 fn -> Series.clip(Series.from_list(["a"]), max: 10) end
+  end
+
   describe "correlation/2 and covariance/2" do
     test "correlation and covariance of different dtypes and edge cases" do
       for {values1, values2, exp_cov, exp_corr} <- [

@@ -990,6 +990,29 @@ defmodule Explorer.DataFrameTest do
                %{a: [1], b: [4], c: [:nan], d: [:nan]}
     end
 
+    test "clip/2" do
+      df = DF.new(a: [-50, 5, nil, 50])
+
+      df1 =
+        df
+        |> DF.mutate(
+          b: clip(a, min: 1, max: 10),
+          c: clip(a, min: 1),
+          d: clip(a, max: 10)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [-50, 5, nil, 50],
+               b: [1, 5, nil, 10],
+               c: [1, 5, nil, 50],
+               d: [-50, 5, nil, 10]
+             }
+
+      assert_raise ArgumentError,
+                   ~r"expects one of the minimum or the maximum",
+                   fn -> df |> DF.mutate(b: clip(a, [])) end
+    end
+
     test "adds some columns with select functions" do
       a = Series.from_list([true, false, true])
       b = Series.from_list([3, 4, 2])

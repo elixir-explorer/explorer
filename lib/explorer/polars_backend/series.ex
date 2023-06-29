@@ -356,6 +356,9 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def abs(%Series{} = s), do: Shared.apply_series(s, :s_abs, [])
 
+  @impl true
+  def clip(%Series{} = s, min, max), do: Shared.apply_series(s, :s_clip, [min, max])
+
   # Trigonometry
 
   @impl true

@@ -8,7 +8,7 @@ use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{
     col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
 };
-use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
+use polars::prelude::{AnyValue, DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
 use crate::datatypes::{ExDate, ExDateTime};
 use crate::series::{cast_str_to_dtype, cast_str_to_f64, ewm_opts, rolling_opts};
@@ -830,6 +830,23 @@ pub fn expr_strptime(expr: ExExpr, format_string: &str) -> ExExpr {
 #[rustler::nif]
 pub fn expr_strftime(expr: ExExpr, format_string: &str) -> ExExpr {
     ExExpr::new(expr.clone_inner().dt().strftime(format_string))
+}
+
+#[rustler::nif]
+pub fn expr_clip(expr: ExExpr, min: Option<f64>, max: Option<f64>) -> ExExpr {
+    match (min, max) {
+        (Some(min_val), Some(max_val)) => ExExpr::new(
+            expr.clone_inner()
+                .clip(AnyValue::Float64(min_val), AnyValue::Float64(max_val)),
+        ),
+        (Some(min_val), None) => {
+            ExExpr::new(expr.clone_inner().clip_min(AnyValue::Float64(min_val)))
+        }
+        (None, Some(max_val)) => {
+            ExExpr::new(expr.clone_inner().clip_max(AnyValue::Float64(max_val)))
+        }
+        _ => panic!("redundant clip with no bounds specified"),
+    }
 }
 
 #[rustler::nif]
