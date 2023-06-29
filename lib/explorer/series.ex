@@ -2184,10 +2184,10 @@ defmodule Explorer.Series do
 
   def covariance(%Series{dtype: dtype}, _right)
       when K.not(is_numeric_dtype(dtype)),
-      do: dtype_error("covariance/3", dtype, [:integer, :float])
+      do: dtype_error("covariance/2", dtype, [:integer, :float])
 
   def covariance(_left, %Series{dtype: dtype}),
-    do: dtype_error("covariance/3", dtype, [:integer, :float])
+    do: dtype_error("covariance/2", dtype, [:integer, :float])
 
   # Cumulative
 

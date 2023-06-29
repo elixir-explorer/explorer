@@ -3745,7 +3745,7 @@ defmodule Explorer.SeriesTest do
                    fn -> Series.correlation(s1, s2) end
 
       assert_raise ArgumentError,
-                   "Explorer.Series.covariance/3 not implemented for dtype :string. " <>
+                   "Explorer.Series.covariance/2 not implemented for dtype :string. " <>
                      "Valid dtypes are [:integer, :float]",
                    fn -> Series.covariance(s1, s2) end
     end
