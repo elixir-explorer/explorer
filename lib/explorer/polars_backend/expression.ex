@@ -60,7 +60,6 @@ defmodule Explorer.PolarsBackend.Expression do
     quotient: 2,
     remainder: 2,
     reverse: 1,
-    round: 2,
     floor: 1,
     ceil: 1,
     select: 3,
@@ -90,6 +89,7 @@ defmodule Explorer.PolarsBackend.Expression do
     sample_frac: 5,
     exp: 1,
     skew: 2,
+    round: 2,
 
     # Trigonometric operations
     acos: 1,
