@@ -978,8 +978,7 @@ defmodule Explorer.DataFrameTest do
                %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
 
       df2 =
-        DF.new(a: [1, 8, 3], b: [4, 5, 2])
-        |> DF.concat_rows(DF.new(a: [nil], b: [nil]))
+        DF.new(a: [1, 8, 3, nil], b: [4, 5, 2, nil])
         |> DF.mutate(c: covariance(a, b), d: correlation(a, b))
 
       assert df2 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
@@ -2061,6 +2060,16 @@ defmodule Explorer.DataFrameTest do
     assert_raise ArgumentError,
                  "columns and dtypes must be identical for all dataframes",
                  fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
+  end
+
+  test "concat_rows/2 rechunking logic when nil is introduced in the new dataframe" do
+    # this may panic if rechunking is not done correctly
+    df =
+      DF.new(x: [1.0, 2.0], y: [2.0, 3.0])
+      |> DF.concat_rows(DF.new(x: [nil], y: [nil]))
+      |> DF.mutate(z: correlation(x, y))
+
+    assert abs(df[:z][0] - 1.0) < 1.0e-4
   end
 
   describe "distinct/2" do
