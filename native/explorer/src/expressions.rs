@@ -5,7 +5,9 @@
 // wrapped in an Elixir struct.
 
 use chrono::{NaiveDate, NaiveDateTime};
-use polars::prelude::{col, concat_str, when, IntoLazy, LiteralValue, SortOptions};
+use polars::prelude::{
+    col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
+};
 use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
 use crate::datatypes::{ExDate, ExDateTime};
@@ -480,6 +482,20 @@ pub fn expr_quantile(expr: ExExpr, quantile: f64) -> ExExpr {
 pub fn expr_skew(data: ExExpr, bias: bool) -> ExExpr {
     let expr = data.clone_inner();
     ExExpr::new(expr.skew(bias))
+}
+
+#[rustler::nif]
+pub fn expr_correlation(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
+    let left_expr = left.clone_inner().cast(DataType::Float64);
+    let right_expr = right.clone_inner().cast(DataType::Float64);
+    ExExpr::new(pearson_corr(left_expr, right_expr, ddof))
+}
+
+#[rustler::nif]
+pub fn expr_covariance(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr = left.clone_inner().cast(DataType::Float64);
+    let right_expr = right.clone_inner().cast(DataType::Float64);
+    ExExpr::new(cov(left_expr, right_expr))
 }
 
 #[rustler::nif]

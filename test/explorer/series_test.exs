@@ -3685,6 +3685,72 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "correlation/2 and covariance/2" do
+    test "correlation and covariance of different dtypes and edge cases" do
+      for {values1, values2, exp_cov, exp_corr} <- [
+            [
+              [1, 8, 3],
+              [4, 5, 2],
+              3.0,
+              0.5447047794019223
+            ],
+            [
+              [1, 8, 3, nil],
+              [4, 5, 2, nil],
+              3.0,
+              0.5447047794019223
+            ],
+            [
+              [1, 8, 3, :nan],
+              [4, 5, 2, :nan],
+              3.0,
+              0.5447047794019223
+            ]
+          ] do
+        s1 = Series.from_list(values1)
+        s2 = Series.from_list(values2)
+        assert abs(Series.correlation(s1, s2) - exp_cov) < 1.0e-4
+        assert abs(Series.covariance(s1, s2) - exp_corr) < 1.0e-4
+      end
+    end
+
+    test "impossible correlation and covariance" do
+      s1 = Series.from_list([], dtype: :float)
+      s2 = Series.from_list([], dtype: :float)
+      assert Series.correlation(s1, s2) == nil
+      assert Series.covariance(s1, s2) == nil
+
+      s1 = Series.from_list([1.0])
+      s2 = Series.from_list([2.0])
+      assert Series.correlation(s1, s2) == :nan
+      assert Series.covariance(s1, s2) == :nan
+
+      s1 = Series.from_list([1.0, 2.0])
+      s2 = Series.from_list([2.0, 3.0, 4.0])
+
+      assert_raise ArgumentError,
+                   ~r/series must either have the same size/,
+                   fn -> Series.correlation(s1, s2) end
+
+      assert_raise ArgumentError,
+                   ~r/series must either have the same size/,
+                   fn -> Series.covariance(s1, s2) end
+
+      s1 = Series.from_list([1.0, 2.0])
+      s2 = Series.from_list(["a", "b"])
+
+      assert_raise ArgumentError,
+                   "Explorer.Series.correlation/3 not implemented for dtype :string. " <>
+                     "Valid dtypes are [:integer, :float]",
+                   fn -> Series.correlation(s1, s2) end
+
+      assert_raise ArgumentError,
+                   "Explorer.Series.covariance/2 not implemented for dtype :string. " <>
+                     "Valid dtypes are [:integer, :float]",
+                   fn -> Series.covariance(s1, s2) end
+    end
+  end
+
   describe "variance/1" do
     test "variance of an integer series" do
       s = Series.from_list([1, 2, nil, 3])

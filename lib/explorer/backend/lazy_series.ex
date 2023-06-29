@@ -105,6 +105,8 @@ defmodule Explorer.Backend.LazySeries do
     count: 1,
     nil_count: 1,
     skew: 2,
+    correlation: 3,
+    covariance: 2,
     # Strings
     contains: 2,
     trim_leading: 1,
@@ -474,6 +476,22 @@ defmodule Explorer.Backend.LazySeries do
   def skew(%Series{} = series, bias) do
     args = [series_or_lazy_series!(series), bias]
     data = new(:skew, args, true)
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def correlation(%Series{} = left, %Series{} = right, ddof) do
+    args = [series_or_lazy_series!(left), series_or_lazy_series!(right), ddof]
+    data = new(:correlation, args, true)
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def covariance(%Series{} = left, %Series{} = right) do
+    args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
+    data = new(:covariance, args, true)
 
     Backend.Series.new(data, :float)
   end

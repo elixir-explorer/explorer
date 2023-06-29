@@ -6,6 +6,7 @@ use crate::{
 
 use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
+use polars::functions::{cov_f, pearson_corr_f};
 use polars::prelude::*;
 use polars_algo::{cut, qcut};
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
@@ -848,6 +849,27 @@ pub fn s_skew(env: Env, s: ExSeries, bias: bool) -> Result<Term, ExplorerError> 
         // DataType::Float64 => Ok(term_from_optional_float(s.skew(bias), env)),
         dt => panic!("skew/2 not implemented for {dt:?}"),
     }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_correlation(
+    env: Env,
+    s1: ExSeries,
+    s2: ExSeries,
+    ddof: u8,
+) -> Result<Term, ExplorerError> {
+    let s1 = s1.clone_inner().cast(&DataType::Float64)?;
+    let s2 = s2.clone_inner().cast(&DataType::Float64)?;
+    let corr = pearson_corr_f(s1.f64()?, s2.f64()?, ddof);
+    Ok(term_from_optional_float(corr, env))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries) -> Result<Term, ExplorerError> {
+    let s1 = s1.clone_inner().cast(&DataType::Float64)?;
+    let s2 = s2.clone_inner().cast(&DataType::Float64)?;
+    let cov = cov_f(s1.f64()?, s2.f64()?);
+    Ok(term_from_optional_float(cov, env))
 }
 
 fn term_from_optional_float(option: Option<f64>, env: Env<'_>) -> Term<'_> {
