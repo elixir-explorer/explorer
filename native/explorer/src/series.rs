@@ -1414,12 +1414,14 @@ pub fn s_strftime(s: ExSeries, format_string: &str) -> Result<ExSeries, Explorer
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_clip(s: ExSeries, min: Option<f64>, max: Option<f64>) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.clone_inner();
+
     let s1 = match (min, max) {
-        (Some(min_val), Some(max_val)) => s
-            .clone_inner()
-            .clip(AnyValue::Float64(min_val), AnyValue::Float64(max_val))?,
-        (Some(min_val), None) => s.clone_inner().clip_min(AnyValue::Float64(min_val))?,
-        (None, Some(max_val)) => s.clone_inner().clip_max(AnyValue::Float64(max_val))?,
+        (Some(min_val), Some(max_val)) => {
+            s1.clip(AnyValue::Float64(min_val), AnyValue::Float64(max_val))?
+        }
+        (Some(min_val), None) => s1.clip_min(AnyValue::Float64(min_val))?,
+        (None, Some(max_val)) => s1.clip_max(AnyValue::Float64(max_val))?,
         _ => panic!("redundant clip with no bounds specified"),
     };
 
