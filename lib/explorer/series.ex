@@ -867,7 +867,7 @@ defmodule Explorer.Series do
     * `:integer`
     * `:float`
 
-  Clipping other dtypes are possible using select/3.
+  Clipping other dtypes are possible using `select/3`.
 
   ## Examples
 
