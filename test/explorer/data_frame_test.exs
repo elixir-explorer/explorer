@@ -2063,7 +2063,7 @@ defmodule Explorer.DataFrameTest do
   end
 
   test "concat_rows/2 rechunking logic when nil is introduced in the new dataframe" do
-    # this may panic if rechunking is not done correctly
+    # this may panic without forced rechunking
     df =
       DF.new(x: [1.0, 2.0], y: [2.0, 3.0])
       |> DF.concat_rows(DF.new(x: [nil], y: [nil]))
