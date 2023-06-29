@@ -1334,6 +1334,17 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "adds a column with round" do
+      df = DF.new(a: [1.2345, 2.3456, 3.4567, 4.5678])
+
+      df1 = DF.mutate(df, b: round(a, 2))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1.2345, 2.3456, 3.4567, 4.5678],
+               b: [1.23, 2.35, 3.46, 4.57]
+             }
+    end
+
     test "adds a column with exponential" do
       df = DF.new(a: [1, 2, 3])
 
