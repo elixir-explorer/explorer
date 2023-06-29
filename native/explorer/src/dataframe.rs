@@ -107,7 +107,7 @@ pub fn df_concat_rows(
         out_df.vstack_mut(&df)?;
     }
     // Follows recommendation from docs and rechunk after many vstacks.
-    out_df.rechunk();
+    out_df.as_single_chunk_par();
     Ok(ExDataFrame::new(out_df))
 }
 

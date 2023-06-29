@@ -2062,6 +2062,16 @@ defmodule Explorer.DataFrameTest do
                  fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
   end
 
+  test "concat_rows/2 rechunking logic when nil is introduced in the new dataframe" do
+    # this may panic without forced rechunking
+    df =
+      DF.new(x: [1.0, 2.0], y: [2.0, 3.0])
+      |> DF.concat_rows(DF.new(x: [nil], y: [nil]))
+      |> DF.mutate(z: correlation(x, y))
+
+    assert abs(df[:z][0] - 1.0) < 1.0e-4
+  end
+
   describe "distinct/2" do
     test "with lists", %{df: df} do
       df1 = DF.distinct(df, [:year, :country])
