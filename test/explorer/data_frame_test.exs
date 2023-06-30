@@ -2976,7 +2976,16 @@ defmodule Explorer.DataFrameTest do
   describe "nil_count/1" do
     test "various dtypes" do
       require Explorer.DataFrame, as: DF
-      df = DF.new(a: [1, nil, 3], b: [6.0, nil, :nan], c: ["a", "b", "c"], d: ["a", nil, nil], e: [nil, nil, nil])
+
+      df =
+        DF.new(
+          a: [1, nil, 3],
+          b: [6.0, nil, :nan],
+          c: ["a", "b", "a"],
+          d: ["a", nil, nil],
+          e: [nil, nil, nil]
+        )
+
       df1 = DF.nil_count(df)
       assert DF.to_columns(df1, atom_keys: true) == %{a: [1], b: [1], c: [0], d: [2], e: [3]}
     end

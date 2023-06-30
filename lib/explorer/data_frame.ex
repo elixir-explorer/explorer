@@ -5013,7 +5013,20 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  TODO
+  Count the number of nils in each column.
+
+  Groups are ignored if the dataframe is using any.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [nil, 2, nil], c: ["a", "b", "c"])
+      iex> Explorer.DataFrame.nil_count(df)
+      #Explorer.DataFrame<
+        Polars[1 x 3]
+        a integer [1]
+        b integer [2]
+        c integer [0]
+      >
   """
   @doc type: :single
   @spec nil_count(df :: DataFrame.t()) :: DataFrame.t()
