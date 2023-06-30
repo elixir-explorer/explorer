@@ -894,19 +894,20 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec clip(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
-  def clip(_series, []) do
-    raise(
-      ArgumentError,
-      "Explorer.Series.clip/2 expects one of the minimum or the maximum " <>
-        "bounds to be specified"
-    )
-  end
-
   def clip(%Series{dtype: dtype} = series, opts) when is_numeric_dtype(dtype) do
     opts = Keyword.validate!(opts, min: nil, max: nil)
     min = if is_integer(opts[:min]), do: opts[:min] / 1.0, else: opts[:min]
     max = if is_integer(opts[:max]), do: opts[:max] / 1.0, else: opts[:max]
-    apply_series(series, :clip, [min, max])
+
+    if K.and(K.is_nil(min), K.is_nil(max)) do
+      raise(
+        ArgumentError,
+        "Explorer.Series.clip/2 expects one of the minimum or the maximum " <>
+          "bounds to be specified"
+      )
+    else
+      apply_series(series, :clip, [min, max])
+    end
   end
 
   def clip(%Series{dtype: dtype}, _opts),

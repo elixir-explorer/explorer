@@ -3709,6 +3709,10 @@ defmodule Explorer.SeriesTest do
                  fn -> Series.clip(Series.from_list([1]), []) end
 
     assert_raise ArgumentError,
+                 ~r"expects one of the minimum or the maximum",
+                 fn -> Series.clip(Series.from_list([1]), min: nil, max: nil) end
+
+    assert_raise ArgumentError,
                  "Explorer.Series.clip/2 not implemented for dtype :string. " <>
                    "Valid dtypes are [:integer, :float]",
                  fn -> Series.clip(Series.from_list(["a"]), max: 10) end
