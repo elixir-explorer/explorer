@@ -430,6 +430,13 @@ pub fn df_describe(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_nil_count(df: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
+    let mut new_df = df.null_count();
+    let new_df = normalize_numeric_dtypes(&mut new_df)?;
+    Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_mutate_with_exprs(
     df: ExDataFrame,
     columns: Vec<ExExpr>,

@@ -5012,6 +5012,24 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :describe, [opts[:percentiles]])
   end
 
+  @doc """
+  Counts the number of null elements in each column.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [nil, 2, nil], c: ["a", "b", "c"])
+      iex> Explorer.DataFrame.nil_count(df)
+      #Explorer.DataFrame<
+        Polars[1 x 3]
+        a integer [1]
+        b integer [2]
+        c integer [0]
+      >
+  """
+  @doc type: :single
+  @spec nil_count(df :: DataFrame.t()) :: DataFrame.t()
+  def nil_count(df), do: Shared.apply_impl(df, :nil_count)
+
   # Helpers
 
   defp backend_from_options!(opts) do

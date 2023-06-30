@@ -180,6 +180,7 @@ defmodule Explorer.Backend.DataFrame do
             ) :: df
   @callback put(df, out_df :: df(), column_name(), series()) :: df
   @callback describe(df, percentiles :: option(list(float()))) :: df()
+  @callback nil_count(df) :: df()
 
   # Two or more table verbs
 
