@@ -5013,9 +5013,7 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Count the number of nils in each column.
-
-  Groups are ignored if the dataframe is using any.
+  Counts the number of null elements in each column.
 
   ## Examples
 
