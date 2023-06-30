@@ -131,6 +131,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_to_parquet(_df, _filename, _compression), do: err()
   def df_width(_df), do: err()
   def df_describe(_df, _percentiles), do: err()
+  def df_nil_count(_df), do: err()
 
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]

@@ -447,6 +447,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def nil_count(%DataFrame{} = df) do
+    case Native.df_nil_count(df.data) do
+      {:ok, polars_df} -> Shared.create_dataframe(polars_df)
+      {:error, error} -> raise "cannot count nils. Reason: #{inspect(error)}"
+    end
+  end
+
+  @impl true
   def arrange_with(%DataFrame{} = df, out_df, column_pairs) do
     {directions, expressions} =
       column_pairs

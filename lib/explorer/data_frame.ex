@@ -5012,6 +5012,13 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :describe, [opts[:percentiles]])
   end
 
+  @doc """
+  TODO
+  """
+  @doc type: :single
+  @spec nil_count(df :: DataFrame.t()) :: DataFrame.t()
+  def nil_count(df), do: Shared.apply_impl(df, :nil_count)
+
   # Helpers
 
   defp backend_from_options!(opts) do
