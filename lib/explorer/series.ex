@@ -4148,6 +4148,22 @@ defmodule Explorer.Series do
   def abs(%Series{dtype: dtype}),
     do: dtype_error("abs/1", dtype, [:integer, :float])
 
+  @doc """
+  TODO
+  """
+  @doc type: :element_wise
+  @spec min(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
+  def min(%Series{} = left, right),
+    do: basic_numeric_operation(:min2, left, right)
+
+  @doc """
+  TODO
+  """
+  @doc type: :element_wise
+  @spec max(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
+  def max(%Series{} = left, right),
+    do: basic_numeric_operation(:max2, left, right)
+
   # Strings
 
   @doc """

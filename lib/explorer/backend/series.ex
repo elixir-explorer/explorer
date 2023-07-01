@@ -108,6 +108,8 @@ defmodule Explorer.Backend.Series do
   @callback log(argument :: s, base :: float()) :: s
   @callback exp(s) :: s
   @callback abs(s) :: s
+  @callback min2(s | number(), s | number()) :: s
+  @callback max2(s | number(), s | number()) :: s
 
   # Trigonometry
 

@@ -458,6 +458,28 @@ pub fn expr_abs(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_min2(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
+    let predicate = left_expr.lt_eq(right_expr);
+    let condition = when(predicate)
+        .then(left.clone_inner())
+        .otherwise(right.clone_inner());
+    ExExpr::new(condition)
+}
+
+#[rustler::nif]
+pub fn expr_max2(left: ExExpr, right: ExExpr) -> ExExpr {
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
+    let predicate = left_expr.gt_eq(right_expr);
+    let condition = when(predicate)
+        .then(left.clone_inner())
+        .otherwise(right.clone_inner());
+    ExExpr::new(condition)
+}
+
+#[rustler::nif]
 pub fn expr_variance(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 

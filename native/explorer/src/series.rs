@@ -1269,6 +1269,14 @@ pub fn s_select(
     on_true: ExSeries,
     on_false: ExSeries,
 ) -> Result<ExSeries, ExplorerError> {
+    select(pred, on_true, on_false)
+}
+
+fn select(
+    pred: ExSeries,
+    on_true: ExSeries,
+    on_false: ExSeries,
+) -> Result<ExSeries, ExplorerError> {
     match pred.len() {
         1 => match pred.bool().unwrap().get(0).unwrap() {
             true => Ok(on_true),
@@ -1346,6 +1354,22 @@ pub fn s_ceil(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_abs(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(s.abs()?.into_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_min2(left: ExSeries, right: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
+    let predicate = ExSeries::new(left_expr.lt_eq(&right_expr)?.into_series());
+    select(predicate, left, right)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_max2(left: ExSeries, right: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let left_expr = left.clone_inner();
+    let right_expr = right.clone_inner();
+    let predicate = ExSeries::new(left_expr.gt_eq(&right_expr)?.into_series());
+    select(predicate, left, right)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

@@ -2786,6 +2786,13 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "min/2 and max/2" do
+    test "with nils" do
+      s = Series.from_list([-50, 5, nil, 50])
+      assert Series.min(s, 10) |> Series.to_list() == [-50, 5, nil, 10]
+    end
+  end
+
   describe "sort/2" do
     test "sort a series in ascending order" do
       s1 = Series.from_list([3, 1, nil, 2])
