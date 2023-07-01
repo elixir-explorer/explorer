@@ -193,11 +193,11 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_correlation(to_expr(series1), to_expr(series2), ddof)
   end
 
-  def to_expr(%LazySeries{op: :elemwise_min, args: [series1, series2]}) do
+  def to_expr(%LazySeries{op: :min, args: [series1, series2]}) do
     Native.expr_elemwise_min(to_expr(series1), to_expr(series2))
   end
 
-  def to_expr(%LazySeries{op: :elemwise_max, args: [series1, series2]}) do
+  def to_expr(%LazySeries{op: :max, args: [series1, series2]}) do
     Native.expr_elemwise_max(to_expr(series1), to_expr(series2))
   end
 

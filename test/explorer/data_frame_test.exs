@@ -970,6 +970,14 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "element-wise min/2 and max/2" do
+      df = DF.new(a: [-50, 5, nil, 50], b: [-100, 10, nil, 100])
+      df1 = DF.mutate(df, c: max(a, b), d: min(a, b))
+
+      assert df1 |> DF.to_columns(atom_keys: true) ==
+      %{a: [-50, 5, nil, 50], b: [-100, 10, nil, 100], c: [-50, 10, nil, 100], d: [-100, 5, nil, 50]}
+    end
+
     test "correlation and covariance" do
       df = DF.new(a: [1, 8, 3], b: [4, 5, 2])
       df1 = DF.mutate(df, c: covariance(a, b), d: correlation(a, b))
