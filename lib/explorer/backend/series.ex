@@ -108,8 +108,8 @@ defmodule Explorer.Backend.Series do
   @callback log(argument :: s, base :: float()) :: s
   @callback exp(s) :: s
   @callback abs(s) :: s
-  @callback elemwise_min(s | number(), s | number()) :: s
-  @callback elemwise_max(s | number(), s | number()) :: s
+  @callback elemwise_min(s, s | number()) :: s
+  @callback elemwise_max(s, s | number()) :: s
 
   # Trigonometry
 

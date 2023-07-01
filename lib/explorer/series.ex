@@ -4149,7 +4149,34 @@ defmodule Explorer.Series do
     do: dtype_error("abs/1", dtype, [:integer, :float])
 
   @doc """
-  TODO
+  Finds the element-wise min.
+
+  When mixing floats and integers, the resulting series will have dtype `:float`.
+
+  Note that any comparison to `:nan` and `nil` always favours the element from
+  the `right` series.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = Series.from_list([-50, 5, nil, 50])
+      iex> Series.min(s, 10)
+      #Explorer.Series<
+        Polars[4]
+        integer [-50, 5, nil, 10]
+      >
+
+      iex> left = Series.from_list([-100, nil, nil, :nan, :nan, 20])
+      iex> right = Series.from_list([-50, -999, :nan, -999, nil, 10])
+      iex> Series.min(left, right)
+      #Explorer.Series<
+        Polars[6]
+        float [-100.0, -999.0, NaN, -999.0, nil, 10.0]
+      >
   """
   @doc type: :element_wise
   @spec min(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
@@ -4157,7 +4184,34 @@ defmodule Explorer.Series do
     do: basic_numeric_operation(:elemwise_min, left, right)
 
   @doc """
-  TODO
+  Finds the element-wise max.
+
+  When mixing floats and integers, the resulting series will have dtype `:float`.
+
+  Note that any comparison to `:nan` and `nil` always favours the element from
+  the `right` series.
+
+  ## Supported dtypes
+
+    * `:integer`
+    * `:float`
+
+  ## Examples
+
+      iex> s = Series.from_list([-50, 5, nil, 50])
+      iex> Series.max(s, 1)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 5, 1, 50]
+      >
+
+      iex> left = Series.from_list([-100, nil, nil, :nan, :nan, 20])
+      iex> right = Series.from_list([-50, -999, :nan, -999, nil, 10])
+      iex> Series.max(left, right)
+      #Explorer.Series<
+        Polars[6]
+        float [-50.0, -999.0, NaN, -999.0, nil, 20.0]
+      >
   """
   @doc type: :element_wise
   @spec max(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
