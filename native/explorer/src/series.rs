@@ -1357,15 +1357,15 @@ pub fn s_abs(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_min2(left: ExSeries, right: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let left_expr = left.clone_inner();
-    let right_expr = right.clone_inner();
-    let predicate = ExSeries::new(left_expr.lt_eq(&right_expr)?.into_series());
+pub fn s_elemwise_min(left: ExSeries, right: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let left_s = left.clone_inner();
+    let right_s = right.clone_inner();
+    let predicate = ExSeries::new(left_s.lt_eq(&right_s)?.into_series());
     select(predicate, left, right)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_max2(left: ExSeries, right: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_elemwise_max(left: ExSeries, right: ExSeries) -> Result<ExSeries, ExplorerError> {
     let left_expr = left.clone_inner();
     let right_expr = right.clone_inner();
     let predicate = ExSeries::new(left_expr.gt_eq(&right_expr)?.into_series());

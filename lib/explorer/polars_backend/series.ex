@@ -345,12 +345,14 @@ defmodule Explorer.PolarsBackend.Series do
   def abs(%Series{} = s), do: Shared.apply_series(s, :s_abs, [])
 
   @impl true
-  def min2(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_min2, [to_polars_series(right, left)])
+  def elemwise_min(left, right),
+    do:
+      Shared.apply_series(to_series(left, right), :s_elemwise_min, [to_polars_series(right, left)])
 
   @impl true
-  def max2(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_max2, [to_polars_series(right, left)])
+  def elemwise_max(left, right),
+    do:
+      Shared.apply_series(to_series(left, right), :s_elemwise_max, [to_polars_series(right, left)])
 
   # Trigonometry
 

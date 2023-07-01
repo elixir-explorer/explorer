@@ -458,7 +458,7 @@ pub fn expr_abs(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_min2(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_elemwise_min(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr = left.clone_inner();
     let right_expr = right.clone_inner();
     let predicate = left_expr.lt_eq(right_expr);
@@ -469,7 +469,7 @@ pub fn expr_min2(left: ExExpr, right: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_max2(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_elemwise_max(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr = left.clone_inner();
     let right_expr = right.clone_inner();
     let predicate = left_expr.gt_eq(right_expr);

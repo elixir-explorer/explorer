@@ -4154,7 +4154,7 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec min(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
   def min(%Series{} = left, right),
-    do: basic_numeric_operation(:min2, left, right)
+    do: basic_numeric_operation(:elemwise_min, left, right)
 
   @doc """
   TODO
@@ -4162,7 +4162,7 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec max(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
   def max(%Series{} = left, right),
-    do: basic_numeric_operation(:max2, left, right)
+    do: basic_numeric_operation(:elemwise_max, left, right)
 
   # Strings
 

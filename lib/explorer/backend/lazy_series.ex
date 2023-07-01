@@ -48,8 +48,8 @@ defmodule Explorer.Backend.LazySeries do
     cast: 2,
     select: 3,
     abs: 1,
-    min2: 2,
-    max2: 2,
+    elemwise_min: 2,
+    elemwise_max: 2,
     strptime: 2,
     strftime: 2,
 
@@ -709,14 +709,14 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def min2(left, right) do
+  def elemwise_min(left, right) do
     data = new(:min, [series_or_lazy_series!(left), series_or_lazy_series!(right)])
     dtype = resolve_numeric_dtype([left, right])
     Backend.Series.new(data, dtype)
   end
 
   @impl true
-  def max2(left, right) do
+  def elemwise_max(left, right) do
     data = new(:max, [series_or_lazy_series!(left), series_or_lazy_series!(right)])
     dtype = resolve_numeric_dtype([left, right])
     Backend.Series.new(data, dtype)

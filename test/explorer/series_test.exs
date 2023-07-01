@@ -2787,9 +2787,24 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "min/2 and max/2" do
-    test "with nils" do
+    test "handle nils correctly" do
       s = Series.from_list([-50, 5, nil, 50])
       assert Series.min(s, 10) |> Series.to_list() == [-50, 5, nil, 10]
+      assert Series.max(s, 1) |> Series.to_list() == [1, 5, 1, 50]
+
+      s1 = Series.from_list([-100, 10, nil, 100])
+      assert Series.min(s, s1) |> Series.to_list() == [-100, 5, nil, 50]
+      assert Series.max(s, s1) |> Series.to_list() == [-50, 10, nil, 100]
+    end
+
+    test "handle nans and infinities correctly" do
+      s = Series.from_list([:neg_infinity, 5, :nan, :infinity])
+      assert Series.min(s, 10) |> Series.to_list() == [:neg_infinity, 5, 10, 10]
+      assert Series.max(s, 1) |> Series.to_list() == [1, 5, 1, :infinity]
+
+      s1 = Series.from_list([-100, 10, nil, 100])
+      assert Series.min(s, s1) |> Series.to_list() == [:neg_infinity, 5, nil, 100]
+      assert Series.max(s, s1) |> Series.to_list() == [-100, 10, nil, :infinity]
     end
   end
 

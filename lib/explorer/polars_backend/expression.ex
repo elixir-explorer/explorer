@@ -139,8 +139,8 @@ defmodule Explorer.PolarsBackend.Expression do
     concat: 1,
     column: 1,
     correlation: 3,
-    min2: 2,
-    max2: 2
+    elemwise_min: 2,
+    elemwise_max: 2
   ]
 
   missing =
@@ -193,12 +193,12 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_correlation(to_expr(series1), to_expr(series2), ddof)
   end
 
-  def to_expr(%LazySeries{op: :min2, args: [series1, series2]}) do
-    Native.expr_min2(to_expr(series1), to_expr(series2))
+  def to_expr(%LazySeries{op: :elemwise_min, args: [series1, series2]}) do
+    Native.expr_elemwise_min(to_expr(series1), to_expr(series2))
   end
 
-  def to_expr(%LazySeries{op: :max2, args: [series1, series2]}) do
-    Native.expr_min2(to_expr(series1), to_expr(series2))
+  def to_expr(%LazySeries{op: :elemwise_max, args: [series1, series2]}) do
+    Native.expr_elemwise_max(to_expr(series1), to_expr(series2))
   end
 
   def to_expr(%LazySeries{op: :format, args: [series_list]}) when is_list(series_list) do
