@@ -180,6 +180,10 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(predicate, :s_select, [on_true.data, on_false.data])
   end
 
+  def select(%Series{} = predicate, on_true, on_false) do
+    select(predicate, literal!(on_true), literal!(on_false))
+  end
+
   # Aggregation
 
   @impl true
@@ -682,6 +686,11 @@ defmodule Explorer.PolarsBackend.Series do
 
   defp to_mod_series(value, %{dtype: dtype}, mod),
     do: mod.from_list([value], dtype)
+
+  defp literal!(%Series{} = series), do: series
+
+  defp literal!(value),
+    do: from_list([value], Explorer.Shared.check_types!([value]))
 end
 
 defimpl Inspect, for: Explorer.PolarsBackend.Series do
