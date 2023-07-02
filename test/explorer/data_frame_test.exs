@@ -1533,7 +1533,6 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    @tag current: true
     test "add columns with select/3" do
       df1 = DF.new(a: [1, 2, 3]) |> DF.mutate(x: select(a <= 2.5, a, 2.5))
       assert Series.to_list(df1[:x]) == [1.0, 2.0, 2.5]
