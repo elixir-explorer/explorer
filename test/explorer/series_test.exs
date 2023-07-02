@@ -2789,8 +2789,8 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([1, 2, 3])
       s1 = Series.select(Series.less_equal(s, 2), -1, 1)
       assert Series.to_list(s1) == [-1, -1, 1]
-      s2 = Series.select(Series.less_equal(s, 2), s, 1)
-      assert Series.to_list(s2) == [1, 2, 1]
+      s2 = Series.select(Series.less_equal(s, 2), s, :infinity)
+      assert Series.to_list(s2) == [1, 2, :infinity]
       s3 = Series.select(Series.less_equal(s, 2), -1, s)
       assert Series.to_list(s3) == [-1, -1, 3]
     end

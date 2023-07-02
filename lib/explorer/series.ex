@@ -77,6 +77,14 @@ defmodule Explorer.Series do
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
 
   @type non_finite :: :nan | :infinity | :neg_infinity
+  @type inferable_scalar ::
+          number()
+          | non_finite()
+          | boolean()
+          | String.t()
+          | Date.t()
+          | Time.t()
+          | NaiveDateTime.t()
 
   @doc false
   @enforce_keys [:data, :dtype]
@@ -1137,7 +1145,11 @@ defmodule Explorer.Series do
   a series of the same size as `predicate` or a series of size 1.
   """
   @doc type: :element_wise
-  @spec select(predicate :: Series.t(), on_true :: Series.t(), on_false :: Series.t()) ::
+  @spec select(
+          predicate :: Series.t(),
+          on_true :: Series.t() | inferable_scalar(),
+          on_false :: Series.t() | inferable_scalar()
+        ) ::
           Series.t()
   def select(
         %Series{dtype: predicate_dtype} = predicate,

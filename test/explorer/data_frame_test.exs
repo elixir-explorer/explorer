@@ -1537,8 +1537,8 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.new(a: [1, 2, 3]) |> DF.mutate(x: select(a <= 2.5, a, 2.5))
       assert Series.to_list(df1[:x]) == [1.0, 2.0, 2.5]
 
-      df2 = DF.new(a: [1, 2, 3]) |> DF.mutate(x: select(a <= 2.5, 2.5, a))
-      assert Series.to_list(df2[:x]) == [2.5, 2.5, 3.0]
+      df2 = DF.new(a: [1, 2, 3]) |> DF.mutate(x: select(a <= 2.5, :nan, a))
+      assert Series.to_list(df2[:x]) == [:nan, :nan, 3.0]
 
       df3 = DF.new(a: [true, false, nil]) |> DF.mutate(x: select(a, false, a))
       assert Series.to_list(df3[:x]) == [false, false, nil]
