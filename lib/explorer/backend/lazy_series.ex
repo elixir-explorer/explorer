@@ -531,6 +531,17 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, dtype)
   end
 
+  def select(%Series{} = predicate, on_true, on_false) do
+    select(predicate, to_series!(on_true), to_series!(on_false))
+  end
+
+  defp to_series!(%Series{} = series), do: series
+
+  defp to_series!(value) do
+    dtype = Explorer.Shared.check_types!([value])
+    from_list([value], dtype)
+  end
+
   @impl true
   def format(list) do
     series_list = Enum.map(list, &series_or_lazy_series!/1)

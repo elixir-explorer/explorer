@@ -1161,6 +1161,17 @@ defmodule Explorer.Series do
     end
   end
 
+  def select(%Series{} = predicate, on_true, on_false) do
+    select(predicate, to_series!(on_true), to_series!(on_false))
+  end
+
+  defp to_series!(%Series{} = series), do: series
+
+  defp to_series!(value) do
+    dtype = Explorer.Shared.check_types!([value])
+    from_list([value], dtype: dtype)
+  end
+
   @doc """
   Returns a random sample of the series.
 
