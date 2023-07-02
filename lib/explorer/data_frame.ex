@@ -5053,7 +5053,7 @@ defmodule Explorer.DataFrame do
     |> arrange_with(&[desc: &1[:counts]])
   end
 
-  def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty.")
+  def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")
 
   # Helpers
 
