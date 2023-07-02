@@ -5030,6 +5030,31 @@ defmodule Explorer.DataFrame do
   @spec nil_count(df :: DataFrame.t()) :: DataFrame.t()
   def nil_count(df), do: Shared.apply_impl(df, :nil_count)
 
+  @doc """
+  Creates a new dataframe with unique rows and the frequencies of each.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "a", "b"], b: [1, 1, nil])
+      iex> Explorer.DataFrame.frequencies(df, [:a, :b])
+      #Explorer.DataFrame<
+        Polars[2 x 3]
+        a string ["a", "b"]
+        b integer [1, nil]
+        counts integer [2, 1]
+      >
+  """
+  @doc type: :single
+  @spec frequencies(df :: DataFrame.t(), columns :: column_names()) :: DataFrame.t()
+  def frequencies(%DataFrame{} = df, [col | _] = columns) do
+    df
+    |> group_by(columns)
+    |> summarise_with(&[counts: Series.count(&1[col])])
+    |> arrange_with(&[desc: &1[:counts]])
+  end
+
+  def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")
+
   # Helpers
 
   defp backend_from_options!(opts) do
