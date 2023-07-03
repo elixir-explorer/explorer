@@ -992,9 +992,14 @@ defmodule Explorer.DataFrameTest do
 
     test "clip/3" do
       df = DF.new(a: [-50, 5, nil, 50])
-      df1 = df |> DF.mutate(b: clip(a, 1, 10))
 
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [-50, 5, nil, 50], b: [1, 5, nil, 10]}
+      df1 = df |> DF.mutate(b: clip(a, 1, 10)) |> DF.select(:b)
+      assert DF.to_columns(df1, atom_keys: true) == %{b: [1, 5, nil, 10]}
+      assert DF.dtypes(df1) == %{"b" => :integer}
+
+      df2 = df |> DF.mutate(b: clip(a, 1.5, 10.5)) |> DF.select(:b)
+      assert DF.to_columns(df2, atom_keys: true) == %{b: [1.5, 5.0, nil, 10.5]}
+      assert DF.dtypes(df2) == %{"b" => :float}
 
       assert_raise ArgumentError,
                    ~r"expects both the min and max bounds to be numbers",

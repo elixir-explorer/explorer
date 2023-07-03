@@ -833,9 +833,19 @@ pub fn expr_strftime(expr: ExExpr, format_string: &str) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_clip(expr: ExExpr, min: f64, max: f64) -> ExExpr {
+pub fn expr_clip_integer(expr: ExExpr, min: i64, max: i64) -> ExExpr {
     let expr = expr
         .clone_inner()
+        .clip(AnyValue::Int64(min), AnyValue::Int64(max));
+
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_clip_float(expr: ExExpr, min: f64, max: f64) -> ExExpr {
+    let expr = expr
+        .clone_inner()
+        .cast(DataType::Float64)
         .clip(AnyValue::Float64(min), AnyValue::Float64(max));
 
     ExExpr::new(expr)

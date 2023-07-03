@@ -357,7 +357,12 @@ defmodule Explorer.PolarsBackend.Series do
   def abs(%Series{} = s), do: Shared.apply_series(s, :s_abs, [])
 
   @impl true
-  def clip(%Series{} = s, min, max), do: Shared.apply_series(s, :s_clip, [min, max])
+  def clip(%Series{dtype: dtype} = s, min, max)
+      when dtype == :integer and is_integer(min) and is_integer(max),
+      do: Shared.apply_series(s, :s_clip_integer, [min, max])
+
+  def clip(%Series{} = s, min, max),
+    do: Shared.apply_series(s, :s_clip_float, [min * 1.0, max * 1.0])
 
   # Trigonometry
 

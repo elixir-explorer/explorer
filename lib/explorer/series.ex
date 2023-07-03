@@ -870,20 +870,28 @@ defmodule Explorer.Series do
         Polars[4]
         integer [1, 5, nil, 10]
       >
+
+      iex> s = Explorer.Series.from_list([-50, 5, nil, 50])
+      iex> Explorer.Series.clip(s, 1.5, 10.5)
+      #Explorer.Series<
+        Polars[4]
+        float [1.5, 5.0, nil, 10.5]
+      >
   """
   @doc type: :element_wise
   @spec clip(series :: Series.t(), min :: number(), max :: number()) :: Series.t()
   def clip(%Series{dtype: dtype} = series, min, max) when is_numeric_dtype(dtype) do
-    if K.and(is_number(min), is_number(max)) do
-      min = if is_integer(min), do: min / 1.0, else: min
-      max = if is_integer(max), do: max / 1.0, else: max
-      apply_series(series, :clip, [min, max])
-    else
-      raise(
-        ArgumentError,
-        "Explorer.Series.clip/3 expects both the min and max bounds to be numbers"
-      )
+    if !K.and(is_number(min), is_number(max)) do
+      raise ArgumentError,
+            "Explorer.Series.clip/3 expects both the min and max bounds to be numbers"
     end
+
+    if min > max do
+      raise ArgumentError,
+            "Explorer.Series.clip/3 expects the max bound to be greater than the min bound"
+    end
+
+    apply_series(series, :clip, [min, max])
   end
 
   def clip(%Series{dtype: dtype}, _min, _max),

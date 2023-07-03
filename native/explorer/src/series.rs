@@ -1413,9 +1413,19 @@ pub fn s_strftime(s: ExSeries, format_string: &str) -> Result<ExSeries, Explorer
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_clip(s: ExSeries, min: f64, max: f64) -> Result<ExSeries, ExplorerError> {
+pub fn s_clip_integer(s: ExSeries, min: i64, max: i64) -> Result<ExSeries, ExplorerError> {
     let s1 = s
         .clone_inner()
+        .clip(AnyValue::Int64(min), AnyValue::Int64(max))?;
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_clip_float(s: ExSeries, min: f64, max: f64) -> Result<ExSeries, ExplorerError> {
+    let s1 = s
+        .clone_inner()
+        .cast(&DataType::Float64)?
         .clip(AnyValue::Float64(min), AnyValue::Float64(max))?;
 
     Ok(ExSeries::new(s1))
