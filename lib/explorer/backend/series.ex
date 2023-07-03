@@ -55,7 +55,11 @@ defmodule Explorer.Backend.Series do
   @callback coalesce(s, s) :: s
   @callback first(s) :: valid_types() | lazy_s()
   @callback last(s) :: valid_types() | lazy_s()
-  @callback select(predicate :: s, s, s) :: s
+  @callback select(
+              predicate :: s,
+              s | valid_types() | non_finite(),
+              s | valid_types() | non_finite()
+            ) :: s
   @callback shift(s, offset :: integer, default :: nil) :: s
   @callback rank(
               s,

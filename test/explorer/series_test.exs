@@ -2784,6 +2784,16 @@ defmodule Explorer.SeriesTest do
 
       assert Series.select(predicate, on_true, on_false) |> Series.to_list() == [1, 0, 1, 0]
     end
+
+    test "select allows if on_true or on_false is a series or a scalar" do
+      s = Series.from_list([1, 2, 3])
+      s1 = Series.select(Series.less_equal(s, 2), -1, 1)
+      assert Series.to_list(s1) == [-1, -1, 1]
+      s2 = Series.select(Series.less_equal(s, 2), s, :infinity)
+      assert Series.to_list(s2) == [1, 2, :infinity]
+      s3 = Series.select(Series.less_equal(s, 2), -1, s)
+      assert Series.to_list(s3) == [-1, -1, 3]
+    end
   end
 
   describe "sort/2" do

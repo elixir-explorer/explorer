@@ -1532,6 +1532,37 @@ defmodule Explorer.DataFrameTest do
                "k" => :integer
              }
     end
+
+    test "add columns with select/3" do
+      df1 = DF.new(a: [1, 2, 3]) |> DF.mutate(x: select(a <= 2.5, a, 2.5))
+      assert Series.to_list(df1[:x]) == [1.0, 2.0, 2.5]
+
+      df2 = DF.new(a: [1, 2, 3]) |> DF.mutate(x: select(a <= 2.5, :nan, a))
+      assert Series.to_list(df2[:x]) == [:nan, :nan, 3.0]
+
+      df3 = DF.new(a: [true, false, nil]) |> DF.mutate(x: select(a, false, a))
+      assert Series.to_list(df3[:x]) == [false, false, nil]
+
+      df4 = DF.new(a: [true, false, nil]) |> DF.mutate(x: select(not a, a, true))
+      assert Series.to_list(df4[:x]) == [true, false, true]
+
+      df5 = DF.new(a: ["a", "b", "c"]) |> DF.mutate(x: select(a == "a", "x", a))
+      assert Series.to_list(df5[:x]) == ["x", "b", "c"]
+
+      df6 = DF.new(a: ["a", "b", "c"]) |> DF.mutate(x: select(a == "a", a, "x"))
+      assert Series.to_list(df6[:x]) == ["a", "x", "x"]
+
+      df7 =
+        DF.new(a: [~D[2023-01-15], ~D[2022-02-16], nil])
+        |> DF.mutate(x: select(a == ~D[2023-01-15], a, ~D[2023-01-01]))
+
+      assert Series.to_list(df7[:x]) ==
+               [
+                 ~N[2023-01-15 00:00:00.000000],
+                 ~N[2023-01-01 00:00:00.000000],
+                 ~N[2023-01-01 00:00:00.000000]
+               ]
+    end
   end
 
   describe "arrange/3" do

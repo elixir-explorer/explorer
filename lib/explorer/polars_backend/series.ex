@@ -11,7 +11,8 @@ defmodule Explorer.PolarsBackend.Series do
 
   @behaviour Explorer.Backend.Series
 
-  defguardp is_numerical(n) when is_number(n) or n in [:nan, :infinity, :neg_infinity]
+  defguardp is_non_finite(n) when n in [:nan, :infinity, :neg_infinity]
+  defguardp is_numerical(n) when is_number(n) or is_non_finite(n)
 
   # Conversion
 
@@ -178,6 +179,17 @@ defmodule Explorer.PolarsBackend.Series do
     end
 
     Shared.apply_series(predicate, :s_select, [on_true.data, on_false.data])
+  end
+
+  def select(%Series{} = predicate, %Series{} = on_true, on_false),
+    do: select(predicate, on_true, to_series(on_false, on_true))
+
+  def select(%Series{} = predicate, on_true, %Series{} = on_false),
+    do: select(predicate, to_series(on_true, on_false), on_false)
+
+  def select(%Series{} = predicate, on_true, on_false) do
+    on_true = from_list([on_true], Explorer.Shared.check_types!([on_true]))
+    select(predicate, on_true, on_false)
   end
 
   # Aggregation
@@ -677,7 +689,7 @@ defmodule Explorer.PolarsBackend.Series do
   defp to_mod_series(value, %{dtype: :float}, mod) when is_integer(value),
     do: mod.from_list([1.0 * value], :float)
 
-  defp to_mod_series(value, %{dtype: :integer}, mod) when is_float(value),
+  defp to_mod_series(value, %{dtype: :integer}, mod) when is_float(value) or is_non_finite(value),
     do: mod.from_list([value], :float)
 
   defp to_mod_series(value, %{dtype: dtype}, mod),
