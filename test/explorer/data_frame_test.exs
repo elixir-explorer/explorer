@@ -1556,7 +1556,12 @@ defmodule Explorer.DataFrameTest do
         DF.new(a: [~D[2023-01-15], ~D[2022-02-16], nil])
         |> DF.mutate(x: select(a == ~D[2023-01-15], a, ~D[2023-01-01]))
 
-      assert Series.to_list(df7[:x]) == [~D[2023-01-15], ~D[2023-01-01], ~D[2023-01-01]]
+      assert Series.to_list(df7[:x]) ==
+               [
+                 ~N[2023-01-15 00:00:00.000000],
+                 ~N[2023-01-01 00:00:00.000000],
+                 ~N[2023-01-01 00:00:00.000000]
+               ]
     end
   end
 

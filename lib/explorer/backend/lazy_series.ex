@@ -512,34 +512,25 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def select(%Series{} = predicate, %Series{} = on_true, %Series{} = on_false) do
-    args = [
-      series_or_lazy_series!(predicate),
-      series_or_lazy_series!(on_true),
-      series_or_lazy_series!(on_false)
-    ]
-
+  def select(%Series{} = predicate, on_true, on_false) do
+    args = [series_or_lazy_series!(predicate) | binary_args(on_true, on_false)]
     data = new(:select, args, aggregations?(args))
 
     dtype =
-      if on_true.dtype in [:float, :integer] do
+      case {on_true, on_false} do
+        {%Series{dtype: dtype}, _} -> dtype
+        {_, %Series{dtype: dtype}} -> dtype
+        _ -> Explorer.Shared.check_types!([on_true])
+      end
+
+    dtype =
+      if dtype in [:float, :integer] do
         resolve_numeric_dtype([on_true, on_false])
       else
-        on_true.dtype
+        dtype
       end
 
     Backend.Series.new(data, dtype)
-  end
-
-  def select(%Series{} = predicate, on_true, on_false) do
-    select(predicate, literal!(on_true), literal!(on_false))
-  end
-
-  defp literal!(%Series{} = series), do: series
-
-  defp literal!(value) do
-    dtype = Explorer.Shared.check_types!([value])
-    from_list([value], dtype)
   end
 
   @impl true
