@@ -3695,27 +3695,23 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "clip/2" do
+  describe "clip/3" do
     for {values, min, max, exp_clipped} <- [
           [[-50, 5, nil, 50], 1, 10, [1, 5, nil, 10]],
           [[-50.0, 5.0, nil, 50.0], 1.0, 10.0, [1.0, 5.0, nil, 10.0]]
         ] do
       s = Series.from_list(values)
-      assert Series.clip(s, min: min, max: max) |> Series.to_list() == exp_clipped
+      assert Series.clip(s, min, max) |> Series.to_list() == exp_clipped
     end
 
     assert_raise ArgumentError,
                  ~r"expects one of the minimum or the maximum",
-                 fn -> Series.clip(Series.from_list([1]), []) end
+                 fn -> Series.clip(Series.from_list([1]), nil, nil) end
 
     assert_raise ArgumentError,
-                 ~r"expects one of the minimum or the maximum",
-                 fn -> Series.clip(Series.from_list([1]), min: nil, max: nil) end
-
-    assert_raise ArgumentError,
-                 "Explorer.Series.clip/2 not implemented for dtype :string. " <>
+                 "Explorer.Series.clip/3 not implemented for dtype :string. " <>
                    "Valid dtypes are [:integer, :float]",
-                 fn -> Series.clip(Series.from_list(["a"]), max: 10) end
+                 fn -> Series.clip(Series.from_list(["a"]), nil, 10) end
   end
 
   describe "correlation/2 and covariance/2" do
