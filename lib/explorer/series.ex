@@ -853,8 +853,7 @@ defmodule Explorer.Series do
   Clip (or clamp) the values in a series.
 
   Values that fall outside of the interval defined by the `min` and `max`
-  bounds are clipped to the bounds. A bound of `nil` means no clipping in
-  the corresponding interval edge. Both bounds cannot be `nil`.
+  bounds are clipped to the bounds.
 
   ## Supported dtypes
 
@@ -871,36 +870,19 @@ defmodule Explorer.Series do
         Polars[4]
         integer [1, 5, nil, 10]
       >
-
-      iex> s = Explorer.Series.from_list([-50, 5, nil, 50])
-      iex> Explorer.Series.clip(s, 1, nil)
-      #Explorer.Series<
-        Polars[4]
-        integer [1, 5, nil, 50]
-      >
-
-      iex> s = Explorer.Series.from_list([-50, 5, nil, 50])
-      iex> Explorer.Series.clip(s, nil, 10)
-      #Explorer.Series<
-        Polars[4]
-        integer [-50, 5, nil, 10]
-      >
   """
   @doc type: :element_wise
-  @spec clip(series :: Series.t(), min :: number() | nil, max :: number() | nil) :: Series.t()
-  def clip(%Series{dtype: dtype} = series, min, max)
-      when is_numeric_dtype(dtype) do
-    min = if is_integer(min), do: min / 1.0, else: min
-    max = if is_integer(max), do: max / 1.0, else: max
-
-    if K.and(K.is_nil(min), K.is_nil(max)) do
+  @spec clip(series :: Series.t(), min :: number(), max :: number()) :: Series.t()
+  def clip(%Series{dtype: dtype} = series, min, max) when is_numeric_dtype(dtype) do
+    if K.and(is_number(min), is_number(max)) do
+      min = if is_integer(min), do: min / 1.0, else: min
+      max = if is_integer(max), do: max / 1.0, else: max
+      apply_series(series, :clip, [min, max])
+    else
       raise(
         ArgumentError,
-        "Explorer.Series.clip/3 expects one of the minimum or the maximum " <>
-          "bounds to be specified"
+        "Explorer.Series.clip/3 expects both the min and max bounds to be numbers"
       )
-    else
-      apply_series(series, :clip, [min, max])
     end
   end
 

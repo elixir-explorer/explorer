@@ -3705,13 +3705,17 @@ defmodule Explorer.SeriesTest do
     end
 
     assert_raise ArgumentError,
-                 ~r"expects one of the minimum or the maximum",
-                 fn -> Series.clip(Series.from_list([1]), nil, nil) end
+                 ~r"expects both the min and max bounds to be numbers",
+                 fn -> Series.clip(Series.from_list([1]), 1, "a") end
+
+    assert_raise ArgumentError,
+                 ~r"expects both the min and max bounds to be numbers",
+                 fn -> Series.clip(Series.from_list([1]), "a", 1) end
 
     assert_raise ArgumentError,
                  "Explorer.Series.clip/3 not implemented for dtype :string. " <>
                    "Valid dtypes are [:integer, :float]",
-                 fn -> Series.clip(Series.from_list(["a"]), nil, 10) end
+                 fn -> Series.clip(Series.from_list(["a"]), 1, 10) end
   end
 
   describe "correlation/2 and covariance/2" do

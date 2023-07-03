@@ -833,17 +833,10 @@ pub fn expr_strftime(expr: ExExpr, format_string: &str) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_clip(expr: ExExpr, min: Option<f64>, max: Option<f64>) -> ExExpr {
-    let expr = expr.clone_inner();
-
-    let expr = match (min, max) {
-        (Some(min_val), Some(max_val)) => {
-            expr.clip(AnyValue::Float64(min_val), AnyValue::Float64(max_val))
-        }
-        (Some(min_val), None) => expr.clip_min(AnyValue::Float64(min_val)),
-        (None, Some(max_val)) => expr.clip_max(AnyValue::Float64(max_val)),
-        _ => panic!("redundant clip with no bounds specified"),
-    };
+pub fn expr_clip(expr: ExExpr, min: f64, max: f64) -> ExExpr {
+    let expr = expr
+        .clone_inner()
+        .clip(AnyValue::Float64(min), AnyValue::Float64(max));
 
     ExExpr::new(expr)
 }
