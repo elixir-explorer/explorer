@@ -2449,6 +2449,16 @@ defmodule Explorer.DataFrame do
 
             Explorer.Backend.Series.new(lazy_s, :boolean)
 
+          date = %Date{} ->
+            lazy_s = LazySeries.new(:to_lazy, [date])
+
+            Explorer.Backend.Series.new(lazy_s, :date)
+
+          datetime = %NaiveDateTime{} ->
+            lazy_s = LazySeries.new(:to_lazy, [datetime])
+
+            Explorer.Backend.Series.new(lazy_s, :datetime)
+
           other ->
             raise ArgumentError,
                   "expecting a lazy series or scalar value, but instead got #{inspect(other)}"
