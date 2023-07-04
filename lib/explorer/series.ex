@@ -300,7 +300,26 @@ defmodule Explorer.Series do
   end
 
   @doc """
-    TODO
+  Creates a singleton series based on a scala value.
+
+  ## Examples
+
+    iex> Series.lit(1)
+    #Explorer.Series<
+      Polars[1]
+      integer [1]
+    >
+
+  This is particularly useful for function calls where the arguments are
+  required to be series.
+
+    iex> s = Series.from_list([nil, 2, 3])
+    iex> Series.coalesce(s, Series.lit(1))
+    #Explorer.Series<
+      Polars[3]
+      integer [1, 2, 3]
+    >
+
   """
   @doc type: :conversion
   @spec lit(value :: Series.t() | inferable_scalar()) :: Series.t()
