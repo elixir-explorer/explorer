@@ -3960,6 +3960,14 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "lit/1" do
+    test "casts to singleton when used on its own" do
+      s1 = Series.lit(1)
+      assert Series.to_list(s1) == [1]
+      assert s1.dtype == :integer
+    end
+  end
+
   describe "categorisation functions" do
     test "cut/6 with no nils" do
       series = -30..30//5 |> Enum.map(&(&1 / 10)) |> Enum.to_list() |> Series.from_list()

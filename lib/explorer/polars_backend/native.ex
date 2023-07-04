@@ -25,6 +25,7 @@ defmodule Explorer.PolarsBackend.Native do
       x86_64-unknown-freebsd
     ),
     mode: mode,
+    target: "aarch64-apple-darwin",
     force_build: System.get_env("EXPLORER_BUILD") in ["1", "true"]
 
   defstruct [:inner]

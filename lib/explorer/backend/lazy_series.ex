@@ -15,6 +15,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @operations [
     # Element-wise
+    lit: 1,
     all_equal: 2,
     equal: 2,
     not_equal: 2,
@@ -189,6 +190,13 @@ defmodule Explorer.Backend.LazySeries do
     args = [data!(left), data!(right)]
     data = new(:divide, args, aggregations?(args))
     Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def lit(%Series{} = s), do: s
+
+  def lit(value) do
+    from_list([value], Explorer.Shared.check_types!([value]))
   end
 
   @impl true

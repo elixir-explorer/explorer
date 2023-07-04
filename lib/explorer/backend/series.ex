@@ -23,6 +23,7 @@ defmodule Explorer.Backend.Series do
   @callback to_iovec(s) :: [binary()]
   @callback cast(s, dtype) :: s
   @callback categorise(s, s) :: s
+  @callback lit(s | valid_types() | non_finite()) :: s
   @callback strptime(s, String.t()) :: s
   @callback strftime(s, String.t()) :: s
 

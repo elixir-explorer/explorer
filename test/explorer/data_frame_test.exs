@@ -1565,6 +1565,20 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "lit/1" do
+    test "converts scalars in queries" do
+      df1 = DF.new(a: [1, nil, 2, nil]) |> DF.mutate(a: coalesce(a, lit(3)))
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 3, 2, 3]}
+
+      df2 =
+        DF.new([a: [1, nil, 2, nil]], lazy: true)
+        |> DF.mutate(a: coalesce(a, lit(3)))
+        |> DF.collect()
+
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [1, 3, 2, 3]}
+    end
+  end
+
   describe "arrange/3" do
     test "raises with invalid column names", %{df: df} do
       assert_raise ArgumentError,

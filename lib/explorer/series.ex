@@ -300,6 +300,15 @@ defmodule Explorer.Series do
   end
 
   @doc """
+    TODO
+  """
+  @doc type: :conversion
+  @spec lit(value :: Series.t() | inferable_scalar()) :: Series.t()
+  def lit(%Series{} = series), do: series
+
+  def lit(value), do: Explorer.PolarsBackend.Series.lit(value)
+
+  @doc """
   Builds a series of `dtype` from `binary`.
 
   All binaries must be in native endianness.

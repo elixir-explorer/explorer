@@ -115,6 +115,7 @@ defmodule Explorer.PolarsBackend.Expression do
     # Conversions
     strptime: 2,
     strftime: 2,
+    lit: 1,
 
     # Strings
     contains: 2,

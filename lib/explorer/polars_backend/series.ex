@@ -379,6 +379,12 @@ defmodule Explorer.PolarsBackend.Series do
   # Comparisons
 
   @impl true
+  def lit(%Series{} = s), do: s
+
+  def lit(value),
+    do: from_list([value], Explorer.Shared.check_types!([value]))
+
+  @impl true
   def equal(left, right),
     do: Shared.apply_series(to_series(left, right), :s_equal, [to_polars_series(right, left)])
 
