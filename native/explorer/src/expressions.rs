@@ -8,7 +8,7 @@ use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{
     col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
 };
-use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
+use polars::prelude::{AnyValue, DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
 use crate::datatypes::{ExDate, ExDateTime};
 use crate::series::{cast_str_to_dtype, cast_str_to_f64, ewm_opts, rolling_opts};
@@ -830,6 +830,25 @@ pub fn expr_strptime(expr: ExExpr, format_string: &str) -> ExExpr {
 #[rustler::nif]
 pub fn expr_strftime(expr: ExExpr, format_string: &str) -> ExExpr {
     ExExpr::new(expr.clone_inner().dt().strftime(format_string))
+}
+
+#[rustler::nif]
+pub fn expr_clip_integer(expr: ExExpr, min: i64, max: i64) -> ExExpr {
+    let expr = expr
+        .clone_inner()
+        .clip(AnyValue::Int64(min), AnyValue::Int64(max));
+
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_clip_float(expr: ExExpr, min: f64, max: f64) -> ExExpr {
+    let expr = expr
+        .clone_inner()
+        .cast(DataType::Float64)
+        .clip(AnyValue::Float64(min), AnyValue::Float64(max));
+
+    ExExpr::new(expr)
 }
 
 #[rustler::nif]

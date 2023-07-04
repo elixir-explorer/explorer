@@ -234,6 +234,8 @@ defmodule Explorer.PolarsBackend.Native do
   def s_abs(_s), do: err()
   def s_strptime(_s, _format_string), do: err()
   def s_strftime(_s, _format_string), do: err()
+  def s_clip_integer(_s, _min, _max), do: err()
+  def s_clip_float(_s, _min, _max), do: err()
   def s_fill_missing_with_strategy(_s, _strategy), do: err()
   def s_fill_missing_with_boolean(_s, _value), do: err()
   def s_fill_missing_with_bin(_s, _value), do: err()

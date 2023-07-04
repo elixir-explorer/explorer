@@ -990,6 +990,22 @@ defmodule Explorer.DataFrameTest do
                %{a: [1], b: [4], c: [:nan], d: [:nan]}
     end
 
+    test "clip/3" do
+      df = DF.new(a: [-50, 5, nil, 50])
+
+      df1 = df |> DF.mutate(b: clip(a, 1, 10)) |> DF.select(:b)
+      assert DF.to_columns(df1, atom_keys: true) == %{b: [1, 5, nil, 10]}
+      assert DF.dtypes(df1) == %{"b" => :integer}
+
+      df2 = df |> DF.mutate(b: clip(a, 1.5, 10.5)) |> DF.select(:b)
+      assert DF.to_columns(df2, atom_keys: true) == %{b: [1.5, 5.0, nil, 10.5]}
+      assert DF.dtypes(df2) == %{"b" => :float}
+
+      assert_raise ArgumentError,
+                   ~r"expects both the min and max bounds to be numbers",
+                   fn -> df |> DF.mutate(b: clip(a, nil, nil)) end
+    end
+
     test "adds some columns with select functions" do
       a = Series.from_list([true, false, true])
       b = Series.from_list([3, 4, 2])

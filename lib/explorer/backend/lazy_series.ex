@@ -50,6 +50,8 @@ defmodule Explorer.Backend.LazySeries do
     abs: 1,
     strptime: 2,
     strftime: 2,
+    clip_float: 3,
+    clip_integer: 3,
 
     # Trigonometric functions
     acos: 1,
@@ -720,6 +722,20 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:strftime, [lazy_series!(series), format_string])
 
     Backend.Series.new(data, :datetime)
+  end
+
+  @impl true
+  def clip(%Series{dtype: :integer} = series, min, max)
+      when is_integer(min) and is_integer(max) do
+    data = new(:clip_integer, [lazy_series!(series), min, max])
+
+    Backend.Series.new(data, :integer)
+  end
+
+  def clip(%Series{} = series, min, max) do
+    data = new(:clip_float, [lazy_series!(series), min * 1.0, max * 1.0])
+
+    Backend.Series.new(data, :float)
   end
 
   @impl true

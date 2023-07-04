@@ -3695,6 +3695,42 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "clip/3" do
+    test "With integers and floats" do
+      s1 = Series.from_list([-50, 5, nil, 50])
+      clipped1 = Series.clip(s1, 1, 10)
+      assert Series.to_list(clipped1) == [1, 5, nil, 10]
+      assert clipped1.dtype == :integer
+
+      s2 = Series.from_list([-50, 5, nil, 50])
+      clipped2 = Series.clip(s2, 1.5, 10.5)
+      assert Series.to_list(clipped2) == [1.5, 5.0, nil, 10.5]
+      assert clipped2.dtype == :float
+
+      s3 = Series.from_list([:neg_infinity, :nan, nil, :infinity])
+      clipped3 = Series.clip(s3, 1.5, 10.5)
+      assert Series.to_list(clipped3) == [1.5, :nan, nil, 10.5]
+      assert clipped3.dtype == :float
+
+      assert_raise ArgumentError,
+                   ~r"expects both the min and max bounds to be numbers",
+                   fn -> Series.clip(Series.from_list([1]), 1, "a") end
+
+      assert_raise ArgumentError,
+                   ~r"expects the max bound to be greater than the min bound",
+                   fn -> Series.clip(Series.from_list([1]), 1, -1) end
+
+      assert_raise ArgumentError,
+                   ~r"expects both the min and max bounds to be numbers",
+                   fn -> Series.clip(Series.from_list([1]), "a", 1) end
+
+      assert_raise ArgumentError,
+                   "Explorer.Series.clip/3 not implemented for dtype :string. " <>
+                     "Valid dtypes are [:integer, :float]",
+                   fn -> Series.clip(Series.from_list(["a"]), 1, 10) end
+    end
+  end
+
   describe "correlation/2 and covariance/2" do
     test "correlation and covariance of different dtypes and edge cases" do
       for {values1, values2, exp_cov, exp_corr} <- [
