@@ -3965,6 +3965,14 @@ defmodule Explorer.SeriesTest do
       s1 = Series.lit(1)
       assert Series.to_list(s1) == [1]
       assert s1.dtype == :integer
+
+      s2 = Series.lit(:nan)
+      assert Series.to_list(s2) == [:nan]
+      assert s2.dtype == :float
+
+      assert_raise ArgumentError,
+                   ~r/unsupported datatype/,
+                   fn -> Series.lit(:abc) end
     end
   end
 
