@@ -725,8 +725,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def clip(%Series{dtype: dtype} = series, min, max)
-      when dtype == :integer and is_integer(min) and is_integer(max) do
+  def clip(%Series{dtype: :integer} = series, min, max)
+      when is_integer(min) and is_integer(max) do
     data = new(:clip_integer, [lazy_series!(series), min, max])
 
     Backend.Series.new(data, :integer)
