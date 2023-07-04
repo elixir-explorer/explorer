@@ -620,7 +620,17 @@ defmodule Explorer.DataFrameTest do
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-      df1 = DF.mutate(df, c: a + 5, d: 2 + a, e: 42, f: 842.1, g: "Elixir", h: true)
+      df1 =
+        DF.mutate(df,
+          c: a + 5,
+          d: 2 + a,
+          e: 42,
+          f: 842.1,
+          g: "Elixir",
+          h: true,
+          i: ~D[2023-01-01],
+          j: ~N[2023-01-01 12:34:56]
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -630,10 +640,16 @@ defmodule Explorer.DataFrameTest do
                e: [42, 42, 42],
                f: [842.1, 842.1, 842.1],
                g: ["Elixir", "Elixir", "Elixir"],
-               h: [true, true, true]
+               h: [true, true, true],
+               i: [~D[2023-01-01], ~D[2023-01-01], ~D[2023-01-01]],
+               j: [
+                 ~N[2023-01-01 12:34:56.000000],
+                 ~N[2023-01-01 12:34:56.000000],
+                 ~N[2023-01-01 12:34:56.000000]
+               ]
              }
 
-      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h"]
+      assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 
       assert df1.dtypes == %{
                "a" => :integer,
@@ -643,7 +659,9 @@ defmodule Explorer.DataFrameTest do
                "e" => :integer,
                "f" => :float,
                "g" => :string,
-               "h" => :boolean
+               "h" => :boolean,
+               "i" => :date,
+               "j" => :datetime
              }
     end
 
@@ -1572,12 +1590,7 @@ defmodule Explorer.DataFrameTest do
         DF.new(a: [~D[2023-01-15], ~D[2022-02-16], nil])
         |> DF.mutate(x: select(a == ~D[2023-01-15], a, ~D[2023-01-01]))
 
-      assert Series.to_list(df7[:x]) ==
-               [
-                 ~N[2023-01-15 00:00:00.000000],
-                 ~N[2023-01-01 00:00:00.000000],
-                 ~N[2023-01-01 00:00:00.000000]
-               ]
+      assert Series.to_list(df7[:x]) == [~D[2023-01-15], ~D[2023-01-01], ~D[2023-01-01]]
     end
   end
 

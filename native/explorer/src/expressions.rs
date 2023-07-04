@@ -55,7 +55,7 @@ pub fn expr_atom(atom: &str) -> ExExpr {
 #[rustler::nif]
 pub fn expr_date(date: ExDate) -> ExExpr {
     let naive_date = NaiveDate::from(date);
-    let expr = naive_date.lit();
+    let expr = naive_date.lit().dt().date();
     ExExpr::new(expr)
 }
 
