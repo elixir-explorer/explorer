@@ -196,7 +196,9 @@ defmodule Explorer.Backend.LazySeries do
   def lit(%Series{} = s), do: s
 
   def lit(value) do
-    from_list([value], Explorer.Shared.check_types!([value]))
+    dtype = Explorer.Shared.check_types!([value])
+
+    Backend.Series.new(value, dtype)
   end
 
   @impl true
