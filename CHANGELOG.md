@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.6.0] - 2023-07-05
+
+### Added
+
+- Add support for OTP 26 and Elixir 1.15.
+
+- Allow `Explorer.DataFrame.summarise/2` to work without groups.
+  The aggregations can work considering the entire dataframe.
+
+- Add the following series functions: `product/1`, `cummulative_product/1`, `abs/1`,
+  `skew/2`, `window_standard_deviation/3`, `rank/2`, `year/1`, `mounth/1`, `day/1`,
+  `hour/1`, `minute/1`, `second/1`, `strptime/2`, `strftime/2`, `argmin/1`, `argmax/1`,
+  `cut/3`, `qcut/3`, `correlation/3`, `covariance/2` and `clip/3`.
+
+  They cover a lot in terms of functionality, so please check the `Explorer.Series`
+  docs for further details.
+
+- Add `Explorer.DataFrame.nil_count/1` that counts the number of nil elements in each
+  column.
+
+- Add `Explorer.DataFrame.frequencies/2` that creates a new dataframe with unique rows
+  and the frequencies of each.
+
+- Add `Explorer.DataFrame.relocate/3` that enables changing order of columns from a df.
+
+- Add precompiled NIFs for FreeBSD.
+
+- Support scalar values in the `on_true` and `on_false` arguments of `Explore.Series.select/3`.
+
+### Fixed
+
+- Fix `Series.day_of_week/1` and `Series.round/2` for operations using a lazy frame.
+
+- Fix upcasted date to datetime for literal expressions. It allows to use scalar dates
+  in expressions like this: `DF.mutate(a: ~D[2023-01-01])`. This also fixes the support
+  for naive datetimes.
+
+- Improve error messages returned from the NIF to be always strings. Now we add more
+  context to the string returned, instead of having `{:context, error_message}`.
+
+- Fix the `:infer_schema_length` option of `Explorer.DataFrame.from_csv/2` when passing `nil`.
+  Now it's possible to take into account the entire file to infer the schema.
+
+
+### Deprecated
+
+- Deprecate `Explorer.Series.to_date/1` and `Explorer.Series.to_time/1` in favor of
+  using `Explorer.Series.cast(s, :date)` and `Explorer.Series.cast(s, :time)` respectively.
+
 ## [v0.5.7] - 2023-05-10
 
 ### Added
@@ -474,7 +523,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.5.7...HEAD
+[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.6.0...HEAD
+[v0.6.0]: https://github.com/elixir-nx/explorer/compare/v0.5.7...v0.6.0
 [v0.5.7]: https://github.com/elixir-nx/explorer/compare/v0.5.6...v0.5.7
 [v0.5.6]: https://github.com/elixir-nx/explorer/compare/v0.5.5...v0.5.6
 [v0.5.5]: https://github.com/elixir-nx/explorer/compare/v0.5.4...v0.5.5
