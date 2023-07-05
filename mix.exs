@@ -40,7 +40,7 @@ defmodule Explorer.MixProject do
       {:table_rex, "~> 3.1.1"},
 
       ## Optional
-      {:rustler, "~> 0.28.0", optional: not (@dev? or @force_build?)},
+      {:rustler, "~> 0.29.0", optional: not (@dev? or @force_build?)},
       {:nx, "~> 0.4.0 or ~> 0.5.0", optional: true},
 
       ## Dev
