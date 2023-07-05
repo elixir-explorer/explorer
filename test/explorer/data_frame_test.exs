@@ -3300,7 +3300,6 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    @tag this: true
     test "duration/3" do
       df1 =
         DF.new(a: [~D[2023-01-15]], b: [~D[2023-01-16]])
@@ -3315,6 +3314,34 @@ defmodule Explorer.DataFrameTest do
       assert Series.to_list(df1[:d]) == [86_400_000_000]
       assert Series.to_list(df1[:e]) == [86_400_000]
       assert Series.to_list(df1[:f]) == [86_400]
+
+      df2 =
+        DF.new(a: [~N[2023-01-15 12:34:56.000]], b: [~N[2023-01-16 12:34:56.500]])
+        |> DF.mutate(
+          c: duration(a, b),
+          d: duration(a, b, :microsecond),
+          e: duration(a, b, :millisecond),
+          f: duration(a, b, :second)
+        )
+
+      assert Series.to_list(df2[:c]) == [86_400_500_000_000]
+      assert Series.to_list(df2[:d]) == [86_400_500_000]
+      assert Series.to_list(df2[:e]) == [86_400_500]
+      assert Series.to_list(df2[:f]) == [86_400]
+
+      df3 =
+        DF.new(a: [~T[12:34:56.000]], b: [~T[12:34:57.500]])
+        |> DF.mutate(
+          c: duration(a, b),
+          d: duration(a, b, :microsecond),
+          e: duration(a, b, :millisecond),
+          f: duration(a, b, :second)
+        )
+
+      assert Series.to_list(df3[:c]) == [1_500_000_000]
+      assert Series.to_list(df3[:d]) == [1_500_000]
+      assert Series.to_list(df3[:e]) == [1_500]
+      assert Series.to_list(df3[:f]) == [1]
     end
   end
 end

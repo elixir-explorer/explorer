@@ -1392,8 +1392,8 @@ pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_duration(left: ExSeries, right: ExSeries, unit: &str) -> Result<ExSeries, ExplorerError> {
-    let right = cast_to_nanosecond_series(right)?;
-    let left = cast_to_nanosecond_series(left)?;
+    let right = cast_to_nanosecond_series(right.clone_inner())?;
+    let left = cast_to_nanosecond_series(left.clone_inner())?;
 
     let divisor = match unit {
         "second" => 1_000_000_000,
@@ -1406,9 +1406,7 @@ pub fn s_duration(left: ExSeries, right: ExSeries, unit: &str) -> Result<ExSerie
     Ok(ExSeries::new((right - left) / divisor))
 }
 
-fn cast_to_nanosecond_series(series: ExSeries) -> Result<Series, ExplorerError> {
-    let series = series.clone_inner();
-
+pub fn cast_to_nanosecond_series(series: Series) -> Result<Series, ExplorerError> {
     Ok(match series.dtype() {
         DataType::Time => series
             .cast(&DataType::Duration(TimeUnit::Nanoseconds))?

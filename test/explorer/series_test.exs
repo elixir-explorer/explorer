@@ -3966,7 +3966,6 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  @tag this: true
   describe "duration/3" do
     test "correct time unit interval conversions" do
       s1 = Series.from_list([~D[2023-01-15]])
@@ -3990,15 +3989,6 @@ defmodule Explorer.SeriesTest do
       assert Series.duration(s5, s6, :millisecond) |> Series.to_list() == [1_500]
       assert Series.duration(s5, s6, :second) |> Series.to_list() == [1]
     end
-
-    # test "correct time unit interval conversions" do
-    # s1 = Series.from_list([~D[2023-01-15], nil])
-    # s2 = Series.from_list([~D[2023-01-16], nil])
-    # assert Series.duration(s1, s2) |> Series.to_list() == [86_400_000_000_000, nil]
-    # assert Series.duration(s1, s2, :microsecond) |> Series.to_list() == [86_400_000_000, nil]
-    # assert Series.duration(s1, s2, :millisecond) |> Series.to_list() == [86_400_000, nil]
-    # assert Series.duration(s1, s2, :second) |> Series.to_list() == [86_400, nil]
-    # end
   end
 
   describe "strptime/2 and strftime/2" do

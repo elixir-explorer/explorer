@@ -24,7 +24,6 @@ defmodule Explorer.PolarsBackend.Native do
       x86_64-unknown-linux-musl
       x86_64-unknown-freebsd
     ),
-    target: "aarch64-apple-darwin",
     mode: mode,
     force_build: System.get_env("EXPLORER_BUILD") in ["1", "true"]
 

@@ -6,7 +6,7 @@
 
 use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{
-    col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
+    col, concat_str, cov, pearson_corr, when, GetOutput, IntoLazy, LiteralValue, SortOptions,
 };
 use polars::prelude::{AnyValue, DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
@@ -895,9 +895,8 @@ pub fn expr_second(expr: ExExpr) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_duration(left: ExExpr, right: ExExpr, unit: &str) -> ExExpr {
-    let left = left.clone_inner();
-    let right = right.clone_inner();
-    let duration = (right - left).cast(DataType::Int64);
+    let right = cast_to_nanosecond_series(right);
+    let left = cast_to_nanosecond_series(left);
 
     let divisor = match unit {
         "second" => 1_000_000_000,
@@ -907,18 +906,24 @@ pub fn expr_duration(left: ExExpr, right: ExExpr, unit: &str) -> ExExpr {
         _ => panic!("unknown time unit {unit:?}"),
     };
 
-    ExExpr::new(duration / Expr::Literal(LiteralValue::Int64(divisor)))
+    ExExpr::new((right - left) / Expr::Literal(LiteralValue::Int64(divisor)))
 }
 
-// fn cast_to_nanosecond_series(expr: ExExpr) -> Result<Series, ExplorerError> {
-// let expr = expr.clone_inner();
+fn cast_to_nanosecond_series(expr: ExExpr) -> Expr {
+    let expr = expr.clone_inner();
 
-// // Ok(match series.dtype() {
-// // DataType::Time => series
-// // .cast(&DataType::Duration(TimeUnit::Nanoseconds))?
-// // .cast(&DataType::Int64)?,
-// // _ => series
-// // .cast(&DataType::Datetime(TimeUnit::Nanoseconds, None))?
-// // .cast(&DataType::Int64)?,
-// // })
-// }
+    expr.map(
+        move |series| {
+            let result = match series.dtype() {
+                DataType::Time => series
+                    .cast(&DataType::Duration(TimeUnit::Nanoseconds))?
+                    .cast(&DataType::Int64)?,
+                _ => series
+                    .cast(&DataType::Datetime(TimeUnit::Nanoseconds, None))?
+                    .cast(&DataType::Int64)?,
+            };
+            Ok(Some(result))
+        },
+        GetOutput::map_dtype(move |_dtype| DataType::Int64),
+    )
+}
