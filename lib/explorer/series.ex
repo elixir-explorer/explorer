@@ -4573,9 +4573,60 @@ defmodule Explorer.Series do
     do: dtype_error("minute/1", dtype, [:datetime])
 
   @doc """
-  TODO
+  Calculates the duration between two series.
+
+  The dtype of the two series must match. The time unit can be one of
+  `:second`, `:millisecond`, `:microsecond` or `:nanosecond`. The time unit
+  defaults to `:nanosecond`.
+
+  ## Supported dtypes
+
+    * `:datetime`
+    * `:date`
+    * `:time`
+
+  ## Examples
+
+      iex> s1 = Explorer.Series.from_list([~D[2023-01-15]])
+      iex> s2 = Explorer.Series.from_list([~D[2023-01-16]])
+      iex> Explorer.Series.duration(s1, s2)
+      #Explorer.Series<
+        Polars[1]
+        integer [86400000000000]
+      >
+      iex> Explorer.Series.duration(s1, s2, :second)
+      #Explorer.Series<
+        Polars[1]
+        integer [86400]
+      >
+
+      iex> s1 = Explorer.Series.from_list([~N[2023-01-15 12:34:56.000]])
+      iex> s2 = Explorer.Series.from_list([~N[2023-01-16 12:34:56.500]])
+      iex> Explorer.Series.duration(s1, s2)
+      #Explorer.Series<
+        Polars[1]
+        integer [86400500000000]
+      >
+      iex> Explorer.Series.duration(s1, s2, :millisecond)
+      #Explorer.Series<
+        Polars[1]
+        integer [86400500]
+      >
+
+      iex> s1 = Explorer.Series.from_list([~T[12:34:56.000]])
+      iex> s2 = Explorer.Series.from_list([~T[12:34:57.500]])
+      iex> Explorer.Series.duration(s1, s2)
+      #Explorer.Series<
+        Polars[1]
+        integer [1500000000]
+      >
+      iex> Explorer.Series.duration(s1, s2, :microsecond)
+      #Explorer.Series<
+        Polars[1]
+        integer [1500000]
+      >
   """
-  @doc type: :datetime_wise
+  @doc type: :element_wise
   @spec duration(
           Series.t() | Date.t() | Time.t() | NaiveDateTime.t(),
           Series.t() | Date.t() | Time.t() | NaiveDateTime.t(),
