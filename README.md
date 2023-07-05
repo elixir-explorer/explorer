@@ -15,7 +15,7 @@ Inside an Elixir script or [Livebook](https://livebook.dev):
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.5.0"}
+  {:explorer, "~> 0.6.0"}
 ])
 ```
 
@@ -24,7 +24,7 @@ Or in the `mix.exs` file of your application:
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.5.0"}
+    {:explorer, "~> 0.6.0"}
   ]
 end
 ```
@@ -219,6 +219,9 @@ You can also use [asdf](https://asdf-vm.com/):
 ```sh
 asdf install rust nightly-2023-02-14
 ```
+
+It's possible that you may need to install [`CMake`](https://cmake.org/) in order to build the project,
+if that is not already installed.
 
 Once you have made your changes, run `mix ci`, to lint and format both Elixir
 and Rust code.
