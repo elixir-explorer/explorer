@@ -3299,5 +3299,22 @@ defmodule Explorer.DataFrameTest do
                f: [3]
              }
     end
+
+    @tag this: true
+    test "duration/3" do
+      df1 =
+        DF.new(a: [~D[2023-01-15]], b: [~D[2023-01-16]])
+        |> DF.mutate(
+          c: duration(a, b),
+          d: duration(a, b, :microsecond),
+          e: duration(a, b, :millisecond),
+          f: duration(a, b, :second)
+        )
+
+      assert Series.to_list(df1[:c]) == [86_400_000_000_000]
+      assert Series.to_list(df1[:d]) == [86_400_000_000]
+      assert Series.to_list(df1[:e]) == [86_400_000]
+      assert Series.to_list(df1[:f]) == [86_400]
+    end
   end
 end

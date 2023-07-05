@@ -140,7 +140,8 @@ defmodule Explorer.PolarsBackend.Expression do
     slice: 3,
     concat: 1,
     column: 1,
-    correlation: 3
+    correlation: 3,
+    duration: 3
   ]
 
   missing =
@@ -191,6 +192,10 @@ defmodule Explorer.PolarsBackend.Expression do
 
   def to_expr(%LazySeries{op: :correlation, args: [series1, series2, ddof]}) do
     Native.expr_correlation(to_expr(series1), to_expr(series2), ddof)
+  end
+
+  def to_expr(%LazySeries{op: :duration, args: [series1, series2, unit]}) do
+    Native.expr_duration(to_expr(series1), to_expr(series2), unit)
   end
 
   def to_expr(%LazySeries{op: :format, args: [series_list]}) when is_list(series_list) do

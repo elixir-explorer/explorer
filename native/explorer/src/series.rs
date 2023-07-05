@@ -1391,6 +1391,35 @@ pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_duration(left: ExSeries, right: ExSeries, unit: &str) -> Result<ExSeries, ExplorerError> {
+    let right = cast_to_nanosecond_series(right)?;
+    let left = cast_to_nanosecond_series(left)?;
+
+    let divisor = match unit {
+        "second" => 1_000_000_000,
+        "millisecond" => 1_000_000,
+        "microsecond" => 1000,
+        "nanosecond" => 1,
+        _ => panic!("unknown time unit {unit:?}"),
+    };
+
+    Ok(ExSeries::new((right - left) / divisor))
+}
+
+fn cast_to_nanosecond_series(series: ExSeries) -> Result<Series, ExplorerError> {
+    let series = series.clone_inner();
+
+    Ok(match series.dtype() {
+        DataType::Time => series
+            .cast(&DataType::Duration(TimeUnit::Nanoseconds))?
+            .cast(&DataType::Int64)?,
+        _ => series
+            .cast(&DataType::Datetime(TimeUnit::Nanoseconds, None))?
+            .cast(&DataType::Int64)?,
+    })
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, ExplorerError> {
     let s1 = s
         .utf8()?

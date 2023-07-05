@@ -50,6 +50,7 @@ defmodule Explorer.Backend.LazySeries do
     abs: 1,
     strptime: 2,
     strftime: 2,
+    duration: 3,
     clip_float: 3,
     clip_integer: 3,
 
@@ -722,6 +723,13 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:strftime, [lazy_series!(series), format_string])
 
     Backend.Series.new(data, :datetime)
+  end
+
+  @impl true
+  def duration(left, right, unit) do
+    data = new(:duration, [lazy_series!(left), lazy_series!(right), Atom.to_string(unit)])
+
+    Backend.Series.new(data, :integer)
   end
 
   @impl true

@@ -47,6 +47,14 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_strftime, [format_string])
   end
 
+  @impl true
+  def duration(%Series{} = left, %Series{} = right, unit) do
+    Shared.apply_series(to_series(left, right), :s_duration, [
+      to_polars_series(right, left),
+      Atom.to_string(unit)
+    ])
+  end
+
   # Introspection
 
   @impl true

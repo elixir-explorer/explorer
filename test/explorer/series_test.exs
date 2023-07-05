@@ -3966,6 +3966,41 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  @tag this: true
+  describe "duration/3" do
+    test "correct time unit interval conversions" do
+      s1 = Series.from_list([~D[2023-01-15]])
+      s2 = Series.from_list([~D[2023-01-16]])
+      assert Series.duration(s1, s2) |> Series.to_list() == [86_400_000_000_000]
+      assert Series.duration(s1, s2, :microsecond) |> Series.to_list() == [86_400_000_000]
+      assert Series.duration(s1, s2, :millisecond) |> Series.to_list() == [86_400_000]
+      assert Series.duration(s1, s2, :second) |> Series.to_list() == [86_400]
+
+      s3 = Series.from_list([~N[2023-01-15 12:34:56.000]])
+      s4 = Series.from_list([~N[2023-01-16 12:34:56.500]])
+      assert Series.duration(s3, s4) |> Series.to_list() == [86_400_500_000_000]
+      assert Series.duration(s3, s4, :microsecond) |> Series.to_list() == [86_400_500_000]
+      assert Series.duration(s3, s4, :millisecond) |> Series.to_list() == [86_400_500]
+      assert Series.duration(s3, s4, :second) |> Series.to_list() == [86_400]
+
+      s5 = Series.from_list([~T[12:34:56.000]])
+      s6 = Series.from_list([~T[12:34:57.500]])
+      assert Series.duration(s5, s6) |> Series.to_list() == [1_500_000_000]
+      assert Series.duration(s5, s6, :microsecond) |> Series.to_list() == [1_500_000]
+      assert Series.duration(s5, s6, :millisecond) |> Series.to_list() == [1_500]
+      assert Series.duration(s5, s6, :second) |> Series.to_list() == [1]
+    end
+
+    # test "correct time unit interval conversions" do
+    # s1 = Series.from_list([~D[2023-01-15], nil])
+    # s2 = Series.from_list([~D[2023-01-16], nil])
+    # assert Series.duration(s1, s2) |> Series.to_list() == [86_400_000_000_000, nil]
+    # assert Series.duration(s1, s2, :microsecond) |> Series.to_list() == [86_400_000_000, nil]
+    # assert Series.duration(s1, s2, :millisecond) |> Series.to_list() == [86_400_000, nil]
+    # assert Series.duration(s1, s2, :second) |> Series.to_list() == [86_400, nil]
+    # end
+  end
+
   describe "strptime/2 and strftime/2" do
     test "parse datetime from string" do
       series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])

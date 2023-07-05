@@ -4573,6 +4573,37 @@ defmodule Explorer.Series do
     do: dtype_error("minute/1", dtype, [:datetime])
 
   @doc """
+  TODO
+  """
+  @doc type: :datetime_wise
+  @spec duration(
+          Series.t() | Date.t() | Time.t() | NaiveDateTime.t(),
+          Series.t() | Date.t() | Time.t() | NaiveDateTime.t(),
+          :second | :millisecond | :microsecond | :nanosecond
+        ) :: Series.t()
+  def duration(left, right, unit \\ :nanosecond)
+
+  def duration(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right, unit) do
+    valid_dtypes = [:date, :time, :datetime]
+    valid_time_units = [:second, :millisecond, :microsecond, :nanosecond]
+
+    cond do
+      K.not(K.in(dtype, valid_dtypes)) ->
+        dtype_error("duration/3", dtype, valid_dtypes)
+
+      K.not(K.in(unit, valid_time_units)) ->
+        raise ArgumentError,
+              "expected time units to be one of #{inspect(valid_time_units)}, " <>
+                "got #{unit}"
+
+      true ->
+        apply_series_list(:duration, [left, right, unit])
+    end
+  end
+
+  def duration(left, right, unit), do: apply_series_list(:duration, [left, right, unit])
+
+  @doc """
   Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
 
   ## Examples

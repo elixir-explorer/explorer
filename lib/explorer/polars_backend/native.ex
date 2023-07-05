@@ -24,6 +24,7 @@ defmodule Explorer.PolarsBackend.Native do
       x86_64-unknown-linux-musl
       x86_64-unknown-freebsd
     ),
+    target: "aarch64-apple-darwin",
     mode: mode,
     force_build: System.get_env("EXPLORER_BUILD") in ["1", "true"]
 
@@ -348,6 +349,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_hour(_s), do: err()
   def s_minute(_s), do: err()
   def s_second(_s), do: err()
+  def s_duration(_left, _right, _unit), do: err()
   def s_sin(_s), do: err()
   def s_cos(_s), do: err()
   def s_tan(_s), do: err()

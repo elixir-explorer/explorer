@@ -892,3 +892,33 @@ pub fn expr_second(expr: ExExpr) -> ExExpr {
 
     ExExpr::new(expr.dt().second().cast(DataType::Int64))
 }
+
+#[rustler::nif]
+pub fn expr_duration(left: ExExpr, right: ExExpr, unit: &str) -> ExExpr {
+    let left = left.clone_inner();
+    let right = right.clone_inner();
+    let duration = (right - left).cast(DataType::Int64);
+
+    let divisor = match unit {
+        "second" => 1_000_000_000,
+        "millisecond" => 1_000_000,
+        "microsecond" => 1000,
+        "nanosecond" => 1,
+        _ => panic!("unknown time unit {unit:?}"),
+    };
+
+    ExExpr::new(duration / Expr::Literal(LiteralValue::Int64(divisor)))
+}
+
+// fn cast_to_nanosecond_series(expr: ExExpr) -> Result<Series, ExplorerError> {
+// let expr = expr.clone_inner();
+
+// // Ok(match series.dtype() {
+// // DataType::Time => series
+// // .cast(&DataType::Duration(TimeUnit::Nanoseconds))?
+// // .cast(&DataType::Int64)?,
+// // _ => series
+// // .cast(&DataType::Datetime(TimeUnit::Nanoseconds, None))?
+// // .cast(&DataType::Int64)?,
+// // })
+// }

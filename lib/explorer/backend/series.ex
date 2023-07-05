@@ -25,6 +25,11 @@ defmodule Explorer.Backend.Series do
   @callback categorise(s, s) :: s
   @callback strptime(s, String.t()) :: s
   @callback strftime(s, String.t()) :: s
+  @callback duration(
+              s | Date.t() | Time.t() | NaiveDateTime.t(),
+              s | Date.t() | Time.t() | NaiveDateTime.t(),
+              :second | :millisecond | :microsecond | :nanosecond
+            ) :: s
 
   # Introspection
 
