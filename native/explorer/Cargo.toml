@@ -16,7 +16,7 @@ anyhow = "1"
 chrono = "0.4"
 rand = { version = "0.8", features = ["alloc"] }
 rand_pcg = "0.3"
-rustler = "0.28"
+rustler = "0.29"
 thiserror = "1"
 smartstring = "1"
 
