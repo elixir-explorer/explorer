@@ -138,8 +138,13 @@ pub fn lf_summarise_with(
     let groups = ex_expr_to_exprs(groups);
     let aggs = ex_expr_to_exprs(aggs);
 
-    let new_df = ldf.groupby_stable(groups).agg(aggs);
-    Ok(ExLazyFrame::new(new_df))
+    let new_lf = if groups.is_empty() {
+        ldf.with_columns(aggs).first()
+    } else {
+        ldf.groupby_stable(groups).agg(aggs)
+    };
+
+    Ok(ExLazyFrame::new(new_lf))
 }
 
 #[rustler::nif]
