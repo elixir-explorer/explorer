@@ -3967,7 +3967,7 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "duration/3" do
-    test "correct time unit interval conversions" do
+    test "time unit conversions" do
       s1 = Series.from_list([~D[2023-01-15]])
       s2 = Series.from_list([~D[2023-01-16]])
       assert Series.duration(s1, s2) |> Series.to_list() == [86_400_000_000_000]
@@ -3988,6 +3988,36 @@ defmodule Explorer.SeriesTest do
       assert Series.duration(s5, s6, :microsecond) |> Series.to_list() == [1_500_000]
       assert Series.duration(s5, s6, :millisecond) |> Series.to_list() == [1_500]
       assert Series.duration(s5, s6, :second) |> Series.to_list() == [1]
+    end
+
+    test "scalar arguments" do
+      scalar = ~T[02:00:00.000]
+      series = Series.from_list([~T[02:01:00.000]])
+      assert Series.duration(scalar, series, :second) |> Series.to_list() == [60]
+      assert Series.duration(series, scalar, :second) |> Series.to_list() == [-60]
+
+      assert_raise ArgumentError, fn -> Series.duration(scalar, scalar) end
+      assert_raise ArgumentError, fn -> Series.duration("a", series) end
+      assert_raise ArgumentError, fn -> Series.duration(series, "a") end
+    end
+
+    test "correct cross-dtype conversions" do
+      date = Series.from_list([~D[1970-01-01]])
+      datetime = Series.from_list([~N[1970-01-01 01:00:00]])
+      time = Series.from_list([~T[02:00:00.000]])
+      assert Series.duration(date, datetime, :second) |> Series.to_list() == [3600]
+      assert Series.duration(date, time, :second) |> Series.to_list() == [7200]
+      assert Series.duration(datetime, time, :second) |> Series.to_list() == [3600]
+
+      str = Series.from_list(["a"])
+
+      assert_raise ArgumentError,
+                   ~r/not implemented for dtype :string/,
+                   fn -> Series.duration(date, str) end
+
+      assert_raise ArgumentError,
+                   ~r/not implemented for dtype :string/,
+                   fn -> Series.duration(str, date) end
     end
   end
 

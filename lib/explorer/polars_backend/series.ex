@@ -55,6 +55,12 @@ defmodule Explorer.PolarsBackend.Series do
     ])
   end
 
+  def duration(%Series{} = left, right, unit),
+    do: duration(left, to_series(right, left), unit)
+
+  def duration(left, %Series{} = right, unit),
+    do: duration(to_series(left, right), right, unit)
+
   # Introspection
 
   @impl true

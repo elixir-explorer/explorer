@@ -4634,13 +4634,16 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def duration(left, right, unit \\ :nanosecond)
 
-  def duration(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right, unit) do
+  def duration(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right, unit) do
     valid_dtypes = [:date, :time, :datetime]
     valid_time_units = [:second, :millisecond, :microsecond, :nanosecond]
 
     cond do
-      K.not(K.in(dtype, valid_dtypes)) ->
-        dtype_error("duration/3", dtype, valid_dtypes)
+      K.not(K.in(left_dtype, valid_dtypes)) ->
+        dtype_error("duration/3", left_dtype, valid_dtypes)
+
+      K.not(K.in(right_dtype, valid_dtypes)) ->
+        dtype_error("duration/3", right_dtype, valid_dtypes)
 
       K.not(K.in(unit, valid_time_units)) ->
         raise ArgumentError,
@@ -4652,7 +4655,19 @@ defmodule Explorer.Series do
     end
   end
 
-  def duration(left, right, unit), do: apply_series_list(:duration, [left, right, unit])
+  def duration(%Series{} = left, right, unit),
+    do: apply_series_list(:duration, [left, right, unit])
+
+  def duration(left, %Series{} = right, unit),
+    do: apply_series_list(:duration, [left, right, unit])
+
+  def duration(left, right, _unit),
+    do:
+      raise(
+        ArgumentError,
+        "expecting a series for one of the first two arguments, " <>
+          "but got #{inspect(left)} and #{inspect(right)}"
+      )
 
   @doc """
   Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
