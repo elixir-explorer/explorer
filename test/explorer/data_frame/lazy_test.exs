@@ -695,6 +695,22 @@ defmodule Explorer.DataFrame.LazyTest do
                median_liquid_fuel: [1193.0, 1236.0, 1199.0, 1260.0, 1255.0]
              }
     end
+
+    test "without a group and with one column with aggregations", %{ldf: ldf} do
+      ldf1 =
+        DF.summarise_with(ldf, fn ldf ->
+          total = ldf["total"]
+
+          [total_min: Series.min(total), total_max: Series.max(total)]
+        end)
+
+      df = DF.collect(ldf1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               total_min: [1],
+               total_max: [2_806_634]
+             }
+    end
   end
 
   describe "relocate/3" do
