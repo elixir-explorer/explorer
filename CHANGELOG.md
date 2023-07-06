@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.6.1] - 2023-07-06
+
+### Fixed
+
+- Fix summarise without groups for lazy frames.
+
 ## [v0.6.0] - 2023-07-05
 
 ### Added
@@ -523,7 +529,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.6.1...HEAD
+[v0.6.1]: https://github.com/elixir-nx/explorer/compare/v0.6.0...v0.6.1
 [v0.6.0]: https://github.com/elixir-nx/explorer/compare/v0.5.7...v0.6.0
 [v0.5.7]: https://github.com/elixir-nx/explorer/compare/v0.5.6...v0.5.7
 [v0.5.6]: https://github.com/elixir-nx/explorer/compare/v0.5.5...v0.5.6
