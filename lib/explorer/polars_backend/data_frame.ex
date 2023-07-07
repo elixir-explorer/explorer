@@ -182,12 +182,17 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(filename, max_rows, columns) do
+  def from_parquet(%Filesystem.S3.Entry{}, _max_rows, _columns) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_parquet(%Filesystem.Local.Entry{} = entry, max_rows, columns) do
     {columns, with_projection} = column_names_or_projection(columns)
 
     df =
       Native.df_from_parquet(
-        filename,
+        entry.path,
         max_rows,
         columns,
         with_projection

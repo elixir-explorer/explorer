@@ -29,6 +29,8 @@ defmodule Explorer.Backend.DataFrame do
   @type compression :: {algorithm :: option(atom()), level :: option(integer())}
   @type columns_for_io :: list(column_name()) | list(pos_integer()) | nil
 
+  @type fs_entry :: Explorer.DataFrame.fs_entry()
+
   # IO: CSV
   @callback from_csv(
               filename :: String.t(),
@@ -65,7 +67,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # IO: Parquet
   @callback from_parquet(
-              filename :: String.t(),
+              entry :: fs_entry(),
               max_rows :: option(integer()),
               columns :: columns_for_io()
             ) :: result(df)

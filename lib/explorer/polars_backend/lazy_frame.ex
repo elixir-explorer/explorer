@@ -117,14 +117,19 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_parquet(filename, max_rows, columns) do
+  def from_parquet(%Filesystem.S3.Entry{}, _max_rows, _columns) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_parquet(%Filesystem.Local.Entry{} = entry, max_rows, columns) do
     if columns do
       raise ArgumentError,
             "`columns` is not supported by Polars' lazy backend. " <>
               "Consider using `select/2` after reading the parquet file"
     end
 
-    case Native.lf_from_parquet(filename, max_rows) do
+    case Native.lf_from_parquet(entry.path, max_rows) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end

@@ -174,6 +174,9 @@ defmodule Explorer.DataFrame do
   alias Explorer.Shared
   alias Explorer.Backend.LazySeries
 
+  alias Filesystem.Local
+  alias Filesystem.S3
+
   @valid_dtypes Explorer.Shared.dtypes()
 
   @enforce_keys [:data, :groups, :names, :dtypes]
@@ -223,6 +226,11 @@ defmodule Explorer.DataFrame do
   a column index, and the value is of type `value`.
   """
   @type column_pairs(value) :: [{column(), value}] | %{column() => value}
+
+  @typedoc """
+  Represents a filesystem entry, that can be local or S3.
+  """
+  @type fs_entry :: Local.Entry.t() | S3.Entry.t()
 
   @typedoc """
   Represents a dataframe.
@@ -521,27 +529,79 @@ defmodule Explorer.DataFrame do
 
     * `:columns` - A list of column names or indexes to keep. If present,
       only these columns are read into the dataframe. (default: `nil`)
+
+    * `:config` - An optional config struct, normally associated with the
+      filesystem entry provided. For example, if an S3 object is being fetch,
+      then config is going to be something like `%Filesystem.S3.Config{}`.
+      Usage: `from_parquet("s3://bkt/file", config: %Filesystem.S3.Config{}`).
   """
   @doc type: :io
-  @spec from_parquet(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_parquet(entry :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
-  def from_parquet(filename, opts \\ []) do
+  def from_parquet(entry, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
         max_rows: nil,
-        columns: nil
+        columns: nil,
+        config: nil
       )
 
     backend = backend_from_options!(backend_opts)
 
     backend.from_parquet(
-      filename,
+      normalise_entry(entry, opts[:config]),
       opts[:max_rows],
       to_columns_for_io(opts[:columns])
     )
   end
+
+  defp normalise_entry(%Local.Entry{} = entry, _config), do: entry
+  defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: entry
+  defp normalise_entry(%S3.Entry{config: %S3.Config{} = config} = entry, config), do: entry
+
+  defp normalise_entry(%S3.Entry{config: nil} = entry, %S3.Config{} = config),
+    do: %{entry | config: config}
+
+  # should we allow overwrites?
+  defp normalise_entry(%S3.Entry{}, config) do
+    raise "incompatible entry configuration with provided config: #{inspect(config)}."
+  end
+
+  defp normalise_entry("s3://" <> _rest = entry, config) do
+    # Is config required?
+    config = maybe_s3_config(config)
+    %S3.Entry{url: entry, config: config}
+  end
+
+  defp normalise_entry("file://" <> _rest = entry, _config), do: %Local.Entry{path: entry}
+
+  defp normalise_entry(filepath, _config) when is_binary(filepath) do
+    if File.exists?(filepath) do
+      %Local.Entry{path: filepath}
+    else
+      raise "cannot read file because it's not a valid file, or its filesystem is not supported"
+    end
+  end
+
+  defp maybe_s3_config(nil), do: nil
+  defp maybe_s3_config(%S3.Config{} = config), do: config
+
+  # should we support maps? and kw lists?
+  defp maybe_s3_config(%{access_key_id: _, secret_key_id: _} = config) do
+    %S3.Config{
+      region: config[:region],
+      access_key_id: config.access_key_id,
+      secret_access_key: config.secret_key_id
+    }
+  end
+
+  defp maybe_s3_config(other),
+    do:
+      raise(
+        "expected a valid S3 configuration struct or map, but instead found: #{inspect(other)}"
+      )
 
   @doc """
   Similar to `from_parquet/2` but raises if there is a problem reading the Parquet file.
