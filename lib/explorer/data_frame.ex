@@ -559,14 +559,10 @@ defmodule Explorer.DataFrame do
 
   defp normalise_entry(%Local.Entry{} = entry, _config), do: entry
   defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: entry
-  defp normalise_entry(%S3.Entry{config: %S3.Config{} = config} = entry, config), do: entry
-
-  defp normalise_entry(%S3.Entry{config: nil} = entry, %S3.Config{} = config),
-    do: %{entry | config: config}
 
   # should we allow overwrites?
   defp normalise_entry(%S3.Entry{}, config) do
-    raise "incompatible entry configuration with provided config: #{inspect(config)}."
+    raise ArgumentError, "incompatible entry configuration with provided config: #{inspect(config)}"
   end
 
   defp normalise_entry("s3://" <> _rest = entry, config) do
@@ -581,7 +577,7 @@ defmodule Explorer.DataFrame do
     if File.exists?(filepath) do
       %Local.Entry{path: filepath}
     else
-      raise "cannot read file because it's not a valid file, or its filesystem is not supported"
+      raise ArgumentError, "cannot read file because it's not a valid file, or its filesystem is not supported"
     end
   end
 
