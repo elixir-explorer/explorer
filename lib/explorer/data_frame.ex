@@ -400,13 +400,14 @@ defmodule Explorer.DataFrame do
     * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
   """
   @doc type: :io
-  @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_csv(entry :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
-  def from_csv(filename, opts \\ []) do
+  def from_csv(entry, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
+        config: nil,
         delimiter: ",",
         dtypes: [],
         encoding: "utf8",
@@ -423,7 +424,7 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     backend.from_csv(
-      filename,
+      normalise_entry(entry, opts[:config]),
       check_dtypes!(opts[:dtypes]),
       opts[:delimiter],
       opts[:null_character],

@@ -33,7 +33,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # IO: CSV
   @callback from_csv(
-              filename :: String.t(),
+              entry :: fs_entry(),
               dtypes,
               delimiter :: String.t(),
               null_character :: String.t(),

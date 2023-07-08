@@ -19,7 +19,25 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_csv(
-        filename,
+        %Filesystem.S3.Entry{},
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _
+      ) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_csv(
+        %Filesystem.Local.Entry{} = entry,
         dtypes,
         <<delimiter::utf8>>,
         null_character,
@@ -46,7 +64,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     df =
       Native.df_from_csv(
-        filename,
+        entry.path,
         infer_schema_length,
         header?,
         max_rows,
