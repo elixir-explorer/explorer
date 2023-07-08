@@ -1,4 +1,4 @@
-defmodule Filesystem do
+defmodule FSS do
   @moduledoc """
   A small abstraction for filesystems.
   """

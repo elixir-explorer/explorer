@@ -174,8 +174,8 @@ defmodule Explorer.DataFrame do
   alias Explorer.Shared
   alias Explorer.Backend.LazySeries
 
-  alias Filesystem.Local
-  alias Filesystem.S3
+  alias FSS.Local
+  alias FSS.S3
 
   @valid_dtypes Explorer.Shared.dtypes()
 
@@ -532,9 +532,9 @@ defmodule Explorer.DataFrame do
       only these columns are read into the dataframe. (default: `nil`)
 
     * `:config` - An optional config struct, normally associated with the
-      filesystem entry provided. For example, if an S3 object is being fetch,
-      then config is going to be something like `%Filesystem.S3.Config{}`.
-      Usage: `from_parquet("s3://bkt/file", config: %Filesystem.S3.Config{}`).
+      entry provided. For example, if an S3 object is being fetch,
+      then config is going to be something like `%FSS.S3.Config{}`.
+      Usage: `from_parquet("s3://bkt/file", config: %FSS.S3.Config{}`).
   """
   @doc type: :io
   @spec from_parquet(entry :: String.t() | fs_entry(), opts :: Keyword.t()) ::
@@ -558,17 +558,21 @@ defmodule Explorer.DataFrame do
     )
   end
 
+  defp normalise_entry(%_{} = entry, config) when config != nil do
+    raise ArgumentError,
+          ":config key is only supported when the argument is a string, got #{inspect(entry)} with config #{inspect(config)}"
+  end
+
   defp normalise_entry(%Local.Entry{} = entry, _config), do: entry
   defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: entry
 
-  # should we allow overwrites?
   defp normalise_entry(%S3.Entry{}, config) do
-    raise ArgumentError, "incompatible entry configuration with provided config: #{inspect(config)}"
+    raise ArgumentError,
+          "incompatible entry configuration with provided config: #{inspect(config)}"
   end
 
   defp normalise_entry("s3://" <> _rest = entry, config) do
-    # Is config required?
-    config = maybe_s3_config(config)
+    config = s3_config(config)
     %S3.Entry{url: entry, config: config}
   end
 
@@ -578,15 +582,15 @@ defmodule Explorer.DataFrame do
     if File.exists?(filepath) do
       %Local.Entry{path: filepath}
     else
-      raise ArgumentError, "cannot read file because it's not a valid file, or its filesystem is not supported"
+      raise ArgumentError,
+            "cannot read entry because it's not a valid file, or its filesystem is not supported"
     end
   end
 
-  defp maybe_s3_config(nil), do: nil
-  defp maybe_s3_config(%S3.Config{} = config), do: config
+  defp s3_config(%S3.Config{} = config), do: config
 
   # should we support maps? and kw lists?
-  defp maybe_s3_config(%{access_key_id: _, secret_key_id: _} = config) do
+  defp s3_config(%{access_key_id: _, secret_key_id: _} = config) do
     %S3.Config{
       region: config[:region],
       access_key_id: config.access_key_id,
@@ -594,11 +598,10 @@ defmodule Explorer.DataFrame do
     }
   end
 
-  defp maybe_s3_config(other),
-    do:
-      raise(
-        "expected a valid S3 configuration struct or map, but instead found: #{inspect(other)}"
-      )
+  defp s3_config(other) do
+    raise ArgumentError,
+          "expected a valid S3 configuration struct or map, but instead found: #{inspect(other)}"
+  end
 
   @doc """
   Similar to `from_parquet/2` but raises if there is a problem reading the Parquet file.
