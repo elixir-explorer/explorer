@@ -597,20 +597,15 @@ defmodule Explorer.DataFrame do
           ":config key is only supported when the argument is a string, got #{inspect(entry)} with config #{inspect(config)}"
   end
 
-  defp normalise_entry(%Local.Entry{} = entry, _config), do: entry
+  defp normalise_entry(%Local.Entry{} = entry, nil), do: entry
   defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: entry
-
-  defp normalise_entry(%S3.Entry{}, config) do
-    raise ArgumentError,
-          "incompatible entry configuration with provided config: #{inspect(config)}"
-  end
 
   defp normalise_entry("s3://" <> _rest = entry, config) do
     config = s3_config(config)
     %S3.Entry{url: entry, config: config}
   end
 
-  defp normalise_entry("file://" <> _rest = entry, _config), do: %Local.Entry{path: entry}
+  defp normalise_entry("file://" <> path, _config), do: %Local.Entry{path: path}
 
   defp normalise_entry(filepath, _config) when is_binary(filepath) do
     if File.exists?(filepath) do
