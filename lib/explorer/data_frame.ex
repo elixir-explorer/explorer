@@ -91,7 +91,7 @@ defmodule Explorer.DataFrame do
 
   Explorer supports reading and writing of:
 
-  - delimited files (such as CSV)
+  - delimited files (such as CSV or TSV)
   - [Parquet](https://databricks.com/glossary/what-is-parquet)
   - [Arrow IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-file-format)
   - [Arrow Streaming IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format)
@@ -100,6 +100,17 @@ defmodule Explorer.DataFrame do
   The convention Explorer uses is to have `from_*` and `to_*` functions to read and write
   to files in the formats above. `load_*` and `dump_*` versions are also available to read
   and write those formats directly in memory.
+
+  Files can be fetched from local or remote file system, such as S3, using the following formats:
+
+      # path to a file in disk
+      Explorer.DataFrame.from_parquet("/path/to/file.parquet")
+
+      # path to a URL schema (with optional configuration) (coming soon)
+      Explorer.DataFrame.from_parquet("s3://bucket/file.parquet", config: FSS.S3.config(credentials))
+
+      # path to a filesystem specification entry (coming soon)
+      Explorer.DataFrame.from_parquet(FSS.S3.entry("s3://bucket/file.parquet", credentials))
 
   ## Selecting columns and access
 
@@ -174,6 +185,9 @@ defmodule Explorer.DataFrame do
   alias Explorer.Shared
   alias Explorer.Backend.LazySeries
 
+  alias FSS.Local
+  alias FSS.S3
+
   @valid_dtypes Explorer.Shared.dtypes()
 
   @enforce_keys [:data, :groups, :names, :dtypes]
@@ -223,6 +237,11 @@ defmodule Explorer.DataFrame do
   a column index, and the value is of type `value`.
   """
   @type column_pairs(value) :: [{column(), value}] | %{column() => value}
+
+  @typedoc """
+  Represents a filesystem entry, that can be local or S3.
+  """
+  @type fs_entry :: Local.Entry.t() | S3.Entry.t()
 
   @typedoc """
   Represents a dataframe.
@@ -375,30 +394,50 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a delimited file into a dataframe.
 
+  It accepts a filename that can be a local file, a "s3://" schema, or
+  a `FSS` entry like `FSS.S3.Entry`.
+
   If the CSV is compressed, it is automatically decompressed.
 
   ## Options
 
     * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+
     * `:dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
       imputed from the first 1000 rows. (default: `[]`)
+
     * `:header` - Does the file have a header of column names as the first row or not? (default: `true`)
+
     * `:max_rows` - Maximum number of lines to read. (default: `nil`)
+
     * `:null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
+
     * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-    * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
-    * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
-    * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
+
+    * `:columns` - A list of column names or indexes to keep.
+      If present, only these columns are read into the dataframe. (default: `nil`)
+
+    * `:infer_schema_length` Maximum number of rows read for schema inference.
+      Setting this to nil will do a full table scan and will be slow (default: `1000`).
+
+    * `:parse_dates` - Automatically try to parse dates/ datetimes and time.
+      If parsing fails, columns remain of dtype `string`
+
     * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
+
+    * `:config` - An optional config struct or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec from_csv(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_csv(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
+        config: nil,
         delimiter: ",",
         dtypes: [],
         encoding: "utf8",
@@ -415,7 +454,7 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     backend.from_csv(
-      filename,
+      normalise_entry(filename, opts[:config]),
       check_dtypes!(opts[:dtypes]),
       opts[:delimiter],
       opts[:null_character],
@@ -515,15 +554,22 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a parquet file into a dataframe.
 
+  It accepts a filename that can be a local file, a "s3://" schema, or
+  a `FSS` entry like `FSS.S3.Entry`.
+
   ## Options
 
     * `:max_rows` - Maximum number of lines to read. (default: `nil`)
 
     * `:columns` - A list of column names or indexes to keep. If present,
       only these columns are read into the dataframe. (default: `nil`)
+
+    * `:config` - An optional config struct or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec from_parquet(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_parquet(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_parquet(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
@@ -531,16 +577,47 @@ defmodule Explorer.DataFrame do
     opts =
       Keyword.validate!(opts,
         max_rows: nil,
-        columns: nil
+        columns: nil,
+        config: nil
       )
 
     backend = backend_from_options!(backend_opts)
 
     backend.from_parquet(
-      filename,
+      normalise_entry(filename, opts[:config]),
       opts[:max_rows],
       to_columns_for_io(opts[:columns])
     )
+  end
+
+  defp normalise_entry(%_{} = entry, config) when config != nil do
+    raise ArgumentError,
+          ":config key is only supported when the argument is a string, got #{inspect(entry)} with config #{inspect(config)}"
+  end
+
+  defp normalise_entry(%Local.Entry{} = entry, nil), do: entry
+  defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: entry
+
+  defp normalise_entry("s3://" <> _rest = entry, config) do
+    config = s3_config(config)
+    %S3.Entry{url: entry, config: config}
+  end
+
+  defp normalise_entry("file://" <> path, _config), do: %Local.Entry{path: path}
+
+  defp normalise_entry(filepath, _config) when is_binary(filepath) do
+    if File.exists?(filepath) do
+      %Local.Entry{path: filepath}
+    else
+      raise ArgumentError,
+            "cannot read entry because it's not a valid file, or its filesystem is not supported"
+    end
+  end
+
+  defp s3_config(%S3.Config{} = config), do: config
+
+  defp s3_config(other) do
+    raise ArgumentError, "expected a valid FSS.S3.config/1 in :config, got: #{inspect(other)}"
   end
 
   @doc """
