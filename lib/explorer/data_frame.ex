@@ -432,9 +432,9 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :io
-  @spec from_csv(entry :: String.t() | fs_entry(), opts :: Keyword.t()) ::
+  @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
-  def from_csv(entry, opts \\ []) do
+  def from_csv(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
@@ -456,7 +456,7 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     backend.from_csv(
-      normalise_entry(entry, opts[:config]),
+      normalise_entry(filename, opts[:config]),
       check_dtypes!(opts[:dtypes]),
       opts[:delimiter],
       opts[:null_character],
