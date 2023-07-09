@@ -91,7 +91,7 @@ defmodule Explorer.DataFrame do
 
   Explorer supports reading and writing of:
 
-  - delimited files (such as CSV)
+  - delimited files (such as CSV or TSV)
   - [Parquet](https://databricks.com/glossary/what-is-parquet)
   - [Arrow IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-file-format)
   - [Arrow Streaming IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format)
@@ -100,6 +100,19 @@ defmodule Explorer.DataFrame do
   The convention Explorer uses is to have `from_*` and `to_*` functions to read and write
   to files in the formats above. `load_*` and `dump_*` versions are also available to read
   and write those formats directly in memory.
+
+  Files can be fetch from the local filesystem or from places like AWS S3 (not implemented yet).
+  From external sources, it's required that a `:config` option is passed, or the filename
+  be a struct like the `FSS.S3.Entry` that contains a `FSS.S3.Config` underneath.
+  In case an `Entry` is provided, the `:config` option must be `nil`.
+
+  ### Examples
+
+      Explorer.DataFrame.from_parquet("s3://bucket/file.parquet", config: %FSS.S3.Config{})
+
+  Or passing an entry directly:
+
+      Explorer.DataFrame.from_parquet(%FSS.S3.Entry{url: "s3://bucket/file.parquet", config: %FSS.S3.Config{}})
 
   ## Selecting columns and access
 
@@ -383,21 +396,40 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a delimited file into a dataframe.
 
+  It accepts a filename that can be a local file, a "s3://" schema, or
+  a FSS entry like `FSS.S3.Entry`.
+
   If the CSV is compressed, it is automatically decompressed.
 
   ## Options
 
     * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+
     * `:dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
       imputed from the first 1000 rows. (default: `[]`)
+
     * `:header` - Does the file have a header of column names as the first row or not? (default: `true`)
+
     * `:max_rows` - Maximum number of lines to read. (default: `nil`)
+
     * `:null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
+
     * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-    * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
-    * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
-    * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
+
+    * `:columns` - A list of column names or indexes to keep.
+      If present, only these columns are read into the dataframe. (default: `nil`)
+
+    * `:infer_schema_length` Maximum number of rows read for schema inference.
+      Setting this to nil will do a full table scan and will be slow (default: `1000`).
+
+    * `:parse_dates` - Automatically try to parse dates/ datetimes and time.
+      If parsing fails, columns remain of dtype `string`
+
     * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
+
+    * `:config` - An optional config struct or map, normally associated with the
+      entry provided. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
   @spec from_csv(entry :: String.t() | fs_entry(), opts :: Keyword.t()) ::
@@ -524,6 +556,9 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a parquet file into a dataframe.
 
+  It accepts a filename that can be a local file, a "s3://" schema, or
+  a FSS entry like `FSS.S3.Entry`.
+
   ## Options
 
     * `:max_rows` - Maximum number of lines to read. (default: `nil`)
@@ -531,15 +566,14 @@ defmodule Explorer.DataFrame do
     * `:columns` - A list of column names or indexes to keep. If present,
       only these columns are read into the dataframe. (default: `nil`)
 
-    * `:config` - An optional config struct, normally associated with the
-      entry provided. For example, if an S3 object is being fetch,
-      then config is going to be something like `%FSS.S3.Config{}`.
-      Usage: `from_parquet("s3://bkt/file", config: %FSS.S3.Config{}`).
+    * `:config` - An optional config struct or map, normally associated with the
+      entry provided. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec from_parquet(entry :: String.t() | fs_entry(), opts :: Keyword.t()) ::
+  @spec from_parquet(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
-  def from_parquet(entry, opts \\ []) do
+  def from_parquet(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
@@ -552,7 +586,7 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     backend.from_parquet(
-      normalise_entry(entry, opts[:config]),
+      normalise_entry(filename, opts[:config]),
       opts[:max_rows],
       to_columns_for_io(opts[:columns])
     )
