@@ -397,7 +397,7 @@ defmodule Explorer.DataFrame do
   Reads a delimited file into a dataframe.
 
   It accepts a filename that can be a local file, a "s3://" schema, or
-  a FSS entry like `FSS.S3.Entry`.
+  a `FSS` entry like `FSS.S3.Entry`.
 
   If the CSV is compressed, it is automatically decompressed.
 
@@ -427,8 +427,8 @@ defmodule Explorer.DataFrame do
 
     * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
 
-    * `:config` - An optional config struct or map, normally associated with the
-      entry provided. See [IO section](#module-io-operations) for more details. (default: `nil`)
+    * `:config` - An optional config struct or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
   """
   @doc type: :io
@@ -557,7 +557,7 @@ defmodule Explorer.DataFrame do
   Reads a parquet file into a dataframe.
 
   It accepts a filename that can be a local file, a "s3://" schema, or
-  a FSS entry like `FSS.S3.Entry`.
+  a `FSS` entry like `FSS.S3.Entry`.
 
   ## Options
 
@@ -566,8 +566,8 @@ defmodule Explorer.DataFrame do
     * `:columns` - A list of column names or indexes to keep. If present,
       only these columns are read into the dataframe. (default: `nil`)
 
-    * `:config` - An optional config struct or map, normally associated with the
-      entry provided. See [IO section](#module-io-operations) for more details. (default: `nil`)
+    * `:config` - An optional config struct or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
   """
   @doc type: :io
@@ -618,18 +618,8 @@ defmodule Explorer.DataFrame do
 
   defp s3_config(%S3.Config{} = config), do: config
 
-  # should we support maps? and kw lists?
-  defp s3_config(%{access_key_id: _, secret_key_id: _} = config) do
-    %S3.Config{
-      region: config[:region],
-      access_key_id: config.access_key_id,
-      secret_access_key: config.secret_key_id
-    }
-  end
-
   defp s3_config(other) do
-    raise ArgumentError,
-          "expected a valid S3 configuration struct or map, but instead found: #{inspect(other)}"
+    raise ArgumentError, "expected a valid FSS.S3.config/1 in :config, got: #{inspect(other)}"
   end
 
   @doc """
