@@ -101,18 +101,16 @@ defmodule Explorer.DataFrame do
   to files in the formats above. `load_*` and `dump_*` versions are also available to read
   and write those formats directly in memory.
 
-  Files can be fetch from the local filesystem or from places like AWS S3 (not implemented yet).
-  From external sources, it's required that a `:config` option is passed, or the filename
-  be a struct like the `FSS.S3.Entry` that contains a `FSS.S3.Config` underneath.
-  In case an `Entry` is provided, the `:config` option must be `nil`.
+  Files can be fetched from local or remote file system, such as S3, using the following formats:
 
-  ### Examples
+      # path to a file in disk
+      Explorer.DataFrame.from_parquet("/path/to/file.parquet")
 
-      Explorer.DataFrame.from_parquet("s3://bucket/file.parquet", config: %FSS.S3.Config{})
+      # path to a URL schema (with optional configuration) (coming soon)
+      Explorer.DataFrame.from_parquet("s3://bucket/file.parquet", config: FSS.S3.config(credentials))
 
-  Or passing an entry directly:
-
-      Explorer.DataFrame.from_parquet(%FSS.S3.Entry{url: "s3://bucket/file.parquet", config: %FSS.S3.Config{}})
+      # path to a filesystem specification entry (coming soon)
+      Explorer.DataFrame.from_parquet(FSS.S3.entry("s3://bucket/file.parquet", credentials))
 
   ## Selecting columns and access
 
