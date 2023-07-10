@@ -1,6 +1,9 @@
 defmodule Explorer.DataFrameTest do
   use ExUnit.Case, async: true
 
+  # Tests for most IO operations are in the data_frame folder
+  # Tests for summarise, group, ungroup are available in grouped_test.exs
+
   # Doctests assume the module has been required
   require Explorer.DataFrame
   doctest Explorer.DataFrame
@@ -25,7 +28,24 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  # Tests for summarise, group, ungroup are available in grouped_test.exs
+  describe "from_query/3" do
+    alias Adbc.{Database, Connection}
+
+    test "queries database" do
+      db = start_supervised!({Database, driver: :sqlite})
+      conn = start_supervised!({Connection, database: db})
+
+      {:ok, _} = Connection.query(conn, "CREATE TABLE IF NOT EXISTS foo (col)")
+      {:ok, _} = Connection.query(conn, "INSERT INTO foo VALUES (?)", [:rand.uniform(1000)])
+
+      {:ok, %DF{} = df} = Explorer.DataFrame.from_query(conn, "SELECT 123 as num, 'abc' as str")
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               num: [123],
+               str: ["abc"]
+             }
+    end
+  end
 
   describe "new/1" do
     test "from series" do

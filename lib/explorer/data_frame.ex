@@ -96,6 +96,7 @@ defmodule Explorer.DataFrame do
   - [Arrow IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-file-format)
   - [Arrow Streaming IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format)
   - [Newline Delimited JSON](http://ndjson.org)
+  - Databases via `ADBC` in `from_query/3`
 
   The convention Explorer uses is to have `from_*` and `to_*` functions to read and write
   to files in the formats above. `load_*` and `dump_*` versions are also available to read
@@ -396,6 +397,49 @@ defmodule Explorer.DataFrame do
 
   `conn` must be a `Adbc.Connection` process. `sql` is a string representing
   the sql query and `params` is an optional list of parameters.
+
+  ## Example
+
+  In order to read data from a database, you must list `:adbc` as a dependency,
+  download the relevant driver, and start both database and connection processes
+  in your supervision tree.
+
+  First, add `:adbc` as a dependency in your `mix.exs`:
+
+      {:adbc, "~> 0.1"}
+
+  Now, in your config/config.exs, configure the drivers you are going to use
+  (see `Adbc` module docs for more information on supported drivers):
+
+      config :adbc, :drivers, [:sqlite3]
+
+  If you are using a notebook or scripting, you can also use `Adbc.download_driver!/1`
+  to dynamically download one.
+
+  Then start the database and the relevant connection processes in your
+  supervision tree:
+
+      children = [
+        {Adbc.Database, driver: :sqlite, name: MyApp.DB},
+        {Adbc.Connection, database: MyApp.DB}
+      ]
+
+      Supervisor.start_link(children, strategy: :one_for_one)
+
+  In a notebook, the above would look like this:
+
+      db = Kino.start_child!({Adbc.Database, driver: :sqlite})
+      conn = Kino.start_child!({Adbc.Connection, database: db})
+
+  And now you can make queries with:
+
+      {:ok, _} = Explorer.DataFrame.from_query(conn, "SELECT 123")
+
+  ## Options
+
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+    * `:lazy` - force the results into the lazy version of the current backend.
   """
   @spec from_query(
           Adbc.Connection.t(),
@@ -404,9 +448,18 @@ defmodule Explorer.DataFrame do
           opts :: Keyword.t()
         ) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
-  def from_query(conn, query, params \\ [], opts \\ []) do
-    backend = backend_from_options!(opts)
-    backend.from_query(conn, query, params)
+  def from_query(conn, query, params \\ [], opts \\ [])
+
+  if Code.ensure_loaded?(Adbc) do
+    def from_query(conn, query, params, opts)
+        when is_binary(query) and is_list(params) and is_list(opts) do
+      backend = backend_from_options!(opts)
+      backend.from_query(conn, query, params)
+    end
+  else
+    def from_query(conn, query, params, opts) do
+      raise "you must install :adbc as a dependency in order to use from_query/3"
+    end
   end
 
   @doc """
@@ -445,6 +498,10 @@ defmodule Explorer.DataFrame do
 
     * `:config` - An optional config struct or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+    * `:lazy` - force the results into the lazy version of the current backend.
 
   """
   @doc type: :io
@@ -517,6 +574,8 @@ defmodule Explorer.DataFrame do
     * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
     * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
     * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+    * `:lazy` - force the results into the lazy version of the current backend.
   """
   @doc type: :io
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
@@ -585,6 +644,9 @@ defmodule Explorer.DataFrame do
     * `:config` - An optional config struct or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+    * `:lazy` - force the results into the lazy version of the current backend.
   """
   @doc type: :io
   @spec from_parquet(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
@@ -790,6 +852,9 @@ defmodule Explorer.DataFrame do
     * `:columns` - List with the name or index of columns to be selected.
       Defaults to all columns.
 
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+    * `:lazy` - force the results into the lazy version of the current backend.
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t(), opts :: Keyword.t()) ::
@@ -919,6 +984,9 @@ defmodule Explorer.DataFrame do
 
     * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
 
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+    * `:lazy` - force the results into the lazy version of the current backend.
   """
   @doc type: :io
   @spec load_ipc(contents :: binary(), opts :: Keyword.t()) ::
@@ -962,6 +1030,10 @@ defmodule Explorer.DataFrame do
 
     * `:columns` - List with the name or index of columns to be selected.
       Defaults to all columns.
+
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+    * `:lazy` - force the results into the lazy version of the current backend.
 
   """
   @doc type: :io
@@ -1070,6 +1142,9 @@ defmodule Explorer.DataFrame do
 
     * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
 
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+    * `:lazy` - force the results into the lazy version of the current backend.
   """
   @doc type: :io
   @spec load_ipc_stream(contents :: binary(), opts :: Keyword.t()) ::
@@ -1171,10 +1246,15 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `:batch_size` - Sets the batch size for reading rows.
-    This value may have significant impact in performance, so adjust it for your needs (default: `1000`).
+      This value may have significant impact in performance,
+      so adjust it for your needs (default: `1000`).
 
     * `:infer_schema_length` - Maximum number of rows read for schema inference.
-    Setting this to nil will do a full table scan and will be slow (default: `1000`).
+      Setting this to nil will do a full table scan and will be slow (default: `1000`).
+
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+    * `:lazy` - force the results into the lazy version of the current backend.
   """
   @doc type: :io
   @spec from_ndjson(filename :: String.t(), opts :: Keyword.t()) ::
@@ -1273,10 +1353,15 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `:batch_size` - Sets the batch size for reading rows.
-    This value may have significant impact in performance, so adjust it for your needs (default: `1000`).
+      This value may have significant impact in performance,
+      so adjust it for your needs (default: `1000`).
 
     * `:infer_schema_length` - Maximum number of rows read for schema inference.
-    Setting this to nil will do a full table scan and will be slow (default: `1000`).
+      Setting this to nil will do a full table scan and will be slow (default: `1000`).
+
+    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
+
+    * `:lazy` - force the results into the lazy version of the current backend.
 
   """
   @doc type: :io
