@@ -396,7 +396,7 @@ defmodule Explorer.DataFrame do
   Reads data from a query.
 
   `conn` must be a `Adbc.Connection` process. `sql` is a string representing
-  the sql query and `params` is an optional list of parameters.
+  the sql query and `params` is the list of query parameters.
 
   ## Example
 
@@ -449,7 +449,7 @@ defmodule Explorer.DataFrame do
           opts :: Keyword.t()
         ) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
-  def from_query(conn, query, params \\ [], opts \\ [])
+  def from_query(conn, query, params, opts \\ [])
 
   if Code.ensure_loaded?(Adbc) do
     def from_query(conn, query, params, opts)
@@ -474,7 +474,7 @@ defmodule Explorer.DataFrame do
           opts :: Keyword.t()
         ) ::
           DataFrame.t()
-  def from_query!(conn, query, params \\ [], opts \\ []) do
+  def from_query!(conn, query, params, opts \\ []) do
     case from_query(conn, query, params, opts) do
       {:ok, df} -> df
       {:error, error} -> raise error

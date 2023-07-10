@@ -38,7 +38,8 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "queries database", %{conn: conn} do
-      {:ok, %DF{} = df} = Explorer.DataFrame.from_query(conn, "SELECT 123 as num, 'abc' as str")
+      {:ok, %DF{} = df} =
+        Explorer.DataFrame.from_query(conn, "SELECT 123 as num, 'abc' as str", [])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                num: [123],
@@ -47,12 +48,14 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "returns error", %{conn: conn} do
-      assert {:error, %Adbc.Error{} = error} = Explorer.DataFrame.from_query(conn, "INVALID SQL")
+      assert {:error, %Adbc.Error{} = error} =
+               Explorer.DataFrame.from_query(conn, "INVALID SQL", [])
+
       assert Exception.message(error) =~ "syntax error"
     end
 
     test "queries database!", %{conn: conn} do
-      assert Explorer.DataFrame.from_query!(conn, "SELECT 123 as num, 'abc' as str")
+      assert Explorer.DataFrame.from_query!(conn, "SELECT 123 as num, 'abc' as str", [])
              |> DF.to_columns(atom_keys: true) == %{
                num: [123],
                str: ["abc"]
@@ -61,7 +64,7 @@ defmodule Explorer.DataFrameTest do
 
     test "returns error!", %{conn: conn} do
       assert_raise Adbc.Error, ~r/syntax error/, fn ->
-        Explorer.DataFrame.from_query!(conn, "INVALID SQL")
+        Explorer.DataFrame.from_query!(conn, "INVALID SQL", [])
       end
     end
   end
