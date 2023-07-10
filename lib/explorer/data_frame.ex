@@ -96,7 +96,7 @@ defmodule Explorer.DataFrame do
   - [Arrow IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-file-format)
   - [Arrow Streaming IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format)
   - [Newline Delimited JSON](http://ndjson.org)
-  - Databases via `ADBC` in `from_query/3`
+  - Databases via `Adbc` in `from_query/3`
 
   The convention Explorer uses is to have `from_*` and `to_*` functions to read and write
   to files in the formats above. `load_*` and `dump_*` versions are also available to read
