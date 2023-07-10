@@ -173,14 +173,19 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_ipc(filename, columns) do
+  def from_ipc(%S3.Entry{}, _) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_ipc(%Local.Entry{} = entry, columns) do
     if columns do
       raise ArgumentError,
             "`columns` is not supported by Polars' lazy backend. " <>
               "Consider using `select/2` after reading the IPC file"
     end
 
-    case Native.lf_from_ipc(filename) do
+    case Native.lf_from_ipc(entry.path) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end

@@ -866,30 +866,37 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads an IPC file into a dataframe.
 
+  It accepts a filename that can be a local file, a "s3://" schema, or
+  a `FSS` entry like `FSS.S3.Entry`.
+
   ## Options
 
     * `:columns` - List with the name or index of columns to be selected.
       Defaults to all columns.
+
+    * `:config` - An optional config struct or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
 
     * `:lazy` - force the results into the lazy version of the current backend.
   """
   @doc type: :io
-  @spec from_ipc(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_ipc(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
-        columns: nil
+        columns: nil,
+        config: nil
       )
 
     backend = backend_from_options!(backend_opts)
 
     backend.from_ipc(
-      filename,
+      normalise_entry(filename, opts[:config]),
       to_columns_for_io(opts[:columns])
     )
   end

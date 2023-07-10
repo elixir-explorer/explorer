@@ -90,7 +90,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # IO: IPC
   @callback from_ipc(
-              filename :: String.t(),
+              entry :: fs_entry(),
               columns :: columns_for_io()
             ) :: result(df)
   @callback to_ipc(df, filename :: String.t(), compression(), streaming :: boolean()) ::
