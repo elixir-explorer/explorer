@@ -441,6 +441,7 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
   """
+  @doc type: :io
   @spec from_query(
           Adbc.Connection.t(),
           query :: String.t(),
