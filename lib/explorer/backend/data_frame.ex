@@ -31,6 +31,13 @@ defmodule Explorer.Backend.DataFrame do
 
   @type fs_entry :: Explorer.DataFrame.fs_entry()
 
+  # IO: query
+  @callback from_query(
+              Adbc.Connection.t(),
+              query :: String.t(),
+              params :: list(term)
+            ) :: result(df)
+
   # IO: CSV
   @callback from_csv(
               entry :: fs_entry(),

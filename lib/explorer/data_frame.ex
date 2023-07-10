@@ -392,6 +392,24 @@ defmodule Explorer.DataFrame do
   # IO
 
   @doc """
+  Reads data from a query.
+
+  `conn` must be a `Adbc.Connection` process. `sql` is a string representing
+  the sql query and `params` is an optional list of parameters.
+  """
+  @spec from_query(
+          Adbc.Connection.t(),
+          query :: String.t(),
+          params :: list(term),
+          opts :: Keyword.t()
+        ) ::
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
+  def from_query(conn, query, params \\ [], opts \\ []) do
+    backend = backend_from_options!(opts)
+    backend.from_query(conn, query, params)
+  end
+
+  @doc """
   Reads a delimited file into a dataframe.
 
   It accepts a filename that can be a local file, a "s3://" schema, or

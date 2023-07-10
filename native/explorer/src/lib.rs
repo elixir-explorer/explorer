@@ -66,7 +66,7 @@ mod atoms {
 rustler::init!(
     "Elixir.Explorer.PolarsBackend.Native",
     [
-        df_experiment,
+        df_from_arrow_stream_pointer,
         df_arrange,
         df_arrange_with,
         df_concat_columns,

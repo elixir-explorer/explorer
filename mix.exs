@@ -38,7 +38,7 @@ defmodule Explorer.MixProject do
       {:rustler_precompiled, "~> 0.5"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 3.1.1"},
-      {:adbc, github: "cocoa-xu/adbc"},
+      {:adbc, github: "elixir-explorer/adbc"},
 
       ## Optional
       {:rustler, "~> 0.29.0", optional: not (@dev? or @force_build?)},
