@@ -18,7 +18,10 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
+      deployments: write
+
     steps:
       - uses: actions/checkout@v3
 
