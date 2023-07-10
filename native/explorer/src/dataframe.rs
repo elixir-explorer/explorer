@@ -282,7 +282,6 @@ pub fn df_sample_frac(
     Ok(ExDataFrame::new(new_df))
 }
 
-/// NOTE: The '_ref' parameter is needed to prevent the BEAM GC from collecting the stream too soon.
 #[rustler::nif]
 fn df_from_arrow_stream_pointer(stream_ptr: u64) -> Result<ExDataFrame, ExplorerError> {
     let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
