@@ -464,6 +464,24 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Similar to `from_query/4` but raises if there is an error.
+  """
+  @doc type: :io
+  @spec from_query!(
+          Adbc.Connection.t(),
+          query :: String.t(),
+          params :: list(term),
+          opts :: Keyword.t()
+        ) ::
+          DataFrame.t()
+  def from_query!(conn, query, params \\ [], opts \\ []) do
+    case from_query(conn, query, params, opts) do
+      {:ok, df} -> df
+      {:error, error} -> raise error
+    end
+  end
+
+  @doc """
   Reads a delimited file into a dataframe.
 
   It accepts a filename that can be a local file, a "s3://" schema, or

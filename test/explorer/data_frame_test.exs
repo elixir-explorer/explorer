@@ -31,19 +31,38 @@ defmodule Explorer.DataFrameTest do
   describe "from_query/3" do
     alias Adbc.{Database, Connection}
 
-    test "queries database" do
+    setup do
       db = start_supervised!({Database, driver: :sqlite})
       conn = start_supervised!({Connection, database: db})
+      [conn: conn]
+    end
 
-      {:ok, _} = Connection.query(conn, "CREATE TABLE IF NOT EXISTS foo (col)")
-      {:ok, _} = Connection.query(conn, "INSERT INTO foo VALUES (?)", [:rand.uniform(1000)])
-
+    test "queries database", %{conn: conn} do
       {:ok, %DF{} = df} = Explorer.DataFrame.from_query(conn, "SELECT 123 as num, 'abc' as str")
 
       assert DF.to_columns(df, atom_keys: true) == %{
                num: [123],
                str: ["abc"]
              }
+    end
+
+    test "returns error", %{conn: conn} do
+      assert {:error, %Adbc.Error{} = error} = Explorer.DataFrame.from_query(conn, "INVALID SQL")
+      assert Exception.message(error) =~ "syntax error"
+    end
+
+    test "queries database!", %{conn: conn} do
+      assert Explorer.DataFrame.from_query!(conn, "SELECT 123 as num, 'abc' as str")
+             |> DF.to_columns(atom_keys: true) == %{
+               num: [123],
+               str: ["abc"]
+             }
+    end
+
+    test "returns error!", %{conn: conn} do
+      assert_raise Adbc.Error, ~r/syntax error/, fn ->
+        Explorer.DataFrame.from_query!(conn, "INVALID SQL")
+      end
     end
   end
 
