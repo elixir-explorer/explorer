@@ -20,6 +20,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   # IO
 
+  @compile {:no_warn_undefined, Adbc.Connection}
   @impl true
   def from_query(conn, query, params) do
     adbc_result =

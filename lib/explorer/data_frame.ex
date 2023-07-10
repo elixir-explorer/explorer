@@ -458,7 +458,7 @@ defmodule Explorer.DataFrame do
       backend.from_query(conn, query, params)
     end
   else
-    def from_query(conn, query, params, opts) do
+    def from_query(_conn, _query, _params, _opts) do
       raise "you must install :adbc as a dependency in order to use from_query/3"
     end
   end
