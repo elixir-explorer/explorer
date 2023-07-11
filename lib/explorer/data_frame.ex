@@ -1061,16 +1061,23 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:config` - An optional config struct or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec from_ipc_stream(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
+  @spec from_ipc_stream(filename :: String.t() | fs_entry()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc_stream(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
-    opts = Keyword.validate!(opts, columns: nil)
+    opts = Keyword.validate!(opts, columns: nil, config: nil)
     backend = backend_from_options!(backend_opts)
 
-    backend.from_ipc_stream(filename, to_columns_for_io(opts[:columns]))
+    backend.from_ipc_stream(
+      normalise_entry(filename, opts[:config]),
+      to_columns_for_io(opts[:columns])
+    )
   end
 
   @doc """

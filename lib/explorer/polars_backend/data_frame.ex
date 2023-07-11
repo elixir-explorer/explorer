@@ -306,10 +306,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc_stream(filename, columns) do
+  def from_ipc_stream(%S3.Entry{}, _) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_ipc_stream(%Local.Entry{} = entry, columns) do
     {columns, projection} = column_names_or_projection(columns)
 
-    case Native.df_from_ipc_stream(filename, columns, projection) do
+    case Native.df_from_ipc_stream(entry.path, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end

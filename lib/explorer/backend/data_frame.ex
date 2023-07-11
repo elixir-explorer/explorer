@@ -103,7 +103,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # IO: IPC Stream
   @callback from_ipc_stream(
-              filename :: String.t(),
+              filename :: fs_entry(),
               columns :: columns_for_io()
             ) :: result(df)
   @callback to_ipc_stream(

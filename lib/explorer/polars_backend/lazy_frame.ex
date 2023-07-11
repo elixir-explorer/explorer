@@ -192,8 +192,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_ipc_stream(filename, columns) do
-    case Eager.from_ipc_stream(filename, columns) do
+  def from_ipc_stream(%_{} = fs_entry, columns) do
+    case Eager.from_ipc_stream(fs_entry, columns) do
       {:ok, df} -> {:ok, Eager.to_lazy(df)}
       {:error, error} -> {:error, error}
     end
