@@ -316,7 +316,7 @@ fn array_to_dataframe(
 
     let struct_array = dyn_array
         .as_any()
-        .downcast_ref::<StructArray>()
+        .downcast_ref::<crate::dataframe::arrow::array::StructArray>()
         .ok_or(ExplorerError::Other(
             "Unable to downcast to StructArray in ArrowArrayStreamReader chunk".into(),
         ))?
