@@ -64,6 +64,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # IO
 
   @impl true
+  def from_query(conn, query, params) do
+    case Eager.from_query(conn, query, params) do
+      {:ok, df} -> {:ok, Eager.to_lazy(df)}
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  @impl true
   def from_csv(
         %S3.Entry{},
         _,

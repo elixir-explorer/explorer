@@ -1,6 +1,9 @@
 defmodule Explorer.DataFrameTest do
   use ExUnit.Case, async: true
 
+  # Tests for most IO operations are in the data_frame folder
+  # Tests for summarise, group, ungroup are available in grouped_test.exs
+
   # Doctests assume the module has been required
   require Explorer.DataFrame
   doctest Explorer.DataFrame
@@ -25,7 +28,46 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  # Tests for summarise, group, ungroup are available in grouped_test.exs
+  describe "from_query/3" do
+    alias Adbc.{Database, Connection}
+
+    setup do
+      db = start_supervised!({Database, driver: :sqlite})
+      conn = start_supervised!({Connection, database: db})
+      [conn: conn]
+    end
+
+    test "queries database", %{conn: conn} do
+      {:ok, %DF{} = df} =
+        Explorer.DataFrame.from_query(conn, "SELECT 123 as num, 'abc' as str", [])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               num: [123],
+               str: ["abc"]
+             }
+    end
+
+    test "returns error", %{conn: conn} do
+      assert {:error, %Adbc.Error{} = error} =
+               Explorer.DataFrame.from_query(conn, "INVALID SQL", [])
+
+      assert Exception.message(error) =~ "syntax error"
+    end
+
+    test "queries database!", %{conn: conn} do
+      assert Explorer.DataFrame.from_query!(conn, "SELECT 123 as num, 'abc' as str", [])
+             |> DF.to_columns(atom_keys: true) == %{
+               num: [123],
+               str: ["abc"]
+             }
+    end
+
+    test "returns error!", %{conn: conn} do
+      assert_raise Adbc.Error, ~r/syntax error/, fn ->
+        Explorer.DataFrame.from_query!(conn, "INVALID SQL", [])
+      end
+    end
+  end
 
   describe "new/1" do
     test "from series" do

@@ -1,6 +1,7 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
+use polars::export::{arrow, arrow::ffi};
 use std::collections::HashMap;
 use std::result::Result;
 
@@ -279,6 +280,53 @@ pub fn df_sample_frac(
     };
 
     Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif]
+fn df_from_arrow_stream_pointer(stream_ptr: u64) -> Result<ExDataFrame, ExplorerError> {
+    let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
+    let stream_ref = unsafe { stream_ptr.as_mut() }
+        .ok_or(ExplorerError::Other("Incorrect stream pointer".into()))?;
+
+    let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_ref) }
+        .map_err(arrow_to_explorer_error)?;
+
+    let df = match unsafe { res.next() } {
+        None => DataFrame::empty(),
+        Some(maybe) => {
+            let mut acc = array_to_dataframe(maybe)?;
+
+            while let Some(maybe) = unsafe { res.next() } {
+                let df = array_to_dataframe(maybe)?;
+                acc.vstack_mut(&df)?;
+            }
+
+            acc.rechunk();
+            acc
+        }
+    };
+
+    Ok(ExDataFrame::new(df))
+}
+
+fn array_to_dataframe(
+    stream_chunk: Result<Box<dyn arrow::array::Array>, polars::error::ArrowError>,
+) -> Result<DataFrame, ExplorerError> {
+    let dyn_array = stream_chunk.map_err(arrow_to_explorer_error)?;
+
+    let struct_array = dyn_array
+        .as_any()
+        .downcast_ref::<StructArray>()
+        .ok_or(ExplorerError::Other(
+            "Unable to downcast to StructArray in ArrowArrayStreamReader chunk".into(),
+        ))?
+        .clone();
+
+    DataFrame::try_from(struct_array).map_err(ExplorerError::Polars)
+}
+
+fn arrow_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
+    ExplorerError::Other(format!("Internal Arrow error: #{:?}", error))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

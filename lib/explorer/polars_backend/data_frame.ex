@@ -20,6 +20,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   # IO
 
+  @compile {:no_warn_undefined, Adbc.Connection}
+  @impl true
+  def from_query(conn, query, params) do
+    adbc_result =
+      Adbc.Connection.query_pointer(conn, query, params, fn pointer, _num_rows ->
+        Explorer.PolarsBackend.Native.df_from_arrow_stream_pointer(pointer)
+      end)
+
+    with {:ok, df_result} <- adbc_result,
+         {:ok, df} <- df_result,
+         do: {:ok, Shared.create_dataframe(df)}
+  end
+
   @impl true
   def from_csv(
         %S3.Entry{},

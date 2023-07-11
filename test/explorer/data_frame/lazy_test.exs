@@ -1191,4 +1191,28 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
   end
+
+  describe "from_query/3" do
+    alias Adbc.{Database, Connection}
+
+    setup do
+      db = start_supervised!({Database, driver: :sqlite})
+      conn = start_supervised!({Connection, database: db})
+      [conn: conn]
+    end
+
+    test "queries database", %{conn: conn} do
+      {:ok, %DF{} = df} =
+        Explorer.DataFrame.from_query(conn, "SELECT 123 as num, 'abc' as str", [], lazy: true)
+
+      assert DF.to_lazy(df) == df
+    end
+
+    test "returns error", %{conn: conn} do
+      assert {:error, %Adbc.Error{} = error} =
+               Explorer.DataFrame.from_query(conn, "INVALID SQL", [], lazy: true)
+
+      assert Exception.message(error) =~ "syntax error"
+    end
+  end
 end
