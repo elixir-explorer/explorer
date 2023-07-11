@@ -411,7 +411,7 @@ defmodule Explorer.DataFrame do
   Now, in your config/config.exs, configure the drivers you are going to use
   (see `Adbc` module docs for more information on supported drivers):
 
-      config :adbc, :drivers, [:sqlite3]
+      config :adbc, :drivers, [:sqlite]
 
   If you are using a notebook or scripting, you can also use `Adbc.download_driver!/1`
   to dynamically download one.
