@@ -52,7 +52,7 @@ defmodule Explorer.DataFrame.CSVTest do
 
   test "from_csv/2 error" do
     assert_raise ArgumentError,
-                 "cannot read entry because it's not a valid file, or its filesystem is not supported",
+                 "from_csv failed: \"cannot read entry because it's not a valid file, or its filesystem is not supported\"",
                  fn ->
                    DF.from_csv!("unknown")
                  end

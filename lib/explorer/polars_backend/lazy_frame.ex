@@ -165,8 +165,13 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_ndjson(filename, infer_schema_length, batch_size) do
-    case Native.lf_from_ndjson(filename, infer_schema_length, batch_size) do
+  def from_ndjson(%S3.Entry{}, _, _) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
+    case Native.lf_from_ndjson(entry.path, infer_schema_length, batch_size) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end

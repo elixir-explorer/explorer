@@ -189,8 +189,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_ndjson(filename, infer_schema_length, batch_size) do
-    with {:ok, df} <- Native.df_from_ndjson(filename, infer_schema_length, batch_size) do
+  def from_ndjson(%S3.Entry{}, _, _) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
+    with {:ok, df} <- Native.df_from_ndjson(entry.path, infer_schema_length, batch_size) do
       {:ok, Shared.create_dataframe(df)}
     end
   end

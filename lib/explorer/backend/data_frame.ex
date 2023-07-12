@@ -120,7 +120,7 @@ defmodule Explorer.Backend.DataFrame do
 
   # IO: IPC NDJSON
   @callback from_ndjson(
-              filename :: String.t(),
+              filename :: fs_entry(),
               infer_schema_length :: integer(),
               batch_size :: integer()
             ) :: result(df)
