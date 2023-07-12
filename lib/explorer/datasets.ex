@@ -38,12 +38,7 @@ defmodule Explorer.Datasets do
 
   ## Citation
 
-      Original Owners:
-      Forina, M. et al, PARVUS -
-      An Extendible Package for Data Exploration, Classification and Correlation.
-      Institute of Pharmaceutical and Food Analysis and Technologies, Via Brigata Salerno,
-      16147 Genoa, Italy.
-      Wine. (1991). UCI Machine Learning Repository.
+      Aeberhard,Stefan and Forina,M.. (1991). Wine. UCI Machine Learning Repository. https://doi.org/10.24432/C5PC7J.
   """
   def wine, do: read_dataset!("wine")
 
@@ -59,11 +54,7 @@ defmodule Explorer.Datasets do
 
   ## Citation
 
-      Original Owners:
-      R. A. Fisher (1936)
-      The use of multiple measurements in taxonomic problems.
-      Annals of Eugenics. 7 (2): 179–188. doi:10.1111/j.1469-1809.1936.tb02137.x
-      Iris. (1936). UCI Machine Learning Repository.
+      Fisher,R. A.. (1988). Iris. UCI Machine Learning Repository. https://doi.org/10.24432/C56C76.
   """
   def iris, do: read_dataset!("iris")
 
