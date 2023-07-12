@@ -189,8 +189,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_ndjson(filename, infer_schema_length, batch_size) do
-    with {:ok, df} <- Native.df_from_ndjson(filename, infer_schema_length, batch_size) do
+  def from_ndjson(%S3.Entry{}, _, _) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
+    with {:ok, df} <- Native.df_from_ndjson(entry.path, infer_schema_length, batch_size) do
       {:ok, Shared.create_dataframe(df)}
     end
   end
@@ -268,10 +273,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc(filename, columns) do
+  def from_ipc(%S3.Entry{}, _) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_ipc(%Local.Entry{} = entry, columns) do
     {columns, projection} = column_names_or_projection(columns)
 
-    case Native.df_from_ipc(filename, columns, projection) do
+    case Native.df_from_ipc(entry.path, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
@@ -301,10 +311,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc_stream(filename, columns) do
+  def from_ipc_stream(%S3.Entry{}, _) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_ipc_stream(%Local.Entry{} = entry, columns) do
     {columns, projection} = column_names_or_projection(columns)
 
-    case Native.df_from_ipc_stream(filename, columns, projection) do
+    case Native.df_from_ipc_stream(entry.path, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end

@@ -165,30 +165,40 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_ndjson(filename, infer_schema_length, batch_size) do
-    case Native.lf_from_ndjson(filename, infer_schema_length, batch_size) do
+  def from_ndjson(%S3.Entry{}, _, _) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
+    case Native.lf_from_ndjson(entry.path, infer_schema_length, batch_size) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
   end
 
   @impl true
-  def from_ipc(filename, columns) do
+  def from_ipc(%S3.Entry{}, _) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def from_ipc(%Local.Entry{} = entry, columns) do
     if columns do
       raise ArgumentError,
             "`columns` is not supported by Polars' lazy backend. " <>
               "Consider using `select/2` after reading the IPC file"
     end
 
-    case Native.lf_from_ipc(filename) do
+    case Native.lf_from_ipc(entry.path) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
   end
 
   @impl true
-  def from_ipc_stream(filename, columns) do
-    case Eager.from_ipc_stream(filename, columns) do
+  def from_ipc_stream(%_{} = fs_entry, columns) do
+    case Eager.from_ipc_stream(fs_entry, columns) do
       {:ok, df} -> {:ok, Eager.to_lazy(df)}
       {:error, error} -> {:error, error}
     end

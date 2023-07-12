@@ -547,20 +547,22 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(backend_opts)
 
-    backend.from_csv(
-      normalise_entry(filename, opts[:config]),
-      check_dtypes!(opts[:dtypes]),
-      opts[:delimiter],
-      opts[:null_character],
-      opts[:skip_rows],
-      opts[:header],
-      opts[:encoding],
-      opts[:max_rows],
-      to_columns_for_io(opts[:columns]),
-      opts[:infer_schema_length],
-      opts[:parse_dates],
-      opts[:eol_delimiter]
-    )
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      backend.from_csv(
+        entry,
+        check_dtypes!(opts[:dtypes]),
+        opts[:delimiter],
+        opts[:null_character],
+        opts[:skip_rows],
+        opts[:header],
+        opts[:encoding],
+        opts[:max_rows],
+        to_columns_for_io(opts[:columns]),
+        opts[:infer_schema_length],
+        opts[:parse_dates],
+        opts[:eol_delimiter]
+      )
+    end
   end
 
   @doc """
@@ -570,8 +572,14 @@ defmodule Explorer.DataFrame do
   @spec from_csv!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
   def from_csv!(filename, opts \\ []) do
     case from_csv(filename, opts) do
-      {:ok, df} -> df
-      {:error, error} -> raise "from_csv failed: #{inspect(error)}"
+      {:ok, df} ->
+        df
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "from_csv failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "from_csv failed: #{inspect(error)}"
     end
   end
 
@@ -682,35 +690,34 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(backend_opts)
 
-    backend.from_parquet(
-      normalise_entry(filename, opts[:config]),
-      opts[:max_rows],
-      to_columns_for_io(opts[:columns])
-    )
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      backend.from_parquet(
+        entry,
+        opts[:max_rows],
+        to_columns_for_io(opts[:columns])
+      )
+    end
   end
 
   defp normalise_entry(%_{} = entry, config) when config != nil do
-    raise ArgumentError,
-          ":config key is only supported when the argument is a string, got #{inspect(entry)} with config #{inspect(config)}"
+    {:error,
+     ArgumentError.message(
+       ":config key is only supported when the argument is a string, got #{inspect(entry)} with config #{inspect(config)}"
+     )}
   end
 
-  defp normalise_entry(%Local.Entry{} = entry, nil), do: entry
-  defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: entry
+  defp normalise_entry(%Local.Entry{} = entry, nil), do: {:ok, entry}
+  defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: {:ok, entry}
 
   defp normalise_entry("s3://" <> _rest = entry, config) do
     config = s3_config(config)
-    %S3.Entry{url: entry, config: config}
+    {:ok, %S3.Entry{url: entry, config: config}}
   end
 
-  defp normalise_entry("file://" <> path, _config), do: %Local.Entry{path: path}
+  defp normalise_entry("file://" <> path, _config), do: {:ok, %Local.Entry{path: path}}
 
   defp normalise_entry(filepath, _config) when is_binary(filepath) do
-    if File.exists?(filepath) do
-      %Local.Entry{path: filepath}
-    else
-      raise ArgumentError,
-            "cannot read entry because it's not a valid file, or its filesystem is not supported"
-    end
+    {:ok, %Local.Entry{path: filepath}}
   end
 
   defp s3_config(%S3.Config{} = config), do: config
@@ -726,8 +733,14 @@ defmodule Explorer.DataFrame do
   @spec from_parquet!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
   def from_parquet!(filename, opts \\ []) do
     case from_parquet(filename, opts) do
-      {:ok, df} -> df
-      {:error, error} -> raise "from_parquet failed: #{inspect(error)}"
+      {:ok, df} ->
+        df
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "from_parquet failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "from_parquet failed: #{inspect(error)}"
     end
   end
 
@@ -866,32 +879,41 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads an IPC file into a dataframe.
 
+  It accepts a filename that can be a local file, a "s3://" schema, or
+  a `FSS` entry like `FSS.S3.Entry`.
+
   ## Options
 
     * `:columns` - List with the name or index of columns to be selected.
       Defaults to all columns.
+
+    * `:config` - An optional config struct or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
 
     * `:lazy` - force the results into the lazy version of the current backend.
   """
   @doc type: :io
-  @spec from_ipc(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_ipc(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
-        columns: nil
+        columns: nil,
+        config: nil
       )
 
     backend = backend_from_options!(backend_opts)
 
-    backend.from_ipc(
-      filename,
-      to_columns_for_io(opts[:columns])
-    )
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      backend.from_ipc(
+        entry,
+        to_columns_for_io(opts[:columns])
+      )
+    end
   end
 
   @doc """
@@ -901,8 +923,14 @@ defmodule Explorer.DataFrame do
   @spec from_ipc!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
   def from_ipc!(filename, opts \\ []) do
     case from_ipc(filename, opts) do
-      {:ok, df} -> df
-      {:error, error} -> raise "from_ipc failed: #{inspect(error)}"
+      {:ok, df} ->
+        df
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "from_ipc failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "from_ipc failed: #{inspect(error)}"
     end
   end
 
@@ -1054,27 +1082,43 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:config` - An optional config struct or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec from_ipc_stream(filename :: String.t()) :: {:ok, DataFrame.t()} | {:error, term()}
+  @spec from_ipc_stream(filename :: String.t() | fs_entry()) ::
+          {:ok, DataFrame.t()} | {:error, term()}
   def from_ipc_stream(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
-    opts = Keyword.validate!(opts, columns: nil)
+    opts = Keyword.validate!(opts, columns: nil, config: nil)
     backend = backend_from_options!(backend_opts)
 
-    backend.from_ipc_stream(filename, to_columns_for_io(opts[:columns]))
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      backend.from_ipc_stream(
+        entry,
+        to_columns_for_io(opts[:columns])
+      )
+    end
   end
 
   @doc """
   Similar to `from_ipc_stream/2` but raises if there is a problem reading the IPC Stream file.
   """
   @doc type: :io
-  @spec from_ipc_stream!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  @spec from_ipc_stream!(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
+          DataFrame.t()
   def from_ipc_stream!(filename, opts \\ []) do
     case from_ipc_stream(filename, opts) do
-      {:ok, df} -> df
-      {:error, error} -> raise "from_ipc_stream failed: #{inspect(error)}"
+      {:ok, df} ->
+        df
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "from_ipc_stream failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "from_ipc_stream failed: #{inspect(error)}"
     end
   end
 
@@ -1274,38 +1318,50 @@ defmodule Explorer.DataFrame do
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
 
     * `:lazy` - force the results into the lazy version of the current backend.
+
+    * `:config` - An optional config struct or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
   """
   @doc type: :io
-  @spec from_ndjson(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_ndjson(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, term()}
   def from_ndjson(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
+        config: nil,
         batch_size: 1000,
         infer_schema_length: @default_infer_schema_length
       )
 
     backend = backend_from_options!(backend_opts)
 
-    backend.from_ndjson(
-      filename,
-      opts[:infer_schema_length],
-      opts[:batch_size]
-    )
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      backend.from_ndjson(
+        entry,
+        opts[:infer_schema_length],
+        opts[:batch_size]
+      )
+    end
   end
 
   @doc """
   Similar to `from_ndjson/2`, but raises in case of error.
   """
   @doc type: :io
-  @spec from_ndjson!(filename :: String.t(), opts :: Keyword.t()) ::
+  @spec from_ndjson!(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           DataFrame.t()
   def from_ndjson!(filename, opts \\ []) do
     case from_ndjson(filename, opts) do
-      {:ok, df} -> df
-      {:error, error} -> raise "from_ndjson failed: #{inspect(error)}"
+      {:ok, df} ->
+        df
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "from_ndjson failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "from_ndjson failed: #{inspect(error)}"
     end
   end
 
@@ -1423,8 +1479,14 @@ defmodule Explorer.DataFrame do
           DataFrame.t()
   def load_ndjson!(contents, opts \\ []) do
     case load_ndjson(contents, opts) do
-      {:ok, df} -> df
-      {:error, error} -> raise "load_ndjson failed: #{inspect(error)}"
+      {:ok, df} ->
+        df
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "load_ndjson failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "load_ndjson failed: #{inspect(error)}"
     end
   end
 

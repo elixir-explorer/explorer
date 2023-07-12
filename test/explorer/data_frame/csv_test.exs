@@ -51,8 +51,8 @@ defmodule Explorer.DataFrame.CSVTest do
   end
 
   test "from_csv/2 error" do
-    assert_raise ArgumentError,
-                 "cannot read entry because it's not a valid file, or its filesystem is not supported",
+    assert_raise RuntimeError,
+                 ~r/No such file or directory/,
                  fn ->
                    DF.from_csv!("unknown")
                  end
