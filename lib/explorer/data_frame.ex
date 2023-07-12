@@ -717,14 +717,7 @@ defmodule Explorer.DataFrame do
   defp normalise_entry("file://" <> path, _config), do: {:ok, %Local.Entry{path: path}}
 
   defp normalise_entry(filepath, _config) when is_binary(filepath) do
-    if File.exists?(filepath) do
-      {:ok, %Local.Entry{path: filepath}}
-    else
-      {:error,
-       ArgumentError.exception(
-         "cannot read entry because it's not a valid file, or its filesystem is not supported"
-       )}
-    end
+    {:ok, %Local.Entry{path: filepath}}
   end
 
   defp s3_config(%S3.Config{} = config), do: config
