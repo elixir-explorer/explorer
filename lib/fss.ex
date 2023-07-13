@@ -13,12 +13,18 @@ defmodule FSS do
 
   defmodule S3 do
     defmodule Config do
-      defstruct [:region, :access_key_id, :secret_access_key]
+      defstruct [
+        :access_key_id,
+        :region,
+        :secret_access_key,
+        :token
+      ]
 
       @type t :: %__MODULE__{
-              region: String.t(),
               access_key_id: String.t(),
-              secret_access_key: String.t()
+              region: String.t(),
+              secret_access_key: String.t(),
+              token: String.t() | nil
             }
     end
 
