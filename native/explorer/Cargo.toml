@@ -29,6 +29,8 @@ mimalloc = { version = "*", default-features = false }
 version = "0.31"
 default-features = false
 features = [
+  "async",
+  "aws",
   "checked_arithmetic",
   "concat_str",
   "cross_join",
