@@ -396,7 +396,8 @@ defmodule Explorer.DataFrame do
   Reads data from a query.
 
   `conn` must be a `Adbc.Connection` process. `sql` is a string representing
-  the sql query and `params` is the list of query parameters.
+  the sql query and `params` is the list of query parameters. See `Adbc`
+  for more information.
 
   ## Example
 
@@ -420,8 +421,12 @@ defmodule Explorer.DataFrame do
   supervision tree:
 
       children = [
-        {Adbc.Database, driver: :sqlite, name: MyApp.DB},
-        {Adbc.Connection, database: MyApp.DB}
+        {Adbc.Database,
+         driver: :sqlite,
+         process_options: [name: MyApp.DB]},
+        {Adbc.Connection,
+         database: MyApp.DB,
+         process_options: [name: MyApp.Conn]}
       ]
 
       Supervisor.start_link(children, strategy: :one_for_one)
@@ -433,6 +438,10 @@ defmodule Explorer.DataFrame do
 
   And now you can make queries with:
 
+      # For named connections
+      {:ok, _} = Explorer.DataFrame.from_query(MyApp.Conn, "SELECT 123")
+
+      # When using the conn PID directly
       {:ok, _} = Explorer.DataFrame.from_query(conn, "SELECT 123")
 
   ## Options
