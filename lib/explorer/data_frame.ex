@@ -720,7 +720,7 @@ defmodule Explorer.DataFrame do
 
   defp normalise_entry("s3://" <> _rest = entry, config) do
     config = s3_config(config)
-    {:ok, %S3.Entry{url: entry, config: config}}
+    S3.Entry.parse(entry, config: config)
   end
 
   defp normalise_entry("file://" <> path, _config), do: {:ok, %Local.Entry{path: path}}

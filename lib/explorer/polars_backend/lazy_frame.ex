@@ -152,16 +152,18 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_parquet(%Local.Entry{} = entry, max_rows, columns) do
-    if columns do
-      raise ArgumentError,
-            "`columns` is not supported by Polars' lazy backend. " <>
-              "Consider using `select/2` after reading the parquet file"
-    end
+    if columns, do: raise_columns_presense_error()
 
     case Native.lf_from_parquet(entry.path, max_rows) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
+  end
+
+  defp raise_columns_presense_error do
+    raise ArgumentError,
+          "`columns` is not supported by Polars' lazy backend. " <>
+            "Consider using `select/2` after reading the parquet file"
   end
 
   @impl true
