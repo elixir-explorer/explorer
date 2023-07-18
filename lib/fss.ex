@@ -50,7 +50,10 @@ defmodule FSS do
             }
 
       def parse(url, opts \\ []) do
-        opts = Keyword.validate!(opts, config: FSS.S3.Config.from_system_env())
+        opts = 
+          opts
+          |> Keyword.validate!(opts, [:config])
+          |> Keyword.put_new_lazy(:config, fn -> FSS.S3.Config.from_system_env() end)
         uri = URI.parse(url)
 
         cond do
@@ -66,7 +69,7 @@ defmodule FSS do
                 {:error, "path to the resource is required"}
             end
 
-          uri.scheme == "http" or uri.scheme == "https" ->
+          uri.scheme in ["http", "https"] ->
             parts =
               case String.split(uri.host, ".") do
                 ["s3", region | tail] ->
