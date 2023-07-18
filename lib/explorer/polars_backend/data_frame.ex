@@ -129,6 +129,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
+  def to_csv_writer_sample(%DataFrame{data: df}, path, header?, delimiter) do
+    <<delimiter::utf8>> = delimiter
+
+    case Native.df_to_csv_writer_sample(df, path, header?, delimiter) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
+  end
+
   @impl true
   def dump_csv(%DataFrame{} = df, header?, <<delimiter::utf8>>) do
     Native.df_dump_csv(df.data, header?, delimiter)

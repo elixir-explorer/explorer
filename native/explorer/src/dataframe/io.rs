@@ -515,7 +515,6 @@ pub fn df_load_ndjson(
     )))
 }
 
-use crate::writer::CloudWriter;
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_to_csv_writer_sample(
@@ -532,7 +531,7 @@ pub fn df_to_csv_writer_sample(
     let object_store: Box<dyn ObjectStore> = Box::new(object_store::local::LocalFileSystem::new());
     let object_store = Arc::from(Mutex::from(object_store));
 
-    let mut cloud_writer = CloudWriter::new(object_store, path.into());
+    let mut cloud_writer = crate::cloud_writer::CloudWriter::new(object_store, path.into());
 
     CsvWriter::new(&mut cloud_writer)
         .has_header(has_headers)

@@ -26,7 +26,6 @@ pub struct CloudWriter {
     writer: SyncIoBridge<Box<dyn AsyncWrite + Send + Unpin>>,
 }
 
-
 impl CloudWriter {
     /// Construct a new CloudWriter
     ///
