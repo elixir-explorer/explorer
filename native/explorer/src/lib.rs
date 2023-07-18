@@ -21,6 +21,7 @@ mod error;
 mod expressions;
 mod lazyframe;
 mod series;
+mod writer;
 
 use dataframe::io::*;
 use dataframe::*;
