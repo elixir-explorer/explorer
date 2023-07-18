@@ -326,7 +326,7 @@ fn array_to_dataframe(
 }
 
 fn arrow_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
-    ExplorerError::Other(format!("Internal Arrow error: #{:?}", error))
+    ExplorerError::Other(format!("Internal Arrow error: #{error:?}"))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
