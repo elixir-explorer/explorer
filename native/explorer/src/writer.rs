@@ -8,8 +8,6 @@ use object_store::MultipartId;
 use object_store::ObjectStore;
 use object_store::path::Path;
 
-use std::future::Future;
-
 /// CloudWriter wraps the asynchronous interface of [ObjectStore::put_multipart](https://docs.rs/object_store/latest/object_store/trait.ObjectStore.html#tymethod.put_multipart)
 /// in a synchronous interface which implements `std::io::Write`.
 ///
