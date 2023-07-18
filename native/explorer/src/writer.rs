@@ -23,7 +23,7 @@ pub struct CloudWriter {
     // The Tokio runtime which the writer uses internally.
     runtime: tokio::runtime::Runtime,
     // Internal writer, constructed at creation
-    writer: tokio_util::io::SyncIoBridge<Box<dyn AsyncWrite + Send + Unpin>>,
+    writer: SyncIoBridge<Box<dyn AsyncWrite + Send + Unpin>>,
 }
 
 
@@ -40,10 +40,10 @@ impl CloudWriter {
         CloudWriter{object_store, path, multipart_id, runtime, writer}
     }
 
-    async fn build_writer(object_store: &Arc<Mutex<Box<dyn ObjectStore>>>, path: &Path) -> (MultipartId, tokio_util::io::SyncIoBridge<Box<dyn AsyncWrite + Send + Unpin>>) {
+    async fn build_writer(object_store: &Arc<Mutex<Box<dyn ObjectStore>>>, path: &Path) -> (MultipartId, SyncIoBridge<Box<dyn AsyncWrite + Send + Unpin>>) {
         let object_store = object_store.lock().unwrap();
-        let (multipart_id, mut async_s3_writer) = object_store.put_multipart(path).await.expect("Could not create location to write to");
-        let mut sync_s3_uploader = tokio_util::io::SyncIoBridge::new(async_s3_writer);
+        let (multipart_id, async_s3_writer) = object_store.put_multipart(path).await.expect("Could not create location to write to");
+        let sync_s3_uploader = SyncIoBridge::new(async_s3_writer);
         (multipart_id, sync_s3_uploader)
     }
 
