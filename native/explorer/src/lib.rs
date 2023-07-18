@@ -14,6 +14,7 @@ use rustler::{Env, Term};
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+mod cloud_writer;
 mod dataframe;
 mod datatypes;
 mod encoding;
@@ -21,7 +22,6 @@ mod error;
 mod expressions;
 mod lazyframe;
 mod series;
-mod cloud_writer;
 
 use dataframe::io::*;
 use dataframe::*;

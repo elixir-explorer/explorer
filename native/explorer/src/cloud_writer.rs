@@ -4,9 +4,9 @@ use std::sync::Mutex;
 use tokio::io::AsyncWrite;
 use tokio_util::io::SyncIoBridge;
 
+use object_store::path::Path;
 use object_store::MultipartId;
 use object_store::ObjectStore;
-use object_store::path::Path;
 
 /// CloudWriter wraps the asynchronous interface of [ObjectStore::put_multipart](https://docs.rs/object_store/latest/object_store/trait.ObjectStore.html#tymethod.put_multipart)
 /// in a synchronous interface which implements `std::io::Write`.
@@ -32,16 +32,32 @@ impl CloudWriter {
     /// Creates a new (current-thread) Tokio runtime
     /// which bridges the sync writing process with the async ObjectStore multipart uploading.
     pub fn new(object_store: Arc<Mutex<Box<dyn ObjectStore>>>, path: Path) -> Self {
-        let runtime = tokio::runtime::Builder::new_current_thread().build().unwrap();
-        let (multipart_id, writer) = runtime.block_on(async {
-            Self::build_writer(&object_store, &path).await
-        });
-        CloudWriter{object_store, path, multipart_id, runtime, writer}
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .build()
+            .unwrap();
+        let (multipart_id, writer) =
+            runtime.block_on(async { Self::build_writer(&object_store, &path).await });
+        CloudWriter {
+            object_store,
+            path,
+            multipart_id,
+            runtime,
+            writer,
+        }
     }
 
-    async fn build_writer(object_store: &Arc<Mutex<Box<dyn ObjectStore>>>, path: &Path) -> (MultipartId, SyncIoBridge<Box<dyn AsyncWrite + Send + Unpin>>) {
+    async fn build_writer(
+        object_store: &Arc<Mutex<Box<dyn ObjectStore>>>,
+        path: &Path,
+    ) -> (
+        MultipartId,
+        SyncIoBridge<Box<dyn AsyncWrite + Send + Unpin>>,
+    ) {
         let object_store = object_store.lock().unwrap();
-        let (multipart_id, async_s3_writer) = object_store.put_multipart(path).await.expect("Could not create location to write to");
+        let (multipart_id, async_s3_writer) = object_store
+            .put_multipart(path)
+            .await
+            .expect("Could not create location to write to");
         let sync_s3_uploader = SyncIoBridge::new(async_s3_writer);
         (multipart_id, sync_s3_uploader)
     }
@@ -49,7 +65,9 @@ impl CloudWriter {
     fn abort(&self) {
         let _ = self.runtime.block_on(async {
             let object_store = self.object_store.lock().unwrap();
-            object_store.abort_multipart(&self.path, &self.multipart_id).await
+            object_store
+                .abort_multipart(&self.path, &self.multipart_id)
+                .await
         });
     }
 }
@@ -78,7 +96,6 @@ impl Drop for CloudWriter {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use object_store::ObjectStore;
@@ -94,7 +111,7 @@ mod tests {
             "foo" => &[1, 2, 3],
             "bar" => &[None, Some("bak"), Some("baz")],
         )
-            .unwrap()
+        .unwrap()
     }
 
     #[test]
@@ -103,12 +120,17 @@ mod tests {
 
         let mut df = example_dataframe();
 
-        let object_store: Box<dyn ObjectStore> = Box::new(object_store::local::LocalFileSystem::new_with_prefix("/tmp/").expect("Could not initialize connection"));
+        let object_store: Box<dyn ObjectStore> = Box::new(
+            object_store::local::LocalFileSystem::new_with_prefix("/tmp/")
+                .expect("Could not initialize connection"),
+        );
         let object_store: Arc<Mutex<Box<dyn ObjectStore>>> = Arc::from(Mutex::from(object_store));
 
         let path: object_store::path::Path = "cloud_writer_example.csv".into();
 
         let mut cloud_writer = CloudWriter::new(object_store, path);
-        let csv_writer = CsvWriter::new(&mut cloud_writer).finish(&mut df).expect("Could not write dataframe as CSV to remote location");
+        let csv_writer = CsvWriter::new(&mut cloud_writer)
+            .finish(&mut df)
+            .expect("Could not write dataframe as CSV to remote location");
     }
 }

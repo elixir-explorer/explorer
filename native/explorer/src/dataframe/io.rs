@@ -515,7 +515,6 @@ pub fn df_load_ndjson(
     )))
 }
 
-
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_to_csv_writer_sample(
     data: ExDataFrame,
@@ -523,9 +522,9 @@ pub fn df_to_csv_writer_sample(
     has_headers: bool,
     delimiter: u8,
 ) -> Result<(), ExplorerError> {
+    use object_store::ObjectStore;
     use std::sync::Arc;
     use std::sync::Mutex;
-    use object_store::ObjectStore;
 
     // Hard-coded local file system object store for now:
     let object_store: Box<dyn ObjectStore> = Box::new(object_store::local::LocalFileSystem::new());
