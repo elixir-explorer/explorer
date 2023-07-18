@@ -565,7 +565,7 @@ defmodule Explorer.DataFrame.LazyTest do
       df2 = DF.distinct(df)
       assert DF.names(df2) == DF.names(df)
 
-      df3 = DF.distinct(df, 0..-1)
+      df3 = DF.distinct(df, 0..-1//1)
       assert DF.names(df3) == DF.names(df)
 
       assert df == DF.distinct(df, 100..200)

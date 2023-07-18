@@ -2032,9 +2032,9 @@ defmodule Explorer.DataFrameTest do
     assert Series.to_list(df["a"]) == [1, 2, 3]
     assert DF.to_columns(df[["a"]]) == %{"a" => [1, 2, 3]}
     assert DF.to_columns(df[[:a, :c]]) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
-    assert DF.to_columns(df[0..-2]) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
+    assert DF.to_columns(df[0..-2//1]) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
     assert DF.to_columns(df[-3..-1]) == DF.to_columns(df)
-    assert DF.to_columns(df[0..-1]) == DF.to_columns(df)
+    assert DF.to_columns(df[0..-1//1]) == DF.to_columns(df)
 
     assert %Series{} = s1 = df[0]
     assert Series.to_list(s1) == [1, 2, 3]
@@ -2089,7 +2089,7 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
     assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
 
-    {df3, df4} = Access.pop(df1, 0..-2)
+    {df3, df4} = Access.pop(df1, 0..-2//1)
     assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
     assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
 
@@ -2198,13 +2198,13 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "with ranges", %{df: df} do
-      df1 = DF.distinct(df, 0..1)
+      df1 = DF.distinct(df, 0..1//1)
       assert DF.names(df1) == ["year", "country"]
 
       df2 = DF.distinct(df)
       assert DF.names(df2) == DF.names(df)
 
-      df3 = DF.distinct(df, 0..-1)
+      df3 = DF.distinct(df, 0..-1//1)
       assert DF.names(df3) == DF.names(df)
 
       assert df == DF.distinct(df, 100..200)

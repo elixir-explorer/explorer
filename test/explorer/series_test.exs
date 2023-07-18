@@ -3184,14 +3184,14 @@ defmodule Explorer.SeriesTest do
 
     test "from a range with negative numbers" do
       s = Series.from_list(["a", "b", "c"])
-      s1 = Series.slice(s, -2..-1)
+      s1 = Series.slice(s, -2..-1//1)
 
       assert Series.to_list(s1) == ["b", "c"]
     end
 
     test "from a range that is out of bounds" do
       s = Series.from_list(["a", "b", "c"])
-      s1 = Series.slice(s, 3..2)
+      s1 = Series.slice(s, 3..2//1)
 
       assert Series.to_list(s1) == []
     end

@@ -1528,7 +1528,7 @@ defmodule Explorer.Series do
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.slice(s, 3..2)
+      iex> Explorer.Series.slice(s, 3..2//1)
       #Explorer.Series<
         Polars[0]
         string []
