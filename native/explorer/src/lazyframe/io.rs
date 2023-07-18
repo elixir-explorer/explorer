@@ -4,7 +4,7 @@ use std::io::BufWriter;
 use std::result::Result;
 
 use crate::dataframe::io::schema_from_dtypes_pairs;
-use crate::datatypes::ExParquetCompression;
+use crate::datatypes::{ExParquetCompression, ExS3Entry};
 use crate::{ExLazyFrame, ExplorerError};
 
 #[rustler::nif]
@@ -17,6 +17,22 @@ pub fn lf_from_parquet(
         ..Default::default()
     };
     let lf = LazyFrame::scan_parquet(filename, options)?;
+
+    Ok(ExLazyFrame::new(lf))
+}
+
+// When we have more cloud entries, we could accept an Enum.
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_from_parquet_cloud(
+    ex_entry: ExS3Entry,
+    stop_after_n_rows: Option<usize>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let options = ScanArgsParquet {
+        n_rows: stop_after_n_rows,
+        cloud_options: Some(ex_entry.config.to_cloud_options()),
+        ..Default::default()
+    };
+    let lf = LazyFrame::scan_parquet(ex_entry.to_string(), options)?;
 
     Ok(ExLazyFrame::new(lf))
 }

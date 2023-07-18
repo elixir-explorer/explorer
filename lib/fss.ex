@@ -28,22 +28,36 @@ defmodule FSS do
               secret_access_key: String.t(),
               token: String.t() | nil
             }
+
+      def from_system_env() do
+        %__MODULE__{
+          access_key_id: System.get_env("AWS_ACCESS_KEY_ID"),
+          secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY"),
+          region: System.get_env("AWS_REGION", System.get_env("AWS_DEFAULT_REGION")),
+          token: System.get_env("AWS_SESSION_TOKEN")
+        }
+      end
     end
 
     defmodule Entry do
-      defstruct [:bucket, :key, :config]
+      defstruct [:bucket, :key, :port, :config]
 
-      @type t :: %__MODULE__{bucket: String.t(), key: String.t(), config: Config.t()}
+      @type t :: %__MODULE__{
+              bucket: String.t(),
+              key: String.t(),
+              port: pos_integer(),
+              config: Config.t()
+            }
 
       def parse(url, opts \\ []) do
-        opts = Keyword.validate!(opts, config: %FSS.S3.Config{})
+        opts = Keyword.validate!(opts, config: FSS.S3.Config.from_system_env())
         uri = URI.parse(url)
 
         cond do
           uri.scheme == "s3" ->
             case uri do
               %{host: host, path: "/" <> key} when is_binary(host) ->
-                {:ok, %__MODULE__{bucket: host, key: key, config: opts[:config]}}
+                {:ok, %__MODULE__{bucket: host, key: key, port: uri.port, config: opts[:config]}}
 
               %{host: nil} ->
                 {:error, "host is required"}
@@ -73,9 +87,19 @@ defmodule FSS do
               end
 
             with {:ok, parts} <- parts do
-              config = %{opts[:config] | region: parts[:region], endpoint: parts[:endpoint]}
+              config = %FSS.S3.Config{
+                opts[:config]
+                | region: parts[:region],
+                  endpoint: parts[:endpoint]
+              }
 
-              {:ok, %__MODULE__{bucket: parts[:bucket], key: parts[:key], config: config}}
+              {:ok,
+               %__MODULE__{
+                 bucket: parts[:bucket],
+                 key: parts[:key],
+                 port: uri.port,
+                 config: config
+               }}
             end
 
           true ->

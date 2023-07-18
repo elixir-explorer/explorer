@@ -14,6 +14,19 @@ defmodule FSS.S3.EntryTest do
       assert is_nil(config.region)
     end
 
+    test "parses a s3:// style uri containing a port" do
+      assert {:ok,
+              %Entry{
+                port: 4562,
+                bucket: "my-bucket",
+                key: "my-file.png",
+                config: %Config{} = config
+              }} =
+               Entry.parse("s3://my-bucket:4562/my-file.png")
+
+      assert config.endpoint == "amazonaws.com"
+    end
+
     test "does not parse an invalid s3 uri using the s3:// schema" do
       assert {:error, "path to the resource is required"} ==
                Entry.parse("s3://my-bucket-my-file.png")
