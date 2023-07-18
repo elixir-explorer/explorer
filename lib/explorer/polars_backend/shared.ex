@@ -14,7 +14,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def apply(fun, args \\ []) do
     case apply(Native, fun, args) do
       {:ok, value} -> value
-      {:error, error} -> raise error_message(error)
+      {:error, error} -> raise runtime_error(error)
     end
   end
 
@@ -23,7 +23,7 @@ defmodule Explorer.PolarsBackend.Shared do
     case apply(Native, fun, [series.data | args]) do
       {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, value} -> value
-      {:error, error} -> raise error_message(error)
+      {:error, error} -> raise runtime_error(error)
     end
   end
 
@@ -32,7 +32,7 @@ defmodule Explorer.PolarsBackend.Shared do
     case apply(Native, fun, [df.data | args]) do
       {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, value} -> value
-      {:error, error} -> raise error_message(error)
+      {:error, error} -> raise runtime_error(error)
     end
   end
 
@@ -66,7 +66,7 @@ defmodule Explorer.PolarsBackend.Shared do
         %{out_df | data: new_df}
 
       {:error, error} ->
-        raise error_message(error)
+        raise runtime_error(error)
     end
   end
 
@@ -149,7 +149,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:integer), do: "i64"
   def internal_from_dtype(:string), do: "str"
 
-  defp error_message(error) when is_binary(error), do: RuntimeError.exception(error)
+  defp runtime_error(error) when is_binary(error), do: RuntimeError.exception(error)
 
   def parquet_compression(nil, _), do: :uncompressed
 
