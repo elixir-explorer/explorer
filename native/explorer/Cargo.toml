@@ -26,7 +26,7 @@ smartstring = "1"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.29"
+version = "0.30"
 default-features = false
 features = [
   "checked_arithmetic",
@@ -69,7 +69,7 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.29"
+version = "0.30"
 
 [dependencies.polars-algo]
-version = "0.29"
+version = "0.30"
