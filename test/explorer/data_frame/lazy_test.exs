@@ -190,7 +190,7 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   describe "from_parquet/2 - S3" do
-    @tag :skip
+    @tag :cloud_integration
     test "reads an URL with s3 schema" do
       config = %FSS.S3.Config{
         access_key_id: "minioadmin",
