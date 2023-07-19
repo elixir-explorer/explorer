@@ -51,26 +51,56 @@ defmodule FSS do
 
       def parse(url, opts \\ []) do
         opts =
-          opts
-          |> Keyword.validate!([:config])
-          |> Keyword.put_new_lazy(:config, fn -> config_from_system_env() end)
+          Keyword.validate!(opts, config: nil)
 
         uri = URI.parse(url)
 
         if uri.scheme == "s3" do
           case uri do
             %{host: host, path: "/" <> key} when is_binary(host) ->
-              {:ok, %__MODULE__{bucket: host, key: key, port: uri.port, config: opts[:config]}}
+              config =
+                opts
+                |> Keyword.fetch!(:config)
+                |> case do
+                  nil ->
+                    config_from_system_env()
+
+                  %Config{} = config ->
+                    config
+
+                  config when is_list(config) or is_map(config) ->
+                    struct!(config_from_system_env(), config)
+
+                  other ->
+                    raise ArgumentError,
+                          "expect configuration to be a %FSS.S3.Config{} struct, a keyword list or a map. Instead got #{inspect(other)}"
+                end
+                |> validate_config!()
+
+              {:ok, %__MODULE__{bucket: host, key: key, port: uri.port, config: config}}
 
             %{host: nil} ->
-              {:error, "host is required"}
+              {:error, ArgumentError.exception("host is required")}
 
             %{path: nil} ->
-              {:error, "path to the resource is required"}
+              {:error, ArgumentError.exception("path to the resource is required")}
           end
         else
-          {:error, "only s3:// URIs are supported for now"}
+          {:error, ArgumentError.exception("only s3:// URIs are supported for now")}
         end
+      end
+
+      defp validate_config!(%Config{} = config) do
+        access = config.access_key_id
+        secret = config.secret_access_key
+        region = config.region
+
+        if is_nil(access) or is_nil(secret) or is_nil(region) or
+             access == "" or secret == "" or region == "" do
+          raise "missing configuration keys or region to access the S3 API"
+        end
+
+        config
       end
     end
   end

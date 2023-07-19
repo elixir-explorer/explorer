@@ -719,7 +719,6 @@ defmodule Explorer.DataFrame do
   defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: {:ok, entry}
 
   defp normalise_entry("s3://" <> _rest = entry, config) do
-    config = s3_config(config)
     S3.Entry.parse(entry, config: config)
   end
 
@@ -727,12 +726,6 @@ defmodule Explorer.DataFrame do
 
   defp normalise_entry(filepath, _config) when is_binary(filepath) do
     {:ok, %Local.Entry{path: filepath}}
-  end
-
-  defp s3_config(%S3.Config{} = config), do: config
-
-  defp s3_config(other) do
-    raise ArgumentError, "expected a valid FSS.S3.config/1 in :config, got: #{inspect(other)}"
   end
 
   @doc """
