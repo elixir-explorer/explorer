@@ -190,35 +190,21 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   describe "from_parquet/2 - S3" do
-    setup do
-      bypass = Bypass.open()
-
-      {:ok, bypass: bypass}
-    end
-
     @tag :skip
-    test "reads an URL with s3 schema", %{df: df, bypass: bypass} do
+    test "reads an URL with s3 schema" do
       config = %FSS.S3.Config{
-        access_key_id: "my-access-key",
-        secret_access_key: "my-secret",
-        endpoint: "localhost",
-        region: "east-2"
+        access_key_id: "minioadmin",
+        secret_access_key: "minioadmin",
+        endpoint: "http://127.0.0.1:9000",
+        region: "us-east-1"
       }
 
-      Bypass.expect_once(bypass, fn conn ->
-        Plug.Conn.resp(conn, 200, DF.dump_parquet!(df))
-      end)
-
       assert {:ok, _ldf} =
-               DF.from_parquet("s3://my-bucket:#{bypass.port}/my-resource.txt",
+               DF.from_parquet("s3://my-bucket/wine.parquet",
                  config: config,
                  lazy: true
                )
     end
-
-    # test "reads from a valid s3 entry"
-    # test "reads from an URL with http schema"
-    # test "raises in case auth is missing"
   end
 
   @tag :tmp_dir

@@ -45,7 +45,6 @@ defmodule Explorer.MixProject do
       {:nx, "~> 0.4.0 or ~> 0.5.0", optional: true},
 
       ## Dev
-      {:bypass, "~> 2.1", only: :test},
       {:ex_doc, "~> 0.24", only: :dev},
       {:benchee, "~> 1.1", only: :dev}
     ]
