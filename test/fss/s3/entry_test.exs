@@ -30,7 +30,7 @@ defmodule FSS.S3.EntryTest do
                 port: 4562,
                 bucket: "my-bucket",
                 key: "my-file.png",
-                config: %Config{} = config
+                config: %Config{} = ^config
               }} =
                Entry.parse("s3://my-bucket:4562/my-file.png", config: config)
     end
