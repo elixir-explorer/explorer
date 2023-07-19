@@ -17,15 +17,15 @@ defmodule FSS do
         :access_key_id,
         :region,
         :secret_access_key,
-        {:endpoint, "amazonaws.com"},
+        :endpoint,
         :token
       ]
 
       @type t :: %__MODULE__{
               access_key_id: String.t(),
-              endpoint: String.t(),
               region: String.t(),
               secret_access_key: String.t(),
+              endpoint: String.t() | nil,
               token: String.t() | nil
             }
     end

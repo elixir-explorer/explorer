@@ -415,7 +415,7 @@ pub struct ExS3Config {
     pub access_key_id: String,
     pub secret_access_key: String,
     pub region: String,
-    pub endpoint: String,
+    pub endpoint: Option<String>,
     pub token: Option<String>,
 }
 
@@ -444,8 +444,12 @@ impl ExS3Config {
             (S3Key::AccessKeyId, &self.access_key_id),
             (S3Key::SecretAccessKey, &self.secret_access_key),
             (S3Key::Region, &self.region),
-            (S3Key::Endpoint, &self.endpoint),
         ];
+
+        if let Some(endpoint) = &self.endpoint {
+            aws_opts.push((S3Key::Endpoint, endpoint))
+        }
+
         if let Some(token) = &self.token {
             aws_opts.push((S3Key::Token, token))
         }
