@@ -18,7 +18,7 @@ defmodule FSS.S3.EntryTest do
       assert {:ok, %Entry{bucket: "my-bucket", key: "my-file.png", config: %Config{} = config}} =
                Entry.parse("s3://my-bucket/my-file.png", config: config)
 
-      assert config.endpoint == "amazonaws.com"
+      assert is_nil(config.endpoint)
       assert config.secret_access_key == "my-secret"
       assert config.access_key_id == "my-access"
       assert config.region == "us-west-2"
@@ -33,8 +33,6 @@ defmodule FSS.S3.EntryTest do
                 config: %Config{} = config
               }} =
                Entry.parse("s3://my-bucket:4562/my-file.png", config: config)
-
-      assert config.endpoint == "amazonaws.com"
     end
 
     test "accepts a config as a keyword list" do
