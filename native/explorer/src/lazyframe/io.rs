@@ -32,7 +32,10 @@ pub fn lf_from_parquet_cloud(
         cloud_options: Some(ex_entry.config.to_cloud_options()),
         ..Default::default()
     };
-    let lf = LazyFrame::scan_parquet(ex_entry.to_string(), options)?;
+    let lf = LazyFrame::scan_parquet(ex_entry.to_string(), options)?
+        .with_common_subplan_elimination(false)
+        .with_streaming(true)
+        .select([all()]);
 
     Ok(ExLazyFrame::new(lf))
 }
