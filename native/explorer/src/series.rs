@@ -8,7 +8,7 @@ use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
 use polars::functions::{cov_f, pearson_corr_f};
 use polars::prelude::*;
-use polars_algo::{cut, qcut};
+use polars_ops::prelude::{cut, qcut};
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
@@ -283,10 +283,15 @@ pub fn s_sort(
     descending: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
+    // Make this an option
+    let maintain_order = true;
+    let multithreaded = false;
+
     let opts = SortOptions {
         descending,
         nulls_last,
-        multithreaded: false,
+        maintain_order,
+        multithreaded,
     };
     Ok(ExSeries::new(series.sort_with(opts)))
 }
@@ -297,10 +302,15 @@ pub fn s_argsort(
     descending: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
+    // Make this an option
+    let maintain_order = true;
+    let multithreaded = false;
+
     let opts = SortOptions {
         descending,
         nulls_last,
-        multithreaded: false,
+        maintain_order,
+        multithreaded,
     };
     let indices = series.arg_sort(opts).cast(&DataType::Int64)?;
     Ok(ExSeries::new(indices))
@@ -331,43 +341,63 @@ pub fn s_frequencies(series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
 pub fn s_cut(
     series: ExSeries,
     bins: Vec<f64>,
-    labels: Option<Vec<&str>>,
+    labels: Option<Vec<String>>,
     break_point_label: Option<&str>,
     category_label: Option<&str>,
-    maintain_order: bool,
+    _maintain_order: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let series = series.clone_inner();
-    let bins = Series::new("", bins);
-    let df = cut(
-        &series,
-        bins,
-        labels,
-        break_point_label,
-        category_label,
-        maintain_order,
-    )?;
-    Ok(ExDataFrame::new(df))
+    // Put this bool as option
+    let left_close = false;
+
+    // Cut is going to return a Series of a Struct. We need to convert it to a DF.
+    let cut_series = cut(&series, bins, labels, left_close, true)?;
+    let mut cut_df = DataFrame::from(cut_series.struct_()?.clone());
+
+    let cut_df = cut_df.insert_at_idx(0, series)?;
+
+    cut_df.set_column_names(&[
+        "values",
+        break_point_label.unwrap_or("break_point"),
+        category_label.unwrap_or("category"),
+    ])?;
+
+    Ok(ExDataFrame::new(cut_df.clone()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_qcut(
     series: ExSeries,
     quantiles: Vec<f64>,
-    labels: Option<Vec<&str>>,
+    labels: Option<Vec<String>>,
     break_point_label: Option<&str>,
     category_label: Option<&str>,
-    maintain_order: bool,
+    _maintain_order: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let series = series.clone_inner();
-    let df = qcut(
+    // TODO: Put these bools as options
+    let left_close = false;
+    let allow_duplicates = false;
+
+    let qcut_series: Series = qcut(
         &series,
-        &quantiles,
+        quantiles,
         labels,
-        break_point_label,
-        category_label,
-        maintain_order,
+        left_close,
+        allow_duplicates,
+        true,
     )?;
-    Ok(ExDataFrame::new(df))
+
+    let mut qcut_df = DataFrame::from(qcut_series.struct_()?.clone());
+    let qcut_df = qcut_df.insert_at_idx(0, series)?;
+
+    qcut_df.set_column_names(&[
+        "values",
+        break_point_label.unwrap_or("break_point"),
+        category_label.unwrap_or("category"),
+    ])?;
+
+    Ok(ExDataFrame::new(qcut_df.clone()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

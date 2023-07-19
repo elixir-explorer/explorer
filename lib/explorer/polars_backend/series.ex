@@ -478,16 +478,23 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def cut(series, bins, labels, break_point_label, category_label, maintain_order) do
-    Shared.apply(:s_cut, [
-      series.data,
-      bins,
-      labels,
-      break_point_label,
-      category_label,
-      maintain_order
-    ])
-    |> Shared.create_dataframe()
-    |> DataFrame.rename(%{"" => "values"})
+    case Explorer.PolarsBackend.Native.s_cut(
+           series.data,
+           bins,
+           labels,
+           break_point_label,
+           category_label,
+           maintain_order
+         ) do
+      {:ok, polars_df} ->
+        Shared.create_dataframe(polars_df)
+
+      {:error, "Polars Error: lengths don't match: " <> _rest} ->
+        raise ArgumentError, "lengths don't match: labels count must equal bins count"
+
+      {:error, msg} ->
+        raise msg
+    end
   end
 
   @impl true
@@ -501,7 +508,6 @@ defmodule Explorer.PolarsBackend.Series do
       maintain_order
     ])
     |> Shared.create_dataframe()
-    |> DataFrame.rename(%{"" => "values"})
   end
 
   # Window

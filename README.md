@@ -211,13 +211,13 @@ to Explorer.
 We require Rust Nightly, which can be installed with [Rustup](https://rust-lang.github.io/rustup/installation/index.html).
 
 ```sh
-rustup toolchain install nightly-2023-02-14
+rustup toolchain install nightly-2023-06-23
 ```
 
 You can also use [asdf](https://asdf-vm.com/):
 
 ```sh
-asdf install rust nightly-2023-02-14
+asdf install rust nightly-2023-06-23
 ```
 
 It's possible that you may need to install [`CMake`](https://cmake.org/) in order to build the project,

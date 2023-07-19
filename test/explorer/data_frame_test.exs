@@ -1150,7 +1150,7 @@ defmodule Explorer.DataFrameTest do
       df1 =
         DF.mutate(df,
           b: window_max(a, 2, weights: [1.0, 2.0]),
-          c: window_mean(a, 2, weights: [1.0, 2.0]),
+          c: window_mean(a, 2, weights: [0.25, 0.75]),
           d: window_min(a, 2, weights: [1.0, 2.0]),
           e: window_sum(a, 2, weights: [1.0, 2.0]),
           f: cumulative_max(a),
@@ -1182,7 +1182,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                b: [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
-               c: [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5],
+               c: [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75],
                d: [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
                e: [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0],
                f: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
