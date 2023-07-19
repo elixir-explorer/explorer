@@ -301,7 +301,7 @@ fn df_from_arrow_stream_pointer(stream_ptr: u64) -> Result<ExDataFrame, Explorer
                 acc.vstack_mut(&df)?;
             }
 
-            acc.rechunk();
+            acc.align_chunks();
             acc
         }
     };

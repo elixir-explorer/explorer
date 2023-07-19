@@ -1399,7 +1399,6 @@ pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, Explorer
             TimeUnit::Microseconds,
             true,
             false,
-            false,
             None,
         )?
         .into_series();

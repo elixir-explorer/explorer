@@ -817,8 +817,6 @@ pub fn expr_strptime(expr: ExExpr, format_string: &str) -> ExExpr {
         strict: false,
         exact: true,
         cache: true,
-        tz_aware: false,
-        utc: false,
     };
     ExExpr::new(
         expr.clone_inner()
