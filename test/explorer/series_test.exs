@@ -2794,6 +2794,15 @@ defmodule Explorer.SeriesTest do
       s3 = Series.select(Series.less_equal(s, 2), -1, s)
       assert Series.to_list(s3) == [-1, -1, 3]
     end
+
+    test "select handles nil, nil on predicate returns nil" do
+      s1 = Series.from_list([1, 2, 3, 4, nil])
+      s2 = Series.from_list([3, 4, nil, 2, 1])
+      s3 = Series.select(Series.less_equal(s1, s2), s1, s2)
+      s4 = Series.select(Series.less_equal(s2, s1), s2, s1)
+      assert Series.to_list(s3) == [1, 2, nil, 2, nil]
+      assert Series.to_list(s4) == [1, 2, nil, 2, nil]
+    end
   end
 
   describe "sort/2" do
