@@ -3684,9 +3684,6 @@ defmodule Explorer.Series do
     * `:category_label` - The name given to the category column.
       Defaults to `category`.
 
-    * `:maintain_order` - The name given to the category column.
-      Defaults to `false`.
-
   ## Examples
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0])
@@ -3704,8 +3701,7 @@ defmodule Explorer.Series do
       Enum.map(bins, &(&1 / 1.0)),
       Keyword.get(opts, :labels),
       Keyword.get(opts, :break_point_label),
-      Keyword.get(opts, :category_label),
-      Keyword.get(opts, :maintain_order, false)
+      Keyword.get(opts, :category_label)
     ])
   end
 
@@ -3727,9 +3723,6 @@ defmodule Explorer.Series do
     * `:category_label` - The name given to the category column.
       Defaults to `category`.
 
-    * `:maintain_order` - The name given to the category column.
-      Defaults to `false`.
-
   ## Examples
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0, 4.0, 5.0])
@@ -3747,8 +3740,7 @@ defmodule Explorer.Series do
       Enum.map(quantiles, &(&1 / 1.0)),
       Keyword.get(opts, :labels),
       Keyword.get(opts, :break_point_label),
-      Keyword.get(opts, :category_label),
-      Keyword.get(opts, :maintain_order, false)
+      Keyword.get(opts, :category_label)
     ])
   end
 

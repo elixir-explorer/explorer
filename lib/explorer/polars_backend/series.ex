@@ -477,14 +477,13 @@ defmodule Explorer.PolarsBackend.Series do
   # Categorisation
 
   @impl true
-  def cut(series, bins, labels, break_point_label, category_label, maintain_order) do
+  def cut(series, bins, labels, break_point_label, category_label) do
     case Explorer.PolarsBackend.Native.s_cut(
            series.data,
            bins,
            labels,
            break_point_label,
-           category_label,
-           maintain_order
+           category_label
          ) do
       {:ok, polars_df} ->
         Shared.create_dataframe(polars_df)
@@ -498,14 +497,13 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def qcut(series, quantiles, labels, break_point_label, category_label, maintain_order) do
+  def qcut(series, quantiles, labels, break_point_label, category_label) do
     Shared.apply(:s_qcut, [
       series.data,
       quantiles,
       labels,
       break_point_label,
-      category_label,
-      maintain_order
+      category_label
     ])
     |> Shared.create_dataframe()
   end

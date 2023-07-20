@@ -283,7 +283,7 @@ pub fn s_sort(
     descending: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    // Make this an option
+    // TODO: Make this an option
     let maintain_order = true;
     let multithreaded = false;
 
@@ -302,7 +302,7 @@ pub fn s_argsort(
     descending: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    // Make this an option
+    // TODO: Make this an option
     let maintain_order = true;
     let multithreaded = false;
 
@@ -344,10 +344,9 @@ pub fn s_cut(
     labels: Option<Vec<String>>,
     break_point_label: Option<&str>,
     category_label: Option<&str>,
-    _maintain_order: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let series = series.clone_inner();
-    // Put this bool as option
+    // TODO: Put this bool as option
     let left_close = false;
 
     // Cut is going to return a Series of a Struct. We need to convert it to a DF.
@@ -372,7 +371,6 @@ pub fn s_qcut(
     labels: Option<Vec<String>>,
     break_point_label: Option<&str>,
     category_label: Option<&str>,
-    _maintain_order: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let series = series.clone_inner();
     // TODO: Put these bools as options
