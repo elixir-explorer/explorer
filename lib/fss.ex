@@ -50,43 +50,39 @@ defmodule FSS do
       end
 
       def parse(url, opts \\ []) do
-        opts =
-          Keyword.validate!(opts, config: nil)
+        opts = Keyword.validate!(opts, config: nil)
 
         uri = URI.parse(url)
 
-        if uri.scheme == "s3" do
-          case uri do
-            %{host: host, path: "/" <> key} when is_binary(host) ->
-              config =
-                opts
-                |> Keyword.fetch!(:config)
-                |> case do
-                  nil ->
-                    config_from_system_env()
+        case uri do
+          %{scheme: "s3", host: host, path: "/" <> key} when is_binary(host) ->
+            config =
+              opts
+              |> Keyword.fetch!(:config)
+              |> case do
+                nil ->
+                  config_from_system_env()
 
-                  %Config{} = config ->
-                    config
+                %Config{} = config ->
+                  config
 
-                  config when is_list(config) or is_map(config) ->
-                    struct!(config_from_system_env(), config)
+                config when is_list(config) or is_map(config) ->
+                  struct!(config_from_system_env(), config)
 
-                  other ->
-                    raise ArgumentError,
-                          "expect configuration to be a %FSS.S3.Config{} struct, a keyword list or a map. Instead got #{inspect(other)}"
-                end
-                |> validate_config!()
+                other ->
+                  raise ArgumentError,
+                        "expect configuration to be a %FSS.S3.Config{} struct, a keyword list or a map. Instead got #{inspect(other)}"
+              end
+              |> validate_config!()
 
-              {:ok, %__MODULE__{bucket: host, key: key, port: uri.port, config: config}}
+            {:ok, %__MODULE__{bucket: host, key: key, port: uri.port, config: config}}
 
-            %{host: nil} ->
-              {:error, ArgumentError.exception("host is required")}
-
-            %{path: nil} ->
-              {:error, ArgumentError.exception("path to the resource is required")}
-          end
-        else
-          {:error, ArgumentError.exception("only s3:// URIs are supported for now")}
+          _ ->
+            {:error,
+             ArgumentError.exception(
+               "expected s3://<bucket>/<key> URL, got: " <>
+                 URI.to_string(uri)
+             )}
         end
       end
 

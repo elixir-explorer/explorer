@@ -70,12 +70,18 @@ defmodule FSS.S3.EntryTest do
     end
 
     test "does not parse an invalid s3 uri using the s3:// schema" do
-      assert {:error, ArgumentError.exception("path to the resource is required")} ==
+      assert {:error,
+              ArgumentError.exception(
+                "expected s3://<bucket>/<key> URL, got: s3://my-bucket-my-file.png"
+              )} ==
                Entry.parse("s3://my-bucket-my-file.png")
     end
 
     test "does not parse a valid s3 uri using the http(s):// schema" do
-      assert {:error, ArgumentError.exception("only s3:// URIs are supported for now")} ==
+      assert {:error,
+              ArgumentError.exception(
+                "expected s3://<bucket>/<key> URL, got: https://my-bucket.not-s3.somethig.com/my-file.png"
+              )} ==
                Entry.parse("https://my-bucket.not-s3.somethig.com/my-file.png")
     end
 
