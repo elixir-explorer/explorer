@@ -45,4 +45,5 @@ command "$container_tool" run -d -p 4566:4566 docker.io/localstack/localstack:2.
 sleep 2
 # Create the bucket and copy the file to there.
 aws --endpoint-url=http://localhost:4566 s3 mb s3://test-bucket
+sleep 2
 aws --endpoint-url=http://localhost:4566 s3 cp "$FILE_PATH" s3://test-bucket/wine.parquet

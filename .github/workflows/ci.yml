@@ -57,7 +57,7 @@ jobs:
 
       - name: Run cloud integration tests
         run: |
-          mix localstack.setup
+          ./test/support/setup-localstack.sh
           mix test --only cloud_integration
 
   format:
