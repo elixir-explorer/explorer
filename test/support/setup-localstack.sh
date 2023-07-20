@@ -9,10 +9,10 @@
 # Exit in the first error.
 set -e
 
-AWS_DEFAULT_REGION="us-east-1"
-AWS_ACCESS_KEY_ID=test
-AWS_SECRET_ACCESS_KEY=test
-AWS_ENDPOINT=http://localhost:4566
+export AWS_DEFAULT_REGION="us-east-1"
+export AWS_ACCESS_KEY_ID=test
+export AWS_SECRET_ACCESS_KEY=test
+export AWS_ENDPOINT=http://localhost:4566
 
 # Dir discovery
 SCRIPT_PATH="${BASH_SOURCE:-$0}"
