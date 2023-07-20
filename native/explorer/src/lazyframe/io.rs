@@ -11,12 +11,20 @@ use crate::{ExLazyFrame, ExplorerError};
 pub fn lf_from_parquet(
     filename: &str,
     stop_after_n_rows: Option<usize>,
+    columns: Option<Vec<String>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let options = ScanArgsParquet {
         n_rows: stop_after_n_rows,
         ..Default::default()
     };
-    let lf = LazyFrame::scan_parquet(filename, options)?;
+
+    let cols: Vec<Expr> = if let Some(cols) = columns {
+        cols.iter().map(|column| col(column)).collect()
+    } else {
+        vec![all()]
+    };
+
+    let lf = LazyFrame::scan_parquet(filename, options)?.select(cols);
 
     Ok(ExLazyFrame::new(lf))
 }
@@ -34,7 +42,7 @@ pub fn lf_from_parquet_cloud(
         ..Default::default()
     };
     let cols: Vec<Expr> = if let Some(cols) = columns {
-        cols.iter().map(|column| col(&column)).collect()
+        cols.iter().map(|column| col(column)).collect()
     } else {
         vec![all()]
     };

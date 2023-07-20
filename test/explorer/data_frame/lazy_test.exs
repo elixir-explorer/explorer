@@ -181,11 +181,10 @@ defmodule Explorer.DataFrame.LazyTest do
       path = Path.join([tmp_dir, "fossil_fuels.parquet"])
       DF.to_parquet!(df, path)
 
-      assert_raise ArgumentError,
-                   "`columns` is not supported by Polars' lazy backend. Consider using `select/2` after reading the parquet file",
-                   fn ->
-                     DF.from_parquet!(path, lazy: true, columns: ["country", "year", "total"])
-                   end
+      df1 = DF.from_parquet!(path, lazy: true, columns: ["country", "year", "total"])
+
+      assert DF.n_columns(df1) == 3
+      assert DF.names(df1) == ["country", "year", "total"]
     end
   end
 
