@@ -7,6 +7,7 @@ use rustler::{Atom, NifStruct, NifTaggedEnum, ResourceArc};
 use std::convert::TryInto;
 use std::fmt;
 use std::ops::Deref;
+use std::str::FromStr;
 
 use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
@@ -440,10 +441,12 @@ impl fmt::Display for ExS3Entry {
 
 impl ExS3Config {
     pub fn to_cloud_options(&self) -> CloudOptions {
+        let true_as_string = String::from("true");
         let mut aws_opts = vec![
             (S3Key::AccessKeyId, &self.access_key_id),
             (S3Key::SecretAccessKey, &self.secret_access_key),
             (S3Key::Region, &self.region),
+            (S3Key::from_str("aws_allow_http").unwrap(), &true_as_string),
         ];
 
         if let Some(endpoint) = &self.endpoint {

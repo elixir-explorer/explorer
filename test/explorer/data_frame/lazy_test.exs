@@ -189,21 +189,25 @@ defmodule Explorer.DataFrame.LazyTest do
     end
   end
 
-  describe "from_parquet/2 - S3" do
+  describe "from_parquet/2 - from S3" do
     @tag :cloud_integration
     test "reads an URL with s3 schema" do
       config = %FSS.S3.Config{
-        access_key_id: "minioadmin",
-        secret_access_key: "minioadmin",
-        endpoint: "http://127.0.0.1:9000",
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566",
         region: "us-east-1"
       }
 
-      assert {:ok, _ldf} =
-               DF.from_parquet("s3://my-bucket/wine.parquet",
+      assert {:ok, ldf} =
+               DF.from_parquet("s3://test-bucket/wine.parquet",
                  config: config,
                  lazy: true
                )
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df) == DF.to_columns(Explorer.Datasets.wine())
     end
   end
 

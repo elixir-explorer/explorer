@@ -55,6 +55,11 @@ jobs:
       - name: Compile once again but without optional deps
         run: mix compile --force --warnings-as-errors --no-optional-deps
 
+      - name: Run cloud integration tests
+        run: |
+          mix localstack.setup
+          mix test --only cloud_integration
+
   format:
     runs-on: ubuntu-latest
     name: mix format

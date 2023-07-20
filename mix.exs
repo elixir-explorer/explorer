@@ -21,6 +21,7 @@ defmodule Explorer.MixProject do
       aliases: [
         "rust.lint": ["cmd cargo clippy --manifest-path=native/explorer/Cargo.toml -- -Dwarnings"],
         "rust.fmt": ["cmd cargo fmt --manifest-path=native/explorer/Cargo.toml --all"],
+        "localstack.setup": ["cmd ./test/support/setup-localstack.sh"],
         ci: ["format", "rust.fmt", "rust.lint", "test"]
       ]
     ]
