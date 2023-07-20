@@ -191,7 +191,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   describe "from_parquet/2 - from S3" do
     @tag :cloud_integration
-    test "reads an URL with s3 schema" do
+    test "reads a parquet file from S3" do
       config = %FSS.S3.Config{
         access_key_id: "test",
         secret_access_key: "test",

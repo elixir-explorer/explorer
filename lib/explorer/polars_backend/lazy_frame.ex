@@ -147,9 +147,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_parquet(%S3.Entry{} = entry, max_rows, columns) do
-    if columns, do: raise_columns_presence_error()
-
-    case Native.lf_from_parquet_cloud(entry, max_rows) do
+    case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end

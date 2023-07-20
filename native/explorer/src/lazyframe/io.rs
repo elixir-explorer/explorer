@@ -26,16 +26,22 @@ pub fn lf_from_parquet(
 pub fn lf_from_parquet_cloud(
     ex_entry: ExS3Entry,
     stop_after_n_rows: Option<usize>,
+    columns: Option<Vec<String>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let options = ScanArgsParquet {
         n_rows: stop_after_n_rows,
         cloud_options: Some(ex_entry.config.to_cloud_options()),
         ..Default::default()
     };
+    let cols: Vec<Expr> = if let Some(cols) = columns {
+        cols.iter().map(|column| col(&column)).collect()
+    } else {
+        vec![all()]
+    };
     let lf = LazyFrame::scan_parquet(ex_entry.to_string(), options)?
         .with_common_subplan_elimination(false)
         .with_streaming(true)
-        .select([all()]);
+        .select(cols);
 
     Ok(ExLazyFrame::new(lf))
 }
