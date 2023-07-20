@@ -208,6 +208,26 @@ defmodule Explorer.DataFrame.LazyTest do
 
       assert DF.to_columns(df) == DF.to_columns(Explorer.Datasets.wine())
     end
+
+    @tag :cloud_integration
+    test "reads a parquet file from S3 using the *.parquet syntax" do
+      config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566",
+        region: "us-east-1"
+      }
+
+      assert {:ok, ldf} =
+               DF.from_parquet("s3://test-bucket/*.parquet",
+                 config: config,
+                 lazy: true
+               )
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df) == DF.to_columns(Explorer.Datasets.wine())
+    end
   end
 
   @tag :tmp_dir
