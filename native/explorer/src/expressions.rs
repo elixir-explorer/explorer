@@ -246,8 +246,9 @@ pub fn expr_sample_n(
     seed: Option<u64>,
 ) -> ExExpr {
     let expr = expr.clone_inner();
+    let fixed_seed = true;
 
-    ExExpr::new(expr.sample_n(n, with_replacement, shuffle, seed))
+    ExExpr::new(expr.sample_n(n, with_replacement, shuffle, seed, fixed_seed))
 }
 
 #[rustler::nif]
@@ -259,8 +260,9 @@ pub fn expr_sample_frac(
     seed: Option<u64>,
 ) -> ExExpr {
     let expr = expr.clone_inner();
+    let fixed_seed = true;
 
-    ExExpr::new(expr.sample_frac(frac, with_replacement, shuffle, seed))
+    ExExpr::new(expr.sample_frac(frac, with_replacement, shuffle, seed, fixed_seed))
 }
 
 #[rustler::nif]
@@ -666,10 +668,16 @@ pub fn expr_reverse(expr: ExExpr) -> ExExpr {
 #[rustler::nif]
 pub fn expr_sort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
     let expr = expr.clone_inner();
+
+    // TODO: make these bools options.
+    let multithreaded = false;
+    let maintain_order = true;
+
     let opts = SortOptions {
         descending,
         nulls_last,
-        multithreaded: false,
+        multithreaded,
+        maintain_order,
     };
 
     ExExpr::new(expr.sort_with(opts))
@@ -678,10 +686,16 @@ pub fn expr_sort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
 #[rustler::nif]
 pub fn expr_argsort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
     let expr = expr.clone_inner();
+
+    // TODO: make these bools options.
+    let multithreaded = false;
+    let maintain_order = true;
+
     let opts = SortOptions {
         descending,
         nulls_last,
-        multithreaded: false,
+        multithreaded,
+        maintain_order,
     };
 
     ExExpr::new(expr.arg_sort(opts).cast(DataType::Int64))

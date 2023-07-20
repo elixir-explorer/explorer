@@ -164,9 +164,9 @@ defmodule Explorer.Backend.Series do
 
   # Categorisation
 
-  @callback cut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil, boolean()) ::
+  @callback cut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) ::
               df
-  @callback qcut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil, boolean()) ::
+  @callback qcut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) ::
               df
 
   # Rolling

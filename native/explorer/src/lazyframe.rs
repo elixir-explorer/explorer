@@ -96,8 +96,14 @@ pub fn lf_arrange_with(
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
 ) -> Result<ExLazyFrame, ExplorerError> {
+    // Make these bools options
+    let maintain_order = true;
+    let nulls_last = false;
+
     let exprs = ex_expr_to_exprs(expressions);
-    let ldf = data.clone_inner().sort_by_exprs(exprs, directions, false);
+    let ldf = data
+        .clone_inner()
+        .sort_by_exprs(exprs, directions, nulls_last, maintain_order);
 
     Ok(ExLazyFrame::new(ldf))
 }
@@ -228,8 +234,9 @@ pub fn lf_join(
 #[rustler::nif]
 pub fn lf_concat_rows(lazy_frames: Vec<ExLazyFrame>) -> Result<ExLazyFrame, ExplorerError> {
     let inputs: Vec<LazyFrame> = lazy_frames.iter().map(|lf| lf.clone_inner()).collect();
-    // Follows recommendation and rechunk.
-    let out_df = concat(inputs, true, false)?;
+    // TODO: Make sure union args options are configurable
+    let union_args = UnionArgs::default();
+    let out_df = concat(inputs, union_args)?;
 
     Ok(ExLazyFrame::new(out_df))
 }

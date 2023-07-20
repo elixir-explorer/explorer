@@ -4001,7 +4001,7 @@ defmodule Explorer.SeriesTest do
       series = -30..30//5 |> Enum.map(&(&1 / 10)) |> Enum.to_list() |> Series.from_list()
       df = Series.cut(series, [-1, 1])
       freqs = Series.frequencies(df[:category])
-      assert Series.to_list(freqs[:values]) == ["(-inf, -1.0]", "(-1.0, 1.0]", "(1.0, inf]"]
+      assert Series.to_list(freqs[:values]) == ["(-inf, -1]", "(-1, 1]", "(1, inf]"]
       assert Series.to_list(freqs[:counts]) == [5, 4, 4]
     end
 
@@ -4014,8 +4014,8 @@ defmodule Explorer.SeriesTest do
     test "cut/6 options" do
       series = Series.from_list([1, 2, 3])
 
-      assert_raise RuntimeError,
-                   "Polars Error: lengths don't match: labels count must equal bins count",
+      assert_raise ArgumentError,
+                   "lengths don't match: labels count must equal bins count",
                    fn -> Series.cut(series, [2], labels: ["x"]) end
 
       df =
@@ -4034,10 +4034,10 @@ defmodule Explorer.SeriesTest do
       freqs = Series.frequencies(df[:category])
 
       assert Series.to_list(freqs[:values]) == [
-               "(-3.0, 1.0]",
-               "(-5.0, -3.0]",
-               "(1.0, inf]",
-               "(-inf, -5.0]"
+               "(-3, 1]",
+               "(-5, -3]",
+               "(1, inf]",
+               "(-inf, -5]"
              ]
 
       assert Series.to_list(freqs[:counts]) == [4, 2, 2, 1]
