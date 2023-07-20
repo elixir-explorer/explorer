@@ -43,12 +43,12 @@ fi
 # Run podman or docker.
 command "$container_tool" run -d -p 4566:4566 docker.io/localstack/localstack:2.0
 echo "waiting a little bit.."
-sleep 15
+sleep 5
 
 echo "creating bucket"
 # Create the bucket and copy the file to there.
-aws --endpoint-url=http://localhost:4566 s3 mb s3://test-bucket
+aws --region us-east-1 --endpoint-url=http://localhost:4566 s3 mb s3://test-bucket
 sleep 5
 
 echo "uploading file"
-aws --endpoint-url=http://localhost:4566 s3 cp "$FILE_PATH" s3://test-bucket/wine.parquet
+aws --region us-east-1 --endpoint-url=http://localhost:4566 s3 cp "$FILE_PATH" s3://test-bucket/wine.parquet
