@@ -55,7 +55,7 @@ defmodule FSS do
         uri = URI.parse(url)
 
         case uri do
-          %{scheme: "s3", host: host, path: "/" <> key} when is_binary(host) ->
+          %{scheme: "s3", host: bucket, path: "/" <> key} when is_binary(bucket) ->
             config =
               opts
               |> Keyword.fetch!(:config)
@@ -75,7 +75,7 @@ defmodule FSS do
               end
               |> validate_config!()
 
-            {:ok, %__MODULE__{bucket: host, key: key, port: uri.port, config: config}}
+            {:ok, %__MODULE__{bucket: bucket, key: key, port: uri.port, config: config}}
 
           _ ->
             {:error,
