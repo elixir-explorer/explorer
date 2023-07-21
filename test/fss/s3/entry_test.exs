@@ -85,11 +85,29 @@ defmodule FSS.S3.EntryTest do
                Entry.parse("https://my-bucket.not-s3.somethig.com/my-file.png")
     end
 
-    test "raise error when missing configuration" do
-      assert_raise RuntimeError,
-                   "missing configuration keys or region to access the S3 API",
+    test "raise error when missing access key id" do
+      assert_raise ArgumentError,
+                   "missing :access_key_id for FSS.S3 (set the key or the AWS_ACCESS_KEY_ID env var)",
                    fn ->
                      Entry.parse("s3://my-bucket/my-file.png")
+                   end
+    end
+
+    test "raise error when missing secret key id" do
+      assert_raise ArgumentError,
+                   "missing :secret_access_key for FSS.S3 (set the key or the AWS_SECRET_ACCESS_KEY env var)",
+                   fn ->
+                     Entry.parse("s3://my-bucket/my-file.png", config: [access_key_id: "my-key"])
+                   end
+    end
+
+    test "raise error when missing region" do
+      assert_raise ArgumentError,
+                   "missing :region for FSS.S3 (set the key or the AWS_REGION env var)",
+                   fn ->
+                     Entry.parse("s3://my-bucket/my-file.png",
+                       config: [access_key_id: "my-key", secret_access_key: "my-secret"]
+                     )
                    end
     end
 

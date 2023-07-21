@@ -40,15 +40,6 @@ defmodule FSS do
               config: Config.t()
             }
 
-      def config_from_system_env() do
-        %FSS.S3.Config{
-          access_key_id: System.get_env("AWS_ACCESS_KEY_ID"),
-          secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY"),
-          region: System.get_env("AWS_REGION", System.get_env("AWS_DEFAULT_REGION")),
-          token: System.get_env("AWS_SESSION_TOKEN")
-        }
-      end
-
       def parse(url, opts \\ []) do
         opts = Keyword.validate!(opts, config: nil)
 
@@ -61,13 +52,13 @@ defmodule FSS do
               |> Keyword.fetch!(:config)
               |> case do
                 nil ->
-                  config_from_system_env()
+                  S3.config_from_system_env()
 
                 %Config{} = config ->
                   config
 
                 config when is_list(config) or is_map(config) ->
-                  struct!(config_from_system_env(), config)
+                  struct!(S3.config_from_system_env(), config)
 
                 other ->
                   raise ArgumentError,
@@ -87,12 +78,28 @@ defmodule FSS do
       end
 
       defp validate_config!(%Config{} = config) do
-        check!(config, :access_key_id, "AWS_...")
-        check!(config, :secret_access_key, "AWS_...")
-        check!(config, :region, "AWS_...")
+        check!(config, :access_key_id, "AWS_ACCESS_KEY_ID")
+        check!(config, :secret_access_key, "AWS_SECRET_ACCESS_KEY")
+        check!(config, :region, "AWS_REGION")
 
         config
       end
+
+      def check!(config, key, env) do
+        if Map.fetch!(config, key) in ["", nil] do
+          raise ArgumentError,
+                "missing #{inspect(key)} for FSS.S3 (set the key or the #{env} env var)"
+        end
+      end
+    end
+
+    def config_from_system_env() do
+      %FSS.S3.Config{
+        access_key_id: System.get_env("AWS_ACCESS_KEY_ID"),
+        secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY"),
+        region: System.get_env("AWS_REGION", System.get_env("AWS_DEFAULT_REGION")),
+        token: System.get_env("AWS_SESSION_TOKEN")
+      }
     end
   end
 end
