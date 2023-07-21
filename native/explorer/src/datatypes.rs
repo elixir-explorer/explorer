@@ -1,14 +1,19 @@
 use crate::atoms;
 use crate::ExplorerError;
 use chrono::prelude::*;
+
+#[cfg(feature = "cloud")]
 use polars::prelude::cloud::CloudOptions;
 use polars::prelude::*;
 use rustler::{Atom, NifStruct, NifTaggedEnum, ResourceArc};
 use std::convert::TryInto;
 use std::fmt;
 use std::ops::Deref;
+
+#[cfg(feature = "aws")]
 use std::str::FromStr;
 
+#[cfg(feature = "aws")]
 use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
 pub struct ExDataFrameRef(pub DataFrame);
@@ -439,6 +444,7 @@ impl fmt::Display for ExS3Entry {
     }
 }
 
+#[cfg(feature = "aws")]
 impl ExS3Config {
     pub fn to_cloud_options(&self) -> CloudOptions {
         let true_as_string = String::from("true");

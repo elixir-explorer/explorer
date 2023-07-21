@@ -30,6 +30,7 @@ pub fn lf_from_parquet(
 }
 
 // When we have more cloud entries, we could accept an Enum.
+#[cfg(feature = "aws")]
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn lf_from_parquet_cloud(
     ex_entry: ExS3Entry,
@@ -52,6 +53,18 @@ pub fn lf_from_parquet_cloud(
         .select(cols);
 
     Ok(ExLazyFrame::new(lf))
+}
+
+#[cfg(not(feature = "aws"))]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_from_parquet_cloud(
+    _ex_entry: ExS3Entry,
+    _stop_after_n_rows: Option<usize>,
+    _columns: Option<Vec<String>>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "AWS reads and writes are not enabled for this machine"
+    )))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]

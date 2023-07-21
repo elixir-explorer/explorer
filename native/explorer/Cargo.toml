@@ -29,8 +29,6 @@ mimalloc = { version = "*", default-features = false }
 version = "0.31"
 default-features = false
 features = [
-  "async",
-  "aws",
   "checked_arithmetic",
   "concat_str",
   "cross_join",
@@ -45,8 +43,6 @@ features = [
   "dtype-categorical",
   "ipc",
   "ipc_streaming",
-  # JSON won't compile on RISCV and ARM 32 bits targets, so we disable in the "release" workflow.
-  "json",
   "lazy",
   "lazy_regex",
   "log",
@@ -76,3 +72,10 @@ version = "0.31"
 
 [dependencies.polars-algo]
 version = "0.31"
+
+[features]
+default = ["ndjson", "cloud"]
+
+cloud = ["aws"]
+ndjson = ["polars/json"]
+aws = ["polars/async", "polars/aws"]
