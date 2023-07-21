@@ -226,6 +226,20 @@ if that is not already installed.
 Once you have made your changes, run `mix ci`, to lint and format both Elixir
 and Rust code.
 
+Our integration tests require the [AWS CLI to be installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html),
+and also a container engine that can be [Podman](https://podman.io) or [Docker](https://docker.com).
+
+Once these dependencies are installed, you need to run the `mix localstack.setup` command,
+and then run the cloud integration tests with `mix test --only cloud_integration`.
+
+Just to recap, here is the combo of commands you need to run:
+
+```sh
+mix ci
+mix localstack.setup
+mix test --only cloud_integration
+```
+
 ## Sponsors
 
 <a href="https://amplified.ai"><img src="sponsors/amplified.png" width=100 alt="Amplified"></a>
