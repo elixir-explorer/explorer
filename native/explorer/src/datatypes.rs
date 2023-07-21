@@ -1,10 +1,15 @@
 use crate::atoms;
 use crate::ExplorerError;
 use chrono::prelude::*;
+use polars::prelude::cloud::CloudOptions;
 use polars::prelude::*;
 use rustler::{Atom, NifStruct, NifTaggedEnum, ResourceArc};
 use std::convert::TryInto;
+use std::fmt;
 use std::ops::Deref;
+use std::str::FromStr;
+
+use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
 pub struct ExDataFrameRef(pub DataFrame);
 pub struct ExExprRef(pub Expr);
@@ -398,5 +403,59 @@ impl TryFrom<ExParquetCompression> for ParquetCompression {
         };
 
         Ok(compression)
+    }
+}
+
+// =========================
+// ====== FSS Structs ======
+// =========================
+
+#[derive(NifStruct, Clone, Debug)]
+#[module = "FSS.S3.Config"]
+pub struct ExS3Config {
+    pub access_key_id: String,
+    pub secret_access_key: String,
+    pub region: String,
+    pub endpoint: Option<String>,
+    pub token: Option<String>,
+}
+
+#[derive(NifStruct, Clone, Debug)]
+#[module = "FSS.S3.Entry"]
+pub struct ExS3Entry {
+    pub bucket: String,
+    pub key: String,
+    pub port: Option<u32>,
+    pub config: ExS3Config,
+}
+
+impl fmt::Display for ExS3Entry {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(port) = &self.port {
+            write!(f, "s3://{}:{}/{}", self.bucket, port, self.key)
+        } else {
+            write!(f, "s3://{}/{}", self.bucket, self.key)
+        }
+    }
+}
+
+impl ExS3Config {
+    pub fn to_cloud_options(&self) -> CloudOptions {
+        let true_as_string = String::from("true");
+        let mut aws_opts = vec![
+            (S3Key::AccessKeyId, &self.access_key_id),
+            (S3Key::SecretAccessKey, &self.secret_access_key),
+            (S3Key::Region, &self.region),
+            (S3Key::from_str("aws_allow_http").unwrap(), &true_as_string),
+        ];
+
+        if let Some(endpoint) = &self.endpoint {
+            aws_opts.push((S3Key::Endpoint, endpoint))
+        }
+
+        if let Some(token) = &self.token {
+            aws_opts.push((S3Key::Token, token))
+        }
+        CloudOptions::default().with_aws(aws_opts)
     }
 }

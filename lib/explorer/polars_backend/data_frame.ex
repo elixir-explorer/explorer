@@ -221,8 +221,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(%S3.Entry{}, _max_rows, _columns) do
-    raise "S3 is not supported yet"
+  def from_parquet(%S3.Entry{} = entry, max_rows, columns) do
+    # We first read using a lazy dataframe, then we collect.
+    with {:ok, ldf} <- Native.lf_from_parquet_cloud(entry, max_rows, columns),
+         {:ok, df} <- Native.lf_collect(ldf) do
+      {:ok, Shared.create_dataframe(df)}
+    end
   end
 
   @impl true

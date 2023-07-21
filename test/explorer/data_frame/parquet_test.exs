@@ -71,6 +71,25 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
   end
 
+  describe "from_parquet/2 - from S3" do
+    @tag :cloud_integration
+    test "reads a parquet file from S3" do
+      config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566",
+        region: "us-east-1"
+      }
+
+      assert {:ok, df} =
+               DF.from_parquet("s3://test-bucket/wine.parquet",
+                 config: config
+               )
+
+      assert DF.to_columns(df) == DF.to_columns(Explorer.Datasets.wine())
+    end
+  end
+
   test "load_parquet/2" do
     parquet = tmp_parquet_file!(Explorer.Datasets.iris())
     contents = File.read!(parquet)

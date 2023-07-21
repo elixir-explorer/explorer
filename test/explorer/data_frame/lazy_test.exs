@@ -181,11 +181,52 @@ defmodule Explorer.DataFrame.LazyTest do
       path = Path.join([tmp_dir, "fossil_fuels.parquet"])
       DF.to_parquet!(df, path)
 
-      assert_raise ArgumentError,
-                   "`columns` is not supported by Polars' lazy backend. Consider using `select/2` after reading the parquet file",
-                   fn ->
-                     DF.from_parquet!(path, lazy: true, columns: ["country", "year", "total"])
-                   end
+      df1 = DF.from_parquet!(path, lazy: true, columns: ["country", "year", "total"])
+
+      assert DF.n_columns(df1) == 3
+      assert DF.names(df1) == ["country", "year", "total"]
+    end
+  end
+
+  describe "from_parquet/2 - from S3" do
+    @tag :cloud_integration
+    test "reads a parquet file from S3" do
+      config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566",
+        region: "us-east-1"
+      }
+
+      assert {:ok, ldf} =
+               DF.from_parquet("s3://test-bucket/wine.parquet",
+                 config: config,
+                 lazy: true
+               )
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df) == DF.to_columns(Explorer.Datasets.wine())
+    end
+
+    @tag :cloud_integration
+    test "reads a parquet file from S3 using the *.parquet syntax" do
+      config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566",
+        region: "us-east-1"
+      }
+
+      assert {:ok, ldf} =
+               DF.from_parquet("s3://test-bucket/*.parquet",
+                 config: config,
+                 lazy: true
+               )
+
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df) == DF.to_columns(Explorer.Datasets.wine())
     end
   end
 

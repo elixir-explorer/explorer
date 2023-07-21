@@ -107,11 +107,18 @@ defmodule Explorer.DataFrame do
       # path to a file in disk
       Explorer.DataFrame.from_parquet("/path/to/file.parquet")
 
-      # path to a URL schema (with optional configuration) (coming soon)
-      Explorer.DataFrame.from_parquet("s3://bucket/file.parquet", config: FSS.S3.config(credentials))
+      # path to a URL schema (with optional configuration)
+      Explorer.DataFrame.from_parquet("s3://bucket/file.parquet", config: FSS.S3.config_from_system_env())
 
-      # path to a filesystem specification entry (coming soon)
-      Explorer.DataFrame.from_parquet(FSS.S3.entry("s3://bucket/file.parquet", credentials))
+      # it's possible to configure using keyword lists
+      Explorer.DataFrame.from_parquet("s3://bucket/file.parquet", config: [access_key_id: "my-key", secret_access_key: "my-secret"])
+
+      # a FSS entry (it already includes its config)
+      Explorer.DataFrame.from_parquet(FSS.S3.parse("s3://bucket/file.parquet"))
+
+  The `:config` option of `from_*` functions is only required if the filename is a path
+  to a remote resource. In case it's a FSS entry, the requirement is that the config is passed
+  inside the entry struct.
 
   ## Selecting columns and access
 
@@ -719,20 +726,13 @@ defmodule Explorer.DataFrame do
   defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: {:ok, entry}
 
   defp normalise_entry("s3://" <> _rest = entry, config) do
-    config = s3_config(config)
-    {:ok, %S3.Entry{url: entry, config: config}}
+    S3.Entry.parse(entry, config: config)
   end
 
   defp normalise_entry("file://" <> path, _config), do: {:ok, %Local.Entry{path: path}}
 
   defp normalise_entry(filepath, _config) when is_binary(filepath) do
     {:ok, %Local.Entry{path: filepath}}
-  end
-
-  defp s3_config(%S3.Config{} = config), do: config
-
-  defp s3_config(other) do
-    raise ArgumentError, "expected a valid FSS.S3.config/1 in :config, got: #{inspect(other)}"
   end
 
   @doc """
