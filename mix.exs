@@ -36,7 +36,7 @@ defmodule Explorer.MixProject do
 
   defp deps do
     [
-      {:rustler_precompiled, "~> 0.5"},
+      {:rustler_precompiled, "~> 0.6"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 3.1.1"},
       {:adbc, "~> 0.1", optional: true},
