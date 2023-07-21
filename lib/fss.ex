@@ -87,14 +87,9 @@ defmodule FSS do
       end
 
       defp validate_config!(%Config{} = config) do
-        access = config.access_key_id
-        secret = config.secret_access_key
-        region = config.region
-
-        if is_nil(access) or is_nil(secret) or is_nil(region) or
-             access == "" or secret == "" or region == "" do
-          raise "missing configuration keys or region to access the S3 API"
-        end
+        check!(config, :access_key_id, "AWS_...")
+        check!(config, :secret_access_key, "AWS_...")
+        check!(config, :region, "AWS_...")
 
         config
       end
