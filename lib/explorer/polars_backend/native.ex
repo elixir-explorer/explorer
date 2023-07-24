@@ -24,6 +24,8 @@ defmodule Explorer.PolarsBackend.Native do
       x86_64-unknown-linux-musl
       x86_64-unknown-freebsd
     ),
+    # We don't use any features of newer NIF versions, so 2.15 is enough.
+    nif_versions: ["2.15"],
     mode: mode,
     force_build: System.get_env("EXPLORER_BUILD") in ["1", "true"]
 
