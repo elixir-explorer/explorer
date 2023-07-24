@@ -53,7 +53,7 @@ defmodule Explorer.Backend.DataFrame do
               parse_dates :: boolean(),
               eol_delimiter :: option(String.t())
             ) :: result(df)
-  @callback to_csv(df, filename :: String.t(), header? :: boolean(), delimiter :: String.t()) ::
+  @callback to_csv(df, entry :: fs_entry(), header? :: boolean(), delimiter :: String.t()) ::
               ok_result()
   @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: result(binary())
 
@@ -80,7 +80,7 @@ defmodule Explorer.Backend.DataFrame do
             ) :: result(df)
   @callback to_parquet(
               df,
-              filename :: String.t(),
+              entry :: fs_entry(),
               compression(),
               streaming :: boolean()
             ) ::
@@ -93,7 +93,7 @@ defmodule Explorer.Backend.DataFrame do
               entry :: fs_entry(),
               columns :: columns_for_io()
             ) :: result(df)
-  @callback to_ipc(df, filename :: String.t(), compression(), streaming :: boolean()) ::
+  @callback to_ipc(df, entry :: fs_entry(), compression(), streaming :: boolean()) ::
               ok_result()
   @callback dump_ipc(df, compression()) :: result(binary())
   @callback load_ipc(
@@ -108,7 +108,7 @@ defmodule Explorer.Backend.DataFrame do
             ) :: result(df)
   @callback to_ipc_stream(
               df,
-              filename :: String.t(),
+              entry :: fs_entry(),
               compression()
             ) ::
               ok_result()
@@ -124,7 +124,7 @@ defmodule Explorer.Backend.DataFrame do
               infer_schema_length :: integer(),
               batch_size :: integer()
             ) :: result(df)
-  @callback to_ndjson(df, filename :: String.t()) :: ok_result()
+  @callback to_ndjson(df, entry :: fs_entry()) :: ok_result()
 
   @callback dump_ndjson(df) :: result(binary())
 
