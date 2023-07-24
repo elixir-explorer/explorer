@@ -268,10 +268,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = df, filename, {compression, level}, streaming) do
+  def to_parquet(%DF{} = df, %Local.Entry{} = entry, {compression, level}, streaming) do
     case Native.lf_to_parquet(
            df.data,
-           filename,
+           entry.path,
            Shared.parquet_compression(compression, level),
            streaming
          ) do
@@ -281,11 +281,21 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_ipc(%DF{} = df, filename, {compression, _level}, streaming) do
-    case Native.lf_to_ipc(df.data, filename, Atom.to_string(compression), streaming) do
+  def to_parquet(_df, %S3.Entry{}, _compression, _streaming) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def to_ipc(%DF{} = df, %Local.Entry{} = entry, {compression, _level}, streaming) do
+    case Native.lf_to_ipc(df.data, entry.path, Atom.to_string(compression), streaming) do
       {:ok, _} -> :ok
       {:error, _} = err -> err
     end
+  end
+
+  @impl true
+  def to_ipc(_df, %S3.Entry{}, _compression, _streaming) do
+    raise "S3 is not supported yet"
   end
 
   @impl true

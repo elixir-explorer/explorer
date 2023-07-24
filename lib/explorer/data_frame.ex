@@ -531,7 +531,7 @@ defmodule Explorer.DataFrame do
 
     * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
 
-    * `:config` - An optional config struct or map, normally associated with remote
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
@@ -684,7 +684,7 @@ defmodule Explorer.DataFrame do
     * `:columns` - A list of column names or indexes to keep. If present,
       only these columns are read into the dataframe. (default: `nil`)
 
-    * `:config` - An optional config struct or map, normally associated with remote
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
@@ -778,14 +778,20 @@ defmodule Explorer.DataFrame do
       This option has no effect on eager - the default - dataframes.
       It defaults to `true`.
 
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec to_parquet(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
+  @spec to_parquet(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           :ok | {:error, term()}
   def to_parquet(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, compression: nil, streaming: true)
+    opts = Keyword.validate!(opts, compression: nil, streaming: true, config: nil)
     compression = parquet_compression(opts[:compression])
-    Shared.apply_impl(df, :to_parquet, [filename, compression, opts[:streaming]])
+
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      Shared.apply_impl(df, :to_parquet, [entry, compression, opts[:streaming]])
+    end
   end
 
   defp parquet_compression(nil), do: {nil, nil}
@@ -816,8 +822,14 @@ defmodule Explorer.DataFrame do
   @spec to_parquet!(df :: DataFrame.t(), filename :: String.t()) :: :ok
   def to_parquet!(df, filename, opts \\ []) do
     case to_parquet(df, filename, opts) do
-      :ok -> :ok
-      {:error, error} -> raise "to_parquet failed: #{inspect(error)}"
+      :ok ->
+        :ok
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "to_parquet failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "to_parquet failed: #{inspect(error)}"
     end
   end
 
@@ -896,7 +908,7 @@ defmodule Explorer.DataFrame do
     * `:columns` - List with the name or index of columns to be selected.
       Defaults to all columns.
 
-    * `:config` - An optional config struct or map, normally associated with remote
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
@@ -967,15 +979,20 @@ defmodule Explorer.DataFrame do
       This option has no effect on eager - the default - dataframes.
       It defaults to `true`.
 
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec to_ipc(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
+  @spec to_ipc(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           :ok | {:error, term()}
   def to_ipc(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, compression: nil, streaming: true)
+    opts = Keyword.validate!(opts, compression: nil, streaming: true, config: nil)
     compression = ipc_compression(opts[:compression])
 
-    Shared.apply_impl(df, :to_ipc, [filename, compression, opts[:streaming]])
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      Shared.apply_impl(df, :to_ipc, [entry, compression, opts[:streaming]])
+    end
   end
 
   defp ipc_compression(nil), do: {nil, nil}
@@ -991,8 +1008,14 @@ defmodule Explorer.DataFrame do
   @spec to_ipc!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
   def to_ipc!(df, filename, opts \\ []) do
     case to_ipc(df, filename, opts) do
-      :ok -> :ok
-      {:error, error} -> raise "to_ipc failed: #{inspect(error)}"
+      :ok ->
+        :ok
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "to_ipc failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "to_ipc failed: #{inspect(error)}"
     end
   end
 
@@ -1091,7 +1114,7 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:config` - An optional config struct or map, normally associated with remote
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
   """
@@ -1147,15 +1170,20 @@ defmodule Explorer.DataFrame do
         * `:zstd`
         * `:lz4`.
 
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec to_ipc_stream(df :: DataFrame.t(), filename :: String.t()) ::
+  @spec to_ipc_stream(df :: DataFrame.t(), filename :: String.t() | fs_entry()) ::
           :ok | {:error, term()}
   def to_ipc_stream(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, compression: nil)
+    opts = Keyword.validate!(opts, compression: nil, config: nil)
     compression = ipc_compression(opts[:compression])
 
-    Shared.apply_impl(df, :to_ipc_stream, [filename, compression])
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      Shared.apply_impl(df, :to_ipc_stream, [entry, compression])
+    end
   end
 
   @doc """
@@ -1165,8 +1193,14 @@ defmodule Explorer.DataFrame do
   @spec to_ipc_stream!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
   def to_ipc_stream!(df, filename, opts \\ []) do
     case to_ipc_stream(df, filename, opts) do
-      :ok -> :ok
-      {:error, error} -> raise "to_ipc_stream failed: #{inspect(error)}"
+      :ok ->
+        :ok
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "to_ipc_stream failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "to_ipc_stream failed: #{inspect(error)}"
     end
   end
 
@@ -1257,14 +1291,22 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `:header` - Should the column names be written as the first line of the file? (default: `true`)
+
     * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec to_csv(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
+  @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
           :ok | {:error, term()}
   def to_csv(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    Shared.apply_impl(df, :to_csv, [filename, opts[:header], opts[:delimiter]])
+    opts = Keyword.validate!(opts, header: true, delimiter: ",", config: nil)
+
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      Shared.apply_impl(df, :to_csv, [entry, opts[:header], opts[:delimiter]])
+    end
   end
 
   @doc """
@@ -1274,8 +1316,14 @@ defmodule Explorer.DataFrame do
   @spec to_csv!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
   def to_csv!(df, filename, opts \\ []) do
     case to_csv(df, filename, opts) do
-      :ok -> :ok
-      {:error, error} -> raise "to_csv failed: #{inspect(error)}"
+      :ok ->
+        :ok
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "to_csv failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "to_csv failed: #{inspect(error)}"
     end
   end
 
@@ -1328,8 +1376,9 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:config` - An optional config struct or map, normally associated with remote
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
   @spec from_ndjson(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
@@ -1381,12 +1430,22 @@ defmodule Explorer.DataFrame do
 
   NDJSON are files that contains JSON files separated by new lines.
   They are often used as structured logs.
+
+  ## Options
+
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
   """
   @doc type: :io
-  @spec to_ndjson(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) ::
+  @spec to_ndjson(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           :ok | {:error, term()}
-  def to_ndjson(df, filename, _opts \\ []) do
-    Shared.apply_impl(df, :to_ndjson, [filename])
+  def to_ndjson(df, filename, opts \\ []) do
+    opts = Keyword.validate!(opts, config: nil)
+
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      Shared.apply_impl(df, :to_ndjson, [entry])
+    end
   end
 
   @doc """
@@ -1396,8 +1455,14 @@ defmodule Explorer.DataFrame do
   @spec to_ndjson!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
   def to_ndjson!(df, filename, opts \\ []) do
     case to_ndjson(df, filename, opts) do
-      :ok -> :ok
-      {:error, error} -> raise "to_ndjson failed: #{inspect(error)}"
+      :ok ->
+        :ok
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "to_ndjson failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "to_ndjson failed: #{inspect(error)}"
     end
   end
 
