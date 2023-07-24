@@ -585,7 +585,7 @@ defmodule Explorer.DataFrame do
   Similar to `from_csv/2` but raises if there is a problem reading the CSV.
   """
   @doc type: :io
-  @spec from_csv!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  @spec from_csv!(filename :: String.t() | fs_entry(), opts :: Keyword.t()) :: DataFrame.t()
   def from_csv!(filename, opts \\ []) do
     case from_csv(filename, opts) do
       {:ok, df} ->
@@ -739,7 +739,7 @@ defmodule Explorer.DataFrame do
   Similar to `from_parquet/2` but raises if there is a problem reading the Parquet file.
   """
   @doc type: :io
-  @spec from_parquet!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  @spec from_parquet!(filename :: String.t() | fs_entry(), opts :: Keyword.t()) :: DataFrame.t()
   def from_parquet!(filename, opts \\ []) do
     case from_parquet(filename, opts) do
       {:ok, df} ->
@@ -819,7 +819,7 @@ defmodule Explorer.DataFrame do
   Similar to `to_parquet/3`, but raises in case of error.
   """
   @doc type: :io
-  @spec to_parquet!(df :: DataFrame.t(), filename :: String.t()) :: :ok
+  @spec to_parquet!(df :: DataFrame.t(), filename :: String.t() | fs_entry()) :: :ok
   def to_parquet!(df, filename, opts \\ []) do
     case to_parquet(df, filename, opts) do
       :ok ->
@@ -941,7 +941,7 @@ defmodule Explorer.DataFrame do
   Similar to `from_ipc/2` but raises if there is a problem reading the IPC file.
   """
   @doc type: :io
-  @spec from_ipc!(filename :: String.t(), opts :: Keyword.t()) :: DataFrame.t()
+  @spec from_ipc!(filename :: String.t() | fs_entry(), opts :: Keyword.t()) :: DataFrame.t()
   def from_ipc!(filename, opts \\ []) do
     case from_ipc(filename, opts) do
       {:ok, df} ->
@@ -1005,7 +1005,8 @@ defmodule Explorer.DataFrame do
   Similar to `to_ipc/3`, but raises in case of error.
   """
   @doc type: :io
-  @spec to_ipc!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
+  @spec to_ipc!(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
+          :ok
   def to_ipc!(df, filename, opts \\ []) do
     case to_ipc(df, filename, opts) do
       :ok ->
@@ -1190,7 +1191,11 @@ defmodule Explorer.DataFrame do
   Similar to `to_ipc_stream/3`, but raises in case of error.
   """
   @doc type: :io
-  @spec to_ipc_stream!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
+  @spec to_ipc_stream!(
+          df :: DataFrame.t(),
+          filename :: String.t() | fs_entry(),
+          opts :: Keyword.t()
+        ) :: :ok
   def to_ipc_stream!(df, filename, opts \\ []) do
     case to_ipc_stream(df, filename, opts) do
       :ok ->
@@ -1313,7 +1318,8 @@ defmodule Explorer.DataFrame do
   Similar to `to_csv/3` but raises if there is a problem reading the CSV.
   """
   @doc type: :io
-  @spec to_csv!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
+  @spec to_csv!(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
+          :ok
   def to_csv!(df, filename, opts \\ []) do
     case to_csv(df, filename, opts) do
       :ok ->
@@ -1452,7 +1458,8 @@ defmodule Explorer.DataFrame do
   Similar to `to_ndjson/3`, but raises in case of error.
   """
   @doc type: :io
-  @spec to_ndjson!(df :: DataFrame.t(), filename :: String.t(), opts :: Keyword.t()) :: :ok
+  @spec to_ndjson!(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
+          :ok
   def to_ndjson!(df, filename, opts \\ []) do
     case to_ndjson(df, filename, opts) do
       :ok ->
