@@ -1514,6 +1514,29 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
+    test "trim characters from string" do
+      IO.puts("running trim characters")
+
+      df =
+        DF.new(
+          a: ["£2", "3£", "£200£", "£££20"],
+          b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
+        )
+
+      df1 =
+        DF.mutate(df,
+          c: trim(a, "£"),
+          d: trim(b)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["£2", "3£", "£200£", "£££20"],
+               b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
+               c: ["2", "3", "200", "20"],
+               d: ["sent", "received", "words", "lots of pound signs"]
+             }
+    end
+
     test "conversion between string and datetime" do
       df =
         DF.new(
@@ -1967,7 +1990,7 @@ defmodule Explorer.DataFrameTest do
              +--------------+-------------+--------------+-------------+-------------+
              | 5.0          | 3.6         | 1.4          | 0.2         | Iris-setosa |
              +--------------+-------------+--------------+-------------+-------------+
-
+             
              """
     end
 
@@ -1983,7 +2006,7 @@ defmodule Explorer.DataFrameTest do
              +==============+=============+==============+=============+=============+
              | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
              +--------------+-------------+--------------+-------------+-------------+
-
+             
              """
     end
 
@@ -2020,7 +2043,7 @@ defmodule Explorer.DataFrameTest do
              +---------------+--------------+-------------+
              | 9             | i            | 1.9         |
              +---------------+--------------+-------------+
-
+             
              """
     end
   end

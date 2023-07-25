@@ -616,7 +616,11 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def trim(series),
-    do: Shared.apply_series(series, :s_trim)
+    do: Shared.apply_series(series, :s_trim, [""])
+
+  @impl true
+  def trim(series, str),
+    do: Shared.apply_series(series, :s_trim, [str])
 
   @impl true
   def trim_leading(series),

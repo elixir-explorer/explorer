@@ -238,6 +238,7 @@ defmodule Explorer.Backend.Series do
   @callback upcase(s) :: s
   @callback downcase(s) :: s
   @callback trim(s) :: s
+  @callback trim(s, String.t()) :: s
   @callback trim_leading(s) :: s
   @callback trim_trailing(s) :: s
 

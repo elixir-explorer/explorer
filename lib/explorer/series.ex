@@ -4276,19 +4276,39 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd"])
+      iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd   "])
       iex> Explorer.Series.trim(s)
       #Explorer.Series<
         Polars[3]
         string ["abc", "def", "bcd"]
       >
+
+      iex> s = Explorer.Series.from_list(["abc", "adefa", "bcda"])
+      iex> Explorer.Series.trim(s, "a")
+      #Explorer.Series<
+        Polars[3]
+        string ["bc", "def", "bcd"]
+      >
+
+      iex> s = Explorer.Series.from_list(["£123", "£1.00", "£1.00£"])
+      iex> Explorer.Series.trim(s, "£")
+      #Explorer.Series<
+        Polars[3]
+        string ["123", "1.00", "1.00"]
+      >
   """
   @doc type: :string_wise
   @spec trim(Series.t()) :: Series.t()
   def trim(%Series{dtype: :string} = series),
-    do: apply_series(series, :trim)
+    do: apply_series(series, :trim, [""])
 
-  def trim(%Series{dtype: dtype}), do: dtype_error("trim/1", dtype, [:string])
+  @doc type: :string_wise
+  @spec trim(Series.t(), String.t()) :: Series.t()
+  def trim(%Series{dtype: :string} = series, string),
+    do: apply_series(series, :trim, [string])
+
+  # def trim(%Series{dtype: dtype}), do: dtype_error("trim/1", dtype, [:string])
+  def trim(%Series{dtype: dtype}, _string), do: dtype_error("trim/2", dtype, [:string])
 
   @doc """
   Returns a string where all leading Unicode whitespaces have been removed.

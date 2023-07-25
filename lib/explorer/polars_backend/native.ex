@@ -317,7 +317,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_slice_by_series(_s, _series), do: err()
   def s_sort(_s, _descending?, _nils_last?), do: err()
   def s_standard_deviation(_s), do: err()
-  def s_trim(_s), do: err()
+  def s_trim(_s, _string), do: err()
   def s_subtract(_s, _other), do: err()
   def s_sum(_s), do: err()
   def s_tail(_s, _length), do: err()
