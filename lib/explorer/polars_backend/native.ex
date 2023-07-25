@@ -24,6 +24,8 @@ defmodule Explorer.PolarsBackend.Native do
       x86_64-unknown-linux-musl
       x86_64-unknown-freebsd
     ),
+    # We don't use any features of newer NIF versions, so 2.15 is enough.
+    nif_versions: ["2.15"],
     mode: mode,
     force_build: System.get_env("EXPLORER_BUILD") in ["1", "true"]
 
@@ -176,7 +178,8 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_slice(_df, _offset, _length), do: err()
   def lf_from_ipc(_filename), do: err()
   def lf_from_ndjson(_filename, _infer_schema_length, _batch_size), do: err()
-  def lf_from_parquet(_filename, _stop_after_n_rows), do: err()
+  def lf_from_parquet(_filename, _stop_after_n_rows, _maybe_columns), do: err()
+  def lf_from_parquet_cloud(_ex_s3_entry, _stop_after_n_rows, _maybe_columns), do: err()
 
   def lf_from_csv(
         _filename,
@@ -328,9 +331,9 @@ defmodule Explorer.PolarsBackend.Native do
   def s_upcase(_s), do: err()
   def s_unordered_distinct(_s), do: err()
   def s_frequencies(_s), do: err()
-  def s_cut(_s, _bins, _labels, _break_point_label, _category_label, _maintain_order), do: err()
+  def s_cut(_s, _bins, _labels, _break_point_label, _category_label), do: err()
 
-  def s_qcut(_s, _quantiles, _labels, _break_point_label, _category_label, _maintain_order),
+  def s_qcut(_s, _quantiles, _labels, _break_point_label, _category_label),
     do: err()
 
   def s_variance(_s), do: err()

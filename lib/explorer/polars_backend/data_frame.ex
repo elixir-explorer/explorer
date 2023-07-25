@@ -120,10 +120,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_csv(%DataFrame{data: df}, filename, header?, delimiter) do
+  def to_csv(%DataFrame{data: df}, %Local.Entry{} = entry, header?, delimiter) do
     <<delimiter::utf8>> = delimiter
 
-    case Native.df_to_csv(df, filename, header?, delimiter) do
+    case Native.df_to_csv(df, entry.path, header?, delimiter) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
@@ -136,6 +136,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
+  end
+
+  @impl true
+  def to_csv(_df, %S3.Entry{}, _header?, _delimiter) do
+    raise "S3 is not supported yet"
   end
 
   @impl true
@@ -210,10 +215,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_ndjson(%DataFrame{data: df}, filename) do
-    with {:ok, _} <- Native.df_to_ndjson(df, filename) do
+  def to_ndjson(%DataFrame{data: df}, %Local.Entry{} = entry) do
+    with {:ok, _} <- Native.df_to_ndjson(df, entry.path) do
       :ok
     end
+  end
+
+  def to_ndjson(_, %S3.Entry{}) do
+    raise "S3 is not supported yet"
   end
 
   @impl true
@@ -230,8 +239,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(%S3.Entry{}, _max_rows, _columns) do
-    raise "S3 is not supported yet"
+  def from_parquet(%S3.Entry{} = entry, max_rows, columns) do
+    # We first read using a lazy dataframe, then we collect.
+    with {:ok, ldf} <- Native.lf_from_parquet_cloud(entry, max_rows, columns),
+         {:ok, df} <- Native.lf_collect(ldf) do
+      {:ok, Shared.create_dataframe(df)}
+    end
   end
 
   @impl true
@@ -253,11 +266,26 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_parquet(%DataFrame{data: df}, filename, {compression, compression_level}, _streaming) do
-    case Native.df_to_parquet(df, filename, parquet_compression(compression, compression_level)) do
+  def to_parquet(
+        %DataFrame{data: df},
+        %Local.Entry{} = entry,
+        {compression, compression_level},
+        _streaming
+      ) do
+    case Native.df_to_parquet(df, entry.path, parquet_compression(compression, compression_level)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
+  end
+
+  @impl true
+  def to_parquet(
+        _df,
+        %S3.Entry{},
+        _compression,
+        _streaming
+      ) do
+    raise "S3 is not supported yet"
   end
 
   @impl true
@@ -297,11 +325,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_ipc(%DataFrame{data: df}, filename, {compression, _level}, _streaming) do
-    case Native.df_to_ipc(df, filename, Atom.to_string(compression)) do
+  def to_ipc(%DataFrame{data: df}, %Local.Entry{} = entry, {compression, _level}, _streaming) do
+    case Native.df_to_ipc(df, entry.path, Atom.to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
+  end
+
+  @impl true
+  def to_ipc(_df, %S3.Entry{}, _, _) do
+    raise "S3 is not supported yet"
   end
 
   @impl true
@@ -335,11 +368,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_ipc_stream(%DataFrame{data: df}, filename, {compression, _level}) do
-    case Native.df_to_ipc_stream(df, filename, Atom.to_string(compression)) do
+  def to_ipc_stream(%DataFrame{data: df}, %Local.Entry{} = entry, {compression, _level}) do
+    case Native.df_to_ipc_stream(df, entry.path, Atom.to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
+  end
+
+  @impl true
+  def to_ipc_stream(_df, %S3.Entry{}, _compression) do
+    raise "S3 is not supported yet"
   end
 
   @impl true

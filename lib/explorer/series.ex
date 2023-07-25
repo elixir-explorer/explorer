@@ -1528,7 +1528,7 @@ defmodule Explorer.Series do
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.slice(s, 3..2)
+      iex> Explorer.Series.slice(s, 3..2//1)
       #Explorer.Series<
         Polars[0]
         string []
@@ -3684,9 +3684,6 @@ defmodule Explorer.Series do
     * `:category_label` - The name given to the category column.
       Defaults to `category`.
 
-    * `:maintain_order` - The name given to the category column.
-      Defaults to `false`.
-
   ## Examples
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0])
@@ -3704,8 +3701,7 @@ defmodule Explorer.Series do
       Enum.map(bins, &(&1 / 1.0)),
       Keyword.get(opts, :labels),
       Keyword.get(opts, :break_point_label),
-      Keyword.get(opts, :category_label),
-      Keyword.get(opts, :maintain_order, false)
+      Keyword.get(opts, :category_label)
     ])
   end
 
@@ -3727,9 +3723,6 @@ defmodule Explorer.Series do
     * `:category_label` - The name given to the category column.
       Defaults to `category`.
 
-    * `:maintain_order` - The name given to the category column.
-      Defaults to `false`.
-
   ## Examples
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0, 4.0, 5.0])
@@ -3738,7 +3731,7 @@ defmodule Explorer.Series do
         Polars[5 x 3]
         values float [1.0, 2.0, 3.0, 4.0, 5.0]
         break_point float [2.0, 2.0, 4.0, 4.0, Inf]
-        category category ["(-inf, 2.0]", "(-inf, 2.0]", "(2.0, 4.0]", "(2.0, 4.0]", "(4.0, inf]"]
+        category category ["(-inf, 2]", "(-inf, 2]", "(2, 4]", "(2, 4]", "(4, inf]"]
       >
   """
   @doc type: :aggregation
@@ -3747,8 +3740,7 @@ defmodule Explorer.Series do
       Enum.map(quantiles, &(&1 / 1.0)),
       Keyword.get(opts, :labels),
       Keyword.get(opts, :break_point_label),
-      Keyword.get(opts, :category_label),
-      Keyword.get(opts, :maintain_order, false)
+      Keyword.get(opts, :category_label)
     ])
   end
 
@@ -3841,10 +3833,17 @@ defmodule Explorer.Series do
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.window_mean(s, 2, weights: [1.0, 2.0])
+      iex> Explorer.Series.window_mean(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[10]
-        float [1.0, 2.5, 4.0, 5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5]
+        float [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.window_mean(s, 2, weights: [0.25, 0.75], min_periods: nil)
+      #Explorer.Series<
+        Polars[10]
+        float [nil, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
       >
   """
   @doc type: :window
@@ -3932,18 +3931,18 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s = Explorer.Series.from_list([1, 2, 3, 2, 1])
+      iex> s = Explorer.Series.from_list([1, 2, 3, 4, 1])
       iex> Explorer.Series.window_standard_deviation(s, 2)
       #Explorer.Series<
         Polars[5]
-        float [0.0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476]
+        float [0.0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 2.1213203435596424]
       >
 
-      iex> s = Explorer.Series.from_list([1, 2, 3, 2, 1])
-      iex> Explorer.Series.window_standard_deviation(s, 2, weights: [1.0, 2.0])
+      iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5, 6])
+      iex> Explorer.Series.window_standard_deviation(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
-        Polars[5]
-        float [NaN, 2.1213203435596424, 2.8284271247461903, 0.7071067811865476, 0.0]
+        Polars[6]
+        float [0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193]
       >
   """
   @doc type: :window

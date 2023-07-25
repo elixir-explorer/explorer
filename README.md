@@ -211,13 +211,13 @@ to Explorer.
 We require Rust Nightly, which can be installed with [Rustup](https://rust-lang.github.io/rustup/installation/index.html).
 
 ```sh
-rustup toolchain install nightly-2023-02-14
+rustup toolchain install nightly-2023-06-23
 ```
 
 You can also use [asdf](https://asdf-vm.com/):
 
 ```sh
-asdf install rust nightly-2023-02-14
+asdf install rust nightly-2023-06-23
 ```
 
 It's possible that you may need to install [`CMake`](https://cmake.org/) in order to build the project,
@@ -225,6 +225,20 @@ if that is not already installed.
 
 Once you have made your changes, run `mix ci`, to lint and format both Elixir
 and Rust code.
+
+Our integration tests require the [AWS CLI to be installed](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html),
+and also a container engine that can be [Podman](https://podman.io) or [Docker](https://docker.com).
+
+Once these dependencies are installed, you need to run the `mix localstack.setup` command,
+and then run the cloud integration tests with `mix test --only cloud_integration`.
+
+Just to recap, here is the combo of commands you need to run:
+
+```sh
+mix ci
+mix localstack.setup
+mix test --only cloud_integration
+```
 
 ## Sponsors
 

@@ -17,10 +17,11 @@ defmodule Explorer.MixProject do
       package: package(),
       deps: deps(),
       docs: docs(),
-      preferred_cli_env: [ci: :test],
+      preferred_cli_env: [ci: :test, "localstack.setup": :test],
       aliases: [
         "rust.lint": ["cmd cargo clippy --manifest-path=native/explorer/Cargo.toml -- -Dwarnings"],
         "rust.fmt": ["cmd cargo fmt --manifest-path=native/explorer/Cargo.toml --all"],
+        "localstack.setup": ["cmd ./test/support/setup-localstack.sh"],
         ci: ["format", "rust.fmt", "rust.lint", "test"]
       ]
     ]
@@ -35,10 +36,10 @@ defmodule Explorer.MixProject do
 
   defp deps do
     [
-      {:rustler_precompiled, "~> 0.5"},
+      {:rustler_precompiled, "~> 0.6"},
       {:table, "~> 0.1.2"},
-      {:table_rex, "~> 3.1.1"},
-      {:adbc, github: "elixir-explorer/adbc", optional: true},
+      {:table_rex, "~> 3.1.1 or ~> 4.0.0"},
+      {:adbc, "~> 0.1", optional: true},
 
       ## Optional
       {:rustler, "~> 0.29.0", optional: not (@dev? or @force_build?)},

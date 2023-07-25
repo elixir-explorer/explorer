@@ -61,7 +61,11 @@ pub fn df_join(
         }
     };
 
-    let new_df = df.join(&other, left_on, right_on, how, suffix)?;
+    let mut join_args = JoinArgs::new(how);
+    join_args.suffix = suffix;
+
+    let new_df = df.join(&other, left_on, right_on, join_args)?;
+
     Ok(ExDataFrame::new(new_df))
 }
 
@@ -301,7 +305,7 @@ fn df_from_arrow_stream_pointer(stream_ptr: u64) -> Result<ExDataFrame, Explorer
                 acc.vstack_mut(&df)?;
             }
 
-            acc.rechunk();
+            acc.align_chunks();
             acc
         }
     };
@@ -326,7 +330,7 @@ fn array_to_dataframe(
 }
 
 fn arrow_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
-    ExplorerError::Other(format!("Internal Arrow error: #{:?}", error))
+    ExplorerError::Other(format!("Internal Arrow error: #{error:?}"))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -336,11 +340,13 @@ pub fn df_arrange(
     reverse: Vec<bool>,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
+    // TODO: make maintain_order an option.
+    let maintain_order = true;
     let new_df = if groups.is_empty() {
-        df.sort(by_columns, reverse)?
+        df.sort(by_columns, reverse, maintain_order)?
     } else {
         df.groupby_stable(groups)?
-            .apply(|df| df.sort(by_columns.clone(), reverse.clone()))?
+            .apply(|df| df.sort(by_columns.clone(), reverse.clone(), maintain_order))?
     };
 
     Ok(ExDataFrame::new(new_df))
@@ -356,14 +362,18 @@ pub fn df_arrange_with(
     let df = data.clone_inner();
     let exprs = ex_expr_to_exprs(expressions);
 
+    // TODO: make these bools options
+    let nulls_last = false;
+    let maintain_order = true;
+
     let new_df = if groups.is_empty() {
         df.lazy()
-            .sort_by_exprs(exprs, directions, false)
+            .sort_by_exprs(exprs, directions, nulls_last, maintain_order)
             .collect()?
     } else {
         df.groupby_stable(groups)?.apply(|df| {
             df.lazy()
-                .sort_by_exprs(&exprs, &directions, false)
+                .sort_by_exprs(&exprs, &directions, nulls_last, maintain_order)
                 .collect()
         })?
     };
@@ -450,7 +460,10 @@ pub fn df_distinct(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_to_dummies(df: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
-    let dummies = df.select(selection).and_then(|df| df.to_dummies(None))?;
+    let drop_first = false;
+    let dummies = df
+        .select(selection)
+        .and_then(|df| df.to_dummies(None, drop_first))?;
     let series = dummies
         .iter()
         .map(|series| series.cast(&DataType::Int64).unwrap())

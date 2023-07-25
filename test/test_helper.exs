@@ -42,4 +42,4 @@ defmodule Explorer.IOHelpers do
   end
 end
 
-ExUnit.start()
+ExUnit.start(exclude: :cloud_integration)

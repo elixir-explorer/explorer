@@ -146,19 +146,16 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_parquet(%S3.Entry{}, _max_rows, _columns) do
-    raise "S3 is not supported yet"
+  def from_parquet(%S3.Entry{} = entry, max_rows, columns) do
+    case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true
   def from_parquet(%Local.Entry{} = entry, max_rows, columns) do
-    if columns do
-      raise ArgumentError,
-            "`columns` is not supported by Polars' lazy backend. " <>
-              "Consider using `select/2` after reading the parquet file"
-    end
-
-    case Native.lf_from_parquet(entry.path, max_rows) do
+    case Native.lf_from_parquet(entry.path, max_rows, columns) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, error}
     end
@@ -271,10 +268,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = df, filename, {compression, level}, streaming) do
+  def to_parquet(%DF{} = df, %Local.Entry{} = entry, {compression, level}, streaming) do
     case Native.lf_to_parquet(
            df.data,
-           filename,
+           entry.path,
            Shared.parquet_compression(compression, level),
            streaming
          ) do
@@ -284,11 +281,21 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_ipc(%DF{} = df, filename, {compression, _level}, streaming) do
-    case Native.lf_to_ipc(df.data, filename, Atom.to_string(compression), streaming) do
+  def to_parquet(_df, %S3.Entry{}, _compression, _streaming) do
+    raise "S3 is not supported yet"
+  end
+
+  @impl true
+  def to_ipc(%DF{} = df, %Local.Entry{} = entry, {compression, _level}, streaming) do
+    case Native.lf_to_ipc(df.data, entry.path, Atom.to_string(compression), streaming) do
       {:ok, _} -> :ok
       {:error, _} = err -> err
     end
+  end
+
+  @impl true
+  def to_ipc(_df, %S3.Entry{}, _compression, _streaming) do
+    raise "S3 is not supported yet"
   end
 
   @impl true
