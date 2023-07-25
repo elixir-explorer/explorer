@@ -872,11 +872,6 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def trim(series) do
-    trim(series, "")
-  end
-
-  @impl true
   def trim(series, string) do
     data = new(:trim, [lazy_series!(series), string])
     Backend.Series.new(data, :string)

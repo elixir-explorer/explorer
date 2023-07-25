@@ -4304,10 +4304,9 @@ defmodule Explorer.Series do
 
   @doc type: :string_wise
   @spec trim(Series.t(), String.t()) :: Series.t()
-  def trim(%Series{dtype: :string} = series, string),
+  def trim(%Series{dtype: :string} = series, string) when is_binary(string),
     do: apply_series(series, :trim, [string])
 
-  # def trim(%Series{dtype: dtype}), do: dtype_error("trim/1", dtype, [:string])
   def trim(%Series{dtype: dtype}, _string), do: dtype_error("trim/2", dtype, [:string])
 
   @doc """
