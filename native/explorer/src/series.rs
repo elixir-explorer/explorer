@@ -1337,11 +1337,11 @@ pub fn s_downcase(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_trim(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_trim(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     let pattern = match pattern {
-        "" => String::from(r#"^[ \s]+|[ \s]+$"#),
-        _ => format!(r#"^[{}]+|[{}]+$"#, &pattern, &pattern),
+        None => String::from(r#"^[ \s]+|[ \s]+$"#),
+        Some(string) => format!(r#"^[{}]+|[{}]+$"#, &string, &string),
     };
 
     // replace only replaces the leftmost match, so we need to call it twice.
