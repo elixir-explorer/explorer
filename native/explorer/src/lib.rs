@@ -14,7 +14,9 @@ use rustler::{Env, Term};
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+#[cfg(feature = "cloud")]
 mod cloud_writer;
+
 mod dataframe;
 mod datatypes;
 mod encoding;

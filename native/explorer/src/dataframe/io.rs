@@ -515,6 +515,7 @@ pub fn df_load_ndjson(
     )))
 }
 
+#[cfg(feature = "cloud")]
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_to_csv_writer_sample(
     data: ExDataFrame,
@@ -533,4 +534,17 @@ pub fn df_to_csv_writer_sample(
         .with_delimiter(delimiter)
         .finish(&mut data.clone())?;
     Ok(())
+}
+
+#[cfg(not(feature = "cloud"))]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_csv_writer_sample(
+    _data: ExDataFrame,
+    _path: &str,
+    _has_headers: bool,
+    _delimiter: u8,
+) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "Writing to a cloud storage is not enabled for this machine."
+    )))
 }
