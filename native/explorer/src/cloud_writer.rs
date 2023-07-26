@@ -1,5 +1,4 @@
-use tokio::io::AsyncWrite;
-use tokio_util::io::SyncIoBridge;
+use tokio::io::{AsyncWrite, AsyncWriteExt};
 
 use object_store::path::Path;
 use object_store::MultipartId;
@@ -20,7 +19,7 @@ pub struct CloudWriter {
     // The Tokio runtime which the writer uses internally.
     runtime: tokio::runtime::Runtime,
     // Internal writer, constructed at creation
-    writer: SyncIoBridge<Box<dyn AsyncWrite + Send + Unpin>>,
+    writer: Box<dyn AsyncWrite + Send + Unpin>,
 }
 
 impl CloudWriter {
@@ -48,14 +47,13 @@ impl CloudWriter {
         path: &Path,
     ) -> (
         MultipartId,
-        SyncIoBridge<Box<dyn AsyncWrite + Send + Unpin>>,
+        Box<dyn AsyncWrite + Send + Unpin>,
     ) {
         let (multipart_id, async_s3_writer) = object_store
             .put_multipart(path)
             .await
             .expect("Could not create location to write to");
-        let sync_s3_uploader = SyncIoBridge::new(async_s3_writer);
-        (multipart_id, sync_s3_uploader)
+        (multipart_id, async_s3_writer)
     }
 
     fn abort(&self) {
@@ -69,7 +67,7 @@ impl CloudWriter {
 
 impl std::io::Write for CloudWriter {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        let res = self.writer.write(buf);
+        let res = self.runtime.block_on(self.writer.write(buf));
         if res.is_err() {
             self.abort();
         }
@@ -77,7 +75,7 @@ impl std::io::Write for CloudWriter {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        let res = self.writer.flush();
+        let res = self.runtime.block_on(self.writer.flush());
         if res.is_err() {
             self.abort();
         }
@@ -87,7 +85,7 @@ impl std::io::Write for CloudWriter {
 
 impl Drop for CloudWriter {
     fn drop(&mut self) {
-        let _ = self.writer.shutdown();
+        let _ = self.runtime.block_on(self.writer.shutdown());
     }
 }
 
@@ -124,7 +122,7 @@ mod tests {
         let path: object_store::path::Path = "cloud_writer_example.csv".into();
 
         let mut cloud_writer = CloudWriter::new(object_store, path);
-        let csv_writer = CsvWriter::new(&mut cloud_writer)
+        CsvWriter::new(&mut cloud_writer)
             .finish(&mut df)
             .expect("Could not write dataframe as CSV to remote location");
     }
