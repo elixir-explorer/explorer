@@ -237,7 +237,7 @@ defmodule Explorer.Backend.Series do
   @callback contains(s, String.t()) :: s
   @callback upcase(s) :: s
   @callback downcase(s) :: s
-  @callback trim(s, String.t()) :: s
+  @callback trim(s, String.t() | nil) :: s
   @callback trim_leading(s) :: s
   @callback trim_trailing(s) :: s
 

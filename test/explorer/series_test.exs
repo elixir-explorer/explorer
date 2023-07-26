@@ -3972,6 +3972,7 @@ defmodule Explorer.SeriesTest do
 
       assert Series.trim(series) |> Series.to_list() == ["123", "2", "20$"]
     end
+
     test "trim/2" do
       series = Series.from_list(["£1£23", "2£", "£20£"])
 

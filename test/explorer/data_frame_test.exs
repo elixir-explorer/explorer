@@ -1515,8 +1515,6 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "trim characters from string" do
-      IO.puts("running trim characters")
-
       df =
         DF.new(
           a: ["£2", "3£", "£200£", "£££20"],
