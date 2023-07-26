@@ -129,6 +129,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
+  @impl true
+  def to_csv(_df, %S3.Entry{}, _header?, _delimiter) do
+    raise "S3 is not supported yet"
+  end
+
   def to_csv_writer_sample(%DataFrame{data: df}, path, header?, delimiter) do
     <<delimiter::utf8>> = delimiter
 
@@ -136,11 +141,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
-  end
-
-  @impl true
-  def to_csv(_df, %S3.Entry{}, _header?, _delimiter) do
-    raise "S3 is not supported yet"
   end
 
   @impl true
