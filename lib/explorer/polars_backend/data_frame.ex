@@ -280,12 +280,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_parquet(
-        _df,
-        %S3.Entry{},
-        _compression,
+        %DataFrame{data: df},
+        %S3.Entry{} = entry,
+        {compression, compression_level},
         _streaming
       ) do
-    raise "S3 is not supported yet"
+    case Native.df_to_parquet_cloud(
+           df,
+           entry,
+           parquet_compression(compression, compression_level)
+         ) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true

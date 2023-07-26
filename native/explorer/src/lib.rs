@@ -128,6 +128,7 @@ rustler::init!(
         df_to_lazy,
         df_to_ndjson,
         df_to_parquet,
+        df_to_parquet_cloud,
         df_width,
         // expressions
         expr_atom,
