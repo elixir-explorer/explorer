@@ -523,13 +523,9 @@ pub fn df_to_csv_writer_sample(
     delimiter: u8,
 ) -> Result<(), ExplorerError> {
     use object_store::ObjectStore;
-    use std::sync::Arc;
-    use std::sync::Mutex;
 
     // Hard-coded local file system object store for now:
     let object_store: Box<dyn ObjectStore> = Box::new(object_store::local::LocalFileSystem::new());
-    let object_store = Arc::from(Mutex::from(object_store));
-
     let mut cloud_writer = crate::cloud_writer::CloudWriter::new(object_store, path.into());
 
     CsvWriter::new(&mut cloud_writer)
