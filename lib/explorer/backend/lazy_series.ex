@@ -113,7 +113,7 @@ defmodule Explorer.Backend.LazySeries do
     contains: 2,
     trim_leading: 1,
     trim_trailing: 1,
-    trim: 1,
+    trim: 2,
     upcase: 1,
     downcase: 1,
     # Float round
@@ -871,9 +871,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def trim(series) do
-    data = new(:trim, [lazy_series!(series)])
-
+  def trim(series, string) do
+    data = new(:trim, [lazy_series!(series), string])
     Backend.Series.new(data, :string)
   end
 

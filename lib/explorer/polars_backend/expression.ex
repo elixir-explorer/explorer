@@ -120,7 +120,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
     # Strings
     contains: 2,
-    trim: 1,
+    trim: 2,
     trim_leading: 1,
     trim_trailing: 1,
     downcase: 1,

@@ -747,9 +747,9 @@ pub fn expr_downcase(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_trim(expr: ExExpr) -> ExExpr {
+pub fn expr_trim(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().strip(None))
+    ExExpr::new(expr.str().strip(string))
 }
 
 #[rustler::nif]

@@ -3966,6 +3966,20 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "trim/1 and trim/2" do
+    test "trim/1" do
+      series = Series.from_list(["  123   ", "       2   ", "    20$    "])
+
+      assert Series.trim(series) |> Series.to_list() == ["123", "2", "20$"]
+    end
+
+    test "trim/2" do
+      series = Series.from_list(["£1£23", "2£", "£20£"])
+
+      assert Series.trim(series, "£") |> Series.to_list() == ["1£23", "2", "20"]
+    end
+  end
+
   describe "strptime/2 and strftime/2" do
     test "parse datetime from string" do
       series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])
