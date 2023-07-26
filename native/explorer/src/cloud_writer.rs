@@ -43,7 +43,7 @@ impl CloudWriter {
     }
 
     async fn build_writer(
-        object_store: &Box<dyn ObjectStore>,
+        object_store: &dyn ObjectStore,
         path: &Path,
     ) -> (MultipartId, Box<dyn AsyncWrite + Send + Unpin>) {
         let (multipart_id, async_s3_writer) = object_store
