@@ -539,7 +539,9 @@ pub fn df_from_ndjson(
     _batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON parsing is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 
@@ -547,7 +549,9 @@ pub fn df_from_ndjson(
 #[rustler::nif]
 pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON writing is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 
@@ -555,7 +559,9 @@ pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerE
 #[rustler::nif]
 pub fn df_dump_ndjson(_data: ExDataFrame) -> Result<Binary<'static>, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON dumping is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 
@@ -567,6 +573,8 @@ pub fn df_load_ndjson(
     _batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON loading is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
