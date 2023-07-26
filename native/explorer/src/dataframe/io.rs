@@ -269,7 +269,7 @@ pub fn df_to_parquet_cloud(
     Ok(())
 }
 fn object_store_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
-    ExplorerError::Other(format!("Internal Object Store error: #{error:?}"))
+    ExplorerError::Other(format!("Internal ObjectStore error: #{error:?}"))
 }
 
 #[cfg(not(feature = "aws"))]
@@ -280,7 +280,9 @@ pub fn df_to_parquet_cloud(
     _ex_compression: ExParquetCompression,
 ) -> Result<(), ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "AWS reads and writes are not enabled for this machine"
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 

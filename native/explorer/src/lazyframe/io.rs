@@ -63,7 +63,9 @@ pub fn lf_from_parquet_cloud(
     _columns: Option<Vec<String>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "AWS reads and writes are not enabled for this machine"
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 
