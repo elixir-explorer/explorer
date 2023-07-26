@@ -126,6 +126,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_summarise_with_exprs(_df, _groups_exprs, _aggs_pairs), do: err()
   def df_tail(_df, _length, _groups), do: err()
   def df_to_csv(_df, _filename, _has_headers, _delimiter), do: err()
+  def df_to_csv_writer_sample(_df, _path, _has_headers, _delimiter), do: err()
   def df_to_dummies(_df, _columns), do: err()
   def df_to_ipc(_df, _filename, _compression), do: err()
   def df_to_ipc_stream(_df, _filename, _compression), do: err()

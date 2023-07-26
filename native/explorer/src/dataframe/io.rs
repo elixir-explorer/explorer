@@ -514,3 +514,23 @@ pub fn df_load_ndjson(
         "NDJSON loading is not enabled for this machine"
     )))
 }
+
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_csv_writer_sample(
+    data: ExDataFrame,
+    path: &str,
+    has_headers: bool,
+    delimiter: u8,
+) -> Result<(), ExplorerError> {
+    use object_store::ObjectStore;
+
+    // Hard-coded local file system object store for now:
+    let object_store: Box<dyn ObjectStore> = Box::new(object_store::local::LocalFileSystem::new());
+    let mut cloud_writer = crate::cloud_writer::CloudWriter::new(object_store, path.into());
+
+    CsvWriter::new(&mut cloud_writer)
+        .has_header(has_headers)
+        .with_delimiter(delimiter)
+        .finish(&mut data.clone())?;
+    Ok(())
+}

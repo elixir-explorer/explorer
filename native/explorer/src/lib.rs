@@ -14,6 +14,7 @@ use rustler::{Env, Term};
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+mod cloud_writer;
 mod dataframe;
 mod datatypes;
 mod encoding;
@@ -118,6 +119,7 @@ rustler::init!(
         df_summarise_with_exprs,
         df_tail,
         df_to_csv,
+        df_to_csv_writer_sample,
         df_to_dummies,
         df_to_ipc,
         df_to_ipc_stream,
