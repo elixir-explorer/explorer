@@ -59,7 +59,7 @@ defmodule Explorer.PolarsBackend.Native do
         _columns,
         _dtypes,
         _encoding,
-        _null_vals,
+        _nil_vals,
         _parse_dates,
         _eol_delimiter
       ),
@@ -95,7 +95,7 @@ defmodule Explorer.PolarsBackend.Native do
         _columns,
         _dtypes,
         _encoding,
-        _null_vals,
+        _nil_vals,
         _parse_dates,
         _eol_delimiter
       ),
@@ -191,7 +191,7 @@ defmodule Explorer.PolarsBackend.Native do
         _rechunk,
         _dtypes,
         _encoding,
-        _null_vals,
+        _nil_vals,
         _parse_dates,
         _eol_delimiter
       ),
