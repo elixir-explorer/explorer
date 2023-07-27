@@ -130,8 +130,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_csv(_df, %S3.Entry{}, _header?, _delimiter) do
-    raise "S3 is not supported yet"
+  def to_csv(%DataFrame{data: df}, %S3.Entry{} = entry, header?, delimiter) do
+    <<delimiter::utf8>> = delimiter
+
+    case Native.df_to_csv_cloud(df, entry, header?, delimiter) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true

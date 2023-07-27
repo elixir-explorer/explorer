@@ -121,6 +121,7 @@ rustler::init!(
         df_summarise_with_exprs,
         df_tail,
         df_to_csv,
+        df_to_csv_cloud,
         df_to_dummies,
         df_to_ipc,
         df_to_ipc_stream,

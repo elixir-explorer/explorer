@@ -228,7 +228,7 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
   end
 
-  describe "to_parquet/2 - cloud" do
+  describe "to_parquet/3 - cloud" do
     setup do
       [df: Explorer.Datasets.wine()]
     end
