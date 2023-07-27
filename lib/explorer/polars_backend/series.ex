@@ -619,12 +619,12 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_trim, [str])
 
   @impl true
-  def trim_leading(series),
-    do: Shared.apply_series(series, :s_trim_leading)
+  def trim_leading(series, str),
+    do: Shared.apply_series(series, :s_trim_leading, [str])
 
   @impl true
-  def trim_trailing(series),
-    do: Shared.apply_series(series, :s_trim_trailing)
+  def trim_trailing(series, str),
+    do: Shared.apply_series(series, :s_trim_trailing, [str])
 
   # Float round
   @impl true

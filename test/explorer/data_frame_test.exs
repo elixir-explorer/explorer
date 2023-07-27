@@ -1535,6 +1535,48 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "trim trailing characters from string" do
+      df =
+        DF.new(
+          a: ["£2", "3£", "£200£", "£££20"],
+          b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
+        )
+
+      df1 =
+        DF.mutate(df,
+          c: trim_trailing(a, "£"),
+          d: trim_trailing(b)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["£2", "3£", "£200£", "£££20"],
+               b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
+               c: ["£2", "3", "£200", "£££20"],
+               d: ["   sent", " received", "  words", "lots of pound signs"]
+             }
+    end
+
+    test "trim leading characters from string" do
+      df =
+        DF.new(
+          a: ["£2", "3£", "£200£", "£££20"],
+          b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
+        )
+
+      df1 =
+        DF.mutate(df,
+          c: trim_leading(a, "£"),
+          d: trim_leading(b)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["£2", "3£", "£200£", "£££20"],
+               b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
+               c: ["2", "3£", "200£", "20"],
+               d: ["sent   ", "received", "words  ", "lots of pound signs    "]
+             }
+    end
+
     test "conversion between string and datetime" do
       df =
         DF.new(

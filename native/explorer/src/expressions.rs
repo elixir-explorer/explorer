@@ -753,15 +753,15 @@ pub fn expr_trim(expr: ExExpr, string: Option<String>) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_trim_leading(expr: ExExpr) -> ExExpr {
+pub fn expr_trim_leading(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().lstrip(None))
+    ExExpr::new(expr.str().lstrip(string))
 }
 
 #[rustler::nif]
-pub fn expr_trim_trailing(expr: ExExpr) -> ExExpr {
+pub fn expr_trim_trailing(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().rstrip(None))
+    ExExpr::new(expr.str().rstrip(string))
 }
 
 #[rustler::nif]

@@ -3966,7 +3966,7 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "trim/1 and trim/2" do
+  describe "trim, trim, trim_leading, trim_trailing" do
     test "trim/1" do
       series = Series.from_list(["  123   ", "       2   ", "    20$    "])
 
@@ -3977,6 +3977,30 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list(["£1£23", "2£", "£20£"])
 
       assert Series.trim(series, "£") |> Series.to_list() == ["1£23", "2", "20"]
+    end
+
+    test "trim_leading/1" do
+      series = Series.from_list(["  123   ", "       2   ", "    20$    "])
+
+      assert Series.trim_leading(series) |> Series.to_list() == ["123   ", "2   ", "20$    "]
+    end
+
+    test "trim_leading/2" do
+      series = Series.from_list(["£1£23", "2£", "£20£"])
+
+      assert Series.trim_leading(series, "£") |> Series.to_list() == ["1£23", "2£", "20£"]
+    end
+
+    test "trim_trailing/1" do
+      series = Series.from_list(["  123   ", "  2   ", "    20$    "])
+
+      assert Series.trim_trailing(series) |> Series.to_list() == ["  123", "  2", "    20$"]
+    end
+
+    test "trim_trailing/2" do
+      series = Series.from_list(["£1£23", "2£", "£20£"])
+
+      assert Series.trim_trailing(series, "£") |> Series.to_list() == ["£1£23", "2", "£20"]
     end
   end
 

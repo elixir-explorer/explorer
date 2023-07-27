@@ -238,8 +238,8 @@ defmodule Explorer.Backend.Series do
   @callback upcase(s) :: s
   @callback downcase(s) :: s
   @callback trim(s, String.t() | nil) :: s
-  @callback trim_leading(s) :: s
-  @callback trim_trailing(s) :: s
+  @callback trim_leading(s, String.t() | nil) :: s
+  @callback trim_trailing(s, String.t() | nil) :: s
 
   # Date / DateTime
 

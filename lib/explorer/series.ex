@@ -4332,9 +4332,27 @@ defmodule Explorer.Series do
   @doc type: :string_wise
   @spec trim_leading(Series.t()) :: Series.t()
   def trim_leading(%Series{dtype: :string} = series),
-    do: apply_series(series, :trim_leading)
+    do: apply_series(series, :trim_leading, [nil])
 
-  def trim_leading(%Series{dtype: dtype}), do: dtype_error("trim_leading/1", dtype, [:string])
+  @doc """
+  Returns a string where all leading examples of the provided binary have been removed.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["$1", "$$200$$", "$$$3000$"])
+      iex> Explorer.Series.trim_leading(s, "$")
+      #Explorer.Series<
+        Polars[3]
+        string ["1", "200$$", "3000$"]
+      >
+  """
+  @doc type: :string_wise
+  @spec trim(Series.t(), String.t()) :: Series.t()
+  def trim_leading(%Series{dtype: :string} = series, string) when is_binary(string),
+    do: apply_series(series, :trim_leading, [string])
+
+  def trim_leading(%Series{dtype: dtype}, _string),
+    do: dtype_error("trim_leading/2", dtype, [:string])
 
   @doc """
   Returns a string where all trailing Unicode whitespaces have been removed.
@@ -4351,9 +4369,27 @@ defmodule Explorer.Series do
   @doc type: :string_wise
   @spec trim_trailing(Series.t()) :: Series.t()
   def trim_trailing(%Series{dtype: :string} = series),
-    do: apply_series(series, :trim_trailing)
+    do: apply_series(series, :trim_trailing, [nil])
 
-  def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
+  @doc """
+  Returns a string where all trailing examples of the provided binary have been removed.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["__abc__", "def_", "__bcd_"])
+      iex> Explorer.Series.trim_trailing(s, "_")
+      #Explorer.Series<
+        Polars[3]
+        string ["__abc", "def", "__bcd"]
+      >
+  """
+  @doc type: :string_wise
+  @spec trim_trailing(Series.t()) :: Series.t()
+  def trim_trailing(%Series{dtype: :string} = series, string) when is_binary(string),
+    do: apply_series(series, :trim_trailing, [string])
+
+  def trim_trailing(%Series{dtype: dtype}, _string),
+    do: dtype_error("trim_trailing/2", dtype, [:string])
 
   # Float
 

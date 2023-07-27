@@ -111,8 +111,8 @@ defmodule Explorer.Backend.LazySeries do
     covariance: 2,
     # Strings
     contains: 2,
-    trim_leading: 1,
-    trim_trailing: 1,
+    trim_leading: 2,
+    trim_trailing: 2,
     trim: 2,
     upcase: 1,
     downcase: 1,
@@ -877,15 +877,15 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def trim_leading(series) do
-    data = new(:trim_leading, [lazy_series!(series)])
+  def trim_leading(series, string) do
+    data = new(:trim_leading, [lazy_series!(series), string])
 
     Backend.Series.new(data, :string)
   end
 
   @impl true
-  def trim_trailing(series) do
-    data = new(:trim_trailing, [lazy_series!(series)])
+  def trim_trailing(series, string) do
+    data = new(:trim_trailing, [lazy_series!(series), string])
 
     Backend.Series.new(data, :string)
   end
