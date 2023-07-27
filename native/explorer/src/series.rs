@@ -1344,7 +1344,6 @@ pub fn s_trim(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerE
         Some(string) => format!(r#"^[{}]+|[{}]+$"#, &string, &string),
     };
 
-
     // replace only replaces the leftmost match, so we need to call it twice.
     Ok(ExSeries::new(
         s1.utf8()?
