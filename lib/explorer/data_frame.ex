@@ -516,7 +516,7 @@ defmodule Explorer.DataFrame do
 
     * `:max_rows` - Maximum number of lines to read. (default: `nil`)
 
-    * `:null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
+    * `:nil_values` - A string or a list of strings that should be interpreted as a nil values. (default: `nil`)
 
     * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
 
@@ -553,7 +553,7 @@ defmodule Explorer.DataFrame do
         encoding: "utf8",
         header: true,
         max_rows: nil,
-        null_character: "NA",
+        nil_values: nil,
         skip_rows: 0,
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
@@ -568,7 +568,7 @@ defmodule Explorer.DataFrame do
         entry,
         check_dtypes!(opts[:dtypes]),
         opts[:delimiter],
-        opts[:null_character],
+        opts[:nil_values],
         opts[:skip_rows],
         opts[:header],
         opts[:encoding],
@@ -611,7 +611,7 @@ defmodule Explorer.DataFrame do
       imputed from the first 1000 rows. (default: `[]`)
     * `:header` - Does the file have a header of column names as the first row or not? (default: `true`)
     * `:max_rows` - Maximum number of lines to read. (default: `nil`)
-    * `:null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
+    * `:nil_values` - A string or a list of strings that should be interpreted as a nil values. (default: `nil`)
     * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
     * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
     * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
@@ -633,7 +633,7 @@ defmodule Explorer.DataFrame do
         encoding: "utf8",
         header: true,
         max_rows: nil,
-        null_character: "NA",
+        nil_values: nil,
         skip_rows: 0,
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
@@ -647,7 +647,7 @@ defmodule Explorer.DataFrame do
       contents,
       check_dtypes!(opts[:dtypes]),
       opts[:delimiter],
-      opts[:null_character],
+      opts[:nil_values],
       opts[:skip_rows],
       opts[:header],
       opts[:encoding],

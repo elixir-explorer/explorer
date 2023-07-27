@@ -56,7 +56,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         %Local.Entry{} = entry,
         dtypes,
         <<delimiter::utf8>>,
-        null_character,
+        nil_values,
         skip_rows,
         header?,
         encoding,
@@ -91,7 +91,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         columns,
         dtypes,
         encoding,
-        null_character,
+        nil_values,
         parse_dates,
         char_byte(eol_delimiter)
       )
@@ -153,7 +153,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         contents,
         dtypes,
         <<delimiter::utf8>>,
-        null_character,
+        nil_values,
         skip_rows,
         header?,
         encoding,
@@ -188,7 +188,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         columns,
         dtypes,
         encoding,
-        null_character,
+        nil_values,
         parse_dates,
         char_byte(eol_delimiter)
       )

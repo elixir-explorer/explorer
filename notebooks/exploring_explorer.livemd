@@ -28,7 +28,7 @@ For CSV, your 'usual suspects' of options are available:
 * `dtypes` - A keyword list of `[column_name: dtype]`. If a type is not specified for a column, it is imputed from the first 1000 rows. (default: `[]`)
 * `header` - Does the file have a header of column names as the first row or not? (default: `true`)
 * `max_rows` - Maximum number of lines to read. (default: `nil`)
-* `null_character` - The string that should be interpreted as a nil value. (default: `"NA"`)
+* `nil_values` - A string or a list of strings that should be interpreted as a nil values. (default: `nil`)
 * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
 * `columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
 
