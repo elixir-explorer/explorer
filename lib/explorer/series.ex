@@ -4355,6 +4355,61 @@ defmodule Explorer.Series do
 
   def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
 
+  @doc """
+  Returns a string sliced from the offset to the end of the string, supporting
+  negative indexing
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.slice_string(s, -3)
+      #Explorer.Series<
+        Polars[3]
+        string ["rth", "ars", "une"]
+      >
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.slice_string(s, 1)
+      #Explorer.Series<
+        Polars[3]
+        string ["arth", "ars", "eptune"]
+      >
+  """
+  @doc type: :string_wise
+  @spec slice_string(Series.t(), integer()) :: Series.t()
+  def slice_string(%Series{dtype: :string} = series, offset) when is_integer(offset),
+    do: apply_series(series, :slice_string, [offset, nil])
+
+  @doc """
+  Returns a string sliced from the offset to the length provided, supporting
+  negative indexing
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.slice_string(s, -3, 2)
+      #Explorer.Series<
+        Polars[3]
+        string ["rt", "ar", "un"]
+      >
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.slice_string(s, 1, 5)
+      #Explorer.Series<
+        Polars[3]
+        string ["arth", "ars", "eptun"]
+      >
+  """
+  @doc type: :string_wise
+  @spec slice_string(Series.t(), integer(), integer()) :: Series.t()
+  def slice_string(%Series{dtype: :string} = series, offset, length)
+      when is_integer(offset)
+      when is_integer(length),
+      do: apply_series(series, :slice_string, [offset, length])
+
+  def slice_string(%Series{dtype: dtype}, _offset, _length),
+    do: dtype_error("slice_string/3", dtype, [:string])
+
   # Float
 
   @doc """

@@ -3980,6 +3980,32 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "string_slicing" do
+    test "string_slice/2 positive offset" do
+      series = Series.from_list(["earth", "mars", "neptune"])
+
+      assert Series.slice_string(series, 2) |> Series.to_list() == ["rth", "rs", "ptune"]
+    end
+
+    test "string_slice/2 negative offset" do
+      series = Series.from_list(["earth", "mars", "neptune"])
+
+      assert Series.slice_string(series, -3) |> Series.to_list() == ["rth", "ars", "une"]
+    end
+
+    test "string_slice/3 positive offset" do
+      series = Series.from_list(["earth", "mars", "neptune"])
+
+      assert Series.slice_string(series, 2, 3) |> Series.to_list() == ["rth", "rs", "ptu"]
+    end
+
+    test "string_slice/3 negative offset" do
+      series = Series.from_list(["earth", "mars", "neptune"])
+
+      assert Series.slice_string(series, -4, 4) |> Series.to_list() == ["arth", "mars", "tune"]
+    end
+  end
+
   describe "strptime/2 and strftime/2" do
     test "parse datetime from string" do
       series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])
