@@ -134,15 +134,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
     raise "S3 is not supported yet"
   end
 
-  def to_csv_writer_sample(%DataFrame{data: df}, path, header?, delimiter) do
-    <<delimiter::utf8>> = delimiter
-
-    case Native.df_to_csv_writer_sample(df, path, header?, delimiter) do
-      {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
-    end
-  end
-
   @impl true
   def dump_csv(%DataFrame{} = df, header?, <<delimiter::utf8>>) do
     Native.df_dump_csv(df.data, header?, delimiter)
@@ -280,12 +271,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_parquet(
-        _df,
-        %S3.Entry{},
-        _compression,
+        %DataFrame{data: df},
+        %S3.Entry{} = entry,
+        {compression, compression_level},
         _streaming
       ) do
-    raise "S3 is not supported yet"
+    case Native.df_to_parquet_cloud(
+           df,
+           entry,
+           parquet_compression(compression, compression_level)
+         ) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true

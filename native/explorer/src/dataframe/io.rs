@@ -1,8 +1,8 @@
 // This file contains the IO functions related to a dataframe.
 // Each format has 8 functions related. They do the following:
 //
-// - dump: dump a dataframe to a string using the given format (like in a CSV string).
-// - load: load a dataframe from a given string (let's say, from a CSV string).
+// - dump: dump a dataframe to a binary/string using the given format (like in a CSV string).
+// - load: load a dataframe from a given binary/string (let's say, from a CSV string).
 // - from: reads a dataframe from a file that is encoded in a given format.
 // - to: writes a dataframe to a file in a given format.
 //
@@ -18,8 +18,9 @@ use std::result::Result;
 use std::sync::Arc;
 
 use crate::dataframe::normalize_numeric_dtypes;
-use crate::datatypes::ExParquetCompression;
+use crate::datatypes::{ExParquetCompression, ExS3Entry};
 use crate::{ExDataFrame, ExplorerError};
+
 // Note that we have two types of "Compression" for IPC: this one and IpcCompresion.
 use polars::export::arrow::io::ipc::write::Compression;
 
@@ -228,6 +229,61 @@ pub fn df_to_parquet(
         .with_compression(compression)
         .finish(&mut data.clone())?;
     Ok(())
+}
+
+#[cfg(feature = "aws")]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_parquet_cloud(
+    data: ExDataFrame,
+    ex_entry: ExS3Entry,
+    ex_compression: ExParquetCompression,
+) -> Result<(), ExplorerError> {
+    use object_store::{aws::AmazonS3Builder, ObjectStore};
+    let config = ex_entry.config;
+    let mut aws_builder = AmazonS3Builder::new()
+        .with_region(config.region)
+        .with_bucket_name(ex_entry.bucket)
+        .with_access_key_id(config.access_key_id)
+        .with_secret_access_key(config.secret_access_key);
+
+    if let Some(endpoint) = config.endpoint {
+        aws_builder = aws_builder.with_allow_http(true).with_endpoint(endpoint);
+    }
+
+    if let Some(token) = config.token {
+        aws_builder = aws_builder.with_token(token);
+    }
+
+    let aws = aws_builder
+        .build()
+        .map_err(object_store_to_explorer_error)?;
+
+    let object_store: Box<dyn ObjectStore> = Box::new(aws);
+    let mut cloud_writer = crate::cloud_writer::CloudWriter::new(object_store, ex_entry.key.into());
+
+    let compression = ParquetCompression::try_from(ex_compression)?;
+
+    ParquetWriter::new(&mut cloud_writer)
+        .with_compression(compression)
+        .finish(&mut data.clone())?;
+    Ok(())
+}
+fn object_store_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
+    ExplorerError::Other(format!("Internal ObjectStore error: #{error:?}"))
+}
+
+#[cfg(not(feature = "aws"))]
+#[rustler::nif]
+pub fn df_to_parquet_cloud(
+    _data: ExDataFrame,
+    _ex_entry: ExS3Entry,
+    _ex_compression: ExParquetCompression,
+) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
+    )))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -483,7 +539,9 @@ pub fn df_from_ndjson(
     _batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON parsing is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 
@@ -491,7 +549,9 @@ pub fn df_from_ndjson(
 #[rustler::nif]
 pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON writing is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 
@@ -499,7 +559,9 @@ pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerE
 #[rustler::nif]
 pub fn df_dump_ndjson(_data: ExDataFrame) -> Result<Binary<'static>, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON dumping is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 
@@ -511,26 +573,8 @@ pub fn df_load_ndjson(
     _batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON loading is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
-}
-
-#[rustler::nif(schedule = "DirtyIo")]
-pub fn df_to_csv_writer_sample(
-    data: ExDataFrame,
-    path: &str,
-    has_headers: bool,
-    delimiter: u8,
-) -> Result<(), ExplorerError> {
-    use object_store::ObjectStore;
-
-    // Hard-coded local file system object store for now:
-    let object_store: Box<dyn ObjectStore> = Box::new(object_store::local::LocalFileSystem::new());
-    let mut cloud_writer = crate::cloud_writer::CloudWriter::new(object_store, path.into());
-
-    CsvWriter::new(&mut cloud_writer)
-        .has_header(has_headers)
-        .with_delimiter(delimiter)
-        .finish(&mut data.clone())?;
-    Ok(())
 }

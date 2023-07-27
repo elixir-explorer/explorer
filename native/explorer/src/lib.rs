@@ -14,7 +14,9 @@ use rustler::{Env, Term};
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+#[cfg(feature = "cloud")]
 mod cloud_writer;
+
 mod dataframe;
 mod datatypes;
 mod encoding;
@@ -119,13 +121,13 @@ rustler::init!(
         df_summarise_with_exprs,
         df_tail,
         df_to_csv,
-        df_to_csv_writer_sample,
         df_to_dummies,
         df_to_ipc,
         df_to_ipc_stream,
         df_to_lazy,
         df_to_ndjson,
         df_to_parquet,
+        df_to_parquet_cloud,
         df_width,
         // expressions
         expr_atom,

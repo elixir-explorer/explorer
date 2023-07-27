@@ -227,4 +227,28 @@ defmodule Explorer.DataFrame.ParquetTest do
       end
     end
   end
+
+  describe "to_parquet/2 - cloud" do
+    setup do
+      [df: Explorer.Datasets.wine()]
+    end
+
+    @tag :cloud_integration
+    test "writes a parquet file to S3", %{df: df} do
+      config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566",
+        region: "us-east-1"
+      }
+
+      path = "s3://test-bucket/test-writes/wine-#{System.monotonic_time()}.parquet"
+
+      assert :ok = DF.to_parquet(df, path, config: config)
+
+      saved_df = DF.from_parquet!(path, config: config)
+
+      assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
+    end
+  end
 end

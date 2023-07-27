@@ -63,7 +63,9 @@ pub fn lf_from_parquet_cloud(
     _columns: Option<Vec<String>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "AWS reads and writes are not enabled for this machine"
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 
@@ -104,7 +106,7 @@ pub fn lf_to_parquet(
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 pub fn lf_from_ipc(filename: &str) -> Result<ExLazyFrame, ExplorerError> {
     let lf = LazyFrame::scan_ipc(filename, Default::default())?;
 
@@ -190,7 +192,7 @@ pub fn lf_from_csv(
     Ok(ExLazyFrame::new(df))
 }
 
-#[cfg(not(any(target_arch = "arm", target_arch = "riscv64")))]
+#[cfg(feature = "ndjson")]
 #[rustler::nif]
 pub fn lf_from_ndjson(
     filename: String,
@@ -205,7 +207,7 @@ pub fn lf_from_ndjson(
     Ok(ExLazyFrame::new(lf))
 }
 
-#[cfg(any(target_arch = "arm", target_arch = "riscv64"))]
+#[cfg(not(feature = "ndjson"))]
 #[rustler::nif]
 pub fn lf_from_ndjson(
     _filename: &str,
@@ -213,6 +215,8 @@ pub fn lf_from_ndjson(
     _batch_size: usize,
 ) -> Result<ExLazyFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON parsing is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }

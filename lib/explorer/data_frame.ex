@@ -785,7 +785,7 @@ defmodule Explorer.DataFrame do
   @doc type: :io
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           :ok | {:error, term()}
-  def to_parquet(df, filename, opts \\ []) do
+  def to_parquet(%DataFrame{} = df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil, streaming: true, config: nil)
     compression = parquet_compression(opts[:compression])
 
