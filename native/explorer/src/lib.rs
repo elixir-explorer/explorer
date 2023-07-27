@@ -124,6 +124,7 @@ rustler::init!(
         df_to_csv_cloud,
         df_to_dummies,
         df_to_ipc,
+        df_to_ipc_cloud,
         df_to_ipc_stream,
         df_to_lazy,
         df_to_ndjson,
