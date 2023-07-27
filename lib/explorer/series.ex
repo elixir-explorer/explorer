@@ -4349,7 +4349,7 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :string_wise
-  @spec trim(Series.t(), String.t()) :: Series.t()
+  @spec trim_leading(Series.t(), String.t()) :: Series.t()
   def trim_leading(%Series{dtype: :string} = series, string) when is_binary(string),
     do: apply_series(series, :trim_leading, [string])
 
@@ -4387,7 +4387,7 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :string_wise
-  @spec trim_trailing(Series.t()) :: Series.t()
+  @spec trim_trailing(Series.t(), String.t()) :: Series.t()
   def trim_trailing(%Series{dtype: :string} = series, string) when is_binary(string),
     do: apply_series(series, :trim_trailing, [string])
 
