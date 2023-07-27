@@ -4272,7 +4272,8 @@ defmodule Explorer.Series do
   def downcase(%Series{dtype: dtype}), do: dtype_error("downcase/1", dtype, [:string])
 
   @doc """
-  Returns a string where all leading and trailing Unicode whitespaces have been removed.
+  Returns a string series  where all leading and trailing Unicode whitespaces
+  have been removed.
 
   ## Examples
 
@@ -4290,7 +4291,7 @@ defmodule Explorer.Series do
     do: apply_series(series, :trim, [nil])
 
   @doc """
-  Returns a string where all leading and trailing examples of the provided string
+  Returns a string series where all leading and trailing examples of the provided string
   have been removed.
 
   ## Examples
@@ -4318,7 +4319,7 @@ defmodule Explorer.Series do
   def trim(%Series{dtype: dtype}, _string), do: dtype_error("trim/2", dtype, [:string])
 
   @doc """
-  Returns a string where all leading Unicode whitespaces have been removed.
+  Returns a string series where all leading Unicode whitespaces have been removed.
 
   ## Examples
 
@@ -4335,7 +4336,8 @@ defmodule Explorer.Series do
     do: apply_series(series, :trim_leading, [nil])
 
   @doc """
-  Returns a string where all leading examples of the provided binary have been removed.
+  Returns a string series where all leading examples of the provided string
+  have been removed.
 
   ## Examples
 
@@ -4355,7 +4357,7 @@ defmodule Explorer.Series do
     do: dtype_error("trim_leading/2", dtype, [:string])
 
   @doc """
-  Returns a string where all trailing Unicode whitespaces have been removed.
+  Returns a string series where all trailing Unicode whitespaces have been removed.
 
   ## Examples
 
@@ -4372,7 +4374,8 @@ defmodule Explorer.Series do
     do: apply_series(series, :trim_trailing, [nil])
 
   @doc """
-  Returns a string where all trailing examples of the provided binary have been removed.
+  Returns a string series where all trailing examples of the provided string
+  have been removed.
 
   ## Examples
 
