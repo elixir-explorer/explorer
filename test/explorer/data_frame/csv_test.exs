@@ -113,6 +113,7 @@ defmodule Explorer.DataFrame.CSVTest do
     end
 
     test "string" do
+      assert_csv(:string, nil, nil)
       assert_csv(:string, "some string", "some string")
       assert_csv(:string, "éphémère", "éphémère")
     end
