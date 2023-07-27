@@ -466,6 +466,28 @@ pub fn df_to_ipc_stream(
     Ok(())
 }
 
+#[cfg(feature = "aws")]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_ipc_stream_cloud(
+    data: ExDataFrame,
+    ex_entry: ExS3Entry,
+    compression: Option<&str>,
+) -> Result<(), ExplorerError> {
+    // Select the compression algorithm.
+    let compression = match compression {
+        Some("lz4") => Some(Compression::LZ4),
+        Some("zstd") => Some(Compression::ZSTD),
+        _ => None,
+    };
+
+    let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
+
+    IpcStreamWriter::new(&mut cloud_writer)
+        .with_compression(compression)
+        .finish(&mut data.clone())?;
+    Ok(())
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_dump_ipc_stream<'a>(
     env: Env<'a>,
@@ -649,6 +671,20 @@ pub fn df_to_csv_cloud(
 #[cfg(not(feature = "aws"))]
 #[rustler::nif]
 pub fn df_to_ipc_cloud(
+    _data: ExDataFrame,
+    _ex_entry: ExS3Entry,
+    _compression: Option<&str>,
+) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
+    )))
+}
+
+#[cfg(not(feature = "aws"))]
+#[rustler::nif]
+pub fn df_to_ipc_stream_cloud(
     _data: ExDataFrame,
     _ex_entry: ExS3Entry,
     _compression: Option<&str>,

@@ -126,6 +126,7 @@ rustler::init!(
         df_to_ipc,
         df_to_ipc_cloud,
         df_to_ipc_stream,
+        df_to_ipc_stream_cloud,
         df_to_lazy,
         df_to_ndjson,
         df_to_parquet,

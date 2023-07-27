@@ -382,8 +382,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_ipc_stream(_df, %S3.Entry{}, _compression) do
-    raise "S3 is not supported yet"
+  def to_ipc_stream(%DataFrame{data: df}, %S3.Entry{} = entry, {compression, _level}) do
+    case Native.df_to_ipc_stream_cloud(df, entry, maybe_atom_to_string(compression)) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true
