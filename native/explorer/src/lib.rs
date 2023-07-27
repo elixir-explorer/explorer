@@ -129,6 +129,7 @@ rustler::init!(
         df_to_ipc_stream_cloud,
         df_to_lazy,
         df_to_ndjson,
+        df_to_ndjson_cloud,
         df_to_parquet,
         df_to_parquet_cloud,
         df_width,

@@ -558,6 +558,17 @@ pub fn df_to_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerErr
     Ok(())
 }
 
+#[cfg(all(feature = "ndjson", feature = "aws"))]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_ndjson_cloud(data: ExDataFrame, ex_entry: ExS3Entry) -> Result<(), ExplorerError> {
+    let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
+
+    JsonWriter::new(&mut cloud_writer)
+        .with_json_format(JsonFormat::JsonLines)
+        .finish(&mut data.clone())?;
+    Ok(())
+}
+
 #[cfg(feature = "ndjson")]
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_dump_ndjson(env: Env, data: ExDataFrame) -> Result<Binary, ExplorerError> {
@@ -692,6 +703,16 @@ pub fn df_to_ipc_stream_cloud(
     Err(ExplorerError::Other(format!(
         "Explorer was compiled without the \"aws\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
+    )))
+}
+
+#[cfg(not(any(feature = "ndjson", feature = "aws")))]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_ndjson_cloud(data: ExDataFrame, ex_entry: ExS3Entry) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "Explorer was compiled without the \"aws\" and \"ndjson\" features enabled. \
+        This is mostly due to these feature being incompatible with your computer's architecture. \
         Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }

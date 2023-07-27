@@ -217,8 +217,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
-  def to_ndjson(_, %S3.Entry{}) do
-    raise "S3 is not supported yet"
+  @impl true
+  def to_ndjson(%DataFrame{data: df}, %S3.Entry{} = entry) do
+    with {:ok, _} <- Native.df_to_ndjson_cloud(df, entry) do
+      :ok
+    end
   end
 
   @impl true
