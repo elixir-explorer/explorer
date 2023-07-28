@@ -281,8 +281,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(_df, %S3.Entry{}, _compression, _streaming) do
-    raise "S3 is not supported yet"
+  def to_parquet(_df, %S3.Entry{}, _compression, _streaming = true) do
+    {:error, ArgumentError.exception("streaming is not supported for writes to AWS S3")}
+  end
+
+  @impl true
+  def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, compression, _streaming = false) do
+    eager_df = collect(ldf)
+
+    Eager.to_parquet(eager_df, entry, compression, false)
   end
 
   @impl true
