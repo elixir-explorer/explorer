@@ -109,6 +109,7 @@ defmodule Explorer.PolarsBackend.Expression do
     cumulative_product: 2,
     window_max: 5,
     window_mean: 5,
+    window_median: 5,
     window_min: 5,
     window_sum: 5,
     window_standard_deviation: 5,
@@ -124,7 +125,8 @@ defmodule Explorer.PolarsBackend.Expression do
     trim_leading: 2,
     trim_trailing: 2,
     downcase: 1,
-    upcase: 1
+    upcase: 1,
+    substring: 3
   ]
 
   @custom_expressions [

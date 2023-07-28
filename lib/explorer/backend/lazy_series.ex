@@ -68,6 +68,7 @@ defmodule Explorer.Backend.LazySeries do
     cumulative_product: 2,
     window_max: 5,
     window_mean: 5,
+    window_median: 5,
     window_min: 5,
     window_sum: 5,
     window_standard_deviation: 5,
@@ -116,6 +117,7 @@ defmodule Explorer.Backend.LazySeries do
     trim: 2,
     upcase: 1,
     downcase: 1,
+    substring: 3,
     # Float round
     round: 2,
     floor: 1,
@@ -155,6 +157,7 @@ defmodule Explorer.Backend.LazySeries do
   @window_fun_operations [
     :window_max,
     :window_mean,
+    :window_median,
     :window_min,
     :window_sum
   ]
@@ -886,6 +889,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def trim_trailing(series, string) do
     data = new(:trim_trailing, [lazy_series!(series), string])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def substring(series, offset, length) do
+    data = new(:substring, [lazy_series!(series), offset, length])
 
     Backend.Series.new(data, :string)
   end

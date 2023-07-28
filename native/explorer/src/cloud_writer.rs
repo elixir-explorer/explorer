@@ -29,6 +29,8 @@ impl CloudWriter {
     /// which bridges the sync writing process with the async ObjectStore multipart uploading.
     pub fn new(object_store: Box<dyn ObjectStore>, path: Path) -> Self {
         let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_time()
+            .enable_io()
             .build()
             .unwrap();
         let (multipart_id, writer) =

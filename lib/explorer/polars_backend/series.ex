@@ -521,6 +521,11 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
+  def window_median(series, window_size, weights, min_periods, center) do
+    window_function(:s_window_median, series, window_size, weights, min_periods, center)
+  end
+
+  @impl true
   def window_min(series, window_size, weights, min_periods, center) do
     window_function(:s_window_min, series, window_size, weights, min_periods, center)
   end
@@ -625,6 +630,10 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def trim_trailing(series, str),
     do: Shared.apply_series(series, :s_trim_trailing, [str])
+
+  @impl true
+  def substring(series, offset, length),
+    do: Shared.apply_series(series, :s_substring, [offset, length])
 
   # Float round
   @impl true

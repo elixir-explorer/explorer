@@ -94,7 +94,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         %Local.Entry{} = entry,
         dtypes,
         <<delimiter::utf8>>,
-        null_character,
+        nil_values,
         skip_rows,
         header?,
         encoding,
@@ -131,7 +131,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         true,
         dtypes,
         encoding,
-        null_character,
+        nil_values,
         parse_dates,
         char_byte(eol_delimiter)
       )
@@ -206,7 +206,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         contents,
         dtypes,
         delimiter,
-        null_character,
+        nil_values,
         skip_rows,
         header?,
         encoding,
@@ -220,7 +220,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
            contents,
            dtypes,
            delimiter,
-           null_character,
+           nil_values,
            skip_rows,
            header?,
            encoding,
@@ -281,8 +281,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(_df, %S3.Entry{}, _compression, _streaming) do
-    raise "S3 is not supported yet"
+  def to_parquet(_df, %S3.Entry{}, _compression, _streaming = true) do
+    {:error, ArgumentError.exception("streaming is not supported for writes to AWS S3")}
+  end
+
+  @impl true
+  def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, compression, _streaming = false) do
+    eager_df = collect(ldf)
+
+    Eager.to_parquet(eager_df, entry, compression, false)
   end
 
   @impl true
@@ -294,8 +301,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_ipc(_df, %S3.Entry{}, _compression, _streaming) do
-    raise "S3 is not supported yet"
+  def to_ipc(_df, %S3.Entry{}, _compression, _streaming = true) do
+    {:error, ArgumentError.exception("streaming is not supported for writes to AWS S3")}
+  end
+
+  @impl true
+  def to_ipc(%DF{} = ldf, %S3.Entry{} = entry, compression, _streaming = false) do
+    eager_df = collect(ldf)
+
+    Eager.to_ipc(eager_df, entry, compression, false)
   end
 
   @impl true

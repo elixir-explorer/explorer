@@ -63,7 +63,9 @@ pub fn lf_from_parquet_cloud(
     _columns: Option<Vec<String>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "AWS reads and writes are not enabled for this machine"
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
 
@@ -104,7 +106,7 @@ pub fn lf_to_parquet(
     }
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 pub fn lf_from_ipc(filename: &str) -> Result<ExLazyFrame, ExplorerError> {
     let lf = LazyFrame::scan_ipc(filename, Default::default())?;
 
@@ -156,21 +158,15 @@ pub fn lf_from_csv(
     skip_rows: usize,
     delimiter_as_byte: u8,
     do_rechunk: bool,
-    dtypes: Option<Vec<(&str, &str)>>,
+    dtypes: Vec<(&str, &str)>,
     encoding: &str,
-    null_char: String,
+    null_vals: Vec<String>,
     parse_dates: bool,
     eol_delimiter: Option<u8>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
         _ => CsvEncoding::Utf8,
-    };
-
-    let schema = match dtypes {
-        Some(dtypes) => Some(schema_from_dtypes_pairs(dtypes)?),
-
-        None => None,
     };
 
     let df = LazyCsvReader::new(filename)
@@ -182,15 +178,15 @@ pub fn lf_from_csv(
         .with_skip_rows(skip_rows)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
-        .with_dtype_overwrite(schema.as_deref())
-        .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
+        .with_dtype_overwrite(Some(schema_from_dtypes_pairs(dtypes)?.as_ref()))
+        .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'))
         .finish()?;
 
     Ok(ExLazyFrame::new(df))
 }
 
-#[cfg(not(any(target_arch = "arm", target_arch = "riscv64")))]
+#[cfg(feature = "ndjson")]
 #[rustler::nif]
 pub fn lf_from_ndjson(
     filename: String,
@@ -205,7 +201,7 @@ pub fn lf_from_ndjson(
     Ok(ExLazyFrame::new(lf))
 }
 
-#[cfg(any(target_arch = "arm", target_arch = "riscv64"))]
+#[cfg(not(feature = "ndjson"))]
 #[rustler::nif]
 pub fn lf_from_ndjson(
     _filename: &str,
@@ -213,6 +209,8 @@ pub fn lf_from_ndjson(
     _batch_size: usize,
 ) -> Result<ExLazyFrame, ExplorerError> {
     Err(ExplorerError::Other(format!(
-        "NDJSON parsing is not enabled for this machine"
+        "Explorer was compiled without the \"ndjson\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }

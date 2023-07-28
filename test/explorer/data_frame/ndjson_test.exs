@@ -209,4 +209,28 @@ defmodule Explorer.DataFrame.NDJSONTest do
              """
     end
   end
+
+  describe "to_ndjson/3 - cloud" do
+    setup do
+      s3_config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566",
+        region: "us-east-1"
+      }
+
+      [df: Explorer.Datasets.wine(), s3_config: s3_config]
+    end
+
+    @tag :cloud_integration
+    test "writes a NDJSON file to S3", %{df: df, s3_config: s3_config} do
+      path = "s3://test-bucket/test-writes/wine-#{System.monotonic_time()}.ndjson"
+
+      assert :ok = DF.to_ndjson(df, path, config: s3_config)
+
+      # When we have the reader, we can activate this assertion.
+      # saved_df = DF.from_ipc!(path, config: config)
+      # assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
+    end
+  end
 end

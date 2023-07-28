@@ -673,6 +673,19 @@ pub fn s_window_mean(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_window_median(
+    series: ExSeries,
+    window_size: usize,
+    weights: Option<Vec<f64>>,
+    min_periods: Option<usize>,
+    center: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let s1 = series.rolling_median(opts.into())?;
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_window_max(
     series: ExSeries,
     window_size: usize,
@@ -1376,6 +1389,17 @@ pub fn s_trim_trailing(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, 
 
     Ok(ExSeries::new(
         s1.utf8()?.replace(pattern.as_str(), "")?.into(),
+    ))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_substring(
+    s1: ExSeries,
+    offset: i64,
+    length: Option<u64>,
+) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(
+        s1.utf8()?.str_slice(offset, length)?.into_series(),
     ))
 }
 
