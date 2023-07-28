@@ -332,7 +332,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_unordered_distinct(_s), do: err()
   def s_frequencies(_s), do: err()
   def s_cut(_s, _bins, _labels, _break_point_label, _category_label), do: err()
-  def s_slice_string(_s, _offset, _length), do: err()
+  def s_substring(_s, _offset, _length), do: err()
 
   def s_qcut(_s, _quantiles, _labels, _break_point_label, _category_label),
     do: err()

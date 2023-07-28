@@ -1519,23 +1519,31 @@ defmodule Explorer.DataFrameTest do
         DF.new(
           a: ["_hello", "_world", "_foo", "_bar"],
           b: ["venus", "earth", "mars", "jupiter"],
-          c: ["_foo", "_bar", "_baz", "_quox"]
+          c: ["_foo", "_bar", "_baz", "_quox"],
+          d: ["_foo", "_bar", "_baz", "_quox"],
+          e: ["_foo", "_bar", "_baz", "_quox"]
         )
 
       df1 =
         DF.mutate(df,
-          d: slice_string(a, 1),
-          e: slice_string(b, 2, 5),
-          f: slice_string(c, -3)
+          f: substring(a, 1),
+          g: substring(b, 2, 5),
+          h: substring(c, -3),
+          i: substring(d, 6, 10),
+          j: substring(e, -15, 2)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: ["_hello", "_world", "_foo", "_bar"],
                b: ["venus", "earth", "mars", "jupiter"],
                c: ["_foo", "_bar", "_baz", "_quox"],
-               d: ["hello", "world", "foo", "bar"],
-               e: ["nus", "rth", "rs", "piter"],
-               f: ["foo", "bar", "baz", "uox"]
+               d: ["_foo", "_bar", "_baz", "_quox"],
+               e: ["_foo", "_bar", "_baz", "_quox"],
+               f: ["hello", "world", "foo", "bar"],
+               g: ["nus", "rth", "rs", "piter"],
+               h: ["foo", "bar", "baz", "uox"],
+               i: ["", "", "", ""],
+               j: ["_f", "_b", "_b", "_q"]
              }
     end
 

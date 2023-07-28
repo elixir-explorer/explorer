@@ -240,7 +240,7 @@ defmodule Explorer.Backend.Series do
   @callback trim(s, String.t() | nil) :: s
   @callback trim_leading(s) :: s
   @callback trim_trailing(s) :: s
-  @callback slice_string(s, integer(), integer()) :: s
+  @callback substring(s, integer(), non_neg_integer() | nil) :: s
 
   # Date / DateTime
 

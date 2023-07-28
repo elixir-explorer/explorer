@@ -627,8 +627,8 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_trim_trailing)
 
   @impl true
-  def slice_string(series, offset, length),
-    do: Shared.apply_series(series, :s_slice_string, [offset, length])
+  def substring(series, offset, length),
+    do: Shared.apply_series(series, :s_substring, [offset, length])
 
   # Float round
   @impl true
