@@ -1550,7 +1550,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "trim characters from string" do
+    test "strip characters from string" do
       df =
         DF.new(
           a: ["£2", "3£", "£200£", "£££20"],
@@ -1559,8 +1559,8 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          c: trim(a, "£"),
-          d: trim(b)
+          c: strip(a, "£"),
+          d: strip(b)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1568,6 +1568,69 @@ defmodule Explorer.DataFrameTest do
                b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
                c: ["2", "3", "200", "20"],
                d: ["sent", "received", "words", "lots of pound signs"]
+             }
+    end
+
+    test "strip multiple characters from string" do
+      df =
+        DF.new(
+          a: ["ababhelloabab", "abababworldabababa", "abab", "bbbbaaaabhelloba"],
+          b: ["nx_hello", "world_nx", "nx_nx_xn", "more_nx"]
+        )
+
+      df1 =
+        DF.mutate(df,
+          c: strip(a, "ab"),
+          d: strip(b, "nx_")
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["ababhelloabab", "abababworldabababa", "abab", "bbbbaaaabhelloba"],
+               b: ["nx_hello", "world_nx", "nx_nx_xn", "more_nx"],
+               c: ["hello", "world", "", "hello"],
+               d: ["hello", "world", "", "more"]
+             }
+    end
+
+    test "strip trailing characters from string" do
+      df =
+        DF.new(
+          a: ["£2", "3£", "£200£", "£££20"],
+          b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
+        )
+
+      df1 =
+        DF.mutate(df,
+          c: rstrip(a, "£"),
+          d: rstrip(b)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["£2", "3£", "£200£", "£££20"],
+               b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
+               c: ["£2", "3", "£200", "£££20"],
+               d: ["   sent", " received", "  words", "lots of pound signs"]
+             }
+    end
+
+    test "strip leading characters from string" do
+      df =
+        DF.new(
+          a: ["£2", "3£", "£200£", "£££20"],
+          b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
+        )
+
+      df1 =
+        DF.mutate(df,
+          c: lstrip(a, "£"),
+          d: lstrip(b)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["£2", "3£", "£200£", "£££20"],
+               b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
+               c: ["2", "3£", "200£", "20"],
+               d: ["sent   ", "received", "words  ", "lots of pound signs    "]
              }
     end
 

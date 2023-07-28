@@ -121,9 +121,9 @@ defmodule Explorer.PolarsBackend.Expression do
 
     # Strings
     contains: 2,
-    trim: 2,
-    trim_leading: 1,
-    trim_trailing: 1,
+    strip: 2,
+    lstrip: 2,
+    rstrip: 2,
     downcase: 1,
     upcase: 1,
     substring: 3

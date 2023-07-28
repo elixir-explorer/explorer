@@ -244,9 +244,9 @@ defmodule Explorer.Backend.Series do
   @callback contains(s, String.t()) :: s
   @callback upcase(s) :: s
   @callback downcase(s) :: s
-  @callback trim(s, String.t() | nil) :: s
-  @callback trim_leading(s) :: s
-  @callback trim_trailing(s) :: s
+  @callback strip(s, String.t() | nil) :: s
+  @callback lstrip(s, String.t() | nil) :: s
+  @callback rstrip(s, String.t() | nil) :: s
   @callback substring(s, integer(), non_neg_integer() | nil) :: s
 
   # Date / DateTime

@@ -1350,7 +1350,7 @@ pub fn s_downcase(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_trim(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
+pub fn s_strip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     let pattern = match pattern {
         None => String::from(r#"^[ \s]+|[ \s]+$"#),
@@ -1358,7 +1358,21 @@ pub fn s_trim(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerE
     };
 
     // replace only replaces the leftmost match, so we need to call it twice.
-    let s1 = ExSeries::new(s1.utf8()?.replace(pattern.as_str(), "")?.into());
+    Ok(ExSeries::new(
+        s1.utf8()?
+            .replace(pattern.as_str(), "")?
+            .replace(pattern.as_str(), "")?
+            .into(),
+    ))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_lstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
+    // There are no eager strip functions.
+    let pattern = match pattern {
+        None => String::from(r#"^[ \s]+"#),
+        Some(string) => format!(r#"^[{}]+"#, &string),
+    };
 
     Ok(ExSeries::new(
         s1.utf8()?.replace(pattern.as_str(), "")?.into(),
@@ -1366,15 +1380,16 @@ pub fn s_trim(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerE
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_trim_leading(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_rstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
-    Ok(ExSeries::new(s1.utf8()?.replace(r#"^[ \s]+"#, "")?.into()))
-}
+    let pattern = match pattern {
+        None => String::from(r#"[ \s]+$"#),
+        Some(string) => format!(r#"[{}]+$"#, &string),
+    };
 
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_trim_trailing(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
-    // There are no eager strip functions.
-    Ok(ExSeries::new(s1.utf8()?.replace(r#"[ \s]+$"#, "")?.into()))
+    Ok(ExSeries::new(
+        s1.utf8()?.replace(pattern.as_str(), "")?.into(),
+    ))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
