@@ -102,4 +102,46 @@ defmodule Explorer.DataFrame.IPCStreamTest do
       assert_ipc_stream(:datetime, "1664624050123456", ~N[2022-10-01 11:34:10.123456])
     end
   end
+
+  describe "to_ipc_stream/3" do
+    setup do
+      [df: Explorer.Datasets.wine()]
+    end
+
+    @tag :tmp_dir
+    test "can write an IPC stream to file", %{df: df, tmp_dir: tmp_dir} do
+      ipc_path = Path.join(tmp_dir, "test.ipcstream")
+
+      assert :ok = DF.to_ipc_stream(df, ipc_path)
+      assert {:ok, ipc_df} = DF.from_ipc_stream(ipc_path)
+
+      assert DF.names(df) == DF.names(ipc_df)
+      assert DF.dtypes(df) == DF.dtypes(ipc_df)
+      assert DF.to_columns(df) == DF.to_columns(ipc_df)
+    end
+  end
+
+  describe "to_ipc_stream/3 - cloud" do
+    setup do
+      s3_config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566",
+        region: "us-east-1"
+      }
+
+      [df: Explorer.Datasets.wine(), s3_config: s3_config]
+    end
+
+    @tag :cloud_integration
+    test "writes an IPC file to S3", %{df: df, s3_config: s3_config} do
+      path = "s3://test-bucket/test-writes/wine-#{System.monotonic_time()}.ipcstream"
+
+      assert :ok = DF.to_ipc_stream(df, path, config: s3_config)
+
+      # When we have the reader, we can activate this assertion.
+      # saved_df = DF.from_ipc!(path, config: config)
+      # assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
+    end
+  end
 end

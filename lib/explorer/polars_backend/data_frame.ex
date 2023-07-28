@@ -130,8 +130,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_csv(_df, %S3.Entry{}, _header?, _delimiter) do
-    raise "S3 is not supported yet"
+  def to_csv(%DataFrame{data: df}, %S3.Entry{} = entry, header?, delimiter) do
+    <<delimiter::utf8>> = delimiter
+
+    case Native.df_to_csv_cloud(df, entry, header?, delimiter) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true
@@ -212,8 +217,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
     end
   end
 
-  def to_ndjson(_, %S3.Entry{}) do
-    raise "S3 is not supported yet"
+  @impl true
+  def to_ndjson(%DataFrame{data: df}, %S3.Entry{} = entry) do
+    with {:ok, _} <- Native.df_to_ndjson_cloud(df, entry) do
+      :ok
+    end
   end
 
   @impl true
@@ -324,20 +332,23 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_ipc(%DataFrame{data: df}, %Local.Entry{} = entry, {compression, _level}, _streaming) do
-    case Native.df_to_ipc(df, entry.path, Atom.to_string(compression)) do
+    case Native.df_to_ipc(df, entry.path, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
   end
 
   @impl true
-  def to_ipc(_df, %S3.Entry{}, _, _) do
-    raise "S3 is not supported yet"
+  def to_ipc(%DataFrame{data: df}, %S3.Entry{} = entry, {compression, _level}, _streaming) do
+    case Native.df_to_ipc_cloud(df, entry, maybe_atom_to_string(compression)) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true
   def dump_ipc(%DataFrame{data: df}, {compression, _level}) do
-    Native.df_dump_ipc(df, Atom.to_string(compression))
+    Native.df_dump_ipc(df, maybe_atom_to_string(compression))
   end
 
   @impl true
@@ -367,20 +378,23 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def to_ipc_stream(%DataFrame{data: df}, %Local.Entry{} = entry, {compression, _level}) do
-    case Native.df_to_ipc_stream(df, entry.path, Atom.to_string(compression)) do
+    case Native.df_to_ipc_stream(df, entry.path, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, error}
     end
   end
 
   @impl true
-  def to_ipc_stream(_df, %S3.Entry{}, _compression) do
-    raise "S3 is not supported yet"
+  def to_ipc_stream(%DataFrame{data: df}, %S3.Entry{} = entry, {compression, _level}) do
+    case Native.df_to_ipc_stream_cloud(df, entry, maybe_atom_to_string(compression)) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, error}
+    end
   end
 
   @impl true
   def dump_ipc_stream(%DataFrame{data: df}, {compression, _level}) do
-    Native.df_dump_ipc_stream(df, Atom.to_string(compression))
+    Native.df_dump_ipc_stream(df, maybe_atom_to_string(compression))
   end
 
   @impl true
@@ -392,6 +406,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
       {:error, error} -> {:error, error}
     end
   end
+
+  defp maybe_atom_to_string(nil), do: nil
+  defp maybe_atom_to_string(atom) when is_atom(atom), do: Atom.to_string(atom)
 
   # Conversion
 

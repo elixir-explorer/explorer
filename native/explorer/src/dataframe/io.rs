@@ -22,7 +22,7 @@ use crate::datatypes::{ExParquetCompression, ExS3Entry};
 use crate::{ExDataFrame, ExplorerError};
 
 // Note that we have two types of "Compression" for IPC: this one and IpcCompresion.
-use polars::export::arrow::io::ipc::write::Compression;
+use polars::export::arrow::io::ipc::write::Compression as IpcStreamCompression;
 
 fn finish_reader<R>(reader: impl SerReader<R>) -> Result<ExDataFrame, ExplorerError>
 where
@@ -119,6 +119,23 @@ pub fn df_to_csv(
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
     CsvWriter::new(&mut buf_writer)
+        .has_header(has_headers)
+        .with_delimiter(delimiter)
+        .finish(&mut data.clone())?;
+    Ok(())
+}
+
+#[cfg(feature = "aws")]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_csv_cloud(
+    data: ExDataFrame,
+    ex_entry: ExS3Entry,
+    has_headers: bool,
+    delimiter: u8,
+) -> Result<(), ExplorerError> {
+    let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
+
+    CsvWriter::new(&mut cloud_writer)
         .has_header(has_headers)
         .with_delimiter(delimiter)
         .finish(&mut data.clone())?;
@@ -238,9 +255,25 @@ pub fn df_to_parquet_cloud(
     ex_entry: ExS3Entry,
     ex_compression: ExParquetCompression,
 ) -> Result<(), ExplorerError> {
-    use object_store::{aws::AmazonS3Builder, ObjectStore};
+    let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
+
+    let compression = ParquetCompression::try_from(ex_compression)?;
+
+    ParquetWriter::new(&mut cloud_writer)
+        .with_compression(compression)
+        .finish(&mut data.clone())?;
+    Ok(())
+}
+fn object_store_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
+    ExplorerError::Other(format!("Internal ObjectStore error: #{error:?}"))
+}
+
+#[cfg(feature = "aws")]
+fn build_aws_s3_cloud_writer(
+    ex_entry: ExS3Entry,
+) -> Result<crate::cloud_writer::CloudWriter, ExplorerError> {
     let config = ex_entry.config;
-    let mut aws_builder = AmazonS3Builder::new()
+    let mut aws_builder = object_store::aws::AmazonS3Builder::new()
         .with_region(config.region)
         .with_bucket_name(ex_entry.bucket)
         .with_access_key_id(config.access_key_id)
@@ -254,36 +287,15 @@ pub fn df_to_parquet_cloud(
         aws_builder = aws_builder.with_token(token);
     }
 
-    let aws = aws_builder
+    let aws_s3 = aws_builder
         .build()
         .map_err(object_store_to_explorer_error)?;
 
-    let object_store: Box<dyn ObjectStore> = Box::new(aws);
-    let mut cloud_writer = crate::cloud_writer::CloudWriter::new(object_store, ex_entry.key.into());
-
-    let compression = ParquetCompression::try_from(ex_compression)?;
-
-    ParquetWriter::new(&mut cloud_writer)
-        .with_compression(compression)
-        .finish(&mut data.clone())?;
-    Ok(())
-}
-fn object_store_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
-    ExplorerError::Other(format!("Internal ObjectStore error: #{error:?}"))
-}
-
-#[cfg(not(feature = "aws"))]
-#[rustler::nif]
-pub fn df_to_parquet_cloud(
-    _data: ExDataFrame,
-    _ex_entry: ExS3Entry,
-    _ex_compression: ExParquetCompression,
-) -> Result<(), ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"aws\" feature enabled. \
-        This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+    let object_store: Box<dyn object_store::ObjectStore> = Box::new(aws_s3);
+    Ok(crate::cloud_writer::CloudWriter::new(
+        object_store,
+        ex_entry.key.into(),
+    ))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -337,16 +349,34 @@ pub fn df_to_ipc(
     filename: &str,
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
-    // Select the compression algorithm.
     let compression = match compression {
-        Some("lz4") => Some(IpcCompression::LZ4),
-        Some("zstd") => Some(IpcCompression::ZSTD),
-        _ => None,
+        Some(algo) => Some(decode_ipc_compression(algo)?),
+        None => None,
     };
 
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
     IpcWriter::new(&mut buf_writer)
+        .with_compression(compression)
+        .finish(&mut data.clone())?;
+    Ok(())
+}
+
+#[cfg(feature = "aws")]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_ipc_cloud(
+    data: ExDataFrame,
+    ex_entry: ExS3Entry,
+    compression: Option<&str>,
+) -> Result<(), ExplorerError> {
+    let compression = match compression {
+        Some(algo) => Some(decode_ipc_compression(algo)?),
+        None => None,
+    };
+
+    let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
+
+    IpcWriter::new(&mut cloud_writer)
         .with_compression(compression)
         .finish(&mut data.clone())?;
     Ok(())
@@ -360,11 +390,9 @@ pub fn df_dump_ipc<'a>(
 ) -> Result<Binary<'a>, ExplorerError> {
     let mut buf = vec![];
 
-    // Select the compression algorithm.
     let compression = match compression {
-        Some("lz4") => Some(IpcCompression::LZ4),
-        Some("zstd") => Some(IpcCompression::ZSTD),
-        _ => None,
+        Some(algo) => Some(decode_ipc_compression(algo)?),
+        None => None,
     };
 
     IpcWriter::new(&mut buf)
@@ -391,6 +419,16 @@ pub fn df_load_ipc(
     finish_reader(reader)
 }
 
+fn decode_ipc_compression(compression: &str) -> Result<IpcCompression, ExplorerError> {
+    match compression {
+        "lz4" => Ok(IpcCompression::LZ4),
+        "zstd" => Ok(IpcCompression::ZSTD),
+        other => Err(ExplorerError::Other(format!(
+            "the algorithm {other} is not supported for IPC compression"
+        ))),
+    }
+}
+
 // ============ IPC Streaming ============ //
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -414,15 +452,33 @@ pub fn df_to_ipc_stream(
     filename: &str,
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
-    // Select the compression algorithm.
     let compression = match compression {
-        Some("lz4") => Some(Compression::LZ4),
-        Some("zstd") => Some(Compression::ZSTD),
-        _ => None,
+        Some(algo) => Some(decode_ipc_stream_compression(algo)?),
+        None => None,
     };
 
-    let mut file = File::create(filename).expect("could not create file");
+    let mut file = File::create(filename)?;
     IpcStreamWriter::new(&mut file)
+        .with_compression(compression)
+        .finish(&mut data.clone())?;
+    Ok(())
+}
+
+#[cfg(feature = "aws")]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_ipc_stream_cloud(
+    data: ExDataFrame,
+    ex_entry: ExS3Entry,
+    compression: Option<&str>,
+) -> Result<(), ExplorerError> {
+    let compression = match compression {
+        Some(algo) => Some(decode_ipc_stream_compression(algo)?),
+        None => None,
+    };
+
+    let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
+
+    IpcStreamWriter::new(&mut cloud_writer)
         .with_compression(compression)
         .finish(&mut data.clone())?;
     Ok(())
@@ -436,11 +492,9 @@ pub fn df_dump_ipc_stream<'a>(
 ) -> Result<Binary<'a>, ExplorerError> {
     let mut buf = vec![];
 
-    // Select the compression algorithm.
     let compression = match compression {
-        Some("lz4") => Some(Compression::LZ4),
-        Some("zstd") => Some(Compression::ZSTD),
-        _ => None,
+        Some(algo) => Some(decode_ipc_stream_compression(algo)?),
+        None => None,
     };
 
     IpcStreamWriter::new(&mut buf)
@@ -465,6 +519,16 @@ pub fn df_load_ipc_stream(
         .with_projection(projection);
 
     finish_reader(reader)
+}
+
+fn decode_ipc_stream_compression(compression: &str) -> Result<IpcStreamCompression, ExplorerError> {
+    match compression {
+        "lz4" => Ok(IpcStreamCompression::LZ4),
+        "zstd" => Ok(IpcStreamCompression::ZSTD),
+        other => Err(ExplorerError::Other(format!(
+            "the algorithm {other} is not supported for IPC stream compression"
+        ))),
+    }
 }
 
 // ============ NDJSON ============ //
@@ -493,6 +557,17 @@ pub fn df_to_ndjson(data: ExDataFrame, filename: &str) -> Result<(), ExplorerErr
     let mut buf_writer = BufWriter::new(file);
 
     JsonWriter::new(&mut buf_writer)
+        .with_json_format(JsonFormat::JsonLines)
+        .finish(&mut data.clone())?;
+    Ok(())
+}
+
+#[cfg(all(feature = "ndjson", feature = "aws"))]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_ndjson_cloud(data: ExDataFrame, ex_entry: ExS3Entry) -> Result<(), ExplorerError> {
+    let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
+
+    JsonWriter::new(&mut cloud_writer)
         .with_json_format(JsonFormat::JsonLines)
         .finish(&mut data.clone())?;
     Ok(())
@@ -575,6 +650,73 @@ pub fn df_load_ndjson(
     Err(ExplorerError::Other(format!(
         "Explorer was compiled without the \"ndjson\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
+    )))
+}
+
+#[cfg(not(feature = "aws"))]
+#[rustler::nif]
+pub fn df_to_parquet_cloud(
+    _data: ExDataFrame,
+    _ex_entry: ExS3Entry,
+    _ex_compression: ExParquetCompression,
+) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
+    )))
+}
+
+#[cfg(not(feature = "aws"))]
+#[rustler::nif]
+pub fn df_to_csv_cloud(
+    data: ExDataFrame,
+    ex_entry: ExS3Entry,
+    has_headers: bool,
+    delimiter: u8,
+) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
+    )))
+}
+
+#[cfg(not(feature = "aws"))]
+#[rustler::nif]
+pub fn df_to_ipc_cloud(
+    _data: ExDataFrame,
+    _ex_entry: ExS3Entry,
+    _compression: Option<&str>,
+) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
+    )))
+}
+
+#[cfg(not(feature = "aws"))]
+#[rustler::nif]
+pub fn df_to_ipc_stream_cloud(
+    _data: ExDataFrame,
+    _ex_entry: ExS3Entry,
+    _compression: Option<&str>,
+) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
+    )))
+}
+
+#[cfg(not(any(feature = "ndjson", feature = "aws")))]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_ndjson_cloud(data: ExDataFrame, ex_entry: ExS3Entry) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other(format!(
+        "Explorer was compiled without the \"aws\" and \"ndjson\" features enabled. \
+        This is mostly due to these feature being incompatible with your computer's architecture. \
         Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
     )))
 }
