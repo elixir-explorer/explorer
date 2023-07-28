@@ -49,7 +49,7 @@ pub fn df_from_csv(
     delimiter_as_byte: u8,
     do_rechunk: bool,
     column_names: Option<Vec<String>>,
-    dtypes: Option<Vec<(&str, &str)>>,
+    dtypes: Vec<(&str, &str)>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,
@@ -58,12 +58,6 @@ pub fn df_from_csv(
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
         _ => CsvEncoding::Utf8,
-    };
-
-    let schema = match dtypes {
-        Some(dtypes) => Some(schema_from_dtypes_pairs(dtypes)?),
-
-        None => None,
     };
 
     let reader = CsvReader::from_path(filename)?
@@ -77,7 +71,7 @@ pub fn df_from_csv(
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
         .with_columns(column_names)
-        .with_dtypes(schema)
+        .with_dtypes(Some(schema_from_dtypes_pairs(dtypes)?))
         .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
 
@@ -174,7 +168,7 @@ pub fn df_load_csv(
     delimiter_as_byte: u8,
     do_rechunk: bool,
     column_names: Option<Vec<String>>,
-    dtypes: Option<Vec<(&str, &str)>>,
+    dtypes: Vec<(&str, &str)>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,
@@ -183,12 +177,6 @@ pub fn df_load_csv(
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
         _ => CsvEncoding::Utf8,
-    };
-
-    let schema = match dtypes {
-        Some(dtypes) => Some(schema_from_dtypes_pairs(dtypes)?),
-
-        None => None,
     };
 
     let cursor = Cursor::new(binary.as_slice());
@@ -204,7 +192,7 @@ pub fn df_load_csv(
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
         .with_columns(column_names)
-        .with_dtypes(schema)
+        .with_dtypes(Some(schema_from_dtypes_pairs(dtypes)?))
         .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
 

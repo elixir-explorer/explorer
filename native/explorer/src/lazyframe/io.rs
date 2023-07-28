@@ -158,7 +158,7 @@ pub fn lf_from_csv(
     skip_rows: usize,
     delimiter_as_byte: u8,
     do_rechunk: bool,
-    dtypes: Option<Vec<(&str, &str)>>,
+    dtypes: Vec<(&str, &str)>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,
@@ -167,12 +167,6 @@ pub fn lf_from_csv(
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
         _ => CsvEncoding::Utf8,
-    };
-
-    let schema = match dtypes {
-        Some(dtypes) => Some(schema_from_dtypes_pairs(dtypes)?),
-
-        None => None,
     };
 
     let df = LazyCsvReader::new(filename)
@@ -184,7 +178,7 @@ pub fn lf_from_csv(
         .with_skip_rows(skip_rows)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
-        .with_dtype_overwrite(schema.as_deref())
+        .with_dtype_overwrite(Some(schema_from_dtypes_pairs(dtypes)?.as_ref()))
         .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'))
         .finish()?;
