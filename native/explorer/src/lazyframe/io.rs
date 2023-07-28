@@ -160,7 +160,7 @@ pub fn lf_from_csv(
     do_rechunk: bool,
     dtypes: Option<Vec<(&str, &str)>>,
     encoding: &str,
-    null_char: String,
+    null_vals: Vec<String>,
     parse_dates: bool,
     eol_delimiter: Option<u8>,
 ) -> Result<ExLazyFrame, ExplorerError> {
@@ -185,7 +185,7 @@ pub fn lf_from_csv(
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
         .with_dtype_overwrite(schema.as_deref())
-        .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
+        .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'))
         .finish()?;
 

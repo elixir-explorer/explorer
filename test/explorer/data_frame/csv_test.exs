@@ -329,7 +329,7 @@ defmodule Explorer.DataFrame.CSVTest do
     end
 
     @tag :tmp_dir
-    test "null_character", config do
+    test "nil_values", config do
       csv =
         tmp_csv(config.tmp_dir, """
         a,b
@@ -338,7 +338,7 @@ defmodule Explorer.DataFrame.CSVTest do
         c,d
         """)
 
-      df = DF.from_csv!(csv, null_character: "n/a")
+      df = DF.from_csv!(csv, nil_values: ["n/a"])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [nil, "nil", "c"],

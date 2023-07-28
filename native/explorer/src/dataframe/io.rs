@@ -51,7 +51,7 @@ pub fn df_from_csv(
     column_names: Option<Vec<String>>,
     dtypes: Option<Vec<(&str, &str)>>,
     encoding: &str,
-    null_char: String,
+    null_vals: Vec<String>,
     parse_dates: bool,
     eol_delimiter: Option<u8>,
 ) -> Result<ExDataFrame, ExplorerError> {
@@ -78,7 +78,7 @@ pub fn df_from_csv(
         .with_encoding(encoding)
         .with_columns(column_names)
         .with_dtypes(schema)
-        .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
+        .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
 
     finish_reader(reader)
@@ -159,7 +159,7 @@ pub fn df_load_csv(
     column_names: Option<Vec<String>>,
     dtypes: Option<Vec<(&str, &str)>>,
     encoding: &str,
-    null_char: String,
+    null_vals: Vec<String>,
     parse_dates: bool,
     eol_delimiter: Option<u8>,
 ) -> Result<ExDataFrame, ExplorerError> {
@@ -188,7 +188,7 @@ pub fn df_load_csv(
         .with_encoding(encoding)
         .with_columns(column_names)
         .with_dtypes(schema)
-        .with_null_values(Some(NullValues::AllColumns(vec![null_char])))
+        .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
 
     finish_reader(reader)
