@@ -4272,7 +4272,7 @@ defmodule Explorer.Series do
   def downcase(%Series{dtype: dtype}), do: dtype_error("downcase/1", dtype, [:string])
 
   @doc """
-  Returns a string series  where all leading and trailing Unicode whitespaces
+  Returns a string series where all leading and trailing Unicode whitespaces
   have been removed.
 
   ## Examples
@@ -4294,20 +4294,22 @@ defmodule Explorer.Series do
   Returns a string series where all leading and trailing examples of the provided string
   have been removed.
 
-  ## Examples
+  Where multiple characters are provided, all combinations of this set of characters will be trimmed
 
-      iex> s = Explorer.Series.from_list(["abc", "adefa", "bcda"])
-      iex> Explorer.Series.trim(s, "a")
-      #Explorer.Series<
-        Polars[3]
-        string ["bc", "def", "bcd"]
-      >
+  ## Examples
 
       iex> s = Explorer.Series.from_list(["£123", "1.00£", "£1.00£"])
       iex> Explorer.Series.trim(s, "£")
       #Explorer.Series<
         Polars[3]
         string ["123", "1.00", "1.00"]
+      >
+
+      iex> s = Explorer.Series.from_list(["abc", "adefa", "bcda"])
+      iex> Explorer.Series.trim(s, "ab")
+      #Explorer.Series<
+        Polars[3]
+        string ["c", "def", "cd"]
       >
 
   """
@@ -4339,6 +4341,7 @@ defmodule Explorer.Series do
   Returns a string series where all leading examples of the provided string
   have been removed.
 
+  Where multiple characters are provided, all combinations of this set of characters will be trimmed
   ## Examples
 
       iex> s = Explorer.Series.from_list(["$1", "$$200$$", "$$$3000$"])
@@ -4346,6 +4349,13 @@ defmodule Explorer.Series do
       #Explorer.Series<
         Polars[3]
         string ["1", "200$$", "3000$"]
+      >
+
+      iex> s = Explorer.Series.from_list(["abc", "adefa", "bcda"])
+      iex> Explorer.Series.trim_leading(s, "ab")
+      #Explorer.Series<
+        Polars[3]
+        string ["c", "defa", "cda"]
       >
   """
   @doc type: :string_wise
@@ -4377,6 +4387,8 @@ defmodule Explorer.Series do
   Returns a string series where all trailing examples of the provided string
   have been removed.
 
+  Where multiple characters are provided, all combinations of this set of characters will be trimmed
+
   ## Examples
 
       iex> s = Explorer.Series.from_list(["__abc__", "def_", "__bcd_"])
@@ -4384,6 +4396,13 @@ defmodule Explorer.Series do
       #Explorer.Series<
         Polars[3]
         string ["__abc", "def", "__bcd"]
+      >
+
+      iex> s = Explorer.Series.from_list(["abc", "adefa", "bcdabaaa"])
+      iex> Explorer.Series.trim_trailing(s, "ab")
+      #Explorer.Series<
+        Polars[3]
+        string ["abc", "adef", "bcd"]
       >
   """
   @doc type: :string_wise

@@ -1535,6 +1535,27 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "trim multiple characters from string" do
+      df =
+        DF.new(
+          a: ["ababhelloabab", "abababworldabababa", "abab", "bbbbaaaabhelloba"],
+          b: ["nx_hello", "world_nx", "nx_nx_xn", "more_nx"]
+        )
+
+      df1 =
+        DF.mutate(df,
+          c: trim(a, "ab"),
+          d: trim(b, "nx_")
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["ababhelloabab", "abababworldabababa", "abab", "bbbbaaaabhelloba"],
+               b: ["nx_hello", "world_nx", "nx_nx_xn", "more_nx"],
+               c: ["hello", "world", "", "hello"],
+               d: ["hello", "world", "", "more"]
+             }
+    end
+
     test "trim trailing characters from string" do
       df =
         DF.new(
