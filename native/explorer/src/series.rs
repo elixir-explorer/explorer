@@ -673,6 +673,19 @@ pub fn s_window_mean(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_window_median(
+    series: ExSeries,
+    window_size: usize,
+    weights: Option<Vec<f64>>,
+    min_periods: Option<usize>,
+    center: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let s1 = series.rolling_median(opts.into())?;
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_window_max(
     series: ExSeries,
     window_size: usize,

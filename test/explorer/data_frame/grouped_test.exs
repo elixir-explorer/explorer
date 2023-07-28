@@ -548,13 +548,14 @@ defmodule Explorer.DataFrame.GroupedTest do
           [
             b: Series.window_max(a, 2, weights: [1.0, 2.0]),
             c: Series.window_mean(a, 2, weights: [0.25, 0.75]),
-            d: Series.window_min(a, 2, weights: [1.0, 2.0]),
-            e: Series.window_sum(a, 2, weights: [1.0, 2.0]),
-            f: Series.cumulative_max(a),
-            g: Series.cumulative_min(a),
-            h: Series.cumulative_sum(a),
-            i: Series.cumulative_max(a, reverse: true),
-            j: Series.window_standard_deviation(a, 2)
+            d: Series.window_median(a, 2, weights: [0.25, 0.75]),
+            e: Series.window_min(a, 2, weights: [1.0, 2.0]),
+            f: Series.window_sum(a, 2, weights: [1.0, 2.0]),
+            g: Series.cumulative_max(a),
+            h: Series.cumulative_min(a),
+            i: Series.cumulative_sum(a),
+            j: Series.cumulative_max(a, reverse: true),
+            k: Series.window_standard_deviation(a, 2)
           ]
         end)
 
@@ -562,13 +563,14 @@ defmodule Explorer.DataFrame.GroupedTest do
                a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                b: [1.0, 4.0, 6.0, 8.0, 10.0, 6, 14.0, 16.0, 18.0, 20.0],
                c: [0.25, 1.75, 2.75, 3.75, 4.75, 1.5, 6.75, 7.75, 8.75, 9.75],
-               d: [1.0, 1.0, 2.0, 3.0, 4.0, 6.0, 6.0, 7.0, 8.0, 9.0],
-               e: [1.0, 5.0, 8.0, 11.0, 14.0, 6.0, 20.0, 23.0, 26.0, 29.0],
-               f: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-               g: [1, 1, 1, 1, 1, 6, 6, 6, 6, 6],
-               h: [1, 3, 6, 10, 15, 6, 13, 21, 30, 40],
-               i: [5, 5, 5, 5, 5, 10, 10, 10, 10, 10],
-               j: [
+               d: [2.0, 1.5, 2.5, 3.5, 4.5, 12.0, 6.5, 7.5, 8.5, 9.5],
+               e: [1.0, 1.0, 2.0, 3.0, 4.0, 6.0, 6.0, 7.0, 8.0, 9.0],
+               f: [1.0, 5.0, 8.0, 11.0, 14.0, 6.0, 20.0, 23.0, 26.0, 29.0],
+               g: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+               h: [1, 1, 1, 1, 1, 6, 6, 6, 6, 6],
+               i: [1, 3, 6, 10, 15, 6, 13, 21, 30, 40],
+               j: [5, 5, 5, 5, 5, 10, 10, 10, 10, 10],
+               k: [
                  0.0,
                  0.7071067811865476,
                  0.7071067811865476,

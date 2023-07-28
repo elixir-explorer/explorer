@@ -199,6 +199,13 @@ defmodule Explorer.Backend.Series do
               min_periods :: integer() | nil,
               center :: boolean()
             ) :: s
+  @callback window_median(
+              s,
+              window_size :: integer(),
+              weights :: [float()] | nil,
+              min_periods :: integer() | nil,
+              center :: boolean()
+            ) :: s
   @callback window_standard_deviation(
               s,
               window_size :: integer(),

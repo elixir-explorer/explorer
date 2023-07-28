@@ -68,6 +68,7 @@ defmodule Explorer.Backend.LazySeries do
     cumulative_product: 2,
     window_max: 5,
     window_mean: 5,
+    window_median: 5,
     window_min: 5,
     window_sum: 5,
     window_standard_deviation: 5,
@@ -155,6 +156,7 @@ defmodule Explorer.Backend.LazySeries do
   @window_fun_operations [
     :window_max,
     :window_mean,
+    :window_median,
     :window_min,
     :window_sum
   ]

@@ -3851,6 +3851,46 @@ defmodule Explorer.Series do
     do: apply_series(series, :window_mean, [window_size | window_args(opts)])
 
   @doc """
+  Calculate the rolling median, given a window size and optional list of weights.
+
+  ## Options
+
+    * `:weights` - An optional list of weights with the same length as the window
+      that will be multiplied elementwise with the values in the window. Defaults to `nil`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. If `nil`, it will be set equal to window size. Defaults to `1`.
+
+    * `:center` - Set the labels at the center of the window. Defaults to `false`.
+
+  ## Examples
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.window_median(s, 4)
+      #Explorer.Series<
+        Polars[10]
+        float [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.window_median(s, 2, weights: [0.25, 0.75])
+      #Explorer.Series<
+        Polars[10]
+        float [2.0, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.window_median(s, 2, weights: [0.25, 0.75], min_periods: nil)
+      #Explorer.Series<
+        Polars[10]
+        float [nil, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+      >
+  """
+  @doc type: :window
+  def window_median(series, window_size, opts \\ []),
+    do: apply_series(series, :window_median, [window_size | window_args(opts)])
+
+  @doc """
   Calculate the rolling min, given a window size and optional list of weights.
 
   ## Options
