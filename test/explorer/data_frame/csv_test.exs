@@ -113,6 +113,7 @@ defmodule Explorer.DataFrame.CSVTest do
     end
 
     test "string" do
+      assert_csv(:string, nil, nil)
       assert_csv(:string, "some string", "some string")
       assert_csv(:string, "éphémère", "éphémère")
     end
@@ -328,7 +329,7 @@ defmodule Explorer.DataFrame.CSVTest do
     end
 
     @tag :tmp_dir
-    test "null_character", config do
+    test "nil_values", config do
       csv =
         tmp_csv(config.tmp_dir, """
         a,b
@@ -337,7 +338,7 @@ defmodule Explorer.DataFrame.CSVTest do
         c,d
         """)
 
-      df = DF.from_csv!(csv, null_character: "n/a")
+      df = DF.from_csv!(csv, nil_values: ["n/a"])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [nil, "nil", "c"],
@@ -476,6 +477,48 @@ defmodule Explorer.DataFrame.CSVTest do
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [0.1, :nan, 4.2, :infinity, :neg_infinity, 8.1]
              }
+    end
+  end
+
+  describe "to_csv/3" do
+    setup do
+      [df: Explorer.Datasets.wine()]
+    end
+
+    @tag :tmp_dir
+    test "can write a CSV to file", %{df: df, tmp_dir: tmp_dir} do
+      csv_path = Path.join(tmp_dir, "test.csv")
+
+      assert :ok = DF.to_csv(df, csv_path)
+      assert {:ok, csv_df} = DF.from_csv(csv_path)
+
+      assert DF.names(df) == DF.names(csv_df)
+      assert DF.dtypes(df) == DF.dtypes(csv_df)
+      assert DF.to_columns(df) == DF.to_columns(csv_df)
+    end
+  end
+
+  describe "to_csv/3 - cloud" do
+    setup do
+      [df: Explorer.Datasets.wine()]
+    end
+
+    @tag :cloud_integration
+    test "writes a CSV file to S3", %{df: df} do
+      config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566",
+        region: "us-east-1"
+      }
+
+      path = "s3://test-bucket/test-writes/wine-#{System.monotonic_time()}.csv"
+
+      assert :ok = DF.to_csv(df, path, config: config)
+
+      # When we have the reader, we can activate this assertion.
+      # saved_df = DF.from_csv!(path, config: config)
+      # assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
     end
   end
 end

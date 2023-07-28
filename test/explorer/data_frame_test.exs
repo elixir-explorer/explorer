@@ -1151,16 +1151,17 @@ defmodule Explorer.DataFrameTest do
         DF.mutate(df,
           b: window_max(a, 2, weights: [1.0, 2.0]),
           c: window_mean(a, 2, weights: [0.25, 0.75]),
-          d: window_min(a, 2, weights: [1.0, 2.0]),
-          e: window_sum(a, 2, weights: [1.0, 2.0]),
-          f: cumulative_max(a),
-          g: cumulative_min(a),
-          h: cumulative_sum(a),
-          i: cumulative_max(a, reverse: true),
-          j: ewm_mean(a),
-          k: cumulative_product(a),
-          l: abs(a),
-          m: window_standard_deviation(a, 2)
+          d: window_median(a, 2, weights: [0.25, 0.75]),
+          e: window_min(a, 2, weights: [1.0, 2.0]),
+          f: window_sum(a, 2, weights: [1.0, 2.0]),
+          g: window_standard_deviation(a, 2),
+          h: ewm_mean(a),
+          p: cumulative_max(a),
+          q: cumulative_min(a),
+          r: cumulative_sum(a),
+          s: cumulative_max(a, reverse: true),
+          t: cumulative_product(a),
+          z: abs(a)
         )
 
       assert df1.dtypes == %{
@@ -1169,27 +1170,37 @@ defmodule Explorer.DataFrameTest do
                "c" => :float,
                "d" => :float,
                "e" => :float,
-               "f" => :integer,
-               "g" => :integer,
-               "h" => :integer,
-               "i" => :integer,
-               "j" => :float,
-               "k" => :integer,
-               "l" => :float,
-               "m" => :float
+               "f" => :float,
+               "g" => :float,
+               "h" => :float,
+               "p" => :integer,
+               "q" => :integer,
+               "r" => :integer,
+               "s" => :integer,
+               "t" => :integer,
+               "z" => :float
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                b: [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
                c: [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75],
-               d: [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
-               e: [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0],
-               f: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-               g: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-               h: [1, 3, 6, 10, 15, 21, 28, 36, 45, 55],
-               i: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
-               j: [
+               d: [2.0, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5],
+               e: [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
+               f: [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0],
+               g: [
+                 0.0,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476,
+                 0.7071067811865476
+               ],
+               h: [
                  1.0,
                  1.6666666666666667,
                  2.4285714285714284,
@@ -1201,20 +1212,12 @@ defmodule Explorer.DataFrameTest do
                  8.017612524461839,
                  9.009775171065494
                ],
-               k: [1, 2, 6, 24, 120, 720, 5040, 40320, 362_880, 3_628_800],
-               l: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
-               m: [
-                 0.0,
-                 0.7071067811865476,
-                 0.7071067811865476,
-                 0.7071067811865476,
-                 0.7071067811865476,
-                 0.7071067811865476,
-                 0.7071067811865476,
-                 0.7071067811865476,
-                 0.7071067811865476,
-                 0.7071067811865476
-               ]
+               p: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+               q: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+               r: [1, 3, 6, 10, 15, 21, 28, 36, 45, 55],
+               s: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+               t: [1, 2, 6, 24, 120, 720, 5040, 40320, 362_880, 3_628_800],
+               z: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
              }
     end
 
@@ -1512,6 +1515,39 @@ defmodule Explorer.DataFrameTest do
       assert_raise ArgumentError, error, fn ->
         DF.mutate(df, b: ^series)
       end
+    end
+
+    test "slice strings" do
+      df =
+        DF.new(
+          a: ["_hello", "_world", "_foo", "_bar"],
+          b: ["venus", "earth", "mars", "jupiter"],
+          c: ["_foo", "_bar", "_baz", "_quox"],
+          d: ["_foo", "_bar", "_baz", "_quox"],
+          e: ["_foo", "_bar", "_baz", "_quox"]
+        )
+
+      df1 =
+        DF.mutate(df,
+          f: substring(a, 1),
+          g: substring(b, 2, 5),
+          h: substring(c, -3),
+          i: substring(d, 6, 10),
+          j: substring(e, -15, 2)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["_hello", "_world", "_foo", "_bar"],
+               b: ["venus", "earth", "mars", "jupiter"],
+               c: ["_foo", "_bar", "_baz", "_quox"],
+               d: ["_foo", "_bar", "_baz", "_quox"],
+               e: ["_foo", "_bar", "_baz", "_quox"],
+               f: ["hello", "world", "foo", "bar"],
+               g: ["nus", "rth", "rs", "piter"],
+               h: ["foo", "bar", "baz", "uox"],
+               i: ["", "", "", ""],
+               j: ["_f", "_b", "_b", "_q"]
+             }
     end
 
     test "trim characters from string" do

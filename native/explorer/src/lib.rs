@@ -14,7 +14,9 @@ use rustler::{Env, Term};
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+#[cfg(feature = "cloud")]
 mod cloud_writer;
+
 mod dataframe;
 mod datatypes;
 mod encoding;
@@ -119,13 +121,17 @@ rustler::init!(
         df_summarise_with_exprs,
         df_tail,
         df_to_csv,
-        df_to_csv_writer_sample,
+        df_to_csv_cloud,
         df_to_dummies,
         df_to_ipc,
+        df_to_ipc_cloud,
         df_to_ipc_stream,
+        df_to_ipc_stream_cloud,
         df_to_lazy,
         df_to_ndjson,
+        df_to_ndjson_cloud,
         df_to_parquet,
+        df_to_parquet_cloud,
         df_width,
         // expressions
         expr_atom,
@@ -231,6 +237,7 @@ rustler::init!(
         expr_cumulative_product,
         expr_window_max,
         expr_window_mean,
+        expr_window_median,
         expr_window_min,
         expr_window_sum,
         expr_window_standard_deviation,
@@ -244,6 +251,7 @@ rustler::init!(
         expr_trim,
         expr_trim_leading,
         expr_trim_trailing,
+        expr_substring,
         // float round expressions
         expr_round,
         expr_floor,
@@ -396,6 +404,7 @@ rustler::init!(
         s_standard_deviation,
         s_tan,
         s_trim,
+        s_substring,
         s_subtract,
         s_sum,
         s_tail,
@@ -410,6 +419,7 @@ rustler::init!(
         s_variance,
         s_window_max,
         s_window_mean,
+        s_window_median,
         s_window_min,
         s_window_sum,
         s_window_standard_deviation,

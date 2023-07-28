@@ -59,7 +59,7 @@ defmodule Explorer.PolarsBackend.Native do
         _columns,
         _dtypes,
         _encoding,
-        _null_char,
+        _nil_vals,
         _parse_dates,
         _eol_delimiter
       ),
@@ -95,7 +95,7 @@ defmodule Explorer.PolarsBackend.Native do
         _columns,
         _dtypes,
         _encoding,
-        _null_char,
+        _nil_vals,
         _parse_dates,
         _eol_delimiter
       ),
@@ -126,13 +126,17 @@ defmodule Explorer.PolarsBackend.Native do
   def df_summarise_with_exprs(_df, _groups_exprs, _aggs_pairs), do: err()
   def df_tail(_df, _length, _groups), do: err()
   def df_to_csv(_df, _filename, _has_headers, _delimiter), do: err()
-  def df_to_csv_writer_sample(_df, _path, _has_headers, _delimiter), do: err()
+  def df_to_csv_cloud(_df, _ex_entry, _has_headers, _delimiter), do: err()
   def df_to_dummies(_df, _columns), do: err()
   def df_to_ipc(_df, _filename, _compression), do: err()
+  def df_to_ipc_cloud(_df, _ex_entry, _compression), do: err()
   def df_to_ipc_stream(_df, _filename, _compression), do: err()
+  def df_to_ipc_stream_cloud(_df, _ex_entry, _compression), do: err()
   def df_to_lazy(_df), do: err()
   def df_to_ndjson(_df, _filename), do: err()
+  def df_to_ndjson_cloud(_df, _ex_entry), do: err()
   def df_to_parquet(_df, _filename, _compression), do: err()
+  def df_to_parquet_cloud(_df, _ex_entry, _compression), do: err()
   def df_width(_df), do: err()
   def df_describe(_df, _percentiles), do: err()
   def df_nil_count(_df), do: err()
@@ -191,7 +195,7 @@ defmodule Explorer.PolarsBackend.Native do
         _rechunk,
         _dtypes,
         _encoding,
-        _null_char,
+        _nil_vals,
         _parse_dates,
         _eol_delimiter
       ),
@@ -332,6 +336,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_unordered_distinct(_s), do: err()
   def s_frequencies(_s), do: err()
   def s_cut(_s, _bins, _labels, _break_point_label, _category_label), do: err()
+  def s_substring(_s, _offset, _length), do: err()
 
   def s_qcut(_s, _quantiles, _labels, _break_point_label, _category_label),
     do: err()
@@ -339,6 +344,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_variance(_s), do: err()
   def s_window_max(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_mean(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
+  def s_window_median(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_min(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_sum(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
 

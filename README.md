@@ -240,6 +240,35 @@ mix localstack.setup
 mix test --only cloud_integration
 ```
 
+## Precompilation
+
+Explorer ships with the NIF code precompiled for the most popular architectures out there.
+We support the following:
+
+- `aarch64-apple-darwin` - MacOS running on ARM 64 bits CPUs.
+- `aarch64-unknown-linux-gnu` - Linux running on ARM 64 bits CPUs, compiled with GCC.
+- `aarch64-unknown-linux-musl` - Linux running on ARM 64 bits CPUs, compiled with Musl.
+- `riscv64gc-unknown-linux-gnu` - Linux running on RISCV 64 bits CPUs, compiled with GCC.
+- `x86_64-apple-darwin` - MacOS running on Intel/AMD 64 bits CPUs.
+- `x86_64-pc-windows-msvc` - Windows running on Intel/AMD 64 bits CPUs, compiled with Visual C++.
+- `x86_64-pc-windows-gnu` - Windows running on Intel/AMD 64 bits CPUs, compiled with GCC.
+- `x86_64-unknown-linux-gnu` - Linux running on Intel/AMD 64 bits CPUs, compiled with GCC.
+- `x86_64-unknown-linux-musl` - Linux running on Intel/AMD 64 bits CPUs, compiled with Musl.
+- `x86_64-unknown-freebsd` - FreeBSD running on Intel/AMD 64 bits.
+
+This means that the problem is going to work without the need to compile it from source.
+This currently **only works for Hex releases**. For more information on how it works, please
+check the [RustlerPrecompiled project](https://hexdocs.pm/rustler_precompiled).
+
+### Features disabled
+
+Some of the features cannot be compiled to some targets, because one of the dependencies
+don't work on it.
+
+This is the case for the **NDJSON** reads and writes, that don't work for the RISCV target.
+We also disable the AWS S3 reads and writes for the RISCV target, because one of the dependencies
+of `ObjectStore` does not compile on it.
+
 ## Sponsors
 
 <a href="https://amplified.ai"><img src="sponsors/amplified.png" width=100 alt="Amplified"></a>

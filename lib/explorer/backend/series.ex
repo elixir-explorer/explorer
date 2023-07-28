@@ -199,6 +199,13 @@ defmodule Explorer.Backend.Series do
               min_periods :: integer() | nil,
               center :: boolean()
             ) :: s
+  @callback window_median(
+              s,
+              window_size :: integer(),
+              weights :: [float()] | nil,
+              min_periods :: integer() | nil,
+              center :: boolean()
+            ) :: s
   @callback window_standard_deviation(
               s,
               window_size :: integer(),
@@ -240,6 +247,7 @@ defmodule Explorer.Backend.Series do
   @callback trim(s, String.t() | nil) :: s
   @callback trim_leading(s, String.t() | nil) :: s
   @callback trim_trailing(s, String.t() | nil) :: s
+  @callback substring(s, integer(), non_neg_integer() | nil) :: s
 
   # Date / DateTime
 

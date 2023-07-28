@@ -607,6 +607,7 @@ init_window_expr_fun!(expr_window_max, rolling_max);
 init_window_expr_fun!(expr_window_min, rolling_min);
 init_window_expr_fun!(expr_window_sum, rolling_sum);
 init_window_expr_fun!(expr_window_mean, rolling_mean);
+init_window_expr_fun!(expr_window_median, rolling_median);
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn expr_window_standard_deviation(
@@ -762,6 +763,12 @@ pub fn expr_trim_leading(expr: ExExpr, string: Option<String>) -> ExExpr {
 pub fn expr_trim_trailing(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().rstrip(string))
+}
+
+#[rustler::nif]
+pub fn expr_substring(expr: ExExpr, offset: i64, length: Option<u64>) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().str_slice(offset, length))
 }
 
 #[rustler::nif]

@@ -3851,6 +3851,46 @@ defmodule Explorer.Series do
     do: apply_series(series, :window_mean, [window_size | window_args(opts)])
 
   @doc """
+  Calculate the rolling median, given a window size and optional list of weights.
+
+  ## Options
+
+    * `:weights` - An optional list of weights with the same length as the window
+      that will be multiplied elementwise with the values in the window. Defaults to `nil`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. If `nil`, it will be set equal to window size. Defaults to `1`.
+
+    * `:center` - Set the labels at the center of the window. Defaults to `false`.
+
+  ## Examples
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.window_median(s, 4)
+      #Explorer.Series<
+        Polars[10]
+        float [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.window_median(s, 2, weights: [0.25, 0.75])
+      #Explorer.Series<
+        Polars[10]
+        float [2.0, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+      >
+
+      iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.window_median(s, 2, weights: [0.25, 0.75], min_periods: nil)
+      #Explorer.Series<
+        Polars[10]
+        float [nil, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+      >
+  """
+  @doc type: :window
+  def window_median(series, window_size, opts \\ []),
+    do: apply_series(series, :window_median, [window_size | window_args(opts)])
+
+  @doc """
   Calculate the rolling min, given a window size and optional list of weights.
 
   ## Options
@@ -4393,6 +4433,69 @@ defmodule Explorer.Series do
 
   def trim_trailing(%Series{dtype: dtype}, _string),
     do: dtype_error("trim_trailing/2", dtype, [:string])
+
+  @doc """
+  Returns a string sliced from the offset to the end of the string, supporting
+  negative indexing
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.substring(s, -3)
+      #Explorer.Series<
+        Polars[3]
+        string ["rth", "ars", "une"]
+      >
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.substring(s, 1)
+      #Explorer.Series<
+        Polars[3]
+        string ["arth", "ars", "eptune"]
+      >
+  """
+  @doc type: :string_wise
+  @spec substring(Series.t(), integer()) :: Series.t()
+  def substring(%Series{dtype: :string} = series, offset) when is_integer(offset),
+    do: apply_series(series, :substring, [offset, nil])
+
+  @doc """
+  Returns a string sliced from the offset to the length provided, supporting
+  negative indexing
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.substring(s, -3, 2)
+      #Explorer.Series<
+        Polars[3]
+        string ["rt", "ar", "un"]
+      >
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.substring(s, 1, 5)
+      #Explorer.Series<
+        Polars[3]
+        string ["arth", "ars", "eptun"]
+      >
+
+      iex> d = Explorer.Series.from_list(["こんにちは世界", "مرحبًا", "안녕하세요"])
+      iex> Explorer.Series.substring(d, 1, 3)
+      #Explorer.Series<
+        Polars[3]
+        string ["んにち", "رحب", "녕하세"]
+      >
+  """
+  @doc type: :string_wise
+  @spec substring(Series.t(), integer(), integer()) :: Series.t()
+  def substring(%Series{dtype: :string} = series, offset, length)
+      when is_integer(offset)
+      when is_integer(length)
+      when length >= 0,
+      do: apply_series(series, :substring, [offset, length])
+
+  def substring(%Series{dtype: dtype}, _offset, _length),
+    do: dtype_error("substring/3", dtype, [:string])
 
   # Float
 

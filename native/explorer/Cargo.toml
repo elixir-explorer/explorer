@@ -19,9 +19,11 @@ rand_pcg = "0.3"
 rustler = { version = "0.29", default-features = false, features = ["derive"] }
 thiserror = "1"
 smartstring = "1"
-tokio = { version = "1.29.1", features = ["rt"] }
-tokio-util = { version = "0.7.8", features = ["io", "io-util"] }
-object_store = "0.6.1"
+
+# Deps necessary for cloud features.
+tokio = { version = "1.29", default-features = false, features = ["rt"], optional = true }
+tokio-util = { version = "0.7", default-features = false, features = ["io", "io-util"], optional = true }
+object_store = { version = "0.6", default-features = false, optional = true }
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
@@ -79,7 +81,7 @@ version = "0.31"
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
 
-cloud = ["aws"]
+cloud = ["object_store", "tokio", "tokio-util", "aws"]
 ndjson = ["polars/json"]
 aws = ["polars/async", "polars/aws"]
 
