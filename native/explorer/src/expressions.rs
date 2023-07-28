@@ -748,19 +748,19 @@ pub fn expr_downcase(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_trim(expr: ExExpr, string: Option<String>) -> ExExpr {
+pub fn expr_strip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().strip(string))
 }
 
 #[rustler::nif]
-pub fn expr_trim_leading(expr: ExExpr, string: Option<String>) -> ExExpr {
+pub fn expr_lstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().lstrip(string))
 }
 
 #[rustler::nif]
-pub fn expr_trim_trailing(expr: ExExpr, string: Option<String>) -> ExExpr {
+pub fn expr_rstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().rstrip(string))
 }

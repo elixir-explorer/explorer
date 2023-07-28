@@ -4318,7 +4318,7 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd   "])
-      iex> Explorer.Series.trim(s)
+      iex> Explorer.Series.strip(s)
       #Explorer.Series<
         Polars[3]
         string ["abc", "def", "bcd"]
@@ -4326,27 +4326,27 @@ defmodule Explorer.Series do
 
   """
   @doc type: :string_wise
-  @spec trim(Series.t()) :: Series.t()
-  def trim(%Series{dtype: :string} = series),
-    do: apply_series(series, :trim, [nil])
+  @spec strip(Series.t()) :: Series.t()
+  def strip(%Series{dtype: :string} = series),
+    do: apply_series(series, :strip, [nil])
 
   @doc """
   Returns a string series where all leading and trailing examples of the provided string
   have been removed.
 
-  Where multiple characters are provided, all combinations of this set of characters will be trimmed
+  Where multiple characters are provided, all combinations of this set of characters will be stripped
 
   ## Examples
 
       iex> s = Explorer.Series.from_list(["£123", "1.00£", "£1.00£"])
-      iex> Explorer.Series.trim(s, "£")
+      iex> Explorer.Series.strip(s, "£")
       #Explorer.Series<
         Polars[3]
         string ["123", "1.00", "1.00"]
       >
 
       iex> s = Explorer.Series.from_list(["abc", "adefa", "bcda"])
-      iex> Explorer.Series.trim(s, "ab")
+      iex> Explorer.Series.strip(s, "ab")
       #Explorer.Series<
         Polars[3]
         string ["c", "def", "cd"]
@@ -4354,11 +4354,11 @@ defmodule Explorer.Series do
 
   """
   @doc type: :string_wise
-  @spec trim(Series.t(), String.t()) :: Series.t()
-  def trim(%Series{dtype: :string} = series, string) when is_binary(string),
-    do: apply_series(series, :trim, [string])
+  @spec strip(Series.t(), String.t()) :: Series.t()
+  def strip(%Series{dtype: :string} = series, string) when is_binary(string),
+    do: apply_series(series, :strip, [string])
 
-  def trim(%Series{dtype: dtype}, _string), do: dtype_error("trim/2", dtype, [:string])
+  def strip(%Series{dtype: dtype}, _string), do: dtype_error("strip/2", dtype, [:string])
 
   @doc """
   Returns a string series where all leading Unicode whitespaces have been removed.
@@ -4366,45 +4366,45 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd"])
-      iex> Explorer.Series.trim_leading(s)
+      iex> Explorer.Series.lstrip(s)
       #Explorer.Series<
         Polars[3]
         string ["abc", "def  ", "bcd"]
       >
   """
   @doc type: :string_wise
-  @spec trim_leading(Series.t()) :: Series.t()
-  def trim_leading(%Series{dtype: :string} = series),
-    do: apply_series(series, :trim_leading, [nil])
+  @spec lstrip(Series.t()) :: Series.t()
+  def lstrip(%Series{dtype: :string} = series),
+    do: apply_series(series, :lstrip, [nil])
 
   @doc """
   Returns a string series where all leading examples of the provided string
   have been removed.
 
-  Where multiple characters are provided, all combinations of this set of characters will be trimmed
+  Where multiple characters are provided, all combinations of this set of characters will be stripped
   ## Examples
 
       iex> s = Explorer.Series.from_list(["$1", "$$200$$", "$$$3000$"])
-      iex> Explorer.Series.trim_leading(s, "$")
+      iex> Explorer.Series.lstrip(s, "$")
       #Explorer.Series<
         Polars[3]
         string ["1", "200$$", "3000$"]
       >
 
       iex> s = Explorer.Series.from_list(["abc", "adefa", "bcda"])
-      iex> Explorer.Series.trim_leading(s, "ab")
+      iex> Explorer.Series.lstrip(s, "ab")
       #Explorer.Series<
         Polars[3]
         string ["c", "defa", "cda"]
       >
   """
   @doc type: :string_wise
-  @spec trim_leading(Series.t(), String.t()) :: Series.t()
-  def trim_leading(%Series{dtype: :string} = series, string) when is_binary(string),
-    do: apply_series(series, :trim_leading, [string])
+  @spec lstrip(Series.t(), String.t()) :: Series.t()
+  def lstrip(%Series{dtype: :string} = series, string) when is_binary(string),
+    do: apply_series(series, :lstrip, [string])
 
-  def trim_leading(%Series{dtype: dtype}, _string),
-    do: dtype_error("trim_leading/2", dtype, [:string])
+  def lstrip(%Series{dtype: dtype}, _string),
+    do: dtype_error("lstrip/2", dtype, [:string])
 
   @doc """
   Returns a string series where all trailing Unicode whitespaces have been removed.
@@ -4412,46 +4412,46 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Explorer.Series.from_list(["  abc", "def  ", "  bcd"])
-      iex> Explorer.Series.trim_trailing(s)
+      iex> Explorer.Series.rstrip(s)
       #Explorer.Series<
         Polars[3]
         string ["  abc", "def", "  bcd"]
       >
   """
   @doc type: :string_wise
-  @spec trim_trailing(Series.t()) :: Series.t()
-  def trim_trailing(%Series{dtype: :string} = series),
-    do: apply_series(series, :trim_trailing, [nil])
+  @spec rstrip(Series.t()) :: Series.t()
+  def rstrip(%Series{dtype: :string} = series),
+    do: apply_series(series, :rstrip, [nil])
 
   @doc """
   Returns a string series where all trailing examples of the provided string
   have been removed.
 
-  Where multiple characters are provided, all combinations of this set of characters will be trimmed
+  Where multiple characters are provided, all combinations of this set of characters will be stripped
 
   ## Examples
 
       iex> s = Explorer.Series.from_list(["__abc__", "def_", "__bcd_"])
-      iex> Explorer.Series.trim_trailing(s, "_")
+      iex> Explorer.Series.rstrip(s, "_")
       #Explorer.Series<
         Polars[3]
         string ["__abc", "def", "__bcd"]
       >
 
       iex> s = Explorer.Series.from_list(["abc", "adefa", "bcdabaaa"])
-      iex> Explorer.Series.trim_trailing(s, "ab")
+      iex> Explorer.Series.rstrip(s, "ab")
       #Explorer.Series<
         Polars[3]
         string ["abc", "adef", "bcd"]
       >
   """
   @doc type: :string_wise
-  @spec trim_trailing(Series.t(), String.t()) :: Series.t()
-  def trim_trailing(%Series{dtype: :string} = series, string) when is_binary(string),
-    do: apply_series(series, :trim_trailing, [string])
+  @spec rstrip(Series.t(), String.t()) :: Series.t()
+  def rstrip(%Series{dtype: :string} = series, string) when is_binary(string),
+    do: apply_series(series, :rstrip, [string])
 
-  def trim_trailing(%Series{dtype: dtype}, _string),
-    do: dtype_error("trim_trailing/2", dtype, [:string])
+  def rstrip(%Series{dtype: dtype}, _string),
+    do: dtype_error("rstrip/2", dtype, [:string])
 
   @doc """
   Returns a string sliced from the offset to the end of the string, supporting

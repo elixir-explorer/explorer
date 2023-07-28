@@ -3966,41 +3966,41 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "trim, trim, trim_leading, trim_trailing" do
-    test "trim/1" do
+  describe "strip, strip, lstrip, rstrip" do
+    test "strip/1" do
       series = Series.from_list(["  123   ", "       2   ", "    20$    "])
 
-      assert Series.trim(series) |> Series.to_list() == ["123", "2", "20$"]
+      assert Series.strip(series) |> Series.to_list() == ["123", "2", "20$"]
     end
 
-    test "trim/2" do
+    test "strip/2" do
       series = Series.from_list(["£1£23", "2£", "£20£"])
 
-      assert Series.trim(series, "£") |> Series.to_list() == ["1£23", "2", "20"]
+      assert Series.strip(series, "£") |> Series.to_list() == ["1£23", "2", "20"]
     end
 
-    test "trim_leading/1" do
+    test "lstrip/1" do
       series = Series.from_list(["  123   ", "       2   ", "    20$    "])
 
-      assert Series.trim_leading(series) |> Series.to_list() == ["123   ", "2   ", "20$    "]
+      assert Series.lstrip(series) |> Series.to_list() == ["123   ", "2   ", "20$    "]
     end
 
-    test "trim_leading/2" do
+    test "lstrip/2" do
       series = Series.from_list(["£1£23", "2£", "£20£"])
 
-      assert Series.trim_leading(series, "£") |> Series.to_list() == ["1£23", "2£", "20£"]
+      assert Series.lstrip(series, "£") |> Series.to_list() == ["1£23", "2£", "20£"]
     end
 
-    test "trim_trailing/1" do
+    test "rstrip/1" do
       series = Series.from_list(["  123   ", "  2   ", "    20$    "])
 
-      assert Series.trim_trailing(series) |> Series.to_list() == ["  123", "  2", "    20$"]
+      assert Series.rstrip(series) |> Series.to_list() == ["  123", "  2", "    20$"]
     end
 
-    test "trim_trailing/2" do
+    test "rstrip/2" do
       series = Series.from_list(["£1£23", "2£", "£20£"])
 
-      assert Series.trim_trailing(series, "£") |> Series.to_list() == ["£1£23", "2", "£20"]
+      assert Series.rstrip(series, "£") |> Series.to_list() == ["£1£23", "2", "£20"]
     end
   end
 

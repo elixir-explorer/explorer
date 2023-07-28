@@ -1550,7 +1550,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "trim characters from string" do
+    test "strip characters from string" do
       df =
         DF.new(
           a: ["£2", "3£", "£200£", "£££20"],
@@ -1559,8 +1559,8 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          c: trim(a, "£"),
-          d: trim(b)
+          c: strip(a, "£"),
+          d: strip(b)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1571,7 +1571,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "trim multiple characters from string" do
+    test "strip multiple characters from string" do
       df =
         DF.new(
           a: ["ababhelloabab", "abababworldabababa", "abab", "bbbbaaaabhelloba"],
@@ -1580,8 +1580,8 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          c: trim(a, "ab"),
-          d: trim(b, "nx_")
+          c: strip(a, "ab"),
+          d: strip(b, "nx_")
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1592,7 +1592,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "trim trailing characters from string" do
+    test "strip trailing characters from string" do
       df =
         DF.new(
           a: ["£2", "3£", "£200£", "£££20"],
@@ -1601,8 +1601,8 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          c: trim_trailing(a, "£"),
-          d: trim_trailing(b)
+          c: rstrip(a, "£"),
+          d: rstrip(b)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1613,7 +1613,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "trim leading characters from string" do
+    test "strip leading characters from string" do
       df =
         DF.new(
           a: ["£2", "3£", "£200£", "£££20"],
@@ -1622,8 +1622,8 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          c: trim_leading(a, "£"),
-          d: trim_leading(b)
+          c: lstrip(a, "£"),
+          d: lstrip(b)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{

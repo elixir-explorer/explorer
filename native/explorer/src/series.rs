@@ -1350,7 +1350,7 @@ pub fn s_downcase(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_trim(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
+pub fn s_strip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     let pattern = match pattern {
         None => String::from(r#"^[ \s]+|[ \s]+$"#),
@@ -1367,7 +1367,7 @@ pub fn s_trim(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerE
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_trim_leading(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
+pub fn s_lstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     let pattern = match pattern {
         None => String::from(r#"^[ \s]+"#),
@@ -1380,7 +1380,7 @@ pub fn s_trim_leading(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, E
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_trim_trailing(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
+pub fn s_rstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     let pattern = match pattern {
         None => String::from(r#"[ \s]+$"#),

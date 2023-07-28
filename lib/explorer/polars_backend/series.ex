@@ -620,16 +620,16 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_downcase)
 
   @impl true
-  def trim(series, str),
-    do: Shared.apply_series(series, :s_trim, [str])
+  def strip(series, str),
+    do: Shared.apply_series(series, :s_strip, [str])
 
   @impl true
-  def trim_leading(series, str),
-    do: Shared.apply_series(series, :s_trim_leading, [str])
+  def lstrip(series, str),
+    do: Shared.apply_series(series, :s_lstrip, [str])
 
   @impl true
-  def trim_trailing(series, str),
-    do: Shared.apply_series(series, :s_trim_trailing, [str])
+  def rstrip(series, str),
+    do: Shared.apply_series(series, :s_rstrip, [str])
 
   @impl true
   def substring(series, offset, length),
