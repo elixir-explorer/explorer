@@ -607,6 +607,7 @@ init_window_expr_fun!(expr_window_max, rolling_max);
 init_window_expr_fun!(expr_window_min, rolling_min);
 init_window_expr_fun!(expr_window_sum, rolling_sum);
 init_window_expr_fun!(expr_window_mean, rolling_mean);
+init_window_expr_fun!(expr_window_median, rolling_median);
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn expr_window_standard_deviation(

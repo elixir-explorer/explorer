@@ -339,6 +339,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_variance(_s), do: err()
   def s_window_max(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_mean(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
+  def s_window_median(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_min(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_sum(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
 

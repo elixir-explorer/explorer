@@ -521,6 +521,11 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
+  def window_median(series, window_size, weights, min_periods, center) do
+    window_function(:s_window_median, series, window_size, weights, min_periods, center)
+  end
+
+  @impl true
   def window_min(series, window_size, weights, min_periods, center) do
     window_function(:s_window_min, series, window_size, weights, min_periods, center)
   end
