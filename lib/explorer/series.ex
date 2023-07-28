@@ -4395,6 +4395,69 @@ defmodule Explorer.Series do
 
   def trim_trailing(%Series{dtype: dtype}), do: dtype_error("trim_trailing/1", dtype, [:string])
 
+  @doc """
+  Returns a string sliced from the offset to the end of the string, supporting
+  negative indexing
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.substring(s, -3)
+      #Explorer.Series<
+        Polars[3]
+        string ["rth", "ars", "une"]
+      >
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.substring(s, 1)
+      #Explorer.Series<
+        Polars[3]
+        string ["arth", "ars", "eptune"]
+      >
+  """
+  @doc type: :string_wise
+  @spec substring(Series.t(), integer()) :: Series.t()
+  def substring(%Series{dtype: :string} = series, offset) when is_integer(offset),
+    do: apply_series(series, :substring, [offset, nil])
+
+  @doc """
+  Returns a string sliced from the offset to the length provided, supporting
+  negative indexing
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.substring(s, -3, 2)
+      #Explorer.Series<
+        Polars[3]
+        string ["rt", "ar", "un"]
+      >
+
+      iex> s = Explorer.Series.from_list(["earth", "mars", "neptune"])
+      iex> Explorer.Series.substring(s, 1, 5)
+      #Explorer.Series<
+        Polars[3]
+        string ["arth", "ars", "eptun"]
+      >
+
+      iex> d = Explorer.Series.from_list(["こんにちは世界", "مرحبًا", "안녕하세요"])
+      iex> Explorer.Series.substring(d, 1, 3)
+      #Explorer.Series<
+        Polars[3]
+        string ["んにち", "رحب", "녕하세"]
+      >
+  """
+  @doc type: :string_wise
+  @spec substring(Series.t(), integer(), integer()) :: Series.t()
+  def substring(%Series{dtype: :string} = series, offset, length)
+      when is_integer(offset)
+      when is_integer(length)
+      when length >= 0,
+      do: apply_series(series, :substring, [offset, length])
+
+  def substring(%Series{dtype: dtype}, _offset, _length),
+    do: dtype_error("substring/3", dtype, [:string])
+
   # Float
 
   @doc """

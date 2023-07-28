@@ -125,7 +125,8 @@ defmodule Explorer.PolarsBackend.Expression do
     trim_leading: 1,
     trim_trailing: 1,
     downcase: 1,
-    upcase: 1
+    upcase: 1,
+    substring: 3
   ]
 
   @custom_expressions [

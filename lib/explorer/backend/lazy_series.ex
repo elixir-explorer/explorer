@@ -117,6 +117,7 @@ defmodule Explorer.Backend.LazySeries do
     trim: 2,
     upcase: 1,
     downcase: 1,
+    substring: 3,
     # Float round
     round: 2,
     floor: 1,
@@ -888,6 +889,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def trim_trailing(series) do
     data = new(:trim_trailing, [lazy_series!(series)])
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def substring(series, offset, length) do
+    data = new(:substring, [lazy_series!(series), offset, length])
 
     Backend.Series.new(data, :string)
   end

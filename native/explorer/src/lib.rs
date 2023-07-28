@@ -251,6 +251,7 @@ rustler::init!(
         expr_trim,
         expr_trim_leading,
         expr_trim_trailing,
+        expr_substring,
         // float round expressions
         expr_round,
         expr_floor,
@@ -403,6 +404,7 @@ rustler::init!(
         s_standard_deviation,
         s_tan,
         s_trim,
+        s_substring,
         s_subtract,
         s_sum,
         s_tail,

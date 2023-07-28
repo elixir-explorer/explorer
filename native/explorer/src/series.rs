@@ -1378,6 +1378,17 @@ pub fn s_trim_trailing(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_substring(
+    s1: ExSeries,
+    offset: i64,
+    length: Option<u64>,
+) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(
+        s1.utf8()?.str_slice(offset, length)?.into_series(),
+    ))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_round(s: ExSeries, decimals: u32) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(s.round(decimals)?.into_series()))
 }

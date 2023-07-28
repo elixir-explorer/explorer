@@ -766,6 +766,12 @@ pub fn expr_trim_trailing(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_substring(expr: ExExpr, offset: i64, length: Option<u64>) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().str_slice(offset, length))
+}
+
+#[rustler::nif]
 pub fn expr_round(expr: ExExpr, decimals: u32) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.round(decimals))
