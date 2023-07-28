@@ -22,7 +22,7 @@ use crate::datatypes::{ExParquetCompression, ExS3Entry};
 use crate::{ExDataFrame, ExplorerError};
 
 // Note that we have two types of "Compression" for IPC: this one and IpcCompresion.
-use polars::export::arrow::io::ipc::write::Compression;
+use polars::export::arrow::io::ipc::write::Compression as IpcStreamCompression;
 
 fn finish_reader<R>(reader: impl SerReader<R>) -> Result<ExDataFrame, ExplorerError>
 where
@@ -452,14 +452,12 @@ pub fn df_to_ipc_stream(
     filename: &str,
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
-    // Select the compression algorithm.
     let compression = match compression {
-        Some("lz4") => Some(Compression::LZ4),
-        Some("zstd") => Some(Compression::ZSTD),
-        _ => None,
+        Some(algo) => Some(decode_ipc_stream_compression(algo)?),
+        None => None,
     };
 
-    let mut file = File::create(filename).expect("could not create file");
+    let mut file = File::create(filename)?;
     IpcStreamWriter::new(&mut file)
         .with_compression(compression)
         .finish(&mut data.clone())?;
@@ -473,11 +471,9 @@ pub fn df_to_ipc_stream_cloud(
     ex_entry: ExS3Entry,
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
-    // Select the compression algorithm.
     let compression = match compression {
-        Some("lz4") => Some(Compression::LZ4),
-        Some("zstd") => Some(Compression::ZSTD),
-        _ => None,
+        Some(algo) => Some(decode_ipc_stream_compression(algo)?),
+        None => None,
     };
 
     let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
@@ -496,11 +492,9 @@ pub fn df_dump_ipc_stream<'a>(
 ) -> Result<Binary<'a>, ExplorerError> {
     let mut buf = vec![];
 
-    // Select the compression algorithm.
     let compression = match compression {
-        Some("lz4") => Some(Compression::LZ4),
-        Some("zstd") => Some(Compression::ZSTD),
-        _ => None,
+        Some(algo) => Some(decode_ipc_stream_compression(algo)?),
+        None => None,
     };
 
     IpcStreamWriter::new(&mut buf)
@@ -525,6 +519,16 @@ pub fn df_load_ipc_stream(
         .with_projection(projection);
 
     finish_reader(reader)
+}
+
+fn decode_ipc_stream_compression(compression: &str) -> Result<IpcStreamCompression, ExplorerError> {
+    match compression {
+        "lz4" => Ok(IpcStreamCompression::LZ4),
+        "zstd" => Ok(IpcStreamCompression::ZSTD),
+        other => Err(ExplorerError::Other(format!(
+            "the algorithm {other} is not supported for IPC stream compression"
+        ))),
+    }
 }
 
 // ============ NDJSON ============ //
