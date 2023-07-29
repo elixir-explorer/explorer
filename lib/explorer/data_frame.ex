@@ -2799,7 +2799,7 @@ defmodule Explorer.DataFrame do
           datetime = %NaiveDateTime{} ->
             lazy_s = LazySeries.new(:to_lazy, [datetime])
 
-            Explorer.Backend.Series.new(lazy_s, :datetime)
+            Explorer.Backend.Series.new(lazy_s, {:datetime, :micro_seconds})
 
           other ->
             raise ArgumentError,
@@ -2890,10 +2890,10 @@ defmodule Explorer.DataFrame do
   in microseconds from the Unix epoch:
 
       iex> df = Explorer.DataFrame.new([])
-      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]), dtype: :datetime)
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]), dtype: {:datetime, :micro_seconds})
       #Explorer.DataFrame<
         Polars[3 x 1]
-        a datetime [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
+        a datetime[μs] [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
       >
 
   If there is already a column where we want to place the tensor,
@@ -2905,7 +2905,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.put(df, :a, Nx.tensor(529550625987654))
       #Explorer.DataFrame<
         Polars[1 x 1]
-        a datetime [1986-10-13 01:23:45.987654]
+        a datetime[μs] [1986-10-13 01:23:45.987654]
       >
 
   This is particularly useful for categorical columns:

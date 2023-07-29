@@ -9,6 +9,7 @@ defmodule Explorer.PolarsBackend.Shared do
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.Series, as: Series
 
+  @valid_dtypes Explorer.Shared.dtypes()
   @polars_df [PolarsDataFrame, PolarsLazyFrame]
 
   def apply(fun, args \\ []) do
@@ -99,7 +100,7 @@ defmodule Explorer.PolarsBackend.Shared do
     Enum.map(dtypes, &normalise_dtype/1)
   end
 
-  def from_list(list, dtype, name \\ "") when is_list(list) and is_atom(dtype) do
+  def from_list(list, dtype, name \\ "") when is_list(list) and dtype in @valid_dtypes do
     case dtype do
       :integer -> Native.s_from_list_i64(name, list)
       :float -> Native.s_from_list_f64(name, list)
@@ -108,19 +109,36 @@ defmodule Explorer.PolarsBackend.Shared do
       :category -> Native.s_from_list_categories(name, list)
       :date -> Native.s_from_list_date(name, list)
       :time -> Native.s_from_list_time(name, list)
-      :datetime -> Native.s_from_list_datetime(name, list)
+      {:datetime, _} -> Native.s_from_list_datetime(name, list)
       :binary -> Native.s_from_list_binary(name, list)
     end
   end
 
   def from_binary(binary, dtype, name \\ "") when is_binary(binary) do
     case dtype do
-      :boolean -> Native.s_from_binary_u8(name, binary) |> Native.s_cast("boolean") |> ok()
-      :date -> Native.s_from_binary_i32(name, binary) |> Native.s_cast("date") |> ok()
-      :time -> Native.s_from_binary_i64(name, binary) |> Native.s_cast("time") |> ok()
-      :datetime -> Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime") |> ok()
-      :integer -> Native.s_from_binary_i64(name, binary)
-      :float -> Native.s_from_binary_f64(name, binary)
+      :boolean ->
+        Native.s_from_binary_u8(name, binary) |> Native.s_cast("boolean") |> ok()
+
+      :date ->
+        Native.s_from_binary_i32(name, binary) |> Native.s_cast("date") |> ok()
+
+      :time ->
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast("time") |> ok()
+
+      {:datetime, :milli_seconds} ->
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[ms]") |> ok()
+
+      {:datetime, :micro_seconds} ->
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[μs]") |> ok()
+
+      {:datetime, :nano_seconds} ->
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[ns]") |> ok()
+
+      :integer ->
+        Native.s_from_binary_i64(name, binary)
+
+      :float ->
+        Native.s_from_binary_f64(name, binary)
     end
   end
 
@@ -131,9 +149,9 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("cat"), do: :category
   def normalise_dtype("date"), do: :date
   def normalise_dtype("time"), do: :time
-  def normalise_dtype("datetime[ms]"), do: :datetime
-  def normalise_dtype("datetime[ns]"), do: :datetime
-  def normalise_dtype("datetime[μs]"), do: :datetime
+  def normalise_dtype("datetime[ms]"), do: {:datetime, :milli_seconds}
+  def normalise_dtype("datetime[ns]"), do: {:datetime, :nano_seconds}
+  def normalise_dtype("datetime[μs]"), do: {:datetime, :micro_seconds}
   def normalise_dtype("f64"), do: :float
   def normalise_dtype("i64"), do: :integer
   def normalise_dtype("list[u32]"), do: :integer
@@ -144,7 +162,9 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:category), do: "cat"
   def internal_from_dtype(:date), do: "date"
   def internal_from_dtype(:time), do: "time"
-  def internal_from_dtype(:datetime), do: "datetime[μs]"
+  def internal_from_dtype({:datetime, :milli_seconds}), do: "datetime[ms]"
+  def internal_from_dtype({:datetime, :nano_seconds}), do: "datetime[ns]"
+  def internal_from_dtype({:datetime, :micro_seconds}), do: "datetime[μs]"
   def internal_from_dtype(:float), do: "f64"
   def internal_from_dtype(:integer), do: "i64"
   def internal_from_dtype(:string), do: "str"

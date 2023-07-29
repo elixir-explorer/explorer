@@ -90,7 +90,9 @@ if Code.ensure_loaded?(Nx) do
       * `:float`
       * `:boolean`
       * `:date`
-      * `:datetime`
+      * `{:datetime, :milli_seconds}`
+      * `{:datetime, :micro_seconds}`
+      * `{:datetime, :nano_seconds}`
 
     See `Explorer.Series.to_iovec/1` and `Explorer.Series.to_tensor/1`
     to learn more about their internal representation.
@@ -242,7 +244,17 @@ if Code.ensure_loaded?(Nx) do
   end
 
   defimpl Nx.LazyContainer, for: DF do
-    @supported [:boolean, :category, :date, :time, :datetime, :float, :integer]
+    @supported [
+      :boolean,
+      :category,
+      :date,
+      :time,
+      :float,
+      :integer,
+      {:datetime, :milli_seconds},
+      {:datetime, :micro_seconds},
+      {:datetime, :nano_seconds}
+    ]
 
     def traverse(df, acc, fun) do
       n_rows = DF.n_rows(df)

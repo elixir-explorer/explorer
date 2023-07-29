@@ -99,7 +99,7 @@ defmodule Explorer.DataFrame.IPCTest do
     end
 
     test "datetime" do
-      assert_ipc(:datetime, "1664624050123456", ~N[2022-10-01 11:34:10.123456])
+      assert_ipc({:datetime, :micro_seconds}, "1664624050123456", ~N[2022-10-01 11:34:10.123456])
     end
   end
 

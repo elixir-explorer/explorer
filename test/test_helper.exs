@@ -7,10 +7,12 @@ defmodule Explorer.IOHelpers do
 
   require ExUnit.Assertions
 
+  @valid_dtypes Explorer.Shared.dtypes()
+
   def f64_epsilon, do: @f64_epsilon
 
   def assert_from_with_correct_type(type, value, parsed_value, reader_fun)
-      when is_atom(type) and is_function(reader_fun, 1) do
+      when type in @valid_dtypes and is_function(reader_fun, 1) do
     df = List.wrap(value) |> Series.from_list() |> Series.cast(type) |> then(&DF.new(column: &1))
 
     %DF{} = df = reader_fun.(df)

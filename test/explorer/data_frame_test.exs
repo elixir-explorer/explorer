@@ -703,7 +703,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :string,
                "h" => :boolean,
                "i" => :date,
-               "j" => :datetime
+               "j" => {:datetime, :micro_seconds}
              }
     end
 
@@ -1716,7 +1716,7 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :date,
-               "b" => :datetime,
+               "b" => {:datetime, :micro_seconds},
                "c" => :integer,
                "d" => :integer,
                "e" => :integer,

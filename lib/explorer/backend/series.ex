@@ -277,7 +277,16 @@ defmodule Explorer.Backend.Series do
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
-    dtype = A.color("#{Series.dtype(series)} ", :atom, inspect_opts)
+
+    type =
+      case Series.dtype(series) do
+        {:datetime, :milli_seconds} -> "datetime[ms]"
+        {:datetime, :micro_seconds} -> "datetime[μs]"
+        {:datetime, :nano_seconds} -> "datetime[ns]"
+        others -> others
+      end
+
+    dtype = A.color("#{type} ", :atom, inspect_opts)
 
     data =
       A.container_doc(
