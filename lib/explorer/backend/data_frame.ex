@@ -249,12 +249,9 @@ defmodule Explorer.Backend.DataFrame do
         data = container_doc(open, values, close, inspect_opts, &Explorer.Shared.to_string/2)
 
         type =
-          case Series.dtype(series) do
-            {:datetime, :milli_seconds} -> "datetime[ms]"
-            {:datetime, :micro_seconds} -> "datetime[μs]"
-            {:datetime, :nano_seconds} -> "datetime[ns]"
-            others -> others
-          end
+          series
+          |> Series.dtype()
+          |> Explorer.Shared.dtype_to_string()
 
         concat([
           line(),

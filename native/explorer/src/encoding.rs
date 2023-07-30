@@ -521,7 +521,7 @@ pub fn iovec_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Date => series_to_iovec!(resource, s, env, date, i32),
         DataType::Time => series_to_iovec!(resource, s, env, time, i64),
-        DataType::Datetime(TimeUnit::Microseconds, None) => {
+        DataType::Datetime(_, None) => {
             series_to_iovec!(resource, s, env, datetime, i64)
         }
         DataType::Categorical(Some(_)) => {

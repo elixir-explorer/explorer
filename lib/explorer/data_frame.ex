@@ -2799,7 +2799,7 @@ defmodule Explorer.DataFrame do
           datetime = %NaiveDateTime{} ->
             lazy_s = LazySeries.new(:to_lazy, [datetime])
 
-            Explorer.Backend.Series.new(lazy_s, {:datetime, :micro_seconds})
+            Explorer.Backend.Series.new(lazy_s, {:datetime, :microsecond})
 
           other ->
             raise ArgumentError,
@@ -2890,7 +2890,7 @@ defmodule Explorer.DataFrame do
   in microseconds from the Unix epoch:
 
       iex> df = Explorer.DataFrame.new([])
-      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]), dtype: {:datetime, :micro_seconds})
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]), dtype: {:datetime, :microsecond})
       #Explorer.DataFrame<
         Polars[3 x 1]
         a datetime[μs] [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]

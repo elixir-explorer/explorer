@@ -90,9 +90,9 @@ if Code.ensure_loaded?(Nx) do
       * `:float`
       * `:boolean`
       * `:date`
-      * `{:datetime, :milli_seconds}`
-      * `{:datetime, :micro_seconds}`
-      * `{:datetime, :nano_seconds}`
+      * `{:datetime, :millisecond}`
+      * `{:datetime, :microsecond}`
+      * `{:datetime, :nanosecond}`
 
     See `Explorer.Series.to_iovec/1` and `Explorer.Series.to_tensor/1`
     to learn more about their internal representation.
@@ -251,9 +251,9 @@ if Code.ensure_loaded?(Nx) do
       :time,
       :float,
       :integer,
-      {:datetime, :milli_seconds},
-      {:datetime, :micro_seconds},
-      {:datetime, :nano_seconds}
+      {:datetime, :millisecond},
+      {:datetime, :microsecond},
+      {:datetime, :nanosecond}
     ]
 
     def traverse(df, acc, fun) do

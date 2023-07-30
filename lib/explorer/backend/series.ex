@@ -279,12 +279,9 @@ defmodule Explorer.Backend.Series do
     close = A.color("]", :list, inspect_opts)
 
     type =
-      case Series.dtype(series) do
-        {:datetime, :milli_seconds} -> "datetime[ms]"
-        {:datetime, :micro_seconds} -> "datetime[μs]"
-        {:datetime, :nano_seconds} -> "datetime[ns]"
-        others -> others
-      end
+      series
+      |> Series.dtype()
+      |> Explorer.Shared.dtype_to_string()
 
     dtype = A.color("#{type} ", :atom, inspect_opts)
 

@@ -719,14 +719,14 @@ defmodule Explorer.Backend.LazySeries do
   def strptime(%Series{} = series, format_string) do
     data = new(:strptime, [lazy_series!(series), format_string])
 
-    Backend.Series.new(data, {:datetime, :micro_seconds})
+    Backend.Series.new(data, {:datetime, :microsecond})
   end
 
   @impl true
   def strftime(%Series{} = series, format_string) do
     data = new(:strftime, [lazy_series!(series), format_string])
 
-    Backend.Series.new(data, {:datetime, :micro_seconds})
+    Backend.Series.new(data, {:datetime, :microsecond})
   end
 
   @impl true

@@ -109,7 +109,7 @@ defmodule Explorer.PolarsBackend.Shared do
       :category -> Native.s_from_list_categories(name, list)
       :date -> Native.s_from_list_date(name, list)
       :time -> Native.s_from_list_time(name, list)
-      {:datetime, _} -> Native.s_from_list_datetime(name, list)
+      {:datetime, precision} -> Native.s_from_list_datetime(name, list, Atom.to_string(precision))
       :binary -> Native.s_from_list_binary(name, list)
     end
   end
@@ -125,13 +125,13 @@ defmodule Explorer.PolarsBackend.Shared do
       :time ->
         Native.s_from_binary_i64(name, binary) |> Native.s_cast("time") |> ok()
 
-      {:datetime, :milli_seconds} ->
+      {:datetime, :millisecond} ->
         Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[ms]") |> ok()
 
-      {:datetime, :micro_seconds} ->
+      {:datetime, :microsecond} ->
         Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[μs]") |> ok()
 
-      {:datetime, :nano_seconds} ->
+      {:datetime, :nanosecond} ->
         Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[ns]") |> ok()
 
       :integer ->
@@ -149,9 +149,9 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("cat"), do: :category
   def normalise_dtype("date"), do: :date
   def normalise_dtype("time"), do: :time
-  def normalise_dtype("datetime[ms]"), do: {:datetime, :milli_seconds}
-  def normalise_dtype("datetime[ns]"), do: {:datetime, :nano_seconds}
-  def normalise_dtype("datetime[μs]"), do: {:datetime, :micro_seconds}
+  def normalise_dtype("datetime[ms]"), do: {:datetime, :millisecond}
+  def normalise_dtype("datetime[ns]"), do: {:datetime, :nanosecond}
+  def normalise_dtype("datetime[μs]"), do: {:datetime, :microsecond}
   def normalise_dtype("f64"), do: :float
   def normalise_dtype("i64"), do: :integer
   def normalise_dtype("list[u32]"), do: :integer
@@ -162,9 +162,9 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:category), do: "cat"
   def internal_from_dtype(:date), do: "date"
   def internal_from_dtype(:time), do: "time"
-  def internal_from_dtype({:datetime, :milli_seconds}), do: "datetime[ms]"
-  def internal_from_dtype({:datetime, :nano_seconds}), do: "datetime[ns]"
-  def internal_from_dtype({:datetime, :micro_seconds}), do: "datetime[μs]"
+  def internal_from_dtype({:datetime, :millisecond}), do: "datetime[ms]"
+  def internal_from_dtype({:datetime, :nanosecond}), do: "datetime[ns]"
+  def internal_from_dtype({:datetime, :microsecond}), do: "datetime[μs]"
   def internal_from_dtype(:float), do: "f64"
   def internal_from_dtype(:integer), do: "i64"
   def internal_from_dtype(:string), do: "str"

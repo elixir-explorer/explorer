@@ -152,7 +152,7 @@ defmodule Explorer.DataFrame.ParquetTest do
 
     test "datetime" do
       assert_parquet(
-        {:datetime, :micro_seconds},
+        {:datetime, :microsecond},
         "1664624050123456",
         ~N[2022-10-01 11:34:10.123456]
       )
