@@ -248,10 +248,15 @@ defmodule Explorer.Backend.DataFrame do
 
         data = container_doc(open, values, close, inspect_opts, &Explorer.Shared.to_string/2)
 
+        type =
+          series
+          |> Series.dtype()
+          |> Explorer.Shared.dtype_to_string()
+
         concat([
           line(),
           color("#{name} ", :map, inspect_opts),
-          color("#{Series.dtype(series)} ", :atom, inspect_opts),
+          color("#{type} ", :atom, inspect_opts),
           data
         ])
       end

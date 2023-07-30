@@ -280,7 +280,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_from_list_bool(_name, _val), do: err()
   def s_from_list_date(_name, _val), do: err()
   def s_from_list_time(_name, _val), do: err()
-  def s_from_list_datetime(_name, _val), do: err()
+  def s_from_list_datetime(_name, _val, _precision), do: err()
   def s_from_list_f64(_name, _val), do: err()
   def s_from_list_i64(_name, _val), do: err()
   def s_from_list_u32(_name, _val), do: err()

@@ -201,7 +201,8 @@ defmodule Explorer.SeriesTest do
         ~N[2353-03-07 00:39:35.702789]
       ]
 
-      assert Series.from_list(dates, dtype: :datetime) |> Series.to_list() == dates
+      assert Series.from_list(dates, dtype: {:datetime, :microsecond}) |> Series.to_list() ==
+               dates
 
       today_in_days = Date.utc_today() |> Date.to_gregorian_days()
       day_in_seconds = 86_400
@@ -219,7 +220,8 @@ defmodule Explorer.SeriesTest do
           |> NaiveDateTime.add(:rand.uniform(60), :second)
         end
 
-      assert Series.from_list(dates, dtype: :datetime) |> Series.to_list() == dates
+      assert Series.from_list(dates, dtype: {:datetime, :microsecond}) |> Series.to_list() ==
+               dates
     end
   end
 
@@ -3077,7 +3079,7 @@ defmodule Explorer.SeriesTest do
 
     test "integer series to datetime" do
       s = Series.from_list([1, 2, 3])
-      s1 = Series.cast(s, :datetime)
+      s1 = Series.cast(s, {:datetime, :microsecond})
 
       assert Series.to_list(s1) == [
                ~N[1970-01-01 00:00:00.000001],
@@ -3085,13 +3087,13 @@ defmodule Explorer.SeriesTest do
                ~N[1970-01-01 00:00:00.000003]
              ]
 
-      assert Series.dtype(s1) == :datetime
+      assert Series.dtype(s1) == {:datetime, :microsecond}
 
       s2 = Series.from_list([1_649_883_642 * 1_000 * 1_000])
-      s3 = Series.cast(s2, :datetime)
+      s3 = Series.cast(s2, {:datetime, :microsecond})
 
       assert Series.to_list(s3) == [~N[2022-04-13 21:00:42.000000]]
-      assert Series.dtype(s3) == :datetime
+      assert Series.dtype(s3) == {:datetime, :microsecond}
     end
 
     test "string series to category" do
@@ -3112,7 +3114,7 @@ defmodule Explorer.SeriesTest do
     test "error when casting with unknown dtype" do
       error_message =
         "Explorer.Series.cast/2 not implemented for dtype :money. " <>
-          "Valid dtypes are [:binary, :boolean, :category, :date, :time, :datetime, :float, :integer, :string]"
+          "Valid dtypes are [:binary, :boolean, :category, :date, :time, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, :float, :integer, :string]"
 
       assert_raise ArgumentError, error_message, fn ->
         Series.from_list([1, 2, 3]) |> Series.cast(:money)

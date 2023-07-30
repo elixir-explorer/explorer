@@ -124,7 +124,11 @@ defmodule Explorer.DataFrame.CSVTest do
     end
 
     test "datetime" do
-      assert_csv(:datetime, "2022-10-01T11:34:10.123456", ~N[2022-10-01 11:34:10.123456])
+      assert_csv(
+        {:datetime, :microsecond},
+        "2022-10-01T11:34:10.123456",
+        ~N[2022-10-01 11:34:10.123456]
+      )
     end
   end
 
@@ -188,7 +192,7 @@ defmodule Explorer.DataFrame.CSVTest do
         """)
 
       df = DF.from_csv!(csv, parse_dates: true)
-      assert %{"c" => :datetime} = Explorer.DataFrame.dtypes(df)
+      assert %{"c" => {:datetime, :microsecond}} = Explorer.DataFrame.dtypes(df)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 3],

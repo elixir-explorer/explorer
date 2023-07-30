@@ -77,7 +77,13 @@ pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>) -> ExSeries {
+pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision: &str) -> ExSeries {
+    let timeunit = match precision {
+        "millisecond" => TimeUnit::Milliseconds,
+        "microsecond" => TimeUnit::Microseconds,
+        "nanosecond" => TimeUnit::Nanoseconds,
+        _ => panic!("Unknown datetime precision"),
+    };
     ExSeries::new(
         Series::new(
             name,
@@ -85,7 +91,7 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>) -> ExSerie
                 .map(|dt| dt.map(|dt| dt.into()))
                 .collect::<Vec<Option<i64>>>(),
         )
-        .cast(&DataType::Datetime(TimeUnit::Microseconds, None))
+        .cast(&DataType::Datetime(timeunit, None))
         .unwrap(),
     )
 }
@@ -1126,7 +1132,9 @@ pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
         "integer" => Ok(DataType::Int64),
         "date" => Ok(DataType::Date),
         "time" => Ok(DataType::Time),
-        "datetime" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
+        "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
+        "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
+        "datetime[ns]" => Ok(DataType::Datetime(TimeUnit::Nanoseconds, None)),
         "boolean" => Ok(DataType::Boolean),
         "string" => Ok(DataType::Utf8),
         "binary" => Ok(DataType::Binary),

@@ -11,6 +11,8 @@ defmodule Explorer.Backend.LazySeries do
 
   defstruct op: nil, args: [], aggregation: false
 
+  @valid_dtypes Explorer.Shared.dtypes()
+
   @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean()}
 
   @operations [
@@ -197,14 +199,14 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def from_list(list, dtype) when is_list(list) and is_atom(dtype) do
+  def from_list(list, dtype) when is_list(list) and dtype in @valid_dtypes do
     data = new(:from_list, [list, dtype], false)
 
     Backend.Series.new(data, dtype)
   end
 
   @impl true
-  def from_binary(binary, dtype) when is_binary(binary) and is_atom(dtype) do
+  def from_binary(binary, dtype) when is_binary(binary) and dtype in @valid_dtypes do
     data = new(:from_binary, [binary, dtype], false)
     Backend.Series.new(data, dtype)
   end
@@ -717,14 +719,14 @@ defmodule Explorer.Backend.LazySeries do
   def strptime(%Series{} = series, format_string) do
     data = new(:strptime, [lazy_series!(series), format_string])
 
-    Backend.Series.new(data, :datetime)
+    Backend.Series.new(data, {:datetime, :microsecond})
   end
 
   @impl true
   def strftime(%Series{} = series, format_string) do
     data = new(:strftime, [lazy_series!(series), format_string])
 
-    Backend.Series.new(data, :datetime)
+    Backend.Series.new(data, {:datetime, :microsecond})
   end
 
   @impl true

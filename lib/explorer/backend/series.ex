@@ -277,7 +277,13 @@ defmodule Explorer.Backend.Series do
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
-    dtype = A.color("#{Series.dtype(series)} ", :atom, inspect_opts)
+
+    type =
+      series
+      |> Series.dtype()
+      |> Explorer.Shared.dtype_to_string()
+
+    dtype = A.color("#{type} ", :atom, inspect_opts)
 
     data =
       A.container_doc(
