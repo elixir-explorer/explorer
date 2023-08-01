@@ -3549,7 +3549,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
-      By default it sorts in acending order.
+      By default it sorts in ascending order.
 
     * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
       `:first` otherwise.
@@ -3586,7 +3586,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
-      By default it sorts in acending order.
+      By default it sorts in ascending order.
 
     * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
       `:first` otherwise.
