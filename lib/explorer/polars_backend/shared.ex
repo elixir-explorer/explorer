@@ -177,4 +177,22 @@ defmodule Explorer.PolarsBackend.Shared do
     do: {algorithm, level}
 
   def parquet_compression(algorithm, _) when algorithm in ~w(snappy lz4raw)a, do: algorithm
+
+  @doc """
+  Builds and returns a path for a new file.
+
+  It saves in a directory called "elixir-explorer-datasets" inside
+  the `System.tmp_dir()`.
+  """
+  def build_path_for_entry(%FSS.S3.Entry{} = entry) do
+    hash =
+      :crypto.hash(:sha256, entry.bucket <> "/" <> entry.key) |> Base.url_encode64(padding: false)
+
+    id = "s3-file-#{hash}"
+
+    base_dir = Path.join([System.tmp_dir!(), "elixir-explorer-datasets"])
+    File.mkdir_p!(base_dir)
+
+    Path.join([base_dir, id])
+  end
 end

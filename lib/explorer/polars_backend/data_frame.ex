@@ -35,20 +35,43 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_csv(
-        %S3.Entry{},
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _,
-        _
+        %S3.Entry{} = entry,
+        dtypes,
+        delimiter,
+        nil_values,
+        skip_rows,
+        header?,
+        encoding,
+        max_rows,
+        columns,
+        infer_schema_length,
+        parse_dates,
+        eol_delimiter
       ) do
-    raise "S3 is not supported yet"
+    path = Shared.build_path_for_entry(entry)
+
+    with :ok <- Explorer.FSS.download(entry, path) do
+      entry = %Local.Entry{path: path}
+
+      result =
+        from_csv(
+          entry,
+          dtypes,
+          delimiter,
+          nil_values,
+          skip_rows,
+          header?,
+          encoding,
+          max_rows,
+          columns,
+          infer_schema_length,
+          parse_dates,
+          eol_delimiter
+        )
+
+      File.rm(path)
+      result
+    end
   end
 
   @impl true

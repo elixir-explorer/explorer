@@ -29,13 +29,15 @@ defmodule Explorer.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :inets, :ssl],
       env: [default_backend: Explorer.PolarsBackend]
     ]
   end
 
   defp deps do
     [
+      {:aws_signature, "~> 0.3"},
+      {:castore, "~> 1.0"},
       {:rustler_precompiled, "~> 0.6"},
       {:table, "~> 0.1.2"},
       {:adbc, "~> 0.1", optional: true},
