@@ -8,7 +8,7 @@ defimpl Explorer.FSS, for: FSS.S3.Entry do
     headers = headers(entry, :get, url, [])
     collectable = File.stream!(path)
 
-    case Utils.HTTP.download(url, collectable, headers: headers) do
+    case Utils.download(url, collectable, headers: headers) do
       {:ok, _collectable} -> :ok
       {:error, _message, 404} -> Utils.posix_error(:enoent)
       {:error, message, _status} -> {:error, message}
