@@ -53,20 +53,24 @@ defmodule Explorer.PolarsBackend.DataFrame do
     with :ok <- Explorer.FSS.download(entry, path) do
       entry = %Local.Entry{path: path}
 
-      from_csv(
-        entry,
-        dtypes,
-        delimiter,
-        nil_values,
-        skip_rows,
-        header?,
-        encoding,
-        max_rows,
-        columns,
-        infer_schema_length,
-        parse_dates,
-        eol_delimiter
-      )
+      result =
+        from_csv(
+          entry,
+          dtypes,
+          delimiter,
+          nil_values,
+          skip_rows,
+          header?,
+          encoding,
+          max_rows,
+          columns,
+          infer_schema_length,
+          parse_dates,
+          eol_delimiter
+        )
+
+      File.rm(path)
+      result
     end
   end
 
