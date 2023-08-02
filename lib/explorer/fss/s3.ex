@@ -24,9 +24,22 @@ defimpl Explorer.FSS, for: FSS.S3.Entry do
       end
 
     uri
-    |> URI.append_path("/" <> entry.bucket)
-    |> URI.append_path("/" <> entry.key)
+    |> append_path("/" <> entry.bucket)
+    |> append_path("/" <> entry.key)
     |> URI.to_string()
+  end
+
+  # Once we depend on Elixir ~> 1.15, we can use `URI.append_path/2`.
+  defp append_path(%URI{}, "//" <> _ = path) do
+    raise ArgumentError, ~s|path cannot start with "//", got: #{inspect(path)}|
+  end
+
+  defp append_path(%URI{path: path} = uri, "/" <> rest = all) do
+    cond do
+      path == nil -> %{uri | path: all}
+      path != "" and :binary.last(path) == ?/ -> %{uri | path: path <> rest}
+      true -> %{uri | path: path <> all}
+    end
   end
 
   defp headers(%FSS.S3.Entry{} = entry, method, url, headers, body \\ nil) do
