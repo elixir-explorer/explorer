@@ -24,8 +24,7 @@ defimpl Explorer.FSS, for: FSS.S3.Entry do
       end
 
     uri
-    |> append_path("/" <> entry.bucket)
-    |> append_path("/" <> entry.key)
+    |> append_path("/" <> entry.bucket <> "/" <> entry.key)
     |> URI.to_string()
   end
 

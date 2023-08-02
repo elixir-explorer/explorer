@@ -181,11 +181,8 @@ defmodule Explorer.PolarsBackend.Shared do
   @doc """
   Builds and returns a path for a new file.
 
-  It uses the MIX_XDG to determine if the file should be saved
-  using the Linux paths.
-
-  This is going to create the "elixir-explorer/datasets" dir if
-  it's not created yet.
+  It saves in a directory called "elixir-explorer-datasets" inside
+  the `System.tmp_dir()`.
   """
   def build_path_for_entry(%FSS.S3.Entry{} = entry) do
     hash =
@@ -193,8 +190,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
     id = "s3-file-#{hash}"
 
-    cache_opts = if System.get_env("MIX_XDG"), do: %{os: :linux}, else: %{}
-    base_dir = :filename.basedir(:user_cache, "elixir-explorer/datasets", cache_opts)
+    base_dir = Path.join([System.tmp_dir!(), "elixir-explorer-datasets"])
     File.mkdir_p!(base_dir)
 
     Path.join([base_dir, id])
