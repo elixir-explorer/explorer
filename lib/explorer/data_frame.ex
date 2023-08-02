@@ -5282,50 +5282,6 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Display the DataFrame in a tabular fashion.
-
-  ## Examples
-
-     df = Explorer.Datasets.iris()
-     Explorer.DataFrame.table(df)
-     Explorer.DataFrame.table(df, limit: 1)
-     Explorer.DataFrame.table(df, limit: :infinity)
-  """
-  @doc type: :introspection
-  @spec table(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
-  def table(df, opts \\ []) do
-    {rows, columns} = shape(df)
-    headers = df.names
-
-    df =
-      case opts[:limit] do
-        :infinity -> df
-        nrow when is_integer(nrow) and nrow >= 0 -> slice(df, 0, nrow)
-        _ -> slice(df, 0, @default_sample_nrows)
-      end
-
-    types = Enum.map(df.names, &"\n<#{Atom.to_string(df.dtypes[&1])}>")
-
-    values =
-      headers
-      |> Enum.map(&Series.to_list(df[&1]))
-      |> Enum.zip_with(& &1)
-
-    name_type = Enum.zip_with(headers, types, fn x, y -> x <> y end)
-
-    TableRex.Table.new()
-    |> TableRex.Table.put_title("Explorer DataFrame: [rows: #{rows}, columns: #{columns}]")
-    |> TableRex.Table.put_header(name_type)
-    |> TableRex.Table.put_header_meta(0..columns, align: :center)
-    |> TableRex.Table.add_rows(values)
-    |> TableRex.Table.render!(
-      header_separator_symbol: "=",
-      horizontal_style: :all
-    )
-    |> IO.puts()
-  end
-
-  @doc """
   Describe numeric columns of a DataFrame.
 
   Groups are ignored if the dataframe is using any.

@@ -8,7 +8,6 @@ defmodule Explorer.DataFrameTest do
   require Explorer.DataFrame
   doctest Explorer.DataFrame
 
-  import ExUnit.CaptureIO
   alias Explorer.DataFrame, as: DF
   alias Explorer.Datasets
   alias Explorer.Series
@@ -2063,85 +2062,6 @@ defmodule Explorer.DataFrameTest do
       msg = "the column given to option `:on` is not the same for both dataframes"
 
       assert_raise ArgumentError, msg, fn -> DF.join(left, right, on: [0]) end
-    end
-  end
-
-  describe "table/1" do
-    test "prints 5 rows by default" do
-      df = Datasets.iris()
-
-      assert capture_io(fn -> DF.table(df) end) == """
-             +-----------------------------------------------------------------------+
-             |              Explorer DataFrame: [rows: 150, columns: 5]              |
-             +--------------+-------------+--------------+-------------+-------------+
-             | sepal_length | sepal_width | petal_length | petal_width |   species   |
-             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
-             +==============+=============+==============+=============+=============+
-             | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
-             +--------------+-------------+--------------+-------------+-------------+
-             | 4.9          | 3.0         | 1.4          | 0.2         | Iris-setosa |
-             +--------------+-------------+--------------+-------------+-------------+
-             | 4.7          | 3.2         | 1.3          | 0.2         | Iris-setosa |
-             +--------------+-------------+--------------+-------------+-------------+
-             | 4.6          | 3.1         | 1.5          | 0.2         | Iris-setosa |
-             +--------------+-------------+--------------+-------------+-------------+
-             | 5.0          | 3.6         | 1.4          | 0.2         | Iris-setosa |
-             +--------------+-------------+--------------+-------------+-------------+
-
-             """
-    end
-
-    test "accepts limit keyword param" do
-      df = Datasets.iris()
-
-      assert capture_io(fn -> DF.table(df, limit: 1) end) == """
-             +-----------------------------------------------------------------------+
-             |              Explorer DataFrame: [rows: 150, columns: 5]              |
-             +--------------+-------------+--------------+-------------+-------------+
-             | sepal_length | sepal_width | petal_length | petal_width |   species   |
-             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
-             +==============+=============+==============+=============+=============+
-             | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
-             +--------------+-------------+--------------+-------------+-------------+
-
-             """
-    end
-
-    test "accepts limit: :infinity" do
-      df =
-        DF.new(
-          a: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-          b: ~w[a b c d e f g h i],
-          c: [9.1, 8.2, 7.3, 6.4, 5.5, 4.6, 3.7, 2.8, 1.9]
-        )
-
-      assert capture_io(fn -> DF.table(df, limit: :infinity) end) == """
-             +--------------------------------------------+
-             | Explorer DataFrame: [rows: 9, columns: 3]  |
-             +---------------+--------------+-------------+
-             |       a       |      b       |      c      |
-             |   <integer>   |   <string>   |   <float>   |
-             +===============+==============+=============+
-             | 1             | a            | 9.1         |
-             +---------------+--------------+-------------+
-             | 2             | b            | 8.2         |
-             +---------------+--------------+-------------+
-             | 3             | c            | 7.3         |
-             +---------------+--------------+-------------+
-             | 4             | d            | 6.4         |
-             +---------------+--------------+-------------+
-             | 5             | e            | 5.5         |
-             +---------------+--------------+-------------+
-             | 6             | f            | 4.6         |
-             +---------------+--------------+-------------+
-             | 7             | g            | 3.7         |
-             +---------------+--------------+-------------+
-             | 8             | h            | 2.8         |
-             +---------------+--------------+-------------+
-             | 9             | i            | 1.9         |
-             +---------------+--------------+-------------+
-
-             """
     end
   end
 
