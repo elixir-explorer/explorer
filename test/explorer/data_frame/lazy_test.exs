@@ -189,8 +189,7 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   describe "from_parquet/2 - from S3" do
-    @tag :cloud_integration
-    test "reads a parquet file from S3" do
+    setup do
       config = %FSS.S3.Config{
         access_key_id: "test",
         secret_access_key: "test",
@@ -198,6 +197,11 @@ defmodule Explorer.DataFrame.LazyTest do
         region: "us-east-1"
       }
 
+      [config: config]
+    end
+
+    @tag :cloud_integration
+    test "reads a parquet file from S3", %{config: config} do
       assert {:ok, ldf} =
                DF.from_parquet("s3://test-bucket/wine.parquet",
                  config: config,
@@ -210,14 +214,7 @@ defmodule Explorer.DataFrame.LazyTest do
     end
 
     @tag :cloud_integration
-    test "reads a parquet file from S3 using the *.parquet syntax" do
-      config = %FSS.S3.Config{
-        access_key_id: "test",
-        secret_access_key: "test",
-        endpoint: "http://localhost:4566",
-        region: "us-east-1"
-      }
-
+    test "reads a parquet file from S3 using the *.parquet syntax", %{config: config} do
       assert {:ok, ldf} =
                DF.from_parquet("s3://test-bucket/*.parquet",
                  config: config,
@@ -227,6 +224,17 @@ defmodule Explorer.DataFrame.LazyTest do
       df = DF.collect(ldf)
 
       assert DF.to_columns(df) == DF.to_columns(Explorer.Datasets.wine())
+    end
+
+    @tag :cloud_integration
+    test "returns an error when file is not found", %{config: config} do
+      assert {:error, error} =
+               DF.from_parquet("s3://test-bucket/oranges.parquet",
+                 config: config,
+                 lazy: true
+               )
+
+      assert error =~ "Polars Error: Object at location oranges.parquet not found:"
     end
   end
 
@@ -285,6 +293,13 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.head(ldf, 15)
     assert :ok = DF.to_ipc(ldf, path, streaming: false, config: config)
+
+    saved_ldf = DF.from_ipc!(path, config: config)
+
+    df = DF.collect(ldf)
+    saved_df = DF.collect(saved_ldf)
+
+    assert DF.to_columns(df) == DF.to_columns(saved_df)
   end
 
   @tag :tmp_dir
@@ -342,6 +357,13 @@ defmodule Explorer.DataFrame.LazyTest do
 
     ldf = DF.head(ldf, 15)
     assert :ok = DF.to_parquet(ldf, path, streaming: false, config: config)
+
+    saved_ldf = DF.from_parquet!(path, config: config)
+
+    df = DF.collect(ldf)
+    saved_df = DF.collect(saved_ldf)
+
+    assert DF.to_columns(df) == DF.to_columns(saved_df)
   end
 
   @tag :tmp_dir
