@@ -86,7 +86,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         _,
         _
       ) do
-    raise "S3 is not supported yet"
+    raise "reading CSV from AWS S3 is not supported for Lazy dataframes"
   end
 
   @impl true
@@ -163,7 +163,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_ndjson(%S3.Entry{}, _, _) do
-    raise "S3 is not supported yet"
+    raise "reading NDJSON from AWS S3 is not supported for Lazy dataframes"
   end
 
   @impl true
@@ -176,7 +176,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_ipc(%S3.Entry{}, _) do
-    raise "S3 is not supported yet"
+    raise "reading IPC from AWS S3 is not supported for Lazy dataframes"
   end
 
   @impl true
@@ -194,7 +194,12 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_ipc_stream(%_{} = fs_entry, columns) do
+  def from_ipc_stream(%S3.Entry{}, _) do
+    raise "reading IPC Stream from AWS S3 is not supported for Lazy dataframes"
+  end
+
+  @impl true
+  def from_ipc_stream(%Local.Entry{} = fs_entry, columns) do
     case Eager.from_ipc_stream(fs_entry, columns) do
       {:ok, df} -> {:ok, Eager.to_lazy(df)}
       {:error, error} -> {:error, error}
