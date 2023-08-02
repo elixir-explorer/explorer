@@ -210,7 +210,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
     end
   end
 
-  describe "to_ndjson/3 - cloud" do
+  describe "cloud reads and writes" do
     setup do
       s3_config = %FSS.S3.Config{
         access_key_id: "test",
@@ -228,9 +228,15 @@ defmodule Explorer.DataFrame.NDJSONTest do
 
       assert :ok = DF.to_ndjson(df, path, config: s3_config)
 
-      # When we have the reader, we can activate this assertion.
-      # saved_df = DF.from_ipc!(path, config: config)
-      # assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
+      saved_df = DF.from_ndjson!(path, config: s3_config)
+      assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
+    end
+
+    @tag :cloud_integration
+    test "returns an error in case file is not found in S3 bucket", %{s3_config: s3_config} do
+      path = "s3://test-bucket/test-writes/file-does-not-exist.ndjson"
+
+      assert {:error, "no such file or directory"} = DF.from_ndjson(path, config: s3_config)
     end
   end
 end
