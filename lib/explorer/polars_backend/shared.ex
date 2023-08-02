@@ -177,4 +177,26 @@ defmodule Explorer.PolarsBackend.Shared do
     do: {algorithm, level}
 
   def parquet_compression(algorithm, _) when algorithm in ~w(snappy lz4raw)a, do: algorithm
+
+  @doc """
+  Builds and returns a path for a new file.
+
+  It uses the MIX_XDG to determine if the file should be saved
+  using the Linux paths.
+
+  This is going to create the "elixir-explorer/datasets" dir if
+  it's not created yet.
+  """
+  def build_path_for_entry(%FSS.S3.Entry{} = entry) do
+    hash =
+      :crypto.hash(:sha256, entry.bucket <> "/" <> entry.key) |> Base.url_encode64(padding: false)
+
+    id = "s3-file-#{hash}"
+
+    cache_opts = if System.get_env("MIX_XDG"), do: %{os: :linux}, else: %{}
+    base_dir = :filename.basedir(:user_cache, "elixir-explorer/datasets", cache_opts)
+    File.mkdir_p!(base_dir)
+
+    Path.join([base_dir, id])
+  end
 end

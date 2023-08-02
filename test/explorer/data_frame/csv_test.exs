@@ -520,9 +520,8 @@ defmodule Explorer.DataFrame.CSVTest do
 
       assert :ok = DF.to_csv(df, path, config: config)
 
-      # When we have the reader, we can activate this assertion.
-      # saved_df = DF.from_csv!(path, config: config)
-      # assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
+      saved_df = DF.from_csv!(path, config: config)
+      assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
     end
   end
 end
