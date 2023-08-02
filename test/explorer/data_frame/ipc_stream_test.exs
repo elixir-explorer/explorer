@@ -143,9 +143,8 @@ defmodule Explorer.DataFrame.IPCStreamTest do
 
       assert :ok = DF.to_ipc_stream(df, path, config: s3_config)
 
-      # When we have the reader, we can activate this assertion.
-      # saved_df = DF.from_ipc!(path, config: config)
-      # assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
+      saved_df = DF.from_ipc_stream!(path, config: s3_config)
+      assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
     end
   end
 end

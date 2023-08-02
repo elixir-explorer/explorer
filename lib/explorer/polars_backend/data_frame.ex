@@ -222,8 +222,17 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_ndjson(%S3.Entry{}, _, _) do
-    raise "S3 is not supported yet"
+  def from_ndjson(%S3.Entry{} = entry, infer_schema_length, batch_size) do
+    path = Shared.build_path_for_entry(entry)
+
+    with :ok <- Explorer.FSS.download(entry, path) do
+      entry = %Local.Entry{path: path}
+
+      result = from_ndjson(entry, infer_schema_length, batch_size)
+
+      File.rm(path)
+      result
+    end
   end
 
   @impl true
@@ -339,8 +348,17 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc(%S3.Entry{}, _) do
-    raise "S3 is not supported yet"
+  def from_ipc(%S3.Entry{} = entry, columns) do
+    path = Shared.build_path_for_entry(entry)
+
+    with :ok <- Explorer.FSS.download(entry, path) do
+      entry = %Local.Entry{path: path}
+
+      result = from_ipc(entry, columns)
+
+      File.rm(path)
+      result
+    end
   end
 
   @impl true
@@ -385,8 +403,17 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc_stream(%S3.Entry{}, _) do
-    raise "S3 is not supported yet"
+  def from_ipc_stream(%S3.Entry{} = entry, columns) do
+    path = Shared.build_path_for_entry(entry)
+
+    with :ok <- Explorer.FSS.download(entry, path) do
+      entry = %Local.Entry{path: path}
+
+      result = from_ipc_stream(entry, columns)
+
+      File.rm(path)
+      result
+    end
   end
 
   @impl true
