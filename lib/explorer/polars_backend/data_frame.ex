@@ -7,6 +7,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series, as: Series
 
+  alias FSS.HTTP
   alias FSS.Local
   alias FSS.S3
 
@@ -35,7 +36,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_csv(
-        %S3.Entry{} = entry,
+        %module{} = entry,
         dtypes,
         delimiter,
         nil_values,
@@ -47,7 +48,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         infer_schema_length,
         parse_dates,
         eol_delimiter
-      ) do
+      )
+      when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do

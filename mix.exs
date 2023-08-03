@@ -46,6 +46,9 @@ defmodule Explorer.MixProject do
       {:rustler, "~> 0.29.0", optional: not (@dev? or @force_build?)},
       {:nx, "~> 0.4.0 or ~> 0.5.0", optional: true},
 
+      ## Test
+      {:bypass, "~> 2.1", only: :test},
+
       ## Dev
       {:ex_doc, "~> 0.24", only: :dev},
       {:benchee, "~> 1.1", only: :dev}
