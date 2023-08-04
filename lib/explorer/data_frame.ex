@@ -733,11 +733,11 @@ defmodule Explorer.DataFrame do
   defp normalise_entry("file://" <> path, _config), do: {:ok, %Local.Entry{path: path}}
 
   defp normalise_entry("http://" <> _rest = url, config) do
-    HTTP.Entry.parse(url, config: config)
+    HTTP.parse(url, config: config)
   end
 
   defp normalise_entry("https://" <> _rest = url, config) do
-    HTTP.Entry.parse(url, config: config)
+    HTTP.parse(url, config: config)
   end
 
   defp normalise_entry(filepath, _config) when is_binary(filepath) do

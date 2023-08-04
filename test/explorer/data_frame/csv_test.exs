@@ -575,20 +575,6 @@ defmodule Explorer.DataFrame.CSVTest do
       assert {:error, "no such file or directory"} = DF.from_csv(url)
     end
 
-    test "returns an error with invalid headers" do
-      url = "http://localhost:9899/path/to/file.csv"
-
-      assert {:error, error} =
-               DF.from_csv(url,
-                 config: [headers: [{"authorization", 42}]]
-               )
-
-      assert error ==
-               ArgumentError.exception(
-                 "one of the headers is invalid. Expecting a list of `{\"key\", \"value\"}`, but got: [{\"authorization\", 42}]"
-               )
-    end
-
     test "returns an error with invalid config" do
       url = "http://localhost:9899/path/to/file.csv"
 
@@ -597,13 +583,6 @@ defmodule Explorer.DataFrame.CSVTest do
       assert error ==
                ArgumentError.exception(
                  "the keys [:auth] are not valid keys for the HTTP configuration"
-               )
-
-      assert {:error, error} = DF.from_csv(url, config: 54)
-
-      assert error ==
-               ArgumentError.exception(
-                 "config for HTTP entry is invalid. Expecting `:headers`, but got 54"
                )
     end
   end
