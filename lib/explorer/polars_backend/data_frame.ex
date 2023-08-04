@@ -224,7 +224,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_ndjson(%S3.Entry{} = entry, infer_schema_length, batch_size) do
+
+  def from_ndjson(%module{} = entry, infer_schema_length, batch_size)
+      when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
