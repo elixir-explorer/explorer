@@ -350,7 +350,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc(%S3.Entry{} = entry, columns) do
+  def from_ipc(%module{} = entry, columns) when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
@@ -405,7 +405,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc_stream(%S3.Entry{} = entry, columns) do
+  def from_ipc_stream(%module{} = entry, columns) when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do

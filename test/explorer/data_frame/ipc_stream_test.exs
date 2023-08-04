@@ -138,7 +138,7 @@ defmodule Explorer.DataFrame.IPCStreamTest do
     end
 
     @tag :cloud_integration
-    test "writes an IPC file to S3", %{df: df, s3_config: s3_config} do
+    test "writes an IPC stream to S3", %{df: df, s3_config: s3_config} do
       path = "s3://test-bucket/test-writes/wine-#{System.monotonic_time()}.ipcstream"
 
       assert :ok = DF.to_ipc_stream(df, path, config: s3_config)
@@ -154,4 +154,52 @@ defmodule Explorer.DataFrame.IPCStreamTest do
       assert {:error, "no such file or directory"} = DF.from_ipc_stream(path, config: s3_config)
     end
   end
+
+  describe "from_ipc_stream/2 - HTTP" do
+    setup do
+      [bypass: Bypass.open(), df: Explorer.Datasets.wine()]
+    end
+
+    test "reads a IPC stream from an HTTP server", %{bypass: bypass, df: df} do
+      Bypass.expect(bypass, "GET", "/path/to/file.ipcstream", fn conn ->
+        bytes = Explorer.DataFrame.dump_ipc_stream!(df)
+        Plug.Conn.resp(conn, 200, bytes)
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.ipcstream"
+
+      assert {:ok, df1} = DF.from_ipc_stream(url)
+
+      assert DF.to_columns(df1) == DF.to_columns(df)
+    end
+
+    test "reads a IPC stream from an HTTP server using headers", %{bypass: bypass, df: df} do
+      Bypass.expect(bypass, "GET", "/path/to/file.ipcstream", fn conn ->
+        assert ["Bearer my-token"] = Plug.Conn.get_req_header(conn, "authorization")
+        bytes = Explorer.DataFrame.dump_ipc_stream!(df)
+        Plug.Conn.resp(conn, 200, bytes)
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.ipcstream"
+
+      assert {:ok, df1} =
+               DF.from_ipc_stream(url,
+                 config: [headers: [{"authorization", "Bearer my-token"}]]
+               )
+
+      assert DF.to_columns(df1) == DF.to_columns(df)
+    end
+
+    test "cannot find a IPC stream", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/path/to/file.ipcstream", fn conn ->
+        Plug.Conn.resp(conn, 404, "not found")
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.ipcstream"
+
+      assert {:error, "no such file or directory"} = DF.from_ipc_stream(url)
+    end
+  end
+
+  defp http_endpoint(bypass), do: "http://localhost:#{bypass.port}"
 end
