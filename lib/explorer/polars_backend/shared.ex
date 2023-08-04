@@ -190,6 +190,19 @@ defmodule Explorer.PolarsBackend.Shared do
 
     id = "s3-file-#{hash}"
 
+    build_tmp_path(id)
+  end
+
+  def build_path_for_entry(%FSS.HTTP.Entry{} = entry) do
+    hash =
+      :crypto.hash(:sha256, entry.url) |> Base.url_encode64(padding: false)
+
+    id = "http-file-#{hash}"
+
+    build_tmp_path(id)
+  end
+
+  defp build_tmp_path(id) do
     base_dir = Path.join([System.tmp_dir!(), "elixir-explorer-datasets"])
     File.mkdir_p!(base_dir)
 

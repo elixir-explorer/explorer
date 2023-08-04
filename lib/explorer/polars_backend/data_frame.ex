@@ -7,6 +7,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series, as: Series
 
+  alias FSS.HTTP
   alias FSS.Local
   alias FSS.S3
 
@@ -35,7 +36,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_csv(
-        %S3.Entry{} = entry,
+        %module{} = entry,
         dtypes,
         delimiter,
         nil_values,
@@ -47,7 +48,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         infer_schema_length,
         parse_dates,
         eol_delimiter
-      ) do
+      )
+      when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
@@ -222,7 +224,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_ndjson(%S3.Entry{} = entry, infer_schema_length, batch_size) do
+
+  def from_ndjson(%module{} = entry, infer_schema_length, batch_size)
+      when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
@@ -275,6 +279,20 @@ defmodule Explorer.PolarsBackend.DataFrame do
     with {:ok, ldf} <- Native.lf_from_parquet_cloud(entry, max_rows, columns),
          {:ok, df} <- Native.lf_collect(ldf) do
       {:ok, Shared.create_dataframe(df)}
+    end
+  end
+
+  @impl true
+  def from_parquet(%HTTP.Entry{} = entry, max_rows, columns) do
+    path = Shared.build_path_for_entry(entry)
+
+    with :ok <- Explorer.FSS.download(entry, path) do
+      entry = %Local.Entry{path: path}
+
+      result = from_parquet(entry, max_rows, columns)
+
+      File.rm(path)
+      result
     end
   end
 
@@ -348,7 +366,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc(%S3.Entry{} = entry, columns) do
+  def from_ipc(%module{} = entry, columns) when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
@@ -403,7 +421,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc_stream(%S3.Entry{} = entry, columns) do
+  def from_ipc_stream(%module{} = entry, columns) when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do

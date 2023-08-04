@@ -150,4 +150,52 @@ defmodule Explorer.DataFrame.IPCTest do
       assert {:error, "no such file or directory"} = DF.from_ipc(path, config: s3_config)
     end
   end
+
+  describe "from_ipc/2 - HTTP" do
+    setup do
+      [bypass: Bypass.open(), df: Explorer.Datasets.wine()]
+    end
+
+    test "reads a IPC file from an HTTP server", %{bypass: bypass, df: df} do
+      Bypass.expect(bypass, "GET", "/path/to/file.ipc", fn conn ->
+        bytes = Explorer.DataFrame.dump_ipc!(df)
+        Plug.Conn.resp(conn, 200, bytes)
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.ipc"
+
+      assert {:ok, df1} = DF.from_ipc(url)
+
+      assert DF.to_columns(df1) == DF.to_columns(df)
+    end
+
+    test "reads a IPC file from an HTTP server using headers", %{bypass: bypass, df: df} do
+      Bypass.expect(bypass, "GET", "/path/to/file.ipc", fn conn ->
+        assert ["Bearer my-token"] = Plug.Conn.get_req_header(conn, "authorization")
+        bytes = Explorer.DataFrame.dump_ipc!(df)
+        Plug.Conn.resp(conn, 200, bytes)
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.ipc"
+
+      assert {:ok, df1} =
+               DF.from_ipc(url,
+                 config: [headers: [{"authorization", "Bearer my-token"}]]
+               )
+
+      assert DF.to_columns(df1) == DF.to_columns(df)
+    end
+
+    test "cannot find a IPC file", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/path/to/file.ipc", fn conn ->
+        Plug.Conn.resp(conn, 404, "not found")
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.ipc"
+
+      assert {:error, "no such file or directory"} = DF.from_ipc(url)
+    end
+  end
+
+  defp http_endpoint(bypass), do: "http://localhost:#{bypass.port}"
 end

@@ -531,4 +531,61 @@ defmodule Explorer.DataFrame.CSVTest do
       assert {:error, "no such file or directory"} = DF.from_csv(path, config: s3_config)
     end
   end
+
+  describe "from_csv/2 - HTTP" do
+    setup do
+      [bypass: Bypass.open()]
+    end
+
+    test "reads a CSV file from an HTTP server", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/path/to/file.csv", fn conn ->
+        Plug.Conn.resp(conn, 200, @data)
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.csv"
+
+      assert {:ok, df} = DF.from_csv(url)
+
+      assert DF.names(df) == ["city", "lat", "lng"]
+    end
+
+    test "reads a CSV file from an HTTP server using headers", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/path/to/file.csv", fn conn ->
+        assert ["Bearer my-token"] = Plug.Conn.get_req_header(conn, "authorization")
+        Plug.Conn.resp(conn, 200, @data)
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.csv"
+
+      assert {:ok, df} =
+               DF.from_csv(url,
+                 config: [headers: [{"authorization", "Bearer my-token"}]]
+               )
+
+      assert DF.names(df) == ["city", "lat", "lng"]
+    end
+
+    test "cannot find a CSV file", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/path/to/file.csv", fn conn ->
+        Plug.Conn.resp(conn, 404, "not found")
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.csv"
+
+      assert {:error, "no such file or directory"} = DF.from_csv(url)
+    end
+
+    test "returns an error with invalid config" do
+      url = "http://localhost:9899/path/to/file.csv"
+
+      assert {:error, error} = DF.from_csv(url, config: [auth: {:bearer, "token"}])
+
+      assert error ==
+               ArgumentError.exception(
+                 "the keys [:auth] are not valid keys for the HTTP configuration"
+               )
+    end
+  end
+
+  defp http_endpoint(bypass), do: "http://localhost:#{bypass.port}"
 end

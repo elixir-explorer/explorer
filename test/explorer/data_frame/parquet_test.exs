@@ -90,6 +90,54 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
   end
 
+  describe "from_parquet/2 - HTTP" do
+    setup do
+      [bypass: Bypass.open(), df: Explorer.Datasets.wine()]
+    end
+
+    test "reads a parquet file from an HTTP server", %{bypass: bypass, df: df} do
+      Bypass.expect(bypass, "GET", "/path/to/file.parquet", fn conn ->
+        bytes = Explorer.DataFrame.dump_parquet!(df)
+        Plug.Conn.resp(conn, 200, bytes)
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.parquet"
+
+      assert {:ok, df1} = DF.from_parquet(url)
+
+      assert DF.to_columns(df1) == DF.to_columns(df)
+    end
+
+    test "reads a parquet file from an HTTP server using headers", %{bypass: bypass, df: df} do
+      Bypass.expect(bypass, "GET", "/path/to/file.parquet", fn conn ->
+        assert ["Bearer my-token"] = Plug.Conn.get_req_header(conn, "authorization")
+        bytes = Explorer.DataFrame.dump_parquet!(df)
+        Plug.Conn.resp(conn, 200, bytes)
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.parquet"
+
+      assert {:ok, df1} =
+               DF.from_parquet(url,
+                 config: [headers: [{"authorization", "Bearer my-token"}]]
+               )
+
+      assert DF.to_columns(df1) == DF.to_columns(df)
+    end
+
+    test "cannot find a parquet file", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/path/to/file.parquet", fn conn ->
+        Plug.Conn.resp(conn, 404, "not found")
+      end)
+
+      url = http_endpoint(bypass) <> "/path/to/file.parquet"
+
+      assert {:error, "no such file or directory"} = DF.from_parquet(url)
+    end
+  end
+
+  defp http_endpoint(bypass), do: "http://localhost:#{bypass.port}"
+
   test "load_parquet/2" do
     parquet = tmp_parquet_file!(Explorer.Datasets.iris())
     contents = File.read!(parquet)
