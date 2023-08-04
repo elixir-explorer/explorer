@@ -283,6 +283,20 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def from_parquet(%HTTP.Entry{} = entry, max_rows, columns) do
+    path = Shared.build_path_for_entry(entry)
+
+    with :ok <- Explorer.FSS.download(entry, path) do
+      entry = %Local.Entry{path: path}
+
+      result = from_parquet(entry, max_rows, columns)
+
+      File.rm(path)
+      result
+    end
+  end
+
+  @impl true
   def from_parquet(%Local.Entry{} = entry, max_rows, columns) do
     {columns, with_projection} = column_names_or_projection(columns)
 
