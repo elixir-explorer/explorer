@@ -430,17 +430,12 @@ pub struct ExS3Config {
 pub struct ExS3Entry {
     pub bucket: String,
     pub key: String,
-    pub port: Option<u32>,
     pub config: ExS3Config,
 }
 
 impl fmt::Display for ExS3Entry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(port) = &self.port {
-            write!(f, "s3://{}:{}/{}", self.bucket, port, self.key)
-        } else {
-            write!(f, "s3://{}/{}", self.bucket, self.key)
-        }
+        write!(f, "s3://{}/{}", self.bucket, self.key)
     }
 }
 
