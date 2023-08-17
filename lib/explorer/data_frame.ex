@@ -4304,8 +4304,7 @@ defmodule Explorer.DataFrame do
 
     Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated
     with existing variables. May accept a filter callback, a list or a range of column names.
-    Default value is `..`. If an empty list is passed, or a range that results in a empty list of
-    column names, it raises an error.
+    If an empty list is passed, or a range that results in a empty list of column names, it raises an error.
 
     ID columns cannot be of the float type and any columns of this dtype is discarded.
     If you need to use float columns as IDs, you must carefully consider rounding
