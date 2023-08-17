@@ -67,7 +67,7 @@ defmodule Explorer.Shared do
     columns
   end
 
-  def to_existing_columns(%{names: names}, 0..-1//1) do
+  def to_existing_columns(%{names: names}, ..) do
     names
   end
 

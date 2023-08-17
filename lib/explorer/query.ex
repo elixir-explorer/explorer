@@ -569,13 +569,13 @@ defmodule Explorer.Query do
   @doc """
   Accesses all columns in the dataframe.
 
-  This is the equivalent to `across(0..-1//1)`.
+  This is the equivalent to `across(..)`.
 
   See the module docs for more information.
   """
   defmacro across() do
     quote do
-      Explorer.Query.__across__(unquote(df_var()), 0..-1//1)
+      Explorer.Query.__across__(unquote(df_var()), ..)
     end
   end
 

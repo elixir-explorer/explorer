@@ -1789,7 +1789,7 @@ defmodule Explorer.DataFrame do
     if struct == Nx.Tensor do
       case data.shape do
         {_, cols} ->
-          {:tensor, Enum.map(1..cols, fn i -> {"x#{i}", data[[0..-1//1, i - 1]]} end)}
+          {:tensor, Enum.map(1..cols, fn i -> {"x#{i}", data[[.., i - 1]]} end)}
 
         _ ->
           raise ArgumentError,
@@ -3257,7 +3257,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec distinct(df :: DataFrame.t(), columns :: columns(), opts :: Keyword.t()) :: DataFrame.t()
-  def distinct(df, columns \\ 0..-1//1, opts \\ [])
+  def distinct(df, columns \\ .., opts \\ [])
 
   def distinct(df, columns, opts) do
     opts = Keyword.validate!(opts, keep_all: false)
@@ -3323,7 +3323,7 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec drop_nil(df :: DataFrame.t(), column() | columns()) ::
           DataFrame.t()
-  def drop_nil(df, columns_or_column \\ 0..-1//1)
+  def drop_nil(df, columns_or_column \\ ..)
 
   def drop_nil(df, column) when is_column(column), do: drop_nil(df, [column])
 
@@ -3601,9 +3601,9 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec rename_with(df :: DataFrame.t(), columns :: columns(), callback :: function()) ::
           DataFrame.t()
-  def rename_with(df, columns \\ 0..-1//1, callback)
+  def rename_with(df, columns \\ .., callback)
 
-  def rename_with(df, 0..-1//1, callback) when is_function(callback) do
+  def rename_with(df, .., callback) when is_function(callback) do
     df.names
     |> Enum.map(callback)
     |> then(&rename(df, &1))
@@ -4222,7 +4222,7 @@ defmodule Explorer.DataFrame do
   def pivot_longer(df, columns_to_pivot, opts) do
     opts =
       Keyword.validate!(opts,
-        select: 0..-1//1,
+        select: ..,
         discard: [],
         names_to: "variable",
         values_to: "value"
@@ -4304,7 +4304,7 @@ defmodule Explorer.DataFrame do
 
     Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated
     with existing variables. May accept a filter callback, a list or a range of column names.
-    Default value is `0..-1//1`. If an empty list is passed, or a range that results in a empty list of
+    Default value is `..`. If an empty list is passed, or a range that results in a empty list of
     column names, it raises an error.
 
     ID columns cannot be of the float type and any columns of this dtype is discarded.
@@ -4511,7 +4511,7 @@ defmodule Explorer.DataFrame do
   end
 
   def pivot_wider(df, names_from, values_from, opts) when is_list(values_from) do
-    opts = Keyword.validate!(opts, id_columns: 0..-1//1, names_prefix: "")
+    opts = Keyword.validate!(opts, id_columns: .., names_prefix: "")
 
     [names_from | values_from] = to_existing_columns(df, [names_from | values_from])
     dtypes = df.dtypes
@@ -5134,9 +5134,9 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec ungroup(df :: DataFrame.t(), groups_or_group :: column_names() | column_name() | :all) ::
           DataFrame.t()
-  def ungroup(df, groups \\ 0..-1//1)
+  def ungroup(df, groups \\ ..)
 
-  def ungroup(df, 0..-1//1), do: %{df | groups: []}
+  def ungroup(df, ..), do: %{df | groups: []}
 
   def ungroup(df, group) when is_column(group), do: ungroup(df, [group])
 
