@@ -421,21 +421,25 @@ pub struct ExS3Config {
     pub access_key_id: String,
     pub secret_access_key: String,
     pub region: String,
-    pub endpoint: Option<String>,
+    pub endpoint: String,
+    pub bucket: Option<String>,
     pub token: Option<String>,
 }
 
 #[derive(NifStruct, Clone, Debug)]
 #[module = "FSS.S3.Entry"]
 pub struct ExS3Entry {
-    pub bucket: String,
     pub key: String,
     pub config: ExS3Config,
 }
 
 impl fmt::Display for ExS3Entry {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "s3://{}/{}", self.bucket, self.key)
+        if let Some(bucket_name) = &self.config.bucket {
+            write!(f, "s3://{}/{}", bucket_name, self.key)
+        } else {
+            write!(f, "s3://default-explorer-bucket/{}", self.key)
+        }
     }
 }
 
@@ -450,13 +454,24 @@ impl ExS3Config {
             (S3Key::from_str("aws_allow_http").unwrap(), &true_as_string),
         ];
 
-        if let Some(endpoint) = &self.endpoint {
-            aws_opts.push((S3Key::Endpoint, endpoint))
-        }
+        aws_opts.push((S3Key::Endpoint, &self.endpoint));
 
         if let Some(token) = &self.token {
             aws_opts.push((S3Key::Token, token))
         }
+
+        // When bucket is not present, we need to force the virtual host style
+        // in order to ignore the bucket name.
+        // We also enforce the host style because we already put the bucket when
+        // is an AWS S3 endpoint.
+        if self.bucket.is_none() || self.is_aws_endpoint() {
+            aws_opts.push((S3Key::VirtualHostedStyleRequest, &true_as_string));
+        }
+
         CloudOptions::default().with_aws(aws_opts)
+    }
+
+    pub fn is_aws_endpoint(&self) -> bool {
+        self.endpoint.contains("amazonaws.com")
     }
 }

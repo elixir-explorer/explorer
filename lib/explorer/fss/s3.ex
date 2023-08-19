@@ -16,15 +16,19 @@ defimpl Explorer.FSS, for: FSS.S3.Entry do
   end
 
   defp url(%FSS.S3.Entry{} = entry) do
+    config = entry.config
+
+    uri = URI.parse(config.endpoint)
+
     uri =
-      if endpoint = entry.config.endpoint do
-        URI.parse(endpoint)
+      if not is_nil(config.bucket) and not String.contains?(config.endpoint, config.bucket) do
+        append_path(uri, "/" <> config.bucket)
       else
-        URI.parse("https://s3.#{entry.config.region}.amazonaws.com")
+        uri
       end
 
     uri
-    |> append_path("/" <> entry.bucket <> "/" <> entry.key)
+    |> append_path("/" <> entry.key)
     |> URI.to_string()
   end
 

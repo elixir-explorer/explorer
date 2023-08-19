@@ -38,7 +38,7 @@ defmodule Explorer.MixProject do
     [
       {:aws_signature, "~> 0.3"},
       {:castore, "~> 1.0"},
-      {:fss, github: "elixir-explorer/fss"},
+      {:fss, github: "elixir-explorer/fss", branch: "ps-add-parse-bucket-url"},
       {:rustler_precompiled, "~> 0.6"},
       {:table, "~> 0.1.2"},
       {:adbc, "~> 0.1", optional: true},

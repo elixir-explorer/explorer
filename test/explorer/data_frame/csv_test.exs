@@ -531,6 +531,27 @@ defmodule Explorer.DataFrame.CSVTest do
       assert {:error, %ArgumentError{message: "resource not found (404)"}} =
                DF.from_csv(path, config: s3_config)
     end
+
+    @tag :cloud_integration
+    test "writes a CSV file to endpoint ignoring bucket name", %{df: df} do
+      config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566/test-bucket",
+        bucket: nil,
+        region: "us-east-1"
+      }
+
+      entry = %FSS.S3.Entry{
+        key: "wine-yolo-#{System.monotonic_time()}.csv",
+        config: config
+      }
+
+      assert :ok = DF.to_csv(df, entry)
+
+      saved_df = DF.from_csv!(entry)
+      assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
+    end
   end
 
   describe "from_csv/2 - HTTP" do

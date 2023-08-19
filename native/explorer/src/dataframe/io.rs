@@ -262,13 +262,26 @@ fn build_aws_s3_cloud_writer(
 ) -> Result<crate::cloud_writer::CloudWriter, ExplorerError> {
     let config = ex_entry.config;
     let mut aws_builder = object_store::aws::AmazonS3Builder::new()
-        .with_region(config.region)
-        .with_bucket_name(ex_entry.bucket)
-        .with_access_key_id(config.access_key_id)
-        .with_secret_access_key(config.secret_access_key);
+        .with_region(&config.region)
+        .with_access_key_id(&config.access_key_id)
+        .with_secret_access_key(&config.secret_access_key)
+        .with_allow_http(true)
+        .with_endpoint(&config.endpoint);
 
-    if let Some(endpoint) = config.endpoint {
-        aws_builder = aws_builder.with_allow_http(true).with_endpoint(endpoint);
+    if let Some(bucket_name) = &config.bucket {
+        aws_builder = aws_builder.with_bucket_name(bucket_name);
+
+        // If the bucket is already in the endpoint, we force the "virtual-hosted"
+        // style in order to make Polars ignore the bucket name.
+        if config.endpoint.contains(bucket_name) {
+            aws_builder = aws_builder.with_virtual_hosted_style_request(true);
+        }
+    } else {
+        // This bucket name is going to be ignored because it's assumed to be
+        // already in the endpoint URL.
+        aws_builder = aws_builder
+            .with_bucket_name("explorer-default-bucket-name")
+            .with_virtual_hosted_style_request(true);
     }
 
     if let Some(token) = config.token {

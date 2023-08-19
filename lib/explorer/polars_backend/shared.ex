@@ -185,8 +185,10 @@ defmodule Explorer.PolarsBackend.Shared do
   the `System.tmp_dir()`.
   """
   def build_path_for_entry(%FSS.S3.Entry{} = entry) do
+    bucket = entry.config.bucket || "default-explorer-bucket"
+
     hash =
-      :crypto.hash(:sha256, entry.bucket <> "/" <> entry.key) |> Base.url_encode64(padding: false)
+      :crypto.hash(:sha256, bucket <> "/" <> entry.key) |> Base.url_encode64(padding: false)
 
     id = "s3-file-#{hash}"
 
