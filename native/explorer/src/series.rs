@@ -101,14 +101,6 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision:
     )
 }
 
-// fn duration_with_timeunit_precision(d: i64, timeunit: TimeUnit) -> i64 {
-//     match timeunit {
-//         TimeUnit::Nanoseconds => d,
-//         TimeUnit::Microseconds => d * 1_000,
-//         TimeUnit::Milliseconds => d * 1_000_000,
-//     }
-// }
-
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_duration(name: &str, val: Vec<Option<i64>>, precision: &str) -> ExSeries {
     let timeunit = precision_to_timeunit(precision);
