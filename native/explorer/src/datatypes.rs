@@ -17,6 +17,7 @@ use std::str::FromStr;
 use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
 pub struct ExDataFrameRef(pub DataFrame);
+pub struct ExDurationRef(pub Duration);
 pub struct ExExprRef(pub Expr);
 pub struct ExLazyFrameRef(pub LazyFrame);
 pub struct ExSeriesRef(pub Series);
@@ -34,6 +35,12 @@ pub struct ExSeriesRef(pub Series);
 #[module = "Explorer.PolarsBackend.DataFrame"]
 pub struct ExDataFrame {
     pub resource: ResourceArc<ExDataFrameRef>,
+}
+
+#[derive(NifStruct, Clone)]
+#[module = "Explorer.PolarsBackend.Duration"]
+pub struct ExDuration {
+    pub resource: ResourceArc<ExDurationRef>,
 }
 
 #[derive(NifStruct)]
@@ -57,6 +64,12 @@ pub struct ExSeries {
 impl ExDataFrameRef {
     pub fn new(df: DataFrame) -> Self {
         Self(df)
+    }
+}
+
+impl ExDurationRef {
+    pub fn new(duration: Duration) -> Self {
+        Self(duration)
     }
 }
 
@@ -97,6 +110,41 @@ impl Deref for ExDataFrame {
 
     fn deref(&self) -> &Self::Target {
         &self.resource.0
+    }
+}
+
+impl ExDuration {
+    pub fn new(duration: Duration) -> Self {
+        Self {
+            resource: ResourceArc::new(ExDurationRef::new(duration)),
+        }
+    }
+
+    // Returns a clone of the Duration inside the ResourceArc container.
+    pub fn clone_inner(&self) -> Duration {
+        self.resource.0.clone()
+    }
+}
+
+// Implement Deref so we can call `Duration` functions directly from a `ExDuration` struct.
+impl Deref for ExDuration {
+    type Target = Duration;
+
+    fn deref(&self) -> &Self::Target {
+        &self.resource.0
+    }
+}
+
+impl From<i64> for ExDuration {
+    fn from(microseconds: i64) -> Self {
+        ExDuration::new(Duration::new(microseconds * 1_000))
+    }
+}
+
+impl From<ExDuration> for i64 {
+    fn from(d: ExDuration) -> i64 {
+        // BILLY: I think this is wrong.
+        d.duration_ns()
     }
 }
 

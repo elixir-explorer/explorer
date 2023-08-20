@@ -210,6 +210,25 @@ fn datetime_series_to_list<'b>(
     ))
 }
 
+#[inline]
+pub fn encode_duration(v: i64, time_unit: TimeUnit, env: Env) -> Term {
+    datetime_to_microseconds(v, time_unit).encode(env)
+}
+
+#[inline]
+fn duration_series_to_list<'b>(
+    s: &Series,
+    time_unit: TimeUnit,
+    env: Env<'b>,
+) -> Result<Term<'b>, ExplorerError> {
+    Ok(unsafe_iterator_series_to_list!(
+        env,
+        s.duration()?.into_iter().map(|option| option
+            .map(|v| { encode_duration(v, time_unit, env) })
+            .encode(env))
+    ))
+}
+
 macro_rules! unsafe_encode_time {
     ($v: expr, $naive_time_struct_keys: ident, $calendar_iso_module: ident, $time_module: ident, $env: ident) => {{
         let t = time64ns_to_time($v);
@@ -467,6 +486,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Time(v) => encode_time(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
+        AnyValue::Duration(v, time_unit) => Ok(encode_duration(v, time_unit, env)),
         AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
         dt => panic!("cannot encode value {dt:?} to term"),
     }
@@ -493,6 +513,7 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
         DataType::Date => date_series_to_list(&s, env),
         DataType::Time => time_series_to_list(&s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(&s, *time_unit, env),
+        DataType::Duration(time_unit) => duration_series_to_list(&s, *time_unit, env),
         DataType::Utf8 => {
             generic_binary_series_to_list(&s.resource, s.utf8()?.downcast_iter(), env)
         }

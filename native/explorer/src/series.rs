@@ -1,6 +1,6 @@
 use crate::{
     atoms,
-    datatypes::{ExDate, ExDateTime, ExTime},
+    datatypes::{ExDate, ExDateTime, ExDuration, ExTime},
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
@@ -76,14 +76,19 @@ pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
     )
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision: &str) -> ExSeries {
-    let timeunit = match precision {
+fn precision_to_timeunit(precision: &str) -> TimeUnit {
+    match precision {
         "millisecond" => TimeUnit::Milliseconds,
         "microsecond" => TimeUnit::Microseconds,
         "nanosecond" => TimeUnit::Nanoseconds,
         _ => panic!("Unknown datetime precision"),
-    };
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision: &str) -> ExSeries {
+    let timeunit = precision_to_timeunit(precision);
+
     ExSeries::new(
         Series::new(
             name,
@@ -92,6 +97,24 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision:
                 .collect::<Vec<Option<i64>>>(),
         )
         .cast(&DataType::Datetime(timeunit, None))
+        .unwrap(),
+    )
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_duration(name: &str, val: Vec<Option<ExDuration>>, precision: &str) -> ExSeries {
+    let timeunit = precision_to_timeunit(precision);
+
+    ExSeries::new(
+        Series::new(
+            name,
+            val.iter()
+                // BILLY: FIXME
+                // Was not able to `derive(copy)` on `ExDuration`.
+                .map(|d| Some(d.clone().unwrap().duration_ns()))
+                .collect::<Vec<Option<i64>>>(),
+        )
+        .cast(&DataType::Duration(timeunit))
         .unwrap(),
     )
 }
@@ -1135,6 +1158,9 @@ pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
         "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
         "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
         "datetime[ns]" => Ok(DataType::Datetime(TimeUnit::Nanoseconds, None)),
+        "duration[ms]" => Ok(DataType::Duration(TimeUnit::Milliseconds)),
+        "duration[μs]" => Ok(DataType::Duration(TimeUnit::Microseconds)),
+        "duration[ns]" => Ok(DataType::Duration(TimeUnit::Nanoseconds)),
         "boolean" => Ok(DataType::Boolean),
         "string" => Ok(DataType::Utf8),
         "binary" => Ok(DataType::Binary),
