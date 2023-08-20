@@ -210,15 +210,6 @@ fn datetime_series_to_list<'b>(
     ))
 }
 
-// #[inline]
-// fn duration_to_i64(v: i64, time_unit: TimeUnit) -> i64 {
-//     match time_unit {
-//         TimeUnit::Nanoseconds => v,
-//         TimeUnit::Microseconds => (v as f64 * 1.0e-3) as i64,
-//         TimeUnit::Milliseconds => (v as f64 * 1.0e-6) as i64,
-//     }
-// }
-
 #[inline]
 fn duration_series_to_list<'b>(
     s: &Series,
