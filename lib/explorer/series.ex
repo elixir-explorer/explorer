@@ -11,6 +11,9 @@ defmodule Explorer.Series do
     * `{:datetime, :millisecond}` - DateTime type with milli-second precision that unwraps to `Elixir.NaiveDateTime`
     * `{:datetime, :microsecond}` - DateTime type with micro-second precision that unwraps to `Elixir.NaiveDateTime`
     * `{:datetime, :nanosecond}` - DateTime type with nano-second precision that unwraps to `Elixir.NaiveDateTime`
+    * `{:duration, :millisecond}` - Duration type with milli-second precision that unwraps to `integer`
+    * `{:duration, :microsecond}` - Duration type with micro-second precision that unwraps to `integer`
+    * `{:duration, :nanosecond}` - Duration type with nano-second precision that unwraps to `integer`
     * `:float` - 64-bit floating point number
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
@@ -2602,6 +2605,12 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec subtract(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
+  def subtract(
+        %Series{dtype: {:datetime, _}} = left,
+        %Series{dtype: {:datetime, _}} = right
+      ),
+      do: apply_series_list(:subtract, [left, right])
+
   def subtract(left, right), do: basic_numeric_operation(:subtract, left, right)
 
   @doc """
