@@ -1836,7 +1836,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.min(s)
-      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :time, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec min(series :: Series.t()) ::
@@ -1882,7 +1882,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.max(s)
-      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :time, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec max(series :: Series.t()) ::
@@ -1928,7 +1928,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmax(s)
-      ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :time, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec argmax(series :: Series.t()) :: number() | non_finite() | nil
@@ -1976,7 +1976,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmin(s)
-      ** (ArgumentError) Explorer.Series.argmin/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :date, :time, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.argmin/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec argmin(series :: Series.t()) :: number() | non_finite() | nil
@@ -2164,7 +2164,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)
-      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float, :date, :time, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
