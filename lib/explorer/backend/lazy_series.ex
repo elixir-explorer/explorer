@@ -222,7 +222,6 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:divide, args, aggregations?(args))
     dtype = resolve_numeric_temporal_dtype(:divide, left, right)
     Backend.Series.new(data, dtype)
-    # Backend.Series.new(data, :float)
   end
 
   @impl true
