@@ -154,8 +154,9 @@ defmodule Explorer.PolarsBackend.Expression do
   end
 
   def to_expr(%LazySeries{op: :cast, args: [lazy_series, dtype]}) do
-    expr = to_expr(lazy_series)
-    Native.expr_cast(expr, Atom.to_string(dtype))
+    lazy_series_expr = to_expr(lazy_series)
+    dtype_expr = Explorer.Shared.dtype_to_string(dtype)
+    Native.expr_cast(lazy_series_expr, dtype_expr)
   end
 
   def to_expr(%LazySeries{op: :fill_missing_with_strategy, args: [lazy_series, strategy]}) do
