@@ -734,6 +734,10 @@ defmodule Explorer.PolarsBackend.Series do
   defp to_mod_series(value, %{dtype: :integer}, mod) when is_float(value) or is_non_finite(value),
     do: mod.from_list([value], :float)
 
+  defp to_mod_series(%NaiveDateTime{} = value, %{dtype: {dtype_base, _}}, mod)
+       when dtype_base in [:datetime, :duration],
+       do: mod.from_list([value], {:datetime, :microsecond})
+
   defp to_mod_series(value, %{dtype: dtype}, mod),
     do: mod.from_list([value], dtype)
 end
