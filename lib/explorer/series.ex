@@ -2519,6 +2519,24 @@ defmodule Explorer.Series do
 
   # Arithmetic
 
+  defp enforce_highest_precision(
+         %Series{dtype: {left_base, left_timeunit}} = left,
+         %Series{dtype: {right_base, right_timeunit}} = right
+       )
+       when K.and(
+              K.in(left_base, [:datetime, :duration]),
+              K.in(right_base, [:datetime, :duration])
+            ) do
+    # Higher precision wins, otherwise information is lost.
+    case {left_timeunit, right_timeunit} do
+      {equal, equal} -> [left, right]
+      {:nanosecond, _} -> [left, cast(right, {right_base, :nanosecond})]
+      {_, :nanosecond} -> [cast(left, {left_base, :nanosecond}), right]
+      {:microsecond, _} -> [left, cast(right, {right_base, :microsecond})]
+      {_, :microsecond} -> [cast(left, {left_base, :microsecond}), right]
+    end
+  end
+
   @doc """
   Adds right to left, element-wise.
 
@@ -2560,7 +2578,25 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec add(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
+  @spec add(
+          left :: Series.t() | number() | NaiveDateTime.t(),
+          right :: Series.t() | number() | NaiveDateTime.t()
+        ) :: Series.t()
+  # def add(%NaiveDateTime{} = left, %Series{dtype: {:duration, _}} = right),
+  #   do: apply_series_list(:add, [left, right])
+
+  # def add(%Series{dtype: {:duration, _}} = left, %NaiveDateTime{} = right),
+  #   do: apply_series_list(:add, [left, right])
+
+  def add(%Series{dtype: {:datetime, _}} = left, %Series{dtype: {:duration, _}} = right),
+    do: apply_series_list(:add, enforce_highest_precision(left, right))
+
+  def add(%Series{dtype: {:duration, _}} = left, %Series{dtype: {:datetime, _}} = right),
+    do: apply_series_list(:add, enforce_highest_precision(left, right))
+
+  def add(%Series{dtype: {:duration, _}} = left, %Series{dtype: {:duration, _}} = right),
+    do: apply_series_list(:add, enforce_highest_precision(left, right))
+
   def add(left, right), do: basic_numeric_operation(:add, left, right)
 
   @doc """
@@ -2604,12 +2640,27 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec subtract(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def subtract(
-        %Series{dtype: {:datetime, _}} = left,
-        %Series{dtype: {:datetime, _}} = right
-      ),
-      do: apply_series_list(:subtract, [left, right])
+  @spec subtract(
+          left :: Series.t() | number() | NaiveDateTime.t(),
+          right :: Series.t() | number() | NaiveDateTime.t()
+        ) :: Series.t()
+  # def subtract(%NaiveDateTime{} = left, %Series{dtype: {:datetime, timeunit}} = right),
+  #   do: apply_series_list(:subtract, [left, right]) |> cast({:duration, timeunit})
+
+  # def subtract(%Series{dtype: {:datetime, timeunit}} = left, %NaiveDateTime{} = right),
+  #   do: apply_series_list(:subtract, [left, right]) |> cast({:duration, timeunit})
+
+  # def subtract(%NaiveDateTime{} = left, %Series{dtype: {:duration, timeunit}} = right),
+  #   do: apply_series_list(:subtract, [left, right]) |> cast({:datetime, timeunit})
+
+  def subtract(%Series{dtype: {:datetime, _}} = left, %Series{dtype: {:datetime, _}} = right),
+    do: apply_series_list(:subtract, enforce_highest_precision(left, right))
+
+  def subtract(%Series{dtype: {:datetime, _}} = left, %Series{dtype: {:duration, _}} = right),
+    do: apply_series_list(:subtract, enforce_highest_precision(left, right))
+
+  def subtract(%Series{dtype: {:duration, _}} = left, %Series{dtype: {:duration, _}} = right),
+    do: apply_series_list(:subtract, enforce_highest_precision(left, right))
 
   def subtract(left, right), do: basic_numeric_operation(:subtract, left, right)
 
@@ -2646,6 +2697,12 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec multiply(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
+  def multiply(%Series{dtype: {:duration, _} = dtype} = left, %Series{dtype: :integer} = right),
+    do: apply_series_list(:multiply, [left, right]) |> cast(dtype)
+
+  def multiply(%Series{dtype: :integer} = left, %Series{dtype: {:duration, _} = dtype} = right),
+    do: apply_series_list(:multiply, [left, right]) |> cast(dtype)
+
   def multiply(left, right), do: basic_numeric_operation(:multiply, left, right)
 
   @doc """
@@ -2696,6 +2753,12 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec divide(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
+  def divide(%Series{dtype: {:duration, _} = dtype} = left, %Series{dtype: :integer} = right),
+    do: apply_series_list(:divide, [left, right]) |> cast(dtype)
+
+  def divide(%Series{dtype: :integer} = left, %Series{dtype: {:duration, _} = dtype} = right),
+    do: apply_series_list(:divide, [left, right]) |> cast(dtype)
+
   def divide(left, right), do: basic_numeric_operation(:divide, left, right)
 
   @doc """

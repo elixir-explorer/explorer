@@ -210,22 +210,26 @@ fn datetime_series_to_list<'b>(
     ))
 }
 
-#[inline]
-pub fn encode_duration(v: i64, time_unit: TimeUnit, env: Env) -> Term {
-    datetime_to_microseconds(v, time_unit).encode(env)
-}
+// #[inline]
+// fn duration_to_i64(v: i64, time_unit: TimeUnit) -> i64 {
+//     match time_unit {
+//         TimeUnit::Nanoseconds => v,
+//         TimeUnit::Microseconds => (v as f64 * 1.0e-3) as i64,
+//         TimeUnit::Milliseconds => (v as f64 * 1.0e-6) as i64,
+//     }
+// }
 
 #[inline]
 fn duration_series_to_list<'b>(
     s: &Series,
-    time_unit: TimeUnit,
+    _time_unit: TimeUnit,
     env: Env<'b>,
 ) -> Result<Term<'b>, ExplorerError> {
     Ok(unsafe_iterator_series_to_list!(
         env,
-        s.duration()?.into_iter().map(|option| option
-            .map(|v| { encode_duration(v, time_unit, env) })
-            .encode(env))
+        s.duration()?
+            .into_iter()
+            .map(|option| option.map(|v| v).encode(env))
     ))
 }
 
@@ -486,7 +490,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Time(v) => encode_time(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
-        AnyValue::Duration(v, time_unit) => Ok(encode_duration(v, time_unit, env)),
+        AnyValue::Duration(v, _time_unit) => Ok(Some(v).encode(env)),
         AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
         dt => panic!("cannot encode value {dt:?} to term"),
     }

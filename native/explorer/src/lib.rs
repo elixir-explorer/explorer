@@ -28,8 +28,8 @@ mod series;
 use dataframe::io::*;
 use dataframe::*;
 pub use datatypes::{
-    ExDataFrame, ExDataFrameRef, ExDurationRef, ExExpr, ExExprRef, ExLazyFrame, ExLazyFrameRef,
-    ExSeries, ExSeriesRef,
+    ExDataFrame, ExDataFrameRef, ExExpr, ExExprRef, ExLazyFrame, ExLazyFrameRef, ExSeries,
+    ExSeriesRef,
 };
 pub use error::ExplorerError;
 use expressions::*;
@@ -40,7 +40,6 @@ use series::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExDataFrameRef, env);
-    rustler::resource!(ExDurationRef, env);
     rustler::resource!(ExExprRef, env);
     rustler::resource!(ExLazyFrameRef, env);
     rustler::resource!(ExSeriesRef, env);

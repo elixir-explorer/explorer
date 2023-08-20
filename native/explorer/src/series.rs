@@ -1,6 +1,6 @@
 use crate::{
     atoms,
-    datatypes::{ExDate, ExDateTime, ExDuration, ExTime},
+    datatypes::{ExDate, ExDateTime, ExTime},
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
@@ -101,17 +101,23 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision:
     )
 }
 
+// fn duration_with_timeunit_precision(d: i64, timeunit: TimeUnit) -> i64 {
+//     match timeunit {
+//         TimeUnit::Nanoseconds => d,
+//         TimeUnit::Microseconds => d * 1_000,
+//         TimeUnit::Milliseconds => d * 1_000_000,
+//     }
+// }
+
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_duration(name: &str, val: Vec<Option<ExDuration>>, precision: &str) -> ExSeries {
+pub fn s_from_list_duration(name: &str, val: Vec<Option<i64>>, precision: &str) -> ExSeries {
     let timeunit = precision_to_timeunit(precision);
 
     ExSeries::new(
         Series::new(
             name,
             val.iter()
-                // BILLY: FIXME
-                // Was not able to `derive(copy)` on `ExDuration`.
-                .map(|d| Some(d.clone().unwrap().duration_ns()))
+                .map(|d| d.map(|d| d))
                 .collect::<Vec<Option<i64>>>(),
         )
         .cast(&DataType::Duration(timeunit))
