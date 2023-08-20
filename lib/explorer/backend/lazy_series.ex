@@ -192,30 +192,11 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, dtype)
   end
 
-  defp highest_precision(left_timeunit, right_timeunit) do
-    # Higher precision wins, otherwise information is lost.
-    case {left_timeunit, right_timeunit} do
-      {equal, equal} -> equal
-      {:nanosecond, _} -> :nanosecond
-      {_, :nanosecond} -> :nanosecond
-      {:microsecond, _} -> :microsecond
-      {_, :microsecond} -> :microsecond
-    end
-  end
-
   @impl true
   def add(left, right) do
     args = [data!(left), data!(right)]
     data = new(:add, args, aggregations?(args))
-
-    dtype =
-      case {dtype(left), dtype(right)} do
-        {{:datetime, ltu}, {:duration, rtu}} -> {:datetime, highest_precision(ltu, rtu)}
-        {{:duration, ltu}, {:datetime, rtu}} -> {:datetime, highest_precision(ltu, rtu)}
-        {{:duration, ltu}, {:duration, rtu}} -> {:duration, highest_precision(ltu, rtu)}
-        _ -> resolve_numeric_dtype([left, right])
-      end
-
+    dtype = resolve_numeric_temporal_dtype(:add, left, right)
     Backend.Series.new(data, dtype)
   end
 
@@ -223,30 +204,15 @@ defmodule Explorer.Backend.LazySeries do
   def subtract(left, right) do
     args = [data!(left), data!(right)]
     data = new(:subtract, args, aggregations?(args))
-
-    dtype =
-      case {dtype(left), dtype(right)} do
-        {{:datetime, ltu}, {:datetime, rtu}} -> {:duration, highest_precision(ltu, rtu)}
-        {{:datetime, ltu}, {:duration, rtu}} -> {:datetime, highest_precision(ltu, rtu)}
-        {{:duration, ltu}, {:duration, rtu}} -> {:duration, highest_precision(ltu, rtu)}
-        _ -> resolve_numeric_dtype([left, right])
-      end
-
+    dtype = resolve_numeric_temporal_dtype(:subtract, left, right)
     Backend.Series.new(data, dtype)
   end
 
   @impl true
   def multiply(left, right) do
     args = [data!(left), data!(right)]
-    data = new(:subtract, args, aggregations?(args))
-
-    dtype =
-      case {dtype(left), dtype(right)} do
-        {{:duration, _} = duration, :integer} -> duration
-        {:integer, {:duration, _} = duration} -> duration
-        _ -> resolve_numeric_dtype([left, right])
-      end
-
+    data = new(:multiply, args, aggregations?(args))
+    dtype = resolve_numeric_temporal_dtype(:multiply, left, right)
     Backend.Series.new(data, dtype)
   end
 
@@ -254,14 +220,9 @@ defmodule Explorer.Backend.LazySeries do
   def divide(left, right) do
     args = [data!(left), data!(right)]
     data = new(:divide, args, aggregations?(args))
-
-    dtype =
-      case {dtype(left), dtype(right)} do
-        {{:duration, _} = duration, :integer} -> duration
-        _ -> resolve_numeric_dtype([left, right])
-      end
-
+    dtype = resolve_numeric_temporal_dtype(:divide, left, right)
     Backend.Series.new(data, dtype)
+    # Backend.Series.new(data, :float)
   end
 
   @impl true
@@ -700,6 +661,51 @@ defmodule Explorer.Backend.LazySeries do
 
   defp resolve_numeric_dtype(:window_mean, _items), do: :float
   defp resolve_numeric_dtype(_op, items), do: resolve_numeric_dtype(items)
+
+  defp resolve_numeric_temporal_dtype(op, %Series{dtype: ldt} = left, %Series{dtype: rdt} = right) do
+    case {op, ldt, rdt} do
+      {:add, {:datetime, ltu}, {:duration, rtu}} -> {:datetime, highest_precision(ltu, rtu)}
+      {:add, {:duration, ltu}, {:datetime, rtu}} -> {:datetime, highest_precision(ltu, rtu)}
+      {:add, {:duration, ltu}, {:duration, rtu}} -> {:duration, highest_precision(ltu, rtu)}
+      {:subtract, {:datetime, ltu}, {:datetime, rtu}} -> {:duration, highest_precision(ltu, rtu)}
+      {:subtract, {:datetime, ltu}, {:duration, rtu}} -> {:datetime, highest_precision(ltu, rtu)}
+      {:subtract, {:duration, ltu}, {:duration, rtu}} -> {:duration, highest_precision(ltu, rtu)}
+      {:multiply, :integer, {:duration, tu}} -> {:duration, tu}
+      {:multiply, {:duration, tu}, :integer} -> {:duration, tu}
+      {:divide, {:duration, tu}, :integer} -> {:duration, tu}
+      {:divide, _, _} -> :float
+      _ -> resolve_numeric_dtype([left, right])
+    end
+  end
+
+  defp resolve_numeric_temporal_dtype(op, left, %Series{dtype: dtype} = right) do
+    case {op, left, dtype} do
+      {:add, %NaiveDateTime{}, {:duration, tu}} -> {:datetime, tu}
+      {:subtract, %NaiveDateTime{}, {:datetime, tu}} -> {:duration, tu}
+      {:multiply, :integer, {:duration, tu}} -> {:duration, tu}
+      {:divide, {:duration, tu}, :integer} -> {:duration, tu}
+      {:divide, _, _} -> :float
+      _ -> resolve_numeric_dtype([left, right])
+    end
+  end
+
+  defp resolve_numeric_temporal_dtype(op, left, right) do
+    case op do
+      :divide -> :float
+      _ -> resolve_numeric_dtype([left, right])
+    end
+  end
+
+  defp highest_precision(left_timeunit, right_timeunit) do
+    # Higher precision wins, otherwise information is lost.
+    case {left_timeunit, right_timeunit} do
+      {equal, equal} -> equal
+      {:nanosecond, _} -> :nanosecond
+      {_, :nanosecond} -> :nanosecond
+      {:microsecond, _} -> :microsecond
+      {_, :microsecond} -> :microsecond
+    end
+  end
 
   # Returns the inner `data` if it's a lazy series. Otherwise raises an error.
   defp lazy_series!(series) do
