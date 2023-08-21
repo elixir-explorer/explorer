@@ -218,9 +218,7 @@ fn duration_series_to_list<'b>(
 ) -> Result<Term<'b>, ExplorerError> {
     Ok(unsafe_iterator_series_to_list!(
         env,
-        s.duration()?
-            .into_iter()
-            .map(|option| option.map(|v| v).encode(env))
+        s.duration()?.into_iter().map(|option| option.encode(env))
     ))
 }
 
