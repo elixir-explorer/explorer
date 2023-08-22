@@ -2522,11 +2522,7 @@ defmodule Explorer.Series do
   defp enforce_highest_precision(
          %Series{dtype: {left_base, left_timeunit}} = left,
          %Series{dtype: {right_base, right_timeunit}} = right
-       )
-       when K.and(
-              K.in(left_base, [:datetime, :duration]),
-              K.in(right_base, [:datetime, :duration])
-            ) do
+       ) do
     # Higher precision wins, otherwise information is lost.
     case {left_timeunit, right_timeunit} do
       {equal, equal} -> [left, right]
