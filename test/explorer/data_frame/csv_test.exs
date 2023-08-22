@@ -528,7 +528,8 @@ defmodule Explorer.DataFrame.CSVTest do
     test "returns an error in case file is not found in S3 bucket", %{s3_config: s3_config} do
       path = "s3://test-bucket/test-writes/file-does-not-exist.csv"
 
-      assert {:error, "no such file or directory"} = DF.from_csv(path, config: s3_config)
+      assert {:error, %ArgumentError{message: "resource not found (404)"}} =
+               DF.from_csv(path, config: s3_config)
     end
   end
 
@@ -572,7 +573,7 @@ defmodule Explorer.DataFrame.CSVTest do
 
       url = http_endpoint(bypass) <> "/path/to/file.csv"
 
-      assert {:error, "no such file or directory"} = DF.from_csv(url)
+      assert {:error, %ArgumentError{message: "resource not found (404)"}} = DF.from_csv(url)
     end
 
     test "returns an error with invalid config" do
