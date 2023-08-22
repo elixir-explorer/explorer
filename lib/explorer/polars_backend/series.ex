@@ -150,20 +150,16 @@ defmodule Explorer.PolarsBackend.Series do
   def format(list) do
     polars_series = for s <- list, do: s.data
 
-    case Explorer.PolarsBackend.Native.s_format(polars_series) do
-      {:ok, %__MODULE__{} = new_series} -> Shared.create_series(new_series)
-      {:error, error} -> raise "cannot format series with Polars, reason: #{inspect(error)}"
-    end
+    Shared.apply(:s_format, [polars_series])
+    |> Shared.create_series()
   end
 
   @impl true
   def concat([%Series{} | _] = series) do
     polars_series = for s <- series, do: s.data
 
-    case Explorer.PolarsBackend.Native.s_concat(polars_series) do
-      {:ok, %__MODULE__{} = new_series} -> Shared.create_series(new_series)
-      {:error, error} -> raise "cannot concat series with Polars, reason: #{inspect(error)}"
-    end
+    Shared.apply(:s_concat, [polars_series])
+    |> Shared.create_series()
   end
 
   @impl true

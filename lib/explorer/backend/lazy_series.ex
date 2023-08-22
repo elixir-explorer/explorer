@@ -822,8 +822,17 @@ defmodule Explorer.Backend.LazySeries do
     unary_not: :not
   }
 
-  defp to_elixir_ast(%{op: op, args: args}) do
+  defp to_elixir_ast(%__MODULE__{op: op, args: args}) do
     {Map.get(@to_elixir_op, op, op), [], Enum.map(args, &to_elixir_ast/1)}
+  end
+
+  defp to_elixir_ast(%Explorer.PolarsBackend.Series{} = series) do
+    series = Explorer.PolarsBackend.Shared.create_series(series)
+
+    case Explorer.Series.size(series) do
+      1 -> series[0]
+      _ -> series
+    end
   end
 
   defp to_elixir_ast(other), do: other
