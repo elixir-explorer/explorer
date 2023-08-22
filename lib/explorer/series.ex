@@ -4266,8 +4266,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.abs/1 not implemented for dtype :string. Valid dtypes are [:integer, :float]
   """
   @doc type: :element_wise
-  @spec abs(series :: Series.t()) ::
-          number() | non_finite() | Date.t() | Time.t() | NaiveDateTime.t() | nil
+  @spec abs(series :: Series.t()) :: Series.t()
   def abs(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: apply_series(series, :abs)
 
