@@ -2752,6 +2752,9 @@ defmodule Explorer.Series do
   def divide(%Series{dtype: {:duration, _} = dtype} = left, %Series{dtype: :integer} = right),
     do: apply_series_list(:divide, [left, right]) |> cast(dtype)
 
+  def divide(_, %Series{dtype: {:duration, _}}),
+    do: raise("cannot divide by duration")
+
   def divide(left, right), do: basic_numeric_operation(:divide, left, right)
 
   @doc """
