@@ -2579,10 +2579,10 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | NaiveDateTime.t()
         ) :: Series.t()
   def add(%NaiveDateTime{} = left, %Series{dtype: {:duration, timeunit}} = right),
-    do: apply_series_list(:add, [left, right]) |> cast({:datetime, timeunit})
+    do: apply_series_list(:add, [from_list([left], dtype: {:datetime, timeunit}), right])
 
   def add(%Series{dtype: {:duration, timeunit}} = left, %NaiveDateTime{} = right),
-    do: apply_series_list(:add, [left, right]) |> cast({:datetime, timeunit})
+    do: apply_series_list(:add, [left, from_list([right], dtype: {:datetime, timeunit})])
 
   def add(%Series{dtype: {:datetime, _}} = left, %Series{dtype: {:duration, _}} = right),
     do: apply_series_list(:add, enforce_highest_precision(left, right))
@@ -2641,13 +2641,13 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | NaiveDateTime.t()
         ) :: Series.t()
   def subtract(%NaiveDateTime{} = left, %Series{dtype: {:datetime, timeunit}} = right),
-    do: apply_series_list(:subtract, [left, right]) |> cast({:duration, timeunit})
+    do: apply_series_list(:subtract, [from_list([left], dtype: {:datetime, timeunit}), right])
 
   def subtract(%Series{dtype: {:datetime, timeunit}} = left, %NaiveDateTime{} = right),
-    do: apply_series_list(:subtract, [left, right]) |> cast({:duration, timeunit})
+    do: apply_series_list(:subtract, [left, from_list([right], dtype: {:datetime, timeunit})])
 
   def subtract(%NaiveDateTime{} = left, %Series{dtype: {:duration, timeunit}} = right),
-    do: apply_series_list(:subtract, [left, right]) |> cast({:datetime, timeunit})
+    do: apply_series_list(:subtract, [from_list([left], dtype: {:datetime, timeunit}), right])
 
   def subtract(%Series{dtype: {:datetime, _}} = left, %Series{dtype: {:datetime, _}} = right),
     do: apply_series_list(:subtract, enforce_highest_precision(left, right))
