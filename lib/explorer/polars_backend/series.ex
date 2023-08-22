@@ -311,45 +311,8 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(to_series(left, right), :s_remainder, [to_polars_series(right, left)])
 
   @impl true
-  def pow(%Series{dtype: dtype} = left, %Series{dtype: dtype} = right),
-    do: Shared.apply_series(matching_size!(left, right), :s_pow, [right.data])
-
-  def pow(%Series{dtype: :float} = left, %Series{dtype: :integer} = right) do
-    left = matching_size!(left, right)
-    right = Series.cast(right, :float)
-    Shared.apply_series(left, :s_pow, [right.data])
-  end
-
-  def pow(%Series{dtype: :integer} = left, %Series{dtype: :float} = right) do
-    left = Series.cast(matching_size!(left, right), :float)
-    Shared.apply_series(left, :s_pow, [right.data])
-  end
-
-  def pow(%Series{dtype: :integer}, exponent) when is_integer(exponent) and exponent < 0,
-    do:
-      raise(
-        "negative exponent with an integer base is not allowed (you may explicitly cast the exponent to float if desired)"
-      )
-
-  def pow(left, exponent) when is_integer(exponent) do
-    cond do
-      Series.dtype(left) == :integer -> Shared.apply_series(left, :s_pow_i_rhs, [exponent])
-      Series.dtype(left) == :float -> Shared.apply_series(left, :s_pow_f_rhs, [exponent / 1])
-    end
-  end
-
-  def pow(left, exponent) when is_numerical(exponent),
-    do: Shared.apply_series(left, :s_pow_f_rhs, [exponent])
-
-  def pow(exponent, right) when is_integer(exponent) do
-    cond do
-      Series.dtype(right) == :integer -> Shared.apply_series(right, :s_pow_i_lhs, [exponent])
-      Series.dtype(right) == :float -> Shared.apply_series(right, :s_pow_f_lhs, [exponent / 1])
-    end
-  end
-
-  def pow(exponent, right) when is_numerical(exponent),
-    do: Shared.apply_series(right, :s_pow_f_lhs, [exponent])
+  def pow(left, right),
+    do: Shared.apply_series(to_series(left, right), :s_pow, [to_polars_series(right, left)])
 
   @impl true
   def log(%Series{} = argument), do: Shared.apply_series(argument, :s_log_natural, [])

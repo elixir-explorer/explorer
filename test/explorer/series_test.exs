@@ -1813,7 +1813,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, -2, 3])
 
-      assert_raise RuntimeError, "Generic Error: negative exponent with an integer base", fn ->
+      assert_raise RuntimeError, ~r"negative exponent with an integer base", fn ->
         Series.pow(s1, s2)
       end
     end
@@ -1881,7 +1881,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3])
 
       assert_raise RuntimeError,
-                   "negative exponent with an integer base is not allowed (you may explicitly cast the exponent to float if desired)",
+                   ~r"negative exponent with an integer base",
                    fn -> Series.pow(s1, -2) end
     end
 
@@ -1942,7 +1942,7 @@ defmodule Explorer.SeriesTest do
     test "pow of an integer series that contains negative integer with an integer scalar value on the left-hand side" do
       s1 = Series.from_list([1, -2, 3])
 
-      assert_raise RuntimeError, "Polars Error: negative exponent with an integer base", fn ->
+      assert_raise RuntimeError, ~r"negative exponent with an integer base", fn ->
         Series.pow(2, s1)
       end
     end

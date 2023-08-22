@@ -1006,118 +1006,65 @@ pub fn s_n_distinct(s: ExSeries) -> Result<usize, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => {
-            let iter1 = s.i64()?.into_iter();
+    match (s.dtype().is_integer(), other.dtype().is_integer()) {
+        (true, true) => {
+            let cast1 = s.cast(&DataType::Int64)?;
+            let mut iter1 = cast1.i64()?.into_iter();
+
             match other.strict_cast(&DataType::UInt32) {
                 Ok(casted) => {
-                    let iter2 = casted.u32()?.into_iter();
+                    let mut iter2 = casted.u32()?.into_iter();
 
-                    let s = iter1
-                        .zip(iter2)
-                        .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.pow(right))))
-                        .collect();
+                    let res = if s.len() == 1 {
+                        let v1 = iter1.next().unwrap();
+                        iter2
+                            .map(|v2| v1.and_then(|left| v2.map(|right| left.pow(right))))
+                            .collect()
+                    } else if other.len() == 1 {
+                        let v2 = iter2.next().unwrap();
+                        iter1
+                            .map(|v1| v1.and_then(|left| v2.map(|right| left.pow(right))))
+                            .collect()
+                    } else {
+                        iter1
+                            .zip(iter2)
+                            .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.pow(right))))
+                            .collect()
+                    };
 
-                    Ok(ExSeries::new(s))
+                    Ok(ExSeries::new(res))
                 }
                 Err(_) => Err(ExplorerError::Other(
                     "negative exponent with an integer base".into(),
                 )),
             }
         }
-        DataType::Float64 => {
-            let iter1 = s.f64()?.into_iter();
-            let iter2 = other.f64()?.into_iter();
-            let s = iter1
-                .zip(iter2)
-                .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.powf(right))))
-                .collect();
+        (_, _) => {
+            let cast1 = s.cast(&DataType::Float64)?;
+            let cast2 = other.cast(&DataType::Float64)?;
+            let mut iter1 = cast1.f64()?.into_iter();
+            let mut iter2 = cast2.f64()?.into_iter();
 
-            Ok(ExSeries::new(s))
+            let res = if s.len() == 1 {
+                let v1 = iter1.next().unwrap();
+                iter2
+                    .map(|v2| v1.and_then(|left| v2.map(|right| left.powf(right))))
+                    .collect()
+            } else if other.len() == 1 {
+                let v2 = iter2.next().unwrap();
+                iter1
+                    .map(|v1| v1.and_then(|left| v2.map(|right| left.powf(right))))
+                    .collect()
+            } else {
+                iter1
+                    .zip(iter2)
+                    .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.powf(right))))
+                    .collect()
+            };
+
+            Ok(ExSeries::new(res))
         }
-        dt => panic!("pow/2 not implemented for {dt:?}"),
     }
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_f_rhs(s: ExSeries, exponent: Term) -> Result<ExSeries, ExplorerError> {
-    let nan = atoms::nan();
-    let infinity = atoms::infinity();
-    let neg_infinity = atoms::neg_infinity();
-
-    let float = match exponent.get_type() {
-        TermType::Number => exponent.decode::<f64>().unwrap(),
-        TermType::Atom => {
-            if nan.eq(&exponent) {
-                f64::NAN
-            } else if infinity.eq(&exponent) {
-                f64::INFINITY
-            } else if neg_infinity.eq(&exponent) {
-                f64::NEG_INFINITY
-            } else {
-                panic!("pow/2 invalid float")
-            }
-        }
-        term_type => panic!("pow/2 not implemented for {term_type:?}"),
-    };
-
-    let s = s
-        .cast(&DataType::Float64)?
-        .f64()?
-        .apply(|v| v.powf(float))
-        .into_series();
-    Ok(ExSeries::new(s))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_f_lhs(s: ExSeries, exponent: Term) -> Result<ExSeries, ExplorerError> {
-    let nan = atoms::nan();
-    let infinity = atoms::infinity();
-    let neg_infinity = atoms::neg_infinity();
-
-    let float = match exponent.get_type() {
-        TermType::Number => exponent.decode::<f64>().unwrap(),
-        TermType::Atom => {
-            if nan.eq(&exponent) {
-                f64::NAN
-            } else if infinity.eq(&exponent) {
-                f64::INFINITY
-            } else if neg_infinity.eq(&exponent) {
-                f64::NEG_INFINITY
-            } else {
-                panic!("pow/2 invalid float")
-            }
-        }
-        term_type => panic!("pow/2 not implemented for {term_type:?}"),
-    };
-
-    let s = s
-        .cast(&DataType::Float64)?
-        .f64()?
-        .apply(|v| float.powf(v))
-        .into_series();
-    Ok(ExSeries::new(s))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_i_rhs(s: ExSeries, exponent: u32) -> Result<ExSeries, ExplorerError> {
-    let s = s.i64()?.apply(|v| v.pow(exponent)).into_series();
-    Ok(ExSeries::new(s))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow_i_lhs(s: ExSeries, base: i64) -> Result<ExSeries, ExplorerError> {
-    let s = s
-        .i64()?
-        .try_apply(|v| match u32::try_from(v) {
-            Ok(v) => Ok(base.pow(v)),
-            Err(_) => Err(PolarsError::ComputeError(
-                "negative exponent with an integer base".into(),
-            )),
-        })?
-        .into_series();
-
-    Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
