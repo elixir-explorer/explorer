@@ -672,6 +672,7 @@ defmodule Explorer.Backend.LazySeries do
       {:multiply, :integer, {:duration, tu}} -> {:duration, tu}
       {:multiply, {:duration, tu}, :integer} -> {:duration, tu}
       {:divide, {:duration, tu}, :integer} -> {:duration, tu}
+      {:divide, _, {:duration, _}} -> raise("cannot divide by duration")
       {:divide, _, _} -> :float
       _ -> resolve_numeric_dtype([left, right])
     end
@@ -683,6 +684,7 @@ defmodule Explorer.Backend.LazySeries do
       {:subtract, %NaiveDateTime{}, {:datetime, tu}} -> {:duration, tu}
       {:multiply, :integer, {:duration, tu}} -> {:duration, tu}
       {:divide, {:duration, tu}, :integer} -> {:duration, tu}
+      {:divide, _, {:duration, _}} -> raise("cannot divide by duration")
       {:divide, _, _} -> :float
       _ -> resolve_numeric_dtype([left, right])
     end
