@@ -2778,13 +2778,13 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec log(argument :: Series.t(), base :: number()) :: Series.t()
-  def log(argument, base) when is_number(base) do
+  def log(%Series{dtype: dtype} = series, base)
+      when K.and(is_numeric_dtype(dtype), is_number(base)) do
     if base <= 0, do: raise(ArgumentError, "base must be a positive number")
     if base == 1, do: raise(ArgumentError, "base cannot be equal to 1")
 
     base = if is_integer(base), do: base / 1.0, else: base
-
-    basic_numeric_operation(:log, argument, base)
+    apply_series(series, :log, [base])
   end
 
   @doc """
@@ -2792,7 +2792,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec exp(Series.t()) :: Series.t()
-  def exp(%Series{} = s), do: apply_series(s, :exp, [])
+  def exp(%Series{} = series), do: apply_series(series, :exp, [])
 
   @doc """
   Element-wise integer division.
