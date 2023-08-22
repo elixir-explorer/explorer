@@ -1220,15 +1220,14 @@ defmodule Explorer.Series do
           on_false :: Series.t() | inferable_scalar()
         ) ::
           Series.t()
-  def select(
-        %Series{dtype: predicate_dtype} = predicate,
-        %Series{dtype: on_true_dtype} = on_true,
-        %Series{dtype: on_false_dtype} = on_false
-      ) do
+  def select(%Series{dtype: predicate_dtype} = predicate, on_true, on_false) do
     if predicate_dtype != :boolean do
       raise ArgumentError,
             "Explorer.Series.select/3 expect the first argument to be a series of booleans, got: #{inspect(predicate_dtype)}"
     end
+
+    %Series{dtype: on_true_dtype} = on_true = maybe_from_list(on_true)
+    %Series{dtype: on_false_dtype} = on_false = maybe_from_list(on_false)
 
     cond do
       K.and(is_numeric_dtype(on_true_dtype), is_numeric_dtype(on_false_dtype)) ->
@@ -1242,9 +1241,8 @@ defmodule Explorer.Series do
     end
   end
 
-  def select(%Series{} = predicate, on_true, on_false) do
-    apply_series_list(:select, [predicate, on_true, on_false])
-  end
+  defp maybe_from_list(%Series{} = series), do: series
+  defp maybe_from_list(other), do: from_list([other])
 
   @doc """
   Returns a random sample of the series.
