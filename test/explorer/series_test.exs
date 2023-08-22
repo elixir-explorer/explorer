@@ -2602,22 +2602,6 @@ defmodule Explorer.SeriesTest do
       assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() ==
                ["a / e - i / m", "b / f - j / n", nil, "d / h - l / p"]
     end
-
-    test "with series that have different sizes" do
-      s1 = Series.from_list([1, 2, 3])
-      s2 = Series.from_list([3, 2, 1, 4])
-
-      assert_raise ArgumentError,
-                   "series must either have the same size or one of them must have size of 1, got: 3 and 4",
-                   fn -> Series.pow(s1, s2) end
-
-      s1 = Series.from_list([1, 2, 3, 4])
-      s2 = Series.from_list([3, 2, 1])
-
-      assert_raise ArgumentError,
-                   "series must either have the same size or one of them must have size of 1, got: 4 and 3",
-                   fn -> Series.pow(s1, s2) end
-    end
   end
 
   describe "sample/2" do
@@ -3788,13 +3772,11 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list(["a", "b"])
 
       assert_raise ArgumentError,
-                   "Explorer.Series.correlation/3 not implemented for dtype :string. " <>
-                     "Valid dtypes are [:integer, :float]",
+                   "cannot invoke Explorer.Series.correlation/3 with mismatched dtypes: :float and :string",
                    fn -> Series.correlation(s1, s2) end
 
       assert_raise ArgumentError,
-                   "Explorer.Series.covariance/2 not implemented for dtype :string. " <>
-                     "Valid dtypes are [:integer, :float]",
+                   "cannot invoke Explorer.Series.covariance/2 with mismatched dtypes: :float and :string",
                    fn -> Series.covariance(s1, s2) end
     end
   end

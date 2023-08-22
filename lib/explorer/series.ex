@@ -2229,22 +2229,15 @@ defmodule Explorer.Series do
       0.5447047794019223
   """
   @doc type: :aggregation
-  @spec correlation(left :: Series.t(), right :: Series.t(), ddof :: non_neg_integer()) ::
+  @spec correlation(
+          left :: Series.t() | number(),
+          right :: Series.t() | number(),
+          ddof :: non_neg_integer()
+        ) ::
           float() | non_finite() | nil
-  def correlation(left, right, ddof \\ 1)
-
-  def correlation(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right, ddof)
-      when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)) do
-    impl = impl!([left, right])
-    apply(impl, :correlation, [left, right, ddof])
+  def correlation(left, right, ddof \\ 1) when K.and(is_integer(ddof), ddof >= 0) do
+    basic_numeric_operation(:correlation, left, right, [ddof])
   end
-
-  def correlation(%Series{dtype: dtype}, _right, _ddof)
-      when K.not(is_numeric_dtype(dtype)),
-      do: dtype_error("correlation/3", dtype, [:integer, :float])
-
-  def correlation(_left, %Series{dtype: dtype}, _ddof),
-    do: dtype_error("correlation/3", dtype, [:integer, :float])
 
   @doc """
   Compute the covariance between two series.
@@ -2262,17 +2255,11 @@ defmodule Explorer.Series do
       3.0
   """
   @doc type: :aggregation
-  @spec covariance(left :: Series.t(), right :: Series.t()) :: float() | non_finite() | nil
-  def covariance(%Series{dtype: left_dtype} = left, %Series{dtype: right_dtype} = right)
-      when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
-      do: apply_series_list(:covariance, [left, right])
-
-  def covariance(%Series{dtype: dtype}, _right)
-      when K.not(is_numeric_dtype(dtype)),
-      do: dtype_error("covariance/2", dtype, [:integer, :float])
-
-  def covariance(_left, %Series{dtype: dtype}),
-    do: dtype_error("covariance/2", dtype, [:integer, :float])
+  @spec covariance(left :: Series.t() | number(), right :: Series.t() | number()) ::
+          float() | non_finite() | nil
+  def covariance(left, right) do
+    basic_numeric_operation(:covariance, left, right)
+  end
 
   # Cumulative
 
@@ -2839,10 +2826,10 @@ defmodule Explorer.Series do
     do: apply_series_list(:quotient, [left, right])
 
   def quotient(%Series{dtype: :integer} = left, right) when is_integer(right),
-    do: apply_series_list(:quotient, [left, right])
+    do: apply_series_list(:quotient, [left, from_list([right])])
 
   def quotient(left, %Series{dtype: :integer} = right) when is_integer(left),
-    do: apply_series_list(:quotient, [left, right])
+    do: apply_series_list(:quotient, [from_list([left]), right])
 
   @doc """
   Computes the remainder of an element-wise integer division.
@@ -2889,10 +2876,10 @@ defmodule Explorer.Series do
     do: apply_series_list(:remainder, [left, right])
 
   def remainder(%Series{dtype: :integer} = left, right) when is_integer(right),
-    do: apply_series_list(:remainder, [left, right])
+    do: apply_series_list(:remainder, [left, from_list([right])])
 
   def remainder(left, %Series{dtype: :integer} = right) when is_integer(left),
-    do: apply_series_list(:remainder, [left, right])
+    do: apply_series_list(:remainder, [from_list([left]), right])
 
   @doc """
   Computes the the sine of a number (in radians).
@@ -3047,35 +3034,38 @@ defmodule Explorer.Series do
   def atan(%Series{dtype: dtype}),
     do: dtype_error("atan/1", dtype, [:float])
 
+  defp basic_numeric_operation(operation, left, right, args \\ [])
+
   defp basic_numeric_operation(
          operation,
          %Series{dtype: left_dtype} = left,
-         %Series{dtype: right_dtype} = right
+         %Series{dtype: right_dtype} = right,
+         args
        )
        when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
-       do: apply_series_list(operation, [left, right])
+       do: apply_series_list(operation, [left, right | args])
 
-  defp basic_numeric_operation(operation, %Series{} = left, %Series{} = right),
-    do: dtype_mismatch_error("#{operation}/2", left, right)
+  defp basic_numeric_operation(operation, %Series{} = left, %Series{} = right, args),
+    do: dtype_mismatch_error("#{operation}/#{length(args) + 2}", left, right)
 
-  defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right)
+  defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right, args)
        when K.and(is_numeric_dtype(dtype), is_numerical(right)),
-       do: apply_series_list(operation, [left, right])
+       do: apply_series_list(operation, [left, from_list([right]) | args])
 
-  defp basic_numeric_operation(operation, left, %Series{dtype: dtype} = right)
+  defp basic_numeric_operation(operation, left, %Series{dtype: dtype} = right, args)
        when K.and(is_numeric_dtype(dtype), is_numerical(left)),
-       do: apply_series_list(operation, [left, right])
+       do: apply_series_list(operation, [from_list([left]), right | args])
 
-  defp basic_numeric_operation(operation, _, %Series{dtype: dtype}),
-    do: dtype_error("#{operation}/2", dtype, [:integer, :float])
+  defp basic_numeric_operation(operation, _, %Series{dtype: dtype}, args),
+    do: dtype_error("#{operation}/#{length(args) + 2}", dtype, [:integer, :float])
 
-  defp basic_numeric_operation(operation, %Series{dtype: dtype}, _),
-    do: dtype_error("#{operation}/2", dtype, [:integer, :float])
+  defp basic_numeric_operation(operation, %Series{dtype: dtype}, _, args),
+    do: dtype_error("#{operation}/#{length(args) + 2}", dtype, [:integer, :float])
 
-  defp basic_numeric_operation(operation, left, right)
+  defp basic_numeric_operation(operation, left, right, args)
        when K.and(is_numerical(left), is_numerical(right)) do
     raise ArgumentError,
-          "#{operation}/2 expect a series as one of its arguments, " <>
+          "#{operation}/#{length(args) + 2} expect a series as one of its arguments, " <>
             "instead got two numbers: #{inspect(left)} and #{inspect(right)}"
   end
 
