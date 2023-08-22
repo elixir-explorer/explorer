@@ -542,7 +542,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_csv(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
@@ -623,7 +623,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_csv(contents, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
@@ -694,7 +694,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec from_parquet(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_parquet(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
@@ -793,7 +793,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec to_parquet(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
-          :ok | {:error, term()}
+          :ok | {:error, Exception.t()}
   def to_parquet(%DataFrame{} = df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil, streaming: true, config: nil)
     compression = parquet_compression(opts[:compression])
@@ -863,7 +863,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec dump_parquet(df :: DataFrame.t(), opts :: Keyword.t()) ::
-          {:ok, binary()} | {:error, term()}
+          {:ok, binary()} | {:error, Exception.t()}
   def dump_parquet(df, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
     compression = parquet_compression(opts[:compression])
@@ -888,7 +888,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec load_parquet(contents :: binary(), opts :: Keyword.t()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_parquet(contents, opts \\ []) do
     backend = backend_from_options!(opts)
     backend.load_parquet(contents)
@@ -926,7 +926,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
@@ -994,7 +994,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec to_ipc(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
-          :ok | {:error, term()}
+          :ok | {:error, Exception.t()}
   def to_ipc(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil, streaming: true, config: nil)
     compression = ipc_compression(opts[:compression])
@@ -1046,7 +1046,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec dump_ipc(df :: DataFrame.t(), opts :: Keyword.t()) ::
-          {:ok, binary()} | {:error, term()}
+          {:ok, binary()} | {:error, Exception.t()}
   def dump_ipc(df, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
     compression = ipc_compression(opts[:compression])
@@ -1079,7 +1079,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec load_ipc(contents :: binary(), opts :: Keyword.t()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc(contents, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
@@ -1130,7 +1130,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec from_ipc_stream(filename :: String.t() | fs_entry()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc_stream(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
@@ -1186,7 +1186,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec to_ipc_stream(df :: DataFrame.t(), filename :: String.t() | fs_entry()) ::
-          :ok | {:error, term()}
+          :ok | {:error, Exception.t()}
   def to_ipc_stream(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil, config: nil)
     compression = ipc_compression(opts[:compression])
@@ -1235,7 +1235,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec dump_ipc_stream(df :: DataFrame.t(), opts :: Keyword.t()) ::
-          {:ok, binary()} | {:error, term()}
+          {:ok, binary()} | {:error, Exception.t()}
   def dump_ipc_stream(df, opts \\ []) do
     opts = Keyword.validate!(opts, compression: nil)
     compression = ipc_compression(opts[:compression])
@@ -1268,7 +1268,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec load_ipc_stream(contents :: binary(), opts :: Keyword.t()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc_stream(contents, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
@@ -1314,7 +1314,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
-          :ok | {:error, term()}
+          :ok | {:error, Exception.t()}
   def to_csv(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",", config: nil)
 
@@ -1357,7 +1357,8 @@ defmodule Explorer.DataFrame do
       {:ok, "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"}
   """
   @doc type: :io
-  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) :: {:ok, String.t()} | {:error, term()}
+  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) ::
+          {:ok, String.t()} | {:error, Exception.t()}
   def dump_csv(df, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",")
     Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
@@ -1397,7 +1398,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec from_ndjson(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ndjson(filename, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
@@ -1454,7 +1455,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec to_ndjson(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
-          :ok | {:error, term()}
+          :ok | {:error, Exception.t()}
   def to_ndjson(df, filename, opts \\ []) do
     opts = Keyword.validate!(opts, config: nil)
 
@@ -1495,7 +1496,7 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :io
-  @spec dump_ndjson(df :: DataFrame.t()) :: {:ok, binary()} | {:error, term()}
+  @spec dump_ndjson(df :: DataFrame.t()) :: {:ok, binary()} | {:error, Exception.t()}
   def dump_ndjson(df) do
     Shared.apply_impl(df, :dump_ndjson, [])
   end
@@ -1531,7 +1532,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :io
   @spec load_ndjson(contents :: String.t(), opts :: Keyword.t()) ::
-          {:ok, DataFrame.t()} | {:error, term()}
+          {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ndjson(contents, opts \\ []) do
     {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
@@ -1601,7 +1602,7 @@ defmodule Explorer.DataFrame do
   Collecting a grouped dataframe should return a grouped dataframe.
   """
   @doc type: :conversion
-  @spec collect(df :: DataFrame.t()) :: {:ok, DataFrame.t()} | {:error, term()}
+  @spec collect(df :: DataFrame.t()) :: DataFrame.t()
   def collect(df), do: Shared.apply_impl(df, :collect)
 
   @doc """
