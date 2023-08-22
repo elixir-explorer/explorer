@@ -234,7 +234,8 @@ defmodule Explorer.DataFrame.LazyTest do
                  lazy: true
                )
 
-      assert error =~ "Polars Error: Object at location oranges.parquet not found:"
+      assert RuntimeError.message(error) =~
+               "Polars Error: Object at location oranges.parquet not found:"
     end
   end
 
