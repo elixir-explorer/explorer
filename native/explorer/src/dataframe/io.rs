@@ -270,15 +270,9 @@ fn build_aws_s3_cloud_writer(
 
     if let Some(bucket_name) = &config.bucket {
         aws_builder = aws_builder.with_bucket_name(bucket_name);
-
-        // If the bucket is already in the endpoint, we force the "virtual-hosted"
-        // style in order to make Polars ignore the bucket name.
-        if config.endpoint.contains(bucket_name) {
-            aws_builder = aws_builder.with_virtual_hosted_style_request(true);
-        }
     } else {
-        // This bucket name is going to be ignored because it's assumed to be
-        // already in the endpoint URL.
+        // We use the virtual host style, and the bucket name is going to be ignored
+        // because it's assumed to be already in the endpoint URL.
         aws_builder = aws_builder
             .with_bucket_name("explorer-default-bucket-name")
             .with_virtual_hosted_style_request(true);

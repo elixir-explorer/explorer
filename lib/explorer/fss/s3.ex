@@ -21,10 +21,10 @@ defimpl Explorer.FSS, for: FSS.S3.Entry do
     uri = URI.parse(config.endpoint)
 
     uri =
-      if not is_nil(config.bucket) and not String.contains?(config.endpoint, config.bucket) do
-        append_path(uri, "/" <> config.bucket)
-      else
+      if is_nil(config.bucket) do
         uri
+      else
+        append_path(uri, "/" <> config.bucket)
       end
 
     uri

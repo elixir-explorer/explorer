@@ -188,7 +188,8 @@ defmodule Explorer.PolarsBackend.Shared do
     bucket = entry.config.bucket || "default-explorer-bucket"
 
     hash =
-      :crypto.hash(:sha256, bucket <> "/" <> entry.key) |> Base.url_encode64(padding: false)
+      :crypto.hash(:sha256, entry.config.endpoint <> "/" <> bucket <> "/" <> entry.key)
+      |> Base.url_encode64(padding: false)
 
     id = "s3-file-#{hash}"
 

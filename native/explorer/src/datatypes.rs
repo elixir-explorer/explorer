@@ -462,16 +462,10 @@ impl ExS3Config {
 
         // When bucket is not present, we need to force the virtual host style
         // in order to ignore the bucket name.
-        // We also enforce the host style because we already put the bucket when
-        // is an AWS S3 endpoint.
-        if self.bucket.is_none() || self.is_aws_endpoint() {
+        if self.bucket.is_none() {
             aws_opts.push((S3Key::VirtualHostedStyleRequest, &true_as_string));
         }
 
         CloudOptions::default().with_aws(aws_opts)
-    }
-
-    pub fn is_aws_endpoint(&self) -> bool {
-        self.endpoint.contains("amazonaws.com")
     }
 }
