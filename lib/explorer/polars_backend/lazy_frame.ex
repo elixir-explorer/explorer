@@ -85,7 +85,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         _,
         _
       ) do
-    raise "reading CSV from AWS S3 is not supported for Lazy dataframes"
+    {:error,
+     ArgumentError.exception("reading CSV from AWS S3 is not supported for Lazy dataframes")}
   end
 
   @impl true
@@ -102,13 +103,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         infer_schema_length,
         parse_dates,
         eol_delimiter
-      ) do
-    if columns do
-      raise ArgumentError,
-            "`columns` is not supported by Polars' lazy backend. " <>
-              "Consider using `select/2` after reading the CSV"
-    end
-
+      )
+      when is_nil(columns) do
     infer_schema_length =
       if infer_schema_length == nil,
         do: max_rows,
@@ -141,6 +137,28 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     end
   end
 
+  @impl true
+  def from_csv(
+        %Local.Entry{},
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _
+      ) do
+    {:error,
+     ArgumentError.exception(
+       "`columns` is not supported by Polars' lazy backend. " <>
+         "Consider using `select/2` after reading the CSV"
+     )}
+  end
+
   defp char_byte(nil), do: nil
   defp char_byte(<<char::utf8>>), do: char
 
@@ -162,7 +180,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_ndjson(%S3.Entry{}, _, _) do
-    raise "reading NDJSON from AWS S3 is not supported for Lazy dataframes"
+    {:error,
+     ArgumentError.exception("reading NDJSON from AWS S3 is not supported for Lazy dataframes")}
   end
 
   @impl true
@@ -175,17 +194,12 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_ipc(%S3.Entry{}, _) do
-    raise "reading IPC from AWS S3 is not supported for Lazy dataframes"
+    {:error,
+     ArgumentError.exception("reading IPC from AWS S3 is not supported for Lazy dataframes")}
   end
 
   @impl true
-  def from_ipc(%Local.Entry{} = entry, columns) do
-    if columns do
-      raise ArgumentError,
-            "`columns` is not supported by Polars' lazy backend. " <>
-              "Consider using `select/2` after reading the IPC file"
-    end
-
+  def from_ipc(%Local.Entry{} = entry, columns) when is_nil(columns) do
     case Native.lf_from_ipc(entry.path) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -193,8 +207,20 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
+  def from_ipc(%Local.Entry{}, _columns) do
+    {:error,
+     ArgumentError.exception(
+       "`columns` is not supported by Polars' lazy backend. " <>
+         "Consider using `select/2` after reading the IPC file"
+     )}
+  end
+
+  @impl true
   def from_ipc_stream(%S3.Entry{}, _) do
-    raise "reading IPC Stream from AWS S3 is not supported for Lazy dataframes"
+    {:error,
+     ArgumentError.exception(
+       "reading IPC Stream from AWS S3 is not supported for Lazy dataframes"
+     )}
   end
 
   @impl true

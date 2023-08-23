@@ -140,11 +140,12 @@ defmodule Explorer.DataFrame.LazyTest do
     df = DF.slice(df, 0, 10)
     DF.to_csv!(df, path)
 
-    assert_raise ArgumentError,
-                 "`columns` is not supported by Polars' lazy backend. Consider using `select/2` after reading the CSV",
-                 fn ->
-                   DF.from_csv!(path, lazy: true, columns: ["country", "year", "total"])
-                 end
+    assert {:error, error} = DF.from_csv(path, lazy: true, columns: ["country", "year", "total"])
+
+    assert error ==
+             ArgumentError.exception(
+               "`columns` is not supported by Polars' lazy backend. Consider using `select/2` after reading the CSV"
+             )
   end
 
   @tag :tmp_dir
@@ -404,7 +405,8 @@ defmodule Explorer.DataFrame.LazyTest do
     DF.to_ipc!(df, path)
 
     assert_raise ArgumentError,
-                 "`columns` is not supported by Polars' lazy backend. Consider using `select/2` after reading the IPC file",
+                 "from_ipc failed: \"`columns` is not supported by Polars' lazy backend. " <>
+                   "Consider using `select/2` after reading the IPC file\"",
                  fn ->
                    DF.from_ipc!(path, lazy: true, columns: ["country", "year", "total"])
                  end
@@ -511,41 +513,46 @@ defmodule Explorer.DataFrame.LazyTest do
     test "from_ipc/2", %{config: config} do
       path = "s3://test-bucket/test-lazy-writes/wine.ipc"
 
-      assert_raise RuntimeError,
-                   "reading IPC from AWS S3 is not supported for Lazy dataframes",
-                   fn ->
-                     DF.from_ipc(path, config: config, lazy: true)
-                   end
+      assert {:error, error} =
+               DF.from_ipc(path, config: config, lazy: true)
+
+      assert error ==
+               ArgumentError.exception(
+                 "reading IPC from AWS S3 is not supported for Lazy dataframes"
+               )
     end
 
     test "from_ipc_stream/2", %{config: config} do
       path = "s3://test-bucket/test-lazy-writes/wine.ipcstream"
 
-      assert_raise RuntimeError,
-                   "reading IPC Stream from AWS S3 is not supported for Lazy dataframes",
-                   fn ->
-                     DF.from_ipc_stream(path, config: config, lazy: true)
-                   end
+      assert {:error, error} = DF.from_ipc_stream(path, config: config, lazy: true)
+
+      assert error ==
+               ArgumentError.exception(
+                 "reading IPC Stream from AWS S3 is not supported for Lazy dataframes"
+               )
     end
 
     test "from_ndjson/2", %{config: config} do
       path = "s3://test-bucket/test-lazy-writes/wine.ndjson"
 
-      assert_raise RuntimeError,
-                   "reading NDJSON from AWS S3 is not supported for Lazy dataframes",
-                   fn ->
-                     DF.from_ndjson(path, config: config, lazy: true)
-                   end
+      assert {:error, error} = DF.from_ndjson(path, config: config, lazy: true)
+
+      assert error ==
+               ArgumentError.exception(
+                 "reading NDJSON from AWS S3 is not supported for Lazy dataframes"
+               )
     end
 
     test "from_csv/2", %{config: config} do
       path = "s3://test-bucket/test-lazy-writes/wine.csv"
 
-      assert_raise RuntimeError,
-                   "reading CSV from AWS S3 is not supported for Lazy dataframes",
-                   fn ->
-                     DF.from_csv(path, config: config, lazy: true)
-                   end
+      assert {:error, error} = DF.from_csv(path, config: config, lazy: true)
+
+      assert error ==
+               ArgumentError.exception(
+                 "reading CSV from AWS S3 is not supported for Lazy dataframes"
+               )
     end
   end
 
