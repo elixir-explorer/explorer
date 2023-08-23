@@ -195,7 +195,7 @@ defmodule Explorer.Shared do
   defp type(%Date{} = _item, _type), do: :date
   defp type(%Time{} = _item, _type), do: :time
   defp type(%NaiveDateTime{} = _item, _type), do: {:datetime, :microsecond}
-  defp type(item, {:duration, _} = duration) when is_integer(item), do: duration
+  defp type(%Explorer.Duration{precision: precision} = _item, _type), do: {:duration, precision}
 
   defp type(item, type) when is_integer(item) and type == :float, do: :numeric
   defp type(item, type) when is_float(item) and type == :integer, do: :numeric

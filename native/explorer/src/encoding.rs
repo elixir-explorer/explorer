@@ -5,8 +5,8 @@ use rustler::{Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
 use std::{mem, slice};
 
 use crate::atoms::{
-    self, calendar, day, hour, infinity, microsecond, minute, month, nan, neg_infinity, second,
-    year,
+    self, calendar, day, hour, infinity, microsecond, millisecond, minute, month, nan, nanosecond,
+    neg_infinity, precision, second, value, year,
 };
 use crate::datatypes::{
     days_to_date, time64ns_to_time, timestamp_to_datetime, ExSeries, ExSeriesRef,
@@ -210,15 +210,78 @@ fn datetime_series_to_list<'b>(
     ))
 }
 
+fn time_unit_to_atom(time_unit: TimeUnit) -> atom::Atom {
+    match time_unit {
+        TimeUnit::Milliseconds => millisecond(),
+        TimeUnit::Microseconds => microsecond(),
+        TimeUnit::Nanoseconds => nanosecond(),
+    }
+}
+
+macro_rules! unsafe_encode_duration {
+    ($v: expr, $time_unit: expr, $duration_struct_keys: ident, $duration_module: ident, $env: ident) => {{
+        let value = $v;
+        let precision = time_unit_to_atom($time_unit);
+
+        unsafe {
+            Term::new(
+                $env,
+                map::make_map_from_arrays(
+                    $env.as_c_arg(),
+                    $duration_struct_keys,
+                    &[
+                        $duration_module,
+                        value.encode($env).as_c_arg(),
+                        precision.encode($env).as_c_arg(),
+                    ],
+                )
+                .unwrap(),
+            )
+        }
+    }};
+}
+
+// Here we build the Explorer.Duration struct manually, as it's much faster than using NifStruct
+// This is because we already have the keys (we know this at compile time), and the types,
+// so we can build the struct directly.
+fn duration_struct_keys(env: Env) -> [NIF_TERM; 3] {
+    return [
+        atom::__struct__().encode(env).as_c_arg(),
+        value().encode(env).as_c_arg(),
+        precision().encode(env).as_c_arg(),
+    ];
+}
+
+#[inline]
+pub fn encode_duration(v: i64, time_unit: TimeUnit, env: Env) -> Result<Term, ExplorerError> {
+    let duration_struct_keys = &duration_struct_keys(env);
+    let duration_module = atoms::duration_module().encode(env).as_c_arg();
+
+    Ok(unsafe_encode_duration!(
+        v,
+        time_unit,
+        duration_struct_keys,
+        duration_module,
+        env
+    ))
+}
+
 #[inline]
 fn duration_series_to_list<'b>(
     s: &Series,
-    _time_unit: TimeUnit,
+    time_unit: TimeUnit,
     env: Env<'b>,
 ) -> Result<Term<'b>, ExplorerError> {
+    let duration_struct_keys = &duration_struct_keys(env);
+    let duration_module = atoms::duration_module().encode(env).as_c_arg();
+
     Ok(unsafe_iterator_series_to_list!(
         env,
-        s.duration()?.into_iter().map(|option| option.encode(env))
+        s.duration()?.into_iter().map(|option| option
+            .map(|v| {
+                unsafe_encode_duration!(v, time_unit, duration_struct_keys, duration_module, env)
+            })
+            .encode(env))
     ))
 }
 
@@ -479,7 +542,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Time(v) => encode_time(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
-        AnyValue::Duration(v, _time_unit) => Ok(Some(v).encode(env)),
+        AnyValue::Duration(v, time_unit) => encode_duration(v, time_unit, env),
         AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
         dt => panic!("cannot encode value {dt:?} to term"),
     }

@@ -1,6 +1,6 @@
 use crate::{
     atoms,
-    datatypes::{ExDate, ExDateTime, ExTime},
+    datatypes::{ExDate, ExDateTime, ExDuration, ExTime},
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
@@ -102,14 +102,14 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision:
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_duration(name: &str, val: Vec<Option<i64>>, precision: &str) -> ExSeries {
+pub fn s_from_list_duration(name: &str, val: Vec<Option<ExDuration>>, precision: &str) -> ExSeries {
     let timeunit = precision_to_timeunit(precision);
 
     ExSeries::new(
         Series::new(
             name,
             val.iter()
-                .map(|d| d.map(|d| d))
+                .map(|d| d.map(|d| d.into()))
                 .collect::<Vec<Option<i64>>>(),
         )
         .cast(&DataType::Duration(timeunit))

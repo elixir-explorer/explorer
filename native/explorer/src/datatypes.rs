@@ -210,6 +210,19 @@ impl From<NaiveDate> for ExDate {
 }
 
 #[derive(NifStruct, Copy, Clone, Debug)]
+#[module = "Explorer.Duration"]
+pub struct ExDuration {
+    pub value: i64,
+    pub precision: Atom,
+}
+
+impl From<ExDuration> for i64 {
+    fn from(d: ExDuration) -> i64 {
+        d.value
+    }
+}
+
+#[derive(NifStruct, Copy, Clone, Debug)]
 #[module = "NaiveDateTime"]
 pub struct ExDateTime {
     pub calendar: Atom,
