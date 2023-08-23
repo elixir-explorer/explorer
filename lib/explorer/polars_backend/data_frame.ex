@@ -53,7 +53,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result =
         from_csv(
@@ -233,7 +233,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result = from_ndjson(entry, infer_schema_length, batch_size)
 
@@ -296,7 +296,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result = from_parquet(entry, max_rows, columns)
 
@@ -382,7 +382,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result = from_ipc(entry, columns)
 
@@ -440,7 +440,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result = from_ipc_stream(entry, columns)
 
