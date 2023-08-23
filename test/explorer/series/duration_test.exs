@@ -192,19 +192,19 @@ defmodule Explorer.Series.DurationTest do
       assert Series.to_list(quot_s) == [@one_hour_us / 10]
     end
 
-    test "integer / duration[μs] raises RuntimeError" do
+    test "integer / duration[μs] raises ArgumentError" do
       ten_s = Series.from_list([10])
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
 
-      assert_raise RuntimeError,
+      assert_raise ArgumentError,
                    "cannot divide by duration",
                    fn -> Series.divide(ten_s, one_hour_s) end
     end
 
-    test "duration[μs] / duration[μs] raises RuntimeError" do
+    test "duration[μs] / duration[μs] raises ArgumentError" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
 
-      assert_raise RuntimeError,
+      assert_raise ArgumentError,
                    "cannot divide by duration",
                    fn -> Series.divide(one_hour_s, one_hour_s) end
     end
