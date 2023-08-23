@@ -250,7 +250,7 @@ defmodule Explorer.DataFrame do
   @typedoc """
   Represents a filesystem entry, that can be local or S3.
   """
-  @type fs_entry :: Local.Entry.t() | S3.Entry.t() | HTTP.Entry.t()
+  @type fs_entry :: FSS.entry()
 
   @typedoc """
   Represents a dataframe.
@@ -730,7 +730,7 @@ defmodule Explorer.DataFrame do
     S3.parse(entry, config: config)
   end
 
-  defp normalise_entry("file://" <> path, _config), do: {:ok, %Local.Entry{path: path}}
+  defp normalise_entry("file://" <> path, _config), do: {:ok, Local.from_path(path)}
 
   defp normalise_entry("http://" <> _rest = url, config) do
     HTTP.parse(url, config: config)
@@ -741,7 +741,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp normalise_entry(filepath, _config) when is_binary(filepath) do
-    {:ok, %Local.Entry{path: filepath}}
+    {:ok, Local.from_path(filepath)}
   end
 
   @doc """

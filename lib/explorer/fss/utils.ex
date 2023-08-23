@@ -7,14 +7,16 @@ defmodule Explorer.FSS.Utils do
 
   @doc """
   Asserts that the given path is a regular file path.
-  """
-  @spec assert_regular_path!(path()) :: :ok
-  def assert_regular_path!(path) do
-    unless regular_path?(path) do
-      raise ArgumentError, "expected a regular file path, got: #{inspect(path)}"
-    end
 
-    :ok
+  It returns an error in case the file is a directory.
+  """
+  @spec assert_regular_path(path()) :: :ok | {:error, Exception.t()}
+  def assert_regular_path(path) do
+    if regular_path?(path) do
+      :ok
+    else
+      {:error, ArgumentError.exception("expected a regular file path, got: #{inspect(path)}")}
+    end
   end
 
   @doc """
