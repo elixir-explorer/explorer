@@ -9,8 +9,8 @@ defimpl Explorer.FSS, for: FSS.HTTP.Entry do
 
     case Utils.download(entry.url, collectable, headers: headers) do
       {:ok, _collectable} -> :ok
-      {:error, _message, 404} -> Utils.posix_error(:enoent)
-      {:error, message, _status} -> {:error, message}
+      {:error, _message, 404} -> {:error, ArgumentError.exception("resource not found (404)")}
+      {:error, exception, _status} -> {:error, exception}
     end
   end
 end

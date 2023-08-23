@@ -236,7 +236,8 @@ defmodule Explorer.DataFrame.NDJSONTest do
     test "returns an error in case file is not found in S3 bucket", %{s3_config: s3_config} do
       path = "s3://test-bucket/test-writes/file-does-not-exist.ndjson"
 
-      assert {:error, "no such file or directory"} = DF.from_ndjson(path, config: s3_config)
+      assert {:error, %ArgumentError{message: "resource not found (404)"}} =
+               DF.from_ndjson(path, config: s3_config)
     end
   end
 
@@ -282,7 +283,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
 
       url = http_endpoint(bypass) <> "/path/to/file.ndjson"
 
-      assert {:error, "no such file or directory"} = DF.from_ndjson(url)
+      assert {:error, %ArgumentError{message: "resource not found (404)"}} = DF.from_ndjson(url)
     end
   end
 

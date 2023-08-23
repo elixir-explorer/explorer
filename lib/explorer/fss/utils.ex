@@ -26,15 +26,6 @@ defmodule Explorer.FSS.Utils do
   end
 
   @doc """
-  Converts the given posix error atom into readable error tuple.
-  """
-  @spec posix_error(atom()) :: {:error, String.t()}
-  def posix_error(error) do
-    message = error |> :file.format_error() |> List.to_string()
-    {:error, message}
-  end
-
-  @doc """
   Downloads resource at the given URL into `collectable`.
 
   If collectable raises and error, it is rescued and an error tuple
@@ -46,7 +37,7 @@ defmodule Explorer.FSS.Utils do
 
   """
   @spec download(String.t(), Collectable.t(), keyword()) ::
-          {:ok, Collectable.t()} | {:error, String.t(), status()}
+          {:ok, Collectable.t()} | {:error, Exception.t(), status()}
   def download(url, collectable, opts \\ []) do
     headers = build_headers(opts[:headers] || [])
 
@@ -86,7 +77,7 @@ defmodule Explorer.FSS.Utils do
           collector.(acc, :halt)
           :httpc.cancel_request(request_id)
           exception = Exception.normalize(kind, reason, __STACKTRACE__)
-          {:error, Exception.message(exception), nil}
+          {:error, exception, nil}
       else
         {:ok, state} ->
           acc = state.collector.(state.acc, :done)
@@ -95,13 +86,13 @@ defmodule Explorer.FSS.Utils do
         {:error, message, status} ->
           collector.(acc, :halt)
           :httpc.cancel_request(request_id)
-          {:error, message, status}
+          {:error, ArgumentError.exception(message), status}
       end
     catch
       kind, reason ->
         :httpc.cancel_request(request_id)
         exception = Exception.normalize(kind, reason, __STACKTRACE__)
-        {:error, Exception.message(exception), nil}
+        {:error, exception, nil}
     end
   end
 

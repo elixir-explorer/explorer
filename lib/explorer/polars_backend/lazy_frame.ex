@@ -65,9 +65,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_query(conn, query, params) do
-    case Eager.from_query(conn, query, params) do
-      {:ok, df} -> {:ok, Eager.to_lazy(df)}
-      {:error, error} -> {:error, error}
+    with {:ok, df} <- Eager.from_query(conn, query, params) do
+      {:ok, Eager.to_lazy(df)}
     end
   end
 
@@ -86,7 +85,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         _,
         _
       ) do
-    raise "reading CSV from AWS S3 is not supported for Lazy dataframes"
+    {:error,
+     ArgumentError.exception("reading CSV from AWS S3 is not supported for Lazy dataframes")}
   end
 
   @impl true
@@ -103,13 +103,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         infer_schema_length,
         parse_dates,
         eol_delimiter
-      ) do
-    if columns do
-      raise ArgumentError,
-            "`columns` is not supported by Polars' lazy backend. " <>
-              "Consider using `select/2` after reading the CSV"
-    end
-
+      )
+      when is_nil(columns) do
     infer_schema_length =
       if infer_schema_length == nil,
         do: max_rows,
@@ -138,8 +133,30 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
     case df do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
+  end
+
+  @impl true
+  def from_csv(
+        %Local.Entry{},
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _,
+        _
+      ) do
+    {:error,
+     ArgumentError.exception(
+       "`columns` is not supported by Polars' lazy backend. " <>
+         "Consider using `select/2` after reading the CSV"
+     )}
   end
 
   defp char_byte(nil), do: nil
@@ -149,7 +166,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def from_parquet(%S3.Entry{} = entry, max_rows, columns) do
     case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -157,52 +174,59 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def from_parquet(%Local.Entry{} = entry, max_rows, columns) do
     case Native.lf_from_parquet(entry.path, max_rows, columns) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
   def from_ndjson(%S3.Entry{}, _, _) do
-    raise "reading NDJSON from AWS S3 is not supported for Lazy dataframes"
+    {:error,
+     ArgumentError.exception("reading NDJSON from AWS S3 is not supported for Lazy dataframes")}
   end
 
   @impl true
   def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
     case Native.lf_from_ndjson(entry.path, infer_schema_length, batch_size) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
   def from_ipc(%S3.Entry{}, _) do
-    raise "reading IPC from AWS S3 is not supported for Lazy dataframes"
+    {:error,
+     ArgumentError.exception("reading IPC from AWS S3 is not supported for Lazy dataframes")}
   end
 
   @impl true
-  def from_ipc(%Local.Entry{} = entry, columns) do
-    if columns do
-      raise ArgumentError,
-            "`columns` is not supported by Polars' lazy backend. " <>
-              "Consider using `select/2` after reading the IPC file"
-    end
-
+  def from_ipc(%Local.Entry{} = entry, columns) when is_nil(columns) do
     case Native.lf_from_ipc(entry.path) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
+  end
+
+  @impl true
+  def from_ipc(%Local.Entry{}, _columns) do
+    {:error,
+     ArgumentError.exception(
+       "`columns` is not supported by Polars' lazy backend. " <>
+         "Consider using `select/2` after reading the IPC file"
+     )}
   end
 
   @impl true
   def from_ipc_stream(%S3.Entry{}, _) do
-    raise "reading IPC Stream from AWS S3 is not supported for Lazy dataframes"
+    {:error,
+     ArgumentError.exception(
+       "reading IPC Stream from AWS S3 is not supported for Lazy dataframes"
+     )}
   end
 
   @impl true
   def from_ipc_stream(%Local.Entry{} = fs_entry, columns) do
-    case Eager.from_ipc_stream(fs_entry, columns) do
-      {:ok, df} -> {:ok, Eager.to_lazy(df)}
-      {:error, error} -> {:error, error}
+    with {:ok, df} <- Eager.from_ipc_stream(fs_entry, columns) do
+      {:ok, Eager.to_lazy(df)}
     end
   end
 
@@ -221,54 +245,50 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         parse_dates,
         eol_delimiter
       ) do
-    case Eager.load_csv(
-           contents,
-           dtypes,
-           delimiter,
-           nil_values,
-           skip_rows,
-           header?,
-           encoding,
-           max_rows,
-           columns,
-           infer_schema_length,
-           parse_dates,
-           eol_delimiter
-         ) do
-      {:ok, df} -> {:ok, Eager.to_lazy(df)}
-      {:error, error} -> {:error, error}
+    with {:ok, df} <-
+           Eager.load_csv(
+             contents,
+             dtypes,
+             delimiter,
+             nil_values,
+             skip_rows,
+             header?,
+             encoding,
+             max_rows,
+             columns,
+             infer_schema_length,
+             parse_dates,
+             eol_delimiter
+           ) do
+      {:ok, Eager.to_lazy(df)}
     end
   end
 
   @impl true
   def load_parquet(contents) do
-    case Eager.load_parquet(contents) do
-      {:ok, df} -> {:ok, Eager.to_lazy(df)}
-      {:error, error} -> {:error, error}
+    with {:ok, df} <- Eager.load_parquet(contents) do
+      {:ok, Eager.to_lazy(df)}
     end
   end
 
   @impl true
   def load_ndjson(contents, infer_schema_length, batch_size) do
-    case Eager.load_ndjson(contents, infer_schema_length, batch_size) do
-      {:ok, df} -> {:ok, Eager.to_lazy(df)}
-      {:error, error} -> {:error, error}
+    with {:ok, df} <- Eager.load_ndjson(contents, infer_schema_length, batch_size) do
+      {:ok, Eager.to_lazy(df)}
     end
   end
 
   @impl true
   def load_ipc(contents, columns) do
-    case Eager.load_ipc(contents, columns) do
-      {:ok, df} -> {:ok, Eager.to_lazy(df)}
-      {:error, error} -> {:error, error}
+    with {:ok, df} <- Eager.load_ipc(contents, columns) do
+      {:ok, Eager.to_lazy(df)}
     end
   end
 
   @impl true
   def load_ipc_stream(contents, columns) do
-    case Eager.load_ipc_stream(contents, columns) do
-      {:ok, df} -> {:ok, Eager.to_lazy(df)}
-      {:error, error} -> {:error, error}
+    with {:ok, df} <- Eager.load_ipc_stream(contents, columns) do
+      {:ok, Eager.to_lazy(df)}
     end
   end
 
@@ -281,7 +301,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
            streaming
          ) do
       {:ok, _} -> :ok
-      {:error, _} = err -> err
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -301,7 +321,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def to_ipc(%DF{} = df, %Local.Entry{} = entry, {compression, _level}, streaming) do
     case Native.lf_to_ipc(df.data, entry.path, Atom.to_string(compression), streaming) do
       {:ok, _} -> :ok
-      {:error, _} = err -> err
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -443,11 +463,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def concat_rows([%DF{} | _t] = dfs, %DF{} = out_df) do
     polars_dfs = Enum.map(dfs, & &1.data)
-
-    case Native.lf_concat_rows(polars_dfs) do
-      {:ok, %PolarsLazyFrame{} = polars_df} -> %{out_df | data: polars_df}
-      {:error, error} -> raise "could not concat dataframe rows. Reason: #{inspect(error)}"
-    end
+    %PolarsLazyFrame{} = polars_df = Shared.apply(:lf_concat_rows, [polars_dfs])
+    %{out_df | data: polars_df}
   end
 
   @impl true

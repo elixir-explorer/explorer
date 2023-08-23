@@ -280,10 +280,8 @@ fn build_aws_s3_cloud_writer(
         .map_err(object_store_to_explorer_error)?;
 
     let object_store: Box<dyn object_store::ObjectStore> = Box::new(aws_s3);
-    Ok(crate::cloud_writer::CloudWriter::new(
-        object_store,
-        ex_entry.key.into(),
-    ))
+
+    crate::cloud_writer::CloudWriter::new(object_store, ex_entry.key.into())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
