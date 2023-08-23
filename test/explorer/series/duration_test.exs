@@ -5,6 +5,21 @@ defmodule Explorer.Series.DurationTest do
 
   @one_hour_us 3600 * 1_000_000
 
+  describe "io" do
+    test "series to and from binary" do
+      for precision <- [:millisecond, :microsecond, :nanosecond] do
+        dtype = {:duration, precision}
+        durations = Series.from_list([100, 101], dtype: dtype)
+
+        [binary] = Series.to_iovec(durations)
+        from_binary = Series.from_binary(binary, dtype)
+
+        assert durations.dtype == from_binary.dtype
+        assert Series.to_list(durations) == Series.to_list(from_binary)
+      end
+    end
+  end
+
   describe "add" do
     test "datetime[μs] + duration[μs]" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})

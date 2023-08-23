@@ -538,6 +538,9 @@ pub fn iovec_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
         DataType::Datetime(_, None) => {
             series_to_iovec!(resource, s, env, datetime, i64)
         }
+        DataType::Duration(_) => {
+            series_to_iovec!(resource, s, env, duration, i64)
+        }
         DataType::Categorical(Some(_)) => {
             let cat_series = s.cast(&DataType::UInt32)?;
 
