@@ -678,18 +678,6 @@ defmodule Explorer.Backend.LazySeries do
     end
   end
 
-  defp resolve_numeric_temporal_dtype(op, left, %Series{dtype: dtype} = right) do
-    case {op, left, dtype} do
-      {:add, %NaiveDateTime{}, {:duration, tu}} -> {:datetime, tu}
-      {:subtract, %NaiveDateTime{}, {:datetime, tu}} -> {:duration, tu}
-      {:multiply, :integer, {:duration, tu}} -> {:duration, tu}
-      {:divide, {:duration, tu}, :integer} -> {:duration, tu}
-      {:divide, _, {:duration, _}} -> raise("cannot divide by duration")
-      {:divide, _, _} -> :float
-      _ -> resolve_numeric_dtype([left, right])
-    end
-  end
-
   defp resolve_numeric_temporal_dtype(op, left, right) do
     case op do
       :divide -> :float
