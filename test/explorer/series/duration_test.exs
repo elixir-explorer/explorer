@@ -77,6 +77,60 @@ defmodule Explorer.Series.DurationTest do
         assert Series.to_list(durations) == Series.to_list(from_binary)
       end
     end
+
+    test "duration structs to_string similarly to polars" do
+      strings = [
+        "1ms",
+        "10ms",
+        "100ms",
+        "1s",
+        "10s",
+        "1m 40s",
+        "16m 40s",
+        "2h 46m 40s",
+        "1d 3h 46m 40s",
+        "11d 13h 46m 40s",
+        "115d 17h 46m 40s",
+        # Like polars, the maximum unit is days so we don't show years.
+        "1157d 9h 46m 40s"
+      ]
+
+      for {string, power} <- Enum.with_index(strings) do
+        assert to_string(%Duration{value: 10 ** power, precision: :millisecond}) == string
+      end
+    end
+
+    test "duration structs inspect as \"Duration[*]\"" do
+      assert inspect(%Duration{value: 1, precision: :millisecond}) == "Duration[1ms]"
+    end
+
+    test "in a series, equal values are displayed the same regardless of precision" do
+      ms = Series.from_list([1], dtype: {:duration, :millisecond})
+      us = Series.from_list([1_000], dtype: {:duration, :microsecond})
+      ns = Series.from_list([1_000_000], dtype: {:duration, :nanosecond})
+
+      # Each series displays its values as "[1ms]" as well as the correct precision.
+      assert inspect(ms) == """
+             #Explorer.Series<
+               Polars[1]
+               duration[ms] [1ms]
+             >\
+             """
+
+      assert inspect(us) == """
+             #Explorer.Series<
+               Polars[1]
+               duration[μs] [1ms]
+             >\
+             """
+
+      assert inspect(ns) == """
+             #Explorer.Series<
+               Polars[1]
+               duration[ns] [1ms]
+             >\
+             """
+    end
   end
 
   describe "add" do
@@ -292,7 +346,6 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "DataFrame (this block belongs elsewhere, but let's keep the tests in one file for now)" do
-    @tag :skip
     test "mutate/2" do
       require Explorer.DataFrame
       alias Explorer.DataFrame, as: DF
@@ -307,7 +360,7 @@ defmodule Explorer.Series.DurationTest do
                Polars[1 x 3]
                eleven datetime[μs] [2023-08-20 11:00:00.000000]
                twelve datetime[μs] [2023-08-20 12:00:00.000000]
-               diff duration[μs] [3600000000]
+               diff duration[μs] [1h]
              >\
              """
     end
