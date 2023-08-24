@@ -15,6 +15,9 @@ defmodule Explorer.Shared do
       {:datetime, :nanosecond},
       {:datetime, :microsecond},
       {:datetime, :millisecond},
+      {:duration, :nanosecond},
+      {:duration, :microsecond},
+      {:duration, :millisecond},
       :float,
       :integer,
       :string
@@ -25,6 +28,12 @@ defmodule Explorer.Shared do
   """
   def datetime_types,
     do: [{:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}]
+
+  @doc """
+  Supported duration dtypes.
+  """
+  def duration_types,
+    do: [{:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
 
   @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
@@ -183,6 +192,11 @@ defmodule Explorer.Shared do
     type || preferable_type || :float
   end
 
+  defp type(%Date{} = _item, _type), do: :date
+  defp type(%Time{} = _item, _type), do: :time
+  defp type(%NaiveDateTime{} = _item, _type), do: {:datetime, :microsecond}
+  defp type(%Explorer.Duration{precision: precision} = _item, _type), do: {:duration, precision}
+
   defp type(item, type) when is_integer(item) and type == :float, do: :numeric
   defp type(item, type) when is_float(item) and type == :integer, do: :numeric
   defp type(item, type) when is_number(item) and type == :numeric, do: :numeric
@@ -200,9 +214,6 @@ defmodule Explorer.Shared do
   defp type(item, :category) when is_binary(item), do: :category
   defp type(item, _type) when is_binary(item), do: :string
 
-  defp type(%Date{} = _item, _type), do: :date
-  defp type(%Time{} = _item, _type), do: :time
-  defp type(%NaiveDateTime{} = _item, _type), do: {:datetime, :microsecond}
   defp type(item, _type) when is_nil(item), do: nil
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
@@ -242,6 +253,7 @@ defmodule Explorer.Shared do
       :date -> {:s, 32}
       :time -> {:s, 64}
       {:datetime, _} -> {:s, 64}
+      {:duration, _} -> {:s, 64}
       _ -> raise ArgumentError, "cannot convert dtype #{dtype} into a binary/tensor type"
     end
   end
@@ -265,6 +277,9 @@ defmodule Explorer.Shared do
   def dtype_to_string({:datetime, :millisecond}), do: "datetime[ms]"
   def dtype_to_string({:datetime, :microsecond}), do: "datetime[μs]"
   def dtype_to_string({:datetime, :nanosecond}), do: "datetime[ns]"
+  def dtype_to_string({:duration, :millisecond}), do: "duration[ms]"
+  def dtype_to_string({:duration, :microsecond}), do: "duration[μs]"
+  def dtype_to_string({:duration, :nanosecond}), do: "duration[ns]"
   def dtype_to_string(other), do: Atom.to_string(other)
 
   @threshold 0.77

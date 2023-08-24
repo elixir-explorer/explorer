@@ -44,6 +44,15 @@ defmodule Explorer.PolarsBackend.Series do
   def cast(series, {:datetime, :nanosecond}),
     do: Shared.apply_series(series, :s_cast, ["datetime[ns]"])
 
+  def cast(series, {:duration, :millisecond}),
+    do: Shared.apply_series(series, :s_cast, ["duration[ms]"])
+
+  def cast(series, {:duration, :microsecond}),
+    do: Shared.apply_series(series, :s_cast, ["duration[μs]"])
+
+  def cast(series, {:duration, :nanosecond}),
+    do: Shared.apply_series(series, :s_cast, ["duration[ns]"])
+
   def cast(series, dtype), do: Shared.apply_series(series, :s_cast, [Atom.to_string(dtype)])
 
   @impl true
@@ -78,6 +87,9 @@ defmodule Explorer.PolarsBackend.Series do
       "datetime[ms]" -> {:s, 64}
       "datetime[μs]" -> {:s, 64}
       "datetime[ns]" -> {:s, 64}
+      "duration[ms]" -> {:s, 64}
+      "duration[μs]" -> {:s, 64}
+      "duration[ns]" -> {:s, 64}
       "cat" -> {:u, 32}
       dtype -> raise "cannot convert dtype #{inspect(dtype)} to iotype"
     end
@@ -680,6 +692,10 @@ defmodule Explorer.PolarsBackend.Series do
 
   defp to_mod_series(value, %{dtype: :integer}, mod) when is_float(value) or is_non_finite(value),
     do: mod.from_list([value], :float)
+
+  defp to_mod_series(%NaiveDateTime{} = value, %{dtype: {dtype_base, _}}, mod)
+       when dtype_base in [:datetime, :duration],
+       do: mod.from_list([value], {:datetime, :microsecond})
 
   defp to_mod_series(value, %{dtype: :category}, mod),
     do: mod.from_list([value], :string)

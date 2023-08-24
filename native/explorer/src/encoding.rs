@@ -5,8 +5,8 @@ use rustler::{Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
 use std::{mem, slice};
 
 use crate::atoms::{
-    self, calendar, day, hour, infinity, microsecond, minute, month, nan, neg_infinity, second,
-    year,
+    self, calendar, day, hour, infinity, microsecond, millisecond, minute, month, nan, nanosecond,
+    neg_infinity, precision, second, value, year,
 };
 use crate::datatypes::{
     days_to_date, time64ns_to_time, timestamp_to_datetime, ExSeries, ExSeriesRef,
@@ -205,6 +205,81 @@ fn datetime_series_to_list<'b>(
                     naive_datetime_module,
                     env
                 )
+            })
+            .encode(env))
+    ))
+}
+
+fn time_unit_to_atom(time_unit: TimeUnit) -> atom::Atom {
+    match time_unit {
+        TimeUnit::Milliseconds => millisecond(),
+        TimeUnit::Microseconds => microsecond(),
+        TimeUnit::Nanoseconds => nanosecond(),
+    }
+}
+
+macro_rules! unsafe_encode_duration {
+    ($v: expr, $time_unit: expr, $duration_struct_keys: ident, $duration_module: ident, $env: ident) => {{
+        let value = $v;
+        let precision = time_unit_to_atom($time_unit);
+
+        unsafe {
+            Term::new(
+                $env,
+                map::make_map_from_arrays(
+                    $env.as_c_arg(),
+                    $duration_struct_keys,
+                    &[
+                        $duration_module,
+                        value.encode($env).as_c_arg(),
+                        precision.encode($env).as_c_arg(),
+                    ],
+                )
+                .unwrap(),
+            )
+        }
+    }};
+}
+
+// Here we build the Explorer.Duration struct manually, as it's much faster than using NifStruct
+// This is because we already have the keys (we know this at compile time), and the types,
+// so we can build the struct directly.
+fn duration_struct_keys(env: Env) -> [NIF_TERM; 3] {
+    return [
+        atom::__struct__().encode(env).as_c_arg(),
+        value().encode(env).as_c_arg(),
+        precision().encode(env).as_c_arg(),
+    ];
+}
+
+#[inline]
+pub fn encode_duration(v: i64, time_unit: TimeUnit, env: Env) -> Result<Term, ExplorerError> {
+    let duration_struct_keys = &duration_struct_keys(env);
+    let duration_module = atoms::duration_module().encode(env).as_c_arg();
+
+    Ok(unsafe_encode_duration!(
+        v,
+        time_unit,
+        duration_struct_keys,
+        duration_module,
+        env
+    ))
+}
+
+#[inline]
+fn duration_series_to_list<'b>(
+    s: &Series,
+    time_unit: TimeUnit,
+    env: Env<'b>,
+) -> Result<Term<'b>, ExplorerError> {
+    let duration_struct_keys = &duration_struct_keys(env);
+    let duration_module = atoms::duration_module().encode(env).as_c_arg();
+
+    Ok(unsafe_iterator_series_to_list!(
+        env,
+        s.duration()?.into_iter().map(|option| option
+            .map(|v| {
+                unsafe_encode_duration!(v, time_unit, duration_struct_keys, duration_module, env)
             })
             .encode(env))
     ))
@@ -467,6 +542,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Time(v) => encode_time(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
+        AnyValue::Duration(v, time_unit) => encode_duration(v, time_unit, env),
         AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
         dt => panic!("cannot encode value {dt:?} to term"),
     }
@@ -493,6 +569,7 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
         DataType::Date => date_series_to_list(&s, env),
         DataType::Time => time_series_to_list(&s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(&s, *time_unit, env),
+        DataType::Duration(time_unit) => duration_series_to_list(&s, *time_unit, env),
         DataType::Utf8 => {
             generic_binary_series_to_list(&s.resource, s.utf8()?.downcast_iter(), env)
         }
@@ -523,6 +600,9 @@ pub fn iovec_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
         DataType::Time => series_to_iovec!(resource, s, env, time, i64),
         DataType::Datetime(_, None) => {
             series_to_iovec!(resource, s, env, datetime, i64)
+        }
+        DataType::Duration(_) => {
+            series_to_iovec!(resource, s, env, duration, i64)
         }
         DataType::Categorical(Some(_)) => {
             let cat_series = s.cast(&DataType::UInt32)?;

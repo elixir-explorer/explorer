@@ -110,6 +110,7 @@ defmodule Explorer.PolarsBackend.Shared do
       :date -> Native.s_from_list_date(name, list)
       :time -> Native.s_from_list_time(name, list)
       {:datetime, precision} -> Native.s_from_list_datetime(name, list, Atom.to_string(precision))
+      {:duration, precision} -> Native.s_from_list_duration(name, list, Atom.to_string(precision))
       :binary -> Native.s_from_list_binary(name, list)
     end
   end
@@ -134,6 +135,15 @@ defmodule Explorer.PolarsBackend.Shared do
       {:datetime, :nanosecond} ->
         Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[ns]") |> ok()
 
+      {:duration, :millisecond} ->
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast("duration[ms]") |> ok()
+
+      {:duration, :microsecond} ->
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast("duration[μs]") |> ok()
+
+      {:duration, :nanosecond} ->
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast("duration[ns]") |> ok()
+
       :integer ->
         Native.s_from_binary_i64(name, binary)
 
@@ -152,6 +162,9 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("datetime[ms]"), do: {:datetime, :millisecond}
   def normalise_dtype("datetime[ns]"), do: {:datetime, :nanosecond}
   def normalise_dtype("datetime[μs]"), do: {:datetime, :microsecond}
+  def normalise_dtype("duration[ms]"), do: {:duration, :millisecond}
+  def normalise_dtype("duration[ns]"), do: {:duration, :nanosecond}
+  def normalise_dtype("duration[μs]"), do: {:duration, :microsecond}
   def normalise_dtype("f64"), do: :float
   def normalise_dtype("i64"), do: :integer
   def normalise_dtype("list[u32]"), do: :integer
@@ -165,6 +178,9 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype({:datetime, :millisecond}), do: "datetime[ms]"
   def internal_from_dtype({:datetime, :nanosecond}), do: "datetime[ns]"
   def internal_from_dtype({:datetime, :microsecond}), do: "datetime[μs]"
+  def internal_from_dtype({:duration, :millisecond}), do: "duration[ms]"
+  def internal_from_dtype({:duration, :nanosecond}), do: "duration[ns]"
+  def internal_from_dtype({:duration, :microsecond}), do: "duration[μs]"
   def internal_from_dtype(:float), do: "f64"
   def internal_from_dtype(:integer), do: "i64"
   def internal_from_dtype(:string), do: "str"
