@@ -101,7 +101,7 @@ defmodule Explorer.Series.DurationTest do
     end
 
     test "duration structs inspect as \"Duration[*]\"" do
-      assert inspect(%Duration{value: 1, precision: :millisecond}) == "Duration[1ms]"
+      assert inspect(%Duration{value: 1, precision: :millisecond}) == "#Explorer.Duration[1ms]"
     end
 
     test "in a series, equal values are displayed the same regardless of precision" do

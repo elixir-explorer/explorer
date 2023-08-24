@@ -34,19 +34,14 @@ defmodule Explorer.Duration do
 
   defp format_pos_nanoseconds(nanoseconds) when is_integer(nanoseconds) and nanoseconds >= 0 do
     [d: @day_ns, h: @hour_ns, m: @min_ns, s: @sec_ns, ms: @ms_ns, us: @us_ns, ns: 1]
-    |> Enum.reduce({[], nanoseconds}, fn {unit, ns_per_unit}, {parts, ns} ->
-      {num_units, remaining_ns} =
-        if ns >= ns_per_unit do
-          {div(ns, ns_per_unit), rem(ns, ns_per_unit)}
-        else
-          {0, ns}
-        end
-
-      {[{unit, num_units} | parts], remaining_ns}
+    |> Enum.flat_map_reduce(nanoseconds, fn {unit, ns_per_unit}, ns ->
+      if ns >= ns_per_unit do
+        {[{unit, div(ns, ns_per_unit)}], rem(ns, ns_per_unit)}
+      else
+        {[], ns}
+      end
     end)
     |> then(fn {parts_reversed, _} -> parts_reversed end)
-    |> Enum.reverse()
-    |> Enum.reject(fn {_unit, value} -> value == 0 end)
     |> Enum.map_join(" ", fn {unit, value} -> "#{value}#{unit}" end)
     |> case do
       "" -> "0"
@@ -59,6 +54,7 @@ defmodule Explorer.Duration do
   end
 
   defimpl Inspect do
-    def inspect(%Duration{} = duration, _), do: "Duration[" <> Duration.to_string(duration) <> "]"
+    def inspect(%Duration{} = duration, _),
+      do: "#Explorer.Duration[" <> Duration.to_string(duration) <> "]"
   end
 end
