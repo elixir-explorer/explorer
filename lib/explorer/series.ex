@@ -109,7 +109,7 @@ defmodule Explorer.Series do
   @behaviour Access
   @compile {:no_warn_undefined, Nx}
 
-  defguardp is_numerical(n) when K.or(is_number(n), K.in(n, [:nan, :infinity, :neg_infinity]))
+  defguardp is_numeric(n) when K.or(is_number(n), K.in(n, [:nan, :infinity, :neg_infinity]))
   defguardp is_io_dtype(dtype) when K.not(K.in(dtype, [:binary, :string]))
   defguardp is_numeric_dtype(dtype) when K.in(dtype, [:float, :integer])
   defguardp is_numeric_or_bool_dtype(dtype) when K.in(dtype, [:float, :integer, :boolean])
@@ -3125,11 +3125,11 @@ defmodule Explorer.Series do
     do: dtype_mismatch_error("#{operation}/#{length(args) + 2}", left, right)
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right, args)
-       when K.and(is_numeric_dtype(dtype), is_numerical(right)),
+       when K.and(is_numeric_dtype(dtype), is_numeric(right)),
        do: apply_series_list(operation, [left, from_list([right]) | args])
 
   defp basic_numeric_operation(operation, left, %Series{dtype: dtype} = right, args)
-       when K.and(is_numeric_dtype(dtype), is_numerical(left)),
+       when K.and(is_numeric_dtype(dtype), is_numeric(left)),
        do: apply_series_list(operation, [from_list([left]), right | args])
 
   defp basic_numeric_operation(operation, _, %Series{dtype: dtype}, args),
@@ -3139,7 +3139,7 @@ defmodule Explorer.Series do
     do: dtype_error("#{operation}/#{length(args) + 2}", dtype, [:integer, :float])
 
   defp basic_numeric_operation(operation, left, right, args)
-       when K.and(is_numerical(left), is_numerical(right)) do
+       when K.and(is_numeric(left), is_numeric(right)) do
     raise ArgumentError,
           "#{operation}/#{length(args) + 2} expect a series as one of its arguments, " <>
             "instead got two numbers: #{inspect(left)} and #{inspect(right)}"
@@ -3499,7 +3499,7 @@ defmodule Explorer.Series do
        do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, right)
-       when K.and(is_numeric_dtype(dtype), is_numerical(right)),
+       when K.and(is_numeric_dtype(dtype), is_numeric(right)),
        do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: :date}, %Date{}), do: true
@@ -3511,7 +3511,7 @@ defmodule Explorer.Series do
        do: true
 
   defp valid_for_bool_mask_operation?(left, %Series{dtype: dtype})
-       when K.and(is_numeric_dtype(dtype), is_numerical(left)),
+       when K.and(is_numeric_dtype(dtype), is_numeric(left)),
        do: true
 
   defp valid_for_bool_mask_operation?(%Date{}, %Series{dtype: :date}), do: true

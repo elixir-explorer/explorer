@@ -12,7 +12,7 @@ defmodule Explorer.PolarsBackend.Series do
   @behaviour Explorer.Backend.Series
 
   defguardp is_non_finite(n) when n in [:nan, :infinity, :neg_infinity]
-  defguardp is_numerical(n) when is_number(n) or is_non_finite(n)
+  defguardp is_numeric(n) when is_number(n) or is_non_finite(n)
 
   # Conversion
 
@@ -310,7 +310,7 @@ defmodule Explorer.PolarsBackend.Series do
   def log(%Series{} = argument), do: Shared.apply_series(argument, :s_log_natural, [])
 
   @impl true
-  def log(%Series{} = argument, base) when is_numerical(base),
+  def log(%Series{} = argument, base) when is_numeric(base),
     do: Shared.apply_series(argument, :s_log, [base])
 
   @impl true
