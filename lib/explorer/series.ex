@@ -2215,8 +2215,7 @@ defmodule Explorer.Series do
   @spec skew(series :: Series.t(), opts :: Keyword.t()) :: float() | non_finite() | nil
   def skew(series, opts \\ [])
 
-  # BILLY-NOTE: Bug? They're checking for numeric-or-temporal but only allowing numeric
-  def skew(%Series{dtype: dtype} = series, opts) when is_numeric_or_temporal_dtype(dtype) do
+  def skew(%Series{dtype: dtype} = series, opts) when is_numeric_dtype(dtype) do
     opts = Keyword.validate!(opts, bias: true)
     apply_series(series, :skew, [opts[:bias]])
   end
