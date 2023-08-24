@@ -3219,9 +3219,11 @@ defmodule Explorer.Series do
     end
   end
 
+  defp sides_comparable?(%Series{dtype: :category}, right) when is_binary(right), do: true
   defp sides_comparable?(%Series{dtype: :string}, right) when is_binary(right), do: true
   defp sides_comparable?(%Series{dtype: :binary}, right) when is_binary(right), do: true
   defp sides_comparable?(%Series{dtype: :boolean}, right) when is_boolean(right), do: true
+  defp sides_comparable?(left, %Series{dtype: :category}) when is_binary(left), do: true
   defp sides_comparable?(left, %Series{dtype: :string}) when is_binary(left), do: true
   defp sides_comparable?(left, %Series{dtype: :binary}) when is_binary(left), do: true
   defp sides_comparable?(left, %Series{dtype: :boolean}) when is_boolean(left), do: true
@@ -3420,6 +3422,11 @@ defmodule Explorer.Series do
 
   defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype}),
     do: true
+
+  defp valid_for_bool_mask_operation?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
+       when K.and(left_dtype == :category, right_dtype == :string)
+       when K.and(left_dtype == :string, right_dtype == :category),
+       do: true
 
   defp valid_for_bool_mask_operation?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
        when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
