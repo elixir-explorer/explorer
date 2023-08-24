@@ -3206,8 +3206,8 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
   def equal(left, right) do
-    if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
-      apply_series_list(:equal, [left, right])
+    if args = cast_for_comparable_operation(left, right) do
+      apply_series_list(:equal, args)
     else
       dtype_mismatch_error("equal/2", left, right)
     end
@@ -3275,22 +3275,12 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
   def not_equal(left, right) do
-    if K.or(valid_for_bool_mask_operation?(left, right), sides_comparable?(left, right)) do
-      apply_series_list(:not_equal, [left, right])
+    if args = cast_for_comparable_operation(left, right) do
+      apply_series_list(:not_equal, args)
     else
       dtype_mismatch_error("not_equal/2", left, right)
     end
   end
-
-  defp sides_comparable?(%Series{dtype: :category}, right) when is_binary(right), do: true
-  defp sides_comparable?(%Series{dtype: :string}, right) when is_binary(right), do: true
-  defp sides_comparable?(%Series{dtype: :binary}, right) when is_binary(right), do: true
-  defp sides_comparable?(%Series{dtype: :boolean}, right) when is_boolean(right), do: true
-  defp sides_comparable?(left, %Series{dtype: :category}) when is_binary(left), do: true
-  defp sides_comparable?(left, %Series{dtype: :string}) when is_binary(left), do: true
-  defp sides_comparable?(left, %Series{dtype: :binary}) when is_binary(left), do: true
-  defp sides_comparable?(left, %Series{dtype: :boolean}) when is_boolean(left), do: true
-  defp sides_comparable?(_, _), do: false
 
   @doc """
   Returns boolean mask of `left > right`, element-wise.
@@ -3324,8 +3314,8 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
   def greater(left, right) do
-    if valid_for_bool_mask_operation?(left, right) do
-      apply_series_list(:greater, [left, right])
+    if args = cast_for_ordered_operation(left, right) do
+      apply_series_list(:greater, args)
     else
       dtype_mismatch_error("greater/2", left, right, @numeric_or_temporal_dtypes)
     end
@@ -3363,8 +3353,8 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
   def greater_equal(left, right) do
-    if valid_for_bool_mask_operation?(left, right) do
-      apply_series_list(:greater_equal, [left, right])
+    if args = cast_for_ordered_operation(left, right) do
+      apply_series_list(:greater_equal, args)
     else
       dtype_mismatch_error("greater_equal/2", left, right, @numeric_or_temporal_dtypes)
     end
@@ -3402,8 +3392,8 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
   def less(left, right) do
-    if valid_for_bool_mask_operation?(left, right) do
-      apply_series_list(:less, [left, right])
+    if args = cast_for_ordered_operation(left, right) do
+      apply_series_list(:less, args)
     else
       dtype_mismatch_error("less/2", left, right, @numeric_or_temporal_dtypes)
     end
@@ -3441,8 +3431,8 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t()
         ) :: Series.t()
   def less_equal(left, right) do
-    if valid_for_bool_mask_operation?(left, right) do
-      apply_series_list(:less_equal, [left, right])
+    if args = cast_for_ordered_operation(left, right) do
+      apply_series_list(:less_equal, args)
     else
       dtype_mismatch_error("less_equal/2", left, right, @numeric_or_temporal_dtypes)
     end
@@ -3473,8 +3463,8 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   def (%Series{} = left) in (%Series{} = right) do
-    if valid_for_bool_mask_operation?(left, right) do
-      apply_series_list(:binary_in, [left, right])
+    if args = cast_for_comparable_operation(left, right) do
+      apply_series_list(:binary_in, args)
     else
       dtype_mismatch_error("in/2", left, right)
     end
@@ -3483,43 +3473,111 @@ defmodule Explorer.Series do
   def (%Series{data: %backend{}} = left) in right when is_list(right),
     do: left in backend.from_list(right, Shared.check_types!(right, nil))
 
-  defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype}),
+  ## Comparable (a superset of ordered)
+
+  defp cast_for_comparable_operation(
+         %Series{dtype: left_dtype} = left,
+         %Series{dtype: right_dtype} = right
+       ) do
+    if valid_comparable_series?(left_dtype, right_dtype) do
+      [left, right]
+    else
+      nil
+    end
+  end
+
+  defp cast_for_comparable_operation(%Series{dtype: dtype} = series, value) do
+    if dtype = cast_to_comparable_series(dtype, value) do
+      [series, from_same_value(series, value, dtype)]
+    else
+      nil
+    end
+  end
+
+  defp cast_for_comparable_operation(value, %Series{dtype: dtype} = series) do
+    if dtype = cast_to_comparable_series(dtype, value) do
+      [from_same_value(series, value, dtype), series]
+    else
+      nil
+    end
+  end
+
+  defp cast_for_comparable_operation(_left, _right),
+    do: nil
+
+  defp valid_comparable_series?(:category, :string), do: true
+  defp valid_comparable_series?(:string, :category), do: true
+
+  defp valid_comparable_series?(left_dtype, right_dtype),
+    do: valid_ordered_series?(left_dtype, right_dtype)
+
+  defp cast_to_comparable_series(:category, value) when is_binary(value), do: :string
+  defp cast_to_comparable_series(:string, value) when is_binary(value), do: :string
+  defp cast_to_comparable_series(:binary, value) when is_binary(value), do: :binary
+  defp cast_to_comparable_series(:boolean, value) when is_boolean(value), do: :boolean
+  defp cast_to_comparable_series(dtype, value), do: cast_to_ordered_series(dtype, value)
+
+  ## Ordered
+
+  defp cast_for_ordered_operation(
+         %Series{dtype: left_dtype} = left,
+         %Series{dtype: right_dtype} = right
+       ) do
+    if valid_ordered_series?(left_dtype, right_dtype) do
+      [left, right]
+    else
+      nil
+    end
+  end
+
+  defp cast_for_ordered_operation(%Series{dtype: dtype} = series, value) do
+    if dtype = cast_to_ordered_series(dtype, value) do
+      [series, from_same_value(series, value, dtype)]
+    else
+      nil
+    end
+  end
+
+  defp cast_for_ordered_operation(value, %Series{dtype: dtype} = series) do
+    if dtype = cast_to_ordered_series(dtype, value) do
+      [from_same_value(series, value, dtype), series]
+    else
+      nil
+    end
+  end
+
+  defp cast_for_ordered_operation(_left, _right),
+    do: nil
+
+  defp valid_ordered_series?(dtype, dtype),
     do: true
 
-  defp valid_for_bool_mask_operation?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
-       when K.and(left_dtype == :category, right_dtype == :string)
-       when K.and(left_dtype == :string, right_dtype == :category),
-       do: true
-
-  defp valid_for_bool_mask_operation?(%Series{dtype: left_dtype}, %Series{dtype: right_dtype})
+  defp valid_ordered_series?(left_dtype, right_dtype)
        when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
        do: true
 
-  defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, right)
-       when K.and(is_numeric_dtype(dtype), is_numeric(right)),
-       do: true
+  defp valid_ordered_series?(_, _),
+    do: false
 
-  defp valid_for_bool_mask_operation?(%Series{dtype: :date}, %Date{}), do: true
+  defp cast_to_ordered_series(dtype, value)
+       when K.and(is_numeric_dtype(dtype), is_integer(value)),
+       do: :integer
 
-  defp valid_for_bool_mask_operation?(%Series{dtype: {:datetime, _}}, %NaiveDateTime{}), do: true
+  defp cast_to_ordered_series(dtype, value)
+       when K.and(is_numeric_dtype(dtype), is_numeric(value)),
+       do: :float
 
-  defp valid_for_bool_mask_operation?(%Series{dtype: {:duration, _}}, right)
-       when is_integer(right),
-       do: true
+  defp cast_to_ordered_series(:date, %Date{}), do: :date
 
-  defp valid_for_bool_mask_operation?(left, %Series{dtype: dtype})
-       when K.and(is_numeric_dtype(dtype), is_numeric(left)),
-       do: true
+  defp cast_to_ordered_series({:datetime, _}, %NaiveDateTime{}),
+    do: {:datetime, :microsecond}
 
-  defp valid_for_bool_mask_operation?(%Date{}, %Series{dtype: :date}), do: true
+  defp cast_to_ordered_series({:duration, _}, value)
+       when is_integer(value),
+       do: :integer
 
-  defp valid_for_bool_mask_operation?(%NaiveDateTime{}, %Series{dtype: {:datetime, _}}), do: true
-
-  defp valid_for_bool_mask_operation?(left, %Series{dtype: {:duration, _}})
-       when is_integer(left),
-       do: true
-
-  defp valid_for_bool_mask_operation?(_, _), do: false
+  defp cast_to_ordered_series(_dtype, _value),
+    do: nil
 
   @doc """
   Returns a boolean mask of `left and right`, element-wise.
@@ -4265,11 +4323,8 @@ defmodule Explorer.Series do
       when K.in(strategy, [:forward, :backward, :min, :max, :mean]),
       do: apply_series(series, :fill_missing_with_strategy, [strategy])
 
-  def fill_missing(%Series{} = series, value) do
-    if K.or(
-         valid_for_bool_mask_operation?(series, value),
-         sides_comparable?(series, value)
-       ) do
+  def fill_missing(%Series{dtype: dtype} = series, value) do
+    if cast_to_comparable_series(dtype, value) do
       apply_series(series, :fill_missing_with_value, [value])
     else
       dtype_mismatch_error("fill_missing/2", series, value)

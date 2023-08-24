@@ -351,29 +351,27 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def equal(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_equal, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_equal, [right.data])
 
   @impl true
   def not_equal(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_not_equal, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_not_equal, [right.data])
 
   @impl true
   def greater(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_greater, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_greater, [right.data])
 
   @impl true
   def less(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_less, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_less, [right.data])
 
   @impl true
-  def greater_equal(left, right) do
-    Shared.apply_series(to_series(left, right), :s_greater_equal, [to_polars_series(right, left)])
-  end
+  def greater_equal(left, right),
+    do: Shared.apply_series(matching_size!(left, right), :s_greater_equal, [right.data])
 
   @impl true
-  def less_equal(left, right) do
-    Shared.apply_series(to_series(left, right), :s_less_equal, [to_polars_series(right, left)])
-  end
+  def less_equal(left, right),
+    do: Shared.apply_series(matching_size!(left, right), :s_less_equal, [right.data])
 
   @impl true
   def all_equal(%Series{} = left, %Series{} = right),
@@ -643,13 +641,6 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Helpers
 
-  defp to_series(%Series{} = series, %Series{} = other), do: matching_size!(series, other)
-  defp to_series(%Series{} = series, _other), do: series
-  defp to_series(series, other), do: to_mod_series(series, other, __MODULE__)
-
-  defp to_polars_series(%Series{data: data}, _other), do: data
-  defp to_polars_series(series, other), do: to_mod_series(series, other, Shared)
-
   defp matching_size!(series, other) do
     case size(series) do
       1 ->
@@ -669,22 +660,6 @@ defmodule Explorer.PolarsBackend.Series do
         end
     end
   end
-
-  defp to_mod_series(value, %{dtype: :float}, mod) when is_integer(value),
-    do: mod.from_list([1.0 * value], :float)
-
-  defp to_mod_series(value, %{dtype: :integer}, mod) when is_float(value) or is_non_finite(value),
-    do: mod.from_list([value], :float)
-
-  defp to_mod_series(%NaiveDateTime{} = value, %{dtype: {dtype_base, _}}, mod)
-       when dtype_base in [:datetime, :duration],
-       do: mod.from_list([value], {:datetime, :microsecond})
-
-  defp to_mod_series(value, %{dtype: :category}, mod),
-    do: mod.from_list([value], :string)
-
-  defp to_mod_series(value, %{dtype: dtype}, mod),
-    do: mod.from_list([value], dtype)
 end
 
 defimpl Inspect, for: Explorer.PolarsBackend.Series do
