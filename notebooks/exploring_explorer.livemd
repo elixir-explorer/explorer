@@ -176,7 +176,8 @@ And of course, you can convert back to an Elixir list.
 Series.to_list(s)
 ```
 
-`Explorer` supports comparisons.
+`Explorer` comparisons return boolean series. We will talk more
+about boolean series later.
 
 ```elixir
 s = 1..11 |> Enum.to_list() |> Series.from_list()
@@ -202,7 +203,7 @@ Series.not_equal(s, 10)
 Series.greater_equal(s, 4)
 ```
 
-And arithmetic.
+`Explorer` supports arithmetic.
 
 ```elixir
 Series.add(s, s1)
@@ -286,6 +287,15 @@ And you can even get a dataframe showing the frequencies for each distinct value
 
 ```elixir
 Series.frequencies(s)
+```
+
+Back to those boolean series returned by comparison functions like `equal` and `not_equal`.
+
+These boolean series can be combined with other functions to perform conditional operations.
+
+```elixir
+s1 = Series.from_list(["It", "was", "the", "best", "of", "times"])
+s1 |> Series.equal("best") |> Series.select("worst", s1)
 ```
 
 ## Working with DataFrames
