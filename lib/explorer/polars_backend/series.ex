@@ -697,6 +697,9 @@ defmodule Explorer.PolarsBackend.Series do
        when dtype_base in [:datetime, :duration],
        do: mod.from_list([value], {:datetime, :microsecond})
 
+  defp to_mod_series(value, %{dtype: :category}, mod),
+    do: mod.from_list([value], :string)
+
   defp to_mod_series(value, %{dtype: dtype}, mod),
     do: mod.from_list([value], dtype)
 end

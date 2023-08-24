@@ -8,7 +8,12 @@ defmodule Explorer.Backend.DataFrame do
   @type df :: Explorer.DataFrame.t()
 
   @type option(type) :: type | nil
-  @type ok_result :: :ok | {:error, term()}
+
+  # Types for IO operations
+  @type ok_result() :: :ok | {:error, Exception.t()}
+  @type io_result(t) :: {:ok, t} | {:error, Exception.t()}
+
+  # Generic result
   @type result(t) :: {:ok, t} | {:error, term()}
 
   @type series :: Explorer.Series.t()
@@ -52,10 +57,10 @@ defmodule Explorer.Backend.DataFrame do
               infer_schema_length :: option(integer()),
               parse_dates :: boolean(),
               eol_delimiter :: option(String.t())
-            ) :: result(df)
+            ) :: io_result(df)
   @callback to_csv(df, entry :: fs_entry(), header? :: boolean(), delimiter :: String.t()) ::
               ok_result()
-  @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: result(binary())
+  @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: io_result(binary())
 
   @callback load_csv(
               contents :: String.t(),
@@ -70,14 +75,14 @@ defmodule Explorer.Backend.DataFrame do
               infer_schema_length :: option(integer()),
               parse_dates :: boolean(),
               eol_delimiter :: option(String.t())
-            ) :: result(df)
+            ) :: io_result(df)
 
   # IO: Parquet
   @callback from_parquet(
               entry :: fs_entry(),
               max_rows :: option(integer()),
               columns :: columns_for_io()
-            ) :: result(df)
+            ) :: io_result(df)
   @callback to_parquet(
               df,
               entry :: fs_entry(),
@@ -85,54 +90,54 @@ defmodule Explorer.Backend.DataFrame do
               streaming :: boolean()
             ) ::
               ok_result()
-  @callback dump_parquet(df, compression()) :: result(binary())
-  @callback load_parquet(contents :: binary()) :: result(df)
+  @callback dump_parquet(df, compression()) :: io_result(binary())
+  @callback load_parquet(contents :: binary()) :: io_result(df)
 
   # IO: IPC
   @callback from_ipc(
               entry :: fs_entry(),
               columns :: columns_for_io()
-            ) :: result(df)
+            ) :: io_result(df)
   @callback to_ipc(df, entry :: fs_entry(), compression(), streaming :: boolean()) ::
               ok_result()
-  @callback dump_ipc(df, compression()) :: result(binary())
+  @callback dump_ipc(df, compression()) :: io_result(binary())
   @callback load_ipc(
               contents :: binary(),
               columns :: columns_for_io()
-            ) :: result(df)
+            ) :: io_result(df)
 
   # IO: IPC Stream
   @callback from_ipc_stream(
               filename :: fs_entry(),
               columns :: columns_for_io()
-            ) :: result(df)
+            ) :: io_result(df)
   @callback to_ipc_stream(
               df,
               entry :: fs_entry(),
               compression()
             ) ::
               ok_result()
-  @callback dump_ipc_stream(df, compression()) :: result(binary())
+  @callback dump_ipc_stream(df, compression()) :: io_result(binary())
   @callback load_ipc_stream(
               contents :: binary(),
               columns :: columns_for_io()
-            ) :: result(df)
+            ) :: io_result(df)
 
   # IO: IPC NDJSON
   @callback from_ndjson(
               filename :: fs_entry(),
               infer_schema_length :: integer(),
               batch_size :: integer()
-            ) :: result(df)
+            ) :: io_result(df)
   @callback to_ndjson(df, entry :: fs_entry()) :: ok_result()
 
-  @callback dump_ndjson(df) :: result(binary())
+  @callback dump_ndjson(df) :: io_result(binary())
 
   @callback load_ndjson(
               contents :: String.t(),
               infer_schema_length :: integer(),
               batch_size :: integer()
-            ) :: result(df)
+            ) :: io_result(df)
 
   # Conversion
 

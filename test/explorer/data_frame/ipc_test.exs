@@ -147,7 +147,22 @@ defmodule Explorer.DataFrame.IPCTest do
     test "returns an error in case file is not found in S3 bucket", %{s3_config: s3_config} do
       path = "s3://test-bucket/test-writes/file-does-not-exist.ipc"
 
-      assert {:error, "no such file or directory"} = DF.from_ipc(path, config: s3_config)
+      assert {:error, %ArgumentError{message: "resource not found (404)"}} =
+               DF.from_ipc(path, config: s3_config)
+    end
+
+    @tag :cloud_integration
+    test "cannot write an IPC file to S3 if bucket does not exist", %{
+      df: df,
+      s3_config: s3_config
+    } do
+      key = "test-writes/wine-#{System.monotonic_time()}.ipc"
+      path = "s3://test-bucket-not-found/" <> key
+
+      assert {:error, error} = DF.to_ipc(df, path, config: s3_config)
+
+      assert error ==
+               RuntimeError.exception("Generic Error: Could not put multipart to path " <> key)
     end
   end
 
@@ -193,7 +208,7 @@ defmodule Explorer.DataFrame.IPCTest do
 
       url = http_endpoint(bypass) <> "/path/to/file.ipc"
 
-      assert {:error, "no such file or directory"} = DF.from_ipc(url)
+      assert {:error, %ArgumentError{message: "resource not found (404)"}} = DF.from_ipc(url)
     end
   end
 

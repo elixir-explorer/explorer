@@ -132,7 +132,7 @@ defmodule Explorer.DataFrame.ParquetTest do
 
       url = http_endpoint(bypass) <> "/path/to/file.parquet"
 
-      assert {:error, "no such file or directory"} = DF.from_parquet(url)
+      assert {:error, %ArgumentError{message: "resource not found (404)"}} = DF.from_parquet(url)
     end
   end
 

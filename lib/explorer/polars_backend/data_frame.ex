@@ -53,7 +53,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result =
         from_csv(
@@ -123,7 +123,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     case df do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -150,7 +150,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     case Native.df_to_csv(df, entry.path, header?, delimiter) do
       {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -160,13 +160,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     case Native.df_to_csv_cloud(df, entry, header?, delimiter) do
       {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
   def dump_csv(%DataFrame{} = df, header?, <<delimiter::utf8>>) do
-    Native.df_dump_csv(df.data, header?, delimiter)
+    case Native.df_dump_csv(df.data, header?, delimiter) do
+      {:ok, string} -> {:ok, string}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
   end
 
   @impl true
@@ -216,7 +219,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     case df do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -230,7 +233,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result = from_ndjson(entry, infer_schema_length, batch_size)
 
@@ -241,35 +244,41 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
-    with {:ok, df} <- Native.df_from_ndjson(entry.path, infer_schema_length, batch_size) do
-      {:ok, Shared.create_dataframe(df)}
+    case Native.df_from_ndjson(entry.path, infer_schema_length, batch_size) do
+      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
   def to_ndjson(%DataFrame{data: df}, %Local.Entry{} = entry) do
-    with {:ok, _} <- Native.df_to_ndjson(df, entry.path) do
-      :ok
+    case Native.df_to_ndjson(df, entry.path) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
   def to_ndjson(%DataFrame{data: df}, %S3.Entry{} = entry) do
-    with {:ok, _} <- Native.df_to_ndjson_cloud(df, entry) do
-      :ok
+    case Native.df_to_ndjson_cloud(df, entry) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
   def dump_ndjson(%DataFrame{} = df) do
-    Native.df_dump_ndjson(df.data)
+    case Native.df_dump_ndjson(df.data) do
+      {:ok, string} -> {:ok, string}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
   end
 
   @impl true
   def load_ndjson(contents, infer_schema_length, batch_size) when is_binary(contents) do
     case Native.df_load_ndjson(contents, infer_schema_length, batch_size) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -287,7 +296,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result = from_parquet(entry, max_rows, columns)
 
@@ -310,7 +319,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     case df do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -323,7 +332,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       ) do
     case Native.df_to_parquet(df, entry.path, parquet_compression(compression, compression_level)) do
       {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -340,13 +349,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
            parquet_compression(compression, compression_level)
          ) do
       {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
   def dump_parquet(%DataFrame{data: df}, {compression, compression_level}) do
-    Native.df_dump_parquet(df, parquet_compression(compression, compression_level))
+    case Native.df_dump_parquet(df, parquet_compression(compression, compression_level)) do
+      {:ok, string} -> {:ok, string}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
   end
 
   defp parquet_compression(nil, _), do: :uncompressed
@@ -361,7 +373,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def load_parquet(contents) when is_binary(contents) do
     case Native.df_load_parquet(contents) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -370,7 +382,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result = from_ipc(entry, columns)
 
@@ -385,7 +397,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     case Native.df_from_ipc(entry.path, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -393,7 +405,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def to_ipc(%DataFrame{data: df}, %Local.Entry{} = entry, {compression, _level}, _streaming) do
     case Native.df_to_ipc(df, entry.path, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -401,13 +413,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def to_ipc(%DataFrame{data: df}, %S3.Entry{} = entry, {compression, _level}, _streaming) do
     case Native.df_to_ipc_cloud(df, entry, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
   def dump_ipc(%DataFrame{data: df}, {compression, _level}) do
-    Native.df_dump_ipc(df, maybe_atom_to_string(compression))
+    case Native.df_dump_ipc(df, maybe_atom_to_string(compression)) do
+      {:ok, string} -> {:ok, string}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
   end
 
   @impl true
@@ -416,7 +431,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     case Native.df_load_ipc(contents, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -425,7 +440,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = %Local.Entry{path: path}
+      entry = Local.from_path(path)
 
       result = from_ipc_stream(entry, columns)
 
@@ -440,7 +455,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     case Native.df_from_ipc_stream(entry.path, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -448,7 +463,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def to_ipc_stream(%DataFrame{data: df}, %Local.Entry{} = entry, {compression, _level}) do
     case Native.df_to_ipc_stream(df, entry.path, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -456,13 +471,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def to_ipc_stream(%DataFrame{data: df}, %S3.Entry{} = entry, {compression, _level}) do
     case Native.df_to_ipc_stream_cloud(df, entry, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
   def dump_ipc_stream(%DataFrame{data: df}, {compression, _level}) do
-    Native.df_dump_ipc_stream(df, maybe_atom_to_string(compression))
+    case Native.df_dump_ipc_stream(df, maybe_atom_to_string(compression)) do
+      {:ok, string} -> {:ok, string}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
   end
 
   @impl true
@@ -471,7 +489,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     case Native.df_load_ipc_stream(contents, columns, projection) do
       {:ok, df} -> {:ok, Shared.create_dataframe(df)}
-      {:error, error} -> {:error, error}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
@@ -624,18 +642,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def describe(%DataFrame{} = df, percentiles) do
-    case Native.df_describe(df.data, percentiles) do
-      {:ok, polars_df} -> Shared.create_dataframe(polars_df)
-      {:error, error} -> raise "cannot describe dataframe. Reason: #{inspect(error)}"
-    end
+    Shared.apply(:df_describe, [df.data, percentiles])
+    |> Shared.create_dataframe()
   end
 
   @impl true
   def nil_count(%DataFrame{} = df) do
-    case Native.df_nil_count(df.data) do
-      {:ok, polars_df} -> Shared.create_dataframe(polars_df)
-      {:error, error} -> raise "cannot count nils. Reason: #{inspect(error)}"
-    end
+    Shared.apply(:df_nil_count, [df.data])
+    |> Shared.create_dataframe()
   end
 
   @impl true
@@ -734,19 +748,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def pivot_wider(df, id_columns, names_from, values_from, names_prefix) do
     names_prefix_optional = unless names_prefix == "", do: names_prefix
 
-    case Native.df_pivot_wider(
-           df.data,
-           id_columns,
-           names_from,
-           values_from,
-           names_prefix_optional
-         ) do
-      {:ok, %__MODULE__{} = polars_df} ->
-        Shared.create_dataframe(polars_df)
-
-      {:error, error} ->
-        raise "cannot pivot wider due to Polars error: #{inspect(error)}"
-    end
+    Shared.apply(:df_pivot_wider, [
+      df.data,
+      id_columns,
+      names_from,
+      values_from,
+      names_prefix_optional
+    ])
+    |> Shared.create_dataframe()
   end
 
   # Two or more table verbs

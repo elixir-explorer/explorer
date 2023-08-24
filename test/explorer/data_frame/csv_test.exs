@@ -528,7 +528,29 @@ defmodule Explorer.DataFrame.CSVTest do
     test "returns an error in case file is not found in S3 bucket", %{s3_config: s3_config} do
       path = "s3://test-bucket/test-writes/file-does-not-exist.csv"
 
-      assert {:error, "no such file or directory"} = DF.from_csv(path, config: s3_config)
+      assert {:error, %ArgumentError{message: "resource not found (404)"}} =
+               DF.from_csv(path, config: s3_config)
+    end
+
+    @tag :cloud_integration
+    test "writes a CSV file to endpoint ignoring bucket name", %{df: df} do
+      config = %FSS.S3.Config{
+        access_key_id: "test",
+        secret_access_key: "test",
+        endpoint: "http://localhost:4566/test-bucket",
+        bucket: nil,
+        region: "us-east-1"
+      }
+
+      entry = %FSS.S3.Entry{
+        key: "wine-yolo-#{System.monotonic_time()}.csv",
+        config: config
+      }
+
+      assert :ok = DF.to_csv(df, entry)
+
+      saved_df = DF.from_csv!(entry)
+      assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
     end
   end
 
@@ -572,7 +594,7 @@ defmodule Explorer.DataFrame.CSVTest do
 
       url = http_endpoint(bypass) <> "/path/to/file.csv"
 
-      assert {:error, "no such file or directory"} = DF.from_csv(url)
+      assert {:error, %ArgumentError{message: "resource not found (404)"}} = DF.from_csv(url)
     end
 
     test "returns an error with invalid config" do

@@ -7,14 +7,16 @@ defmodule Explorer.FSS.Utils do
 
   @doc """
   Asserts that the given path is a regular file path.
-  """
-  @spec assert_regular_path!(path()) :: :ok
-  def assert_regular_path!(path) do
-    unless regular_path?(path) do
-      raise ArgumentError, "expected a regular file path, got: #{inspect(path)}"
-    end
 
-    :ok
+  It returns an error in case the file is a directory.
+  """
+  @spec assert_regular_path(path()) :: :ok | {:error, Exception.t()}
+  def assert_regular_path(path) do
+    if regular_path?(path) do
+      :ok
+    else
+      {:error, ArgumentError.exception("expected a regular file path, got: #{inspect(path)}")}
+    end
   end
 
   @doc """
@@ -23,15 +25,6 @@ defmodule Explorer.FSS.Utils do
   @spec regular_path?(path()) :: boolean()
   def regular_path?(path) do
     not String.ends_with?(path, "/")
-  end
-
-  @doc """
-  Converts the given posix error atom into readable error tuple.
-  """
-  @spec posix_error(atom()) :: {:error, String.t()}
-  def posix_error(error) do
-    message = error |> :file.format_error() |> List.to_string()
-    {:error, message}
   end
 
   @doc """
@@ -46,7 +39,7 @@ defmodule Explorer.FSS.Utils do
 
   """
   @spec download(String.t(), Collectable.t(), keyword()) ::
-          {:ok, Collectable.t()} | {:error, String.t(), status()}
+          {:ok, Collectable.t()} | {:error, Exception.t(), status()}
   def download(url, collectable, opts \\ []) do
     headers = build_headers(opts[:headers] || [])
 
@@ -86,7 +79,7 @@ defmodule Explorer.FSS.Utils do
           collector.(acc, :halt)
           :httpc.cancel_request(request_id)
           exception = Exception.normalize(kind, reason, __STACKTRACE__)
-          {:error, Exception.message(exception), nil}
+          {:error, exception, nil}
       else
         {:ok, state} ->
           acc = state.collector.(state.acc, :done)
@@ -95,13 +88,13 @@ defmodule Explorer.FSS.Utils do
         {:error, message, status} ->
           collector.(acc, :halt)
           :httpc.cancel_request(request_id)
-          {:error, message, status}
+          {:error, ArgumentError.exception(message), status}
       end
     catch
       kind, reason ->
         :httpc.cancel_request(request_id)
         exception = Exception.normalize(kind, reason, __STACKTRACE__)
-        {:error, Exception.message(exception), nil}
+        {:error, exception, nil}
     end
   end
 

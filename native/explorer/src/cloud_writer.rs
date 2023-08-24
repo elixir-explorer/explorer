@@ -1,5 +1,6 @@
 use tokio::io::{AsyncWrite, AsyncWriteExt};
 
+use crate::ExplorerError;
 use object_store::path::Path;
 use object_store::MultipartId;
 use object_store::ObjectStore;
@@ -27,32 +28,30 @@ impl CloudWriter {
     ///
     /// Creates a new (current-thread) Tokio runtime
     /// which bridges the sync writing process with the async ObjectStore multipart uploading.
-    pub fn new(object_store: Box<dyn ObjectStore>, path: Path) -> Self {
+    pub fn new(object_store: Box<dyn ObjectStore>, path: Path) -> Result<Self, ExplorerError> {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_time()
             .enable_io()
-            .build()
-            .unwrap();
+            .build()?;
+
         let (multipart_id, writer) =
-            runtime.block_on(async { Self::build_writer(&object_store, &path).await });
-        CloudWriter {
+            runtime.block_on(async { Self::build_writer(&object_store, &path).await })?;
+        Ok(CloudWriter {
             object_store,
             path,
             multipart_id,
             runtime,
             writer,
-        }
+        })
     }
 
     async fn build_writer(
         object_store: &dyn ObjectStore,
         path: &Path,
-    ) -> (MultipartId, Box<dyn AsyncWrite + Send + Unpin>) {
-        let (multipart_id, async_s3_writer) = object_store
-            .put_multipart(path)
-            .await
-            .expect("Could not create location to write to");
-        (multipart_id, async_s3_writer)
+    ) -> Result<(MultipartId, Box<dyn AsyncWrite + Send + Unpin>), ExplorerError> {
+        let (multipart_id, async_s3_writer) = (object_store.put_multipart(path).await)
+            .map_err(|_| ExplorerError::Other(format!("Could not put multipart to path {path}")))?;
+        Ok((multipart_id, async_s3_writer))
     }
 
     fn abort(&self) {
@@ -120,7 +119,7 @@ mod tests {
 
         let path: object_store::path::Path = "cloud_writer_example.csv".into();
 
-        let mut cloud_writer = CloudWriter::new(object_store, path);
+        let mut cloud_writer = CloudWriter::new(object_store, path).unwrap();
         CsvWriter::new(&mut cloud_writer)
             .finish(&mut df)
             .expect("Could not write dataframe as CSV to remote location");

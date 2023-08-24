@@ -2,43 +2,51 @@ defimpl Explorer.FSS, for: FSS.S3.Entry do
   alias Explorer.FSS.Utils
 
   def download(entry, path) do
-    Utils.assert_regular_path!(path)
+    with :ok <- Utils.assert_regular_path(path),
+         {:ok, url} <- url(entry) do
+      headers = headers(entry, :get, url, [])
+      collectable = File.stream!(path)
 
-    url = url(entry)
-    headers = headers(entry, :get, url, [])
-    collectable = File.stream!(path)
-
-    case Utils.download(url, collectable, headers: headers) do
-      {:ok, _collectable} -> :ok
-      {:error, _message, 404} -> Utils.posix_error(:enoent)
-      {:error, message, _status} -> {:error, message}
+      case Utils.download(url, collectable, headers: headers) do
+        {:ok, _collectable} -> :ok
+        {:error, _message, 404} -> {:error, ArgumentError.exception("resource not found (404)")}
+        {:error, exception, _status} -> {:error, exception}
+      end
     end
   end
 
   defp url(%FSS.S3.Entry{} = entry) do
-    uri =
-      if endpoint = entry.config.endpoint do
-        URI.parse(endpoint)
+    config = entry.config
+
+    uri = URI.parse(config.endpoint)
+
+    maybe_uri =
+      if is_nil(config.bucket) do
+        {:ok, uri}
       else
-        URI.parse("https://s3.#{entry.config.region}.amazonaws.com")
+        append_path(uri, "/" <> config.bucket)
       end
 
-    uri
-    |> append_path("/" <> entry.bucket <> "/" <> entry.key)
-    |> URI.to_string()
+    with {:ok, uri} <- maybe_uri,
+         {:ok, uri_with_key} <- append_path(uri, "/" <> entry.key) do
+      {:ok, URI.to_string(uri_with_key)}
+    end
   end
 
   # Once we depend on Elixir ~> 1.15, we can use `URI.append_path/2`.
   defp append_path(%URI{}, "//" <> _ = path) do
-    raise ArgumentError, ~s|path cannot start with "//", got: #{inspect(path)}|
+    {:error, ArgumentError.exception(~s|path cannot start with "//", got: #{inspect(path)}|)}
   end
 
   defp append_path(%URI{path: path} = uri, "/" <> rest = all) do
-    cond do
-      path == nil -> %{uri | path: all}
-      path != "" and :binary.last(path) == ?/ -> %{uri | path: path <> rest}
-      true -> %{uri | path: path <> all}
-    end
+    updated_uri =
+      cond do
+        path == nil -> %{uri | path: all}
+        path != "" and :binary.last(path) == ?/ -> %{uri | path: path <> rest}
+        true -> %{uri | path: path <> all}
+      end
+
+    {:ok, updated_uri}
   end
 
   defp headers(%FSS.S3.Entry{} = entry, method, url, headers, body \\ nil) do

@@ -634,6 +634,15 @@ defmodule Explorer.SeriesTest do
                [false, false, false, false, true]
     end
 
+    test "compare categories with integers" do
+      s = Series.from_list(["a", "b", "c", nil, "a"], dtype: :category)
+
+      assert Series.equal(Series.from_list(["a"]), s) |> Series.to_list() ==
+               [true, false, false, nil, true]
+
+      assert Series.equal(s, "a") |> Series.to_list() == [true, false, false, nil, true]
+    end
+
     test "performs broadcasting" do
       s1 = Series.from_list([-1, 0, 1])
       s2 = Series.from_list([0])
@@ -3001,7 +3010,7 @@ defmodule Explorer.SeriesTest do
   test "categories/1" do
     s = Series.from_list(["a", "b", "c", nil, "a"], dtype: :category)
     categories = Series.categories(s)
-    assert Series.to_list(categories) === ["a", "b", "c"]
+    assert Series.to_list(categories) == ["a", "b", "c"]
     assert Series.dtype(categories) == :string
   end
 
