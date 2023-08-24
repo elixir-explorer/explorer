@@ -51,7 +51,7 @@ You'll notice that the output looks slightly different than many dataframe libra
 If you'd like to see a table with your data, we've got you covered there too.
 
 ```elixir
-Explorer.DataFrame.table(df)
+Kino.DataTable.new(df)
 ```
 
 Writing files is very similar to reading them. The options are a little more limited:
@@ -156,7 +156,7 @@ Series.from_list([1, 2, 3, "a"])
 
 One of the goals of `Explorer` is *useful error messages*. If you look at the error above, you get:
 
-> Cannot make a series from mismatched types. Type of "a" does not match inferred dtype integer.
+> the value "a" does not match the inferred series dtype :integer
 
 Hopefully this makes abundantly clear what's going on.
 
@@ -541,7 +541,7 @@ DF.sample(df, 10000)
 ```
 
 ```elixir
-DF.sample(df, 10000, replacement: true)
+DF.sample(df, 10000, replace: true)
 ```
 
 ### Pull and slice

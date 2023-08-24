@@ -120,6 +120,8 @@ defmodule Explorer.DataFrame do
   to a remote resource. In case it's a FSS entry, the requirement is that the config is passed
   inside the entry struct.
 
+  For more details about the options, see the [FSS docs](https://hexdocs.pm/fss).
+
   ## Selecting columns and access
 
   Several functions in this module, such as `select/2`, `discard/2`, `drop_nil/2`, and so
@@ -248,7 +250,7 @@ defmodule Explorer.DataFrame do
   @type column_pairs(value) :: [{column(), value}] | %{column() => value}
 
   @typedoc """
-  Represents a filesystem entry, that can be local or S3.
+  Represents a filesystem entry, that can be local, S3 or URL.
   """
   @type fs_entry :: FSS.entry()
 
