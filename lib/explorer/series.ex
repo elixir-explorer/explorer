@@ -2677,12 +2677,6 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec multiply(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def multiply(%Series{dtype: {:duration, _} = dtype} = left, %Series{dtype: :integer} = right),
-    do: apply_series_list(:multiply, [left, right]) |> cast(dtype)
-
-  def multiply(%Series{dtype: :integer} = left, %Series{dtype: {:duration, _} = dtype} = right),
-    do: apply_series_list(:multiply, [left, right]) |> cast(dtype)
-
   def multiply(left, right), do: basic_numeric_operation(:multiply, left, right)
 
   @doc """
@@ -2733,9 +2727,6 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec divide(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def divide(%Series{dtype: {:duration, _} = dtype} = left, %Series{dtype: :integer} = right),
-    do: apply_series_list(:divide, [left, right]) |> cast(dtype)
-
   def divide(_, %Series{dtype: {:duration, _}}),
     do: raise(ArgumentError, "cannot divide by duration")
 

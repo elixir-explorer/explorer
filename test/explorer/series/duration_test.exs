@@ -284,28 +284,6 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "multiply" do
-    test "duration[μs] * integer" do
-      ten_hour_duration_us = %Duration{value: @one_hour_us * 10, precision: :microsecond}
-
-      ten_s = Series.from_list([10])
-      one_hour_s = Series.from_list([@one_hour_duration_us])
-      prod_s = Series.multiply(one_hour_s, ten_s)
-
-      assert prod_s.dtype == {:duration, :microsecond}
-      assert Series.to_list(prod_s) == [ten_hour_duration_us]
-    end
-
-    test "integer * duration[μs]" do
-      ten_hour_duration_us = %Duration{value: @one_hour_us * 10, precision: :microsecond}
-
-      ten_s = Series.from_list([10])
-      one_hour_s = Series.from_list([@one_hour_duration_us])
-      prod_s = Series.multiply(ten_s, one_hour_s)
-
-      assert prod_s.dtype == {:duration, :microsecond}
-      assert Series.to_list(prod_s) == [ten_hour_duration_us]
-    end
-
     test "duration[μs] * duration[μs] raises ArgumentError" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
 
@@ -316,26 +294,6 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "divide" do
-    test "duration[μs] / integer" do
-      six_min_duration_us = %Duration{value: @one_hour_us / 10, precision: :microsecond}
-
-      one_hour_s = Series.from_list([@one_hour_duration_us])
-      ten_s = Series.from_list([10])
-      quot_s = Series.divide(one_hour_s, ten_s)
-
-      assert quot_s.dtype == {:duration, :microsecond}
-      assert Series.to_list(quot_s) == [six_min_duration_us]
-    end
-
-    test "integer / duration[μs] raises ArgumentError" do
-      ten_s = Series.from_list([10])
-      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
-
-      assert_raise ArgumentError,
-                   "cannot divide by duration",
-                   fn -> Series.divide(ten_s, one_hour_s) end
-    end
-
     test "duration[μs] / duration[μs] raises ArgumentError" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
 
