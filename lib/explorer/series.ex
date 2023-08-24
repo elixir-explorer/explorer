@@ -4774,7 +4774,7 @@ defmodule Explorer.Series do
     do: dtype_error("is_infinite/1", dtype, [:float])
 
   @doc """
-  Returns a mask of infinite values.
+  Returns a mask of nan values.
 
   ## Examples
 
