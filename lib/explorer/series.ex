@@ -942,7 +942,7 @@ defmodule Explorer.Series do
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `:time` - Time type that unwraps to `Elixir.Time`
     * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
-    * `:duration` - Duration type that unwraps to ... BILLY-TODO
+    * `:duration` - Duration type that unwraps to `Explorer.Duration`
 
   ## Examples
 
