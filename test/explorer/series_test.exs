@@ -2866,14 +2866,12 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [1, 3, 0, 2]
     end
 
-    # There is a bug which is not considering "nils first" for descending argsort
-    @tag :skip
     test "indices of sorting a series in descending order" do
       s1 = Series.from_list([9, 4, nil, 5])
 
       result = Series.argsort(s1, direction: :desc, nils: :first)
 
-      assert Series.to_list(result) == [2, 0, 3, 1]
+      assert Series.to_list(result) == [0, 3, 1, 2]
     end
 
     test "indices of sorting a float series in ascending order" do
@@ -2884,14 +2882,12 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(result) == [5, 1, 6, 0, 4, 2, 3]
     end
 
-    # There is a bug which is not considering "nils first" for descending argsort
-    @tag :skip
     test "indices of sorting a float series in descending order" do
       s1 = Series.from_list([3.0, 1.0, :nan, nil, :infinity, :neg_infinity, 2.0])
 
       result = Series.argsort(s1, direction: :desc)
 
-      assert Series.to_list(result) == [3, 2, 4, 0, 6, 1, 5]
+      assert Series.to_list(result) == [2, 4, 0, 6, 1, 5, 3]
     end
 
     test "sort a series in descending order, but with nils last" do
