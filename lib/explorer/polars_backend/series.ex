@@ -198,17 +198,6 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(predicate, :s_select, [on_true.data, on_false.data])
   end
 
-  def select(%Series{} = predicate, %Series{} = on_true, on_false),
-    do: select(predicate, on_true, to_series(on_false, on_true))
-
-  def select(%Series{} = predicate, on_true, %Series{} = on_false),
-    do: select(predicate, to_series(on_true, on_false), on_false)
-
-  def select(%Series{} = predicate, on_true, on_false) do
-    on_true = from_list([on_true], Explorer.Shared.check_types!([on_true]))
-    select(predicate, on_true, on_false)
-  end
-
   # Aggregation
 
   @impl true
@@ -257,16 +246,11 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def correlation(left, right, ddof),
-    do:
-      Shared.apply_series(to_series(left, right), :s_correlation, [
-        to_polars_series(right, left),
-        ddof
-      ])
+    do: Shared.apply_series(matching_size!(left, right), :s_correlation, [right.data, ddof])
 
   @impl true
   def covariance(left, right),
-    do:
-      Shared.apply_series(to_series(left, right), :s_covariance, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_covariance, [right.data])
 
   # Cumulative
 
@@ -296,39 +280,38 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def add(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_add, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
 
   @impl true
   def subtract(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_subtract, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_subtract, [right.data])
 
   @impl true
   def multiply(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_multiply, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_multiply, [right.data])
 
   @impl true
   def divide(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_divide, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_divide, [right.data])
 
   @impl true
   def quotient(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_quotient, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_quotient, [right.data])
 
   @impl true
   def remainder(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_remainder, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_remainder, [right.data])
 
   @impl true
   def pow(left, right),
-    do: Shared.apply_series(to_series(left, right), :s_pow, [to_polars_series(right, left)])
+    do: Shared.apply_series(matching_size!(left, right), :s_pow, [right.data])
 
   @impl true
   def log(%Series{} = argument), do: Shared.apply_series(argument, :s_log_natural, [])
 
   @impl true
-  def log(%Series{} = argument, base) when is_numerical(base) do
-    Shared.apply_series(argument, :s_log, [base])
-  end
+  def log(%Series{} = argument, base) when is_numerical(base),
+    do: Shared.apply_series(argument, :s_log, [base])
 
   @impl true
   def exp(%Series{} = s), do: Shared.apply_series(s, :s_exp, [])
