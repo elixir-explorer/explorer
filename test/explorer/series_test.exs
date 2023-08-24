@@ -1141,6 +1141,71 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, true, true]
     end
 
+    test "with results from divide can find nan and infinity" do
+      s1 = Series.from_list([1, 0, 0])
+      s2 = Series.from_list([4, 1, 0])
+      s3 = Series.divide(s2, s1)
+
+      assert inspect(s3) ==
+               """
+               #Explorer.Series<
+                 Polars[3]
+                 float [4.0, Inf, NaN]
+               >
+               """
+               |> String.trim()
+
+      assert Series.to_list(s3) == [4.0, :infinity, :nan]
+
+      s4 = Series.from_list([:nan, :infinity])
+
+      assert inspect(s4) ==
+               """
+               #Explorer.Series<
+                 Polars[2]
+                 float [NaN, Inf]
+               >
+               """
+               |> String.trim()
+
+      boolean_series = Series.in(s3, s4)
+
+      assert Series.to_list(boolean_series) == [false, true, true]
+    end
+
+    test "with float series can find nan and infinity" do
+      #      s1 = Series.from_list([1, 0, 0])
+      #      s2 = Series.from_list([4, 1, 0])
+      #      s3 = Series.divide(s2, s1)
+      s3 = Series.from_list([4.0, :infinity, :nan])
+
+      assert inspect(s3) ==
+               """
+               #Explorer.Series<
+                 Polars[3]
+                 float [4.0, Inf, NaN]
+               >
+               """
+               |> String.trim()
+
+      assert Series.to_list(s3) == [4.0, :infinity, :nan]
+
+      s4 = Series.from_list([:nan, :infinity])
+
+      assert inspect(s4) ==
+               """
+               #Explorer.Series<
+                 Polars[2]
+                 float [NaN, Inf]
+               >
+               """
+               |> String.trim()
+
+      boolean_series = Series.in(s3, s4)
+
+      assert Series.to_list(boolean_series) == [false, true, true]
+    end
+
     test "with binary series" do
       s1 = Series.from_list([<<239, 191, 19>>, <<2>>, <<3>>], dtype: :binary)
       s2 = Series.from_list([<<239, 191, 19>>, <<0>>, <<3>>], dtype: :binary)
