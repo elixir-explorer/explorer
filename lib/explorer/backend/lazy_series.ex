@@ -876,6 +876,10 @@ defmodule Explorer.Backend.LazySeries do
     unary_not: :not
   }
 
+  defp to_elixir_ast(%__MODULE__{op: :from_list, args: [[single], _]}) do
+    single
+  end
+
   defp to_elixir_ast(%__MODULE__{op: op, args: args}) do
     {Map.get(@to_elixir_op, op, op), [], Enum.map(args, &to_elixir_ast/1)}
   end

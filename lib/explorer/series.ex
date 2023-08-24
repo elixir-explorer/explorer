@@ -326,6 +326,14 @@ defmodule Explorer.Series do
     raise ArgumentError, "unsupported datatype: #{inspect(dtype)}"
   end
 
+  defp from_same_value(%{data: %backend{}}, value) do
+    backend.from_list([value], Shared.check_types!([value], nil))
+  end
+
+  defp from_same_value(%{data: %backend{}}, value, dtype) do
+    backend.from_list([value], dtype)
+  end
+
   @doc """
   Builds a series of `dtype` from `binary`.
 
@@ -2563,10 +2571,10 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | NaiveDateTime.t()
         ) :: Series.t()
   def add(%NaiveDateTime{} = left, %Series{dtype: {:duration, timeunit}} = right),
-    do: apply_series_list(:add, [from_list([left], dtype: {:datetime, timeunit}), right])
+    do: apply_series_list(:add, [from_same_value(right, left, {:datetime, timeunit}), right])
 
   def add(%Series{dtype: {:duration, timeunit}} = left, %NaiveDateTime{} = right),
-    do: apply_series_list(:add, [left, from_list([right], dtype: {:datetime, timeunit})])
+    do: apply_series_list(:add, [left, from_same_value(left, right, {:datetime, timeunit})])
 
   def add(%Series{dtype: {:datetime, _}} = left, %Series{dtype: {:duration, _}} = right),
     do: apply_series_list(:add, enforce_highest_precision(left, right))
@@ -3103,6 +3111,12 @@ defmodule Explorer.Series do
 
   defp basic_numeric_operation(operation, left, right, args \\ [])
 
+  defp basic_numeric_operation(operation, %Series{} = left, right, args) when is_numeric(right),
+    do: basic_numeric_operation(operation, left, from_same_value(left, right), args)
+
+  defp basic_numeric_operation(operation, left, %Series{} = right, args) when is_numeric(left),
+    do: basic_numeric_operation(operation, from_same_value(right, left), right, args)
+
   defp basic_numeric_operation(
          operation,
          %Series{dtype: left_dtype} = left,
@@ -3114,14 +3128,6 @@ defmodule Explorer.Series do
 
   defp basic_numeric_operation(operation, %Series{} = left, %Series{} = right, args),
     do: dtype_mismatch_error("#{operation}/#{length(args) + 2}", left, right)
-
-  defp basic_numeric_operation(operation, %Series{dtype: dtype} = left, right, args)
-       when K.and(is_numeric_dtype(dtype), is_numeric(right)),
-       do: apply_series_list(operation, [left, from_list([right]) | args])
-
-  defp basic_numeric_operation(operation, left, %Series{dtype: dtype} = right, args)
-       when K.and(is_numeric_dtype(dtype), is_numeric(left)),
-       do: apply_series_list(operation, [from_list([left]), right | args])
 
   defp basic_numeric_operation(operation, _, %Series{dtype: dtype}, args),
     do: dtype_error("#{operation}/#{length(args) + 2}", dtype, [:integer, :float])
@@ -3474,8 +3480,8 @@ defmodule Explorer.Series do
     end
   end
 
-  def (%Series{} = left) in right when is_list(right),
-    do: left in Explorer.Series.from_list(right)
+  def (%Series{data: %backend{}} = left) in right when is_list(right),
+    do: left in backend.from_list(right, Shared.check_types!(right, nil))
 
   defp valid_for_bool_mask_operation?(%Series{dtype: dtype}, %Series{dtype: dtype}),
     do: true
