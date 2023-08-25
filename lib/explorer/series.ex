@@ -4,16 +4,12 @@ defmodule Explorer.Series do
 
   A series can be of the following data types:
 
-    * `:binary` - Binary
+    * `:binary` - Binaries (sequences of bytes)
     * `:boolean` - Boolean
-    * `:category` - UTF-8 encoded binary but represented internally as integers
+    * `:category` - Strings but represented internally as integers
     * `:date` - Date type that unwraps to `Elixir.Date`
-    * `{:datetime, :millisecond}` - DateTime type with milli-second precision that unwraps to `Elixir.NaiveDateTime`
-    * `{:datetime, :microsecond}` - DateTime type with micro-second precision that unwraps to `Elixir.NaiveDateTime`
-    * `{:datetime, :nanosecond}` - DateTime type with nano-second precision that unwraps to `Elixir.NaiveDateTime`
-    * `{:duration, :millisecond}` - Duration type with milli-second precision that unwraps to `integer`
-    * `{:duration, :microsecond}` - Duration type with micro-second precision that unwraps to `integer`
-    * `{:duration, :nanosecond}` - Duration type with nano-second precision that unwraps to `integer`
+    * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
+    * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
     * `:float` - 64-bit floating point number
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
@@ -941,16 +937,7 @@ defmodule Explorer.Series do
   @doc """
   Returns the data type of the series.
 
-  A series can be of the following data types:
-
-    * `:float` - 64-bit floating point number
-    * `:integer` - 64-bit signed integer
-    * `:boolean` - Boolean
-    * `:string` - UTF-8 encoded binary
-    * `:date` - Date type that unwraps to `Elixir.Date`
-    * `:time` - Time type that unwraps to `Elixir.Time`
-    * `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
-    * `:duration` - Duration type that unwraps to `Explorer.Duration`
+  See the moduledoc for all supported dtypes.
 
   ## Examples
 
