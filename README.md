@@ -143,30 +143,6 @@ Your dataframe is going to look like this:
 >
 ```
 
-It's also possible to see a dataframe like a table, using the `Explorer.DataFrame.table/2`
-function:
-
-```elixir
-Explorer.DataFrame.table(mountains)
-```
-
-Prints:
-
-```
-+-------------------------------------------+
-| Explorer DataFrame: [rows: 3, columns: 2] |
-+---------------------+---------------------+
-|        name         |      elevation      |
-|      <string>       |      <integer>      |
-+=====================+=====================+
-| Everest             | 8848                |
-+---------------------+---------------------+
-| K2                  | 8611                |
-+---------------------+---------------------+
-| Aconcagua           | 6962                |
-+---------------------+---------------------+
-```
-
 And now I want to show you how to filter our dataframe. But first, let's require
 the `Explorer.DataFrame` module and give a short name to it:
 
