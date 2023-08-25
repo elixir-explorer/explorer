@@ -775,7 +775,10 @@ defmodule Explorer.DataFrameTest do
           calc4: divide(a, 2),
           calc5: pow(a, 2),
           calc6: quotient(a, 2),
-          calc7: remainder(a, 2)
+          calc7: remainder(a, 2),
+          calc8: divide(a * 0.0, 0.0),
+          calc9: divide(a, 0.0),
+          calc10: is_nan(divide(a * 0.0, 0.0))
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -786,7 +789,10 @@ defmodule Explorer.DataFrameTest do
                calc4: [0.5, 1.0, 2.0],
                calc5: [1.0, 4.0, 16.0],
                calc6: [0, 1, 2],
-               calc7: [1, 0, 0]
+               calc7: [1, 0, 0],
+               calc8: [:nan, :nan, :nan],
+               calc9: [:infinity, :infinity, :infinity],
+               calc10: [true, true, true]
              }
 
       assert DF.dtypes(df1) == %{
@@ -797,7 +803,10 @@ defmodule Explorer.DataFrameTest do
                "calc4" => :float,
                "calc5" => :integer,
                "calc6" => :integer,
-               "calc7" => :integer
+               "calc7" => :integer,
+               "calc8" => :float,
+               "calc9" => :float,
+               "calc10" => :boolean
              }
     end
 
