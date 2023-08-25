@@ -655,6 +655,36 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["a", "b"]
       assert df1.dtypes == %{"a" => :float, "b" => :string}
     end
+
+    test "changes a column with boolean series and select" do
+      df = DF.new(%{a: Series.from_list([0.2, :nan])})
+
+      # mutate_with works with Series.equal
+      df =
+        DF.mutate_with(df, fn ldf ->
+          updated =
+            ldf["a"]
+            |> Series.equal(0.2)
+            |> Series.select(nil, ldf["a"])
+
+          [a: updated]
+        end)
+
+      assert DF.to_columns(df, atom_keys: true) == %{a: [nil, :nan]}
+
+      # mutate_with works with Series.is_nan
+      df =
+        DF.mutate_with(df, fn ldf ->
+          updated =
+            ldf["a"]
+            |> Series.is_nan()
+            |> Series.select(nil, ldf["a"])
+
+          [a: updated]
+        end)
+
+      assert DF.to_columns(df, atom_keys: true) == %{a: [0.2, nil]}
+    end
   end
 
   describe "mutate/2" do
