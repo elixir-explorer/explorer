@@ -1072,11 +1072,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: a, b: b, c: c)
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            select1: Series.select(ldf["a"], ldf["b"], ldf["c"])
-          ]
-        end)
+        DF.mutate(df, select1: select(a, b, c))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1090,18 +1086,34 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(b: [3, 4, 2], c: [6, 2, 1])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            select1: Series.select(Series.from_list([true]), ldf["b"], ldf["c"]),
-            select2: Series.select(Series.from_list([false]), ldf["b"], ldf["c"])
-          ]
-        end)
+        DF.mutate(df,
+          select1: select(from_list([true]), b, c),
+          select2: select(from_list([false]), b, c)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                b: [3, 4, 2],
                c: [6, 2, 1],
                select1: [3, 4, 2],
                select2: [6, 2, 1]
+             }
+    end
+
+    test "adds some columns with select functions and scalar values" do
+      a = Series.from_list([true, false, true])
+      b = Series.from_list([3, 4, 2])
+      c = Series.from_list([6, 2, 1])
+      df = DF.new(a: a, b: b, c: c)
+
+      df1 =
+        DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [true, false, true],
+               b: [3, 4, 2],
+               c: [6, 2, 1],
+               select1: ["passed", "failed", "passed"],
+               select2: [0, 50, 50]
              }
     end
 
