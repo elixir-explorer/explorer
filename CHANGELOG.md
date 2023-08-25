@@ -94,6 +94,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Allow comparison of strings with categories.
 
+- Fix `Explorer.Series.is_nan/1` inside the context of `Explorer.Query`.
+  The NIF function was not being exported.
+
 ### Removed
 
 - Remove dependency on `TableRex`, and the `Explorer.DataFrame.table/2` function.
