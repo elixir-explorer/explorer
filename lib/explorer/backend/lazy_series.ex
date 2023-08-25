@@ -197,6 +197,7 @@ defmodule Explorer.Backend.LazySeries do
     args = [data!(left), data!(right)]
     data = new(:add, args, aggregations?(args))
     dtype = resolve_numeric_temporal_dtype(:add, left, right)
+
     Backend.Series.new(data, dtype)
   end
 
@@ -205,6 +206,7 @@ defmodule Explorer.Backend.LazySeries do
     args = [data!(left), data!(right)]
     data = new(:subtract, args, aggregations?(args))
     dtype = resolve_numeric_temporal_dtype(:subtract, left, right)
+
     Backend.Series.new(data, dtype)
   end
 
@@ -213,6 +215,7 @@ defmodule Explorer.Backend.LazySeries do
     args = [data!(left), data!(right)]
     data = new(:multiply, args, aggregations?(args))
     dtype = resolve_numeric_temporal_dtype(:multiply, left, right)
+
     Backend.Series.new(data, dtype)
   end
 
@@ -221,6 +224,7 @@ defmodule Explorer.Backend.LazySeries do
     args = [data!(left), data!(right)]
     data = new(:divide, args, aggregations?(args))
     dtype = resolve_numeric_temporal_dtype(:divide, left, right)
+
     Backend.Series.new(data, dtype)
   end
 
