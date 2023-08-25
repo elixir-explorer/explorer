@@ -1,3 +1,5 @@
+<!-- livebook:{"persist_outputs":true} -->
+
 # Ten Minutes to Explorer
 
 ```elixir
@@ -5,6 +7,12 @@ Mix.install([
   {:explorer, "~> 0.6.0"},
   {:kino, "~> 0.9.0"}
 ])
+```
+
+<!-- livebook:{"output":true} -->
+
+```
+:ok
 ```
 
 ## Introduction
@@ -73,14 +81,18 @@ DataFrame.to_csv(df, filename)
 
 `Explorer`, like `Polars`, works up from the concept of a `Series`. In many ways, you can think of a dataframe as a row-aligned map of `Series`. These are like `vectors` in R or `series` in Pandas.
 
-For simplicity, `Explorer` uses the following `Series` `dtypes`:
+`Explorer` supports the following `Series` `dtypes`:
 
+* `:binary` - Binaries (sequences of bytes)
+* `:boolean` - Boolean
+* `:category` - Strings but represented internally as integers
+* `:date` - Date type that unwraps to `Elixir.Date`
+* `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
+* `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
 * `:float` - 64-bit floating point number
 * `:integer` - 64-bit signed integer
-* `:boolean` - Boolean
 * `:string` - UTF-8 encoded binary
-* `:date` - Date type that unwraps to `Elixir.Date`
-* `:datetime` - DateTime type that unwraps to `Elixir.NaiveDateTime`
+* `:time` - Time type that unwraps to `Elixir.Time`
 
 `Series` can be constructed from Elixir basic types. For example:
 
