@@ -1405,7 +1405,7 @@ defmodule Explorer.SeriesTest do
 
     test "adding two numbers" do
       assert_raise ArgumentError,
-                   "add/2 expects at least one series as an argument, instead got two scalars: 1 and 2",
+                   "add/2 expects a series as one of its arguments, instead got two scalars: 1 and 2",
                    fn ->
                      Series.add(1, 2)
                    end

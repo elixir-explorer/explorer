@@ -239,7 +239,7 @@ defmodule Explorer.Series.DurationTest do
 
     test "Date + Date raises ArgumentError" do
       assert_raise ArgumentError,
-                   "add/2 expects at least one series as an argument, instead got two scalars: ~D[2023-08-20] and ~D[2023-08-21]",
+                   "add/2 expects a series as one of its arguments, instead got two scalars: ~D[2023-08-20] and ~D[2023-08-21]",
                    fn -> Series.add(@aug_20, @aug_21) end
     end
 
@@ -370,7 +370,7 @@ defmodule Explorer.Series.DurationTest do
 
     test "Date - Date raises ArgumentError" do
       assert_raise ArgumentError,
-                   "subtract/2 expects at least one series as an argument, instead got two scalars: ~D[2023-08-21] and ~D[2023-08-20]",
+                   "subtract/2 expects a series as one of its arguments, instead got two scalars: ~D[2023-08-21] and ~D[2023-08-20]",
                    fn -> Series.subtract(@aug_21, @aug_20) end
     end
 

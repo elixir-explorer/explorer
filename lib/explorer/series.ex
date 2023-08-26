@@ -2500,20 +2500,15 @@ defmodule Explorer.Series do
 
   # Arithmetic
 
-  defp cast_for_arithmetic(operation, [_, _] = args) do
+  defp cast_for_arithmetic(function, [_, _] = args) do
     args
     |> case do
       [%Series{}, %Series{}] -> args
       [left, %Series{} = right] -> [from_list([left]), right]
       [%Series{} = left, right] -> [left, from_list([right])]
-      [_, _] -> raise(ArgumentError, arithmetic_error(operation, args))
+      [left, right] -> no_series_error(function, left, right)
     end
     |> enforce_highest_precision()
-  end
-
-  defp arithmetic_error(operation, [left, right]) do
-    "#{operation}/2 expects at least one series as an argument, " <>
-      "instead got two scalars: #{inspect(left)} and #{inspect(right)}"
   end
 
   defp enforce_highest_precision([
@@ -2578,13 +2573,13 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t()
         ) :: Series.t()
   def add(left, right) do
-    [left, right] = cast_for_arithmetic(:add, [left, right])
+    [left, right] = cast_for_arithmetic("add/2", [left, right])
 
     if _dtype = cast_to_add(dtype(left), dtype(right)) do
       args = maybe_swap_args_add([left, right])
       apply_series_list(:add, args)
     else
-      dtype_mismatch_error("add/2", left, right, @ordered_dtypes)
+      dtype_mismatch_error("add/2", left, right)
     end
   end
 
@@ -2653,12 +2648,12 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t()
         ) :: Series.t()
   def subtract(left, right) do
-    [left, right] = cast_for_arithmetic(:subtract, [left, right])
+    [left, right] = cast_for_arithmetic("subtract/2", [left, right])
 
     if _dtype = cast_to_subtract(dtype(left), dtype(right)) do
       apply_series_list(:subtract, [left, right])
     else
-      dtype_mismatch_error("subtract/2", left, right, @ordered_dtypes)
+      dtype_mismatch_error("subtract/2", left, right)
     end
   end
 
@@ -2710,7 +2705,7 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Duration.t()
         ) :: Series.t()
   def multiply(left, right) do
-    [left, right] = cast_for_arithmetic(:multiply, [left, right])
+    [left, right] = cast_for_arithmetic("multiply/2", [left, right])
 
     if dtype = cast_to_multiply(dtype(left), dtype(right)) do
       apply_series_list(:multiply, [left, right])
@@ -2720,7 +2715,7 @@ defmodule Explorer.Series do
       # We need to return duration in these cases, so we need an additional cast.
       |> cast(dtype)
     else
-      dtype_mismatch_error("multiply/2", left, right, [:integer, :float] ++ @duration_dtypes)
+      dtype_mismatch_error("multiply/2", left, right)
     end
   end
 
@@ -2786,7 +2781,7 @@ defmodule Explorer.Series do
           right :: Series.t() | number()
         ) :: Series.t()
   def divide(left, right) do
-    [left, right] = cast_for_arithmetic(:divide, [left, right])
+    [left, right] = cast_for_arithmetic("divide/2", [left, right])
 
     if dtype = cast_to_divide(dtype(left), dtype(right)) do
       apply_series_list(:divide, [left, right])
@@ -2798,7 +2793,7 @@ defmodule Explorer.Series do
     else
       case dtype(right) do
         {:duration, _} -> raise(ArgumentError, "cannot divide by duration")
-        _ -> dtype_mismatch_error("divide/2", left, right, [:integer, :float] ++ @duration_dtypes)
+        _ -> dtype_mismatch_error("divide/2", left, right)
       end
     end
   end
@@ -3207,10 +3202,13 @@ defmodule Explorer.Series do
     do: dtype_error("#{operation}/#{length(args) + 2}", dtype, [:integer, :float])
 
   defp basic_numeric_operation(operation, left, right, args)
-       when K.and(is_numeric(left), is_numeric(right)) do
+       when K.and(is_numeric(left), is_numeric(right)),
+       do: no_series_error("#{operation}/#{length(args) + 2}", left, right)
+
+  defp no_series_error(function, left, right) do
     raise ArgumentError,
-          "#{operation}/#{length(args) + 2} expect a series as one of its arguments, " <>
-            "instead got two numbers: #{inspect(left)} and #{inspect(right)}"
+          "#{function} expects a series as one of its arguments, " <>
+            "instead got two scalars: #{inspect(left)} and #{inspect(right)}"
   end
 
   # Comparisons
