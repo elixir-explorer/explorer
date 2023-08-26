@@ -31,7 +31,7 @@ object_store = { version = "0.6", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.31"
+version = "0.32"
 default-features = false
 features = [
   "checked_arithmetic",
@@ -73,10 +73,10 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.31"
+version = "0.32"
 
 [dependencies.polars-algo]
-version = "0.31"
+version = "0.32"
 
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]

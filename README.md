@@ -190,15 +190,18 @@ machine if you want to compile from source, which is the case when contributing
 to Explorer.
 
 We require Rust Nightly, which can be installed with [Rustup](https://rust-lang.github.io/rustup/installation/index.html).
+If you already have Rustup and a recent version of Cargo installed, then the correct version of
+Rust is going to be installed in the first compilation of the project. Otherwise, you can manually
+install the correct version:
 
 ```sh
-rustup toolchain install nightly-2023-06-23
+rustup toolchain install nightly-2023-07-27
 ```
 
 You can also use [asdf](https://asdf-vm.com/):
 
 ```sh
-asdf install rust nightly-2023-06-23
+asdf install rust nightly-2023-07-27
 ```
 
 It's possible that you may need to install [`CMake`](https://cmake.org/) in order to build the project,
