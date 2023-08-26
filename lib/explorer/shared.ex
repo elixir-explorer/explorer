@@ -218,6 +218,20 @@ defmodule Explorer.Shared do
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
   @doc """
+  The return dtype for the basic arithmetic operations: add, subtract, multiply, and divide.
+
+  This function assumes that the inputs have already had the highest precision enforced.
+  """
+  def dtype_for_basic_arithmetic(operation, left_dtype, right_dtype) do
+    case operation do
+      :add -> Explorer.Series.cast_to_add(left_dtype, right_dtype)
+      :subtract -> Explorer.Series.cast_to_subtract(left_dtype, right_dtype)
+      :multiply -> Explorer.Series.cast_to_multiply(left_dtype, right_dtype)
+      :divide -> Explorer.Series.cast_to_divide(left_dtype, right_dtype)
+    end
+  end
+
+  @doc """
   Downcasts lists of mixed numeric types (float and int) to float.
   """
   def cast_numerics(list, type) when type == :numeric do

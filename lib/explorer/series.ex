@@ -2582,16 +2582,17 @@ defmodule Explorer.Series do
     end
   end
 
-  defp cast_to_add(:integer, :integer), do: :integer
-  defp cast_to_add(:integer, :float), do: :float
-  defp cast_to_add(:float, :integer), do: :float
-  defp cast_to_add(:float, :float), do: :float
-  defp cast_to_add(:date, {:duration, _}), do: :date
-  defp cast_to_add({:duration, _}, :date), do: :date
-  defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
-  defp cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
-  defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_add(_, _), do: nil
+  @doc false
+  def cast_to_add(:integer, :integer), do: :integer
+  def cast_to_add(:integer, :float), do: :float
+  def cast_to_add(:float, :integer), do: :float
+  def cast_to_add(:float, :float), do: :float
+  def cast_to_add(:date, {:duration, _}), do: :date
+  def cast_to_add({:duration, _}, :date), do: :date
+  def cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
+  def cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
+  def cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
+  def cast_to_add(_, _), do: nil
 
   defp maybe_swap_args_add([left, right]) do
     case {dtype(left), dtype(right)} do
@@ -2656,16 +2657,17 @@ defmodule Explorer.Series do
     end
   end
 
-  defp cast_to_subtract(:integer, :integer), do: :integer
-  defp cast_to_subtract(:integer, :float), do: :float
-  defp cast_to_subtract(:float, :integer), do: :float
-  defp cast_to_subtract(:float, :float), do: :float
-  defp cast_to_subtract(:date, :date), do: {:duration, :millisecond}
-  defp cast_to_subtract(:date, {:duration, _}), do: :date
-  defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
-  defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
-  defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_subtract(_, _), do: nil
+  @doc false
+  def cast_to_subtract(:integer, :integer), do: :integer
+  def cast_to_subtract(:integer, :float), do: :float
+  def cast_to_subtract(:float, :integer), do: :float
+  def cast_to_subtract(:float, :float), do: :float
+  def cast_to_subtract(:date, :date), do: {:duration, :millisecond}
+  def cast_to_subtract(:date, {:duration, _}), do: :date
+  def cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
+  def cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
+  def cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
+  def cast_to_subtract(_, _), do: nil
 
   @doc """
   Multiplies left and right, element-wise.
@@ -2718,15 +2720,16 @@ defmodule Explorer.Series do
     end
   end
 
-  defp cast_to_multiply(:integer, :integer), do: :integer
-  defp cast_to_multiply(:integer, :float), do: :float
-  defp cast_to_multiply(:float, :integer), do: :float
-  defp cast_to_multiply(:float, :float), do: :float
-  defp cast_to_multiply(:integer, {:duration, p}), do: {:duration, p}
-  defp cast_to_multiply({:duration, p}, :integer), do: {:duration, p}
-  defp cast_to_multiply(:float, {:duration, p}), do: {:duration, p}
-  defp cast_to_multiply({:duration, p}, :float), do: {:duration, p}
-  defp cast_to_multiply(_, _), do: nil
+  @doc false
+  def cast_to_multiply(:integer, :integer), do: :integer
+  def cast_to_multiply(:integer, :float), do: :float
+  def cast_to_multiply(:float, :integer), do: :float
+  def cast_to_multiply(:float, :float), do: :float
+  def cast_to_multiply(:integer, {:duration, p}), do: {:duration, p}
+  def cast_to_multiply({:duration, p}, :integer), do: {:duration, p}
+  def cast_to_multiply(:float, {:duration, p}), do: {:duration, p}
+  def cast_to_multiply({:duration, p}, :float), do: {:duration, p}
+  def cast_to_multiply(_, _), do: nil
 
   @doc """
   Divides left by right, element-wise.
@@ -2797,13 +2800,14 @@ defmodule Explorer.Series do
     end
   end
 
-  defp cast_to_divide(:integer, :integer), do: :float
-  defp cast_to_divide(:integer, :float), do: :float
-  defp cast_to_divide(:float, :integer), do: :float
-  defp cast_to_divide(:float, :float), do: :float
-  defp cast_to_divide({:duration, p}, :integer), do: {:duration, p}
-  defp cast_to_divide({:duration, p}, :float), do: {:duration, p}
-  defp cast_to_divide(_, _), do: nil
+  @doc false
+  def cast_to_divide(:integer, :integer), do: :float
+  def cast_to_divide(:integer, :float), do: :float
+  def cast_to_divide(:float, :integer), do: :float
+  def cast_to_divide(:float, :float), do: :float
+  def cast_to_divide({:duration, p}, :integer), do: {:duration, p}
+  def cast_to_divide({:duration, p}, :float), do: {:duration, p}
+  def cast_to_divide(_, _), do: nil
 
   @doc """
   Raises a numeric series to the power of the exponent.
