@@ -2730,6 +2730,8 @@ defmodule Explorer.Series do
   defp cast_to_multiply(:float, :float), do: :float
   defp cast_to_multiply(:integer, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, :integer), do: {:duration, p}
+  defp cast_to_multiply(:float, {:duration, p}), do: {:duration, p}
+  defp cast_to_multiply({:duration, p}, :float), do: {:duration, p}
   defp cast_to_multiply(_, _), do: nil
 
   @doc """
