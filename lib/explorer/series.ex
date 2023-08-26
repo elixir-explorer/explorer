@@ -5106,6 +5106,7 @@ defmodule Explorer.Series do
     )
   end
 
+  @spec dtype_mismatch_error(String.t(), any(), any(), [any()]) :: no_return()
   defp dtype_mismatch_error(function, left, right, valid) do
     left_series? = match?(%Series{}, left)
     right_series? = match?(%Series{}, right)
