@@ -583,6 +583,64 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "divide" do
+    # Integer
+
+    test "duration[μs] / integer" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2])
+      quotient_s = Series.divide(one_hour_us_s, two_s)
+
+      assert quotient_s.dtype == {:duration, :microsecond}
+      thirty_min_duration_s = %Duration{value: div(@one_hour_us, 2), precision: :microsecond}
+      assert Series.to_list(quotient_s) == [thirty_min_duration_s]
+    end
+
+    test "duration[μs] / Integer" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      quotient_s = Series.divide(one_hour_us_s, 2)
+
+      assert quotient_s.dtype == {:duration, :microsecond}
+      thirty_min_duration_s = %Duration{value: div(@one_hour_us, 2), precision: :microsecond}
+      assert Series.to_list(quotient_s) == [thirty_min_duration_s]
+    end
+
+    test "Integer / duration[μs] raises ArgumentError" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+
+      assert_raise ArgumentError,
+                   "cannot divide by duration",
+                   fn -> Series.divide(2, one_hour_s) end
+    end
+
+    # Float
+
+    test "duration[μs] / float" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2.0])
+      quotient_s = Series.divide(one_hour_us_s, two_s)
+
+      assert quotient_s.dtype == {:duration, :microsecond}
+      thirty_min_duration_s = %Duration{value: div(@one_hour_us, 2), precision: :microsecond}
+      assert Series.to_list(quotient_s) == [thirty_min_duration_s]
+    end
+
+    test "duration[μs] / Float" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      quotient_s = Series.divide(one_hour_us_s, 2.0)
+
+      assert quotient_s.dtype == {:duration, :microsecond}
+      thirty_min_duration_s = %Duration{value: div(@one_hour_us, 2), precision: :microsecond}
+      assert Series.to_list(quotient_s) == [thirty_min_duration_s]
+    end
+
+    test "Float / duration[μs] raises ArgumentError" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+
+      assert_raise ArgumentError,
+                   "cannot divide by duration",
+                   fn -> Series.divide(2.0, one_hour_s) end
+    end
+
     test "duration[μs] / duration[μs] raises ArgumentError" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
 
