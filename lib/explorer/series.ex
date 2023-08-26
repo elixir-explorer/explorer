@@ -2803,6 +2803,7 @@ defmodule Explorer.Series do
   defp cast_to_divide(:float, :integer), do: :float
   defp cast_to_divide(:float, :float), do: :float
   defp cast_to_divide({:duration, p}, :integer), do: {:duration, p}
+  defp cast_to_divide({:duration, p}, :float), do: {:duration, p}
   defp cast_to_divide(_, _), do: nil
 
   @doc """
