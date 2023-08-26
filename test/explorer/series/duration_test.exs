@@ -139,6 +139,34 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "add" do
+    # Duration only
+
+    test "duration[μs] + duration[μs]" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+      two_hour_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(one_hour_s, two_hour_s)
+
+      three_hour_duration_us = %Duration{value: 3 * @one_hour_us, precision: :microsecond}
+      assert sum_s.dtype == {:duration, :microsecond}
+      assert Series.to_list(sum_s) == [three_hour_duration_us]
+    end
+
+    test "duration[ms] + duration[μs] (different precisions)" do
+      one_hour_ms_s = Series.from_list([@one_hour_duration_ms])
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(one_hour_ms_s, one_hour_us_s)
+
+      # Since we added a duration with :millisecond precision to a datetime with :microsecond
+      # precision, the resulting difference has :microsecond precision since that was the highest
+      # precision present in the operation.
+      assert one_hour_ms_s.dtype == {:duration, :millisecond}
+      assert one_hour_us_s.dtype == {:duration, :microsecond}
+      assert sum_s.dtype == {:duration, :microsecond}
+
+      two_hour_duration_us = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(sum_s) == [two_hour_duration_us]
+    end
+
     # Date
 
     test "date + duration[μs]" do
@@ -209,6 +237,12 @@ defmodule Explorer.Series.DurationTest do
       assert Series.to_list(sum_s) == [@aug_21]
     end
 
+    test "Date + Date raises ArgumentError" do
+      assert_raise ArgumentError,
+                   "add/2 expects at least one series as an argument, instead got two scalars: ~D[2023-08-20] and ~D[2023-08-21]",
+                   fn -> Series.add(@aug_20, @aug_21) end
+    end
+
     test "date + date raises ArgumentError" do
       aug_20_s = Series.from_list([@aug_20])
       aug_21_s = Series.from_list([@aug_21])
@@ -238,16 +272,6 @@ defmodule Explorer.Series.DurationTest do
       assert sum_s.dtype == {:datetime, :microsecond}
       twelve_ndt = ~N[2023-08-20 12:00:00.0000000]
       assert Series.to_list(sum_s) == [twelve_ndt]
-    end
-
-    test "duration[μs] + duration[μs]" do
-      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
-      two_hour_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
-      sum_s = Series.add(one_hour_s, two_hour_s)
-
-      three_hour_duration_us = %Duration{value: 3 * @one_hour_us, precision: :microsecond}
-      assert sum_s.dtype == {:duration, :microsecond}
-      assert Series.to_list(sum_s) == [three_hour_duration_us]
     end
 
     test "NaiveDateTime + duration[μs]" do
@@ -292,6 +316,31 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "subtract" do
+    # Duration only
+
+    test "duration[μs] - duration[μs]" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+      two_hour_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
+      diff_s = Series.subtract(two_hour_s, one_hour_s)
+
+      assert diff_s.dtype == {:duration, :microsecond}
+      assert Series.to_list(diff_s) == [@one_hour_duration_us]
+    end
+
+    test "duration[ms] - duration[μs] (different precisions)" do
+      two_hour_us_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
+      one_hour_ms_s = Series.from_list([@one_hour_duration_ms])
+      diff_s = Series.subtract(two_hour_us_s, one_hour_ms_s)
+
+      # Since we subtracted a duration with :millisecond precision from a duration with :microsecond
+      # precision, the resulting difference has :microsecond precision since that was the highest
+      # precision present in the operation.
+      assert two_hour_us_s.dtype == {:duration, :microsecond}
+      assert one_hour_ms_s.dtype == {:duration, :millisecond}
+      assert diff_s.dtype == {:duration, :microsecond}
+      assert Series.to_list(diff_s) == [@one_hour_duration_us]
+    end
+
     # Date
 
     test "date - date" do
@@ -361,15 +410,6 @@ defmodule Explorer.Series.DurationTest do
 
       assert diff_s.dtype == {:datetime, :microsecond}
       assert Series.to_list(diff_s) == [~N[2023-08-20 11:00:00.0000000]]
-    end
-
-    test "duration[μs] - duration[μs]" do
-      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
-      two_hour_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
-      diff_s = Series.subtract(two_hour_s, one_hour_s)
-
-      assert diff_s.dtype == {:duration, :microsecond}
-      assert Series.to_list(diff_s) == [@one_hour_duration_us]
     end
 
     test "NaiveDateTime - datetime[μs]" do
