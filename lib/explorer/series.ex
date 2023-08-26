@@ -68,7 +68,6 @@ defmodule Explorer.Series do
   @date_or_datetime_dtypes [:date | @datetime_dtypes]
   @temporal_dtypes [:time | @date_or_datetime_dtypes ++ @duration_dtypes]
   @numeric_dtypes [:integer, :float]
-  @ordered_dtypes @numeric_dtypes ++ @date_or_datetime_dtypes ++ @duration_dtypes
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
   @type dtype ::
