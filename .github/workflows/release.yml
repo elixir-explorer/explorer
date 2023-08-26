@@ -48,6 +48,11 @@ jobs:
           # Get the project version from mix.exs
           echo "PROJECT_VERSION=$(sed -n 's/^  @version "\(.*\)"/\1/p' mix.exs | head -n1)" >> $GITHUB_ENV
 
+      - name: Add target
+        shell: bash
+        run: |
+          rustup target add ${{ matrix.job.target }}
+
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: v0-precomp
