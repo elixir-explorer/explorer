@@ -48,12 +48,6 @@ jobs:
           # Get the project version from mix.exs
           echo "PROJECT_VERSION=$(sed -n 's/^  @version "\(.*\)"/\1/p' mix.exs | head -n1)" >> $GITHUB_ENV
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: nightly-2023-06-23
-          targets: ${{ matrix.job.target }}
-
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: v0-precomp
