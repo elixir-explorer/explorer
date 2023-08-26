@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v0.7.0] - 2023-08-25
+## [v0.7.0] - 2023-08-26
 
 ### Added
 
@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   This change makes easier to define which type of error we want to raise.
 
-- Update Polars to v0.31.
+- Update Polars to v0.32.
 
   With that we made some minor API changes, like changing some options for `cut/qcut` operations
   in the `Explorer.Series` module.
