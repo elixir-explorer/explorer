@@ -2788,8 +2788,13 @@ defmodule Explorer.Series do
   def divide(left, right) do
     [left, right] = cast_for_arithmetic(:divide, [left, right])
 
-    if _dtype = cast_to_divide(dtype(left), dtype(right)) do
+    if dtype = cast_to_divide(dtype(left), dtype(right)) do
       apply_series_list(:divide, [left, right])
+      # Polars currently returns inconsistent dtypes, e.g.:
+      #   * `duration / integer -> duration` when `integer` is a scalar
+      #   * `duration / integer ->  integer` when `integer` is a series
+      # We need to return duration in these cases, so we need an additional cast.
+      |> cast(dtype)
     else
       case dtype(right) do
         {:duration, _} -> raise(ArgumentError, "cannot divide by duration")
