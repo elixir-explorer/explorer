@@ -2714,10 +2714,10 @@ defmodule Explorer.Series do
 
     if dtype = cast_to_multiply(dtype(left), dtype(right)) do
       apply_series_list(:multiply, [left, right])
-      # Polars currently returns inconsistent dtypes:
+      # Polars currently returns inconsistent dtypes, e.g.:
       #   * `integer * duration -> duration` when `integer` is a scalar
       #   * `integer * duration ->  integer` when `integer` is a series
-      # We need to return duration in both cases, so we need an additional cast.
+      # We need to return duration in these cases, so we need an additional cast.
       |> cast(dtype)
     else
       dtype_mismatch_error("multiply/2", left, right, [:integer, :float] ++ @duration_dtypes)
