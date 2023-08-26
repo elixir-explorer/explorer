@@ -2666,7 +2666,7 @@ defmodule Explorer.Series do
   defp cast_to_subtract(:integer, :float), do: :float
   defp cast_to_subtract(:float, :integer), do: :float
   defp cast_to_subtract(:float, :float), do: :float
-  defp cast_to_subtract(:date, :date), do: {:duration, :microsecond}
+  defp cast_to_subtract(:date, :date), do: {:duration, :millisecond}
   defp cast_to_subtract(:date, {:duration, _}), do: :date
   defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
   defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
