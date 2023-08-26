@@ -6,8 +6,11 @@ defmodule Explorer.Series.DurationTest do
 
   @aug_20 ~D[2023-08-20]
   @aug_21 ~D[2023-08-21]
+  @one_hour_ms 3600 * 1_000
   @one_hour_us 3600 * 1_000_000
+  @one_hour_duration_ms %Duration{value: @one_hour_ms, precision: :millisecond}
   @one_hour_duration_us %Duration{value: @one_hour_us, precision: :microsecond}
+  @one_day_duration_ms %Duration{value: 24 * @one_hour_ms, precision: :millisecond}
 
   describe "list" do
     test "from a list of integers" do
@@ -148,7 +151,7 @@ defmodule Explorer.Series.DurationTest do
       assert sum_s.dtype == :date
       assert Series.to_list(sum_s) == [@aug_20]
 
-      # Adding a duration more than a day results in the next date.
+      # Adding a duration at least a day results in the next date.
       one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
       sum_s = Series.add(aug_20_s, one_day_s)
 
@@ -166,7 +169,7 @@ defmodule Explorer.Series.DurationTest do
       assert sum_s.dtype == :date
       assert Series.to_list(sum_s) == [@aug_20]
 
-      # Adding a duration more than a day results in the next date.
+      # Adding a duration at least a day results in the next date.
       one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
       sum_s = Series.add(one_day_s, aug_20_s)
 
@@ -182,7 +185,7 @@ defmodule Explorer.Series.DurationTest do
       assert sum_s.dtype == :date
       assert Series.to_list(sum_s) == [@aug_20]
 
-      # Adding a duration more than a day results in the next date.
+      # Adding a duration at least a day results in the next date.
       one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
       sum_s = Series.add(@aug_20, one_day_s)
 
@@ -198,7 +201,7 @@ defmodule Explorer.Series.DurationTest do
       assert sum_s.dtype == :date
       assert Series.to_list(sum_s) == [@aug_20]
 
-      # Adding a duration more than a day results in the next date.
+      # Adding a duration at least a day results in the next date.
       one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
       sum_s = Series.add(one_day_s, @aug_20)
 
@@ -289,6 +292,59 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "subtract" do
+    # Date
+
+    test "date - date" do
+      aug_20_s = Series.from_list([@aug_20])
+      aug_21_s = Series.from_list([@aug_21])
+      diff_s = Series.subtract(aug_21_s, aug_20_s)
+
+      assert diff_s.dtype == {:duration, :millisecond}
+      assert Series.to_list(diff_s) == [@one_day_duration_ms]
+    end
+
+    test "Date - date" do
+      aug_20_s = Series.from_list([@aug_20])
+      diff_s = Series.subtract(@aug_21, aug_20_s)
+
+      assert diff_s.dtype == {:duration, :millisecond}
+      assert Series.to_list(diff_s) == [@one_day_duration_ms]
+    end
+
+    test "date - Date" do
+      aug_21_s = Series.from_list([@aug_21])
+      diff_s = Series.subtract(aug_21_s, @aug_20)
+
+      assert diff_s.dtype == {:duration, :millisecond}
+      assert Series.to_list(diff_s) == [@one_day_duration_ms]
+    end
+
+    test "Date - Date raises ArgumentError" do
+      assert_raise ArgumentError,
+                   "subtract/2 expects at least one series as an argument, instead got two scalars: ~D[2023-08-21] and ~D[2023-08-20]",
+                   fn -> Series.subtract(@aug_21, @aug_20) end
+    end
+
+    test "date - duration[ms]" do
+      aug_21_s = Series.from_list([@aug_21])
+
+      # Subtracting a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_ms])
+      diff_s = Series.subtract(aug_21_s, one_hour_s)
+
+      assert diff_s.dtype == :date
+      assert Series.to_list(diff_s) == [@aug_20]
+
+      # Subtracting a duration at least a day results in the previous date.
+      one_day_s = Series.from_list([@one_day_duration_ms])
+      diff_s = Series.subtract(aug_21_s, one_day_s)
+
+      assert diff_s.dtype == :date
+      assert Series.to_list(diff_s) == [@aug_20]
+    end
+
+    # Datetime
+
     test "datetime[μs] - datetime[μs]" do
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
       twelve_s = Series.from_list([~N[2023-08-20 12:00:00.0000000]])
