@@ -186,6 +186,7 @@ rustler::init!(
         expr_greater,
         expr_greater_equal,
         expr_is_nil,
+        expr_is_nan,
         expr_is_not_nil,
         expr_less,
         expr_less_equal,
