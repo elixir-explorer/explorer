@@ -8,6 +8,7 @@ on:
 
 env:
   EXPLORER_BUILD: true
+  RUST_TOOLCHAIN_VERSION: nightly-2023-06-23
   MIX_ENV: test
 
 jobs:
@@ -34,9 +35,13 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: test-native-${{ runner.os }}-${{ hashFiles('native/**/Cargo.lock') }}
+          key: test-native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}-${{ hashFiles('native/**/Cargo.lock') }}
           restore-keys: |
-            test-native-${{ runner.os }}
+            test-native-${{ runner.os }}-${{ env.RUST_TOOLCHAIN_VERSION }}
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
 
       - uses: erlef/setup-beam@v1
         with:

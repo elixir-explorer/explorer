@@ -10,6 +10,9 @@ on:
       - "native/**"
   workflow_dispatch:
 
+env:
+  RUST_TOOLCHAIN_VERSION: nightly-2023-06-23
+
 jobs:
   lint-rust:
     name: Lint Rust
@@ -22,8 +25,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "${{ env.RUST_TOOLCHAIN_VERSION }}"
+          components: rustfmt, clippy
+
       - uses: Swatinem/rust-cache@v2
         with:
+          env-vars: "RUST_TOOLCHAIN_VERSION"
           workspaces: |
             native/explorer
 
