@@ -4,6 +4,8 @@ defmodule Explorer.Series.DurationTest do
   alias Explorer.Duration
   alias Explorer.Series
 
+  @aug_20 ~D[2023-08-20]
+  @aug_21 ~D[2023-08-21]
   @one_hour_us 3600 * 1_000_000
   @one_hour_duration_us %Duration{value: @one_hour_us, precision: :microsecond}
 
@@ -134,6 +136,87 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "add" do
+    # Date
+
+    test "date + duration[μs]" do
+      aug_20_s = Series.from_list([@aug_20])
+
+      # Adding a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(aug_20_s, one_hour_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_20]
+
+      # Adding a duration more than a day results in the next date.
+      one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(aug_20_s, one_day_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_21]
+    end
+
+    test "duration[μs] + date" do
+      aug_20_s = Series.from_list([@aug_20])
+
+      # Adding a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(one_hour_s, aug_20_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_20]
+
+      # Adding a duration more than a day results in the next date.
+      one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(one_day_s, aug_20_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_21]
+    end
+
+    test "Date + duration[μs]" do
+      # Adding a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(@aug_20, one_hour_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_20]
+
+      # Adding a duration more than a day results in the next date.
+      one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(@aug_20, one_day_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_21]
+    end
+
+    test "duration[μs] + Date" do
+      # Adding a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(one_hour_s, @aug_20)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_20]
+
+      # Adding a duration more than a day results in the next date.
+      one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(one_day_s, @aug_20)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_21]
+    end
+
+    test "date + date raises ArgumentError" do
+      aug_20_s = Series.from_list([@aug_20])
+      aug_21_s = Series.from_list([@aug_21])
+
+      assert_raise ArgumentError,
+                   "cannot invoke Explorer.Series.add/2 with mismatched dtypes: :date and :date",
+                   fn -> Series.add(aug_20_s, aug_21_s) end
+    end
+
+    # Datetime
+
     test "datetime[μs] + duration[μs]" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
