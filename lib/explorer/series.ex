@@ -59,6 +59,7 @@ defmodule Explorer.Series do
 
   alias __MODULE__, as: Series
   alias Kernel, as: K
+  alias Explorer.Duration
   alias Explorer.Shared
 
   @valid_dtypes Explorer.Shared.dtypes()
@@ -67,6 +68,7 @@ defmodule Explorer.Series do
   @date_or_datetime_dtypes [:date | @datetime_dtypes]
   @temporal_dtypes [:time | @date_or_datetime_dtypes ++ @duration_dtypes]
   @numeric_dtypes [:integer, :float]
+  @ordered_dtypes @numeric_dtypes ++ @date_or_datetime_dtypes ++ @duration_dtypes
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
   @type dtype ::
@@ -2498,10 +2500,26 @@ defmodule Explorer.Series do
 
   # Arithmetic
 
-  defp enforce_highest_precision(
+  defp cast_for_arithmetic(operation, [_, _] = args) do
+    args
+    |> case do
+      [%Series{}, %Series{}] -> args
+      [left, %Series{} = right] -> [from_list([left]), right]
+      [%Series{} = left, right] -> [left, from_list([right])]
+      [_, _] -> raise(ArgumentError, arithmetic_error(operation, args))
+    end
+    |> enforce_highest_precision()
+  end
+
+  defp arithmetic_error(operation, [left, right]) do
+    "#{operation}/2 expects at least one series as an argument, " <>
+      "instead got two scalars: #{inspect(left)} and #{inspect(right)}"
+  end
+
+  defp enforce_highest_precision([
          %Series{dtype: {left_base, left_timeunit}} = left,
          %Series{dtype: {right_base, right_timeunit}} = right
-       ) do
+       ]) do
     # Higher precision wins, otherwise information is lost.
     case {left_timeunit, right_timeunit} do
       {equal, equal} -> [left, right]
@@ -2511,6 +2529,8 @@ defmodule Explorer.Series do
       {_, :microsecond} -> [cast(left, {left_base, :microsecond}), right]
     end
   end
+
+  defp enforce_highest_precision(args), do: args
 
   @doc """
   Adds right to left, element-wise.
@@ -2554,25 +2574,38 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec add(
-          left :: Series.t() | number() | NaiveDateTime.t(),
-          right :: Series.t() | number() | NaiveDateTime.t()
+          left :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t(),
+          right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t()
         ) :: Series.t()
-  def add(%NaiveDateTime{} = left, %Series{dtype: {:duration, timeunit}} = right),
-    do: apply_series_list(:add, [from_same_value(right, left, {:datetime, timeunit}), right])
+  def add(left, right) do
+    [left, right] = cast_for_arithmetic(:add, [left, right])
 
-  def add(%Series{dtype: {:duration, timeunit}} = left, %NaiveDateTime{} = right),
-    do: apply_series_list(:add, [left, from_same_value(left, right, {:datetime, timeunit})])
+    if _dtype = cast_to_add(dtype(left), dtype(right)) do
+      args = maybe_swap_args_add([left, right])
+      apply_series_list(:add, args)
+    else
+      dtype_mismatch_error("add/2", left, right, @ordered_dtypes)
+    end
+  end
 
-  def add(%Series{dtype: {:datetime, _}} = left, %Series{dtype: {:duration, _}} = right),
-    do: apply_series_list(:add, enforce_highest_precision(left, right))
+  defp cast_to_add(:integer, :integer), do: :integer
+  defp cast_to_add(:integer, :float), do: :float
+  defp cast_to_add(:float, :integer), do: :float
+  defp cast_to_add(:float, :float), do: :float
+  defp cast_to_add(:date, {:duration, _}), do: :date
+  defp cast_to_add({:duration, _}, :date), do: :date
+  defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
+  defp cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
+  defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
+  defp cast_to_add(_, _), do: nil
 
-  def add(%Series{dtype: {:duration, _}} = left, %Series{dtype: {:datetime, _}} = right),
-    do: apply_series_list(:add, enforce_highest_precision(left, right))
-
-  def add(%Series{dtype: {:duration, _}} = left, %Series{dtype: {:duration, _}} = right),
-    do: apply_series_list(:add, enforce_highest_precision(left, right))
-
-  def add(left, right), do: basic_numeric_operation(:add, left, right)
+  defp maybe_swap_args_add([left, right]) do
+    case {dtype(left), dtype(right)} do
+      # `duration + date` is not supported by polars for some reason.
+      {{:duration, _}, :date} -> [right, left]
+      _ -> [left, right]
+    end
+  end
 
   @doc """
   Subtracts right from left, element-wise.
@@ -2616,28 +2649,29 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec subtract(
-          left :: Series.t() | number() | NaiveDateTime.t(),
-          right :: Series.t() | number() | NaiveDateTime.t()
+          left :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t(),
+          right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t()
         ) :: Series.t()
-  def subtract(%NaiveDateTime{} = left, %Series{dtype: {:datetime, timeunit}} = right),
-    do: apply_series_list(:subtract, [from_list([left], dtype: {:datetime, timeunit}), right])
+  def subtract(left, right) do
+    [left, right] = cast_for_arithmetic(:subtract, [left, right])
 
-  def subtract(%Series{dtype: {:datetime, timeunit}} = left, %NaiveDateTime{} = right),
-    do: apply_series_list(:subtract, [left, from_list([right], dtype: {:datetime, timeunit})])
+    if _dtype = cast_to_subtract(dtype(left), dtype(right)) do
+      apply_series_list(:subtract, [left, right])
+    else
+      dtype_mismatch_error("subtract/2", left, right, @ordered_dtypes)
+    end
+  end
 
-  def subtract(%NaiveDateTime{} = left, %Series{dtype: {:duration, timeunit}} = right),
-    do: apply_series_list(:subtract, [from_list([left], dtype: {:datetime, timeunit}), right])
-
-  def subtract(%Series{dtype: {:datetime, _}} = left, %Series{dtype: {:datetime, _}} = right),
-    do: apply_series_list(:subtract, enforce_highest_precision(left, right))
-
-  def subtract(%Series{dtype: {:datetime, _}} = left, %Series{dtype: {:duration, _}} = right),
-    do: apply_series_list(:subtract, enforce_highest_precision(left, right))
-
-  def subtract(%Series{dtype: {:duration, _}} = left, %Series{dtype: {:duration, _}} = right),
-    do: apply_series_list(:subtract, enforce_highest_precision(left, right))
-
-  def subtract(left, right), do: basic_numeric_operation(:subtract, left, right)
+  defp cast_to_subtract(:integer, :integer), do: :integer
+  defp cast_to_subtract(:integer, :float), do: :float
+  defp cast_to_subtract(:float, :integer), do: :float
+  defp cast_to_subtract(:float, :float), do: :float
+  defp cast_to_subtract(:date, :date), do: {:duration, :microsecond}
+  defp cast_to_subtract(:date, {:duration, _}), do: :date
+  defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
+  defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
+  defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
+  defp cast_to_subtract(_, _), do: nil
 
   @doc """
   Multiplies left and right, element-wise.
@@ -2671,8 +2705,32 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec multiply(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def multiply(left, right), do: basic_numeric_operation(:multiply, left, right)
+  @spec multiply(
+          left :: Series.t() | number() | Duration.t(),
+          right :: Series.t() | number() | Duration.t()
+        ) :: Series.t()
+  def multiply(left, right) do
+    [left, right] = cast_for_arithmetic(:multiply, [left, right])
+
+    if dtype = cast_to_multiply(dtype(left), dtype(right)) do
+      apply_series_list(:multiply, [left, right])
+      # Polars currently returns inconsistent dtypes:
+      #   * `integer * duration -> duration` when `integer` is a scalar
+      #   * `integer * duration ->  integer` when `integer` is a series
+      # We need to return duration in both cases, so we need an additional cast.
+      |> cast(dtype)
+    else
+      dtype_mismatch_error("multiply/2", left, right, [:integer, :float] ++ @duration_dtypes)
+    end
+  end
+
+  defp cast_to_multiply(:integer, :integer), do: :integer
+  defp cast_to_multiply(:integer, :float), do: :float
+  defp cast_to_multiply(:float, :integer), do: :float
+  defp cast_to_multiply(:float, :float), do: :float
+  defp cast_to_multiply(:integer, {:duration, p}), do: {:duration, p}
+  defp cast_to_multiply({:duration, p}, :integer), do: {:duration, p}
+  defp cast_to_multiply(_, _), do: nil
 
   @doc """
   Divides left by right, element-wise.
@@ -2721,11 +2779,29 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec divide(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def divide(_, %Series{dtype: {:duration, _}}),
-    do: raise(ArgumentError, "cannot divide by duration")
+  @spec divide(
+          left :: Series.t() | number() | Duration.t(),
+          right :: Series.t() | number()
+        ) :: Series.t()
+  def divide(left, right) do
+    [left, right] = cast_for_arithmetic(:divide, [left, right])
 
-  def divide(left, right), do: basic_numeric_operation(:divide, left, right)
+    if _dtype = cast_to_divide(dtype(left), dtype(right)) do
+      apply_series_list(:divide, [left, right])
+    else
+      case dtype(right) do
+        {:duration, _} -> raise(ArgumentError, "cannot divide by duration")
+        _ -> dtype_mismatch_error("divide/2", left, right, [:integer, :float] ++ @duration_dtypes)
+      end
+    end
+  end
+
+  defp cast_to_divide(:integer, :integer), do: :float
+  defp cast_to_divide(:integer, :float), do: :float
+  defp cast_to_divide(:float, :integer), do: :float
+  defp cast_to_divide(:float, :float), do: :float
+  defp cast_to_divide({:duration, p}, :integer), do: {:duration, p}
+  defp cast_to_divide(_, _), do: nil
 
   @doc """
   Raises a numeric series to the power of the exponent.
