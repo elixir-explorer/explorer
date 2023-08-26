@@ -463,6 +463,116 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "multiply" do
+    # Integer
+
+    test "integer * duration[μs]" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2])
+      product_s = Series.multiply(two_s, one_hour_us_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "duration[μs] * integer" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2])
+      product_s = Series.multiply(one_hour_us_s, two_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "Integer * duration[μs]" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      product_s = Series.multiply(2, one_hour_us_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "duration[μs] * Integer" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      product_s = Series.multiply(one_hour_us_s, 2)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    # Float
+
+    test "float * duration[μs]" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2.0])
+      product_s = Series.multiply(two_s, one_hour_us_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "duration[μs] * float" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2.0])
+      product_s = Series.multiply(one_hour_us_s, two_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "Float * duration[μs]" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      product_s = Series.multiply(2.0, one_hour_us_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "duration[μs] * Float" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      product_s = Series.multiply(one_hour_us_s, 2.0)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "fractional parts of floats work (roughly) as expected" do
+      # This test is not exhaustive. Rather, its purpose is to give us a reasonable confidence that
+      # multiplying durations by floats is fairly accurate.
+      #
+      # The exact answers we see here are subject to implementation details outside our control.
+      # If we find that this test breaks unexpectedly (e.g. from a dependency update), then we may
+      # wish to remove it.
+      one_s = 1 / 3_600
+      one_ms = 1 / 3_600_000
+      one_us = 1 / 3_600_000_000
+      one_ns = 1 / 3_600_000_000_000
+
+      float_string_pairs = [
+        {3 / 4, "45m"},
+        {3 / 2, "1h 30m"},
+        {1.0 + one_s, "1h 1s"},
+        # Float rounding issue (but only off by one).
+        {1.0 + one_ms, "1h 999us 999ns"},
+        {1.0 + one_us, "1h 1us"},
+        {1.0 + one_ns, "1h 1ns"}
+      ]
+
+      one_hour_ns_s = Series.from_list([1_000 * @one_hour_us], dtype: {:duration, :nanosecond})
+
+      for {float, expected} <- float_string_pairs do
+        [duration] = one_hour_ns_s |> Series.multiply(float) |> Series.to_list()
+        assert to_string(duration) == expected
+      end
+    end
+
     test "duration[μs] * duration[μs] raises ArgumentError" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
 
