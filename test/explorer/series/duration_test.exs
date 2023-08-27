@@ -669,5 +669,37 @@ defmodule Explorer.Series.DurationTest do
              >\
              """
     end
+
+    test "mutate/2 with duration + date" do
+      require Explorer.DataFrame
+      alias Explorer.DataFrame, as: DF
+
+      df =
+        DF.new(aug_20: [~D[2023-08-20]], aug_21: [~D[2023-08-21]])
+        |> DF.mutate(sub: aug_21 - aug_20)
+
+      # Arg-swapping works.
+      df1 = DF.mutate(df, add1: sub + aug_20)
+      assert df1["add1"].dtype == :date
+      assert Series.to_list(df1["add1"]) == [~D[2023-08-21]]
+
+      # Arg-swapping works.
+      df2 = DF.mutate(df, add2: sub + ^df["aug_20"])
+      assert df2["add2"].dtype == :date
+      assert Series.to_list(df2["add2"]) == [~D[2023-08-21]]
+
+      # Arg-swapping works.
+      df2 = DF.mutate(df, add2: sub + aug_20 + sub)
+      assert df2["add2"].dtype == :date
+      assert Series.to_list(df2["add2"]) == [~D[2023-08-22]]
+
+      # Arg-swapping does NOT work.
+      # [src/dataframe.rs:507] &mutations = [
+      #   [(col("sub")) + ([(col("aug_20")) + (col("sub"))])].alias("add2"),
+      # ]
+      df2 = DF.mutate(df, add2: sub + (aug_20 + sub))
+      assert df2["add2"].dtype == :date
+      assert Series.to_list(df2["add2"]) == [~D[2023-08-22]]
+    end
   end
 end
