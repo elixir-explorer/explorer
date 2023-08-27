@@ -2575,18 +2575,9 @@ defmodule Explorer.Series do
     [left, right] = cast_for_arithmetic("add/2", [left, right])
 
     if _dtype = Shared.cast_to_arithmetic(:add, dtype(left), dtype(right)) do
-      args = maybe_swap_args_add([left, right])
-      apply_series_list(:add, args)
+      apply_series_list(:add, [left, right])
     else
       dtype_mismatch_error("add/2", left, right)
-    end
-  end
-
-  defp maybe_swap_args_add([left, right]) do
-    case {dtype(left), dtype(right)} do
-      # `duration + date` is not supported by polars for some reason.
-      {{:duration, _}, :date} -> [right, left]
-      _ -> [left, right]
     end
   end
 

@@ -229,7 +229,15 @@ pub fn s_mask(series: ExSeries, filter: ExSeries) -> Result<ExSeries, ExplorerEr
 pub fn s_add(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
     let s1 = other.clone_inner();
-    Ok(ExSeries::new(s + s1))
+
+    // `Duration + Date` is not supported by Polars for some reason.
+    // `Date + Duration` is, so as a work around we're swapping the arguments.
+    let sum = match (data.dtype(), other.dtype()) {
+        (DataType::Duration(_), DataType::Date) => s1 + s,
+        _ => s + s1,
+    };
+
+    Ok(ExSeries::new(sum))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
