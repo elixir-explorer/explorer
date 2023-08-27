@@ -298,12 +298,36 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(matching_size!(left, right), :s_subtract, [right.data])
 
   @impl true
-  def multiply(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_multiply, [right.data])
+  def multiply(left, right) do
+    result = Shared.apply_series(matching_size!(left, right), :s_multiply, [right.data])
+    expected_dtype = Explorer.Shared.cast_to_arithmetic(:multiply, dtype(left), dtype(right))
+
+    # Polars currently returns inconsistent dtypes, e.g.:
+    #   * `integer * duration -> duration` when `integer` is a scalar
+    #   * `integer * duration ->  integer` when `integer` is a series
+    # We need to return duration in these cases, so we need an additional cast.
+    if match?({:duration, _}, expected_dtype) and expected_dtype != dtype(result) do
+      cast(result, expected_dtype)
+    else
+      result
+    end
+  end
 
   @impl true
-  def divide(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_divide, [right.data])
+  def divide(left, right) do
+    result = Shared.apply_series(matching_size!(left, right), :s_divide, [right.data])
+    expected_dtype = Explorer.Shared.cast_to_arithmetic(:divide, dtype(left), dtype(right))
+
+    # Polars currently returns inconsistent dtypes, e.g.:
+    #   * `duration / integer -> duration` when `integer` is a scalar
+    #   * `duration / integer ->  integer` when `integer` is a series
+    # We need to return duration in these cases, so we need an additional cast.
+    if match?({:duration, _}, expected_dtype) and expected_dtype != dtype(result) do
+      cast(result, expected_dtype)
+    else
+      result
+    end
+  end
 
   @impl true
   def quotient(left, right),

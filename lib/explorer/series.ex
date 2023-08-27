@@ -2675,13 +2675,8 @@ defmodule Explorer.Series do
   def multiply(left, right) do
     [left, right] = cast_for_arithmetic("multiply/2", [left, right])
 
-    if dtype = Shared.cast_to_arithmetic(:multiply, dtype(left), dtype(right)) do
+    if _dtype = Shared.cast_to_arithmetic(:multiply, dtype(left), dtype(right)) do
       apply_series_list(:multiply, [left, right])
-      # Polars currently returns inconsistent dtypes, e.g.:
-      #   * `integer * duration -> duration` when `integer` is a scalar
-      #   * `integer * duration ->  integer` when `integer` is a series
-      # We need to return duration in these cases, so we need an additional cast.
-      |> cast(dtype)
     else
       dtype_mismatch_error("multiply/2", left, right)
     end
@@ -2741,13 +2736,8 @@ defmodule Explorer.Series do
   def divide(left, right) do
     [left, right] = cast_for_arithmetic("divide/2", [left, right])
 
-    if dtype = Shared.cast_to_arithmetic(:divide, dtype(left), dtype(right)) do
+    if _dtype = Shared.cast_to_arithmetic(:divide, dtype(left), dtype(right)) do
       apply_series_list(:divide, [left, right])
-      # Polars currently returns inconsistent dtypes, e.g.:
-      #   * `duration / integer -> duration` when `integer` is a scalar
-      #   * `duration / integer ->  integer` when `integer` is a series
-      # We need to return duration in these cases, so we need an additional cast.
-      |> cast(dtype)
     else
       case dtype(right) do
         {:duration, _} -> raise(ArgumentError, "cannot divide by duration")
