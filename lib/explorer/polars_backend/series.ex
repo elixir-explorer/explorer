@@ -281,16 +281,16 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def add(left, right) do
     left = matching_size!(left, right)
-    [left, right] = maybe_swap_args_add([left, right])
-    Shared.apply_series(left, :s_add, [right.data])
-  end
 
-  defp maybe_swap_args_add([left, right]) do
-    case {dtype(left), dtype(right)} |> IO.inspect() do
-      # `duration + date` is not supported by polars for some reason.
-      {{:duration, _}, :date} -> [right, left]
-      _ -> [left, right]
-    end
+    # `duration + date` is not supported by polars for some reason.
+    # `date + duration` is, so we're swapping arguments as a work around.
+    [left, right] =
+      case {dtype(left), dtype(right)} do
+        {{:duration, _}, :date} -> [right, left]
+        _ -> [left, right]
+      end
+
+    Shared.apply_series(left, :s_add, [right.data])
   end
 
   @impl true
