@@ -279,8 +279,19 @@ defmodule Explorer.PolarsBackend.Series do
   # Arithmetic
 
   @impl true
-  def add(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
+  def add(left, right) do
+    left = matching_size!(left, right)
+    [left, right] = maybe_swap_args_add([left, right])
+    Shared.apply_series(left, :s_add, [right.data])
+  end
+
+  defp maybe_swap_args_add([left, right]) do
+    case {dtype(left), dtype(right)} |> IO.inspect() do
+      # `duration + date` is not supported by polars for some reason.
+      {{:duration, _}, :date} -> [right, left]
+      _ -> [left, right]
+    end
+  end
 
   @impl true
   def subtract(left, right),
