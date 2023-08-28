@@ -48,7 +48,7 @@ pub fn lf_from_parquet_cloud(
         vec![all()]
     };
     let lf = LazyFrame::scan_parquet(ex_entry.to_string(), options)?
-        .with_common_subplan_elimination(false)
+        .with_comm_subplan_elim(false)
         .with_streaming(true)
         .select(cols);
 
@@ -89,7 +89,7 @@ pub fn lf_to_parquet(
             maintain_order: false,
         };
 
-        lf.with_common_subplan_elimination(false)
+        lf.with_comm_subplan_elim(false)
             .sink_parquet(filename.into(), options)?;
         Ok(())
     } else {
@@ -134,7 +134,7 @@ pub fn lf_to_ipc(
             compression,
             maintain_order: false,
         };
-        lf.with_common_subplan_elimination(false)
+        lf.with_comm_subplan_elim(false)
             .sink_ipc(filename.into(), options)?;
         Ok(())
     } else {

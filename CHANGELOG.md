@@ -7,6 +7,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.0] - 2023-08-28
+
+### Added
+
+- Enable reads and writes of dataframes from/to external file systems.
+
+  It supports HTTP(s) URLs or AWS S3 locations.
+
+  This feature introduces the [FSS](https://github.com/elixir-explorer/fss) abstraction,
+  which is also going to be present in newer versions of Kino. This is going to make the integration
+  of Livebook files with Explorer much easier.
+
+  The implementation is done differently, depending on which file format is used, and if
+  it's a read or write. All the writes to AWS S3 are done in the Rust side - using an abstraction
+  called `CloudWriter` -, and most of the readers are implemented in Elixir, by doing a download
+  of the files, and then loading the dataframe from it. The only exception is the reads of
+  parquet files, which are done in Rust, using Polars' `scan_parquet` with streaming.
+
+  We want to give a special thanks to [Qqwy / Marten](https://github.com/Qqwy) for the
+  `CloudWriter` implementation!
+
+- Add ADBC: Arrow Database Connectivity.
+
+  Continuing with improvements in the IO area, we added support for reading dataframes from
+  databases using ADBC, which is similar in idea to ODBC, but integrates much better with
+  Apache Arrow, that is the backbone of Polars - our backend today.
+
+  The function `Explorer.DataFrame.from_query/1` is the entrypoint for this feature, and it
+  allows quering databases like PostgreSQL, SQLite and Snowflake.
+
+  Check the [Elixir ADBC bindings docs](https://hexdocs.pm/adbc) for more information.
+
+  For the this feature, we had a fundamental contribution from [Cocoa](https://github.com/cocoa-xu)
+  in the ADBC bindings, so we want to say a special thanks to her!
+
+  We want to thank the people that joined José in [his live streamings on Twitch](https://www.twitch.tv/josevalim),
+  and helped to build this feature!
+
+- Add the following functions to `Explorer.Series`:
+  - [`window_median/3`](https://hexdocs.pm/explorer/Explorer.Series.html#window_median/3)
+  - [`substring/3`](https://hexdocs.pm/explorer/Explorer.Series.html#substring/3)
+
+- Add duration dtypes. This is adds the following dtypes:
+  - `{:duration, :nanosecond}`
+  - `{:duration, :microsecond}`
+  - `{:duration, :millisecond}`
+
+  This feature was a great contribution from [Billy Lanchantin](https://github.com/billylanchantin),
+  and we want to thank him for this!
+
+### Changed
+
+- Return exception structs instead of strings for all IO operation errors, and for anything
+  that returns an error from the NIF integration.
+
+  This change makes easier to define which type of error we want to raise.
+
+- Update Polars to v0.32.
+
+  With that we made some minor API changes, like changing some options for `cut/qcut` operations
+  in the `Explorer.Series` module.
+
+- Use `nil_values` instead of `null_character` for IO operations.
+
+- Never expect `nil` for CSV IO dtypes.
+
+- Rename `Explorer.DataFrame.table/2` to `Explorer.DataFrame.print/2`.
+
+- Change `:datetime` dtype to be `{:datetime, time_unit}`, where time unit can be
+  the following:
+  - `:millisecond`
+  - `:microsecond`
+  - `:nanosecond`
+
+- Rename the following `Series` functions:
+  - `trim/1` to `strip/2`
+  - `trim_leading/1` to `lstrip/2`
+  - `trim_trailing/1` to `rstrip/2`
+
+  These functions now support a string argument.
+
+### Fixed
+
+- Fix warnings for the upcoming Elixir v1.16.
+
+- Fix `Explorer.Series.abs/1` type specs.
+
+- Allow comparison of strings with categories.
+
+- Fix `Explorer.Series.is_nan/1` inside the context of `Explorer.Query`.
+  The NIF function was not being exported.
+
 ## [v0.6.1] - 2023-07-06
 
 ### Fixed
@@ -523,26 +615,27 @@ properly compare floats.
 
 ### Security
 
-- Updated Rust dependencies to address Dependabot security alerts: [1](https://github.com/elixir-nx/explorer/security/dependabot/1), [2](https://github.com/elixir-nx/explorer/security/dependabot/3), [3](https://github.com/elixir-nx/explorer/security/dependabot/4)
+- Updated Rust dependencies to address Dependabot security alerts: [1](https://github.com/elixir-explorer/explorer/security/dependabot/1), [2](https://github.com/elixir-explorer/explorer/security/dependabot/3), [3](https://github.com/elixir-explorer/explorer/security/dependabot/4)
 
 ## [v0.1.0] - 2022-04-26
 
 First release.
 
-[Unreleased]: https://github.com/elixir-nx/explorer/compare/v0.6.1...HEAD
-[v0.6.1]: https://github.com/elixir-nx/explorer/compare/v0.6.0...v0.6.1
-[v0.6.0]: https://github.com/elixir-nx/explorer/compare/v0.5.7...v0.6.0
-[v0.5.7]: https://github.com/elixir-nx/explorer/compare/v0.5.6...v0.5.7
-[v0.5.6]: https://github.com/elixir-nx/explorer/compare/v0.5.5...v0.5.6
-[v0.5.5]: https://github.com/elixir-nx/explorer/compare/v0.5.4...v0.5.5
-[v0.5.4]: https://github.com/elixir-nx/explorer/compare/v0.5.3...v0.5.4
-[v0.5.3]: https://github.com/elixir-nx/explorer/compare/v0.5.2...v0.5.3
-[v0.5.2]: https://github.com/elixir-nx/explorer/compare/v0.5.1...v0.5.2
-[v0.5.1]: https://github.com/elixir-nx/explorer/compare/v0.5.0...v0.5.1
-[v0.5.0]: https://github.com/elixir-nx/explorer/compare/v0.4.0...v0.5.0
-[v0.4.0]: https://github.com/elixir-nx/explorer/compare/v0.3.1...v0.4.0
-[v0.3.1]: https://github.com/elixir-nx/explorer/compare/v0.3.0...v0.3.1
-[v0.3.0]: https://github.com/elixir-nx/explorer/compare/v0.2.0...v0.3.0
-[v0.2.0]: https://github.com/elixir-nx/explorer/compare/v0.1.1...v0.2.0
-[v0.1.1]: https://github.com/elixir-nx/explorer/compare/v0.1.0...v0.1.1
-[v0.1.0]: https://github.com/elixir-nx/explorer/releases/tag/v0.1.0
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.7.0...HEAD
+[v0.7.0]: https://github.com/elixir-explorer/explorer/compare/v0.6.1...v0.7.0
+[v0.6.1]: https://github.com/elixir-explorer/explorer/compare/v0.6.0...v0.6.1
+[v0.6.0]: https://github.com/elixir-explorer/explorer/compare/v0.5.7...v0.6.0
+[v0.5.7]: https://github.com/elixir-explorer/explorer/compare/v0.5.6...v0.5.7
+[v0.5.6]: https://github.com/elixir-explorer/explorer/compare/v0.5.5...v0.5.6
+[v0.5.5]: https://github.com/elixir-explorer/explorer/compare/v0.5.4...v0.5.5
+[v0.5.4]: https://github.com/elixir-explorer/explorer/compare/v0.5.3...v0.5.4
+[v0.5.3]: https://github.com/elixir-explorer/explorer/compare/v0.5.2...v0.5.3
+[v0.5.2]: https://github.com/elixir-explorer/explorer/compare/v0.5.1...v0.5.2
+[v0.5.1]: https://github.com/elixir-explorer/explorer/compare/v0.5.0...v0.5.1
+[v0.5.0]: https://github.com/elixir-explorer/explorer/compare/v0.4.0...v0.5.0
+[v0.4.0]: https://github.com/elixir-explorer/explorer/compare/v0.3.1...v0.4.0
+[v0.3.1]: https://github.com/elixir-explorer/explorer/compare/v0.3.0...v0.3.1
+[v0.3.0]: https://github.com/elixir-explorer/explorer/compare/v0.2.0...v0.3.0
+[v0.2.0]: https://github.com/elixir-explorer/explorer/compare/v0.1.1...v0.2.0
+[v0.1.1]: https://github.com/elixir-explorer/explorer/compare/v0.1.0...v0.1.1
+[v0.1.0]: https://github.com/elixir-explorer/explorer/releases/tag/v0.1.0

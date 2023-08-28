@@ -1082,11 +1082,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: a, b: b, c: c)
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            select1: Series.select(ldf["a"], ldf["b"], ldf["c"])
-          ]
-        end)
+        DF.mutate(df, select1: select(a, b, c))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1100,18 +1096,34 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(b: [3, 4, 2], c: [6, 2, 1])
 
       df1 =
-        DF.mutate_with(df, fn ldf ->
-          [
-            select1: Series.select(Series.from_list([true]), ldf["b"], ldf["c"]),
-            select2: Series.select(Series.from_list([false]), ldf["b"], ldf["c"])
-          ]
-        end)
+        DF.mutate(df,
+          select1: select(from_list([true]), b, c),
+          select2: select(from_list([false]), b, c)
+        )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                b: [3, 4, 2],
                c: [6, 2, 1],
                select1: [3, 4, 2],
                select2: [6, 2, 1]
+             }
+    end
+
+    test "adds some columns with select functions and scalar values" do
+      a = Series.from_list([true, false, true])
+      b = Series.from_list([3, 4, 2])
+      c = Series.from_list([6, 2, 1])
+      df = DF.new(a: a, b: b, c: c)
+
+      df1 =
+        DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [true, false, true],
+               b: [3, 4, 2],
+               c: [6, 2, 1],
+               select1: ["passed", "failed", "passed"],
+               select2: [0, 50, 50]
              }
     end
 
@@ -1194,7 +1206,7 @@ defmodule Explorer.DataFrameTest do
                a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
                b: [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
                c: [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75],
-               d: [2.0, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5],
+               d: [1.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5],
                e: [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
                f: [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0],
                g: [

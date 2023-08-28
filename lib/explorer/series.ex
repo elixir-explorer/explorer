@@ -4022,7 +4022,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_median(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[10]
-        float [2.0, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+        float [1.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()

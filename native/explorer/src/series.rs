@@ -1332,7 +1332,7 @@ pub fn s_downcase(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_strip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     let pattern = match pattern {
-        None => String::from(r#"^[ \s]+|[ \s]+$"#),
+        None => String::from(r"^[ \s]+|[ \s]+$"),
         Some(string) => format!(r#"^[{}]+|[{}]+$"#, &string, &string),
     };
 
@@ -1349,7 +1349,7 @@ pub fn s_strip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, Explorer
 pub fn s_lstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     let pattern = match pattern {
-        None => String::from(r#"^[ \s]+"#),
+        None => String::from(r"^[ \s]+"),
         Some(string) => format!(r#"^[{}]+"#, &string),
     };
 
@@ -1362,7 +1362,7 @@ pub fn s_lstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, Explore
 pub fn s_rstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     let pattern = match pattern {
-        None => String::from(r#"[ \s]+$"#),
+        None => String::from(r"[ \s]+$"),
         Some(string) => format!(r#"[{}]+$"#, &string),
     };
 
@@ -1454,6 +1454,7 @@ pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, Explorer
             true,
             false,
             None,
+            Some(true),
         )?
         .into_series();
     Ok(ExSeries::new(s1))
