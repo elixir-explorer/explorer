@@ -41,6 +41,7 @@ defmodule Explorer.MixProject do
       {:fss, "~> 0.1"},
       {:rustler_precompiled, "~> 0.6"},
       {:table, "~> 0.1.2"},
+      {:table_rex, "~> 3.1.1 or ~> 4.0.0"},
       {:adbc, "~> 0.1", optional: true},
 
       ## Optional
