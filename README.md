@@ -59,7 +59,7 @@ Inside an Elixir script or [Livebook](https://livebook.dev):
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.6.0"}
+  {:explorer, "~> 0.7.0"}
 ])
 ```
 
@@ -68,7 +68,7 @@ Or in the `mix.exs` file of your application:
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.6.0"}
+    {:explorer, "~> 0.7.0"}
   ]
 end
 ```
