@@ -5291,18 +5291,18 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Display the DataFrame in a tabular fashion.
+  Prints the DataFrame in a tabular fashion.
 
   ## Examples
 
      df = Explorer.Datasets.iris()
-     Explorer.DataFrame.table(df)
-     Explorer.DataFrame.table(df, limit: 1)
-     Explorer.DataFrame.table(df, limit: :infinity)
+     Explorer.DataFrame.print(df)
+     Explorer.DataFrame.print(df, limit: 1)
+     Explorer.DataFrame.print(df, limit: :infinity)
   """
   @doc type: :introspection
-  @spec table(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
-  def table(df, opts \\ []) do
+  @spec print(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
+  def print(df, opts \\ []) do
     {rows, columns} = shape(df)
     headers = df.names
 

@@ -2079,7 +2079,7 @@ defmodule Explorer.DataFrameTest do
     test "prints 5 rows by default" do
       df = Datasets.iris()
 
-      assert capture_io(fn -> DF.table(df) end) == """
+      assert capture_io(fn -> DF.print(df) end) == """
              +-----------------------------------------------------------------------+
              |              Explorer DataFrame: [rows: 150, columns: 5]              |
              +--------------+-------------+--------------+-------------+-------------+
@@ -2103,7 +2103,7 @@ defmodule Explorer.DataFrameTest do
     test "accepts limit keyword param" do
       df = Datasets.iris()
 
-      assert capture_io(fn -> DF.table(df, limit: 1) end) == """
+      assert capture_io(fn -> DF.print(df, limit: 1) end) == """
              +-----------------------------------------------------------------------+
              |              Explorer DataFrame: [rows: 150, columns: 5]              |
              +--------------+-------------+--------------+-------------+-------------+
@@ -2124,7 +2124,7 @@ defmodule Explorer.DataFrameTest do
           c: [9.1, 8.2, 7.3, 6.4, 5.5, 4.6, 3.7, 2.8, 1.9]
         )
 
-      assert capture_io(fn -> DF.table(df, limit: :infinity) end) == """
+      assert capture_io(fn -> DF.print(df, limit: :infinity) end) == """
              +--------------------------------------------+
              | Explorer DataFrame: [rows: 9, columns: 3]  |
              +---------------+--------------+-------------+
