@@ -73,6 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Never expect `nil` for CSV IO dtypes.
 
+- Rename `Explorer.DataFrame.table/2` to `Explorer.DataFrame.print/2`.
+
 - Change `:datetime` dtype to be `{:datetime, time_unit}`, where time unit can be
   the following:
   - `:millisecond`
@@ -96,11 +98,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix `Explorer.Series.is_nan/1` inside the context of `Explorer.Query`.
   The NIF function was not being exported.
-
-### Removed
-
-- Remove dependency on `TableRex`, and the `Explorer.DataFrame.table/2` function.
-  The goal is to support `TableRex` on `Table.Reader`.
 
 ## [v0.6.1] - 2023-07-06
 
