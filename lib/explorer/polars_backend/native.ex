@@ -163,6 +163,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_boolean(_bool), do: err()
   def expr_date(_date), do: err()
   def expr_datetime(_datetime), do: err()
+  def expr_duration(_duration), do: err()
   def expr_describe_filter_plan(_df, _expr), do: err()
   def expr_float(_number), do: err()
   def expr_integer(_number), do: err()

@@ -6,6 +6,9 @@ defmodule Explorer.Duration do
   @enforce_keys [:value, :precision]
   defstruct [:value, :precision]
 
+  @type precision :: :millisecond | :microsecond | :nanosecond
+  @type t :: %__MODULE__{value: integer(), precision: precision()}
+
   # Nanosecond constants
   @us_ns 1_000
   @ms_ns 1_000 * @us_ns

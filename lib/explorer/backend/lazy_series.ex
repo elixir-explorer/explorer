@@ -135,7 +135,8 @@ defmodule Explorer.Backend.LazySeries do
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
 
-  @arithmetic_operations [:pow, :quotient, :remainder]
+  @basic_arithmetic_operations [:add, :subtract, :multiply, :divide]
+  @other_arithmetic_operations [:pow, :quotient, :remainder]
 
   @aggregation_operations [
     :sum,
@@ -189,38 +190,6 @@ defmodule Explorer.Backend.LazySeries do
     args = [lazy_series!(s), dtype]
     data = new(:cast, args, aggregations?(args))
 
-    Backend.Series.new(data, dtype)
-  end
-
-  @impl true
-  def add(left, right) do
-    args = [data!(left), data!(right)]
-    data = new(:add, args, aggregations?(args))
-    dtype = resolve_numeric_temporal_dtype(:add, left, right)
-    Backend.Series.new(data, dtype)
-  end
-
-  @impl true
-  def subtract(left, right) do
-    args = [data!(left), data!(right)]
-    data = new(:subtract, args, aggregations?(args))
-    dtype = resolve_numeric_temporal_dtype(:subtract, left, right)
-    Backend.Series.new(data, dtype)
-  end
-
-  @impl true
-  def multiply(left, right) do
-    args = [data!(left), data!(right)]
-    data = new(:multiply, args, aggregations?(args))
-    dtype = resolve_numeric_temporal_dtype(:multiply, left, right)
-    Backend.Series.new(data, dtype)
-  end
-
-  @impl true
-  def divide(left, right) do
-    args = [data!(left), data!(right)]
-    data = new(:divide, args, aggregations?(args))
-    dtype = resolve_numeric_temporal_dtype(:divide, left, right)
     Backend.Series.new(data, dtype)
   end
 
@@ -412,7 +381,19 @@ defmodule Explorer.Backend.LazySeries do
     end
   end
 
-  for op <- @arithmetic_operations do
+  for op <- @basic_arithmetic_operations do
+    @impl true
+    def unquote(op)(%Series{} = left, %Series{} = right) do
+      dtype = Explorer.Shared.cast_to_arithmetic(unquote(op), dtype(left), dtype(right))
+
+      args = [data!(left), data!(right)]
+      data = new(unquote(op), args, aggregations?(args))
+
+      Backend.Series.new(data, dtype)
+    end
+  end
+
+  for op <- @other_arithmetic_operations do
     @impl true
     def unquote(op)(left, right) do
       dtype = resolve_numeric_dtype([left, right])
@@ -653,41 +634,6 @@ defmodule Explorer.Backend.LazySeries do
 
   defp resolve_numeric_dtype(:window_mean, _items), do: :float
   defp resolve_numeric_dtype(_op, items), do: resolve_numeric_dtype(items)
-
-  defp resolve_numeric_temporal_dtype(op, %Series{dtype: ldt} = left, %Series{dtype: rdt} = right) do
-    case {op, ldt, rdt} do
-      {:add, {:datetime, ltu}, {:duration, rtu}} -> {:datetime, highest_precision(ltu, rtu)}
-      {:add, {:duration, ltu}, {:datetime, rtu}} -> {:datetime, highest_precision(ltu, rtu)}
-      {:add, {:duration, ltu}, {:duration, rtu}} -> {:duration, highest_precision(ltu, rtu)}
-      {:subtract, {:datetime, ltu}, {:datetime, rtu}} -> {:duration, highest_precision(ltu, rtu)}
-      {:subtract, {:datetime, ltu}, {:duration, rtu}} -> {:datetime, highest_precision(ltu, rtu)}
-      {:subtract, {:duration, ltu}, {:duration, rtu}} -> {:duration, highest_precision(ltu, rtu)}
-      {:multiply, :integer, {:duration, tu}} -> {:duration, tu}
-      {:multiply, {:duration, tu}, :integer} -> {:duration, tu}
-      {:divide, {:duration, tu}, :integer} -> {:duration, tu}
-      {:divide, _, {:duration, _}} -> raise("cannot divide by duration")
-      {:divide, _, _} -> :float
-      _ -> resolve_numeric_dtype([left, right])
-    end
-  end
-
-  defp resolve_numeric_temporal_dtype(op, left, right) do
-    case op do
-      :divide -> :float
-      _ -> resolve_numeric_dtype([left, right])
-    end
-  end
-
-  defp highest_precision(left_timeunit, right_timeunit) do
-    # Higher precision wins, otherwise information is lost.
-    case {left_timeunit, right_timeunit} do
-      {equal, equal} -> equal
-      {:nanosecond, _} -> :nanosecond
-      {_, :nanosecond} -> :nanosecond
-      {:microsecond, _} -> :microsecond
-      {_, :microsecond} -> :microsecond
-    end
-  end
 
   # Returns the inner `data` if it's a lazy series. Otherwise raises an error.
   defp lazy_series!(series) do

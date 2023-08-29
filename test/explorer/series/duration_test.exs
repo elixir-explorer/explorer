@@ -4,8 +4,13 @@ defmodule Explorer.Series.DurationTest do
   alias Explorer.Duration
   alias Explorer.Series
 
+  @aug_20 ~D[2023-08-20]
+  @aug_21 ~D[2023-08-21]
+  @one_hour_ms 3600 * 1_000
   @one_hour_us 3600 * 1_000_000
+  @one_hour_duration_ms %Duration{value: @one_hour_ms, precision: :millisecond}
   @one_hour_duration_us %Duration{value: @one_hour_us, precision: :microsecond}
+  @one_day_duration_ms %Duration{value: 24 * @one_hour_ms, precision: :millisecond}
 
   describe "list" do
     test "from a list of integers" do
@@ -134,6 +139,121 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "add" do
+    # Duration only
+
+    test "duration[μs] + duration[μs]" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+      two_hour_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(one_hour_s, two_hour_s)
+
+      three_hour_duration_us = %Duration{value: 3 * @one_hour_us, precision: :microsecond}
+      assert sum_s.dtype == {:duration, :microsecond}
+      assert Series.to_list(sum_s) == [three_hour_duration_us]
+    end
+
+    test "duration[ms] + duration[μs] (different precisions)" do
+      one_hour_ms_s = Series.from_list([@one_hour_duration_ms])
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(one_hour_ms_s, one_hour_us_s)
+
+      # Since we added a duration with :millisecond precision to a datetime with :microsecond
+      # precision, the resulting difference has :microsecond precision since that was the highest
+      # precision present in the operation.
+      assert one_hour_ms_s.dtype == {:duration, :millisecond}
+      assert one_hour_us_s.dtype == {:duration, :microsecond}
+      assert sum_s.dtype == {:duration, :microsecond}
+
+      two_hour_duration_us = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(sum_s) == [two_hour_duration_us]
+    end
+
+    # Date
+
+    test "date + duration[μs]" do
+      aug_20_s = Series.from_list([@aug_20])
+
+      # Adding a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(aug_20_s, one_hour_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_20]
+
+      # Adding a duration at least a day results in the next date.
+      one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(aug_20_s, one_day_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_21]
+    end
+
+    test "duration[μs] + date" do
+      aug_20_s = Series.from_list([@aug_20])
+
+      # Adding a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(one_hour_s, aug_20_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_20]
+
+      # Adding a duration at least a day results in the next date.
+      one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(one_day_s, aug_20_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_21]
+    end
+
+    test "Date + duration[μs]" do
+      # Adding a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(@aug_20, one_hour_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_20]
+
+      # Adding a duration at least a day results in the next date.
+      one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(@aug_20, one_day_s)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_21]
+    end
+
+    test "duration[μs] + Date" do
+      # Adding a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_us])
+      sum_s = Series.add(one_hour_s, @aug_20)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_20]
+
+      # Adding a duration at least a day results in the next date.
+      one_day_s = Series.from_list([24 * @one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(one_day_s, @aug_20)
+
+      assert sum_s.dtype == :date
+      assert Series.to_list(sum_s) == [@aug_21]
+    end
+
+    test "Date + Date raises ArgumentError" do
+      assert_raise ArgumentError,
+                   "add/2 expects a series as one of its arguments, instead got two scalars: ~D[2023-08-20] and ~D[2023-08-21]",
+                   fn -> Series.add(@aug_20, @aug_21) end
+    end
+
+    test "date + date raises ArgumentError" do
+      aug_20_s = Series.from_list([@aug_20])
+      aug_21_s = Series.from_list([@aug_21])
+
+      assert_raise ArgumentError,
+                   "cannot invoke Explorer.Series.add/2 with mismatched dtypes: :date and :date",
+                   fn -> Series.add(aug_20_s, aug_21_s) end
+    end
+
+    # Datetime
+
     test "datetime[μs] + duration[μs]" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
@@ -152,16 +272,6 @@ defmodule Explorer.Series.DurationTest do
       assert sum_s.dtype == {:datetime, :microsecond}
       twelve_ndt = ~N[2023-08-20 12:00:00.0000000]
       assert Series.to_list(sum_s) == [twelve_ndt]
-    end
-
-    test "duration[μs] + duration[μs]" do
-      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
-      two_hour_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
-      sum_s = Series.add(one_hour_s, two_hour_s)
-
-      three_hour_duration_us = %Duration{value: 3 * @one_hour_us, precision: :microsecond}
-      assert sum_s.dtype == {:duration, :microsecond}
-      assert Series.to_list(sum_s) == [three_hour_duration_us]
     end
 
     test "NaiveDateTime + duration[μs]" do
@@ -206,6 +316,84 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "subtract" do
+    # Duration only
+
+    test "duration[μs] - duration[μs]" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+      two_hour_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
+      diff_s = Series.subtract(two_hour_s, one_hour_s)
+
+      assert diff_s.dtype == {:duration, :microsecond}
+      assert Series.to_list(diff_s) == [@one_hour_duration_us]
+    end
+
+    test "duration[ms] - duration[μs] (different precisions)" do
+      two_hour_us_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
+      one_hour_ms_s = Series.from_list([@one_hour_duration_ms])
+      diff_s = Series.subtract(two_hour_us_s, one_hour_ms_s)
+
+      # Since we subtracted a duration with :millisecond precision from a duration with :microsecond
+      # precision, the resulting difference has :microsecond precision since that was the highest
+      # precision present in the operation.
+      assert two_hour_us_s.dtype == {:duration, :microsecond}
+      assert one_hour_ms_s.dtype == {:duration, :millisecond}
+      assert diff_s.dtype == {:duration, :microsecond}
+      assert Series.to_list(diff_s) == [@one_hour_duration_us]
+    end
+
+    # Date
+
+    test "date - date" do
+      aug_20_s = Series.from_list([@aug_20])
+      aug_21_s = Series.from_list([@aug_21])
+      diff_s = Series.subtract(aug_21_s, aug_20_s)
+
+      assert diff_s.dtype == {:duration, :millisecond}
+      assert Series.to_list(diff_s) == [@one_day_duration_ms]
+    end
+
+    test "Date - date" do
+      aug_20_s = Series.from_list([@aug_20])
+      diff_s = Series.subtract(@aug_21, aug_20_s)
+
+      assert diff_s.dtype == {:duration, :millisecond}
+      assert Series.to_list(diff_s) == [@one_day_duration_ms]
+    end
+
+    test "date - Date" do
+      aug_21_s = Series.from_list([@aug_21])
+      diff_s = Series.subtract(aug_21_s, @aug_20)
+
+      assert diff_s.dtype == {:duration, :millisecond}
+      assert Series.to_list(diff_s) == [@one_day_duration_ms]
+    end
+
+    test "Date - Date raises ArgumentError" do
+      assert_raise ArgumentError,
+                   "subtract/2 expects a series as one of its arguments, instead got two scalars: ~D[2023-08-21] and ~D[2023-08-20]",
+                   fn -> Series.subtract(@aug_21, @aug_20) end
+    end
+
+    test "date - duration[ms]" do
+      aug_21_s = Series.from_list([@aug_21])
+
+      # Subtracting a duration less than a day results in the same date.
+      one_hour_s = Series.from_list([@one_hour_duration_ms])
+      diff_s = Series.subtract(aug_21_s, one_hour_s)
+
+      assert diff_s.dtype == :date
+      assert Series.to_list(diff_s) == [@aug_20]
+
+      # Subtracting a duration at least a day results in the previous date.
+      one_day_s = Series.from_list([@one_day_duration_ms])
+      diff_s = Series.subtract(aug_21_s, one_day_s)
+
+      assert diff_s.dtype == :date
+      assert Series.to_list(diff_s) == [@aug_20]
+    end
+
+    # Datetime
+
     test "datetime[μs] - datetime[μs]" do
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
       twelve_s = Series.from_list([~N[2023-08-20 12:00:00.0000000]])
@@ -222,15 +410,6 @@ defmodule Explorer.Series.DurationTest do
 
       assert diff_s.dtype == {:datetime, :microsecond}
       assert Series.to_list(diff_s) == [~N[2023-08-20 11:00:00.0000000]]
-    end
-
-    test "duration[μs] - duration[μs]" do
-      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
-      two_hour_s = Series.from_list([2 * @one_hour_us], dtype: {:duration, :microsecond})
-      diff_s = Series.subtract(two_hour_s, one_hour_s)
-
-      assert diff_s.dtype == {:duration, :microsecond}
-      assert Series.to_list(diff_s) == [@one_hour_duration_us]
     end
 
     test "NaiveDateTime - datetime[μs]" do
@@ -284,6 +463,116 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "multiply" do
+    # Integer
+
+    test "integer * duration[μs]" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2])
+      product_s = Series.multiply(two_s, one_hour_us_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "duration[μs] * integer" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2])
+      product_s = Series.multiply(one_hour_us_s, two_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "Integer * duration[μs]" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      product_s = Series.multiply(2, one_hour_us_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "duration[μs] * Integer" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      product_s = Series.multiply(one_hour_us_s, 2)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    # Float
+
+    test "float * duration[μs]" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2.0])
+      product_s = Series.multiply(two_s, one_hour_us_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "duration[μs] * float" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2.0])
+      product_s = Series.multiply(one_hour_us_s, two_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "Float * duration[μs]" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      product_s = Series.multiply(2.0, one_hour_us_s)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "duration[μs] * Float" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      product_s = Series.multiply(one_hour_us_s, 2.0)
+
+      assert product_s.dtype == {:duration, :microsecond}
+      two_hour_duration_s = %Duration{value: 2 * @one_hour_us, precision: :microsecond}
+      assert Series.to_list(product_s) == [two_hour_duration_s]
+    end
+
+    test "fractional parts of floats work (roughly) as expected" do
+      # This test is not exhaustive. Rather, its purpose is to give us a reasonable confidence that
+      # multiplying durations by floats is fairly accurate.
+      #
+      # The exact answers we see here are subject to implementation details outside our control.
+      # If we find that this test breaks unexpectedly (e.g. from a dependency update), then we may
+      # wish to remove it.
+      one_s = 1 / 3_600
+      one_ms = 1 / 3_600_000
+      one_us = 1 / 3_600_000_000
+      one_ns = 1 / 3_600_000_000_000
+
+      float_string_pairs = [
+        {3 / 4, "45m"},
+        {3 / 2, "1h 30m"},
+        {1.0 + one_s, "1h 1s"},
+        # Float rounding issue (but only off by one).
+        {1.0 + one_ms, "1h 999us 999ns"},
+        {1.0 + one_us, "1h 1us"},
+        {1.0 + one_ns, "1h 1ns"}
+      ]
+
+      one_hour_ns_s = Series.from_list([1_000 * @one_hour_us], dtype: {:duration, :nanosecond})
+
+      for {float, expected} <- float_string_pairs do
+        [duration] = one_hour_ns_s |> Series.multiply(float) |> Series.to_list()
+        assert to_string(duration) == expected
+      end
+    end
+
     test "duration[μs] * duration[μs] raises ArgumentError" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
 
@@ -294,6 +583,64 @@ defmodule Explorer.Series.DurationTest do
   end
 
   describe "divide" do
+    # Integer
+
+    test "duration[μs] / integer" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2])
+      quotient_s = Series.divide(one_hour_us_s, two_s)
+
+      assert quotient_s.dtype == {:duration, :microsecond}
+      thirty_min_duration_s = %Duration{value: div(@one_hour_us, 2), precision: :microsecond}
+      assert Series.to_list(quotient_s) == [thirty_min_duration_s]
+    end
+
+    test "duration[μs] / Integer" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      quotient_s = Series.divide(one_hour_us_s, 2)
+
+      assert quotient_s.dtype == {:duration, :microsecond}
+      thirty_min_duration_s = %Duration{value: div(@one_hour_us, 2), precision: :microsecond}
+      assert Series.to_list(quotient_s) == [thirty_min_duration_s]
+    end
+
+    test "Integer / duration[μs] raises ArgumentError" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+
+      assert_raise ArgumentError,
+                   "cannot divide by duration",
+                   fn -> Series.divide(2, one_hour_s) end
+    end
+
+    # Float
+
+    test "duration[μs] / float" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      two_s = Series.from_list([2.0])
+      quotient_s = Series.divide(one_hour_us_s, two_s)
+
+      assert quotient_s.dtype == {:duration, :microsecond}
+      thirty_min_duration_s = %Duration{value: div(@one_hour_us, 2), precision: :microsecond}
+      assert Series.to_list(quotient_s) == [thirty_min_duration_s]
+    end
+
+    test "duration[μs] / Float" do
+      one_hour_us_s = Series.from_list([@one_hour_duration_us])
+      quotient_s = Series.divide(one_hour_us_s, 2.0)
+
+      assert quotient_s.dtype == {:duration, :microsecond}
+      thirty_min_duration_s = %Duration{value: div(@one_hour_us, 2), precision: :microsecond}
+      assert Series.to_list(quotient_s) == [thirty_min_duration_s]
+    end
+
+    test "Float / duration[μs] raises ArgumentError" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+
+      assert_raise ArgumentError,
+                   "cannot divide by duration",
+                   fn -> Series.divide(2.0, one_hour_s) end
+    end
+
     test "duration[μs] / duration[μs] raises ArgumentError" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
 
@@ -321,6 +668,59 @@ defmodule Explorer.Series.DurationTest do
                diff duration[μs] [1h]
              >\
              """
+    end
+
+    test "mutate/2 with scalar Duration" do
+      require Explorer.DataFrame
+      alias Explorer.DataFrame, as: DF
+
+      ms = %Duration{value: 1_000, precision: :millisecond}
+      us = %Duration{value: 1_000, precision: :microsecond}
+      ns = %Duration{value: 1_000, precision: :nanosecond}
+
+      df = DF.new([])
+
+      df = DF.mutate(df, ms: ^ms)
+      assert df["ms"].dtype == {:duration, :millisecond}
+      assert Series.to_list(df["ms"]) == [ms]
+
+      df = DF.mutate(df, us: ^us)
+      assert df["us"].dtype == {:duration, :microsecond}
+      assert Series.to_list(df["us"]) == [us]
+
+      df = DF.mutate(df, ns: ^ns)
+      assert df["ns"].dtype == {:duration, :nanosecond}
+      assert Series.to_list(df["ns"]) == [ns]
+    end
+
+    # There is currently an issue with Polars where `duration + date` is not supported but
+    # `date + duration` is. There is a workaround in `Series.add/2` where we swap the args, but
+    # that workaround does not extend to expressions. This test contains scenarios that a solution
+    # which extends to expressions will need to cover.
+    @tag :skip
+    test "mutate/2 with duration + date" do
+      require Explorer.DataFrame
+      alias Explorer.DataFrame, as: DF
+
+      aug_20 = Series.from_list([~D[2023-08-20]])
+      aug_21 = Series.from_list([~D[2023-08-21]])
+      df = DF.new(aug_20: aug_20, aug_21: aug_21, sub: Series.subtract(aug_21, aug_20))
+
+      df1 = DF.mutate(df, add1: sub + aug_20)
+      assert df1["add1"].dtype == :date
+      assert Series.to_list(df1["add1"]) == [~D[2023-08-21]]
+
+      df2 = DF.mutate(df, add2: sub + ^df["aug_20"])
+      assert df2["add2"].dtype == :date
+      assert Series.to_list(df2["add2"]) == [~D[2023-08-21]]
+
+      df3 = DF.mutate(df, add3: sub + aug_20 + sub)
+      assert df3["add3"].dtype == :date
+      assert Series.to_list(df3["add3"]) == [~D[2023-08-22]]
+
+      df4 = DF.mutate(df, add4: sub + (aug_20 + sub))
+      assert df4["add4"].dtype == :date
+      assert Series.to_list(df4["add4"]) == [~D[2023-08-22]]
     end
   end
 end

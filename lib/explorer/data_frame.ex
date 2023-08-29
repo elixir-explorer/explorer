@@ -2813,6 +2813,11 @@ defmodule Explorer.DataFrame do
 
             Explorer.Backend.Series.new(lazy_s, {:datetime, :microsecond})
 
+          duration = %Explorer.Duration{} ->
+            lazy_s = LazySeries.new(:to_lazy, [duration])
+
+            Explorer.Backend.Series.new(lazy_s, {:datetime, duration.precision})
+
           other ->
             raise ArgumentError,
                   "expecting a lazy series or scalar value, but instead got #{inspect(other)}"
