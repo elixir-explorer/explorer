@@ -145,6 +145,7 @@ rustler::init!(
         expr_column,
         expr_date,
         expr_datetime,
+        expr_duration,
         expr_day_of_week,
         expr_month,
         expr_year,

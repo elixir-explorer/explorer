@@ -10,7 +10,8 @@ use polars::prelude::{
 };
 use polars::prelude::{AnyValue, DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
-use crate::datatypes::{ExDate, ExDateTime};
+use crate::atoms::{microsecond, millisecond, nanosecond};
+use crate::datatypes::{ExDate, ExDateTime, ExDuration};
 use crate::series::{cast_str_to_dtype, cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 
@@ -64,6 +65,28 @@ pub fn expr_datetime(datetime: ExDateTime) -> ExExpr {
     let naive_datetime = NaiveDateTime::from(datetime);
     let expr = naive_datetime.lit();
     ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_duration(duration: ExDuration) -> ExExpr {
+    // Note: it's tempting to use `.lit()` on a `chrono::Duration` struct in this function, but
+    // doing so will lose precision information as `chrono::Duration`s have no time units.
+    let time_unit = time_unit_of_ex_duration(duration);
+    let expr = Expr::Literal(LiteralValue::Duration(duration.value, time_unit));
+    ExExpr::new(expr)
+}
+
+fn time_unit_of_ex_duration(duration: ExDuration) -> TimeUnit {
+    let precision = duration.precision;
+    if precision == millisecond() {
+        TimeUnit::Milliseconds
+    } else if precision == microsecond() {
+        TimeUnit::Microseconds
+    } else if precision == nanosecond() {
+        TimeUnit::Nanoseconds
+    } else {
+        panic!("unrecognized precision: {precision:?}")
+    }
 }
 
 #[rustler::nif]
