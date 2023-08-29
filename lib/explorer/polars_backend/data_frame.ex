@@ -626,7 +626,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
     exprs =
       for {name, lazy_series} <- column_pairs do
         lazy_series
-        |> maybe_swap_args(df)
         |> to_expr()
         |> alias_expr(name)
       end
@@ -822,43 +821,4 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def inspect(df, opts) do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
   end
-
-  # Helpers
-
-  defp maybe_swap_args(%Explorer.Backend.LazySeries{op: op, args: args}, df) do
-    maybe_swapped_args =
-      case op do
-        :add ->
-          case List.pop_at(args, -1) do
-            {%Explorer.PolarsBackend.Series{} = last, rest} ->
-              case Explorer.PolarsBackend.Native.s_dtype(last) do
-                {:ok, "date"} ->
-                  [last | rest]
-
-                _ ->
-                  args
-              end
-
-            {%Explorer.Backend.LazySeries{op: :column, args: [col_name]} = last, rest} ->
-              case df[col_name] do
-                %Explorer.Series{dtype: :date} ->
-                  [last | rest]
-
-                _ ->
-                  args
-              end
-
-            _ ->
-              args
-          end
-
-        _ ->
-          args
-      end
-
-    args = Enum.map(maybe_swapped_args, &maybe_swap_args(&1, df))
-    %Explorer.Backend.LazySeries{op: op, args: args}
-  end
-
-  defp maybe_swap_args(arg, _df), do: arg
 end
