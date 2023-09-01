@@ -1259,6 +1259,26 @@ defmodule Explorer.SeriesTest do
         Series.in(s1, s2)
       end
     end
+
+    @tag :skip
+    test "compare categories with strings" do
+      s = Series.from_list(["a", "b", "c", nil, "a"], dtype: :category)
+
+      assert Series.in(s, Series.from_list(["a", "b"])) |> Series.to_list() ==
+               [true, true, false, false, true]
+
+      assert Series.in(s, ["a"]) |> Series.to_list() == [true, false, false, false, true]
+
+      assert Series.in(s, ["z"]) |> IO.inspect() |> Series.to_list() == [
+               false,
+               false,
+               false,
+               false,
+               false
+             ]
+
+      assert Series.in(s, ["a", "z"]) |> Series.to_list() == [true, false, false, false, true]
+    end
   end
 
   describe "iotype/1" do

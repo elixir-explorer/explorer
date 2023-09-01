@@ -548,6 +548,15 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         DataType::Date => s.date()?.is_in(&rhs)?,
         DataType::Time => s.time()?.is_in(&rhs)?,
         DataType::Datetime(_, _) => s.datetime()?.is_in(&rhs)?,
+        DataType::Categorical(Some(mapping)) => {
+            let l_logical = s.categorical()?.logical();
+
+            let r_casted = rhs.cast(&DataType::Categorical(Some(mapping.clone())))?;
+
+            let r_logical = r_casted.categorical()?.logical().clone().into_series();
+
+            l_logical.is_in(&r_logical)?
+        }
         dt => panic!("is_in/2 not implemented for {dt:?}"),
     };
 
