@@ -2164,6 +2164,22 @@ defmodule Explorer.DataFrameTest do
 
              """
     end
+
+    test "works with lazy" do
+      df = Datasets.iris() |> DF.to_lazy()
+
+      assert capture_io(fn -> DF.print(df, limit: 1) end) == """
+             +-----------------------------------------------------------------------+
+             |              Explorer DataFrame: [rows: ???, columns: 5]              |
+             +--------------+-------------+--------------+-------------+-------------+
+             | sepal_length | sepal_width | petal_length | petal_width |   species   |
+             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
+             +==============+=============+==============+=============+=============+
+             | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+
+             """
+    end
   end
 
   test "fetch/2" do

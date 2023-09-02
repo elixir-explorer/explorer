@@ -1586,6 +1586,13 @@ defmodule Explorer.DataFrame do
   ## Conversion
 
   @doc """
+  Returns true if the data frame is a lazy one.
+  """
+  @doc type: :conversion
+  @spec lazy?(df :: DataFrame.t()) :: boolean
+  def lazy?(%DataFrame{data: %struct{}}), do: struct.lazy() == struct
+
+  @doc """
   Converts the dataframe to the lazy version of the current backend.
 
   If already lazy, this is a noop.
@@ -5310,7 +5317,13 @@ defmodule Explorer.DataFrame do
   @doc type: :introspection
   @spec print(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
   def print(df, opts \\ []) do
-    {rows, columns} = shape(df)
+    {rows, columns} =
+      if lazy?(df) do
+        {"???", n_columns(df)}
+      else
+        shape(df)
+      end
+
     headers = df.names
 
     df =
@@ -5319,6 +5332,7 @@ defmodule Explorer.DataFrame do
         nrow when is_integer(nrow) and nrow >= 0 -> slice(df, 0, nrow)
         _ -> slice(df, 0, @default_sample_nrows)
       end
+      |> collect()
 
     types = Enum.map(df.names, &"\n<#{Atom.to_string(df.dtypes[&1])}>")
 
