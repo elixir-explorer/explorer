@@ -694,10 +694,7 @@ defmodule Explorer.Series.DurationTest do
     end
 
     # There is currently an issue with Polars where `duration + date` is not supported but
-    # `date + duration` is. There is a workaround in `Series.add/2` where we swap the args, but
-    # that workaround does not extend to expressions. This test contains scenarios that a solution
-    # which extends to expressions will need to cover.
-    @tag :skip
+    # `date + duration` is. There is a workaround in where we swap the args.
     test "mutate/2 with duration + date" do
       require Explorer.DataFrame
       alias Explorer.DataFrame, as: DF
@@ -721,6 +718,33 @@ defmodule Explorer.Series.DurationTest do
       df4 = DF.mutate(df, add4: sub + (aug_20 + sub))
       assert df4["add4"].dtype == :date
       assert Series.to_list(df4["add4"]) == [~D[2023-08-22]]
+    end
+
+    test "mutate/2 with multiply/divide" do
+      require Explorer.DataFrame
+      alias Explorer.DataFrame, as: DF
+
+      df = DF.new(duration: [%Duration{precision: :millisecond, value: 10}])
+
+      # Multiplication by integer and float works (and is commutative).
+      df = DF.mutate(df, mul1: duration * 1)
+      df = DF.mutate(df, mul2: 2 * duration)
+      df = DF.mutate(df, mul3: duration * 3.0)
+      df = DF.mutate(df, mul4: 4.0 * duration)
+      assert df["mul1"].dtype == {:duration, :millisecond}
+      assert df["mul2"].dtype == {:duration, :millisecond}
+      assert df["mul3"].dtype == {:duration, :millisecond}
+      assert df["mul4"].dtype == {:duration, :millisecond}
+
+      # Dividing duration by integer and float works.
+      df = DF.mutate(df, div1: duration / 1)
+      df = DF.mutate(df, div2: duration / 2.0)
+      assert df["div1"].dtype == {:duration, :millisecond}
+      assert df["div2"].dtype == {:duration, :millisecond}
+
+      # Dividing integer and float by duration raises.
+      assert_raise(ArgumentError, fn -> DF.mutate(df, div3: 3 / duration) end)
+      assert_raise(ArgumentError, fn -> DF.mutate(df, div4: 4.0 / duration) end)
     end
   end
 end
