@@ -136,7 +136,7 @@ defmodule Explorer.PolarsBackend.Expression do
     from_binary: 2,
     log: 1,
     log: 2,
-    to_lazy: 1,
+    lazy: 1,
     shift: 3,
     slice: 2,
     slice: 3,
@@ -174,7 +174,7 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_series(series)
   end
 
-  def to_expr(%LazySeries{op: :to_lazy, args: [data]}) do
+  def to_expr(%LazySeries{op: :lazy, args: [data]}) do
     to_expr(data)
   end
 

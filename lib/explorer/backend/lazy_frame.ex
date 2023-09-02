@@ -31,7 +31,7 @@ defmodule Explorer.Backend.LazyFrame do
   def lazy, do: __MODULE__
 
   @impl true
-  def to_lazy(ldf), do: ldf
+  def lazy(ldf), do: ldf
 
   @impl true
   def inspect(ldf, opts) do

@@ -502,7 +502,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def lazy, do: Explorer.PolarsBackend.LazyFrame
 
   @impl true
-  def to_lazy(df), do: Shared.apply_dataframe(df, df, :df_to_lazy, [])
+  def lazy(df), do: Shared.apply_dataframe(df, df, :df_lazy, [])
 
   @impl true
   def collect(df), do: df

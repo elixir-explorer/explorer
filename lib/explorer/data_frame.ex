@@ -1604,8 +1604,12 @@ defmodule Explorer.DataFrame do
   return a lazy dataframe with groups.
   """
   @doc type: :conversion
-  @spec to_lazy(df :: DataFrame.t()) :: DataFrame.t()
-  def to_lazy(df), do: Shared.apply_impl(df, :to_lazy)
+  @spec lazy(df :: DataFrame.t()) :: DataFrame.t()
+  def lazy(df), do: Shared.apply_impl(df, :lazy)
+
+  @deprecated "Use lazy/1 instead"
+  @doc type: :conversion
+  def to_lazy(df), do: Shared.apply_impl(df, :lazy)
 
   @doc """
   Collects the lazy data frame into an eager one, computing the query.
@@ -2800,32 +2804,32 @@ defmodule Explorer.DataFrame do
 
           number when is_number(number) ->
             dtype = if is_integer(number), do: :integer, else: :float
-            lazy_s = LazySeries.new(:to_lazy, [number])
+            lazy_s = LazySeries.new(:lazy, [number])
 
             Explorer.Backend.Series.new(lazy_s, dtype)
 
           string when is_binary(string) ->
-            lazy_s = LazySeries.new(:to_lazy, [string])
+            lazy_s = LazySeries.new(:lazy, [string])
 
             Explorer.Backend.Series.new(lazy_s, :string)
 
           boolean when is_boolean(boolean) ->
-            lazy_s = LazySeries.new(:to_lazy, [boolean])
+            lazy_s = LazySeries.new(:lazy, [boolean])
 
             Explorer.Backend.Series.new(lazy_s, :boolean)
 
           date = %Date{} ->
-            lazy_s = LazySeries.new(:to_lazy, [date])
+            lazy_s = LazySeries.new(:lazy, [date])
 
             Explorer.Backend.Series.new(lazy_s, :date)
 
           datetime = %NaiveDateTime{} ->
-            lazy_s = LazySeries.new(:to_lazy, [datetime])
+            lazy_s = LazySeries.new(:lazy, [datetime])
 
             Explorer.Backend.Series.new(lazy_s, {:datetime, :microsecond})
 
           duration = %Explorer.Duration{} ->
-            lazy_s = LazySeries.new(:to_lazy, [duration])
+            lazy_s = LazySeries.new(:lazy, [duration])
 
             Explorer.Backend.Series.new(lazy_s, {:datetime, duration.precision})
 
