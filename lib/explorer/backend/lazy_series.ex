@@ -9,11 +9,11 @@ defmodule Explorer.Backend.LazySeries do
 
   @behaviour Explorer.Backend.Series
 
-  defstruct op: nil, args: [], aggregation: false
+  defstruct op: nil, args: [], dtype: nil, aggregation: false
 
   @valid_dtypes Explorer.Shared.dtypes()
 
-  @type t :: %__MODULE__{op: atom(), args: list(), aggregation: boolean()}
+  @type t :: %__MODULE__{op: atom(), args: list(), dtype: any(), aggregation: boolean()}
 
   @operations [
     # Element-wise
