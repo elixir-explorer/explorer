@@ -1595,18 +1595,22 @@ defmodule Explorer.DataFrame do
   @doc """
   Converts the dataframe to the lazy version of the current backend.
 
-  If already lazy, this is a noop.
+  Operations on a lazy dataframe are not executed immediately, instead
+  they are batched together, and performed when `collect/1` is invoked.
+  This allows for query optimizations, parallelism, leading to better
+  performance.
 
-  Converting a grouped dataframe should return a lazy dataframe with groups.
+  If already lazy, this is a noop. Converting a grouped dataframe should
+  return a lazy dataframe with groups.
   """
   @doc type: :conversion
   @spec to_lazy(df :: DataFrame.t()) :: DataFrame.t()
   def to_lazy(df), do: Shared.apply_impl(df, :to_lazy)
 
   @doc """
-  This collects the lazy data frame into an eager one, computing the query.
+  Collects the lazy data frame into an eager one, computing the query.
 
-  If already eager, this is a noop.
+  It is the opposite of `lazy/1`. If already eager, this is a noop.
 
   Collecting a grouped dataframe should return a grouped dataframe.
   """
