@@ -270,14 +270,11 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(%LazySeries{op: :divide, args: [left, right]}) do
     expr = Native.expr_divide(to_expr(left), to_expr(right))
 
-    cond do
-      match?({:duration, _}, dtype(left)) and dtype(right) in [:integer, :float] ->
-        wrap_in_cast(expr, dtype(left))
+    case {dtype(left), dtype(right)} do
+      {{:duration, _} = left_dtype, right_dtype} when right_dtype in [:integer, :float] ->
+        wrap_in_cast(expr, left_dtype)
 
-      match?({:duration, _}, dtype(right)) ->
-        raise(ArgumentError, "cannot divide by duration")
-
-      true ->
+      {_, _} ->
         expr
     end
   end
