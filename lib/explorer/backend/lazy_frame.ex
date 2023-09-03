@@ -73,7 +73,7 @@ defmodule Explorer.Backend.LazyFrame do
   @impl true
   def pull(df, column) do
     dtype_for_column = df.dtypes[column]
-    data = LazySeries.new(:column, [column])
+    data = LazySeries.new(:column, [column], dtype_for_column)
     Backend.Series.new(data, dtype_for_column)
   end
 
