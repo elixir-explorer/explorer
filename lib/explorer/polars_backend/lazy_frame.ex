@@ -26,17 +26,17 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def lazy, do: __MODULE__
 
   @impl true
-  def to_lazy(ldf), do: ldf
+  def lazy(ldf), do: ldf
 
   @impl true
   def collect(ldf), do: Shared.apply_dataframe(ldf, ldf, :lf_collect, [])
 
   @impl true
   def from_tabular(tabular, dtypes),
-    do: Eager.from_tabular(tabular, dtypes) |> Eager.to_lazy()
+    do: Eager.from_tabular(tabular, dtypes) |> Eager.lazy()
 
   @impl true
-  def from_series(pairs), do: Eager.from_series(pairs) |> Eager.to_lazy()
+  def from_series(pairs), do: Eager.from_series(pairs) |> Eager.lazy()
 
   # Introspection
 
@@ -66,7 +66,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_query(conn, query, params) do
     with {:ok, df} <- Eager.from_query(conn, query, params) do
-      {:ok, Eager.to_lazy(df)}
+      {:ok, Eager.lazy(df)}
     end
   end
 
@@ -226,7 +226,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_ipc_stream(%Local.Entry{} = fs_entry, columns) do
     with {:ok, df} <- Eager.from_ipc_stream(fs_entry, columns) do
-      {:ok, Eager.to_lazy(df)}
+      {:ok, Eager.lazy(df)}
     end
   end
 
@@ -260,35 +260,35 @@ defmodule Explorer.PolarsBackend.LazyFrame do
              parse_dates,
              eol_delimiter
            ) do
-      {:ok, Eager.to_lazy(df)}
+      {:ok, Eager.lazy(df)}
     end
   end
 
   @impl true
   def load_parquet(contents) do
     with {:ok, df} <- Eager.load_parquet(contents) do
-      {:ok, Eager.to_lazy(df)}
+      {:ok, Eager.lazy(df)}
     end
   end
 
   @impl true
   def load_ndjson(contents, infer_schema_length, batch_size) do
     with {:ok, df} <- Eager.load_ndjson(contents, infer_schema_length, batch_size) do
-      {:ok, Eager.to_lazy(df)}
+      {:ok, Eager.lazy(df)}
     end
   end
 
   @impl true
   def load_ipc(contents, columns) do
     with {:ok, df} <- Eager.load_ipc(contents, columns) do
-      {:ok, Eager.to_lazy(df)}
+      {:ok, Eager.lazy(df)}
     end
   end
 
   @impl true
   def load_ipc_stream(contents, columns) do
     with {:ok, df} <- Eager.load_ipc_stream(contents, columns) do
-      {:ok, Eager.to_lazy(df)}
+      {:ok, Eager.lazy(df)}
     end
   end
 

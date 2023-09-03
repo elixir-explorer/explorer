@@ -7,16 +7,16 @@ defmodule Explorer.DataFrame.LazyTest do
 
   setup do
     df = Datasets.fossil_fuels()
-    ldf = DF.to_lazy(df)
+    ldf = DF.lazy(df)
     {:ok, ldf: ldf, df: df}
   end
 
   test "new/1" do
     ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     ldf1 = DF.new([%{a: 42, b: "a"}, %{a: 51, b: "c"}], lazy: true)
-    assert DF.to_lazy(ldf1) == ldf1
+    assert DF.lazy(ldf1) == ldf1
 
     ldf2 =
       DF.new(
@@ -24,7 +24,7 @@ defmodule Explorer.DataFrame.LazyTest do
         lazy: true
       )
 
-    assert DF.to_lazy(ldf2) == ldf2
+    assert DF.lazy(ldf2) == ldf2
   end
 
   test "names/1", %{ldf: ldf} do
@@ -98,8 +98,8 @@ defmodule Explorer.DataFrame.LazyTest do
     assert ldf |> DF.collect() |> DF.to_columns() == DF.to_columns(df)
   end
 
-  test "to_lazy/1 is no-op", %{ldf: ldf} do
-    assert DF.to_lazy(ldf) == ldf
+  test "lazy/1 is no-op", %{ldf: ldf} do
+    assert DF.lazy(ldf) == ldf
   end
 
   test "inspect/1", %{ldf: ldf} do
@@ -127,7 +127,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.from_csv!(path, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -157,7 +157,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.from_parquet!(path, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -375,7 +375,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.from_ndjson!(path, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -391,7 +391,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.from_ipc!(path, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -421,7 +421,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.from_ipc_stream!(path, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -435,7 +435,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.load_csv!(contents, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -449,7 +449,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.load_parquet!(contents, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -463,7 +463,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.load_ndjson!(contents, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -477,7 +477,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.load_ipc!(contents, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -491,7 +491,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.load_ipc_stream!(contents, lazy: true)
 
     # no-op
-    assert DF.to_lazy(ldf) == ldf
+    assert DF.lazy(ldf) == ldf
 
     df1 = DF.collect(ldf)
 
@@ -1078,7 +1078,7 @@ defmodule Explorer.DataFrame.LazyTest do
       right = DF.new([b: [1, 2, 3]], lazy: true)
       joined = DF.join(left, right, how: :cross)
 
-      assert DF.to_lazy(joined) == joined
+      assert DF.lazy(joined) == joined
       assert %DF{} = joined
 
       assert DF.names(joined) == ["a", "b"]
@@ -1389,7 +1389,7 @@ defmodule Explorer.DataFrame.LazyTest do
       {:ok, %DF{} = df} =
         Explorer.DataFrame.from_query(conn, "SELECT 123 as num, 'abc' as str", [], lazy: true)
 
-      assert DF.to_lazy(df) == df
+      assert DF.lazy(df) == df
     end
 
     test "returns error", %{conn: conn} do

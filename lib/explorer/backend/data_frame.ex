@@ -142,7 +142,7 @@ defmodule Explorer.Backend.DataFrame do
   # Conversion
 
   @callback lazy() :: module()
-  @callback to_lazy(df) :: df
+  @callback lazy(df) :: df
   @callback collect(df) :: df
   @callback from_tabular(Table.Reader.t(), dtypes) :: df
   @callback from_series([{binary(), Series.t()}]) :: df

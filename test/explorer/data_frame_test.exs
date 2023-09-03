@@ -2166,7 +2166,7 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "works with lazy" do
-      df = Datasets.iris() |> DF.to_lazy()
+      df = Datasets.iris() |> DF.lazy()
 
       assert capture_io(fn -> DF.print(df, limit: 1) end) == """
              +-----------------------------------------------------------------------+
@@ -2940,8 +2940,8 @@ defmodule Explorer.DataFrameTest do
     assert DF.collect(df) == df
   end
 
-  test "to_lazy/1", %{df: df} do
-    assert %Explorer.PolarsBackend.LazyFrame{} = DF.to_lazy(df).data
+  test "lazy/1", %{df: df} do
+    assert %Explorer.PolarsBackend.LazyFrame{} = DF.lazy(df).data
   end
 
   describe "to_rows/2" do

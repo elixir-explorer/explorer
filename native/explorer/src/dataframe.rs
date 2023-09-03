@@ -638,7 +638,7 @@ pub fn df_pivot_wider(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_to_lazy(df: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
+pub fn df_lazy(df: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
     let new_lf = df.clone_inner().lazy();
     Ok(ExLazyFrame::new(new_lf))
 }

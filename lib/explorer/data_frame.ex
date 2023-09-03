@@ -1604,8 +1604,12 @@ defmodule Explorer.DataFrame do
   return a lazy dataframe with groups.
   """
   @doc type: :conversion
-  @spec to_lazy(df :: DataFrame.t()) :: DataFrame.t()
-  def to_lazy(df), do: Shared.apply_impl(df, :to_lazy)
+  @spec lazy(df :: DataFrame.t()) :: DataFrame.t()
+  def lazy(df), do: Shared.apply_impl(df, :lazy)
+
+  @deprecated "Use lazy/1 instead"
+  @doc type: :conversion
+  def to_lazy(df), do: Shared.apply_impl(df, :lazy)
 
   @doc """
   Collects the lazy data frame into an eager one, computing the query.
@@ -2800,32 +2804,32 @@ defmodule Explorer.DataFrame do
 
           number when is_number(number) ->
             dtype = if is_integer(number), do: :integer, else: :float
-            lazy_s = LazySeries.new(:to_lazy, [number], dtype)
+            lazy_s = LazySeries.new(:lazy, [number], dtype)
 
             Explorer.Backend.Series.new(lazy_s, dtype)
 
           string when is_binary(string) ->
-            lazy_s = LazySeries.new(:to_lazy, [string], :string)
+            lazy_s = LazySeries.new(:lazy, [string], :string)
 
             Explorer.Backend.Series.new(lazy_s, :string)
 
           boolean when is_boolean(boolean) ->
-            lazy_s = LazySeries.new(:to_lazy, [boolean], :boolean)
+            lazy_s = LazySeries.new(:lazy, [boolean], :boolean)
 
             Explorer.Backend.Series.new(lazy_s, :boolean)
 
           date = %Date{} ->
-            lazy_s = LazySeries.new(:to_lazy, [date], :date)
+            lazy_s = LazySeries.new(:lazy, [date], :date)
 
             Explorer.Backend.Series.new(lazy_s, :date)
 
           datetime = %NaiveDateTime{} ->
-            lazy_s = LazySeries.new(:to_lazy, [datetime], {:datetime, :microsecond})
+            lazy_s = LazySeries.new(:lazy, [datetime], {:datetime, :microsecond})
 
             Explorer.Backend.Series.new(lazy_s, {:datetime, :microsecond})
 
           duration = %Explorer.Duration{precision: precision} ->
-            lazy_s = LazySeries.new(:to_lazy, [duration], {:datetime, precision})
+            lazy_s = LazySeries.new(:lazy, [duration], {:datetime, precision})
 
             Explorer.Backend.Series.new(lazy_s, {:datetime, precision})
 

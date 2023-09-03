@@ -1250,9 +1250,9 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
-  test "to_lazy/1", %{df: df} do
+  test "lazy/1", %{df: df} do
     grouped = DF.group_by(df, ["country", "year"])
-    assert ["country", "year"] = DF.to_lazy(grouped).groups
+    assert ["country", "year"] = DF.lazy(grouped).groups
   end
 
   describe "put/3" do
