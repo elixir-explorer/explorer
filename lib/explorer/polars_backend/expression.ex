@@ -13,7 +13,6 @@ defmodule Explorer.PolarsBackend.Expression do
   @type t :: %__MODULE__{resource: reference()}
 
   @all_expressions [
-    add: 2,
     all_equal: 2,
     argmax: 1,
     argmin: 1,
@@ -29,7 +28,6 @@ defmodule Explorer.PolarsBackend.Expression do
     minute: 1,
     second: 1,
     distinct: 1,
-    divide: 2,
     equal: 2,
     exp: 1,
     abs: 1,
@@ -50,7 +48,6 @@ defmodule Explorer.PolarsBackend.Expression do
     mean: 1,
     median: 1,
     min: 1,
-    multiply: 2,
     n_distinct: 1,
     nil_count: 1,
     not_equal: 2,
@@ -130,6 +127,9 @@ defmodule Explorer.PolarsBackend.Expression do
   ]
 
   @custom_expressions [
+    add: 2,
+    divide: 2,
+    multiply: 2,
     cast: 2,
     fill_missing_with_strategy: 2,
     from_list: 2,
@@ -241,6 +241,44 @@ defmodule Explorer.PolarsBackend.Expression do
     end
   end
 
+  def to_expr(%LazySeries{op: :add, args: [left, right]}) do
+    # `duration + date` is not supported by polars for some reason.
+    # `date + duration` is, so we're swapping arguments as a work around.
+    [left, right] =
+      case [dtype(left), dtype(right)] do
+        [{:duration, _}, :date] -> [right, left]
+        _ -> [left, right]
+      end
+
+    Native.expr_add(to_expr(left), to_expr(right))
+  end
+
+  def to_expr(%LazySeries{op: :multiply, args: [left, right] = args}) do
+    expr = Native.expr_multiply(to_expr(left), to_expr(right))
+
+    input_dtypes = Enum.map(args, &dtype/1)
+    duration_dtype = Enum.find(input_dtypes, &match?({:duration, _}, &1))
+    numeric? = Enum.any?(input_dtypes, &(&1 in [:integer, :float]))
+
+    if duration_dtype && numeric? do
+      wrap_in_cast(expr, duration_dtype)
+    else
+      expr
+    end
+  end
+
+  def to_expr(%LazySeries{op: :divide, args: [left, right]}) do
+    expr = Native.expr_divide(to_expr(left), to_expr(right))
+
+    case {dtype(left), dtype(right)} do
+      {{:duration, _} = left_dtype, right_dtype} when right_dtype in [:integer, :float] ->
+        wrap_in_cast(expr, left_dtype)
+
+      {_, _} ->
+        expr
+    end
+  end
+
   for {op, arity} <- @all_expressions do
     args = Macro.generate_arguments(arity, __MODULE__)
 
@@ -276,5 +314,18 @@ defmodule Explorer.PolarsBackend.Expression do
   # Only for inspecting the expression in tests
   def describe_filter_plan(%DataFrame{data: polars_df}, %__MODULE__{} = expression) do
     Native.expr_describe_filter_plan(polars_df, expression)
+  end
+
+  defp wrap_in_cast(lazy_series_expr, dtype) do
+    dtype_expr = Explorer.Shared.dtype_to_string(dtype)
+    Native.expr_cast(lazy_series_expr, dtype_expr)
+  end
+
+  defp dtype(%LazySeries{dtype: dtype}), do: dtype
+
+  defp dtype(%PolarsSeries{} = polars_series) do
+    with {:ok, dtype} <- Native.s_dtype(polars_series) do
+      Explorer.PolarsBackend.Shared.normalise_dtype(dtype)
+    end
   end
 end

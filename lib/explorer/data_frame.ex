@@ -2804,34 +2804,34 @@ defmodule Explorer.DataFrame do
 
           number when is_number(number) ->
             dtype = if is_integer(number), do: :integer, else: :float
-            lazy_s = LazySeries.new(:lazy, [number])
+            lazy_s = LazySeries.new(:lazy, [number], dtype)
 
             Explorer.Backend.Series.new(lazy_s, dtype)
 
           string when is_binary(string) ->
-            lazy_s = LazySeries.new(:lazy, [string])
+            lazy_s = LazySeries.new(:lazy, [string], :string)
 
             Explorer.Backend.Series.new(lazy_s, :string)
 
           boolean when is_boolean(boolean) ->
-            lazy_s = LazySeries.new(:lazy, [boolean])
+            lazy_s = LazySeries.new(:lazy, [boolean], :boolean)
 
             Explorer.Backend.Series.new(lazy_s, :boolean)
 
           date = %Date{} ->
-            lazy_s = LazySeries.new(:lazy, [date])
+            lazy_s = LazySeries.new(:lazy, [date], :date)
 
             Explorer.Backend.Series.new(lazy_s, :date)
 
           datetime = %NaiveDateTime{} ->
-            lazy_s = LazySeries.new(:lazy, [datetime])
+            lazy_s = LazySeries.new(:lazy, [datetime], {:datetime, :microsecond})
 
             Explorer.Backend.Series.new(lazy_s, {:datetime, :microsecond})
 
-          duration = %Explorer.Duration{} ->
-            lazy_s = LazySeries.new(:lazy, [duration])
+          duration = %Explorer.Duration{precision: precision} ->
+            lazy_s = LazySeries.new(:lazy, [duration], {:datetime, precision})
 
-            Explorer.Backend.Series.new(lazy_s, {:datetime, duration.precision})
+            Explorer.Backend.Series.new(lazy_s, {:datetime, precision})
 
           other ->
             raise ArgumentError,
