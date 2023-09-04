@@ -1149,10 +1149,20 @@ pub fn s_categories(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let chunks = s.cast(&DataType::UInt32)?.u32()?.clone();
-
     match cat.dtype() {
         DataType::Categorical(Some(mapping)) => {
+            let chunks = if s.dtype() == &DataType::Utf8 {
+                let ids: ChunkedArray<UInt32Type> = s
+                    .utf8()?
+                    .into_iter()
+                    .map(|opt_str| opt_str.and_then(|slice| mapping.find(slice)))
+                    .collect();
+
+                ids
+            } else {
+                s.cast(&DataType::UInt32)?.u32()?.clone()
+            };
+
             let categorical_chunks = unsafe {
                 CategoricalChunked::from_cats_and_rev_map_unchecked(chunks, mapping.clone())
             };
@@ -1175,6 +1185,18 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
                 let values: Vec<Option<&str>> = utf8s.into();
                 let array = Utf8Array::<i64>::from(values);
                 let mapping = RevMapping::Local(array);
+
+                let chunks = if s.dtype() == &DataType::Utf8 {
+                    let ids: ChunkedArray<UInt32Type> = s
+                        .utf8()?
+                        .into_iter()
+                        .map(|opt_str| opt_str.and_then(|slice| mapping.find(slice)))
+                        .collect();
+
+                    ids
+                } else {
+                    s.cast(&DataType::UInt32)?.u32()?.clone()
+                };
 
                 let categorical_chunks = unsafe {
                     CategoricalChunked::from_cats_and_rev_map_unchecked(chunks, Arc::new(mapping))

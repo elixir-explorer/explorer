@@ -104,6 +104,11 @@ defmodule Explorer.PolarsBackend.Series do
       when dtype in [:string, :category],
       do: Shared.apply_series(series, :s_categorise, [categories.data])
 
+  @impl true
+  def categorise(%Series{dtype: :string} = series, %Series{dtype: dtype} = categories)
+      when dtype in [:string, :category],
+      do: Shared.apply_series(series, :s_categorise, [categories.data])
+
   # Slice and dice
 
   @impl true

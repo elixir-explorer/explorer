@@ -3040,6 +3040,46 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(categorized) == ["a", "c", "b", "a", "c", nil, "b", nil, nil]
       assert Series.dtype(categorized) == :category
     end
+
+    test "takes string series and categorise with categorical series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :category)
+
+      indexes = Series.from_list(["c", "b", "a", "a", "c"])
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == ["c", "b", "a", "a", "c"]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes string series containing nils and categorise with categorical series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :category)
+
+      indexes = Series.from_list(["c", "b", nil, "a", "a", "c"])
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == ["c", "b", nil, "a", "a", "c"]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes string series containing more elements and categorise with categorical series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :category)
+
+      indexes = Series.from_list(["z", "c", "b", "a", "a", "c", "z"])
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == [nil, "c", "b", "a", "a", "c", nil]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes string series and categorise with another string series" do
+      categories = Series.from_list(["a", "b", "c"])
+
+      indexes = Series.from_list(["c", "b", "a", "a", "c"])
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == ["c", "b", "a", "a", "c"]
+      assert Series.dtype(categorized) == :category
+    end
   end
 
   describe "cast/2" do

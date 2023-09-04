@@ -1123,6 +1123,10 @@ defmodule Explorer.Series do
   def categorise(%Series{dtype: :integer} = series, [head | _] = categories) when is_binary(head),
     do: apply_series(series, :categorise, [from_list(categories, dtype: :string)])
 
+  def categorise(%Series{dtype: :string} = series, %Series{dtype: dtype} = categories)
+      when K.in(dtype, [:string, :category]),
+      do: apply_series(series, :categorise, [categories])
+
   # Slice and dice
 
   @doc """
