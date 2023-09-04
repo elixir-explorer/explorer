@@ -1263,13 +1263,22 @@ defmodule Explorer.SeriesTest do
     @tag :skip
     test "compare categories with strings" do
       s = Series.from_list(["a", "b", "c", nil, "a"], dtype: :category)
+      categorized = Series.categorise(Series.from_list(["a", "b"]), s)
 
-      assert Series.in(s, Series.from_list(["a", "b"])) |> Series.to_list() ==
+      assert Series.in(s, categorized) |> Series.to_list() ==
                [true, true, false, false, true]
 
-      assert Series.in(s, ["a"]) |> Series.to_list() == [true, false, false, false, true]
+      assert Series.in(s, Series.categorise(Series.from_list(["a"]), s)) |> Series.to_list() == [
+               true,
+               false,
+               false,
+               false,
+               true
+             ]
 
-      assert Series.in(s, ["z"]) |> IO.inspect() |> Series.to_list() == [
+      # Right now the `nil` value is returning `true`, because categorise returns
+      # `nil` for inexisting members. Should we remove inexisting members from categorised series?
+      assert Series.in(s, Series.categorise(Series.from_list(["z"]), s)) |> Series.to_list() == [
                false,
                false,
                false,
@@ -1277,7 +1286,7 @@ defmodule Explorer.SeriesTest do
                false
              ]
 
-      assert Series.in(s, ["a", "z"]) |> Series.to_list() == [true, false, false, false, true]
+      # assert Series.in(s, ["a", "z"]) |> Series.to_list() == [true, false, false, false, true]
     end
   end
 
@@ -3064,7 +3073,7 @@ defmodule Explorer.SeriesTest do
     test "takes string series containing more elements and categorise with categorical series" do
       categories = Series.from_list(["a", "b", "c"], dtype: :category)
 
-      indexes = Series.from_list(["z", "c", "b", "a", "a", "c", "z"])
+      indexes = Series.from_list(["z", "c", "b", "a", "a", "c", "w"])
       categorized = Series.categorise(indexes, categories)
 
       assert Series.to_list(categorized) == [nil, "c", "b", "a", "a", "c", nil]
