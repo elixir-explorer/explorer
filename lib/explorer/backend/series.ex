@@ -11,7 +11,16 @@ defmodule Explorer.Backend.Series do
   @type lazy_s :: Explorer.Series.lazy_t()
   @type df :: Explorer.DataFrame.t()
   @type dtype :: Explorer.Series.dtype()
-  @type valid_types :: number() | boolean() | String.t() | Date.t() | Time.t() | NaiveDateTime.t()
+
+  @type valid_types ::
+          number()
+          | boolean()
+          | String.t()
+          | Date.t()
+          | Time.t()
+          | NaiveDateTime.t()
+          | Explorer.Duration.t()
+
   @type non_finite :: Explorer.Series.non_finite()
   @type option(type) :: type | nil
   # x - x is defined for type x.
