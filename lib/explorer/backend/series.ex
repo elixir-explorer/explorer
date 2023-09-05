@@ -14,6 +14,8 @@ defmodule Explorer.Backend.Series do
   @type valid_types :: number() | boolean() | String.t() | Date.t() | Time.t() | NaiveDateTime.t()
   @type non_finite :: Explorer.Series.non_finite()
   @type option(type) :: type | nil
+  # x - x is defined for type x.
+  @type diffable :: number() | Date.t() | NaiveDateTime.t() | Explorer.Duration.t()
 
   # Conversion
 
@@ -101,10 +103,10 @@ defmodule Explorer.Backend.Series do
 
   # Arithmetic
 
-  @callback add(s | number(), s | number()) :: s
-  @callback subtract(s | number(), s | number()) :: s
-  @callback multiply(s | number(), s | number()) :: s
-  @callback divide(s | number(), s | number()) :: s
+  @callback add(s | diffable(), s | diffable(), out_dtype :: dtype()) :: s
+  @callback subtract(s | diffable(), s | diffable(), out_dtype :: dtype()) :: s
+  @callback multiply(s | diffable(), s | diffable(), out_dtype :: dtype()) :: s
+  @callback divide(s | diffable(), s | number(), out_dtype :: dtype()) :: s
   @callback quotient(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
   @callback remainder(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
   @callback pow(s | number(), s | number()) :: s
