@@ -218,51 +218,6 @@ defmodule Explorer.Shared do
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
   @doc """
-  The return dtype for the basic arithmetic operations: add, subtract, multiply, and divide.
-
-  This function assumes that the inputs have already had the highest precision enforced.
-  """
-  def cast_to_arithmetic(:add, :integer, :integer), do: :integer
-  def cast_to_arithmetic(:add, :integer, :float), do: :float
-  def cast_to_arithmetic(:add, :float, :integer), do: :float
-  def cast_to_arithmetic(:add, :float, :float), do: :float
-  def cast_to_arithmetic(:add, :date, {:duration, _}), do: :date
-  def cast_to_arithmetic(:add, {:duration, _}, :date), do: :date
-  def cast_to_arithmetic(:add, {:datetime, p}, {:duration, p}), do: {:datetime, p}
-  def cast_to_arithmetic(:add, {:duration, p}, {:datetime, p}), do: {:datetime, p}
-  def cast_to_arithmetic(:add, {:duration, p}, {:duration, p}), do: {:duration, p}
-  def cast_to_arithmetic(:add, _, _), do: nil
-
-  def cast_to_arithmetic(:subtract, :integer, :integer), do: :integer
-  def cast_to_arithmetic(:subtract, :integer, :float), do: :float
-  def cast_to_arithmetic(:subtract, :float, :integer), do: :float
-  def cast_to_arithmetic(:subtract, :float, :float), do: :float
-  def cast_to_arithmetic(:subtract, :date, :date), do: {:duration, :millisecond}
-  def cast_to_arithmetic(:subtract, :date, {:duration, _}), do: :date
-  def cast_to_arithmetic(:subtract, {:datetime, p}, {:datetime, p}), do: {:duration, p}
-  def cast_to_arithmetic(:subtract, {:datetime, p}, {:duration, p}), do: {:datetime, p}
-  def cast_to_arithmetic(:subtract, {:duration, p}, {:duration, p}), do: {:duration, p}
-  def cast_to_arithmetic(:subtract, _, _), do: nil
-
-  def cast_to_arithmetic(:multiply, :integer, :integer), do: :integer
-  def cast_to_arithmetic(:multiply, :integer, :float), do: :float
-  def cast_to_arithmetic(:multiply, :float, :integer), do: :float
-  def cast_to_arithmetic(:multiply, :float, :float), do: :float
-  def cast_to_arithmetic(:multiply, :integer, {:duration, p}), do: {:duration, p}
-  def cast_to_arithmetic(:multiply, {:duration, p}, :integer), do: {:duration, p}
-  def cast_to_arithmetic(:multiply, :float, {:duration, p}), do: {:duration, p}
-  def cast_to_arithmetic(:multiply, {:duration, p}, :float), do: {:duration, p}
-  def cast_to_arithmetic(:multiply, _, _), do: nil
-
-  def cast_to_arithmetic(:divide, :integer, :integer), do: :float
-  def cast_to_arithmetic(:divide, :integer, :float), do: :float
-  def cast_to_arithmetic(:divide, :float, :integer), do: :float
-  def cast_to_arithmetic(:divide, :float, :float), do: :float
-  def cast_to_arithmetic(:divide, {:duration, p}, :integer), do: {:duration, p}
-  def cast_to_arithmetic(:divide, {:duration, p}, :float), do: {:duration, p}
-  def cast_to_arithmetic(:divide, _, _), do: nil
-
-  @doc """
   Downcasts lists of mixed numeric types (float and int) to float.
   """
   def cast_numerics(list, type) when type == :numeric do
