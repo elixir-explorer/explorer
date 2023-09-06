@@ -11,7 +11,16 @@ defmodule Explorer.Backend.Series do
   @type lazy_s :: Explorer.Series.lazy_t()
   @type df :: Explorer.DataFrame.t()
   @type dtype :: Explorer.Series.dtype()
-  @type valid_types :: number() | boolean() | String.t() | Date.t() | Time.t() | NaiveDateTime.t()
+
+  @type valid_types ::
+          number()
+          | boolean()
+          | String.t()
+          | Date.t()
+          | Time.t()
+          | NaiveDateTime.t()
+          | Explorer.Duration.t()
+
   @type non_finite :: Explorer.Series.non_finite()
   @type option(type) :: type | nil
 
@@ -101,10 +110,10 @@ defmodule Explorer.Backend.Series do
 
   # Arithmetic
 
-  @callback add(s | number(), s | number()) :: s
-  @callback subtract(s | number(), s | number()) :: s
-  @callback multiply(s | number(), s | number()) :: s
-  @callback divide(s | number(), s | number()) :: s
+  @callback add(out_dtype :: dtype(), s, s) :: s
+  @callback subtract(out_dtype :: dtype(), s, s) :: s
+  @callback multiply(out_dtype :: dtype(), s, s) :: s
+  @callback divide(out_dtype :: dtype(), s, s) :: s
   @callback quotient(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
   @callback remainder(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
   @callback pow(s | number(), s | number()) :: s

@@ -2574,12 +2574,23 @@ defmodule Explorer.Series do
   def add(left, right) do
     [left, right] = cast_for_arithmetic("add/2", [left, right])
 
-    if _dtype = Shared.cast_to_arithmetic(:add, dtype(left), dtype(right)) do
-      apply_series_list(:add, [left, right])
+    if out_dtype = cast_to_add(dtype(left), dtype(right)) do
+      apply_series_list(:add, [out_dtype, left, right])
     else
       dtype_mismatch_error("add/2", left, right)
     end
   end
+
+  defp cast_to_add(:integer, :integer), do: :integer
+  defp cast_to_add(:integer, :float), do: :float
+  defp cast_to_add(:float, :integer), do: :float
+  defp cast_to_add(:float, :float), do: :float
+  defp cast_to_add(:date, {:duration, _}), do: :date
+  defp cast_to_add({:duration, _}, :date), do: :date
+  defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
+  defp cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
+  defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
+  defp cast_to_add(_, _), do: nil
 
   @doc """
   Subtracts right from left, element-wise.
@@ -2629,12 +2640,23 @@ defmodule Explorer.Series do
   def subtract(left, right) do
     [left, right] = cast_for_arithmetic("subtract/2", [left, right])
 
-    if _dtype = Shared.cast_to_arithmetic(:subtract, dtype(left), dtype(right)) do
-      apply_series_list(:subtract, [left, right])
+    if out_dtype = cast_to_subtract(dtype(left), dtype(right)) do
+      apply_series_list(:subtract, [out_dtype, left, right])
     else
       dtype_mismatch_error("subtract/2", left, right)
     end
   end
+
+  defp cast_to_subtract(:integer, :integer), do: :integer
+  defp cast_to_subtract(:integer, :float), do: :float
+  defp cast_to_subtract(:float, :integer), do: :float
+  defp cast_to_subtract(:float, :float), do: :float
+  defp cast_to_subtract(:date, :date), do: {:duration, :millisecond}
+  defp cast_to_subtract(:date, {:duration, _}), do: :date
+  defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
+  defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
+  defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
+  defp cast_to_subtract(_, _), do: nil
 
   @doc """
   Multiplies left and right, element-wise.
@@ -2675,12 +2697,22 @@ defmodule Explorer.Series do
   def multiply(left, right) do
     [left, right] = cast_for_arithmetic("multiply/2", [left, right])
 
-    if _dtype = Shared.cast_to_arithmetic(:multiply, dtype(left), dtype(right)) do
-      apply_series_list(:multiply, [left, right])
+    if out_dtype = cast_to_multiply(dtype(left), dtype(right)) do
+      apply_series_list(:multiply, [out_dtype, left, right])
     else
       dtype_mismatch_error("multiply/2", left, right)
     end
   end
+
+  defp cast_to_multiply(:integer, :integer), do: :integer
+  defp cast_to_multiply(:integer, :float), do: :float
+  defp cast_to_multiply(:float, :integer), do: :float
+  defp cast_to_multiply(:float, :float), do: :float
+  defp cast_to_multiply(:integer, {:duration, p}), do: {:duration, p}
+  defp cast_to_multiply({:duration, p}, :integer), do: {:duration, p}
+  defp cast_to_multiply(:float, {:duration, p}), do: {:duration, p}
+  defp cast_to_multiply({:duration, p}, :float), do: {:duration, p}
+  defp cast_to_multiply(_, _), do: nil
 
   @doc """
   Divides left by right, element-wise.
@@ -2736,8 +2768,8 @@ defmodule Explorer.Series do
   def divide(left, right) do
     [left, right] = cast_for_arithmetic("divide/2", [left, right])
 
-    if _dtype = Shared.cast_to_arithmetic(:divide, dtype(left), dtype(right)) do
-      apply_series_list(:divide, [left, right])
+    if out_dtype = cast_to_divide(dtype(left), dtype(right)) do
+      apply_series_list(:divide, [out_dtype, left, right])
     else
       case dtype(right) do
         {:duration, _} -> raise(ArgumentError, "cannot divide by duration")
@@ -2745,6 +2777,14 @@ defmodule Explorer.Series do
       end
     end
   end
+
+  defp cast_to_divide(:integer, :integer), do: :float
+  defp cast_to_divide(:integer, :float), do: :float
+  defp cast_to_divide(:float, :integer), do: :float
+  defp cast_to_divide(:float, :float), do: :float
+  defp cast_to_divide({:duration, p}, :integer), do: {:duration, p}
+  defp cast_to_divide({:duration, p}, :float), do: {:duration, p}
+  defp cast_to_divide(_, _), do: nil
 
   @doc """
   Raises a numeric series to the power of the exponent.
