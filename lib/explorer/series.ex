@@ -2575,7 +2575,7 @@ defmodule Explorer.Series do
     [left, right] = cast_for_arithmetic("add/2", [left, right])
 
     if out_dtype = cast_to_add(dtype(left), dtype(right)) do
-      apply_series_list(:add, [left, right, out_dtype])
+      apply_series_list(:add, [out_dtype, left, right])
     else
       dtype_mismatch_error("add/2", left, right)
     end
@@ -2641,7 +2641,7 @@ defmodule Explorer.Series do
     [left, right] = cast_for_arithmetic("subtract/2", [left, right])
 
     if out_dtype = cast_to_subtract(dtype(left), dtype(right)) do
-      apply_series_list(:subtract, [left, right, out_dtype])
+      apply_series_list(:subtract, [out_dtype, left, right])
     else
       dtype_mismatch_error("subtract/2", left, right)
     end
@@ -2698,7 +2698,7 @@ defmodule Explorer.Series do
     [left, right] = cast_for_arithmetic("multiply/2", [left, right])
 
     if out_dtype = cast_to_multiply(dtype(left), dtype(right)) do
-      apply_series_list(:multiply, [left, right, out_dtype])
+      apply_series_list(:multiply, [out_dtype, left, right])
     else
       dtype_mismatch_error("multiply/2", left, right)
     end
@@ -2769,7 +2769,7 @@ defmodule Explorer.Series do
     [left, right] = cast_for_arithmetic("divide/2", [left, right])
 
     if out_dtype = cast_to_divide(dtype(left), dtype(right)) do
-      apply_series_list(:divide, [left, right, out_dtype])
+      apply_series_list(:divide, [out_dtype, left, right])
     else
       case dtype(right) do
         {:duration, _} -> raise(ArgumentError, "cannot divide by duration")

@@ -279,14 +279,14 @@ defmodule Explorer.PolarsBackend.Series do
   # Arithmetic
 
   @impl true
-  def add(left, right, out_dtype) do
+  def add(out_dtype, left, right) do
     left = matching_size!(left, right)
 
     # `duration + date` is not supported by polars for some reason.
     # `date + duration` is, so we're swapping arguments as a work around.
     [left, right] =
-      case {dtype(left), dtype(right), out_dtype} do
-        {{:duration, _}, :date, :date} -> [right, left]
+      case {out_dtype, dtype(left), dtype(right)} do
+        {:date, {:duration, _}, :date} -> [right, left]
         _ -> [left, right]
       end
 
@@ -294,11 +294,11 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def subtract(left, right, _out_dtype),
+  def subtract(_out_dtype, left, right),
     do: Shared.apply_series(matching_size!(left, right), :s_subtract, [right.data])
 
   @impl true
-  def multiply(left, right, out_dtype) do
+  def multiply(out_dtype, left, right) do
     result = Shared.apply_series(matching_size!(left, right), :s_multiply, [right.data])
 
     # Polars currently returns inconsistent dtypes, e.g.:
@@ -313,7 +313,7 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def divide(left, right, out_dtype) do
+  def divide(out_dtype, left, right) do
     result = Shared.apply_series(matching_size!(left, right), :s_divide, [right.data])
 
     # Polars currently returns inconsistent dtypes, e.g.:

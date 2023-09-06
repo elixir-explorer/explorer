@@ -383,7 +383,7 @@ defmodule Explorer.Backend.LazySeries do
 
   for op <- @basic_arithmetic_operations do
     @impl true
-    def unquote(op)(%Series{} = left, %Series{} = right, dtype) do
+    def unquote(op)(dtype, %Series{} = left, %Series{} = right) do
       args = [data!(left), data!(right)]
       data = new(unquote(op), args, dtype, aggregations?(args))
 
