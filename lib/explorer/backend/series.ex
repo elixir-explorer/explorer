@@ -64,11 +64,7 @@ defmodule Explorer.Backend.Series do
   @callback coalesce(s, s) :: s
   @callback first(s) :: valid_types() | lazy_s()
   @callback last(s) :: valid_types() | lazy_s()
-  @callback select(
-              predicate :: s,
-              s | valid_types() | non_finite(),
-              s | valid_types() | non_finite()
-            ) :: s
+  @callback select(predicate :: s, s, s) :: s
   @callback shift(s, offset :: integer, default :: nil) :: s
   @callback rank(
               s,
@@ -114,9 +110,9 @@ defmodule Explorer.Backend.Series do
   @callback subtract(out_dtype :: dtype(), s, s) :: s
   @callback multiply(out_dtype :: dtype(), s, s) :: s
   @callback divide(out_dtype :: dtype(), s, s) :: s
-  @callback quotient(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
-  @callback remainder(s | neg_integer() | pos_integer(), s | neg_integer() | pos_integer()) :: s
-  @callback pow(s | number(), s | number()) :: s
+  @callback quotient(s, s) :: s
+  @callback remainder(s, s) :: s
+  @callback pow(s, s) :: s
   @callback log(argument :: s) :: s
   @callback log(argument :: s, base :: float()) :: s
   @callback exp(s) :: s
@@ -134,12 +130,12 @@ defmodule Explorer.Backend.Series do
 
   # Comparisons
 
-  @callback equal(s | valid_types(), s | valid_types()) :: s
-  @callback not_equal(s | valid_types(), s | valid_types()) :: s
-  @callback greater(s | valid_types(), s | valid_types()) :: s
-  @callback greater_equal(s | valid_types(), s | valid_types()) :: s
-  @callback less(s | valid_types(), s | valid_types()) :: s
-  @callback less_equal(s | valid_types(), s | valid_types()) :: s
+  @callback equal(s, s) :: s
+  @callback not_equal(s, s) :: s
+  @callback greater(s, s) :: s
+  @callback greater_equal(s, s) :: s
+  @callback less(s, s) :: s
+  @callback less_equal(s, s) :: s
   @callback all_equal(s, s) :: boolean() | lazy_s()
 
   @callback binary_and(s, s) :: s
