@@ -551,13 +551,49 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         DataType::Categorical(Some(mapping)) => {
             let l_logical = s.categorical()?.logical();
 
-            let r_casted = rhs.cast(&DataType::Categorical(Some(mapping.clone())))?;
+            match rhs.dtype() {
+                DataType::Utf8 => {
+                    let mut r_ids: Vec<Option<u32>> = vec![];
 
-            let r_logical = r_casted.categorical()?.logical().clone().into_series();
+                    // In case the right-hand is a series of strings, we only care
+                    // about members in the category on the left, or if it's None.
+                    for opt in rhs.unique()?.utf8()?.into_iter() {
+                        match opt {
+                            Some(slice) => {
+                                if let Some(id) = mapping.find(slice) {
+                                    r_ids.push(Some(id));
+                                }
+                            }
+                            None => r_ids.push(None),
+                        }
+                    }
 
-            l_logical.is_in(&r_logical)?
+                    let r_logical = Series::new("r_logical", r_ids);
+
+                    l_logical.is_in(&r_logical)?
+                }
+                DataType::Categorical(Some(_rhs_mapping)) => {
+                    let mut r_ids: Vec<Option<u32>> = vec![];
+                    for opt in rhs.categorical()?.iter_str() {
+                        match opt {
+                            Some(slice) => {
+                                if let Some(id) = mapping.find(slice) {
+                                    r_ids.push(Some(id));
+                                }
+                            }
+                            None => r_ids.push(None),
+                        }
+                    }
+
+                    let r_logical = Series::new("r_logical", r_ids);
+
+                    l_logical.is_in(&r_logical)?
+                }
+
+                dt => panic!("in/2 does not work for categorical and {dt:?} pairs"),
+            }
         }
-        dt => panic!("is_in/2 not implemented for {dt:?}"),
+        dt => panic!("in/2 not implemented for {dt:?}"),
     };
 
     Ok(ExSeries::new(s.into_series()))
