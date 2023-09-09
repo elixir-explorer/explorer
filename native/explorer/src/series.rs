@@ -572,20 +572,14 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 
                     l_logical.is_in(&r_logical)?
                 }
-                DataType::Categorical(Some(_rhs_mapping)) => {
-                    let mut r_ids: Vec<Option<u32>> = vec![];
-                    for opt in rhs.categorical()?.iter_str() {
-                        match opt {
-                            Some(slice) => {
-                                if let Some(id) = mapping.find(slice) {
-                                    r_ids.push(Some(id));
-                                }
-                            }
-                            None => r_ids.push(None),
-                        }
+                DataType::Categorical(Some(rhs_mapping)) => {
+                    if !mapping.same_src(rhs_mapping) {
+                        return Err(ExplorerError::Other(
+                            "cannot compare categories from different sources. See Explorer.Series.categorise/2".into(),
+                        ));
                     }
 
-                    let r_logical = Series::new("r_logical", r_ids);
+                    let r_logical = rhs.categorical()?.logical().clone().into_series();
 
                     l_logical.is_in(&r_logical)?
                 }

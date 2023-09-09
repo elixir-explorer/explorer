@@ -1071,6 +1071,10 @@ defmodule Explorer.Series do
 
     * a list of strings. The integers will be indexes into the list
 
+  This is going to essentially "copy" the source of categories from the left series
+  to the right. All members from the left that are not present in the right hand-side
+  are going to be `nil`.
+
   If you have a series of strings and you want to convert them into categories,
   invoke `cast(series, :category)` instead.
 

@@ -1323,9 +1323,9 @@ defmodule Explorer.SeriesTest do
                [true, false, false, true, true]
     end
 
-    test "compare categories with categories" do
+    test "compare categories with categories that are incompatible" do
       s = Series.from_list(["a", "b", "c", "a"], dtype: :category)
-      s1 = Series.from_list(["a", "b", "z"], dtype: :category)
+      s1 = Series.from_list(["a", "b", "z"]) |> Series.categorise(s)
 
       assert Series.in(s, s1) |> Series.to_list() ==
                [true, true, false, true]
@@ -1333,15 +1333,15 @@ defmodule Explorer.SeriesTest do
 
     test "compare categories with categories and nil on left-hand side" do
       s = Series.from_list(["a", nil, "c", "a"], dtype: :category)
-      s1 = Series.from_list(["a", "b", "z"], dtype: :category)
+      s1 = Series.from_list(["a", "c"]) |> Series.categorise(s)
 
       assert Series.in(s, s1) |> Series.to_list() ==
-               [true, false, false, true]
+               [true, false, true, true]
     end
 
     test "compare categories with categories and nil on right-hand side" do
       s = Series.from_list(["a", "b", "c", "a"], dtype: :category)
-      s1 = Series.from_list(["a", "b", nil], dtype: :category)
+      s1 = Series.from_list(["a", "b", nil]) |> Series.categorise(s)
 
       assert Series.in(s, s1) |> Series.to_list() ==
                [true, true, false, true]
@@ -1349,7 +1349,7 @@ defmodule Explorer.SeriesTest do
 
     test "compare categories with categories and nil on both sides" do
       s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
-      s1 = Series.from_list(["a", "b", nil], dtype: :category)
+      s1 = Series.from_list(["a", "b", nil]) |> Series.categorise(s)
 
       assert Series.in(s, s1) |> Series.to_list() ==
                [true, true, false, true, true]
@@ -1357,7 +1357,7 @@ defmodule Explorer.SeriesTest do
 
     test "compare categories with categories that are equivalent" do
       s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
-      s1 = Series.from_list(["a", "b", "c", nil], dtype: :category)
+      s1 = Series.from_list(["a", "b", "c", nil]) |> Series.categorise(s)
 
       assert Series.in(s, s1) |> Series.to_list() ==
                [true, true, true, true, true]
@@ -1367,8 +1367,11 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
       s1 = Series.from_list(["z"], dtype: :category)
 
-      assert Series.in(s, s1) |> Series.to_list() ==
-               [false, false, false, false, false]
+      assert_raise RuntimeError,
+                   ~s/Generic Error: cannot compare categories from different sources. See Explorer.Series.categorise\/2/,
+                   fn ->
+                     Series.in(s, s1)
+                   end
     end
   end
 
