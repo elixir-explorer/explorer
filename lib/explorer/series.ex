@@ -1057,11 +1057,11 @@ defmodule Explorer.Series do
   def categories(%Series{dtype: dtype}), do: dtype_error("categories/1", dtype, [:category])
 
   @doc """
-  Categorise a series of integers according to `categories`.
+  Categorise a series of integers or strings according to `categories`.
 
-  This function receives a series of integers and convert them into the
-  categories specified by the second argument. The second argument can
-  be one of:
+  This function receives a series of integers or strings and convert them
+  into the categories specified by the second argument.
+  The second argument can be one of:
 
     * a series with dtype `:category`. The integers will be indexes into
       the categories of the given series (returned by `categories/1`)
@@ -1070,6 +1070,10 @@ defmodule Explorer.Series do
       the series itself
 
     * a list of strings. The integers will be indexes into the list
+
+  This is going to essentially "copy" the source of categories from the left series
+  to the right. All members from the left that are not present in the right hand-side
+  are going to be `nil`.
 
   If you have a series of strings and you want to convert them into categories,
   invoke `cast(series, :category)` instead.
@@ -1114,14 +1118,25 @@ defmodule Explorer.Series do
         category ["a", "c", nil, "a", "c", nil]
       >
 
+  Strings can be used as "indexes" to create a categorical series
+  with the intersection of members:
+
+      iex> strings = Explorer.Series.from_list(["a", "c", nil, "c", "b", "d"])
+      iex> Explorer.Series.categorise(strings, ["a", "b", "c"])
+      #Explorer.Series<
+        Polars[6]
+        category ["a", "c", nil, "c", "b", nil]
+      >
+
   """
   @doc type: :element_wise
-  def categorise(%Series{dtype: :integer} = series, %Series{dtype: dtype} = categories)
-      when K.in(dtype, [:string, :category]),
+  def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: dtype} = categories)
+      when K.and(K.in(l_dtype, [:integer, :string]), K.in(dtype, [:string, :category])),
       do: apply_series(series, :categorise, [categories])
 
-  def categorise(%Series{dtype: :integer} = series, [head | _] = categories) when is_binary(head),
-    do: apply_series(series, :categorise, [from_list(categories, dtype: :string)])
+  def categorise(%Series{dtype: l_dtype} = series, [head | _] = categories)
+      when K.and(K.in(l_dtype, [:integer, :string]), is_binary(head)),
+      do: apply_series(series, :categorise, [from_list(categories, dtype: :string)])
 
   # Slice and dice
 

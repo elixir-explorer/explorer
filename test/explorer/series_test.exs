@@ -1134,6 +1134,27 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end
 
+    test "with integer series and nil on the left-hand side" do
+      s1 = Series.from_list([1, 2, 3, nil])
+      s2 = Series.from_list([1, 0, 3])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, false]
+    end
+
+    test "with integer series and nil on the right-hand side" do
+      s1 = Series.from_list([1, 2, 3])
+      s2 = Series.from_list([1, 0, 3, nil])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with integer series and nil on both sides" do
+      s1 = Series.from_list([1, 2, 3, nil])
+      s2 = Series.from_list([1, 0, 3, nil])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, true]
+    end
+
     test "with float series" do
       s1 = Series.from_list([1.0, 2.0, :nan, :infinity, :neg_infinity])
       s2 = Series.from_list([1.0, 3.5, :nan, :infinity, :neg_infinity])
@@ -1258,6 +1279,99 @@ defmodule Explorer.SeriesTest do
       assert_raise ArgumentError, fn ->
         Series.in(s1, s2)
       end
+    end
+
+    test "compare categories with strings" do
+      s = Series.from_list(["a", "b", "c", "a"], dtype: :category)
+
+      assert Series.in(s, ["a", "b"]) |> Series.to_list() ==
+               [true, true, false, true]
+    end
+
+    test "compare categories with strings when left-hand side contains nil" do
+      s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
+
+      assert Series.in(s, ["a", "b"]) |> Series.to_list() ==
+               [true, true, false, true, false]
+    end
+
+    test "compare categories with strings when right-hand side contains nil" do
+      s = Series.from_list(["a", "b", "c", "a"], dtype: :category)
+
+      assert Series.in(s, ["a", "b", nil]) |> Series.to_list() ==
+               [true, true, false, true]
+    end
+
+    test "compare categories with strings when both sides contains nil" do
+      s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
+
+      assert Series.in(s, ["a", "b", nil]) |> Series.to_list() ==
+               [true, true, false, true, true]
+    end
+
+    test "compare categories with strings when left-hand side contains nil and right-hand contains unknown element" do
+      s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
+
+      assert Series.in(s, ["a", "z"]) |> Series.to_list() ==
+               [true, false, false, true, false]
+    end
+
+    test "compare categories with strings when left-hand side contains nil and right-hand contains unknown element and nil" do
+      s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
+
+      assert Series.in(s, ["a", "z", nil]) |> Series.to_list() ==
+               [true, false, false, true, true]
+    end
+
+    test "compare categories with categories that are incompatible" do
+      s = Series.from_list(["a", "b", "c", "a"], dtype: :category)
+      s1 = Series.from_list(["a", "b", "z"]) |> Series.categorise(s)
+
+      assert Series.in(s, s1) |> Series.to_list() ==
+               [true, true, false, true]
+    end
+
+    test "compare categories with categories and nil on left-hand side" do
+      s = Series.from_list(["a", nil, "c", "a"], dtype: :category)
+      s1 = Series.from_list(["a", "c"]) |> Series.categorise(s)
+
+      assert Series.in(s, s1) |> Series.to_list() ==
+               [true, false, true, true]
+    end
+
+    test "compare categories with categories and nil on right-hand side" do
+      s = Series.from_list(["a", "b", "c", "a"], dtype: :category)
+      s1 = Series.from_list(["a", "b", nil]) |> Series.categorise(s)
+
+      assert Series.in(s, s1) |> Series.to_list() ==
+               [true, true, false, true]
+    end
+
+    test "compare categories with categories and nil on both sides" do
+      s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
+      s1 = Series.from_list(["a", "b", nil]) |> Series.categorise(s)
+
+      assert Series.in(s, s1) |> Series.to_list() ==
+               [true, true, false, true, true]
+    end
+
+    test "compare categories with categories that are equivalent" do
+      s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
+      s1 = Series.from_list(["a", "b", "c", nil]) |> Series.categorise(s)
+
+      assert Series.in(s, s1) |> Series.to_list() ==
+               [true, true, true, true, true]
+    end
+
+    test "compare categories with categories that are different" do
+      s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
+      s1 = Series.from_list(["z"], dtype: :category)
+
+      assert_raise RuntimeError,
+                   ~s/Generic Error: cannot compare categories from different sources. See Explorer.Series.categorise\/2/,
+                   fn ->
+                     Series.in(s, s1)
+                   end
     end
   end
 
@@ -3018,6 +3132,46 @@ defmodule Explorer.SeriesTest do
       categorized = Series.categorise(indexes, ["a", "b", "c"])
 
       assert Series.to_list(categorized) == ["a", "c", "b", "a", "c", nil, "b", nil, nil]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes string series and categorise with categorical series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :category)
+
+      indexes = Series.from_list(["c", "b", "a", "a", "c"])
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == ["c", "b", "a", "a", "c"]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes string series containing nils and categorise with categorical series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :category)
+
+      indexes = Series.from_list(["c", "b", nil, "a", "a", "c"])
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == ["c", "b", nil, "a", "a", "c"]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes string series containing more elements and categorise with categorical series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :category)
+
+      indexes = Series.from_list(["z", "c", "b", "a", "a", "c", "w"])
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == [nil, "c", "b", "a", "a", "c", nil]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes string series and categorise with another string series" do
+      categories = Series.from_list(["a", "b", "c"])
+
+      indexes = Series.from_list(["c", "b", "a", "a", "c"])
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == ["c", "b", "a", "a", "c"]
       assert Series.dtype(categorized) == :category
     end
   end

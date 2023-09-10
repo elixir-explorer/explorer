@@ -548,7 +548,46 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         DataType::Date => s.date()?.is_in(&rhs)?,
         DataType::Time => s.time()?.is_in(&rhs)?,
         DataType::Datetime(_, _) => s.datetime()?.is_in(&rhs)?,
-        dt => panic!("is_in/2 not implemented for {dt:?}"),
+        DataType::Categorical(Some(mapping)) => {
+            let l_logical = s.categorical()?.logical();
+
+            match rhs.dtype() {
+                DataType::Utf8 => {
+                    let mut r_ids: Vec<Option<u32>> = vec![];
+
+                    // In case the right-hand is a series of strings, we only care
+                    // about members in the category on the left, or if it's None.
+                    for opt in rhs.unique()?.utf8()?.into_iter() {
+                        match opt {
+                            Some(slice) => {
+                                if let Some(id) = mapping.find(slice) {
+                                    r_ids.push(Some(id));
+                                }
+                            }
+                            None => r_ids.push(None),
+                        }
+                    }
+
+                    let r_logical = Series::new("r_logical", r_ids);
+
+                    l_logical.is_in(&r_logical)?
+                }
+                DataType::Categorical(Some(rhs_mapping)) => {
+                    if !mapping.same_src(rhs_mapping) {
+                        return Err(ExplorerError::Other(
+                            "cannot compare categories from different sources. See Explorer.Series.categorise/2".into(),
+                        ));
+                    }
+
+                    let r_logical = rhs.categorical()?.logical().clone().into_series();
+
+                    l_logical.is_in(&r_logical)?
+                }
+
+                dt => panic!("in/2 does not work for categorical and {dt:?} pairs"),
+            }
+        }
+        dt => panic!("in/2 not implemented for {dt:?}"),
     };
 
     Ok(ExSeries::new(s.into_series()))
@@ -1140,10 +1179,20 @@ pub fn s_categories(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let chunks = s.cast(&DataType::UInt32)?.u32()?.clone();
-
     match cat.dtype() {
         DataType::Categorical(Some(mapping)) => {
+            let chunks = if s.dtype() == &DataType::Utf8 {
+                let ids: ChunkedArray<UInt32Type> = s
+                    .utf8()?
+                    .into_iter()
+                    .map(|opt_str| opt_str.and_then(|slice| mapping.find(slice)))
+                    .collect();
+
+                ids
+            } else {
+                s.cast(&DataType::UInt32)?.u32()?.clone()
+            };
+
             let categorical_chunks = unsafe {
                 CategoricalChunked::from_cats_and_rev_map_unchecked(chunks, mapping.clone())
             };
@@ -1166,6 +1215,18 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
                 let values: Vec<Option<&str>> = utf8s.into();
                 let array = Utf8Array::<i64>::from(values);
                 let mapping = RevMapping::Local(array);
+
+                let chunks = if s.dtype() == &DataType::Utf8 {
+                    let ids: ChunkedArray<UInt32Type> = s
+                        .utf8()?
+                        .into_iter()
+                        .map(|opt_str| opt_str.and_then(|slice| mapping.find(slice)))
+                        .collect();
+
+                    ids
+                } else {
+                    s.cast(&DataType::UInt32)?.u32()?.clone()
+                };
 
                 let categorical_chunks = unsafe {
                     CategoricalChunked::from_cats_and_rev_map_unchecked(chunks, Arc::new(mapping))
