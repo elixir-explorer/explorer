@@ -599,5 +599,30 @@ defmodule Explorer.Query do
     |> Enum.map(&%{Explorer.Shared.apply_impl(df, :pull, [&1]) | name: &1})
   end
 
+  defmacro select(do: clauses) do
+    conditions =
+      clauses
+      |> Enum.map(fn {:->, _, [[condition], on_true]} -> [condition, on_true] end)
+
+    quote do
+      import Explorer.Query
+
+      unquote(conditions)
+      |> Enum.reverse()
+      |> Enum.reduce(nil, fn [condition, truthy], acc ->
+        predicate = Explorer.Shared.lazy_series!(condition)
+        on_true = Explorer.Shared.lazy_series!(truthy)
+
+        on_false =
+          case acc do
+            nil -> Explorer.Backend.LazySeries.from_list([nil], on_true.dtype)
+            _ -> Explorer.Shared.lazy_series!(acc)
+          end
+
+        Explorer.Backend.LazySeries.select(predicate, on_true, on_false)
+      end)
+    end
+  end
+
   defp df_var(), do: quote(do: var!(df, Explorer.Query))
 end
