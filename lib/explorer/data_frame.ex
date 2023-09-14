@@ -5342,7 +5342,7 @@ defmodule Explorer.DataFrame do
       end
       |> collect()
 
-    types = Enum.map(df.names, &"\n<#{Atom.to_string(df.dtypes[&1])}>")
+    types = Enum.map(df.names, &"\n<#{Shared.dtype_to_string(df.dtypes[&1])}>")
 
     values =
       headers
