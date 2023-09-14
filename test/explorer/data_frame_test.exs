@@ -1081,8 +1081,7 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 =
-        DF.mutate(df, select1: select(a, b, c))
+      df1 = DF.mutate(df, select1: select(a, b, c))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1115,8 +1114,7 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 =
-        DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
+      df1 = DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -2177,6 +2175,25 @@ defmodule Explorer.DataFrameTest do
              +==============+=============+==============+=============+=============+
              | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
              +--------------+-------------+--------------+-------------+-------------+
+
+             """
+    end
+
+    test "works with tuple dtypes" do
+      df =
+        [datetime1: [~N[2023-09-14 00:00:00]], datetime2: [~N[2023-09-14 01:00:00]]]
+        |> DF.new()
+        |> DF.mutate(duration: datetime2 - datetime1)
+
+      assert capture_io(fn -> DF.print(df, limit: 1) end) == """
+             +--------------------------------------------------------------------------+
+             |                Explorer DataFrame: [rows: 1, columns: 3]                 |
+             +----------------------------+----------------------------+----------------+
+             |         datetime1          |         datetime2          |    duration    |
+             |       <datetime[μs]>       |       <datetime[μs]>       | <duration[μs]> |
+             +============================+============================+================+
+             | 2023-09-14 00:00:00.000000 | 2023-09-14 01:00:00.000000 | 1h             |
+             +----------------------------+----------------------------+----------------+
 
              """
     end
