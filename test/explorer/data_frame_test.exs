@@ -1782,12 +1782,12 @@ defmodule Explorer.DataFrameTest do
       df =
         DF.mutate(df,
           simple_result:
-            select do
+            cond do
               grade > 9 -> "Exceptional"
               grade > 5 -> "Passed"
             end,
           result:
-            select do
+            cond do
               grade > 9 -> "Exceptional"
               grade > 5 -> "Passed"
               true -> cast(grade, :string)
