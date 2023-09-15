@@ -161,13 +161,6 @@ defmodule Explorer.Shared do
             "#{inspect(struct1)} and #{inspect(struct2)}"
   end
 
-  def lazy_series!(val) when is_struct(val, Explorer.Series), do: val
-
-  def lazy_series!(list) when is_list(list),
-    do: Explorer.Backend.LazySeries.from_list(list, check_types!(list))
-
-  def lazy_series!(val), do: lazy_series!([val])
-
   @doc """
   Gets the `dtype` of a list or raise error if not possible.
 

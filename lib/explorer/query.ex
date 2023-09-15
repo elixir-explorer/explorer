@@ -1,3 +1,5 @@
+import Kernel, except: [if: 2, unless: 2]
+
 defmodule Explorer.Query do
   @moduledoc ~S"""
   High-level query for Explorer.
@@ -80,6 +82,8 @@ defmodule Explorer.Query do
       >
 
   ## Conditionals
+
+  Queries support both `if/2` and `unless/2` operations inside queries.
 
   `cond/1` can be used to write multi-clause conditions:
 
@@ -355,11 +359,13 @@ defmodule Explorer.Query do
   end
 
   defp traverse({:^, meta, [expr]}, vars, state) do
-    if state.collect_pins_and_vars do
-      var = Macro.unique_var(:pin, __MODULE__)
-      {var, [{:=, meta, [var, expr]} | vars]}
-    else
-      {expr, vars}
+    cond do
+      state.collect_pins_and_vars ->
+        var = Macro.unique_var(:pin, __MODULE__)
+        {var, [{:=, meta, [var, expr]} | vars]}
+
+      true ->
+        {expr, vars}
     end
   end
 
@@ -373,46 +379,21 @@ defmodule Explorer.Query do
   end
 
   defp traverse({:cond, _meta, [[do: clauses]]}, vars, state) do
-    conditions =
+    clauses =
       clauses
       |> Enum.map(fn {:->, _, [[on_condition], on_true]} ->
         {condition, _} = traverse(on_condition, vars, state)
         {truthy, _} = traverse(on_true, vars, state)
-
         {condition, truthy}
       end)
       |> Enum.reverse()
 
-    block =
+    body =
       quote do
-        import Explorer.Query
-
-        unquote(conditions)
-        |> Enum.reduce(nil, fn
-          {true, truthy}, _acc ->
-            Explorer.Shared.lazy_series!(truthy)
-
-          {false, _truthy}, acc ->
-            Explorer.Shared.lazy_series!(acc)
-
-          {nil, _truthy}, acc ->
-            Explorer.Shared.lazy_series!(acc)
-
-          {condition, truthy}, acc ->
-            predicate = Explorer.Shared.lazy_series!(condition)
-            on_true = Explorer.Shared.lazy_series!(truthy)
-
-            on_false =
-              case acc do
-                nil -> Explorer.Backend.LazySeries.from_list([nil], on_true.dtype)
-                _ -> Explorer.Shared.lazy_series!(acc)
-              end
-
-            Explorer.Backend.LazySeries.select(predicate, on_true, on_false)
-        end)
+        Explorer.Query.__cond__(unquote(clauses))
       end
 
-    {block, vars}
+    {body, vars}
   end
 
   defp traverse({var, meta, ctx} = expr, vars, state) when is_atom(var) and is_atom(ctx) do
@@ -429,13 +410,16 @@ defmodule Explorer.Query do
   end
 
   defp traverse({left, meta, right}, vars, state) do
-    if is_atom(left) and is_list(right) and special_form_defines_var?(left, right) do
-      raise ArgumentError, "#{left}/#{length(right)} is not currently supported in Explorer.Query"
-    end
+    cond do
+      is_atom(left) and is_list(right) and special_form_defines_var?(left, right) ->
+        raise ArgumentError,
+              "#{left}/#{length(right)} is not currently supported in Explorer.Query"
 
-    {left, vars} = traverse(left, vars, state)
-    {right, vars} = traverse(right, vars, state)
-    {{left, meta, right}, vars}
+      true ->
+        {left, vars} = traverse(left, vars, state)
+        {right, vars} = traverse(right, vars, state)
+        {{left, meta, right}, vars}
+    end
   end
 
   defp traverse({left, right}, vars, state) do
@@ -591,6 +575,69 @@ defmodule Explorer.Query do
   end
 
   defp validate_concatenation([], all_binary?), do: all_binary?
+
+  @doc """
+  Provides `if/2` conditionals inside queries.
+  """
+  def if(condition, do: do_clause) do
+    if(condition, do: do_clause, else: nil)
+  end
+
+  def if(condition, do: do_clause, else: else_clause) do
+    __cond__([{true, else_clause}, {condition, do_clause}])
+  end
+
+  def if(_condition, _arguments) do
+    raise ArgumentError,
+          "invalid or duplicate keys for if, only \"do\" and an optional \"else\" are permitted"
+  end
+
+  @doc """
+  Provides `unless/2` conditionals inside queries.
+  """
+  def unless(condition, do: do_clause) do
+    unless(condition, do: do_clause, else: nil)
+  end
+
+  def unless(condition, do: do_clause, else: else_clause) do
+    __cond__([{true, do_clause}, {condition, else_clause}])
+  end
+
+  def unless(_condition, _arguments) do
+    raise ArgumentError,
+          "invalid or duplicate keys for unless, only \"do\" and an optional \"else\" are permitted"
+  end
+
+  @doc false
+  def __cond__(clauses) do
+    Enum.reduce(clauses, nil, fn
+      {true, truthy}, _acc ->
+        lazy_series_for_cond!(truthy, clauses)
+
+      {false, _truthy}, acc ->
+        lazy_series_for_cond!(acc, clauses)
+
+      {%Explorer.Series{} = predicate, truthy}, acc ->
+        on_true = lazy_series_for_cond!(truthy, clauses)
+        on_false = lazy_series_for_cond!(acc, clauses)
+        Explorer.Backend.LazySeries.select(predicate, on_true, on_false)
+
+      {other, _truthy}, _acc ->
+        raise ArgumentError,
+              "conditionals expect predicates to be series or a boolean, got: #{inspect(other)}"
+    end)
+  end
+
+  defp lazy_series_for_cond!(%Explorer.Series{} = val, _clauses), do: val
+
+  defp lazy_series_for_cond!(nil, clauses) do
+    {_, non_empty_clause} = Enum.find(clauses, fn {_condition, truthy} -> truthy end)
+    series = lazy_series_for_cond!(non_empty_clause, clauses)
+    Explorer.Backend.LazySeries.from_list([nil], series.dtype)
+  end
+
+  defp lazy_series_for_cond!(val, _clauses),
+    do: Explorer.Backend.LazySeries.from_list([val], Explorer.Shared.check_types!([val]))
 
   @doc """
   Accesses a column by name.
