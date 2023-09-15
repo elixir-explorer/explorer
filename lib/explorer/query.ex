@@ -79,6 +79,25 @@ defmodule Explorer.Query do
         unusual nums integer [3]
       >
 
+  ## Special operations
+
+  `cond/1` can be used to write multi-clause conditions:
+
+      iex> df = DF.new(a: [10, 4, 6])
+      iex> DF.mutate(df,
+      ...>   b:
+      ...>     cond do
+      ...>       a > 9 -> "Exceptional"
+      ...>       a > 5 -> "Passed"
+      ...>       true -> "Failed"
+      ...>     end
+      ...> )
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [10, 4, 6]
+        b string ["Exceptional", "Failed", "Passed"]
+      >
+
   ## Across and comprehensions
 
   `Explorer.Query` leverages the power behind Elixir for-comprehensions
