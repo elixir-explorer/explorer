@@ -1775,6 +1775,28 @@ defmodule Explorer.DataFrameTest do
 
       assert Series.to_list(df7[:x]) == [~D[2023-01-15], ~D[2023-01-01], ~D[2023-01-01]]
     end
+
+    test "support select/1 macro" do
+      df = DF.new(%{names: ["Alice", "Bob", "John"], grade: [10, 4, 6]})
+
+      df =
+        DF.mutate(df,
+          simple_result:
+            cond do
+              grade > 9 -> "Exceptional"
+              grade > 5 -> "Passed"
+            end,
+          result:
+            cond do
+              grade > 9 -> "Exceptional"
+              grade > 5 -> "Passed"
+              true -> cast(grade, :string)
+            end
+        )
+
+      assert Series.to_list(df[:simple_result]) == ["Exceptional", nil, "Passed"]
+      assert Series.to_list(df[:result]) == ["Exceptional", "4", "Passed"]
+    end
   end
 
   describe "arrange/3" do

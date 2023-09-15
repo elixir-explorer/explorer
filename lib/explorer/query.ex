@@ -79,6 +79,25 @@ defmodule Explorer.Query do
         unusual nums integer [3]
       >
 
+  ## Conditionals
+
+  `cond/1` can be used to write multi-clause conditions:
+
+      iex> df = DF.new(a: [10, 4, 6])
+      iex> DF.mutate(df,
+      ...>   b:
+      ...>     cond do
+      ...>       a > 9 -> "Exceptional"
+      ...>       a > 5 -> "Passed"
+      ...>       true -> "Failed"
+      ...>     end
+      ...> )
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        a integer [10, 4, 6]
+        b string ["Exceptional", "Failed", "Passed"]
+      >
+
   ## Across and comprehensions
 
   `Explorer.Query` leverages the power behind Elixir for-comprehensions
@@ -353,6 +372,49 @@ defmodule Explorer.Query do
     {{:"::", meta, [left, right]}, vars}
   end
 
+  defp traverse({:cond, _meta, [[do: clauses]]}, vars, state) do
+    conditions =
+      clauses
+      |> Enum.map(fn {:->, _, [[on_condition], on_true]} ->
+        {condition, _} = traverse(on_condition, vars, state)
+        {truthy, _} = traverse(on_true, vars, state)
+
+        {condition, truthy}
+      end)
+      |> Enum.reverse()
+
+    block =
+      quote do
+        import Explorer.Query
+
+        unquote(conditions)
+        |> Enum.reduce(nil, fn
+          {true, truthy}, _acc ->
+            Explorer.Shared.lazy_series!(truthy)
+
+          {false, _truthy}, acc ->
+            Explorer.Shared.lazy_series!(acc)
+
+          {nil, _truthy}, acc ->
+            Explorer.Shared.lazy_series!(acc)
+
+          {condition, truthy}, acc ->
+            predicate = Explorer.Shared.lazy_series!(condition)
+            on_true = Explorer.Shared.lazy_series!(truthy)
+
+            on_false =
+              case acc do
+                nil -> Explorer.Backend.LazySeries.from_list([nil], on_true.dtype)
+                _ -> Explorer.Shared.lazy_series!(acc)
+              end
+
+            Explorer.Backend.LazySeries.select(predicate, on_true, on_false)
+        end)
+      end
+
+    {block, vars}
+  end
+
   defp traverse({var, meta, ctx} = expr, vars, state) when is_atom(var) and is_atom(ctx) do
     cond do
       Map.has_key?(state.known_vars, {var, ctx}) ->
@@ -390,7 +452,6 @@ defmodule Explorer.Query do
 
   defp special_form_defines_var?(:=, [_, _]), do: true
   defp special_form_defines_var?(:case, [_, _]), do: true
-  defp special_form_defines_var?(:cond, [_]), do: true
   defp special_form_defines_var?(:receive, [_]), do: true
   defp special_form_defines_var?(:try, [_]), do: true
   defp special_form_defines_var?(:with, [_ | _]), do: true
