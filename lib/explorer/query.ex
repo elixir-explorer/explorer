@@ -79,7 +79,7 @@ defmodule Explorer.Query do
         unusual nums integer [3]
       >
 
-  ## Special operations
+  ## Conditionals
 
   `cond/1` can be used to write multi-clause conditions:
 
