@@ -178,6 +178,67 @@ defmodule Explorer.QueryTest do
     end
   end
 
+  describe "and/2" do
+    test "calculates and operation" do
+      assert DF.new(grade: [10, 4, 6])
+             |> DF.mutate(average: grade > 5 and grade < 8)
+             |> DF.to_columns(atom_keys: true) == %{
+               grade: [10, 4, 6],
+               average: [false, false, true]
+             }
+    end
+
+    test "supports scalar values in and/2" do
+      assert DF.new(grade: [10, 4, 6])
+             |> DF.mutate(good: true and grade > 7)
+             |> DF.to_columns(atom_keys: true) == %{
+               grade: [10, 4, 6],
+               good: [true, false, false]
+             }
+    end
+  end
+
+  describe "or/2" do
+    test "calculates or operation" do
+      assert DF.new(grade: [10, 4, 6], exceptional: [true, true, false])
+             |> DF.mutate(good: grade > 7 or exceptional)
+             |> DF.to_columns(atom_keys: true) == %{
+               grade: [10, 4, 6],
+               exceptional: [true, true, false],
+               good: [true, true, false]
+             }
+    end
+
+    test "supports scalar values in or/2" do
+      assert DF.new(grade: [10, 4, 6])
+             |> DF.mutate(all: true or grade > 7)
+             |> DF.to_columns(atom_keys: true) == %{
+               grade: [10, 4, 6],
+               all: [true, true, true]
+             }
+    end
+  end
+
+  describe "not/1" do
+    test "calculates not operation" do
+      assert DF.new(grade: [10, 4, 6])
+             |> DF.mutate(not_good: not (grade > 7))
+             |> DF.to_columns(atom_keys: true) == %{
+               grade: [10, 4, 6],
+               not_good: [false, true, true]
+             }
+    end
+
+    test "supports scalar values in not/1" do
+      assert DF.new(grade: [10, 4, 6])
+             |> DF.mutate(always: not false)
+             |> DF.to_columns(atom_keys: true) == %{
+               grade: [10, 4, 6],
+               always: [true, true, true]
+             }
+    end
+  end
+
   test "raises on special forms" do
     assert_raise ArgumentError, "=/2 is not currently supported in Explorer.Query", fn ->
       Code.eval_quoted(

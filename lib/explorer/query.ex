@@ -353,7 +353,7 @@ defmodule Explorer.Query do
       unquote_splicing(Enum.reverse(vars))
       import Kernel, only: unquote(@kernel_only)
       import Explorer.Query, except: [query: 1]
-      import Explorer.Series
+      import Explorer.Series, except: [and: 2, or: 2, not: 1]
       unquote(query)
     end
   end
@@ -396,7 +396,8 @@ defmodule Explorer.Query do
     {body, vars}
   end
 
-  defp traverse({var, meta, ctx} = expr, vars, state) when is_atom(var) and is_atom(ctx) do
+  defp traverse({var, meta, ctx} = expr, vars, state)
+       when Kernel.and(is_atom(var), is_atom(ctx)) do
     cond do
       Map.has_key?(state.known_vars, {var, ctx}) ->
         {expr, vars}
@@ -411,7 +412,10 @@ defmodule Explorer.Query do
 
   defp traverse({left, meta, right}, vars, state) do
     cond do
-      is_atom(left) and is_list(right) and special_form_defines_var?(left, right) ->
+      Kernel.and(
+        Kernel.and(is_atom(left), is_list(right)),
+        special_form_defines_var?(left, right)
+      ) ->
         raise ArgumentError,
               "#{left}/#{length(right)} is not currently supported in Explorer.Query"
 
@@ -464,7 +468,7 @@ defmodule Explorer.Query do
       {:_, _, context}, acc when is_atom(context) ->
         {:ok, acc}
 
-      {name, _meta, context}, acc when is_atom(name) and is_atom(context) ->
+      {name, _meta, context}, acc when Kernel.and(is_atom(name), is_atom(context)) ->
         {:ok, Map.put(acc, {name, context}, true)}
 
       node, acc ->
@@ -512,6 +516,43 @@ defmodule Explorer.Query do
   """
   def +number when is_number(number), do: number
   def +series when is_struct(series, Explorer.Series), do: series
+
+  @doc """
+  Binary and operator.
+
+  Works with boolean and series.
+  """
+  def left and right when Kernel.and(is_boolean(left), is_boolean(right)),
+    do: Kernel.and(left, right)
+
+  def left and right, do: Explorer.Series.and(boolean!(left), boolean!(right))
+
+  @doc """
+  Binary or operator.
+
+  Works with boolean and series.
+  """
+  def left or right when Kernel.or(is_boolean(left), is_boolean(right)),
+    do: Kernel.or(left, right)
+
+  def left or right, do: Explorer.Series.or(boolean!(left), boolean!(right))
+
+  @doc """
+  Unary not operator.
+
+  Works with boolean and series.
+  """
+  def not value when is_boolean(value), do: Kernel.not(value)
+
+  def not value, do: Explorer.Series.not(boolean!(value))
+
+  defp boolean!(%Explorer.Series{dtype: :boolean} = series), do: series
+  defp boolean!(value) when is_boolean(value), do: Explorer.Series.from_list([value])
+
+  defp boolean!(other) do
+    raise ArgumentError,
+          "boolean operators require either a boolean (true/false) or a boolean series, got: #{inspect(other)}"
+  end
 
   @doc """
   String concatenation operator.
