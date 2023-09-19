@@ -264,9 +264,20 @@ We support the following:
 - `x86_64-unknown-linux-musl` - Linux running on Intel/AMD 64 bits CPUs, compiled with Musl.
 - `x86_64-unknown-freebsd` - FreeBSD running on Intel/AMD 64 bits.
 
-This means that the problem is going to work without the need to compile it from source.
+This means that the Explorer is going to work without the need to compile it from source.
+
 This currently **only works for Hex releases**. For more information on how it works, please
 check the [RustlerPrecompiled project](https://hexdocs.pm/rustler_precompiled).
+
+### Legacy CPUs
+
+We ship some of the precompiled artifacts with modern CPU features enabled by default. But in
+case your computer is not compatible with them, you can set an application environment that is
+going to be read at compile time, enabling the legacy variants of artifacts.
+
+```elixir
+config :explorer, use_legacy_artifacts: true
+```
 
 ### Features disabled
 
