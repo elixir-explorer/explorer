@@ -4109,6 +4109,43 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "replace/3" do
+    test "replaces all occurences of pattern in string by replacement string" do
+      series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
+
+      assert Series.replace(series, ",", "") |> Series.to_list() == [
+               "1200",
+               "1234567",
+               "asdf",
+               nil
+             ]
+    end
+
+    test "doesn't work with non string series" do
+      series = Series.from_list([1200, 1_234_567, nil])
+
+      assert_raise ArgumentError,
+                   "Explorer.Series.replace/3 not implemented for dtype :integer. Valid dtypes are [:string]",
+                   fn -> Series.replace(series, ",", "") end
+    end
+
+    test "raises error if pattern is not string" do
+      series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
+
+      assert_raise ArgumentError,
+                   "pattern and replacement in replace/3 need to be a string",
+                   fn -> Series.replace(series, 2, "") end
+    end
+
+    test "raises error if replacement is not string" do
+      series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
+
+      assert_raise ArgumentError,
+                   "pattern and replacement in replace/3 need to be a string",
+                   fn -> Series.replace(series, ",", nil) end
+    end
+  end
+
   describe "strip, strip, lstrip, rstrip" do
     test "strip/1" do
       series = Series.from_list(["  123   ", "       2   ", "    20$    "])

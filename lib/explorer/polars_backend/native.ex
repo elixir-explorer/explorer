@@ -311,6 +311,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_ceil(_s), do: err()
   def s_rstrip(_s, _string), do: err()
   def s_rank(_s, _method, _descending, _seed), do: err()
+  def s_replace(_s, _pattern, _replacement), do: err()
   def s_sample_n(_s, _n, _replace, _shuffle, _seed), do: err()
   def s_sample_frac(_s, _frac, _replace, _shuffle, _seed), do: err()
   def s_series_equal(_s, _other, _null_equal), do: err()
