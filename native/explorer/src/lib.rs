@@ -393,6 +393,7 @@ rustler::init!(
         s_rank,
         s_remainder,
         s_rename,
+        s_replace,
         s_reverse,
         s_rstrip,
         s_sample_n,

@@ -114,6 +114,7 @@ defmodule Explorer.Backend.LazySeries do
     covariance: 2,
     # Strings
     contains: 2,
+    replace: 3,
     lstrip: 2,
     rstrip: 2,
     strip: 2,
@@ -885,6 +886,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def downcase(series) do
     data = new(:downcase, [lazy_series!(series)], :string)
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def replace(series, pattern, replacement) do
+    data = new(:replace, [lazy_series!(series), pattern, replacement], :string)
 
     Backend.Series.new(data, :string)
   end

@@ -1390,6 +1390,17 @@ pub fn s_downcase(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_replace(
+    s1: ExSeries,
+    pattern: &str,
+    replacement: &str,
+) -> Result<ExSeries, ExplorerError> {
+    Ok(ExSeries::new(
+        s1.utf8()?.replace_all(pattern, replacement)?.into(),
+    ))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_strip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, ExplorerError> {
     // There are no eager strip functions.
     let pattern = match pattern {

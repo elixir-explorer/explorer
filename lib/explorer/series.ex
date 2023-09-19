@@ -539,14 +539,14 @@ defmodule Explorer.Series do
   def replace(series, tensor_or_list)
 
   def replace(series, tensor) when is_struct(tensor, Nx.Tensor) do
-    replace(series, :from_tensor, tensor)
+    replace_tensor_or_list(series, :from_tensor, tensor)
   end
 
   def replace(series, list) when is_list(list) do
-    replace(series, :from_list, list)
+    replace_tensor_or_list(series, :from_list, list)
   end
 
-  defp replace(series, fun, arg) do
+  defp replace_tensor_or_list(series, fun, arg) do
     backend_series_string = Atom.to_string(series.data.__struct__)
     backend_string = binary_part(backend_series_string, 0, byte_size(backend_series_string) - 7)
     backend = String.to_atom(backend_string)
@@ -4529,6 +4529,31 @@ defmodule Explorer.Series do
     do: apply_series(series, :downcase)
 
   def downcase(%Series{dtype: dtype}), do: dtype_error("downcase/1", dtype, [:string])
+
+  @doc """
+  Replaces all occurences of pattern with replacement in string series.
+
+  Both pattern and replacement must be of type string.
+
+  ## Examples
+
+      iex> series = Explorer.Series.from_list(["1,200", "1,234,567", "asdf", nil])
+      iex> Explorer.Series.replace(series, ",", "")
+      #Explorer.Series<
+        Polars[4]
+        string ["1200", "1234567", "asdf", nil]
+      >
+  """
+  @doc type: :string_wise
+  @spec replace(Series.t(), binary(), binary()) :: Series.t()
+  def replace(%Series{dtype: :string} = series, pattern, replacement)
+      when K.and(is_binary(pattern), is_binary(replacement)),
+      do: apply_series(series, :replace, [pattern, replacement])
+
+  def replace(%Series{dtype: :string}, _, _),
+    do: raise(ArgumentError, "pattern and replacement in replace/3 need to be a string")
+
+  def replace(%Series{dtype: dtype}, _, _), do: dtype_error("replace/3", dtype, [:string])
 
   @doc """
   Returns a string series where all leading and trailing Unicode whitespaces

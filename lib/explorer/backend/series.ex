@@ -249,6 +249,7 @@ defmodule Explorer.Backend.Series do
   @callback contains(s, String.t()) :: s
   @callback upcase(s) :: s
   @callback downcase(s) :: s
+  @callback replace(s, String.t(), String.t()) :: s
   @callback strip(s, String.t() | nil) :: s
   @callback lstrip(s, String.t() | nil) :: s
   @callback rstrip(s, String.t() | nil) :: s

@@ -619,6 +619,10 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_downcase)
 
   @impl true
+  def replace(series, pattern, replacement),
+    do: Shared.apply_series(series, :s_replace, [pattern, replacement])
+
+  @impl true
   def strip(series, str),
     do: Shared.apply_series(series, :s_strip, [str])
 

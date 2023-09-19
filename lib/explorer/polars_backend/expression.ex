@@ -118,6 +118,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
     # Strings
     contains: 2,
+    replace: 3,
     strip: 2,
     lstrip: 2,
     rstrip: 2,
