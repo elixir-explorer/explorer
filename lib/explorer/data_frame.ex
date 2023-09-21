@@ -4349,7 +4349,7 @@ defmodule Explorer.DataFrame do
       iex>   hour: [10, 9, 10, 10, 11, 15, 14, 16, 14, 16]
       iex> )
 
-  This dataframe is going to look like this - using `table/2`:
+  This dataframe is going to look like this - using `print/2`:
 
         +----------------------------------------------+
         |  Explorer DataFrame: [rows: 10, columns: 3]  |
@@ -4398,7 +4398,7 @@ defmodule Explorer.DataFrame do
         Friday integer [16, 11, nil]
       >
 
-  Now if we print that same dataframe with `table/2`, we get a better picture of the schedule:
+  Now if we print that same dataframe with `print/2`, we get a better picture of the schedule:
 
         +----------------------------------------------------------------------+
         |              Explorer DataFrame: [rows: 3, columns: 6]               |
