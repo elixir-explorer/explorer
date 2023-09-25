@@ -2982,20 +2982,38 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  test "table reader integration" do
-    df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+  describe "table reader integration" do
+    test "eager" do
+      df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
 
-    assert df |> Table.to_rows() |> Enum.to_list() == [
-             %{"x" => 1, "y" => "a"},
-             %{"x" => 2, "y" => "b"},
-             %{"x" => 3, "y" => "c"}
-           ]
+      assert df |> Table.to_rows() |> Enum.to_list() == [
+               %{"x" => 1, "y" => "a"},
+               %{"x" => 2, "y" => "b"},
+               %{"x" => 3, "y" => "c"}
+             ]
 
-    columns = Table.to_columns(df)
-    assert Enum.to_list(columns["x"]) == [1, 2, 3]
-    assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
+      columns = Table.to_columns(df)
+      assert Enum.to_list(columns["x"]) == [1, 2, 3]
+      assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
 
-    assert {:columns, %{count: 3}, _} = Table.Reader.init(df)
+      assert {:columns, %{count: 3}, _} = Table.Reader.init(df)
+    end
+
+    test "lazy" do
+      df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"]) |> DF.lazy()
+
+      assert df |> Table.to_rows() |> Enum.to_list() == [
+               %{"x" => 1, "y" => "a"},
+               %{"x" => 2, "y" => "b"},
+               %{"x" => 3, "y" => "c"}
+             ]
+
+      columns = Table.to_columns(df)
+      assert Enum.to_list(columns["x"]) == [1, 2, 3]
+      assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
+
+      assert {:columns, %{count: 3}, _} = Table.Reader.init(df)
+    end
   end
 
   test "collect/1 is no-op", %{df: df} do

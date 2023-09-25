@@ -5478,6 +5478,7 @@ end
 
 defimpl Table.Reader, for: Explorer.DataFrame do
   def init(df) do
+    df = Explorer.DataFrame.collect(df)
     columns = Explorer.DataFrame.names(df)
 
     data =
