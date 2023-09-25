@@ -2,10 +2,78 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v0.7.1] - 2023-09-25
+
+### Added
+
+- Add more temporal arithmetic operations. This change makes possible
+  to mix some datatypes, like `date`, `duration` and scalar types like
+  `integers` and `floats`.
+
+  The following operations are possible now:
+
+  * `date - date`
+  * `date + duration`
+  * `date - duration`
+  * `duration + date`
+  * `duration * integer`
+  * `duration * float`
+  * `duration / integer`
+  * `duration / float`
+  * `integer * duration`
+  * `float * duration`
+
+- Support lazy dataframes on `Explorer.DataFrame.print/2`.
+
+- Add support for strings as the "indexes" of `Explorer.Series.categorise/2`.
+  This makes possible to categorise a string series with a categories series.
+
+- Introduce `cond/1` support in queries, which enables multi-clause conditions.
+  Example of usage:
+
+          iex> df = DF.new(a: [10, 4, 6])
+          iex> DF.mutate(df,
+          ...>   b:
+          ...>     cond do
+          ...>       a > 9 -> "Exceptional"
+          ...>       a > 5 -> "Passed"
+          ...>       true -> "Failed"
+          ...>     end
+          ...> )
+          #Explorer.DataFrame<
+            Polars[3 x 2]
+            a integer [10, 4, 6]
+            b string ["Exceptional", "Failed", "Passed"]
+          >
+
+- Similar to `cond/1`, this version also introduces support for the `if/2`
+  and `unless/2` macros inside queries.
+
+- Allow the usage of scalar booleans inside queries.
+
+- Add `Explorer.Series.replace/3` for string series.
+  This enables the replacement of patterns inside string series.
+
+### Deprecated
+
+- Deprecate `Explorer.DataFrame.to_lazy/1` in favor of just `lazy/1`.
+
+### Fixed
+
+- Fix the `Explorer.Series.in/2` function to work with series of the
+  `:category` dtype.
+
+  Now, if both series shares the same categories, we can compare them.
+  To make sure that a categorical series shares the same categories from
+  another series, you must create that series using the
+  `Explorer.Series.categorise/2` function.
+
+- Display the dtype of duration series correctly in `Explorer.DataFrame.print/2`.
 
 ## [v0.7.0] - 2023-08-28
 
@@ -621,7 +689,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.7.1...HEAD
+[v0.7.1]: https://github.com/elixir-explorer/explorer/compare/v0.7.0...v0.7.1
 [v0.7.0]: https://github.com/elixir-explorer/explorer/compare/v0.6.1...v0.7.0
 [v0.6.1]: https://github.com/elixir-explorer/explorer/compare/v0.6.0...v0.6.1
 [v0.6.0]: https://github.com/elixir-explorer/explorer/compare/v0.5.7...v0.6.0
