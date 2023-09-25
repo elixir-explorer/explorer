@@ -1607,7 +1607,7 @@ defmodule Explorer.DataFrame do
   @spec lazy(df :: DataFrame.t()) :: DataFrame.t()
   def lazy(df), do: Shared.apply_impl(df, :lazy)
 
-  @doc deprecated: "Use lazy/1 instead"
+  @deprecated "Use lazy/1 instead"
   @doc type: :conversion
   def to_lazy(df), do: Shared.apply_impl(df, :lazy)
 
