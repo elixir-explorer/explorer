@@ -4485,9 +4485,9 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :string_wise
-  @spec contains(Series.t(), String.t() | Regex.t()) :: Series.t()
+  @spec contains(Series.t(), String.t()) :: Series.t()
   def contains(%Series{dtype: :string} = series, pattern)
-      when K.or(K.is_binary(pattern), K.is_struct(pattern, Regex)),
+      when K.is_binary(pattern),
       do: apply_series(series, :contains, [pattern])
 
   def contains(%Series{dtype: dtype}, _), do: dtype_error("contains/2", dtype, [:string])
