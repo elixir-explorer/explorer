@@ -107,6 +107,7 @@ defmodule Explorer.MixProject do
         "datasets",
         "checksum-*.exs",
         "mix.exs",
+        "CHANGELOG.md",
         "README.md",
         "LICENSE"
       ],
