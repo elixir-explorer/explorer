@@ -258,6 +258,7 @@ defmodule Explorer.Backend.Series do
   # Date / DateTime
 
   @callback day_of_week(s) :: s
+  @callback week_of_year(s) :: s
   @callback month(s) :: s
   @callback year(s) :: s
   @callback hour(s) :: s

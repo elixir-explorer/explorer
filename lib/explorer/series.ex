@@ -5033,6 +5033,41 @@ defmodule Explorer.Series do
   def day_of_week(%Series{dtype: dtype}),
     do: dtype_error("day_of_week/1", dtype, @date_or_datetime_dtypes)
 
+  @doc """
+  Returns the ISO week number starting from 1. The return value ranges from 1 to 53. (The last week
+  of year differs by years.)
+
+  Weeks start on Monday and end on Sunday. If the final week of the a year does not end on Sunday,
+  the first days of the following year will have a week number of 52 (or 53 for a leap year).
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-01], ~D[2023-01-02], ~D[2023-02-01], nil])
+      iex> Explorer.Series.week_of_year(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [52, 1, 5, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list(
+      ...>   [~N[2023-01-01 00:00:00], ~N[2023-01-02 00:00:00], ~N[2023-02-01 23:59:59], nil]
+      ...> )
+      iex> Explorer.Series.week_of_year(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [52, 1, 5, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec week_of_year(Series.t()) :: Series.t()
+  def week_of_year(%Series{dtype: dtype} = series) when K.in(dtype, @date_or_datetime_dtypes),
+    do: apply_series_list(:week_of_year, [series])
+
+  def week_of_year(%Series{dtype: dtype}),
+    do: dtype_error("week_of_year/1", dtype, @date_or_datetime_dtypes)
+
   @deprecated "Use cast(:date) instead"
   def to_date(%Series{dtype: dtype} = series) when K.in(dtype, @datetime_dtypes),
     do: cast(series, :date)

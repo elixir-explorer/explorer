@@ -312,6 +312,7 @@ rustler::init!(
         s_cos,
         s_upcase,
         s_day_of_week,
+        s_week_of_year,
         s_month,
         s_year,
         s_hour,

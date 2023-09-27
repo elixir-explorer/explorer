@@ -353,6 +353,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_ewm_mean(_s, _alpha, _adjust, _min_periods, _ignore_nils), do: err()
   def s_in(_s, _other), do: err()
   def s_day_of_week(_s), do: err()
+  def s_week_of_year(_s), do: err()
   def s_month(_s), do: err()
   def s_year(_s), do: err()
   def s_hour(_s), do: err()
