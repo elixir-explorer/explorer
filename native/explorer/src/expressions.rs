@@ -904,6 +904,20 @@ pub fn expr_day_of_week(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_day_of_year(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().ordinal_day().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_week_of_year(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().week().cast(DataType::Int64))
+}
+
+#[rustler::nif]
 pub fn expr_month(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
