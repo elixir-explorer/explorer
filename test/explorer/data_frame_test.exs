@@ -1081,8 +1081,7 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 =
-        DF.mutate(df, select1: select(a, b, c))
+      df1 = DF.mutate(df, select1: select(a, b, c))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1115,8 +1114,7 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 =
-        DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
+      df1 = DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1713,7 +1711,11 @@ defmodule Explorer.DataFrameTest do
           h: year(b),
           i: hour(b),
           j: minute(b),
-          k: second(b)
+          k: second(b),
+          l: day_of_year(a),
+          m: day_of_year(b),
+          n: week_of_year(a),
+          o: week_of_year(b)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1732,7 +1734,11 @@ defmodule Explorer.DataFrameTest do
                h: [2023, 2022, 2021, nil],
                i: [1, 2, 3, nil],
                j: [1, 2, 3, nil],
-               k: [1, 2, 3, nil]
+               k: [1, 2, 3, nil],
+               l: [15, 47, 79, nil],
+               m: [15, 47, 79, nil],
+               n: [2, 7, 11, nil],
+               o: [2, 7, 11, nil]
              }
 
       assert df1.dtypes == %{
@@ -1746,7 +1752,11 @@ defmodule Explorer.DataFrameTest do
                "h" => :integer,
                "i" => :integer,
                "j" => :integer,
-               "k" => :integer
+               "k" => :integer,
+               "l" => :integer,
+               "m" => :integer,
+               "n" => :integer,
+               "o" => :integer
              }
     end
 
