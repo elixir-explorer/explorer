@@ -22,6 +22,7 @@ defmodule Explorer.PolarsBackend.Expression do
     coalesce: 2,
     count: 1,
     day_of_week: 1,
+    day_of_year: 1,
     week_of_year: 1,
     month: 1,
     year: 1,

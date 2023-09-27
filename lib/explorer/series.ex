@@ -5034,6 +5034,38 @@ defmodule Explorer.Series do
     do: dtype_error("day_of_week/1", dtype, @date_or_datetime_dtypes)
 
   @doc """
+  Returns the day of year starting from 1. The return value ranges from 1 to 366. (The last day of
+  year differs by years.)
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-01], ~D[2023-01-02], ~D[2023-02-01], nil])
+      iex> Explorer.Series.day_of_year(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 2, 32, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list(
+      ...>   [~N[2023-01-01 00:00:00], ~N[2023-01-02 00:00:00], ~N[2023-02-01 23:59:59], nil]
+      ...> )
+      iex> Explorer.Series.day_of_year(s)
+      #Explorer.Series<
+        Polars[4]
+        integer [1, 2, 32, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec day_of_year(Series.t()) :: Series.t()
+  def day_of_year(%Series{dtype: dtype} = series) when K.in(dtype, @date_or_datetime_dtypes),
+    do: apply_series_list(:day_of_year, [series])
+
+  def day_of_year(%Series{dtype: dtype}),
+    do: dtype_error("day_of_year/1", dtype, @date_or_datetime_dtypes)
+
+  @doc """
   Returns the ISO week number starting from 1. The return value ranges from 1 to 53. (The last week
   of year differs by years.)
 

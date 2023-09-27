@@ -1481,6 +1481,13 @@ pub fn s_day_of_week(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_day_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.ordinal_day()?.cast(&DataType::Int64)?;
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_week_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.week()?.cast(&DataType::Int64)?;
 

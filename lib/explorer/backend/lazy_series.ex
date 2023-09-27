@@ -127,6 +127,7 @@ defmodule Explorer.Backend.LazySeries do
     ceil: 1,
     # Date functions
     day_of_week: 1,
+    day_of_year: 1,
     week_of_year: 1,
     month: 1,
     year: 1,
@@ -560,6 +561,13 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def day_of_week(%Series{} = s) do
     data = new(:day_of_week, [lazy_series!(s)], :integer)
+
+    Backend.Series.new(data, :integer)
+  end
+
+  @impl true
+  def day_of_year(%Series{} = s) do
+    data = new(:day_of_year, [lazy_series!(s)], :integer)
 
     Backend.Series.new(data, :integer)
   end
