@@ -1081,7 +1081,8 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 = DF.mutate(df, select1: select(a, b, c))
+      df1 =
+        DF.mutate(df, select1: select(a, b, c))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1114,7 +1115,8 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 = DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
+      df1 =
+        DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
