@@ -1138,7 +1138,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3, nil])
       s2 = Series.from_list([1, 0, 3])
 
-      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, false]
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, nil]
     end
 
     test "with integer series and nil on the right-hand side" do
@@ -1152,7 +1152,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3, nil])
       s2 = Series.from_list([1, 0, 3, nil])
 
-      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, true]
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, nil]
     end
 
     test "with float series" do
@@ -1292,7 +1292,7 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
 
       assert Series.in(s, ["a", "b"]) |> Series.to_list() ==
-               [true, true, false, true, false]
+               [true, true, false, true, nil]
     end
 
     test "compare categories with strings when right-hand side contains nil" do
@@ -1306,21 +1306,21 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
 
       assert Series.in(s, ["a", "b", nil]) |> Series.to_list() ==
-               [true, true, false, true, true]
+               [true, true, false, true, nil]
     end
 
     test "compare categories with strings when left-hand side contains nil and right-hand contains unknown element" do
       s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
 
       assert Series.in(s, ["a", "z"]) |> Series.to_list() ==
-               [true, false, false, true, false]
+               [true, false, false, true, nil]
     end
 
     test "compare categories with strings when left-hand side contains nil and right-hand contains unknown element and nil" do
       s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
 
       assert Series.in(s, ["a", "z", nil]) |> Series.to_list() ==
-               [true, false, false, true, true]
+               [true, false, false, true, nil]
     end
 
     test "compare categories with categories that are incompatible" do
@@ -1336,7 +1336,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list(["a", "c"]) |> Series.categorise(s)
 
       assert Series.in(s, s1) |> Series.to_list() ==
-               [true, false, true, true]
+               [true, nil, true, true]
     end
 
     test "compare categories with categories and nil on right-hand side" do
@@ -1352,7 +1352,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list(["a", "b", nil]) |> Series.categorise(s)
 
       assert Series.in(s, s1) |> Series.to_list() ==
-               [true, true, false, true, true]
+               [true, true, false, true, nil]
     end
 
     test "compare categories with categories that are equivalent" do
@@ -1360,7 +1360,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list(["a", "b", "c", nil]) |> Series.categorise(s)
 
       assert Series.in(s, s1) |> Series.to_list() ==
-               [true, true, true, true, true]
+               [true, true, true, true, nil]
     end
 
     test "compare categories with categories that are different" do
@@ -4102,8 +4102,9 @@ defmodule Explorer.SeriesTest do
             {[1.0, :infinity, :neg_infinity, nil], 1, 3, 2}
           ] do
         series = Series.from_list(list)
-        assert Series.argmax(series) == exp_argmax
-        assert Series.argmin(series) == exp_argmin
+
+        assert Series.argmax(series) == exp_argmax, "argmax of #{inspect(list)} is not expected"
+        assert Series.argmin(series) == exp_argmin, "argmin of #{inspect(list)} is not expected"
         assert Series.argmin(Series.fill_missing(series, :max)) == exp_argmin_filled
       end
     end

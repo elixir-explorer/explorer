@@ -6,9 +6,9 @@ use crate::{
 
 use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
-use polars::functions::{cov_f, pearson_corr_f};
+use polars::functions::{cov, pearson_corr};
 use polars::prelude::*;
-use polars_ops::prelude::{cut, qcut};
+use polars_ops::prelude::{cut, is_in, qcut};
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
@@ -277,9 +277,7 @@ fn checked_div(data: ExSeries, other: ExSeries) -> Result<Series, ExplorerError>
             let num = data.i64()?.get(0).unwrap();
             Ok(Series::new(
                 data.name(),
-                other
-                    .i64()?
-                    .apply_on_opt(|v| v.and_then(|v| num.checked_div(v))),
+                other.i64()?.apply(|v| v.and_then(|v| num.checked_div(v))),
             ))
         }
         _ => match other.len() {
@@ -540,14 +538,14 @@ pub fn s_less_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerE
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = match s.dtype() {
-        DataType::Boolean => s.bool()?.is_in(&rhs)?,
-        DataType::Int64 => s.i64()?.is_in(&rhs)?,
-        DataType::Float64 => s.f64()?.is_in(&rhs)?,
-        DataType::Utf8 => s.utf8()?.is_in(&rhs)?,
-        DataType::Binary => s.binary()?.is_in(&rhs)?,
-        DataType::Date => s.date()?.is_in(&rhs)?,
-        DataType::Time => s.time()?.is_in(&rhs)?,
-        DataType::Datetime(_, _) => s.datetime()?.is_in(&rhs)?,
+        DataType::Boolean
+        | DataType::Int64
+        | DataType::Float64
+        | DataType::Utf8
+        | DataType::Binary
+        | DataType::Date
+        | DataType::Time
+        | DataType::Datetime(_, _) => is_in(&s, &rhs)?,
         DataType::Categorical(Some(mapping)) => {
             let l_logical = s.categorical()?.logical();
 
@@ -570,7 +568,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 
                     let r_logical = Series::new("r_logical", r_ids);
 
-                    l_logical.is_in(&r_logical)?
+                    is_in(&l_logical.clone().into_series(), &r_logical)?
                 }
                 DataType::Categorical(Some(rhs_mapping)) => {
                     if !mapping.same_src(rhs_mapping) {
@@ -581,7 +579,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 
                     let r_logical = rhs.categorical()?.logical().clone().into_series();
 
-                    l_logical.is_in(&r_logical)?
+                    is_in(&l_logical.clone().into_series(), &r_logical)?
                 }
 
                 dt => panic!("in/2 does not work for categorical and {dt:?} pairs"),
@@ -967,7 +965,7 @@ pub fn s_correlation(
 ) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
-    let corr = pearson_corr_f(s1.f64()?, s2.f64()?, ddof);
+    let corr = pearson_corr(s1.f64()?, s2.f64()?, ddof);
     Ok(term_from_optional_float(corr, env))
 }
 
@@ -975,7 +973,7 @@ pub fn s_correlation(
 pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
-    let cov = cov_f(s1.f64()?, s2.f64()?);
+    let cov = cov(s1.f64()?, s2.f64()?);
     Ok(term_from_optional_float(cov, env))
 }
 
@@ -1539,7 +1537,7 @@ pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, Explorer
             true,
             false,
             None,
-            Some(true),
+            &Utf8Chunked::from_iter(std::iter::once("earliest")),
         )?
         .into_series();
     Ok(ExSeries::new(s1))
@@ -1572,36 +1570,36 @@ pub fn s_clip_float(s: ExSeries, min: f64, max: f64) -> Result<ExSeries, Explore
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.f64()?.apply(|o| o.sin()).into();
+    let s1 = s.f64()?.apply_values(|o| o.sin()).into();
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cos(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.f64()?.apply(|o| o.cos()).into();
+    let s1 = s.f64()?.apply_values(|o| o.cos()).into();
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_tan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.f64()?.apply(|o| o.tan()).into();
+    let s1 = s.f64()?.apply_values(|o| o.tan()).into();
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_asin(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.f64()?.apply(|o| o.asin()).into();
+    let s1 = s.f64()?.apply_values(|o| o.asin()).into();
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_acos(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.f64()?.apply(|o| o.acos()).into();
+    let s1 = s.f64()?.apply_values(|o| o.acos()).into();
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.f64()?.apply(|o| o.atan()).into();
+    let s1 = s.f64()?.apply_values(|o| o.atan()).into();
     Ok(ExSeries::new(s1))
 }

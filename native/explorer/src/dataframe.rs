@@ -202,7 +202,7 @@ pub fn df_filter_with(
     let new_df = if groups.is_empty() {
         df.clone_inner().lazy().filter(exp).collect()?
     } else {
-        df.groupby_stable(groups)?
+        df.group_by_stable(groups)?
             .apply(|df| df.lazy().filter(exp.clone()).collect())?
     };
 
@@ -219,7 +219,7 @@ pub fn df_slice_by_indices(
     let new_df = if groups.is_empty() {
         df.take(&idx)?
     } else {
-        df.groupby_stable(groups)?.apply(|df| df.take(&idx))?
+        df.group_by_stable(groups)?.apply(|df| df.take(&idx))?
     };
     Ok(ExDataFrame::new(new_df))
 }
@@ -237,7 +237,7 @@ pub fn df_slice_by_series(
             let new_df = if groups.is_empty() {
                 df.take(idx)?
             } else {
-                df.groupby_stable(groups)?.apply(|df| df.take(idx))?
+                df.group_by_stable(groups)?.apply(|df| df.take(idx))?
             };
 
             Ok(ExDataFrame::new(new_df))
@@ -260,7 +260,7 @@ pub fn df_sample_n(
     let new_df = if groups.is_empty() {
         df.sample_n(n, replace, shuffle, seed)?
     } else {
-        df.groupby_stable(groups)?
+        df.group_by_stable(groups)?
             .apply(|df| df.sample_n(n, replace, shuffle, seed))?
     };
 
@@ -279,7 +279,7 @@ pub fn df_sample_frac(
     let new_df = if groups.is_empty() {
         df.sample_frac(frac, replace, shuffle, seed)?
     } else {
-        df.groupby_stable(groups)?
+        df.group_by_stable(groups)?
             .apply(|df| df.sample_frac(frac, replace, shuffle, seed))?
     };
 
@@ -345,7 +345,7 @@ pub fn df_arrange(
     let new_df = if groups.is_empty() {
         df.sort(by_columns, reverse, maintain_order)?
     } else {
-        df.groupby_stable(groups)?
+        df.group_by_stable(groups)?
             .apply(|df| df.sort(by_columns.clone(), reverse.clone(), maintain_order))?
     };
 
@@ -371,7 +371,7 @@ pub fn df_arrange_with(
             .sort_by_exprs(exprs, directions, nulls_last, maintain_order)
             .collect()?
     } else {
-        df.groupby_stable(groups)?.apply(|df| {
+        df.group_by_stable(groups)?.apply(|df| {
             df.lazy()
                 .sort_by_exprs(&exprs, &directions, nulls_last, maintain_order)
                 .collect()
@@ -391,7 +391,7 @@ pub fn df_slice(
     let new_df = if groups.is_empty() {
         df.slice(offset, length)
     } else {
-        df.groupby_stable(groups)?
+        df.group_by_stable(groups)?
             .apply(|df| Ok(df.slice(offset, length)))?
     };
     Ok(ExDataFrame::new(new_df))
@@ -406,7 +406,8 @@ pub fn df_head(
     let new_df = if groups.is_empty() {
         df.head(length)
     } else {
-        df.groupby_stable(groups)?.apply(|df| Ok(df.head(length)))?
+        df.group_by_stable(groups)?
+            .apply(|df| Ok(df.head(length)))?
     };
     Ok(ExDataFrame::new(new_df))
 }
@@ -420,7 +421,8 @@ pub fn df_tail(
     let new_df = if groups.is_empty() {
         df.tail(length)
     } else {
-        df.groupby_stable(groups)?.apply(|df| Ok(df.tail(length)))?
+        df.group_by_stable(groups)?
+            .apply(|df| Ok(df.tail(length)))?
     };
     Ok(ExDataFrame::new(new_df))
 }
@@ -507,7 +509,7 @@ pub fn df_mutate_with_exprs(
     let new_df = if groups.is_empty() {
         df.clone_inner().lazy().with_columns(mutations).collect()?
     } else {
-        df.groupby_stable(groups)?
+        df.group_by_stable(groups)?
             .apply(|df| df.lazy().with_columns(&mutations).collect())?
     };
 
@@ -538,7 +540,7 @@ pub fn df_rename_columns(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_groups(df: ExDataFrame, groups: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
-    let groups = df.groupby(groups)?.groups()?;
+    let groups = df.group_by(groups)?.groups()?;
 
     Ok(ExDataFrame::new(groups))
 }
@@ -549,7 +551,7 @@ pub fn df_group_indices(
     groups: Vec<&str>,
 ) -> Result<Vec<ExSeries>, ExplorerError> {
     let series = df
-        .groupby_stable(groups)?
+        .group_by_stable(groups)?
         .groups()?
         .column("groups")?
         .list()?
@@ -573,7 +575,7 @@ pub fn df_summarise_with_exprs(
     let new_lf = if groups.is_empty() {
         lf.with_columns(aggs).first()
     } else {
-        lf.groupby_stable(groups).agg(aggs)
+        lf.group_by_stable(groups).agg(aggs)
     };
 
     Ok(ExDataFrame::new(new_lf.collect()?))

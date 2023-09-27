@@ -21,9 +21,6 @@ use crate::dataframe::normalize_numeric_dtypes;
 use crate::datatypes::{ExParquetCompression, ExS3Entry};
 use crate::{ExDataFrame, ExplorerError};
 
-// Note that we have two types of "Compression" for IPC: this one and IpcCompresion.
-use polars::export::arrow::io::ipc::write::Compression as IpcStreamCompression;
-
 fn finish_reader<R>(reader: impl SerReader<R>) -> Result<ExDataFrame, ExplorerError>
 where
     R: polars::io::mmap::MmapBytesReader,
@@ -449,7 +446,7 @@ pub fn df_to_ipc_stream(
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
     let compression = match compression {
-        Some(algo) => Some(decode_ipc_stream_compression(algo)?),
+        Some(algo) => Some(decode_ipc_compression(algo)?),
         None => None,
     };
 
@@ -468,7 +465,7 @@ pub fn df_to_ipc_stream_cloud(
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
     let compression = match compression {
-        Some(algo) => Some(decode_ipc_stream_compression(algo)?),
+        Some(algo) => Some(decode_ipc_compression(algo)?),
         None => None,
     };
 
@@ -489,7 +486,7 @@ pub fn df_dump_ipc_stream<'a>(
     let mut buf = vec![];
 
     let compression = match compression {
-        Some(algo) => Some(decode_ipc_stream_compression(algo)?),
+        Some(algo) => Some(decode_ipc_compression(algo)?),
         None => None,
     };
 
@@ -515,16 +512,6 @@ pub fn df_load_ipc_stream(
         .with_projection(projection);
 
     finish_reader(reader)
-}
-
-fn decode_ipc_stream_compression(compression: &str) -> Result<IpcStreamCompression, ExplorerError> {
-    match compression {
-        "lz4" => Ok(IpcStreamCompression::LZ4),
-        "zstd" => Ok(IpcStreamCompression::ZSTD),
-        other => Err(ExplorerError::Other(format!(
-            "the algorithm {other} is not supported for IPC stream compression"
-        ))),
-    }
 }
 
 // ============ NDJSON ============ //
