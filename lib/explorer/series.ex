@@ -5034,8 +5034,9 @@ defmodule Explorer.Series do
     do: dtype_error("day_of_week/1", dtype, @date_or_datetime_dtypes)
 
   @doc """
-  Returns the day-of-year number starting from 1. The return value ranges from 1 to 366. (The last
-  day of year differs by years.)
+  Returns the day-of-year number starting from 1.
+  
+  The return value ranges from 1 to 366 (the last day of year differs by years).
 
   ## Examples
 
@@ -5066,8 +5067,9 @@ defmodule Explorer.Series do
     do: dtype_error("day_of_year/1", dtype, @date_or_datetime_dtypes)
 
   @doc """
-  Returns the week-of-year number. The return value ranges from 1 to 53. (The last week of year
-  differs by years.)
+  Returns the week-of-year number.
+
+  The return value ranges from 1 to 53 (the last week of year differs by years).
 
   Weeks start on Monday and end on Sunday. If the final week of a year does not end on Sunday, the
   first days of the following year will have a week number of 52 (or 53 for a leap year).
