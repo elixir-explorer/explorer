@@ -39,7 +39,7 @@ defmodule Explorer.MixProject do
       {:aws_signature, "~> 0.3"},
       {:castore, "~> 1.0"},
       {:fss, "~> 0.1"},
-      {:rustler_precompiled, "~> 0.6"},
+      {:rustler_precompiled, "~> 0.7"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 3.1.1 or ~> 4.0.0"},
       {:adbc, "~> 0.1", optional: true},

@@ -1,6 +1,7 @@
 [build.env]
 passthrough = [
-  "RUSTLER_NIF_VERSION"
+  "RUSTLER_NIF_VERSION",
+  "RUSTFLAGS"
 ]
 
 [target.riscv64gc-unknown-linux-gnu]
