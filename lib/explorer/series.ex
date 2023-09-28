@@ -5035,7 +5035,7 @@ defmodule Explorer.Series do
 
   @doc """
   Returns the day-of-year number starting from 1.
-  
+
   The return value ranges from 1 to 366 (the last day of year differs by years).
 
   ## Examples
