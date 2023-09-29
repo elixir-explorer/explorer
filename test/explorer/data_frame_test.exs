@@ -1056,7 +1056,7 @@ defmodule Explorer.DataFrameTest do
       df3 = DF.new(a: [1], b: [4]) |> DF.mutate(c: covariance(a, a), d: correlation(a, a))
 
       assert df3 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
-               %{a: [1], b: [4], c: [:nan], d: [:nan]}
+               %{a: [1], b: [4], c: [:nan], d: [nil]}
     end
 
     test "clip/3" do

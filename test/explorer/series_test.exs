@@ -3588,7 +3588,7 @@ defmodule Explorer.SeriesTest do
 
     test "product of integers with nil" do
       s = Series.from_list([1, 2, nil, 3])
-      assert Series.product(s) === nil
+      assert Series.product(s) === 6
     end
 
     test "product of a series with a single value" do
@@ -3607,8 +3607,11 @@ defmodule Explorer.SeriesTest do
     end
 
     test "product of an empty series" do
-      s = Series.from_list([])
-      assert Series.product(s) === nil
+      s = Series.from_list([], dtype: :integer)
+      assert Series.product(s) === 1
+
+      s = Series.from_list([], dtype: :float)
+      assert Series.product(s) === 1.0
     end
 
     test "product of a series with zero" do
@@ -3913,7 +3916,7 @@ defmodule Explorer.SeriesTest do
 
       s1 = Series.from_list([1.0])
       s2 = Series.from_list([2.0])
-      assert Series.correlation(s1, s2) == :nan
+      assert Series.correlation(s1, s2) == nil
       assert Series.covariance(s1, s2) == :nan
 
       s1 = Series.from_list([1.0, 2.0])
