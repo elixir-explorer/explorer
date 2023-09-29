@@ -3582,12 +3582,12 @@ defmodule Explorer.DataFrameTest do
         )
 
       assert DF.to_columns(df3, atom_keys: true) == %{
-               a: [3],
-               b: [1],
-               c: [0],
-               d: [3],
-               e: [3],
-               f: [3]
+               a: [0],
+               b: [0],
+               c: [3],
+               d: [2],
+               e: [2],
+               f: [2]
              }
     end
   end

@@ -4095,19 +4095,19 @@ defmodule Explorer.SeriesTest do
   describe "argmax/1 and argmin/1" do
     test "argmax and argmin for different dtypes" do
       for {list, exp_argmax, exp_argmin, exp_argmin_filled} <- [
-            {[1, 2, 3, nil], 2, 3, 0},
-            {[1.3, nil, 5.4, 2.6], 2, 1, 0},
-            {[nil, ~D[2023-01-01], ~D[2022-01-01], ~D[2021-01-01]], 1, 0, 3},
+            {[1, 2, 3, nil], 2, 0, 0},
+            {[1.3, nil, 5.4, 2.6], 2, 0, 0},
+            {[nil, ~D[2023-01-01], ~D[2022-01-01], ~D[2021-01-01]], 1, 3, 3},
             {[~N[2023-01-01 00:00:00], ~N[2022-01-01 00:00:00], ~N[2021-01-01 00:00:00], nil], 0,
-             3, 2},
+             2, 2},
             {[~N[2023-01-01 10:00:00], ~N[2022-01-01 01:00:00], ~N[2021-01-01 00:10:00], nil], 0,
-             3, 2},
-            {[1.0, :infinity, :neg_infinity, nil], 1, 3, 2}
+             2, 2},
+            {[1.0, :infinity, :neg_infinity, nil], 1, 2, 2}
           ] do
         series = Series.from_list(list)
 
-        assert Series.argmax(series) == exp_argmax, "argmax of #{inspect(list)} is not expected"
-        assert Series.argmin(series) == exp_argmin, "argmin of #{inspect(list)} is not expected"
+        assert Series.argmax(series) == exp_argmax
+        assert Series.argmin(series) == exp_argmin
         assert Series.argmin(Series.fill_missing(series, :max)) == exp_argmin_filled
       end
     end
