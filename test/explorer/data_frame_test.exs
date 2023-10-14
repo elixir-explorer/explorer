@@ -1592,6 +1592,21 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "replace characters in a string" do
+      df =
+        DF.new(a: ["2,000", "2,000,000", ","])
+
+      df1 =
+        DF.mutate(df,
+          b: replace(a, ",", "")
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["2,000", "2,000,000", ","],
+               b: ["2000", "2000000", ""]
+             }
+    end
+
     test "strip multiple characters from string" do
       df =
         DF.new(

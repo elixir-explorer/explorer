@@ -261,6 +261,7 @@ rustler::init!(
         expr_lstrip,
         expr_rstrip,
         expr_substring,
+        expr_replace,
         // float round expressions
         expr_round,
         expr_floor,
