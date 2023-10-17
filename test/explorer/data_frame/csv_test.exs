@@ -187,7 +187,7 @@ defmodule Explorer.DataFrame.CSVTest do
       csv =
         tmp_csv(config.tmp_dir, """
         a,b,c
-        1,2,2020-10-15 00:00:01,
+        1,2,2020-10-15 00:00:01
         3,4,2020-10-15 00:00:18
         """)
 
@@ -206,7 +206,7 @@ defmodule Explorer.DataFrame.CSVTest do
       csv =
         tmp_csv(config.tmp_dir, """
         a,b,c
-        1,2,"2020-10-15 00:00:01",
+        1,2,"2020-10-15 00:00:01"
         3,4,2020-10-15 00:00:18
         """)
 
