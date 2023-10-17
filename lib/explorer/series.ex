@@ -1935,6 +1935,10 @@ defmodule Explorer.Series do
       iex> Explorer.Series.argmax(s)
       1
 
+      iex> s = Explorer.Series.from_list([], dtype: :integer)
+      iex> Explorer.Series.argmax(s)
+      nil
+
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmax(s)
       ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
@@ -1950,7 +1954,9 @@ defmodule Explorer.Series do
   @doc """
   Gets the index of the minimum value of the series.
 
-  Note that `nil` is treated as a minimum value.
+  Note that `nil` is ignored. In case an empty list
+  or a series whose all elements are `nil` is used,
+  the result will be `nil`.
 
   ## Supported dtypes
 
@@ -1965,11 +1971,11 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([1, 2, nil, 3])
       iex> Explorer.Series.argmin(s)
-      2
+      0
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 3.0])
       iex> Explorer.Series.argmin(s)
-      2
+      0
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.argmin(s)
@@ -1982,6 +1988,14 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([~T[00:02:03.000212], ~T[00:05:04.000456]])
       iex> Explorer.Series.argmin(s)
       0
+
+      iex> s = Explorer.Series.from_list([], dtype: :integer)
+      iex> Explorer.Series.argmin(s)
+      nil
+
+      iex> s = Explorer.Series.from_list([nil], dtype: :integer)
+      iex> Explorer.Series.argmin(s)
+      nil
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmin(s)
@@ -2115,6 +2129,9 @@ defmodule Explorer.Series do
   @doc """
   Reduce this Series to the product value.
 
+  Note that an empty series is going to result in a
+  product of `1`. Values that are `nil` are ignored.
+
   ## Supported dtypes
 
     * `:integer`
@@ -2125,6 +2142,10 @@ defmodule Explorer.Series do
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.product(s)
       6
+
+      iex> s = Explorer.Series.from_list([])
+      iex> Explorer.Series.product(s)
+      1.0
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.product(s)

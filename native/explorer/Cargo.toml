@@ -21,9 +21,9 @@ thiserror = "1"
 smartstring = "1"
 
 # Deps necessary for cloud features.
-tokio = { version = "1.29", default-features = false, features = ["rt"], optional = true }
+tokio = { version = "1.33", default-features = false, features = ["rt"], optional = true }
 tokio-util = { version = "0.7", default-features = false, features = ["io", "io-util"], optional = true }
-object_store = { version = "0.6", default-features = false, optional = true }
+object_store = { version = "0.7", default-features = false, optional = true }
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
@@ -31,9 +31,10 @@ object_store = { version = "0.6", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.32"
+version = "0.33"
 default-features = false
 features = [
+  "abs",
   "checked_arithmetic",
   "concat_str",
   "cross_join",
@@ -73,17 +74,17 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.32"
+version = "0.33"
 
 [dependencies.polars-algo]
-version = "0.32"
+version = "0.33"
 
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
 
 cloud = ["object_store", "tokio", "tokio-util", "aws"]
 ndjson = ["polars/json"]
-aws = ["polars/async", "polars/aws"]
+aws = ["object_store/aws", "polars/async", "polars/aws"]
 
 # Feature necessary for Rustler Precompiled.
 nif_version_2_15 = ["rustler/nif_version_2_15"]

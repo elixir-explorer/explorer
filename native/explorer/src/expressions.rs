@@ -271,9 +271,8 @@ pub fn expr_sample_n(
     seed: Option<u64>,
 ) -> ExExpr {
     let expr = expr.clone_inner();
-    let fixed_seed = true;
 
-    ExExpr::new(expr.sample_n(n, with_replacement, shuffle, seed, fixed_seed))
+    ExExpr::new(expr.sample_n(n, with_replacement, shuffle, seed))
 }
 
 #[rustler::nif]
@@ -285,9 +284,8 @@ pub fn expr_sample_frac(
     seed: Option<u64>,
 ) -> ExExpr {
     let expr = expr.clone_inner();
-    let fixed_seed = true;
 
-    ExExpr::new(expr.sample_frac(frac, with_replacement, shuffle, seed, fixed_seed))
+    ExExpr::new(expr.sample_frac(frac, with_replacement, shuffle, seed))
 }
 
 #[rustler::nif]
@@ -775,19 +773,19 @@ pub fn expr_downcase(expr: ExExpr) -> ExExpr {
 #[rustler::nif]
 pub fn expr_strip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().strip(string))
+    ExExpr::new(expr.str().strip_chars(string))
 }
 
 #[rustler::nif]
 pub fn expr_lstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().lstrip(string))
+    ExExpr::new(expr.str().strip_chars_start(string))
 }
 
 #[rustler::nif]
 pub fn expr_rstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().rstrip(string))
+    ExExpr::new(expr.str().strip_chars_end(string))
 }
 
 #[rustler::nif]
@@ -873,13 +871,13 @@ pub fn expr_strptime(expr: ExExpr, format_string: &str) -> ExExpr {
         strict: false,
         exact: true,
         cache: true,
-        use_earliest: Some(true),
     };
-    ExExpr::new(
-        expr.clone_inner()
-            .str()
-            .to_datetime(Some(TimeUnit::Microseconds), None, options),
-    )
+    ExExpr::new(expr.clone_inner().str().to_datetime(
+        Some(TimeUnit::Microseconds),
+        None,
+        options,
+        "earliest".lit(),
+    ))
 }
 
 #[rustler::nif]

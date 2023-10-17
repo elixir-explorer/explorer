@@ -147,7 +147,7 @@ pub fn lf_summarise_with(
     let new_lf = if groups.is_empty() {
         ldf.with_columns(aggs).first()
     } else {
-        ldf.groupby_stable(groups).agg(aggs)
+        ldf.group_by_stable(groups).agg(aggs)
     };
 
     Ok(ExLazyFrame::new(new_lf))

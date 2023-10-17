@@ -2696,7 +2696,7 @@ defmodule Explorer.DataFrame do
         petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
         petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
-        petal_length_avg float [1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, 1.4640000000000004, ...]
+        petal_length_avg float [1.464, 1.464, 1.464, 1.464, 1.464, ...]
       >
   """
   @doc type: :single
@@ -5223,7 +5223,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.summarise(df, mean_petal_length: mean(petal_length))
       #Explorer.DataFrame<
         Polars[1 x 1]
-        mean_petal_length float [3.758666666666667]
+        mean_petal_length float [3.758666666666666]
       >
 
   """
