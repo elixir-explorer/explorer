@@ -30,16 +30,16 @@ jobs:
         nif: ["2.15"]
         job:
           - { target: aarch64-apple-darwin, os: macos-11 }
-          - { target: aarch64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
-          - { target: aarch64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true, cross-version: from-source }
+          - { target: aarch64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true, cross-version: from-source }
           - { target: riscv64gc-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true, cargo-args: "--no-default-features" }
           - { target: x86_64-apple-darwin, os: macos-11 }
           - { target: x86_64-pc-windows-gnu, os: windows-2022, rustflags: "-C target-feature=+fxsr,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+fma" }
           - { target: x86_64-pc-windows-gnu, os: windows-2022, variant: "legacy_cpu" }
           - { target: x86_64-pc-windows-msvc, os: windows-2019, rustflags: "-C target-feature=+fxsr,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+fma" }
           - { target: x86_64-pc-windows-msvc, os: windows-2019, variant: "legacy_cpu" }
-          - { target: x86_64-unknown-freebsd, os: ubuntu-22.04, use-cross: true, cross-version: v0.2.5, rustflags: "-C target-feature=+fxsr,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+fma" }
-          - { target: x86_64-unknown-freebsd, os: ubuntu-22.04, use-cross: true, cross-version: v0.2.5, variant: "legacy_cpu" }
+          - { target: x86_64-unknown-freebsd, os: ubuntu-22.04, use-cross: true, cross-version: from-source, rustflags: "-C target-feature=+fxsr,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+fma" }
+          - { target: x86_64-unknown-freebsd, os: ubuntu-22.04, use-cross: true, cross-version: from-source, variant: "legacy_cpu" }
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04, rustflags: "-C target-feature=+fxsr,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+fma" }
           - { target: x86_64-unknown-linux-gnu, os: ubuntu-20.04, variant: "legacy_cpu" }
           - { target: x86_64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
@@ -74,14 +74,14 @@ jobs:
 
       - name: Build the project
         id: build-crate
-        uses: philss/rustler-precompiled-action@v1.1.0
+        uses: philss/rustler-precompiled-action@v1.1.1
         with:
           project-name: explorer
           project-version: ${{ env.PROJECT_VERSION }}
           target: ${{ matrix.job.target }}
           nif-version: ${{ matrix.nif }}
           use-cross: ${{ matrix.job.use-cross }}
-          cross-version: ${{ matrix.job.cross-version || 'v0.2.4' }}
+          cross-version: ${{ matrix.job.cross-version || 'v0.2.5' }}
           project-dir: "native/explorer"
           cargo-args: ${{ matrix.job.cargo-args }}
           variant: ${{ matrix.job.variant }}
