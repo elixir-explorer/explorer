@@ -60,6 +60,7 @@ pub fn df_from_csv(
     let reader = CsvReader::from_path(filename)?
         .infer_schema(infer_schema_length)
         .has_header(has_header)
+        .truncate_ragged_lines(true)
         .with_try_parse_dates(parse_dates)
         .with_n_rows(stop_after_n_rows)
         .with_delimiter(delimiter_as_byte)

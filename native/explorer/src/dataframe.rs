@@ -507,7 +507,11 @@ pub fn df_mutate_with_exprs(
 ) -> Result<ExDataFrame, ExplorerError> {
     let mutations = ex_expr_to_exprs(columns);
     let new_df = if groups.is_empty() {
-        df.clone_inner().lazy().with_columns(mutations).collect()?
+        df.clone_inner()
+            .lazy()
+            .with_comm_subexpr_elim(false)
+            .with_columns(mutations)
+            .collect()?
     } else {
         df.group_by_stable(groups)?
             .apply(|df| df.lazy().with_columns(&mutations).collect())?
