@@ -5,4 +5,4 @@ passthrough = [
 ]
 
 [target.riscv64gc-unknown-linux-gnu]
-pre-build = ["DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -yq --no-install-recommends cmake"]
+pre-build = ["apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends cmake"]
