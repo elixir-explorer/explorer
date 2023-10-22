@@ -5277,12 +5277,12 @@ defmodule Explorer.Series do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(df, opts) do
+    def inspect(series, opts) do
       force_unfit(
         concat([
           color("#Explorer.Series<", :map, opts),
           nest(
-            concat([line(), Shared.apply_impl(df, :inspect, [opts])]),
+            concat([line(), Shared.apply_impl(series, :inspect, [opts])]),
             2
           ),
           line(),

@@ -11,16 +11,25 @@ defmodule Explorer.Shared do
       :boolean,
       :category,
       :date,
-      :time,
-      {:datetime, :nanosecond},
-      {:datetime, :microsecond},
-      {:datetime, :millisecond},
-      {:duration, :nanosecond},
-      {:duration, :microsecond},
-      {:duration, :millisecond},
       :float,
       :integer,
-      :string
+      :string,
+      :time,
+      {:datetime, :microsecond},
+      {:datetime, :millisecond},
+      {:datetime, :nanosecond},
+      {:duration, :microsecond},
+      {:duration, :millisecond},
+      {:duration, :nanosecond},
+      # We could make all recursive: {:list, dtype()}
+      {:list, :binary},
+      {:list, :boolean},
+      {:list, :category},
+      {:list, :date},
+      {:list, :float},
+      {:list, :integer},
+      {:list, :string},
+      {:list, :time}
     ]
 
   @doc """
@@ -280,6 +289,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:duration, :millisecond}), do: "duration[ms]"
   def dtype_to_string({:duration, :microsecond}), do: "duration[μs]"
   def dtype_to_string({:duration, :nanosecond}), do: "duration[ns]"
+  def dtype_to_string({:list, dtype}), do: "list[" <> dtype_to_string(dtype) <> "]"
   def dtype_to_string(other), do: Atom.to_string(other)
 
   @threshold 0.77

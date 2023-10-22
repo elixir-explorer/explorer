@@ -167,8 +167,16 @@ defmodule Explorer.PolarsBackend.Shared do
   def normalise_dtype("duration[μs]"), do: {:duration, :microsecond}
   def normalise_dtype("f64"), do: :float
   def normalise_dtype("i64"), do: :integer
-  def normalise_dtype("list[u32]"), do: :integer
   def normalise_dtype("str"), do: :string
+  # def normalise_dtype("list[u32]"), do: {:list, :integer}
+  def normalise_dtype("list[i64]"), do: {:list, :integer}
+  def normalise_dtype("list[f64]"), do: {:list, :float}
+  def normalise_dtype("list[binary]"), do: {:list, :binary}
+  def normalise_dtype("list[bool]"), do: {:list, :boolean}
+  def normalise_dtype("list[str]"), do: {:list, :string}
+  def normalise_dtype("list[cat]"), do: {:list, :category}
+  def normalise_dtype("list[date]"), do: {:list, :date}
+  def normalise_dtype("list[time]"), do: {:list, :time}
 
   def internal_from_dtype(:binary), do: "binary"
   def internal_from_dtype(:boolean), do: "bool"
@@ -184,6 +192,7 @@ defmodule Explorer.PolarsBackend.Shared do
   def internal_from_dtype(:float), do: "f64"
   def internal_from_dtype(:integer), do: "i64"
   def internal_from_dtype(:string), do: "str"
+  def internal_from_dtype({:list, dtype}), do: "list[" <> internal_from_dtype(dtype) <> "]"
 
   defp runtime_error(error) when is_binary(error), do: RuntimeError.exception(error)
 
