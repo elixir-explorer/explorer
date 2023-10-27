@@ -32,7 +32,7 @@ jobs:
           - { target: aarch64-apple-darwin, os: macos-11 }
           - { target: aarch64-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true }
           - { target: aarch64-unknown-linux-musl, os: ubuntu-20.04, use-cross: true }
-          - { target: riscv64gc-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true, cargo-args: "--no-default-features" }
+          # - { target: riscv64gc-unknown-linux-gnu, os: ubuntu-20.04, use-cross: true, cargo-args: "--no-default-features" }
           - { target: x86_64-apple-darwin, os: macos-11 }
           - { target: x86_64-pc-windows-gnu, os: windows-2022, rustflags: "-C target-feature=+fxsr,+sse,+sse2,+sse3,+ssse3,+sse4.1,+sse4.2,+popcnt,+avx,+fma" }
           - { target: x86_64-pc-windows-gnu, os: windows-2022, variant: "legacy_cpu" }
@@ -74,7 +74,7 @@ jobs:
 
       - name: Build the project
         id: build-crate
-        uses: philss/rustler-precompiled-action@ps-experimental-no-default-features-for-nif-version
+        uses: philss/rustler-precompiled-action@v1.1.3
         with:
           project-name: explorer
           project-version: ${{ env.PROJECT_VERSION }}
