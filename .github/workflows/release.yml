@@ -74,7 +74,7 @@ jobs:
 
       - name: Build the project
         id: build-crate
-        uses: philss/rustler-precompiled-action@v1.1.1
+        uses: philss/rustler-precompiled-action@ps-experimental-no-default-features-for-nif-version
         with:
           project-name: explorer
           project-version: ${{ env.PROJECT_VERSION }}
