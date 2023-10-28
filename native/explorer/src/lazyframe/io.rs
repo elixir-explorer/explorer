@@ -174,7 +174,7 @@ pub fn lf_from_csv(
         .has_header(has_header)
         .with_try_parse_dates(parse_dates)
         .with_n_rows(stop_after_n_rows)
-        .with_delimiter(delimiter_as_byte)
+        .with_separator(delimiter_as_byte)
         .with_skip_rows(skip_rows)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)

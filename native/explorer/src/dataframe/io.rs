@@ -63,7 +63,7 @@ pub fn df_from_csv(
         .truncate_ragged_lines(true)
         .with_try_parse_dates(parse_dates)
         .with_n_rows(stop_after_n_rows)
-        .with_delimiter(delimiter_as_byte)
+        .with_separator(delimiter_as_byte)
         .with_skip_rows(skip_rows)
         .with_projection(projection)
         .with_rechunk(do_rechunk)
@@ -115,7 +115,7 @@ pub fn df_to_csv(
     let mut buf_writer = BufWriter::new(file);
     CsvWriter::new(&mut buf_writer)
         .has_header(has_headers)
-        .with_delimiter(delimiter)
+        .with_separator(delimiter)
         .finish(&mut data.clone())?;
     Ok(())
 }
@@ -132,7 +132,7 @@ pub fn df_to_csv_cloud(
 
     CsvWriter::new(&mut cloud_writer)
         .has_header(has_headers)
-        .with_delimiter(delimiter)
+        .with_separator(delimiter)
         .finish(&mut data.clone())?;
     Ok(())
 }
@@ -148,7 +148,7 @@ pub fn df_dump_csv(
 
     CsvWriter::new(&mut buf)
         .has_header(has_headers)
-        .with_delimiter(delimiter)
+        .with_separator(delimiter)
         .finish(&mut data.clone())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
@@ -187,7 +187,7 @@ pub fn df_load_csv(
         .has_header(has_header)
         .with_try_parse_dates(parse_dates)
         .with_n_rows(stop_after_n_rows)
-        .with_delimiter(delimiter_as_byte)
+        .with_separator(delimiter_as_byte)
         .with_skip_rows(skip_rows)
         .with_projection(projection)
         .with_rechunk(do_rechunk)

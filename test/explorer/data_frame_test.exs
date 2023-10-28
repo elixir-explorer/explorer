@@ -1357,7 +1357,7 @@ defmodule Explorer.DataFrameTest do
                a: [1, 2, 3, 4, 5],
                b: [5, 3, 2, 1, 4],
                c: [1, 3, 2, 4, 5],
-               d: [5, 1, 4, 0, 0]
+               d: [4, 2, 5, 0, 0]
              }
 
       assert df1.dtypes == %{
@@ -3424,8 +3424,8 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.sample(df, 3, seed: 100)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               letters: ["e", "b", "d"],
-               numbers: [5, 2, 4]
+               letters: ["j", "f", "h"],
+               numbers: [10, 6, 8]
              }
     end
 
@@ -3435,8 +3435,8 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.sample(df, 0.2, seed: 100)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               letters: ["j", "b"],
-               numbers: [10, 2]
+               letters: ["f", "g"],
+               numbers: [6, 7]
              }
     end
 

@@ -363,7 +363,7 @@ defmodule Explorer.PolarsBackend.Series do
       do: Shared.apply_series(s, :s_clip_integer, [min, max])
 
   def clip(%Series{} = s, min, max),
-    do: Shared.apply_series(s, :s_clip_float, [min * 1.0, max * 1.0])
+    do: s |> cast(:float) |> Shared.apply_series(:s_clip_float, [min * 1.0, max * 1.0])
 
   # Trigonometry
 

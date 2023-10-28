@@ -430,7 +430,7 @@ fn categorical_series_to_list<'b>(
     let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
     let mut list = unsafe { list::make_list(env_as_c_arg, &[]) };
 
-    let logical = s.categorical()?.logical();
+    let logical = s.categorical()?.physical();
     let cat_size = mapping.len();
     let mut terms: Vec<NIF_TERM> = vec![nil_as_c_arg; cat_size];
 

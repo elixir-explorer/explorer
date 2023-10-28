@@ -3997,16 +3997,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sample(df, 3, seed: 100)
       #Explorer.DataFrame<
         Polars[3 x 10]
-        year integer [2011, 2012, 2011]
-        country string ["SERBIA", "FALKLAND ISLANDS (MALVINAS)", "SWAZILAND"]
-        total integer [13422, 15, 286]
-        solid_fuel integer [9355, 3, 102]
-        liquid_fuel integer [2537, 12, 184]
-        gas_fuel integer [1188, 0, 0]
-        cement integer [342, 0, 0]
-        gas_flaring integer [0, 0, 0]
-        per_capita float [1.49, 5.21, 0.24]
-        bunker_fuels integer [39, 0, 1]
+        year integer [2012, 2013, 2014]
+        country string ["SYRIAN ARAB REPUBLIC", "EGYPT", "AFGHANISTAN"]
+        total integer [12198, 58198, 2675]
+        solid_fuel integer [1, 224, 1194]
+        liquid_fuel integer [7909, 26501, 1393]
+        gas_fuel integer [3265, 24672, 74]
+        cement integer [816, 6800, 14]
+        gas_flaring integer [208, 0, 0]
+        per_capita float [0.61, 0.66, 0.08]
+        bunker_fuels integer [437, 694, 9]
       >
 
   Or you can sample a proportion of rows:
@@ -4015,16 +4015,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sample(df, 0.03, seed: 100)
       #Explorer.DataFrame<
         Polars[32 x 10]
-        year integer [2011, 2012, 2012, 2013, 2010, ...]
-        country string ["URUGUAY", "FRENCH POLYNESIA", "ICELAND", "PERU", "TUNISIA", ...]
-        total integer [2117, 222, 491, 15586, 7543, ...]
-        solid_fuel integer [1, 0, 96, 784, 15, ...]
-        liquid_fuel integer [1943, 222, 395, 7097, 3138, ...]
-        gas_fuel integer [40, 0, 0, 3238, 3176, ...]
-        cement integer [132, 0, 0, 1432, 1098, ...]
-        gas_flaring integer [0, 0, 0, 3036, 116, ...]
-        per_capita float [0.63, 0.81, 1.52, 0.51, 0.71, ...]
-        bunker_fuels integer [401, 45, 170, 617, 219, ...]
+        year integer [2013, 2012, 2014, 2011, 2011, ...]
+        country string ["BRITISH VIRGIN ISLANDS", "TAJIKISTAN", "AFGHANISTAN", "ICELAND", "SINGAPORE", ...]
+        total integer [48, 800, 2675, 513, 12332, ...]
+        solid_fuel integer [0, 192, 1194, 94, 7, ...]
+        liquid_fuel integer [48, 501, 1393, 400, 7774, ...]
+        gas_fuel integer [0, 74, 74, 0, 4551, ...]
+        cement integer [0, 34, 14, 19, 0, ...]
+        gas_flaring integer [0, 0, 0, 0, 0, ...]
+        per_capita float [1.64, 0.1, 0.08, 1.6, 2.38, ...]
+        bunker_fuels integer [0, 28, 9, 168, 41786, ...]
       >
 
   ## Grouped examples
@@ -4039,10 +4039,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[6 x 5]
         Groups: ["species"]
-        sepal_length float [5.3, 5.1, 5.1, 5.6, 6.2, ...]
-        sepal_width float [3.7, 3.8, 2.5, 2.7, 3.4, ...]
-        petal_length float [1.5, 1.9, 3.0, 4.2, 5.4, ...]
-        petal_width float [0.2, 0.4, 1.1, 1.3, 2.3, ...]
+        sepal_length float [4.8, 5.0, 5.5, 6.5, 7.4, ...]
+        sepal_width float [3.1, 3.6, 2.4, 2.8, 2.8, ...]
+        petal_length float [1.6, 1.4, 3.8, 4.6, 6.1, ...]
+        petal_width float [0.2, 0.2, 1.1, 1.5, 1.9, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
       >
 
@@ -4055,10 +4055,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[15 x 5]
         Groups: ["species"]
-        sepal_length float [5.3, 5.1, 4.7, 5.7, 5.1, ...]
-        sepal_width float [3.7, 3.8, 3.2, 3.8, 3.5, ...]
-        petal_length float [1.5, 1.9, 1.3, 1.7, 1.4, ...]
-        petal_width float [0.2, 0.4, 0.2, 0.3, 0.3, ...]
+        sepal_length float [5.2, 5.0, 5.2, 5.0, 5.0, ...]
+        sepal_width float [3.4, 3.6, 3.5, 3.0, 3.4, ...]
+        petal_length float [1.4, 1.4, 1.5, 1.6, 1.6, ...]
+        petal_width float [0.2, 0.2, 0.2, 0.2, 0.4, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
