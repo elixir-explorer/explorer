@@ -2597,7 +2597,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list([<<3>>, <<4>>], dtype: :binary)
 
       assert_raise RuntimeError,
-                   "Polars Error: External error: invalid utf-8 sequence",
+                   "Polars Error: invalid utf-8 sequence",
                    fn -> Series.format([s1, s2]) end
     end
 
@@ -2733,7 +2733,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 10, seed: 100)
 
       assert Series.size(result) == 10
-      assert Series.to_list(result) == [55, 51, 33, 26, 5, 32, 62, 31, 9, 25]
+      assert Series.to_list(result) == [57, 9, 54, 62, 50, 77, 35, 88, 1, 69]
     end
 
     test "sample taking 5% of elements" do
@@ -2742,7 +2742,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 0.05, seed: 100)
 
       assert Series.size(result) == 5
-      assert Series.to_list(result) == [49, 77, 96, 19, 18]
+      assert Series.to_list(result) == [9, 56, 79, 28, 54]
     end
 
     test "sample taking more than elements without replace" do
@@ -3805,13 +3805,13 @@ defmodule Explorer.SeriesTest do
     test "rank of a float series with a nan" do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
       r = Series.rank(s)
-      assert Series.to_list(r) === [2.0, 4.0, 5.0, nil, 3.0, 1.0, 8.0, 6.0]
+      assert Series.to_list(r) === [2.0, 4.0, 5.0, nil, 3.0, 1.0, 7.0, 6.0]
     end
 
     test "rank of a float series with infinity positive" do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
       r = Series.rank(s)
-      assert Series.to_list(r) === [2.0, 4.0, 5.0, nil, 3.0, 1.0, 8.0, 6.0]
+      assert Series.to_list(r) === [2.0, 4.0, 5.0, nil, 3.0, 1.0, 7.0, 6.0]
     end
 
     test "rank of a float series with infinity negative" do
@@ -3844,22 +3844,28 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "clip/3" do
-    test "With integers and floats" do
+    test "with integers" do
       s1 = Series.from_list([-50, 5, nil, 50])
       clipped1 = Series.clip(s1, 1, 10)
       assert Series.to_list(clipped1) == [1, 5, nil, 10]
       assert clipped1.dtype == :integer
+    end
 
+    test "with regular floats" do
       s2 = Series.from_list([-50, 5, nil, 50])
       clipped2 = Series.clip(s2, 1.5, 10.5)
       assert Series.to_list(clipped2) == [1.5, 5.0, nil, 10.5]
       assert clipped2.dtype == :float
+    end
 
+    test "with special floats" do
       s3 = Series.from_list([:neg_infinity, :nan, nil, :infinity])
       clipped3 = Series.clip(s3, 1.5, 10.5)
       assert Series.to_list(clipped3) == [1.5, :nan, nil, 10.5]
       assert clipped3.dtype == :float
+    end
 
+    test "errors" do
       assert_raise ArgumentError,
                    ~r"expects both the min and max bounds to be numbers",
                    fn -> Series.clip(Series.from_list([1]), 1, "a") end

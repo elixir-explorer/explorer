@@ -1,6 +1,7 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
+use polars::error::PolarsResult;
 use polars::export::{arrow, arrow::ffi};
 use std::collections::HashMap;
 use std::result::Result;
@@ -251,17 +252,18 @@ pub fn df_slice_by_series(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_sample_n(
     df: ExDataFrame,
-    n: usize,
+    n: u64,
     replace: bool,
     shuffle: bool,
     seed: Option<u64>,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
+    let n_s = Series::new("n", &[n]);
     let new_df = if groups.is_empty() {
-        df.sample_n(n, replace, shuffle, seed)?
+        df.sample_n(&n_s, replace, shuffle, seed)?
     } else {
         df.group_by_stable(groups)?
-            .apply(|df| df.sample_n(n, replace, shuffle, seed))?
+            .apply(|df| df.sample_n(&n_s, replace, shuffle, seed))?
     };
 
     Ok(ExDataFrame::new(new_df))
@@ -276,11 +278,12 @@ pub fn df_sample_frac(
     seed: Option<u64>,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
+    let frac_s = Series::new("frac", &[frac]);
     let new_df = if groups.is_empty() {
-        df.sample_frac(frac, replace, shuffle, seed)?
+        df.sample_frac(&frac_s, replace, shuffle, seed)?
     } else {
         df.group_by_stable(groups)?
-            .apply(|df| df.sample_frac(frac, replace, shuffle, seed))?
+            .apply(|df| df.sample_frac(&frac_s, replace, shuffle, seed))?
     };
 
     Ok(ExDataFrame::new(new_df))
@@ -314,7 +317,7 @@ fn df_from_arrow_stream_pointer(stream_ptr: u64) -> Result<ExDataFrame, Explorer
 }
 
 fn array_to_dataframe(
-    stream_chunk: Result<Box<dyn arrow::array::Array>, polars::error::ArrowError>,
+    stream_chunk: PolarsResult<Box<dyn arrow::array::Array>>,
 ) -> Result<DataFrame, ExplorerError> {
     let dyn_array = stream_chunk.map_err(arrow_to_explorer_error)?;
 

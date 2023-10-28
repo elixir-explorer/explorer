@@ -8,7 +8,7 @@ use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{
     col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
 };
-use polars::prelude::{AnyValue, DataType, Expr, Literal, StrptimeOptions, TimeUnit};
+use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
 use crate::atoms::{microsecond, millisecond, nanosecond};
 use crate::datatypes::{ExDate, ExDateTime, ExDuration};
@@ -265,14 +265,14 @@ pub fn expr_shift(expr: ExExpr, offset: i64, _default: Option<ExExpr>) -> ExExpr
 #[rustler::nif]
 pub fn expr_sample_n(
     expr: ExExpr,
-    n: usize,
+    n: u64,
     with_replacement: bool,
     shuffle: bool,
     seed: Option<u64>,
 ) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.sample_n(n, with_replacement, shuffle, seed))
+    ExExpr::new(expr.sample_n(n.lit(), with_replacement, shuffle, seed))
 }
 
 #[rustler::nif]
@@ -285,7 +285,7 @@ pub fn expr_sample_frac(
 ) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.sample_frac(frac, with_replacement, shuffle, seed))
+    ExExpr::new(expr.sample_frac(frac.lit(), with_replacement, shuffle, seed))
 }
 
 #[rustler::nif]
@@ -773,25 +773,37 @@ pub fn expr_downcase(expr: ExExpr) -> ExExpr {
 #[rustler::nif]
 pub fn expr_strip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().strip_chars(string))
+    let matches_expr = match string {
+        Some(string) => string.lit(),
+        None => Expr::Literal(LiteralValue::Null),
+    };
+    ExExpr::new(expr.str().strip_chars(matches_expr))
 }
 
 #[rustler::nif]
 pub fn expr_lstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().strip_chars_start(string))
+    let matches_expr = match string {
+        Some(string) => string.lit(),
+        None => Expr::Literal(LiteralValue::Null),
+    };
+    ExExpr::new(expr.str().strip_chars_start(matches_expr))
 }
 
 #[rustler::nif]
 pub fn expr_rstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().strip_chars_end(string))
+    let matches_expr = match string {
+        Some(string) => string.lit(),
+        None => Expr::Literal(LiteralValue::Null),
+    };
+    ExExpr::new(expr.str().strip_chars_end(matches_expr))
 }
 
 #[rustler::nif]
 pub fn expr_substring(expr: ExExpr, offset: i64, length: Option<u64>) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().str_slice(offset, length))
+    ExExpr::new(expr.str().slice(offset, length))
 }
 
 #[rustler::nif]
@@ -887,9 +899,7 @@ pub fn expr_strftime(expr: ExExpr, format_string: &str) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_clip_integer(expr: ExExpr, min: i64, max: i64) -> ExExpr {
-    let expr = expr
-        .clone_inner()
-        .clip(AnyValue::Int64(min), AnyValue::Int64(max));
+    let expr = expr.clone_inner().clip(min.lit(), max.lit());
 
     ExExpr::new(expr)
 }
@@ -899,7 +909,7 @@ pub fn expr_clip_float(expr: ExExpr, min: f64, max: f64) -> ExExpr {
     let expr = expr
         .clone_inner()
         .cast(DataType::Float64)
-        .clip(AnyValue::Float64(min), AnyValue::Float64(max));
+        .clip(min.lit(), max.lit());
 
     ExExpr::new(expr)
 }

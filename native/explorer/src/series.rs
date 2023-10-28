@@ -8,7 +8,7 @@ use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
 use polars::functions::{cov, pearson_corr};
 use polars::prelude::*;
-use polars_ops::prelude::{cut, is_in, qcut};
+use polars_ops::prelude::{cut, is_in, peaks::peak_max, peaks::peak_min, qcut};
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
@@ -547,7 +547,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         | DataType::Time
         | DataType::Datetime(_, _) => is_in(&s, &rhs)?,
         DataType::Categorical(Some(mapping)) => {
-            let l_logical = s.categorical()?.logical();
+            let l_logical = s.categorical()?.physical();
 
             match rhs.dtype() {
                 DataType::Utf8 => {
@@ -577,7 +577,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
                         ));
                     }
 
-                    let r_logical = rhs.categorical()?.logical().clone().into_series();
+                    let r_logical = rhs.categorical()?.physical().clone().into_series();
 
                     is_in(&l_logical.clone().into_series(), &r_logical)?
                 }
@@ -820,7 +820,7 @@ pub fn s_ewm_mean(
     ignore_nulls: bool,
 ) -> Result<ExSeries, ExplorerError> {
     let opts = ewm_opts(alpha, adjust, min_periods, ignore_nulls);
-    let s1 = series.ewm_mean(opts)?;
+    let s1 = polars_ops::prelude::ewm_mean(&series, opts)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -991,22 +991,26 @@ pub fn s_at(env: Env, series: ExSeries, idx: usize) -> Result<Term, ExplorerErro
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_sum(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(series.cumsum(reverse)))
+    let new_series = polars_ops::prelude::cumsum(&series, reverse)?;
+    Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_max(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(series.cummax(reverse)))
+    let new_series = polars_ops::prelude::cummax(&series, reverse)?;
+    Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_min(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(series.cummin(reverse)))
+    let new_series = polars_ops::prelude::cummin(&series, reverse)?;
+    Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_product(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(series.cumprod(reverse)))
+    let new_series = polars_ops::prelude::cumprod(&series, reverse)?;
+    Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1044,12 +1048,32 @@ pub fn s_quantile<'a>(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_peak_max(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s.peak_max().into_series()))
+    let ca = match s.dtype() {
+        DataType::Int64 => peak_max(s.i64()?),
+        DataType::Float64 => peak_max(s.f64()?),
+        DataType::Date => peak_max(s.date()?),
+        DataType::Time => peak_max(s.time()?),
+        DataType::Datetime(_unit, None) => peak_max(s.datetime()?),
+        DataType::Duration(_unit) => peak_max(s.duration()?),
+        dt => panic!("peak_max/1 not implemented for {dt:?}"),
+    };
+
+    Ok(ExSeries::new(ca.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_peak_min(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s.peak_min().into_series()))
+    let ca = match s.dtype() {
+        DataType::Int64 => peak_min(s.i64()?),
+        DataType::Float64 => peak_min(s.f64()?),
+        DataType::Date => peak_min(s.date()?),
+        DataType::Time => peak_min(s.time()?),
+        DataType::Datetime(_unit, None) => peak_min(s.datetime()?),
+        DataType::Duration(_unit) => peak_min(s.duration()?),
+        dt => panic!("peak_min/1 not implemented for {dt:?}"),
+    };
+
+    Ok(ExSeries::new(ca.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1446,9 +1470,9 @@ pub fn s_substring(
     offset: i64,
     length: Option<u64>,
 ) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(
-        s1.utf8()?.str_slice(offset, length)?.into_series(),
-    ))
+    let s2 = s1.utf8()?.str_slice(offset, length).into_series();
+
+    Ok(ExSeries::new(s2))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1551,19 +1575,22 @@ pub fn s_strftime(s: ExSeries, format_string: &str) -> Result<ExSeries, Explorer
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_clip_integer(s: ExSeries, min: i64, max: i64) -> Result<ExSeries, ExplorerError> {
-    let s1 = s
-        .clone_inner()
-        .clip(AnyValue::Int64(min), AnyValue::Int64(max))?;
+    let s1 = clip(
+        &s,
+        &Series::new("min_clip", &[min]),
+        &Series::new("max_clip", &[max]),
+    )?;
 
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_clip_float(s: ExSeries, min: f64, max: f64) -> Result<ExSeries, ExplorerError> {
-    let s1 = s
-        .clone_inner()
-        .cast(&DataType::Float64)?
-        .clip(AnyValue::Float64(min), AnyValue::Float64(max))?;
+    let s1 = clip(
+        &s,
+        &Series::new("min_clip", &[min]),
+        &Series::new("max_clip", &[max]),
+    )?;
 
     Ok(ExSeries::new(s1))
 }
