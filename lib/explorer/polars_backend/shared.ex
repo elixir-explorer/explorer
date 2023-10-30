@@ -112,6 +112,7 @@ defmodule Explorer.PolarsBackend.Shared do
       {:datetime, precision} -> Native.s_from_list_datetime(name, list, Atom.to_string(precision))
       {:duration, precision} -> Native.s_from_list_duration(name, list, Atom.to_string(precision))
       :binary -> Native.s_from_list_binary(name, list)
+      {:list, :integer} -> Native.s_from_list_list_i64(name, list)
     end
   end
 

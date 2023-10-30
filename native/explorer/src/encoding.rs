@@ -544,6 +544,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
         AnyValue::Duration(v, time_unit) => encode_duration(v, time_unit, env),
         AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
+        AnyValue::List(series) => list_from_series(ExSeries::new(series), env),
         dt => panic!("cannot encode value {dt:?} to term"),
     }
 }
@@ -561,6 +562,7 @@ pub fn term_from_float(float: f64, env: Env<'_>) -> Term<'_> {
     }
 }
 
+// TODO: make this function work with "Series" directly.
 pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Boolean => series_to_list!(s, env, bool),
@@ -577,6 +579,15 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
             generic_binary_series_to_list(&s.resource, s.binary()?.downcast_iter(), env)
         }
         DataType::Categorical(Some(mapping)) => categorical_series_to_list(&s, env, mapping),
+        DataType::List(_inner_dtype) => s
+            .list()?
+            .into_iter()
+            .map(|item| match item {
+                Some(list) => list_from_series(ExSeries::new(list), env),
+                None => Ok(None::<bool>.encode(env)),
+            })
+            .collect::<Result<Vec<Term>, ExplorerError>>()
+            .map(|lists| lists.encode(env)),
         dt => panic!("to_list/1 not implemented for {dt:?}"),
     }
 }
