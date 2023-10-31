@@ -225,7 +225,7 @@ defmodule Explorer.Shared do
 
   defp type(item, _type) when is_nil(item), do: nil
   defp type([], _type), do: nil
-# TODO: maybe map all elements to gather types
+  # TODO: maybe map all elements to gather types
   defp type([item | _], type), do: {:list, type(item, type)}
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
