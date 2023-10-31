@@ -562,7 +562,6 @@ pub fn term_from_float(float: f64, env: Env<'_>) -> Term<'_> {
     }
 }
 
-// TODO: make this function work with "Series" directly.
 pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Boolean => series_to_list!(s, env, bool),

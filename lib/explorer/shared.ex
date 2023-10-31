@@ -224,7 +224,9 @@ defmodule Explorer.Shared do
   defp type(item, _type) when is_binary(item), do: :string
 
   defp type(item, _type) when is_nil(item), do: nil
-  defp type(item, type) when is_list(item), do: {:list, type(hd(item), type)}
+  defp type([], _type), do: nil
+# TODO: maybe map all elements to gather types
+  defp type([item | _], type), do: {:list, type(item, type)}
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
   @doc """
