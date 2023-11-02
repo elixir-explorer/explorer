@@ -2727,6 +2727,35 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "filter/2" do
+    test "basic example" do
+      require Explorer.Series
+
+      s = Series.from_list([1, 2, 3, 4])
+      filtered = Series.filter(s, n: n > 2)
+      assert Series.to_list(filtered) == [3, 4]
+    end
+
+    test "aggregation" do
+      require Explorer.Series
+
+      s = Series.from_list([1, 2, 3, 4])
+      filtered = Series.filter(s, n: n == count(n))
+      assert Series.to_list(filtered) == [4]
+    end
+
+    test "mismatched columns" do
+      require Explorer.Series
+
+      s = Series.from_list([1, 2, 3, 4])
+      message = "could not find column name \"k\". The available entries are: [\"n\"]"
+
+      assert_raise ArgumentError, message, fn ->
+        Series.filter(s, n: k > 2)
+      end
+    end
+  end
+
   describe "filter_with/2" do
     test "basic example" do
       s = Series.from_list([1, 2, 3, 4])
