@@ -2727,6 +2727,25 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "filter_with/2" do
+    test "basic example" do
+      s = Series.from_list([1, 2, 3, 4])
+      filtered = Series.filter_with(s, &Series.greater(&1, 2))
+      assert Series.to_list(filtered) == [3, 4]
+    end
+
+    test "raise an error if the function is not returning a lazy series" do
+      s = Series.from_list([1, 2, 3, 4])
+
+      message =
+        "expecting the function to return a single or a list of boolean LazySeries, but instead it contains:\ntrue"
+
+      assert_raise ArgumentError, message, fn ->
+        Series.filter_with(s, &(&1 > 2))
+      end
+    end
+  end
+
   describe "sample/2" do
     test "sample taking 10 elements" do
       s = 1..100 |> Enum.to_list() |> Series.from_list()

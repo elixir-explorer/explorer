@@ -1406,6 +1406,30 @@ defmodule Explorer.Series do
   def at_every(series, every_n), do: apply_series(series, :at_every, [every_n])
 
   @doc """
+  Filters a series with a callback function.
+
+  ## Examples
+
+      iex> series = Explorer.Series.from_list([1, 2, 3])
+      iex> is_odd = fn s -> s |> Explorer.Series.remainder(2) |> Explorer.Series.equal(1) end
+      iex> Explorer.Series.filter_with(series, is_odd)
+      #Explorer.Series<
+        Polars[2]
+        integer [1, 3]
+      >
+  """
+  @doc type: :element_wise
+  @spec filter_with(
+          series :: Series.t(),
+          fun :: (Series.t() -> Series.lazy_t())
+        ) :: Series.t()
+  def filter_with(%Series{} = series, fun) when is_function(fun, 1) do
+    Explorer.DataFrame.new(series: series)
+    |> Explorer.DataFrame.filter_with(&fun.(&1[:series]))
+    |> Explorer.DataFrame.pull(:series)
+  end
+
+  @doc """
   Filters a series with a mask.
 
   ## Examples
