@@ -12,6 +12,14 @@ defmodule Explorer.Series.ListTest do
       assert Series.to_list(one_item) == [[1], [2], [3, nil, 4], []]
     end
 
+    test "with a list of lists of integers recursively" do
+      one_item = Series.from_list([[[1]]])
+
+      assert one_item.dtype == {:list, {:list, :integer}}
+      assert one_item[0] == [[1]]
+      assert Series.to_list(one_item) == [[[1]]]
+    end
+
     test "with a list of lists of floats" do
       one_item = Series.from_list([[1.2], [2.3], [3.4, nil, 4.5], []], dtype: {:list, :float})
 

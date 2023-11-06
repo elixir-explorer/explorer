@@ -275,6 +275,21 @@ defmodule Explorer.Backend.Series do
     %Explorer.Series{data: data, dtype: dtype}
   end
 
+  def new(data, {:list, _dtype} = list_dtype) do
+    if valid_list_dtype?(list_dtype) do
+      %Explorer.Series{data: data, dtype: list_dtype}
+    else
+      raise ArgumentError, "invalid list dtype: " <> inspect(list_dtype)
+    end
+  end
+
+  defp valid_list_dtype?({:list, inner_dtype}) do
+    case inner_dtype do
+      {:list, _} -> valid_list_dtype?(inner_dtype)
+      other -> other in @valid_dtypes
+    end
+  end
+
   alias Inspect.Algebra, as: A
   alias Explorer.Series
 

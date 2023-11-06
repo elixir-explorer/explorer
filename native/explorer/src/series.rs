@@ -28,27 +28,10 @@ macro_rules! from_list {
     };
 }
 
-macro_rules! from_list_of_lists {
-    ($name:ident, $type:ty) => {
-        #[rustler::nif(schedule = "DirtyCpu")]
-        pub fn $name(name: &str, val: Vec<Vec<Option<$type>>>) -> ExSeries {
-            let lists: Vec<Series> = val
-                .iter()
-                .map(|list| Series::new("", list.as_slice()))
-                .collect();
-            ExSeries::new(Series::new(name, lists))
-        }
-    };
-}
-
 from_list!(s_from_list_i64, i64);
 from_list!(s_from_list_u32, u32);
 from_list!(s_from_list_bool, bool);
 from_list!(s_from_list_str, String);
-from_list_of_lists!(s_from_list_of_lists_str, String);
-from_list_of_lists!(s_from_list_of_lists_i64, i64);
-from_list_of_lists!(s_from_list_of_lists_f64, f64);
-from_list_of_lists!(s_from_list_of_lists_bool, bool);
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_f64(name: &str, val: Term) -> ExSeries {
@@ -165,6 +148,18 @@ pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries 
             .cast(&DataType::Categorical(None))
             .unwrap(),
     )
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_of_series(name: &str, val: Vec<ExSeries>) -> ExSeries {
+    // TODO: accept Vec<Option<Series>>
+    let mut lists: Vec<Series> = vec![];
+
+    for maybe_series in val.iter() {
+        lists.push(maybe_series.clone_inner())
+    }
+
+    ExSeries::new(Series::new(name, lists))
 }
 
 macro_rules! from_binary {

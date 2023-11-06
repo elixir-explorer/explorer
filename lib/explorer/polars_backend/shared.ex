@@ -100,7 +100,15 @@ defmodule Explorer.PolarsBackend.Shared do
     Enum.map(dtypes, &normalise_dtype/1)
   end
 
-  def from_list(list, dtype, name \\ "") when is_list(list) and dtype in @valid_dtypes do
+  def from_list(list, dtype), do: from_list(list, dtype, "")
+
+  def from_list(list, {:list, inner_dtype} = _dtype, name) when is_list(list) do
+    series = for inner_list <- list, do: from_list(inner_list, inner_dtype, name)
+
+    Native.s_from_list_of_series(name, series)
+  end
+
+  def from_list(list, dtype, name) when is_list(list) and dtype in @valid_dtypes do
     case dtype do
       :integer -> Native.s_from_list_i64(name, list)
       :float -> Native.s_from_list_f64(name, list)
@@ -112,10 +120,6 @@ defmodule Explorer.PolarsBackend.Shared do
       {:datetime, precision} -> Native.s_from_list_datetime(name, list, Atom.to_string(precision))
       {:duration, precision} -> Native.s_from_list_duration(name, list, Atom.to_string(precision))
       :binary -> Native.s_from_list_binary(name, list)
-      {:list, :integer} -> Native.s_from_list_of_lists_i64(name, list)
-      {:list, :float} -> Native.s_from_list_of_lists_f64(name, list)
-      {:list, :string} -> Native.s_from_list_of_lists_str(name, list)
-      {:list, :boolean} -> Native.s_from_list_of_lists_bool(name, list)
     end
   end
 

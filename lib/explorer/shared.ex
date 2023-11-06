@@ -4,9 +4,12 @@ defmodule Explorer.Shared do
 
   @doc """
   All supported dtypes.
+
+  This list excludes recursive dtypes, such as lists
+  within lists inside.
   """
-  def dtypes,
-    do: [
+  def dtypes do
+    non_list_dtypes = [
       :binary,
       :boolean,
       :category,
@@ -20,17 +23,13 @@ defmodule Explorer.Shared do
       {:datetime, :nanosecond},
       {:duration, :microsecond},
       {:duration, :millisecond},
-      {:duration, :nanosecond},
-      # We could make all recursive: {:list, dtype()}
-      {:list, :binary},
-      {:list, :boolean},
-      {:list, :category},
-      {:list, :date},
-      {:list, :float},
-      {:list, :integer},
-      {:list, :string},
-      {:list, :time}
+      {:duration, :nanosecond}
     ]
+
+    list_dtypes = for dtype <- non_list_dtypes, do: {:list, dtype}
+
+    non_list_dtypes ++ list_dtypes
+  end
 
   @doc """
   Supported datetime dtypes.
@@ -189,6 +188,9 @@ defmodule Explorer.Shared do
           new_type == :numeric and type in [:float, :integer] ->
             new_type
 
+          match?({:list, list_type} when is_list(list_type), new_type) ->
+            resolve_list_dtype(new_type, type)
+
           new_type != type and type != nil ->
             raise ArgumentError,
                   "the value #{inspect(el)} does not match the inferred series dtype #{inspect(type)}"
@@ -225,8 +227,7 @@ defmodule Explorer.Shared do
 
   defp type(item, _type) when is_nil(item), do: nil
   defp type([], _type), do: nil
-  # TODO: maybe map all elements to gather types
-  defp type([item | _], type), do: {:list, type(item, type)}
+  defp type([_item | _] = items, type), do: {:list, for(item <- items, do: type(item, type))}
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
   @doc """
@@ -243,6 +244,25 @@ defmodule Explorer.Shared do
   end
 
   def cast_numerics(list, type), do: {list, type}
+
+  defp resolve_list_dtype({:list, inner_dtype} = dtype, _type) when is_atom(inner_dtype),
+    do: dtype
+
+  defp resolve_list_dtype({:list, inner_dtype}, type) when is_list(inner_dtype) do
+    uniq_without_nils = for dtype <- inner_dtype, not is_nil(dtype), uniq: true, do: dtype
+
+    case uniq_without_nils do
+      [{:list, inner} = dtype] when is_list(inner) ->
+        {:list, resolve_list_dtype(dtype, type)}
+
+      [dtype] when is_atom(dtype) ->
+        {:list, dtype}
+
+      multiple_dtypes ->
+        raise ArgumentError,
+              "cannot decide which type of this list dtype: #{inspect(multiple_dtypes)}"
+    end
+  end
 
   @doc """
   Helper for shared behaviour in inspect.
