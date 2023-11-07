@@ -151,13 +151,14 @@ pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries 
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_of_series(name: &str, val: Vec<ExSeries>) -> ExSeries {
-    // TODO: accept Vec<Option<Series>>
-    let mut lists: Vec<Series> = vec![];
-
-    for maybe_series in val.iter() {
-        lists.push(maybe_series.clone_inner())
-    }
+pub fn s_from_list_of_series(name: &str, series_vec: Vec<Option<ExSeries>>) -> ExSeries {
+    let lists: Vec<Option<Series>> = series_vec
+        .iter()
+        .map(|maybe_series| match maybe_series {
+            Some(ex_series) => Some(ex_series.clone_inner()),
+            None => None,
+        })
+        .collect();
 
     ExSeries::new(Series::new(name, lists))
 }
