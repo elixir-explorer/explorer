@@ -1406,7 +1406,7 @@ defmodule Explorer.Series do
   def at_every(series, every_n), do: apply_series(series, :at_every, [every_n])
 
   @doc """
-  Picks rows based on `Explorer.Query`.
+  Picks values based on an `Explorer.Query`.
 
   The query is compiled and runs efficiently against the series.
   The query must return a boolean expression or a list of boolean expressions.
@@ -1422,24 +1422,45 @@ defmodule Explorer.Series do
   See `filter_with/2` for a callback version of this function without
   `Explorer.Query`.
 
-  ## Examples
+  ## Syntax
+
+  > #### Notice {: .notice}
+  >
+  > This macro uses the special `_` syntax.
+
+  DataFrames have named columns, so their queries use column names as variables:
+
+      iex> require Explorer.DataFrame
+      iex> df = Explorer.DataFrame.new(col_name: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, col_name > 2)
+      #Explorer.DataFrame<
+        Polars[1 x 1]
+        col_name integer [3]
+      >
+
+  Series have no named columns.
+  (A series constitutes a single column, so no name is required.)
+  This means their queries can't use column names as variables.
+  Instead, series queries use the special `_` variable like so:
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.filter(s, n: n > 2)
+      iex> Explorer.Series.filter(s, _ > 2)
       #Explorer.Series<
         Polars[1]
         integer [3]
       >
 
+  ## Examples
+
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
-      iex> Explorer.Series.filter(s, string: string == "b")
+      iex> Explorer.Series.filter(s, _ == "b")
       #Explorer.Series<
         Polars[1]
         string ["b"]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.filter(s, n: remainder(n, 2) == 1)
+      iex> Explorer.Series.filter(s, remainder(_, 2) == 1)
       #Explorer.Series<
         Polars[2]
         integer [1, 3]
@@ -1448,26 +1469,26 @@ defmodule Explorer.Series do
   Returning a non-boolean expression errors:
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.filter(s, n: cumulative_max(n))
+      iex> Explorer.Series.filter(s, cumulative_max(_))
       ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer
 
   Which can be addressed by converting it to boolean:
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.filter(s, n: cumulative_max(n) == 1)
+      iex> Explorer.Series.filter(s, cumulative_max(_) == 1)
       #Explorer.Series<
         Polars[1]
         integer [1]
       >
   """
   @doc type: :element_wise
-  defmacro filter(series, [{column, query}]) do
+  defmacro filter(series, query) do
     quote do
       require Explorer.Query
 
-      Explorer.DataFrame.new([{unquote(column), unquote(series)}])
+      Explorer.DataFrame.new([{:_, unquote(series)}])
       |> Explorer.DataFrame.filter_with(Explorer.Query.query(unquote(query)))
-      |> Explorer.DataFrame.pull(unquote(column))
+      |> Explorer.DataFrame.pull(:_)
     end
   end
 

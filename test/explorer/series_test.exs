@@ -2732,7 +2732,7 @@ defmodule Explorer.SeriesTest do
       require Explorer.Series
 
       s = Series.from_list([1, 2, 3, 4])
-      filtered = Series.filter(s, n: n > 2)
+      filtered = Series.filter(s, _ > 2)
       assert Series.to_list(filtered) == [3, 4]
     end
 
@@ -2740,7 +2740,7 @@ defmodule Explorer.SeriesTest do
       require Explorer.Series
 
       s = Series.from_list([1, 2, 3, 4])
-      filtered = Series.filter(s, n: n == count(n))
+      filtered = Series.filter(s, _ == count(_))
       assert Series.to_list(filtered) == [4]
     end
 
@@ -2748,10 +2748,10 @@ defmodule Explorer.SeriesTest do
       require Explorer.Series
 
       s = Series.from_list([1, 2, 3, 4])
-      message = "could not find column name \"k\". The available entries are: [\"n\"]"
+      message = "could not find column name \"n\". The available entries are: [\"_\"]"
 
       assert_raise ArgumentError, message, fn ->
-        Series.filter(s, n: k > 2)
+        Series.filter(s, n > 2)
       end
     end
   end
