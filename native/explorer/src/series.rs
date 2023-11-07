@@ -154,9 +154,10 @@ pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries 
 pub fn s_from_list_of_series(name: &str, series_vec: Vec<Option<ExSeries>>) -> ExSeries {
     let lists: Vec<Option<Series>> = series_vec
         .iter()
-        .map(|maybe_series| match maybe_series {
-            Some(ex_series) => Some(ex_series.clone_inner()),
-            None => None,
+        .map(|maybe_series| {
+            maybe_series
+                .as_ref()
+                .map(|ex_series| ex_series.clone_inner())
         })
         .collect();
 
