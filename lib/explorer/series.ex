@@ -1486,7 +1486,7 @@ defmodule Explorer.Series do
     quote do
       require Explorer.Query
 
-      Explorer.DataFrame.new([{:_, unquote(series)}])
+      Explorer.DataFrame.new([_: unquote(series)])
       |> Explorer.DataFrame.filter_with(Explorer.Query.query(unquote(query)))
       |> Explorer.DataFrame.pull(:_)
     end
