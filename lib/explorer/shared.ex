@@ -188,6 +188,9 @@ defmodule Explorer.Shared do
           new_type == :numeric and type in [:float, :integer] ->
             new_type
 
+          new_type == {:list, :numeric} and type in [{:list, :integer}, {:list, :float}] ->
+            new_type
+
           match?({:list, list_type} when is_list(list_type), new_type) ->
             resolve_list_dtype(new_type, type)
 
@@ -256,11 +259,20 @@ defmodule Explorer.Shared do
         {:list, resolve_list_dtype(dtype, type)}
 
       [dtype] when is_atom(dtype) ->
-        {:list, dtype}
+        # Preserve numeric dtype
+        if type == {:list, :numeric} and dtype in [:integer, :float] do
+          type
+        else
+          {:list, dtype}
+        end
 
       multiple_dtypes ->
-        raise ArgumentError,
-              "cannot decide which type of this list dtype: #{inspect(multiple_dtypes)}"
+        if Enum.sort(multiple_dtypes) == [:float, :integer] do
+          {:list, :numeric}
+        else
+          raise ArgumentError,
+                "cannot decide which type of this list dtype: #{inspect(multiple_dtypes)}"
+        end
     end
   end
 
