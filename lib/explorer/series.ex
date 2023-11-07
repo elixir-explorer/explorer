@@ -1421,6 +1421,7 @@ defmodule Explorer.Series do
 
   See `filter_with/2` for a callback version of this function without
   `Explorer.Query`.
+  See `mask/2` if you want to filter values based on another series.
 
   ## Syntax
 
@@ -1494,6 +1495,8 @@ defmodule Explorer.Series do
 
   @doc """
   Filters a series with a callback function.
+
+  See `mask/2` if you want to filter values based on another series.
 
   ## Examples
 
