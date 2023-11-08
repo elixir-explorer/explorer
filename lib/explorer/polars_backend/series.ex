@@ -284,19 +284,8 @@ defmodule Explorer.PolarsBackend.Series do
   # Arithmetic
 
   @impl true
-  def add(out_dtype, left, right) do
-    left = matching_size!(left, right)
-
-    # `duration + date` is not supported by polars for some reason.
-    # `date + duration` is, so we're swapping arguments as a work around.
-    [left, right] =
-      case {out_dtype, dtype(left), dtype(right)} do
-        {:date, {:duration, _}, :date} -> [right, left]
-        _ -> [left, right]
-      end
-
-    Shared.apply_series(left, :s_add, [right.data])
-  end
+  def add(_out_dtype, left, right),
+    do: Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
 
   @impl true
   def subtract(_out_dtype, left, right),

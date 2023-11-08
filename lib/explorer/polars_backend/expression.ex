@@ -13,6 +13,7 @@ defmodule Explorer.PolarsBackend.Expression do
   @type t :: %__MODULE__{resource: reference()}
 
   @all_expressions [
+    add: 2,
     all_equal: 2,
     argmax: 1,
     argmin: 1,
@@ -130,7 +131,6 @@ defmodule Explorer.PolarsBackend.Expression do
   ]
 
   @custom_expressions [
-    add: 2,
     divide: 2,
     multiply: 2,
     cast: 2,
@@ -242,18 +242,6 @@ defmodule Explorer.PolarsBackend.Expression do
 
       apply(Native, unquote(expr_op), [expr | args])
     end
-  end
-
-  def to_expr(%LazySeries{op: :add, args: [left, right]}) do
-    # `duration + date` is not supported by polars for some reason.
-    # `date + duration` is, so we're swapping arguments as a work around.
-    [left, right] =
-      case [dtype(left), dtype(right)] do
-        [{:duration, _}, :date] -> [right, left]
-        _ -> [left, right]
-      end
-
-    Native.expr_add(to_expr(left), to_expr(right))
   end
 
   def to_expr(%LazySeries{op: :multiply, args: [left, right] = args}) do
