@@ -693,8 +693,8 @@ defmodule Explorer.Series.DurationTest do
       assert Series.to_list(df["ns"]) == [ns]
     end
 
-    # There is currently an issue with Polars where `duration + date` is not supported but
-    # `date + duration` is. There is a workaround in where we swap the args.
+    # There used to be an issue with Polars where `duration + date` was not supported but
+    # `date + duration` was. This test was for that workaround (which is no longer present).
     test "mutate/2 with duration + date" do
       require Explorer.DataFrame
       alias Explorer.DataFrame, as: DF
