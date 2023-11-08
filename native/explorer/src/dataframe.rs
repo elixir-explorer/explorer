@@ -6,6 +6,7 @@ use polars::export::{arrow, arrow::ffi};
 use std::collections::HashMap;
 use std::result::Result;
 
+use crate::datatypes::ExSeriesDtype;
 use crate::ex_expr_to_exprs;
 use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 use smartstring::alias::String as SmartString;
@@ -77,9 +78,14 @@ pub fn df_names(df: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn df_dtypes(df: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
-    let result = df.dtypes().iter().map(|dtype| dtype.to_string()).collect();
-    Ok(result)
+pub fn df_dtypes(df: ExDataFrame) -> Result<Vec<ExSeriesDtype>, ExplorerError> {
+    let mut dtypes: Vec<ExSeriesDtype> = vec![];
+
+    for dtype in df.dtypes().iter() {
+        dtypes.push(ExSeriesDtype::try_from(dtype)?)
+    }
+
+    Ok(dtypes)
 }
 
 #[rustler::nif]

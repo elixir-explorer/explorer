@@ -18,7 +18,7 @@ use std::result::Result;
 use std::sync::Arc;
 
 use crate::dataframe::normalize_numeric_dtypes;
-use crate::datatypes::{ExParquetCompression, ExS3Entry};
+use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
 use crate::{ExDataFrame, ExplorerError};
 
 fn finish_reader<R>(reader: impl SerReader<R>) -> Result<ExDataFrame, ExplorerError>
@@ -46,7 +46,7 @@ pub fn df_from_csv(
     delimiter_as_byte: u8,
     do_rechunk: bool,
     column_names: Option<Vec<String>>,
-    dtypes: Vec<(&str, &str)>,
+    dtypes: Vec<(&str, ExSeriesDtype)>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,
@@ -76,32 +76,15 @@ pub fn df_from_csv(
     finish_reader(reader)
 }
 
-pub fn schema_from_dtypes_pairs(dtypes: Vec<(&str, &str)>) -> Result<Arc<Schema>, ExplorerError> {
+pub fn schema_from_dtypes_pairs(
+    dtypes: Vec<(&str, ExSeriesDtype)>,
+) -> Result<Arc<Schema>, ExplorerError> {
     let mut schema = Schema::new();
-    for (name, dtype_str) in dtypes {
-        let dtype = dtype_from_str(dtype_str)?;
+    for (name, ex_dtype) in dtypes {
+        let dtype = DataType::try_from(&ex_dtype)?;
         schema.with_column(name.into(), dtype);
     }
     Ok(Arc::new(schema))
-}
-
-fn dtype_from_str(dtype: &str) -> Result<DataType, ExplorerError> {
-    match dtype {
-        "binary" => Ok(DataType::Binary),
-        "bool" => Ok(DataType::Boolean),
-        "cat" => Ok(DataType::Categorical(None)),
-        "date" => Ok(DataType::Date),
-        "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
-        "datetime[ns]" => Ok(DataType::Datetime(TimeUnit::Nanoseconds, None)),
-        "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
-        "duration[ms]" => Ok(DataType::Duration(TimeUnit::Milliseconds)),
-        "duration[ns]" => Ok(DataType::Duration(TimeUnit::Nanoseconds)),
-        "duration[μs]" => Ok(DataType::Duration(TimeUnit::Microseconds)),
-        "f64" => Ok(DataType::Float64),
-        "i64" => Ok(DataType::Int64),
-        "str" => Ok(DataType::Utf8),
-        _ => Err(ExplorerError::Internal("Unrecognised datatype".into())),
-    }
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -169,7 +152,7 @@ pub fn df_load_csv(
     delimiter_as_byte: u8,
     do_rechunk: bool,
     column_names: Option<Vec<String>>,
-    dtypes: Vec<(&str, &str)>,
+    dtypes: Vec<(&str, ExSeriesDtype)>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,

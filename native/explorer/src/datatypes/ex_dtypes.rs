@@ -96,7 +96,7 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             ExSeriesDtype::Date => Ok(DataType::Date),
             ExSeriesDtype::Float => Ok(DataType::Float64),
             ExSeriesDtype::Integer => Ok(DataType::Int64),
-            ExSeriesDtype::String => Ok(DataType::Int8),
+            ExSeriesDtype::String => Ok(DataType::Utf8),
             ExSeriesDtype::Time => Ok(DataType::Time),
             ExSeriesDtype::Datetime(ExTimeUnit::Nanosecond) => {
                 Ok(DataType::Datetime(TimeUnit::Nanoseconds, None))
@@ -129,4 +129,27 @@ pub enum ExSeriesIoType {
     U(u8),
     S(u8),
     F(u8),
+}
+
+impl TryFrom<&DataType> for ExSeriesIoType {
+    type Error = ExplorerError;
+
+    fn try_from(value: &DataType) -> Result<Self, Self::Error> {
+        match value {
+            DataType::Boolean => Ok(ExSeriesIoType::U(8)),
+            DataType::UInt8 => Ok(ExSeriesIoType::U(8)),
+            DataType::UInt32 => Ok(ExSeriesIoType::U(32)),
+            DataType::Int32 => Ok(ExSeriesIoType::S(32)),
+            DataType::Int64 => Ok(ExSeriesIoType::S(64)),
+            DataType::Float64 => Ok(ExSeriesIoType::F(64)),
+            DataType::Date => Ok(ExSeriesIoType::S(32)),
+            DataType::Datetime(_, _) => Ok(ExSeriesIoType::S(64)),
+            DataType::Duration(_) => Ok(ExSeriesIoType::S(64)),
+            DataType::Time => Ok(ExSeriesIoType::S(64)),
+            DataType::Categorical(_) => Ok(ExSeriesIoType::U(32)),
+            _ => Err(ExplorerError::Other(format!(
+                "cannot convert dtype {value} to iotype"
+            ))),
+        }
+    }
 }

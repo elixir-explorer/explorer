@@ -11,8 +11,8 @@ use polars::prelude::{
 use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
 use crate::atoms::{microsecond, millisecond, nanosecond};
-use crate::datatypes::{ExDate, ExDateTime, ExDuration};
-use crate::series::{cast_str_to_dtype, cast_str_to_f64, ewm_opts, rolling_opts};
+use crate::datatypes::{ExDate, ExDateTime, ExDuration, ExSeriesDtype};
+use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 
 // Useful to get an ExExpr vec into a vec of expressions.
@@ -97,9 +97,9 @@ pub fn expr_series(series: ExSeries) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_cast(data: ExExpr, to_dtype: &str) -> ExExpr {
+pub fn expr_cast(data: ExExpr, to_dtype: ExSeriesDtype) -> ExExpr {
     let expr = data.clone_inner();
-    let to_dtype = cast_str_to_dtype(to_dtype).expect("dtype is not valid");
+    let to_dtype = DataType::try_from(&to_dtype).expect("dtype is not valid");
 
     ExExpr::new(expr.cast(to_dtype))
 }

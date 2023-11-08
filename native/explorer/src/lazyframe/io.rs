@@ -4,7 +4,7 @@ use std::io::BufWriter;
 use std::result::Result;
 
 use crate::dataframe::io::schema_from_dtypes_pairs;
-use crate::datatypes::{ExParquetCompression, ExS3Entry};
+use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
 use crate::{ExLazyFrame, ExplorerError};
 
 #[rustler::nif]
@@ -158,7 +158,7 @@ pub fn lf_from_csv(
     skip_rows: usize,
     delimiter_as_byte: u8,
     do_rechunk: bool,
-    dtypes: Vec<(&str, &str)>,
+    dtypes: Vec<(&str, ExSeriesDtype)>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,
