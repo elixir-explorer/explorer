@@ -694,7 +694,7 @@ defmodule Explorer.Series.DurationTest do
     end
 
     # There used to be an issue with Polars where `duration + date` was not supported but
-    # `date + duration` was. This test was for that workaround (which is no longer present).
+    # `date + duration` was. This test was for a workaround (longer present) to that issue.
     test "mutate/2 with duration + date" do
       require Explorer.DataFrame
       alias Explorer.DataFrame, as: DF
