@@ -334,6 +334,7 @@ rustler::init!(
         s_distinct,
         s_divide,
         s_dtype,
+        s_iotype,
         s_equal,
         s_exp,
         s_fill_missing_with_strategy,

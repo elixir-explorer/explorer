@@ -1,6 +1,6 @@
 use crate::{
     atoms,
-    datatypes::{ExDate, ExDateTime, ExDuration, ExTime},
+    datatypes::{ExDate, ExDateTime, ExDuration, ExSeriesDtype, ExSeriesIoType, ExTime},
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
@@ -195,9 +195,29 @@ pub fn s_rename(data: ExSeries, name: &str) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn s_dtype(data: ExSeries) -> Result<String, ExplorerError> {
-    let dt = data.dtype().to_string();
-    Ok(dt)
+pub fn s_dtype(data: ExSeries) -> Result<ExSeriesDtype, ExplorerError> {
+    ExSeriesDtype::try_from(data.dtype())
+}
+
+#[rustler::nif]
+pub fn s_iotype(data: ExSeries) -> Result<ExSeriesIoType, ExplorerError> {
+    let dtype = data.dtype();
+    match dtype {
+        DataType::Boolean => Ok(ExSeriesIoType::U(8)),
+        DataType::UInt8 => Ok(ExSeriesIoType::U(8)),
+        DataType::UInt32 => Ok(ExSeriesIoType::U(32)),
+        DataType::Int32 => Ok(ExSeriesIoType::S(32)),
+        DataType::Int64 => Ok(ExSeriesIoType::S(64)),
+        DataType::Float64 => Ok(ExSeriesIoType::F(64)),
+        DataType::Date => Ok(ExSeriesIoType::S(32)),
+        DataType::Datetime(_, _) => Ok(ExSeriesIoType::S(64)),
+        DataType::Duration(_) => Ok(ExSeriesIoType::S(64)),
+        DataType::Time => Ok(ExSeriesIoType::S(64)),
+        DataType::Categorical(_) => Ok(ExSeriesIoType::U(32)),
+        _ => Err(ExplorerError::Other(format!(
+            "cannot convert dtype {dtype} to iotype"
+        ))),
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

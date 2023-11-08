@@ -328,7 +328,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
   defp dtype(%PolarsSeries{} = polars_series) do
     with {:ok, dtype} <- Native.s_dtype(polars_series) do
-      Explorer.PolarsBackend.Shared.normalise_dtype(dtype)
+      dtype
     end
   end
 end

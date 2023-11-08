@@ -72,8 +72,16 @@ defmodule Explorer.PolarsBackend.Shared do
   end
 
   def create_series(%PolarsSeries{} = polars_series) do
-    {:ok, dtype} = Native.s_dtype(polars_series)
-    Explorer.Backend.Series.new(polars_series, normalise_dtype(dtype))
+    dtype =
+      case Native.s_dtype(polars_series) do
+        {:ok, dtype} ->
+          dtype
+
+        {:error, reason} ->
+          raise ArgumentError, reason
+      end
+
+    Explorer.Backend.Series.new(polars_series, dtype)
   end
 
   def create_dataframe(polars_df) do
