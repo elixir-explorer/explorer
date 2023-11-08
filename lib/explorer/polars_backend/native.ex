@@ -269,7 +269,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_equal(_s, _rhs), do: err()
   def s_exp(_s), do: err()
   def s_abs(_s), do: err()
-  def s_strptime(_s, _format_string), do: err()
+  def s_strptime(_s, _format_string, _precision), do: err()
   def s_strftime(_s, _format_string), do: err()
   def s_clip_integer(_s, _min, _max), do: err()
   def s_clip_float(_s, _min, _max), do: err()

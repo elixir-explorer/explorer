@@ -1552,12 +1552,21 @@ pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_strptime(
+    s: ExSeries,
+    format_string: Option<&str>,
+    precision: Option<&str>,
+) -> Result<ExSeries, ExplorerError> {
+    let timeunit = match precision {
+        None => TimeUnit::Microseconds,
+        Some(precision) => precision_to_timeunit(precision),
+    };
+
     let s1 = s
         .utf8()?
         .as_datetime(
-            Some(format_string),
-            TimeUnit::Microseconds,
+            format_string,
+            timeunit,
             true,
             false,
             None,

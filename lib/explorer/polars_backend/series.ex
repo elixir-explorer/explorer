@@ -35,6 +35,10 @@ defmodule Explorer.PolarsBackend.Series do
   def to_iovec(series), do: Shared.apply_series(series, :s_to_iovec)
 
   @impl true
+  def cast(%Series{dtype: :string} = series, {:datetime, precision}) do
+    Shared.apply_series(series, :s_strptime, [nil, Atom.to_string(precision)])
+  end
+
   def cast(series, {:datetime, :millisecond}),
     do: Shared.apply_series(series, :s_cast, ["datetime[ms]"])
 
@@ -57,7 +61,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def strptime(%Series{} = series, format_string) do
-    Shared.apply_series(series, :s_strptime, [format_string])
+    Shared.apply_series(series, :s_strptime, [format_string, nil])
   end
 
   @impl true
