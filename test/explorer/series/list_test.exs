@@ -28,6 +28,14 @@ defmodule Explorer.Series.ListTest do
       assert Series.to_list(series) == [[[1]]]
     end
 
+    test "list of lists of floats recursively" do
+      series = Series.from_list([[[1.52]]])
+
+      assert series.dtype == {:list, {:list, :float}}
+      assert series[0] == [[1.52]]
+      assert Series.to_list(series) == [[[1.52]]]
+    end
+
     test "list of lists of floats" do
       series = Series.from_list([[1.2], [2.3], [3.4, nil, 4.5], []])
 
@@ -50,7 +58,6 @@ defmodule Explorer.Series.ListTest do
       assert Series.to_list(s) === [[:infinity, :neg_infinity], [:infinity]]
     end
 
-    @tag skip: true
     test "list of lists mixing floats and integers" do
       s = Series.from_list([[1, 2.4], [3]])
       assert Series.dtype(s) == {:list, :float}

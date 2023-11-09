@@ -237,16 +237,35 @@ defmodule Explorer.Shared do
   Downcasts lists of mixed numeric types (float and int) to float.
   """
   def cast_numerics(list, type) when type == :numeric do
-    data =
-      Enum.map(list, fn
-        item when item in [nil, :infinity, :neg_infinity, :nan] -> item
-        item -> item / 1
-      end)
+    {cast_numerics_to_floats(list), :float}
+  end
 
-    {data, :float}
+  def cast_numerics(list, {:list, _} = dtype) do
+    {cast_deep(list, dtype), cast_dtype(dtype)}
   end
 
   def cast_numerics(list, type), do: {list, type}
+
+  defp cast_numerics_to_floats(list) do
+    Enum.map(list, fn
+      item when item in [nil, :infinity, :neg_infinity, :nan] or is_float(item) -> item
+      item -> item / 1
+    end)
+  end
+
+  defp cast_deep(nil, _), do: nil
+
+  defp cast_deep(list, {:list, inner_dtype}) do
+    Enum.map(list, fn item -> cast_deep(item, inner_dtype) end)
+  end
+
+  defp cast_deep(list, :numeric), do: cast_numerics_to_floats(list)
+  defp cast_deep(list, _), do: list
+
+  defp cast_dtype({:list, :numeric}), do: {:list, :float}
+  defp cast_dtype({:list, other} = dtype) when is_atom(other), do: dtype
+  defp cast_dtype({:list, inner}), do: {:list, cast_dtype(inner)}
+  defp cast_dtype(other), do: other
 
   defp resolve_list_dtype({:list, inner_dtype} = dtype, _type) when is_atom(inner_dtype),
     do: dtype
