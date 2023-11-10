@@ -178,7 +178,8 @@ defmodule Explorer.Shared do
   """
   def check_types!(list, preferable_type \\ nil) do
     initial_type =
-      if leaf_dtype_of?(preferable_type, [:numeric, :binary, :float, :integer, :category]), do: preferable_type
+      if leaf_dtype_of?(preferable_type, [:numeric, :binary, :float, :integer, :category]),
+        do: preferable_type
 
     type =
       Enum.reduce(list, initial_type, fn el, type ->
@@ -250,7 +251,7 @@ defmodule Explorer.Shared do
   end
 
   def cast_numerics(list, {:list, _} = dtype) do
-    {cast_deep(list, dtype), cast_dtype(dtype)}
+    {cast_numerics_deep(list, dtype), cast_numeric_dtype_to_float(dtype)}
   end
 
   def cast_numerics(list, type), do: {list, type}
@@ -262,25 +263,34 @@ defmodule Explorer.Shared do
     end)
   end
 
-  defp cast_deep(nil, _), do: nil
+  defp cast_numerics_deep(nil, _), do: nil
 
-  defp cast_deep(list, {:list, inner_dtype}) when is_list(list) do
-    Enum.map(list, fn item -> cast_deep(item, inner_dtype) end)
+  defp cast_numerics_deep(list, {:list, inner_dtype}) when is_list(list) do
+    Enum.map(list, fn item -> cast_numerics_deep(item, inner_dtype) end)
   end
 
-  defp cast_deep(list, :numeric), do: cast_numerics_to_floats(list)
-  defp cast_deep(list, _), do: list
+  defp cast_numerics_deep(list, :numeric), do: cast_numerics_to_floats(list)
+  defp cast_numerics_deep(list, _), do: list
 
-  defp cast_dtype({:list, :numeric}), do: {:list, :float}
-  defp cast_dtype({:list, other} = dtype) when is_atom(other), do: dtype
-  defp cast_dtype({:list, inner}), do: {:list, cast_dtype(inner)}
-  defp cast_dtype(other), do: other
+  defp cast_numeric_dtype_to_float({:list, :numeric}), do: {:list, :float}
+  defp cast_numeric_dtype_to_float({:list, other} = dtype) when is_atom(other), do: dtype
 
-  defp leaf_dtype_of?({:list, inner_dtype}, possibilities) do
+  defp cast_numeric_dtype_to_float({:list, inner}),
+    do: {:list, cast_numeric_dtype_to_float(inner)}
+
+  defp cast_numeric_dtype_to_float(other), do: other
+
+  @doc """
+  Check if the list dtype has the leaf in one of the possible values.
+
+  This is useful to verify if the list dtype of unknown "height" is valid,
+  or if it has the dtype in one of the possibilities.
+  """
+  def leaf_dtype_of?({:list, inner_dtype}, possibilities) do
     leaf_dtype_of?(inner_dtype, possibilities)
   end
 
-  defp leaf_dtype_of?(dtype, possibilities) do
+  def leaf_dtype_of?(dtype, possibilities) do
     dtype in List.wrap(possibilities)
   end
 

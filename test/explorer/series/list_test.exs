@@ -163,4 +163,63 @@ defmodule Explorer.Series.ListTest do
                    fn -> Series.from_list([[[[[1, 2], ["z", "b"]]]]]) end
     end
   end
+
+  describe "cast/2" do
+    test "list of integers series to list of floats" do
+      s = Series.from_list([[1]])
+
+      s1 = Series.cast(s, {:list, :float})
+
+      assert s1.dtype == {:list, :float}
+      assert s1[0] === [1.0]
+      assert Series.to_list(s1) == [[1.0]]
+    end
+
+    test "list of floats series to list of integers" do
+      s = Series.from_list([[1.0]])
+
+      s1 = Series.cast(s, {:list, :integer})
+
+      assert s1.dtype == {:list, :integer}
+      assert s1[0] === [1]
+      assert Series.to_list(s1) === [[1]]
+    end
+
+    test "deeper list of integers series to list of floats" do
+      s = Series.from_list([[[1, 2]], [[3, 4]]])
+
+      s1 = Series.cast(s, {:list, {:list, :float}})
+
+      assert s1.dtype == {:list, {:list, :float}}
+      assert s1[0] === [[1.0, 2.0]]
+      assert Series.to_list(s1) === [[[1.0, 2.0]], [[3.0, 4.0]]]
+    end
+
+    test "list of integer series to list of datetime" do
+      s = Series.from_list([[1, 2, 3], [1_649_883_642 * 1_000 * 1_000]])
+      s1 = Series.cast(s, {:list, {:datetime, :microsecond}})
+
+      assert Series.to_list(s1) == [
+               [
+                 ~N[1970-01-01 00:00:00.000001],
+                 ~N[1970-01-01 00:00:00.000002],
+                 ~N[1970-01-01 00:00:00.000003]
+               ],
+               [~N[2022-04-13 21:00:42.000000]]
+             ]
+
+      assert Series.dtype(s1) == {:list, {:datetime, :microsecond}}
+    end
+
+    test "deeper list of integers series to list of invalid dtype" do
+      s = Series.from_list([[[1, 2]], [[3, 4]]])
+
+      error_regex =
+        ~r[Explorer.Series.cast/2 not implemented for dtype {:list, {:list, :invalid_dtype}}]
+
+      assert_raise ArgumentError, error_regex, fn ->
+        Series.cast(s, {:list, {:list, :invalid_dtype}})
+      end
+    end
+  end
 end

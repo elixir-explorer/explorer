@@ -837,6 +837,14 @@ defmodule Explorer.Series do
   def cast(series, dtype) when K.in(dtype, @valid_dtypes),
     do: apply_series(series, :cast, [dtype])
 
+  def cast(series, {:list, _} = dtype) do
+    if Shared.leaf_dtype_of?(dtype, @valid_dtypes) do
+      apply_series(series, :cast, [dtype])
+    else
+      dtype_error("cast/2", dtype, @valid_dtypes)
+    end
+  end
+
   def cast(_series, dtype), do: dtype_error("cast/2", dtype, @valid_dtypes)
 
   @doc """
