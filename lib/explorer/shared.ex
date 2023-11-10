@@ -231,7 +231,8 @@ defmodule Explorer.Shared do
   defp result_list_type([], _type), do: nil
 
   defp result_list_type([h | _tail] = items, type) when is_list(h) do
-    {:list, result_list_type(List.flatten(items), type)}
+    # Enum.flat_map/2 is used here becase we want to remove one level of nesting per iteraction.
+    {:list, result_list_type(Enum.flat_map(items, & &1), type)}
   end
 
   defp result_list_type(items, type) when is_list(items) do

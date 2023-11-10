@@ -112,5 +112,39 @@ defmodule Explorer.Series.ListTest do
       assert series[0] == [true]
       assert Series.to_list(series) == [[true], [false], [true, nil, false], []]
     end
+
+    test "list of lists of lists of lists of integers" do
+      series = Series.from_list([[[[[1, 2]]]]])
+
+      assert series.dtype == {:list, {:list, {:list, {:list, :integer}}}}
+      assert series[0] == [[[[1, 2]]]]
+      assert Series.to_list(series) == [[[[[1, 2]]]]]
+    end
+
+    test "list of lists of one date" do
+      series = Series.from_list([[~D[2023-11-10]]])
+
+      assert series.dtype == {:list, :date}
+      assert series[0] == [~D[2023-11-10]]
+      assert Series.to_list(series) == [[~D[2023-11-10]]]
+    end
+
+    test "list of lists of one datetime" do
+      series = Series.from_list([[~N[2023-11-10 00:19:30]]])
+
+      assert series.dtype == {:list, {:datetime, :microsecond}}
+      assert series[0] == [~N[2023-11-10 00:19:30.000000]]
+      assert Series.to_list(series) == [[~N[2023-11-10 00:19:30.000000]]]
+    end
+
+    test "mixing list of lists of strings and numbers" do
+      assert_raise ArgumentError,
+                   "the value \"a\" does not match the inferred series dtype :integer",
+                   fn -> Series.from_list([[1], ["a"]]) end
+
+      assert_raise ArgumentError,
+                   "the value \"z\" does not match the inferred series dtype :integer",
+                   fn -> Series.from_list([[[[[1, 2], ["z", "b"]]]]])end
+    end
   end
 end
