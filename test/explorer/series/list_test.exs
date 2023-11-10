@@ -222,4 +222,65 @@ defmodule Explorer.Series.ListTest do
       end
     end
   end
+
+  describe "inspect/1" do
+    test "list of integers series" do
+      s = Series.from_list([[1, 2], [3, nil, 4], [5, 6]])
+
+      assert inspect(s) ==
+               """
+               #Explorer.Series<
+                 Polars[3]
+                 list[integer] [[1, 2], [3, nil, 4], [5, 6]]
+               >
+               """
+               |> String.trim_trailing()
+    end
+
+    test "list of floats series" do
+      s =
+        Series.from_list([
+          [1.3, 2.4],
+          [3.5, 4.6],
+          [5.7, 6.8],
+          [nil, :nan],
+          [:infinity, :neg_infinity]
+        ])
+
+      assert inspect(s) ==
+               """
+               #Explorer.Series<
+                 Polars[5]
+                 list[float] [[1.3, 2.4], [3.5, 4.6], [5.7, 6.8], [nil, NaN], [Inf, -Inf]]
+               >
+               """
+               |> String.trim_trailing()
+    end
+
+    test "deeper list of integers series" do
+      s = Series.from_list([[[1, 2]], [[3, 4]]])
+
+      assert inspect(s) ==
+               """
+               #Explorer.Series<
+                 Polars[2]
+                 list[list[integer]] [[[1, 2]], [[3, 4]]]
+               >
+               """
+               |> String.trim_trailing()
+    end
+
+    test "list of lists of datetime" do
+      s = Series.from_list([[~N[2023-11-10 00:19:30]]])
+
+      assert inspect(s) ==
+               """
+               #Explorer.Series<
+                 Polars[1]
+                 list[datetime[μs]] [[2023-11-10 00:19:30.000000]]
+               >
+               """
+               |> String.trim_trailing()
+    end
+  end
 end

@@ -231,7 +231,7 @@ defmodule Explorer.Backend.DataFrame do
   end
 
   @default_limit 5
-  import Inspect.Algebra
+  alias Inspect.Algebra, as: A
 
   @doc """
   Default inspect implementation for backends.
@@ -239,35 +239,34 @@ defmodule Explorer.Backend.DataFrame do
   def inspect(df, backend, n_rows, inspect_opts, opts \\ [])
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
     inspect_opts = %{inspect_opts | limit: @default_limit}
-    open = color("[", :list, inspect_opts)
-    close = color("]", :list, inspect_opts)
+    open = A.color("[", :list, inspect_opts)
+    close = A.color("]", :list, inspect_opts)
 
     cols_algebra =
       for name <- DataFrame.names(df) do
         series = df[name]
 
-        values =
+        data =
           series
           |> Series.slice(0, inspect_opts.limit + 1)
           |> Series.to_list()
-
-        data = container_doc(open, values, close, inspect_opts, &Explorer.Shared.to_string/2)
+          |> to_doc(inspect_opts)
 
         type =
           series
           |> Series.dtype()
           |> Explorer.Shared.dtype_to_string()
 
-        concat([
-          line(),
-          color("#{name} ", :map, inspect_opts),
-          color("#{type} ", :atom, inspect_opts),
+        A.concat([
+          A.line(),
+          A.color("#{name} ", :map, inspect_opts),
+          A.color("#{type} ", :atom, inspect_opts),
           data
         ])
       end
 
-    concat([
-      color(backend, :atom, inspect_opts),
+    A.concat([
+      A.color(backend, :atom, inspect_opts),
       open,
       "#{n_rows || "???"} x #{length(cols_algebra)}",
       close,
@@ -275,12 +274,20 @@ defmodule Explorer.Backend.DataFrame do
     ])
   end
 
+  defp to_doc(item, opts) when is_list(item) do
+    open = A.color("[", :list, opts)
+    close = A.color("]", :list, opts)
+    A.container_doc(open, item, close, opts, &to_doc/2)
+  end
+
+  defp to_doc(item, _opts), do: Explorer.Shared.to_string(item)
+
   defp groups_algebra([_ | _] = groups, opts),
     do:
-      Inspect.Algebra.concat([
-        Inspect.Algebra.line(),
-        Inspect.Algebra.color("Groups: ", :atom, opts),
-        Inspect.Algebra.to_doc(groups, opts)
+      A.concat([
+        A.line(),
+        A.color("Groups: ", :atom, opts),
+        A.to_doc(groups, opts)
       ])
 
   defp groups_algebra([], _), do: ""

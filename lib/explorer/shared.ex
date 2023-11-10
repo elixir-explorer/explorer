@@ -297,16 +297,12 @@ defmodule Explorer.Shared do
   @doc """
   Helper for shared behaviour in inspect.
   """
-  def to_string(nil, _opts), do: "nil"
-  def to_string(:nan, _opts), do: "NaN"
-  def to_string(:infinity, _opts), do: "Inf"
-  def to_string(:neg_infinity, _opts), do: "-Inf"
-  def to_string(i, _opts) when is_binary(i), do: inspect(i)
-
-  def to_string(i, opts) when is_list(i),
-    do: IO.iodata_to_binary(["[", Enum.map_intersperse(i, ", ", &to_string(&1, opts)), "]"])
-
-  def to_string(i, _opts), do: Kernel.to_string(i)
+  def to_string(nil), do: "nil"
+  def to_string(:nan), do: "NaN"
+  def to_string(:infinity), do: "Inf"
+  def to_string(:neg_infinity), do: "-Inf"
+  def to_string(i) when is_binary(i), do: inspect(i)
+  def to_string(i), do: Kernel.to_string(i)
 
   @doc """
   Converts a dtype to a binary type when possible.

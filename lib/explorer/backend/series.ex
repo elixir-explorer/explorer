@@ -276,17 +276,10 @@ defmodule Explorer.Backend.Series do
   end
 
   def new(data, {:list, _dtype} = list_dtype) do
-    if valid_list_dtype?(list_dtype) do
+    if Explorer.Shared.leaf_dtype_of?(list_dtype, @valid_dtypes) do
       %Explorer.Series{data: data, dtype: list_dtype}
     else
       raise ArgumentError, "invalid list dtype: " <> inspect(list_dtype)
-    end
-  end
-
-  defp valid_list_dtype?({:list, inner_dtype}) do
-    case inner_dtype do
-      {:list, _} -> valid_list_dtype?(inner_dtype)
-      other -> other in @valid_dtypes
     end
   end
 
@@ -331,5 +324,5 @@ defmodule Explorer.Backend.Series do
     A.container_doc(open, item, close, opts, &to_doc/2)
   end
 
-  defp to_doc(item, opts), do: Explorer.Shared.to_string(item, opts)
+  defp to_doc(item, _opts), do: Explorer.Shared.to_string(item)
 end

@@ -1,6 +1,8 @@
 defmodule Explorer.SeriesTest do
   use ExUnit.Case, async: true
 
+  # Note that for the `{:list, _}` dtype, we have a separated file for the tests.
+
   alias Explorer.Series
 
   doctest Explorer.Series
