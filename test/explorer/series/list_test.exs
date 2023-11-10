@@ -144,7 +144,7 @@ defmodule Explorer.Series.ListTest do
 
       assert_raise ArgumentError,
                    "the value \"z\" does not match the inferred series dtype :integer",
-                   fn -> Series.from_list([[[[[1, 2], ["z", "b"]]]]])end
+                   fn -> Series.from_list([[[[[1, 2], ["z", "b"]]]]]) end
     end
   end
 end
