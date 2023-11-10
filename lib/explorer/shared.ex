@@ -281,7 +281,7 @@ defmodule Explorer.Shared do
   defp cast_numeric_dtype_to_float(other), do: other
 
   @doc """
-  Check if the list dtype has the leaf in one of the possible values.
+  Check if the dtype has the leaf in one of the possible values.
 
   This is useful to verify if the list dtype of unknown "height" is valid,
   or if it has the dtype in one of the possibilities.
