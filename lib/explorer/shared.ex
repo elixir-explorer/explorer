@@ -178,21 +178,15 @@ defmodule Explorer.Shared do
   """
   def check_types!(list, preferable_type \\ nil) do
     initial_type =
-      if preferable_type in [:binary, :float, :integer, :category], do: preferable_type
+      if preferable_type in [:numeric, :binary, :float, :integer, :category], do: preferable_type
 
     type =
       Enum.reduce(list, initial_type, fn el, type ->
         new_type = type(el, type) || type
 
         cond do
-          new_type == :numeric and type in [:float, :integer] ->
+          leaf_dtype_of?(new_type, :numeric) and leaf_dtype_of?(type, [:integer, :float]) ->
             new_type
-
-          new_type == {:list, :numeric} and type in [{:list, :integer}, {:list, :float}] ->
-            new_type
-
-          match?({:list, list_type} when is_list(list_type), new_type) ->
-            resolve_list_dtype(new_type, type)
 
           new_type != type and type != nil ->
             raise ArgumentError,
@@ -230,8 +224,22 @@ defmodule Explorer.Shared do
 
   defp type(item, _type) when is_nil(item), do: nil
   defp type([], _type), do: nil
-  defp type([_item | _] = items, type), do: {:list, for(item <- items, do: type(item, type))}
+  defp type([_item | _] = items, type), do: {:list, result_list_type(items, type)}
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
+
+  defp result_list_type(nil, _type), do: nil
+  defp result_list_type([], _type), do: nil
+
+  defp result_list_type([h | _tail] = items, type) when is_list(h) do
+    {:list, result_list_type(List.flatten(items), type)}
+  end
+
+  defp result_list_type(items, type) when is_list(items) do
+    check_types!(items, leaf_dtype(type))
+  end
+
+  defp leaf_dtype({:list, inner_dtype}), do: leaf_dtype(inner_dtype)
+  defp leaf_dtype(dtype), do: dtype
 
   @doc """
   Downcasts lists of mixed numeric types (float and int) to float.
@@ -255,7 +263,7 @@ defmodule Explorer.Shared do
 
   defp cast_deep(nil, _), do: nil
 
-  defp cast_deep(list, {:list, inner_dtype}) do
+  defp cast_deep(list, {:list, inner_dtype}) when is_list(list) do
     Enum.map(list, fn item -> cast_deep(item, inner_dtype) end)
   end
 
@@ -267,32 +275,12 @@ defmodule Explorer.Shared do
   defp cast_dtype({:list, inner}), do: {:list, cast_dtype(inner)}
   defp cast_dtype(other), do: other
 
-  defp resolve_list_dtype({:list, inner_dtype} = dtype, _type) when is_atom(inner_dtype),
-    do: dtype
+  defp leaf_dtype_of?({:list, inner_dtype}, possibilities) do
+    leaf_dtype_of?(inner_dtype, possibilities)
+  end
 
-  defp resolve_list_dtype({:list, inner_dtype}, type) when is_list(inner_dtype) do
-    uniq_without_nils = for dtype <- inner_dtype, not is_nil(dtype), uniq: true, do: dtype
-
-    case uniq_without_nils do
-      [{:list, inner} = dtype] when is_list(inner) ->
-        {:list, resolve_list_dtype(dtype, type)}
-
-      [dtype] when is_atom(dtype) ->
-        # Preserve numeric dtype
-        if type == {:list, :numeric} and dtype in [:integer, :float] do
-          type
-        else
-          {:list, dtype}
-        end
-
-      multiple_dtypes ->
-        if Enum.sort(multiple_dtypes) == [:float, :integer] do
-          {:list, :numeric}
-        else
-          raise ArgumentError,
-                "cannot decide which type of this list dtype: #{inspect(multiple_dtypes)}"
-        end
-    end
+  defp leaf_dtype_of?(dtype, possibilities) do
+    dtype in List.wrap(possibilities)
   end
 
   @doc """

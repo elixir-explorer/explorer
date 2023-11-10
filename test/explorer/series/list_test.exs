@@ -51,6 +51,13 @@ defmodule Explorer.Series.ListTest do
       assert Series.to_list(s) === [[:nan], [:nan, :nan]]
     end
 
+    test "list of lists of deep nans" do
+      s = Series.from_list([[[:nan], [:nan, :nan]]])
+      assert Series.dtype(s) == {:list, {:list, :float}}
+
+      assert Series.to_list(s) === [[[:nan], [:nan, :nan]]]
+    end
+
     test "list of lists of infinity" do
       s = Series.from_list([[:infinity, :neg_infinity], [:infinity]])
       assert Series.dtype(s) == {:list, :float}
@@ -63,6 +70,30 @@ defmodule Explorer.Series.ListTest do
       assert Series.dtype(s) == {:list, :float}
 
       assert Series.to_list(s) === [[1.0, 2.4], [3.0]]
+    end
+
+    test "list of lists of deep integers and numerics" do
+      s = Series.from_list([[[-1], [7.2, 6]]])
+      assert Series.dtype(s) == {:list, {:list, :float}}
+
+      assert Series.to_list(s) === [[[-1.0], [7.2, 6.0]]]
+    end
+
+    test "list of lists of deep integers and floats" do
+      s =
+        Series.from_list([
+          [[-1], [7.2, 6.6]],
+          [[-2.2], [8.3, 7.7]],
+          [[-3], [9.4, 8.9]]
+        ])
+
+      assert Series.dtype(s) == {:list, {:list, :float}}
+
+      assert Series.to_list(s) === [
+               [[-1.0], [7.2, 6.6]],
+               [[-2.2], [8.3, 7.7]],
+               [[-3.0], [9.4, 8.9]]
+             ]
     end
 
     test "list of lists of strings" do
