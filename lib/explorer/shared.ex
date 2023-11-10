@@ -302,6 +302,10 @@ defmodule Explorer.Shared do
   def to_string(:infinity, _opts), do: "Inf"
   def to_string(:neg_infinity, _opts), do: "-Inf"
   def to_string(i, _opts) when is_binary(i), do: inspect(i)
+
+  def to_string(i, opts) when is_list(i),
+    do: IO.iodata_to_binary(["[", Enum.map_join(i, ", ", &to_string(&1, opts)), "]"])
+
   def to_string(i, _opts), do: Kernel.to_string(i)
 
   @doc """
