@@ -178,7 +178,7 @@ defmodule Explorer.Shared do
   """
   def check_types!(list, preferable_type \\ nil) do
     initial_type =
-      if preferable_type in [:numeric, :binary, :float, :integer, :category], do: preferable_type
+      if leaf_dtype_of?(preferable_type, [:numeric, :binary, :float, :integer, :category]), do: preferable_type
 
     type =
       Enum.reduce(list, initial_type, fn el, type ->

@@ -137,6 +137,22 @@ defmodule Explorer.Series.ListTest do
       assert Series.to_list(series) == [[~N[2023-11-10 00:19:30.000000]]]
     end
 
+    test "list of lists of one category" do
+      series = Series.from_list([["a"]], dtype: {:list, :category})
+
+      assert series.dtype == {:list, :category}
+      assert series[0] == ["a"]
+      assert Series.to_list(series) == [["a"]]
+    end
+
+    test "list of lists of one binary" do
+      series = Series.from_list([[<<118, 225, 252, 151>>]], dtype: {:list, :binary})
+
+      assert series.dtype == {:list, :binary}
+      assert series[0] == [<<118, 225, 252, 151>>]
+      assert Series.to_list(series) == [[<<118, 225, 252, 151>>]]
+    end
+
     test "mixing list of lists of strings and numbers" do
       assert_raise ArgumentError,
                    "the value \"a\" does not match the inferred series dtype :integer",
