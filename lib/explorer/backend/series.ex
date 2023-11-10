@@ -309,13 +309,10 @@ defmodule Explorer.Backend.Series do
     dtype = A.color("#{type} ", :atom, inspect_opts)
 
     data =
-      A.container_doc(
-        open,
-        series |> Series.slice(0, inspect_opts.limit + 1) |> Series.to_list(),
-        close,
-        inspect_opts,
-        &Explorer.Shared.to_string/2
-      )
+      series
+      |> Series.slice(0, inspect_opts.limit + 1)
+      |> Series.to_list()
+      |> to_doc(inspect_opts)
 
     A.concat([
       A.color(backend, :atom, inspect_opts),
@@ -327,4 +324,12 @@ defmodule Explorer.Backend.Series do
       data
     ])
   end
+
+  defp to_doc(item, opts) when is_list(item) do
+    open = A.color("[", :list, opts)
+    close = A.color("]", :list, opts)
+    A.container_doc(open, item, close, opts, &to_doc/2)
+  end
+
+  defp to_doc(item, opts), do: Explorer.Shared.to_string(item, opts)
 end
