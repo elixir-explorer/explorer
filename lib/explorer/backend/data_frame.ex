@@ -250,7 +250,7 @@ defmodule Explorer.Backend.DataFrame do
           series
           |> Series.slice(0, inspect_opts.limit + 1)
           |> Series.to_list()
-          |> to_doc(inspect_opts)
+          |> Explorer.Shared.to_doc(inspect_opts)
 
         type =
           series
@@ -273,14 +273,6 @@ defmodule Explorer.Backend.DataFrame do
       groups_algebra(df.groups, inspect_opts) | cols_algebra
     ])
   end
-
-  defp to_doc(item, opts) when is_list(item) do
-    open = A.color("[", :list, opts)
-    close = A.color("]", :list, opts)
-    A.container_doc(open, item, close, opts, &to_doc/2)
-  end
-
-  defp to_doc(item, _opts), do: Explorer.Shared.to_string(item)
 
   defp groups_algebra([_ | _] = groups, opts),
     do:

@@ -297,12 +297,22 @@ defmodule Explorer.Shared do
   @doc """
   Helper for shared behaviour in inspect.
   """
-  def to_string(nil), do: "nil"
-  def to_string(:nan), do: "NaN"
-  def to_string(:infinity), do: "Inf"
-  def to_string(:neg_infinity), do: "-Inf"
-  def to_string(i) when is_binary(i), do: inspect(i)
-  def to_string(i), do: Kernel.to_string(i)
+  def to_doc(item, opts) when is_list(item) do
+    open = Inspect.Algebra.color("[", :list, opts)
+    close = Inspect.Algebra.color("]", :list, opts)
+    Inspect.Algebra.container_doc(open, item, close, opts, &to_doc/2)
+  end
+
+  def to_doc(item, _opts) do
+    case item do
+      nil -> "nil"
+      :nan -> "NaN"
+      :infinity -> "Inf"
+      :neg_infinity -> "-Inf"
+      i when is_binary(i) -> inspect(i)
+      _ -> Kernel.to_string(item)
+    end
+  end
 
   @doc """
   Converts a dtype to a binary type when possible.
