@@ -13,9 +13,8 @@ defmodule Explorer.Backend.LazySeriesTest do
              #Explorer.Series<
                LazySeries[???]
                integer (column("col_a"))
-             >
+             >\
              """
-             |> String.trim_trailing()
   end
 
   test "inspect/2 with nested operations" do
@@ -29,9 +28,8 @@ defmodule Explorer.Backend.LazySeriesTest do
              #Explorer.Series<
                LazySeries[???]
                boolean (column("col_a") == 5)
-             >
+             >\
              """
-             |> String.trim_trailing()
   end
 
   test "inspect/2 with single-element series" do
@@ -45,9 +43,8 @@ defmodule Explorer.Backend.LazySeriesTest do
              #Explorer.Series<
                LazySeries[???]
                boolean (column("col_a") == 5)
-             >
+             >\
              """
-             |> String.trim_trailing()
   end
 
   test "inspect/2 with nested series" do
@@ -64,8 +61,7 @@ defmodule Explorer.Backend.LazySeriesTest do
                Polars[3]
                integer [1, 2, 3]
              >)
-             >
+             >\
              """
-             |> String.trim_trailing()
   end
 end
