@@ -276,7 +276,7 @@ defmodule Explorer.Backend.Series do
   end
 
   def new(data, {:list, _dtype} = list_dtype) do
-    if Explorer.Shared.leaf_dtype_of?(list_dtype, @valid_dtypes) do
+    if Explorer.Shared.leaf_dtype(list_dtype) in @valid_dtypes do
       %Explorer.Series{data: data, dtype: list_dtype}
     else
       raise ArgumentError, "invalid list dtype: " <> inspect(list_dtype)

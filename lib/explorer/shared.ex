@@ -178,7 +178,7 @@ defmodule Explorer.Shared do
   """
   def check_types!(list, preferable_type \\ nil) do
     initial_type =
-      if leaf_dtype_of?(preferable_type, [:numeric, :binary, :float, :integer, :category]),
+      if leaf_dtype(preferable_type) in [:numeric, :binary, :float, :integer, :category],
         do: preferable_type
 
     type =
@@ -186,7 +186,7 @@ defmodule Explorer.Shared do
         new_type = type(el, type) || type
 
         cond do
-          leaf_dtype_of?(new_type, :numeric) and leaf_dtype_of?(type, [:integer, :float]) ->
+          leaf_dtype(new_type) == :numeric and leaf_dtype(type) in [:integer, :float] ->
             new_type
 
           new_type != type and type != nil ->
@@ -240,8 +240,11 @@ defmodule Explorer.Shared do
     check_types!(items, leaf_dtype(type))
   end
 
-  defp leaf_dtype({:list, inner_dtype}), do: leaf_dtype(inner_dtype)
-  defp leaf_dtype(dtype), do: dtype
+  @doc """
+  Returns the leaf dtype from a {:list, _} dtype, or itself.
+  """
+  def leaf_dtype({:list, inner_dtype}), do: leaf_dtype(inner_dtype)
+  def leaf_dtype(dtype), do: dtype
 
   @doc """
   Downcasts lists of mixed numeric types (float and int) to float.
@@ -279,20 +282,6 @@ defmodule Explorer.Shared do
     do: {:list, cast_numeric_dtype_to_float(inner)}
 
   defp cast_numeric_dtype_to_float(other), do: other
-
-  @doc """
-  Check if the dtype has the leaf in one of the possible values.
-
-  This is useful to verify if the list dtype of unknown "height" is valid,
-  or if it has the dtype in one of the possibilities.
-  """
-  def leaf_dtype_of?({:list, inner_dtype}, possibilities) do
-    leaf_dtype_of?(inner_dtype, possibilities)
-  end
-
-  def leaf_dtype_of?(dtype, possibilities) do
-    dtype in List.wrap(possibilities)
-  end
 
   @doc """
   Helper for shared behaviour in inspect.
