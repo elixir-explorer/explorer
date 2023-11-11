@@ -110,11 +110,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         do: max_rows,
         else: infer_schema_length
 
-    dtypes =
-      Enum.map(dtypes, fn {column_name, dtype} ->
-        {column_name, Shared.internal_from_dtype(dtype)}
-      end)
-
     df =
       Native.lf_from_csv(
         entry.path,
@@ -124,7 +119,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         skip_rows,
         delimiter,
         true,
-        dtypes,
+        Map.to_list(dtypes),
         encoding,
         nil_values,
         parse_dates,

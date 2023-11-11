@@ -1,6 +1,6 @@
 use crate::{
     atoms,
-    datatypes::{ExDate, ExDateTime, ExDuration, ExTime},
+    datatypes::{ExDate, ExDateTime, ExDuration, ExSeriesDtype, ExSeriesIoType, ExTime},
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
@@ -150,6 +150,20 @@ pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries 
     )
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_of_series(name: &str, series_vec: Vec<Option<ExSeries>>) -> ExSeries {
+    let lists: Vec<Option<Series>> = series_vec
+        .iter()
+        .map(|maybe_series| {
+            maybe_series
+                .as_ref()
+                .map(|ex_series| ex_series.clone_inner())
+        })
+        .collect();
+
+    ExSeries::new(Series::new(name, lists))
+}
+
 macro_rules! from_binary {
     ($name:ident, $type:ty, $bytes:expr) => {
         #[rustler::nif(schedule = "DirtyCpu")]
@@ -181,9 +195,13 @@ pub fn s_rename(data: ExSeries, name: &str) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn s_dtype(data: ExSeries) -> Result<String, ExplorerError> {
-    let dt = data.dtype().to_string();
-    Ok(dt)
+pub fn s_dtype(data: ExSeries) -> Result<ExSeriesDtype, ExplorerError> {
+    ExSeriesDtype::try_from(data.dtype())
+}
+
+#[rustler::nif]
+pub fn s_iotype(data: ExSeries) -> Result<ExSeriesIoType, ExplorerError> {
+    ExSeriesIoType::try_from(data.dtype())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1150,31 +1168,9 @@ pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_cast(s: ExSeries, to_type: &str) -> Result<ExSeries, ExplorerError> {
-    let dtype = cast_str_to_dtype(to_type)?;
+pub fn s_cast(s: ExSeries, to_type: ExSeriesDtype) -> Result<ExSeries, ExplorerError> {
+    let dtype = DataType::try_from(&to_type)?;
     Ok(ExSeries::new(s.cast(&dtype)?))
-}
-
-pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
-    match str_type {
-        "float" => Ok(DataType::Float64),
-        "integer" => Ok(DataType::Int64),
-        "date" => Ok(DataType::Date),
-        "time" => Ok(DataType::Time),
-        "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
-        "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
-        "datetime[ns]" => Ok(DataType::Datetime(TimeUnit::Nanoseconds, None)),
-        "duration[ms]" => Ok(DataType::Duration(TimeUnit::Milliseconds)),
-        "duration[μs]" => Ok(DataType::Duration(TimeUnit::Microseconds)),
-        "duration[ns]" => Ok(DataType::Duration(TimeUnit::Nanoseconds)),
-        "boolean" => Ok(DataType::Boolean),
-        "string" => Ok(DataType::Utf8),
-        "binary" => Ok(DataType::Binary),
-        "category" => Ok(DataType::Categorical(None)),
-        _ => Err(ExplorerError::Other(format!(
-            "Cannot cast to dtype: {str_type}"
-        ))),
-    }
 }
 
 pub fn cast_str_to_f64(atom: &str) -> f64 {

@@ -35,25 +35,8 @@ defmodule Explorer.PolarsBackend.Series do
   def to_iovec(series), do: Shared.apply_series(series, :s_to_iovec)
 
   @impl true
-  def cast(series, {:datetime, :millisecond}),
-    do: Shared.apply_series(series, :s_cast, ["datetime[ms]"])
-
-  def cast(series, {:datetime, :microsecond}),
-    do: Shared.apply_series(series, :s_cast, ["datetime[μs]"])
-
-  def cast(series, {:datetime, :nanosecond}),
-    do: Shared.apply_series(series, :s_cast, ["datetime[ns]"])
-
-  def cast(series, {:duration, :millisecond}),
-    do: Shared.apply_series(series, :s_cast, ["duration[ms]"])
-
-  def cast(series, {:duration, :microsecond}),
-    do: Shared.apply_series(series, :s_cast, ["duration[μs]"])
-
-  def cast(series, {:duration, :nanosecond}),
-    do: Shared.apply_series(series, :s_cast, ["duration[ns]"])
-
-  def cast(series, dtype), do: Shared.apply_series(series, :s_cast, [Atom.to_string(dtype)])
+  def cast(series, dtype),
+    do: Shared.apply_series(series, :s_cast, [dtype])
 
   @impl true
   def strptime(%Series{} = series, format_string) do
@@ -68,31 +51,14 @@ defmodule Explorer.PolarsBackend.Series do
   # Introspection
 
   @impl true
-  def dtype(series), do: series |> Shared.apply_series(:s_dtype) |> Shared.normalise_dtype()
+  def dtype(series), do: series |> Shared.apply_series(:s_dtype)
 
   @impl true
   def size(series), do: Shared.apply_series(series, :s_size)
 
   @impl true
   def iotype(series) do
-    case Shared.apply_series(series, :s_dtype) do
-      "u8" -> {:u, 8}
-      "u32" -> {:u, 32}
-      "i32" -> {:s, 32}
-      "i64" -> {:s, 64}
-      "f64" -> {:f, 64}
-      "bool" -> {:u, 8}
-      "date" -> {:s, 32}
-      "time" -> {:s, 64}
-      "datetime[ms]" -> {:s, 64}
-      "datetime[μs]" -> {:s, 64}
-      "datetime[ns]" -> {:s, 64}
-      "duration[ms]" -> {:s, 64}
-      "duration[μs]" -> {:s, 64}
-      "duration[ns]" -> {:s, 64}
-      "cat" -> {:u, 32}
-      dtype -> raise "cannot convert dtype #{inspect(dtype)} to iotype"
-    end
+    Shared.apply_series(series, :s_iotype)
   end
 
   @impl true

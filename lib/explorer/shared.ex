@@ -4,24 +4,32 @@ defmodule Explorer.Shared do
 
   @doc """
   All supported dtypes.
+
+  This list excludes recursive dtypes, such as lists
+  within lists inside.
   """
-  def dtypes,
-    do: [
+  def dtypes do
+    non_list_dtypes = [
       :binary,
       :boolean,
       :category,
       :date,
-      :time,
-      {:datetime, :nanosecond},
-      {:datetime, :microsecond},
-      {:datetime, :millisecond},
-      {:duration, :nanosecond},
-      {:duration, :microsecond},
-      {:duration, :millisecond},
       :float,
       :integer,
-      :string
+      :string,
+      :time,
+      {:datetime, :microsecond},
+      {:datetime, :millisecond},
+      {:datetime, :nanosecond},
+      {:duration, :microsecond},
+      {:duration, :millisecond},
+      {:duration, :nanosecond}
     ]
+
+    list_dtypes = for dtype <- non_list_dtypes, do: {:list, dtype}
+
+    non_list_dtypes ++ list_dtypes
+  end
 
   @doc """
   Supported datetime dtypes.
@@ -170,14 +178,15 @@ defmodule Explorer.Shared do
   """
   def check_types!(list, preferable_type \\ nil) do
     initial_type =
-      if preferable_type in [:binary, :float, :integer, :category], do: preferable_type
+      if leaf_dtype(preferable_type) in [:numeric, :binary, :float, :integer, :category],
+        do: preferable_type
 
     type =
       Enum.reduce(list, initial_type, fn el, type ->
         new_type = type(el, type) || type
 
         cond do
-          new_type == :numeric and type in [:float, :integer] ->
+          leaf_dtype(new_type) == :numeric and leaf_dtype(type) in [:integer, :float] ->
             new_type
 
           new_type != type and type != nil ->
@@ -215,32 +224,84 @@ defmodule Explorer.Shared do
   defp type(item, _type) when is_binary(item), do: :string
 
   defp type(item, _type) when is_nil(item), do: nil
+  defp type([], _type), do: nil
+  defp type([_item | _] = items, type), do: {:list, result_list_type(items, type)}
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
+
+  defp result_list_type(nil, _type), do: nil
+  defp result_list_type([], _type), do: nil
+
+  defp result_list_type([h | _tail] = items, type) when is_list(h) do
+    # Enum.flat_map/2 is used here becase we want to remove one level of nesting per iteraction.
+    {:list, result_list_type(Enum.flat_map(items, & &1), type)}
+  end
+
+  defp result_list_type(items, type) when is_list(items) do
+    check_types!(items, leaf_dtype(type))
+  end
+
+  @doc """
+  Returns the leaf dtype from a {:list, _} dtype, or itself.
+  """
+  def leaf_dtype({:list, inner_dtype}), do: leaf_dtype(inner_dtype)
+  def leaf_dtype(dtype), do: dtype
 
   @doc """
   Downcasts lists of mixed numeric types (float and int) to float.
   """
   def cast_numerics(list, type) when type == :numeric do
-    data =
-      Enum.map(list, fn
-        item when item in [nil, :infinity, :neg_infinity, :nan] -> item
-        item -> item / 1
-      end)
+    {cast_numerics_to_floats(list), :float}
+  end
 
-    {data, :float}
+  def cast_numerics(list, {:list, _} = dtype) do
+    {cast_numerics_deep(list, dtype), cast_numeric_dtype_to_float(dtype)}
   end
 
   def cast_numerics(list, type), do: {list, type}
 
+  defp cast_numerics_to_floats(list) do
+    Enum.map(list, fn
+      item when item in [nil, :infinity, :neg_infinity, :nan] or is_float(item) -> item
+      item -> item / 1
+    end)
+  end
+
+  defp cast_numerics_deep(nil, _), do: nil
+
+  defp cast_numerics_deep(list, {:list, inner_dtype}) when is_list(list) do
+    Enum.map(list, fn item -> cast_numerics_deep(item, inner_dtype) end)
+  end
+
+  defp cast_numerics_deep(list, :numeric), do: cast_numerics_to_floats(list)
+  defp cast_numerics_deep(list, _), do: list
+
+  defp cast_numeric_dtype_to_float({:list, :numeric}), do: {:list, :float}
+  defp cast_numeric_dtype_to_float({:list, other} = dtype) when is_atom(other), do: dtype
+
+  defp cast_numeric_dtype_to_float({:list, inner}),
+    do: {:list, cast_numeric_dtype_to_float(inner)}
+
+  defp cast_numeric_dtype_to_float(other), do: other
+
   @doc """
   Helper for shared behaviour in inspect.
   """
-  def to_string(nil, _opts), do: "nil"
-  def to_string(:nan, _opts), do: "NaN"
-  def to_string(:infinity, _opts), do: "Inf"
-  def to_string(:neg_infinity, _opts), do: "-Inf"
-  def to_string(i, _opts) when is_binary(i), do: inspect(i)
-  def to_string(i, _opts), do: Kernel.to_string(i)
+  def to_doc(item, opts) when is_list(item) do
+    open = Inspect.Algebra.color("[", :list, opts)
+    close = Inspect.Algebra.color("]", :list, opts)
+    Inspect.Algebra.container_doc(open, item, close, opts, &to_doc/2)
+  end
+
+  def to_doc(item, _opts) do
+    case item do
+      nil -> "nil"
+      :nan -> "NaN"
+      :infinity -> "Inf"
+      :neg_infinity -> "-Inf"
+      i when is_binary(i) -> inspect(i)
+      _ -> Kernel.to_string(item)
+    end
+  end
 
   @doc """
   Converts a dtype to a binary type when possible.
@@ -280,7 +341,8 @@ defmodule Explorer.Shared do
   def dtype_to_string({:duration, :millisecond}), do: "duration[ms]"
   def dtype_to_string({:duration, :microsecond}), do: "duration[μs]"
   def dtype_to_string({:duration, :nanosecond}), do: "duration[ns]"
-  def dtype_to_string(other), do: Atom.to_string(other)
+  def dtype_to_string({:list, dtype}), do: "list[" <> dtype_to_string(dtype) <> "]"
+  def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
 
   @threshold 0.77
   @max_suggestions 5

@@ -14,6 +14,8 @@ defmodule Explorer.Series do
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
+    * `{:list, dtype}` - A recursive dtype that can store lists. Examples: `{:list, :integer}` or
+      a nested list dtype like `{:list, {:list, :integer}}`.
 
   A series must consist of a single data type only. Series may have `nil` values in them.
   The series `dtype` can be retrieved via the `dtype/1` function or directly accessed as
@@ -81,10 +83,12 @@ defmodule Explorer.Series do
           | :float
           | :integer
           | :string
+          | list_dtype
 
   @type time_unit :: :nanosecond | :microsecond | :millisecond
   @type datetime_dtype :: {:datetime, time_unit}
   @type duration_dtype :: {:duration, time_unit}
+  @type list_dtype :: {:list, dtype()}
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
@@ -832,6 +836,14 @@ defmodule Explorer.Series do
 
   def cast(series, dtype) when K.in(dtype, @valid_dtypes),
     do: apply_series(series, :cast, [dtype])
+
+  def cast(series, {:list, _} = dtype) do
+    if K.in(Shared.leaf_dtype(dtype), @valid_dtypes) do
+      apply_series(series, :cast, [dtype])
+    else
+      dtype_error("cast/2", dtype, @valid_dtypes)
+    end
+  end
 
   def cast(_series, dtype), do: dtype_error("cast/2", dtype, @valid_dtypes)
 
@@ -5391,12 +5403,12 @@ defmodule Explorer.Series do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(df, opts) do
+    def inspect(series, opts) do
       force_unfit(
         concat([
           color("#Explorer.Series<", :map, opts),
           nest(
-            concat([line(), Shared.apply_impl(df, :inspect, [opts])]),
+            concat([line(), Shared.apply_impl(series, :inspect, [opts])]),
             2
           ),
           line(),

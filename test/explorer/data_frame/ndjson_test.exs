@@ -111,6 +111,16 @@ defmodule Explorer.DataFrame.NDJSONTest do
       assert_ndjson(:string, "éphémère", "éphémère")
     end
 
+    test "list of integer" do
+      assert_ndjson({:list, :integer}, [["100"]], [100])
+      assert_ndjson({:list, :integer}, [["-101"]], [-101])
+    end
+
+    test "list of floats" do
+      assert_ndjson({:list, :float}, [["100.42"]], [100.42])
+      assert_ndjson({:list, :float}, [["-101.51"]], [-101.51])
+    end
+
     # test "date" do
     #   assert_ndjson(:date, "19327", ~D[2022-12-01])
     #   assert_ndjson(:date, "-3623", ~D[1960-01-31])

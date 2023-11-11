@@ -96,11 +96,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
         do: max_rows,
         else: infer_schema_length
 
-    dtypes =
-      Enum.map(dtypes, fn {column_name, dtype} ->
-        {column_name, Shared.internal_from_dtype(dtype)}
-      end)
-
     {columns, with_projection} = column_names_or_projection(columns)
 
     df =
@@ -114,7 +109,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         delimiter,
         true,
         columns,
-        dtypes,
+        Map.to_list(dtypes),
         encoding,
         nil_values,
         parse_dates,
@@ -192,11 +187,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
         do: max_rows,
         else: infer_schema_length
 
-    dtypes =
-      Enum.map(dtypes, fn {column_name, dtype} ->
-        {column_name, Shared.internal_from_dtype(dtype)}
-      end)
-
     {columns, with_projection} = column_names_or_projection(columns)
 
     df =
@@ -210,7 +200,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         delimiter,
         true,
         columns,
-        dtypes,
+        Map.to_list(dtypes),
         encoding,
         nil_values,
         parse_dates,

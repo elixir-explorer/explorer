@@ -1,6 +1,6 @@
 use crate::{
-    dataframe::to_smart_strings, expressions::ex_expr_to_exprs, ExDataFrame, ExExpr, ExLazyFrame,
-    ExplorerError,
+    dataframe::to_smart_strings, datatypes::ExSeriesDtype, expressions::ex_expr_to_exprs,
+    ExDataFrame, ExExpr, ExLazyFrame, ExplorerError,
 };
 use polars::prelude::*;
 use std::result::Result;
@@ -55,13 +55,15 @@ pub fn lf_names(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn lf_dtypes(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
-    let lf = data.clone_inner();
-    Ok(lf
-        .schema()?
-        .iter_dtypes()
-        .map(|dtype| dtype.to_string())
-        .collect())
+pub fn lf_dtypes(data: ExLazyFrame) -> Result<Vec<ExSeriesDtype>, ExplorerError> {
+    let mut dtypes: Vec<ExSeriesDtype> = vec![];
+    let schema = data.clone_inner().schema()?;
+
+    for dtype in schema.iter_dtypes() {
+        dtypes.push(ExSeriesDtype::try_from(dtype)?)
+    }
+
+    Ok(dtypes)
 }
 
 #[rustler::nif]

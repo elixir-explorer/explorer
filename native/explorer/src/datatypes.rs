@@ -1,3 +1,5 @@
+mod ex_dtypes;
+
 use crate::atoms;
 use crate::ExplorerError;
 use chrono::prelude::*;
@@ -15,6 +17,8 @@ use std::str::FromStr;
 
 #[cfg(feature = "aws")]
 use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
+
+pub use ex_dtypes::*;
 
 pub struct ExDataFrameRef(pub DataFrame);
 pub struct ExExprRef(pub Expr);

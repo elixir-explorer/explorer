@@ -101,6 +101,16 @@ defmodule Explorer.DataFrame.IPCTest do
     test "datetime" do
       assert_ipc({:datetime, :microsecond}, "1664624050123456", ~N[2022-10-01 11:34:10.123456])
     end
+
+    test "list of integer" do
+      assert_ipc({:list, :integer}, [["100"]], [100])
+      assert_ipc({:list, :integer}, [["-101"]], [-101])
+    end
+
+    test "list of floats" do
+      assert_ipc({:list, :float}, [["100.42"]], [100.42])
+      assert_ipc({:list, :float}, [["-101.51"]], [-101.51])
+    end
   end
 
   describe "to_ipc/3" do

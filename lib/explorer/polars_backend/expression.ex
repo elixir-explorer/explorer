@@ -158,8 +158,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
   def to_expr(%LazySeries{op: :cast, args: [lazy_series, dtype]}) do
     lazy_series_expr = to_expr(lazy_series)
-    dtype_expr = Explorer.Shared.dtype_to_string(dtype)
-    Native.expr_cast(lazy_series_expr, dtype_expr)
+    Native.expr_cast(lazy_series_expr, dtype)
   end
 
   def to_expr(%LazySeries{op: :fill_missing_with_strategy, args: [lazy_series, strategy]}) do
@@ -252,7 +251,7 @@ defmodule Explorer.PolarsBackend.Expression do
     numeric? = Enum.any?(input_dtypes, &(&1 in [:integer, :float]))
 
     if duration_dtype && numeric? do
-      wrap_in_cast(expr, duration_dtype)
+      Native.expr_cast(expr, duration_dtype)
     else
       expr
     end
@@ -263,7 +262,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
     case {dtype(left), dtype(right)} do
       {{:duration, _} = left_dtype, right_dtype} when right_dtype in [:integer, :float] ->
-        wrap_in_cast(expr, left_dtype)
+        Native.expr_cast(expr, left_dtype)
 
       {_, _} ->
         expr
@@ -307,16 +306,11 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_describe_filter_plan(polars_df, expression)
   end
 
-  defp wrap_in_cast(lazy_series_expr, dtype) do
-    dtype_expr = Explorer.Shared.dtype_to_string(dtype)
-    Native.expr_cast(lazy_series_expr, dtype_expr)
-  end
-
   defp dtype(%LazySeries{dtype: dtype}), do: dtype
 
   defp dtype(%PolarsSeries{} = polars_series) do
     with {:ok, dtype} <- Native.s_dtype(polars_series) do
-      Explorer.PolarsBackend.Shared.normalise_dtype(dtype)
+      dtype
     end
   end
 end

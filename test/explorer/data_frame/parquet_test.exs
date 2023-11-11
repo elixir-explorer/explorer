@@ -205,6 +205,16 @@ defmodule Explorer.DataFrame.ParquetTest do
         ~N[2022-10-01 11:34:10.123456]
       )
     end
+
+    test "list of integer" do
+      assert_parquet({:list, :integer}, [["100"]], [100])
+      assert_parquet({:list, :integer}, [["-101"]], [-101])
+    end
+
+    test "list of floats" do
+      assert_parquet({:list, :float}, [["100.42"]], [100.42])
+      assert_parquet({:list, :float}, [["-101.51"]], [-101.51])
+    end
   end
 
   test "dump_parquet/1 without compression" do

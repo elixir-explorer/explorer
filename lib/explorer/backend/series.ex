@@ -275,6 +275,14 @@ defmodule Explorer.Backend.Series do
     %Explorer.Series{data: data, dtype: dtype}
   end
 
+  def new(data, {:list, _dtype} = list_dtype) do
+    if Explorer.Shared.leaf_dtype(list_dtype) in @valid_dtypes do
+      %Explorer.Series{data: data, dtype: list_dtype}
+    else
+      raise ArgumentError, "invalid list dtype: " <> inspect(list_dtype)
+    end
+  end
+
   alias Inspect.Algebra, as: A
   alias Explorer.Series
 
@@ -294,13 +302,10 @@ defmodule Explorer.Backend.Series do
     dtype = A.color("#{type} ", :atom, inspect_opts)
 
     data =
-      A.container_doc(
-        open,
-        series |> Series.slice(0, inspect_opts.limit + 1) |> Series.to_list(),
-        close,
-        inspect_opts,
-        &Explorer.Shared.to_string/2
-      )
+      series
+      |> Series.slice(0, inspect_opts.limit + 1)
+      |> Series.to_list()
+      |> Explorer.Shared.to_doc(inspect_opts)
 
     A.concat([
       A.color(backend, :atom, inspect_opts),
