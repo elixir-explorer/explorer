@@ -4313,8 +4313,6 @@ defmodule Explorer.DataFrame do
   `pivot_wider/4` "widens" data, increasing the number of columns and decreasing the number of rows.
   The inverse transformation is `pivot_longer/3`.
 
-  Due to a restriction upstream, `values_from` must be a numeric type.
-
   In case the dataframe is using groups, the groups that are also in the list of columns
   to pivot will be removed from the resultant dataframe. See the examples below.
 
@@ -4536,14 +4534,6 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, id_columns: .., names_prefix: "")
 
     [names_from | values_from] = to_existing_columns(df, [names_from | values_from])
-    dtypes = df.dtypes
-
-    for column <- values_from do
-      unless dtypes[column] in [:integer, :float, :date, :datetime, :category] do
-        raise ArgumentError,
-              "the values_from column must be numeric, but found #{dtypes[values_from]}"
-      end
-    end
 
     id_columns =
       for column_name <- to_existing_columns(df, opts[:id_columns]) -- [names_from | values_from],
