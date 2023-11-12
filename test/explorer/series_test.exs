@@ -3598,6 +3598,76 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "mode/1" do
+    test "returns the mode of an integer series" do
+      s = Series.from_list([1, 2, 2, 3])
+      mode = Series.mode(s)
+      s2 = Series.from_list([2])
+      assert Series.equal(mode, s2)
+    end
+
+    test "returns the mode of an integer series when it is multiple values" do
+      s = Series.from_list([1, 2, 2, 3, 3])
+      mode = s |> Series.mode() |> Series.sort()
+      s2 = Series.from_list([2, 3])
+      assert Series.equal(mode, s2)
+    end
+
+    test "returns the mode of a float series" do
+      s = Series.from_list([1.0, 2.0, 2.0, 3.0])
+      mode = Series.mode(s)
+      s2 = Series.from_list([2.0])
+      assert Series.equal(mode, s2)
+    end
+
+    test "returns the mode of a string series" do
+      s = Series.from_list(["a", "b", "b", "c"])
+      mode = Series.mode(s)
+      s2 = Series.from_list(["b"])
+      assert Series.equal(mode, s2)
+    end
+
+    test "returns the mode of a date series" do
+      s =
+        Series.from_list([
+          ~D[2022-01-01],
+          ~D[2022-01-02],
+          ~D[2022-01-02],
+          ~D[2022-01-03]
+        ])
+
+      mode = Series.mode(s)
+      s2 = Series.from_list([~D[2022-01-02]])
+      assert Series.equal(mode, s2)
+    end
+
+    test "returns the mode of a datetime series" do
+      s =
+        Series.from_list([
+          ~N[2022-01-01 00:00:00],
+          ~N[2022-01-01 00:01:00],
+          ~N[2022-01-01 00:01:00]
+        ])
+
+      mode = Series.mode(s)
+      s2 = Series.from_list([~N[2022-01-01 00:01:00]])
+      assert Series.equal(mode, s2)
+    end
+
+    test "returns the mode of a boolean series" do
+      s = Series.from_list([true, false, false, true])
+      mode = Series.mode(s)
+      s2 = Series.from_list([false])
+      assert Series.equal(mode, s2)
+    end
+
+    test "returns the mode of a category series" do
+      s = Series.from_list(["EUA", "Brazil", "Brazil", "Poland"], dtype: :category)
+      mode = Series.mode(s)
+      assert Series.to_list(mode) == ["Brazil"]
+    end
+  end
+
   describe "sum/1" do
     test "sum of integers" do
       s = Series.from_list([1, 2, nil, 3])

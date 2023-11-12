@@ -3526,6 +3526,18 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "mode/1" do
+      df =
+        Datasets.iris()
+        |> DF.group_by(:species)
+        |> DF.summarise(petal_width_mode: mode(petal_width))
+
+      assert DF.to_columns(df) == %{
+               "petal_width_mode" => [[0.2], [1.3], [1.8]],
+               "species" => ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
+             }
+    end
+
     test "argmax/1 and argmin/1" do
       df =
         DF.new(
