@@ -2167,6 +2167,19 @@ defmodule Explorer.Series do
   @doc """
   Gets the most common value of the series.
 
+  ## Supported dtypes
+
+    * `:binary`
+    * `:boolean`
+    * `:category`
+    * `:date`
+    * `:datetime`
+    * `:duration`
+    * `:float`
+    * `:integer`
+    * `:string`
+    * `:time`
+
   ## Examples
 
       iex> s = Explorer.Series.from_list([1, 2, 2, nil])
@@ -2192,6 +2205,9 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec mode(series :: Series.t()) :: Series.t() | nil
+  def mode(%Series{dtype: {:list, _} = dtype}),
+    do: dtype_error("mode/1", dtype, Shared.non_list_types())
+
   def mode(%Series{} = series),
     do: Shared.apply_impl(series, :mode)
 
