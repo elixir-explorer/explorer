@@ -2169,16 +2169,7 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:binary`
-    * `:boolean`
-    * `:category`
-    * `:date`
-    * `:datetime`
-    * `:duration`
-    * `:float`
-    * `:integer`
-    * `:string`
-    * `:time`
+  All except `:list`.
 
   ## Examples
 
