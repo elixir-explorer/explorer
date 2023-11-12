@@ -9,7 +9,7 @@ defmodule Explorer.Query do
   > All examples below assume you have defined aliased
   > `Explorer.DataFrame` to `DF` as shown below:
   >
-  >     alias Explorer.DataFrame, as: DF
+  >     require Explorer.DataFrame, as: DF
   >
 
   Queries convert regular Elixir code which compile to efficient
