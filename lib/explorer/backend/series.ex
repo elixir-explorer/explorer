@@ -82,6 +82,7 @@ defmodule Explorer.Backend.Series do
   @callback argmax(s) :: number() | non_finite() | lazy_s() | nil
   @callback mean(s) :: float() | non_finite() | lazy_s() | nil
   @callback median(s) :: float() | non_finite() | lazy_s() | nil
+  @callback mode(s) :: s | lazy_s()
   @callback variance(s) :: float() | non_finite() | lazy_s() | nil
   @callback standard_deviation(s) :: float() | non_finite() | lazy_s() | nil
   @callback quantile(s, float()) ::

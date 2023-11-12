@@ -2165,6 +2165,46 @@ defmodule Explorer.Series do
   def mean(%Series{dtype: dtype}), do: dtype_error("mean/1", dtype, [:integer, :float])
 
   @doc """
+  Gets the most common value(s) of the series.
+
+  This function will return multiple values when there's a tie.
+
+  ## Supported dtypes
+
+  All except `:list`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 2, nil])
+      iex> Explorer.Series.mode(s)
+      #Explorer.Series<
+        Polars[1]
+        integer [2]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "b", "c"])
+      iex> Explorer.Series.mode(s)
+      #Explorer.Series<
+        Polars[1]
+        string ["b"]
+      >
+
+      s = Explorer.Series.from_list([1.0, 2.0, 2.0, 3.0, 3.0])
+      Explorer.Series.mode(s)
+      #Explorer.Series<
+        Polars[2]
+        float [2.0, 3.0]
+      >
+  """
+  @doc type: :aggregation
+  @spec mode(series :: Series.t()) :: Series.t() | nil
+  def mode(%Series{dtype: {:list, _} = dtype}),
+    do: dtype_error("mode/1", dtype, Shared.non_list_types())
+
+  def mode(%Series{} = series),
+    do: Shared.apply_impl(series, :mode)
+
+  @doc """
   Gets the median value of the series.
 
   ## Supported dtypes

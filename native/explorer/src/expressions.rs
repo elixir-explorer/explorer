@@ -469,6 +469,13 @@ pub fn expr_median(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_mode(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.mode())
+}
+
+#[rustler::nif]
 pub fn expr_product(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 

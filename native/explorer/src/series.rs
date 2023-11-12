@@ -938,6 +938,14 @@ pub fn s_median(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_mode(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    match mode::mode(&s) {
+        Ok(s) => Ok(ExSeries::new(s)),
+        Err(e) => Err(e.into()),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     match s.dtype() {
         DataType::Int64 => Ok(ExSeries::new(s.product())),

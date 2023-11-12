@@ -29,9 +29,8 @@
           buildInputs = with pkgs; [
             act
             clang
-            beam.packages.erlangR25.elixir_1_14
-            erlangR25
-            gdb
+            elixir
+            erlangR26
             libiconv
             openssl
             pkg-config
@@ -40,6 +39,7 @@
             cmake
           ] ++ lib.optionals stdenv.isDarwin [
             darwin.apple_sdk.frameworks.Security
+            darwin.apple_sdk.frameworks.SystemConfiguration
           ];
           shellHook = ''
             mkdir -p .nix-mix

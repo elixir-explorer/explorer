@@ -9,7 +9,16 @@ defmodule Explorer.Shared do
   within lists inside.
   """
   def dtypes do
-    non_list_dtypes = [
+    non_list_dtypes = non_list_types()
+    list_dtypes = for dtype <- non_list_dtypes, do: {:list, dtype}
+    non_list_dtypes ++ list_dtypes
+  end
+
+  @doc """
+  Non-list dtypes.
+  """
+  def non_list_types,
+    do: [
       :binary,
       :boolean,
       :category,
@@ -25,11 +34,6 @@ defmodule Explorer.Shared do
       {:duration, :millisecond},
       {:duration, :nanosecond}
     ]
-
-    list_dtypes = for dtype <- non_list_dtypes, do: {:list, dtype}
-
-    non_list_dtypes ++ list_dtypes
-  end
 
   @doc """
   Supported datetime dtypes.
