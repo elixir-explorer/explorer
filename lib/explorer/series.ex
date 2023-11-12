@@ -2165,7 +2165,9 @@ defmodule Explorer.Series do
   def mean(%Series{dtype: dtype}), do: dtype_error("mean/1", dtype, [:integer, :float])
 
   @doc """
-  Gets the most common value of the series.
+  Gets the most common value(s) of the series.
+
+  This function will return multiple values when there's a tie.
 
   ## Supported dtypes
 
