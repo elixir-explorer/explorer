@@ -114,6 +114,7 @@ defmodule Explorer.Series do
   defguardp is_io_dtype(dtype) when K.not(K.in(dtype, [:binary, :string]))
   defguardp is_numeric_dtype(dtype) when K.in(dtype, [:float, :integer])
   defguardp is_numeric_or_bool_dtype(dtype) when K.in(dtype, [:float, :integer, :boolean])
+  defguardp is_numeric_or_io_dtype(dtype) when K.in(dtype, [:float, :integer, :binary, :string])
 
   defguardp is_numeric_or_temporal_dtype(dtype)
             when K.in(dtype, [
@@ -2197,7 +2198,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec mode(series :: Series.t()) :: Series.t() | nil
-  def mode(%Series{dtype: dtype} = series) when numeric_or_string_dtype?(dtype),
+  def mode(%Series{dtype: dtype} = series) when is_numeric_or_io_dtype(dtype),
     do: Shared.apply_impl(series, :mode)
 
   def mode(%Series{dtype: dtype}), do: dtype_error("mode/1", dtype, [:integer, :float, :string])
