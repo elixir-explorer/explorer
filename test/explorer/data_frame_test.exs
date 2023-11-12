@@ -2917,6 +2917,30 @@ defmodule Explorer.DataFrameTest do
                      DF.pivot_wider(df, "variable", "value", id_columns: [:float_id])
                    end
     end
+
+    test "with a string values_from" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: ["x", "y"])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: ["x"],
+               b: ["y"]
+             }
+    end
+
+    test "with a date values_from" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [~D[2022-01-01], ~D[2023-01-01]])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [~D[2022-01-01]],
+               b: [~D[2023-01-01]]
+             }
+    end
   end
 
   describe "pivot_longer/3" do
