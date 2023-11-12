@@ -11,8 +11,6 @@ defmodule Explorer.Backend.LazySeries do
 
   defstruct op: nil, args: [], dtype: nil, aggregation: false
 
-  @valid_dtypes Explorer.Shared.dtypes()
-
   @type t :: %__MODULE__{op: atom(), args: list(), dtype: any(), aggregation: boolean()}
 
   @operations [
@@ -190,23 +188,21 @@ defmodule Explorer.Backend.LazySeries do
   def dtype(%Series{} = s), do: s.dtype
 
   @impl true
-  @valid_dtypes Explorer.Shared.dtypes()
-  def cast(%Series{} = s, dtype) when dtype in @valid_dtypes do
+  def cast(%Series{} = s, dtype) do
     args = [lazy_series!(s), dtype]
     data = new(:cast, args, dtype, aggregations?(args))
-
     Backend.Series.new(data, dtype)
   end
 
   @impl true
-  def from_list(list, dtype) when is_list(list) and dtype in @valid_dtypes do
+  def from_list(list, dtype) when is_list(list) do
     data = new(:from_list, [list, dtype], dtype, false)
 
     Backend.Series.new(data, dtype)
   end
 
   @impl true
-  def from_binary(binary, dtype) when is_binary(binary) and dtype in @valid_dtypes do
+  def from_binary(binary, dtype) when is_binary(binary) do
     data = new(:from_binary, [binary, dtype], dtype, false)
     Backend.Series.new(data, dtype)
   end
@@ -640,7 +636,7 @@ defmodule Explorer.Backend.LazySeries do
       for item <- items, uniq: true do
         case item do
           %Series{dtype: dtype} -> dtype
-          other -> Explorer.Shared.check_types!([other])
+          other -> Explorer.Shared.dtype_from_list!([other])
         end
       end
 

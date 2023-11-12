@@ -64,7 +64,6 @@ defmodule Explorer.Series do
   alias Explorer.Duration
   alias Explorer.Shared
 
-  @valid_dtypes Explorer.Shared.dtypes()
   @datetime_dtypes Explorer.Shared.datetime_types()
   @duration_dtypes Explorer.Shared.duration_types()
   @date_or_datetime_dtypes [:date | @datetime_dtypes]
@@ -308,7 +307,7 @@ defmodule Explorer.Series do
     opts = Keyword.validate!(opts, [:dtype, :backend])
     backend = backend_from_options!(opts)
 
-    type = Shared.check_types!(list, opts[:dtype])
+    type = Shared.dtype_from_list!(list, opts[:dtype])
     {list, type} = Shared.cast_numerics(list, type)
 
     series = backend.from_list(list, type)
@@ -321,14 +320,10 @@ defmodule Explorer.Series do
   end
 
   defp check_optional_dtype!(nil), do: nil
-  defp check_optional_dtype!(dtype) when K.in(dtype, @valid_dtypes), do: dtype
-
-  defp check_optional_dtype!(dtype) do
-    raise ArgumentError, "unsupported datatype: #{inspect(dtype)}"
-  end
+  defp check_optional_dtype!(dtype), do: Shared.validate_dtype!(dtype)
 
   defp from_same_value(%{data: %backend{}}, value) do
-    backend.from_list([value], Shared.check_types!([value], nil))
+    backend.from_list([value], Shared.dtype_from_list!([value], nil))
   end
 
   defp from_same_value(%{data: %backend{}}, value, dtype) do
@@ -403,10 +398,9 @@ defmodule Explorer.Series do
           keyword
         ) ::
           Series.t()
-  def from_binary(binary, dtype, opts \\ [])
-      when K.and(is_binary(binary), K.and(K.in(dtype, @valid_dtypes), is_list(opts))) do
+  def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
     opts = Keyword.validate!(opts, [:dtype, :backend])
-    {_type, alignment} = Shared.dtype_to_iotype!(dtype)
+    {_type, alignment} = dtype |> Shared.validate_dtype!() |> Shared.dtype_to_iotype!()
 
     if rem(bit_size(binary), alignment) != 0 do
       raise ArgumentError, "binary for dtype #{dtype} is expected to be #{alignment}-bit aligned"
@@ -834,18 +828,13 @@ defmodule Explorer.Series do
   @spec cast(series :: Series.t(), dtype :: dtype()) :: Series.t()
   def cast(%Series{dtype: dtype} = series, dtype), do: series
 
-  def cast(series, dtype) when K.in(dtype, @valid_dtypes),
-    do: apply_series(series, :cast, [dtype])
-
-  def cast(series, {:list, _} = dtype) do
-    if K.in(Shared.leaf_dtype(dtype), @valid_dtypes) do
+  def cast(series, dtype) do
+    if Shared.valid_dtype?(dtype) do
       apply_series(series, :cast, [dtype])
     else
-      dtype_error("cast/2", dtype, @valid_dtypes)
+      dtype_error("cast/2", dtype, Shared.dtypes())
     end
   end
-
-  def cast(_series, dtype), do: dtype_error("cast/2", dtype, @valid_dtypes)
 
   @doc """
   Converts a string series to a datetime series with a given `format_string`.
@@ -2199,7 +2188,7 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec mode(series :: Series.t()) :: Series.t() | nil
   def mode(%Series{dtype: {:list, _} = dtype}),
-    do: dtype_error("mode/1", dtype, Shared.non_list_types())
+    do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}])
 
   def mode(%Series{} = series),
     do: Shared.apply_impl(series, :mode)
@@ -3722,7 +3711,7 @@ defmodule Explorer.Series do
   end
 
   def (%Series{data: %backend{}} = left) in right when is_list(right),
-    do: left in backend.from_list(right, Shared.check_types!(right, nil))
+    do: left in backend.from_list(right, Shared.dtype_from_list!(right, nil))
 
   ## Comparable (a superset of ordered)
 

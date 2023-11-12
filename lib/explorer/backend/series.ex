@@ -3,8 +3,6 @@ defmodule Explorer.Backend.Series do
   The behaviour for series backends.
   """
 
-  @valid_dtypes Explorer.Shared.dtypes()
-
   @type t :: struct()
 
   @type s :: Explorer.Series.t()
@@ -272,16 +270,8 @@ defmodule Explorer.Backend.Series do
   @doc """
   Create a new `Series`.
   """
-  def new(data, dtype) when dtype in @valid_dtypes do
+  def new(data, dtype) do
     %Explorer.Series{data: data, dtype: dtype}
-  end
-
-  def new(data, {:list, _dtype} = list_dtype) do
-    if Explorer.Shared.leaf_dtype(list_dtype) in @valid_dtypes do
-      %Explorer.Series{data: data, dtype: list_dtype}
-    else
-      raise ArgumentError, "invalid list dtype: " <> inspect(list_dtype)
-    end
   end
 
   alias Inspect.Algebra, as: A

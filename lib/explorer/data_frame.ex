@@ -199,8 +199,6 @@ defmodule Explorer.DataFrame do
   alias FSS.Local
   alias FSS.S3
 
-  @valid_dtypes Explorer.Shared.dtypes()
-
   @enforce_keys [:data, :groups, :names, :dtypes]
   defstruct [:data, :groups, :names, :dtypes]
 
@@ -355,11 +353,13 @@ defmodule Explorer.DataFrame do
     end)
   end
 
-  defp check_dtype!(_key, value) when value in @valid_dtypes, do: value
-
   defp check_dtype!(key, value) do
-    raise ArgumentError,
-          "invalid dtype #{inspect(value)} for #{inspect(key)} (expected one of #{inspect(@valid_dtypes)})"
+    if Shared.valid_dtype?(value) do
+      value
+    else
+      raise ArgumentError,
+            "invalid dtype #{inspect(value)} for #{inspect(key)} (expected one of #{inspect(Shared.dtypes())})"
+    end
   end
 
   # Access

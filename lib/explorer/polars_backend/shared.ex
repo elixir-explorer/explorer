@@ -9,7 +9,6 @@ defmodule Explorer.PolarsBackend.Shared do
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.Series, as: Series
 
-  @valid_dtypes Explorer.Shared.dtypes()
   @polars_df [PolarsDataFrame, PolarsLazyFrame]
 
   def apply(fun, args \\ []) do
@@ -119,7 +118,7 @@ defmodule Explorer.PolarsBackend.Shared do
     Native.s_from_list_of_series(name, series)
   end
 
-  def from_list(list, dtype, name) when is_list(list) and dtype in @valid_dtypes do
+  def from_list(list, dtype, name) when is_list(list) do
     case dtype do
       :integer -> Native.s_from_list_i64(name, list)
       :float -> Native.s_from_list_f64(name, list)

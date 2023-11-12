@@ -678,7 +678,7 @@ defmodule Explorer.Query do
   end
 
   defp lazy_series_for_cond!(val, _clauses),
-    do: Explorer.Backend.LazySeries.from_list([val], Explorer.Shared.check_types!([val]))
+    do: Explorer.Backend.LazySeries.from_list([val], Explorer.Shared.dtype_from_list!([val]))
 
   @doc """
   Accesses a column by name.

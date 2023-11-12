@@ -553,7 +553,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   # Like `Explorer.Series.from_list/2`, but gives a better error message with the series name.
   defp series_from_list!(name, list, dtype) do
-    type = Explorer.Shared.check_types!(list, dtype)
+    type = Explorer.Shared.dtype_from_list!(list, dtype)
     {list, type} = Explorer.Shared.cast_numerics(list, type)
     series = Shared.from_list(list, type, name)
     Explorer.Backend.Series.new(series, type)

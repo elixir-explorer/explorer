@@ -3305,13 +3305,9 @@ defmodule Explorer.SeriesTest do
     end
 
     test "error when casting with unknown dtype" do
-      error_message =
-        "Explorer.Series.cast/2 not implemented for dtype :money. " <>
-          "Valid dtypes are [:binary, :boolean, :category, :date, :float, :integer, :string, :time, {:datetime, :microsecond}, {:datetime, :millisecond}, {:datetime, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:list, :binary}, {:list, :boolean}, {:list, :category}, {:list, :date}, {:list, :float}, {:list, :integer}, {:list, :string}, {:list, :time}, {:list, {:datetime, :microsecond}}, {:list, {:datetime, :millisecond}}, {:list, {:datetime, :nanosecond}}, {:list, {:duration, :microsecond}}, {:list, {:duration, :millisecond}}, {:list, {:duration, :nanosecond}}]"
-
-      assert_raise ArgumentError, error_message, fn ->
-        Series.from_list([1, 2, 3]) |> Series.cast(:money)
-      end
+      assert_raise ArgumentError,
+                   ~r"Explorer.Series.cast/2 not implemented for dtype :money",
+                   fn -> Series.from_list([1, 2, 3]) |> Series.cast(:money) end
     end
   end
 

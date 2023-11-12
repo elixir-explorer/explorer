@@ -2,6 +2,23 @@ defmodule Explorer.Shared do
   # A collection of **private** helpers shared in Explorer.
   @moduledoc false
 
+  @non_list_types [
+    :binary,
+    :boolean,
+    :category,
+    :date,
+    :float,
+    :integer,
+    :string,
+    :time,
+    {:datetime, :microsecond},
+    {:datetime, :millisecond},
+    {:datetime, :nanosecond},
+    {:duration, :microsecond},
+    {:duration, :millisecond},
+    {:duration, :nanosecond}
+  ]
+
   @doc """
   All supported dtypes.
 
@@ -9,31 +26,27 @@ defmodule Explorer.Shared do
   within lists inside.
   """
   def dtypes do
-    non_list_dtypes = non_list_types()
-    list_dtypes = for dtype <- non_list_dtypes, do: {:list, dtype}
-    non_list_dtypes ++ list_dtypes
+    @non_list_types ++ [{:list, :any}]
   end
 
   @doc """
-  Non-list dtypes.
+  Validates a given dtype.
   """
-  def non_list_types,
-    do: [
-      :binary,
-      :boolean,
-      :category,
-      :date,
-      :float,
-      :integer,
-      :string,
-      :time,
-      {:datetime, :microsecond},
-      {:datetime, :millisecond},
-      {:datetime, :nanosecond},
-      {:duration, :microsecond},
-      {:duration, :millisecond},
-      {:duration, :nanosecond}
-    ]
+  def valid_dtype?({:list, inner}), do: valid_dtype?(inner)
+  def valid_dtype?(dtype) when dtype in @non_list_types, do: true
+  def valid_dtype?(_dtype), do: false
+
+  @doc """
+  Validates a given dtype, raises if invalid.
+  """
+  def validate_dtype!(dtype) do
+    if valid_dtype?(dtype) do
+      dtype
+    else
+      raise ArgumentError,
+            "unsupported dtype #{inspect(dtype)}, expected one of #{inspect(dtypes())}"
+    end
+  end
 
   @doc """
   Supported datetime dtypes.
@@ -180,7 +193,7 @@ defmodule Explorer.Shared do
   This is useful in cases where you want to build the series in a target type,
   without the need to cast it later.
   """
-  def check_types!(list, preferable_type \\ nil) do
+  def dtype_from_list!(list, preferable_type \\ nil) do
     initial_type =
       if leaf_dtype(preferable_type) in [:numeric, :binary, :float, :integer, :category],
         do: preferable_type
@@ -241,7 +254,7 @@ defmodule Explorer.Shared do
   end
 
   defp result_list_type(items, type) when is_list(items) do
-    check_types!(items, leaf_dtype(type))
+    dtype_from_list!(items, leaf_dtype(type))
   end
 
   @doc """
