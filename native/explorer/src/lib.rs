@@ -419,6 +419,7 @@ rustler::init!(
         s_tan,
         s_strip,
         s_substring,
+        s_split,
         s_subtract,
         s_sum,
         s_tail,
@@ -442,6 +443,7 @@ rustler::init!(
         s_round,
         s_floor,
         s_ceil,
+        s_join,
     ],
     load = on_load
 );

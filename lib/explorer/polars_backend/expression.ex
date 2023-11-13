@@ -128,7 +128,11 @@ defmodule Explorer.PolarsBackend.Expression do
     rstrip: 2,
     downcase: 1,
     upcase: 1,
-    substring: 3
+    substring: 3,
+    split: 2,
+
+    # Lists
+    join: 2
   ]
 
   @custom_expressions [

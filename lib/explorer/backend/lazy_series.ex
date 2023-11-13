@@ -120,6 +120,7 @@ defmodule Explorer.Backend.LazySeries do
     upcase: 1,
     downcase: 1,
     substring: 3,
+    split: 2,
     # Float round
     round: 2,
     floor: 1,
@@ -132,7 +133,9 @@ defmodule Explorer.Backend.LazySeries do
     year: 1,
     hour: 1,
     minute: 1,
-    second: 1
+    second: 1,
+    # List functions
+    join: 2
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -939,6 +942,13 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def split(series, by) do
+    data = new(:split, [lazy_series!(series), by], :string)
+
+    Backend.Series.new(data, {:list, :string})
+  end
+
+  @impl true
   def round(series, decimals) when is_integer(decimals) and decimals >= 0 do
     data = new(:round, [lazy_series!(series), decimals], :float)
 
@@ -957,6 +967,13 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:ceil, [lazy_series!(series)], :float)
 
     Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def join(series, separator) do
+    data = new(:join, [lazy_series!(series), separator], {:list, :string})
+
+    Backend.Series.new(data, :string)
   end
 
   @remaining_non_lazy_operations [

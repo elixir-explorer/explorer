@@ -366,6 +366,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_frequencies(_s), do: err()
   def s_cut(_s, _bins, _labels, _break_point_label, _category_label), do: err()
   def s_substring(_s, _offset, _length), do: err()
+  def s_split(_s, _by), do: err()
 
   def s_qcut(_s, _quantiles, _labels, _break_point_label, _category_label),
     do: err()
@@ -396,6 +397,8 @@ defmodule Explorer.PolarsBackend.Native do
   def s_asin(_s), do: err()
   def s_acos(_s), do: err()
   def s_atan(_s), do: err()
+
+  def s_join(_s, _separator), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end
