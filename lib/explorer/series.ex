@@ -4936,6 +4936,28 @@ defmodule Explorer.Series do
   def substring(%Series{dtype: dtype}, _offset, _length),
     do: dtype_error("substring/3", dtype, [:string])
 
+  @doc """
+  Split the string by a substring.
+
+  ## Examples
+
+      iex> s = Series.from_list(["1", "1|2"])
+      iex> Series.split(s, "|")
+      #Explorer.Series<
+        Polars[2]
+        list[string] [["1"], ["1", "2"]]
+      >
+
+  """
+  @doc type: :string_wise
+  @spec split(Series.t(), String.t()) :: Series.t()
+  def split(%Series{dtype: :string} = series, by)
+      when is_binary(by),
+      do: apply_series(series, :split, [by])
+
+  def split(%Series{dtype: dtype}, _by),
+    do: dtype_error("split/2", dtype, [:string])
+
   # Float
 
   @doc """
@@ -5291,6 +5313,28 @@ defmodule Explorer.Series do
 
   def to_time(%Series{dtype: dtype}),
     do: dtype_error("to_time/1", dtype, @datetime_dtypes)
+
+  @doc """
+  Join all string items in a sublist and place a separator between them.
+
+  ## Examples
+
+      iex> s = Series.from_list([["1"], ["1", "2"]])
+      iex> Series.join(s, "|")
+      #Explorer.Series<
+        Polars[2]
+        string ["1", "1|2"]
+      >
+
+  """
+  @doc type: :list_wise
+  @spec join(Series.t(), String.t()) :: Series.t()
+  def join(%Series{dtype: {:list, :string}} = series, separator)
+      when is_binary(separator),
+      do: apply_series(series, :join, [separator])
+
+  def join(%Series{dtype: dtype}, _separator),
+    do: dtype_error("join/2", dtype, [{:list, :string}])
 
   # Escape hatch
 

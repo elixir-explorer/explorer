@@ -1480,6 +1480,16 @@ pub fn s_substring(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_split(s1: ExSeries, by: &str) -> Result<ExSeries, ExplorerError> {
+    let s2 = s1
+        .utf8()?
+        .split(&ChunkedArray::new("a", &[by]))
+        .into_series();
+
+    Ok(ExSeries::new(s2))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_round(s: ExSeries, decimals: u32) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(s.round(decimals)?.into_series()))
 }
@@ -1633,4 +1643,14 @@ pub fn s_acos(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply_values(|o| o.atan()).into();
     Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_join(s1: ExSeries, separator: &str) -> Result<ExSeries, ExplorerError> {
+    let s2 = s1
+        .list()?
+        .lst_join(&ChunkedArray::new("a", &[separator]))?
+        .into_series();
+
+    Ok(ExSeries::new(s2))
 }

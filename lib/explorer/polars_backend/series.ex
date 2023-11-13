@@ -596,6 +596,10 @@ defmodule Explorer.PolarsBackend.Series do
   def substring(series, offset, length),
     do: Shared.apply_series(series, :s_substring, [offset, length])
 
+  @impl true
+  def split(series, by),
+    do: Shared.apply_series(series, :s_split, [by])
+
   # Float round
   @impl true
   def round(series, decimals),
@@ -641,6 +645,12 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def second(series),
     do: Shared.apply_series(series, :s_second)
+
+  # Lists
+
+  @impl true
+  def join(series, separator),
+    do: Shared.apply_series(series, :s_join, [separator])
 
   # Polars specific functions
 

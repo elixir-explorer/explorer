@@ -22,7 +22,8 @@ defmodule Explorer.SeriesTest do
           :element_wise,
           :float_wise,
           :string_wise,
-          :datetime_wise
+          :datetime_wise,
+          :list_wise
         ] do
       flunk("invalid @doc type: #{inspect(metadata[:type])} for #{name}/#{arity}")
     end
@@ -4340,6 +4341,14 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "split" do
+    test "split/2 exclusive" do
+      series = Series.from_list(["1", "1|2"])
+
+      assert series |> Series.split("|") |> Series.to_list() == [["1"], ["1", "2"]]
+    end
+  end
+
   describe "strptime/2 and strftime/2" do
     test "parse datetime from string" do
       series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])
@@ -4415,6 +4424,14 @@ defmodule Explorer.SeriesTest do
              ]
 
       assert Series.to_list(freqs[:counts]) == [4, 2, 2, 1]
+    end
+  end
+
+  describe "join" do
+    test "join/2" do
+      series = Series.from_list([["1"], ["1", "2"]])
+
+      assert series |> Series.join("|") |> Series.to_list() == ["1", "1|2"]
     end
   end
 end

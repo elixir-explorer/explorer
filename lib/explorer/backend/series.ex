@@ -253,6 +253,7 @@ defmodule Explorer.Backend.Series do
   @callback lstrip(s, String.t() | nil) :: s
   @callback rstrip(s, String.t() | nil) :: s
   @callback substring(s, integer(), non_neg_integer() | nil) :: s
+  @callback split(s, String.t()) :: s
 
   # Date / DateTime
 
@@ -264,6 +265,9 @@ defmodule Explorer.Backend.Series do
   @callback hour(s) :: s
   @callback minute(s) :: s
   @callback second(s) :: s
+
+  # List
+  @callback join(s, String.t()) :: s
 
   # Functions
 
