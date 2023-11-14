@@ -236,6 +236,8 @@ pub fn df_to_parquet_cloud(
         .finish(&mut data.clone())?;
     Ok(())
 }
+
+#[cfg(feature = "aws")]
 fn object_store_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
     ExplorerError::Other(format!("Internal ObjectStore error: #{error:?}"))
 }
@@ -580,31 +582,25 @@ pub fn df_from_ndjson(
     _infer_schema_length: Option<usize>,
     _batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"ndjson\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"ndjson\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[cfg(not(feature = "ndjson"))]
 #[rustler::nif]
 pub fn df_to_ndjson(_data: ExDataFrame, _filename: &str) -> Result<(), ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"ndjson\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"ndjson\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[cfg(not(feature = "ndjson"))]
 #[rustler::nif]
 pub fn df_dump_ndjson(_data: ExDataFrame) -> Result<Binary<'static>, ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"ndjson\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"ndjson\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[cfg(not(feature = "ndjson"))]
@@ -614,11 +610,9 @@ pub fn df_load_ndjson(
     _infer_schema_length: Option<usize>,
     _batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"ndjson\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"ndjson\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[cfg(not(feature = "aws"))]
@@ -628,26 +622,22 @@ pub fn df_to_parquet_cloud(
     _ex_entry: ExS3Entry,
     _ex_compression: ExParquetCompression,
 ) -> Result<(), ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"aws\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"aws\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[cfg(not(feature = "aws"))]
 #[rustler::nif]
 pub fn df_to_csv_cloud(
-    data: ExDataFrame,
-    ex_entry: ExS3Entry,
-    has_headers: bool,
-    delimiter: u8,
+    _data: ExDataFrame,
+    _ex_entry: ExS3Entry,
+    _has_headers: bool,
+    _delimiter: u8,
 ) -> Result<(), ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"aws\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"aws\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[cfg(not(feature = "aws"))]
@@ -657,11 +647,9 @@ pub fn df_to_ipc_cloud(
     _ex_entry: ExS3Entry,
     _compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"aws\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"aws\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[cfg(not(feature = "aws"))]
@@ -671,19 +659,15 @@ pub fn df_to_ipc_stream_cloud(
     _ex_entry: ExS3Entry,
     _compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"aws\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"aws\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[cfg(not(any(feature = "ndjson", feature = "aws")))]
 #[rustler::nif(schedule = "DirtyIo")]
-pub fn df_to_ndjson_cloud(data: ExDataFrame, ex_entry: ExS3Entry) -> Result<(), ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"aws\" and \"ndjson\" features enabled. \
+pub fn df_to_ndjson_cloud(_data: ExDataFrame, _ex_entry: ExS3Entry) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other("Explorer was compiled without the \"aws\" and \"ndjson\" features enabled. \
         This is mostly due to these feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }

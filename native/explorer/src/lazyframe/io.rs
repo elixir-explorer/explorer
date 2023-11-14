@@ -62,11 +62,9 @@ pub fn lf_from_parquet_cloud(
     _stop_after_n_rows: Option<usize>,
     _columns: Option<Vec<String>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"aws\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"aws\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -208,9 +206,7 @@ pub fn lf_from_ndjson(
     _infer_schema_length: Option<usize>,
     _batch_size: usize,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"ndjson\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"ndjson\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }

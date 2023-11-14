@@ -219,7 +219,7 @@ Rust is going to be installed in the first compilation of the project. Otherwise
 install the correct version:
 
 ```sh
-rustup toolchain install nightly-2023-07-27
+rustup toolchain install nightly-2023-11-12
 ```
 
 You can also use [asdf](https://asdf-vm.com/):
