@@ -5307,10 +5307,10 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-     df = Explorer.Datasets.iris()
-     Explorer.DataFrame.print(df)
-     Explorer.DataFrame.print(df, limit: 1)
-     Explorer.DataFrame.print(df, limit: :infinity)
+      df = Explorer.Datasets.iris()
+      Explorer.DataFrame.print(df)
+      Explorer.DataFrame.print(df, limit: 1)
+      Explorer.DataFrame.print(df, limit: :infinity)
   """
   @doc type: :introspection
   @spec print(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
