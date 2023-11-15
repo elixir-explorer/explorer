@@ -296,9 +296,14 @@ defmodule Explorer.Backend.Series do
 
     dtype = A.color("#{type} ", :atom, inspect_opts)
 
+    series =
+      case inspect_opts.limit do
+        :infinity -> series
+        limit when is_integer(limit) -> Series.slice(series, 0, limit + 1)
+      end
+
     data =
       series
-      |> Series.slice(0, inspect_opts.limit + 1)
       |> Series.to_list()
       |> Explorer.Shared.to_doc(inspect_opts)
 
