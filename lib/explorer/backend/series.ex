@@ -81,8 +81,9 @@ defmodule Explorer.Backend.Series do
   @callback mean(s) :: float() | non_finite() | lazy_s() | nil
   @callback median(s) :: float() | non_finite() | lazy_s() | nil
   @callback mode(s) :: s | lazy_s()
-  @callback variance(s) :: float() | non_finite() | lazy_s() | nil
-  @callback standard_deviation(s) :: float() | non_finite() | lazy_s() | nil
+  @callback variance(s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
+  @callback standard_deviation(s, ddof :: non_neg_integer()) ::
+              float() | non_finite() | lazy_s() | nil
   @callback quantile(s, float()) ::
               number() | non_finite() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
   @callback nil_count(s) :: number() | lazy_s()

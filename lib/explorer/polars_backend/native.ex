@@ -350,7 +350,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_slice_by_indices(_s, _indices), do: err()
   def s_slice_by_series(_s, _series), do: err()
   def s_sort(_s, _descending?, _nils_last?), do: err()
-  def s_standard_deviation(_s), do: err()
+  def s_standard_deviation(_s, _ddof), do: err()
   def s_strip(_s, _string), do: err()
   def s_subtract(_s, _other), do: err()
   def s_sum(_s), do: err()
@@ -371,7 +371,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_qcut(_s, _quantiles, _labels, _break_point_label, _category_label),
     do: err()
 
-  def s_variance(_s), do: err()
+  def s_variance(_s, _ddof), do: err()
   def s_window_max(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_mean(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_median(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()

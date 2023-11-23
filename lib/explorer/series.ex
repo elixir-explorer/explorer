@@ -2225,6 +2225,10 @@ defmodule Explorer.Series do
   @doc """
   Gets the variance of the series.
 
+  By default, this is the sample variance. This function also takes an optional
+  delta degrees of freedom (ddof). Setting this to zero corresponds to the population 
+  variance.
+
   ## Supported dtypes
 
     * `:integer`
@@ -2245,14 +2249,20 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype {:datetime, :microsecond}. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
-  @spec variance(series :: Series.t()) :: float() | non_finite() | nil
-  def variance(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
-    do: apply_series(series, :variance)
+  @spec variance(series :: Series.t(), ddof :: non_neg_integer()) :: float() | non_finite() | nil
+  def variance(series, ddof \\ 1)
 
-  def variance(%Series{dtype: dtype}), do: dtype_error("variance/1", dtype, [:integer, :float])
+  def variance(%Series{dtype: dtype} = series, ddof) when is_numeric_dtype(dtype),
+    do: apply_series(series, :variance, [ddof])
+
+  def variance(%Series{dtype: dtype}, _), do: dtype_error("variance/1", dtype, [:integer, :float])
 
   @doc """
   Gets the standard deviation of the series.
+
+  By default, this is the sample standard deviation. This function also takes an optional
+  delta degrees of freedom (ddof). Setting this to zero corresponds to the population 
+  sample standard deviation.
 
   ## Supported dtypes
 
@@ -2274,11 +2284,14 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.standard_deviation/1 not implemented for dtype :string. Valid dtypes are [:integer, :float]
   """
   @doc type: :aggregation
-  @spec standard_deviation(series :: Series.t()) :: float() | non_finite() | nil
-  def standard_deviation(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
-    do: apply_series(series, :standard_deviation)
+  @spec standard_deviation(series :: Series.t(), ddof :: non_neg_integer()) ::
+          float() | non_finite() | nil
+  def standard_deviation(series, ddof \\ 1)
 
-  def standard_deviation(%Series{dtype: dtype}),
+  def standard_deviation(%Series{dtype: dtype} = series, ddof) when is_numeric_dtype(dtype),
+    do: apply_series(series, :standard_deviation, [ddof])
+
+  def standard_deviation(%Series{dtype: dtype}, _),
     do: dtype_error("standard_deviation/1", dtype, [:integer, :float])
 
   @doc """

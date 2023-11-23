@@ -955,19 +955,19 @@ pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_variance(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
+pub fn s_variance(env: Env, s: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
     match s.dtype() {
-        DataType::Int64 => Ok(s.i64()?.var(1).encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.var(1), env)),
+        DataType::Int64 => Ok(s.i64()?.var(ddof).encode(env)),
+        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.var(ddof), env)),
         dt => panic!("var/1 not implemented for {dt:?}"),
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_standard_deviation(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
+pub fn s_standard_deviation(env: Env, s: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
     match s.dtype() {
-        DataType::Int64 => Ok(s.i64()?.std(1).encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.std(1), env)),
+        DataType::Int64 => Ok(s.i64()?.std(ddof).encode(env)),
+        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.std(ddof), env)),
         dt => panic!("std/1 not implemented for {dt:?}"),
     }
 }
