@@ -72,6 +72,8 @@ defmodule Explorer.Series do
   @numeric_dtypes [:integer | @float_dtypes]
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
+  @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}]
+
   @type dtype ::
           :binary
           | :boolean
@@ -112,7 +114,9 @@ defmodule Explorer.Series do
   @compile {:no_warn_undefined, Nx}
 
   defguardp is_numeric(n) when K.or(is_number(n), K.in(n, [:nan, :infinity, :neg_infinity]))
-  defguardp is_io_dtype(dtype) when K.not(K.in(dtype, [:binary, :string]))
+
+  defguardp is_io_dtype(dtype) when K.in(dtype, @io_dtypes)
+
   defguardp is_numeric_dtype(dtype) when K.in(dtype, [{:f, 32}, {:f, 64}, :integer])
 
   defguardp is_numeric_or_bool_dtype(dtype)

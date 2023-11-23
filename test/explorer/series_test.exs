@@ -4441,4 +4441,100 @@ defmodule Explorer.SeriesTest do
       assert series |> Series.join("|") |> Series.to_list() == ["1", "1|2"]
     end
   end
+
+  describe "to_iovec/1" do
+    test "integer" do
+      series = Series.from_list([-1, 0, 1])
+
+      assert Series.to_iovec(series) == [
+               <<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>
+             ]
+    end
+
+    test "float 64" do
+      series = Series.from_list([1.0, 2.0, 3.0])
+
+      assert Series.to_iovec(series) == [
+               <<1.0::float-64-native, 2.0::float-64-native, 3.0::float-64-native>>
+             ]
+    end
+
+    test "float 32" do
+      series = Series.from_list([1.0, 2.0, 3.0], dtype: {:f, 32})
+
+      assert Series.to_iovec(series) == [
+               <<1.0::float-32-native, 2.0::float-32-native, 3.0::float-32-native>>
+             ]
+    end
+
+    test "boolean" do
+      series = Series.from_list([true, false, true])
+      assert Series.to_iovec(series) == [<<1, 0, 1>>]
+    end
+
+    test "date" do
+      series = Series.from_list([~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]])
+
+      assert Series.to_iovec(series) == [
+               <<-719_162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>
+             ]
+    end
+
+    test "time" do
+      series = Series.from_list([~T[00:00:00.000000], ~T[23:59:59.999999]])
+
+      assert Series.to_iovec(series) == [
+               <<0::signed-64-native, 86_399_999_999_000::signed-64-native>>
+             ]
+    end
+
+    test "datetime" do
+      series =
+        Series.from_list([
+          ~N[0001-01-01 00:00:00],
+          ~N[1970-01-01 00:00:00],
+          ~N[1986-10-13 01:23:45.987654]
+        ])
+
+      assert Series.to_iovec(series) ==
+               [
+                 <<-62_135_596_800_000_000::signed-64-native, 0::signed-64-native,
+                   529_550_625_987_654::signed-64-native>>
+               ]
+    end
+
+    test "category" do
+      series = Series.from_list(["a", "b", "c", "b"], dtype: :category)
+
+      assert Series.to_iovec(series) ==
+               [
+                 <<0::unsigned-32-native, 1::unsigned-32-native, 2::unsigned-32-native,
+                   1::unsigned-32-native>>
+               ]
+    end
+
+    test "string" do
+      series = Explorer.Series.from_list(["a", "b", "c", "b"])
+
+      assert_raise ArgumentError, "cannot convert series of dtype :string into iovec", fn ->
+        Series.to_iovec(series)
+      end
+    end
+
+    test "binary" do
+      series = Explorer.Series.from_list(["a", "b", "c", "b"], dtype: :binary)
+
+      assert_raise ArgumentError, "cannot convert series of dtype :binary into iovec", fn ->
+        Series.to_iovec(series)
+      end
+    end
+
+    test "list" do
+      series = Series.from_list([[-1], [0, 1]])
+
+      assert_raise ArgumentError,
+                   "cannot convert series of dtype {:list, :integer} into iovec",
+                   fn -> Series.to_iovec(series) end
+    end
+  end
 end

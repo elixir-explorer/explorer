@@ -621,6 +621,7 @@ pub fn iovec_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
             Ok([bin.release(env)].encode(env))
         }
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
+        DataType::Float32 => series_to_iovec!(resource, s, env, f32, f32),
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Date => series_to_iovec!(resource, s, env, date, i32),
         DataType::Time => series_to_iovec!(resource, s, env, time, i64),
