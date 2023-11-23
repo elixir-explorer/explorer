@@ -184,6 +184,7 @@ macro_rules! from_binary {
     };
 }
 
+from_binary!(s_from_binary_f32, f32, 4);
 from_binary!(s_from_binary_f64, f64, 8);
 from_binary!(s_from_binary_i32, i32, 4);
 from_binary!(s_from_binary_i64, i64, 8);

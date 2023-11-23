@@ -166,6 +166,9 @@ defmodule Explorer.PolarsBackend.Shared do
       :integer ->
         Native.s_from_binary_i64(name, binary)
 
+      {:f, 32} ->
+        Native.s_from_binary_f32(name, binary)
+
       {:f, 64} ->
         Native.s_from_binary_f64(name, binary)
     end

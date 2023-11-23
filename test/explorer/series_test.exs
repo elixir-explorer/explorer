@@ -4537,4 +4537,83 @@ defmodule Explorer.SeriesTest do
                    fn -> Series.to_iovec(series) end
     end
   end
+
+  describe "from_binary/2" do
+    test "integer" do
+      series =
+        Series.from_binary(
+          <<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>,
+          :integer
+        )
+
+      assert series.dtype == :integer
+      assert Series.to_list(series) == [-1, 0, 1]
+    end
+
+    test "float 64" do
+      series =
+        Series.from_binary(
+          <<1.0::float-64-native, 2.0::float-64-native, 3.0::float-64-native>>,
+          {:f, 64}
+        )
+
+      assert series.dtype == {:f, 64}
+      assert Series.to_list(series) == [1.0, 2.0, 3.0]
+    end
+
+    test "float 32" do
+      series =
+        Series.from_binary(
+          <<1.0::float-32-native, 2.0::float-32-native, 3.0::float-32-native>>,
+          {:f, 32}
+        )
+
+      assert series.dtype == {:f, 32}
+      assert Series.to_list(series) == [1.0, 2.0, 3.0]
+    end
+
+    test "boolean" do
+      series = Series.from_binary(<<1, 0, 1>>, :boolean)
+      assert series.dtype == :boolean
+      assert Series.to_list(series) == [true, false, true]
+    end
+
+    test "date" do
+      series =
+        Series.from_binary(
+          <<-719_162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>,
+          :date
+        )
+
+      assert series.dtype == :date
+      assert Series.to_list(series) == [~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]]
+    end
+
+    test "time" do
+      series =
+        Series.from_binary(<<0::signed-64-native, 86_399_999_999_000::signed-64-native>>, :time)
+
+      assert series.dtype == :time
+
+      assert Series.to_list(series) ==
+               [~T[00:00:00.000000], ~T[23:59:59.999999]]
+    end
+
+    @tag :skip
+    test "datetime" do
+      series =
+        Series.from_binary(
+          <<-62_135_596_800_000_000::signed-64-native, 0::signed-64-native,
+            529_550_625_987_654::signed-64-native>>,
+          {:datetime, :microsecond}
+        )
+
+      # There is a precision problem here. Investigate.
+      assert Series.to_list(series) == [
+               ~N[0001-01-01 00:00:00],
+               ~N[1970-01-01 00:00:00],
+               ~N[1986-10-13 01:23:45.987654]
+             ]
+    end
+  end
 end

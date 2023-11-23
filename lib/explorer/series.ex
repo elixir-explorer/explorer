@@ -415,7 +415,7 @@ defmodule Explorer.Series do
         ) ::
           Series.t()
   def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
-    opts = Keyword.validate!(opts, [:dtype, :backend])
+    opts = Keyword.validate!(opts, [:backend])
     {_type, alignment} = dtype |> Shared.validate_dtype!() |> Shared.dtype_to_iotype!()
 
     if rem(bit_size(binary), alignment) != 0 do

@@ -388,6 +388,7 @@ rustler::init!(
         s_from_list_binary,
         s_from_list_categories,
         s_from_list_of_series,
+        s_from_binary_f32,
         s_from_binary_f64,
         s_from_binary_i64,
         s_from_binary_i32,
