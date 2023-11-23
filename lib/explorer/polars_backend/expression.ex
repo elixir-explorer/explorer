@@ -255,7 +255,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
     input_dtypes = Enum.map(args, &dtype/1)
     duration_dtype = Enum.find(input_dtypes, &match?({:duration, _}, &1))
-    numeric? = Enum.any?(input_dtypes, &(&1 in [:integer, :float]))
+    numeric? = Enum.any?(input_dtypes, &(&1 in [:integer, {:f, 32}, {:f, 64}]))
 
     if duration_dtype && numeric? do
       Native.expr_cast(expr, duration_dtype)
@@ -268,7 +268,8 @@ defmodule Explorer.PolarsBackend.Expression do
     expr = Native.expr_divide(to_expr(left), to_expr(right))
 
     case {dtype(left), dtype(right)} do
-      {{:duration, _} = left_dtype, right_dtype} when right_dtype in [:integer, :float] ->
+      {{:duration, _} = left_dtype, right_dtype}
+      when right_dtype in [:integer, {:f, 32}, {:f, 64}] ->
         Native.expr_cast(expr, left_dtype)
 
       {_, _} ->

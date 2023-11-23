@@ -14,10 +14,10 @@ defmodule Explorer.DataFrame.IPCStreamTest do
     assert DF.n_columns(df) == 5
 
     assert df.dtypes == %{
-             "sepal_length" => :float,
-             "sepal_width" => :float,
-             "petal_length" => :float,
-             "petal_width" => :float,
+             "sepal_length" => {:f, 64},
+             "sepal_width" => {:f, 64},
+             "petal_length" => {:f, 64},
+             "petal_width" => {:f, 64},
              "species" => :string
            }
 
@@ -77,9 +77,9 @@ defmodule Explorer.DataFrame.IPCStreamTest do
     end
 
     test "float" do
-      assert_ipc_stream(:float, "2.3", 2.3)
-      assert_ipc_stream(:float, "57.653484", 57.653484)
-      assert_ipc_stream(:float, "-1.772232", -1.772232)
+      assert_ipc_stream({:f, 64}, "2.3", 2.3)
+      assert_ipc_stream({:f, 64}, "57.653484", 57.653484)
+      assert_ipc_stream({:f, 64}, "-1.772232", -1.772232)
     end
 
     # cast not used as it is not implemented for boolean values
@@ -112,8 +112,8 @@ defmodule Explorer.DataFrame.IPCStreamTest do
     end
 
     test "list of floats" do
-      assert_ipc_stream({:list, :float}, [["100.42"]], [100.42])
-      assert_ipc_stream({:list, :float}, [["-101.51"]], [-101.51])
+      assert_ipc_stream({:list, {:f, 64}}, [["100.42"]], [100.42])
+      assert_ipc_stream({:list, {:f, 64}}, [["-101.51"]], [-101.51])
     end
   end
 

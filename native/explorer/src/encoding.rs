@@ -457,6 +457,35 @@ fn categorical_series_to_list<'b>(
     Ok(unsafe { Term::new(env, list) })
 }
 
+// Convert f32 series taking into account NaN and Infinity floats (they are encoded as atoms).
+#[inline]
+fn float32_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
+    let nan_atom = nan().encode(env);
+    let neg_infinity_atom = neg_infinity().encode(env);
+    let infinity_atom = infinity().encode(env);
+    let nil_atom = atom::nil().encode(env);
+
+    Ok(unsafe_iterator_series_to_list!(
+        env,
+        s.f32()?.into_iter().map(|option| {
+            match option {
+                Some(x) => {
+                    if x.is_finite() {
+                        x.encode(env)
+                    } else {
+                        match (x.is_nan(), x.is_sign_negative()) {
+                            (true, _) => nan_atom,
+                            (false, true) => neg_infinity_atom,
+                            (false, false) => infinity_atom,
+                        }
+                    }
+                }
+                None => nil_atom,
+            }
+        })
+    ))
+}
+
 // Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
 #[inline]
 fn float64_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
@@ -566,6 +595,7 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Boolean => series_to_list!(s, env, bool),
         DataType::Int64 => series_to_list!(s, env, i64),
+        DataType::Float32 => float32_series_to_list(&s, env),
         DataType::Float64 => float64_series_to_list(&s, env),
         DataType::Date => date_series_to_list(&s, env),
         DataType::Time => time_series_to_list(&s, env),

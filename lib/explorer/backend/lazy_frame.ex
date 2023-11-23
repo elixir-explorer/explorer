@@ -47,7 +47,7 @@ defmodule Explorer.Backend.LazyFrame do
         concat([
           line(),
           color("#{name} ", :map, opts),
-          color("#{dtypes[name]}", :atom, opts)
+          color("#{Explorer.Shared.dtype_to_string(dtypes[name])}", :atom, opts)
         ])
       end
 

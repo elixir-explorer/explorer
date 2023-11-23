@@ -40,25 +40,25 @@ defmodule Explorer.SeriesTest do
     test "with floats" do
       s = Series.from_list([1, 2.4, 3])
       assert Series.to_list(s) === [1.0, 2.4, 3.0]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "with nan" do
       s = Series.from_list([:nan, :nan, :nan])
       assert Series.to_list(s) === [:nan, :nan, :nan]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "with infinity" do
       s = Series.from_list([:infinity, :infinity, :infinity])
       assert Series.to_list(s) === [:infinity, :infinity, :infinity]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "with negative infinity" do
       s = Series.from_list([:neg_infinity, :neg_infinity, :neg_infinity])
       assert Series.to_list(s) === [:neg_infinity, :neg_infinity, :neg_infinity]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "with binaries" do
@@ -95,49 +95,55 @@ defmodule Explorer.SeriesTest do
     test "mixing floats and integers" do
       s = Series.from_list([1, 2.4, 3])
       assert Series.to_list(s) === [1.0, 2.4, 3.0]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "mixing integers and nan" do
       s = Series.from_list([1, :nan, 3])
       assert Series.to_list(s) === [1.0, :nan, 3.0]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "mixing integers and infinity" do
       s = Series.from_list([1, :infinity, 3])
       assert Series.to_list(s) === [1.0, :infinity, 3.0]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "mixing integers and negative infinity" do
       s = Series.from_list([1, :neg_infinity, 3])
       assert Series.to_list(s) === [1.0, :neg_infinity, 3.0]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "mixing floats and nan" do
       s = Series.from_list([3.0, :nan, 0.5])
       assert Series.to_list(s) === [3.0, :nan, 0.5]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "mixing floats and infinity" do
       s = Series.from_list([1.0, :infinity, 3.0])
       assert Series.to_list(s) === [1.0, :infinity, 3.0]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "mixing floats and negative infinity" do
       s = Series.from_list([1.0, :neg_infinity, 3.0])
       assert Series.to_list(s) === [1.0, :neg_infinity, 3.0]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
     end
 
     test "mixing floats, integers, nan, infinity and negative infinity" do
       s = Series.from_list([1, :nan, 2.0, :infinity, :neg_infinity])
       assert Series.to_list(s) === [1.0, :nan, 2.0, :infinity, :neg_infinity]
-      assert Series.dtype(s) == :float
+      assert Series.dtype(s) == {:f, 64}
+    end
+
+    test "floats as {:f, 32}" do
+      s = Series.from_list([1.0, 2.5, :nan, 3.5, :infinity], dtype: {:f, 32})
+      assert Series.to_list(s) === [1.0, 2.5, :nan, 3.5, :infinity]
+      assert Series.dtype(s) == {:f, 32}
     end
 
     test "mixing integers with an invalid atom" do
@@ -512,7 +518,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, nil, 4])
 
       assert_raise ArgumentError,
-                   "fill_missing with :nan values require a :float series, got :integer",
+                   "fill_missing with :nan values require a float series, got :integer",
                    fn -> Series.fill_missing(s1, :nan) end
     end
 
@@ -525,7 +531,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, nil, 4])
 
       assert_raise ArgumentError,
-                   "fill_missing with :infinity values require a :float series, got :integer",
+                   "fill_missing with :infinity values require a float series, got :integer",
                    fn -> Series.fill_missing(s1, :infinity) end
     end
 
@@ -540,7 +546,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, nil, 4])
 
       assert_raise ArgumentError,
-                   "fill_missing with :neg_infinity values require a :float series, got :integer",
+                   "fill_missing with :neg_infinity values require a float series, got :integer",
                    fn -> Series.fill_missing(s1, :neg_infinity) end
     end
   end
@@ -1021,7 +1027,7 @@ defmodule Explorer.SeriesTest do
 
     test "raises on value mismatch" do
       assert_raise ArgumentError,
-                   "cannot invoke Explorer.Series.less/2 with mismatched dtypes: :float and nil",
+                   "cannot invoke Explorer.Series.less/2 with mismatched dtypes: {:f, 64} and nil",
                    fn -> Series.less(Series.from_list([]), nil) end
 
       assert_raise ArgumentError,
@@ -1427,7 +1433,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.add(s1, s2)
 
-      assert s3.dtype == :float
+      assert s3.dtype == {:f, 64}
       assert Series.to_list(s3) == [5.0, 7.0, :nan, :infinity, :neg_infinity, :nan]
     end
 
@@ -1452,7 +1458,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.add(s1, 1.1)
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
 
       assert Series.to_list(s2) == [2.1, 3.1, 4.1]
     end
@@ -1462,7 +1468,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.add(s1, :nan)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
     end
 
@@ -1471,7 +1477,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.add(s1, :infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:infinity, :infinity, :nan, :infinity, :nan]
     end
 
@@ -1480,7 +1486,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.add(s1, :neg_infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :nan, :neg_infinity]
     end
 
@@ -1488,7 +1494,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.add(1.1, s1)
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
 
       assert Series.to_list(s2) == [2.1, 3.1, 4.1]
     end
@@ -1498,7 +1504,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.add(:nan, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
     end
 
@@ -1507,7 +1513,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.add(:infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:infinity, :infinity, :nan, :infinity, :nan]
     end
 
@@ -1516,7 +1522,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.add(:neg_infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :nan, :neg_infinity]
     end
 
@@ -1546,7 +1552,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.subtract(s1, s2)
 
-      assert s3.dtype == :float
+      assert s3.dtype == {:f, 64}
       assert Series.to_list(s3) == [-3.0, -2.0, :nan, :nan, :nan, :infinity, :neg_infinity]
     end
 
@@ -1571,7 +1577,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.subtract(s1, 1.5)
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
 
       assert Series.to_list(s2) == [-0.5, 0.5, 1.5]
     end
@@ -1581,7 +1587,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.subtract(s1, :nan)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
     end
 
@@ -1590,7 +1596,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.subtract(s1, :infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :nan, :neg_infinity]
     end
 
@@ -1599,7 +1605,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.subtract(s1, :neg_infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:infinity, :infinity, :nan, :infinity, :nan]
     end
 
@@ -1607,7 +1613,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3])
 
       s2 = Series.subtract(1.5, s1)
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
 
       assert Series.to_list(s2) == [0.5, -0.5, -1.5]
     end
@@ -1617,7 +1623,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.subtract(:nan, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
     end
 
@@ -1626,7 +1632,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.subtract(:infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:infinity, :infinity, :nan, :nan, :infinity]
     end
 
@@ -1635,7 +1641,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.subtract(:neg_infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :neg_infinity, :nan]
     end
   end
@@ -1657,7 +1663,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.multiply(s1, s2)
 
-      assert s3.dtype == :float
+      assert s3.dtype == {:f, 64}
       assert Series.to_list(s3) == [4.0, 11.25, :nan, :infinity, :infinity, :neg_infinity]
     end
 
@@ -1684,7 +1690,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(s1, -2.5)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [-2.5, -5.0, -7.5]
     end
 
@@ -1693,7 +1699,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(s1, :nan)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
     end
 
@@ -1702,7 +1708,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(s1, :infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:infinity, :infinity, :nan, :infinity, :neg_infinity]
     end
 
@@ -1711,7 +1717,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(s1, :neg_infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :neg_infinity, :infinity]
     end
 
@@ -1720,7 +1726,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(-2.5, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [-2.5, -5.0, -7.5]
     end
 
@@ -1729,7 +1735,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(:nan, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
     end
 
@@ -1738,7 +1744,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(:infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:infinity, :infinity, :nan, :infinity, :neg_infinity]
     end
 
@@ -1747,7 +1753,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(:neg_infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :neg_infinity, :infinity]
     end
   end
@@ -1759,7 +1765,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.divide(s2, s1)
 
-      assert s3.dtype == :float
+      assert s3.dtype == {:f, 64}
       assert Series.to_list(s3) == [4.0, 2.5, 2.0]
     end
 
@@ -1769,7 +1775,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.divide(s1, s2)
 
-      assert s3.dtype == :float
+      assert s3.dtype == {:f, 64}
       assert Series.to_list(s3) == [0.25, 0.5555555555555556, :nan, :nan, :nan, :nan]
     end
 
@@ -1778,7 +1784,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(s1, -2)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [-0.5, -1, -1.5]
     end
 
@@ -1787,7 +1793,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(-2, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [-2.0, -1.0, -0.4]
     end
 
@@ -1796,7 +1802,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(s1, -2.5)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [-0.4, -0.8, -1.2]
     end
 
@@ -1805,7 +1811,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(s1, :nan)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
     end
 
@@ -1814,7 +1820,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(s1, :infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [0.0, 0.0, :nan, :nan, :nan]
     end
 
@@ -1823,7 +1829,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(s1, :neg_infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [-0.0, -0.0, :nan, :nan, :nan]
     end
 
@@ -1832,7 +1838,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(-3.12, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [-3.12, -1.56, -1.04]
     end
 
@@ -1841,7 +1847,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(:nan, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
     end
 
@@ -1850,7 +1856,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(:infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:infinity, :infinity, :nan, :nan, :nan]
     end
 
@@ -1859,7 +1865,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.divide(:neg_infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :nan, :nan]
     end
   end
@@ -1950,7 +1956,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 11.313708498984761, :nan, :infinity, 0.0]
     end
 
@@ -1960,7 +1966,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 0.08838834764831845, :nan, :infinity, 0.0]
     end
 
@@ -2016,7 +2022,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2.0)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 4.0, 9.0]
     end
 
@@ -2025,7 +2031,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, -2.0)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 0.25, 0.1111111111111111]
     end
 
@@ -2034,7 +2040,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(s1, :nan)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [1, :nan, :nan]
     end
 
@@ -2043,7 +2049,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(s1, :infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [1.0, :infinity, :infinity]
     end
 
@@ -2052,7 +2058,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(s1, :neg_infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [1.0, 0.0, 0.0]
     end
 
@@ -2087,7 +2093,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(2.0, s1)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [2.0, 4.0, 8.0]
     end
 
@@ -2096,7 +2102,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(-2.0, s1)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [-2.0, 4.0, -8.0]
     end
 
@@ -2105,7 +2111,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(:nan, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan]
     end
 
@@ -2114,7 +2120,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(:infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:infinity, :infinity, :infinity]
     end
 
@@ -2123,7 +2129,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(:neg_infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :infinity, :neg_infinity]
     end
 
@@ -2149,7 +2155,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 24.705294220065465, :nan, :infinity, 0.0]
     end
 
@@ -2159,7 +2165,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 0.040477154050155256, :nan, :infinity, 0.0]
     end
 
@@ -2169,7 +2175,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 12.25, :nan, :infinity, :neg_infinity]
     end
 
@@ -2179,7 +2185,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 0.08163265306122448, :nan, :infinity, :neg_infinity]
     end
 
@@ -2215,7 +2221,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 6.25, :nan, :infinity, :infinity]
     end
 
@@ -2224,7 +2230,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, -2)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 0.16, :nan, 0.0, 0.0]
     end
 
@@ -2233,7 +2239,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2.0)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 6.25, :nan, :infinity, :infinity]
     end
 
@@ -2242,7 +2248,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, -2.0)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1.0, 0.16, :nan, 0.0, 0.0]
     end
 
@@ -2251,7 +2257,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(s1, :nan)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [1, :nan, :nan, :nan, :nan]
     end
 
@@ -2260,7 +2266,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(s1, :infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [1.0, :infinity, :nan, :infinity, :infinity]
     end
 
@@ -2269,7 +2275,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(s1, :neg_infinity)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [1.0, 0.0, :nan, 0.0, 0.0]
     end
 
@@ -2278,7 +2284,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(2, s1)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [2.0, 5.656854249492381, :nan, :infinity, 0.0]
     end
 
@@ -2287,7 +2293,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(2, s1)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [2.0, 0.1767766952966369, :nan, :infinity, 0.0]
     end
 
@@ -2296,7 +2302,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(-2, s1)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [-2.0, :nan, :nan, :infinity, 0.0]
     end
 
@@ -2305,7 +2311,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(2.0, s1)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [2.0, 5.656854249492381, :nan, :infinity, 0.0]
     end
 
@@ -2314,7 +2320,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(-2.0, s1)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [-2.0, :nan, :nan, :infinity, 0.0]
     end
 
@@ -2323,7 +2329,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(:nan, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:nan, :nan, :nan, :nan, :nan]
     end
 
@@ -2332,7 +2338,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(:infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:infinity, :infinity, :nan, :infinity, 0.0]
     end
 
@@ -2341,7 +2347,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.pow(:neg_infinity, s1)
 
-      assert s2.dtype == :float
+      assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :infinity, :nan, :infinity, 0.0]
     end
 
@@ -2368,7 +2374,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.log(args)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
 
       assert Series.to_list(result) == [
                0.0,
@@ -2386,7 +2392,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.log(args, 2)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [0.0, 3.0, 4.0, nil, 5.0]
     end
 
@@ -2395,7 +2401,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.log(args, 2.0)
 
-      assert result.dtype == :float
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [3.0, 4.0, 5.0]
     end
 
@@ -3238,10 +3244,10 @@ defmodule Explorer.SeriesTest do
 
     test "integer series to float" do
       s = Series.from_list([1, 2, 3])
-      s1 = Series.cast(s, :float)
+      s1 = Series.cast(s, {:f, 64})
 
       assert Series.to_list(s1) == [1.0, 2.0, 3.0]
-      assert Series.dtype(s1) == :float
+      assert Series.dtype(s1) == {:f, 64}
     end
 
     test "integer series to date" do
@@ -3332,7 +3338,7 @@ defmodule Explorer.SeriesTest do
 
       assert Series.size(s3) == 6
       assert Series.to_list(s3) == [1.0, 2.1, 3.2, 4.3, 5.4, 6.5]
-      assert Series.dtype(s3) == :float
+      assert Series.dtype(s3) == {:f, 64}
     end
 
     test "concat integer and float series" do
@@ -3343,7 +3349,7 @@ defmodule Explorer.SeriesTest do
 
       assert Series.size(s3) == 6
       assert Series.to_list(s3) == [1.0, 2.0, 3.0, 4.3, 5.4, 6.5]
-      assert Series.dtype(s3) == :float
+      assert Series.dtype(s3) == {:f, 64}
     end
 
     test "concat incompatible dtypes" do
@@ -3727,7 +3733,7 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([], dtype: :integer)
       assert Series.product(s) === 1
 
-      s = Series.from_list([], dtype: :float)
+      s = Series.from_list([], dtype: {:f, 64})
       assert Series.product(s) === 1.0
     end
 
@@ -3972,14 +3978,14 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list([-50, 5, nil, 50])
       clipped2 = Series.clip(s2, 1.5, 10.5)
       assert Series.to_list(clipped2) == [1.5, 5.0, nil, 10.5]
-      assert clipped2.dtype == :float
+      assert clipped2.dtype == {:f, 64}
     end
 
     test "with special floats" do
       s3 = Series.from_list([:neg_infinity, :nan, nil, :infinity])
       clipped3 = Series.clip(s3, 1.5, 10.5)
       assert Series.to_list(clipped3) == [1.5, :nan, nil, 10.5]
-      assert clipped3.dtype == :float
+      assert clipped3.dtype == {:f, 64}
     end
 
     test "errors" do
@@ -3997,7 +4003,7 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "Explorer.Series.clip/3 not implemented for dtype :string. " <>
-                     "Valid dtypes are [:integer, :float]",
+                     "Valid dtypes are [:integer, {:f, 32}, {:f, 64}]",
                    fn -> Series.clip(Series.from_list(["a"]), 1, 10) end
     end
   end
@@ -4032,8 +4038,8 @@ defmodule Explorer.SeriesTest do
     end
 
     test "impossible correlation and covariance" do
-      s1 = Series.from_list([], dtype: :float)
-      s2 = Series.from_list([], dtype: :float)
+      s1 = Series.from_list([], dtype: {:f, 64})
+      s2 = Series.from_list([], dtype: {:f, 64})
       assert Series.correlation(s1, s2) == nil
       assert Series.covariance(s1, s2) == nil
 
@@ -4057,11 +4063,11 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list(["a", "b"])
 
       assert_raise ArgumentError,
-                   "cannot invoke Explorer.Series.correlation/3 with mismatched dtypes: :float and :string",
+                   "cannot invoke Explorer.Series.correlation/3 with mismatched dtypes: {:f, 64} and :string",
                    fn -> Series.correlation(s1, s2) end
 
       assert_raise ArgumentError,
-                   "cannot invoke Explorer.Series.covariance/2 with mismatched dtypes: :float and :string",
+                   "cannot invoke Explorer.Series.covariance/2 with mismatched dtypes: {:f, 64} and :string",
                    fn -> Series.covariance(s1, s2) end
     end
   end

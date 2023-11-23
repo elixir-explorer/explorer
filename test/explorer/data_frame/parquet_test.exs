@@ -14,10 +14,10 @@ defmodule Explorer.DataFrame.ParquetTest do
     assert DF.n_columns(frame) == 5
 
     assert frame.dtypes == %{
-             "sepal_length" => :float,
-             "sepal_width" => :float,
-             "petal_length" => :float,
-             "petal_width" => :float,
+             "sepal_length" => {:f, 64},
+             "sepal_width" => {:f, 64},
+             "petal_length" => {:f, 64},
+             "petal_width" => {:f, 64},
              "species" => :string
            }
 
@@ -148,10 +148,10 @@ defmodule Explorer.DataFrame.ParquetTest do
     assert DF.n_columns(frame) == 5
 
     assert frame.dtypes == %{
-             "sepal_length" => :float,
-             "sepal_width" => :float,
-             "petal_length" => :float,
-             "petal_width" => :float,
+             "sepal_length" => {:f, 64},
+             "sepal_width" => {:f, 64},
+             "petal_length" => {:f, 64},
+             "petal_width" => {:f, 64},
              "species" => :string
            }
 
@@ -177,9 +177,9 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
 
     test "float" do
-      assert_parquet(:float, "2.3", 2.3)
-      assert_parquet(:float, "57.653484", 57.653484)
-      assert_parquet(:float, "-1.772232", -1.772232)
+      assert_parquet({:f, 64}, "2.3", 2.3)
+      assert_parquet({:f, 64}, "57.653484", 57.653484)
+      assert_parquet({:f, 64}, "-1.772232", -1.772232)
     end
 
     # cast not used as it is not implemented for boolean values
@@ -212,8 +212,8 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
 
     test "list of floats" do
-      assert_parquet({:list, :float}, [["100.42"]], [100.42])
-      assert_parquet({:list, :float}, [["-101.51"]], [-101.51])
+      assert_parquet({:list, {:f, 64}}, [["100.42"]], [100.42])
+      assert_parquet({:list, {:f, 64}}, [["-101.51"]], [-101.51])
     end
   end
 

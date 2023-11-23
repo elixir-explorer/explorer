@@ -7,7 +7,8 @@ defmodule Explorer.Shared do
     :boolean,
     :category,
     :date,
-    :float,
+    {:f, 32},
+    {:f, 64},
     :integer,
     :string,
     :time,
@@ -59,6 +60,11 @@ defmodule Explorer.Shared do
   """
   def duration_types,
     do: [{:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+
+  @doc """
+  Supported float dtypes.
+  """
+  def float_types, do: [{:f, 32}, {:f, 64}]
 
   @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
@@ -195,15 +201,22 @@ defmodule Explorer.Shared do
   """
   def dtype_from_list!(list, preferable_type \\ nil) do
     initial_type =
-      if leaf_dtype(preferable_type) in [:numeric, :binary, :float, :integer, :category],
-        do: preferable_type
+      if leaf_dtype(preferable_type) in [
+           :numeric,
+           :binary,
+           {:f, 32},
+           {:f, 64},
+           :integer,
+           :category
+         ],
+         do: preferable_type
 
     type =
       Enum.reduce(list, initial_type, fn el, type ->
         new_type = type(el, type) || type
 
         cond do
-          leaf_dtype(new_type) == :numeric and leaf_dtype(type) in [:integer, :float] ->
+          leaf_dtype(new_type) == :numeric and leaf_dtype(type) in [:integer, {:f, 32}, {:f, 64}] ->
             new_type
 
           new_type != type and type != nil ->
@@ -215,7 +228,7 @@ defmodule Explorer.Shared do
         end
       end)
 
-    type || preferable_type || :float
+    type || preferable_type || {:f, 64}
   end
 
   defp type(%Date{} = _item, _type), do: :date
@@ -223,17 +236,19 @@ defmodule Explorer.Shared do
   defp type(%NaiveDateTime{} = _item, _type), do: {:datetime, :microsecond}
   defp type(%Explorer.Duration{precision: precision} = _item, _type), do: {:duration, precision}
 
-  defp type(item, type) when is_integer(item) and type == :float, do: :numeric
+  defp type(item, type) when is_integer(item) and type in [{:f, 32}, {:f, 64}], do: :numeric
   defp type(item, type) when is_float(item) and type == :integer, do: :numeric
   defp type(item, type) when is_number(item) and type == :numeric, do: :numeric
 
   defp type(item, type)
-       when item in [:nan, :infinity, :neg_infinity] and type in [:integer, :float, :numeric],
+       when item in [:nan, :infinity, :neg_infinity] and
+              type in [:integer, {:f, 32}, {:f, 64}, :numeric],
        do: :numeric
 
   defp type(item, _type) when is_integer(item), do: :integer
-  defp type(item, _type) when is_float(item), do: :float
-  defp type(item, _type) when item in [:nan, :infinity, :neg_infinity], do: :float
+  defp type(item, {:f, _} = float_dtype) when is_float(item), do: float_dtype
+  defp type(item, _type) when is_float(item), do: {:f, 64}
+  defp type(item, _type) when item in [:nan, :infinity, :neg_infinity], do: {:f, 64}
   defp type(item, _type) when is_boolean(item), do: :boolean
 
   defp type(item, :binary) when is_binary(item), do: :binary
@@ -267,7 +282,7 @@ defmodule Explorer.Shared do
   Downcasts lists of mixed numeric types (float and int) to float.
   """
   def cast_numerics(list, type) when type == :numeric do
-    {cast_numerics_to_floats(list), :float}
+    {cast_numerics_to_floats(list), {:f, 64}}
   end
 
   def cast_numerics(list, {:list, _} = dtype) do
@@ -292,7 +307,7 @@ defmodule Explorer.Shared do
   defp cast_numerics_deep(list, :numeric), do: cast_numerics_to_floats(list)
   defp cast_numerics_deep(list, _), do: list
 
-  defp cast_numeric_dtype_to_float({:list, :numeric}), do: {:list, :float}
+  defp cast_numeric_dtype_to_float({:list, :numeric}), do: {:list, {:f, 64}}
   defp cast_numeric_dtype_to_float({:list, other} = dtype) when is_atom(other), do: dtype
 
   defp cast_numeric_dtype_to_float({:list, inner}),
@@ -325,7 +340,7 @@ defmodule Explorer.Shared do
   """
   def dtype_to_iotype!(dtype) do
     case dtype do
-      :float -> {:f, 64}
+      {:f, _n} -> dtype
       :integer -> {:s, 64}
       :boolean -> {:u, 8}
       :date -> {:s, 32}
@@ -341,7 +356,7 @@ defmodule Explorer.Shared do
   """
   def iotype_to_dtype!(type) do
     case type do
-      {:f, 64} -> :float
+      {:f, _} -> type
       {:s, 64} -> :integer
       {:u, 8} -> :boolean
       {:s, 32} -> :date
@@ -359,6 +374,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:duration, :microsecond}), do: "duration[μs]"
   def dtype_to_string({:duration, :nanosecond}), do: "duration[ns]"
   def dtype_to_string({:list, dtype}), do: "list[" <> dtype_to_string(dtype) <> "]"
+  def dtype_to_string({:f, size}), do: "float[" <> Integer.to_string(size) <> "]"
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
 
   @threshold 0.77

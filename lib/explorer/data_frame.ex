@@ -8,10 +8,10 @@ defmodule Explorer.DataFrame do
       iex> Explorer.Datasets.iris()
       #Explorer.DataFrame<
         Polars[150 x 5]
-        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
-        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
-        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
-        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        sepal_length float[64] [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float[64] [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float[64] [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float[64] [0.2, 0.2, 0.2, 0.2, 0.2, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
@@ -22,7 +22,7 @@ defmodule Explorer.DataFrame do
       iex> df["sepal_length"]
       #Explorer.Series<
         Polars[150]
-        float [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9, 5.4, 4.8, 4.8, 4.3, 5.8, 5.7, 5.4, 5.1, 5.7, 5.1, 5.4, 5.1, 4.6, 5.1, 4.8, 5.0, 5.0, 5.2, 5.2, 4.7, 4.8, 5.4, 5.2, 5.5, 4.9, 5.0, 5.5, 4.9, 4.4, 5.1, 5.0, 4.5, 4.4, 5.0, 5.1, 4.8, 5.1, 4.6, 5.3, 5.0, ...]
+        float[64] [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9, 5.4, 4.8, 4.8, 4.3, 5.8, 5.7, 5.4, 5.1, 5.7, 5.1, 5.4, 5.1, 4.6, 5.1, 4.8, 5.0, 5.0, 5.2, 5.2, 4.7, 4.8, 5.4, 5.2, 5.5, 4.9, 5.0, 5.5, 4.9, 4.4, 5.1, 5.0, 4.5, 4.4, 5.0, 5.1, 4.8, 5.1, 4.6, 5.3, 5.0, ...]
       >
 
   ## Creating dataframes
@@ -157,7 +157,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[178 x 2]
         class integer [1, 1, 1, 1, 1, ...]
-        hue float [1.04, 1.05, 1.03, 0.86, 1.04, ...]
+        hue float[64] [1.04, 1.05, 1.03, 0.86, 1.04, ...]
       >
 
   Or a range for the given positions:
@@ -167,8 +167,8 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[178 x 3]
         class integer [1, 1, 1, 1, 1, ...]
-        alcohol float [14.23, 13.2, 13.16, 14.37, 13.24, ...]
-        malic_acid float [1.71, 1.78, 2.36, 1.95, 2.59, ...]
+        alcohol float[64] [14.23, 13.2, 13.16, 14.37, 13.24, ...]
+        malic_acid float[64] [1.71, 1.78, 2.36, 1.95, 2.59, ...]
       >
 
   Or a regex to keep only columns matching a given pattern:
@@ -178,7 +178,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[178 x 2]
         class integer [1, 1, 1, 1, 1, ...]
-        hue float [1.04, 1.05, 1.03, 0.86, 1.04, ...]
+        hue float[64] [1.04, 1.05, 1.03, 0.86, 1.04, ...]
       >
 
   Given you can also access a series using its index, you can use
@@ -1563,7 +1563,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         col_a integer [1, 2]
-        col_b float [5.1, 5.2]
+        col_b float[64] [5.1, 5.2]
       >
 
   """
@@ -1649,7 +1649,7 @@ defmodule Explorer.DataFrame do
       ...> })
       #Explorer.DataFrame<
         Polars[2 x 2]
-        floats float [1.0, 2.0]
+        floats float[64] [1.0, 2.0]
         ints integer [1, nil]
       >
 
@@ -1681,7 +1681,7 @@ defmodule Explorer.DataFrame do
       ...> })
       #Explorer.DataFrame<
         Polars[2 x 2]
-        floats float [1.0, 2.0]
+        floats float[64] [1.0, 2.0]
         ints integer [3, 4]
       >
 
@@ -1693,7 +1693,7 @@ defmodule Explorer.DataFrame do
       ...> ], dtypes: [times: :time])
       #Explorer.DataFrame<
         Polars[2 x 2]
-        floats float [1.0, 2.0]
+        floats float[64] [1.0, 2.0]
         times time [00:00:00.000003, 00:00:00.000004]
       >
 
@@ -1705,21 +1705,21 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, nil]})
       #Explorer.DataFrame<
         Polars[2 x 2]
-        floats float [1.0, 2.0]
+        floats float[64] [1.0, 2.0]
         ints integer [1, nil]
       >
 
       iex> Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
       #Explorer.DataFrame<
         Polars[2 x 2]
-        floats float [1.0, 2.0]
+        floats float[64] [1.0, 2.0]
         ints integer [1, nil]
       >
 
       iex> Explorer.DataFrame.new([floats: [1.0, 2.0], ints: [1, nil], binaries: [<<239, 191, 19>>, nil]], dtypes: [{:binaries, :binary}])
       #Explorer.DataFrame<
         Polars[2 x 3]
-        floats float [1.0, 2.0]
+        floats float[64] [1.0, 2.0]
         ints integer [1, nil]
         binaries binary [<<239, 191, 19>>, nil]
       >
@@ -1988,7 +1988,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, 2])
       iex> Explorer.DataFrame.dtypes(df)
-      %{"floats" => :float, "ints" => :integer}
+      %{"floats" => {:f, 64}, "ints" => :integer}
   """
   @doc type: :introspection
   @spec dtypes(df :: DataFrame.t()) :: %{String.t() => atom()}
@@ -2083,7 +2083,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [74, 7, 14565, 0, 374]
         cement integer [5, 177, 2598, 0, 204]
         gas_flaring integer [0, 0, 2623, 0, 3697]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37]
         bunker_fuels integer [9, 7, 663, 0, 321]
       >
 
@@ -2099,7 +2099,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [74, 7]
         cement integer [5, 177]
         gas_flaring integer [0, 0]
-        per_capita float [0.08, 0.43]
+        per_capita float[64] [0.08, 0.43]
         bunker_fuels integer [9, 7]
       >
 
@@ -2114,10 +2114,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[6 x 5]
         Groups: ["species"]
-        sepal_length float [5.1, 4.9, 7.0, 6.4, 6.3, ...]
-        sepal_width float [3.5, 3.0, 3.2, 3.2, 3.3, ...]
-        petal_length float [1.4, 1.4, 4.7, 4.5, 6.0, ...]
-        petal_width float [0.2, 0.2, 1.4, 1.5, 2.5, ...]
+        sepal_length float[64] [5.1, 4.9, 7.0, 6.4, 6.3, ...]
+        sepal_width float[64] [3.5, 3.0, 3.2, 3.2, 3.3, ...]
+        petal_length float[64] [1.4, 1.4, 4.7, 4.5, 6.0, ...]
+        petal_width float[64] [0.2, 0.2, 1.4, 1.5, 2.5, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
       >
 
@@ -2148,7 +2148,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [5349, 0, 581, 0, 0]
         cement integer [8229, 0, 381, 299, 177]
         gas_flaring integer [0, 0, 0, 0, 0]
-        per_capita float [0.49, 0.44, 0.24, 0.08, 0.22]
+        per_capita float[64] [0.49, 0.44, 0.24, 0.08, 0.22]
         bunker_fuels integer [761, 1, 153, 33, 9]
       >
 
@@ -2164,7 +2164,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [0, 0]
         cement integer [299, 177]
         gas_flaring integer [0, 0]
-        per_capita float [0.08, 0.22]
+        per_capita float[64] [0.08, 0.22]
         bunker_fuels integer [33, 9]
       >
 
@@ -2179,10 +2179,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[6 x 5]
         Groups: ["species"]
-        sepal_length float [5.3, 5.0, 5.1, 5.7, 6.2, ...]
-        sepal_width float [3.7, 3.3, 2.5, 2.8, 3.4, ...]
-        petal_length float [1.5, 1.4, 3.0, 4.1, 5.4, ...]
-        petal_width float [0.2, 0.2, 1.1, 1.3, 2.3, ...]
+        sepal_length float[64] [5.3, 5.0, 5.1, 5.7, 6.2, ...]
+        sepal_width float[64] [3.7, 3.3, 2.5, 2.8, 3.4, ...]
+        petal_length float[64] [1.5, 1.4, 3.0, 4.1, 5.4, ...]
+        petal_width float[64] [0.2, 0.2, 1.1, 1.3, 2.3, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
       >
 
@@ -2273,7 +2273,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[150 x 2]
         Groups: ["species"]
-        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        sepal_width float[64] [3.5, 3.0, 3.2, 3.1, 3.6, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
@@ -2327,10 +2327,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[150 x 5]
         Groups: ["species"]
-        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
-        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
-        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
-        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        sepal_length float[64] [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float[64] [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float[64] [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float[64] [0.2, 0.2, 0.2, 0.2, 0.2, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
@@ -2485,10 +2485,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[79 x 5]
         Groups: ["species"]
-        sepal_length float [4.6, 5.4, 5.0, 4.9, 5.4, ...]
-        sepal_width float [3.1, 3.9, 3.4, 3.1, 3.7, ...]
-        petal_length float [1.5, 1.7, 1.5, 1.5, 1.5, ...]
-        petal_width float [0.2, 0.4, 0.2, 0.1, 0.2, ...]
+        sepal_length float[64] [4.6, 5.4, 5.0, 4.9, 5.4, ...]
+        sepal_width float[64] [3.1, 3.9, 3.4, 3.1, 3.7, ...]
+        petal_length float[64] [1.5, 1.7, 1.5, 1.5, 1.5, ...]
+        petal_width float[64] [0.2, 0.4, 0.2, 0.1, 0.2, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
@@ -2541,10 +2541,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[79 x 5]
         Groups: ["species"]
-        sepal_length float [4.6, 5.4, 5.0, 4.9, 5.4, ...]
-        sepal_width float [3.1, 3.9, 3.4, 3.1, 3.7, ...]
-        petal_length float [1.5, 1.7, 1.5, 1.5, 1.5, ...]
-        petal_width float [0.2, 0.4, 0.2, 0.1, 0.2, ...]
+        sepal_length float[64] [4.6, 5.4, 5.0, 4.9, 5.4, ...]
+        sepal_width float[64] [3.1, 3.9, 3.4, 3.1, 3.7, ...]
+        petal_length float[64] [1.5, 1.7, 1.5, 1.5, 1.5, ...]
+        petal_width float[64] [0.2, 0.4, 0.2, 0.1, 0.2, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
   """
@@ -2656,12 +2656,12 @@ defmodule Explorer.DataFrame do
   Alternatively, all of the above works with a map instead of a keyword list:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate(df, %{"c" => cast(b, :float)})
+      iex> Explorer.DataFrame.mutate(df, %{"c" => cast(b, {:f, 64})})
       #Explorer.DataFrame<
         Polars[3 x 3]
         a string ["a", "b", "c"]
         b integer [1, 2, 3]
-        c float [1.0, 2.0, 3.0]
+        c float[64] [1.0, 2.0, 3.0]
       >
 
   ## Grouped examples
@@ -2691,12 +2691,12 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[150 x 6]
         Groups: ["species"]
-        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
-        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
-        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
-        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        sepal_length float[64] [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float[64] [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float[64] [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float[64] [0.2, 0.2, 0.2, 0.2, 0.2, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
-        petal_length_avg float [1.464, 1.464, 1.464, 1.464, 1.464, ...]
+        petal_length_avg float[64] [1.464, 1.464, 1.464, 1.464, 1.464, ...]
       >
   """
   @doc type: :single
@@ -2739,7 +2739,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
-        b float [1.0, 4.0, 9.0]
+        b float[64] [1.0, 4.0, 9.0]
       >
 
   It's possible to "reuse" a variable for different computations:
@@ -2803,7 +2803,7 @@ defmodule Explorer.DataFrame do
                     "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
 
           number when is_number(number) ->
-            dtype = if is_integer(number), do: :integer, else: :float
+            dtype = if is_integer(number), do: :integer, else: {:f, 64}
             lazy_s = LazySeries.new(:lazy, [number], dtype)
 
             Explorer.Backend.Series.new(lazy_s, dtype)
@@ -2959,17 +2959,17 @@ defmodule Explorer.DataFrame do
       ** (ArgumentError) dtype integer expects a tensor of type {:s, 64} but got type {:f, 64}
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
-      iex> Explorer.DataFrame.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: :float)
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: {:f, 64})
       #Explorer.DataFrame<
         Polars[3 x 1]
-        a float [1.0, 1.0, 1.0]
+        a float[64] [1.0, 1.0, 1.0]
       >
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
       iex> Explorer.DataFrame.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: :infer)
       #Explorer.DataFrame<
         Polars[3 x 1]
-        a float [1.0, 1.0, 1.0]
+        a float[64] [1.0, 1.0, 1.0]
       >
 
   ## List examples
@@ -3086,7 +3086,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [0, 0, 0, 0, 0, ...]
         cement integer [0, 0, 0, 0, 0, ...]
         gas_flaring integer [0, 0, 0, 0, 0, ...]
-        per_capita float [0.52, 0.0, 0.0, 1.04, 1.04, ...]
+        per_capita float[64] [0.52, 0.0, 0.0, 1.04, 1.04, ...]
         bunker_fuels integer [0, 0, 0, 0, 0, ...]
       >
 
@@ -3107,10 +3107,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[150 x 5]
         Groups: ["species"]
-        sepal_length float [4.5, 4.4, 4.9, 4.8, 4.3, ...]
-        sepal_width float [2.3, 2.9, 3.0, 3.0, 3.0, ...]
-        petal_length float [1.3, 1.4, 1.4, 1.4, 1.1, ...]
-        petal_width float [0.3, 0.2, 0.2, 0.1, 0.1, ...]
+        sepal_length float[64] [4.5, 4.4, 4.9, 4.8, 4.3, ...]
+        sepal_width float[64] [2.3, 2.9, 3.0, 3.0, 3.0, ...]
+        petal_length float[64] [1.3, 1.4, 1.4, 1.4, 1.1, ...]
+        petal_width float[64] [0.3, 0.2, 0.2, 0.1, 0.1, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
   """
@@ -3173,10 +3173,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[150 x 5]
         Groups: ["species"]
-        sepal_length float [4.5, 4.4, 4.9, 4.8, 4.3, ...]
-        sepal_width float [2.3, 2.9, 3.0, 3.0, 3.0, ...]
-        petal_length float [1.3, 1.4, 1.4, 1.4, 1.1, ...]
-        petal_width float [0.3, 0.2, 0.2, 0.1, 0.1, ...]
+        sepal_length float[64] [4.5, 4.4, 4.9, 4.8, 4.3, ...]
+        sepal_width float[64] [2.3, 2.9, 3.0, 3.0, 3.0, ...]
+        petal_length float[64] [1.3, 1.4, 1.4, 1.4, 1.1, ...]
+        petal_width float[64] [0.3, 0.2, 0.2, 0.1, 0.1, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
   """
@@ -3251,7 +3251,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [74, 7, 14565, 0, 374, ...]
         cement integer [5, 177, 2598, 0, 204, ...]
         gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
@@ -3391,7 +3391,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 4]
         d string ["yes", "no"]
-        b float [5.1, 5.2]
+        b float[64] [5.1, 5.2]
         a integer [1, 2]
         c integer [4, 5]
       >
@@ -3404,7 +3404,7 @@ defmodule Explorer.DataFrame do
         Polars[2 x 4]
         a integer [1, 2]
         c integer [4, 5]
-        b float [5.1, 5.2]
+        b float[64] [5.1, 5.2]
         d string ["yes", "no"]
       >
   """
@@ -3579,7 +3579,7 @@ defmodule Explorer.DataFrame do
         GAS_FUEL integer [74, 7, 14565, 0, 374, ...]
         CEMENT integer [5, 177, 2598, 0, 204, ...]
         GAS_FLARING integer [0, 0, 2623, 0, 3697, ...]
-        PER_CAPITA float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        PER_CAPITA float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         BUNKER_FUELS integer [9, 7, 663, 0, 321, ...]
       >
 
@@ -3597,7 +3597,7 @@ defmodule Explorer.DataFrame do
         gas integer [74, 7, 14565, 0, 374, ...]
         cement integer [5, 177, 2598, 0, 204, ...]
         gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
@@ -3615,7 +3615,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [74, 7, 14565, 0, 374, ...]
         CEMENT integer [5, 177, 2598, 0, 204, ...]
         gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
@@ -3755,7 +3755,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [7, 14565]
         cement integer [177, 2598]
         gas_flaring integer [0, 2623]
-        per_capita float [0.43, 0.9]
+        per_capita float[64] [0.43, 0.9]
         bunker_fuels integer [7, 663]
       >
 
@@ -3773,7 +3773,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [390719, 25]
         cement integer [11314, 112]
         gas_flaring integer [4244, 0]
-        per_capita float [4.43, 0.54]
+        per_capita float[64] [4.43, 0.54]
         bunker_fuels integer [30722, 251]
       >
 
@@ -3791,7 +3791,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [390719, 25, 23929, 0, 12731, ...]
         cement integer [11314, 112, 1000, 0, 1088, ...]
         gas_flaring integer [4244, 0, 0, 0, 8042, ...]
-        per_capita float [4.43, 0.54, 0.97, 0.16, 1.65, ...]
+        per_capita float[64] [4.43, 0.54, 0.97, 0.16, 1.65, ...]
         bunker_fuels integer [30722, 251, 0, 10, 1256, ...]
       >
 
@@ -3805,10 +3805,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[9 x 5]
         Groups: ["species"]
-        sepal_length float [5.1, 4.9, 4.7, 7.0, 6.4, ...]
-        sepal_width float [3.5, 3.0, 3.2, 3.2, 3.2, ...]
-        petal_length float [1.4, 1.4, 1.3, 4.7, 4.5, ...]
-        petal_width float [0.2, 0.2, 0.2, 1.4, 1.5, ...]
+        sepal_length float[64] [5.1, 4.9, 4.7, 7.0, 6.4, ...]
+        sepal_width float[64] [3.5, 3.0, 3.2, 3.2, 3.2, ...]
+        petal_length float[64] [1.4, 1.4, 1.3, 4.7, 4.5, ...]
+        petal_width float[64] [0.2, 0.2, 0.2, 1.4, 1.5, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", ...]
       >
 
@@ -3820,10 +3820,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[9 x 5]
         Groups: ["species"]
-        sepal_length float [5.1, 4.8, 5.1, 5.6, 5.7, ...]
-        sepal_width float [3.8, 3.0, 3.8, 2.7, 3.0, ...]
-        petal_length float [1.9, 1.4, 1.6, 4.2, 4.2, ...]
-        petal_width float [0.4, 0.3, 0.2, 1.3, 1.2, ...]
+        sepal_length float[64] [5.1, 4.8, 5.1, 5.6, 5.7, ...]
+        sepal_width float[64] [3.8, 3.0, 3.8, 2.7, 3.0, ...]
+        petal_length float[64] [1.9, 1.4, 1.6, 4.2, 4.2, ...]
+        petal_width float[64] [0.4, 0.3, 0.2, 1.3, 1.2, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", ...]
       >
 
@@ -3899,10 +3899,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[6 x 5]
         Groups: ["species"]
-        sepal_length float [5.1, 4.7, 7.0, 6.9, 6.3, ...]
-        sepal_width float [3.5, 3.2, 3.2, 3.1, 3.3, ...]
-        petal_length float [1.4, 1.3, 4.7, 4.9, 6.0, ...]
-        petal_width float [0.2, 0.2, 1.4, 1.5, 2.5, ...]
+        sepal_length float[64] [5.1, 4.7, 7.0, 6.9, 6.3, ...]
+        sepal_width float[64] [3.5, 3.2, 3.2, 3.1, 3.3, ...]
+        petal_length float[64] [1.4, 1.3, 4.7, 4.9, 6.0, ...]
+        petal_width float[64] [0.2, 0.2, 1.4, 1.5, 2.5, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
       >
 
@@ -3915,10 +3915,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[9 x 5]
         Groups: ["species"]
-        sepal_length float [5.1, 4.9, 4.7, 7.0, 6.4, ...]
-        sepal_width float [3.5, 3.0, 3.2, 3.2, 3.2, ...]
-        petal_length float [1.4, 1.4, 1.3, 4.7, 4.5, ...]
-        petal_width float [0.2, 0.2, 0.2, 1.4, 1.5, ...]
+        sepal_length float[64] [5.1, 4.9, 4.7, 7.0, 6.4, ...]
+        sepal_width float[64] [3.5, 3.0, 3.2, 3.2, 3.2, ...]
+        petal_length float[64] [1.4, 1.4, 1.3, 4.7, 4.5, ...]
+        petal_width float[64] [0.2, 0.2, 0.2, 1.4, 1.5, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", ...]
       >
 
@@ -4005,7 +4005,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [3265, 24672, 74]
         cement integer [816, 6800, 14]
         gas_flaring integer [208, 0, 0]
-        per_capita float [0.61, 0.66, 0.08]
+        per_capita float[64] [0.61, 0.66, 0.08]
         bunker_fuels integer [437, 694, 9]
       >
 
@@ -4023,7 +4023,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [0, 74, 74, 0, 4551, ...]
         cement integer [0, 34, 14, 19, 0, ...]
         gas_flaring integer [0, 0, 0, 0, 0, ...]
-        per_capita float [1.64, 0.1, 0.08, 1.6, 2.38, ...]
+        per_capita float[64] [1.64, 0.1, 0.08, 1.6, 2.38, ...]
         bunker_fuels integer [0, 28, 9, 168, 41786, ...]
       >
 
@@ -4039,10 +4039,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[6 x 5]
         Groups: ["species"]
-        sepal_length float [4.8, 5.0, 5.5, 6.5, 7.4, ...]
-        sepal_width float [3.1, 3.6, 2.4, 2.8, 2.8, ...]
-        petal_length float [1.6, 1.4, 3.8, 4.6, 6.1, ...]
-        petal_width float [0.2, 0.2, 1.1, 1.5, 1.9, ...]
+        sepal_length float[64] [4.8, 5.0, 5.5, 6.5, 7.4, ...]
+        sepal_width float[64] [3.1, 3.6, 2.4, 2.8, 2.8, ...]
+        petal_length float[64] [1.6, 1.4, 3.8, 4.6, 6.1, ...]
+        petal_width float[64] [0.2, 0.2, 1.1, 1.5, 1.9, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
       >
 
@@ -4055,10 +4055,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[15 x 5]
         Groups: ["species"]
-        sepal_length float [5.2, 5.0, 5.2, 5.0, 5.0, ...]
-        sepal_width float [3.4, 3.6, 3.5, 3.0, 3.4, ...]
-        petal_length float [1.4, 1.4, 1.5, 1.6, 1.6, ...]
-        petal_width float [0.2, 0.2, 0.2, 0.2, 0.4, ...]
+        sepal_length float[64] [5.2, 5.0, 5.2, 5.0, 5.0, ...]
+        sepal_width float[64] [3.4, 3.6, 3.5, 3.0, 3.4, ...]
+        petal_length float[64] [1.4, 1.4, 1.5, 1.6, 1.6, ...]
+        petal_width float[64] [0.2, 0.2, 0.2, 0.2, 0.4, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
@@ -4108,7 +4108,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [3930, 26368, 18010, 414, 0, ...]
         cement integer [898, 1551, 272, 375, 0, ...]
         gas_flaring integer [0, 446, 0, 0, 0, ...]
-        per_capita float [2.22, 1.29, 2.7, 0.2, 0.68, ...]
+        per_capita float[64] [2.22, 1.29, 2.7, 0.2, 0.68, ...]
         bunker_fuels integer [1011, 2079, 14210, 111, 4, ...]
       >
 
@@ -4164,7 +4164,7 @@ defmodule Explorer.DataFrame do
         total integer [2308, 1254, 32500, 141, 7924, ...]
         cement integer [5, 177, 2598, 0, 204, ...]
         gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
         variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", ...]
         value integer [627, 117, 332, 0, 0, ...]
@@ -4209,12 +4209,12 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[150 x 6]
         Groups: ["species"]
-        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
-        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
-        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        sepal_width float[64] [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float[64] [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float[64] [0.2, 0.2, 0.2, 0.2, 0.2, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
         variable string ["sepal_length", "sepal_length", "sepal_length", "sepal_length", "sepal_length", ...]
-        value float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        value float[64] [5.1, 4.9, 4.7, 4.6, 5.0, ...]
       >
 
   Now we want to do something different: we want to pivot the "species" column that is also a group.
@@ -4225,10 +4225,10 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.pivot_longer(grouped, ["species"])
       #Explorer.DataFrame<
         Polars[150 x 6]
-        sepal_length float [5.1, 4.9, 4.7, 4.6, 5.0, ...]
-        sepal_width float [3.5, 3.0, 3.2, 3.1, 3.6, ...]
-        petal_length float [1.4, 1.4, 1.3, 1.5, 1.4, ...]
-        petal_width float [0.2, 0.2, 0.2, 0.2, 0.2, ...]
+        sepal_length float[64] [5.1, 4.9, 4.7, 4.6, 5.0, ...]
+        sepal_width float[64] [3.5, 3.0, 3.2, 3.1, 3.6, ...]
+        petal_length float[64] [1.4, 1.4, 1.3, 1.5, 1.4, ...]
+        petal_width float[64] [0.2, 0.2, 0.2, 0.2, 0.2, ...]
         variable string ["species", "species", "species", "species", "species", ...]
         value string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
@@ -4321,7 +4321,7 @@ defmodule Explorer.DataFrame do
   * `:id_columns` - A set of columns that uniquely identifies each observation.
 
     Defaults to all columns in data except for the columns specified in `names_from` and `values_from`,
-    and columns that are of the `:float` dtype.
+    and columns that are of the `{:f, 64}` dtype.
 
     Typically used when you have redundant variables, i.e. variables whose values are perfectly correlated
     with existing variables. May accept a filter callback, a list or a range of column names.
@@ -4537,7 +4537,7 @@ defmodule Explorer.DataFrame do
 
     id_columns =
       for column_name <- to_existing_columns(df, opts[:id_columns]) -- [names_from | values_from],
-          df.dtypes[column_name] != :float,
+          df.dtypes[column_name] != {:f, 64},
           do: column_name
 
     if id_columns == [] do
@@ -4930,7 +4930,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.concat_rows([df1, df2])
       #Explorer.DataFrame<
         Polars[6 x 2]
-        x float [1.0, 2.0, 3.0, 4.2, 5.3, ...]
+        x float[64] [1.0, 2.0, 3.0, 4.2, 5.3, ...]
         y string ["a", "b", "c", "d", "e", ...]
       >
   """
@@ -4969,7 +4969,7 @@ defmodule Explorer.DataFrame do
             changed_types
 
           types_are_numeric_compatible?(types, name, type) ->
-            Map.put(changed_types, name, :float)
+            Map.put(changed_types, name, {:f, 64})
 
           true ->
             raise ArgumentError,
@@ -4980,22 +4980,23 @@ defmodule Explorer.DataFrame do
   end
 
   defp types_are_numeric_compatible?(types, name, type) do
-    numeric_types = [:float, :integer]
+    numeric_types = [{:f, 32}, {:f, 64}, :integer]
     types[name] != type and types[name] in numeric_types and type in numeric_types
   end
 
   defp cast_numeric_columns_to_float(dfs, changed_types) do
+    # TODO: work with {:f, 32} as well
     for df <- dfs do
       columns =
         for {name, :integer} <- df.dtypes,
-            changed_types[name] == :float,
+            changed_types[name] == {:f, 64},
             do: name
 
       if Enum.empty?(columns) do
         df
       else
         mutate_with(ungroup(df), fn ldf ->
-          for column <- columns, do: {column, Series.cast(ldf[column], :float)}
+          for column <- columns, do: {column, Series.cast(ldf[column], {:f, 64})}
         end)
       end
     end
@@ -5039,7 +5040,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [74, 7, 14565, 0, 374, ...]
         cement integer [5, 177, 2598, 0, 204, ...]
         gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
@@ -5058,7 +5059,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [74, 7, 14565, 0, 374, ...]
         cement integer [5, 177, 2598, 0, 204, ...]
         gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
@@ -5077,7 +5078,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [74, 7, 14565, 0, 374, ...]
         cement integer [5, 177, 2598, 0, 204, ...]
         gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
@@ -5117,7 +5118,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [74, 7, 14565, 0, 374, ...]
         cement integer [5, 177, 2598, 0, 204, ...]
         gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
@@ -5137,7 +5138,7 @@ defmodule Explorer.DataFrame do
         gas_fuel integer [74, 7, 14565, 0, 374, ...]
         cement integer [5, 177, 2598, 0, 204, ...]
         gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-        per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+        per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
         bunker_fuels integer [9, 7, 663, 0, 321, ...]
       >
 
@@ -5203,7 +5204,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         species string ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
-        mean_petal_length float [1.464, 4.26, 5.552]
+        mean_petal_length float[64] [1.464, 4.26, 5.552]
       >
 
   In case aggregations for all the dataframe is what you want, you can use ungrouped
@@ -5213,7 +5214,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.summarise(df, mean_petal_length: mean(petal_length))
       #Explorer.DataFrame<
         Polars[1 x 1]
-        mean_petal_length float [3.758666666666666]
+        mean_petal_length float[64] [3.758666666666666]
       >
 
   """
@@ -5370,7 +5371,7 @@ defmodule Explorer.DataFrame do
         Polars[9 x 4]
         describe string ["count", "null_count", "mean", "std", "min", ...]
         a string ["3", "1", nil, nil, "d", ...]
-        b float [3.0, 0.0, 2.0, 1.0, 1.0, ...]
+        b float[64] [3.0, 0.0, 2.0, 1.0, 1.0, ...]
         c string ["3", "0", nil, nil, "a", ...]
       >
 
@@ -5380,7 +5381,7 @@ defmodule Explorer.DataFrame do
         Polars[9 x 4]
         describe string ["count", "null_count", "mean", "std", "min", ...]
         a string ["3", "1", nil, nil, "d", ...]
-        b float [3.0, 0.0, 2.0, 1.0, 1.0, ...]
+        b float[64] [3.0, 0.0, 2.0, 1.0, 1.0, ...]
         c string ["3", "0", nil, nil, "a", ...]
       >
   """

@@ -33,34 +33,41 @@ from_list!(s_from_list_u32, u32);
 from_list!(s_from_list_bool, bool);
 from_list!(s_from_list_str, String);
 
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_f64(name: &str, val: Term) -> ExSeries {
-    let nan = atoms::nan();
-    let infinity = atoms::infinity();
-    let neg_infinity = atoms::neg_infinity();
+macro_rules! from_list_float {
+    ($name:ident, $type:ty, $module:ident) => {
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $name(name: &str, val: Term) -> ExSeries {
+            let nan = atoms::nan();
+            let infinity = atoms::infinity();
+            let neg_infinity = atoms::neg_infinity();
 
-    ExSeries::new(Series::new(
-        name,
-        val.decode::<ListIterator>()
-            .unwrap()
-            .map(|item| match item.get_type() {
-                TermType::Number => Some(item.decode::<f64>().unwrap()),
-                TermType::Atom => {
-                    if nan.eq(&item) {
-                        Some(f64::NAN)
-                    } else if infinity.eq(&item) {
-                        Some(f64::INFINITY)
-                    } else if neg_infinity.eq(&item) {
-                        Some(f64::NEG_INFINITY)
-                    } else {
-                        None
-                    }
-                }
-                term_type => panic!("from_list/2 not implemented for {term_type:?}"),
-            })
-            .collect::<Vec<Option<f64>>>(),
-    ))
+            ExSeries::new(Series::new(
+                name,
+                val.decode::<ListIterator>()
+                    .unwrap()
+                    .map(|item| match item.get_type() {
+                        TermType::Number => Some(item.decode::<$type>().unwrap()),
+                        TermType::Atom => {
+                            if nan.eq(&item) {
+                                Some($module::NAN)
+                            } else if infinity.eq(&item) {
+                                Some($module::INFINITY)
+                            } else if neg_infinity.eq(&item) {
+                                Some($module::NEG_INFINITY)
+                            } else {
+                                None
+                            }
+                        }
+                        term_type => panic!("from_list/2 not implemented for {term_type:?}"),
+                    })
+                    .collect::<Vec<Option<$type>>>(),
+            ))
+        }
+    };
 }
+
+from_list_float!(s_from_list_f32, f32, f32);
+from_list_float!(s_from_list_f64, f64, f64);
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {

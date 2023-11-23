@@ -14,7 +14,8 @@ use smartstring::alias::String as SmartString;
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
 
-// Helper to normalize integers and float column dtypes.
+// Helper to normalize integers column dtypes. This is going to be removed in future
+// versions.
 pub fn normalize_numeric_dtypes(df: &mut DataFrame) -> Result<DataFrame, crate::ExplorerError> {
     let dtypes = df.dtypes().into_iter().enumerate();
 
@@ -26,7 +27,6 @@ pub fn normalize_numeric_dtypes(df: &mut DataFrame) -> Result<DataFrame, crate::
             | DataType::Int8
             | DataType::Int16
             | DataType::Int32 => df.apply_at_idx(idx, |s| s.cast(&DataType::Int64).unwrap())?,
-            DataType::Float32 => df.apply_at_idx(idx, |s| s.cast(&DataType::Float64).unwrap())?,
             _ => df,
         };
     }

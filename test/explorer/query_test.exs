@@ -67,7 +67,7 @@ defmodule Explorer.QueryTest do
 
       assert abc()
              |> DF.mutate(
-               for col <- across(), col.dtype in [:integer, :float] do
+               for col <- across(), col.dtype in [:integer, {:f, 64}] do
                  {col.name, -col}
                end
              )

@@ -138,9 +138,9 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert DF.dtypes(df2) == %{
                "team" => :string,
-               "adv" => :float,
-               "cou" => :float,
-               "spo" => :float
+               "adv" => {:f, 64},
+               "cou" => {:f, 64},
+               "spo" => {:f, 64}
              }
 
       assert Series.to_list(df2["cou"]) == [1.0, 4.0]
@@ -482,7 +482,7 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
 
       assert df2.names == ["a", "b", "c", "d"]
-      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :float}
+      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => {:f, 64}}
       assert df2.groups == ["c"]
     end
 
@@ -500,7 +500,7 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
 
       assert df2.names == ["a", "b", "c", "d"]
-      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :float}
+      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => {:f, 64}}
       assert df2.groups == ["c"]
     end
   end
@@ -530,7 +530,7 @@ defmodule Explorer.DataFrame.GroupedTest do
                "a" => :integer,
                "b" => :string,
                "c" => :integer,
-               "d" => :float,
+               "d" => {:f, 64},
                "e" => :integer
              }
 
@@ -1199,7 +1199,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       stacked = DF.concat_rows([grouped_first, grouped_second])
 
       assert DF.groups(stacked) == ["a"]
-      assert DF.dtypes(stacked) == %{"a" => :float, "b" => :string}
+      assert DF.dtypes(stacked) == %{"a" => {:f, 64}, "b" => :string}
       assert DF.n_rows(stacked) == 6
     end
   end
@@ -1220,7 +1220,7 @@ defmodule Explorer.DataFrame.GroupedTest do
                "a" => :integer,
                "b" => :string,
                "c" => :integer,
-               "d" => :float
+               "d" => {:f, 64}
              }
 
       assert DF.n_rows(stacked) == 3
@@ -1241,7 +1241,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.dtypes(stacked) == %{
                "a" => :integer,
                "b" => :string,
-               "a_1" => :float,
+               "a_1" => {:f, 64},
                "d" => :integer
              }
 
