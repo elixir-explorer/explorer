@@ -99,8 +99,8 @@ defmodule Explorer.Backend.LazySeries do
     median: 1,
     mode: 1,
     n_distinct: 1,
-    variance: 1,
-    standard_deviation: 1,
+    variance: 2,
+    standard_deviation: 2,
     quantile: 2,
     rank: 4,
     product: 1,
@@ -152,8 +152,6 @@ defmodule Explorer.Backend.LazySeries do
     :mean,
     :median,
     :mode,
-    :variance,
-    :standard_deviation,
     :count,
     :product,
     :nil_count,
@@ -507,6 +505,22 @@ defmodule Explorer.Backend.LazySeries do
   def covariance(%Series{} = left, %Series{} = right) do
     args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
     data = new(:covariance, args, :float, true)
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def variance(%Series{} = s, ddof \\ 1) do
+    args = [series_or_lazy_series!(s), ddof]
+    data = new(:variance, args, :float, true)
+
+    Backend.Series.new(data, :float)
+  end
+
+  @impl true
+  def standard_deviation(%Series{} = s, ddof \\ 1) do
+    args = [series_or_lazy_series!(s), ddof]
+    data = new(:standard_deviation, args, :float, true)
 
     Backend.Series.new(data, :float)
   end

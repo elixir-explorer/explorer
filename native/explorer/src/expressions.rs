@@ -490,17 +490,17 @@ pub fn expr_abs(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_variance(expr: ExExpr) -> ExExpr {
+pub fn expr_variance(expr: ExExpr, ddof: u8) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.var(1))
+    ExExpr::new(expr.var(ddof))
 }
 
 #[rustler::nif]
-pub fn expr_standard_deviation(expr: ExExpr) -> ExExpr {
+pub fn expr_standard_deviation(expr: ExExpr, ddof: u8) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.std(1))
+    ExExpr::new(expr.std(ddof))
 }
 
 #[rustler::nif]

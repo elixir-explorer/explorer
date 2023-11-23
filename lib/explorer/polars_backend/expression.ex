@@ -70,11 +70,11 @@ defmodule Explorer.PolarsBackend.Expression do
     asin: 1,
     acos: 1,
     atan: 1,
-    standard_deviation: 1,
+    standard_deviation: 2,
     subtract: 2,
     sum: 1,
     unordered_distinct: 1,
-    variance: 1,
+    variance: 2,
     skew: 2,
     covariance: 2
   ]
@@ -94,6 +94,8 @@ defmodule Explorer.PolarsBackend.Expression do
     round: 2,
     clip_float: 3,
     clip_integer: 3,
+    variance: 2,
+    standard_deviation: 2,
 
     # Trigonometric operations
     acos: 1,
