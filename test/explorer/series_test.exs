@@ -142,6 +142,7 @@ defmodule Explorer.SeriesTest do
 
     test "floats as {:f, 32}" do
       s = Series.from_list([1.0, 2.5, :nan, 3.5, :infinity], dtype: {:f, 32})
+      assert s[0] == 1.0
       assert Series.to_list(s) === [1.0, 2.5, :nan, 3.5, :infinity]
       assert Series.dtype(s) == {:f, 32}
     end

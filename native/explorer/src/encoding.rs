@@ -457,63 +457,41 @@ fn categorical_series_to_list<'b>(
     Ok(unsafe { Term::new(env, list) })
 }
 
-// Convert f32 series taking into account NaN and Infinity floats (they are encoded as atoms).
-#[inline]
-fn float32_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
-    let nan_atom = nan().encode(env);
-    let neg_infinity_atom = neg_infinity().encode(env);
-    let infinity_atom = infinity().encode(env);
-    let nil_atom = atom::nil().encode(env);
+// Convert f32 and f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
+macro_rules! float_series_to_list {
+    ($name:ident, $convert_function:ident) => {
+        #[inline]
+        fn $name<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
+            let nan_atom = nan().encode(env);
+            let neg_infinity_atom = neg_infinity().encode(env);
+            let infinity_atom = infinity().encode(env);
+            let nil_atom = atom::nil().encode(env);
 
-    Ok(unsafe_iterator_series_to_list!(
-        env,
-        s.f32()?.into_iter().map(|option| {
-            match option {
-                Some(x) => {
-                    if x.is_finite() {
-                        x.encode(env)
-                    } else {
-                        match (x.is_nan(), x.is_sign_negative()) {
-                            (true, _) => nan_atom,
-                            (false, true) => neg_infinity_atom,
-                            (false, false) => infinity_atom,
+            Ok(unsafe_iterator_series_to_list!(
+                env,
+                s.$convert_function()?.into_iter().map(|option| {
+                    match option {
+                        Some(x) => {
+                            if x.is_finite() {
+                                x.encode(env)
+                            } else {
+                                match (x.is_nan(), x.is_sign_negative()) {
+                                    (true, _) => nan_atom,
+                                    (false, true) => neg_infinity_atom,
+                                    (false, false) => infinity_atom,
+                                }
+                            }
                         }
+                        None => nil_atom,
                     }
-                }
-                None => nil_atom,
-            }
-        })
-    ))
+                })
+            ))
+        }
+    };
 }
 
-// Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
-#[inline]
-fn float64_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
-    let nan_atom = nan().encode(env);
-    let neg_infinity_atom = neg_infinity().encode(env);
-    let infinity_atom = infinity().encode(env);
-    let nil_atom = atom::nil().encode(env);
-
-    Ok(unsafe_iterator_series_to_list!(
-        env,
-        s.f64()?.into_iter().map(|option| {
-            match option {
-                Some(x) => {
-                    if x.is_finite() {
-                        x.encode(env)
-                    } else {
-                        match (x.is_nan(), x.is_sign_negative()) {
-                            (true, _) => nan_atom,
-                            (false, true) => neg_infinity_atom,
-                            (false, false) => infinity_atom,
-                        }
-                    }
-                }
-                None => nil_atom,
-            }
-        })
-    ))
-}
+float_series_to_list!(float64_series_to_list, f64);
+float_series_to_list!(float32_series_to_list, f32);
 
 macro_rules! series_to_list {
     ($s:ident, $env:ident, $convert_function:ident) => {
@@ -561,13 +539,34 @@ pub fn resource_term_from_value<'b>(
     }
 }
 
+// Macro for decoding both f32 and f64 to term.
+macro_rules! term_from_float {
+    ($name:ident, $type:ty) => {
+        pub fn $name(float: $type, env: Env<'_>) -> Term<'_> {
+            if float.is_finite() {
+                float.encode(env)
+            } else {
+                match (float.is_nan(), float.is_sign_negative()) {
+                    (true, _) => nan().encode(env),
+                    (false, true) => neg_infinity().encode(env),
+                    (false, false) => infinity().encode(env),
+                }
+            }
+        }
+    };
+}
+
+term_from_float!(term_from_float64, f64);
+term_from_float!(term_from_float32, f32);
+
 pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     match v {
         AnyValue::Null => Ok(None::<bool>.encode(env)),
         AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
         AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
         AnyValue::Int64(v) => Ok(Some(v).encode(env)),
-        AnyValue::Float64(v) => Ok(Some(term_from_float(v, env)).encode(env)),
+        AnyValue::Float32(v) => Ok(Some(term_from_float32(v, env)).encode(env)),
+        AnyValue::Float64(v) => Ok(Some(term_from_float64(v, env)).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Time(v) => encode_time(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
@@ -575,19 +574,6 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
         AnyValue::List(series) => list_from_series(ExSeries::new(series), env),
         dt => panic!("cannot encode value {dt:?} to term"),
-    }
-}
-
-// Useful for series functions that can return float.
-pub fn term_from_float(float: f64, env: Env<'_>) -> Term<'_> {
-    if float.is_finite() {
-        float.encode(env)
-    } else {
-        match (float.is_nan(), float.is_sign_negative()) {
-            (true, _) => nan().encode(env),
-            (false, true) => neg_infinity().encode(env),
-            (false, false) => infinity().encode(env),
-        }
     }
 }
 

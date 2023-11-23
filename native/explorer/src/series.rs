@@ -1012,7 +1012,7 @@ pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries) -> Result<Term, Explor
 
 fn term_from_optional_float(option: Option<f64>, env: Env<'_>) -> Term<'_> {
     match option {
-        Some(float) => encoding::term_from_float(float, env),
+        Some(float) => encoding::term_from_float64(float, env),
         None => rustler::types::atom::nil().to_term(env),
     }
 }
