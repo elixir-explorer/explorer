@@ -50,7 +50,7 @@ defmodule Explorer.DataFrame.LazyTest do
              "gas_flaring" => :integer,
              "gas_fuel" => :integer,
              "liquid_fuel" => :integer,
-             "per_capita" => :float,
+             "per_capita" => {:f, 64},
              "solid_fuel" => :integer,
              "total" => :integer,
              "year" => :integer
@@ -76,7 +76,7 @@ defmodule Explorer.DataFrame.LazyTest do
   gas_fuel integer [74, 7, 14565, 0, 374]
   cement integer [5, 177, 2598, 0, 204]
   gas_flaring integer [0, 0, 2623, 0, 3697]
-  per_capita float [0.08, 0.43, 0.9, 1.68, 0.37]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37]
   bunker_fuels integer [9, 7, 663, 0, 321]
 >)
   end
@@ -113,7 +113,7 @@ defmodule Explorer.DataFrame.LazyTest do
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >)
   end
@@ -786,7 +786,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf1 = DF.mutate_with(ldf, fn _ -> [a: 1, b: 2.0, c: true] end)
 
       assert ldf1.names == ["d", "a", "b", "c"]
-      assert ldf1.dtypes == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
+      assert ldf1.dtypes == %{"a" => :integer, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
 
       df = DF.collect(ldf1)
 
@@ -806,11 +806,11 @@ defmodule Explorer.DataFrame.LazyTest do
 
       ldf1 =
         DF.mutate_with(ldf, fn ldf ->
-          [a: Series.cast(ldf["a"], :float)]
+          [a: Series.cast(ldf["a"], {:f, 64})]
         end)
 
       assert ldf1.names == ["a", "b"]
-      assert ldf1.dtypes == %{"a" => :float, "b" => :string}
+      assert ldf1.dtypes == %{"a" => {:f, 64}, "b" => :string}
 
       df = DF.collect(ldf1)
 
@@ -830,7 +830,7 @@ defmodule Explorer.DataFrame.LazyTest do
       assert_raise RuntimeError,
                    "mutate_with/2 with groups is not supported yet for lazy frames",
                    fn ->
-                     DF.mutate_with(ldf1, fn ldf -> [a: Series.cast(ldf["a"], :float)] end)
+                     DF.mutate_with(ldf1, fn ldf -> [a: Series.cast(ldf["a"], {:f, 64})] end)
                    end
     end
   end

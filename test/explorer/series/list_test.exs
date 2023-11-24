@@ -31,7 +31,7 @@ defmodule Explorer.Series.ListTest do
     test "list of lists of floats recursively" do
       series = Series.from_list([[[1.52]]])
 
-      assert series.dtype == {:list, {:list, :float}}
+      assert series.dtype == {:list, {:list, {:f, 64}}}
       assert series[0] == [[1.52]]
       assert Series.to_list(series) == [[[1.52]]]
     end
@@ -39,42 +39,42 @@ defmodule Explorer.Series.ListTest do
     test "list of lists of floats" do
       series = Series.from_list([[1.2], [2.3], [3.4, nil, 4.5], []])
 
-      assert series.dtype == {:list, :float}
+      assert series.dtype == {:list, {:f, 64}}
       assert series[0] == [1.2]
       assert Series.to_list(series) == [[1.2], [2.3], [3.4, nil, 4.5], []]
     end
 
     test "list of lists of nans" do
       s = Series.from_list([[:nan], [:nan, :nan]])
-      assert Series.dtype(s) == {:list, :float}
+      assert Series.dtype(s) == {:list, {:f, 64}}
 
       assert Series.to_list(s) === [[:nan], [:nan, :nan]]
     end
 
     test "list of lists of deep nans" do
       s = Series.from_list([[[:nan], [:nan, :nan]]])
-      assert Series.dtype(s) == {:list, {:list, :float}}
+      assert Series.dtype(s) == {:list, {:list, {:f, 64}}}
 
       assert Series.to_list(s) === [[[:nan], [:nan, :nan]]]
     end
 
     test "list of lists of infinity" do
       s = Series.from_list([[:infinity, :neg_infinity], [:infinity]])
-      assert Series.dtype(s) == {:list, :float}
+      assert Series.dtype(s) == {:list, {:f, 64}}
 
       assert Series.to_list(s) === [[:infinity, :neg_infinity], [:infinity]]
     end
 
     test "list of lists mixing floats and integers" do
       s = Series.from_list([[1, 2.4], [3]])
-      assert Series.dtype(s) == {:list, :float}
+      assert Series.dtype(s) == {:list, {:f, 64}}
 
       assert Series.to_list(s) === [[1.0, 2.4], [3.0]]
     end
 
     test "list of lists of deep integers and numerics" do
       s = Series.from_list([[[-1], [7.2, 6]]])
-      assert Series.dtype(s) == {:list, {:list, :float}}
+      assert Series.dtype(s) == {:list, {:list, {:f, 64}}}
 
       assert Series.to_list(s) === [[[-1.0], [7.2, 6.0]]]
     end
@@ -87,7 +87,7 @@ defmodule Explorer.Series.ListTest do
           [[-3], [9.4, 8.9]]
         ])
 
-      assert Series.dtype(s) == {:list, {:list, :float}}
+      assert Series.dtype(s) == {:list, {:list, {:f, 64}}}
 
       assert Series.to_list(s) === [
                [[-1.0], [7.2, 6.6]],
@@ -168,9 +168,9 @@ defmodule Explorer.Series.ListTest do
     test "list of integers series to list of floats" do
       s = Series.from_list([[1]])
 
-      s1 = Series.cast(s, {:list, :float})
+      s1 = Series.cast(s, {:list, {:f, 64}})
 
-      assert s1.dtype == {:list, :float}
+      assert s1.dtype == {:list, {:f, 64}}
       assert s1[0] === [1.0]
       assert Series.to_list(s1) == [[1.0]]
     end
@@ -188,9 +188,9 @@ defmodule Explorer.Series.ListTest do
     test "deeper list of integers series to list of floats" do
       s = Series.from_list([[[1, 2]], [[3, 4]]])
 
-      s1 = Series.cast(s, {:list, {:list, :float}})
+      s1 = Series.cast(s, {:list, {:list, {:f, 64}}})
 
-      assert s1.dtype == {:list, {:list, :float}}
+      assert s1.dtype == {:list, {:list, {:f, 64}}}
       assert s1[0] === [[1.0, 2.0]]
       assert Series.to_list(s1) === [[[1.0, 2.0]], [[3.0, 4.0]]]
     end
@@ -250,7 +250,7 @@ defmodule Explorer.Series.ListTest do
                """
                #Explorer.Series<
                  Polars[5]
-                 list[float] [[1.3, 2.4], [3.5, 4.6], [5.7, 6.8], [nil, NaN], [Inf, -Inf]]
+                 list[f64] [[1.3, 2.4], [3.5, 4.6], [5.7, 6.8], [nil, NaN], [Inf, -Inf]]
                >\
                """
     end

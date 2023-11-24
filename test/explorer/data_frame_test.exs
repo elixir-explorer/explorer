@@ -74,14 +74,14 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(%{floats: Series.from_list([1.0, 2.0]), integers: Series.from_list([1, 2])})
 
       assert DF.to_columns(df, atom_keys: true) == %{floats: [1.0, 2.0], integers: [1, 2]}
-      assert DF.dtypes(df) == %{"floats" => :float, "integers" => :integer}
+      assert DF.dtypes(df) == %{"floats" => {:f, 64}, "integers" => :integer}
     end
 
     test "from columnar data" do
       df = DF.new(%{floats: [1.0, 2.0], integers: [1, nil]})
 
       assert DF.to_columns(df, atom_keys: true) == %{floats: [1.0, 2.0], integers: [1, nil]}
-      assert DF.dtypes(df) == %{"floats" => :float, "integers" => :integer}
+      assert DF.dtypes(df) == %{"floats" => {:f, 64}, "integers" => :integer}
     end
 
     test "from columnar data with binaries" do
@@ -96,7 +96,11 @@ defmodule Explorer.DataFrameTest do
                binaries: [<<239, 191, 19>>, nil]
              }
 
-      assert DF.dtypes(df) == %{"floats" => :float, "integers" => :integer, "binaries" => :binary}
+      assert DF.dtypes(df) == %{
+               "floats" => {:f, 64},
+               "integers" => :integer,
+               "binaries" => :binary
+             }
     end
 
     test "from rows" do
@@ -127,7 +131,7 @@ defmodule Explorer.DataFrameTest do
         }
       ]
 
-      df = DF.new(rows, dtypes: [{:outliers, :binary}, {:ymax, :float}, {:ymin, :float}])
+      df = DF.new(rows, dtypes: [{:outliers, :binary}, {:ymax, {:f, 64}}, {:ymin, {:f, 64}}])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                lower: [17.0, 12.0, 22.2],
@@ -143,12 +147,12 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df) == %{
-               "lower" => :float,
-               "middle" => :float,
+               "lower" => {:f, 64},
+               "middle" => {:f, 64},
                "outliers" => :binary,
-               "upper" => :float,
-               "ymax" => :float,
-               "ymin" => :float
+               "upper" => {:f, 64},
+               "ymax" => {:f, 64},
+               "ymin" => {:f, 64}
              }
     end
 
@@ -163,7 +167,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(%{floats: [1, 2.4, 3]})
 
       assert DF.to_columns(df, atom_keys: true) == %{floats: [1, 2.4, 3]}
-      assert DF.dtypes(df) == %{"floats" => :float}
+      assert DF.dtypes(df) == %{"floats" => {:f, 64}}
     end
 
     test "with binaries" do
@@ -645,7 +649,7 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate_with(df, fn ldf ->
-          [a: Series.cast(ldf["a"], :float)]
+          [a: Series.cast(ldf["a"], {:f, 64})]
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -654,7 +658,7 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert df1.names == ["a", "b"]
-      assert df1.dtypes == %{"a" => :float, "b" => :string}
+      assert df1.dtypes == %{"a" => {:f, 64}, "b" => :string}
     end
   end
 
@@ -699,7 +703,7 @@ defmodule Explorer.DataFrameTest do
                "c" => :integer,
                "d" => :integer,
                "e" => :integer,
-               "f" => :float,
+               "f" => {:f, 64},
                "g" => :string,
                "h" => :boolean,
                "i" => :date,
@@ -710,7 +714,7 @@ defmodule Explorer.DataFrameTest do
     test "changes a column" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-      df1 = DF.mutate(df, a: cast(a, :float))
+      df1 = DF.mutate(df, a: cast(a, {:f, 64}))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1.0, 2.0, 3.0],
@@ -718,7 +722,7 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert df1.names == ["a", "b"]
-      assert df1.dtypes == %{"a" => :float, "b" => :string}
+      assert df1.dtypes == %{"a" => {:f, 64}, "b" => :string}
     end
 
     test "adds new columns ordering, sorting and negating" do
@@ -761,7 +765,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :integer,
                "h" => :integer,
                "i" => :integer,
-               "j" => :float
+               "j" => {:f, 64}
              }
     end
 
@@ -801,12 +805,12 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer,
-               "calc8" => :float,
-               "calc9" => :float,
+               "calc8" => {:f, 64},
+               "calc9" => {:f, 64},
                "calc10" => :boolean
              }
     end
@@ -843,10 +847,10 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                # TODO: This should be float after #374 is resolved
                "calc5" => :integer,
-               "calc5_1" => :float,
+               "calc5_1" => {:f, 64},
                "calc6" => :integer,
                "calc7" => :integer
              }
@@ -883,7 +887,7 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer
@@ -921,7 +925,7 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer
@@ -964,7 +968,7 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer
@@ -1007,11 +1011,11 @@ defmodule Explorer.DataFrameTest do
                "c" => :integer,
                "d" => :integer,
                "e" => :integer,
-               "f" => :float,
+               "f" => {:f, 64},
                "g" => :integer,
                "h" => :integer,
                "i" => :integer,
-               "j" => :float
+               "j" => {:f, 64}
              }
     end
 
@@ -1035,7 +1039,7 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "c" => :float
+               "c" => {:f, 64}
              }
     end
 
@@ -1068,7 +1072,7 @@ defmodule Explorer.DataFrameTest do
 
       df2 = df |> DF.mutate(b: clip(a, 1.5, 10.5)) |> DF.select(:b)
       assert DF.to_columns(df2, atom_keys: true) == %{b: [1.5, 5.0, nil, 10.5]}
-      assert DF.dtypes(df2) == %{"b" => :float}
+      assert DF.dtypes(df2) == %{"b" => {:f, 64}}
 
       assert_raise ArgumentError,
                    ~r"expects both the min and max bounds to be numbers",
@@ -1155,13 +1159,13 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.dtypes(df1) == %{
                "a" => :integer,
-               "b" => :float,
-               "concat1" => :float,
-               "concat2" => :float,
-               "concat3" => :float,
-               "coalesce1" => :float,
-               "coalesce2" => :float,
-               "coalesce3" => :float
+               "b" => {:f, 64},
+               "concat1" => {:f, 64},
+               "concat2" => {:f, 64},
+               "concat3" => {:f, 64},
+               "coalesce1" => {:f, 64},
+               "coalesce2" => {:f, 64},
+               "coalesce3" => {:f, 64}
              }
     end
 
@@ -1187,19 +1191,19 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "b" => :float,
-               "c" => :float,
-               "d" => :float,
-               "e" => :float,
-               "f" => :float,
-               "g" => :float,
-               "h" => :float,
+               "b" => {:f, 64},
+               "c" => {:f, 64},
+               "d" => {:f, 64},
+               "e" => {:f, 64},
+               "f" => {:f, 64},
+               "g" => {:f, 64},
+               "h" => {:f, 64},
                "p" => :integer,
                "q" => :integer,
                "r" => :integer,
                "s" => :integer,
                "t" => :integer,
-               "z" => :float
+               "z" => {:f, 64}
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1285,7 +1289,7 @@ defmodule Explorer.DataFrameTest do
                "c" => :integer,
                "d" => :integer,
                "e" => :integer,
-               "f" => :float,
+               "f" => {:f, 64},
                "g" => :integer
              }
     end
@@ -1310,10 +1314,10 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :boolean,
-               "b" => :float,
+               "b" => {:f, 64},
                "c" => :boolean,
                "d" => :boolean,
-               "e" => :float
+               "e" => {:f, 64}
              }
     end
 
@@ -1449,8 +1453,8 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "b" => :float,
-               "c" => :float
+               "b" => {:f, 64},
+               "c" => {:f, 64}
              }
     end
 
@@ -1479,7 +1483,7 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "b" => :float
+               "b" => {:f, 64}
              }
     end
 
@@ -1503,13 +1507,13 @@ defmodule Explorer.DataFrameTest do
       assert df2.names == ["a", "b", "c", "d", "e", "f", "g"]
 
       assert df2.dtypes == %{
-               "a" => :float,
-               "b" => :float,
-               "c" => :float,
-               "d" => :float,
-               "e" => :float,
-               "f" => :float,
-               "g" => :float
+               "a" => {:f, 64},
+               "b" => {:f, 64},
+               "c" => {:f, 64},
+               "d" => {:f, 64},
+               "e" => {:f, 64},
+               "f" => {:f, 64},
+               "g" => {:f, 64}
              }
     end
 
@@ -2166,7 +2170,7 @@ defmodule Explorer.DataFrameTest do
              |              Explorer DataFrame: [rows: 150, columns: 5]              |
              +--------------+-------------+--------------+-------------+-------------+
              | sepal_length | sepal_width | petal_length | petal_width |   species   |
-             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
              +==============+=============+==============+=============+=============+
              | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
              +--------------+-------------+--------------+-------------+-------------+
@@ -2190,7 +2194,7 @@ defmodule Explorer.DataFrameTest do
              |              Explorer DataFrame: [rows: 150, columns: 5]              |
              +--------------+-------------+--------------+-------------+-------------+
              | sepal_length | sepal_width | petal_length | petal_width |   species   |
-             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
              +==============+=============+==============+=============+=============+
              | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
              +--------------+-------------+--------------+-------------+-------------+
@@ -2207,30 +2211,30 @@ defmodule Explorer.DataFrameTest do
         )
 
       assert capture_io(fn -> DF.print(df, limit: :infinity) end) == """
-             +--------------------------------------------+
-             | Explorer DataFrame: [rows: 9, columns: 3]  |
-             +---------------+--------------+-------------+
-             |       a       |      b       |      c      |
-             |   <integer>   |   <string>   |   <float>   |
-             +===============+==============+=============+
-             | 1             | a            | 9.1         |
-             +---------------+--------------+-------------+
-             | 2             | b            | 8.2         |
-             +---------------+--------------+-------------+
-             | 3             | c            | 7.3         |
-             +---------------+--------------+-------------+
-             | 4             | d            | 6.4         |
-             +---------------+--------------+-------------+
-             | 5             | e            | 5.5         |
-             +---------------+--------------+-------------+
-             | 6             | f            | 4.6         |
-             +---------------+--------------+-------------+
-             | 7             | g            | 3.7         |
-             +---------------+--------------+-------------+
-             | 8             | h            | 2.8         |
-             +---------------+--------------+-------------+
-             | 9             | i            | 1.9         |
-             +---------------+--------------+-------------+
+             +---------------------------------------------+
+             |  Explorer DataFrame: [rows: 9, columns: 3]  |
+             +----------------+---------------+------------+
+             |       a        |       b       |     c      |
+             |   <integer>    |   <string>    |   <f64>    |
+             +================+===============+============+
+             | 1              | a             | 9.1        |
+             +----------------+---------------+------------+
+             | 2              | b             | 8.2        |
+             +----------------+---------------+------------+
+             | 3              | c             | 7.3        |
+             +----------------+---------------+------------+
+             | 4              | d             | 6.4        |
+             +----------------+---------------+------------+
+             | 5              | e             | 5.5        |
+             +----------------+---------------+------------+
+             | 6              | f             | 4.6        |
+             +----------------+---------------+------------+
+             | 7              | g             | 3.7        |
+             +----------------+---------------+------------+
+             | 8              | h             | 2.8        |
+             +----------------+---------------+------------+
+             | 9              | i             | 1.9        |
+             +----------------+---------------+------------+
 
              """
     end
@@ -2243,7 +2247,7 @@ defmodule Explorer.DataFrameTest do
              |              Explorer DataFrame: [rows: ???, columns: 5]              |
              +--------------+-------------+--------------+-------------+-------------+
              | sepal_length | sepal_width | petal_length | petal_width |   species   |
-             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
              +==============+=============+==============+=============+=============+
              | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
              +--------------+-------------+--------------+-------------+-------------+
@@ -3277,7 +3281,7 @@ defmodule Explorer.DataFrameTest do
         )
 
       assert DF.put(df, :a, i)[:a] |> Series.to_list() == [1, 1, 1]
-      assert DF.put(df, :a, f, dtype: :float)[:a] |> Series.to_list() == [1.0, 1.0, 1.0]
+      assert DF.put(df, :a, f, dtype: {:f, 64})[:a] |> Series.to_list() == [1.0, 1.0, 1.0]
 
       assert DF.put(df, :a, d, dtype: :date)[:a] |> Series.to_list() == [
                ~D[1969-12-31],
@@ -3286,7 +3290,7 @@ defmodule Explorer.DataFrameTest do
              ]
 
       assert DF.put(df, :c, i, dtype: :integer)[:c] |> Series.to_list() == [1, 1, 1]
-      assert DF.put(df, :c, f, dtype: :float)[:c] |> Series.to_list() == [1.0, 1.0, 1.0]
+      assert DF.put(df, :c, f, dtype: {:f, 64})[:c] |> Series.to_list() == [1.0, 1.0, 1.0]
 
       assert DF.put(df, :c, d, dtype: :date)[:c] |> Series.to_list() == [
                ~D[1969-12-31],
@@ -3295,7 +3299,7 @@ defmodule Explorer.DataFrameTest do
              ]
 
       assert DF.put(df, :d, i, dtype: :integer)[:d] |> Series.to_list() == [1, 1, 1]
-      assert DF.put(df, :d, f, dtype: :float)[:d] |> Series.to_list() == [1.0, 1.0, 1.0]
+      assert DF.put(df, :d, f, dtype: {:f, 64})[:d] |> Series.to_list() == [1.0, 1.0, 1.0]
 
       assert DF.put(df, :d, d)[:d] |> Series.to_list() == [
                ~D[1969-12-31],
@@ -3318,7 +3322,12 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       df1 = DF.describe(df)
 
-      assert df1.dtypes == %{"a" => :string, "b" => :float, "c" => :string, "describe" => :string}
+      assert df1.dtypes == %{
+               "a" => :string,
+               "b" => {:f, 64},
+               "c" => :string,
+               "describe" => :string
+             }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: ["3", "1", nil, nil, "d", nil, nil, nil, "f"],
@@ -3333,7 +3342,12 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.describe(df, percentiles: [0.3, 0.5, 0.8])
       df2 = DF.describe(df, percentiles: [0.5])
 
-      assert df1.dtypes == %{"a" => :string, "b" => :float, "c" => :string, "describe" => :string}
+      assert df1.dtypes == %{
+               "a" => :string,
+               "b" => {:f, 64},
+               "c" => :string,
+               "describe" => :string
+             }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: ["3", "1", nil, nil, "d", nil, nil, nil, "f"],
@@ -3537,7 +3551,7 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.dtypes(df1) == %{
                "total" => :integer,
-               "solid_fuel_mean" => :float,
+               "solid_fuel_mean" => {:f, 64},
                "gas_fuel_max" => :integer
              }
 

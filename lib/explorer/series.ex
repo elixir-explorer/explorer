@@ -10,7 +10,7 @@ defmodule Explorer.Series do
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
     * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
-    * `:float` - 64-bit floating point number
+    * `{:f, size}` - a 64-bit or 32-bit floating point number. The atom `:float` can be used as an alias for `{:f, 64}`.
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
@@ -44,7 +44,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1.0, nil, 2.5, 3.1])
       #Explorer.Series<
         Polars[4]
-        float [1.0, nil, 2.5, 3.1]
+        f64 [1.0, nil, 2.5, 3.1]
       >
 
   Any of the dtypes above are supported, such as strings:
@@ -66,10 +66,13 @@ defmodule Explorer.Series do
 
   @datetime_dtypes Explorer.Shared.datetime_types()
   @duration_dtypes Explorer.Shared.duration_types()
+  @float_dtypes Explorer.Shared.float_types()
   @date_or_datetime_dtypes [:date | @datetime_dtypes]
   @temporal_dtypes [:time | @date_or_datetime_dtypes ++ @duration_dtypes]
-  @numeric_dtypes [:integer, :float]
+  @numeric_dtypes [:integer | @float_dtypes]
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
+
+  @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}]
 
   @type dtype ::
           :binary
@@ -79,7 +82,8 @@ defmodule Explorer.Series do
           | :time
           | datetime_dtype
           | duration_dtype
-          | :float
+          | {:f, 32}
+          | {:f, 64}
           | :integer
           | :string
           | list_dtype
@@ -110,13 +114,18 @@ defmodule Explorer.Series do
   @compile {:no_warn_undefined, Nx}
 
   defguardp is_numeric(n) when K.or(is_number(n), K.in(n, [:nan, :infinity, :neg_infinity]))
-  defguardp is_io_dtype(dtype) when K.not(K.in(dtype, [:binary, :string]))
-  defguardp is_numeric_dtype(dtype) when K.in(dtype, [:float, :integer])
-  defguardp is_numeric_or_bool_dtype(dtype) when K.in(dtype, [:float, :integer, :boolean])
+
+  defguardp is_io_dtype(dtype) when K.in(dtype, @io_dtypes)
+
+  defguardp is_numeric_dtype(dtype) when K.in(dtype, [{:f, 32}, {:f, 64}, :integer])
+
+  defguardp is_numeric_or_bool_dtype(dtype)
+            when K.in(dtype, [{:f, 32}, {:f, 64}, :integer, :boolean])
 
   defguardp is_numeric_or_temporal_dtype(dtype)
             when K.in(dtype, [
-                   :float,
+                   {:f, 32},
+                   {:f, 64},
                    :integer,
                    :date,
                    :time,
@@ -202,7 +211,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1.0, nil, 2.5, 3.1])
       #Explorer.Series<
         Polars[4]
-        float [1.0, nil, 2.5, 3.1]
+        f64 [1.0, nil, 2.5, 3.1]
       >
 
   A mix of integers and floats will be cast to a float:
@@ -210,7 +219,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1, 2.0])
       #Explorer.Series<
         Polars[2]
-        float [1.0, 2.0]
+        f64 [1.0, 2.0]
       >
 
   Floats series can accept NaN, Inf, and -Inf values:
@@ -218,19 +227,19 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1.0, 2.0, :nan, 4.0])
       #Explorer.Series<
         Polars[4]
-        float [1.0, 2.0, NaN, 4.0]
+        f64 [1.0, 2.0, NaN, 4.0]
       >
 
       iex> Explorer.Series.from_list([1.0, 2.0, :infinity, 4.0])
       #Explorer.Series<
         Polars[4]
-        float [1.0, 2.0, Inf, 4.0]
+        f64 [1.0, 2.0, Inf, 4.0]
       >
 
       iex> Explorer.Series.from_list([1.0, 2.0, :neg_infinity, 4.0])
       #Explorer.Series<
         Polars[4]
-        float [1.0, 2.0, -Inf, 4.0]
+        f64 [1.0, 2.0, -Inf, 4.0]
       >
 
   Trying to create a "nil" series will, by default, result in a series of floats:
@@ -238,7 +247,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([nil, nil])
       #Explorer.Series<
         Polars[2]
-        float [nil, nil]
+        f64 [nil, nil]
       >
 
   You can specify the desired `dtype` for a series with the `:dtype` option.
@@ -307,20 +316,19 @@ defmodule Explorer.Series do
     opts = Keyword.validate!(opts, [:dtype, :backend])
     backend = backend_from_options!(opts)
 
-    type = Shared.dtype_from_list!(list, opts[:dtype])
+    normalised_dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
+
+    type = Shared.dtype_from_list!(list, normalised_dtype)
     {list, type} = Shared.cast_numerics(list, type)
 
     series = backend.from_list(list, type)
 
-    case check_optional_dtype!(opts[:dtype]) do
+    case normalised_dtype do
       nil -> series
       ^type -> series
       other -> cast(series, other)
     end
   end
-
-  defp check_optional_dtype!(nil), do: nil
-  defp check_optional_dtype!(dtype), do: Shared.validate_dtype!(dtype)
 
   defp from_same_value(%{data: %backend{}}, value) do
     backend.from_list([value], Shared.dtype_from_list!([value], nil))
@@ -343,10 +351,10 @@ defmodule Explorer.Series do
 
   Integers and floats follow their native encoding:
 
-      iex> Explorer.Series.from_binary(<<1.0::float-64-native, 2.0::float-64-native>>, :float)
+      iex> Explorer.Series.from_binary(<<1.0::float-64-native, 2.0::float-64-native>>, {:f, 64})
       #Explorer.Series<
         Polars[2]
-        float [1.0, 2.0]
+        f64 [1.0, 2.0]
       >
 
       iex> Explorer.Series.from_binary(<<-1::signed-64-native, 1::signed-64-native>>, :integer)
@@ -394,13 +402,21 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_binary(
           binary,
-          :float | :integer | :boolean | :date | :time | datetime_dtype | duration_dtype,
+          :float
+          | {:f, 32}
+          | {:f, 64}
+          | :integer
+          | :boolean
+          | :date
+          | :time
+          | datetime_dtype
+          | duration_dtype,
           keyword
         ) ::
           Series.t()
   def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
-    opts = Keyword.validate!(opts, [:dtype, :backend])
-    {_type, alignment} = dtype |> Shared.validate_dtype!() |> Shared.dtype_to_iotype!()
+    opts = Keyword.validate!(opts, [:backend])
+    {_type, alignment} = dtype |> Shared.normalise_dtype!() |> Shared.dtype_to_iotype!()
 
     if rem(bit_size(binary), alignment) != 0 do
       raise ArgumentError, "binary for dtype #{dtype} is expected to be #{alignment}-bit aligned"
@@ -437,7 +453,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_tensor(tensor)
       #Explorer.Series<
         Polars[3]
-        float [1.0, 2.0, 3.0]
+        f64 [1.0, 2.0, 3.0]
       >
 
   Unsigned 8-bit tensors are assumed to be booleans:
@@ -759,10 +775,10 @@ defmodule Explorer.Series do
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.cast(s, :float)
+      iex> Explorer.Series.cast(s, {:f, 64})
       #Explorer.Series<
         Polars[3]
-        float [1.0, 2.0, 3.0]
+        f64 [1.0, 2.0, 3.0]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
@@ -829,8 +845,8 @@ defmodule Explorer.Series do
   def cast(%Series{dtype: dtype} = series, dtype), do: series
 
   def cast(series, dtype) do
-    if Shared.valid_dtype?(dtype) do
-      apply_series(series, :cast, [dtype])
+    if normalised = Shared.normalise_dtype(dtype) do
+      apply_series(series, :cast, [normalised])
     else
       dtype_error("cast/2", dtype, Shared.dtypes())
     end
@@ -895,7 +911,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   Clipping other dtypes are possible using `select/3`.
 
@@ -912,7 +929,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.clip(s, 1.5, 10.5)
       #Explorer.Series<
         Polars[4]
-        float [1.5, 5.0, nil, 10.5]
+        f64 [1.5, 5.0, nil, 10.5]
       >
   """
   @doc type: :element_wise
@@ -932,7 +949,7 @@ defmodule Explorer.Series do
   end
 
   def clip(%Series{dtype: dtype}, _min, _max),
-    do: dtype_error("clip/3", dtype, [:integer, :float])
+    do: dtype_error("clip/3", dtype, @numeric_dtypes)
 
   # Introspection
 
@@ -1558,7 +1575,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rank(s)
       #Explorer.Series<
         Polars[5]
-        float [3.0, 4.5, 1.5, 1.5, 4.5]
+        f64 [3.0, 4.5, 1.5, 1.5, 4.5]
       >
 
       iex> s = Explorer.Series.from_list([1.1, 2.4, 3.2])
@@ -1572,7 +1589,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rank(s, method: "average")
       #Explorer.Series<
         Polars[3]
-        float [2.0, 1.0, 3.0]
+        f64 [2.0, 1.0, 3.0]
       >
 
       iex> s = Explorer.Series.from_list([3, 6, 1, 1, 6])
@@ -1809,7 +1826,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.concat([s1, s2])
       #Explorer.Series<
         Polars[6]
-        float [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
+        f64 [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
       >
   """
   @doc type: :shape
@@ -1822,7 +1839,7 @@ defmodule Explorer.Series do
         impl!(series).concat(series)
 
       [a, b] when K.and(is_numeric_dtype(a), is_numeric_dtype(b)) ->
-        series = Enum.map(series, &cast(&1, :float))
+        series = Enum.map(series, &cast(&1, {:f, 64}))
         impl!(series).concat(series)
 
       incompatible ->
@@ -1896,7 +1913,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:boolean`
 
   ## Examples
@@ -1915,14 +1933,15 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.sum(s)
-      ** (ArgumentError) Explorer.Series.sum/1 not implemented for dtype :date. Valid dtypes are [:integer, :float, :boolean]
+      ** (ArgumentError) Explorer.Series.sum/1 not implemented for dtype :date. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :boolean]
   """
   @doc type: :aggregation
   @spec sum(series :: Series.t()) :: number() | non_finite() | nil
   def sum(%Series{dtype: dtype} = series) when is_numeric_or_bool_dtype(dtype),
     do: apply_series(series, :sum)
 
-  def sum(%Series{dtype: dtype}), do: dtype_error("sum/1", dtype, [:integer, :float, :boolean])
+  def sum(%Series{dtype: dtype}),
+    do: dtype_error("sum/1", dtype, [:integer, {:f, 32}, {:f, 64}, :boolean])
 
   @doc """
   Gets the minimum value of the series.
@@ -1930,7 +1949,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -1960,7 +1980,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.min(s)
-      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec min(series :: Series.t()) ::
@@ -1976,7 +1996,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -2006,7 +2027,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.max(s)
-      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec max(series :: Series.t()) ::
@@ -2022,7 +2043,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -2056,7 +2078,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmax(s)
-      ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec argmax(series :: Series.t()) :: number() | non_finite() | nil
@@ -2076,7 +2098,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -2114,7 +2137,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmin(s)
-      ** (ArgumentError) Explorer.Series.argmin/1 not implemented for dtype :string. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.argmin/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec argmin(series :: Series.t()) :: number() | non_finite() | nil
@@ -2130,7 +2153,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2144,14 +2168,15 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.mean(s)
-      ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are [:integer, :float]
+      ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec mean(series :: Series.t()) :: float() | non_finite() | nil
   def mean(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: apply_series(series, :mean)
 
-  def mean(%Series{dtype: dtype}), do: dtype_error("mean/1", dtype, [:integer, :float])
+  def mean(%Series{dtype: dtype}),
+    do: dtype_error("mean/1", dtype, @numeric_dtypes)
 
   @doc """
   Gets the most common value(s) of the series.
@@ -2182,7 +2207,7 @@ defmodule Explorer.Series do
       Explorer.Series.mode(s)
       #Explorer.Series<
         Polars[2]
-        float [2.0, 3.0]
+        f64 [2.0, 3.0]
       >
   """
   @doc type: :aggregation
@@ -2199,7 +2224,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2213,14 +2239,15 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.median(s)
-      ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are [:integer, :float]
+      ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec median(series :: Series.t()) :: float() | non_finite() | nil
   def median(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: apply_series(series, :median)
 
-  def median(%Series{dtype: dtype}), do: dtype_error("median/1", dtype, [:integer, :float])
+  def median(%Series{dtype: dtype}),
+    do: dtype_error("median/1", dtype, @numeric_dtypes)
 
   @doc """
   Gets the variance of the series.
@@ -2232,7 +2259,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2246,7 +2274,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.variance(s)
-      ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype {:datetime, :microsecond}. Valid dtypes are [:integer, :float]
+      ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype {:datetime, :microsecond}. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec variance(series :: Series.t(), ddof :: non_neg_integer()) :: float() | non_finite() | nil
@@ -2255,7 +2283,7 @@ defmodule Explorer.Series do
   def variance(%Series{dtype: dtype} = series, ddof) when is_numeric_dtype(dtype),
     do: apply_series(series, :variance, [ddof])
 
-  def variance(%Series{dtype: dtype}, _), do: dtype_error("variance/1", dtype, [:integer, :float])
+  def variance(%Series{dtype: dtype}, _), do: dtype_error("variance/1", dtype, @numeric_dtypes)
 
   @doc """
   Gets the standard deviation of the series.
@@ -2267,7 +2295,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2281,7 +2310,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.standard_deviation(s)
-      ** (ArgumentError) Explorer.Series.standard_deviation/1 not implemented for dtype :string. Valid dtypes are [:integer, :float]
+      ** (ArgumentError) Explorer.Series.standard_deviation/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec standard_deviation(series :: Series.t(), ddof :: non_neg_integer()) ::
@@ -2292,7 +2321,7 @@ defmodule Explorer.Series do
     do: apply_series(series, :standard_deviation, [ddof])
 
   def standard_deviation(%Series{dtype: dtype}, _),
-    do: dtype_error("standard_deviation/1", dtype, [:integer, :float])
+    do: dtype_error("standard_deviation/1", dtype, @numeric_dtypes)
 
   @doc """
   Reduce this Series to the product value.
@@ -2303,7 +2332,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2317,14 +2347,15 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.product(s)
-      ** (ArgumentError) Explorer.Series.product/1 not implemented for dtype :boolean. Valid dtypes are [:integer, :float]
+      ** (ArgumentError) Explorer.Series.product/1 not implemented for dtype :boolean. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec product(series :: Series.t()) :: float() | non_finite() | nil
   def product(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: at(apply_series(series, :product), 0)
 
-  def product(%Series{dtype: dtype}), do: dtype_error("product/1", dtype, [:integer, :float])
+  def product(%Series{dtype: dtype}),
+    do: dtype_error("product/1", dtype, @numeric_dtypes)
 
   @doc """
   Gets the given quantile of the series.
@@ -2332,7 +2363,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -2362,7 +2394,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)
-      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
@@ -2385,7 +2417,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2407,7 +2440,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.skew(s, false)
-      ** (ArgumentError) Explorer.Series.skew/2 not implemented for dtype :boolean. Valid dtypes are [:integer, :float]
+      ** (ArgumentError) Explorer.Series.skew/2 not implemented for dtype :boolean. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec skew(series :: Series.t(), opts :: Keyword.t()) :: float() | non_finite() | nil
@@ -2418,7 +2451,8 @@ defmodule Explorer.Series do
     apply_series(series, :skew, [opts[:bias]])
   end
 
-  def skew(%Series{dtype: dtype}, _), do: dtype_error("skew/2", dtype, [:integer, :float])
+  def skew(%Series{dtype: dtype}, _),
+    do: dtype_error("skew/2", dtype, @numeric_dtypes)
 
   @doc """
   Compute the Pearson's correlation between two series.
@@ -2429,7 +2463,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2455,7 +2490,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2483,7 +2519,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -2535,7 +2572,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -2587,7 +2625,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:boolean`
 
   ## Examples
@@ -2617,7 +2656,7 @@ defmodule Explorer.Series do
   end
 
   def cumulative_sum(%Series{dtype: dtype}, _),
-    do: dtype_error("cumulative_sum/2", dtype, [:integer, :float])
+    do: dtype_error("cumulative_sum/2", dtype, @numeric_dtypes)
 
   @doc """
   Calculates the cumulative product of the series.
@@ -2629,7 +2668,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2658,7 +2698,7 @@ defmodule Explorer.Series do
   end
 
   def cumulative_product(%Series{dtype: dtype}, _),
-    do: dtype_error("cumulative_product/2", dtype, [:integer, :float])
+    do: dtype_error("cumulative_product/2", dtype, @numeric_dtypes)
 
   # Local minima/maxima
 
@@ -2668,7 +2708,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -2717,7 +2758,8 @@ defmodule Explorer.Series do
   defp enforce_highest_precision([
          %Series{dtype: {left_base, left_timeunit}} = left,
          %Series{dtype: {right_base, right_timeunit}} = right
-       ]) do
+       ])
+       when K.and(is_atom(left_timeunit), is_atom(right_timeunit)) do
     # Higher precision wins, otherwise information is lost.
     case {left_timeunit, right_timeunit} do
       {equal, equal} -> [left, right]
@@ -2733,7 +2775,7 @@ defmodule Explorer.Series do
   @doc """
   Adds right to left, element-wise.
 
-  When mixing floats and integers, the resulting series will have dtype `:float`.
+  When mixing floats and integers, the resulting series will have dtype `{:f, 64}`.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -2742,7 +2784,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2786,9 +2829,9 @@ defmodule Explorer.Series do
   end
 
   defp cast_to_add(:integer, :integer), do: :integer
-  defp cast_to_add(:integer, :float), do: :float
-  defp cast_to_add(:float, :integer), do: :float
-  defp cast_to_add(:float, :float), do: :float
+  defp cast_to_add(:integer, {:f, _} = float), do: float
+  defp cast_to_add({:f, _} = float, :integer), do: float
+  defp cast_to_add({:f, _}, {:f, _}), do: {:f, 64}
   defp cast_to_add(:date, {:duration, _}), do: :date
   defp cast_to_add({:duration, _}, :date), do: :date
   defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
@@ -2799,7 +2842,7 @@ defmodule Explorer.Series do
   @doc """
   Subtracts right from left, element-wise.
 
-  When mixing floats and integers, the resulting series will have dtype `:float`.
+  When mixing floats and integers, the resulting series will have dtype `{:f, 64}`.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -2808,7 +2851,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2852,9 +2896,10 @@ defmodule Explorer.Series do
   end
 
   defp cast_to_subtract(:integer, :integer), do: :integer
-  defp cast_to_subtract(:integer, :float), do: :float
-  defp cast_to_subtract(:float, :integer), do: :float
-  defp cast_to_subtract(:float, :float), do: :float
+  defp cast_to_subtract(:integer, {:f, _} = float), do: float
+  defp cast_to_subtract({:f, _} = float, :integer), do: float
+  defp cast_to_subtract({:f, _}, {:f, _}), do: {:f, 64}
+
   defp cast_to_subtract(:date, :date), do: {:duration, :millisecond}
   defp cast_to_subtract(:date, {:duration, _}), do: :date
   defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
@@ -2865,7 +2910,7 @@ defmodule Explorer.Series do
   @doc """
   Multiplies left and right, element-wise.
 
-  When mixing floats and integers, the resulting series will have dtype `:float`.
+  When mixing floats and integers, the resulting series will have dtype `{:f, 64}`.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -2874,7 +2919,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2909,19 +2955,19 @@ defmodule Explorer.Series do
   end
 
   defp cast_to_multiply(:integer, :integer), do: :integer
-  defp cast_to_multiply(:integer, :float), do: :float
-  defp cast_to_multiply(:float, :integer), do: :float
-  defp cast_to_multiply(:float, :float), do: :float
+  defp cast_to_multiply(:integer, {:f, _} = float), do: float
+  defp cast_to_multiply({:f, _} = float, :integer), do: float
+  defp cast_to_multiply({:f, _}, {:f, _}), do: {:f, 64}
   defp cast_to_multiply(:integer, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, :integer), do: {:duration, p}
-  defp cast_to_multiply(:float, {:duration, p}), do: {:duration, p}
-  defp cast_to_multiply({:duration, p}, :float), do: {:duration, p}
+  defp cast_to_multiply({:f, _}, {:duration, p}), do: {:duration, p}
+  defp cast_to_multiply({:duration, p}, {:f, _}), do: {:duration, p}
   defp cast_to_multiply(_, _), do: nil
 
   @doc """
   Divides left by right, element-wise.
 
-  The resulting series will have the dtype as `:float`.
+  The resulting series will have the dtype as `{:f, 64}`.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -2930,7 +2976,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -2939,21 +2986,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
         Polars[3]
-        float [5.0, 5.0, 5.0]
+        f64 [5.0, 5.0, 5.0]
       >
 
       iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, 2)
       #Explorer.Series<
         Polars[3]
-        float [5.0, 5.0, 5.0]
+        f64 [5.0, 5.0, 5.0]
       >
 
       iex> s1 = [10, 52 ,10] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, 2.5)
       #Explorer.Series<
         Polars[3]
-        float [4.0, 20.8, 4.0]
+        f64 [4.0, 20.8, 4.0]
       >
 
       iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
@@ -2961,7 +3008,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
         Polars[3]
-        float [5.0, Inf, 5.0]
+        f64 [5.0, Inf, 5.0]
       >
   """
   @doc type: :element_wise
@@ -2982,12 +3029,12 @@ defmodule Explorer.Series do
     end
   end
 
-  defp cast_to_divide(:integer, :integer), do: :float
-  defp cast_to_divide(:integer, :float), do: :float
-  defp cast_to_divide(:float, :integer), do: :float
-  defp cast_to_divide(:float, :float), do: :float
+  defp cast_to_divide(:integer, :integer), do: {:f, 64}
+  defp cast_to_divide(:integer, {:f, _} = float), do: float
+  defp cast_to_divide({:f, _} = float, :integer), do: float
+  defp cast_to_divide({:f, _}, {:f, _}), do: {:f, 64}
   defp cast_to_divide({:duration, p}, :integer), do: {:duration, p}
-  defp cast_to_divide({:duration, p}, :float), do: {:duration, p}
+  defp cast_to_divide({:duration, p}, {:f, _}), do: {:duration, p}
   defp cast_to_divide(_, _), do: nil
 
   @doc """
@@ -3000,7 +3047,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -3008,7 +3056,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.pow(s, 2.0)
       #Explorer.Series<
         Polars[3]
-        float [64.0, 256.0, 1024.0]
+        f64 [64.0, 256.0, 1024.0]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
@@ -3022,21 +3070,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.pow(s, -3.0)
       #Explorer.Series<
         Polars[3]
-        float [0.125, 0.015625, 0.004629629629629629]
+        f64 [0.125, 0.015625, 0.004629629629629629]
       >
 
       iex> s = [1.0, 2.0, 3.0] |> Explorer.Series.from_list()
       iex> Explorer.Series.pow(s, 3.0)
       #Explorer.Series<
         Polars[3]
-        float [1.0, 8.0, 27.0]
+        f64 [1.0, 8.0, 27.0]
       >
 
       iex> s = [2.0, 4.0, 6.0] |> Explorer.Series.from_list()
       iex> Explorer.Series.pow(s, 2)
       #Explorer.Series<
         Polars[3]
-        float [4.0, 16.0, 36.0]
+        f64 [4.0, 16.0, 36.0]
       >
   """
   @doc type: :element_wise
@@ -3046,13 +3094,14 @@ defmodule Explorer.Series do
   @doc """
   Calculates the natural logarithm.
 
-  The resultant series is going to be of dtype `:float`.
+  The resultant series is going to be of dtype `{:f, 64}`.
   See `log/2` for passing a custom base.
 
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -3060,7 +3109,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.log(s)
       #Explorer.Series<
         Polars[5]
-        float [0.0, 0.6931471805599453, 1.0986122886681098, nil, 1.3862943611198906]
+        f64 [0.0, 0.6931471805599453, 1.0986122886681098, nil, 1.3862943611198906]
       >
 
   """
@@ -3071,12 +3120,13 @@ defmodule Explorer.Series do
   @doc """
   Calculates the logarithm on a given base.
 
-  The resultant series is going to be of dtype `:float`.
+  The resultant series is going to be of dtype `{:f, 64}`.
 
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -3084,7 +3134,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.log(s, 2)
       #Explorer.Series<
         Polars[3]
-        float [3.0, 4.0, 5.0]
+        f64 [3.0, 4.0, 5.0]
       >
 
   """
@@ -3208,11 +3258,12 @@ defmodule Explorer.Series do
 
   @doc """
   Computes the the sine of a number (in radians).
-  The resultant series is going to be of dtype `:float`, with values between 1 and -1.
+  The resultant series is going to be of dtype `{:f, 64}`, with values between 1 and -1.
 
   ## Supported dtype
 
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -3221,24 +3272,25 @@ defmodule Explorer.Series do
       iex> Explorer.Series.sin(s)
       #Explorer.Series<
         Polars[9]
-        float [1.0, -1.2246467991473532e-16, -1.0, -0.7071067811865475, 0.0, 0.7071067811865475, 1.0, 1.2246467991473532e-16, -1.0]
+        f64 [1.0, -1.2246467991473532e-16, -1.0, -0.7071067811865475, 0.0, 0.7071067811865475, 1.0, 1.2246467991473532e-16, -1.0]
       >
   """
   @doc type: :float_wise
   @spec sin(series :: Series.t()) :: Series.t()
-  def sin(%Series{dtype: :float} = series),
+  def sin(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
     do: apply_series(series, :sin)
 
   def sin(%Series{dtype: dtype}),
-    do: dtype_error("sin/1", dtype, [:float])
+    do: dtype_error("sin/1", dtype, [{:f, 32}, {:f, 64}])
 
   @doc """
   Computes the the cosine of a number (in radians).
-  The resultant series is going to be of dtype `:float`, with values between 1 and -1.
+  The resultant series is going to be of dtype `{:f, 64}`, with values between 1 and -1.
 
   ## Supported dtype
 
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -3247,24 +3299,25 @@ defmodule Explorer.Series do
       iex> Explorer.Series.cos(s)
       #Explorer.Series<
         Polars[9]
-        float [-1.8369701987210297e-16, -1.0, 6.123233995736766e-17, 0.7071067811865476, 1.0, 0.7071067811865476, 6.123233995736766e-17, -1.0, -1.8369701987210297e-16]
+        f64 [-1.8369701987210297e-16, -1.0, 6.123233995736766e-17, 0.7071067811865476, 1.0, 0.7071067811865476, 6.123233995736766e-17, -1.0, -1.8369701987210297e-16]
       >
   """
   @doc type: :float_wise
   @spec cos(series :: Series.t()) :: Series.t()
-  def cos(%Series{dtype: :float} = series),
+  def cos(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
     do: apply_series(series, :cos)
 
   def cos(%Series{dtype: dtype}),
-    do: dtype_error("cos/1", dtype, [:float])
+    do: dtype_error("cos/1", dtype, [{:f, 32}, {:f, 64}])
 
   @doc """
   Computes the tangent of a number (in radians).
-  The resultant series is going to be of dtype `:float`.
+  The resultant series is going to be of dtype `{:f, 64}`.
 
   ## Supported dtype
 
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -3273,24 +3326,25 @@ defmodule Explorer.Series do
       iex> Explorer.Series.tan(s)
       #Explorer.Series<
         Polars[9]
-        float [-5443746451065123.0, 1.2246467991473532e-16, -1.633123935319537e16, -0.9999999999999999, 0.0, 0.9999999999999999, 1.633123935319537e16, -1.2246467991473532e-16, 5443746451065123.0]
+        f64 [-5443746451065123.0, 1.2246467991473532e-16, -1.633123935319537e16, -0.9999999999999999, 0.0, 0.9999999999999999, 1.633123935319537e16, -1.2246467991473532e-16, 5443746451065123.0]
       >
   """
   @doc type: :float_wise
   @spec tan(series :: Series.t()) :: Series.t()
-  def tan(%Series{dtype: :float} = series),
+  def tan(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
     do: apply_series(series, :tan)
 
   def tan(%Series{dtype: dtype}),
-    do: dtype_error("tan/1", dtype, [:float])
+    do: dtype_error("tan/1", dtype, [{:f, 32}, {:f, 64}])
 
   @doc """
   Computes the the arcsine of a number.
-  The resultant series is going to be of dtype `:float`, in radians, with values between -pi/2 and pi/2.
+  The resultant series is going to be of dtype `{:f, 64}`, in radians, with values between -pi/2 and pi/2.
 
   ## Supported dtype
 
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -3298,24 +3352,25 @@ defmodule Explorer.Series do
       iex> Explorer.Series.asin(s)
       #Explorer.Series<
         Polars[5]
-        float [1.5707963267948966, 0.0, -1.5707963267948966, -0.7853981633974482, 0.7853981633974482]
+        f64 [1.5707963267948966, 0.0, -1.5707963267948966, -0.7853981633974482, 0.7853981633974482]
       >
   """
   @doc type: :float_wise
   @spec asin(series :: Series.t()) :: Series.t()
-  def asin(%Series{dtype: :float} = series),
+  def asin(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
     do: apply_series(series, :asin)
 
   def asin(%Series{dtype: dtype}),
-    do: dtype_error("asin/1", dtype, [:float])
+    do: dtype_error("asin/1", dtype, [{:f, 32}, {:f, 64}])
 
   @doc """
   Computes the the arccosine of a number.
-  The resultant series is going to be of dtype `:float`, in radians, with values between 0 and pi.
+  The resultant series is going to be of dtype `{:f, 64}`, in radians, with values between 0 and pi.
 
   ## Supported dtype
 
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -3323,24 +3378,25 @@ defmodule Explorer.Series do
       iex> Explorer.Series.acos(s)
       #Explorer.Series<
         Polars[5]
-        float [0.0, 1.5707963267948966, 3.141592653589793, 2.356194490192345, 0.7853981633974484]
+        f64 [0.0, 1.5707963267948966, 3.141592653589793, 2.356194490192345, 0.7853981633974484]
       >
   """
   @doc type: :float_wise
   @spec acos(series :: Series.t()) :: Series.t()
-  def acos(%Series{dtype: :float} = series),
+  def acos(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
     do: apply_series(series, :acos)
 
   def acos(%Series{dtype: dtype}),
-    do: dtype_error("acos/1", dtype, [:float])
+    do: dtype_error("acos/1", dtype, [{:f, 32}, {:f, 64}])
 
   @doc """
   Computes the the arctangent of a number.
-  The resultant series is going to be of dtype `:float`, in radians, with values between -pi/2 and pi/2.
+  The resultant series is going to be of dtype `{:f, 64}`, in radians, with values between -pi/2 and pi/2.
 
   ## Supported dtype
 
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -3348,16 +3404,16 @@ defmodule Explorer.Series do
       iex> Explorer.Series.atan(s)
       #Explorer.Series<
         Polars[5]
-        float [0.7853981633974483, 0.0, -0.7853981633974483, -0.6154797086703873, 0.6154797086703873]
+        f64 [0.7853981633974483, 0.0, -0.7853981633974483, -0.6154797086703873, 0.6154797086703873]
       >
   """
   @doc type: :float_wise
   @spec atan(series :: Series.t()) :: Series.t()
-  def atan(%Series{dtype: :float} = series),
+  def atan(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
     do: apply_series(series, :atan)
 
   def atan(%Series{dtype: dtype}),
-    do: dtype_error("atan/1", dtype, [:float])
+    do: dtype_error("atan/1", dtype, [{:f, 32}, {:f, 64}])
 
   defp basic_numeric_operation(operation, left, right, args \\ [])
 
@@ -3380,10 +3436,10 @@ defmodule Explorer.Series do
     do: dtype_mismatch_error("#{operation}/#{length(args) + 2}", left, right)
 
   defp basic_numeric_operation(operation, _, %Series{dtype: dtype}, args),
-    do: dtype_error("#{operation}/#{length(args) + 2}", dtype, [:integer, :float])
+    do: dtype_error("#{operation}/#{length(args) + 2}", dtype, @numeric_dtypes)
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype}, _, args),
-    do: dtype_error("#{operation}/#{length(args) + 2}", dtype, [:integer, :float])
+    do: dtype_error("#{operation}/#{length(args) + 2}", dtype, @numeric_dtypes)
 
   defp basic_numeric_operation(operation, left, right, args)
        when K.and(is_numeric(left), is_numeric(right)),
@@ -3545,7 +3601,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -3584,7 +3641,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -3623,7 +3681,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -3662,7 +3721,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
     * `:date`
     * `:time`
     * `:datetime`
@@ -3818,7 +3878,7 @@ defmodule Explorer.Series do
 
   defp cast_to_ordered_series(dtype, value)
        when K.and(is_numeric_dtype(dtype), is_numeric(value)),
-       do: :float
+       do: {:f, 64}
 
   defp cast_to_ordered_series(:date, %Date{}), do: :date
 
@@ -4102,8 +4162,8 @@ defmodule Explorer.Series do
       iex> Explorer.Series.cut(s, [1.5, 2.5])
       #Explorer.DataFrame<
         Polars[3 x 3]
-        values float [1.0, 2.0, 3.0]
-        break_point float [1.5, 2.5, Inf]
+        values f64 [1.0, 2.0, 3.0]
+        break_point f64 [1.5, 2.5, Inf]
         category category ["(-inf, 1.5]", "(1.5, 2.5]", "(2.5, inf]"]
       >
   """
@@ -4141,8 +4201,8 @@ defmodule Explorer.Series do
       iex> Explorer.Series.qcut(s, [0.25, 0.75])
       #Explorer.DataFrame<
         Polars[5 x 3]
-        values float [1.0, 2.0, 3.0, 4.0, 5.0]
-        break_point float [2.0, 2.0, 4.0, 4.0, Inf]
+        values f64 [1.0, 2.0, 3.0, 4.0, 5.0]
+        break_point f64 [2.0, 2.0, 4.0, 4.0, Inf]
         category category ["(-inf, 2]", "(-inf, 2]", "(2, 4]", "(2, 4]", "(4, inf]"]
       >
   """
@@ -4215,7 +4275,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_sum(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         Polars[10]
-        float [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
+        f64 [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
       >
   """
   @doc type: :window
@@ -4241,21 +4301,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_mean(s, 4)
       #Explorer.Series<
         Polars[10]
-        float [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
+        f64 [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_mean(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[10]
-        float [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
+        f64 [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_mean(s, 2, weights: [0.25, 0.75], min_periods: nil)
       #Explorer.Series<
         Polars[10]
-        float [nil, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
+        f64 [nil, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
       >
   """
   @doc type: :window
@@ -4281,21 +4341,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_median(s, 4)
       #Explorer.Series<
         Polars[10]
-        float [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
+        f64 [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_median(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[10]
-        float [1.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+        f64 [1.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_median(s, 2, weights: [0.25, 0.75], min_periods: nil)
       #Explorer.Series<
         Polars[10]
-        float [nil, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+        f64 [nil, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
       >
   """
   @doc type: :window
@@ -4328,7 +4388,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_min(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         Polars[10]
-        float [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+        f64 [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
       >
   """
   @doc type: :window
@@ -4361,7 +4421,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_max(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         Polars[10]
-        float [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
+        f64 [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
       >
   """
   @doc type: :window
@@ -4387,14 +4447,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_standard_deviation(s, 2)
       #Explorer.Series<
         Polars[5]
-        float [0.0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 2.1213203435596424]
+        f64 [0.0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 2.1213203435596424]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5, 6])
       iex> Explorer.Series.window_standard_deviation(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[6]
-        float [0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193]
+        f64 [0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193]
       >
   """
   @doc type: :window
@@ -4429,14 +4489,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.ewm_mean(s)
       #Explorer.Series<
         Polars[5]
-        float [1.0, 1.6666666666666667, 2.4285714285714284, 3.2666666666666666, 4.161290322580645]
+        f64 [1.0, 1.6666666666666667, 2.4285714285714284, 3.2666666666666666, 4.161290322580645]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.ewm_mean(s, alpha: 0.1)
       #Explorer.Series<
         Polars[5]
-        float [1.0, 1.5263157894736843, 2.070110701107011, 2.6312881651642916, 3.2097140484969833]
+        f64 [1.0, 1.5263157894736843, 2.070110701107011, 2.6312881651642916, 3.2097140484969833]
       >
   """
   @doc type: :window
@@ -4531,21 +4591,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.fill_missing(s, :nan)
       #Explorer.Series<
         Polars[4]
-        float [1.0, 2.0, NaN, 4.0]
+        f64 [1.0, 2.0, NaN, 4.0]
       >
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
       iex> Explorer.Series.fill_missing(s, :infinity)
       #Explorer.Series<
         Polars[4]
-        float [1.0, 2.0, Inf, 4.0]
+        f64 [1.0, 2.0, Inf, 4.0]
       >
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
       iex> Explorer.Series.fill_missing(s, :neg_infinity)
       #Explorer.Series<
         Polars[4]
-        float [1.0, 2.0, -Inf, 4.0]
+        f64 [1.0, 2.0, -Inf, 4.0]
       >
 
   """
@@ -4564,9 +4624,9 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def fill_missing(%Series{} = series, value)
       when K.in(value, [:nan, :infinity, :neg_infinity]) do
-    if series.dtype != :float do
+    if K.not(K.in(series.dtype, [{:f, 32}, {:f, 64}])) do
       raise ArgumentError,
-            "fill_missing with :#{value} values require a :float series, got #{inspect(series.dtype)}"
+            "fill_missing with :#{value} values require a float series, got #{inspect(series.dtype)}"
     end
 
     apply_series(series, :fill_missing_with_value, [value])
@@ -4622,7 +4682,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   ## Examples
 
@@ -4637,19 +4698,19 @@ defmodule Explorer.Series do
       iex> Explorer.Series.abs(s)
       #Explorer.Series<
         Polars[4]
-        float [1.0, 2.0, 1.0, 3.0]
+        f64 [1.0, 2.0, 1.0, 3.0]
       >
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, -3.0])
       iex> Explorer.Series.abs(s)
       #Explorer.Series<
         Polars[4]
-        float [1.0, 2.0, nil, 3.0]
+        f64 [1.0, 2.0, nil, 3.0]
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.abs(s)
-      ** (ArgumentError) Explorer.Series.abs/1 not implemented for dtype :string. Valid dtypes are [:integer, :float]
+      ** (ArgumentError) Explorer.Series.abs/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
   """
   @doc type: :element_wise
   @spec abs(series :: Series.t()) :: Series.t()
@@ -4657,7 +4718,7 @@ defmodule Explorer.Series do
     do: apply_series(series, :abs)
 
   def abs(%Series{dtype: dtype}),
-    do: dtype_error("abs/1", dtype, [:integer, :float])
+    do: dtype_error("abs/1", dtype, @numeric_dtypes)
 
   # Strings
 
@@ -4982,19 +5043,19 @@ defmodule Explorer.Series do
       iex> Explorer.Series.round(s, 2)
       #Explorer.Series<
         Polars[3]
-        float [1.12, 2.56, 4.0]
+        f64 [1.12, 2.56, 4.0]
       >
   """
   @doc type: :float_wise
   @spec round(Series.t(), non_neg_integer()) :: Series.t()
-  def round(%Series{dtype: :float} = series, decimals)
+  def round(%Series{dtype: {:f, _}} = series, decimals)
       when K.and(is_integer(decimals), decimals >= 0),
       do: apply_series(series, :round, [decimals])
 
-  def round(%Series{dtype: :float}, _),
+  def round(%Series{dtype: {:f, _}}, _),
     do: raise(ArgumentError, "second argument to round/2 must be a non-negative integer")
 
-  def round(%Series{dtype: dtype}, _), do: dtype_error("round/2", dtype, [:float])
+  def round(%Series{dtype: dtype}, _), do: dtype_error("round/2", dtype, @float_dtypes)
 
   @doc """
   Floor floating point series to lowest integers smaller or equal to the float value.
@@ -5005,13 +5066,15 @@ defmodule Explorer.Series do
       iex> Explorer.Series.floor(s)
       #Explorer.Series<
         Polars[3]
-        float [1.0, 2.0, 3.0]
+        f64 [1.0, 2.0, 3.0]
       >
   """
   @doc type: :float_wise
   @spec floor(Series.t()) :: Series.t()
-  def floor(%Series{dtype: :float} = series), do: apply_series(series, :floor)
-  def floor(%Series{dtype: dtype}), do: dtype_error("floor/1", dtype, [:float])
+  def floor(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
+    do: apply_series(series, :floor)
+
+  def floor(%Series{dtype: dtype}), do: dtype_error("floor/1", dtype, @float_dtypes)
 
   @doc """
   Ceil floating point series to highest integers smaller or equal to the float value.
@@ -5022,13 +5085,15 @@ defmodule Explorer.Series do
       iex> Explorer.Series.ceil(s)
       #Explorer.Series<
         Polars[3]
-        float [2.0, 3.0, 4.0]
+        f64 [2.0, 3.0, 4.0]
       >
   """
   @doc type: :float_wise
   @spec ceil(Series.t()) :: Series.t()
-  def ceil(%Series{dtype: :float} = series), do: apply_series(series, :ceil)
-  def ceil(%Series{dtype: dtype}), do: dtype_error("ceil/1", dtype, [:float])
+  def ceil(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
+    do: apply_series(series, :ceil)
+
+  def ceil(%Series{dtype: dtype}), do: dtype_error("ceil/1", dtype, @float_dtypes)
 
   @doc """
   Returns a mask of finite values.
@@ -5046,10 +5111,10 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec is_finite(Series.t()) :: Series.t()
-  def is_finite(%Series{dtype: :float} = series),
+  def is_finite(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
     do: apply_series(series, :is_finite)
 
-  def is_finite(%Series{dtype: dtype}), do: dtype_error("is_finite/1", dtype, [:float])
+  def is_finite(%Series{dtype: dtype}), do: dtype_error("is_finite/1", dtype, @float_dtypes)
 
   @doc """
   Returns a mask of infinite values.
@@ -5067,11 +5132,11 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec is_infinite(Series.t()) :: Series.t()
-  def is_infinite(%Series{dtype: :float} = series),
+  def is_infinite(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
     do: apply_series(series, :is_infinite)
 
   def is_infinite(%Series{dtype: dtype}),
-    do: dtype_error("is_infinite/1", dtype, [:float])
+    do: dtype_error("is_infinite/1", dtype, @float_dtypes)
 
   @doc """
   Returns a mask of nan values.
@@ -5089,10 +5154,10 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec is_nan(Series.t()) :: Series.t()
-  def is_nan(%Series{dtype: :float} = series),
+  def is_nan(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
     do: apply_series(series, :is_nan)
 
-  def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, [:float])
+  def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, @float_dtypes)
 
   # Date / DateTime
 
@@ -5480,8 +5545,8 @@ defmodule Explorer.Series do
   defp check_dtypes_for_coalesce!(%Series{} = s1, %Series{} = s2) do
     case {s1.dtype, s2.dtype} do
       {dtype, dtype} -> :ok
-      {:integer, :float} -> :ok
-      {:float, :integer} -> :ok
+      {:integer, {:f, _}} -> :ok
+      {{:f, _}, :integer} -> :ok
       {left, right} -> dtype_mismatch_error("coalesce/2", left, right)
     end
   end

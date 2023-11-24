@@ -121,7 +121,8 @@ defmodule Explorer.PolarsBackend.Shared do
   def from_list(list, dtype, name) when is_list(list) do
     case dtype do
       :integer -> Native.s_from_list_i64(name, list)
-      :float -> Native.s_from_list_f64(name, list)
+      {:f, 32} -> Native.s_from_list_f32(name, list)
+      {:f, 64} -> Native.s_from_list_f64(name, list)
       :boolean -> Native.s_from_list_bool(name, list)
       :string -> Native.s_from_list_str(name, list)
       :category -> Native.s_from_list_categories(name, list)
@@ -165,7 +166,10 @@ defmodule Explorer.PolarsBackend.Shared do
       :integer ->
         Native.s_from_binary_i64(name, binary)
 
-      :float ->
+      {:f, 32} ->
+        Native.s_from_binary_f32(name, binary)
+
+      {:f, 64} ->
         Native.s_from_binary_f64(name, binary)
     end
   end
