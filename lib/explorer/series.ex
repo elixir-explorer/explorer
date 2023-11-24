@@ -2775,7 +2775,7 @@ defmodule Explorer.Series do
   @doc """
   Adds right to left, element-wise.
 
-  When mixing floats and integers, the resulting series will have dtype `:float`.
+  When mixing floats and integers, the resulting series will have dtype `{:f, 64}`.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -2842,7 +2842,7 @@ defmodule Explorer.Series do
   @doc """
   Subtracts right from left, element-wise.
 
-  When mixing floats and integers, the resulting series will have dtype `:float`.
+  When mixing floats and integers, the resulting series will have dtype `{:f, 64}`.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -2910,7 +2910,7 @@ defmodule Explorer.Series do
   @doc """
   Multiplies left and right, element-wise.
 
-  When mixing floats and integers, the resulting series will have dtype `:float`.
+  When mixing floats and integers, the resulting series will have dtype `{:f, 64}`.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -2967,7 +2967,7 @@ defmodule Explorer.Series do
   @doc """
   Divides left by right, element-wise.
 
-  The resulting series will have the dtype as `:float`.
+  The resulting series will have the dtype as `{:f, 64}`.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -3094,7 +3094,7 @@ defmodule Explorer.Series do
   @doc """
   Calculates the natural logarithm.
 
-  The resultant series is going to be of dtype `:float`.
+  The resultant series is going to be of dtype `{:f, 64}`.
   See `log/2` for passing a custom base.
 
   ## Supported dtypes
@@ -3120,7 +3120,7 @@ defmodule Explorer.Series do
   @doc """
   Calculates the logarithm on a given base.
 
-  The resultant series is going to be of dtype `:float`.
+  The resultant series is going to be of dtype `{:f, 64}`.
 
   ## Supported dtypes
 
@@ -3258,7 +3258,7 @@ defmodule Explorer.Series do
 
   @doc """
   Computes the the sine of a number (in radians).
-  The resultant series is going to be of dtype `:float`, with values between 1 and -1.
+  The resultant series is going to be of dtype `{:f, 64}`, with values between 1 and -1.
 
   ## Supported dtype
 
@@ -3285,7 +3285,7 @@ defmodule Explorer.Series do
 
   @doc """
   Computes the the cosine of a number (in radians).
-  The resultant series is going to be of dtype `:float`, with values between 1 and -1.
+  The resultant series is going to be of dtype `{:f, 64}`, with values between 1 and -1.
 
   ## Supported dtype
 
@@ -3312,7 +3312,7 @@ defmodule Explorer.Series do
 
   @doc """
   Computes the tangent of a number (in radians).
-  The resultant series is going to be of dtype `:float`.
+  The resultant series is going to be of dtype `{:f, 64}`.
 
   ## Supported dtype
 
@@ -3339,7 +3339,7 @@ defmodule Explorer.Series do
 
   @doc """
   Computes the the arcsine of a number.
-  The resultant series is going to be of dtype `:float`, in radians, with values between -pi/2 and pi/2.
+  The resultant series is going to be of dtype `{:f, 64}`, in radians, with values between -pi/2 and pi/2.
 
   ## Supported dtype
 
@@ -3365,7 +3365,7 @@ defmodule Explorer.Series do
 
   @doc """
   Computes the the arccosine of a number.
-  The resultant series is going to be of dtype `:float`, in radians, with values between 0 and pi.
+  The resultant series is going to be of dtype `{:f, 64}`, in radians, with values between 0 and pi.
 
   ## Supported dtype
 
@@ -3391,7 +3391,7 @@ defmodule Explorer.Series do
 
   @doc """
   Computes the the arctangent of a number.
-  The resultant series is going to be of dtype `:float`, in radians, with values between -pi/2 and pi/2.
+  The resultant series is going to be of dtype `{:f, 64}`, in radians, with values between -pi/2 and pi/2.
 
   ## Supported dtype
 
