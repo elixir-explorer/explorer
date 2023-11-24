@@ -118,7 +118,7 @@ DataFrame.to_csv(df, filename)
 * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
 * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
 * `{:f, 32}` - 32-bit floating point number
-* `{:f, 64}` - 64-bit floating point number
+* `:float` or `{:f, 64}` - 64-bit floating point number.
 * `:integer` - 64-bit signed integer
 * `:string` - UTF-8 encoded binary
 * `:time` - Time type that unwraps to `Elixir.Time`
@@ -1000,7 +1000,7 @@ Did you catch that? You can pass in new columns as keyword arguments. It also wo
 
 ```elixir
 DF.mutate(df,
-  gas_fuel: Series.cast(gas_fuel, {:f, 64}),
+  gas_fuel: Series.cast(gas_fuel, :float),
   gas_and_liquid_fuel: gas_fuel + liquid_fuel
 )
 ```

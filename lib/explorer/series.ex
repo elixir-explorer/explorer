@@ -10,7 +10,7 @@ defmodule Explorer.Series do
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
     * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
-    * `{:f, size}` - a 64-bit or 32-bit floating point number
+    * `{:f, size}` - a 64-bit or 32-bit floating point number. The atom `:float` can be used as an alias for `{:f, 64}`.
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
