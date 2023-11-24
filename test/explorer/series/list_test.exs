@@ -250,7 +250,7 @@ defmodule Explorer.Series.ListTest do
                """
                #Explorer.Series<
                  Polars[5]
-                 list[float[64]] [[1.3, 2.4], [3.5, 4.6], [5.7, 6.8], [nil, NaN], [Inf, -Inf]]
+                 list[f64] [[1.3, 2.4], [3.5, 4.6], [5.7, 6.8], [nil, NaN], [Inf, -Inf]]
                >\
                """
     end

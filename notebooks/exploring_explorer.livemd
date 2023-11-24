@@ -59,7 +59,7 @@ df = Explorer.Datasets.fossil_fuels()
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -214,7 +214,7 @@ s = Series.from_list([1.0, 2.0, nil, nil, 5.0])
 ```
 #Explorer.Series<
   Polars[5]
-  float[64] [1.0, 2.0, nil, nil, 5.0]
+  f64 [1.0, 2.0, nil, nil, 5.0]
 >
 ```
 
@@ -235,7 +235,7 @@ Series.fill_missing(s, :forward)
 ```
 #Explorer.Series<
   Polars[5]
-  float[64] [1.0, 2.0, 2.0, 2.0, 5.0]
+  f64 [1.0, 2.0, 2.0, 2.0, 5.0]
 >
 ```
 
@@ -250,7 +250,7 @@ Series.from_list([1, 2.0])
 ```
 #Explorer.Series<
   Polars[2]
-  float[64] [1.0, 2.0]
+  f64 [1.0, 2.0]
 >
 ```
 
@@ -474,7 +474,7 @@ Series.add(s, s1)
 ```
 #Explorer.Series<
   Polars[3]
-  float[64] [2.0, 4.0, 6.0]
+  f64 [2.0, 4.0, 6.0]
 >
 ```
 
@@ -683,7 +683,7 @@ df
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -761,7 +761,7 @@ DataFrame.head(df)
   gas_fuel integer [74, 7, 14565, 0, 374]
   cement integer [5, 177, 2598, 0, 204]
   gas_flaring integer [0, 0, 2623, 0, 3697]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37]
   bunker_fuels integer [9, 7, 663, 0, 321]
 >
 ```
@@ -785,7 +785,7 @@ DataFrame.tail(df, 10)
   gas_fuel integer [390719, 25, 23929, 0, 12731, ...]
   cement integer [11314, 112, 1000, 0, 1088, ...]
   gas_flaring integer [4244, 0, 0, 0, 8042, ...]
-  per_capita float[64] [4.43, 0.54, 0.97, 0.16, 1.65, ...]
+  per_capita f64 [4.43, 0.54, 0.97, 0.16, 1.65, ...]
   bunker_fuels integer [30722, 251, 0, 10, 1256, ...]
 >
 ```
@@ -870,7 +870,7 @@ DF.discard(df, &String.ends_with?(&1, "fuel"))
   total integer [2308, 1254, 32500, 141, 7924, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -899,7 +899,7 @@ DF.filter(df, country == "BRAZIL")
   gas_fuel integer [14372, 13778, 16328, 19399, 21297]
   cement integer [8040, 8717, 9428, 9517, 9691]
   gas_flaring integer [1402, 987, 848, 767, 949]
-  per_capita float[64] [0.58, 0.6, 0.63, 0.67, 0.7]
+  per_capita f64 [0.58, 0.6, 0.63, 0.67, 0.7]
   bunker_fuels integer [5101, 5516, 5168, 4895, 4895]
 >
 ```
@@ -923,7 +923,7 @@ DF.filter(df, country == "ALGERIA" and year > 2012)
   gas_fuel integer [17863, 20151]
   cement integer [2516, 2856]
   gas_flaring integer [1922, 2073]
-  per_capita float[64] [0.96, 1.02]
+  per_capita f64 [0.96, 1.02]
   bunker_fuels integer [687, 581]
 >
 ```
@@ -951,7 +951,7 @@ end)
   gas_fuel integer [17863, 20151]
   cement integer [2516, 2856]
   gas_flaring integer [1922, 2073]
-  per_capita float[64] [0.96, 1.02]
+  per_capita f64 [0.96, 1.02]
   bunker_fuels integer [687, 581]
 >
 ```
@@ -990,7 +990,7 @@ DF.mutate(df, new_column: solid_fuel + cement)
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
   new_column integer [632, 294, 2930, 0, 204, ...]
 >
@@ -1015,10 +1015,10 @@ DF.mutate(df,
   total integer [2308, 1254, 32500, 141, 7924, ...]
   solid_fuel integer [627, 117, 332, 0, 0, ...]
   liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
-  gas_fuel float[64] [74.0, 7.0, 14565.0, 0.0, 374.0, ...]
+  gas_fuel f64 [74.0, 7.0, 14565.0, 0.0, 374.0, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
   gas_and_liquid_fuel integer [1675, 960, 26946, 141, 4023, ...]
 >
@@ -1043,7 +1043,7 @@ DF.mutate(df, %{"gas_fuel" => gas_fuel - 10})
   gas_fuel integer [64, -3, 14555, -10, 364, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -1071,7 +1071,7 @@ DF.arrange(df, year)
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -1095,7 +1095,7 @@ DF.arrange(df, asc: total, desc: year)
   gas_fuel integer [0, 0, 0, 0, 0, ...]
   cement integer [0, 0, 0, 0, 0, ...]
   gas_flaring integer [0, 0, 0, 0, 0, ...]
-  per_capita float[64] [0.52, 1.04, 1.04, 1.04, 0.0, ...]
+  per_capita f64 [0.52, 1.04, 1.04, 1.04, 0.0, ...]
   bunker_fuels integer [0, 0, 0, 0, 0, ...]
 >
 ```
@@ -1120,7 +1120,7 @@ DF.arrange(df, asc: Series.window_sum(total, 2))
   gas_fuel integer [0, 0, 0, 0, 0, ...]
   cement integer [0, 0, 0, 0, 0, ...]
   gas_flaring integer [0, 0, 0, 0, 0, ...]
-  per_capita float[64] [0.3, 0.32, 0.36, 0.0, 0.0, ...]
+  per_capita f64 [0.3, 0.32, 0.36, 0.0, 0.0, ...]
   bunker_fuels integer [1, 1, 1, 0, 0, ...]
 >
 ```
@@ -1164,7 +1164,7 @@ DF.distinct(df, ["country"], keep_all: true)
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -1190,7 +1190,7 @@ DF.rename(df, year: "year_test")
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -1212,7 +1212,7 @@ DF.rename_with(df, &(&1 <> "_test"))
   gas_fuel_test integer [74, 7, 14565, 0, 374, ...]
   cement_test integer [5, 177, 2598, 0, 204, ...]
   gas_flaring_test integer [0, 0, 2623, 0, 3697, ...]
-  per_capita_test float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita_test f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels_test integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -1494,7 +1494,7 @@ DF.sample(df, 10)
   gas_fuel integer [541, 4506, 0, 0, 2287, ...]
   cement integer [122, 0, 0, 0, 681, ...]
   gas_flaring integer [0, 0, 0, 0, 0, ...]
-  per_capita float[64] [0.33, 2.99, 2.63, 0.78, 1.96, ...]
+  per_capita f64 [0.33, 2.99, 2.63, 0.78, 1.96, ...]
   bunker_fuels integer [11, 39109, 1, 45, 2545, ...]
 >
 ```
@@ -1516,7 +1516,7 @@ DF.sample(df, 0.4)
   gas_fuel integer [74, 7, 37801, 18092, 518, ...]
   cement integer [5, 177, 4760, 2955, 653, ...]
   gas_flaring integer [0, 0, 1678, 1712, 0, ...]
-  per_capita float[64] [0.08, 0.43, 1.04, 2.06, 0.56, ...]
+  per_capita f64 [0.08, 0.43, 1.04, 2.06, 0.56, ...]
   bunker_fuels integer [9, 7, 3300, 1509, 414, ...]
 >
 ```
@@ -1545,7 +1545,7 @@ DF.sample(df, 10000, replace: true)
   gas_fuel integer [0, 0, 0, 0, 0, ...]
   cement integer [0, 0, 163, 0, 0, ...]
   gas_flaring integer [0, 0, 0, 0, 0, ...]
-  per_capita float[64] [0.51, 0.07, 0.07, 0.78, 0.12, ...]
+  per_capita f64 [0.51, 0.07, 0.07, 0.78, 0.12, ...]
   bunker_fuels integer [2, 3, 9, 3, 9, ...]
 >
 ```
@@ -1617,7 +1617,7 @@ DF.slice(df, [1, 20, 50])
   gas_fuel integer [7, 0, 12]
   cement integer [177, 177, 67]
   gas_flaring integer [0, 0, 0]
-  per_capita float[64] [0.43, 0.15, 0.01]
+  per_capita f64 [0.43, 0.15, 0.01]
   bunker_fuels integer [7, 127, 126]
 >
 ```
@@ -1641,7 +1641,7 @@ DF.slice(df, -10, 5)
   gas_fuel integer [390719, 25, 23929, 0, 12731]
   cement integer [11314, 112, 1000, 0, 1088]
   gas_flaring integer [4244, 0, 0, 0, 8042]
-  per_capita float[64] [4.43, 0.54, 0.97, 0.16, 1.65]
+  per_capita f64 [4.43, 0.54, 0.97, 0.16, 1.65]
   bunker_fuels integer [30722, 251, 0, 10, 1256]
 >
 ```
@@ -1663,7 +1663,7 @@ DF.slice(df, 10, 5)
   gas_fuel integer [17763, 5073, 4904, 0, 6696]
   cement integer [1129, 579, 174, 0, 163]
   gas_flaring integer [132, 0, 909, 0, 0]
-  per_capita float[64] [4.81, 2.19, 0.92, 1.25, 6.33]
+  per_capita f64 [4.81, 2.19, 0.92, 1.25, 6.33]
   bunker_fuels integer [3307, 575, 398, 179, 545]
 >
 ```
@@ -1687,7 +1687,7 @@ DF.slice(df, 12..42)
   gas_fuel integer [4904, 0, 6696, 10753, 8, ...]
   cement integer [174, 0, 163, 1873, 31, ...]
   gas_flaring integer [909, 0, 0, 0, 1, ...]
-  per_capita float[64] [0.92, 1.25, 6.33, 0.11, 1.44, ...]
+  per_capita f64 [0.92, 1.25, 6.33, 0.11, 1.44, ...]
   bunker_fuels integer [398, 179, 545, 313, 108, ...]
 >
 ```
@@ -2247,7 +2247,7 @@ grouped = DF.group_by(df, ["country"])
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -2283,7 +2283,7 @@ DF.ungroup(grouped)
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >
 ```
@@ -2302,7 +2302,7 @@ grouped
 #Explorer.DataFrame<
   Polars[222 x 2]
   country string ["QATAR", "CURACAO", "TRINIDAD AND TOBAGO", "KUWAIT", "NETHERLAND ANTILLES", ...]
-  max_per_capita float[64] [13.54, 10.72, 9.84, 8.16, 7.45, ...]
+  max_per_capita f64 [13.54, 10.72, 9.84, 8.16, 7.45, ...]
 >
 ```
 
@@ -2332,7 +2332,7 @@ DF.summarise(grouped, min_per_capita: min(per_capita), min_total: min(total))
 #Explorer.DataFrame<
   Polars[222 x 3]
   country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-  min_per_capita float[64] [0.08, 0.43, 0.9, 1.63, 0.37, ...]
+  min_per_capita f64 [0.08, 0.43, 0.9, 1.63, 0.37, ...]
   min_total integer [2308, 1254, 32500, 126, 7924, ...]
 >
 ```
@@ -2357,7 +2357,7 @@ DF.mutate(grouped, total_window_sum: window_sum(total, 3), rows_in_group: count(
   gas_fuel integer [74, 84, 84, 81, 74, ...]
   cement integer [5, 5, 5, 7, 14, ...]
   gas_flaring integer [0, 0, 0, 0, 0, ...]
-  per_capita float[64] [0.08, 0.12, 0.1, 0.09, 0.08, ...]
+  per_capita f64 [0.08, 0.12, 0.1, 0.09, 0.08, ...]
   bunker_fuels integer [9, 9, 9, 9, 9, ...]
   total_window_sum integer [2308, 5646, 8579, 9002, 8339, ...]
   rows_in_group integer [5, 5, 5, 5, 5, ...]

@@ -44,7 +44,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1.0, nil, 2.5, 3.1])
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, nil, 2.5, 3.1]
+        f64 [1.0, nil, 2.5, 3.1]
       >
 
   Any of the dtypes above are supported, such as strings:
@@ -211,7 +211,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1.0, nil, 2.5, 3.1])
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, nil, 2.5, 3.1]
+        f64 [1.0, nil, 2.5, 3.1]
       >
 
   A mix of integers and floats will be cast to a float:
@@ -219,7 +219,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1, 2.0])
       #Explorer.Series<
         Polars[2]
-        float[64] [1.0, 2.0]
+        f64 [1.0, 2.0]
       >
 
   Floats series can accept NaN, Inf, and -Inf values:
@@ -227,19 +227,19 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1.0, 2.0, :nan, 4.0])
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, 2.0, NaN, 4.0]
+        f64 [1.0, 2.0, NaN, 4.0]
       >
 
       iex> Explorer.Series.from_list([1.0, 2.0, :infinity, 4.0])
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, 2.0, Inf, 4.0]
+        f64 [1.0, 2.0, Inf, 4.0]
       >
 
       iex> Explorer.Series.from_list([1.0, 2.0, :neg_infinity, 4.0])
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, 2.0, -Inf, 4.0]
+        f64 [1.0, 2.0, -Inf, 4.0]
       >
 
   Trying to create a "nil" series will, by default, result in a series of floats:
@@ -247,7 +247,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([nil, nil])
       #Explorer.Series<
         Polars[2]
-        float[64] [nil, nil]
+        f64 [nil, nil]
       >
 
   You can specify the desired `dtype` for a series with the `:dtype` option.
@@ -354,7 +354,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_binary(<<1.0::float-64-native, 2.0::float-64-native>>, {:f, 64})
       #Explorer.Series<
         Polars[2]
-        float[64] [1.0, 2.0]
+        f64 [1.0, 2.0]
       >
 
       iex> Explorer.Series.from_binary(<<-1::signed-64-native, 1::signed-64-native>>, :integer)
@@ -453,7 +453,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_tensor(tensor)
       #Explorer.Series<
         Polars[3]
-        float[64] [1.0, 2.0, 3.0]
+        f64 [1.0, 2.0, 3.0]
       >
 
   Unsigned 8-bit tensors are assumed to be booleans:
@@ -778,7 +778,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.cast(s, {:f, 64})
       #Explorer.Series<
         Polars[3]
-        float[64] [1.0, 2.0, 3.0]
+        f64 [1.0, 2.0, 3.0]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
@@ -929,7 +929,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.clip(s, 1.5, 10.5)
       #Explorer.Series<
         Polars[4]
-        float[64] [1.5, 5.0, nil, 10.5]
+        f64 [1.5, 5.0, nil, 10.5]
       >
   """
   @doc type: :element_wise
@@ -1575,7 +1575,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rank(s)
       #Explorer.Series<
         Polars[5]
-        float[64] [3.0, 4.5, 1.5, 1.5, 4.5]
+        f64 [3.0, 4.5, 1.5, 1.5, 4.5]
       >
 
       iex> s = Explorer.Series.from_list([1.1, 2.4, 3.2])
@@ -1589,7 +1589,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rank(s, method: "average")
       #Explorer.Series<
         Polars[3]
-        float[64] [2.0, 1.0, 3.0]
+        f64 [2.0, 1.0, 3.0]
       >
 
       iex> s = Explorer.Series.from_list([3, 6, 1, 1, 6])
@@ -1826,7 +1826,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.concat([s1, s2])
       #Explorer.Series<
         Polars[6]
-        float[64] [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
+        f64 [1.0, 2.0, 3.0, 4.0, 5.0, 6.4]
       >
   """
   @doc type: :shape
@@ -2207,7 +2207,7 @@ defmodule Explorer.Series do
       Explorer.Series.mode(s)
       #Explorer.Series<
         Polars[2]
-        float[64] [2.0, 3.0]
+        f64 [2.0, 3.0]
       >
   """
   @doc type: :aggregation
@@ -2986,21 +2986,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
         Polars[3]
-        float[64] [5.0, 5.0, 5.0]
+        f64 [5.0, 5.0, 5.0]
       >
 
       iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, 2)
       #Explorer.Series<
         Polars[3]
-        float[64] [5.0, 5.0, 5.0]
+        f64 [5.0, 5.0, 5.0]
       >
 
       iex> s1 = [10, 52 ,10] |> Explorer.Series.from_list()
       iex> Explorer.Series.divide(s1, 2.5)
       #Explorer.Series<
         Polars[3]
-        float[64] [4.0, 20.8, 4.0]
+        f64 [4.0, 20.8, 4.0]
       >
 
       iex> s1 = [10, 10, 10] |> Explorer.Series.from_list()
@@ -3008,7 +3008,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.divide(s1, s2)
       #Explorer.Series<
         Polars[3]
-        float[64] [5.0, Inf, 5.0]
+        f64 [5.0, Inf, 5.0]
       >
   """
   @doc type: :element_wise
@@ -3056,7 +3056,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.pow(s, 2.0)
       #Explorer.Series<
         Polars[3]
-        float[64] [64.0, 256.0, 1024.0]
+        f64 [64.0, 256.0, 1024.0]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
@@ -3070,21 +3070,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.pow(s, -3.0)
       #Explorer.Series<
         Polars[3]
-        float[64] [0.125, 0.015625, 0.004629629629629629]
+        f64 [0.125, 0.015625, 0.004629629629629629]
       >
 
       iex> s = [1.0, 2.0, 3.0] |> Explorer.Series.from_list()
       iex> Explorer.Series.pow(s, 3.0)
       #Explorer.Series<
         Polars[3]
-        float[64] [1.0, 8.0, 27.0]
+        f64 [1.0, 8.0, 27.0]
       >
 
       iex> s = [2.0, 4.0, 6.0] |> Explorer.Series.from_list()
       iex> Explorer.Series.pow(s, 2)
       #Explorer.Series<
         Polars[3]
-        float[64] [4.0, 16.0, 36.0]
+        f64 [4.0, 16.0, 36.0]
       >
   """
   @doc type: :element_wise
@@ -3109,7 +3109,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.log(s)
       #Explorer.Series<
         Polars[5]
-        float[64] [0.0, 0.6931471805599453, 1.0986122886681098, nil, 1.3862943611198906]
+        f64 [0.0, 0.6931471805599453, 1.0986122886681098, nil, 1.3862943611198906]
       >
 
   """
@@ -3134,7 +3134,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.log(s, 2)
       #Explorer.Series<
         Polars[3]
-        float[64] [3.0, 4.0, 5.0]
+        f64 [3.0, 4.0, 5.0]
       >
 
   """
@@ -3272,7 +3272,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.sin(s)
       #Explorer.Series<
         Polars[9]
-        float[64] [1.0, -1.2246467991473532e-16, -1.0, -0.7071067811865475, 0.0, 0.7071067811865475, 1.0, 1.2246467991473532e-16, -1.0]
+        f64 [1.0, -1.2246467991473532e-16, -1.0, -0.7071067811865475, 0.0, 0.7071067811865475, 1.0, 1.2246467991473532e-16, -1.0]
       >
   """
   @doc type: :float_wise
@@ -3299,7 +3299,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.cos(s)
       #Explorer.Series<
         Polars[9]
-        float[64] [-1.8369701987210297e-16, -1.0, 6.123233995736766e-17, 0.7071067811865476, 1.0, 0.7071067811865476, 6.123233995736766e-17, -1.0, -1.8369701987210297e-16]
+        f64 [-1.8369701987210297e-16, -1.0, 6.123233995736766e-17, 0.7071067811865476, 1.0, 0.7071067811865476, 6.123233995736766e-17, -1.0, -1.8369701987210297e-16]
       >
   """
   @doc type: :float_wise
@@ -3326,7 +3326,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.tan(s)
       #Explorer.Series<
         Polars[9]
-        float[64] [-5443746451065123.0, 1.2246467991473532e-16, -1.633123935319537e16, -0.9999999999999999, 0.0, 0.9999999999999999, 1.633123935319537e16, -1.2246467991473532e-16, 5443746451065123.0]
+        f64 [-5443746451065123.0, 1.2246467991473532e-16, -1.633123935319537e16, -0.9999999999999999, 0.0, 0.9999999999999999, 1.633123935319537e16, -1.2246467991473532e-16, 5443746451065123.0]
       >
   """
   @doc type: :float_wise
@@ -3352,7 +3352,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.asin(s)
       #Explorer.Series<
         Polars[5]
-        float[64] [1.5707963267948966, 0.0, -1.5707963267948966, -0.7853981633974482, 0.7853981633974482]
+        f64 [1.5707963267948966, 0.0, -1.5707963267948966, -0.7853981633974482, 0.7853981633974482]
       >
   """
   @doc type: :float_wise
@@ -3378,7 +3378,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.acos(s)
       #Explorer.Series<
         Polars[5]
-        float[64] [0.0, 1.5707963267948966, 3.141592653589793, 2.356194490192345, 0.7853981633974484]
+        f64 [0.0, 1.5707963267948966, 3.141592653589793, 2.356194490192345, 0.7853981633974484]
       >
   """
   @doc type: :float_wise
@@ -3404,7 +3404,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.atan(s)
       #Explorer.Series<
         Polars[5]
-        float[64] [0.7853981633974483, 0.0, -0.7853981633974483, -0.6154797086703873, 0.6154797086703873]
+        f64 [0.7853981633974483, 0.0, -0.7853981633974483, -0.6154797086703873, 0.6154797086703873]
       >
   """
   @doc type: :float_wise
@@ -4162,8 +4162,8 @@ defmodule Explorer.Series do
       iex> Explorer.Series.cut(s, [1.5, 2.5])
       #Explorer.DataFrame<
         Polars[3 x 3]
-        values float[64] [1.0, 2.0, 3.0]
-        break_point float[64] [1.5, 2.5, Inf]
+        values f64 [1.0, 2.0, 3.0]
+        break_point f64 [1.5, 2.5, Inf]
         category category ["(-inf, 1.5]", "(1.5, 2.5]", "(2.5, inf]"]
       >
   """
@@ -4201,8 +4201,8 @@ defmodule Explorer.Series do
       iex> Explorer.Series.qcut(s, [0.25, 0.75])
       #Explorer.DataFrame<
         Polars[5 x 3]
-        values float[64] [1.0, 2.0, 3.0, 4.0, 5.0]
-        break_point float[64] [2.0, 2.0, 4.0, 4.0, Inf]
+        values f64 [1.0, 2.0, 3.0, 4.0, 5.0]
+        break_point f64 [2.0, 2.0, 4.0, 4.0, Inf]
         category category ["(-inf, 2]", "(-inf, 2]", "(2, 4]", "(2, 4]", "(4, inf]"]
       >
   """
@@ -4275,7 +4275,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_sum(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         Polars[10]
-        float[64] [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
+        f64 [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
       >
   """
   @doc type: :window
@@ -4301,21 +4301,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_mean(s, 4)
       #Explorer.Series<
         Polars[10]
-        float[64] [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
+        f64 [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_mean(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[10]
-        float[64] [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
+        f64 [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_mean(s, 2, weights: [0.25, 0.75], min_periods: nil)
       #Explorer.Series<
         Polars[10]
-        float[64] [nil, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
+        f64 [nil, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
       >
   """
   @doc type: :window
@@ -4341,21 +4341,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_median(s, 4)
       #Explorer.Series<
         Polars[10]
-        float[64] [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
+        f64 [1.0, 1.5, 2.0, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_median(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[10]
-        float[64] [1.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+        f64 [1.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.window_median(s, 2, weights: [0.25, 0.75], min_periods: nil)
       #Explorer.Series<
         Polars[10]
-        float[64] [nil, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
+        f64 [nil, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5]
       >
   """
   @doc type: :window
@@ -4388,7 +4388,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_min(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         Polars[10]
-        float[64] [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+        f64 [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
       >
   """
   @doc type: :window
@@ -4421,7 +4421,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_max(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         Polars[10]
-        float[64] [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
+        f64 [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
       >
   """
   @doc type: :window
@@ -4447,14 +4447,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_standard_deviation(s, 2)
       #Explorer.Series<
         Polars[5]
-        float[64] [0.0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 2.1213203435596424]
+        f64 [0.0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 2.1213203435596424]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5, 6])
       iex> Explorer.Series.window_standard_deviation(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[6]
-        float[64] [0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193]
+        f64 [0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193]
       >
   """
   @doc type: :window
@@ -4489,14 +4489,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.ewm_mean(s)
       #Explorer.Series<
         Polars[5]
-        float[64] [1.0, 1.6666666666666667, 2.4285714285714284, 3.2666666666666666, 4.161290322580645]
+        f64 [1.0, 1.6666666666666667, 2.4285714285714284, 3.2666666666666666, 4.161290322580645]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.ewm_mean(s, alpha: 0.1)
       #Explorer.Series<
         Polars[5]
-        float[64] [1.0, 1.5263157894736843, 2.070110701107011, 2.6312881651642916, 3.2097140484969833]
+        f64 [1.0, 1.5263157894736843, 2.070110701107011, 2.6312881651642916, 3.2097140484969833]
       >
   """
   @doc type: :window
@@ -4591,21 +4591,21 @@ defmodule Explorer.Series do
       iex> Explorer.Series.fill_missing(s, :nan)
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, 2.0, NaN, 4.0]
+        f64 [1.0, 2.0, NaN, 4.0]
       >
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
       iex> Explorer.Series.fill_missing(s, :infinity)
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, 2.0, Inf, 4.0]
+        f64 [1.0, 2.0, Inf, 4.0]
       >
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, 4.0])
       iex> Explorer.Series.fill_missing(s, :neg_infinity)
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, 2.0, -Inf, 4.0]
+        f64 [1.0, 2.0, -Inf, 4.0]
       >
 
   """
@@ -4698,14 +4698,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.abs(s)
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, 2.0, 1.0, 3.0]
+        f64 [1.0, 2.0, 1.0, 3.0]
       >
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, nil, -3.0])
       iex> Explorer.Series.abs(s)
       #Explorer.Series<
         Polars[4]
-        float[64] [1.0, 2.0, nil, 3.0]
+        f64 [1.0, 2.0, nil, 3.0]
       >
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
@@ -5043,7 +5043,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.round(s, 2)
       #Explorer.Series<
         Polars[3]
-        float[64] [1.12, 2.56, 4.0]
+        f64 [1.12, 2.56, 4.0]
       >
   """
   @doc type: :float_wise
@@ -5066,7 +5066,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.floor(s)
       #Explorer.Series<
         Polars[3]
-        float[64] [1.0, 2.0, 3.0]
+        f64 [1.0, 2.0, 3.0]
       >
   """
   @doc type: :float_wise
@@ -5085,7 +5085,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.ceil(s)
       #Explorer.Series<
         Polars[3]
-        float[64] [2.0, 3.0, 4.0]
+        f64 [2.0, 3.0, 4.0]
       >
   """
   @doc type: :float_wise

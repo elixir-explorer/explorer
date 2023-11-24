@@ -76,7 +76,7 @@ defmodule Explorer.DataFrame.LazyTest do
   gas_fuel integer [74, 7, 14565, 0, 374]
   cement integer [5, 177, 2598, 0, 204]
   gas_flaring integer [0, 0, 2623, 0, 3697]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37]
   bunker_fuels integer [9, 7, 663, 0, 321]
 >)
   end
@@ -113,7 +113,7 @@ defmodule Explorer.DataFrame.LazyTest do
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float[64] [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >)
   end

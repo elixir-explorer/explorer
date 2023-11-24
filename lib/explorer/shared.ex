@@ -378,7 +378,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:duration, :microsecond}), do: "duration[μs]"
   def dtype_to_string({:duration, :nanosecond}), do: "duration[ns]"
   def dtype_to_string({:list, dtype}), do: "list[" <> dtype_to_string(dtype) <> "]"
-  def dtype_to_string({:f, size}), do: "float[" <> Integer.to_string(size) <> "]"
+  def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
 
   @threshold 0.77
