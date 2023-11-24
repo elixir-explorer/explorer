@@ -512,17 +512,17 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def variance(%Series{} = s, ddof \\ 1) do
     args = [series_or_lazy_series!(s), ddof]
-    data = new(:variance, args, :float, true)
+    data = new(:variance, args, {:f, 64}, true)
 
-    Backend.Series.new(data, :float)
+    Backend.Series.new(data, {:f, 64})
   end
 
   @impl true
   def standard_deviation(%Series{} = s, ddof \\ 1) do
     args = [series_or_lazy_series!(s), ddof]
-    data = new(:standard_deviation, args, :float, true)
+    data = new(:standard_deviation, args, {:f, 64}, true)
 
-    Backend.Series.new(data, :float)
+    Backend.Series.new(data, {:f, 64})
   end
 
   @impl true

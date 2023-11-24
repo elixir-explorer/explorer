@@ -44,7 +44,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_list([1.0, nil, 2.5, 3.1])
       #Explorer.Series<
         Polars[4]
-        float [1.0, nil, 2.5, 3.1]
+        float[64] [1.0, nil, 2.5, 3.1]
       >
 
   Any of the dtypes above are supported, such as strings:
@@ -911,7 +911,8 @@ defmodule Explorer.Series do
   ## Supported dtypes
 
     * `:integer`
-    * `:float`
+    * `{:f, 32}`
+    * `{:f, 64}`
 
   Clipping other dtypes are possible using `select/3`.
 
