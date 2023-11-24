@@ -31,18 +31,22 @@ defmodule Explorer.Shared do
   end
 
   @doc """
-  Validates a given dtype.
+  Normalise a given dtype and return nil if is invalid.
   """
-  def valid_dtype?({:list, inner}), do: valid_dtype?(inner)
-  def valid_dtype?(dtype) when dtype in @non_list_types, do: true
-  def valid_dtype?(_dtype), do: false
+  def normalise_dtype({:list, inner}) do
+    if maybe_dtype = normalise_dtype(inner), do: {:list, maybe_dtype}
+  end
+
+  def normalise_dtype(dtype) when dtype in @non_list_types, do: dtype
+  def normalise_dtype(:float), do: {:f, 64}
+  def normalise_dtype(_dtype), do: nil
 
   @doc """
-  Validates a given dtype, raises if invalid.
+  Normalise a given dtype, but raise error in case it's invalid.
   """
-  def validate_dtype!(dtype) do
-    if valid_dtype?(dtype) do
-      dtype
+  def normalise_dtype!(dtype) do
+    if maybe_dtype = normalise_dtype(dtype) do
+      maybe_dtype
     else
       raise ArgumentError,
             "unsupported dtype #{inspect(dtype)}, expected one of #{inspect(dtypes())}"

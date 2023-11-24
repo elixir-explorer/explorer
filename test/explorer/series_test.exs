@@ -147,6 +147,13 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == {:f, 32}
     end
 
+    test "integers as {:f, 64}" do
+      s = Series.from_list([1, 2, 3, 4], dtype: :float)
+      assert s[0] == 1.0
+      assert Series.to_list(s) === [1.0, 2.0, 3.0, 4.0]
+      assert Series.dtype(s) == {:f, 64}
+    end
+
     test "mixing integers with an invalid atom" do
       assert_raise ArgumentError, "unsupported datatype: :error", fn ->
         Series.from_list([1, 2, :error, 4])

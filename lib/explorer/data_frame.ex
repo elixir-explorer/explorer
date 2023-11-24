@@ -354,8 +354,8 @@ defmodule Explorer.DataFrame do
   end
 
   defp check_dtype!(key, value) do
-    if Shared.valid_dtype?(value) do
-      value
+    if dtype = Shared.normalise_dtype(value) do
+      dtype
     else
       raise ArgumentError,
             "invalid dtype #{inspect(value)} for #{inspect(key)} (expected one of #{inspect(Shared.dtypes())})"

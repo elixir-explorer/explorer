@@ -316,20 +316,19 @@ defmodule Explorer.Series do
     opts = Keyword.validate!(opts, [:dtype, :backend])
     backend = backend_from_options!(opts)
 
-    type = Shared.dtype_from_list!(list, opts[:dtype])
+    normalised_dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
+
+    type = Shared.dtype_from_list!(list, normalised_dtype)
     {list, type} = Shared.cast_numerics(list, type)
 
     series = backend.from_list(list, type)
 
-    case check_optional_dtype!(opts[:dtype]) do
+    case normalised_dtype do
       nil -> series
       ^type -> series
       other -> cast(series, other)
     end
   end
-
-  defp check_optional_dtype!(nil), do: nil
-  defp check_optional_dtype!(dtype), do: Shared.validate_dtype!(dtype)
 
   defp from_same_value(%{data: %backend{}}, value) do
     backend.from_list([value], Shared.dtype_from_list!([value], nil))
@@ -403,8 +402,9 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_binary(
           binary,
-          {:f, 64}
+          :float
           | {:f, 32}
+          | {:f, 64}
           | :integer
           | :boolean
           | :date
@@ -416,7 +416,7 @@ defmodule Explorer.Series do
           Series.t()
   def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
     opts = Keyword.validate!(opts, [:backend])
-    {_type, alignment} = dtype |> Shared.validate_dtype!() |> Shared.dtype_to_iotype!()
+    {_type, alignment} = dtype |> Shared.normalise_dtype!() |> Shared.dtype_to_iotype!()
 
     if rem(bit_size(binary), alignment) != 0 do
       raise ArgumentError, "binary for dtype #{dtype} is expected to be #{alignment}-bit aligned"
@@ -845,8 +845,8 @@ defmodule Explorer.Series do
   def cast(%Series{dtype: dtype} = series, dtype), do: series
 
   def cast(series, dtype) do
-    if Shared.valid_dtype?(dtype) do
-      apply_series(series, :cast, [dtype])
+    if normalised = Shared.normalise_dtype(dtype) do
+      apply_series(series, :cast, [normalised])
     else
       dtype_error("cast/2", dtype, Shared.dtypes())
     end
