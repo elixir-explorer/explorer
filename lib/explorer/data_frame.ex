@@ -5170,11 +5170,11 @@ defmodule Explorer.DataFrame do
   @doc """
   Summarise each group to a single row using `Explorer.Query`.
 
-  To summarise, you must perform aggregation, defined in `Explorer.Series`,
-  on the desired columns. The query is compiled and runs efficiently
-  against the dataframe. This function performs aggregations based on groups,
-  and the query must contain at least one aggregation.
-  It implicitly ungroups the resultant dataframe.
+  To summarise, you must either perform an aggregation (defined in `Explorer.Series`)
+  on the desired columns, or select plain columns to retrieve all elements of a group.
+
+  The query is compiled and runs efficiently against the dataframe. This function
+  performs aggregations based on groups and it implicitly ungroups the resultant dataframe.
 
   > #### Notice {: .notice}
   >
@@ -5184,6 +5184,15 @@ defmodule Explorer.DataFrame do
   `Explorer.Query`.
 
   ## Examples
+
+      iex> df = Explorer.DataFrame.new(letters: ~w(a b c d e), is_vowel: [true, false, false, false, true])
+      iex> grouped_df = Explorer.DataFrame.group_by(df, :is_vowel)
+      iex> Explorer.DataFrame.summarise(grouped_df, letters: letters)
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        is_vowel boolean [true, false]
+        letters list[string] [["a", "e"], ["b", "c", "d"]]
+      >
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> grouped_df = Explorer.DataFrame.group_by(df, "year")
@@ -5274,9 +5283,12 @@ defmodule Explorer.DataFrame do
           %Series{data: %LazySeries{aggregation: true}} ->
             value
 
+          %Series{data: %LazySeries{op: :column}} ->
+            value
+
           %Series{data: %LazySeries{}} = series ->
-            raise "expecting summarise with an aggregation operation, " <>
-                    "but no aggregation was found in: #{inspect(series)}"
+            raise "expecting summarise with an aggregation operation or plain column, " <>
+                    "but none of which were found in: #{inspect(series)}"
 
           other ->
             raise "expecting a lazy series, got: #{inspect(other)}"
