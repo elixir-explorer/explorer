@@ -91,13 +91,13 @@ pub fn schema_from_dtypes_pairs(
 pub fn df_to_csv(
     data: ExDataFrame,
     filename: &str,
-    has_headers: bool,
+    include_headers: bool,
     delimiter: u8,
 ) -> Result<(), ExplorerError> {
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
     CsvWriter::new(&mut buf_writer)
-        .has_header(has_headers)
+        .include_header(include_headers)
         .with_separator(delimiter)
         .finish(&mut data.clone())?;
     Ok(())
@@ -108,13 +108,13 @@ pub fn df_to_csv(
 pub fn df_to_csv_cloud(
     data: ExDataFrame,
     ex_entry: ExS3Entry,
-    has_headers: bool,
+    include_headers: bool,
     delimiter: u8,
 ) -> Result<(), ExplorerError> {
     let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
 
     CsvWriter::new(&mut cloud_writer)
-        .has_header(has_headers)
+        .include_header(include_headers)
         .with_separator(delimiter)
         .finish(&mut data.clone())?;
     Ok(())
@@ -124,13 +124,13 @@ pub fn df_to_csv_cloud(
 pub fn df_dump_csv(
     env: Env,
     data: ExDataFrame,
-    has_headers: bool,
+    include_headers: bool,
     delimiter: u8,
 ) -> Result<Binary, ExplorerError> {
     let mut buf = vec![];
 
     CsvWriter::new(&mut buf)
-        .has_header(has_headers)
+        .include_header(include_headers)
         .with_separator(delimiter)
         .finish(&mut data.clone())?;
 

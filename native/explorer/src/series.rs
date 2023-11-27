@@ -6,9 +6,9 @@ use crate::{
 
 use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
-use polars::functions::{cov, pearson_corr};
 use polars::prelude::*;
-use polars_ops::prelude::{cut, is_in, peaks::peak_max, peaks::peak_min, qcut};
+use polars_ops::chunked_array::cov::{cov, pearson_corr};
+use polars_ops::prelude::peaks::*;
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
@@ -404,7 +404,7 @@ pub fn s_cut(
     let cut_series = cut(&series, bins, labels, left_close, true)?;
     let mut cut_df = DataFrame::from(cut_series.struct_()?.clone());
 
-    let cut_df = cut_df.insert_at_idx(0, series)?;
+    let cut_df = cut_df.insert_column(0, series)?;
 
     cut_df.set_column_names(&[
         "values",
@@ -438,7 +438,7 @@ pub fn s_qcut(
     )?;
 
     let mut qcut_df = DataFrame::from(qcut_series.struct_()?.clone());
-    let qcut_df = qcut_df.insert_at_idx(0, series)?;
+    let qcut_df = qcut_df.insert_column(0, series)?;
 
     qcut_df.set_column_names(&[
         "values",
@@ -501,7 +501,7 @@ pub fn s_is_nan(series: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_at_every(series: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(series.take_every(n)))
+    Ok(ExSeries::new(series.gather_every(n)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -511,9 +511,9 @@ pub fn s_series_equal(
     null_equal: bool,
 ) -> Result<bool, ExplorerError> {
     let result = if null_equal {
-        series.series_equal_missing(&other)
+        series.equals_missing(&other)
     } else {
-        series.series_equal(&other)
+        series.equals(&other)
     };
 
     Ok(result)
@@ -1007,7 +1007,9 @@ pub fn s_correlation(
 pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
-    let cov = cov(s1.f64()?, s2.f64()?);
+    // TODO: make ddof a parameter.
+    let ddof: u8 = 1;
+    let cov = cov(s1.f64()?, s2.f64()?, ddof);
     Ok(term_from_optional_float(cov, env))
 }
 
@@ -1025,25 +1027,25 @@ pub fn s_at(env: Env, series: ExSeries, idx: usize) -> Result<Term, ExplorerErro
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_sum(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    let new_series = polars_ops::prelude::cumsum(&series, reverse)?;
+    let new_series = polars_ops::prelude::cum_sum(&series, reverse)?;
     Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_max(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    let new_series = polars_ops::prelude::cummax(&series, reverse)?;
+    let new_series = polars_ops::prelude::cum_max(&series, reverse)?;
     Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_min(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    let new_series = polars_ops::prelude::cummin(&series, reverse)?;
+    let new_series = polars_ops::prelude::cum_min(&series, reverse)?;
     Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_product(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    let new_series = polars_ops::prelude::cumprod(&series, reverse)?;
+    let new_series = polars_ops::prelude::cum_prod(&series, reverse)?;
     Ok(ExSeries::new(new_series))
 }
 
@@ -1248,7 +1250,7 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
             } else {
                 let values: Vec<Option<&str>> = utf8s.into();
                 let array = Utf8Array::<i64>::from(values);
-                let mapping = RevMapping::Local(array);
+                let mapping = RevMapping::build_local(array);
 
                 let chunks = if s.dtype() == &DataType::Utf8 {
                     let ids: ChunkedArray<UInt32Type> = s
@@ -1514,7 +1516,7 @@ pub fn s_ceil(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_abs(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s.abs()?.into_series()))
+    Ok(ExSeries::new(abs(&s)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

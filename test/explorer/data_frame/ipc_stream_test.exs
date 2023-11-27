@@ -94,15 +94,23 @@ defmodule Explorer.DataFrame.IPCStreamTest do
     end
 
     test "date" do
-      assert_ipc_stream(:date, "19327", ~D[2022-12-01])
-      assert_ipc_stream(:date, "-3623", ~D[1960-01-31])
+      assert_ipc_stream(:date, "2022-12-01", ~D[2022-12-01])
+      assert_ipc_stream(:date, "1960-01-31", ~D[1960-01-31])
+
+      assert_ipc_stream(:date, 0, ~D[1970-01-01])
     end
 
     test "datetime" do
       assert_ipc_stream(
         {:datetime, :microsecond},
-        "1664624050123456",
+        ~N[2022-10-01 11:34:10.123456],
         ~N[2022-10-01 11:34:10.123456]
+      )
+
+      assert_ipc_stream(
+        {:datetime, :microsecond},
+        0,
+        ~N[1970-01-01 00:00:00.000000]
       )
     end
 

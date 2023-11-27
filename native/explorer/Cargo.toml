@@ -28,7 +28,7 @@ tokio-util = { version = "0.7", default-features = false, features = [
   "io",
   "io-util",
 ], optional = true }
-object_store = { version = "0.7", default-features = false, optional = true }
+object_store = { version = "0.8", default-features = false, optional = true }
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
@@ -36,7 +36,8 @@ object_store = { version = "0.7", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.34"
+# version = "0.35"
+git = "https://github.com/pola-rs/polars.git"
 default-features = false
 features = [
   "abs",
@@ -46,6 +47,7 @@ features = [
   "cum_agg",
   "cutqcut",
   "csv",
+  "cov",
   "decompress-fast",
   "describe",
   "dtype-date",
@@ -81,11 +83,9 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.34"
-features = ["ewma", "cum_agg"]
-
-[dependencies.polars-algo]
-version = "0.34"
+# version = "0.35"
+git = "https://github.com/pola-rs/polars.git"
+features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]

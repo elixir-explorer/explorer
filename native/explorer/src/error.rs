@@ -29,8 +29,6 @@ pub enum ExplorerError {
     #[error(transparent)]
     TryFromInt(#[from] std::num::TryFromIntError),
     #[error(transparent)]
-    Parquet(#[from] polars::export::arrow::io::parquet::read::ParquetError),
-    #[error(transparent)]
     Unknown(#[from] anyhow::Error),
 }
 
