@@ -38,7 +38,8 @@ defmodule Explorer.Shared do
   end
 
   def normalise_dtype(dtype) when dtype in @non_list_types, do: dtype
-  def normalise_dtype(:float), do: {:f, 64}
+  def normalise_dtype(dtype) when dtype in [:float, :f64], do: {:f, 64}
+  def normalise_dtype(:f32), do: {:f, 32}
   def normalise_dtype(_dtype), do: nil
 
   @doc """

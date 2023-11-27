@@ -11,6 +11,7 @@ defmodule Explorer.Series do
     * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
     * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
     * `{:f, size}` - a 64-bit or 32-bit floating point number. The atom `:float` can be used as an alias for `{:f, 64}`.
+      The atoms `:f32` and `:f64` can be used as shortcuts for `{:f, 32}` and `{:f, 64}` respectively.
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
@@ -262,6 +263,18 @@ defmodule Explorer.Series do
       #Explorer.Series<
         Polars[2]
         string ["1", nil]
+      >
+
+      iex> Explorer.Series.from_list([1, 2], dtype: :f32)
+      #Explorer.Series<
+        Polars[2]
+        f32 [1.0, 2.0]
+      >
+
+      iex> Explorer.Series.from_list([1, nil, 2], dtype: :float)
+      #Explorer.Series<
+        Polars[3]
+        f64 [1.0, nil, 2.0]
       >
 
   The `dtype` option is particulary important if a `:binary` series is desired, because
