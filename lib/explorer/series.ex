@@ -2471,7 +2471,7 @@ defmodule Explorer.Series do
       iex> s1 = Series.from_list([1, 8, 3])
       iex> s2 = Series.from_list([4, 5, 2])
       iex> Series.correlation(s1, s2)
-      0.5447047794019223
+      0.5447047794019221
   """
   @doc type: :aggregation
   @spec correlation(

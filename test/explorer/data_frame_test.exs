@@ -1048,19 +1048,19 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.mutate(df, c: covariance(a, b), d: correlation(a, b))
 
       assert df1 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
-               %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
+               %{a: [1], b: [4], c: [3.0], d: [0.5447047794019221]}
 
       df2 =
         DF.new(a: [1, 8, 3, nil], b: [4, 5, 2, nil])
         |> DF.mutate(c: covariance(a, b), d: correlation(a, b))
 
       assert df2 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
-               %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
+               %{a: [1], b: [4], c: [3.0], d: [0.5447047794019221]}
 
       df3 = DF.new(a: [1], b: [4]) |> DF.mutate(c: covariance(a, a), d: correlation(a, a))
 
       assert df3 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
-               %{a: [1], b: [4], c: [:nan], d: [nil]}
+               %{a: [1], b: [4], c: [:nan], d: [:nan]}
     end
 
     test "clip/3" do
@@ -1791,8 +1791,9 @@ defmodule Explorer.DataFrameTest do
       df3 = DF.new(a: [true, false, nil]) |> DF.mutate(x: select(a, false, a))
       assert Series.to_list(df3[:x]) == [false, false, nil]
 
+      # It keeps `nils`
       df4 = DF.new(a: [true, false, nil]) |> DF.mutate(x: select(not a, a, true))
-      assert Series.to_list(df4[:x]) == [true, false, true]
+      assert Series.to_list(df4[:x]) == [true, false, nil]
 
       df5 = DF.new(a: ["a", "b", "c"]) |> DF.mutate(x: select(a == "a", "x", a))
       assert Series.to_list(df5[:x]) == ["x", "b", "c"]

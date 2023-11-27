@@ -194,14 +194,22 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
 
     test "date" do
-      assert_parquet(:date, "19327", ~D[2022-12-01])
-      assert_parquet(:date, "-3623", ~D[1960-01-31])
+      assert_parquet(:date, 19327, ~D[2022-12-01])
+      assert_parquet(:date, -3623, ~D[1960-01-31])
+
+      assert_parquet(:date, ~D[2022-12-01], ~D[2022-12-01])
     end
 
     test "datetime" do
       assert_parquet(
         {:datetime, :microsecond},
-        "1664624050123456",
+        1_664_624_050_123_456,
+        ~N[2022-10-01 11:34:10.123456]
+      )
+
+      assert_parquet(
+        {:datetime, :microsecond},
+        ~N[2022-10-01 11:34:10.123456],
         ~N[2022-10-01 11:34:10.123456]
       )
     end

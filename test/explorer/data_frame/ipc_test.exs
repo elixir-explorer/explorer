@@ -94,12 +94,21 @@ defmodule Explorer.DataFrame.IPCTest do
     end
 
     test "date" do
-      assert_ipc(:date, "19327", ~D[2022-12-01])
-      assert_ipc(:date, "-3623", ~D[1960-01-31])
+      assert_ipc(:date, 19327, ~D[2022-12-01])
+      assert_ipc(:date, 0, ~D[1970-01-01])
+      assert_ipc(:date, -3623, ~D[1960-01-31])
+
+      assert_ipc(:date, ~D[2022-12-01], ~D[2022-12-01])
     end
 
     test "datetime" do
-      assert_ipc({:datetime, :microsecond}, "1664624050123456", ~N[2022-10-01 11:34:10.123456])
+      assert_ipc({:datetime, :microsecond}, 1_664_624_050_123_456, ~N[2022-10-01 11:34:10.123456])
+
+      assert_ipc(
+        {:datetime, :microsecond},
+        ~N[2022-10-01 11:34:10.123456],
+        ~N[2022-10-01 11:34:10.123456]
+      )
     end
 
     test "list of integer" do

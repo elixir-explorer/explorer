@@ -5,10 +5,9 @@
 // wrapped in an Elixir struct.
 
 use chrono::{NaiveDate, NaiveDateTime};
-use polars::prelude::{
-    col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
-};
-use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
+use polars::lazy::dsl::{col, concat_str, cov, pearson_corr, when, Expr, StrptimeOptions};
+use polars::prelude::{DataType, Literal, TimeUnit};
+use polars::prelude::{IntoLazy, LiteralValue, SortOptions};
 
 use crate::atoms::{microsecond, millisecond, nanosecond};
 use crate::datatypes::{ExDate, ExDateTime, ExDuration, ExSeriesDtype};
@@ -238,7 +237,7 @@ pub fn expr_slice(expr: ExExpr, offset: i64, length: u32) -> ExExpr {
 pub fn expr_slice_by_indices(expr: ExExpr, indices_expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.take(indices_expr.clone_inner()))
+    ExExpr::new(expr.gather(indices_expr.clone_inner()))
 }
 
 #[rustler::nif]
@@ -259,7 +258,7 @@ pub fn expr_tail(expr: ExExpr, length: usize) -> ExExpr {
 pub fn expr_shift(expr: ExExpr, offset: i64, _default: Option<ExExpr>) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.shift(offset))
+    ExExpr::new(expr.shift(offset.into()))
 }
 
 #[rustler::nif]
@@ -527,7 +526,9 @@ pub fn expr_correlation(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
 pub fn expr_covariance(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
-    ExExpr::new(cov(left_expr, right_expr))
+    // TODO: make this a parameter.
+    let ddof: u8 = 1;
+    ExExpr::new(cov(left_expr, right_expr, ddof))
 }
 
 #[rustler::nif]
@@ -655,25 +656,25 @@ pub fn expr_window_standard_deviation(
 #[rustler::nif]
 pub fn expr_cumulative_min(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
-    ExExpr::new(expr.cummin(reverse))
+    ExExpr::new(expr.cum_min(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_max(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
-    ExExpr::new(expr.cummax(reverse))
+    ExExpr::new(expr.cum_max(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
-    ExExpr::new(expr.cumsum(reverse))
+    ExExpr::new(expr.cum_sum(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_product(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
-    ExExpr::new(expr.cumprod(reverse))
+    ExExpr::new(expr.cum_prod(reverse))
 }
 
 #[rustler::nif]

@@ -3050,7 +3050,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.argsort(s1, direction: :desc, nils: :first)
 
-      assert Series.to_list(result) == [0, 3, 1, 2]
+      assert Series.to_list(result) == [2, 0, 3, 1]
     end
 
     test "indices of sorting a float series in ascending order" do
@@ -3066,7 +3066,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.argsort(s1, direction: :desc)
 
-      assert Series.to_list(result) == [2, 4, 0, 6, 1, 5, 3]
+      assert Series.to_list(result) == [3, 2, 4, 0, 6, 1, 5]
     end
 
     test "sort a series in descending order, but with nils last" do
@@ -4048,12 +4048,12 @@ defmodule Explorer.SeriesTest do
     test "impossible correlation and covariance" do
       s1 = Series.from_list([], dtype: {:f, 64})
       s2 = Series.from_list([], dtype: {:f, 64})
-      assert Series.correlation(s1, s2) == nil
-      assert Series.covariance(s1, s2) == nil
+      assert Series.correlation(s1, s2) == :nan
+      assert Series.covariance(s1, s2) == -0.0
 
       s1 = Series.from_list([1.0])
       s2 = Series.from_list([2.0])
-      assert Series.correlation(s1, s2) == nil
+      assert Series.correlation(s1, s2) == :nan
       assert Series.covariance(s1, s2) == :nan
 
       s1 = Series.from_list([1.0, 2.0])
