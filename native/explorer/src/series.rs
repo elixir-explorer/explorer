@@ -1250,8 +1250,7 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
             } else {
                 let values: Vec<Option<&str>> = utf8s.into();
                 let array = Utf8Array::<i64>::from(values);
-                // TODO: make sure the categories hash can be a constant.
-                let mapping = RevMapping::Local(array, 100);
+                let mapping = RevMapping::build_local(array);
 
                 let chunks = if s.dtype() == &DataType::Utf8 {
                     let ids: ChunkedArray<UInt32Type> = s
