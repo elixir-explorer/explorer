@@ -3564,6 +3564,21 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "allows returning the group as a list" do
+      df =
+        DF.new(
+          letters: ~w(a b c d e f g h i j),
+          is_vowel: [true, false, false, false, true, false, false, false, true, false]
+        )
+        |> DF.group_by(:is_vowel)
+        |> DF.summarise(letters: letters)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               is_vowel: [true, false],
+               letters: [["a", "e", "i"], ["b", "c", "d", "f", "g", "h", "j"]]
+             }
+    end
+
     test "mode/1" do
       df =
         Datasets.iris()

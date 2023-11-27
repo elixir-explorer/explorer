@@ -380,7 +380,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
     test "with one group but no aggregation", %{df: df} do
       message = """
-      expecting summarise with an aggregation operation, but no aggregation was found in: #Explorer.Series<
+      expecting summarise with an aggregation operation or plain column, but none of which were found in: #Explorer.Series<
         LazySeries[???]
         integer (column("solid_fuel") + 50)
       >\
