@@ -135,7 +135,9 @@ defmodule Explorer.Backend.LazySeries do
     minute: 1,
     second: 1,
     # List functions
-    join: 2
+    join: 2,
+    length: 1,
+    member: 2
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -988,6 +990,20 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:join, [lazy_series!(series), separator], {:list, :string})
 
     Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def length(series) do
+    data = new(:length, [lazy_series!(series)], :integer)
+
+    Backend.Series.new(data, :integer)
+  end
+
+  @impl true
+  def member?(series, value) do
+    data = new(:member, [lazy_series!(series), value], :boolean)
+
+    Backend.Series.new(data, :boolean)
   end
 
   @remaining_non_lazy_operations [
