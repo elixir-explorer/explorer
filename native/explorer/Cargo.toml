@@ -85,9 +85,6 @@ features = [
 version = "0.35"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
-[dependencies.polars-algo]
-version = "0.35"
-
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
 

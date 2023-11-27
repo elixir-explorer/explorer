@@ -424,7 +424,6 @@ dependencies = [
  "mimalloc",
  "object_store",
  "polars",
- "polars-algo",
  "polars-ops",
  "rand",
  "rand_pcg",
@@ -1213,17 +1212,6 @@ dependencies = [
  "polars-sql",
  "polars-time",
  "version_check",
-]
-
-[[package]]
-name = "polars-algo"
-version = "0.35.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6847089ff3e12fab13b7b589c109e38e91529e5cb4baa023765a1fd08fad847"
-dependencies = [
- "polars-core",
- "polars-lazy",
- "polars-ops",
 ]
 
 [[package]]
