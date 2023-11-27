@@ -511,9 +511,9 @@ pub fn s_series_equal(
     null_equal: bool,
 ) -> Result<bool, ExplorerError> {
     let result = if null_equal {
-        series.series_equal_missing(&other)
+        series.equals_missing(&other)
     } else {
-        series.series_equal(&other)
+        series.equals(&other)
     };
 
     Ok(result)
