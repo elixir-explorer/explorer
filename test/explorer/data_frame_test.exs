@@ -1851,18 +1851,30 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "supports list operations" do
-      df = DF.new(a: [~w(a b c), ~w(d e f)], b: [[1, 2, 3], [4, 5, 6]])
+      df =
+        DF.new(
+          a: [~w(a b c), ~w(d e f)],
+          b: [[1, 2, 3], [4, 5, 6]],
+          c: [
+            [~N[2021-01-01 00:00:00], ~N[2021-01-02 00:00:00]],
+            [~N[2021-01-03 00:00:00], ~N[2021-01-04 00:00:00]]
+          ]
+        )
 
       df =
         DF.mutate(df,
           join: join(a, ","),
           length: length(b),
-          member?: member?(a, "a")
+          member?: member?(c, ~N[2021-01-02 00:00:00])
         )
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [~w(a b c), ~w(d e f)],
                b: [[1, 2, 3], [4, 5, 6]],
+               c: [
+                 [~N[2021-01-01 00:00:00.000000], ~N[2021-01-02 00:00:00.000000]],
+                 [~N[2021-01-03 00:00:00.000000], ~N[2021-01-04 00:00:00.000000]]
+               ],
                join: ["a,b,c", "d,e,f"],
                length: [3, 3],
                member?: [true, false]

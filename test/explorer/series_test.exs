@@ -4496,8 +4496,6 @@ defmodule Explorer.SeriesTest do
       assert series |> Series.member?(~T[00:00:01]) |> Series.to_list() == [false, true]
     end
 
-    # This test is not passing. The resulting series is [false, false] instead of [false, true].
-    @tag :skip
     test "works with datetimes" do
       series =
         Series.from_list([
@@ -4513,7 +4511,7 @@ defmodule Explorer.SeriesTest do
 
     test "works with durations" do
       series = Series.from_list([[1], [1, 2]], dtype: {:list, {:duration, :millisecond}})
-      duration = %Explorer.Duration{value: 2, precision: :millisecond}
+      duration = %Explorer.Duration{value: 2000, precision: :microsecond}
 
       assert series |> Series.member?(duration) |> Series.to_list() == [false, true]
     end

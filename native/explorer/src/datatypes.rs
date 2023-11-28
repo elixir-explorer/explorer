@@ -433,6 +433,16 @@ pub enum ExValidValue<'a> {
     Duration(ExDuration),
 }
 
+impl<'a> ExValidValue<'a> {
+    pub fn lit_with_matching_precision(self, data_type: &DataType) -> Expr {
+        match data_type {
+            DataType::Datetime(time_unit, _) => self.lit().dt().cast_time_unit(*time_unit),
+            DataType::Duration(time_unit) => self.lit().dt().cast_time_unit(*time_unit),
+            _ => self.lit(),
+        }
+    }
+}
+
 impl<'a> Literal for &ExValidValue<'a> {
     fn lit(self) -> Expr {
         match self {

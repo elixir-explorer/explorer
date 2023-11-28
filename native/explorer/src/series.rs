@@ -1679,12 +1679,19 @@ pub fn s_length(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-fn s_member(s: ExSeries, value: ExValidValue) -> Result<ExSeries, ExplorerError> {
+fn s_member(
+    s: ExSeries,
+    value: ExValidValue,
+    inner_dtype: ExSeriesDtype,
+) -> Result<ExSeries, ExplorerError> {
+    let inner_dtype = DataType::try_from(&inner_dtype)?;
+    let value_expr = value.lit_with_matching_precision(&inner_dtype);
+
     let s2 = s
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s.name()).list().contains(value.lit())])
+        .select([col(s.name()).list().contains(value_expr)])
         .collect()?
         .column(s.name())?
         .clone();

@@ -658,8 +658,8 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_length)
 
   @impl true
-  def member?(series, value),
-    do: Shared.apply_series(series, :s_member, [value])
+  def member?(%Series{dtype: {:list, inner_dtype}} = series, value),
+    do: Shared.apply_series(series, :s_member, [value, inner_dtype])
 
   # Polars specific functions
 

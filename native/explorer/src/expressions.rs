@@ -971,8 +971,12 @@ pub fn expr_length(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_member(expr: ExExpr, value: ExValidValue) -> ExExpr {
+pub fn expr_member(expr: ExExpr, value: ExValidValue, inner_dtype: ExSeriesDtype) -> ExExpr {
     let expr = expr.clone_inner();
+    let inner_dtype = DataType::try_from(&inner_dtype).unwrap();
 
-    ExExpr::new(expr.list().contains(value.lit()))
+    ExExpr::new(
+        expr.list()
+            .contains(value.lit_with_matching_precision(&inner_dtype)),
+    )
 }
