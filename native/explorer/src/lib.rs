@@ -267,6 +267,10 @@ rustler::init!(
         expr_round,
         expr_floor,
         expr_ceil,
+        // list expressions
+        expr_join,
+        expr_lengths,
+        expr_member,
         // lazyframe
         lf_collect,
         lf_describe_plan,
@@ -446,6 +450,8 @@ rustler::init!(
         s_floor,
         s_ceil,
         s_join,
+        s_lengths,
+        s_member,
     ],
     load = on_load
 );

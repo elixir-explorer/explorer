@@ -4454,11 +4454,79 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "join" do
+  describe "join/2" do
     test "join/2" do
       series = Series.from_list([["1"], ["1", "2"]])
 
       assert series |> Series.join("|") |> Series.to_list() == ["1", "1|2"]
+    end
+  end
+
+  describe "lengths/1" do
+    test "calculates the length of each list in a series" do
+      series = Series.from_list([[1], [1, 2, 3], [1, 2]])
+
+      assert series |> Series.lengths() |> Series.to_list() == [1, 3, 2]
+    end
+  end
+
+  describe "member?/2" do
+    test "checks if any of the element lists contain the given value" do
+      series = Series.from_list([[1], [1, 2, 3], [1, 2]])
+
+      assert series |> Series.member?(1) |> Series.to_list() == [true, true, true]
+      assert series |> Series.member?(2) |> Series.to_list() == [false, true, true]
+      assert series |> Series.member?(3) |> Series.to_list() == [false, true, false]
+    end
+
+    test "works with floats" do
+      series = Series.from_list([[1.0], [1.0, 2.0]])
+
+      assert series |> Series.member?(2.0) |> Series.to_list() == [false, true]
+    end
+
+    test "works with booleans" do
+      series = Series.from_list([[true], [true, false]])
+
+      assert series |> Series.member?(false) |> Series.to_list() == [false, true]
+    end
+
+    test "works with strings" do
+      series = Series.from_list([["a"], ["a", "b"]])
+
+      assert series |> Series.member?("b") |> Series.to_list() == [false, true]
+    end
+
+    test "works with dates" do
+      series = Series.from_list([[~D[2021-01-01]], [~D[2021-01-01], ~D[2021-01-02]]])
+
+      assert series |> Series.member?(~D[2021-01-02]) |> Series.to_list() == [false, true]
+    end
+
+    test "works with times" do
+      series = Series.from_list([[~T[00:00:00]], [~T[00:00:00], ~T[00:00:01]]])
+
+      assert series |> Series.member?(~T[00:00:01]) |> Series.to_list() == [false, true]
+    end
+
+    test "works with datetimes" do
+      series =
+        Series.from_list([
+          [~N[2021-01-01 00:00:00]],
+          [~N[2021-01-01 00:00:00], ~N[2021-01-01 00:00:01]]
+        ])
+
+      assert series |> Series.member?(~N[2021-01-01 00:00:01]) |> Series.to_list() == [
+               false,
+               true
+             ]
+    end
+
+    test "works with durations" do
+      series = Series.from_list([[1], [1, 2]], dtype: {:list, {:duration, :millisecond}})
+      duration = %Explorer.Duration{value: 2000, precision: :microsecond}
+
+      assert series |> Series.member?(duration) |> Series.to_list() == [false, true]
     end
   end
 

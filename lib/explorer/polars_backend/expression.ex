@@ -134,7 +134,9 @@ defmodule Explorer.PolarsBackend.Expression do
     split: 2,
 
     # Lists
-    join: 2
+    join: 2,
+    lengths: 1,
+    member: 3
   ]
 
   @custom_expressions [

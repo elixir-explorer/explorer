@@ -1849,6 +1849,37 @@ defmodule Explorer.DataFrameTest do
       assert Series.to_list(df[:simple_result]) == ["Exceptional", "Passed", "Passed"]
       assert Series.to_list(df[:result]) == [nil, "Failed", nil]
     end
+
+    test "supports list operations" do
+      df =
+        DF.new(
+          a: [~w(a b c), ~w(d e f)],
+          b: [[1, 2, 3], [4, 5, 6]],
+          c: [
+            [~N[2021-01-01 00:00:00], ~N[2021-01-02 00:00:00]],
+            [~N[2021-01-03 00:00:00], ~N[2021-01-04 00:00:00]]
+          ]
+        )
+
+      df =
+        DF.mutate(df,
+          join: join(a, ","),
+          lengths: lengths(b),
+          member?: member?(c, ~N[2021-01-02 00:00:00])
+        )
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [~w(a b c), ~w(d e f)],
+               b: [[1, 2, 3], [4, 5, 6]],
+               c: [
+                 [~N[2021-01-01 00:00:00.000000], ~N[2021-01-02 00:00:00.000000]],
+                 [~N[2021-01-03 00:00:00.000000], ~N[2021-01-04 00:00:00.000000]]
+               ],
+               join: ["a,b,c", "d,e,f"],
+               lengths: [3, 3],
+               member?: [true, false]
+             }
+    end
   end
 
   describe "arrange/3" do

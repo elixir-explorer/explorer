@@ -4,13 +4,12 @@
 // or an expression and returns an expression that is
 // wrapped in an Elixir struct.
 
-use chrono::{NaiveDate, NaiveDateTime};
-use polars::lazy::dsl::{col, concat_str, cov, pearson_corr, when, Expr, StrptimeOptions};
-use polars::prelude::{DataType, Literal, TimeUnit};
-use polars::prelude::{IntoLazy, LiteralValue, SortOptions};
+use polars::prelude::{
+    col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
+};
+use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
-use crate::atoms::{microsecond, millisecond, nanosecond};
-use crate::datatypes::{ExDate, ExDateTime, ExDuration, ExSeriesDtype};
+use crate::datatypes::{ExDate, ExDateTime, ExDuration, ExSeriesDtype, ExValidValue};
 use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 
@@ -54,38 +53,17 @@ pub fn expr_atom(atom: &str) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_date(date: ExDate) -> ExExpr {
-    let naive_date = NaiveDate::from(date);
-    let expr = naive_date.lit().dt().date();
-    ExExpr::new(expr)
+    ExExpr::new(date.lit())
 }
 
 #[rustler::nif]
 pub fn expr_datetime(datetime: ExDateTime) -> ExExpr {
-    let naive_datetime = NaiveDateTime::from(datetime);
-    let expr = naive_datetime.lit();
-    ExExpr::new(expr)
+    ExExpr::new(datetime.lit())
 }
 
 #[rustler::nif]
 pub fn expr_duration(duration: ExDuration) -> ExExpr {
-    // Note: it's tempting to use `.lit()` on a `chrono::Duration` struct in this function, but
-    // doing so will lose precision information as `chrono::Duration`s have no time units.
-    let time_unit = time_unit_of_ex_duration(duration);
-    let expr = Expr::Literal(LiteralValue::Duration(duration.value, time_unit));
-    ExExpr::new(expr)
-}
-
-fn time_unit_of_ex_duration(duration: ExDuration) -> TimeUnit {
-    let precision = duration.precision;
-    if precision == millisecond() {
-        TimeUnit::Milliseconds
-    } else if precision == microsecond() {
-        TimeUnit::Microseconds
-    } else if precision == nanosecond() {
-        TimeUnit::Nanoseconds
-    } else {
-        panic!("unrecognized precision: {precision:?}")
-    }
+    ExExpr::new(duration.lit())
 }
 
 #[rustler::nif]
@@ -976,4 +954,29 @@ pub fn expr_second(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
     ExExpr::new(expr.dt().second().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_join(expr: ExExpr, sep: String) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.list().join(sep.lit()))
+}
+
+#[rustler::nif]
+pub fn expr_lengths(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.list().len().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_member(expr: ExExpr, value: ExValidValue, inner_dtype: ExSeriesDtype) -> ExExpr {
+    let expr = expr.clone_inner();
+    let inner_dtype = DataType::try_from(&inner_dtype).unwrap();
+
+    ExExpr::new(
+        expr.list()
+            .contains(value.lit_with_matching_precision(&inner_dtype)),
+    )
 }

@@ -1,6 +1,8 @@
 use crate::{
     atoms,
-    datatypes::{ExDate, ExDateTime, ExDuration, ExSeriesDtype, ExSeriesIoType, ExTime},
+    datatypes::{
+        ExDate, ExDateTime, ExDuration, ExSeriesDtype, ExSeriesIoType, ExTime, ExValidValue,
+    },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
@@ -1661,6 +1663,38 @@ pub fn s_join(s1: ExSeries, separator: &str) -> Result<ExSeries, ExplorerError> 
         .list()?
         .lst_join(&ChunkedArray::new("a", &[separator]))?
         .into_series();
+
+    Ok(ExSeries::new(s2))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_lengths(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s2 = s
+        .list()?
+        .lst_lengths()
+        .into_series()
+        .cast(&DataType::Int64)?;
+
+    Ok(ExSeries::new(s2))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn s_member(
+    s: ExSeries,
+    value: ExValidValue,
+    inner_dtype: ExSeriesDtype,
+) -> Result<ExSeries, ExplorerError> {
+    let inner_dtype = DataType::try_from(&inner_dtype)?;
+    let value_expr = value.lit_with_matching_precision(&inner_dtype);
+
+    let s2 = s
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s.name()).list().contains(value_expr)])
+        .collect()?
+        .column(s.name())?
+        .clone();
 
     Ok(ExSeries::new(s2))
 }

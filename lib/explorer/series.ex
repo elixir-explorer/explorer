@@ -5431,6 +5431,48 @@ defmodule Explorer.Series do
   def join(%Series{dtype: dtype}, _separator),
     do: dtype_error("join/2", dtype, [{:list, :string}])
 
+  @doc """
+  Calculates the length of each list in a list series.
+
+  ## Examples
+
+      iex> s = Series.from_list([[1], [1, 2]])
+      iex> Series.lengths(s)
+      #Explorer.Series<
+        Polars[2]
+        integer [1, 2]
+      >
+
+  """
+  @doc type: :list_wise
+  @spec lengths(Series.t()) :: Series.t()
+  def lengths(%Series{dtype: {:list, _}} = series),
+    do: apply_series(series, :lengths)
+
+  def lengths(%Series{dtype: dtype}),
+    do: dtype_error("lengths/1", dtype, [{:list, :_}])
+
+  @doc """
+  Checks for the presence of a value in a list series.
+
+  ## Examples
+
+      iex> s = Series.from_list([[1], [1, 2]])
+      iex> Series.member?(s, 2)
+      #Explorer.Series<
+        Polars[2]
+        boolean [false, true]
+      >
+
+  """
+  @doc type: :list_wise
+  @spec member?(Series.t(), Explorer.Backend.Series.valid_types()) :: Series.t()
+  def member?(%Series{dtype: {:list, _}} = series, value),
+    do: apply_series(series, :member?, [value])
+
+  def member?(%Series{dtype: dtype}, _value),
+    do: dtype_error("member?/2", dtype, [{:list, :_}])
+
   # Escape hatch
 
   @doc """

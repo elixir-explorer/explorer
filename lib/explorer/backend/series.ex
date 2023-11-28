@@ -269,6 +269,8 @@ defmodule Explorer.Backend.Series do
 
   # List
   @callback join(s, String.t()) :: s
+  @callback lengths(s) :: s
+  @callback member?(s, valid_types()) :: s
 
   # Functions
 

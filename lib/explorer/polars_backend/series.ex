@@ -653,6 +653,14 @@ defmodule Explorer.PolarsBackend.Series do
   def join(series, separator),
     do: Shared.apply_series(series, :s_join, [separator])
 
+  @impl true
+  def lengths(series),
+    do: Shared.apply_series(series, :s_lengths)
+
+  @impl true
+  def member?(%Series{dtype: {:list, inner_dtype}} = series, value),
+    do: Shared.apply_series(series, :s_member, [value, inner_dtype])
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)
