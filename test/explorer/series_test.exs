@@ -148,10 +148,23 @@ defmodule Explorer.SeriesTest do
     end
 
     test "integers as {:f, 64}" do
-      s = Series.from_list([1, 2, 3, 4], dtype: :float)
-      assert s[0] == 1.0
-      assert Series.to_list(s) === [1.0, 2.0, 3.0, 4.0]
-      assert Series.dtype(s) == {:f, 64}
+      # Shortcuts and the "real" dtype
+      for dtype <- [:float, :f64, {:f, 64}] do
+        s = Series.from_list([1, 2, 3, 4], dtype: dtype)
+        assert s[0] === 1.0
+        assert Series.to_list(s) === [1.0, 2.0, 3.0, 4.0]
+        assert Series.dtype(s) === {:f, 64}
+      end
+    end
+
+    test "integers as {:f, 32}" do
+      # Shortcut and the "real" dtype
+      for dtype <- [:f32, {:f, 32}] do
+        s = Series.from_list([1, 2, 3, 4], dtype: dtype)
+        assert s[0] === 1.0
+        assert Series.to_list(s) === [1.0, 2.0, 3.0, 4.0]
+        assert Series.dtype(s) === {:f, 32}
+      end
     end
 
     test "mixing integers with an invalid atom" do
