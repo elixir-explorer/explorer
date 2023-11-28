@@ -269,7 +269,7 @@ rustler::init!(
         expr_ceil,
         // list expressions
         expr_join,
-        expr_length,
+        expr_lengths,
         expr_member,
         // lazyframe
         lf_collect,
@@ -450,7 +450,7 @@ rustler::init!(
         s_floor,
         s_ceil,
         s_join,
-        s_length,
+        s_lengths,
         s_member,
     ],
     load = on_load

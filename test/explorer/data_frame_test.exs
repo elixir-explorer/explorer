@@ -1864,7 +1864,7 @@ defmodule Explorer.DataFrameTest do
       df =
         DF.mutate(df,
           join: join(a, ","),
-          length: length(b),
+          lengths: lengths(b),
           member?: member?(c, ~N[2021-01-02 00:00:00])
         )
 
@@ -1876,7 +1876,7 @@ defmodule Explorer.DataFrameTest do
                  [~N[2021-01-03 00:00:00.000000], ~N[2021-01-04 00:00:00.000000]]
                ],
                join: ["a,b,c", "d,e,f"],
-               length: [3, 3],
+               lengths: [3, 3],
                member?: [true, false]
              }
     end

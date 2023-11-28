@@ -401,7 +401,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_atan(_s), do: err()
 
   def s_join(_s, _separator), do: err()
-  def s_length(_s), do: err()
+  def s_lengths(_s), do: err()
   def s_member(_s, _value, _inner_dtype), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)

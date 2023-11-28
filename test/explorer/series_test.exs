@@ -4449,11 +4449,11 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "length/1" do
+  describe "lengths/1" do
     test "calculates the length of each list in a series" do
       series = Series.from_list([[1], [1, 2, 3], [1, 2]])
 
-      assert series |> Series.length() |> Series.to_list() == [1, 3, 2]
+      assert series |> Series.lengths() |> Series.to_list() == [1, 3, 2]
     end
   end
 

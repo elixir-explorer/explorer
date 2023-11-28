@@ -57,7 +57,7 @@ defmodule Explorer.Series do
 
   """
 
-  import Kernel, except: [and: 2, not: 1, in: 2, length: 1]
+  import Kernel, except: [and: 2, not: 1, in: 2]
 
   alias __MODULE__, as: Series
   alias Kernel, as: K
@@ -3433,17 +3433,17 @@ defmodule Explorer.Series do
        do: apply_series_list(operation, [left, right | args])
 
   defp basic_numeric_operation(operation, %Series{} = left, %Series{} = right, args),
-    do: dtype_mismatch_error("#{operation}/#{K.length(args) + 2}", left, right)
+    do: dtype_mismatch_error("#{operation}/#{length(args) + 2}", left, right)
 
   defp basic_numeric_operation(operation, _, %Series{dtype: dtype}, args),
-    do: dtype_error("#{operation}/#{K.length(args) + 2}", dtype, @numeric_dtypes)
+    do: dtype_error("#{operation}/#{length(args) + 2}", dtype, @numeric_dtypes)
 
   defp basic_numeric_operation(operation, %Series{dtype: dtype}, _, args),
-    do: dtype_error("#{operation}/#{K.length(args) + 2}", dtype, @numeric_dtypes)
+    do: dtype_error("#{operation}/#{length(args) + 2}", dtype, @numeric_dtypes)
 
   defp basic_numeric_operation(operation, left, right, args)
        when K.and(is_numeric(left), is_numeric(right)),
-       do: no_series_error("#{operation}/#{K.length(args) + 2}", left, right)
+       do: no_series_error("#{operation}/#{length(args) + 2}", left, right)
 
   defp no_series_error(function, left, right) do
     raise ArgumentError,
@@ -5420,7 +5420,7 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = Series.from_list([[1], [1, 2]])
-      iex> Series.length(s)
+      iex> Series.lengths(s)
       #Explorer.Series<
         Polars[2]
         integer [1, 2]
@@ -5428,12 +5428,12 @@ defmodule Explorer.Series do
 
   """
   @doc type: :list_wise
-  @spec length(Series.t()) :: Series.t()
-  def length(%Series{dtype: {:list, _}} = series),
-    do: apply_series(series, :length)
+  @spec lengths(Series.t()) :: Series.t()
+  def lengths(%Series{dtype: {:list, _}} = series),
+    do: apply_series(series, :lengths)
 
-  def length(%Series{dtype: dtype}),
-    do: dtype_error("length/1", dtype, [{:list, :_}])
+  def lengths(%Series{dtype: dtype}),
+    do: dtype_error("lengths/1", dtype, [{:list, :_}])
 
   @doc """
   Checks for the presence of a value in a list series.

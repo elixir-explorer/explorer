@@ -136,7 +136,7 @@ defmodule Explorer.Backend.LazySeries do
     second: 1,
     # List functions
     join: 2,
-    length: 1,
+    lengths: 1,
     member: 3
   ]
 
@@ -993,8 +993,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def length(series) do
-    data = new(:length, [lazy_series!(series)], :integer)
+  def lengths(series) do
+    data = new(:lengths, [lazy_series!(series)], :integer)
 
     Backend.Series.new(data, :integer)
   end

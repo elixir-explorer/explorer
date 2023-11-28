@@ -1668,7 +1668,7 @@ pub fn s_join(s1: ExSeries, separator: &str) -> Result<ExSeries, ExplorerError> 
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_length(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+pub fn s_lengths(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s2 = s
         .list()?
         .lst_lengths()

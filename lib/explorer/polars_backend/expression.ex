@@ -135,7 +135,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
     # Lists
     join: 2,
-    length: 1,
+    lengths: 1,
     member: 3
   ]
 
