@@ -10,13 +10,17 @@ defmodule Explorer.Series do
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
     * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
-    * `{:f, size}` - a 64-bit or 32-bit floating point number. The atom `:float` can be used as an alias for `{:f, 64}`.
-      The atoms `:f32` and `:f64` can be used as shortcuts for `{:f, 32}` and `{:f, 64}` respectively.
+    * `{:f, size}` - a 64-bit or 32-bit floating point number
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
     * `{:list, dtype}` - A recursive dtype that can store lists. Examples: `{:list, :integer}` or
       a nested list dtype like `{:list, {:list, :integer}}`.
+
+  The following data type aliases are also supported:
+
+    * The atom `:float` as an alias for `{:f, 64}` to mirror Elixir's floats
+    * The atoms `:f32` and `:f64` as aliases to `{:f, 32}` and `{:f, 64}` for Nx compabitility
 
   A series must consist of a single data type only. Series may have `nil` values in them.
   The series `dtype` can be retrieved via the `dtype/1` function or directly accessed as
