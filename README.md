@@ -13,7 +13,9 @@ data exploration to Elixir.
 
 Explorer high-level features are:
 
-- Simply typed series: `:binary`, `:boolean`, `:category`, `:date`, `:datetime`, `:duration`, `:float` (`{:f, 32}` or `{:f, 64}`), `:integer`, `:string`, and `:time`.
+- Simply typed series: `:binary`, `:boolean`, `:category`, `:date`, `:datetime`,
+  `:duration`, floats (`:f32` and `:f64`), `:integer`, `:string`, `:time`, and
+  `:list`
 
 - A powerful but constrained and opinionated API, so you spend less time looking
   for the right function and more time doing data manipulation.
