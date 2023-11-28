@@ -3901,6 +3901,7 @@ defmodule Explorer.Series do
        do: {:f, 64}
 
   defp cast_to_ordered_series(:date, %Date{}), do: :date
+  defp cast_to_ordered_series(:time, %Time{}), do: :time
 
   defp cast_to_ordered_series({:datetime, _}, %NaiveDateTime{}),
     do: {:datetime, :microsecond}
@@ -3908,6 +3909,9 @@ defmodule Explorer.Series do
   defp cast_to_ordered_series({:duration, _}, value)
        when is_integer(value),
        do: :integer
+
+  defp cast_to_ordered_series({:duration, _}, %Explorer.Duration{}),
+    do: :duration
 
   defp cast_to_ordered_series(_dtype, _value),
     do: nil
@@ -5470,8 +5474,13 @@ defmodule Explorer.Series do
   """
   @doc type: :list_wise
   @spec member?(Series.t(), Explorer.Backend.Series.valid_types()) :: Series.t()
-  def member?(%Series{dtype: {:list, _}} = series, value),
-    do: apply_series(series, :member?, [value])
+  def member?(%Series{dtype: {:list, dtype}} = series, value) do
+    if cast_to_comparable_series(dtype, value) do
+      apply_series(series, :member?, [value])
+    else
+      dtype_mismatch_error("member?/2", series, value)
+    end
+  end
 
   def member?(%Series{dtype: dtype}, _value),
     do: dtype_error("member?/2", dtype, [{:list, :_}])

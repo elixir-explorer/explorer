@@ -4483,6 +4483,7 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list([[1.0], [1.0, 2.0]])
 
       assert series |> Series.member?(2.0) |> Series.to_list() == [false, true]
+      assert series |> Series.member?(2) |> Series.to_list() == [false, true]
     end
 
     test "works with booleans" do
