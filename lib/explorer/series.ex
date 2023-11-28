@@ -2270,7 +2270,7 @@ defmodule Explorer.Series do
   Gets the variance of the series.
 
   By default, this is the sample variance. This function also takes an optional
-  delta degrees of freedom (ddof). Setting this to zero corresponds to the population 
+  delta degrees of freedom (ddof). Setting this to zero corresponds to the population
   variance.
 
   ## Supported dtypes
@@ -2306,7 +2306,7 @@ defmodule Explorer.Series do
   Gets the standard deviation of the series.
 
   By default, this is the sample standard deviation. This function also takes an optional
-  delta degrees of freedom (ddof). Setting this to zero corresponds to the population 
+  delta degrees of freedom (ddof). Setting this to zero corresponds to the population
   sample standard deviation.
 
   ## Supported dtypes
@@ -3769,9 +3769,12 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Checks if each element of the series in the left exists in the series in the right, returning a boolean mask.
+  Checks if each element of the series in the left exists in the series
+  on the right, returning a boolean mask.
 
   The series sizes do not have to match.
+
+  See `member?/2` if you want to check if a literal belongs to a list.
 
   ## Examples
 
