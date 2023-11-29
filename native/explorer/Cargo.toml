@@ -90,7 +90,7 @@ features = ["abs", "ewma", "cum_agg", "cov"]
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
 
-cloud = ["object_store", "tokio", "tokio-util", "aws"]
+cloud = ["object_store", "tokio", "tokio-util", "aws", "polars/cloud", "polars/cloud_write"]
 ndjson = ["polars/json"]
 aws = ["object_store/aws", "polars/async", "polars/aws"]
 
