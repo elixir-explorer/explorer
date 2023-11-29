@@ -328,6 +328,7 @@ defmodule Explorer.DataFrame.LazyTest do
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
   end
 
+  @tag :cloud_integration
   test "to_parquet/2 - cloud with streaming enabled", %{ldf: ldf} do
     config = %FSS.S3.Config{
       access_key_id: "test",
@@ -339,9 +340,12 @@ defmodule Explorer.DataFrame.LazyTest do
     path = "s3://test-bucket/test-lazy-writes/wine-#{System.monotonic_time()}.parquet"
 
     ldf = DF.head(ldf, 15)
-    assert {:error, error} = DF.to_parquet(ldf, path, streaming: true, config: config)
+    assert :ok = DF.to_parquet(ldf, path, streaming: true, config: config)
 
-    assert error == ArgumentError.exception("streaming is not supported for writes to AWS S3")
+    df = DF.collect(ldf)
+    df1 = DF.from_parquet!(path, config: config)
+
+    assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
   end
 
   @tag :cloud_integration

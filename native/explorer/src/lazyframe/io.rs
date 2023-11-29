@@ -104,6 +104,45 @@ pub fn lf_to_parquet(
     }
 }
 
+#[cfg(feature = "aws")]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_to_parquet_cloud(
+    data: ExLazyFrame,
+    ex_entry: ExS3Entry,
+    ex_compression: ExParquetCompression,
+) -> Result<(), ExplorerError> {
+    let lf = data.clone_inner();
+    let cloud_options = Some(ex_entry.config.to_cloud_options());
+    let compression = ParquetCompression::try_from(ex_compression)?;
+
+    let options = ParquetWriteOptions {
+        compression,
+        statistics: false,
+        row_group_size: None,
+        data_pagesize_limit: None,
+        maintain_order: false,
+    };
+
+    lf.with_comm_subplan_elim(false).sink_parquet_cloud(
+        ex_entry.to_string(),
+        cloud_options,
+        options,
+    )?;
+    Ok(())
+}
+
+#[cfg(not(feature = "aws"))]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_to_parquet_cloud(
+    _data: ExLazyFrame,
+    _ex_entry: ExS3Entry,
+    _ex_compression: ExParquetCompression,
+) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other("Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
+}
+
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn lf_from_ipc(filename: &str) -> Result<ExLazyFrame, ExplorerError> {
     let lf = LazyFrame::scan_ipc(filename, Default::default())?;

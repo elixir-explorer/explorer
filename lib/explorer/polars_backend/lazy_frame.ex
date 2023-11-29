@@ -301,8 +301,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(_df, %S3.Entry{}, _compression, _streaming = true) do
-    {:error, ArgumentError.exception("streaming is not supported for writes to AWS S3")}
+  def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, {compression, level}, _streaming = true) do
+    case Native.lf_to_parquet_cloud(
+           ldf.data,
+           entry,
+           Shared.parquet_compression(compression, level)
+         ) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
   end
 
   @impl true

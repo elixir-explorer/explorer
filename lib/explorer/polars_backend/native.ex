@@ -241,6 +241,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_concat_rows(_dfs), do: err()
   def lf_concat_columns(_df, _others), do: err()
   def lf_to_parquet(_df, _filename, _compression, _streaming), do: err()
+  def lf_to_parquet_cloud(_df, _filename, _compression), do: err()
   def lf_to_ipc(_df, _filename, _compression, _streaming), do: err()
 
   # Series
