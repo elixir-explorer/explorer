@@ -2518,10 +2518,14 @@ defmodule Explorer.Series do
       3.0
   """
   @doc type: :aggregation
-  @spec covariance(left :: Series.t() | number(), right :: Series.t() | number()) ::
+  @spec covariance(
+          left :: Series.t() | number(),
+          right :: Series.t() | number(),
+          ddof :: non_neg_integer()
+        ) ::
           float() | non_finite() | nil
-  def covariance(left, right) do
-    basic_numeric_operation(:covariance, left, right)
+  def covariance(left, right, ddof \\ 1) do
+    basic_numeric_operation(:covariance, left, right, [ddof])
   end
 
   # Cumulative

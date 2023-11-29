@@ -501,11 +501,9 @@ pub fn expr_correlation(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_covariance(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_covariance(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
-    // TODO: make this a parameter.
-    let ddof: u8 = 1;
     ExExpr::new(cov(left_expr, right_expr, ddof))
 }
 

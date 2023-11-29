@@ -4088,7 +4088,7 @@ defmodule Explorer.SeriesTest do
                    fn -> Series.correlation(s1, s2) end
 
       assert_raise ArgumentError,
-                   "cannot invoke Explorer.Series.covariance/2 with mismatched dtypes: {:f, 64} and :string",
+                   "cannot invoke Explorer.Series.covariance/3 with mismatched dtypes: {:f, 64} and :string",
                    fn -> Series.covariance(s1, s2) end
     end
   end
