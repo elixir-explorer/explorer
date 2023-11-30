@@ -11,11 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add the functions `day_of_year/1` and `week_of_year/1` to `Explorer.Series`.
 
-- Add `filter/2` - a macro -, and `filter_with/2` to the `Explorer.Series`.
+- Add `filter/2` - a macro -, and `filter_with/2` to `Explorer.Series`.
 
   This change enables the usage of queries - using `Explorer.Query` - when
   filtering a series. The main difference is that series does not have a
-  name when used outside a dataframe. So to refer to a itself inside the
+  name when used outside a dataframe. So to refer to itself inside the
   query, we can use the special `_` variable.
 
         iex> s = Explorer.Series.from_list([1, 2, 3])
@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Change `:float` dtype to be represented as `{:f, 64}`. It's still possible
   to use the atom `:float` to create float series, but now `Explorer.Series.dtype/1`
-  returns `{:f, 64}`.
+  returns `{:f, 64}` for float 64 bits series.
 
 ### Fixed
 
