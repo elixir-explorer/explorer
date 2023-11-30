@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.7.2] - 2023-11-30
+
 ### Added
 
 - Add the functions `day_of_year/1` and `week_of_year/1` to `Explorer.Series`.
@@ -755,7 +757,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.7.2...HEAD
+[v0.7.2]: https://github.com/elixir-explorer/explorer/compare/v0.7.1...v0.7.2
 [v0.7.1]: https://github.com/elixir-explorer/explorer/compare/v0.7.0...v0.7.1
 [v0.7.0]: https://github.com/elixir-explorer/explorer/compare/v0.6.1...v0.7.0
 [v0.6.1]: https://github.com/elixir-explorer/explorer/compare/v0.6.0...v0.6.1
