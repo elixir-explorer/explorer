@@ -1,6 +1,14 @@
 defmodule Explorer.Duration do
-  # Internal representation of a duration.
-  @moduledoc false
+  @moduledoc """
+  Represents a duration of time.
+
+  The value is represented by an integer, and the precision can be one
+  of the following:
+
+  * `:millisecond`
+  * `:microsecond`
+  * `:nanosecond`
+  """
   alias Explorer.Duration
 
   @enforce_keys [:value, :precision]

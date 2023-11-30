@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add the functions `day_of_year/1` and `week_of_year/1` to `Explorer.Series`.
+
+- Add `filter/2` - a macro -, and `filter_with/2` to `Explorer.Series`.
+
+  This change enables the usage of queries - using `Explorer.Query` - when
+  filtering a series. The main difference is that series does not have a
+  name when used outside a dataframe. So to refer to itself inside the
+  query, we can use the special `_` variable.
+
+        iex> s = Explorer.Series.from_list([1, 2, 3])
+        iex> Explorer.Series.filter(s, _ > 2)
+        #Explorer.Series<
+          Polars[1]
+          integer [3]
+        >
+
+- Add support for the `{:list, any()}` dtype, where `any()` can be any other
+  valid dtype. This is a recursive dtype, that can represent nested lists.
+  It's useful to group data together in the same series.
+
+- Add `Explorer.Series.mode/2` to get the most common value(s) of the series.
+
+- Add `split/2` and `join/2` to the `Explorer.Series` module.
+  These functions are useful to split string series into `{:list, :string}`,
+  or to join parts of a `{:list, :string}` and return a `:string` series.
+
+- Expose `ddof` option for variance, covariance and standard deviation.
+
+- Add a new `{:f, 32}` dtype to represent 32 bits float series.
+  It's also possible to use the atom `:f32` to create this type of series.
+  The atom `:f64` can be used as an alias for `{:f, 64}`, just like the
+  `:float` atom.
+
+- Add `lengths/1` and `member?/2` to `Explorer.Series`.
+  These functions work with `{:list, any()}`, where `any()` is any valid dtype.
+  The idea is to count the members of a "list" series, and check if a given
+  value is member of a list series, respectively.
+
+- Add support for streaming parquet files from a lazy dataframe to AWS S3
+  compatible services.
+
+### Changed
+
+- Remove restriction on `pivot_wider` dtypes.
+  In the early days, Polars only supported numeric dtypes for the "first"
+  aggregation. This is not true anymore, and we can lift this restriction.
+
+- Change `:float` dtype to be represented as `{:f, 64}`. It's still possible
+  to use the atom `:float` to create float series, but now `Explorer.Series.dtype/1`
+  returns `{:f, 64}` for float 64 bits series.
+
+### Fixed
+
+- Add missing implementation of `Explorer.Series.replace/3` for lazy series.
+
+- Fix inspection of DFs and series when `limit: :infinity` is used.
+
+### Removed
+
+- Drop support for the `riscv64gc-unknown-linux-gnu` target.
+
+  We decided to stop precompiling to this target because it's been hard to maintain it.
+  Ideally we should support it again in the future.
+
 ## [v0.7.1] - 2023-09-25
 
 ### Added
