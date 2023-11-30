@@ -3,6 +3,3 @@ passthrough = [
   "RUSTLER_NIF_VERSION",
   "RUSTFLAGS"
 ]
-
-[target.riscv64gc-unknown-linux-gnu]
-pre-build = ["apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends cmake"]
