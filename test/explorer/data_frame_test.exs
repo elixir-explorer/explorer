@@ -3702,4 +3702,29 @@ defmodule Explorer.DataFrameTest do
              }
     end
   end
+
+  describe "explode/2" do
+    test "explodes a list column" do
+      df = DF.new(letters: [~w(a e), ~w(b c d)], is_vowel: [true, false])
+
+      df1 = DF.explode(df, :letters)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["a", "e", "b", "c", "d"],
+               is_vowel: [true, true, false, false, false]
+             }
+    end
+
+    test "works with multiple columns" do
+      df = DF.new(a: [[1, 2], [3, 4]], b: [[5, 6], [7, 8]], c: ["a", "b"])
+
+      df1 = DF.explode(df, [:a, :b])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4],
+               b: [5, 6, 7, 8],
+               c: ["a", "a", "b", "b"]
+             }
+    end
+  end
 end

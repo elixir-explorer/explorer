@@ -195,6 +195,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback put(df, out_df :: df(), column_name(), series()) :: df
   @callback describe(df, percentiles :: option(list(float()))) :: df()
   @callback nil_count(df) :: df()
+  @callback explode(df, columns :: [column_name()]) :: df()
 
   # Two or more table verbs
 

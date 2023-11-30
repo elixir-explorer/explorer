@@ -748,6 +748,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> Shared.create_dataframe()
   end
 
+  @impl true
+  def explode(df, columns) do
+    Shared.apply_dataframe(df, df, :df_explode, [columns])
+  end
+
   # Two or more table verbs
 
   @impl true

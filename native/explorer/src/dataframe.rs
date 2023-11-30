@@ -653,6 +653,12 @@ pub fn df_pivot_wider(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_explode(df: ExDataFrame, columns: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
+    let new_df = df.explode(columns)?;
+    Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_lazy(df: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
     let new_lf = df.clone_inner().lazy();
     Ok(ExLazyFrame::new(new_lf))
