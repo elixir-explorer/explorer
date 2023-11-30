@@ -5283,8 +5283,8 @@ defmodule Explorer.DataFrame do
           %Series{data: %LazySeries{aggregation: true}} ->
             value
 
-          %Series{data: %LazySeries{op: :column}} ->
-            value
+          %Series{data: %LazySeries{op: :column}} = value ->
+            %{value | dtype: {:list, value.dtype}}
 
           %Series{data: %LazySeries{}} = series ->
             raise "expecting summarise with an aggregation operation or plain column, " <>
@@ -5375,7 +5375,17 @@ defmodule Explorer.DataFrame do
   def explode(%DataFrame{} = df, column_or_columns) do
     columns = to_existing_columns(df, List.wrap(column_or_columns))
 
-    Shared.apply_impl(df, :explode, [columns])
+    out_dtypes =
+      Enum.reduce(columns, df.dtypes, fn column, dtypes ->
+        Map.update!(dtypes, column, fn
+          {:list, inner_dtype} -> inner_dtype
+          dtype -> dtype
+        end)
+      end)
+
+    out_df = %{df | dtypes: out_dtypes}
+
+    Shared.apply_impl(df, :explode, [out_df, columns])
   end
 
   @doc """

@@ -3608,6 +3608,8 @@ defmodule Explorer.DataFrameTest do
                is_vowel: [true, false],
                letters: [["a", "e", "i"], ["b", "c", "d", "f", "g", "h", "j"]]
              }
+
+      assert DF.dtypes(df) == %{"is_vowel" => :boolean, "letters" => {:list, :string}}
     end
 
     test "mode/1" do
@@ -3713,6 +3715,8 @@ defmodule Explorer.DataFrameTest do
                letters: ["a", "e", "b", "c", "d"],
                is_vowel: [true, true, false, false, false]
              }
+
+      assert DF.dtypes(df1) == %{"is_vowel" => :boolean, "letters" => :string}
     end
 
     test "works with multiple columns" do
