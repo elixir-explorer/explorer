@@ -91,7 +91,7 @@ defmodule Explorer.Backend.Series do
   @callback skew(s, bias? :: boolean()) :: float() | non_finite() | lazy_s() | nil
   @callback correlation(s, s, ddof :: non_neg_integer()) ::
               float() | non_finite() | lazy_s() | nil
-  @callback covariance(s, s) :: float() | non_finite() | lazy_s() | nil
+  @callback covariance(s, s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
 
   # Cumulative
 

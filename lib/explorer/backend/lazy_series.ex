@@ -110,7 +110,7 @@ defmodule Explorer.Backend.LazySeries do
     nil_count: 1,
     skew: 2,
     correlation: 3,
-    covariance: 2,
+    covariance: 3,
     # Strings
     contains: 2,
     replace: 3,
@@ -504,8 +504,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def covariance(%Series{} = left, %Series{} = right) do
-    args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
+  def covariance(%Series{} = left, %Series{} = right, ddof \\ 1) do
+    args = [series_or_lazy_series!(left), series_or_lazy_series!(right), ddof]
     data = new(:covariance, args, {:f, 64}, true)
 
     Backend.Series.new(data, {:f, 64})

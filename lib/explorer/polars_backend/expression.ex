@@ -75,8 +75,7 @@ defmodule Explorer.PolarsBackend.Expression do
     sum: 1,
     unordered_distinct: 1,
     variance: 2,
-    skew: 2,
-    covariance: 2
+    skew: 2
   ]
 
   @first_only_expressions [
@@ -154,7 +153,8 @@ defmodule Explorer.PolarsBackend.Expression do
     slice: 3,
     concat: 1,
     column: 1,
-    correlation: 3
+    correlation: 3,
+    covariance: 3
   ]
 
   missing =
@@ -205,6 +205,10 @@ defmodule Explorer.PolarsBackend.Expression do
 
   def to_expr(%LazySeries{op: :correlation, args: [series1, series2, ddof]}) do
     Native.expr_correlation(to_expr(series1), to_expr(series2), ddof)
+  end
+
+  def to_expr(%LazySeries{op: :covariance, args: [series1, series2, ddof]}) do
+    Native.expr_covariance(to_expr(series1), to_expr(series2), ddof)
   end
 
   def to_expr(%LazySeries{op: :format, args: [series_list]}) when is_list(series_list) do

@@ -224,8 +224,8 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(matching_size!(left, right), :s_correlation, [right.data, ddof])
 
   @impl true
-  def covariance(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_covariance, [right.data])
+  def covariance(left, right, ddof),
+    do: Shared.apply_series(matching_size!(left, right), :s_covariance, [right.data, ddof])
 
   # Cumulative
 

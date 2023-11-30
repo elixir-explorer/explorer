@@ -1006,11 +1006,9 @@ pub fn s_correlation(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries) -> Result<Term, ExplorerError> {
+pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
-    // TODO: make ddof a parameter.
-    let ddof: u8 = 1;
     let cov = cov(s1.f64()?, s2.f64()?, ddof);
     Ok(term_from_optional_float(cov, env))
 }
