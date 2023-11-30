@@ -77,6 +77,9 @@ defmodule Explorer.MixProject do
           Explorer.Backend.LazyFrame,
           Explorer.Backend.LazySeries,
           Explorer.PolarsBackend
+        ],
+        Internal: [
+          Explorer.Duration
         ]
       ],
       groups_for_functions: [
