@@ -166,6 +166,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_width(_df), do: err()
   def df_describe(_df, _percentiles), do: err()
   def df_nil_count(_df), do: err()
+  def df_explode(_df, _columns), do: err()
 
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
@@ -207,6 +208,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_select(_df, _columns), do: err()
   def lf_tail(_df, _n_rows), do: err()
   def lf_slice(_df, _offset, _length), do: err()
+  def lf_explode(_df, _columns), do: err()
   def lf_from_ipc(_filename), do: err()
   def lf_from_ndjson(_filename, _infer_schema_length, _batch_size), do: err()
   def lf_from_parquet(_filename, _stop_after_n_rows, _maybe_columns), do: err()

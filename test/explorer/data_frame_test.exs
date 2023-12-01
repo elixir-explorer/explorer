@@ -3608,6 +3608,8 @@ defmodule Explorer.DataFrameTest do
                is_vowel: [true, false],
                letters: [["a", "e", "i"], ["b", "c", "d", "f", "g", "h", "j"]]
              }
+
+      assert DF.dtypes(df) == %{"is_vowel" => :boolean, "letters" => {:list, :string}}
     end
 
     test "mode/1" do
@@ -3700,6 +3702,45 @@ defmodule Explorer.DataFrameTest do
                e: [2],
                f: [2]
              }
+    end
+  end
+
+  describe "explode/2" do
+    test "explodes a list column" do
+      df = DF.new(letters: [~w(a e), ~w(b c d)], is_vowel: [true, false])
+
+      df1 = DF.explode(df, :letters)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["a", "e", "b", "c", "d"],
+               is_vowel: [true, true, false, false, false]
+             }
+
+      assert DF.dtypes(df1) == %{"is_vowel" => :boolean, "letters" => :string}
+    end
+
+    test "works with multiple columns" do
+      df = DF.new(a: [[1, 2], [3, 4]], b: [[5, 6], [7, 8]], c: ["a", "b"])
+
+      df1 = DF.explode(df, [:a, :b])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4],
+               b: [5, 6, 7, 8],
+               c: ["a", "a", "b", "b"]
+             }
+    end
+
+    test "raises if the columns are not of the list type" do
+      df = DF.new(a: [1, 2, 3], b: [[1, 2], [3, 4], [5, 6]])
+
+      assert_raise ArgumentError,
+                   "explode/2 expects list columns, but the given columns have the types: [:integer]",
+                   fn -> DF.explode(df, :a) end
+
+      assert_raise ArgumentError,
+                   "explode/2 expects list columns, but the given columns have the types: [:integer, {:list, :integer}]",
+                   fn -> DF.explode(df, [:a, :b]) end
     end
   end
 end

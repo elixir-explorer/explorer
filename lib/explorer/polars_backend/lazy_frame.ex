@@ -413,6 +413,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         values_to
       ])
 
+  @impl true
+  def explode(%DF{} = df, %DF{} = out_df, columns),
+    do: Shared.apply_dataframe(df, out_df, :lf_explode, [columns])
+
   # Groups
 
   @impl true
