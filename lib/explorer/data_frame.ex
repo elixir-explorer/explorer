@@ -5375,12 +5375,16 @@ defmodule Explorer.DataFrame do
   def explode(%DataFrame{} = df, column_or_columns) do
     columns = to_existing_columns(df, List.wrap(column_or_columns))
 
+    dtypes = Enum.map(columns, &Map.fetch!(df.dtypes, &1))
+
+    unless Enum.all?(dtypes, &match?({:list, _}, &1)) do
+      raise ArgumentError,
+            "explode/2 expects list columns, but the given columns have the types: #{inspect(dtypes)}"
+    end
+
     out_dtypes =
       Enum.reduce(columns, df.dtypes, fn column, dtypes ->
-        Map.update!(dtypes, column, fn
-          {:list, inner_dtype} -> inner_dtype
-          dtype -> dtype
-        end)
+        Map.update!(dtypes, column, fn {:list, inner_dtype} -> inner_dtype end)
       end)
 
     out_df = %{df | dtypes: out_dtypes}

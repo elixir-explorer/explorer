@@ -3730,5 +3730,17 @@ defmodule Explorer.DataFrameTest do
                c: ["a", "a", "b", "b"]
              }
     end
+
+    test "raises if the columns are not of the list type" do
+      df = DF.new(a: [1, 2, 3], b: [[1, 2], [3, 4], [5, 6]])
+
+      assert_raise ArgumentError,
+                   "explode/2 expects list columns, but the given columns have the types: [:integer]",
+                   fn -> DF.explode(df, :a) end
+
+      assert_raise ArgumentError,
+                   "explode/2 expects list columns, but the given columns have the types: [:integer, {:list, :integer}]",
+                   fn -> DF.explode(df, [:a, :b]) end
+    end
   end
 end
