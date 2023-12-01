@@ -69,7 +69,10 @@ defmodule Explorer.MixProject do
         # Explorer.Datasets,
         # Explorer.Query,
         # Explorer.Series,
-        # Explorer.TensorFrame,
+        "Custom data types": [
+          Explorer.Duration,
+          Explorer.TensorFrame
+        ],
         Backends: [
           Explorer.Backend,
           Explorer.Backend.DataFrame,
@@ -77,9 +80,6 @@ defmodule Explorer.MixProject do
           Explorer.Backend.LazyFrame,
           Explorer.Backend.LazySeries,
           Explorer.PolarsBackend
-        ],
-        Internal: [
-          Explorer.Duration
         ]
       ],
       groups_for_functions: [
