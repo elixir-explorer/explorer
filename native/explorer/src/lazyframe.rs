@@ -97,11 +97,9 @@ pub fn lf_arrange_with(
     data: ExLazyFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
+    nulls_last: bool,
+    maintain_order: bool,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    // Make these bools options
-    let maintain_order = true;
-    let nulls_last = false;
-
     let exprs = ex_expr_to_exprs(expressions);
     let ldf = data
         .clone_inner()

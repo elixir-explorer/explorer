@@ -58,8 +58,11 @@ defmodule Explorer.PolarsBackend.Native do
   defstruct [:inner]
 
   def df_from_arrow_stream_pointer(_stream_ptr), do: err()
-  def df_arrange(_df, _by, _reverse, _groups), do: err()
-  def df_arrange_with(_df, _expressions, _directions, _groups), do: err()
+  def df_arrange(_df, _by, _reverse, _nulls_last, _maintain_order, _groups), do: err()
+
+  def df_arrange_with(_df, _expressions, _directions, _nulls_last, _maintain_order, _groups),
+    do: err()
+
   def df_concat_columns(_df, _others), do: err()
   def df_concat_rows(_df, _others), do: err()
   def df_distinct(_df, _subset, _selection), do: err()
@@ -229,7 +232,7 @@ defmodule Explorer.PolarsBackend.Native do
       do: err()
 
   def lf_filter_with(_df, _expression), do: err()
-  def lf_arrange_with(_df, _expressions, _directions), do: err()
+  def lf_arrange_with(_df, _expressions, _directions, _nulls_last, _maintain_order), do: err()
   def lf_distinct(_df, _subset, _selection), do: err()
   def lf_mutate_with(_df, _exprs), do: err()
   def lf_summarise_with(_df, _groups, _aggs), do: err()

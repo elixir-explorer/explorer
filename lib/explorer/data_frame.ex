@@ -3050,6 +3050,17 @@ defmodule Explorer.DataFrame do
   See `arrange_with/2` for a callback version of this function without
   `Explorer.Query`.
 
+  ## Options
+
+    * `:nils` - `:first | :last`.
+      Determines if `nil`s get sorted first or last in the result.
+      Default is `:last`.
+
+    * `:stable` - `boolean()`.
+      Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
+      Unstable sorting may be more performant.
+      Default is `true`.
+
   ## Examples
 
   A single column name will sort ascending by that column:
@@ -3070,6 +3081,15 @@ defmodule Explorer.DataFrame do
         Polars[3 x 2]
         a string ["c", "b", "a"]
         b integer [2, 1, 3]
+      >
+
+  You can specify how `nil`s are sorted:
+
+      iex> df = Explorer.DataFrame.new(a: ["b", "c", nil, "a"])
+      iex> Explorer.DataFrame.arrange(df, [desc: a], nils: :first)
+      #Explorer.DataFrame<
+        Polars[4 x 1]
+        a string [nil, "c", "b", "a"]
       >
 
   Sorting by more than one column sorts them in the order they are entered:
@@ -3115,10 +3135,15 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  defmacro arrange(df, query) do
+  defmacro arrange(df, query, opts \\ []) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.arrange_with(unquote(df), Explorer.Query.query(unquote(query)))
+
+      Explorer.DataFrame.arrange_with(
+        unquote(df),
+        Explorer.Query.query(unquote(query)),
+        unquote(opts)
+      )
     end
   end
 
@@ -3131,7 +3156,16 @@ defmodule Explorer.DataFrame do
 
   This is a callback version of `arrange/2`.
 
-  Sorting is stable by default.
+  ## Options
+
+    * `:nils` - `:first | :last`.
+      Determines if `nil`s get sorted first or last in the result.
+      Default is `:last`.
+
+    * `:stable` - `boolean()`.
+      Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
+      Unstable sorting may be more performant.
+      Default is `true`.
 
   ## Examples
 
@@ -3153,6 +3187,15 @@ defmodule Explorer.DataFrame do
         Polars[3 x 2]
         a string ["c", "b", "a"]
         b integer [2, 1, 3]
+      >
+
+  You can specify how `nil`s are sorted:
+
+      iex> df = Explorer.DataFrame.new(a: ["b", "c", nil, "a"])
+      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"]], nils: :first)
+      #Explorer.DataFrame<
+        Polars[4 x 1]
+        a string [nil, "c", "b", "a"]
       >
 
   Sorting by more than one column sorts them in the order they are entered:
@@ -3184,9 +3227,26 @@ defmodule Explorer.DataFrame do
   @spec arrange_with(
           df :: DataFrame.t(),
           (Explorer.Backend.LazyFrame.t() ->
-             Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}])
+             Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}]),
+          opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
-  def arrange_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
+  def arrange_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
+    opts = Keyword.validate!(opts, nils: :last, stable: true)
+
+    nulls_last =
+      case opts[:nils] do
+        :first -> false
+        :last -> true
+        _ -> raise ArgumentError, "`nils` must be `:first` or `:last`"
+      end
+
+    maintain_order =
+      case opts[:stable] do
+        true -> true
+        false -> false
+        _ -> raise ArgumentError, "`stable` must be `true` or `false`"
+      end
+
     ldf = Explorer.Backend.LazyFrame.new(df)
 
     result = fun.(ldf)
@@ -3211,7 +3271,12 @@ defmodule Explorer.DataFrame do
           raise "not a valid lazy series or arrange instruction: #{inspect(other)}"
       end)
 
-    Shared.apply_impl(df, :arrange_with, [df, dir_and_lazy_series_pairs])
+    Shared.apply_impl(df, :arrange_with, [
+      df,
+      dir_and_lazy_series_pairs,
+      nulls_last,
+      maintain_order
+    ])
   end
 
   @doc """
