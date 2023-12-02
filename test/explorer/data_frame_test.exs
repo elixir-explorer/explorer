@@ -3703,6 +3703,25 @@ defmodule Explorer.DataFrameTest do
                f: [2]
              }
     end
+
+    test "all?/1 and any?/1" do
+      df = DF.new([a: [true, false, true], nils: [nil, nil, nil]], dtypes: [nils: :boolean])
+
+      df1 =
+        DF.summarise(df,
+          all?: all?(a),
+          any?: any?(a),
+          all_nils?: all?(nils),
+          any_nils?: any?(nils)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               all?: [false],
+               any?: [true],
+               all_nils?: [true],
+               any_nils?: [false]
+             }
+    end
   end
 
   describe "explode/2" do

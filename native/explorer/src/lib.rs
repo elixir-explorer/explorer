@@ -241,6 +241,8 @@ rustler::init!(
         expr_skew,
         expr_correlation,
         expr_covariance,
+        expr_all,
+        expr_any,
         // window expressions
         expr_cumulative_max,
         expr_cumulative_min,
@@ -373,6 +375,8 @@ rustler::init!(
         s_skew,
         s_correlation,
         s_covariance,
+        s_all,
+        s_any,
         s_min,
         s_mode,
         s_multiply,

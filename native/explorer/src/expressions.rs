@@ -508,6 +508,20 @@ pub fn expr_covariance(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_all(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.all(true))
+}
+
+#[rustler::nif]
+pub fn expr_any(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.any(true))
+}
+
+#[rustler::nif]
 pub fn expr_alias(expr: ExExpr, name: &str) -> ExExpr {
     let expr = expr.clone_inner();
 

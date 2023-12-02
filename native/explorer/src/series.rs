@@ -1013,6 +1013,20 @@ pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries, ddof: u8) -> Result<Te
     Ok(term_from_optional_float(cov, env))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_all(s: ExSeries) -> Result<bool, ExplorerError> {
+    let s = s.clone_inner();
+
+    Ok(s.bool()?.all())
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_any(s: ExSeries) -> Result<bool, ExplorerError> {
+    let s = s.clone_inner();
+
+    Ok(s.bool()?.any())
+}
+
 fn term_from_optional_float(option: Option<f64>, env: Env<'_>) -> Term<'_> {
     match option {
         Some(float) => encoding::term_from_float64(float, env),
