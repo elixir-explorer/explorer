@@ -13,7 +13,9 @@ defmodule Explorer.PolarsBackend.Expression do
   @type t :: %__MODULE__{resource: reference()}
 
   @all_expressions [
+    all: 1,
     add: 2,
+    any: 1,
     all_equal: 2,
     argmax: 1,
     argmin: 1,

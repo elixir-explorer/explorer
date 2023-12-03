@@ -92,6 +92,8 @@ defmodule Explorer.Backend.Series do
   @callback correlation(s, s, ddof :: non_neg_integer()) ::
               float() | non_finite() | lazy_s() | nil
   @callback covariance(s, s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
+  @callback all?(s) :: boolean() | lazy_s()
+  @callback any?(s) :: boolean() | lazy_s()
 
   # Cumulative
 

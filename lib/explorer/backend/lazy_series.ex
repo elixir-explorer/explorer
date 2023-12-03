@@ -111,6 +111,8 @@ defmodule Explorer.Backend.LazySeries do
     skew: 2,
     correlation: 3,
     covariance: 3,
+    all: 1,
+    any: 1,
     # Strings
     contains: 2,
     replace: 3,
@@ -528,6 +530,24 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def all?(%Series{} = s) do
+    args = [series_or_lazy_series!(s)]
+
+    data = new(:all, args, :boolean, true)
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def any?(%Series{} = s) do
+    args = [series_or_lazy_series!(s)]
+
+    data = new(:any, args, :boolean, true)
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
   def coalesce(%Series{} = left, %Series{} = right) do
     args = [series_or_lazy_series!(left), series_or_lazy_series!(right)]
 
@@ -647,6 +667,8 @@ defmodule Explorer.Backend.LazySeries do
   defp dtype_for_agg_operation(op, series)
        when op in [:first, :last, :sum, :min, :max, :argmin, :argmax],
        do: series.dtype
+
+  defp dtype_for_agg_operation(op, _) when op in [:all?, :any?], do: :boolean
 
   defp dtype_for_agg_operation(_, _), do: {:f, 64}
 

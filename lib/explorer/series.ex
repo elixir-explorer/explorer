@@ -2528,6 +2528,90 @@ defmodule Explorer.Series do
     basic_numeric_operation(:covariance, left, right, [ddof])
   end
 
+  @doc """
+  Returns if all the values in a boolean series are true.
+
+  ## Supported dtypes
+
+    * `:boolean`
+
+  ## Examples
+
+      iex> s = Series.from_list([true, true, true])
+      iex> Series.all?(s)
+      true
+
+      iex> s = Series.from_list([true, false, true])
+      iex> Series.all?(s)
+      false
+
+      iex> s = Series.from_list([1, 2, 3])
+      iex> Series.all?(s)
+      ** (ArgumentError) Explorer.Series.all?/1 not implemented for dtype :integer. Valid dtypes are [:boolean]
+
+  An empty series will always return true:
+
+      iex> s = Series.from_list([], dtype: :boolean)
+      iex> Series.all?(s)
+      true
+
+  Opposite to Elixir but similar to databases, `nil` values are ignored:
+
+      iex> s = Series.from_list([nil, true, true])
+      iex> Series.all?(s)
+      true
+
+      iex> s = Series.from_list([nil, nil, nil], dtype: :boolean)
+      iex> Series.all?(s)
+      true
+  """
+  @doc type: :aggregation
+  @spec all?(series :: Series.t()) :: boolean()
+  def all?(%Series{dtype: :boolean} = series), do: apply_series(series, :all?)
+  def all?(%Series{dtype: dtype}), do: dtype_error("all?/1", dtype, [:boolean])
+
+  @doc """
+  Returns if any of the values in a boolean series are true.
+
+  ## Supported dtypes
+
+    * `:boolean`
+
+  ## Examples
+
+      iex> s = Series.from_list([true, true, true])
+      iex> Series.any?(s)
+      true
+
+      iex> s = Series.from_list([true, false, true])
+      iex> Series.any?(s)
+      true
+
+      iex> s = Series.from_list([1, 2, 3])
+      iex> Series.any?(s)
+      ** (ArgumentError) Explorer.Series.any?/1 not implemented for dtype :integer. Valid dtypes are [:boolean]
+
+  An empty series will always return `false`:
+
+      iex> s = Series.from_list([], dtype: :boolean)
+      iex> Series.any?(s)
+      false
+
+  Opposite to Elixir but similar to databases, `nil` values are ignored:
+
+      iex> s = Series.from_list([nil, true, true])
+      iex> Series.any?(s)
+      true
+
+      iex> s = Series.from_list([nil, nil, nil], dtype: :boolean)
+      iex> Series.any?(s)
+      false
+  """
+  @doc type: :aggregation
+  @spec any?(series :: Series.t()) :: boolean()
+  def any?(%Series{dtype: :boolean} = series), do: apply_series(series, :any?)
+  def any?(%Series{dtype: dtype}), do: dtype_error("any?/1", dtype, [:boolean])
+
   # Cumulative
 
   @doc """
