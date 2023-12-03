@@ -1,7 +1,9 @@
 use crate::ExplorerError;
 use polars::datatypes::DataType;
+use polars::datatypes::Field;
 use polars::datatypes::TimeUnit;
 use rustler::NifTaggedEnum;
+use std::collections::HashMap;
 use std::ops::Deref;
 
 impl rustler::Encoder for Box<ExSeriesDtype> {
@@ -39,6 +41,7 @@ pub enum ExSeriesDtype {
     Datetime(ExTimeUnit),
     Duration(ExTimeUnit),
     List(Box<ExSeriesDtype>),
+    Struct(HashMap<String, ExSeriesDtype>),
 }
 
 impl TryFrom<&DataType> for ExSeriesDtype {
@@ -78,6 +81,17 @@ impl TryFrom<&DataType> for ExSeriesDtype {
             DataType::List(inner) => Ok(ExSeriesDtype::List(Box::new(Self::try_from(
                 inner.as_ref(),
             )?))),
+
+            DataType::Struct(fields) => {
+                let mut struct_fields = HashMap::new();
+
+                for field in fields {
+                    struct_fields
+                        .insert(field.name().to_string(), Self::try_from(field.data_type())?);
+                }
+
+                Ok(ExSeriesDtype::Struct(struct_fields))
+            }
 
             _ => Err(ExplorerError::Other(format!(
                 "cannot cast to dtype: {value}"
@@ -124,6 +138,12 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             ExSeriesDtype::List(inner) => {
                 Ok(DataType::List(Box::new(Self::try_from(inner.as_ref())?)))
             }
+            ExSeriesDtype::Struct(fields) => Ok(DataType::Struct(
+                fields
+                    .iter()
+                    .map(|(k, v)| Ok(Field::new(k.as_str(), v.try_into()?)))
+                    .collect::<Result<Vec<Field>, Self::Error>>()?,
+            )),
         }
     }
 }

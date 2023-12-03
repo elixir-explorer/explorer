@@ -1,7 +1,7 @@
 defmodule Explorer.SeriesTest do
   use ExUnit.Case, async: true
 
-  # Note that for the `{:list, _}` dtype, we have a separated file for the tests.
+  # Note that for the `{:list, _}` and `{:struct, _}` dtypes, we have a separated file for the tests.
 
   alias Explorer.Series
 
@@ -4623,6 +4623,14 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "cannot convert series of dtype {:list, :integer} into iovec",
+                   fn -> Series.to_iovec(series) end
+    end
+
+    test "struct" do
+      series = Series.from_list([%{a: 1}, %{a: 2}])
+
+      assert_raise ArgumentError,
+                   ~S'cannot convert series of dtype {:struct, %{"a" => :integer}} into iovec',
                    fn -> Series.to_iovec(series) end
     end
   end

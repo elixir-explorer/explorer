@@ -2,7 +2,7 @@ defmodule Explorer.Shared do
   # A collection of **private** helpers shared in Explorer.
   @moduledoc false
 
-  @non_list_types [
+  @scalar_types [
     :binary,
     :boolean,
     :category,
@@ -27,7 +27,7 @@ defmodule Explorer.Shared do
   within lists inside.
   """
   def dtypes do
-    @non_list_types ++ [{:list, :any}]
+    @scalar_types ++ [{:list, :any}, {:struct, :any}]
   end
 
   @doc """
@@ -37,7 +37,20 @@ defmodule Explorer.Shared do
     if maybe_dtype = normalise_dtype(inner), do: {:list, maybe_dtype}
   end
 
-  def normalise_dtype(dtype) when dtype in @non_list_types, do: dtype
+  def normalise_dtype({:struct, inner_types}) do
+    normalized_dtypes =
+      for {key, dtype} <- inner_types, into: %{} do
+        {key, normalise_dtype(dtype)}
+      end
+
+    if normalized_dtypes |> Map.values() |> Enum.any?(&is_nil/1) do
+      nil
+    else
+      {:struct, normalized_dtypes}
+    end
+  end
+
+  def normalise_dtype(dtype) when dtype in @scalar_types, do: dtype
   def normalise_dtype(dtype) when dtype in [:float, :f64], do: {:f, 64}
   def normalise_dtype(:f32), do: {:f, 32}
   def normalise_dtype(_dtype), do: nil
@@ -220,16 +233,11 @@ defmodule Explorer.Shared do
       Enum.reduce(list, initial_type, fn el, type ->
         new_type = type(el, type) || type
 
-        cond do
-          leaf_dtype(new_type) == :numeric and leaf_dtype(type) in [:integer, {:f, 32}, {:f, 64}] ->
-            new_type
-
-          new_type != type and type != nil ->
-            raise ArgumentError,
-                  "the value #{inspect(el)} does not match the inferred series dtype #{inspect(type)}"
-
-          true ->
-            new_type
+        if new_type_matches?(type, new_type) do
+          new_type
+        else
+          raise ArgumentError,
+                "the value #{inspect(el)} does not match the inferred series dtype #{inspect(type)}"
         end
       end)
 
@@ -263,6 +271,25 @@ defmodule Explorer.Shared do
   defp type(item, _type) when is_nil(item), do: nil
   defp type([], _type), do: nil
   defp type([_item | _] = items, type), do: {:list, result_list_type(items, type)}
+
+  defp type(%{} = item, type) do
+    preferable_inner_types =
+      case type do
+        {:struct, %{} = inner_types} -> inner_types
+        _ -> %{}
+      end
+
+    inferred_inner_types =
+      for {key, value} <- item, into: %{} do
+        key = to_string(key)
+        inner_type = Map.get(preferable_inner_types, key)
+
+        {key, type(value, inner_type) || Map.get(preferable_inner_types, key)}
+      end
+
+    {:struct, inferred_inner_types}
+  end
+
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
   defp result_list_type(nil, _type), do: nil
@@ -277,6 +304,31 @@ defmodule Explorer.Shared do
     dtype_from_list!(items, leaf_dtype(type))
   end
 
+  defp new_type_matches?(type, new_type)
+
+  defp new_type_matches?(nil, _new_trpe), do: true
+
+  defp new_type_matches?({:struct, types}, {:struct, new_types}) do
+    types
+    |> Map.keys()
+    |> Enum.all?(fn key ->
+      type = Map.get(types, key)
+
+      case Map.fetch(new_types, key) do
+        {:ok, new_type} -> new_type_matches?(type, new_type)
+        :error -> false
+      end
+    end)
+  end
+
+  defp new_type_matches?(type, new_type) do
+    if leaf_dtype(new_type) == :numeric and leaf_dtype(type) in [:integer, {:f, 32}, {:f, 64}] do
+      true
+    else
+      type == new_type
+    end
+  end
+
   @doc """
   Returns the leaf dtype from a {:list, _} dtype, or itself.
   """
@@ -286,15 +338,28 @@ defmodule Explorer.Shared do
   @doc """
   Downcasts lists of mixed numeric types (float and int) to float.
   """
-  def cast_numerics(list, type) when type == :numeric do
-    {cast_numerics_to_floats(list), {:f, 64}}
-  end
-
-  def cast_numerics(list, {:list, _} = dtype) do
+  def cast_numerics(list, dtype) do
     {cast_numerics_deep(list, dtype), cast_numeric_dtype_to_float(dtype)}
   end
 
-  def cast_numerics(list, type), do: {list, type}
+  defp cast_numerics_deep(list, {:struct, dtypes}) when is_list(list) do
+    Enum.map(list, fn item ->
+      Map.new(item, fn {field, inner_value} ->
+        inner_dtype = Map.fetch!(dtypes, to_string(field))
+        [casted_value] = cast_numerics_deep([inner_value], inner_dtype)
+
+        {field, casted_value}
+      end)
+    end)
+  end
+
+  defp cast_numerics_deep(list, {:list, inner_dtype}) when is_list(list) do
+    Enum.map(list, fn item -> cast_numerics_deep(item, inner_dtype) end)
+  end
+
+  defp cast_numerics_deep(list, :numeric), do: cast_numerics_to_floats(list)
+
+  defp cast_numerics_deep(list, _), do: list
 
   defp cast_numerics_to_floats(list) do
     Enum.map(list, fn
@@ -303,21 +368,13 @@ defmodule Explorer.Shared do
     end)
   end
 
-  defp cast_numerics_deep(nil, _), do: nil
-
-  defp cast_numerics_deep(list, {:list, inner_dtype}) when is_list(list) do
-    Enum.map(list, fn item -> cast_numerics_deep(item, inner_dtype) end)
-  end
-
-  defp cast_numerics_deep(list, :numeric), do: cast_numerics_to_floats(list)
-  defp cast_numerics_deep(list, _), do: list
-
-  defp cast_numeric_dtype_to_float({:list, :numeric}), do: {:list, {:f, 64}}
-  defp cast_numeric_dtype_to_float({:list, other} = dtype) when is_atom(other), do: dtype
+  defp cast_numeric_dtype_to_float({:struct, dtypes}),
+    do: {:struct, Map.new(dtypes, fn {f, inner} -> {f, cast_numeric_dtype_to_float(inner)} end)}
 
   defp cast_numeric_dtype_to_float({:list, inner}),
     do: {:list, cast_numeric_dtype_to_float(inner)}
 
+  defp cast_numeric_dtype_to_float(:numeric), do: {:f, 64}
   defp cast_numeric_dtype_to_float(other), do: other
 
   @doc """
@@ -327,6 +384,20 @@ defmodule Explorer.Shared do
     open = Inspect.Algebra.color("[", :list, opts)
     close = Inspect.Algebra.color("]", :list, opts)
     Inspect.Algebra.container_doc(open, item, close, opts, &to_doc/2)
+  end
+
+  def to_doc(item, opts) when is_map(item) and not is_struct(item) do
+    open = Inspect.Algebra.color("%{", :map, opts)
+    close = Inspect.Algebra.color("}", :map, opts)
+    arrow = Inspect.Algebra.color(" => ", :map, opts)
+
+    Inspect.Algebra.container_doc(open, Enum.to_list(item), close, opts, fn {key, value}, opts ->
+      Inspect.Algebra.concat([
+        Inspect.Algebra.color(inspect(key), :string, opts),
+        arrow,
+        to_doc(value, opts)
+      ])
+    end)
   end
 
   def to_doc(item, _opts) do
@@ -379,6 +450,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:duration, :microsecond}), do: "duration[μs]"
   def dtype_to_string({:duration, :nanosecond}), do: "duration[ns]"
   def dtype_to_string({:list, dtype}), do: "list[" <> dtype_to_string(dtype) <> "]"
+  def dtype_to_string({:struct, fields}), do: "struct[#{map_size(fields)}]"
   def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
 
