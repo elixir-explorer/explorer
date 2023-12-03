@@ -2555,7 +2555,7 @@ defmodule Explorer.Series do
       iex> Series.all?(s)
       true
 
-  Nil values are ignored:
+  Opposite to Elixir but similar to databases, `nil` values are ignored:
 
       iex> s = Series.from_list([nil, true, true])
       iex> Series.all?(s)
