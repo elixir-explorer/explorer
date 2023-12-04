@@ -309,7 +309,7 @@ defmodule Explorer.Shared do
 
   defp new_type_matches?(type, type), do: true
 
-  defp new_type_matches?(nil, _new_trpe), do: true
+  defp new_type_matches?(nil, _new_type), do: true
 
   defp new_type_matches?({:struct, types}, {:struct, new_types}) do
     Enum.all?(types, fn {key, type} ->
