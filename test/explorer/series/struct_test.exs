@@ -61,6 +61,13 @@ defmodule Explorer.Series.StructTest do
       assert Series.to_list(series) == [%{"a" => 1.0, "b" => 2.4}, %{"a" => 1.5, "b" => 2.0}]
     end
 
+    test "allows nested lists with structs" do
+      series = Series.from_list([[%{a: 1}, %{a: 2}], [%{a: 3}]])
+
+      assert series.dtype == {:list, {:struct, %{"a" => :integer}}}
+      assert Series.to_list(series) == [[%{"a" => 1}, %{"a" => 2}], [%{"a" => 3}]]
+    end
+
     test "errors when structs have mismatched types" do
       assert_raise ArgumentError,
                    "the value %{a: \"a\"} does not match the inferred series dtype {:struct, %{\"a\" => :integer}}",
@@ -69,6 +76,10 @@ defmodule Explorer.Series.StructTest do
       assert_raise ArgumentError,
                    "the value %{b: 1} does not match the inferred series dtype {:struct, %{\"a\" => :integer}}",
                    fn -> Series.from_list([%{a: 1}, %{b: 1}]) end
+
+      assert_raise ArgumentError,
+                   "the value [%{a: \"a\"}] does not match the inferred series dtype {:list, {:struct, %{\"a\" => :integer}}}",
+                   fn -> Series.from_list([[%{a: 1}], [%{a: "a"}]]) end
     end
   end
 
