@@ -16,7 +16,8 @@ defmodule Explorer.Series do
     * `:time` - Time type that unwraps to `Elixir.Time`
     * `{:list, dtype}` - A recursive dtype that can store lists. Examples: `{:list, :integer}` or
       a nested list dtype like `{:list, {:list, :integer}}`.
-    * `{:struct, %{key => dtype}}` - A recursive dtype that can store structs. Examples:
+    * `{:struct, %{key => dtype}}` - A recursive dtype that can store Arrow/Polars structs (not to be
+      confused with Elixir's struct). This type unwraps to Elixir maps with string keys. Examples:
       `{:struct, %{"a" => :integer}}` or a nested struct dtype like `{:struct, %{"a" => {:struct, %{"b" => :integer}}}}`.
 
   The following data type aliases are also supported:
