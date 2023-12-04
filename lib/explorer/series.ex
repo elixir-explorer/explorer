@@ -16,6 +16,9 @@ defmodule Explorer.Series do
     * `:time` - Time type that unwraps to `Elixir.Time`
     * `{:list, dtype}` - A recursive dtype that can store lists. Examples: `{:list, :integer}` or
       a nested list dtype like `{:list, {:list, :integer}}`.
+    * `{:struct, %{key => dtype}}` - A recursive dtype that can store Arrow/Polars structs (not to be
+      confused with Elixir's struct). This type unwraps to Elixir maps with string keys. Examples:
+      `{:struct, %{"a" => :integer}}` or a nested struct dtype like `{:struct, %{"a" => {:struct, %{"b" => :integer}}}}`.
 
   The following data type aliases are also supported:
 
@@ -77,7 +80,7 @@ defmodule Explorer.Series do
   @numeric_dtypes [:integer | @float_dtypes]
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
-  @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}]
+  @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}, {:struct, :any}]
 
   @type dtype ::
           :binary
@@ -92,11 +95,13 @@ defmodule Explorer.Series do
           | :integer
           | :string
           | list_dtype
+          | struct_dtype
 
   @type time_unit :: :nanosecond | :microsecond | :millisecond
   @type datetime_dtype :: {:datetime, time_unit}
   @type duration_dtype :: {:duration, time_unit}
   @type list_dtype :: {:list, dtype()}
+  @type struct_dtype :: {:struct, %{String.t() => dtype()}}
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
@@ -2202,7 +2207,7 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-  All except `:list`.
+  All except `:list` and `:struct`.
 
   ## Examples
 
@@ -2230,7 +2235,7 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec mode(series :: Series.t()) :: Series.t() | nil
   def mode(%Series{dtype: {:list, _} = dtype}),
-    do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}])
+    do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
 
   def mode(%Series{} = series),
     do: Shared.apply_impl(series, :mode)

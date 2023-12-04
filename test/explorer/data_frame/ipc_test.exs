@@ -120,6 +120,10 @@ defmodule Explorer.DataFrame.IPCTest do
       assert_ipc({:list, {:f, 64}}, [["100.42"]], [100.42])
       assert_ipc({:list, {:f, 64}}, [["-101.51"]], [-101.51])
     end
+
+    test "struct" do
+      assert_ipc({:struct, %{"a" => :integer}}, [%{a: 1}], %{"a" => 1})
+    end
   end
 
   describe "to_ipc/3" do

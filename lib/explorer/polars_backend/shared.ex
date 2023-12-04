@@ -118,6 +118,18 @@ defmodule Explorer.PolarsBackend.Shared do
     Native.s_from_list_of_series(name, series)
   end
 
+  def from_list(list, {:struct, fields} = _dtype, name) when is_list(list) do
+    series =
+      for {column, values} <- Table.to_columns(list) do
+        column = to_string(column)
+        inner_type = Map.fetch!(fields, column)
+
+        from_list(values, inner_type, column)
+      end
+
+    Native.s_from_list_of_series_as_structs(name, series)
+  end
+
   def from_list(list, dtype, name) when is_list(list) do
     case dtype do
       :integer -> Native.s_from_list_i64(name, list)
