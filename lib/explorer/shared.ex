@@ -38,16 +38,17 @@ defmodule Explorer.Shared do
   end
 
   def normalise_dtype({:struct, inner_types}) do
-    normalized_dtypes =
-      for {key, dtype} <- inner_types, into: %{} do
-        {key, normalise_dtype(dtype)}
+    inner_types
+    |> Enum.reduce_while(%{}, fn {key, dtype}, normalized_dtypes ->
+      case normalise_dtype(dtype) do
+        nil -> {:halt, nil}
+        dtype -> {:cont, Map.put(normalized_dtypes, key, dtype)}
       end
-
-    if normalized_dtypes |> Map.values() |> Enum.any?(&is_nil/1) do
-      nil
-    else
-      {:struct, normalized_dtypes}
-    end
+    end)
+    |> then(fn
+      nil -> nil
+      normalized_dtypes -> {:struct, normalized_dtypes}
+    end)
   end
 
   def normalise_dtype(dtype) when dtype in @scalar_types, do: dtype
@@ -306,14 +307,12 @@ defmodule Explorer.Shared do
 
   defp new_type_matches?(type, new_type)
 
+  defp new_type_matches?(type, type), do: true
+
   defp new_type_matches?(nil, _new_trpe), do: true
 
   defp new_type_matches?({:struct, types}, {:struct, new_types}) do
-    types
-    |> Map.keys()
-    |> Enum.all?(fn key ->
-      type = Map.get(types, key)
-
+    Enum.all?(types, fn {key, type} ->
       case Map.fetch(new_types, key) do
         {:ok, new_type} -> new_type_matches?(type, new_type)
         :error -> false
@@ -322,11 +321,7 @@ defmodule Explorer.Shared do
   end
 
   defp new_type_matches?(type, new_type) do
-    if leaf_dtype(new_type) == :numeric and leaf_dtype(type) in [:integer, {:f, 32}, {:f, 64}] do
-      true
-    else
-      type == new_type
-    end
+    leaf_dtype(new_type) == :numeric and leaf_dtype(type) in [:integer, {:f, 32}, {:f, 64}]
   end
 
   @doc """

@@ -109,6 +109,14 @@ defmodule Explorer.Series.StructTest do
 
       assert Series.dtype(s1) == {:struct, %{"a" => {:datetime, :microsecond}}}
     end
+
+    test "errors when casting to invalid nested types" do
+      s = Series.from_list([%{a: 1}, %{a: 2}])
+
+      assert_raise ArgumentError,
+                   ~r"Explorer.Series.cast/2 not implemented for dtype {:struct, %{\"a\" => :invalid_type}}",
+                   fn -> Series.cast(s, {:struct, %{"a" => :invalid_type}}) end
+    end
   end
 
   describe "inspect/1" do
