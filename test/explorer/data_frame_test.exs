@@ -1951,6 +1951,21 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "with a simple df and nils" do
+      df = DF.new(a: [1, 2, nil, 3])
+      df1 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :first)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [nil, 1, 2, 3]
+             }
+
+      df2 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :last)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 3, nil]
+             }
+    end
+
     test "without a lazy series" do
       df = DF.new(a: [1, 2])
 

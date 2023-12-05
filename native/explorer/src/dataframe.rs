@@ -347,12 +347,25 @@ pub fn df_arrange(
     df: ExDataFrame,
     by_columns: Vec<String>,
     reverse: Vec<bool>,
+    nulls_last: bool,
+    maintain_order: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    // TODO: make maintain_order an option.
-    let maintain_order = true;
     let new_df = if groups.is_empty() {
-        df.sort(by_columns, reverse, maintain_order)?
+        // Note: we cannot use either df.sort or df.sort_with_options.
+        // df.sort does not allow a nulls_last option.
+        // df.sort_with_options only allows a single column.
+        let by_columns = df.select_series(by_columns)?;
+        // TODO: make these bools options.
+        let multithreaded = false;
+        df.sort_impl(
+            by_columns,
+            reverse,
+            nulls_last,
+            maintain_order,
+            None,
+            multithreaded,
+        )?
     } else {
         df.group_by_stable(groups)?
             .apply(|df| df.sort(by_columns.clone(), reverse.clone(), maintain_order))?
@@ -366,14 +379,12 @@ pub fn df_arrange_with(
     data: ExDataFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
+    nulls_last: bool,
+    maintain_order: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = data.clone_inner();
     let exprs = ex_expr_to_exprs(expressions);
-
-    // TODO: make these bools options
-    let nulls_last = false;
-    let maintain_order = true;
 
     let new_df = if groups.is_empty() {
         df.lazy()

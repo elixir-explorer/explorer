@@ -643,7 +643,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def arrange_with(%DataFrame{} = df, out_df, column_pairs) do
+  def arrange_with(%DataFrame{} = df, out_df, column_pairs, nulls_last, maintain_order) do
     {directions, expressions} =
       column_pairs
       |> Enum.map(fn {direction, lazy_series} ->
@@ -652,7 +652,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
       end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(df, out_df, :df_arrange_with, [expressions, directions, df.groups])
+    Shared.apply_dataframe(df, out_df, :df_arrange_with, [
+      expressions,
+      directions,
+      nulls_last,
+      maintain_order,
+      df.groups
+    ])
   end
 
   @impl true
