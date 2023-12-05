@@ -5348,8 +5348,8 @@ defmodule Explorer.DataFrame do
           %Series{data: %LazySeries{aggregation: true}} ->
             value
 
-          %Series{data: %LazySeries{op: :column}} ->
-            value
+          %Series{data: %LazySeries{op: :column}} = value ->
+            %{value | dtype: {:list, value.dtype}}
 
           %Series{data: %LazySeries{}} = series ->
             raise "expecting summarise with an aggregation operation or plain column, " <>
@@ -5378,6 +5378,83 @@ defmodule Explorer.DataFrame do
       end
 
     groups ++ names_with_dtypes
+  end
+
+  @doc """
+  Explodes one or multiple list column into multiple rows.
+
+  When exploding multiple columns, the number of list elements in each row for
+  the exploded columns must be the same.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: [[1, 2], [3, 4]], b: [[5, 6], [7, 8]], c: ["a", "b"])
+      iex> Explorer.DataFrame.explode(df, :a)
+      #Explorer.DataFrame<
+        Polars[4 x 3]
+        a integer [1, 2, 3, 4]
+        b list[integer] [[5, 6], [5, 6], [7, 8], [7, ...]]
+        c string ["a", "a", "b", "b"]
+      >
+      iex> Explorer.DataFrame.explode(df, [:a, :b])
+      #Explorer.DataFrame<
+        Polars[4 x 3]
+        a integer [1, 2, 3, 4]
+        b integer [5, 6, 7, 8]
+        c string ["a", "a", "b", "b"]
+      >
+
+  You can think of exploding multiple list columns as being the inverse of
+  aggregating the elements the exploded columns into lists:
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3, 4], b: [5, 6, 7, 8], c: ["a", "a", "b", "b"])
+      iex> df = df |> Explorer.DataFrame.group_by(:c) |> Explorer.DataFrame.summarise(a: a, b: b)
+      #Explorer.DataFrame<
+        Polars[2 x 3]
+        c string ["a", "b"]
+        a list[integer] [[1, 2], [3, 4]]
+        b list[integer] [[5, 6], [7, 8]]
+      >
+      iex> Explorer.DataFrame.explode(df, [:a, :b]) # we are back where we started
+      #Explorer.DataFrame<
+        Polars[4 x 3]
+        c string ["a", "a", "b", "b"]
+        a integer [1, 2, 3, 4]
+        b integer [5, 6, 7, 8]
+      >
+
+  If you want to perform the cartesian product of two list columns, you must
+  call `explode/2` once for each column:
+
+      iex> df = Explorer.DataFrame.new(a: [[1, 2], [3, 4]], b: [[5, 6], [7, 8]], c: ["a", "b"])
+      iex> df |> Explorer.DataFrame.explode(:a) |> Explorer.DataFrame.explode(:b)
+      #Explorer.DataFrame<
+        Polars[8 x 3]
+        a integer [1, 1, 2, 2, 3, ...]
+        b integer [5, 6, 5, 6, 7, ...]
+        c string ["a", "a", "a", "a", "b", ...]
+      >
+  """
+  @doc type: :single
+  @spec explode(df :: DataFrame.t(), column :: column_name() | [column_name()]) :: DataFrame.t()
+  def explode(%DataFrame{} = df, column_or_columns) do
+    columns = to_existing_columns(df, List.wrap(column_or_columns))
+
+    dtypes = Enum.map(columns, &Map.fetch!(df.dtypes, &1))
+
+    unless Enum.all?(dtypes, &match?({:list, _}, &1)) do
+      raise ArgumentError,
+            "explode/2 expects list columns, but the given columns have the types: #{inspect(dtypes)}"
+    end
+
+    out_dtypes =
+      Enum.reduce(columns, df.dtypes, fn column, dtypes ->
+        Map.update!(dtypes, column, fn {:list, inner_dtype} -> inner_dtype end)
+      end)
+
+    out_df = %{df | dtypes: out_dtypes}
+
+    Shared.apply_impl(df, :explode, [out_df, columns])
   end
 
   @doc """

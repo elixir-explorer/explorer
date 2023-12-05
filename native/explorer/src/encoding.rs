@@ -2,6 +2,7 @@ use chrono::prelude::*;
 use polars::export::arrow::array::GenericBinaryArray;
 use polars::prelude::*;
 use rustler::{Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
+use std::collections::HashMap;
 use std::{mem, slice};
 
 use crate::atoms::{
@@ -573,6 +574,12 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Duration(v, time_unit) => encode_duration(v, time_unit, env),
         AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
         AnyValue::List(series) => list_from_series(ExSeries::new(series), env),
+        AnyValue::Struct(_, _, fields) => v
+            ._iter_struct_av()
+            .zip(fields)
+            .map(|(value, field)| Ok((field.name.as_str(), term_from_value(value, env)?)))
+            .collect::<Result<HashMap<_, _>, ExplorerError>>()
+            .map(|map| map.encode(env)),
         dt => panic!("cannot encode value {dt:?} to term"),
     }
 }
@@ -603,6 +610,11 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
             })
             .collect::<Result<Vec<Term>, ExplorerError>>()
             .map(|lists| lists.encode(env)),
+        DataType::Struct(_fields) => s
+            .iter()
+            .map(|value| term_from_value(value, env))
+            .collect::<Result<Vec<_>, ExplorerError>>()
+            .map(|values| values.encode(env)),
         dt => panic!("to_list/1 not implemented for {dt:?}"),
     }
 }

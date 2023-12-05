@@ -123,6 +123,10 @@ defmodule Explorer.DataFrame.IPCStreamTest do
       assert_ipc_stream({:list, {:f, 64}}, [["100.42"]], [100.42])
       assert_ipc_stream({:list, {:f, 64}}, [["-101.51"]], [-101.51])
     end
+
+    test "struct" do
+      assert_ipc_stream({:struct, %{"a" => :integer}}, [%{a: 1}], %{"a" => 1})
+    end
   end
 
   describe "to_ipc_stream/3" do

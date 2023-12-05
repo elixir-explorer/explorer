@@ -69,7 +69,10 @@ defmodule Explorer.MixProject do
         # Explorer.Datasets,
         # Explorer.Query,
         # Explorer.Series,
-        # Explorer.TensorFrame,
+        "Custom data types": [
+          Explorer.Duration,
+          Explorer.TensorFrame
+        ],
         Backends: [
           Explorer.Backend,
           Explorer.Backend.DataFrame,

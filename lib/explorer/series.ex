@@ -16,6 +16,9 @@ defmodule Explorer.Series do
     * `:time` - Time type that unwraps to `Elixir.Time`
     * `{:list, dtype}` - A recursive dtype that can store lists. Examples: `{:list, :integer}` or
       a nested list dtype like `{:list, {:list, :integer}}`.
+    * `{:struct, %{key => dtype}}` - A recursive dtype that can store Arrow/Polars structs (not to be
+      confused with Elixir's struct). This type unwraps to Elixir maps with string keys. Examples:
+      `{:struct, %{"a" => :integer}}` or a nested struct dtype like `{:struct, %{"a" => {:struct, %{"b" => :integer}}}}`.
 
   The following data type aliases are also supported:
 
@@ -101,7 +104,7 @@ defmodule Explorer.Series do
   @numeric_dtypes [:integer | @float_dtypes]
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
-  @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}]
+  @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}, {:struct, :any}]
 
   @type dtype ::
           :binary
@@ -116,11 +119,13 @@ defmodule Explorer.Series do
           | :integer
           | :string
           | list_dtype
+          | struct_dtype
 
   @type time_unit :: :nanosecond | :microsecond | :millisecond
   @type datetime_dtype :: {:datetime, time_unit}
   @type duration_dtype :: {:duration, time_unit}
   @type list_dtype :: {:list, dtype()}
+  @type struct_dtype :: {:struct, %{String.t() => dtype()}}
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
@@ -2274,7 +2279,7 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-  All except `:list`.
+  All except `:list` and `:struct`.
 
   ## Examples
 
@@ -2302,7 +2307,7 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec mode(series :: Series.t()) :: Series.t() | nil
   def mode(%Series{dtype: {:list, _} = dtype}),
-    do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}])
+    do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
 
   def mode(%Series{} = series),
     do: Shared.apply_impl(series, :mode)
@@ -2599,6 +2604,90 @@ defmodule Explorer.Series do
   def covariance(left, right, ddof \\ 1) do
     basic_numeric_operation(:covariance, left, right, [ddof])
   end
+
+  @doc """
+  Returns if all the values in a boolean series are true.
+
+  ## Supported dtypes
+
+    * `:boolean`
+
+  ## Examples
+
+      iex> s = Series.from_list([true, true, true])
+      iex> Series.all?(s)
+      true
+
+      iex> s = Series.from_list([true, false, true])
+      iex> Series.all?(s)
+      false
+
+      iex> s = Series.from_list([1, 2, 3])
+      iex> Series.all?(s)
+      ** (ArgumentError) Explorer.Series.all?/1 not implemented for dtype :integer. Valid dtypes are [:boolean]
+
+  An empty series will always return true:
+
+      iex> s = Series.from_list([], dtype: :boolean)
+      iex> Series.all?(s)
+      true
+
+  Opposite to Elixir but similar to databases, `nil` values are ignored:
+
+      iex> s = Series.from_list([nil, true, true])
+      iex> Series.all?(s)
+      true
+
+      iex> s = Series.from_list([nil, nil, nil], dtype: :boolean)
+      iex> Series.all?(s)
+      true
+  """
+  @doc type: :aggregation
+  @spec all?(series :: Series.t()) :: boolean()
+  def all?(%Series{dtype: :boolean} = series), do: apply_series(series, :all?)
+  def all?(%Series{dtype: dtype}), do: dtype_error("all?/1", dtype, [:boolean])
+
+  @doc """
+  Returns if any of the values in a boolean series are true.
+
+  ## Supported dtypes
+
+    * `:boolean`
+
+  ## Examples
+
+      iex> s = Series.from_list([true, true, true])
+      iex> Series.any?(s)
+      true
+
+      iex> s = Series.from_list([true, false, true])
+      iex> Series.any?(s)
+      true
+
+      iex> s = Series.from_list([1, 2, 3])
+      iex> Series.any?(s)
+      ** (ArgumentError) Explorer.Series.any?/1 not implemented for dtype :integer. Valid dtypes are [:boolean]
+
+  An empty series will always return `false`:
+
+      iex> s = Series.from_list([], dtype: :boolean)
+      iex> Series.any?(s)
+      false
+
+  Opposite to Elixir but similar to databases, `nil` values are ignored:
+
+      iex> s = Series.from_list([nil, true, true])
+      iex> Series.any?(s)
+      true
+
+      iex> s = Series.from_list([nil, nil, nil], dtype: :boolean)
+      iex> Series.any?(s)
+      false
+  """
+  @doc type: :aggregation
+  @spec any?(series :: Series.t()) :: boolean()
+  def any?(%Series{dtype: :boolean} = series), do: apply_series(series, :any?)
+  def any?(%Series{dtype: dtype}), do: dtype_error("any?/1", dtype, [:boolean])
 
   # Cumulative
 

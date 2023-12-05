@@ -169,6 +169,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_width(_df), do: err()
   def df_describe(_df, _percentiles), do: err()
   def df_nil_count(_df), do: err()
+  def df_explode(_df, _columns), do: err()
 
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
@@ -210,6 +211,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_select(_df, _columns), do: err()
   def lf_tail(_df, _n_rows), do: err()
   def lf_slice(_df, _offset, _length), do: err()
+  def lf_explode(_df, _columns), do: err()
   def lf_from_ipc(_filename), do: err()
   def lf_from_ndjson(_filename, _infer_schema_length, _batch_size), do: err()
   def lf_from_parquet(_filename, _stop_after_n_rows, _maybe_columns), do: err()
@@ -249,7 +251,9 @@ defmodule Explorer.PolarsBackend.Native do
   # Series
   def s_as_str(_s), do: err()
   def s_add(_s, _other), do: err()
+  def s_all(_s), do: err()
   def s_and(_s, _s2), do: err()
+  def s_any(_s), do: err()
   def s_argmax(_s), do: err()
   def s_argmin(_s), do: err()
   def s_argsort(_s, _descending?, _nils_last?), do: err()
@@ -323,6 +327,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_from_list_binary(_name, _val), do: err()
   def s_from_list_categories(_name, _val), do: err()
   def s_from_list_of_series(_name, _val), do: err()
+  def s_from_list_of_series_as_structs(_name, _val), do: err()
   def s_from_binary_f32(_name, _val), do: err()
   def s_from_binary_f64(_name, _val), do: err()
   def s_from_binary_i32(_name, _val), do: err()

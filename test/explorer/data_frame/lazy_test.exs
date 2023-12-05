@@ -1403,4 +1403,18 @@ defmodule Explorer.DataFrame.LazyTest do
       assert Exception.message(error) =~ "syntax error"
     end
   end
+
+  describe "explode/2" do
+    test "explodes a list column" do
+      ldf = DF.new([letters: [~w(a e), ~w(b c d)], is_vowel: [true, false]], lazy: true)
+
+      ldf1 = DF.explode(ldf, :letters)
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["a", "e", "b", "c", "d"],
+               is_vowel: [true, true, false, false, false]
+             }
+    end
+  end
 end

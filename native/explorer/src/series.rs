@@ -173,6 +173,21 @@ pub fn s_from_list_of_series(name: &str, series_vec: Vec<Option<ExSeries>>) -> E
     ExSeries::new(Series::new(name, lists))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_of_series_as_structs(name: &str, series_vec: Vec<ExSeries>) -> ExSeries {
+    let struct_chunked = StructChunked::new(
+        name,
+        series_vec
+            .into_iter()
+            .map(|s| s.clone_inner())
+            .collect::<Vec<_>>()
+            .as_slice(),
+    )
+    .unwrap();
+
+    ExSeries::new(struct_chunked.into_series())
+}
+
 macro_rules! from_binary {
     ($name:ident, $type:ty, $bytes:expr) => {
         #[rustler::nif(schedule = "DirtyCpu")]
@@ -1011,6 +1026,20 @@ pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries, ddof: u8) -> Result<Te
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
     let cov = cov(s1.f64()?, s2.f64()?, ddof);
     Ok(term_from_optional_float(cov, env))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_all(s: ExSeries) -> Result<bool, ExplorerError> {
+    let s = s.clone_inner();
+
+    Ok(s.bool()?.all())
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_any(s: ExSeries) -> Result<bool, ExplorerError> {
+    let s = s.clone_inner();
+
+    Ok(s.bool()?.any())
 }
 
 fn term_from_optional_float(option: Option<f64>, env: Env<'_>) -> Term<'_> {

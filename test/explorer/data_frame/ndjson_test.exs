@@ -121,6 +121,10 @@ defmodule Explorer.DataFrame.NDJSONTest do
       assert_ndjson({:list, {:f, 64}}, [["-101.51"]], [-101.51])
     end
 
+    test "structs" do
+      assert_ndjson({:struct, %{"a" => :integer}}, [%{a: 1}], %{"a" => 1})
+    end
+
     # test "date" do
     #   assert_ndjson(:date, "19327", ~D[2022-12-01])
     #   assert_ndjson(:date, "-3623", ~D[1960-01-31])
