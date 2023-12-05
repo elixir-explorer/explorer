@@ -356,6 +356,7 @@ pub fn df_arrange(
         // df.sort does not allow a nulls_last option.
         // df.sort_with_options only allows a single column.
         let by_columns = df.select_series(by_columns)?;
+        // TODO: make these bools options.
         let multithreaded = false;
         df.sort_impl(
             by_columns,
