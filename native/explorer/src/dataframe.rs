@@ -670,6 +670,12 @@ pub fn df_explode(df: ExDataFrame, columns: Vec<&str>) -> Result<ExDataFrame, Ex
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_unnest(df: ExDataFrame, columns: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
+    let new_df = df.clone_inner().unnest(columns)?;
+    Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_lazy(df: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
     let new_lf = df.clone_inner().lazy();
     Ok(ExLazyFrame::new(new_lf))

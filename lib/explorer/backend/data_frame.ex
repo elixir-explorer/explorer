@@ -202,6 +202,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback describe(df, percentiles :: option(list(float()))) :: df()
   @callback nil_count(df) :: df()
   @callback explode(df, out_df :: df(), columns :: [column_name()]) :: df()
+  @callback unnest(df, out_df :: df(), columns :: [column_name()]) :: df()
 
   # Two or more table verbs
 

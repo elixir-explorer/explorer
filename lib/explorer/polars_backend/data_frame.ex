@@ -759,6 +759,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_dataframe(df, out_df, :df_explode, [columns])
   end
 
+  @impl true
+  def unnest(df, out_df, columns) do
+    Shared.apply_dataframe(df, out_df, :df_unnest, [columns])
+  end
+
   # Two or more table verbs
 
   @impl true

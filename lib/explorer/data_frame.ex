@@ -5458,6 +5458,74 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Unnests one or multiple struct columns into individual columns.
+
+  The field names in a unnested column must not exist in the dataframe
+  or in any other unnested columns.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(before: [1, 2], struct: [%{x: 1, y: 2}, %{x: 3, y: 4}], after: [3, 4])
+      iex> Explorer.DataFrame.unnest(df, :struct)
+      #Explorer.DataFrame<
+        Polars[2 x 4]
+        before integer [1, 2]
+        x integer [1, 3]
+        y integer [2, 4]
+        after integer [3, 4]
+      >
+
+      iex> df = Explorer.DataFrame.new(struct1: [%{x: 1, y: 2}, %{x: 3, y: 4}], struct2: [%{z: 5}, %{z: 6}])
+      iex> Explorer.DataFrame.unnest(df, [:struct1, :struct2])
+      #Explorer.DataFrame<
+        Polars[2 x 3]
+        x integer [1, 3]
+        y integer [2, 4]
+        z integer [5, 6]
+      >
+  """
+  @doc type: :single
+  @spec unnest(df :: DataFrame.t(), column_or_columns :: column_name() | [column_name()]) ::
+          DataFrame.t()
+  def unnest(%DataFrame{} = df, column_or_columns) do
+    columns = to_existing_columns(df, List.wrap(column_or_columns))
+
+    dtypes = Enum.map(columns, &Map.fetch!(df.dtypes, &1))
+
+    unless Enum.all?(dtypes, &match?({:struct, _}, &1)) do
+      raise ArgumentError,
+            "unnest/2 expects struct columns, but the given columns have the types: #{inspect(dtypes)}"
+    end
+
+    {new_dtypes, new_names} =
+      columns
+      |> Enum.zip(dtypes)
+      |> Enum.reduce({%{}, %{}}, fn {column, {:struct, inner_dtypes}}, {new_dtypes, new_names} ->
+        new_dtypes = Map.merge(new_dtypes, inner_dtypes)
+        new_names = Map.put(new_names, column, Map.keys(inner_dtypes))
+
+        {new_dtypes, new_names}
+      end)
+
+    out_dtypes =
+      df.dtypes
+      |> Map.drop(columns)
+      |> Map.merge(new_dtypes)
+
+    out_names =
+      Enum.flat_map(df.names, fn name ->
+        case Map.fetch(new_names, name) do
+          {:ok, names} -> names
+          :error -> [name]
+        end
+      end)
+
+    out_df = %{df | dtypes: out_dtypes, names: out_names}
+
+    Shared.apply_impl(df, :unnest, [out_df, columns])
+  end
+
+  @doc """
   Prints the DataFrame in a tabular fashion.
 
   ## Examples

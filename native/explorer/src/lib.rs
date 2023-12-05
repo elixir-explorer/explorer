@@ -138,6 +138,7 @@ rustler::init!(
         df_to_ndjson_cloud,
         df_to_parquet,
         df_to_parquet_cloud,
+        df_unnest,
         df_width,
         // expressions
         expr_atom,
@@ -286,6 +287,7 @@ rustler::init!(
         lf_tail,
         lf_slice,
         lf_explode,
+        lf_unnest,
         lf_from_csv,
         lf_from_ipc,
         lf_from_parquet,
