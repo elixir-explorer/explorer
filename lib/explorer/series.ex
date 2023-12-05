@@ -63,6 +63,30 @@ defmodule Explorer.Series do
         string ["foo", "bar", "baz"]
       >
 
+  ## Special `_` syntax
+
+  DataFrames have named columns, so their queries use column names as variables:
+
+      iex> require Explorer.DataFrame
+      iex> df = Explorer.DataFrame.new(col_name: [1, 2, 3])
+      iex> Explorer.DataFrame.filter(df, col_name > 2)
+      #Explorer.DataFrame<
+        Polars[1 x 1]
+        col_name integer [3]
+      >
+
+  Series have no named columns.
+  (A series constitutes a single column, so no name is required.)
+  This means their queries can't use column names as variables.
+  Instead, series queries use the special `_` variable like so:
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.filter(s, _ > 2)
+      #Explorer.Series<
+        Polars[1]
+        integer [3]
+      >
+
   """
 
   import Kernel, except: [and: 2, not: 1, in: 2]
@@ -1445,6 +1469,8 @@ defmodule Explorer.Series do
   @spec at_every(series :: Series.t(), every_n :: integer()) :: Series.t()
   def at_every(series, every_n), do: apply_series(series, :at_every, [every_n])
 
+  # Macros
+
   @doc """
   Picks values based on an `Explorer.Query`.
 
@@ -1454,7 +1480,10 @@ defmodule Explorer.Series do
 
   > #### Notice {: .notice}
   >
-  > This is a macro. You must `require Explorer.Series` before using it.
+  > This is a macro.
+  >
+  >   * You must `require Explorer.Series` before using it.
+  >   * You must use the special `_` syntax. See the moduledoc for details.
 
   Besides element-wise series operations, you can also use window functions
   and aggregations inside comparisons.
@@ -1462,34 +1491,6 @@ defmodule Explorer.Series do
   See `filter_with/2` for a callback version of this function without
   `Explorer.Query`.
   See `mask/2` if you want to filter values based on another series.
-
-  ## Syntax
-
-  > #### Notice {: .notice}
-  >
-  > This macro uses the special `_` syntax.
-
-  DataFrames have named columns, so their queries use column names as variables:
-
-      iex> require Explorer.DataFrame
-      iex> df = Explorer.DataFrame.new(col_name: [1, 2, 3])
-      iex> Explorer.DataFrame.filter(df, col_name > 2)
-      #Explorer.DataFrame<
-        Polars[1 x 1]
-        col_name integer [3]
-      >
-
-  Series have no named columns.
-  (A series constitutes a single column, so no name is required.)
-  This means their queries can't use column names as variables.
-  Instead, series queries use the special `_` variable like so:
-
-      iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.filter(s, _ > 2)
-      #Explorer.Series<
-        Polars[1]
-        integer [3]
-      >
 
   ## Examples
 
@@ -1556,6 +1557,77 @@ defmodule Explorer.Series do
   def filter_with(%Series{} = series, fun) when is_function(fun, 1) do
     Explorer.DataFrame.new(series: series)
     |> Explorer.DataFrame.filter_with(&fun.(&1[:series]))
+    |> Explorer.DataFrame.pull(:series)
+  end
+
+  @doc """
+  Maps values based on an `Explorer.Query`.
+
+  The query is compiled and runs efficiently against the series.
+
+  > #### Notice {: .notice}
+  >
+  > This is a macro.
+  >
+  >   * You must `require Explorer.Series` before using it.
+  >   * You must use the special `_` syntax. See the moduledoc for details.
+
+  See `map_with/2` for a callback version of this function without `Explorer.Query`.
+
+  This function only works with lazy computations.
+  See `transform/2` for a version that works with any Elixir function.
+
+  ## Examples
+
+  Basic example:
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.map(s, _ * 2)
+      #Explorer.Series<
+        Polars[3]
+        integer [2, 4, 6]
+      >
+
+  You can also use window functions and aggregations:
+
+      iex> s = Explorer.Series.from_list([2, 3, 4])
+      iex> Explorer.Series.map(s, _ - min(_))
+      #Explorer.Series<
+        Polars[3]
+        integer [0, 1, 2]
+      >
+  """
+  @doc type: :element_wise
+  defmacro map(series, query) do
+    quote do
+      require Explorer.DataFrame
+
+      Explorer.DataFrame.new(_: unquote(series))
+      |> Explorer.DataFrame.mutate(_: unquote(query))
+      |> Explorer.DataFrame.pull(:_)
+    end
+  end
+
+  @doc """
+  Maps a series with a callback function.
+
+  This function only works with lazy computations.
+  See `transform/2` for a version that works with any Elixir function.
+
+  ## Examples
+
+      iex> series = Explorer.Series.from_list([2, 3, 4])
+      iex> shift_left = fn s -> Explorer.Series.subtract(s, Explorer.Series.min(s)) end
+      iex> Explorer.Series.map_with(series, shift_left)
+      #Explorer.Series<
+        Polars[3]
+        integer [0, 1, 2]
+      >
+  """
+  @doc type: :element_wise
+  def map_with(%Series{} = series, fun) when is_function(fun, 1) do
+    Explorer.DataFrame.new(series: series)
+    |> Explorer.DataFrame.mutate_with(&[series: fun.(&1[:series])])
     |> Explorer.DataFrame.pull(:series)
   end
 

@@ -2805,6 +2805,49 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "map/2" do
+    test "basic example" do
+      require Explorer.Series
+
+      s = Series.from_list([1, 2, 3, 4])
+      mapped = Series.map(s, _ * 2)
+      assert Series.to_list(mapped) == [2, 4, 6, 8]
+    end
+
+    test "aggregation" do
+      require Explorer.Series
+
+      s = Series.from_list([1, 2, 3, 4])
+      mapped = Series.map(s, _ - min(_))
+      assert Series.to_list(mapped) == [0, 1, 2, 3]
+    end
+
+    test "mismatched columns" do
+      require Explorer.Series
+
+      s = Series.from_list([1, 2, 3, 4])
+      message = "could not find column name \"n\". The available entries are: [\"_\"]"
+
+      assert_raise ArgumentError, message, fn ->
+        Series.map(s, n * 2)
+      end
+    end
+  end
+
+  describe "map_with/2" do
+    test "basic example" do
+      s = Series.from_list([1, 2, 3, 4])
+      mapped = Series.map_with(s, &Series.multiply(&1, 2))
+      assert Series.to_list(mapped) == [2, 4, 6, 8]
+    end
+
+    test "aggregation" do
+      s = Series.from_list([1, 2, 3, 4])
+      mapped = Series.map_with(s, &Series.subtract(&1, Series.min(&1)))
+      assert Series.to_list(mapped) == [0, 1, 2, 3]
+    end
+  end
+
   describe "sample/2" do
     test "sample taking 10 elements" do
       s = 1..100 |> Enum.to_list() |> Series.from_list()
