@@ -3150,8 +3150,8 @@ defmodule Explorer.DataFrame do
   @doc """
   Arranges/sorts rows by columns using a callback function.
 
-  The callback receives a lazy dataframe. A lazy dataframe does not
-  hold values; instead it stores operations for efficient sorting.
+  The callback receives a lazy dataframe which stores
+  operations instead of values for efficient sorting.
 
   This is a callback version of `arrange/2`.
 
