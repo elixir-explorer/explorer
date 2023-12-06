@@ -764,6 +764,26 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_dataframe(df, out_df, :df_unnest, [columns])
   end
 
+  @impl true
+  def correlation(df, out_df, ddof) do
+    [column_name | cols] = out_df.names
+
+    correlations =
+      Enum.map(cols, fn left ->
+        corr_series =
+          cols
+          |> Enum.map(fn right -> PolarsSeries.correlation(df[left], df[right], ddof) end)
+          |> Shared.from_list({:f, 64})
+          |> Shared.create_series()
+
+        {left, corr_series}
+      end)
+
+    names_series = cols |> Shared.from_list(:string) |> Shared.create_series()
+
+    from_series([{column_name, names_series} | correlations])
+  end
+
   # Two or more table verbs
 
   @impl true

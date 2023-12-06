@@ -5668,13 +5668,15 @@ defmodule Explorer.DataFrame do
   * `{:f, 32}`
   * `{:f, 64}`
 
+  The resultant columns are always `{:f, 64}`.
+
   ## Options
 
   * `:columns` - the selection of columns to calculate. Defaults to all numeric columns.
-  * `:column_name` - the name of the column with variable names. Defaults to "names".
+  * `:column_name` - the name of the column with column names. Defaults to "names".
   * `:ddof` - the 'delta degrees of freedom' - the divisor used in the correlation
     calculation. Defaults to 1.
-   
+
   ## Examples
 
       iex> df = Explorer.DataFrame.new(dogs: [1, 8, 3], cats: [4, 5, 2])
@@ -5691,15 +5693,17 @@ defmodule Explorer.DataFrame do
   def correlation(df, opts \\ []) do
     opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
 
+    column_name = to_column_name(opts[:column_name])
+
     cols =
       df
       |> to_existing_columns(opts[:columns])
       |> Enum.filter(fn name -> numeric_column?(df, name) end)
 
-    result = for l <- cols, r <- cols, do: Series.correlation(df[l], df[r], opts[:ddof])
-    values = Enum.chunk_every(result, length(cols))
+    out_dtypes = for col <- cols, into: %{column_name => :string}, do: {col, {:f, 64}}
+    out_df = %{df | dtypes: out_dtypes, names: [column_name | cols]}
 
-    new([{opts[:column_name], cols} | Enum.zip(cols, values)])
+    Shared.apply_impl(df, :correlation, [out_df, opts[:ddof]])
   end
 
   defp numeric_column?(df, name) do

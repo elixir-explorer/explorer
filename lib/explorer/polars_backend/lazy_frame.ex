@@ -488,6 +488,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   not_available_funs = [
+    correlation: 3,
     describe: 2,
     nil_count: 1,
     dummies: 3,

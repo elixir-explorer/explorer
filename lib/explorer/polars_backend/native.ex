@@ -6,8 +6,7 @@ defmodule Explorer.PolarsBackend.Native do
   github_url = mix_config[:package][:links]["GitHub"]
   # Since Rustler 0.27.0, we need to change manually the mode for each env.
   # We want "debug" in dev and test because it's faster to compile.
-  # mode = if Mix.env() in [:dev, :test], do: :debug, else: :release
-  mode = :debug
+  mode = if Mix.env() in [:dev, :test], do: :debug, else: :release
 
   use_legacy =
     Application.compile_env(
