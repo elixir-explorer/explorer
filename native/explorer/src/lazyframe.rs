@@ -91,6 +91,12 @@ pub fn lf_explode(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, 
 }
 
 #[rustler::nif]
+pub fn lf_unnest(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
+    let lf = data.clone_inner().unnest(columns);
+    Ok(ExLazyFrame::new(lf))
+}
+
+#[rustler::nif]
 pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
     let expr = ex_expr.clone_inner();

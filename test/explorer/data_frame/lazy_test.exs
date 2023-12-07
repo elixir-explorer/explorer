@@ -1417,4 +1417,18 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
   end
+
+  describe "unnest/2" do
+    test "unnests a struct column" do
+      ldf = DF.new([data: [%{x: 1, y: 2}, %{x: 3, y: 4}]], lazy: true)
+
+      ldf1 = DF.unnest(ldf, :data)
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               x: [1, 3],
+               y: [2, 4]
+             }
+    end
+  end
 end

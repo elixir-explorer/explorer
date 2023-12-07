@@ -422,6 +422,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def explode(%DF{} = df, %DF{} = out_df, columns),
     do: Shared.apply_dataframe(df, out_df, :lf_explode, [columns])
 
+  @impl true
+  def unnest(%DF{} = df, %DF{} = out_df, columns),
+    do: Shared.apply_dataframe(df, out_df, :lf_unnest, [columns])
+
   # Groups
 
   @impl true

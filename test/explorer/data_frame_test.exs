@@ -3777,4 +3777,82 @@ defmodule Explorer.DataFrameTest do
                    fn -> DF.explode(df, [:a, :b]) end
     end
   end
+
+  describe "unnest/2" do
+    test "unnests a struct column" do
+      df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}])
+
+      df1 = DF.unnest(df, :a)
+
+      assert DF.names(df1) == ["x", "y"]
+      assert DF.dtypes(df1) == %{"x" => :integer, "y" => :integer}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               x: [1, 3],
+               y: [2, 4]
+             }
+    end
+
+    test "unnests multiple struct columns at once" do
+      df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}], b: [%{z: 5}, %{z: 6}])
+
+      df1 = DF.unnest(df, [:a, :b])
+
+      assert DF.names(df1) == ["x", "y", "z"]
+      assert DF.dtypes(df1) == %{"x" => :integer, "y" => :integer, "z" => :integer}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               x: [1, 3],
+               y: [2, 4],
+               z: [5, 6]
+             }
+    end
+
+    test "unnests the columns in the right order" do
+      df =
+        DF.new(
+          before: [1, 2],
+          a: [%{x: 1}, %{x: 2}],
+          between: [3, 4],
+          x: [%{y: 1}, %{y: 2}],
+          after: [5, 6]
+        )
+
+      df1 = DF.unnest(df, [:a, :x])
+
+      assert DF.names(df1) == ["before", "x", "between", "y", "after"]
+
+      assert DF.dtypes(df1) == %{
+               "before" => :integer,
+               "x" => :integer,
+               "between" => :integer,
+               "y" => :integer,
+               "after" => :integer
+             }
+    end
+
+    test "errors if the column is not of the struct type" do
+      df = DF.new(a: [1, 2, 3])
+
+      assert_raise ArgumentError,
+                   "unnest/2 expects struct columns, but the given columns have the types: [:integer]",
+                   fn -> DF.unnest(df, :a) end
+    end
+
+    test "errors when unnesting columns with clashing names" do
+      df = DF.new(a: [%{x: 1}, %{x: 2}], x: [3, 4])
+
+      assert_raise RuntimeError,
+                   ~r/column with name 'x' has more than one occurrences/,
+                   fn -> DF.unnest(df, :a) end
+    end
+
+    test "errors when unnesting multiple columns with clashing names" do
+      df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}], b: [%{x: 5}, %{x: 6}])
+
+      assert_raise RuntimeError,
+                   ~r/column with name 'x' has more than one occurrences/,
+                   fn -> DF.unnest(df, [:a, :b]) end
+    end
+  end
 end
