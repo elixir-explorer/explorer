@@ -1631,6 +1631,28 @@ defmodule Explorer.Series do
     |> Explorer.DataFrame.pull(:series)
   end
 
+  @doc type: :element_wise
+  defmacro arrange(series, query, opts \\ []) do
+    {direction, opts} = Keyword.pop(opts, :direction, :asc)
+
+    quote do
+      require Explorer.DataFrame
+
+      Explorer.DataFrame.new(_: unquote(series))
+      |> Explorer.DataFrame.arrange([{unquote(direction), unquote(query)}], unquote(opts))
+      |> Explorer.DataFrame.pull(:_)
+    end
+  end
+
+  @doc type: :element_wise
+  def arrange_with(%Series{} = series, fun, opts \\ []) do
+    {direction, opts} = Keyword.pop(opts, :direction, :asc)
+
+    Explorer.DataFrame.new(series: series)
+    |> Explorer.DataFrame.arrange_with(&[{direction, fun.(&1[:series])}], opts)
+    |> Explorer.DataFrame.pull(:series)
+  end
+
   @doc """
   Filters a series with a mask.
 
