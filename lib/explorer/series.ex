@@ -1632,7 +1632,7 @@ defmodule Explorer.Series do
   end
 
   @doc type: :element_wise
-  defmacro arrange(series, query, opts \\ []) do
+  defmacro sort_by(series, query, opts \\ []) do
     {direction, opts} = Keyword.pop(opts, :direction, :asc)
 
     quote do
@@ -1645,7 +1645,7 @@ defmodule Explorer.Series do
   end
 
   @doc type: :element_wise
-  def arrange_with(%Series{} = series, fun, opts \\ []) do
+  def sort_with(%Series{} = series, fun, opts \\ []) do
     {direction, opts} = Keyword.pop(opts, :direction, :asc)
 
     Explorer.DataFrame.new(series: series)

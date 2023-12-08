@@ -2853,7 +2853,7 @@ defmodule Explorer.SeriesTest do
       require Explorer.Series
 
       s1 = Series.from_list([1, 2, 3])
-      result = Series.arrange(s1, remainder(_, 3))
+      result = Series.sort_by(s1, remainder(_, 3))
       assert Series.to_list(result) == [3, 1, 2]
     end
 
@@ -2861,7 +2861,7 @@ defmodule Explorer.SeriesTest do
       require Explorer.Series
 
       s1 = Series.from_list([1, 2, 3])
-      result = Series.arrange(s1, remainder(_, 3), direction: :desc)
+      result = Series.sort_by(s1, remainder(_, 3), direction: :desc)
       assert Series.to_list(result) == [2, 1, 3]
     end
 
@@ -2869,7 +2869,7 @@ defmodule Explorer.SeriesTest do
       require Explorer.Series
 
       s1 = Series.from_list([1, nil, 2, 3])
-      result = Series.arrange(s1, remainder(_, 3))
+      result = Series.sort_by(s1, remainder(_, 3))
       assert Series.to_list(result) == [3, 1, 2, nil]
     end
 
@@ -2877,7 +2877,7 @@ defmodule Explorer.SeriesTest do
       require Explorer.Series
 
       s1 = Series.from_list([1, nil, 2, 3])
-      result = Series.arrange(s1, remainder(_, 3), nils: :first)
+      result = Series.sort_by(s1, remainder(_, 3), nils: :first)
       assert Series.to_list(result) == [nil, 3, 1, 2]
     end
   end
@@ -2885,25 +2885,25 @@ defmodule Explorer.SeriesTest do
   describe "arrange_with/2" do
     test "ascending order (default)" do
       s1 = Series.from_list([1, 2, 3])
-      result = Series.arrange_with(s1, &Series.remainder(&1, 3))
+      result = Series.sort_with(s1, &Series.remainder(&1, 3))
       assert Series.to_list(result) == [3, 1, 2]
     end
 
     test "descending order" do
       s1 = Series.from_list([1, 2, 3])
-      result = Series.arrange_with(s1, &Series.remainder(&1, 3), direction: :desc)
+      result = Series.sort_with(s1, &Series.remainder(&1, 3), direction: :desc)
       assert Series.to_list(result) == [2, 1, 3]
     end
 
     test "nils last (default)" do
       s1 = Series.from_list([1, nil, 2, 3])
-      result = Series.arrange_with(s1, &Series.remainder(&1, 3))
+      result = Series.sort_with(s1, &Series.remainder(&1, 3))
       assert Series.to_list(result) == [3, 1, 2, nil]
     end
 
     test "nils first" do
       s1 = Series.from_list([1, nil, 2, 3])
-      result = Series.arrange_with(s1, &Series.remainder(&1, 3), nils: :first)
+      result = Series.sort_with(s1, &Series.remainder(&1, 3), nils: :first)
       assert Series.to_list(result) == [nil, 3, 1, 2]
     end
   end
