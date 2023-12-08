@@ -9,6 +9,9 @@ defmodule Explorer.Shared do
     :date,
     {:f, 32},
     {:f, 64},
+    {:s, 8},
+    {:s, 16},
+    {:s, 32},
     :integer,
     :string,
     :time,
@@ -447,6 +450,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:list, dtype}), do: "list[" <> dtype_to_string(dtype) <> "]"
   def dtype_to_string({:struct, fields}), do: "struct[#{map_size(fields)}]"
   def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
+  def dtype_to_string({:s, size}), do: "s" <> Integer.to_string(size)
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
 
   @threshold 0.77

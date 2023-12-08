@@ -848,7 +848,12 @@ defmodule Explorer.Backend.LazySeries do
 
     open = A.color("(", :list, opts)
     close = A.color(")", :list, opts)
-    dtype = A.color("#{Series.dtype(series)}", :atom, opts)
+
+    dtype =
+      series
+      |> Series.dtype()
+      |> Explorer.Shared.dtype_to_string()
+      |> A.color(:atom, opts)
 
     A.concat([
       A.color("LazySeries[???]", :atom, opts),

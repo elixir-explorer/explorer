@@ -323,6 +323,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_from_list_duration(_name, _val, _precision), do: err()
   def s_from_list_f32(_name, _val), do: err()
   def s_from_list_f64(_name, _val), do: err()
+  def s_from_list_i32(_name, _val), do: err()
   def s_from_list_i64(_name, _val), do: err()
   def s_from_list_u32(_name, _val), do: err()
   def s_from_list_str(_name, _val), do: err()

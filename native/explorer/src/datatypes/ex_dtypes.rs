@@ -35,6 +35,7 @@ pub enum ExSeriesDtype {
     Category,
     Date,
     F(u8),
+    S(u8),
     Integer,
     String,
     Time,
@@ -55,6 +56,9 @@ impl TryFrom<&DataType> for ExSeriesDtype {
             DataType::Date => Ok(ExSeriesDtype::Date),
             DataType::Float64 => Ok(ExSeriesDtype::F(64)),
             DataType::Float32 => Ok(ExSeriesDtype::F(32)),
+            DataType::Int8 => Ok(ExSeriesDtype::S(8)),
+            DataType::Int16 => Ok(ExSeriesDtype::S(16)),
+            DataType::Int32 => Ok(ExSeriesDtype::S(32)),
             DataType::Int64 => Ok(ExSeriesDtype::Integer),
             DataType::Time => Ok(ExSeriesDtype::Time),
             DataType::Utf8 => Ok(ExSeriesDtype::String),
@@ -114,6 +118,13 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             ExSeriesDtype::F(size) => Err(ExplorerError::Other(format!(
                 "float dtype of size {size} is not valid"
             ))),
+            ExSeriesDtype::S(8) => Ok(DataType::Int8),
+            ExSeriesDtype::S(16) => Ok(DataType::Int16),
+            ExSeriesDtype::S(32) => Ok(DataType::Int32),
+            ExSeriesDtype::S(64) => Ok(DataType::Int64),
+            ExSeriesDtype::S(size) => Err(ExplorerError::Other(format!(
+                "signed integer dtype of size {size} is not valid"
+            ))),
             ExSeriesDtype::Integer => Ok(DataType::Int64),
             ExSeriesDtype::String => Ok(DataType::Utf8),
             ExSeriesDtype::Time => Ok(DataType::Time),
@@ -164,6 +175,8 @@ impl TryFrom<&DataType> for ExSeriesIoType {
             DataType::Boolean => Ok(ExSeriesIoType::U(8)),
             DataType::UInt8 => Ok(ExSeriesIoType::U(8)),
             DataType::UInt32 => Ok(ExSeriesIoType::U(32)),
+            DataType::Int8 => Ok(ExSeriesIoType::S(8)),
+            DataType::Int16 => Ok(ExSeriesIoType::S(16)),
             DataType::Int32 => Ok(ExSeriesIoType::S(32)),
             DataType::Int64 => Ok(ExSeriesIoType::S(64)),
             DataType::Float64 => Ok(ExSeriesIoType::F(64)),
