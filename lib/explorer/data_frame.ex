@@ -5657,6 +5657,59 @@ defmodule Explorer.DataFrame do
 
   def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")
 
+  @doc """
+  Calculates the pairwise Pearson's correlation of numeric columns.
+
+  ## Supported dtypes
+
+  Only columns with the following dtypes are taken into account.
+
+  * `:integer`
+  * `{:f, 32}`
+  * `{:f, 64}`
+
+  The resultant columns are always `{:f, 64}`.
+
+  ## Options
+
+  * `:columns` - the selection of columns to calculate. Defaults to all numeric columns.
+  * `:column_name` - the name of the column with column names. Defaults to "names".
+  * `:ddof` - the 'delta degrees of freedom' - the divisor used in the correlation
+    calculation. Defaults to 1.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(dogs: [1, 8, 3], cats: [4, 5, 2])
+      iex> Explorer.DataFrame.correlation(df)
+      #Explorer.DataFrame<
+        Polars[2 x 3]
+        names string ["dogs", "cats"]
+        dogs f64 [1.0000000000000002, 0.5447047794019219]
+        cats f64 [0.5447047794019219, 1.0]
+      >
+  """
+  @doc type: :single
+  @spec correlation(df :: DataFrame.t(), opts :: Keyword.t()) :: df :: DataFrame.t()
+  def correlation(df, opts \\ []) do
+    opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
+
+    column_name = to_column_name(opts[:column_name])
+
+    cols =
+      df
+      |> to_existing_columns(opts[:columns])
+      |> Enum.filter(fn name -> numeric_column?(df, name) end)
+
+    out_dtypes = for col <- cols, into: %{column_name => :string}, do: {col, {:f, 64}}
+    out_df = %{df | dtypes: out_dtypes, names: [column_name | cols]}
+
+    Shared.apply_impl(df, :correlation, [out_df, opts[:ddof]])
+  end
+
+  defp numeric_column?(df, name) do
+    Series.dtype(df[name]) in [:integer | Explorer.Shared.float_types()]
+  end
+
   # Helpers
 
   defp backend_from_options!(opts) do
