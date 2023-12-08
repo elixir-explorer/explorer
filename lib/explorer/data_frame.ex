@@ -5658,7 +5658,7 @@ defmodule Explorer.DataFrame do
   def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")
 
   @doc """
-  Calculates the pairwise correlation of numeric columns.
+  Calculates the pairwise Pearson's correlation of numeric columns.
 
   ## Supported dtypes
 
