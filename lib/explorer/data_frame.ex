@@ -5659,6 +5659,7 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Calculates the pairwise Pearson's correlation of numeric columns.
+  The returned dataframe is the correlation matrix.
 
   ## Supported dtypes
 
@@ -5692,22 +5693,48 @@ defmodule Explorer.DataFrame do
   @spec correlation(df :: DataFrame.t(), opts :: Keyword.t()) :: df :: DataFrame.t()
   def correlation(df, opts \\ []) do
     opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
-
-    column_name = to_column_name(opts[:column_name])
-
-    cols =
-      df
-      |> to_existing_columns(opts[:columns])
-      |> Enum.filter(fn name -> numeric_column?(df, name) end)
-
-    out_dtypes = for col <- cols, into: %{column_name => :string}, do: {col, {:f, 64}}
-    out_df = %{df | dtypes: out_dtypes, names: [column_name | cols]}
-
+    out_df = pairwised_df(df, opts)
     Shared.apply_impl(df, :correlation, [out_df, opts[:ddof]])
   end
 
-  defp numeric_column?(df, name) do
-    Series.dtype(df[name]) in [:integer | Explorer.Shared.float_types()]
+  @doc """
+  Calculates the pairwise covariance of numeric columns.
+  The returned dataframe is the covariance matrix.
+
+  ## Supported dtypes
+
+  Only columns with the following dtypes are taken into account.
+
+  * `:integer`
+  * `{:f, 32}`
+  * `{:f, 64}`
+
+  The resultant columns are always `{:f, 64}`.
+
+  ## Options
+
+  * `:columns` - the selection of columns to calculate. Defaults to all numeric columns.
+  * `:column_name` - the name of the column with column names. Defaults to "names".
+  * `:ddof` - the 'delta degrees of freedom' - the divisor used in the correlation
+    calculation. Defaults to 1.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1])
+      iex> Explorer.DataFrame.covariance(df)
+      #Explorer.DataFrame<
+        Polars[2 x 3]
+        names string ["dogs", "cats"]
+        dogs f64 [0.6666666666666666, -1.0]
+        cats f64 [-1.0, 1.6666666666666667]
+      >
+  """
+  @doc type: :single
+  @spec covariance(df :: DataFrame.t(), opts :: Keyword.t()) :: df :: DataFrame.t()
+  def covariance(df, opts \\ []) do
+    opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
+    out_df = pairwised_df(df, opts)
+    Shared.apply_impl(df, :covariance, [out_df, opts[:ddof]])
   end
 
   # Helpers
@@ -5720,6 +5747,22 @@ defmodule Explorer.DataFrame do
     else
       :"#{backend}.DataFrame"
     end
+  end
+
+  defp numeric_column?(df, name) do
+    Series.dtype(df[name]) in [:integer | Explorer.Shared.float_types()]
+  end
+
+  defp pairwised_df(df, opts) do
+    column_name = to_column_name(opts[:column_name])
+
+    cols =
+      df
+      |> to_existing_columns(opts[:columns])
+      |> Enum.filter(fn name -> numeric_column?(df, name) end)
+
+    out_dtypes = for col <- cols, into: %{column_name => :string}, do: {col, {:f, 64}}
+    %{df | dtypes: out_dtypes, names: [column_name | cols]}
   end
 
   defimpl Inspect do
