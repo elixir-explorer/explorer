@@ -1631,7 +1631,55 @@ defmodule Explorer.Series do
     |> Explorer.DataFrame.pull(:series)
   end
 
-  @doc type: :element_wise
+  @doc """
+  Sorts the series based on an expression.
+
+  > #### Notice {: .notice}
+  >
+  > This is a macro.
+  >
+  >   * You must `require Explorer.Series` before using it.
+  >   * You must use the special `_` syntax. See the moduledoc for details.
+
+  See `sort_with/3` for the callback-based version of this function.
+
+  ## Options
+
+    * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
+      By default it sorts in ascending order.
+
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
+
+    * `:stable` - `true` or `false`.
+      Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
+      Unstable sorting may be more performant.
+      By default it is `true`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.sort_by(s, remainder(_, 3))
+      #Explorer.Series<
+        Polars[3]
+        integer [3, 1, 2]
+      >
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.sort_by(s, remainder(_, 3), direction: :desc)
+      #Explorer.Series<
+        Polars[3]
+        integer [2, 1, 3]
+      >
+
+      iex> s = Explorer.Series.from_list([1, nil, 2, 3])
+      iex> Explorer.Series.sort_by(s, -2 * _, nils: :first)
+      #Explorer.Series<
+        Polars[4]
+        integer [nil, 3, 2, 1]
+      >
+  """
+  @doc type: :shape
   defmacro sort_by(series, query, opts \\ []) do
     {direction, opts} = Keyword.pop(opts, :direction, :asc)
 
@@ -1644,7 +1692,48 @@ defmodule Explorer.Series do
     end
   end
 
-  @doc type: :element_wise
+  @doc """
+  Sorts the series based on a callback that returns a lazy series.
+
+  See `sort_by/3` for the expression-based version of this function.
+
+  ## Options
+
+    * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
+      By default it sorts in ascending order.
+
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
+
+    * `:stable` - `true` or `false`.
+      Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
+      Unstable sorting may be more performant.
+      By default it is `true`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.sort_with(s, &Explorer.Series.remainder(&1, 3))
+      #Explorer.Series<
+        Polars[3]
+        integer [3, 1, 2]
+      >
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.sort_with(s, &Explorer.Series.remainder(&1, 3), direction: :desc)
+      #Explorer.Series<
+        Polars[3]
+        integer [2, 1, 3]
+      >
+
+      iex> s = Explorer.Series.from_list([1, nil, 2, 3])
+      iex> Explorer.Series.sort_with(s, &Explorer.Series.multiply(-2, &1), nils: :first)
+      #Explorer.Series<
+        Polars[4]
+        integer [nil, 3, 2, 1]
+      >
+  """
+  @doc type: :shape
   def sort_with(%Series{} = series, fun, opts \\ []) do
     {direction, opts} = Keyword.pop(opts, :direction, :asc)
 
@@ -4205,6 +4294,9 @@ defmodule Explorer.Series do
   Sorts the series.
 
   Sorting is stable by default.
+
+  See `sort_by/3` for an expression-based sorting function.
+  See `sort_with/3` for a callback-based sorting function.
 
   ## Options
 
