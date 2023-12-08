@@ -253,6 +253,16 @@ defmodule Explorer.SeriesTest do
       assert Series.from_list(dates, dtype: {:datetime, :microsecond}) |> Series.to_list() ==
                dates
     end
+
+    test "with 32-bit integers" do
+      for dtype <- [:i32, {:s, 32}] do
+        s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[0] === -1
+        assert Series.to_list(s) === [-1, 0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:s, 32}
+      end
+    end
   end
 
   describe "fetch/2" do

@@ -12,6 +12,8 @@ defmodule Explorer.Shared do
     {:s, 8},
     {:s, 16},
     {:s, 32},
+    {:s, 64},
+    # TODO: remove this integer
     :integer,
     :string,
     :time,
@@ -56,7 +58,9 @@ defmodule Explorer.Shared do
 
   def normalise_dtype(dtype) when dtype in @scalar_types, do: dtype
   def normalise_dtype(dtype) when dtype in [:float, :f64], do: {:f, 64}
+  def normalise_dtype(dtype) when dtype in [:integer, :i64], do: {:s, 64}
   def normalise_dtype(:f32), do: {:f, 32}
+  def normalise_dtype(:i32), do: {:s, 32}
   def normalise_dtype(_dtype), do: nil
 
   @doc """
