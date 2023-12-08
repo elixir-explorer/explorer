@@ -5659,6 +5659,7 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Calculates the pairwise Pearson's correlation of numeric columns.
+
   The returned dataframe is the correlation matrix.
 
   ## Supported dtypes
@@ -5699,6 +5700,7 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Calculates the pairwise covariance of numeric columns.
+
   The returned dataframe is the covariance matrix.
 
   ## Supported dtypes
@@ -5715,7 +5717,7 @@ defmodule Explorer.DataFrame do
 
   * `:columns` - the selection of columns to calculate. Defaults to all numeric columns.
   * `:column_name` - the name of the column with column names. Defaults to "names".
-  * `:ddof` - the 'delta degrees of freedom' - the divisor used in the correlation
+  * `:ddof` - the 'delta degrees of freedom' - the divisor used in the covariance
     calculation. Defaults to 1.
 
   ## Examples

@@ -843,7 +843,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp pairwised(df, out_df, ddof, operation) do
     [column_name | cols] = out_df.names
 
-    correlations =
+    pairwised_results =
       Enum.map(cols, fn left ->
         corr_series =
           cols
@@ -856,6 +856,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     names_series = cols |> Shared.from_list(:string) |> Shared.create_series()
 
-    from_series([{column_name, names_series} | correlations])
+    from_series([{column_name, names_series} | pairwised_results])
   end
 end
