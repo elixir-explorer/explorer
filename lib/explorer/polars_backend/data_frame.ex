@@ -766,22 +766,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def correlation(df, out_df, ddof) do
-    [column_name | cols] = out_df.names
+    pairwised(df, out_df, ddof, :correlation)
+  end
 
-    correlations =
-      Enum.map(cols, fn left ->
-        corr_series =
-          cols
-          |> Enum.map(fn right -> PolarsSeries.correlation(df[left], df[right], ddof) end)
-          |> Shared.from_list({:f, 64})
-          |> Shared.create_series()
-
-        {left, corr_series}
-      end)
-
-    names_series = cols |> Shared.from_list(:string) |> Shared.create_series()
-
-    from_series([{column_name, names_series} | correlations])
+  @impl true
+  def covariance(df, out_df, ddof) do
+    pairwised(df, out_df, ddof, :covariance)
   end
 
   # Two or more table verbs
@@ -846,5 +836,26 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def inspect(df, opts) do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
+  end
+
+  # helpers
+
+  defp pairwised(df, out_df, ddof, operation) do
+    [column_name | cols] = out_df.names
+
+    pairwised_results =
+      Enum.map(cols, fn left ->
+        corr_series =
+          cols
+          |> Enum.map(fn right -> apply(PolarsSeries, operation, [df[left], df[right], ddof]) end)
+          |> Shared.from_list({:f, 64})
+          |> Shared.create_series()
+
+        {left, corr_series}
+      end)
+
+    names_series = cols |> Shared.from_list(:string) |> Shared.create_series()
+
+    from_series([{column_name, names_series} | pairwised_results])
   end
 end

@@ -3909,5 +3909,126 @@ defmodule Explorer.DataFrameTest do
                names: []
              }
     end
+
+    test "ignores non numeric columns" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2], frogs: ["a", "b", "c"])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0000000000000002, 0.5447047794019219],
+               cats: [0.5447047794019219, 1.0]
+             }
+    end
+
+    test "subset of numeric columns" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2], frogs: [7, 8, 9])
+      df1 = DF.correlation(df, columns: [:dogs, :cats])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0000000000000002, 0.5447047794019219],
+               cats: [0.5447047794019219, 1.0]
+             }
+    end
+
+    test "the returned matrix preserves the order" do
+      df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1])
+      df1 = DF.correlation(df, columns: [:cats, :dogs])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats", "dogs"],
+               dogs: [-1.0, 1.0],
+               cats: [1.0, -1.0]
+             }
+    end
+  end
+
+  describe "covariance/2" do
+    test "two integer columns" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.6666666666666666, -1.0],
+               cats: [-1.0, 1.6666666666666667]
+             }
+    end
+
+    test "three integer columns and custom column name" do
+      df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1], frogs: [7, 8, 9])
+      df1 = DF.covariance(df, column_name: "variables")
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               variables: ["dogs", "cats", "frogs"],
+               dogs: [1.0, -1.0, 1.0],
+               cats: [-1.0, 1.0, -1.0],
+               frogs: [1.0, -1.0, 1.0]
+             }
+    end
+
+    test "two float columns" do
+      df = DF.new(dogs: [1.4, 8.6, 3.7], cats: [4.1, 5.3, 2.2])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [13.52333333333333, 3.2433333333333394],
+               cats: [3.2433333333333394, 2.4433333333333422]
+             }
+    end
+
+    test "one column" do
+      df = DF.new(cats: [4, 5, 2])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats"],
+               cats: [2.3333333333333357]
+             }
+    end
+
+    test "no numeric columns" do
+      df = DF.new(cats: ["susie", "tuka", "tobias", "terror"])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: []
+             }
+    end
+
+    test "ignores non numeric columns" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1], frogs: ["a", "b", "c", "d"])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.6666666666666666, -1.0],
+               cats: [-1.0, 1.6666666666666667]
+             }
+    end
+
+    test "subset of numeric columns" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1], frogs: [6, 7, 8, 9])
+      df1 = DF.covariance(df, columns: [:dogs, :cats])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.6666666666666666, -1.0],
+               cats: [-1.0, 1.6666666666666667]
+             }
+    end
+
+    test "the returned matrix preserves the order" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1])
+      df1 = DF.covariance(df, columns: [:cats, :dogs])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats", "dogs"],
+               dogs: [-1.0, 0.6666666666666666],
+               cats: [1.6666666666666667, -1.0]
+             }
+    end
   end
 end
