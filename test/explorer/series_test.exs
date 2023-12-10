@@ -2882,7 +2882,7 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "arrange_with/2" do
+  describe "sort_with/2" do
     test "ascending order (default)" do
       s1 = Series.from_list([1, 2, 3])
       result = Series.sort_with(s1, &Series.remainder(&1, 3))
