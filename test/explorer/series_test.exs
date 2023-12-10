@@ -2848,6 +2848,66 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "sort_by/2" do
+    test "ascending order (default)" do
+      require Explorer.Series
+
+      s1 = Series.from_list([1, 2, 3])
+      result = Series.sort_by(s1, remainder(_, 3))
+      assert Series.to_list(result) == [3, 1, 2]
+    end
+
+    test "descending order" do
+      require Explorer.Series
+
+      s1 = Series.from_list([1, 2, 3])
+      result = Series.sort_by(s1, remainder(_, 3), direction: :desc)
+      assert Series.to_list(result) == [2, 1, 3]
+    end
+
+    test "nils last (default)" do
+      require Explorer.Series
+
+      s1 = Series.from_list([1, nil, 2, 3])
+      result = Series.sort_by(s1, remainder(_, 3))
+      assert Series.to_list(result) == [3, 1, 2, nil]
+    end
+
+    test "nils first" do
+      require Explorer.Series
+
+      s1 = Series.from_list([1, nil, 2, 3])
+      result = Series.sort_by(s1, remainder(_, 3), nils: :first)
+      assert Series.to_list(result) == [nil, 3, 1, 2]
+    end
+  end
+
+  describe "sort_with/2" do
+    test "ascending order (default)" do
+      s1 = Series.from_list([1, 2, 3])
+      result = Series.sort_with(s1, &Series.remainder(&1, 3))
+      assert Series.to_list(result) == [3, 1, 2]
+    end
+
+    test "descending order" do
+      s1 = Series.from_list([1, 2, 3])
+      result = Series.sort_with(s1, &Series.remainder(&1, 3), direction: :desc)
+      assert Series.to_list(result) == [2, 1, 3]
+    end
+
+    test "nils last (default)" do
+      s1 = Series.from_list([1, nil, 2, 3])
+      result = Series.sort_with(s1, &Series.remainder(&1, 3))
+      assert Series.to_list(result) == [3, 1, 2, nil]
+    end
+
+    test "nils first" do
+      s1 = Series.from_list([1, nil, 2, 3])
+      result = Series.sort_with(s1, &Series.remainder(&1, 3), nils: :first)
+      assert Series.to_list(result) == [nil, 3, 1, 2]
+    end
+  end
+
   describe "sample/2" do
     test "sample taking 10 elements" do
       s = 1..100 |> Enum.to_list() |> Series.from_list()
