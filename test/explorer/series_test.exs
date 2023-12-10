@@ -2848,7 +2848,7 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "arrange/2" do
+  describe "sort_by/2" do
     test "ascending order (default)" do
       require Explorer.Series
 
