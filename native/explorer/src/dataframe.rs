@@ -21,12 +21,9 @@ pub fn normalize_numeric_dtypes(df: &mut DataFrame) -> Result<DataFrame, crate::
 
     for (idx, dtype) in dtypes {
         match dtype {
-            DataType::UInt8
-            | DataType::UInt16
-            | DataType::UInt32
-            | DataType::Int8
-            | DataType::Int16
-            | DataType::Int32 => df.apply_at_idx(idx, |s| s.cast(&DataType::Int64).unwrap())?,
+            DataType::UInt8 | DataType::UInt16 | DataType::UInt32 => {
+                df.apply_at_idx(idx, |s| s.cast(&DataType::Int64).unwrap())?
+            }
             _ => df,
         };
     }
