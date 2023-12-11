@@ -263,6 +263,26 @@ defmodule Explorer.SeriesTest do
         assert Series.dtype(s) == {:s, 32}
       end
     end
+
+    test "with 16-bit integers" do
+      for dtype <- [:i16, {:s, 16}] do
+        s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[0] === -1
+        assert Series.to_list(s) === [-1, 0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:s, 16}
+      end
+    end
+
+    test "with 8-bit integers" do
+      for dtype <- [:i8, {:s, 8}] do
+        s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[0] === -1
+        assert Series.to_list(s) === [-1, 0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:s, 8}
+      end
+    end
   end
 
   describe "fetch/2" do

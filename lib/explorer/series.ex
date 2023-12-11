@@ -11,8 +11,7 @@ defmodule Explorer.Series do
     * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
     * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
     * `{:f, size}` - a 64-bit or 32-bit floating point number
-    * `{:s, size}` - a 64-bit or 32-bit integer number. It can also be 8-bit or 16-bit,
-      but it's not possible to create a series of these types from Explorer.
+    * `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit integer number.
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`

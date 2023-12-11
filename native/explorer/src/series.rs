@@ -30,6 +30,8 @@ macro_rules! from_list {
     };
 }
 
+from_list!(s_from_list_i8, i8);
+from_list!(s_from_list_i16, i16);
 from_list!(s_from_list_i32, i32);
 from_list!(s_from_list_i64, i64);
 from_list!(s_from_list_u32, u32);

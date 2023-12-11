@@ -133,6 +133,10 @@ defmodule Explorer.PolarsBackend.Shared do
   def from_list(list, dtype, name) when is_list(list) do
     case dtype do
       :integer -> Native.s_from_list_i64(name, list)
+      {:s, 8} -> Native.s_from_list_i8(name, list)
+      {:s, 16} -> Native.s_from_list_i16(name, list)
+      {:s, 32} -> Native.s_from_list_i32(name, list)
+      {:s, 64} -> Native.s_from_list_i64(name, list)
       {:f, 32} -> Native.s_from_list_f32(name, list)
       {:f, 64} -> Native.s_from_list_f64(name, list)
       :boolean -> Native.s_from_list_bool(name, list)

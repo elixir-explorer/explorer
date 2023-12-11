@@ -395,6 +395,8 @@ rustler::init!(
         s_from_list_duration,
         s_from_list_f32,
         s_from_list_f64,
+        s_from_list_i8,
+        s_from_list_i16,
         s_from_list_i32,
         s_from_list_i64,
         s_from_list_u32,

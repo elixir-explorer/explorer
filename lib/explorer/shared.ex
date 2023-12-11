@@ -60,6 +60,8 @@ defmodule Explorer.Shared do
   def normalise_dtype(dtype) when dtype in [:float, :f64], do: {:f, 64}
   def normalise_dtype(dtype) when dtype in [:integer, :i64], do: {:s, 64}
   def normalise_dtype(:f32), do: {:f, 32}
+  def normalise_dtype(:i8), do: {:s, 8}
+  def normalise_dtype(:i16), do: {:s, 16}
   def normalise_dtype(:i32), do: {:s, 32}
   def normalise_dtype(_dtype), do: nil
 
@@ -232,6 +234,10 @@ defmodule Explorer.Shared do
            :binary,
            {:f, 32},
            {:f, 64},
+           {:s, 8},
+           {:s, 16},
+           {:s, 32},
+           {:s, 64},
            :integer,
            :category
          ],
@@ -266,6 +272,7 @@ defmodule Explorer.Shared do
               type in [:integer, {:f, 32}, {:f, 64}, :numeric],
        do: :numeric
 
+  defp type(item, {:s, _} = integer_type) when is_integer(item), do: integer_type
   defp type(item, _type) when is_integer(item), do: :integer
   defp type(item, {:f, _} = float_dtype) when is_float(item), do: float_dtype
   defp type(item, _type) when is_float(item), do: {:f, 64}
