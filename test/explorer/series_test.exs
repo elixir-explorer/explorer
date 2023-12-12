@@ -4161,6 +4161,17 @@ defmodule Explorer.SeriesTest do
       end
     end
 
+    test "explicit pearson and spearman rank methods for correlation" do
+      s1 = Series.from_list([1, 8, 3])
+      s2 = Series.from_list([4, 5, 2])
+      assert abs(Series.correlation(s1, s2, method: "spearman") - 0.5) < 1.0e-4
+      assert abs(Series.correlation(s1, s2, method: "pearson") - 0.5447047794019223) < 1.0e-4
+
+      assert_raise RuntimeError, ~r/Generic Error: method is not supported not_a_method/, fn ->
+        Series.correlation(s1, s2, method: "not_a_method")
+      end
+    end
+
     test "impossible correlation and covariance" do
       s1 = Series.from_list([], dtype: {:f, 64})
       s2 = Series.from_list([], dtype: {:f, 64})
@@ -4187,7 +4198,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list(["a", "b"])
 
       assert_raise ArgumentError,
-                   "cannot invoke Explorer.Series.correlation/3 with mismatched dtypes: {:f, 64} and :string",
+                   "cannot invoke Explorer.Series.correlation/4 with mismatched dtypes: {:f, 64} and :string",
                    fn -> Series.correlation(s1, s2) end
 
       assert_raise ArgumentError,

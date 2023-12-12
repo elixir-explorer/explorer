@@ -5,7 +5,8 @@
 // wrapped in an Elixir struct.
 
 use polars::prelude::{
-    col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
+    col, concat_str, cov, pearson_corr, spearman_rank_corr, when, IntoLazy, LiteralValue,
+    SortOptions,
 };
 use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
@@ -494,10 +495,15 @@ pub fn expr_skew(data: ExExpr, bias: bool) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_correlation(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
+pub fn expr_correlation(left: ExExpr, right: ExExpr, ddof: u8, method: &str) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
-    ExExpr::new(pearson_corr(left_expr, right_expr, ddof))
+
+    match method {
+        "pearson" => ExExpr::new(pearson_corr(left_expr, right_expr, ddof)),
+        "spearman" => ExExpr::new(spearman_rank_corr(left_expr, right_expr, ddof, true)),
+        &_ => todo!("not supported yet"),
+    }
 }
 
 #[rustler::nif]

@@ -220,8 +220,9 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_skew, [bias?])
 
   @impl true
-  def correlation(left, right, ddof),
-    do: Shared.apply_series(matching_size!(left, right), :s_correlation, [right.data, ddof])
+  def correlation(left, right, ddof, method),
+    do:
+      Shared.apply_series(matching_size!(left, right), :s_correlation, [right.data, ddof, method])
 
   @impl true
   def covariance(left, right, ddof),

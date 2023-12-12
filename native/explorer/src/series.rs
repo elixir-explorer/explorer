@@ -1008,15 +1008,36 @@ pub fn s_skew(env: Env, s: ExSeries, bias: bool) -> Result<Term, ExplorerError> 
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_correlation(
-    env: Env,
+pub fn s_correlation<'a>(
+    env: Env<'a>,
     s1: ExSeries,
     s2: ExSeries,
     ddof: u8,
-) -> Result<Term, ExplorerError> {
+    method: &str,
+) -> Result<Term<'a>, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
-    let corr = pearson_corr(s1.f64()?, s2.f64()?, ddof);
+
+    let corr = match method {
+        "pearson" => pearson_corr(s1.f64()?, s2.f64()?, ddof),
+        "spearman" => {
+            let df = df!("s1" => s1, "s2" => s2)?;
+            let lazy_df = df
+                .lazy()
+                .with_column(spearman_rank_corr(col("s1"), col("s2"), ddof, true).alias("corr"));
+            let result = lazy_df.collect()?;
+            let item = result.column("corr")?.get(0)?;
+            match item {
+                AnyValue::Float64(x) => Some(x),
+                _ => None,
+            }
+        }
+        &_ => {
+            return Err(ExplorerError::Other(format!(
+                "method is not supported {method}"
+            )))
+        }
+    };
     Ok(term_from_optional_float(corr, env))
 }
 

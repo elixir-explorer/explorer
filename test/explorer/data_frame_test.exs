@@ -3868,6 +3868,17 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "spearman rank method" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2])
+      df1 = DF.correlation(df, method: "spearman")
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0, 0.5],
+               cats: [0.5, 1.0]
+             }
+    end
+
     test "three integer columns and custom column name" do
       df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1], frogs: [7, 8, 9])
       df1 = DF.correlation(df, column_name: "variables")
