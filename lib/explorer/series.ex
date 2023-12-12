@@ -11,7 +11,8 @@ defmodule Explorer.Series do
     * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
     * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
     * `{:f, size}` - a 64-bit or 32-bit floating point number
-    * `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit integer number.
+    * `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit signed integer number.
+    * `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer number.
     * `:integer` - 64-bit signed integer
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
@@ -100,9 +101,11 @@ defmodule Explorer.Series do
   @datetime_dtypes Explorer.Shared.datetime_types()
   @duration_dtypes Explorer.Shared.duration_types()
   @float_dtypes Explorer.Shared.float_types()
+  @integer_types Explorer.Shared.integer_types()
+
   @date_or_datetime_dtypes [:date | @datetime_dtypes]
   @temporal_dtypes [:time | @date_or_datetime_dtypes ++ @duration_dtypes]
-  @numeric_dtypes [:integer | @float_dtypes]
+  @numeric_dtypes @integer_types ++ @float_dtypes
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
   @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}, {:struct, :any}]
@@ -117,6 +120,14 @@ defmodule Explorer.Series do
           | duration_dtype
           | {:f, 32}
           | {:f, 64}
+          | {:s, 8}
+          | {:s, 16}
+          | {:s, 32}
+          | {:s, 64}
+          | {:u, 8}
+          | {:u, 16}
+          | {:u, 32}
+          | {:u, 64}
           | :integer
           | :string
           | list_dtype
@@ -152,25 +163,13 @@ defmodule Explorer.Series do
 
   defguardp is_io_dtype(dtype) when K.in(dtype, @io_dtypes)
 
-  defguardp is_numeric_dtype(dtype) when K.in(dtype, [{:f, 32}, {:f, 64}, :integer])
+  defguardp is_numeric_dtype(dtype) when K.in(dtype, @numeric_dtypes)
 
   defguardp is_numeric_or_bool_dtype(dtype)
-            when K.in(dtype, [{:f, 32}, {:f, 64}, :integer, :boolean])
+            when K.in(dtype, [:boolean | @numeric_dtypes])
 
   defguardp is_numeric_or_temporal_dtype(dtype)
-            when K.in(dtype, [
-                   {:f, 32},
-                   {:f, 64},
-                   :integer,
-                   :date,
-                   :time,
-                   {:datetime, :nanosecond},
-                   {:datetime, :microsecond},
-                   {:datetime, :millisecond},
-                   {:duration, :nanosecond},
-                   {:duration, :microsecond},
-                   {:duration, :millisecond}
-                 ])
+            when K.in(dtype, @numeric_or_temporal_dtypes)
 
   @impl true
   def fetch(series, idx) when is_integer(idx), do: {:ok, fetch!(series, idx)}
@@ -2139,7 +2138,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.sum(s)
-      ** (ArgumentError) Explorer.Series.sum/1 not implemented for dtype :date. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :boolean]
+      ** (ArgumentError) Explorer.Series.sum/1 not implemented for dtype :date. Valid dtypes are [:boolean, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec sum(series :: Series.t()) :: number() | non_finite() | nil
@@ -2147,7 +2146,7 @@ defmodule Explorer.Series do
     do: apply_series(series, :sum)
 
   def sum(%Series{dtype: dtype}),
-    do: dtype_error("sum/1", dtype, [:integer, {:f, 32}, {:f, 64}, :boolean])
+    do: dtype_error("sum/1", dtype, [:boolean | @numeric_dtypes])
 
   @doc """
   Gets the minimum value of the series.
@@ -2186,7 +2185,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.min(s)
-      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec min(series :: Series.t()) ::
@@ -2233,7 +2232,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.max(s)
-      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec max(series :: Series.t()) ::
@@ -2284,7 +2283,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmax(s)
-      ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec argmax(series :: Series.t()) :: number() | non_finite() | nil
@@ -2343,7 +2342,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmin(s)
-      ** (ArgumentError) Explorer.Series.argmin/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.argmin/1 not implemented for dtype :string. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec argmin(series :: Series.t()) :: number() | non_finite() | nil
@@ -2374,7 +2373,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.mean(s)
-      ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
+      ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec mean(series :: Series.t()) :: float() | non_finite() | nil
@@ -2445,7 +2444,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~D[2021-01-01], ~D[1999-12-31]])
       iex> Explorer.Series.median(s)
-      ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
+      ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec median(series :: Series.t()) :: float() | non_finite() | nil
@@ -2480,7 +2479,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.variance(s)
-      ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype {:datetime, :microsecond}. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
+      ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype {:datetime, :microsecond}. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec variance(series :: Series.t(), ddof :: non_neg_integer()) :: float() | non_finite() | nil
@@ -2516,7 +2515,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.standard_deviation(s)
-      ** (ArgumentError) Explorer.Series.standard_deviation/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
+      ** (ArgumentError) Explorer.Series.standard_deviation/1 not implemented for dtype :string. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec standard_deviation(series :: Series.t(), ddof :: non_neg_integer()) ::
@@ -2553,7 +2552,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.product(s)
-      ** (ArgumentError) Explorer.Series.product/1 not implemented for dtype :boolean. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
+      ** (ArgumentError) Explorer.Series.product/1 not implemented for dtype :boolean. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec product(series :: Series.t()) :: float() | non_finite() | nil
@@ -2600,7 +2599,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)
-      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [:integer, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}, :time, :date, {:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}, {:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
   """
   @doc type: :aggregation
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
@@ -2646,7 +2645,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.skew(s, false)
-      ** (ArgumentError) Explorer.Series.skew/2 not implemented for dtype :boolean. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
+      ** (ArgumentError) Explorer.Series.skew/2 not implemented for dtype :boolean. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]
   """
   @doc type: :aggregation
   @spec skew(series :: Series.t(), opts :: Keyword.t()) :: float() | non_finite() | nil
@@ -5014,7 +5013,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.abs(s)
-      ** (ArgumentError) Explorer.Series.abs/1 not implemented for dtype :string. Valid dtypes are [:integer, {:f, 32}, {:f, 64}]
+      ** (ArgumentError) Explorer.Series.abs/1 not implemented for dtype :string. Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, {:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]
   """
   @doc type: :element_wise
   @spec abs(series :: Series.t()) :: Series.t()

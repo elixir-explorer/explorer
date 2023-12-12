@@ -17,20 +17,8 @@ use std::io::{BufReader, BufWriter, Cursor};
 use std::result::Result;
 use std::sync::Arc;
 
-use crate::dataframe::normalize_numeric_dtypes;
 use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
 use crate::{ExDataFrame, ExplorerError};
-
-fn finish_reader<R>(reader: impl SerReader<R>) -> Result<ExDataFrame, ExplorerError>
-where
-    R: polars::io::mmap::MmapBytesReader,
-{
-    let mut df = reader.finish()?;
-
-    let normalized_df = normalize_numeric_dtypes(&mut df)?;
-
-    Ok(ExDataFrame::new(normalized_df))
-}
 
 // ============ CSV ============ //
 
@@ -73,7 +61,7 @@ pub fn df_from_csv(
         .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 pub fn schema_from_dtypes_pairs(
@@ -180,7 +168,7 @@ pub fn df_load_csv(
         .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 // ============ Parquet ============ //
@@ -200,7 +188,7 @@ pub fn df_from_parquet(
         .with_columns(column_names)
         .with_projection(projection);
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -302,7 +290,7 @@ pub fn df_load_parquet(binary: Binary) -> Result<ExDataFrame, ExplorerError> {
     let cursor = Cursor::new(binary.as_slice());
     let reader = ParquetReader::new(cursor);
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 // ============ IPC ============ //
@@ -319,7 +307,7 @@ pub fn df_from_ipc(
         .with_columns(columns)
         .with_projection(projection);
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -395,7 +383,7 @@ pub fn df_load_ipc(
         .with_columns(columns)
         .with_projection(projection);
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 fn decode_ipc_compression(compression: &str) -> Result<IpcCompression, ExplorerError> {
@@ -422,7 +410,7 @@ pub fn df_from_ipc_stream(
         .with_columns(columns)
         .with_projection(projection);
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -497,7 +485,7 @@ pub fn df_load_ipc_stream(
         .with_columns(columns)
         .with_projection(projection);
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 // ============ NDJSON ============ //
@@ -516,7 +504,7 @@ pub fn df_from_ndjson(
         .with_batch_size(batch_size)
         .infer_schema_len(infer_schema_length);
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 #[cfg(feature = "ndjson")]
@@ -570,7 +558,7 @@ pub fn df_load_ndjson(
         .with_batch_size(batch_size)
         .infer_schema_len(infer_schema_length);
 
-    finish_reader(reader)
+    Ok(ExDataFrame::new(reader.finish()?))
 }
 
 // ============ For when the feature is not enabled ============ //

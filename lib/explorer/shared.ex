@@ -13,6 +13,10 @@ defmodule Explorer.Shared do
     {:s, 16},
     {:s, 32},
     {:s, 64},
+    {:u, 8},
+    {:u, 16},
+    {:u, 32},
+    {:u, 64},
     # TODO: remove this integer
     :integer,
     :string,
@@ -63,6 +67,10 @@ defmodule Explorer.Shared do
   def normalise_dtype(:i8), do: {:s, 8}
   def normalise_dtype(:i16), do: {:s, 16}
   def normalise_dtype(:i32), do: {:s, 32}
+  def normalise_dtype(:u8), do: {:u, 8}
+  def normalise_dtype(:u16), do: {:u, 16}
+  def normalise_dtype(:u32), do: {:u, 32}
+  def normalise_dtype(:u64), do: {:u, 64}
   def normalise_dtype(_dtype), do: nil
 
   @doc """
@@ -93,6 +101,21 @@ defmodule Explorer.Shared do
   Supported float dtypes.
   """
   def float_types, do: [{:f, 32}, {:f, 64}]
+
+  @doc """
+  Supported signed integer dtypes.
+  """
+  def signed_integer_types, do: [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer]
+
+  @doc """
+  Supported unsigned integer dtypes.
+  """
+  def unsigned_integer_types, do: [{:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}]
+
+  @doc """
+  All integer dtypes.
+  """
+  def integer_types, do: signed_integer_types() ++ unsigned_integer_types()
 
   @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
@@ -238,6 +261,10 @@ defmodule Explorer.Shared do
            {:s, 16},
            {:s, 32},
            {:s, 64},
+           {:u, 8},
+           {:u, 16},
+           {:u, 32},
+           {:u, 64},
            :integer,
            :category
          ],
@@ -273,6 +300,7 @@ defmodule Explorer.Shared do
        do: :numeric
 
   defp type(item, {:s, _} = integer_type) when is_integer(item), do: integer_type
+  defp type(item, {:u, _} = integer_type) when is_integer(item) and item >= 0, do: integer_type
   defp type(item, _type) when is_integer(item), do: :integer
   defp type(item, {:f, _} = float_dtype) when is_float(item), do: float_dtype
   defp type(item, _type) when is_float(item), do: {:f, 64}
@@ -462,6 +490,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:struct, fields}), do: "struct[#{map_size(fields)}]"
   def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
   def dtype_to_string({:s, size}), do: "s" <> Integer.to_string(size)
+  def dtype_to_string({:u, size}), do: "u" <> Integer.to_string(size)
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
 
   @threshold 0.77

@@ -14,23 +14,6 @@ use smartstring::alias::String as SmartString;
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
 
-// Helper to normalize integers column dtypes. This is going to be removed in future
-// versions.
-pub fn normalize_numeric_dtypes(df: &mut DataFrame) -> Result<DataFrame, crate::ExplorerError> {
-    let dtypes = df.dtypes().into_iter().enumerate();
-
-    for (idx, dtype) in dtypes {
-        match dtype {
-            DataType::UInt8 | DataType::UInt16 | DataType::UInt32 => {
-                df.apply_at_idx(idx, |s| s.cast(&DataType::Int64).unwrap())?
-            }
-            _ => df,
-        };
-    }
-
-    Ok(df.clone())
-}
-
 fn to_string_names(names: Vec<&str>) -> Vec<String> {
     names.into_iter().map(|s| s.to_string()).collect()
 }
@@ -511,8 +494,7 @@ pub fn df_describe(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_nil_count(df: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    let mut new_df = df.null_count();
-    let new_df = normalize_numeric_dtypes(&mut new_df)?;
+    let new_df = df.null_count();
     Ok(ExDataFrame::new(new_df))
 }
 
