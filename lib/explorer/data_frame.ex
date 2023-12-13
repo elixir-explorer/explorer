@@ -3230,7 +3230,7 @@ defmodule Explorer.DataFrame do
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
   def arrange_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
-    [_direction | opts] = Shared.validate_sort_options!(opts)
+    [_descending? | opts] = Shared.validate_sort_options!(opts)
 
     ldf = Explorer.Backend.LazyFrame.new(df)
 
