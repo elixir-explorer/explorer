@@ -354,7 +354,16 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def arrange_with(%DF{groups: []} = df, out_df, column_pairs, nulls_last, maintain_order) do
+  def arrange_with(
+        %DF{groups: []} = df,
+        out_df,
+        column_pairs,
+        maintain_order?,
+        multithreaded?,
+        nulls_last?
+      )
+      when is_boolean(maintain_order?) and is_boolean(multithreaded?) and
+             is_boolean(nulls_last?) do
     {directions, expressions} =
       column_pairs
       |> Enum.map(fn {direction, lazy_series} -> {direction == :desc, to_expr(lazy_series)} end)
@@ -363,13 +372,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Shared.apply_dataframe(df, out_df, :lf_arrange_with, [
       expressions,
       directions,
-      nulls_last,
-      maintain_order
+      maintain_order?,
+      multithreaded?,
+      nulls_last?
     ])
   end
 
   @impl true
-  def arrange_with(_df, _out_df, _directions, _nulls_last, _maintain_order) do
+  def arrange_with(_df, _out_df, _directions, _maintain_order?, _multithreaded?, _nulls_last?) do
     raise "arrange_with/2 with groups is not supported yet for lazy frames"
   end
 

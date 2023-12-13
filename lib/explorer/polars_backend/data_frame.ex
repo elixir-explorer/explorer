@@ -643,7 +643,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def arrange_with(%DataFrame{} = df, out_df, column_pairs, nulls_last, maintain_order) do
+  def arrange_with(
+        %DataFrame{} = df,
+        out_df,
+        column_pairs,
+        maintain_order?,
+        multithreaded?,
+        nulls_last?
+      )
+      when is_boolean(maintain_order?) and is_boolean(multithreaded?) and
+             is_boolean(nulls_last?) do
     {directions, expressions} =
       column_pairs
       |> Enum.map(fn {direction, lazy_series} ->
@@ -655,8 +664,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_dataframe(df, out_df, :df_arrange_with, [
       expressions,
       directions,
-      nulls_last,
-      maintain_order,
+      maintain_order?,
+      multithreaded?,
+      nulls_last?,
       df.groups
     ])
   end

@@ -76,8 +76,8 @@ defmodule Explorer.Backend.LazySeries do
     # Transformation
     column: 1,
     reverse: 1,
-    argsort: 3,
-    sort: 3,
+    argsort: 5,
+    sort: 5,
     distinct: 1,
     unordered_distinct: 1,
     slice: 2,
@@ -221,16 +221,16 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def argsort(%Series{} = s, descending?, nils_last?) do
-    args = [lazy_series!(s), descending?, nils_last?]
+  def argsort(%Series{} = s, descending?, maintain_order?, multithreaded?, nulls_last?) do
+    args = [lazy_series!(s), descending?, maintain_order?, multithreaded?, nulls_last?]
     data = new(:argsort, args, :integer, aggregations?(args))
 
     Backend.Series.new(data, :integer)
   end
 
   @impl true
-  def sort(%Series{} = s, descending?, nils_last?) do
-    args = [lazy_series!(s), descending?, nils_last?]
+  def sort(%Series{} = s, descending?, maintain_order?, multithreaded?, nulls_last?) do
+    args = [lazy_series!(s), descending?, maintain_order?, multithreaded?, nulls_last?]
     data = new(:sort, args, s.dtype, aggregations?(args))
 
     Backend.Series.new(data, s.dtype)

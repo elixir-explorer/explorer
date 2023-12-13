@@ -347,8 +347,9 @@ pub fn df_arrange(
     df: ExDataFrame,
     by_columns: Vec<String>,
     reverse: Vec<bool>,
-    nulls_last: bool,
     maintain_order: bool,
+    multithreaded: bool,
+    nulls_last: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let new_df = if groups.is_empty() {
@@ -356,8 +357,6 @@ pub fn df_arrange(
         // df.sort does not allow a nulls_last option.
         // df.sort_with_options only allows a single column.
         let by_columns = df.select_series(by_columns)?;
-        // TODO: make these bools options.
-        let multithreaded = false;
         df.sort_impl(
             by_columns,
             reverse,
@@ -379,8 +378,9 @@ pub fn df_arrange_with(
     data: ExDataFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
-    nulls_last: bool,
     maintain_order: bool,
+    _multithreaded: bool,
+    nulls_last: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = data.clone_inner();

@@ -4325,11 +4325,7 @@ defmodule Explorer.Series do
   """
   @doc type: :shape
   def sort(series, opts \\ []) do
-    opts = Keyword.validate!(opts, [:nils, direction: :asc])
-    descending? = opts[:direction] == :desc
-    nils_last? = if nils = opts[:nils], do: nils == :last, else: K.not(descending?)
-
-    apply_series(series, :sort, [descending?, nils_last?])
+    apply_series(series, :sort, Shared.validate_sort_options!(opts))
   end
 
   @doc """
@@ -4362,11 +4358,7 @@ defmodule Explorer.Series do
   """
   @doc type: :shape
   def argsort(series, opts \\ []) do
-    opts = Keyword.validate!(opts, [:nils, direction: :asc])
-    descending? = opts[:direction] == :desc
-    nils_last? = if nils = opts[:nils], do: nils == :last, else: K.not(descending?)
-
-    apply_series(series, :argsort, [descending?, nils_last?])
+    apply_series(series, :argsort, Shared.validate_sort_options!(opts))
   end
 
   @doc """

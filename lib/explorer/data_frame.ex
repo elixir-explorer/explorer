@@ -3230,21 +3230,7 @@ defmodule Explorer.DataFrame do
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
   def arrange_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
-    opts = Keyword.validate!(opts, nils: :last, stable: true)
-
-    nulls_last =
-      case opts[:nils] do
-        :first -> false
-        :last -> true
-        _ -> raise ArgumentError, "`nils` must be `:first` or `:last`"
-      end
-
-    maintain_order =
-      case opts[:stable] do
-        true -> true
-        false -> false
-        _ -> raise ArgumentError, "`stable` must be `true` or `false`"
-      end
+    [_direction | opts] = Shared.validate_sort_options!(opts)
 
     ldf = Explorer.Backend.LazyFrame.new(df)
 
@@ -3270,12 +3256,7 @@ defmodule Explorer.DataFrame do
           raise "not a valid lazy series or arrange instruction: #{inspect(other)}"
       end)
 
-    Shared.apply_impl(df, :arrange_with, [
-      df,
-      dir_and_lazy_series_pairs,
-      nulls_last,
-      maintain_order
-    ])
+    Shared.apply_impl(df, :arrange_with, [df, dir_and_lazy_series_pairs] ++ opts)
   end
 
   @doc """

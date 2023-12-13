@@ -158,8 +158,20 @@ defmodule Explorer.Backend.Series do
 
   # Sort
 
-  @callback sort(s, descending? :: boolean(), nils_last :: boolean()) :: s
-  @callback argsort(s, descending? :: boolean(), nils_last :: boolean()) :: s
+  @callback sort(
+              s,
+              descending? :: boolean(),
+              maintain_order? :: boolean(),
+              multithreaded? :: boolean(),
+              nulls_last? :: boolean()
+            ) :: s
+  @callback argsort(
+              s,
+              descending? :: boolean(),
+              maintain_order? :: boolean(),
+              multithreaded? :: boolean(),
+              nulls_last? :: boolean()
+            ) :: s
   @callback reverse(s) :: s
 
   # Distinct
