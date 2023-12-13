@@ -5623,9 +5623,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.nil_count(df)
       #Explorer.DataFrame<
         Polars[1 x 3]
-        a integer [1]
-        b integer [2]
-        c integer [0]
+        a u32 [1]
+        b u32 [2]
+        c u32 [0]
       >
   """
   @doc type: :single

@@ -253,6 +253,76 @@ defmodule Explorer.SeriesTest do
       assert Series.from_list(dates, dtype: {:datetime, :microsecond}) |> Series.to_list() ==
                dates
     end
+
+    test "with 32-bit integers" do
+      for dtype <- [:i32, {:s, 32}] do
+        s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[0] === -1
+        assert Series.to_list(s) === [-1, 0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:s, 32}
+      end
+    end
+
+    test "with 16-bit integers" do
+      for dtype <- [:i16, {:s, 16}] do
+        s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[0] === -1
+        assert Series.to_list(s) === [-1, 0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:s, 16}
+      end
+    end
+
+    test "with 8-bit integers" do
+      for dtype <- [:i8, {:s, 8}] do
+        s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[0] === -1
+        assert Series.to_list(s) === [-1, 0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:s, 8}
+      end
+    end
+
+    test "with 64-bit unsigned integers" do
+      for dtype <- [:u64, {:u, 64}] do
+        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[3] === 3
+        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:u, 64}
+      end
+    end
+
+    test "with 32-bit unsigned integers" do
+      for dtype <- [:u32, {:u, 32}] do
+        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[3] === 3
+        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:u, 32}
+      end
+    end
+
+    test "with 16-bit unsigned integers" do
+      for dtype <- [:u16, {:u, 16}] do
+        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[1] === 1
+        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:u, 16}
+      end
+    end
+
+    test "with 8-bit unsigned integers" do
+      for dtype <- [:u8, {:u, 8}] do
+        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+
+        assert s[1] === 1
+        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.dtype(s) == {:u, 8}
+      end
+    end
   end
 
   describe "fetch/2" do
@@ -4127,7 +4197,8 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "Explorer.Series.clip/3 not implemented for dtype :string. " <>
-                     "Valid dtypes are [:integer, {:f, 32}, {:f, 64}]",
+                     "Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, " <>
+                     "{:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]",
                    fn -> Series.clip(Series.from_list(["a"]), 1, 10) end
     end
   end

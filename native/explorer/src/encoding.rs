@@ -565,7 +565,14 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Null => Ok(None::<bool>.encode(env)),
         AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
         AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
+        AnyValue::Int8(v) => Ok(Some(v).encode(env)),
+        AnyValue::Int16(v) => Ok(Some(v).encode(env)),
+        AnyValue::Int32(v) => Ok(Some(v).encode(env)),
         AnyValue::Int64(v) => Ok(Some(v).encode(env)),
+        AnyValue::UInt8(v) => Ok(Some(v).encode(env)),
+        AnyValue::UInt16(v) => Ok(Some(v).encode(env)),
+        AnyValue::UInt32(v) => Ok(Some(v).encode(env)),
+        AnyValue::UInt64(v) => Ok(Some(v).encode(env)),
         AnyValue::Float32(v) => Ok(Some(term_from_float32(v, env)).encode(env)),
         AnyValue::Float64(v) => Ok(Some(term_from_float64(v, env)).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
@@ -587,9 +594,20 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
 pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Boolean => series_to_list!(s, env, bool),
+
+        DataType::Int8 => series_to_list!(s, env, i8),
+        DataType::Int16 => series_to_list!(s, env, i16),
+        DataType::Int32 => series_to_list!(s, env, i32),
         DataType::Int64 => series_to_list!(s, env, i64),
+
+        DataType::UInt8 => series_to_list!(s, env, u8),
+        DataType::UInt16 => series_to_list!(s, env, u16),
+        DataType::UInt32 => series_to_list!(s, env, u32),
+        DataType::UInt64 => series_to_list!(s, env, u64),
+
         DataType::Float32 => float32_series_to_list(&s, env),
         DataType::Float64 => float64_series_to_list(&s, env),
+
         DataType::Date => date_series_to_list(&s, env),
         DataType::Time => time_series_to_list(&s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(&s, *time_unit, env),
@@ -632,6 +650,9 @@ pub fn iovec_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
             }
             Ok([bin.release(env)].encode(env))
         }
+        DataType::Int8 => series_to_iovec!(resource, s, env, i8, i8),
+        DataType::Int16 => series_to_iovec!(resource, s, env, i16, i16),
+        DataType::Int32 => series_to_iovec!(resource, s, env, i32, i32),
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
         DataType::Float32 => series_to_iovec!(resource, s, env, f32, f32),
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
