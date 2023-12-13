@@ -5678,9 +5678,9 @@ defmodule Explorer.DataFrame do
   * `:column_name` - the name of the column with column names. Defaults to "names".
   * `:ddof` - the 'delta degrees of freedom' - the divisor used in the correlation
     calculation. Defaults to 1.
-  * `method` refers to the correlation method. The following methods are available:
-    - `"pearson"` : Standard correlation coefficient. (default)
-    - `"spearman"` : Spearman rank correlation.
+  * `:method` refers to the correlation method. The following methods are available:
+    - `:pearson` : Standard correlation coefficient. (default)
+    - `:spearman` : Spearman rank correlation.
 
   ## Examples
 
@@ -5701,7 +5701,7 @@ defmodule Explorer.DataFrame do
         column_name: "names",
         columns: names(df),
         ddof: 1,
-        method: "pearson"
+        method: :pearson
       )
 
     out_df = pairwised_df(df, opts)

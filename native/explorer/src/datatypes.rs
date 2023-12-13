@@ -505,6 +505,12 @@ pub enum ExParquetCompression {
     Zstd(Option<i32>),
 }
 
+#[derive(NifTaggedEnum)]
+pub enum ExCorrelationMethod {
+    Pearson,
+    Spearman,
+}
+
 impl TryFrom<ExParquetCompression> for ParquetCompression {
     type Error = ExplorerError;
 

@@ -3870,7 +3870,7 @@ defmodule Explorer.DataFrameTest do
 
     test "spearman rank method" do
       df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2])
-      df1 = DF.correlation(df, method: "spearman")
+      df1 = DF.correlation(df, method: :spearman)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                names: ["dogs", "cats"],

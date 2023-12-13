@@ -4164,11 +4164,11 @@ defmodule Explorer.SeriesTest do
     test "explicit pearson and spearman rank methods for correlation" do
       s1 = Series.from_list([1, 8, 3])
       s2 = Series.from_list([4, 5, 2])
-      assert abs(Series.correlation(s1, s2, method: "spearman") - 0.5) < 1.0e-4
-      assert abs(Series.correlation(s1, s2, method: "pearson") - 0.5447047794019223) < 1.0e-4
+      assert abs(Series.correlation(s1, s2, method: :spearman) - 0.5) < 1.0e-4
+      assert abs(Series.correlation(s1, s2, method: :pearson) - 0.5447047794019223) < 1.0e-4
 
-      assert_raise RuntimeError, ~r/Generic Error: method is not supported not_a_method/, fn ->
-        Series.correlation(s1, s2, method: "not_a_method")
+      assert_raise ArgumentError, ~s(unsupported correlation method :not_a_method), fn ->
+        Series.correlation(s1, s2, method: :not_a_method)
       end
     end
 
