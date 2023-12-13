@@ -11,7 +11,7 @@ use polars::prelude::{
 use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
 use crate::datatypes::{
-    ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExSeriesDtype, ExValidValue,
+    ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExValidValue,
 };
 use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
@@ -269,7 +269,12 @@ pub fn expr_sample_frac(
 }
 
 #[rustler::nif]
-pub fn expr_rank(expr: ExExpr, method: &str, descending: bool, seed: Option<u64>) -> ExExpr {
+pub fn expr_rank(
+    expr: ExExpr,
+    method: ExRankMethod,
+    descending: bool,
+    seed: Option<u64>,
+) -> ExExpr {
     let expr = expr.clone_inner();
     let rank_options = crate::parse_rank_method_options(method, descending);
 

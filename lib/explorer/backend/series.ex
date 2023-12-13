@@ -66,7 +66,7 @@ defmodule Explorer.Backend.Series do
   @callback shift(s, offset :: integer, default :: nil) :: s
   @callback rank(
               s,
-              method :: String.t(),
+              method :: atom(),
               descending :: boolean(),
               seed :: option(integer())
             ) :: s | lazy_s()

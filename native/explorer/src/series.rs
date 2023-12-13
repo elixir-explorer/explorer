@@ -1,8 +1,8 @@
 use crate::{
     atoms,
     datatypes::{
-        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExSeriesDtype, ExSeriesIoType, ExTime,
-        ExValidValue,
+        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype,
+        ExSeriesIoType, ExTime, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -1358,7 +1358,7 @@ pub fn s_sample_frac(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_rank(
     series: ExSeries,
-    method: &str,
+    method: ExRankMethod,
     descending: bool,
     seed: Option<u64>,
 ) -> Result<ExSeries, ExplorerError> {
@@ -1384,34 +1384,30 @@ pub fn s_rank(
     }
 }
 
-pub fn parse_rank_method_options(strategy: &str, descending: bool) -> RankOptions {
+pub fn parse_rank_method_options(strategy: ExRankMethod, descending: bool) -> RankOptions {
     match strategy {
-        "ordinal" => RankOptions {
+        ExRankMethod::Ordinal => RankOptions {
             method: RankMethod::Ordinal,
             descending,
         },
-        "random" => RankOptions {
+        ExRankMethod::Random => RankOptions {
             method: RankMethod::Random,
             descending,
         },
-        "average" => RankOptions {
+        ExRankMethod::Average => RankOptions {
             method: RankMethod::Average,
             descending,
         },
-        "min" => RankOptions {
+        ExRankMethod::Min => RankOptions {
             method: RankMethod::Min,
             descending,
         },
-        "max" => RankOptions {
+        ExRankMethod::Max => RankOptions {
             method: RankMethod::Max,
             descending,
         },
-        "dense" => RankOptions {
+        ExRankMethod::Dense => RankOptions {
             method: RankMethod::Dense,
-            descending,
-        },
-        _ => RankOptions {
-            method: RankMethod::Average,
             descending,
         },
     }
