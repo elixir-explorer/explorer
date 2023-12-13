@@ -4136,6 +4136,14 @@ defmodule Explorer.SeriesTest do
       r = Series.rank(s)
       assert Series.to_list(r) === [3.0, 5.0, 6.0, nil, 4.0, 2.0, 1.0, 7.0]
     end
+
+    test "invalid rank method" do
+      s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
+
+      assert_raise ArgumentError, ~s(unsupported rank method :not_a_method), fn ->
+        Series.rank(s, method: :not_a_method, seed: 4242)
+      end
+    end
   end
 
   describe "skew/2" do

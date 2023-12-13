@@ -1826,6 +1826,9 @@ defmodule Explorer.Series do
   def rank(series, opts) do
     opts = Keyword.validate!(opts, method: :average, descending: false, seed: nil)
 
+    if K.not(K.in(opts[:method], [:average, :min, :max, :dense, :ordinal, :random])),
+      do: raise(ArgumentError, "unsupported rank method #{inspect(opts[:method])}")
+
     apply_series(series, :rank, [opts[:method], opts[:descending], opts[:seed]])
   end
 
