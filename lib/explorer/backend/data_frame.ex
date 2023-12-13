@@ -203,7 +203,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback nil_count(df) :: df()
   @callback explode(df, out_df :: df(), columns :: [column_name()]) :: df()
   @callback unnest(df, out_df :: df(), columns :: [column_name()]) :: df()
-  @callback correlation(df, out_df :: df(), ddof :: integer()) :: df()
+  @callback correlation(df, out_df :: df(), ddof :: integer(), method :: atom()) :: df()
   @callback covariance(df, out_df :: df(), ddof :: integer()) :: df()
 
   # Two or more table verbs

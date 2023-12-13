@@ -89,7 +89,7 @@ defmodule Explorer.Backend.Series do
   @callback nil_count(s) :: number() | lazy_s()
   @callback product(s) :: float() | non_finite() | lazy_s() | nil
   @callback skew(s, bias? :: boolean()) :: float() | non_finite() | lazy_s() | nil
-  @callback correlation(s, s, ddof :: non_neg_integer()) ::
+  @callback correlation(s, s, ddof :: non_neg_integer(), method :: atom()) ::
               float() | non_finite() | lazy_s() | nil
   @callback covariance(s, s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
   @callback all?(s) :: boolean() | lazy_s()

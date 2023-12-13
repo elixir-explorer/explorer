@@ -80,6 +80,7 @@ features = [
   "peaks",
   "moment",
   "rank",
+  "propagate_nans",
 ]
 
 [dependencies.polars-ops]

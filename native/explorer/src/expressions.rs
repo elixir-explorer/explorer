@@ -5,11 +5,14 @@
 // wrapped in an Elixir struct.
 
 use polars::prelude::{
-    col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
+    col, concat_str, cov, pearson_corr, spearman_rank_corr, when, IntoLazy, LiteralValue,
+    SortOptions,
 };
 use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
 
-use crate::datatypes::{ExDate, ExDateTime, ExDuration, ExSeriesDtype, ExValidValue};
+use crate::datatypes::{
+    ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExSeriesDtype, ExValidValue,
+};
 use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 
@@ -494,10 +497,21 @@ pub fn expr_skew(data: ExExpr, bias: bool) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_correlation(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
+pub fn expr_correlation(
+    left: ExExpr,
+    right: ExExpr,
+    ddof: u8,
+    method: ExCorrelationMethod,
+) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
-    ExExpr::new(pearson_corr(left_expr, right_expr, ddof))
+
+    match method {
+        ExCorrelationMethod::Pearson => ExExpr::new(pearson_corr(left_expr, right_expr, ddof)),
+        ExCorrelationMethod::Spearman => {
+            ExExpr::new(spearman_rank_corr(left_expr, right_expr, ddof, true))
+        }
+    }
 }
 
 #[rustler::nif]

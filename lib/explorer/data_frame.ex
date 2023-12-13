@@ -5658,7 +5658,7 @@ defmodule Explorer.DataFrame do
   def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")
 
   @doc """
-  Calculates the pairwise Pearson's correlation of numeric columns.
+  Calculates the pairwise correlation of numeric columns.
 
   The returned dataframe is the correlation matrix.
 
@@ -5678,6 +5678,9 @@ defmodule Explorer.DataFrame do
   * `:column_name` - the name of the column with column names. Defaults to "names".
   * `:ddof` - the 'delta degrees of freedom' - the divisor used in the correlation
     calculation. Defaults to 1.
+  * `:method` refers to the correlation method. The following methods are available:
+    - `:pearson` : Standard correlation coefficient. (default)
+    - `:spearman` : Spearman rank correlation.
 
   ## Examples
 
@@ -5693,9 +5696,16 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec correlation(df :: DataFrame.t(), opts :: Keyword.t()) :: df :: DataFrame.t()
   def correlation(df, opts \\ []) do
-    opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
+    opts =
+      Keyword.validate!(opts,
+        column_name: "names",
+        columns: names(df),
+        ddof: 1,
+        method: :pearson
+      )
+
     out_df = pairwised_df(df, opts)
-    Shared.apply_impl(df, :correlation, [out_df, opts[:ddof]])
+    Shared.apply_impl(df, :correlation, [out_df, opts[:ddof], opts[:method]])
   end
 
   @doc """

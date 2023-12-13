@@ -2660,10 +2660,14 @@ defmodule Explorer.Series do
     do: dtype_error("skew/2", dtype, @numeric_dtypes)
 
   @doc """
-  Compute the Pearson's correlation between two series.
+  Compute the correlation between two series.
 
   The parameter `ddof` refers to the 'delta degrees of freedom' - the divisor
   used in the correlation calculation. Defaults to 1.
+
+  The parameter `:method` refers to the correlation method. The following methods are available:
+    - `:pearson` : Standard correlation coefficient. (default)
+    - `:spearman` : Spearman rank correlation.
 
   ## Supported dtypes
 
@@ -2682,11 +2686,16 @@ defmodule Explorer.Series do
   @spec correlation(
           left :: Series.t() | number(),
           right :: Series.t() | number(),
-          ddof :: non_neg_integer()
+          opts :: Keyword.t()
         ) ::
           float() | non_finite() | nil
-  def correlation(left, right, ddof \\ 1) when K.and(is_integer(ddof), ddof >= 0) do
-    basic_numeric_operation(:correlation, left, right, [ddof])
+  def correlation(left, right, opts \\ []) do
+    opts = Keyword.validate!(opts, ddof: 1, method: :pearson)
+
+    if K.not(K.in(opts[:method], [:pearson, :spearman])),
+      do: raise(ArgumentError, "unsupported correlation method #{inspect(opts[:method])}")
+
+    basic_numeric_operation(:correlation, left, right, [opts[:ddof], opts[:method]])
   end
 
   @doc """
