@@ -3052,14 +3052,17 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:nils` - `:first | :last`.
-      Determines if `nil`s get sorted first or last in the result.
-      Default is `:last`.
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
 
-    * `:stable` - `boolean()`.
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `false`.
+
+    * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      Default is `true`.
+      By default it is `true`.
 
   ## Examples
 
@@ -3157,14 +3160,17 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:nils` - `:first | :last`.
-      Determines if `nil`s get sorted first or last in the result.
-      Default is `:last`.
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
 
-    * `:stable` - `boolean()`.
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `false`.
+
+    * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      Default is `true`.
+      By default it is `true`.
 
   ## Examples
 

@@ -1651,7 +1651,11 @@ defmodule Explorer.Series do
     * `:nils` - `:first` or `:last`.
       By default it is `:last` if direction is `:asc`, and `:first` otherwise.
 
-    * `:stable` - `true` or `false`.
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `false`.
+
+    * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
       By default it is `true`.
@@ -1705,7 +1709,11 @@ defmodule Explorer.Series do
     * `:nils` - `:first` or `:last`.
       By default it is `:last` if direction is `:asc`, and `:first` otherwise.
 
-    * `:stable` - `true` or `false`.
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `false`.
+
+    * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
       By default it is `true`.
@@ -4303,8 +4311,17 @@ defmodule Explorer.Series do
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
       By default it sorts in ascending order.
 
-    * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
-      `:first` otherwise.
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
+
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `false`.
+
+    * `:stable` - boolean.
+      Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
+      Unstable sorting may be more performant.
+      By default it is `true`.
 
   ## Examples
 
@@ -4336,8 +4353,17 @@ defmodule Explorer.Series do
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
       By default it sorts in ascending order.
 
-    * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
-      `:first` otherwise.
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
+
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `false`.
+
+    * `:stable` - boolean.
+      Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
+      Unstable sorting may be more performant.
+      By default it is `true`.
 
   ## Examples
 
