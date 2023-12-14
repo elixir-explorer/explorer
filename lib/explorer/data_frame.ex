@@ -3059,6 +3059,23 @@ defmodule Explorer.DataFrame do
       Whether to parallelize the sorting.
       By default it is `false`.
 
+      > #### Notice {: .notice}
+      >
+      > The `:parallel` option is applicable under one condition: all lazy series must reduce to
+      > `op: :column`. E.g.
+      >
+      > ```elixir
+      > df = Explorer.DataFrame.new(a: [1, 2, 3])
+      > Explorer.DataFrame.arrange(df, desc: a)
+      > ```
+      >
+      > If any additional computation takes place, e.g.
+      >
+      > ```elixir
+      > Explorer.DataFrame.arrange(df, desc: 1 / a)
+      > ```
+      > parallelism is not available and this option is ignored.
+
     * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
@@ -3166,6 +3183,23 @@ defmodule Explorer.DataFrame do
     * `:parallel` - boolean.
       Whether to parallelize the sorting.
       By default it is `false`.
+
+      > #### Notice {: .notice}
+      >
+      > The `:parallel` option is applicable under one condition: all lazy series must reduce to
+      > `op: :column`. E.g.
+      >
+      > ```elixir
+      > df = Explorer.DataFrame.new(a: [1, 2, 3])
+      > Explorer.DataFrame.arrange(df, &[desc: &1["a"]])
+      > ```
+      >
+      > If any additional computation takes place, e.g.
+      >
+      > ```elixir
+      > Explorer.DataFrame.arrange(df, desc: &[desc: Explorer.Series.divide(1, &1["a"])])
+      > ```
+      > parallelism is not available and this option is ignored.
 
     * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
