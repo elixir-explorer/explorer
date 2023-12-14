@@ -67,7 +67,6 @@ defmodule Explorer.PolarsBackend.Native do
         _expressions,
         _directions,
         _maintain_order?,
-        _multithreaded?,
         _nulls_last?,
         _groups
       ),
@@ -252,7 +251,6 @@ defmodule Explorer.PolarsBackend.Native do
         _expressions,
         _directions,
         _maintain_order?,
-        _multithreaded?,
         _nulls_last?
       ),
       do: err()

@@ -110,7 +110,6 @@ pub fn lf_arrange_with(
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
     maintain_order: bool,
-    _multithreaded: bool,
     nulls_last: bool,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let exprs = ex_expr_to_exprs(expressions);

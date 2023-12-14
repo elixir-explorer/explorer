@@ -373,7 +373,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       expressions,
       directions,
       maintain_order?,
-      multithreaded?,
       nulls_last?
     ])
   end

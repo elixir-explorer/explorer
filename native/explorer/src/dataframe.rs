@@ -379,7 +379,6 @@ pub fn df_arrange_with(
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
     maintain_order: bool,
-    _multithreaded: bool,
     nulls_last: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
