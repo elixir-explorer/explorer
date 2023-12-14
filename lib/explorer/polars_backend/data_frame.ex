@@ -653,22 +653,35 @@ defmodule Explorer.PolarsBackend.DataFrame do
       )
       when is_boolean(maintain_order?) and is_boolean(multithreaded?) and
              is_boolean(nulls_last?) do
-    {directions, expressions} =
-      column_pairs
-      |> Enum.map(fn {direction, lazy_series} ->
-        expr = to_expr(lazy_series)
-        {direction == :desc, expr}
-      end)
-      |> Enum.unzip()
+    if Enum.all?(column_pairs, fn {_, %{op: op}} -> op == :column end) do
+      {directions, column_names} =
+        column_pairs
+        |> Enum.map(fn {dir, %{args: [col]}} -> {dir == :desc, col} end)
+        |> Enum.unzip()
 
-    Shared.apply_dataframe(df, out_df, :df_arrange_with, [
-      expressions,
-      directions,
-      maintain_order?,
-      multithreaded?,
-      nulls_last?,
-      df.groups
-    ])
+      Shared.apply_dataframe(df, out_df, :df_arrange, [
+        column_names,
+        directions,
+        maintain_order?,
+        multithreaded?,
+        nulls_last?,
+        df.groups
+      ])
+    else
+      {directions, expressions} =
+        column_pairs
+        |> Enum.map(fn {dir, lazy_series} -> {dir == :desc, to_expr(lazy_series)} end)
+        |> Enum.unzip()
+
+      Shared.apply_dataframe(df, out_df, :df_arrange_with, [
+        expressions,
+        directions,
+        maintain_order?,
+        multithreaded?,
+        nulls_last?,
+        df.groups
+      ])
+    end
   end
 
   @impl true
