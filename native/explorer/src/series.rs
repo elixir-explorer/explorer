@@ -1359,25 +1359,17 @@ pub fn s_rank(
     seed: Option<u64>,
 ) -> Result<ExSeries, ExplorerError> {
     let rank_method = parse_rank_method_options(method, descending);
+    let rank_data_type = match rank_method.method {
+        RankMethod::Average => DataType::Float64,
+        _ => DataType::Int64,
+    };
 
-    match rank_method.method {
-        RankMethod::Average => {
-            let new_s = series
-                .rank(rank_method, seed)
-                .cast(&DataType::Float64)?
-                .into_series();
+    let new_s = series
+        .rank(rank_method, seed)
+        .cast(&rank_data_type)?
+        .into_series();
 
-            Ok(ExSeries::new(new_s))
-        }
-        _ => {
-            let new_s = series
-                .rank(rank_method, seed)
-                .cast(&DataType::Int64)?
-                .into_series();
-
-            Ok(ExSeries::new(new_s))
-        }
-    }
+    Ok(ExSeries::new(new_s))
 }
 
 pub fn parse_rank_method_options(strategy: ExRankMethod, descending: bool) -> RankOptions {
