@@ -3052,14 +3052,20 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:nils` - `:first | :last`.
-      Determines if `nil`s get sorted first or last in the result.
-      Default is `:last`.
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
 
-    * `:stable` - `boolean()`.
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `true`.
+
+      Parallel sort isn't available on certain lazy operations.
+      In those situations this option is ignored.
+
+    * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      Default is `true`.
+      By default it is `false`.
 
   ## Examples
 
@@ -3157,14 +3163,20 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:nils` - `:first | :last`.
-      Determines if `nil`s get sorted first or last in the result.
-      Default is `:last`.
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
 
-    * `:stable` - `boolean()`.
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `true`.
+
+      Parallel sort isn't available on certain lazy operations.
+      In those situations this option is ignored.
+
+    * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      Default is `true`.
+      By default it is `false`.
 
   ## Examples
 
@@ -3230,21 +3242,7 @@ defmodule Explorer.DataFrame do
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
   def arrange_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
-    opts = Keyword.validate!(opts, nils: :last, stable: true)
-
-    nulls_last =
-      case opts[:nils] do
-        :first -> false
-        :last -> true
-        _ -> raise ArgumentError, "`nils` must be `:first` or `:last`"
-      end
-
-    maintain_order =
-      case opts[:stable] do
-        true -> true
-        false -> false
-        _ -> raise ArgumentError, "`stable` must be `true` or `false`"
-      end
+    [_descending? | opts] = Shared.validate_sort_options!(opts)
 
     ldf = Explorer.Backend.LazyFrame.new(df)
 
@@ -3270,12 +3268,7 @@ defmodule Explorer.DataFrame do
           raise "not a valid lazy series or arrange instruction: #{inspect(other)}"
       end)
 
-    Shared.apply_impl(df, :arrange_with, [
-      df,
-      dir_and_lazy_series_pairs,
-      nulls_last,
-      maintain_order
-    ])
+    Shared.apply_impl(df, :arrange_with, [df, dir_and_lazy_series_pairs] ++ opts)
   end
 
   @doc """

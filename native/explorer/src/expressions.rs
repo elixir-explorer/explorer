@@ -707,36 +707,40 @@ pub fn expr_reverse(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_sort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
+pub fn expr_sort(
+    expr: ExExpr,
+    descending: bool,
+    maintain_order: bool,
+    multithreaded: bool,
+    nulls_last: bool,
+) -> ExExpr {
     let expr = expr.clone_inner();
-
-    // TODO: make these bools options.
-    let multithreaded = false;
-    let maintain_order = true;
 
     let opts = SortOptions {
         descending,
-        nulls_last,
-        multithreaded,
         maintain_order,
+        multithreaded,
+        nulls_last,
     };
 
     ExExpr::new(expr.sort_with(opts))
 }
 
 #[rustler::nif]
-pub fn expr_argsort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
+pub fn expr_argsort(
+    expr: ExExpr,
+    descending: bool,
+    maintain_order: bool,
+    multithreaded: bool,
+    nulls_last: bool,
+) -> ExExpr {
     let expr = expr.clone_inner();
-
-    // TODO: make these bools options.
-    let multithreaded = false;
-    let maintain_order = true;
 
     let opts = SortOptions {
         descending,
-        nulls_last,
-        multithreaded,
         maintain_order,
+        multithreaded,
+        nulls_last,
     };
 
     ExExpr::new(expr.arg_sort(opts).cast(DataType::Int64))

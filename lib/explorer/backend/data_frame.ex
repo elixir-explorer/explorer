@@ -166,8 +166,9 @@ defmodule Explorer.Backend.DataFrame do
               df,
               out_df :: df(),
               directions :: [{:asc | :desc, lazy_series()}],
-              nulls_last :: boolean(),
-              maintain_order :: boolean()
+              maintain_order? :: boolean(),
+              multithreaded? :: boolean(),
+              nulls_last? :: boolean()
             ) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()]) :: df
   @callback rename(df, out_df :: df(), [{old :: column_name(), new :: column_name()}]) :: df

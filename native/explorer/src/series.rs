@@ -358,17 +358,15 @@ pub fn s_shift(series: ExSeries, offset: i64) -> Result<ExSeries, ExplorerError>
 pub fn s_sort(
     series: ExSeries,
     descending: bool,
+    maintain_order: bool,
+    multithreaded: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    // TODO: Make this an option
-    let maintain_order = true;
-    let multithreaded = false;
-
     let opts = SortOptions {
         descending,
-        nulls_last,
         maintain_order,
         multithreaded,
+        nulls_last,
     };
     Ok(ExSeries::new(series.sort_with(opts)))
 }
@@ -377,17 +375,15 @@ pub fn s_sort(
 pub fn s_argsort(
     series: ExSeries,
     descending: bool,
+    maintain_order: bool,
+    multithreaded: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    // TODO: Make this an option
-    let maintain_order = true;
-    let multithreaded = false;
-
     let opts = SortOptions {
         descending,
-        nulls_last,
         maintain_order,
         multithreaded,
+        nulls_last,
     };
     let indices = series.arg_sort(opts).cast(&DataType::Int64)?;
     Ok(ExSeries::new(indices))

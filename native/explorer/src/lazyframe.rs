@@ -109,8 +109,8 @@ pub fn lf_arrange_with(
     data: ExLazyFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
-    nulls_last: bool,
     maintain_order: bool,
+    nulls_last: bool,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let exprs = ex_expr_to_exprs(expressions);
     let ldf = data

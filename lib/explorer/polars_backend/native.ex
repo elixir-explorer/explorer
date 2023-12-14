@@ -58,10 +58,19 @@ defmodule Explorer.PolarsBackend.Native do
   defstruct [:inner]
 
   def df_from_arrow_stream_pointer(_stream_ptr), do: err()
-  def df_arrange(_df, _by, _reverse, _nulls_last, _maintain_order, _groups), do: err()
 
-  def df_arrange_with(_df, _expressions, _directions, _nulls_last, _maintain_order, _groups),
+  def df_arrange(_df, _by, _reverse, _maintain_order?, _multithreaded?, _nulls_last?, _groups),
     do: err()
+
+  def df_arrange_with(
+        _df,
+        _expressions,
+        _directions,
+        _maintain_order?,
+        _nulls_last?,
+        _groups
+      ),
+      do: err()
 
   def df_concat_columns(_df, _others), do: err()
   def df_concat_rows(_df, _others), do: err()
@@ -236,7 +245,16 @@ defmodule Explorer.PolarsBackend.Native do
       do: err()
 
   def lf_filter_with(_df, _expression), do: err()
-  def lf_arrange_with(_df, _expressions, _directions, _nulls_last, _maintain_order), do: err()
+
+  def lf_arrange_with(
+        _df,
+        _expressions,
+        _directions,
+        _maintain_order?,
+        _nulls_last?
+      ),
+      do: err()
+
   def lf_distinct(_df, _subset, _selection), do: err()
   def lf_mutate_with(_df, _exprs), do: err()
   def lf_summarise_with(_df, _groups, _aggs), do: err()
@@ -258,7 +276,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_any(_s), do: err()
   def s_argmax(_s), do: err()
   def s_argmin(_s), do: err()
-  def s_argsort(_s, _descending?, _nils_last?), do: err()
+  def s_argsort(_s, _descending?, _maintain_order?, _multithreaded?, _nulls_last?), do: err()
   def s_cast(_s, _dtype), do: err()
   def s_categories(_s), do: err()
   def s_categorise(_s, _s_categories), do: err()
@@ -367,7 +385,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_slice(_s, _offset, _length), do: err()
   def s_slice_by_indices(_s, _indices), do: err()
   def s_slice_by_series(_s, _series), do: err()
-  def s_sort(_s, _descending?, _nils_last?), do: err()
+  def s_sort(_s, _descending?, _maintain_order?, _multithreaded?, _nulls_last?), do: err()
   def s_standard_deviation(_s, _ddof), do: err()
   def s_strip(_s, _string), do: err()
   def s_subtract(_s, _other), do: err()

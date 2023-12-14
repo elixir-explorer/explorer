@@ -407,15 +407,27 @@ defmodule Explorer.PolarsBackend.Series do
   # Sort
 
   @impl true
-  def sort(series, descending?, nils_last?)
-      when is_boolean(descending?) and is_boolean(nils_last?) do
-    Shared.apply_series(series, :s_sort, [descending?, nils_last?])
+  def sort(series, descending?, maintain_order?, multithreaded?, nulls_last?)
+      when is_boolean(descending?) and is_boolean(maintain_order?) and is_boolean(multithreaded?) and
+             is_boolean(nulls_last?) do
+    Shared.apply_series(series, :s_sort, [
+      descending?,
+      maintain_order?,
+      multithreaded?,
+      nulls_last?
+    ])
   end
 
   @impl true
-  def argsort(series, descending?, nils_last?)
-      when is_boolean(descending?) and is_boolean(nils_last?) do
-    Shared.apply_series(series, :s_argsort, [descending?, nils_last?])
+  def argsort(series, descending?, maintain_order?, multithreaded?, nulls_last?)
+      when is_boolean(descending?) and is_boolean(maintain_order?) and is_boolean(multithreaded?) and
+             is_boolean(nulls_last?) do
+    Shared.apply_series(series, :s_argsort, [
+      descending?,
+      maintain_order?,
+      multithreaded?,
+      nulls_last?
+    ])
   end
 
   @impl true

@@ -1651,10 +1651,17 @@ defmodule Explorer.Series do
     * `:nils` - `:first` or `:last`.
       By default it is `:last` if direction is `:asc`, and `:first` otherwise.
 
-    * `:stable` - `true` or `false`.
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `true`.
+
+      Parallel sort isn't available on certain lazy operations.
+      In those situations this option is ignored.
+
+    * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      By default it is `true`.
+      By default it is `false`.
 
   ## Examples
 
@@ -1705,10 +1712,17 @@ defmodule Explorer.Series do
     * `:nils` - `:first` or `:last`.
       By default it is `:last` if direction is `:asc`, and `:first` otherwise.
 
-    * `:stable` - `true` or `false`.
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `true`.
+
+      Parallel sort isn't available on certain lazy operations.
+      In those situations this option is ignored.
+
+    * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      By default it is `true`.
+      By default it is `false`.
 
   ## Examples
 
@@ -4305,8 +4319,6 @@ defmodule Explorer.Series do
   @doc """
   Sorts the series.
 
-  Sorting is stable by default.
-
   See `sort_by/3` for an expression-based sorting function.
   See `sort_with/3` for a callback-based sorting function.
 
@@ -4315,8 +4327,17 @@ defmodule Explorer.Series do
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
       By default it sorts in ascending order.
 
-    * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
-      `:first` otherwise.
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
+
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `true`.
+
+    * `:stable` - boolean.
+      Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
+      Unstable sorting may be more performant.
+      By default it is `false`.
 
   ## Examples
 
@@ -4337,11 +4358,7 @@ defmodule Explorer.Series do
   """
   @doc type: :shape
   def sort(series, opts \\ []) do
-    opts = Keyword.validate!(opts, [:nils, direction: :asc])
-    descending? = opts[:direction] == :desc
-    nils_last? = if nils = opts[:nils], do: nils == :last, else: K.not(descending?)
-
-    apply_series(series, :sort, [descending?, nils_last?])
+    apply_series(series, :sort, Shared.validate_sort_options!(opts))
   end
 
   @doc """
@@ -4352,8 +4369,17 @@ defmodule Explorer.Series do
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
       By default it sorts in ascending order.
 
-    * `:nils` - `:first` or `:last`. By default it is `:last` if direction is `:asc`, and
-      `:first` otherwise.
+    * `:nils` - `:first` or `:last`.
+      By default it is `:last` if direction is `:asc`, and `:first` otherwise.
+
+    * `:parallel` - boolean.
+      Whether to parallelize the sorting.
+      By default it is `true`.
+
+    * `:stable` - boolean.
+      Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
+      Unstable sorting may be more performant.
+      By default it is `false`.
 
   ## Examples
 
@@ -4374,11 +4400,7 @@ defmodule Explorer.Series do
   """
   @doc type: :shape
   def argsort(series, opts \\ []) do
-    opts = Keyword.validate!(opts, [:nils, direction: :asc])
-    descending? = opts[:direction] == :desc
-    nils_last? = if nils = opts[:nils], do: nils == :last, else: K.not(descending?)
-
-    apply_series(series, :argsort, [descending?, nils_last?])
+    apply_series(series, :argsort, Shared.validate_sort_options!(opts))
   end
 
   @doc """

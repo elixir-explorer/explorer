@@ -519,4 +519,58 @@ defmodule Explorer.Shared do
     |> Enum.sort(&(elem(&1, 1) <= elem(&2, 1)))
     |> Enum.map(fn {_, key} -> ["      * ", inspect(key), ?\n] end)
   end
+
+  @doc """
+  Validate options to be used for the various sorting functions.
+  """
+  def validate_sort_options!(opts) do
+    opts = Keyword.validate!(opts, [:direction, :nils, parallel: true, stable: false])
+
+    direction =
+      case Keyword.fetch(opts, :direction) do
+        {:ok, d} when d in [:asc, :desc] ->
+          d
+
+        :error ->
+          :not_provided
+
+        {:ok, x} ->
+          raise ArgumentError, "`:direction` must be `:asc` or `:desc`, found: #{inspect(x)}."
+      end
+
+    nils =
+      case Keyword.fetch(opts, :nils) do
+        {:ok, n} when n in [:first, :last] ->
+          n
+
+        :error ->
+          case direction do
+            :asc -> :last
+            :desc -> :first
+            :not_provided -> :last
+          end
+
+        {:ok, x} ->
+          raise ArgumentError, "`:nils` must be `:first` or `:last`, found: #{inspect(x)}."
+      end
+
+    parallel =
+      case Keyword.fetch!(opts, :parallel) do
+        b when is_boolean(b) -> b
+        x -> raise ArgumentError, "`:parallel` must be `true` or `false`, found: #{inspect(x)}."
+      end
+
+    stable =
+      case Keyword.fetch!(opts, :stable) do
+        b when is_boolean(b) -> b
+        x -> raise ArgumentError, "`:stable` must be `true` or `false`, found: #{inspect(x)}."
+      end
+
+    descending? = direction == :desc
+    maintain_order? = stable == true
+    multithreaded? = parallel == true
+    nulls_last? = nils == :last
+
+    [descending?, maintain_order?, multithreaded?, nulls_last?]
+  end
 end

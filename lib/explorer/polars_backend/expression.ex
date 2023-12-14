@@ -82,8 +82,8 @@ defmodule Explorer.PolarsBackend.Expression do
 
   @first_only_expressions [
     quantile: 2,
-    argsort: 3,
-    sort: 3,
+    argsort: 5,
+    sort: 5,
     head: 2,
     tail: 2,
     peaks: 2,
