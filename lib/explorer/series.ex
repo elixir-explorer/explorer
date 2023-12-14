@@ -1653,12 +1653,15 @@ defmodule Explorer.Series do
 
     * `:parallel` - boolean.
       Whether to parallelize the sorting.
-      By default it is `false`.
+      By default it is `true`.
+
+      Parallel sort isn't available on certain lazy operations.
+      In those situations this option is ignored.
 
     * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      By default it is `true`.
+      By default it is `false`.
 
   ## Examples
 
@@ -1711,12 +1714,15 @@ defmodule Explorer.Series do
 
     * `:parallel` - boolean.
       Whether to parallelize the sorting.
-      By default it is `false`.
+      By default it is `true`.
+
+      Parallel sort isn't available on certain lazy operations.
+      In those situations this option is ignored.
 
     * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      By default it is `true`.
+      By default it is `false`.
 
   ## Examples
 
@@ -4301,8 +4307,6 @@ defmodule Explorer.Series do
   @doc """
   Sorts the series.
 
-  Sorting is stable by default.
-
   See `sort_by/3` for an expression-based sorting function.
   See `sort_with/3` for a callback-based sorting function.
 
@@ -4316,12 +4320,12 @@ defmodule Explorer.Series do
 
     * `:parallel` - boolean.
       Whether to parallelize the sorting.
-      By default it is `false`.
+      By default it is `true`.
 
     * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      By default it is `true`.
+      By default it is `false`.
 
   ## Examples
 
@@ -4358,12 +4362,12 @@ defmodule Explorer.Series do
 
     * `:parallel` - boolean.
       Whether to parallelize the sorting.
-      By default it is `false`.
+      By default it is `true`.
 
     * `:stable` - boolean.
       Determines if the sorting is stable (ties are guaranteed to maintain their order) or not.
       Unstable sorting may be more performant.
-      By default it is `true`.
+      By default it is `false`.
 
   ## Examples
 
