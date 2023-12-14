@@ -736,7 +736,7 @@ defmodule Explorer.DataFrameTest do
           f: distinct(a),
           g: unordered_distinct(a),
           h: -a,
-          i: rank(a, method: "ordinal"),
+          i: rank(a, method: :ordinal),
           j: rank(c)
         )
 

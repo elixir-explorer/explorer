@@ -4091,31 +4091,31 @@ defmodule Explorer.SeriesTest do
 
     test "rank of a series of floats (method: ordinal)" do
       s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
-      r = Series.rank(s, method: "ordinal")
+      r = Series.rank(s, method: :ordinal)
       assert Series.to_list(r) === [8, 2, 5, 3, 9, 10, 6, 7, 1, 4]
     end
 
     test "rank of a series of floats (method: min)" do
       s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
-      r = Series.rank(s, method: "min")
+      r = Series.rank(s, method: :min)
       assert Series.to_list(r) === [8, 2, 5, 3, 9, 10, 6, 6, 1, 3]
     end
 
     test "rank of a series of floats (method: max)" do
       s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
-      r = Series.rank(s, method: "max")
+      r = Series.rank(s, method: :max)
       assert Series.to_list(r) === [8, 2, 5, 4, 9, 10, 7, 7, 1, 4]
     end
 
     test "rank of a series of floats (method: dense)" do
       s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
-      r = Series.rank(s, method: "dense")
+      r = Series.rank(s, method: :dense)
       assert Series.to_list(r) === [6, 2, 4, 3, 7, 8, 5, 5, 1, 3]
     end
 
     test "rank of a series of floats (method: random)" do
       s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
-      r = Series.rank(s, method: "random", seed: 4242)
+      r = Series.rank(s, method: :random, seed: 4242)
       assert Series.to_list(r) === [8, 2, 5, 4, 9, 10, 7, 6, 1, 3]
     end
 
@@ -4135,6 +4135,14 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
       r = Series.rank(s)
       assert Series.to_list(r) === [3.0, 5.0, 6.0, nil, 4.0, 2.0, 1.0, 7.0]
+    end
+
+    test "invalid rank method" do
+      s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
+
+      assert_raise ArgumentError, ~s(unsupported rank method :not_a_method), fn ->
+        Series.rank(s, method: :not_a_method, seed: 4242)
+      end
     end
   end
 

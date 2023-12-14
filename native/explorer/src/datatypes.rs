@@ -511,6 +511,16 @@ pub enum ExCorrelationMethod {
     Spearman,
 }
 
+#[derive(NifTaggedEnum)]
+pub enum ExRankMethod {
+    Average,
+    Min,
+    Max,
+    Dense,
+    Ordinal,
+    Random,
+}
+
 impl TryFrom<ExParquetCompression> for ParquetCompression {
     type Error = ExplorerError;
 
