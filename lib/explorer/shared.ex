@@ -480,7 +480,7 @@ defmodule Explorer.Shared do
   Validate options to be used for the various sorting functions.
   """
   def validate_sort_options!(opts) do
-    opts = Keyword.validate!(opts, [:direction, :nils, parallel: false, stable: true])
+    opts = Keyword.validate!(opts, [:direction, :nils, parallel: true, stable: false])
 
     direction =
       case Keyword.fetch(opts, :direction) do
