@@ -76,7 +76,7 @@ rustler::init!(
     [
         df_from_arrow_stream_pointer,
         df_arrange,
-        df_arrange_with,
+        df_sort_with,
         df_concat_columns,
         df_concat_rows,
         df_describe,
@@ -294,7 +294,7 @@ rustler::init!(
         lf_from_parquet_cloud,
         lf_from_ndjson,
         lf_filter_with,
-        lf_arrange_with,
+        lf_sort_with,
         lf_distinct,
         lf_mutate_with,
         lf_summarise_with,

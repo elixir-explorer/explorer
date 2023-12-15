@@ -105,7 +105,7 @@ pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame,
 }
 
 #[rustler::nif]
-pub fn lf_arrange_with(
+pub fn lf_sort_with(
     data: ExLazyFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,

@@ -643,7 +643,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def arrange_with(
+  def sort_with(
         %DataFrame{} = df,
         out_df,
         column_pairs,
@@ -673,7 +673,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         |> Enum.map(fn {dir, lazy_series} -> {dir == :desc, to_expr(lazy_series)} end)
         |> Enum.unzip()
 
-      Shared.apply_dataframe(df, out_df, :df_arrange_with, [
+      Shared.apply_dataframe(df, out_df, :df_sort_with, [
         expressions,
         directions,
         maintain_order?,

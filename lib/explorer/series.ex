@@ -1752,7 +1752,7 @@ defmodule Explorer.Series do
     {direction, opts} = Keyword.pop(opts, :direction, :asc)
 
     Explorer.DataFrame.new(series: series)
-    |> Explorer.DataFrame.arrange_with(&[{direction, fun.(&1[:series])}], opts)
+    |> Explorer.DataFrame.sort_with(&[{direction, fun.(&1[:series])}], opts)
     |> Explorer.DataFrame.pull(:series)
   end
 

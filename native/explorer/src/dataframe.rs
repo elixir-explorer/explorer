@@ -354,7 +354,7 @@ pub fn df_arrange(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_arrange_with(
+pub fn df_sort_with(
     data: ExDataFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,

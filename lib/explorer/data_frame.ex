@@ -3047,7 +3047,7 @@ defmodule Explorer.DataFrame do
   >
   > This is a macro. You must `require  Explorer.DataFrame` before using it.
 
-  See `arrange_with/2` for a callback version of this function without
+  See `sort_with/2` for a callback version of this function without
   `Explorer.Query`.
 
   ## Options
@@ -3145,7 +3145,7 @@ defmodule Explorer.DataFrame do
     quote do
       require Explorer.Query
 
-      Explorer.DataFrame.arrange_with(
+      Explorer.DataFrame.sort_with(
         unquote(df),
         Explorer.Query.query(unquote(query)),
         unquote(opts)
@@ -3183,7 +3183,7 @@ defmodule Explorer.DataFrame do
   A single column name will sort ascending by that column:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange_with(df, &(&1["a"]))
+      iex> Explorer.DataFrame.sort_with(df, &(&1["a"]))
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
@@ -3193,7 +3193,7 @@ defmodule Explorer.DataFrame do
   You can also sort descending:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"]])
+      iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"]])
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["c", "b", "a"]
@@ -3203,7 +3203,7 @@ defmodule Explorer.DataFrame do
   You can specify how `nil`s are sorted:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", nil, "a"])
-      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"]], nils: :first)
+      iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"]], nils: :first)
       #Explorer.DataFrame<
         Polars[4 x 1]
         a string [nil, "c", "b", "a"]
@@ -3212,7 +3212,7 @@ defmodule Explorer.DataFrame do
   Sorting by more than one column sorts them in the order they are entered:
 
       iex> df = Explorer.DataFrame.new(a: [3, 1, 3], b: [2, 1, 3])
-      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"], asc: &1["b"]])
+      iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"], asc: &1["b"]])
       #Explorer.DataFrame<
         Polars[3 x 2]
         a integer [3, 3, 1]
@@ -3223,7 +3223,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.arrange_with(grouped, &[desc: &1["species"], asc: &1["sepal_width"]])
+      iex> Explorer.DataFrame.sort_with(grouped, &[desc: &1["species"], asc: &1["sepal_width"]])
       #Explorer.DataFrame<
         Polars[150 x 5]
         Groups: ["species"]
@@ -3235,13 +3235,13 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec arrange_with(
+  @spec sort_with(
           df :: DataFrame.t(),
           (Explorer.Backend.LazyFrame.t() ->
              Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}]),
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
-  def arrange_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
+  def sort_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
     [_descending? | opts] = Shared.validate_sort_options!(opts)
 
     ldf = Explorer.Backend.LazyFrame.new(df)
@@ -3268,7 +3268,7 @@ defmodule Explorer.DataFrame do
           raise "not a valid lazy series or arrange instruction: #{inspect(other)}"
       end)
 
-    Shared.apply_impl(df, :arrange_with, [df, dir_and_lazy_series_pairs] ++ opts)
+    Shared.apply_impl(df, :sort_with, [df, dir_and_lazy_series_pairs] ++ opts)
   end
 
   @doc """
@@ -5645,7 +5645,7 @@ defmodule Explorer.DataFrame do
     df
     |> group_by(columns)
     |> summarise_with(&[counts: Series.count(&1[col])])
-    |> arrange_with(&[desc: &1[:counts]])
+    |> sort_with(&[desc: &1[:counts]])
   end
 
   def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")
