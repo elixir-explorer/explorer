@@ -1026,13 +1026,11 @@ pub fn s_correlation(
     let corr = match method {
         ExCorrelationMethod::Pearson => pearson_corr(s1.f64()?, s2.f64()?, ddof),
         ExCorrelationMethod::Spearman => {
-            let df = df!("s1" => s1, "s2" => s2)?;
-            let lazy_df = df
+            let df = df!("s1" => s1, "s2" => s2)?
                 .lazy()
-                .with_column(spearman_rank_corr(col("s1"), col("s2"), ddof, true).alias("corr"));
-            let result = lazy_df.collect()?;
-            let item = result.column("corr")?.get(0)?;
-            match item {
+                .with_column(spearman_rank_corr(col("s1"), col("s2"), ddof, true).alias("corr"))
+                .collect()?;
+            match df.column("corr")?.get(0)? {
                 AnyValue::Float64(x) => Some(x),
                 _ => None,
             }
