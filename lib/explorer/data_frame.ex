@@ -3153,6 +3153,14 @@ defmodule Explorer.DataFrame do
     end
   end
 
+  @deprecated "Use sort_by/3 instead"
+  @doc type: :single
+  defmacro arrange(df, query, opts \\ []) do
+    quote do
+      Explorer.DataFrame.sort_by(unquote(df), unquote(query), unquote(opts))
+    end
+  end
+
   @doc """
   Sorts rows by columns using a callback function.
 
@@ -3270,6 +3278,10 @@ defmodule Explorer.DataFrame do
 
     Shared.apply_impl(df, :sort_with, [df, dir_and_lazy_series_pairs] ++ opts)
   end
+
+  @deprecated "Use sort_with/3 instead"
+  @doc type: :single
+  def arrange_with(df, fun, opts \\ []), do: sort_with(df, fun, opts)
 
   @doc """
   Takes distinct rows by a selection of columns.
