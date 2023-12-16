@@ -3041,7 +3041,7 @@ defmodule Explorer.DataFrame do
   defp append_unless_present([], name), do: [name]
 
   @doc """
-  Arranges/sorts rows by columns using `Explorer.Query`.
+  Sorts rows by columns using `Explorer.Query`.
 
   > #### Notice {: .notice}
   >
@@ -3154,7 +3154,7 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Arranges/sorts rows by columns using a callback function.
+  Sorts rows by columns using a callback function.
 
   The callback receives a lazy dataframe which stores
   operations instead of values for efficient sorting.
