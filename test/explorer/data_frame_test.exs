@@ -1879,11 +1879,11 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "arrange/3" do
+  describe "sort_by/3" do
     test "raises with invalid column names", %{df: df} do
       assert_raise ArgumentError,
                    ~r"could not find column name \"test\"",
-                   fn -> DF.arrange(df, test) end
+                   fn -> DF.sort_by(df, test) end
     end
   end
 
@@ -1928,7 +1928,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "with a simple df and arrange by two columns" do
+    test "with a simple df and sort_by by two columns" do
       df = DF.new(a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1])
       df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
 

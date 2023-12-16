@@ -659,7 +659,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         |> Enum.map(fn {dir, %{args: [col]}} -> {dir == :desc, col} end)
         |> Enum.unzip()
 
-      Shared.apply_dataframe(df, out_df, :df_arrange, [
+      Shared.apply_dataframe(df, out_df, :df_sort_by, [
         column_names,
         directions,
         maintain_order?,

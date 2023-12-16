@@ -75,7 +75,7 @@ rustler::init!(
     "Elixir.Explorer.PolarsBackend.Native",
     [
         df_from_arrow_stream_pointer,
-        df_arrange,
+        df_sort_by,
         df_sort_with,
         df_concat_columns,
         df_concat_rows,

@@ -1694,7 +1694,7 @@ defmodule Explorer.Series do
       require Explorer.DataFrame
 
       Explorer.DataFrame.new(_: unquote(series))
-      |> Explorer.DataFrame.arrange([{unquote(direction), unquote(query)}], unquote(opts))
+      |> Explorer.DataFrame.sort_by([{unquote(direction), unquote(query)}], unquote(opts))
       |> Explorer.DataFrame.pull(:_)
     end
   end

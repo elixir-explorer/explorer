@@ -668,7 +668,7 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
 
-    test "with a simple df and arrange by two columns" do
+    test "with a simple df and sort_by by two columns" do
       ldf = DF.new([a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1]], lazy: true)
       ldf1 = DF.sort_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
 

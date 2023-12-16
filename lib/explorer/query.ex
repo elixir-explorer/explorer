@@ -43,7 +43,7 @@ defmodule Explorer.Query do
 
   Queries are supported in the following operations:
 
-    * `Explorer.DataFrame.arrange/2`
+    * `Explorer.DataFrame.sort_by/2`
     * `Explorer.DataFrame.filter/2`
     * `Explorer.DataFrame.mutate/2`
     * `Explorer.DataFrame.summarise/2`
@@ -218,7 +218,7 @@ defmodule Explorer.Query do
         petal_width_mean f64 [0.2439999999999999, 1.3259999999999998, 2.026]
       >
 
-  `arrange` expects a list of columns to sort by, while for-comprehensions
+  `sort_by` expects a list of columns to sort by, while for-comprehensions
   in `filter` generate a list of conditions, which are joined using `and`.
   For example, to filter all entries have both sepal and petal length above
   average, using a filter on the column name, one could write:

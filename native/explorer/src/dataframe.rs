@@ -323,7 +323,7 @@ fn arrow_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_arrange(
+pub fn df_sort_by(
     df: ExDataFrame,
     by_columns: Vec<String>,
     reverse: Vec<bool>,
