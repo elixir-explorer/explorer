@@ -1050,7 +1050,7 @@ DF.mutate(df, %{"gas_fuel" => gas_fuel - 10})
 
 `DF.transmute/2`, which is `DF.mutate/2` that only retains the specified columns, is forthcoming.
 
-### Arrange
+### Sort_by
 
 Sorting the dataframe is pretty straightforward.
 
