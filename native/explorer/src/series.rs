@@ -881,7 +881,14 @@ pub fn s_ewm_standard_deviation(
     min_periods: usize,
     ignore_nulls: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let opts = EWMOptions { alpha, adjust, bias, min_periods, ignore_nulls, ..Default::default() };
+    let opts = EWMOptions {
+        alpha,
+        adjust,
+        bias,
+        min_periods,
+        ignore_nulls,
+        ..Default::default()
+    };
     let s1 = polars_ops::prelude::ewm_std(&series, opts)?;
     Ok(ExSeries::new(s1))
 }
@@ -895,7 +902,14 @@ pub fn s_ewm_variance(
     min_periods: usize,
     ignore_nulls: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let opts = EWMOptions { alpha, adjust, bias, min_periods, ignore_nulls, ..Default::default() };
+    let opts = EWMOptions {
+        alpha,
+        adjust,
+        bias,
+        min_periods,
+        ignore_nulls,
+        ..Default::default()
+    };
     let s1 = polars_ops::prelude::ewm_var(&series, opts)?;
     Ok(ExSeries::new(s1))
 }

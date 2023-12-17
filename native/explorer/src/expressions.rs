@@ -8,7 +8,7 @@ use polars::prelude::{
     col, concat_str, cov, pearson_corr, spearman_rank_corr, when, IntoLazy, LiteralValue,
     SortOptions,
 };
-use polars::prelude::{DataType, Expr, EWMOptions, Literal, StrptimeOptions, TimeUnit};
+use polars::prelude::{DataType, EWMOptions, Expr, Literal, StrptimeOptions, TimeUnit};
 
 use crate::datatypes::{
     ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExValidValue,
@@ -709,7 +709,14 @@ pub fn expr_ewm_standard_deviation(
     ignore_nulls: bool,
 ) -> ExExpr {
     let expr = data.clone_inner();
-    let opts = EWMOptions { alpha, adjust, bias, min_periods, ignore_nulls, ..Default::default() };
+    let opts = EWMOptions {
+        alpha,
+        adjust,
+        bias,
+        min_periods,
+        ignore_nulls,
+        ..Default::default()
+    };
     ExExpr::new(expr.ewm_std(opts))
 }
 
@@ -723,7 +730,14 @@ pub fn expr_ewm_variance(
     ignore_nulls: bool,
 ) -> ExExpr {
     let expr = data.clone_inner();
-    let opts = EWMOptions { alpha, adjust, bias, min_periods, ignore_nulls, ..Default::default() };
+    let opts = EWMOptions {
+        alpha,
+        adjust,
+        bias,
+        min_periods,
+        ignore_nulls,
+        ..Default::default()
+    };
     ExExpr::new(expr.ewm_var(opts))
 }
 
