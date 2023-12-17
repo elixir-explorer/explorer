@@ -533,6 +533,20 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_ewm_mean, [alpha, adjust, min_periods, ignore_nils])
   end
 
+  @impl true
+  def ewm_standard_deviation(series, alpha, adjust, bias, min_periods, ignore_nils) do
+    Shared.apply_series(
+      series,
+      :s_ewm_standard_deviation,
+      [alpha, adjust, bias, min_periods, ignore_nils]
+    )
+  end
+
+  @impl true
+  def ewm_variance(series, alpha, adjust, bias, min_periods, ignore_nils) do
+    Shared.apply_series(series, :s_ewm_variance, [alpha, adjust, bias, min_periods, ignore_nils])
+  end
+
   # Missing values
 
   @impl true

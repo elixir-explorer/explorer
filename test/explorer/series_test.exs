@@ -3751,6 +3751,262 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "ewm_standard_deviation/2" do
+    test "returns calculated ewm std values with default options used for calculation" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_standard_deviation(s1)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.7071067811865476,
+               0.9636241116594314,
+               1.1771636613972951,
+               1.3452425132127066,
+               1.4709162008918397,
+               1.5607315639222439,
+               1.6224598916602895,
+               1.6634845490537977,
+               1.689976601128564
+             ]
+    end
+
+    test "returns calculated ewm std with different smoothing factor if different alpha is passed" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_standard_deviation(s1, alpha: 0.8)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.7071067811865476,
+               0.8613567692141088,
+               0.930593876392466,
+               0.9563763729664396,
+               0.9647929424175131,
+               0.9672984330369606,
+               0.9679969383076764,
+               0.9681825776281606,
+               0.9682301709724406
+             ]
+    end
+
+    test "returns calculated ewm std with nils for index less than min period size, if min_periods is set" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_standard_deviation(s1, min_periods: 5)
+
+      assert Series.to_list(s2) == [
+               nil,
+               nil,
+               nil,
+               nil,
+               1.3452425132127066,
+               1.4709162008918397,
+               1.5607315639222439,
+               1.6224598916602895,
+               1.6634845490537977,
+               1.689976601128564
+             ]
+    end
+
+    test "ignores nil by default and calculates ewm std" do
+      s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
+      s2 = Series.ewm_standard_deviation(s1, ignore_nils: true)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.0,
+               0.7071067811865476,
+               0.7071067811865476,
+               0.9636241116594314,
+               1.1771636613972951,
+               1.3452425132127066,
+               1.4709162008918397,
+               1.5607315639222439,
+               1.6224598916602895
+             ]
+    end
+
+    test "does not ignore nil if set ignore_nils option to false and calculates ewm std" do
+      s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
+      s2 = Series.ewm_standard_deviation(s1, ignore_nils: false)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.0,
+               0.7071067811865476,
+               0.7071067811865476,
+               0.8864052604279183,
+               0.9772545497599153,
+               1.1470897308102692,
+               1.3067888637766594,
+               1.4363395171897309,
+               1.5336045526865307
+             ]
+    end
+
+    test "returns calculated ewm std without adjustment if adjust option is set to false" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_standard_deviation(s1, adjust: false)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.7071067811865476,
+               1.0488088481701516,
+               1.300183137283433,
+               1.46929354773366,
+               1.5764952405261994,
+               1.641829587869702,
+               1.6805652557493016,
+               1.7030595977801866,
+               1.7159083446458816
+             ]
+    end
+
+    test "returns calculated ewm std with bias if bias option is set to true" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_standard_deviation(s1, bias: true)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.4714045207910317,
+               0.7284313590846835,
+               0.9285592184789413,
+               1.0805247886738212,
+               1.191428190780648,
+               1.2693050154594225,
+               1.3221328870469677,
+               1.3568998042691014,
+               1.3791855333404945
+             ]
+    end
+  end
+
+  describe "ewm_variance/2" do
+    test "returns calculated ewm var values with default options used for calculation" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_variance(s1)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.5,
+               0.9285714285714284,
+               1.385714285714286,
+               1.8096774193548393,
+               2.163594470046083,
+               2.435883014623173,
+               2.632376100046318,
+               2.7671808449407167,
+               2.8560209123620535
+             ]
+    end
+
+    test "returns calculated ewm var with different smoothing factor if different alpha is passed" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_variance(s1, alpha: 0.8)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.5,
+               0.7419354838709674,
+               0.8660049627791564,
+               0.9146557667684424,
+               0.9308254217386428,
+               0.9356662585557595,
+               0.9370180725730355,
+               0.9373775036227093,
+               0.9374696639813216
+             ]
+    end
+
+    test "returns calculated ewm var with nils for index less than min period size, if min_periods is set" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_variance(s1, min_periods: 5)
+
+      assert Series.to_list(s2) == [
+               nil,
+               nil,
+               nil,
+               nil,
+               1.8096774193548393,
+               2.163594470046083,
+               2.435883014623173,
+               2.632376100046318,
+               2.7671808449407167,
+               2.8560209123620535
+             ]
+    end
+
+    test "ignores nil by default and calculates ewm var" do
+      s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
+      s2 = Series.ewm_variance(s1, ignore_nils: true)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.0,
+               0.5,
+               0.5,
+               0.9285714285714284,
+               1.385714285714286,
+               1.8096774193548393,
+               2.163594470046083,
+               2.435883014623173,
+               2.632376100046318
+             ]
+    end
+
+    test "does not ignore nil if set ignore_nils option to false and calculates ewm var" do
+      s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
+      s2 = Series.ewm_variance(s1, ignore_nils: false)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.0,
+               0.5,
+               0.5,
+               0.7857142857142857,
+               0.9550264550264549,
+               1.315814850530376,
+               1.7076971344906926,
+               2.0630712086408294,
+               2.3519429240208543
+             ]
+    end
+
+    test "returns calculated ewm var without adjustment if adjust option is set to false" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_variance(s1, adjust: false)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.5,
+               1.1,
+               1.6904761904761905,
+               2.1588235294117646,
+               2.4853372434017595,
+               2.695604395604396,
+               2.824299578831716,
+               2.9004119935912107,
+               2.9443414472253693
+             ]
+    end
+
+    test "returns calculated ewm var with bias if bias option is set to true" do
+      s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_variance(s1, bias: true)
+
+      assert Series.to_list(s2) == [
+               0.0,
+               0.2222222222222222,
+               0.5306122448979591,
+               0.8622222222222223,
+               1.167533818938606,
+               1.4195011337868484,
+               1.6111352222704451,
+               1.7480353710111498,
+               1.8411770788255257,
+               1.9021527353757046
+             ]
+    end
+  end
+
   describe "mean/1" do
     test "returns the mean of an integer series" do
       s = Series.from_list([1, 2, nil, 3])
