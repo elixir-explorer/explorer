@@ -4848,6 +4848,116 @@ defmodule Explorer.Series do
     ])
   end
 
+  @doc """
+  Calculate the exponentially weighted moving standard deviation, given smoothing factor alpha.
+
+  ## Options
+
+    * `:alpha` - Optional smoothing factor which specifies the imporance given
+      to most recent observations. It is a value such that, 0 < alpha <= 1. Defaults to 0.5.
+
+    * `:adjust` - If set to true, it corrects the bias introduced by smoothing process.
+      Defaults to `true`.
+
+    * `:bias` - If set to false, it corrects the estimate to be statistically unbiased.
+      Defaults to `false`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. Defaults to `1`.
+
+    * `:ignore_nils` - If set to true, it ignore nulls in the calculation. Defaults to `true`.
+
+  ## Examples
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.ewm_std(s)
+      #Explorer.Series<
+        Polars[5]
+        f64 [0.0, 0.7071067811865476, 0.9636241116594314, 1.1771636613972951, 1.3452425132127066]
+      >
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.ewm_std(s, alpha: 0.1)
+      #Explorer.Series<
+        Polars[5]
+        f64 [0.0, 0.7071067811865476, 0.9990770648702808, 1.2879021599718157, 1.5741638698820746]
+      >
+  """
+  @doc type: :window
+  def ewm_std(series, opts \\ []) do
+    opts =
+      Keyword.validate!(opts,
+        alpha: 0.5,
+        adjust: true,
+        bias: false,
+        min_periods: 1,
+        ignore_nils: true
+      )
+
+    apply_series(series, :ewm_std, [
+      opts[:alpha],
+      opts[:adjust],
+      opts[:bias],
+      opts[:min_periods],
+      opts[:ignore_nils]
+    ])
+  end
+
+  @doc """
+  Calculate the exponentially weighted moving variance, given smoothing factor alpha.
+
+  ## Options
+
+    * `:alpha` - Optional smoothing factor which specifies the imporance given
+      to most recent observations. It is a value such that, 0 < alpha <= 1. Defaults to 0.5.
+
+    * `:adjust` - If set to true, it corrects the bias introduced by smoothing process.
+      Defaults to `true`.
+
+    * `:bias` - If set to false, it corrects the estimate to be statistically unbiased.
+      Defaults to `false`.
+
+    * `:min_periods` - The number of values in the window that should be non-nil
+      before computing a result. Defaults to `1`.
+
+    * `:ignore_nils` - If set to true, it ignore nulls in the calculation. Defaults to `true`.
+
+  ## Examples
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.ewm_var(s)
+      #Explorer.Series<
+        Polars[5]
+        f64 [0.0, 0.5, 0.9285714285714284, 1.385714285714286, 1.8096774193548393]
+      >
+
+      iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
+      iex> Explorer.Series.ewm_var(s, alpha: 0.1)
+      #Explorer.Series<
+        Polars[5]
+        f64 [0.0, 0.5, 0.9981549815498153, 1.6586919736600685, 2.4779918892421087]
+      >
+  """
+  @doc type: :window
+  def ewm_var(series, opts \\ []) do
+    opts =
+      Keyword.validate!(opts,
+        alpha: 0.5,
+        adjust: true,
+        bias: false,
+        min_periods: 1,
+        ignore_nils: true
+      )
+
+    apply_series(series, :ewm_var, [
+      opts[:alpha],
+      opts[:adjust],
+      opts[:bias],
+      opts[:min_periods],
+      opts[:ignore_nils]
+    ])
+  end
+
   # Missing values
 
   @doc """

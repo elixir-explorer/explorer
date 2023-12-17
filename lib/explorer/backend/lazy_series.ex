@@ -73,6 +73,8 @@ defmodule Explorer.Backend.LazySeries do
     window_sum: 5,
     window_standard_deviation: 5,
     ewm_mean: 5,
+    ewm_std: 6,
+    ewm_var: 6,
     # Transformation
     column: 1,
     reverse: 1,
@@ -658,6 +660,28 @@ defmodule Explorer.Backend.LazySeries do
     if aggregations?(args), do: raise_agg_inside_window(:ewm_mean)
 
     data = new(:ewm_mean, args, {:f, 64}, false)
+
+    Backend.Series.new(data, {:f, 64})
+  end
+
+  @impl true
+  def ewm_std(%Series{} = series, alpha, adjust, bias, min_periods, ignore_nils) do
+    args = [lazy_series!(series), alpha, adjust, bias, min_periods, ignore_nils]
+
+    if aggregations?(args), do: raise_agg_inside_window(:ewm_std)
+
+    data = new(:ewm_std, args, {:f, 64}, false)
+
+    Backend.Series.new(data, {:f, 64})
+  end
+
+  @impl true
+  def ewm_var(%Series{} = series, alpha, adjust, bias, min_periods, ignore_nils) do
+    args = [lazy_series!(series), alpha, adjust, bias, min_periods, ignore_nils]
+
+    if aggregations?(args), do: raise_agg_inside_window(:ewm_var)
+
+    data = new(:ewm_var, args, {:f, 64}, false)
 
     Backend.Series.new(data, {:f, 64})
   end

@@ -243,6 +243,24 @@ defmodule Explorer.Backend.Series do
               ignore_nils :: boolean()
             ) :: s
 
+  @callback ewm_std(
+              s,
+              alpha :: float(),
+              adjust :: boolean(),
+              bias :: boolean(),
+              min_periods :: integer(),
+              ignore_nils :: boolean()
+            ) :: s
+
+  @callback ewm_var(
+              s,
+              alpha :: float(),
+              adjust :: boolean(),
+              bias :: boolean(),
+              min_periods :: integer(),
+              ignore_nils :: boolean()
+            ) :: s
+
   # Nulls
 
   @callback fill_missing_with_strategy(s, :backward | :forward | :min | :max | :mean) :: s

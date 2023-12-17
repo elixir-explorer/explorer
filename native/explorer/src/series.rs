@@ -872,6 +872,34 @@ pub fn s_ewm_mean(
     Ok(ExSeries::new(s1))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_ewm_std(
+    series: ExSeries,
+    alpha: f64,
+    adjust: bool,
+    bias: bool,
+    min_periods: usize,
+    ignore_nulls: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let opts = EWMOptions { alpha, adjust, bias, min_periods, ignore_nulls, ..Default::default() };
+    let s1 = polars_ops::prelude::ewm_std(&series, opts)?;
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_ewm_var(
+    series: ExSeries,
+    alpha: f64,
+    adjust: bool,
+    bias: bool,
+    min_periods: usize,
+    ignore_nulls: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let opts = EWMOptions { alpha, adjust, bias, min_periods, ignore_nulls, ..Default::default() };
+    let s1 = polars_ops::prelude::ewm_var(&series, opts)?;
+    Ok(ExSeries::new(s1))
+}
+
 pub fn ewm_opts(alpha: f64, adjust: bool, min_periods: usize, ignore_nulls: bool) -> EWMOptions {
     EWMOptions {
         alpha,
