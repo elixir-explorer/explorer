@@ -3751,10 +3751,10 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "ewm_std/2" do
+  describe "ewm_standard_deviation/2" do
     test "returns calculated ewm std values with default options used for calculation" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_std(s1)
+      s2 = Series.ewm_standard_deviation(s1)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3772,7 +3772,7 @@ defmodule Explorer.SeriesTest do
 
     test "returns calculated ewm std with different smoothing factor if different alpha is passed" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_std(s1, alpha: 0.8)
+      s2 = Series.ewm_standard_deviation(s1, alpha: 0.8)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3790,7 +3790,7 @@ defmodule Explorer.SeriesTest do
 
     test "returns calculated ewm std with nils for index less than min period size, if min_periods is set" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_std(s1, min_periods: 5)
+      s2 = Series.ewm_standard_deviation(s1, min_periods: 5)
 
       assert Series.to_list(s2) == [
                nil,
@@ -3808,7 +3808,7 @@ defmodule Explorer.SeriesTest do
 
     test "ignores nil by default and calculates ewm std" do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
-      s2 = Series.ewm_std(s1, ignore_nils: true)
+      s2 = Series.ewm_standard_deviation(s1, ignore_nils: true)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3826,7 +3826,7 @@ defmodule Explorer.SeriesTest do
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewm std" do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
-      s2 = Series.ewm_std(s1, ignore_nils: false)
+      s2 = Series.ewm_standard_deviation(s1, ignore_nils: false)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3844,7 +3844,7 @@ defmodule Explorer.SeriesTest do
 
     test "returns calculated ewm std without adjustment if adjust option is set to false" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_std(s1, adjust: false)
+      s2 = Series.ewm_standard_deviation(s1, adjust: false)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3862,7 +3862,7 @@ defmodule Explorer.SeriesTest do
 
     test "returns calculated ewm std with bias if bias option is set to true" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_std(s1, bias: true)
+      s2 = Series.ewm_standard_deviation(s1, bias: true)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3879,10 +3879,10 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "ewm_var/2" do
+  describe "ewm_variance/2" do
     test "returns calculated ewm var values with default options used for calculation" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_var(s1)
+      s2 = Series.ewm_variance(s1)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3900,7 +3900,7 @@ defmodule Explorer.SeriesTest do
 
     test "returns calculated ewm var with different smoothing factor if different alpha is passed" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_var(s1, alpha: 0.8)
+      s2 = Series.ewm_variance(s1, alpha: 0.8)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3918,7 +3918,7 @@ defmodule Explorer.SeriesTest do
 
     test "returns calculated ewm var with nils for index less than min period size, if min_periods is set" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_var(s1, min_periods: 5)
+      s2 = Series.ewm_variance(s1, min_periods: 5)
 
       assert Series.to_list(s2) == [
                nil,
@@ -3936,7 +3936,7 @@ defmodule Explorer.SeriesTest do
 
     test "ignores nil by default and calculates ewm var" do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
-      s2 = Series.ewm_var(s1, ignore_nils: true)
+      s2 = Series.ewm_variance(s1, ignore_nils: true)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3954,7 +3954,7 @@ defmodule Explorer.SeriesTest do
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewm var" do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
-      s2 = Series.ewm_var(s1, ignore_nils: false)
+      s2 = Series.ewm_variance(s1, ignore_nils: false)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3972,7 +3972,7 @@ defmodule Explorer.SeriesTest do
 
     test "returns calculated ewm var without adjustment if adjust option is set to false" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_var(s1, adjust: false)
+      s2 = Series.ewm_variance(s1, adjust: false)
 
       assert Series.to_list(s2) == [
                0.0,
@@ -3990,7 +3990,7 @@ defmodule Explorer.SeriesTest do
 
     test "returns calculated ewm var with bias if bias option is set to true" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
-      s2 = Series.ewm_var(s1, bias: true)
+      s2 = Series.ewm_variance(s1, bias: true)
 
       assert Series.to_list(s2) == [
                0.0,

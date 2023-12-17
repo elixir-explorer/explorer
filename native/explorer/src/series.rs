@@ -873,7 +873,7 @@ pub fn s_ewm_mean(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_ewm_std(
+pub fn s_ewm_standard_deviation(
     series: ExSeries,
     alpha: f64,
     adjust: bool,
@@ -887,7 +887,7 @@ pub fn s_ewm_std(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_ewm_var(
+pub fn s_ewm_variance(
     series: ExSeries,
     alpha: f64,
     adjust: bool,

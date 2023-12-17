@@ -256,8 +256,8 @@ rustler::init!(
         expr_window_sum,
         expr_window_standard_deviation,
         expr_ewm_mean,
-        expr_ewm_std,
-        expr_ewm_var,
+        expr_ewm_standard_deviation,
+        expr_ewm_variance,
         // inspect expressions
         expr_describe_filter_plan,
         // string expressions
@@ -463,8 +463,8 @@ rustler::init!(
         s_window_sum,
         s_window_standard_deviation,
         s_ewm_mean,
-        s_ewm_std,
-        s_ewm_var,
+        s_ewm_standard_deviation,
+        s_ewm_variance,
         s_in,
         s_round,
         s_floor,

@@ -700,7 +700,7 @@ pub fn expr_ewm_mean(
 }
 
 #[rustler::nif]
-pub fn expr_ewm_std(
+pub fn expr_ewm_standard_deviation(
     data: ExExpr,
     alpha: f64,
     adjust: bool,
@@ -714,7 +714,7 @@ pub fn expr_ewm_std(
 }
 
 #[rustler::nif]
-pub fn expr_ewm_var(
+pub fn expr_ewm_variance(
     data: ExExpr,
     alpha: f64,
     adjust: bool,

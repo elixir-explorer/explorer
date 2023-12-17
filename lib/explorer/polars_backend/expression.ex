@@ -118,8 +118,8 @@ defmodule Explorer.PolarsBackend.Expression do
     window_sum: 5,
     window_standard_deviation: 5,
     ewm_mean: 5,
-    ewm_std: 6,
-    ewm_var: 6,
+    ewm_standard_deviation: 6,
+    ewm_variance: 6,
 
     # Conversions
     strptime: 2,

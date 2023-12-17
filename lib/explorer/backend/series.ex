@@ -243,7 +243,7 @@ defmodule Explorer.Backend.Series do
               ignore_nils :: boolean()
             ) :: s
 
-  @callback ewm_std(
+  @callback ewm_standard_deviation(
               s,
               alpha :: float(),
               adjust :: boolean(),
@@ -252,7 +252,7 @@ defmodule Explorer.Backend.Series do
               ignore_nils :: boolean()
             ) :: s
 
-  @callback ewm_var(
+  @callback ewm_variance(
               s,
               alpha :: float(),
               adjust :: boolean(),

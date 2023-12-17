@@ -4870,21 +4870,21 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.ewm_std(s)
+      iex> Explorer.Series.ewm_standard_deviation(s)
       #Explorer.Series<
         Polars[5]
         f64 [0.0, 0.7071067811865476, 0.9636241116594314, 1.1771636613972951, 1.3452425132127066]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.ewm_std(s, alpha: 0.1)
+      iex> Explorer.Series.ewm_standard_deviation(s, alpha: 0.1)
       #Explorer.Series<
         Polars[5]
         f64 [0.0, 0.7071067811865476, 0.9990770648702808, 1.2879021599718157, 1.5741638698820746]
       >
   """
   @doc type: :window
-  def ewm_std(series, opts \\ []) do
+  def ewm_standard_deviation(series, opts \\ []) do
     opts =
       Keyword.validate!(opts,
         alpha: 0.5,
@@ -4894,7 +4894,7 @@ defmodule Explorer.Series do
         ignore_nils: true
       )
 
-    apply_series(series, :ewm_std, [
+    apply_series(series, :ewm_standard_deviation, [
       opts[:alpha],
       opts[:adjust],
       opts[:bias],
@@ -4925,21 +4925,21 @@ defmodule Explorer.Series do
   ## Examples
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.ewm_var(s)
+      iex> Explorer.Series.ewm_variance(s)
       #Explorer.Series<
         Polars[5]
         f64 [0.0, 0.5, 0.9285714285714284, 1.385714285714286, 1.8096774193548393]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
-      iex> Explorer.Series.ewm_var(s, alpha: 0.1)
+      iex> Explorer.Series.ewm_variance(s, alpha: 0.1)
       #Explorer.Series<
         Polars[5]
         f64 [0.0, 0.5, 0.9981549815498153, 1.6586919736600685, 2.4779918892421087]
       >
   """
   @doc type: :window
-  def ewm_var(series, opts \\ []) do
+  def ewm_variance(series, opts \\ []) do
     opts =
       Keyword.validate!(opts,
         alpha: 0.5,
@@ -4949,7 +4949,7 @@ defmodule Explorer.Series do
         ignore_nils: true
       )
 
-    apply_series(series, :ewm_var, [
+    apply_series(series, :ewm_variance, [
       opts[:alpha],
       opts[:adjust],
       opts[:bias],
