@@ -715,7 +715,6 @@ pub fn expr_ewm_standard_deviation(
         bias,
         min_periods,
         ignore_nulls,
-        ..Default::default()
     };
     ExExpr::new(expr.ewm_std(opts))
 }
@@ -736,7 +735,6 @@ pub fn expr_ewm_variance(
         bias,
         min_periods,
         ignore_nulls,
-        ..Default::default()
     };
     ExExpr::new(expr.ewm_var(opts))
 }

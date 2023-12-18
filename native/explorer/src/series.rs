@@ -887,7 +887,6 @@ pub fn s_ewm_standard_deviation(
         bias,
         min_periods,
         ignore_nulls,
-        ..Default::default()
     };
     let s1 = polars_ops::prelude::ewm_std(&series, opts)?;
     Ok(ExSeries::new(s1))
@@ -908,7 +907,6 @@ pub fn s_ewm_variance(
         bias,
         min_periods,
         ignore_nulls,
-        ..Default::default()
     };
     let s1 = polars_ops::prelude::ewm_var(&series, opts)?;
     Ok(ExSeries::new(s1))
