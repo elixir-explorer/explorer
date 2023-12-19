@@ -162,7 +162,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback mask(df, mask :: series) :: df
   @callback filter_with(df, out_df :: df(), lazy_series()) :: df
   @callback mutate_with(df, out_df :: df(), mutations :: [{column_name(), lazy_series()}]) :: df
-  @callback arrange_with(
+  @callback sort_with(
               df,
               out_df :: df(),
               directions :: [{:asc | :desc, lazy_series()}],

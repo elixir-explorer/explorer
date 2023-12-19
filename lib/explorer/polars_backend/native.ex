@@ -59,10 +59,10 @@ defmodule Explorer.PolarsBackend.Native do
 
   def df_from_arrow_stream_pointer(_stream_ptr), do: err()
 
-  def df_arrange(_df, _by, _reverse, _maintain_order?, _multithreaded?, _nulls_last?, _groups),
+  def df_sort_by(_df, _by, _reverse, _maintain_order?, _multithreaded?, _nulls_last?, _groups),
     do: err()
 
-  def df_arrange_with(
+  def df_sort_with(
         _df,
         _expressions,
         _directions,
@@ -246,7 +246,7 @@ defmodule Explorer.PolarsBackend.Native do
 
   def lf_filter_with(_df, _expression), do: err()
 
-  def lf_arrange_with(
+  def lf_sort_with(
         _df,
         _expressions,
         _directions,

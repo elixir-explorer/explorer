@@ -1085,8 +1085,7 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 =
-        DF.mutate(df, select1: select(a, b, c))
+      df1 = DF.mutate(df, select1: select(a, b, c))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1119,8 +1118,7 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 =
-        DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
+      df1 = DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1597,8 +1595,7 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "replace characters in a string" do
-      df =
-        DF.new(a: ["2,000", "2,000,000", ","])
+      df = DF.new(a: ["2,000", "2,000,000", ","])
 
       df1 =
         DF.mutate(df,
@@ -1882,18 +1879,18 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "arrange/3" do
+  describe "sort_by/3" do
     test "raises with invalid column names", %{df: df} do
       assert_raise ArgumentError,
                    ~r"could not find column name \"test\"",
-                   fn -> DF.arrange(df, test) end
+                   fn -> DF.sort_by(df, test) end
     end
   end
 
-  describe "arrange_with/2" do
+  describe "sort_with/2" do
     test "with a simple df and asc order" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"]] end)
+      df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"]] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],
@@ -1903,7 +1900,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with a simple df one column and without order" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> ldf["a"] end)
+      df1 = DF.sort_with(df, fn ldf -> ldf["a"] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],
@@ -1913,7 +1910,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with a simple df and desc order" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> [desc: ldf["a"]] end)
+      df1 = DF.sort_with(df, fn ldf -> [desc: ldf["a"]] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [6, 5, 4, 3, 2, 1],
@@ -1923,7 +1920,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with a simple df and just the lazy series" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> [ldf["a"]] end)
+      df1 = DF.sort_with(df, fn ldf -> [ldf["a"]] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],
@@ -1931,9 +1928,9 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "with a simple df and arrange by two columns" do
+    test "with a simple df and sort_by by two columns" do
       df = DF.new(a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1])
-      df1 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+      df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 2, 3, 5, 6],
@@ -1943,7 +1940,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with a simple df and window function" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
+      df1 = DF.sort_with(df, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [5, 6, 3, 4, 2, 1],
@@ -1953,13 +1950,13 @@ defmodule Explorer.DataFrameTest do
 
     test "with a simple df and nils" do
       df = DF.new(a: [1, 2, nil, 3])
-      df1 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :first)
+      df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :first)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [nil, 1, 2, 3]
              }
 
-      df2 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :last)
+      df2 = DF.sort_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :last)
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                a: [1, 2, 3, nil]
@@ -1970,7 +1967,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2])
 
       assert_raise RuntimeError, "expecting a lazy series, got: :foo", fn ->
-        DF.arrange_with(df, fn _ldf -> [desc: :foo] end)
+        DF.sort_with(df, fn _ldf -> [desc: :foo] end)
       end
     end
 
@@ -1980,7 +1977,7 @@ defmodule Explorer.DataFrameTest do
       message = "expecting a valid direction, which is :asc or :desc, got: :descending"
 
       assert_raise RuntimeError, message, fn ->
-        DF.arrange_with(df, fn ldf -> [descending: ldf["a"]] end)
+        DF.sort_with(df, fn ldf -> [descending: ldf["a"]] end)
       end
     end
   end

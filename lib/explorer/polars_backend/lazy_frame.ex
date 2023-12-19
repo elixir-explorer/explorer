@@ -354,7 +354,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def arrange_with(
+  def sort_with(
         %DF{groups: []} = df,
         out_df,
         column_pairs,
@@ -369,7 +369,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       |> Enum.map(fn {direction, lazy_series} -> {direction == :desc, to_expr(lazy_series)} end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(df, out_df, :lf_arrange_with, [
+    Shared.apply_dataframe(df, out_df, :lf_sort_with, [
       expressions,
       directions,
       maintain_order?,
@@ -378,8 +378,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def arrange_with(_df, _out_df, _directions, _maintain_order?, _multithreaded?, _nulls_last?) do
-    raise "arrange_with/2 with groups is not supported yet for lazy frames"
+  def sort_with(_df, _out_df, _directions, _maintain_order?, _multithreaded?, _nulls_last?) do
+    raise "sort_with/2 with groups is not supported yet for lazy frames"
   end
 
   @impl true

@@ -517,8 +517,7 @@ defmodule Explorer.DataFrame.LazyTest do
     test "from_ipc/2", %{config: config} do
       path = "s3://test-bucket/test-lazy-writes/wine.ipc"
 
-      assert {:error, error} =
-               DF.from_ipc(path, config: config, lazy: true)
+      assert {:error, error} = DF.from_ipc(path, config: config, lazy: true)
 
       assert error ==
                ArgumentError.exception(
@@ -620,10 +619,10 @@ defmodule Explorer.DataFrame.LazyTest do
     end
   end
 
-  describe "arrange_with/2" do
+  describe "sort_with/2" do
     test "with a simple df and asc order" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"]] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [asc: ldf["a"]] end)
 
       df1 = DF.collect(ldf1)
 
@@ -635,7 +634,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     test "with a simple df one column and without order" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> ldf["a"] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> ldf["a"] end)
 
       df1 = DF.collect(ldf1)
 
@@ -647,7 +646,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     test "with a simple df and desc order" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [desc: ldf["a"]] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [desc: ldf["a"]] end)
 
       df1 = DF.collect(ldf1)
 
@@ -659,7 +658,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     test "with a simple df and just the lazy series" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [ldf["a"]] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [ldf["a"]] end)
 
       df1 = DF.collect(ldf1)
 
@@ -669,9 +668,9 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
 
-    test "with a simple df and arrange by two columns" do
+    test "with a simple df and sort_by by two columns" do
       ldf = DF.new([a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
 
       df1 = DF.collect(ldf1)
 
@@ -683,7 +682,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     test "with a simple df and window function" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
 
       df1 = DF.collect(ldf1)
 
@@ -698,9 +697,9 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.group_by(ldf, "b")
 
       assert_raise RuntimeError,
-                   "arrange_with/2 with groups is not supported yet for lazy frames",
+                   "sort_with/2 with groups is not supported yet for lazy frames",
                    fn ->
-                     DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+                     DF.sort_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
                    end
     end
   end

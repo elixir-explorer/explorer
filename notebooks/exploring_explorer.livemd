@@ -797,7 +797,7 @@ In `Explorer`, like in `dplyr`, we have five main verbs to work with dataframes:
 * select
 * filter
 * mutate
-* arrange
+* sort
 * summarise
 
 We are going to explore then in this notebook, but first we need to "require"
@@ -1050,12 +1050,12 @@ DF.mutate(df, %{"gas_fuel" => gas_fuel - 10})
 
 `DF.transmute/2`, which is `DF.mutate/2` that only retains the specified columns, is forthcoming.
 
-### Arrange
+### Sort
 
 Sorting the dataframe is pretty straightforward.
 
 ```elixir
-DF.arrange(df, year)
+DF.sort_by(df, year)
 ```
 
 <!-- livebook:{"output":true} -->
@@ -1079,7 +1079,7 @@ DF.arrange(df, year)
 But it comes with some tricks up its sleeve.
 
 ```elixir
-DF.arrange(df, asc: total, desc: year)
+DF.sort_by(df, asc: total, desc: year)
 ```
 
 <!-- livebook:{"output":true} -->
@@ -1100,10 +1100,10 @@ DF.arrange(df, asc: total, desc: year)
 >
 ```
 
-As the examples show, `arrange/2` is a macro, and therefore you can use some functions to arrange your dataframe:
+As the examples show, `sort_by/2` is a macro, and therefore you can use some Series functions to sort your dataframe:
 
 ```elixir
-DF.arrange(df, asc: Series.window_sum(total, 2))
+DF.sort_by(df, asc: window_sum(total, 2))
 ```
 
 <!-- livebook:{"output":true} -->
@@ -2293,7 +2293,7 @@ But what we care about the most is aggregating! Let's see which country has the 
 ```elixir
 grouped
 |> DF.summarise(max_per_capita: max(per_capita))
-|> DF.arrange(desc: max_per_capita)
+|> DF.sort_by(desc: max_per_capita)
 ```
 
 <!-- livebook:{"output":true} -->
@@ -2337,7 +2337,7 @@ DF.summarise(grouped, min_per_capita: min(per_capita), min_total: min(total))
 >
 ```
 
-Speaking of `mutate`, it's 'group-aware'. As are `arrange`, `distinct`, and `n_rows`.
+Speaking of `mutate`, it's 'group-aware'. As are `sort_by`, `distinct`, and `n_rows`.
 
 ```elixir
 DF.mutate(grouped, total_window_sum: window_sum(total, 3), rows_in_group: count(country))
@@ -2369,7 +2369,7 @@ It's also possible to use aggregations inside other functions:
 ```elixir
 grouped
 |> DF.summarise(greater_than_9: greater(max(per_capita), 9.0), per_capita_max: max(per_capita))
-|> DataFrame.arrange(desc: per_capita_max)
+|> DataFrame.sort_by(desc: per_capita_max)
 ```
 
 ### That's it!

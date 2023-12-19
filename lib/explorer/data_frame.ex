@@ -61,7 +61,7 @@ defmodule Explorer.DataFrame do
   - `select/2` for picking columns and `discard/2` to discard them
   - `filter/2` for picking rows based on predicates
   - `mutate/2` for adding or replacing columns that are functions of existing columns
-  - `arrange/2` for changing the ordering of rows
+  - `sort_by/2` for changing the ordering of rows
   - `distinct/2` for picking unique rows
   - `summarise/2` for reducing multiple rows down to a single summary
   - `pivot_longer/3` and `pivot_wider/4` for massaging dataframes into longer or
@@ -3041,13 +3041,13 @@ defmodule Explorer.DataFrame do
   defp append_unless_present([], name), do: [name]
 
   @doc """
-  Arranges/sorts rows by columns using `Explorer.Query`.
+  Sorts rows by columns using `Explorer.Query`.
 
   > #### Notice {: .notice}
   >
   > This is a macro. You must `require  Explorer.DataFrame` before using it.
 
-  See `arrange_with/2` for a callback version of this function without
+  See `sort_with/2` for a callback version of this function without
   `Explorer.Query`.
 
   ## Options
@@ -3072,7 +3072,7 @@ defmodule Explorer.DataFrame do
   A single column name will sort ascending by that column:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange(df, a)
+      iex> Explorer.DataFrame.sort_by(df, a)
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
@@ -3082,7 +3082,7 @@ defmodule Explorer.DataFrame do
   You can also sort descending:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange(df, desc: a)
+      iex> Explorer.DataFrame.sort_by(df, desc: a)
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["c", "b", "a"]
@@ -3092,7 +3092,7 @@ defmodule Explorer.DataFrame do
   You can specify how `nil`s are sorted:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", nil, "a"])
-      iex> Explorer.DataFrame.arrange(df, [desc: a], nils: :first)
+      iex> Explorer.DataFrame.sort_by(df, [desc: a], nils: :first)
       #Explorer.DataFrame<
         Polars[4 x 1]
         a string [nil, "c", "b", "a"]
@@ -3101,7 +3101,7 @@ defmodule Explorer.DataFrame do
   Sorting by more than one column sorts them in the order they are entered:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> Explorer.DataFrame.arrange(df, asc: total, desc: country)
+      iex> Explorer.DataFrame.sort_by(df, asc: total, desc: country)
       #Explorer.DataFrame<
         Polars[1094 x 10]
         year integer [2010, 2010, 2011, 2011, 2012, ...]
@@ -3118,10 +3118,10 @@ defmodule Explorer.DataFrame do
 
   ## Grouped examples
 
-  When used in a grouped dataframe, arrange is going to sort each group individually and
-  then return the entire dataframe with the existing groups. If one of the arrange columns
+  When used in a grouped dataframe, sort_by is going to sort each group individually and
+  then return the entire dataframe with the existing groups. If one of the sort_by columns
   is also a group, the sorting for that column is not going to work. It is necessary to
-  first summarise the desired column and then arrange it.
+  first summarise the desired column and then sort_by it.
 
   Here is an example using the Iris dataset. We group by species and then we try to sort
   the dataframe by species and petal length, but only "petal length" is taken into account
@@ -3129,7 +3129,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.arrange(grouped, desc: species, asc: sepal_width)
+      iex> Explorer.DataFrame.sort_by(grouped, desc: species, asc: sepal_width)
       #Explorer.DataFrame<
         Polars[150 x 5]
         Groups: ["species"]
@@ -3141,11 +3141,11 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  defmacro arrange(df, query, opts \\ []) do
+  defmacro sort_by(df, query, opts \\ []) do
     quote do
       require Explorer.Query
 
-      Explorer.DataFrame.arrange_with(
+      Explorer.DataFrame.sort_with(
         unquote(df),
         Explorer.Query.query(unquote(query)),
         unquote(opts)
@@ -3153,13 +3153,21 @@ defmodule Explorer.DataFrame do
     end
   end
 
+  @deprecated "Use sort_by/3 instead"
+  @doc type: :single
+  defmacro arrange(df, query, opts \\ []) do
+    quote do
+      Explorer.DataFrame.sort_by(unquote(df), unquote(query), unquote(opts))
+    end
+  end
+
   @doc """
-  Arranges/sorts rows by columns using a callback function.
+  Sorts rows by columns using a callback function.
 
   The callback receives a lazy dataframe which stores
   operations instead of values for efficient sorting.
 
-  This is a callback version of `arrange/2`.
+  This is a callback version of `sort_by/2`.
 
   ## Options
 
@@ -3183,7 +3191,7 @@ defmodule Explorer.DataFrame do
   A single column name will sort ascending by that column:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange_with(df, &(&1["a"]))
+      iex> Explorer.DataFrame.sort_with(df, &(&1["a"]))
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
@@ -3193,7 +3201,7 @@ defmodule Explorer.DataFrame do
   You can also sort descending:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"]])
+      iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"]])
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["c", "b", "a"]
@@ -3203,7 +3211,7 @@ defmodule Explorer.DataFrame do
   You can specify how `nil`s are sorted:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", nil, "a"])
-      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"]], nils: :first)
+      iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"]], nils: :first)
       #Explorer.DataFrame<
         Polars[4 x 1]
         a string [nil, "c", "b", "a"]
@@ -3212,7 +3220,7 @@ defmodule Explorer.DataFrame do
   Sorting by more than one column sorts them in the order they are entered:
 
       iex> df = Explorer.DataFrame.new(a: [3, 1, 3], b: [2, 1, 3])
-      iex> Explorer.DataFrame.arrange_with(df, &[desc: &1["a"], asc: &1["b"]])
+      iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"], asc: &1["b"]])
       #Explorer.DataFrame<
         Polars[3 x 2]
         a integer [3, 3, 1]
@@ -3223,7 +3231,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.arrange_with(grouped, &[desc: &1["species"], asc: &1["sepal_width"]])
+      iex> Explorer.DataFrame.sort_with(grouped, &[desc: &1["species"], asc: &1["sepal_width"]])
       #Explorer.DataFrame<
         Polars[150 x 5]
         Groups: ["species"]
@@ -3235,13 +3243,13 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec arrange_with(
+  @spec sort_with(
           df :: DataFrame.t(),
           (Explorer.Backend.LazyFrame.t() ->
              Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}]),
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
-  def arrange_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
+  def sort_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
     [_descending? | opts] = Shared.validate_sort_options!(opts)
 
     ldf = Explorer.Backend.LazyFrame.new(df)
@@ -3265,11 +3273,15 @@ defmodule Explorer.DataFrame do
           {:asc, lazy_series}
 
         other ->
-          raise "not a valid lazy series or arrange instruction: #{inspect(other)}"
+          raise "not a valid lazy series or sort_by instruction: #{inspect(other)}"
       end)
 
-    Shared.apply_impl(df, :arrange_with, [df, dir_and_lazy_series_pairs] ++ opts)
+    Shared.apply_impl(df, :sort_with, [df, dir_and_lazy_series_pairs] ++ opts)
   end
+
+  @deprecated "Use sort_with/3 instead"
+  @doc type: :single
+  def arrange_with(df, fun, opts \\ []), do: sort_with(df, fun, opts)
 
   @doc """
   Takes distinct rows by a selection of columns.
@@ -5645,7 +5657,7 @@ defmodule Explorer.DataFrame do
     df
     |> group_by(columns)
     |> summarise_with(&[counts: Series.count(&1[col])])
-    |> arrange_with(&[desc: &1[:counts]])
+    |> sort_with(&[desc: &1[:counts]])
   end
 
   def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")

@@ -163,7 +163,7 @@ defmodule Explorer.DataFrame.GroupedTest do
           total_min: min(total),
           cement_median: median(cement)
         )
-        |> DF.arrange(country)
+        |> DF.sort_by(country)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                country: [
@@ -437,10 +437,10 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
-  describe "arrange/2" do
+  describe "sort_by/2" do
     test "sorts by group", %{df: df} do
-      df = DF.arrange(df, total)
-      grouped_df = df |> DF.group_by("country") |> DF.arrange(total)
+      df = DF.sort_by(df, total)
+      grouped_df = df |> DF.group_by("country") |> DF.sort_by(total)
 
       assert df["total"][0] == Series.min(df["total"])
 
@@ -452,12 +452,12 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
-  describe "arrange_with/2" do
+  describe "sort_with/2" do
     test "sorts by group", %{df: df} do
       grouped_df =
         df
         |> DF.group_by("country")
-        |> DF.arrange_with(fn ldf -> [asc: ldf["total"]] end)
+        |> DF.sort_with(fn ldf -> [asc: ldf["total"]] end)
 
       assert grouped_df
              |> DF.ungroup()
