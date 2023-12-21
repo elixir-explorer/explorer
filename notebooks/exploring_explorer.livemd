@@ -38,6 +38,7 @@ For CSV, your 'usual suspects' of options are available:
 * `max_rows` - Maximum number of lines to read. (default: `nil`)
 * `nil_values` - A list of strings that should be interpreted as a nil values. (default: `[]`)
 * `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
+* `skip_rows_after_header` - The number of lines to skip at the after the header row. (default: `0`)
 * `columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
 
 `Explorer` also has multiple example datasets built in, which you can load from the `Explorer.Datasets` module like so:

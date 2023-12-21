@@ -523,6 +523,8 @@ defmodule Explorer.DataFrame do
 
     * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
 
+    * `:skip_rows_after_header` - The number of lines to skip after the header row. (default: `0`)
+
     * `:columns` - A list of column names or indexes to keep.
       If present, only these columns are read into the dataframe. (default: `nil`)
 
@@ -558,6 +560,7 @@ defmodule Explorer.DataFrame do
         max_rows: nil,
         nil_values: [],
         skip_rows: 0,
+        skip_rows_after_header: 0,
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
         parse_dates: false,
@@ -573,6 +576,7 @@ defmodule Explorer.DataFrame do
         opts[:delimiter],
         opts[:nil_values],
         opts[:skip_rows],
+        opts[:skip_rows_after_header],
         opts[:header],
         opts[:encoding],
         opts[:max_rows],
@@ -616,6 +620,7 @@ defmodule Explorer.DataFrame do
     * `:max_rows` - Maximum number of lines to read. (default: `nil`)
     * `:nil_values` - A list of strings that should be interpreted as a nil values. (default: `[]`)
     * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
+    * `:skip_rows_after_header` - The number of lines to skip after the heqader row. (default: `0`)
     * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
     * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
     * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
@@ -638,6 +643,7 @@ defmodule Explorer.DataFrame do
         max_rows: nil,
         nil_values: [],
         skip_rows: 0,
+        skip_rows_after_header: 0,
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
         parse_dates: false,
@@ -652,6 +658,7 @@ defmodule Explorer.DataFrame do
       opts[:delimiter],
       opts[:nil_values],
       opts[:skip_rows],
+      opts[:skip_rows_after_header],
       opts[:header],
       opts[:encoding],
       opts[:max_rows],
