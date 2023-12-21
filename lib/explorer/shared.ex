@@ -83,7 +83,7 @@ defmodule Explorer.Shared do
       maybe_dtype
     else
       raise ArgumentError,
-            "unsupported dtype #{inspect(dtype)}, expected one of #{inspect(dtypes())}"
+            "unsupported dtype #{inspect(dtype)}, expected one of #{inspect_dtypes(dtypes())}"
     end
   end
 
