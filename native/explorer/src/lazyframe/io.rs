@@ -193,6 +193,7 @@ pub fn lf_from_csv(
     has_header: bool,
     stop_after_n_rows: Option<usize>,
     skip_rows: usize,
+    skip_rows_after_header: usize,
     delimiter_as_byte: u8,
     do_rechunk: bool,
     dtypes: Vec<(&str, ExSeriesDtype)>,
@@ -213,6 +214,7 @@ pub fn lf_from_csv(
         .with_n_rows(stop_after_n_rows)
         .with_separator(delimiter_as_byte)
         .with_skip_rows(skip_rows)
+        .with_skip_rows_after_header(skip_rows_after_header)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
         .with_dtype_overwrite(Some(schema_from_dtypes_pairs(dtypes)?.as_ref()))

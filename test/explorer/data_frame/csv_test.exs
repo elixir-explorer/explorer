@@ -368,6 +368,41 @@ defmodule Explorer.DataFrame.CSVTest do
     end
 
     @tag :tmp_dir
+    test "skip_rows_after_header", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, skip_rows_after_header: 1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: ["e"],
+               b: ["f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "skip_rows with skip_rows_after_header", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        g,h
+        """)
+
+      df = DF.from_csv!(csv, skip_rows: 1, skip_rows_after_header: 1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               c: ["g"],
+               d: ["h"]
+             }
+    end
+
+    @tag :tmp_dir
     test "columns - str", config do
       csv =
         tmp_csv(config.tmp_dir, """
