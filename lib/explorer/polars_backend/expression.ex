@@ -224,7 +224,7 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(%LazySeries{op: :slice, args: [lazy_series, lazy_series_or_list]}) do
     indices =
       if is_list(lazy_series_or_list) do
-        Explorer.PolarsBackend.Shared.from_list(lazy_series_or_list, :integer)
+        Explorer.PolarsBackend.Shared.from_list(lazy_series_or_list, {:s, 64})
       else
         lazy_series_or_list
       end
@@ -265,7 +265,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
     input_dtypes = Enum.map(args, &dtype/1)
     duration_dtype = Enum.find(input_dtypes, &match?({:duration, _}, &1))
-    numeric? = Enum.any?(input_dtypes, &(&1 in [:integer, {:f, 32}, {:f, 64}]))
+    numeric? = Enum.any?(input_dtypes, &(&1 in Explorer.Shared.numeric_types()))
 
     if duration_dtype && numeric? do
       Native.expr_cast(expr, duration_dtype)
@@ -278,9 +278,12 @@ defmodule Explorer.PolarsBackend.Expression do
     expr = Native.expr_divide(to_expr(left), to_expr(right))
 
     case {dtype(left), dtype(right)} do
-      {{:duration, _} = left_dtype, right_dtype}
-      when right_dtype in [:integer, {:f, 32}, {:f, 64}] ->
-        Native.expr_cast(expr, left_dtype)
+      {{:duration, _} = left_dtype, right_dtype} ->
+        if right_dtype in Explorer.Shared.numeric_types() do
+          Native.expr_cast(expr, left_dtype)
+        else
+          expr
+        end
 
       {_, _} ->
         expr

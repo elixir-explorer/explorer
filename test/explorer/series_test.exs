@@ -34,7 +34,7 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([1, 2, 3])
 
       assert Series.to_list(s) === [1, 2, 3]
-      assert Series.dtype(s) == :integer
+      assert Series.dtype(s) == {:s, 64}
     end
 
     test "with floats" do
@@ -609,7 +609,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, nil, 4])
 
       assert_raise ArgumentError,
-                   "fill_missing with :nan values require a float series, got :integer",
+                   "fill_missing with :nan values require a float series, got {:s, 64}",
                    fn -> Series.fill_missing(s1, :nan) end
     end
 
@@ -622,7 +622,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, nil, 4])
 
       assert_raise ArgumentError,
-                   "fill_missing with :infinity values require a float series, got :integer",
+                   "fill_missing with :infinity values require a float series, got {:s, 64}",
                    fn -> Series.fill_missing(s1, :infinity) end
     end
 
@@ -637,7 +637,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, nil, 4])
 
       assert_raise ArgumentError,
-                   "fill_missing with :neg_infinity values require a float series, got :integer",
+                   "fill_missing with :neg_infinity values require a float series, got {:s, 64}",
                    fn -> Series.fill_missing(s1, :neg_infinity) end
     end
   end
@@ -1514,7 +1514,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.add(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [5, 7, 9]
     end
 
@@ -1533,7 +1533,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.add(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [-1, 0, 1]
     end
 
@@ -1633,7 +1633,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.subtract(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [-3, -3, -3]
     end
 
@@ -1652,7 +1652,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.subtract(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [3, 4, 5]
     end
 
@@ -1744,7 +1744,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.multiply(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [4, 10, 18]
     end
 
@@ -1763,7 +1763,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [-2, -4, -6]
     end
 
@@ -1772,7 +1772,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(-2, s1)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [-2, -4, -6]
     end
 
@@ -1968,7 +1968,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.quotient(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [5, 5, 7]
     end
 
@@ -1977,7 +1977,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.quotient(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [-5, -5, -7]
     end
 
@@ -1986,7 +1986,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.quotient(101, s1)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [10, 5, 4]
     end
   end
@@ -1998,7 +1998,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.remainder(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [0, 1, 1]
     end
 
@@ -2007,7 +2007,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.remainder(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [0, 1, 1]
     end
 
@@ -2016,7 +2016,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.remainder(101, s1)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [1, 1, 1]
     end
   end
@@ -2028,7 +2028,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, 4, 3]
     end
 
@@ -2067,7 +2067,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2077,7 +2077,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2087,7 +2087,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2096,7 +2096,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, 4, 9]
     end
 
@@ -2158,7 +2158,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(2, s1)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [2, 4, 8]
     end
 
@@ -2175,7 +2175,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(-2, s1)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [-2, 4, -8]
     end
 
@@ -3521,7 +3521,7 @@ defmodule Explorer.SeriesTest do
 
       assert Series.size(s3) == 6
       assert Series.to_list(s3) == [1, 2, 3, 4, 5, 6]
-      assert Series.dtype(s3) == :integer
+      assert Series.dtype(s3) == {:s, 64}
     end
 
     test "concat float series" do
@@ -3551,7 +3551,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list(["a", "b", "c"])
 
       error_message =
-        "cannot concatenate series with mismatched dtypes: [:integer, :string]. " <>
+        "cannot concatenate series with mismatched dtypes: [{:s, 64}, :string]. " <>
           "First cast the series to the desired dtype."
 
       assert_raise ArgumentError, error_message, fn ->
@@ -4429,7 +4429,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([-50, 5, nil, 50])
       clipped1 = Series.clip(s1, 1, 10)
       assert Series.to_list(clipped1) == [1, 5, nil, 10]
-      assert clipped1.dtype == :integer
+      assert clipped1.dtype == {:s, 64}
     end
 
     test "with regular floats" do
@@ -4461,8 +4461,7 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "Explorer.Series.clip/3 not implemented for dtype :string. " <>
-                     "Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, " <>
-                     "{:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]",
+                     "Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}",
                    fn -> Series.clip(Series.from_list(["a"]), 1, 10) end
     end
   end
@@ -4728,7 +4727,7 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list([1200, 1_234_567, nil])
 
       assert_raise ArgumentError,
-                   "Explorer.Series.replace/3 not implemented for dtype :integer. Valid dtypes are [:string]",
+                   "Explorer.Series.replace/3 not implemented for dtype {:s, 64}. Valid dtype is :string",
                    fn -> Series.replace(series, ",", "") end
     end
 
@@ -5071,7 +5070,7 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list([[-1], [0, 1]])
 
       assert_raise ArgumentError,
-                   "cannot convert series of dtype {:list, :integer} into iovec",
+                   "cannot convert series of dtype {:list, {:s, 64}} into iovec",
                    fn -> Series.to_iovec(series) end
     end
 
@@ -5079,7 +5078,7 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list([%{a: 1}, %{a: 2}])
 
       assert_raise ArgumentError,
-                   ~S'cannot convert series of dtype {:struct, %{"a" => :integer}} into iovec',
+                   ~S'cannot convert series of dtype {:struct, %{"a" => {:s, 64}}} into iovec',
                    fn -> Series.to_iovec(series) end
     end
   end
@@ -5092,7 +5091,7 @@ defmodule Explorer.SeriesTest do
           :integer
         )
 
-      assert series.dtype == :integer
+      assert series.dtype == {:s, 64}
       assert Series.to_list(series) == [-1, 0, 1]
     end
 

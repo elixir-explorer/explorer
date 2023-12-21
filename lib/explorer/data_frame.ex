@@ -2810,7 +2810,7 @@ defmodule Explorer.DataFrame do
                     "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
 
           number when is_number(number) ->
-            dtype = if is_integer(number), do: :integer, else: {:f, 64}
+            dtype = if is_integer(number), do: {:s, 64}, else: {:f, 64}
             lazy_s = LazySeries.new(:lazy, [number], dtype)
 
             Explorer.Backend.Series.new(lazy_s, dtype)
@@ -3019,7 +3019,13 @@ defmodule Explorer.DataFrame do
   defp put(%DataFrame{} = df, column_name, fun, arg, opts) when is_column_name(column_name) do
     opts = Keyword.validate!(opts, [:dtype])
     name = to_column_name(column_name)
-    dtype = opts[:dtype]
+
+    dtype =
+      if opts[:dtype] in [nil, :infer] do
+        opts[:dtype]
+      else
+        Shared.normalise_dtype!(opts[:dtype])
+      end
 
     if dtype == nil and is_map_key(df.dtypes, name) do
       put(df, name, Series.replace(pull(df, name), arg), [])
@@ -3774,7 +3780,7 @@ defmodule Explorer.DataFrame do
           value <- Series.to_list(Series.distinct(df[column])),
           do: column <> "_#{value}"
 
-    out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, :integer}
+    out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:s, 64}}
 
     out_df = %{df | groups: [], names: out_columns, dtypes: out_dtypes}
     Shared.apply_impl(df, :dummies, [out_df, columns])
@@ -4015,7 +4021,8 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :slice, [row_indices])
   end
 
-  def slice(%DataFrame{} = df, %Series{dtype: :integer} = indices) do
+  # TODO: consider accepting more integer dtypes
+  def slice(%DataFrame{} = df, %Series{dtype: {:s, 64}} = indices) do
     Shared.apply_impl(df, :slice, [indices])
   end
 
@@ -4363,7 +4370,7 @@ defmodule Explorer.DataFrame do
 
         [_ | _] = dtypes ->
           raise ArgumentError,
-                "columns to pivot must include columns with the same dtype, but found multiple dtypes: #{inspect(dtypes)}"
+                "columns to pivot must include columns with the same dtype, but found multiple dtypes: #{Shared.inspect_dtypes(dtypes)}"
       end
 
     new_dtypes =
@@ -5056,15 +5063,17 @@ defmodule Explorer.DataFrame do
   end
 
   defp types_are_numeric_compatible?(types, name, type) do
-    numeric_types = [{:f, 32}, {:f, 64}, :integer]
+    # TODO: consider a moduletag
+    numeric_types = Explorer.Shared.integer_types() ++ Explorer.Shared.float_types()
     types[name] != type and types[name] in numeric_types and type in numeric_types
   end
 
   defp cast_numeric_columns_to_float(dfs, changed_types) do
     # TODO: work with {:f, 32} as well
     for df <- dfs do
+      # TODO: check if s64 is enough
       columns =
-        for {name, :integer} <- df.dtypes,
+        for {name, {:s, 64}} <- df.dtypes,
             changed_types[name] == {:f, 64},
             do: name
 
@@ -5455,7 +5464,7 @@ defmodule Explorer.DataFrame do
 
     unless Enum.all?(dtypes, &match?({:list, _}, &1)) do
       raise ArgumentError,
-            "explode/2 expects list columns, but the given columns have the types: #{inspect(dtypes)}"
+            "explode/2 expects list columns, but the given columns have the types: #{Shared.inspect_dtypes(dtypes)}"
     end
 
     out_dtypes =
@@ -5505,7 +5514,7 @@ defmodule Explorer.DataFrame do
 
     unless Enum.all?(dtypes, &match?({:struct, _}, &1)) do
       raise ArgumentError,
-            "unnest/2 expects struct columns, but the given columns have the types: #{inspect(dtypes)}"
+            "unnest/2 expects struct columns, but the given columns have the types: #{Shared.inspect_dtypes(dtypes)}"
     end
 
     {new_dtypes, new_names} =
@@ -5774,7 +5783,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp numeric_column?(df, name) do
-    Series.dtype(df[name]) in [:integer | Explorer.Shared.float_types()]
+    Series.dtype(df[name]) in (Explorer.Shared.integer_types() ++ Explorer.Shared.float_types())
   end
 
   defp pairwised_df(df, opts) do

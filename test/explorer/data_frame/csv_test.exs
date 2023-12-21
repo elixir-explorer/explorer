@@ -97,8 +97,8 @@ defmodule Explorer.DataFrame.CSVTest do
 
   describe "dtypes" do
     test "integer" do
-      assert_csv(:integer, "100", 100)
-      assert_csv(:integer, "-101", -101)
+      assert_csv({:s, 64}, "100", 100)
+      assert_csv({:s, 64}, "-101", -101)
     end
 
     test "float" do

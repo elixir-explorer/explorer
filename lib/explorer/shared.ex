@@ -2,13 +2,7 @@ defmodule Explorer.Shared do
   # A collection of **private** helpers shared in Explorer.
   @moduledoc false
 
-  @scalar_types [
-    :binary,
-    :boolean,
-    :category,
-    :date,
-    {:f, 32},
-    {:f, 64},
+  @integer_types [
     {:s, 8},
     {:s, 16},
     {:s, 32},
@@ -16,18 +10,26 @@ defmodule Explorer.Shared do
     {:u, 8},
     {:u, 16},
     {:u, 32},
-    {:u, 64},
-    # TODO: remove this integer
-    :integer,
-    :string,
-    :time,
-    {:datetime, :microsecond},
-    {:datetime, :millisecond},
-    {:datetime, :nanosecond},
-    {:duration, :microsecond},
-    {:duration, :millisecond},
-    {:duration, :nanosecond}
+    {:u, 64}
   ]
+
+  @scalar_types @integer_types ++
+                  [
+                    :binary,
+                    :boolean,
+                    :category,
+                    :date,
+                    {:f, 32},
+                    {:f, 64},
+                    :string,
+                    :time,
+                    {:datetime, :microsecond},
+                    {:datetime, :millisecond},
+                    {:datetime, :nanosecond},
+                    {:duration, :microsecond},
+                    {:duration, :millisecond},
+                    {:duration, :nanosecond}
+                  ]
 
   @doc """
   All supported dtypes.
@@ -105,7 +107,7 @@ defmodule Explorer.Shared do
   @doc """
   Supported signed integer dtypes.
   """
-  def signed_integer_types, do: [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer]
+  def signed_integer_types, do: [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}]
 
   @doc """
   Supported unsigned integer dtypes.
@@ -116,6 +118,11 @@ defmodule Explorer.Shared do
   All integer dtypes.
   """
   def integer_types, do: signed_integer_types() ++ unsigned_integer_types()
+
+  @doc """
+  Both integer and float dtypes.
+  """
+  def numeric_types, do: float_types() ++ integer_types()
 
   @doc """
   Gets the backend from a `Keyword.t()` or `nil`.
@@ -252,22 +259,13 @@ defmodule Explorer.Shared do
   """
   def dtype_from_list!(list, preferable_type \\ nil) do
     initial_type =
-      if leaf_dtype(preferable_type) in [
-           :numeric,
-           :binary,
-           {:f, 32},
-           {:f, 64},
-           {:s, 8},
-           {:s, 16},
-           {:s, 32},
-           {:s, 64},
-           {:u, 8},
-           {:u, 16},
-           {:u, 32},
-           {:u, 64},
-           :integer,
-           :category
-         ],
+      if leaf_dtype(preferable_type) in ([
+                                           :numeric,
+                                           :binary,
+                                           {:f, 32},
+                                           {:f, 64},
+                                           :category
+                                         ] ++ @integer_types),
          do: preferable_type
 
     type =
@@ -285,23 +283,25 @@ defmodule Explorer.Shared do
     type || preferable_type || {:f, 64}
   end
 
+  @numeric_types @integer_types ++ [{:f, 32}, {:f, 64}, :numeric]
+
   defp type(%Date{} = _item, _type), do: :date
   defp type(%Time{} = _item, _type), do: :time
   defp type(%NaiveDateTime{} = _item, _type), do: {:datetime, :microsecond}
   defp type(%Explorer.Duration{precision: precision} = _item, _type), do: {:duration, precision}
 
   defp type(item, type) when is_integer(item) and type in [{:f, 32}, {:f, 64}], do: :numeric
-  defp type(item, type) when is_float(item) and type == :integer, do: :numeric
+  defp type(item, type) when is_float(item) and type in @integer_types, do: :numeric
   defp type(item, type) when is_number(item) and type == :numeric, do: :numeric
 
   defp type(item, type)
        when item in [:nan, :infinity, :neg_infinity] and
-              type in [:integer, {:f, 32}, {:f, 64}, :numeric],
+              type in @numeric_types,
        do: :numeric
 
   defp type(item, {:s, _} = integer_type) when is_integer(item), do: integer_type
   defp type(item, {:u, _} = integer_type) when is_integer(item) and item >= 0, do: integer_type
-  defp type(item, _type) when is_integer(item), do: :integer
+  defp type(item, _type) when is_integer(item), do: {:s, 64}
   defp type(item, {:f, _} = float_dtype) when is_float(item), do: float_dtype
   defp type(item, _type) when is_float(item), do: {:f, 64}
   defp type(item, _type) when item in [:nan, :infinity, :neg_infinity], do: {:f, 64}
@@ -362,8 +362,10 @@ defmodule Explorer.Shared do
     end)
   end
 
+  # TODO: check if only @numeric_types can be used here
   defp new_type_matches?(type, new_type) do
-    leaf_dtype(new_type) == :numeric and leaf_dtype(type) in [:integer, {:f, 32}, {:f, 64}]
+    leaf_dtype(new_type) == :numeric and
+      leaf_dtype(type) in ([{:f, 32}, {:f, 64}] ++ @integer_types)
   end
 
   @doc """
@@ -449,12 +451,45 @@ defmodule Explorer.Shared do
   end
 
   @doc """
+  Helper to inspect dtypes in a sentence.
+  """
+  def inspect_dtypes(dtypes, opts \\ []) do
+    opts = Keyword.validate!(opts, with_prefix: false)
+
+    case dtypes do
+      [dtype] ->
+        if opts[:with_prefix] do
+          "dtype is #{inspect(dtype)}"
+        else
+          inspect(dtype)
+        end
+
+      [_ | _] = dtypes ->
+        prefix =
+          if opts[:with_prefix] do
+            "dtypes are "
+          else
+            ""
+          end
+
+        {items, [last]} = Enum.split(Enum.sort(dtypes), -1)
+
+        IO.iodata_to_binary([
+          prefix,
+          Enum.map_intersperse(items, ", ", &Kernel.inspect/1),
+          " and ",
+          inspect(last)
+        ])
+    end
+  end
+
+  @doc """
   Converts a dtype to a binary type when possible.
   """
   def dtype_to_iotype!(dtype) do
     case dtype do
       {:f, _n} -> dtype
-      :integer -> {:s, 64}
+      {:s, 64} -> {:s, 64}
       :boolean -> {:u, 8}
       :date -> {:s, 32}
       :time -> {:s, 64}
@@ -470,7 +505,7 @@ defmodule Explorer.Shared do
   def iotype_to_dtype!(type) do
     case type do
       {:f, _} -> type
-      {:s, 64} -> :integer
+      {:s, 64} -> {:s, 64}
       {:u, 8} -> :boolean
       {:s, 32} -> :date
       _ -> raise ArgumentError, "cannot convert binary/tensor type #{inspect(type)} into dtype"

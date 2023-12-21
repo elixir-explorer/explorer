@@ -22,7 +22,7 @@ defmodule Explorer.Query do
       #Explorer.DataFrame<
         Polars[1 x 2]
         strs string ["c"]
-        nums integer [3]
+        nums s64 [3]
       >
 
   If a column has unusual format, you can either rename it before-hand,
@@ -32,7 +32,7 @@ defmodule Explorer.Query do
       iex> DF.filter(df, col("unusual nums") > 2)
       #Explorer.DataFrame<
         Polars[1 x 1]
-        unusual nums integer [3]
+        unusual nums s64 [3]
       >
 
   All operations from `Explorer.Series` are imported inside queries.
@@ -59,7 +59,7 @@ defmodule Explorer.Query do
       #Explorer.DataFrame<
         Polars[1 x 2]
         strs string ["c"]
-        nums integer [3]
+        nums s64 [3]
       >
 
       iex> min = 2
@@ -68,7 +68,7 @@ defmodule Explorer.Query do
       #Explorer.DataFrame<
         Polars[3 x 2]
         strs string ["a", "b", "c"]
-        nums integer [1, 2, 3]
+        nums s64 [1, 2, 3]
       >
 
   `^` can be used with `col` to access columns dynamically:
@@ -78,7 +78,7 @@ defmodule Explorer.Query do
       iex> DF.filter(df, col(^name) > 2)
       #Explorer.DataFrame<
         Polars[1 x 1]
-        unusual nums integer [3]
+        unusual nums s64 [3]
       >
 
   ## Conditionals
@@ -98,7 +98,7 @@ defmodule Explorer.Query do
       ...> )
       #Explorer.DataFrame<
         Polars[3 x 2]
-        a integer [10, 4, 6]
+        a s64 [10, 4, 6]
         b string ["Exceptional", "Failed", "Passed"]
       >
 
@@ -691,7 +691,7 @@ defmodule Explorer.Query do
       iex> Explorer.DataFrame.filter(df, col("unusual nums") > 2)
       #Explorer.DataFrame<
         Polars[1 x 1]
-        unusual nums integer [3]
+        unusual nums s64 [3]
       >
 
   `name` must be an atom, a string, or an integer.
@@ -705,7 +705,7 @@ defmodule Explorer.Query do
       iex> Explorer.DataFrame.filter(df, col(^name) > 2)
       #Explorer.DataFrame<
         Polars[1 x 1]
-        nums integer [3]
+        nums s64 [3]
       >
 
   For traversing multiple columns programatically,

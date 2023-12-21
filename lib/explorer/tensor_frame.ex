@@ -72,9 +72,9 @@ if Code.ensure_loaded?(Nx) do
         iex> Explorer.DataFrame.put(df, "result", add_columns(df))
         #Explorer.DataFrame<
           Polars[2 x 3]
-          a integer [11, 12]
-          b integer [21, 22]
-          result integer [32, 34]
+          a s64 [11, 12]
+          b s64 [21, 22]
+          result s64 [32, 34]
         >
 
     One benefit of using `Explorer.DataFrame.put/4` is that it will
@@ -252,7 +252,7 @@ if Code.ensure_loaded?(Nx) do
       :time,
       {:f, 32},
       {:f, 64},
-      :integer,
+      {:s, 64},
       {:datetime, :millisecond},
       {:datetime, :microsecond},
       {:datetime, :nanosecond}

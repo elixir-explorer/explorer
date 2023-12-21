@@ -6,13 +6,13 @@ defmodule Explorer.Backend.LazySeriesTest do
 
   test "inspect/2 gives a basic hint of lazy series" do
     data = LazySeries.new(:column, ["col_a"], :unknown)
-    opaque_series = Backend.Series.new(data, :integer)
+    opaque_series = Backend.Series.new(data, {:s, 64})
 
     assert inspect(opaque_series) ==
              """
              #Explorer.Series<
                LazySeries[???]
-               integer (column("col_a"))
+               s64 (column("col_a"))
              >\
              """
   end
@@ -59,7 +59,7 @@ defmodule Explorer.Backend.LazySeriesTest do
                LazySeries[???]
                boolean (column("col_a") == #Explorer.Series<
                Polars[3]
-               integer [1, 2, 3]
+               s64 [1, 2, 3]
              >)
              >\
              """
