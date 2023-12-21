@@ -454,14 +454,21 @@ defmodule Explorer.Shared do
   Helper to inspect dtypes in a sentence.
   """
   def inspect_dtypes(dtypes, opts \\ []) do
-    opts = Keyword.validate!(opts, with_prefix: false)
+    opts = Keyword.validate!(opts, with_prefix: false, backsticks: false)
+
+    inspect_fun =
+      if opts[:backsticks] do
+        fn item -> "`" <> inspect(item) <> "`" end
+      else
+        &Kernel.inspect/1
+      end
 
     case dtypes do
       [dtype] ->
         if opts[:with_prefix] do
-          "dtype is #{inspect(dtype)}"
+          "dtype is #{inspect_fun.(dtype)}"
         else
-          inspect(dtype)
+          inspect_fun.(dtype)
         end
 
       [_ | _] = dtypes ->
@@ -476,9 +483,9 @@ defmodule Explorer.Shared do
 
         IO.iodata_to_binary([
           prefix,
-          Enum.map_intersperse(items, ", ", &Kernel.inspect/1),
+          Enum.map_intersperse(items, ", ", inspect_fun),
           " and ",
-          inspect(last)
+          inspect_fun.(last)
         ])
     end
   end

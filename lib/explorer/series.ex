@@ -971,9 +971,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   Clipping other dtypes are possible using `select/3`.
 
@@ -2149,9 +2148,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:boolean`
 
   ## Examples
@@ -2185,9 +2183,9 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -2232,9 +2230,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -2279,9 +2276,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -2334,9 +2330,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -2389,9 +2384,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -2460,9 +2454,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -2495,9 +2488,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -2531,9 +2523,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -2568,9 +2559,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -2599,9 +2589,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -2653,9 +2642,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -2703,9 +2691,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -2735,9 +2722,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -2852,9 +2838,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -2905,9 +2890,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -2958,9 +2942,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:boolean`
 
   ## Examples
@@ -3001,9 +2984,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -3041,9 +3023,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -3117,9 +3098,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -3185,9 +3165,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -3254,9 +3233,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -3312,9 +3290,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -3384,9 +3361,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -3437,9 +3413,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -3462,9 +3437,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -3503,7 +3477,7 @@ defmodule Explorer.Series do
 
   ## Supported dtype
 
-    * `:integer`
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   Returns `nil` if there is a zero in the right-hand side.
 
@@ -3553,7 +3527,7 @@ defmodule Explorer.Series do
 
   ## Supported dtype
 
-    * `:integer`
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   Returns `nil` if there is a zero in the right-hand side.
 
@@ -3938,9 +3912,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -3978,9 +3951,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -4018,9 +3990,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -4058,9 +4029,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
     * `:datetime`
@@ -5147,9 +5117,8 @@ defmodule Explorer.Series do
 
   ## Supported dtypes
 
-    * `:integer`
-    * `{:f, 32}`
-    * `{:f, 64}`
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
 
   ## Examples
 
@@ -6003,7 +5972,7 @@ defmodule Explorer.Series do
     raise(
       ArgumentError,
       "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. " <>
-        "Valid " <> Explorer.Shared.inspect_dtypes(valid_dtypes, with_prefix: true)
+        "Valid " <> Shared.inspect_dtypes(valid_dtypes, with_prefix: true)
     )
   end
 
