@@ -115,7 +115,7 @@ defmodule Explorer.Series do
 
   @date_or_datetime_dtypes [:date | @datetime_dtypes]
   @temporal_dtypes [:time | @date_or_datetime_dtypes ++ @duration_dtypes]
-  @numeric_dtypes @integer_types ++ @float_dtypes
+  @numeric_dtypes Explorer.Shared.numeric_types()
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
   @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}, {:struct, :any}]
@@ -126,27 +126,27 @@ defmodule Explorer.Series do
           | :category
           | :date
           | :time
+          | :string
           | datetime_dtype
           | duration_dtype
-          | {:f, 32}
-          | {:f, 64}
-          | {:s, 8}
-          | {:s, 16}
-          | {:s, 32}
-          | {:s, 64}
-          | {:u, 8}
-          | {:u, 16}
-          | {:u, 32}
-          | {:u, 64}
-          | :string
+          | float_dtype
           | list_dtype
+          | signed_integer_dtype
           | struct_dtype
+          | unsigned_integer_dtype
 
   @type time_unit :: :nanosecond | :microsecond | :millisecond
   @type datetime_dtype :: {:datetime, time_unit}
   @type duration_dtype :: {:duration, time_unit}
   @type list_dtype :: {:list, dtype()}
   @type struct_dtype :: {:struct, %{String.t() => dtype()}}
+
+  @type signed_integer_dtype :: {:s, 8} | {:s, 16} | {:s, 32} | {:s, 64}
+  @type unsigned_integer_dtype :: {:u, 8} | {:u, 16} | {:u, 32} | {:u, 64}
+  @type float_dtype :: {:f, 32} | {:f, 64}
+
+  @type float_dtype_alias :: :float | :f32 | :f64
+  @type integer_dtype_alias :: :integer | :u8 | :u16 | :u32 | :u64 | :s8 | :s16 | :s32 | :s64
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
@@ -238,6 +238,7 @@ defmodule Explorer.Series do
     * `:backend` - The backend to allocate the series on.
     * `:dtype` - Cast the series to a given `:dtype`. By default this is `nil`, which means
       that Explorer will infer the type from the values in the list.
+      See the module docs for the list of valid dtypes and aliases.
 
   ## Examples
 
@@ -457,20 +458,20 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_binary(
           binary,
-          :float
-          | {:f, 32}
-          | {:f, 64}
-          | :integer
-          | :boolean
+          :boolean
           | :date
           | :time
           | datetime_dtype
-          | duration_dtype,
+          | duration_dtype
+          | float_dtype
+          | float_dtype_alias
+          | integer_dtype_alias
+          | signed_integer_dtype
+          | unsigned_integer_dtype,
           keyword
         ) ::
           Series.t()
   def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
-    # TODO: fix the typespecs to consider multiple integer dtypes.
     opts = Keyword.validate!(opts, [:backend])
     dtype = Shared.normalise_dtype!(dtype)
 
