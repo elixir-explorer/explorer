@@ -5687,9 +5687,8 @@ defmodule Explorer.DataFrame do
 
   Only columns with the following dtypes are taken into account.
 
-  * `:integer`
-  * `{:f, 32}`
-  * `{:f, 64}`
+  * floats: #{Shared.inspect_dtypes(Shared.float_types(), backsticks: true)}
+  * integers: #{Shared.inspect_dtypes(Shared.integer_types(), backsticks: true)}
 
   The resultant columns are always `{:f, 64}`.
 
@@ -5738,9 +5737,8 @@ defmodule Explorer.DataFrame do
 
   Only columns with the following dtypes are taken into account.
 
-  * `:integer`
-  * `{:f, 32}`
-  * `{:f, 64}`
+  * floats: #{Shared.inspect_dtypes(Shared.float_types(), backsticks: true)}
+  * integers: #{Shared.inspect_dtypes(Shared.integer_types(), backsticks: true)}
 
   The resultant columns are always `{:f, 64}`.
 
