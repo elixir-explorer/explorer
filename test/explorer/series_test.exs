@@ -4432,6 +4432,13 @@ defmodule Explorer.SeriesTest do
       assert clipped1.dtype == {:s, 64}
     end
 
+    test "with unsigned integers" do
+      s1 = Series.from_list([1, 5, nil, 50], dtype: :u16)
+      clipped1 = Series.clip(s1, 3, 10)
+      assert Series.to_list(clipped1) == [3, 5, nil, 10]
+      assert clipped1.dtype == {:u, 16}
+    end
+
     test "with regular floats" do
       s2 = Series.from_list([-50, 5, nil, 50])
       clipped2 = Series.clip(s2, 1.5, 10.5)
