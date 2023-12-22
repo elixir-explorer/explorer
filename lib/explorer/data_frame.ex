@@ -5063,9 +5063,8 @@ defmodule Explorer.DataFrame do
   end
 
   defp types_are_numeric_compatible?(types, name, type) do
-    # TODO: consider a moduletag
-    numeric_types = Explorer.Shared.integer_types() ++ Explorer.Shared.float_types()
-    types[name] != type and types[name] in numeric_types and type in numeric_types
+    types[name] != type and types[name] in Shared.numeric_types() and
+      type in Shared.numeric_types()
   end
 
   defp cast_numeric_columns_to_float(dfs, changed_types) do
@@ -5781,7 +5780,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp numeric_column?(df, name) do
-    Series.dtype(df[name]) in (Explorer.Shared.integer_types() ++ Explorer.Shared.float_types())
+    Series.dtype(df[name]) in Explorer.Shared.numeric_types()
   end
 
   defp pairwised_df(df, opts) do

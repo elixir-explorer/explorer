@@ -362,10 +362,8 @@ defmodule Explorer.Shared do
     end)
   end
 
-  # TODO: check if only @numeric_types can be used here
   defp new_type_matches?(type, new_type) do
-    leaf_dtype(new_type) == :numeric and
-      leaf_dtype(type) in ([{:f, 32}, {:f, 64}] ++ @integer_types)
+    leaf_dtype(new_type) == :numeric and leaf_dtype(type) in numeric_types()
   end
 
   @doc """

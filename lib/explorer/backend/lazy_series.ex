@@ -706,11 +706,9 @@ defmodule Explorer.Backend.LazySeries do
         end
       end
 
-    numeric_dtypes = Explorer.Shared.integer_types() ++ Explorer.Shared.float_types()
-
     case dtypes do
       [dtype] ->
-        if dtype in numeric_dtypes do
+        if dtype in Explorer.Shared.numeric_types() do
           dtype
         else
           raise "invalid dtype for numeric items: #{inspect(dtype)}"
