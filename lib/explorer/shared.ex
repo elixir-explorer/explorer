@@ -495,8 +495,9 @@ defmodule Explorer.Shared do
   """
   def dtype_to_iotype!(dtype) do
     case dtype do
-      {:f, _n} -> dtype
-      {:s, 64} -> {:s, 64}
+      {:f, n} when n in [32, 64] -> dtype
+      {:s, n} when n in [8, 16, 32, 64] -> dtype
+      {:u, n} when n in [8, 16, 32, 64] -> dtype
       :boolean -> {:u, 8}
       :date -> {:s, 32}
       :time -> {:s, 64}
