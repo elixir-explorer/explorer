@@ -82,8 +82,8 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.names(df1) == ["year", "total"]
 
       assert DF.dtypes(df1) == %{
-               "year" => :integer,
-               "total" => :integer
+               "year" => {:s, 64},
+               "total" => {:s, 64}
              }
 
       assert DF.groups(df1) == []
@@ -104,9 +104,9 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.names(df1) == ["country", "year", "total_max", "total_min"]
 
       assert DF.dtypes(df1) == %{
-               "year" => :integer,
-               "total_min" => :integer,
-               "total_max" => :integer,
+               "year" => {:s, 64},
+               "total_min" => {:s, 64},
+               "total_max" => {:s, 64},
                "country" => :string
              }
 
@@ -382,7 +382,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       message = """
       expecting summarise with an aggregation operation or plain column, but none of which were found in: #Explorer.Series<
         LazySeries[???]
-        integer (column("solid_fuel") + 50)
+        s64 (column("solid_fuel") + 50)
       >\
       """
 
@@ -482,7 +482,7 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
 
       assert df2.names == ["a", "b", "c", "d"]
-      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => {:f, 64}}
+      assert df2.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:f, 64}}
       assert df2.groups == ["c"]
     end
 
@@ -500,7 +500,7 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
 
       assert df2.names == ["a", "b", "c", "d"]
-      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => {:f, 64}}
+      assert df2.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:f, 64}}
       assert df2.groups == ["c"]
     end
   end
@@ -527,11 +527,11 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert df2.names == ["a", "b", "c", "d", "e"]
 
       assert df2.dtypes == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => :string,
-               "c" => :integer,
+               "c" => {:s, 64},
                "d" => {:f, 64},
-               "e" => :integer
+               "e" => {:s, 64}
              }
 
       assert df2.groups == ["c"]
@@ -1185,7 +1185,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       stacked = DF.concat_rows([grouped_first, grouped_second])
 
       assert DF.groups(stacked) == ["a"]
-      assert DF.dtypes(stacked) == %{"a" => :integer, "b" => :string}
+      assert DF.dtypes(stacked) == %{"a" => {:s, 64}, "b" => :string}
       assert DF.n_rows(stacked) == 6
     end
 
@@ -1217,9 +1217,9 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.groups(stacked) == ["a"]
 
       assert DF.dtypes(stacked) == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => :string,
-               "c" => :integer,
+               "c" => {:s, 64},
                "d" => {:f, 64}
              }
 
@@ -1239,10 +1239,10 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.groups(stacked) == ["a"]
 
       assert DF.dtypes(stacked) == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => :string,
                "a_1" => {:f, 64},
-               "d" => :integer
+               "d" => {:s, 64}
              }
 
       assert DF.n_rows(stacked) == 3
@@ -1263,7 +1263,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 = DF.put(grouped, :c, Series.from_list(~w(a b c)))
 
       assert DF.names(df1) == ["a", "b", "c"]
-      assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer, "c" => :string}
+      assert DF.dtypes(df1) == %{"a" => {:s, 64}, "b" => {:s, 64}, "c" => :string}
       assert DF.groups(df1) == ["a"]
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1280,7 +1280,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 = DF.put(grouped, :b, Series.from_list([10, 10, 10]))
 
       assert DF.names(df1) == ["a", "b"]
-      assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer}
+      assert DF.dtypes(df1) == %{"a" => {:s, 64}, "b" => {:s, 64}}
       assert DF.groups(df1) == ["a"]
 
       assert DF.to_columns(df1, atom_keys: true) == %{

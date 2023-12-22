@@ -14,6 +14,17 @@ defmodule Explorer.PolarsBackend.Series do
   defguardp is_non_finite(n) when n in [:nan, :infinity, :neg_infinity]
   defguardp is_numeric(n) when is_number(n) or is_non_finite(n)
 
+  @integer_types [
+    {:s, 8},
+    {:s, 16},
+    {:s, 32},
+    {:s, 64},
+    {:u, 8},
+    {:u, 16},
+    {:u, 32},
+    {:u, 64}
+  ]
+
   # Conversion
 
   @impl true
@@ -66,8 +77,8 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_categories)
 
   @impl true
-  def categorise(%Series{dtype: :integer} = series, %Series{dtype: dtype} = categories)
-      when dtype in [:string, :category],
+  def categorise(%Series{dtype: {integer_type, _}} = series, %Series{dtype: dtype} = categories)
+      when dtype in [:string, :category] and integer_type in [:s, :u],
       do: Shared.apply_series(series, :s_categorise, [categories.data])
 
   @impl true
@@ -324,8 +335,8 @@ defmodule Explorer.PolarsBackend.Series do
   def abs(%Series{} = s), do: Shared.apply_series(s, :s_abs, [])
 
   @impl true
-  def clip(%Series{dtype: :integer} = s, min, max)
-      when is_integer(min) and is_integer(max),
+  def clip(%Series{dtype: dtype} = s, min, max)
+      when dtype in @integer_types and is_integer(min) and is_integer(max),
       do: Shared.apply_series(s, :s_clip_integer, [min, max])
 
   def clip(%Series{} = s, min, max),

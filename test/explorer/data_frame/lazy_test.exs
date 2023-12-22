@@ -44,16 +44,16 @@ defmodule Explorer.DataFrame.LazyTest do
 
   test "dtypes/1", %{ldf: ldf} do
     assert DF.dtypes(ldf) == %{
-             "bunker_fuels" => :integer,
-             "cement" => :integer,
+             "bunker_fuels" => {:s, 64},
+             "cement" => {:s, 64},
              "country" => :string,
-             "gas_flaring" => :integer,
-             "gas_fuel" => :integer,
-             "liquid_fuel" => :integer,
+             "gas_flaring" => {:s, 64},
+             "gas_fuel" => {:s, 64},
+             "liquid_fuel" => {:s, 64},
              "per_capita" => {:f, 64},
-             "solid_fuel" => :integer,
-             "total" => :integer,
-             "year" => :integer
+             "solid_fuel" => {:s, 64},
+             "total" => {:s, 64},
+             "year" => {:s, 64}
            }
   end
 
@@ -68,16 +68,16 @@ defmodule Explorer.DataFrame.LazyTest do
   test "slice/3", %{ldf: ldf} do
     assert ldf |> DF.slice(0, 5) |> inspect() == ~s(#Explorer.DataFrame<
   LazyPolars[??? x 10]
-  year integer [2010, 2010, 2010, 2010, 2010]
+  year s64 [2010, 2010, 2010, 2010, 2010]
   country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA"]
-  total integer [2308, 1254, 32500, 141, 7924]
-  solid_fuel integer [627, 117, 332, 0, 0]
-  liquid_fuel integer [1601, 953, 12381, 141, 3649]
-  gas_fuel integer [74, 7, 14565, 0, 374]
-  cement integer [5, 177, 2598, 0, 204]
-  gas_flaring integer [0, 0, 2623, 0, 3697]
+  total s64 [2308, 1254, 32500, 141, 7924]
+  solid_fuel s64 [627, 117, 332, 0, 0]
+  liquid_fuel s64 [1601, 953, 12381, 141, 3649]
+  gas_fuel s64 [74, 7, 14565, 0, 374]
+  cement s64 [5, 177, 2598, 0, 204]
+  gas_flaring s64 [0, 0, 2623, 0, 3697]
   per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37]
-  bunker_fuels integer [9, 7, 663, 0, 321]
+  bunker_fuels s64 [9, 7, 663, 0, 321]
 >)
   end
 
@@ -105,16 +105,16 @@ defmodule Explorer.DataFrame.LazyTest do
   test "inspect/1", %{ldf: ldf} do
     assert inspect(ldf) == ~s(#Explorer.DataFrame<
   LazyPolars[??? x 10]
-  year integer [2010, 2010, 2010, 2010, 2010, ...]
+  year s64 [2010, 2010, 2010, 2010, 2010, ...]
   country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-  total integer [2308, 1254, 32500, 141, 7924, ...]
-  solid_fuel integer [627, 117, 332, 0, 0, ...]
-  liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
-  gas_fuel integer [74, 7, 14565, 0, 374, ...]
-  cement integer [5, 177, 2598, 0, 204, ...]
-  gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+  total s64 [2308, 1254, 32500, 141, 7924, ...]
+  solid_fuel s64 [627, 117, 332, 0, 0, ...]
+  liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+  gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+  cement s64 [5, 177, 2598, 0, 204, ...]
+  gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
   per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-  bunker_fuels integer [9, 7, 663, 0, 321, ...]
+  bunker_fuels s64 [9, 7, 663, 0, 321, ...]
 >)
   end
 
@@ -769,7 +769,7 @@ defmodule Explorer.DataFrame.LazyTest do
         end)
 
       assert ldf1.names == ["a", "b", "c", "d"]
-      assert ldf1.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :integer}
+      assert ldf1.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:s, 64}}
 
       df = DF.collect(ldf1)
 
@@ -789,7 +789,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf1 = DF.mutate_with(ldf, fn _ -> [a: 1, b: 2.0, c: true] end)
 
       assert ldf1.names == ["d", "a", "b", "c"]
-      assert ldf1.dtypes == %{"a" => :integer, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
+      assert ldf1.dtypes == %{"a" => {:s, 64}, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
 
       df = DF.collect(ldf1)
 
@@ -928,7 +928,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf1 = DF.rename(ldf, %{"a" => "ids"})
 
       assert ldf1.names == ["ids", "b"]
-      assert ldf1.dtypes == %{"ids" => :integer, "b" => :string}
+      assert ldf1.dtypes == %{"ids" => {:s, 64}, "b" => :string}
 
       df = DF.collect(ldf1)
 
@@ -976,7 +976,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.pivot_longer(ldf, &String.ends_with?(&1, "fuel"), select: [])
 
       assert ldf.names == ["variable", "value"]
-      assert ldf.dtypes == %{"variable" => :string, "value" => :integer}
+      assert ldf.dtypes == %{"variable" => :string, "value" => {:s, 64}}
 
       df = DF.collect(ldf)
       assert DF.shape(df) == {3282, 2}
@@ -990,10 +990,10 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf.names == ["year", "country", "variable", "value"]
 
       assert ldf.dtypes == %{
-               "year" => :integer,
+               "year" => {:s, 64},
                "country" => :string,
                "variable" => :string,
-               "value" => :integer
+               "value" => {:s, 64}
              }
 
       df = DF.collect(ldf)

@@ -37,7 +37,6 @@ pub enum ExSeriesDtype {
     F(u8),
     S(u8),
     U(u8),
-    Integer,
     String,
     Time,
     Datetime(ExTimeUnit),
@@ -60,7 +59,7 @@ impl TryFrom<&DataType> for ExSeriesDtype {
             DataType::Int8 => Ok(ExSeriesDtype::S(8)),
             DataType::Int16 => Ok(ExSeriesDtype::S(16)),
             DataType::Int32 => Ok(ExSeriesDtype::S(32)),
-            DataType::Int64 => Ok(ExSeriesDtype::Integer),
+            DataType::Int64 => Ok(ExSeriesDtype::S(64)),
 
             DataType::UInt8 => Ok(ExSeriesDtype::U(8)),
             DataType::UInt16 => Ok(ExSeriesDtype::U(16)),
@@ -140,7 +139,6 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             ExSeriesDtype::U(size) => Err(ExplorerError::Other(format!(
                 "unsigned integer dtype of size {size} is not valid"
             ))),
-            ExSeriesDtype::Integer => Ok(DataType::Int64),
             ExSeriesDtype::String => Ok(DataType::Utf8),
             ExSeriesDtype::Time => Ok(DataType::Time),
             ExSeriesDtype::Datetime(ExTimeUnit::Nanosecond) => {

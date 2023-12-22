@@ -34,7 +34,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         a string ["a", "b"]
-        b integer [1, 2]
+        b s64 [1, 2]
       >
 
   Or with a list of maps:
@@ -43,7 +43,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         col1 string ["a", "b"]
-        col2 integer [1, 2]
+        col2 s64 [1, 2]
       >
 
   ## Verbs
@@ -136,7 +136,7 @@ defmodule Explorer.DataFrame do
       iex> df["class"]
       #Explorer.Series<
         Polars[178]
-        integer [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
+        s64 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
       >
 
   Accessing the dataframe with a column name either as a string or an atom, will return
@@ -146,7 +146,7 @@ defmodule Explorer.DataFrame do
       iex> df[0]
       #Explorer.Series<
         Polars[178]
-        integer [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
+        s64 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
       >
 
   You can also pass a list, a range, or a regex to return a dataframe matching
@@ -156,7 +156,7 @@ defmodule Explorer.DataFrame do
       iex> df[["class", "hue"]]
       #Explorer.DataFrame<
         Polars[178 x 2]
-        class integer [1, 1, 1, 1, 1, ...]
+        class s64 [1, 1, 1, 1, 1, ...]
         hue f64 [1.04, 1.05, 1.03, 0.86, 1.04, ...]
       >
 
@@ -166,7 +166,7 @@ defmodule Explorer.DataFrame do
       iex> df[0..2]
       #Explorer.DataFrame<
         Polars[178 x 3]
-        class integer [1, 1, 1, 1, 1, ...]
+        class s64 [1, 1, 1, 1, 1, ...]
         alcohol f64 [14.23, 13.2, 13.16, 14.37, 13.24, ...]
         malic_acid f64 [1.71, 1.78, 2.36, 1.95, 2.59, ...]
       >
@@ -177,7 +177,7 @@ defmodule Explorer.DataFrame do
       iex> df[~r/(class|hue)/]
       #Explorer.DataFrame<
         Polars[178 x 2]
-        class integer [1, 1, 1, 1, 1, ...]
+        class s64 [1, 1, 1, 1, 1, ...]
         hue f64 [1.04, 1.05, 1.03, 0.86, 1.04, ...]
       >
 
@@ -1569,7 +1569,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.load_ndjson!(contents)
       #Explorer.DataFrame<
         Polars[2 x 2]
-        col_a integer [1, 2]
+        col_a s64 [1, 2]
         col_b f64 [5.1, 5.2]
       >
 
@@ -1657,7 +1657,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         floats f64 [1.0, 2.0]
-        ints integer [1, nil]
+        ints s64 [1, nil]
       >
 
   ### From tensors
@@ -1672,9 +1672,9 @@ defmodule Explorer.DataFrame do
       ...> ]))
       #Explorer.DataFrame<
         Polars[2 x 3]
-        x1 integer [1, 4]
-        x2 integer [2, 5]
-        x3 integer [3, 6]
+        x1 s64 [1, 4]
+        x2 s64 [2, 5]
+        x3 s64 [3, 6]
       >
 
   Explorer expects tensors to have certain types, so you may need to cast
@@ -1689,7 +1689,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         floats f64 [1.0, 2.0]
-        ints integer [3, 4]
+        ints s64 [3, 4]
       >
 
   Use dtypes to force a particular representation:
@@ -1713,26 +1713,26 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         floats f64 [1.0, 2.0]
-        ints integer [1, nil]
+        ints s64 [1, nil]
       >
 
       iex> Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, nil])
       #Explorer.DataFrame<
         Polars[2 x 2]
         floats f64 [1.0, 2.0]
-        ints integer [1, nil]
+        ints s64 [1, nil]
       >
 
       iex> Explorer.DataFrame.new([floats: [1.0, 2.0], ints: [1, nil], binaries: [<<239, 191, 19>>, nil]], dtypes: [{:binaries, :binary}])
       #Explorer.DataFrame<
         Polars[2 x 3]
         floats f64 [1.0, 2.0]
-        ints integer [1, nil]
+        ints s64 [1, nil]
         binaries binary [<<239, 191, 19>>, nil]
       >
 
       iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, "wrong"]})
-      ** (ArgumentError) cannot create series "ints": the value "wrong" does not match the inferred series dtype :integer
+      ** (ArgumentError) cannot create series "ints": the value "wrong" does not match the inferred series dtype {:s, 64}
 
   From row data:
 
@@ -1740,7 +1740,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.new(rows)
       #Explorer.DataFrame<
         Polars[3 x 2]
-        id integer [1, 2, 3]
+        id s64 [1, 2, 3]
         name string ["José", "Christopher", "Cristine"]
       >
 
@@ -1748,7 +1748,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.new(rows)
       #Explorer.DataFrame<
         Polars[3 x 2]
-        id integer [1, 2, 3]
+        id s64 [1, 2, 3]
         name string ["José", "Christopher", "Cristine"]
       >
   """
@@ -1995,7 +1995,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.DataFrame.new(floats: [1.0, 2.0], ints: [1, 2])
       iex> Explorer.DataFrame.dtypes(df)
-      %{"floats" => {:f, 64}, "ints" => :integer}
+      %{"floats" => {:f, 64}, "ints" => {:s, 64}}
   """
   @doc type: :introspection
   @spec dtypes(df :: DataFrame.t()) :: %{String.t() => atom()}
@@ -2082,32 +2082,32 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.head(df)
       #Explorer.DataFrame<
         Polars[5 x 10]
-        year integer [2010, 2010, 2010, 2010, 2010]
+        year s64 [2010, 2010, 2010, 2010, 2010]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA"]
-        total integer [2308, 1254, 32500, 141, 7924]
-        solid_fuel integer [627, 117, 332, 0, 0]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649]
-        gas_fuel integer [74, 7, 14565, 0, 374]
-        cement integer [5, 177, 2598, 0, 204]
-        gas_flaring integer [0, 0, 2623, 0, 3697]
+        total s64 [2308, 1254, 32500, 141, 7924]
+        solid_fuel s64 [627, 117, 332, 0, 0]
+        liquid_fuel s64 [1601, 953, 12381, 141, 3649]
+        gas_fuel s64 [74, 7, 14565, 0, 374]
+        cement s64 [5, 177, 2598, 0, 204]
+        gas_flaring s64 [0, 0, 2623, 0, 3697]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37]
-        bunker_fuels integer [9, 7, 663, 0, 321]
+        bunker_fuels s64 [9, 7, 663, 0, 321]
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.head(df, 2)
       #Explorer.DataFrame<
         Polars[2 x 10]
-        year integer [2010, 2010]
+        year s64 [2010, 2010]
         country string ["AFGHANISTAN", "ALBANIA"]
-        total integer [2308, 1254]
-        solid_fuel integer [627, 117]
-        liquid_fuel integer [1601, 953]
-        gas_fuel integer [74, 7]
-        cement integer [5, 177]
-        gas_flaring integer [0, 0]
+        total s64 [2308, 1254]
+        solid_fuel s64 [627, 117]
+        liquid_fuel s64 [1601, 953]
+        gas_fuel s64 [74, 7]
+        cement s64 [5, 177]
+        gas_flaring s64 [0, 0]
         per_capita f64 [0.08, 0.43]
-        bunker_fuels integer [9, 7]
+        bunker_fuels s64 [9, 7]
       >
 
   ## Grouped examples
@@ -2147,32 +2147,32 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.tail(df)
       #Explorer.DataFrame<
         Polars[5 x 10]
-        year integer [2014, 2014, 2014, 2014, 2014]
+        year s64 [2014, 2014, 2014, 2014, 2014]
         country string ["VIET NAM", "WALLIS AND FUTUNA ISLANDS", "YEMEN", "ZAMBIA", "ZIMBABWE"]
-        total integer [45517, 6, 6190, 1228, 3278]
-        solid_fuel integer [19246, 0, 137, 132, 2097]
-        liquid_fuel integer [12694, 6, 5090, 797, 1005]
-        gas_fuel integer [5349, 0, 581, 0, 0]
-        cement integer [8229, 0, 381, 299, 177]
-        gas_flaring integer [0, 0, 0, 0, 0]
+        total s64 [45517, 6, 6190, 1228, 3278]
+        solid_fuel s64 [19246, 0, 137, 132, 2097]
+        liquid_fuel s64 [12694, 6, 5090, 797, 1005]
+        gas_fuel s64 [5349, 0, 581, 0, 0]
+        cement s64 [8229, 0, 381, 299, 177]
+        gas_flaring s64 [0, 0, 0, 0, 0]
         per_capita f64 [0.49, 0.44, 0.24, 0.08, 0.22]
-        bunker_fuels integer [761, 1, 153, 33, 9]
+        bunker_fuels s64 [761, 1, 153, 33, 9]
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.tail(df, 2)
       #Explorer.DataFrame<
         Polars[2 x 10]
-        year integer [2014, 2014]
+        year s64 [2014, 2014]
         country string ["ZAMBIA", "ZIMBABWE"]
-        total integer [1228, 3278]
-        solid_fuel integer [132, 2097]
-        liquid_fuel integer [797, 1005]
-        gas_fuel integer [0, 0]
-        cement integer [299, 177]
-        gas_flaring integer [0, 0]
+        total s64 [1228, 3278]
+        solid_fuel s64 [132, 2097]
+        liquid_fuel s64 [797, 1005]
+        gas_fuel s64 [0, 0]
+        cement s64 [299, 177]
+        gas_flaring s64 [0, 0]
         per_capita f64 [0.08, 0.22]
-        bunker_fuels integer [33, 9]
+        bunker_fuels s64 [33, 9]
       >
 
   ## Grouped examples
@@ -2231,7 +2231,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
-        b integer [1, 2, 3]
+        b s64 [1, 2, 3]
       >
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [4, 5, 6])
@@ -2239,7 +2239,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
-        b integer [1, 2, 3]
+        b s64 [1, 2, 3]
       >
 
   Or you can use a callback function that takes the dataframe's names as its first argument:
@@ -2248,7 +2248,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.select(df, &String.starts_with?(&1, "b"))
       #Explorer.DataFrame<
         Polars[3 x 1]
-        b integer [1, 2, 3]
+        b s64 [1, 2, 3]
       >
 
   Or, if you prefer, a regex:
@@ -2257,16 +2257,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.select(df, ~r/^b$/)
       #Explorer.DataFrame<
         Polars[3 x 1]
-        b integer [1, 2, 3]
+        b s64 [1, 2, 3]
       >
 
   Or a callback function that takes names and types:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.select(df, fn _name, type -> type == :integer end)
+      iex> Explorer.DataFrame.select(df, fn _name, type -> type == {:s, 64} end)
       #Explorer.DataFrame<
         Polars[3 x 1]
-        b integer [1, 2, 3]
+        b s64 [1, 2, 3]
       >
 
   ## Grouped examples
@@ -2319,7 +2319,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.discard(df, ["a", "b"])
       #Explorer.DataFrame<
         Polars[3 x 1]
-        c integer [4, 5, 6]
+        c s64 [4, 5, 6]
       >
 
   Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
@@ -2371,7 +2371,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1 x 2]
         col1 string ["b"]
-        col2 integer [2]
+        col2 s64 [2]
       >
 
   You must avoid using masks when the masks themselves are computed from
@@ -2382,7 +2382,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         col1 string ["b", "c"]
-        col2 integer [2, 3]
+        col2 s64 [2, 3]
       >
 
   Instead, do this:
@@ -2392,7 +2392,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         col1 string ["b", "c"]
-        col2 integer [2, 3]
+        col2 s64 [2, 3]
       >
 
   The `filter_with/2` version is much more efficient because it doesn't need
@@ -2444,7 +2444,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1 x 2]
         col1 string ["c"]
-        col2 integer [3]
+        col2 s64 [3]
       >
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
@@ -2452,22 +2452,22 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1 x 2]
         col1 string ["b"]
-        col2 integer [2]
+        col2 s64 [2]
       >
 
       iex> df = Explorer.DataFrame.new(col1: [5, 4, 3], col2: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, [col1 > 3, col2 < 3])
       #Explorer.DataFrame<
         Polars[2 x 2]
-        col1 integer [5, 4]
-        col2 integer [1, 2]
+        col1 s64 [5, 4]
+        col2 s64 [1, 2]
       >
 
   Returning a non-boolean expression errors:
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
       iex> Explorer.DataFrame.filter(df, cumulative_max(col2))
-      ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer
+      ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:s, 64}
 
   Which can be addressed by converting it to boolean:
 
@@ -2476,7 +2476,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1 x 2]
         col1 string ["a"]
-        col2 integer [1]
+        col2 s64 [1]
       >
 
   ## Grouped examples
@@ -2524,7 +2524,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1 x 2]
         col1 string ["c"]
-        col2 integer [3]
+        col2 s64 [3]
       >
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
@@ -2532,7 +2532,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1 x 2]
         col1 string ["b"]
-        col2 integer [2]
+        col2 s64 [2]
       >
 
   ## Grouped examples
@@ -2626,8 +2626,8 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 3]
         a string ["a", "b", "c"]
-        b integer [1, 2, 3]
-        c integer [2, 3, 4]
+        b s64 [1, 2, 3]
+        c s64 [2, 3, 4]
       >
 
   It's also possible to overwrite existing columns:
@@ -2636,8 +2636,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.mutate(df, a: b * 2)
       #Explorer.DataFrame<
         Polars[3 x 2]
-        a integer [2, 4, 6]
-        b integer [1, 2, 3]
+        a s64 [2, 4, 6]
+        b s64 [1, 2, 3]
       >
 
   Scalar values are repeated to fill the series:
@@ -2646,8 +2646,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.mutate(df, a: 4)
       #Explorer.DataFrame<
         Polars[3 x 2]
-        a integer [4, 4, 4]
-        b integer [1, 2, 3]
+        a s64 [4, 4, 4]
+        b s64 [1, 2, 3]
       >
 
   It's also possible to use functions from the Series module, like `Explorer.Series.window_sum/3`:
@@ -2656,8 +2656,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.mutate(df, b: window_sum(a, 2))
       #Explorer.DataFrame<
         Polars[3 x 2]
-        a integer [1, 2, 3]
-        b integer [1, 3, 5]
+        a s64 [1, 2, 3]
+        b s64 [1, 3, 5]
       >
 
   Alternatively, all of the above works with a map instead of a keyword list:
@@ -2667,7 +2667,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 3]
         a string ["a", "b", "c"]
-        b integer [1, 2, 3]
+        b s64 [1, 2, 3]
         c f64 [1.0, 2.0, 3.0]
       >
 
@@ -2686,8 +2686,8 @@ defmodule Explorer.DataFrame do
         Polars[3 x 3]
         Groups: ["id"]
         id string ["a", "a", "b"]
-        b integer [1, 2, 3]
-        count integer [2, 2, 1]
+        b s64 [1, 2, 3]
+        count s64 [2, 2, 1]
       >
 
   In case we want to get the average size of the petal length from the Iris dataset, we can:
@@ -2734,9 +2734,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.mutate_with(df, &[c: Explorer.Series.add(&1["a"], &1["b"])])
       #Explorer.DataFrame<
         Polars[3 x 3]
-        a integer [4, 5, 6]
-        b integer [1, 2, 3]
-        c integer [5, 7, 9]
+        a s64 [4, 5, 6]
+        b s64 [1, 2, 3]
+        c s64 [5, 7, 9]
       >
 
   You can overwrite existing columns as well:
@@ -2758,10 +2758,10 @@ defmodule Explorer.DataFrame do
       iex> end)
       #Explorer.DataFrame<
         Polars[3 x 4]
-        a integer [4, 5, 6]
-        b integer [1, 2, 3]
-        c integer [5, 7, 9]
-        d integer [5, 12, 16]
+        a s64 [4, 5, 6]
+        b s64 [1, 2, 3]
+        c s64 [5, 7, 9]
+        d s64 [5, 12, 16]
       >
 
   ## Grouped examples
@@ -2777,8 +2777,8 @@ defmodule Explorer.DataFrame do
         Polars[3 x 3]
         Groups: ["id"]
         id string ["a", "a", "b"]
-        b integer [1, 2, 3]
-        count integer [2, 2, 1]
+        b s64 [1, 2, 3]
+        count s64 [2, 2, 1]
       >
 
   """
@@ -2810,7 +2810,7 @@ defmodule Explorer.DataFrame do
                     "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
 
           number when is_number(number) ->
-            dtype = if is_integer(number), do: :integer, else: {:f, 64}
+            dtype = if is_integer(number), do: {:s, 64}, else: {:f, 64}
             lazy_s = LazySeries.new(:lazy, [number], dtype)
 
             Explorer.Backend.Series.new(lazy_s, dtype)
@@ -2884,16 +2884,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.put(df, :b, Explorer.Series.transform(df[:a], fn n -> n * 2 end))
       #Explorer.DataFrame<
         Polars[3 x 2]
-        a integer [1, 2, 3]
-        b integer [2, 4, 6]
+        a s64 [1, 2, 3]
+        b s64 [2, 4, 6]
       >
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
       iex> Explorer.DataFrame.put(df, :b, Explorer.Series.from_list([4, 5, 6]))
       #Explorer.DataFrame<
         Polars[3 x 2]
-        a integer [1, 2, 3]
-        b integer [4, 5, 6]
+        a s64 [1, 2, 3]
+        b s64 [4, 5, 6]
       >
 
   ## Grouped examples
@@ -2908,8 +2908,8 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         Groups: ["a"]
-        a integer [1, 2, 3]
-        b integer [9, 8, 7]
+        a s64 [1, 2, 3]
+        b s64 [9, 8, 7]
       >
 
   ## Tensor examples
@@ -2920,7 +2920,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]))
       #Explorer.DataFrame<
         Polars[3 x 1]
-        a integer [1, 2, 3]
+        a s64 [1, 2, 3]
       >
 
   You can specify which dtype the tensor represents.
@@ -2963,7 +2963,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
       iex> Explorer.DataFrame.put(df, :a, Nx.tensor(1.0, type: :f64))
-      ** (ArgumentError) dtype integer expects a tensor of type {:s, 64} but got type {:f, 64}
+      ** (ArgumentError) dtype {:s, 64} expects a tensor of type {:s, 64} but got type {:f, 64}
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
       iex> Explorer.DataFrame.put(df, :a, Nx.tensor(1.0, type: :f64), dtype: {:f, 64})
@@ -2987,7 +2987,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.put(df, :a, [1, 2, 3])
       #Explorer.DataFrame<
         Polars[3 x 1]
-        a integer [1, 2, 3]
+        a s64 [1, 2, 3]
       >
 
   The same considerations as above apply.
@@ -3030,7 +3030,7 @@ defmodule Explorer.DataFrame do
         if dtype == nil or dtype == :infer do
           [backend: backend]
         else
-          [dtype: dtype, backend: backend]
+          [dtype: Shared.normalise_dtype!(dtype), backend: backend]
         end
 
       put(df, name, apply(Series, fun, [arg, opts]), [])
@@ -3083,7 +3083,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
-        b integer [3, 1, 2]
+        b s64 [3, 1, 2]
       >
 
   You can also sort descending:
@@ -3093,7 +3093,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["c", "b", "a"]
-        b integer [2, 1, 3]
+        b s64 [2, 1, 3]
       >
 
   You can specify how `nil`s are sorted:
@@ -3111,16 +3111,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sort_by(df, asc: total, desc: country)
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        year integer [2010, 2010, 2011, 2011, 2012, ...]
+        year s64 [2010, 2010, 2011, 2011, 2012, ...]
         country string ["NIUE", "TUVALU", "TUVALU", "NIUE", "NIUE", ...]
-        total integer [1, 2, 2, 2, 2, ...]
-        solid_fuel integer [0, 0, 0, 0, 0, ...]
-        liquid_fuel integer [1, 2, 2, 2, 2, ...]
-        gas_fuel integer [0, 0, 0, 0, 0, ...]
-        cement integer [0, 0, 0, 0, 0, ...]
-        gas_flaring integer [0, 0, 0, 0, 0, ...]
+        total s64 [1, 2, 2, 2, 2, ...]
+        solid_fuel s64 [0, 0, 0, 0, 0, ...]
+        liquid_fuel s64 [1, 2, 2, 2, 2, ...]
+        gas_fuel s64 [0, 0, 0, 0, 0, ...]
+        cement s64 [0, 0, 0, 0, 0, ...]
+        gas_flaring s64 [0, 0, 0, 0, 0, ...]
         per_capita f64 [0.52, 0.0, 0.0, 1.04, 1.04, ...]
-        bunker_fuels integer [0, 0, 0, 0, 0, ...]
+        bunker_fuels s64 [0, 0, 0, 0, 0, ...]
       >
 
   ## Grouped examples
@@ -3202,7 +3202,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
-        b integer [3, 1, 2]
+        b s64 [3, 1, 2]
       >
 
   You can also sort descending:
@@ -3212,7 +3212,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["c", "b", "a"]
-        b integer [2, 1, 3]
+        b s64 [2, 1, 3]
       >
 
   You can specify how `nil`s are sorted:
@@ -3230,8 +3230,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"], asc: &1["b"]])
       #Explorer.DataFrame<
         Polars[3 x 2]
-        a integer [3, 3, 1]
-        b integer [2, 3, 1]
+        a s64 [3, 3, 1]
+        b s64 [2, 3, 1]
       >
 
   ## Grouped examples
@@ -3308,7 +3308,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.distinct(df, ["year", "country"])
       #Explorer.DataFrame<
         Polars[1094 x 2]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
       >
 
@@ -3319,16 +3319,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.distinct(df, ["year", "country"], keep_all: true)
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        total integer [2308, 1254, 32500, 141, 7924, ...]
-        solid_fuel integer [627, 117, 332, 0, 0, ...]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
-        gas_fuel integer [74, 7, 14565, 0, 374, ...]
-        cement integer [5, 177, 2598, 0, 204, ...]
-        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        total s64 [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel s64 [627, 117, 332, 0, 0, ...]
+        liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+        cement s64 [5, 177, 2598, 0, 204, ...]
+        gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        bunker_fuels s64 [9, 7, 663, 0, 321, ...]
       >
 
   A callback on the dataframe's names can be passed instead of a list (like `select/2`):
@@ -3337,7 +3337,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.distinct(df, &String.starts_with?(&1, "x"))
       #Explorer.DataFrame<
         Polars[2 x 2]
-        x1 integer [1, 3]
+        x1 s64 [1, 3]
         x2 string ["a", "c"]
       >
 
@@ -3349,7 +3349,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         Groups: ["x1"]
-        x1 integer [1, 3]
+        x1 s64 [1, 3]
         x2 string ["a", "c"]
       >
 
@@ -3392,8 +3392,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.drop_nil(df)
       #Explorer.DataFrame<
         Polars[1 x 2]
-        a integer [1]
-        b integer [1]
+        a s64 [1]
+        b s64 [1]
       >
 
    To drop nils on a single column:
@@ -3402,8 +3402,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.drop_nil(df, :a)
       #Explorer.DataFrame<
         Polars[2 x 2]
-        a integer [1, 2]
-        b integer [1, nil]
+        a s64 [1, 2]
+        b s64 [1, nil]
       >
 
   To drop some columns:
@@ -3412,9 +3412,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.drop_nil(df, [:a, :c])
       #Explorer.DataFrame<
         Polars[1 x 3]
-        a integer [2]
-        b integer [nil]
-        c integer [5]
+        a s64 [2]
+        b s64 [nil]
+        c s64 [5]
       >
 
   Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
@@ -3455,8 +3455,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.relocate(df, "a", after: "c")
       #Explorer.DataFrame<
         Polars[3 x 3]
-        b integer [1, 3, 1]
-        c integer [nil, 5, 6]
+        b s64 [1, 3, 1]
+        c s64 [nil, 5, 6]
         a string ["a", "b", "a"]
       >
 
@@ -3468,8 +3468,8 @@ defmodule Explorer.DataFrame do
         Polars[2 x 4]
         d string ["yes", "no"]
         b f64 [5.1, 5.2]
-        a integer [1, 2]
-        c integer [4, 5]
+        a s64 [1, 2]
+        c s64 [4, 5]
       >
 
   Relocate before another column
@@ -3478,8 +3478,8 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.relocate(df, ["a", "c"], before: "b")
       #Explorer.DataFrame<
         Polars[2 x 4]
-        a integer [1, 2]
-        c integer [4, 5]
+        a s64 [1, 2]
+        c s64 [4, 5]
         b f64 [5.1, 5.2]
         d string ["yes", "no"]
       >
@@ -3556,7 +3556,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         c string ["a", "b", "a"]
-        d integer [1, 3, 1]
+        d s64 [1, 3, 1]
       >
 
   Or you can rename individual columns using keyword args:
@@ -3566,7 +3566,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         first string ["a", "b", "a"]
-        b integer [1, 3, 1]
+        b s64 [1, 3, 1]
       >
 
   Or you can rename individual columns using a map:
@@ -3576,7 +3576,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         first string ["a", "b", "a"]
-        b integer [1, 3, 1]
+        b s64 [1, 3, 1]
       >
 
   """
@@ -3647,16 +3647,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.rename_with(df, &String.upcase/1)
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        YEAR integer [2010, 2010, 2010, 2010, 2010, ...]
+        YEAR s64 [2010, 2010, 2010, 2010, 2010, ...]
         COUNTRY string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        TOTAL integer [2308, 1254, 32500, 141, 7924, ...]
-        SOLID_FUEL integer [627, 117, 332, 0, 0, ...]
-        LIQUID_FUEL integer [1601, 953, 12381, 141, 3649, ...]
-        GAS_FUEL integer [74, 7, 14565, 0, 374, ...]
-        CEMENT integer [5, 177, 2598, 0, 204, ...]
-        GAS_FLARING integer [0, 0, 2623, 0, 3697, ...]
+        TOTAL s64 [2308, 1254, 32500, 141, 7924, ...]
+        SOLID_FUEL s64 [627, 117, 332, 0, 0, ...]
+        LIQUID_FUEL s64 [1601, 953, 12381, 141, 3649, ...]
+        GAS_FUEL s64 [74, 7, 14565, 0, 374, ...]
+        CEMENT s64 [5, 177, 2598, 0, 204, ...]
+        GAS_FLARING s64 [0, 0, 2623, 0, 3697, ...]
         PER_CAPITA f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        BUNKER_FUELS integer [9, 7, 663, 0, 321, ...]
+        BUNKER_FUELS s64 [9, 7, 663, 0, 321, ...]
       >
 
   A callback can be used to filter the column names that will be renamed, similarly to `select/2`:
@@ -3665,16 +3665,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.rename_with(df, &String.ends_with?(&1, "_fuel"), &String.trim_trailing(&1, "_fuel"))
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        total integer [2308, 1254, 32500, 141, 7924, ...]
-        solid integer [627, 117, 332, 0, 0, ...]
-        liquid integer [1601, 953, 12381, 141, 3649, ...]
-        gas integer [74, 7, 14565, 0, 374, ...]
-        cement integer [5, 177, 2598, 0, 204, ...]
-        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        total s64 [2308, 1254, 32500, 141, 7924, ...]
+        solid s64 [627, 117, 332, 0, 0, ...]
+        liquid s64 [1601, 953, 12381, 141, 3649, ...]
+        gas s64 [74, 7, 14565, 0, 374, ...]
+        cement s64 [5, 177, 2598, 0, 204, ...]
+        gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        bunker_fuels s64 [9, 7, 663, 0, 321, ...]
       >
 
   Or you can just pass in the list of column names you'd like to apply the function to:
@@ -3683,16 +3683,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.rename_with(df, ["total", "cement"], &String.upcase/1)
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        TOTAL integer [2308, 1254, 32500, 141, 7924, ...]
-        solid_fuel integer [627, 117, 332, 0, 0, ...]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
-        gas_fuel integer [74, 7, 14565, 0, 374, ...]
-        CEMENT integer [5, 177, 2598, 0, 204, ...]
-        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        TOTAL s64 [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel s64 [627, 117, 332, 0, 0, ...]
+        liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+        CEMENT s64 [5, 177, 2598, 0, 204, ...]
+        gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        bunker_fuels s64 [9, 7, 663, 0, 321, ...]
       >
 
   Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
@@ -3727,9 +3727,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dummies(df, "col_x")
       #Explorer.DataFrame<
         Polars[4 x 3]
-        col_x_a integer [1, 0, 1, 0]
-        col_x_b integer [0, 1, 0, 0]
-        col_x_c integer [0, 0, 0, 1]
+        col_x_a s64 [1, 0, 1, 0]
+        col_x_b s64 [0, 1, 0, 0]
+        col_x_c s64 [0, 0, 0, 1]
       >
 
   Or multiple columns:
@@ -3738,12 +3738,12 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dummies(df, ["col_x", "col_y"])
       #Explorer.DataFrame<
         Polars[4 x 6]
-        col_x_a integer [1, 0, 1, 0]
-        col_x_b integer [0, 1, 0, 0]
-        col_x_c integer [0, 0, 0, 1]
-        col_y_b integer [1, 0, 1, 0]
-        col_y_a integer [0, 1, 0, 0]
-        col_y_d integer [0, 0, 0, 1]
+        col_x_a s64 [1, 0, 1, 0]
+        col_x_b s64 [0, 1, 0, 0]
+        col_x_c s64 [0, 0, 0, 1]
+        col_y_b s64 [1, 0, 1, 0]
+        col_y_a s64 [0, 1, 0, 0]
+        col_y_d s64 [0, 0, 0, 1]
       >
 
   Or all string columns:
@@ -3752,9 +3752,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dummies(df, fn _name, type -> type == :string end)
       #Explorer.DataFrame<
         Polars[4 x 3]
-        col_y_b integer [1, 0, 1, 0]
-        col_y_a integer [0, 1, 0, 0]
-        col_y_d integer [0, 0, 0, 1]
+        col_y_b s64 [1, 0, 1, 0]
+        col_y_a s64 [0, 1, 0, 0]
+        col_y_d s64 [0, 0, 0, 1]
       >
 
   Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
@@ -3774,7 +3774,7 @@ defmodule Explorer.DataFrame do
           value <- Series.to_list(Series.distinct(df[column])),
           do: column <> "_#{value}"
 
-    out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, :integer}
+    out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:s, 64}}
 
     out_df = %{df | groups: [], names: out_columns, dtypes: out_dtypes}
     Shared.apply_impl(df, :dummies, [out_df, columns])
@@ -3792,14 +3792,14 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.pull(df, "total")
       #Explorer.Series<
         Polars[1094]
-        integer [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
+        s64 [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pull(df, 2)
       #Explorer.Series<
         Polars[1094]
-        integer [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
+        s64 [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
       >
   """
   @doc type: :single
@@ -3823,16 +3823,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.slice(df, 1, 2)
       #Explorer.DataFrame<
         Polars[2 x 10]
-        year integer [2010, 2010]
+        year s64 [2010, 2010]
         country string ["ALBANIA", "ALGERIA"]
-        total integer [1254, 32500]
-        solid_fuel integer [117, 332]
-        liquid_fuel integer [953, 12381]
-        gas_fuel integer [7, 14565]
-        cement integer [177, 2598]
-        gas_flaring integer [0, 2623]
+        total s64 [1254, 32500]
+        solid_fuel s64 [117, 332]
+        liquid_fuel s64 [953, 12381]
+        gas_fuel s64 [7, 14565]
+        cement s64 [177, 2598]
+        gas_flaring s64 [0, 2623]
         per_capita f64 [0.43, 0.9]
-        bunker_fuels integer [7, 663]
+        bunker_fuels s64 [7, 663]
       >
 
   Negative offsets count from the end of the series:
@@ -3841,16 +3841,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.slice(df, -10, 2)
       #Explorer.DataFrame<
         Polars[2 x 10]
-        year integer [2014, 2014]
+        year s64 [2014, 2014]
         country string ["UNITED STATES OF AMERICA", "URUGUAY"]
-        total integer [1432855, 1840]
-        solid_fuel integer [450047, 2]
-        liquid_fuel integer [576531, 1700]
-        gas_fuel integer [390719, 25]
-        cement integer [11314, 112]
-        gas_flaring integer [4244, 0]
+        total s64 [1432855, 1840]
+        solid_fuel s64 [450047, 2]
+        liquid_fuel s64 [576531, 1700]
+        gas_fuel s64 [390719, 25]
+        cement s64 [11314, 112]
+        gas_flaring s64 [4244, 0]
         per_capita f64 [4.43, 0.54]
-        bunker_fuels integer [30722, 251]
+        bunker_fuels s64 [30722, 251]
       >
 
   If the length would run past the end of the dataframe, the result may be shorter than the length:
@@ -3859,16 +3859,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.slice(df, -10, 20)
       #Explorer.DataFrame<
         Polars[10 x 10]
-        year integer [2014, 2014, 2014, 2014, 2014, ...]
+        year s64 [2014, 2014, 2014, 2014, 2014, ...]
         country string ["UNITED STATES OF AMERICA", "URUGUAY", "UZBEKISTAN", "VANUATU", "VENEZUELA", ...]
-        total integer [1432855, 1840, 28692, 42, 50510, ...]
-        solid_fuel integer [450047, 2, 1677, 0, 204, ...]
-        liquid_fuel integer [576531, 1700, 2086, 42, 28445, ...]
-        gas_fuel integer [390719, 25, 23929, 0, 12731, ...]
-        cement integer [11314, 112, 1000, 0, 1088, ...]
-        gas_flaring integer [4244, 0, 0, 0, 8042, ...]
+        total s64 [1432855, 1840, 28692, 42, 50510, ...]
+        solid_fuel s64 [450047, 2, 1677, 0, 204, ...]
+        liquid_fuel s64 [576531, 1700, 2086, 42, 28445, ...]
+        gas_fuel s64 [390719, 25, 23929, 0, 12731, ...]
+        cement s64 [11314, 112, 1000, 0, 1088, ...]
+        gas_flaring s64 [4244, 0, 0, 0, 8042, ...]
         per_capita f64 [4.43, 0.54, 0.97, 0.16, 1.65, ...]
-        bunker_fuels integer [30722, 251, 0, 10, 1256, ...]
+        bunker_fuels s64 [30722, 251, 0, 10, 1256, ...]
       >
 
   ## Grouped examples
@@ -3929,7 +3929,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.slice(df, [0, 2])
       #Explorer.DataFrame<
         Polars[2 x 2]
-        a integer [1, 3]
+        a s64 [1, 3]
         b string ["a", "c"]
       >
 
@@ -3939,7 +3939,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.slice(df, Explorer.Series.from_list([0, 2]))
       #Explorer.DataFrame<
         Polars[2 x 2]
-        a integer [1, 3]
+        a s64 [1, 3]
         b string ["a", "c"]
       >
 
@@ -3949,7 +3949,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.slice(df, 1..2)
       #Explorer.DataFrame<
         Polars[2 x 2]
-        a integer [2, 3]
+        a s64 [2, 3]
         b string ["b", "c"]
       >
 
@@ -3959,7 +3959,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.slice(df, -2..-1)
       #Explorer.DataFrame<
         Polars[2 x 2]
-        a integer [2, 3]
+        a s64 [2, 3]
         b string ["b", "c"]
       >
 
@@ -4015,7 +4015,8 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :slice, [row_indices])
   end
 
-  def slice(%DataFrame{} = df, %Series{dtype: :integer} = indices) do
+  # TODO: consider accepting more integer dtypes
+  def slice(%DataFrame{} = df, %Series{dtype: {:s, 64}} = indices) do
     Shared.apply_impl(df, :slice, [indices])
   end
 
@@ -4073,16 +4074,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sample(df, 3, seed: 100)
       #Explorer.DataFrame<
         Polars[3 x 10]
-        year integer [2012, 2013, 2014]
+        year s64 [2012, 2013, 2014]
         country string ["SYRIAN ARAB REPUBLIC", "EGYPT", "AFGHANISTAN"]
-        total integer [12198, 58198, 2675]
-        solid_fuel integer [1, 224, 1194]
-        liquid_fuel integer [7909, 26501, 1393]
-        gas_fuel integer [3265, 24672, 74]
-        cement integer [816, 6800, 14]
-        gas_flaring integer [208, 0, 0]
+        total s64 [12198, 58198, 2675]
+        solid_fuel s64 [1, 224, 1194]
+        liquid_fuel s64 [7909, 26501, 1393]
+        gas_fuel s64 [3265, 24672, 74]
+        cement s64 [816, 6800, 14]
+        gas_flaring s64 [208, 0, 0]
         per_capita f64 [0.61, 0.66, 0.08]
-        bunker_fuels integer [437, 694, 9]
+        bunker_fuels s64 [437, 694, 9]
       >
 
   Or you can sample a proportion of rows:
@@ -4091,16 +4092,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sample(df, 0.03, seed: 100)
       #Explorer.DataFrame<
         Polars[32 x 10]
-        year integer [2013, 2012, 2014, 2011, 2011, ...]
+        year s64 [2013, 2012, 2014, 2011, 2011, ...]
         country string ["BRITISH VIRGIN ISLANDS", "TAJIKISTAN", "AFGHANISTAN", "ICELAND", "SINGAPORE", ...]
-        total integer [48, 800, 2675, 513, 12332, ...]
-        solid_fuel integer [0, 192, 1194, 94, 7, ...]
-        liquid_fuel integer [48, 501, 1393, 400, 7774, ...]
-        gas_fuel integer [0, 74, 74, 0, 4551, ...]
-        cement integer [0, 34, 14, 19, 0, ...]
-        gas_flaring integer [0, 0, 0, 0, 0, ...]
+        total s64 [48, 800, 2675, 513, 12332, ...]
+        solid_fuel s64 [0, 192, 1194, 94, 7, ...]
+        liquid_fuel s64 [48, 501, 1393, 400, 7774, ...]
+        gas_fuel s64 [0, 74, 74, 0, 4551, ...]
+        cement s64 [0, 34, 14, 19, 0, ...]
+        gas_flaring s64 [0, 0, 0, 0, 0, ...]
         per_capita f64 [1.64, 0.1, 0.08, 1.6, 2.38, ...]
-        bunker_fuels integer [0, 28, 9, 168, 41786, ...]
+        bunker_fuels s64 [0, 28, 9, 168, 41786, ...]
       >
 
   ## Grouped examples
@@ -4176,16 +4177,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.shuffle(df, seed: 100)
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        year integer [2014, 2014, 2014, 2012, 2010, ...]
+        year s64 [2014, 2014, 2014, 2012, 2010, ...]
         country string ["ISRAEL", "ARGENTINA", "NETHERLANDS", "YEMEN", "GRENADA", ...]
-        total integer [17617, 55638, 45624, 5091, 71, ...]
-        solid_fuel integer [6775, 1588, 9070, 129, 0, ...]
-        liquid_fuel integer [6013, 25685, 18272, 4173, 71, ...]
-        gas_fuel integer [3930, 26368, 18010, 414, 0, ...]
-        cement integer [898, 1551, 272, 375, 0, ...]
-        gas_flaring integer [0, 446, 0, 0, 0, ...]
+        total s64 [17617, 55638, 45624, 5091, 71, ...]
+        solid_fuel s64 [6775, 1588, 9070, 129, 0, ...]
+        liquid_fuel s64 [6013, 25685, 18272, 4173, 71, ...]
+        gas_fuel s64 [3930, 26368, 18010, 414, 0, ...]
+        cement s64 [898, 1551, 272, 375, 0, ...]
+        gas_flaring s64 [0, 446, 0, 0, 0, ...]
         per_capita f64 [2.22, 1.29, 2.7, 0.2, 0.68, ...]
-        bunker_fuels integer [1011, 2079, 14210, 111, 4, ...]
+        bunker_fuels s64 [1011, 2079, 14210, 111, 4, ...]
       >
 
   """
@@ -4235,34 +4236,34 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.pivot_longer(df, &String.ends_with?(&1, "fuel"))
       #Explorer.DataFrame<
         Polars[3282 x 9]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        total integer [2308, 1254, 32500, 141, 7924, ...]
-        cement integer [5, 177, 2598, 0, 204, ...]
-        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        total s64 [2308, 1254, 32500, 141, 7924, ...]
+        cement s64 [5, 177, 2598, 0, 204, ...]
+        gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        bunker_fuels s64 [9, 7, 663, 0, 321, ...]
         variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", ...]
-        value integer [627, 117, 332, 0, 0, ...]
+        value s64 [627, 117, 332, 0, 0, ...]
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pivot_longer(df, &String.ends_with?(&1, "fuel"), select: ["year", "country"])
       #Explorer.DataFrame<
         Polars[3282 x 4]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
         variable string ["solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", "solid_fuel", ...]
-        value integer [627, 117, 332, 0, 0, ...]
+        value s64 [627, 117, 332, 0, 0, ...]
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pivot_longer(df, ["total"], select: ["year", "country"], discard: ["country"])
       #Explorer.DataFrame<
         Polars[1094 x 3]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         variable string ["total", "total", "total", "total", "total", ...]
-        value integer [2308, 1254, 32500, 141, 7924, ...]
+        value s64 [2308, 1254, 32500, 141, 7924, ...]
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
@@ -4270,7 +4271,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1094 x 2]
         my_var string ["total", "total", "total", "total", "total", ...]
-        my_value integer [2308, 1254, 32500, 141, 7924, ...]
+        my_value s64 [2308, 1254, 32500, 141, 7924, ...]
       >
 
   ## Grouped examples
@@ -4363,7 +4364,7 @@ defmodule Explorer.DataFrame do
 
         [_ | _] = dtypes ->
           raise ArgumentError,
-                "columns to pivot must include columns with the same dtype, but found multiple dtypes: #{inspect(dtypes)}"
+                "columns to pivot must include columns with the same dtype, but found multiple dtypes: #{Shared.inspect_dtypes(dtypes)}"
       end
 
     new_dtypes =
@@ -4465,11 +4466,11 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 6]
         team string ["A", "B", "C"]
-        Monday integer [10, nil, 15]
-        Tuesday integer [14, 9, nil]
-        Wednesday integer [nil, 16, 10]
-        Thursday integer [10, nil, 14]
-        Friday integer [16, 11, nil]
+        Monday s64 [10, nil, 15]
+        Tuesday s64 [14, 9, nil]
+        Wednesday s64 [nil, 16, 10]
+        Thursday s64 [10, nil, 14]
+        Friday s64 [16, 11, nil]
       >
 
   Now if we print that same dataframe with `print/2`, we get a better picture of the schedule:
@@ -4498,11 +4499,11 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.pivot_wider(df, "property", "property_value")
       #Explorer.DataFrame<
         Polars[2 x 5]
-        product_id integer [1, 2]
-        product_id_1 integer [1, 2]
-        width_cm integer [42, 35]
-        height_cm integer [40, 20]
-        length_cm integer [64, 40]
+        product_id s64 [1, 2]
+        product_id_1 s64 [1, 2]
+        width_cm s64 [42, 35]
+        height_cm s64 [40, 20]
+        length_cm s64 [64, 40]
       >
 
   But if the option `:names_prefix` is used, that suffix is not added:
@@ -4515,11 +4516,11 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.pivot_wider(df, "property", "property_value", names_prefix: "col_")
       #Explorer.DataFrame<
         Polars[2 x 5]
-        product_id integer [1, 2]
-        col_product_id integer [1, 2]
-        col_width_cm integer [42, 35]
-        col_height_cm integer [40, 20]
-        col_length_cm integer [64, 40]
+        product_id s64 [1, 2]
+        col_product_id s64 [1, 2]
+        col_width_cm s64 [42, 35]
+        col_height_cm s64 [40, 20]
+        col_length_cm s64 [64, 40]
       >
 
   Multiple columns are accepted for the `values_from` parameter, but the behaviour is slightly
@@ -4536,15 +4537,15 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.pivot_wider(df, "property", ["property_value", "another_value"])
       #Explorer.DataFrame<
         Polars[2 x 9]
-        product_id integer [1, 2]
-        property_value_property_product_id integer [1, 2]
-        property_value_property_width_cm integer [42, 35]
-        property_value_property_height_cm integer [40, 20]
-        property_value_property_length_cm integer [64, 40]
-        another_value_property_product_id integer [1, 2]
-        another_value_property_width_cm integer [43, 36]
-        another_value_property_height_cm integer [41, 21]
-        another_value_property_length_cm integer [65, 42]
+        product_id s64 [1, 2]
+        property_value_property_product_id s64 [1, 2]
+        property_value_property_width_cm s64 [42, 35]
+        property_value_property_height_cm s64 [40, 20]
+        property_value_property_length_cm s64 [64, 40]
+        another_value_property_product_id s64 [1, 2]
+        another_value_property_width_cm s64 [43, 36]
+        another_value_property_height_cm s64 [41, 21]
+        another_value_property_length_cm s64 [65, 42]
       >
 
   ## Grouped examples
@@ -4563,11 +4564,11 @@ defmodule Explorer.DataFrame do
         Polars[3 x 6]
         Groups: ["team"]
         team string ["A", "B", "C"]
-        Monday integer [10, nil, 15]
-        Tuesday integer [14, 9, nil]
-        Wednesday integer [nil, 16, 10]
-        Thursday integer [10, nil, 14]
-        Friday integer [16, 11, nil]
+        Monday s64 [10, nil, 15]
+        Tuesday s64 [14, 9, nil]
+        Wednesday s64 [nil, 16, 10]
+        Thursday s64 [10, nil, 14]
+        Friday s64 [16, 11, nil]
       >
 
   In the following example the group "weekday" is going to be removed, because the column is going
@@ -4583,11 +4584,11 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 6]
         team string ["A", "B", "C"]
-        Monday integer [10, nil, 15]
-        Tuesday integer [14, 9, nil]
-        Wednesday integer [nil, 16, 10]
-        Thursday integer [10, nil, 14]
-        Friday integer [16, 11, nil]
+        Monday s64 [10, nil, 15]
+        Tuesday s64 [14, 9, nil]
+        Wednesday s64 [nil, 16, 10]
+        Thursday s64 [10, nil, 14]
+        Friday s64 [16, 11, nil]
       >
 
   """
@@ -4662,7 +4663,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.join(left, right)
       #Explorer.DataFrame<
         Polars[3 x 3]
-        a integer [1, 2, 2]
+        a s64 [1, 2, 2]
         b string ["a", "b", "b"]
         c string ["d", "e", "f"]
       >
@@ -4674,7 +4675,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.join(left, right, how: :left)
       #Explorer.DataFrame<
         Polars[4 x 3]
-        a integer [1, 2, 2, 3]
+        a s64 [1, 2, 2, 3]
         b string ["a", "b", "b", "c"]
         c string ["d", "e", "f", nil]
       >
@@ -4686,7 +4687,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.join(left, right, how: :right)
       #Explorer.DataFrame<
         Polars[3 x 3]
-        a integer [1, 2, 4]
+        a s64 [1, 2, 4]
         c string ["d", "e", "f"]
         b string ["a", "b", nil]
       >
@@ -4698,7 +4699,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.join(left, right, how: :outer)
       #Explorer.DataFrame<
         Polars[4 x 3]
-        a integer [1, 2, 4, 3]
+        a s64 [1, 2, 4, 3]
         b string ["a", "b", nil, "c"]
         c string ["d", "e", "f", nil]
       >
@@ -4710,9 +4711,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.join(left, right, how: :cross)
       #Explorer.DataFrame<
         Polars[9 x 4]
-        a integer [1, 1, 1, 2, 2, ...]
+        a s64 [1, 1, 1, 2, 2, ...]
         b string ["a", "a", "a", "b", "b", ...]
-        a_right integer [1, 2, 4, 1, 2, ...]
+        a_right s64 [1, 2, 4, 1, 2, ...]
         c string ["d", "e", "f", "d", "e", ...]
       >
 
@@ -4723,7 +4724,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.join(left, right, on: [{"a", "d"}])
       #Explorer.DataFrame<
         Polars[3 x 3]
-        a integer [1, 2, 2]
+        a s64 [1, 2, 2]
         b string ["a", "b", "b"]
         c string ["d", "e", "f"]
       >
@@ -4743,7 +4744,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 3]
         Groups: ["b"]
-        a integer [1, 2, 2]
+        a s64 [1, 2, 2]
         b string ["a", "b", "b"]
         c string ["d", "e", "f"]
       >
@@ -4758,7 +4759,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[4 x 3]
         Groups: ["b"]
-        a integer [1, 2, 2, 3]
+        a s64 [1, 2, 2, 3]
         b string ["a", "b", "b", "c"]
         c string ["d", "e", "f", nil]
       >
@@ -4773,7 +4774,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 3]
         Groups: ["c"]
-        a integer [1, 2, 4]
+        a s64 [1, 2, 4]
         c string ["d", "e", "f"]
         b string ["a", "b", nil]
       >
@@ -4788,7 +4789,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[4 x 3]
         Groups: ["b"]
-        a integer [1, 2, 4, 3]
+        a s64 [1, 2, 4, 3]
         b string ["a", "b", nil, "c"]
         c string ["d", "e", "f", nil]
       >
@@ -4803,9 +4804,9 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[9 x 4]
         Groups: ["b"]
-        a integer [1, 1, 1, 2, 2, ...]
+        a s64 [1, 1, 1, 2, 2, ...]
         b string ["a", "a", "a", "b", "b", ...]
-        a_right integer [1, 2, 4, 1, 2, ...]
+        a_right s64 [1, 2, 4, 1, 2, ...]
         c string ["d", "e", "f", "d", "e", ...]
       >
 
@@ -4923,9 +4924,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.concat_columns([df1, df2])
       #Explorer.DataFrame<
         Polars[3 x 4]
-        x integer [1, 2, 3]
+        x s64 [1, 2, 3]
         y string ["a", "b", "c"]
-        z integer [4, 5, 6]
+        z s64 [4, 5, 6]
         a string ["d", "e", "f"]
       >
 
@@ -4936,9 +4937,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.concat_columns([df1, df2])
       #Explorer.DataFrame<
         Polars[3 x 4]
-        x integer [1, 2, 3]
+        x s64 [1, 2, 3]
         y string ["a", "b", "c"]
-        x_1 integer [4, 5, 6]
+        x_1 s64 [4, 5, 6]
         a string ["d", "e", "f"]
       >
 
@@ -4997,7 +4998,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.concat_rows([df1, df2])
       #Explorer.DataFrame<
         Polars[6 x 2]
-        x integer [1, 2, 3, 4, 5, ...]
+        x s64 [1, 2, 3, 4, 5, ...]
         y string ["a", "b", "c", "d", "e", ...]
       >
 
@@ -5056,15 +5057,16 @@ defmodule Explorer.DataFrame do
   end
 
   defp types_are_numeric_compatible?(types, name, type) do
-    numeric_types = [{:f, 32}, {:f, 64}, :integer]
-    types[name] != type and types[name] in numeric_types and type in numeric_types
+    types[name] != type and types[name] in Shared.numeric_types() and
+      type in Shared.numeric_types()
   end
 
   defp cast_numeric_columns_to_float(dfs, changed_types) do
     # TODO: work with {:f, 32} as well
     for df <- dfs do
+      # TODO: check if s64 is enough
       columns =
-        for {name, :integer} <- df.dtypes,
+        for {name, {:s, 64}} <- df.dtypes,
             changed_types[name] == {:f, 64},
             do: name
 
@@ -5108,16 +5110,16 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1094 x 10]
         Groups: ["country"]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        total integer [2308, 1254, 32500, 141, 7924, ...]
-        solid_fuel integer [627, 117, 332, 0, 0, ...]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
-        gas_fuel integer [74, 7, 14565, 0, 374, ...]
-        cement integer [5, 177, 2598, 0, 204, ...]
-        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        total s64 [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel s64 [627, 117, 332, 0, 0, ...]
+        liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+        cement s64 [5, 177, 2598, 0, 204, ...]
+        gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        bunker_fuels s64 [9, 7, 663, 0, 321, ...]
       >
 
   Or you can group by multiple columns in a given list:
@@ -5127,16 +5129,16 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1094 x 10]
         Groups: ["country", "year"]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        total integer [2308, 1254, 32500, 141, 7924, ...]
-        solid_fuel integer [627, 117, 332, 0, 0, ...]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
-        gas_fuel integer [74, 7, 14565, 0, 374, ...]
-        cement integer [5, 177, 2598, 0, 204, ...]
-        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        total s64 [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel s64 [627, 117, 332, 0, 0, ...]
+        liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+        cement s64 [5, 177, 2598, 0, 204, ...]
+        gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        bunker_fuels s64 [9, 7, 663, 0, 321, ...]
       >
 
   Or by a range:
@@ -5146,16 +5148,16 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1094 x 10]
         Groups: ["year", "country"]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        total integer [2308, 1254, 32500, 141, 7924, ...]
-        solid_fuel integer [627, 117, 332, 0, 0, ...]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
-        gas_fuel integer [74, 7, 14565, 0, 374, ...]
-        cement integer [5, 177, 2598, 0, 204, ...]
-        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        total s64 [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel s64 [627, 117, 332, 0, 0, ...]
+        liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+        cement s64 [5, 177, 2598, 0, 204, ...]
+        gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        bunker_fuels s64 [9, 7, 663, 0, 321, ...]
       >
 
   Regexes and functions are also accepted in column names, as in `select/2`.
@@ -5186,16 +5188,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.ungroup(df)
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        total integer [2308, 1254, 32500, 141, 7924, ...]
-        solid_fuel integer [627, 117, 332, 0, 0, ...]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
-        gas_fuel integer [74, 7, 14565, 0, 374, ...]
-        cement integer [5, 177, 2598, 0, 204, ...]
-        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        total s64 [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel s64 [627, 117, 332, 0, 0, ...]
+        liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+        cement s64 [5, 177, 2598, 0, 204, ...]
+        gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        bunker_fuels s64 [9, 7, 663, 0, 321, ...]
       >
 
   Ungrouping a single column:
@@ -5206,16 +5208,16 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1094 x 10]
         Groups: ["year"]
-        year integer [2010, 2010, 2010, 2010, 2010, ...]
+        year s64 [2010, 2010, 2010, 2010, 2010, ...]
         country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-        total integer [2308, 1254, 32500, 141, 7924, ...]
-        solid_fuel integer [627, 117, 332, 0, 0, ...]
-        liquid_fuel integer [1601, 953, 12381, 141, 3649, ...]
-        gas_fuel integer [74, 7, 14565, 0, 374, ...]
-        cement integer [5, 177, 2598, 0, 204, ...]
-        gas_flaring integer [0, 0, 2623, 0, 3697, ...]
+        total s64 [2308, 1254, 32500, 141, 7924, ...]
+        solid_fuel s64 [627, 117, 332, 0, 0, ...]
+        liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+        gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+        cement s64 [5, 177, 2598, 0, 204, ...]
+        gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
         per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-        bunker_fuels integer [9, 7, 663, 0, 321, ...]
+        bunker_fuels s64 [9, 7, 663, 0, 321, ...]
       >
 
   Lists, ranges, regexes, and functions are also accepted in column names, as in `select/2`.
@@ -5275,9 +5277,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.summarise(grouped_df, total_max: max(total), total_min: min(total))
       #Explorer.DataFrame<
         Polars[5 x 3]
-        year integer [2010, 2011, 2012, 2013, 2014]
-        total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
-        total_min integer [1, 2, 2, 2, 3]
+        year s64 [2010, 2011, 2012, 2013, 2014]
+        total_max s64 [2393248, 2654360, 2734817, 2797384, 2806634]
+        total_min s64 [1, 2, 2, 2, 3]
       >
 
   Suppose you want to get the mean petal length of each Iris species. You could do something
@@ -5328,9 +5330,9 @@ defmodule Explorer.DataFrame do
       iex> DataFrame.summarise_with(df, &[total_max: Series.max(&1["total"]), countries: Series.n_distinct(&1["country"])])
       #Explorer.DataFrame<
         Polars[5 x 3]
-        year integer [2010, 2011, 2012, 2013, 2014]
-        total_max integer [2393248, 2654360, 2734817, 2797384, 2806634]
-        countries integer [217, 217, 220, 220, 220]
+        year s64 [2010, 2011, 2012, 2013, 2014]
+        total_max s64 [2393248, 2654360, 2734817, 2797384, 2806634]
+        countries s64 [217, 217, 220, 220, 220]
       >
 
       iex> alias Explorer.{DataFrame, Series}
@@ -5338,8 +5340,8 @@ defmodule Explorer.DataFrame do
       iex> DataFrame.summarise_with(df, &[total_max: Series.max(&1["total"]), countries: Series.n_distinct(&1["country"])])
       #Explorer.DataFrame<
         Polars[1 x 2]
-        total_max integer [2806634]
-        countries integer [222]
+        total_max s64 [2806634]
+        countries s64 [222]
       >
 
   """
@@ -5403,15 +5405,15 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.explode(df, :a)
       #Explorer.DataFrame<
         Polars[4 x 3]
-        a integer [1, 2, 3, 4]
-        b list[integer] [[5, 6], [5, 6], [7, 8], [7, ...]]
+        a s64 [1, 2, 3, 4]
+        b list[s64] [[5, 6], [5, 6], [7, 8], [7, ...]]
         c string ["a", "a", "b", "b"]
       >
       iex> Explorer.DataFrame.explode(df, [:a, :b])
       #Explorer.DataFrame<
         Polars[4 x 3]
-        a integer [1, 2, 3, 4]
-        b integer [5, 6, 7, 8]
+        a s64 [1, 2, 3, 4]
+        b s64 [5, 6, 7, 8]
         c string ["a", "a", "b", "b"]
       >
 
@@ -5423,15 +5425,15 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 3]
         c string ["a", "b"]
-        a list[integer] [[1, 2], [3, 4]]
-        b list[integer] [[5, 6], [7, 8]]
+        a list[s64] [[1, 2], [3, 4]]
+        b list[s64] [[5, 6], [7, 8]]
       >
       iex> Explorer.DataFrame.explode(df, [:a, :b]) # we are back where we started
       #Explorer.DataFrame<
         Polars[4 x 3]
         c string ["a", "a", "b", "b"]
-        a integer [1, 2, 3, 4]
-        b integer [5, 6, 7, 8]
+        a s64 [1, 2, 3, 4]
+        b s64 [5, 6, 7, 8]
       >
 
   If you want to perform the cartesian product of two list columns, you must
@@ -5441,8 +5443,8 @@ defmodule Explorer.DataFrame do
       iex> df |> Explorer.DataFrame.explode(:a) |> Explorer.DataFrame.explode(:b)
       #Explorer.DataFrame<
         Polars[8 x 3]
-        a integer [1, 1, 2, 2, 3, ...]
-        b integer [5, 6, 5, 6, 7, ...]
+        a s64 [1, 1, 2, 2, 3, ...]
+        b s64 [5, 6, 5, 6, 7, ...]
         c string ["a", "a", "a", "a", "b", ...]
       >
   """
@@ -5455,7 +5457,7 @@ defmodule Explorer.DataFrame do
 
     unless Enum.all?(dtypes, &match?({:list, _}, &1)) do
       raise ArgumentError,
-            "explode/2 expects list columns, but the given columns have the types: #{inspect(dtypes)}"
+            "explode/2 expects list columns, but the given columns have the types: #{Shared.inspect_dtypes(dtypes)}"
     end
 
     out_dtypes =
@@ -5480,19 +5482,19 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.unnest(df, :struct)
       #Explorer.DataFrame<
         Polars[2 x 4]
-        before integer [1, 2]
-        x integer [1, 3]
-        y integer [2, 4]
-        after integer [3, 4]
+        before s64 [1, 2]
+        x s64 [1, 3]
+        y s64 [2, 4]
+        after s64 [3, 4]
       >
 
       iex> df = Explorer.DataFrame.new(struct1: [%{x: 1, y: 2}, %{x: 3, y: 4}], struct2: [%{z: 5}, %{z: 6}])
       iex> Explorer.DataFrame.unnest(df, [:struct1, :struct2])
       #Explorer.DataFrame<
         Polars[2 x 3]
-        x integer [1, 3]
-        y integer [2, 4]
-        z integer [5, 6]
+        x s64 [1, 3]
+        y s64 [2, 4]
+        z s64 [5, 6]
       >
   """
   @doc type: :single
@@ -5505,7 +5507,7 @@ defmodule Explorer.DataFrame do
 
     unless Enum.all?(dtypes, &match?({:struct, _}, &1)) do
       raise ArgumentError,
-            "unnest/2 expects struct columns, but the given columns have the types: #{inspect(dtypes)}"
+            "unnest/2 expects struct columns, but the given columns have the types: #{Shared.inspect_dtypes(dtypes)}"
     end
 
     {new_dtypes, new_names} =
@@ -5654,8 +5656,8 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 3]
         a string ["a", "b"]
-        b integer [1, nil]
-        counts integer [2, 1]
+        b s64 [1, nil]
+        counts s64 [2, 1]
       >
   """
   @doc type: :single
@@ -5678,9 +5680,8 @@ defmodule Explorer.DataFrame do
 
   Only columns with the following dtypes are taken into account.
 
-  * `:integer`
-  * `{:f, 32}`
-  * `{:f, 64}`
+  * floats: #{Shared.inspect_dtypes(Shared.float_types(), backsticks: true)}
+  * integers: #{Shared.inspect_dtypes(Shared.integer_types(), backsticks: true)}
 
   The resultant columns are always `{:f, 64}`.
 
@@ -5729,9 +5730,8 @@ defmodule Explorer.DataFrame do
 
   Only columns with the following dtypes are taken into account.
 
-  * `:integer`
-  * `{:f, 32}`
-  * `{:f, 64}`
+  * floats: #{Shared.inspect_dtypes(Shared.float_types(), backsticks: true)}
+  * integers: #{Shared.inspect_dtypes(Shared.integer_types(), backsticks: true)}
 
   The resultant columns are always `{:f, 64}`.
 
@@ -5774,7 +5774,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp numeric_column?(df, name) do
-    Series.dtype(df[name]) in [:integer | Explorer.Shared.float_types()]
+    Series.dtype(df[name]) in Explorer.Shared.numeric_types()
   end
 
   defp pairwised_df(df, opts) do

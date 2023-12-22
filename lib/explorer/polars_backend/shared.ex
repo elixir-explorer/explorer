@@ -132,7 +132,6 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def from_list(list, dtype, name) when is_list(list) do
     case dtype do
-      :integer -> Native.s_from_list_i64(name, list)
       # Signed integers
       {:s, 8} -> Native.s_from_list_i8(name, list)
       {:s, 16} -> Native.s_from_list_i16(name, list)
@@ -157,6 +156,7 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
+  # TODO: add more integer dtypes support
   def from_binary(binary, dtype, name \\ "") when is_binary(binary) do
     case dtype do
       :boolean ->
@@ -186,7 +186,7 @@ defmodule Explorer.PolarsBackend.Shared do
       {:duration, :nanosecond} ->
         Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
 
-      :integer ->
+      {:s, 64} ->
         Native.s_from_binary_i64(name, binary)
 
       {:f, 32} ->

@@ -74,14 +74,14 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(%{floats: Series.from_list([1.0, 2.0]), integers: Series.from_list([1, 2])})
 
       assert DF.to_columns(df, atom_keys: true) == %{floats: [1.0, 2.0], integers: [1, 2]}
-      assert DF.dtypes(df) == %{"floats" => {:f, 64}, "integers" => :integer}
+      assert DF.dtypes(df) == %{"floats" => {:f, 64}, "integers" => {:s, 64}}
     end
 
     test "from columnar data" do
       df = DF.new(%{floats: [1.0, 2.0], integers: [1, nil]})
 
       assert DF.to_columns(df, atom_keys: true) == %{floats: [1.0, 2.0], integers: [1, nil]}
-      assert DF.dtypes(df) == %{"floats" => {:f, 64}, "integers" => :integer}
+      assert DF.dtypes(df) == %{"floats" => {:f, 64}, "integers" => {:s, 64}}
     end
 
     test "from columnar data with binaries" do
@@ -98,7 +98,7 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.dtypes(df) == %{
                "floats" => {:f, 64},
-               "integers" => :integer,
+               "integers" => {:s, 64},
                "binaries" => :binary
              }
     end
@@ -160,7 +160,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(%{integers: [1, 2, 3]})
 
       assert DF.to_columns(df, atom_keys: true) == %{integers: [1, 2, 3]}
-      assert DF.dtypes(df) == %{"integers" => :integer}
+      assert DF.dtypes(df) == %{"integers" => {:s, 64}}
     end
 
     test "with floats" do
@@ -246,7 +246,7 @@ defmodule Explorer.DataFrameTest do
                integers: [nil, nil, nil]
              }
 
-      assert DF.dtypes(df) == %{"integers" => :integer}
+      assert DF.dtypes(df) == %{"integers" => {:s, 64}}
     end
 
     test "with series of integers and dtype string" do
@@ -299,7 +299,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
       message =
-        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type :integer"
+        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:s, 64}"
 
       assert_raise ArgumentError, message, fn ->
         DF.filter_with(df, fn ldf ->
@@ -315,7 +315,7 @@ defmodule Explorer.DataFrameTest do
 
       message =
         "expecting the function to return a boolean LazySeries, " <>
-          "but instead it returned a LazySeries of type :integer"
+          "but instead it returned a LazySeries of type {:s, 64}"
 
       assert_raise ArgumentError, message, fn ->
         DF.filter_with(df, fn ldf ->
@@ -586,7 +586,7 @@ defmodule Explorer.DataFrameTest do
 
       error_message =
         "expecting the function to return a single or a list of boolean LazySeries, but instead it contains:\n" <>
-          "#Explorer.Series<\n  LazySeries[???]\n  integer (column(\"a\") + column(\"b\"))\n>"
+          "#Explorer.Series<\n  LazySeries[???]\n  s64 (column(\"a\") + column(\"b\"))\n>"
 
       assert_raise ArgumentError, error_message, fn ->
         DF.filter(df, [a > 4, b < 4, a + b])
@@ -641,7 +641,7 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert df1.names == ["a", "b", "c", "d"]
-      assert df1.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :integer}
+      assert df1.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:s, 64}}
     end
 
     test "changes a column" do
@@ -698,11 +698,11 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 
       assert df1.dtypes == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => :string,
-               "c" => :integer,
-               "d" => :integer,
-               "e" => :integer,
+               "c" => {:s, 64},
+               "d" => {:s, 64},
+               "e" => {:s, 64},
                "f" => {:f, 64},
                "g" => :string,
                "h" => :boolean,
@@ -756,15 +756,15 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 
       assert df1.dtypes == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => :string,
-               "c" => :integer,
-               "d" => :integer,
+               "c" => {:s, 64},
+               "d" => {:s, 64},
                "e" => :string,
-               "f" => :integer,
-               "g" => :integer,
-               "h" => :integer,
-               "i" => :integer,
+               "f" => {:s, 64},
+               "g" => {:s, 64},
+               "h" => {:s, 64},
+               "i" => {:s, 64},
                "j" => {:f, 64}
              }
     end
@@ -801,14 +801,14 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df1) == %{
-               "a" => :integer,
-               "calc1" => :integer,
-               "calc2" => :integer,
-               "calc3" => :integer,
+               "a" => {:s, 64},
+               "calc1" => {:s, 64},
+               "calc2" => {:s, 64},
+               "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => :integer,
-               "calc6" => :integer,
-               "calc7" => :integer,
+               "calc5" => {:s, 64},
+               "calc6" => {:s, 64},
+               "calc7" => {:s, 64},
                "calc8" => {:f, 64},
                "calc9" => {:f, 64},
                "calc10" => :boolean
@@ -843,16 +843,16 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df1) == %{
-               "a" => :integer,
-               "calc1" => :integer,
-               "calc2" => :integer,
-               "calc3" => :integer,
+               "a" => {:s, 64},
+               "calc1" => {:s, 64},
+               "calc2" => {:s, 64},
+               "calc3" => {:s, 64},
                "calc4" => {:f, 64},
                # TODO: This should be float after #374 is resolved
-               "calc5" => :integer,
+               "calc5" => {:s, 64},
                "calc5_1" => {:f, 64},
-               "calc6" => :integer,
-               "calc7" => :integer
+               "calc6" => {:s, 64},
+               "calc7" => {:s, 64}
              }
     end
 
@@ -883,14 +883,14 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df1) == %{
-               "a" => :integer,
-               "calc1" => :integer,
-               "calc2" => :integer,
-               "calc3" => :integer,
+               "a" => {:s, 64},
+               "calc1" => {:s, 64},
+               "calc2" => {:s, 64},
+               "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => :integer,
-               "calc6" => :integer,
-               "calc7" => :integer
+               "calc5" => {:s, 64},
+               "calc6" => {:s, 64},
+               "calc7" => {:s, 64}
              }
     end
 
@@ -921,14 +921,14 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df1) == %{
-               "a" => :integer,
-               "calc1" => :integer,
-               "calc2" => :integer,
-               "calc3" => :integer,
+               "a" => {:s, 64},
+               "calc1" => {:s, 64},
+               "calc2" => {:s, 64},
+               "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => :integer,
-               "calc6" => :integer,
-               "calc7" => :integer
+               "calc5" => {:s, 64},
+               "calc6" => {:s, 64},
+               "calc7" => {:s, 64}
              }
     end
 
@@ -961,17 +961,17 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df1) == %{
-               "a" => :integer,
-               "b" => :integer,
-               "c" => :integer,
-               "d" => :integer,
-               "calc1" => :integer,
-               "calc2" => :integer,
-               "calc3" => :integer,
+               "a" => {:s, 64},
+               "b" => {:s, 64},
+               "c" => {:s, 64},
+               "d" => {:s, 64},
+               "calc1" => {:s, 64},
+               "calc2" => {:s, 64},
+               "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => :integer,
-               "calc6" => :integer,
-               "calc7" => :integer
+               "calc5" => {:s, 64},
+               "calc6" => {:s, 64},
+               "calc7" => {:s, 64}
              }
     end
 
@@ -1006,15 +1006,15 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
 
       assert df1.dtypes == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => :string,
-               "c" => :integer,
-               "d" => :integer,
-               "e" => :integer,
+               "c" => {:s, 64},
+               "d" => {:s, 64},
+               "e" => {:s, 64},
                "f" => {:f, 64},
-               "g" => :integer,
-               "h" => :integer,
-               "i" => :integer,
+               "g" => {:s, 64},
+               "h" => {:s, 64},
+               "i" => {:s, 64},
                "j" => {:f, 64}
              }
     end
@@ -1038,7 +1038,7 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert df1.dtypes == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "c" => {:f, 64}
              }
     end
@@ -1068,7 +1068,7 @@ defmodule Explorer.DataFrameTest do
 
       df1 = df |> DF.mutate(b: clip(a, 1, 10)) |> DF.select(:b)
       assert DF.to_columns(df1, atom_keys: true) == %{b: [1, 5, nil, 10]}
-      assert DF.dtypes(df1) == %{"b" => :integer}
+      assert DF.dtypes(df1) == %{"b" => {:s, 64}}
 
       df2 = df |> DF.mutate(b: clip(a, 1.5, 10.5)) |> DF.select(:b)
       assert DF.to_columns(df2, atom_keys: true) == %{b: [1.5, 5.0, nil, 10.5]}
@@ -1156,7 +1156,7 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df1) == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => {:f, 64},
                "concat1" => {:f, 64},
                "concat2" => {:f, 64},
@@ -1188,7 +1188,7 @@ defmodule Explorer.DataFrameTest do
         )
 
       assert df1.dtypes == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => {:f, 64},
                "c" => {:f, 64},
                "d" => {:f, 64},
@@ -1196,11 +1196,11 @@ defmodule Explorer.DataFrameTest do
                "f" => {:f, 64},
                "g" => {:f, 64},
                "h" => {:f, 64},
-               "p" => :integer,
-               "q" => :integer,
-               "r" => :integer,
-               "s" => :integer,
-               "t" => :integer,
+               "p" => {:s, 64},
+               "q" => {:s, 64},
+               "r" => {:s, 64},
+               "s" => {:s, 64},
+               "t" => {:s, 64},
                "z" => {:f, 64}
              }
 
@@ -1255,7 +1255,7 @@ defmodule Explorer.DataFrameTest do
                c: [true, false, false, false, true, false]
              }
 
-      assert df1.dtypes == %{"a" => :integer, "b" => :boolean, "c" => :boolean}
+      assert df1.dtypes == %{"a" => {:s, 64}, "b" => :boolean, "c" => :boolean}
     end
 
     test "add columns with missing values" do
@@ -1282,13 +1282,13 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert df1.dtypes == %{
-               "a" => :integer,
-               "b" => :integer,
-               "c" => :integer,
-               "d" => :integer,
-               "e" => :integer,
+               "a" => {:s, 64},
+               "b" => {:s, 64},
+               "c" => {:s, 64},
+               "d" => {:s, 64},
+               "e" => {:s, 64},
                "f" => {:f, 64},
-               "g" => :integer
+               "g" => {:s, 64}
              }
     end
 
@@ -1363,10 +1363,10 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert df1.dtypes == %{
-               "a" => :integer,
-               "b" => :integer,
-               "c" => :integer,
-               "d" => :integer
+               "a" => {:s, 64},
+               "b" => {:s, 64},
+               "c" => {:s, 64},
+               "d" => {:s, 64}
              }
     end
 
@@ -1414,8 +1414,8 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df1) == %{
-               "a" => :integer,
-               "b" => :integer
+               "a" => {:s, 64},
+               "b" => {:s, 64}
              }
     end
 
@@ -1431,8 +1431,8 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df1) == %{
-               "a" => :integer,
-               "b" => :integer
+               "a" => {:s, 64},
+               "b" => {:s, 64}
              }
     end
 
@@ -1450,7 +1450,7 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["a", "b", "c"]
 
       assert df1.dtypes == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => {:f, 64},
                "c" => {:f, 64}
              }
@@ -1480,7 +1480,7 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["a", "b"]
 
       assert df1.dtypes == %{
-               "a" => :integer,
+               "a" => {:s, 64},
                "b" => {:f, 64}
              }
     end
@@ -1762,19 +1762,19 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{
                "a" => :date,
                "b" => {:datetime, :microsecond},
-               "c" => :integer,
-               "d" => :integer,
-               "e" => :integer,
-               "f" => :integer,
-               "g" => :integer,
-               "h" => :integer,
-               "i" => :integer,
-               "j" => :integer,
-               "k" => :integer,
-               "l" => :integer,
-               "m" => :integer,
-               "n" => :integer,
-               "o" => :integer
+               "c" => {:s, 64},
+               "d" => {:s, 64},
+               "e" => {:s, 64},
+               "f" => {:s, 64},
+               "g" => {:s, 64},
+               "h" => {:s, 64},
+               "i" => {:s, 64},
+               "j" => {:s, 64},
+               "k" => {:s, 64},
+               "l" => {:s, 64},
+               "m" => {:s, 64},
+               "n" => {:s, 64},
+               "o" => {:s, 64}
              }
     end
 
@@ -2254,30 +2254,30 @@ defmodule Explorer.DataFrameTest do
         )
 
       assert capture_io(fn -> DF.print(df, limit: :infinity) end) == """
-             +---------------------------------------------+
-             |  Explorer DataFrame: [rows: 9, columns: 3]  |
-             +----------------+---------------+------------+
-             |       a        |       b       |     c      |
-             |   <integer>    |   <string>    |   <f64>    |
-             +================+===============+============+
-             | 1              | a             | 9.1        |
-             +----------------+---------------+------------+
-             | 2              | b             | 8.2        |
-             +----------------+---------------+------------+
-             | 3              | c             | 7.3        |
-             +----------------+---------------+------------+
-             | 4              | d             | 6.4        |
-             +----------------+---------------+------------+
-             | 5              | e             | 5.5        |
-             +----------------+---------------+------------+
-             | 6              | f             | 4.6        |
-             +----------------+---------------+------------+
-             | 7              | g             | 3.7        |
-             +----------------+---------------+------------+
-             | 8              | h             | 2.8        |
-             +----------------+---------------+------------+
-             | 9              | i             | 1.9        |
-             +----------------+---------------+------------+
+             +--------------------------------------------+
+             | Explorer DataFrame: [rows: 9, columns: 3]  |
+             +-------------+----------------+-------------+
+             |      a      |       b        |      c      |
+             |    <s64>    |    <string>    |    <f64>    |
+             +=============+================+=============+
+             | 1           | a              | 9.1         |
+             +-------------+----------------+-------------+
+             | 2           | b              | 8.2         |
+             +-------------+----------------+-------------+
+             | 3           | c              | 7.3         |
+             +-------------+----------------+-------------+
+             | 4           | d              | 6.4         |
+             +-------------+----------------+-------------+
+             | 5           | e              | 5.5         |
+             +-------------+----------------+-------------+
+             | 6           | f              | 4.6         |
+             +-------------+----------------+-------------+
+             | 7           | g              | 3.7         |
+             +-------------+----------------+-------------+
+             | 8           | h              | 2.8         |
+             +-------------+----------------+-------------+
+             | 9           | i              | 1.9         |
+             +-------------+----------------+-------------+
 
              """
     end
@@ -2769,7 +2769,7 @@ defmodule Explorer.DataFrameTest do
         |> DF.put(:category, Series.from_list(["a", "b", "a"], dtype: :category))
         |> DF.pivot_wider("category", "category")
 
-      assert DF.dtypes(df1) == %{"a" => :category, "b" => :category, "id" => :integer}
+      assert DF.dtypes(df1) == %{"a" => :category, "b" => :category, "id" => {:s, 64}}
       assert DF.to_columns(df1, atom_keys: true) == %{id: [1], a: ["a"], b: ["b"]}
     end
 
@@ -2995,7 +2995,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), select: [])
 
       assert df.names == ["variable", "value"]
-      assert df.dtypes == %{"variable" => :string, "value" => :integer}
+      assert df.dtypes == %{"variable" => :string, "value" => {:s, 64}}
       assert DF.shape(df) == {3282, 2}
     end
 
@@ -3005,10 +3005,10 @@ defmodule Explorer.DataFrameTest do
       assert df.names == ["year", "country", "variable", "value"]
 
       assert df.dtypes == %{
-               "year" => :integer,
+               "year" => {:s, 64},
                "country" => :string,
                "variable" => :string,
-               "value" => :integer
+               "value" => {:s, 64}
              }
 
       assert DF.shape(df) == {3282, 4}
@@ -3073,7 +3073,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with multiple types of columns to pivot", %{df: df} do
       assert_raise ArgumentError,
-                   "columns to pivot must include columns with the same dtype, but found multiple dtypes: [:string, :integer]",
+                   "columns to pivot must include columns with the same dtype, but found multiple dtypes: :string and {:s, 64}",
                    fn ->
                      DF.pivot_longer(df, &(&1 in ["solid_fuel", "country"]))
                    end
@@ -3290,7 +3290,7 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.put(df, :b, Series.transform(df[:a], fn n -> n * 2 end))
 
       assert DF.names(df1) == ["a", "b"]
-      assert DF.dtypes(df1) == %{"a" => :integer, "b" => :integer}
+      assert DF.dtypes(df1) == %{"a" => {:s, 64}, "b" => {:s, 64}}
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -3303,7 +3303,7 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.put(df, :a, Series.transform(df[:a], fn n -> n * 2 end))
 
       assert DF.names(df1) == ["a"]
-      assert DF.dtypes(df1) == %{"a" => :integer}
+      assert DF.dtypes(df1) == %{"a" => {:s, 64}}
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [2, 4, 6]
@@ -3593,9 +3593,9 @@ defmodule Explorer.DataFrameTest do
       assert DF.names(df1) == ["total", "solid_fuel_mean", "gas_fuel_max"]
 
       assert DF.dtypes(df1) == %{
-               "total" => :integer,
+               "total" => {:s, 64},
                "solid_fuel_mean" => {:f, 64},
-               "gas_fuel_max" => :integer
+               "gas_fuel_max" => {:s, 64}
              }
 
       assert DF.groups(df1) == []
@@ -3766,11 +3766,11 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3], b: [[1, 2], [3, 4], [5, 6]])
 
       assert_raise ArgumentError,
-                   "explode/2 expects list columns, but the given columns have the types: [:integer]",
+                   "explode/2 expects list columns, but the given columns have the types: {:s, 64}",
                    fn -> DF.explode(df, :a) end
 
       assert_raise ArgumentError,
-                   "explode/2 expects list columns, but the given columns have the types: [:integer, {:list, :integer}]",
+                   "explode/2 expects list columns, but the given columns have the types: {:list, {:s, 64}} and {:s, 64}",
                    fn -> DF.explode(df, [:a, :b]) end
     end
   end
@@ -3782,7 +3782,7 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.unnest(df, :a)
 
       assert DF.names(df1) == ["x", "y"]
-      assert DF.dtypes(df1) == %{"x" => :integer, "y" => :integer}
+      assert DF.dtypes(df1) == %{"x" => {:s, 64}, "y" => {:s, 64}}
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                x: [1, 3],
@@ -3796,7 +3796,7 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.unnest(df, [:a, :b])
 
       assert DF.names(df1) == ["x", "y", "z"]
-      assert DF.dtypes(df1) == %{"x" => :integer, "y" => :integer, "z" => :integer}
+      assert DF.dtypes(df1) == %{"x" => {:s, 64}, "y" => {:s, 64}, "z" => {:s, 64}}
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                x: [1, 3],
@@ -3820,11 +3820,11 @@ defmodule Explorer.DataFrameTest do
       assert DF.names(df1) == ["before", "x", "between", "y", "after"]
 
       assert DF.dtypes(df1) == %{
-               "before" => :integer,
-               "x" => :integer,
-               "between" => :integer,
-               "y" => :integer,
-               "after" => :integer
+               "before" => {:s, 64},
+               "x" => {:s, 64},
+               "between" => {:s, 64},
+               "y" => {:s, 64},
+               "after" => {:s, 64}
              }
     end
 
@@ -3832,7 +3832,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3])
 
       assert_raise ArgumentError,
-                   "unnest/2 expects struct columns, but the given columns have the types: [:integer]",
+                   "unnest/2 expects struct columns, but the given columns have the types: {:s, 64}",
                    fn -> DF.unnest(df, :a) end
     end
 
