@@ -3019,13 +3019,7 @@ defmodule Explorer.DataFrame do
   defp put(%DataFrame{} = df, column_name, fun, arg, opts) when is_column_name(column_name) do
     opts = Keyword.validate!(opts, [:dtype])
     name = to_column_name(column_name)
-
-    dtype =
-      if opts[:dtype] in [nil, :infer] do
-        opts[:dtype]
-      else
-        Shared.normalise_dtype!(opts[:dtype])
-      end
+    dtype = opts[:dtype]
 
     if dtype == nil and is_map_key(df.dtypes, name) do
       put(df, name, Series.replace(pull(df, name), arg), [])
@@ -3036,7 +3030,7 @@ defmodule Explorer.DataFrame do
         if dtype == nil or dtype == :infer do
           [backend: backend]
         else
-          [dtype: dtype, backend: backend]
+          [dtype: Shared.normalise_dtype!(dtype), backend: backend]
         end
 
       put(df, name, apply(Series, fun, [arg, opts]), [])
