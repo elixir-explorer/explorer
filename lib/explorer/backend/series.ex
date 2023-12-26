@@ -321,6 +321,7 @@ defmodule Explorer.Backend.Series do
   """
   def inspect(series, backend, n_rows, inspect_opts, opts \\ [])
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
+    from_another_node? = Keyword.get(opts, :from_another_node, false)
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
 
@@ -331,25 +332,39 @@ defmodule Explorer.Backend.Series do
 
     dtype = A.color("#{type} ", :atom, inspect_opts)
 
+    series_info =
+      if from_another_node? do
+        "node: #{node(series.data.resource)}"
+      else
+        "#{n_rows || "???"}"
+      end
+
+    data = build_series_data(series, inspect_opts, from_another_node?)
+
+    A.concat([
+      A.color(backend, :atom, inspect_opts),
+      open,
+      series_info,
+      close,
+      A.line(),
+      dtype,
+      data
+    ])
+  end
+
+  defp build_series_data(_series, _inspect_opts, true) do
+    "???"
+  end
+
+  defp build_series_data(series, inspect_opts, _from_another_node?) do
     series =
       case inspect_opts.limit do
         :infinity -> series
         limit when is_integer(limit) -> Series.slice(series, 0, limit + 1)
       end
 
-    data =
-      series
-      |> Series.to_list()
-      |> Explorer.Shared.to_doc(inspect_opts)
-
-    A.concat([
-      A.color(backend, :atom, inspect_opts),
-      open,
-      "#{n_rows || "???"}",
-      close,
-      A.line(),
-      dtype,
-      data
-    ])
+    series
+    |> Series.to_list()
+    |> Explorer.Shared.to_doc(inspect_opts)
   end
 end

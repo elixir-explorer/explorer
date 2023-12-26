@@ -6037,12 +6037,6 @@ defmodule Explorer.Series do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(series, _opts) when node(series.data.resource) != node() do
-      raise RuntimeError.exception(
-              "It is not possible to inspect a Series that belongs to another node"
-            )
-    end
-
     def inspect(series, opts) do
       force_unfit(
         concat([

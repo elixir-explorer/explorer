@@ -5792,12 +5792,6 @@ defmodule Explorer.DataFrame do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(df, _opts) when node(df.data.resource) != node() do
-      raise RuntimeError.exception(
-              "It is not possible to inspect a DataFrame that belongs to another node"
-            )
-    end
-
     def inspect(df, opts) do
       force_unfit(
         concat([

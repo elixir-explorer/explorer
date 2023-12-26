@@ -596,6 +596,10 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
+  def inspect(series, opts) when node(series.data.resource) != node() do
+    Explorer.Backend.Series.inspect(series, "Polars", nil, opts, from_another_node: true)
+  end
+
   def inspect(series, opts) do
     Explorer.Backend.Series.inspect(series, "Polars", Series.size(series), opts)
   end
