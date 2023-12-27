@@ -51,6 +51,7 @@ features = [
   "decompress-fast",
   "describe",
   "dtype-full",
+  "group_by_list",
   "ipc",
   "ipc_streaming",
   "lazy",

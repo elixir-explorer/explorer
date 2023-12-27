@@ -14,16 +14,8 @@ defmodule Explorer.PolarsBackend.Series do
   defguardp is_non_finite(n) when n in [:nan, :infinity, :neg_infinity]
   defguardp is_numeric(n) when is_number(n) or is_non_finite(n)
 
-  @integer_types [
-    {:s, 8},
-    {:s, 16},
-    {:s, 32},
-    {:s, 64},
-    {:u, 8},
-    {:u, 16},
-    {:u, 32},
-    {:u, 64}
-  ]
+  @integer_types Explorer.Shared.integer_types()
+  @numeric_types Explorer.Shared.numeric_types()
 
   # Conversion
 
@@ -456,7 +448,13 @@ defmodule Explorer.PolarsBackend.Series do
   def n_distinct(series), do: Shared.apply_series(series, :s_n_distinct)
 
   @impl true
-  def frequencies(series) do
+  def frequencies(%Series{dtype: {:list, inner_dtype} = dtype})
+      when inner_dtype not in @numeric_types do
+    raise ArgumentError,
+          "frequencies/1 only works with series of lists of numeric types, but #{Explorer.Shared.dtype_to_string(dtype)} was given"
+  end
+
+  def frequencies(%Series{} = series) do
     Shared.apply(:s_frequencies, [series.data])
     |> Shared.create_dataframe()
     |> DataFrame.rename(["values", "counts"])
