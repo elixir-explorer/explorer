@@ -5168,4 +5168,58 @@ defmodule Explorer.SeriesTest do
              ]
     end
   end
+
+  describe "frequencies/1" do
+    test "integer" do
+      s = Series.from_list([1, 2, 3, 1, 3, 4, 1, 5, 6, 1, 2])
+
+      df = Series.frequencies(s)
+
+      assert Series.dtype(df[:values]) == {:s, 64}
+      assert Series.dtype(df[:counts]) == {:s, 64}
+
+      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+               values: [1, 2, 3, 4, 5, 6],
+               counts: [4, 2, 2, 1, 1, 1]
+             }
+    end
+
+    test "string" do
+      s = Series.from_list(["a", "a", "b", "c", "c", "c"])
+
+      df = Series.frequencies(s)
+
+      assert Series.dtype(df[:values]) == :string
+      assert Series.dtype(df[:counts]) == {:s, 64}
+
+      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+               values: ["c", "a", "b"],
+               counts: [3, 2, 1]
+             }
+    end
+
+    test "list of integer" do
+      s = Series.from_list([[1, 2], [3, 1, 3], [4, 1], [5, 6], [1, 2], [4, 1]])
+
+      df = Series.frequencies(s)
+
+      assert Series.dtype(df[:values]) == {:list, {:s, 64}}
+      assert Series.dtype(df[:counts]) == {:s, 64}
+
+      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+               values: [[1, 2], [4, 1], [3, 1, 3], [5, 6]],
+               counts: [2, 2, 1, 1]
+             }
+    end
+
+    test "list of list of string" do
+      s = Series.from_list([["a"], ["a", "b"], ["c"], ["c"], ["c"]])
+
+      assert_raise ArgumentError,
+                   "frequencies/1 only works with series of lists of numeric types, but list[string] was given",
+                   fn ->
+                     Series.frequencies(s)
+                   end
+    end
+  end
 end
