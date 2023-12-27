@@ -21,7 +21,7 @@ thiserror = "1"
 smartstring = "1"
 
 # Deps necessary for cloud features.
-tokio = { version = "1.33", default-features = false, features = [
+tokio = { version = "1.35", default-features = false, features = [
   "rt",
 ], optional = true }
 tokio-util = { version = "0.7", default-features = false, features = [
