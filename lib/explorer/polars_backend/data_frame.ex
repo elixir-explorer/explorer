@@ -864,6 +864,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Inspect
 
   @impl true
+  def inspect(df, opts) when node(df.data.resource) != node() do
+    Explorer.Backend.DataFrame.inspect(df, "Polars", "node: #{node(df.data.resource)}", opts,
+      elide_columns: true
+    )
+  end
+
   def inspect(df, opts) do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
   end

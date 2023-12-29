@@ -250,46 +250,69 @@ defmodule Explorer.Backend.DataFrame do
   Default inspect implementation for backends.
   """
   def inspect(df, backend, n_rows, inspect_opts, opts \\ [])
-      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
+      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows) or is_binary(n_rows)) and
+             is_list(opts) do
     inspect_opts = %{inspect_opts | limit: @default_limit}
+    elide_columns? = Keyword.get(opts, :elide_columns, false)
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
 
-    cols_algebra =
-      for name <- DataFrame.names(df) do
-        series = df[name]
-
-        series =
-          case inspect_opts.limit do
-            :infinity -> series
-            limit when is_integer(limit) -> Series.slice(series, 0, limit + 1)
-          end
-
-        data =
-          series
-          |> Series.to_list()
-          |> Explorer.Shared.to_doc(inspect_opts)
-
-        type =
-          series
-          |> Series.dtype()
-          |> Explorer.Shared.dtype_to_string()
-
-        A.concat([
-          A.line(),
-          A.color("#{name} ", :map, inspect_opts),
-          A.color("#{type} ", :atom, inspect_opts),
-          data
-        ])
-      end
+    cols_algebra = build_cols_algebra(df, inspect_opts, elide_columns?)
+    df_info = if(elide_columns?, do: n_rows, else: "#{n_rows || "???"} x #{length(cols_algebra)}")
 
     A.concat([
       A.color(backend, :atom, inspect_opts),
       open,
-      "#{n_rows || "???"} x #{length(cols_algebra)}",
+      df_info,
       close,
       groups_algebra(df.groups, inspect_opts) | cols_algebra
     ])
+  end
+
+  defp build_cols_algebra(df, inspect_opts, true) do
+    for name <- DataFrame.names(df) do
+      type =
+        df
+        |> DataFrame.dtypes()
+        |> Map.get(name)
+        |> Explorer.Shared.dtype_to_string()
+
+      A.concat([
+        A.line(),
+        A.color("#{name} ", :map, inspect_opts),
+        A.color("#{type} ", :atom, inspect_opts),
+        "???"
+      ])
+    end
+  end
+
+  defp build_cols_algebra(df, inspect_opts, _elide_columns?) do
+    for name <- DataFrame.names(df) do
+      series = df[name]
+
+      series =
+        case inspect_opts.limit do
+          :infinity -> series
+          limit when is_integer(limit) -> Series.slice(series, 0, limit + 1)
+        end
+
+      data =
+        series
+        |> Series.to_list()
+        |> Explorer.Shared.to_doc(inspect_opts)
+
+      type =
+        series
+        |> Series.dtype()
+        |> Explorer.Shared.dtype_to_string()
+
+      A.concat([
+        A.line(),
+        A.color("#{name} ", :map, inspect_opts),
+        A.color("#{type} ", :atom, inspect_opts),
+        data
+      ])
+    end
   end
 
   defp groups_algebra([_ | _] = groups, opts),

@@ -227,8 +227,7 @@ defmodule Explorer.PolarsBackend.Shared do
   end
 
   def build_path_for_entry(%FSS.HTTP.Entry{} = entry) do
-    hash =
-      :crypto.hash(:sha256, entry.url) |> Base.url_encode64(padding: false)
+    hash = :crypto.hash(:sha256, entry.url) |> Base.url_encode64(padding: false)
 
     id = "http-file-#{hash}"
 
