@@ -198,6 +198,18 @@ defmodule Explorer.PolarsBackend.Shared do
       {:s, 64} ->
         Native.s_from_binary_i64(name, binary)
 
+      {:u, 8} ->
+        Native.s_from_binary_u8(name, binary)
+
+      {:u, 16} ->
+        Native.s_from_binary_u16(name, binary)
+
+      {:u, 32} ->
+        Native.s_from_binary_u32(name, binary)
+
+      {:u, 64} ->
+        Native.s_from_binary_u64(name, binary)
+
       {:f, 32} ->
         Native.s_from_binary_f32(name, binary)
 

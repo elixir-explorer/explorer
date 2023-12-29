@@ -5135,6 +5135,50 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(series) == [-2, 0, 3]
     end
 
+    test "64-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<3::unsigned-64-native, 0::unsigned-64-native, 1::unsigned-64-native>>,
+          :u64
+        )
+
+      assert series.dtype == {:u, 64}
+      assert Series.to_list(series) == [3, 0, 1]
+    end
+
+    test "32-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<1_234_567::unsigned-32-native, 0::unsigned-32-native, 1::unsigned-32-native>>,
+          :u32
+        )
+
+      assert series.dtype == {:u, 32}
+      assert Series.to_list(series) == [1_234_567, 0, 1]
+    end
+
+    test "16-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<14::unsigned-16-native, 0::unsigned-16-native, 12::unsigned-16-native>>,
+          :u16
+        )
+
+      assert series.dtype == {:u, 16}
+      assert Series.to_list(series) == [14, 0, 12]
+    end
+
+    test "8-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<255::unsigned-8-native, 0::unsigned-8-native, 3::unsigned-8-native>>,
+          :u8
+        )
+
+      assert series.dtype == {:u, 8}
+      assert Series.to_list(series) == [255, 0, 3]
+    end
+
     test "float 64" do
       series =
         Series.from_binary(
