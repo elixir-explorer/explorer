@@ -359,6 +359,8 @@ defmodule Explorer.PolarsBackend.Native do
   def s_from_list_of_series_as_structs(_name, _val), do: err()
   def s_from_binary_f32(_name, _val), do: err()
   def s_from_binary_f64(_name, _val), do: err()
+  def s_from_binary_i8(_name, _val), do: err()
+  def s_from_binary_i16(_name, _val), do: err()
   def s_from_binary_i32(_name, _val), do: err()
   def s_from_binary_i64(_name, _val), do: err()
   def s_from_binary_u8(_name, _val), do: err()

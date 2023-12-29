@@ -5091,7 +5091,7 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "from_binary/2" do
-    test "integer" do
+    test "64-bit signed integer" do
       series =
         Series.from_binary(
           <<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>,
@@ -5100,6 +5100,39 @@ defmodule Explorer.SeriesTest do
 
       assert series.dtype == {:s, 64}
       assert Series.to_list(series) == [-1, 0, 1]
+    end
+
+    test "32-bit signed integer" do
+      series =
+        Series.from_binary(
+          <<-1::signed-32-native, 0::signed-32-native, 1::signed-32-native>>,
+          :i32
+        )
+
+      assert series.dtype == {:s, 32}
+      assert Series.to_list(series) == [-1, 0, 1]
+    end
+
+    test "16-bit signed integer" do
+      series =
+        Series.from_binary(
+          <<-14::signed-16-native, 0::signed-16-native, 12::signed-16-native>>,
+          :i16
+        )
+
+      assert series.dtype == {:s, 16}
+      assert Series.to_list(series) == [-14, 0, 12]
+    end
+
+    test "8-bit signed integer" do
+      series =
+        Series.from_binary(
+          <<-2::signed-8-native, 0::signed-8-native, 3::signed-8-native>>,
+          :i8
+        )
+
+      assert series.dtype == {:s, 8}
+      assert Series.to_list(series) == [-2, 0, 3]
     end
 
     test "float 64" do

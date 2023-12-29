@@ -186,6 +186,15 @@ defmodule Explorer.PolarsBackend.Shared do
       {:duration, :nanosecond} ->
         Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
 
+      {:s, 8} ->
+        Native.s_from_binary_i8(name, binary)
+
+      {:s, 16} ->
+        Native.s_from_binary_i16(name, binary)
+
+      {:s, 32} ->
+        Native.s_from_binary_i32(name, binary)
+
       {:s, 64} ->
         Native.s_from_binary_i64(name, binary)
 

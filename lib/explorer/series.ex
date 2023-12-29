@@ -478,7 +478,8 @@ defmodule Explorer.Series do
     {_type, alignment} = dtype |> Shared.dtype_to_iotype!()
 
     if rem(bit_size(binary), alignment) != 0 do
-      raise ArgumentError, "binary for dtype #{dtype} is expected to be #{alignment}-bit aligned"
+      raise ArgumentError,
+            "binary for dtype #{Shared.dtype_to_string(dtype)} is expected to be #{alignment}-bit aligned"
     end
 
     backend = backend_from_options!(opts)
