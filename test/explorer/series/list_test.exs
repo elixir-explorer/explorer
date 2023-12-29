@@ -105,8 +105,7 @@ defmodule Explorer.Series.ListTest do
     end
 
     test "list of lists of booleans" do
-      series =
-        Series.from_list([[true], [false], [true, nil, false], []])
+      series = Series.from_list([[true], [false], [true, nil, false], []])
 
       assert series.dtype == {:list, :boolean}
       assert series[0] == [true]

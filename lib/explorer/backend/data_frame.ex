@@ -250,7 +250,8 @@ defmodule Explorer.Backend.DataFrame do
   Default inspect implementation for backends.
   """
   def inspect(df, backend, n_rows, inspect_opts, opts \\ [])
-      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows) or is_binary(n_rows)) and is_list(opts) do
+      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows) or is_binary(n_rows)) and
+             is_list(opts) do
     inspect_opts = %{inspect_opts | limit: @default_limit}
     elide_columns? = Keyword.get(opts, :elide_columns, false)
     open = A.color("[", :list, inspect_opts)

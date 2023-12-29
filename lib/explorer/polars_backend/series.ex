@@ -597,7 +597,9 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def inspect(series, opts) when node(series.data.resource) != node() do
-    Explorer.Backend.Series.inspect(series, "Polars", "node: #{node(series.data.resource)}", opts, elide_columns: true)
+    Explorer.Backend.Series.inspect(series, "Polars", "node: #{node(series.data.resource)}", opts,
+      elide_columns: true
+    )
   end
 
   def inspect(series, opts) do
