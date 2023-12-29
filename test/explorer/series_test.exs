@@ -255,7 +255,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with 32-bit integers" do
-      for dtype <- [:i32, {:s, 32}] do
+      for dtype <- [:s32, {:s, 32}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
 
         assert s[0] === -1
@@ -265,7 +265,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with 16-bit integers" do
-      for dtype <- [:i16, {:s, 16}] do
+      for dtype <- [:s16, {:s, 16}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
 
         assert s[0] === -1
@@ -275,7 +275,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with 8-bit integers" do
-      for dtype <- [:i8, {:s, 8}] do
+      for dtype <- [:s8, {:s, 8}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
 
         assert s[0] === -1
@@ -4987,11 +4987,67 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "to_iovec/1" do
-    test "integer" do
-      series = Series.from_list([-1, 0, 1])
+    test "64-bit signed integer" do
+      series = Series.from_list([-1, 0, 1], dtype: :s64)
 
       assert Series.to_iovec(series) == [
                <<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>
+             ]
+    end
+
+    test "32-bit signed integer" do
+      series = Series.from_list([-25, 0, 12], dtype: :s32)
+
+      assert Series.to_iovec(series) == [
+               <<-25::signed-32-native, 0::signed-32-native, 12::signed-32-native>>
+             ]
+    end
+
+    test "16-bit signed integer" do
+      series = Series.from_list([-73, 0, 19], dtype: :s16)
+
+      assert Series.to_iovec(series) == [
+               <<-73::signed-16-native, 0::signed-16-native, 19::signed-16-native>>
+             ]
+    end
+
+    test "8-bit signed integer" do
+      series = Series.from_list([-3, 0, 63], dtype: :s8)
+
+      assert Series.to_iovec(series) == [
+               <<-3::signed-8-native, 0::signed-8-native, 63::signed-8-native>>
+             ]
+    end
+
+    test "64-bit unsigned integer" do
+      series = Series.from_list([1_249_123, 0, 1], dtype: :u64)
+
+      assert Series.to_iovec(series) == [
+               <<1_249_123::unsigned-64-native, 0::unsigned-64-native, 1::unsigned-64-native>>
+             ]
+    end
+
+    test "32-bit unsigned integer" do
+      series = Series.from_list([25, 0, 12], dtype: :u32)
+
+      assert Series.to_iovec(series) == [
+               <<25::unsigned-32-native, 0::unsigned-32-native, 12::unsigned-32-native>>
+             ]
+    end
+
+    test "16-bit unsigned integer" do
+      series = Series.from_list([73, 0, 19], dtype: :u16)
+
+      assert Series.to_iovec(series) == [
+               <<73::unsigned-16-native, 0::unsigned-16-native, 19::unsigned-16-native>>
+             ]
+    end
+
+    test "8-bit unsigned integer" do
+      series = Series.from_list([3, 0, 63], dtype: :u8)
+
+      assert Series.to_iovec(series) == [
+               <<3::unsigned-8-native, 0::unsigned-8-native, 63::unsigned-8-native>>
              ]
     end
 
@@ -5091,7 +5147,7 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "from_binary/2" do
-    test "integer" do
+    test "64-bit signed integer" do
       series =
         Series.from_binary(
           <<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>,
@@ -5100,6 +5156,83 @@ defmodule Explorer.SeriesTest do
 
       assert series.dtype == {:s, 64}
       assert Series.to_list(series) == [-1, 0, 1]
+    end
+
+    test "32-bit signed integer" do
+      series =
+        Series.from_binary(
+          <<-1::signed-32-native, 0::signed-32-native, 1::signed-32-native>>,
+          :s32
+        )
+
+      assert series.dtype == {:s, 32}
+      assert Series.to_list(series) == [-1, 0, 1]
+    end
+
+    test "16-bit signed integer" do
+      series =
+        Series.from_binary(
+          <<-14::signed-16-native, 0::signed-16-native, 12::signed-16-native>>,
+          :s16
+        )
+
+      assert series.dtype == {:s, 16}
+      assert Series.to_list(series) == [-14, 0, 12]
+    end
+
+    test "8-bit signed integer" do
+      series =
+        Series.from_binary(
+          <<-2::signed-8-native, 0::signed-8-native, 3::signed-8-native>>,
+          :s8
+        )
+
+      assert series.dtype == {:s, 8}
+      assert Series.to_list(series) == [-2, 0, 3]
+    end
+
+    test "64-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<3::unsigned-64-native, 0::unsigned-64-native, 1::unsigned-64-native>>,
+          :u64
+        )
+
+      assert series.dtype == {:u, 64}
+      assert Series.to_list(series) == [3, 0, 1]
+    end
+
+    test "32-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<1_234_567::unsigned-32-native, 0::unsigned-32-native, 1::unsigned-32-native>>,
+          :u32
+        )
+
+      assert series.dtype == {:u, 32}
+      assert Series.to_list(series) == [1_234_567, 0, 1]
+    end
+
+    test "16-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<14::unsigned-16-native, 0::unsigned-16-native, 12::unsigned-16-native>>,
+          :u16
+        )
+
+      assert series.dtype == {:u, 16}
+      assert Series.to_list(series) == [14, 0, 12]
+    end
+
+    test "8-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<255::unsigned-8-native, 0::unsigned-8-native, 3::unsigned-8-native>>,
+          :u8
+        )
+
+      assert series.dtype == {:u, 8}
+      assert Series.to_list(series) == [255, 0, 3]
     end
 
     test "float 64" do
