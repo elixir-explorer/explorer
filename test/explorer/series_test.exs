@@ -255,7 +255,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with 32-bit integers" do
-      for dtype <- [:i32, {:s, 32}] do
+      for dtype <- [:s32, {:s, 32}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
 
         assert s[0] === -1
@@ -265,7 +265,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with 16-bit integers" do
-      for dtype <- [:i16, {:s, 16}] do
+      for dtype <- [:s16, {:s, 16}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
 
         assert s[0] === -1
@@ -275,7 +275,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with 8-bit integers" do
-      for dtype <- [:i8, {:s, 8}] do
+      for dtype <- [:s8, {:s, 8}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
 
         assert s[0] === -1
@@ -5162,7 +5162,7 @@ defmodule Explorer.SeriesTest do
       series =
         Series.from_binary(
           <<-1::signed-32-native, 0::signed-32-native, 1::signed-32-native>>,
-          :i32
+          :s32
         )
 
       assert series.dtype == {:s, 32}
@@ -5173,7 +5173,7 @@ defmodule Explorer.SeriesTest do
       series =
         Series.from_binary(
           <<-14::signed-16-native, 0::signed-16-native, 12::signed-16-native>>,
-          :i16
+          :s16
         )
 
       assert series.dtype == {:s, 16}
@@ -5184,7 +5184,7 @@ defmodule Explorer.SeriesTest do
       series =
         Series.from_binary(
           <<-2::signed-8-native, 0::signed-8-native, 3::signed-8-native>>,
-          :i8
+          :s8
         )
 
       assert series.dtype == {:s, 8}

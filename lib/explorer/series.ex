@@ -28,10 +28,10 @@ defmodule Explorer.Series do
     * The atom `:integer` as an alias for `{:s, 64}` to mirror Elixir's integers
     * There are serveral atoms to represent integer dtypes, and they also follow Nx naming for compatibility.
       They are the following:
-      * `i8` as alias to `{:s, 8}`
-      * `i16` as alias to `{:s, 16}`
-      * `i32` as alias to `{:s, 32}`
-      * `i64` as alias to `{:s, 64}`
+      * `s8` as alias to `{:s, 8}`
+      * `s16` as alias to `{:s, 16}`
+      * `s32` as alias to `{:s, 32}`
+      * `s64` as alias to `{:s, 64}`
       * `u8` as alias to `{:u, 8}`
       * `u16` as alias to `{:u, 16}`
       * `u32` as alias to `{:u, 32}`
@@ -427,7 +427,7 @@ defmodule Explorer.Series do
         boolean [true, false, true]
       >
 
-  Dates are encoded as i32 representing days from the Unix epoch (1970-01-01):
+  Dates are encoded as s32 representing days from the Unix epoch (1970-01-01):
 
       iex> binary = <<-719162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>
       iex> Explorer.Series.from_binary(binary, :date)
@@ -436,7 +436,7 @@ defmodule Explorer.Series do
         date [0001-01-01, 1970-01-01, 1986-10-13]
       >
 
-  Times are encoded as i64 representing nanoseconds from midnight:
+  Times are encoded as s64 representing nanoseconds from midnight:
 
       iex> binary = <<0::signed-64-native, 86399999999000::signed-64-native>>
       iex> Explorer.Series.from_binary(binary, :time)
@@ -445,7 +445,7 @@ defmodule Explorer.Series do
         time [00:00:00.000000, 23:59:59.999999]
       >
 
-  Datetimes are encoded as i64 representing microseconds from the Unix epoch (1970-01-01):
+  Datetimes are encoded as s64 representing microseconds from the Unix epoch (1970-01-01):
 
       iex> binary = <<0::signed-64-native, 529550625987654::signed-64-native>>
       iex> Explorer.Series.from_binary(binary, {:datetime, :microsecond})
@@ -710,19 +710,19 @@ defmodule Explorer.Series do
       iex> Explorer.Series.to_iovec(series)
       [<<1, 0, 1>>]
 
-  Dates are encoded as i32 representing days from the Unix epoch (1970-01-01):
+  Dates are encoded as s32 representing days from the Unix epoch (1970-01-01):
 
       iex> series = Explorer.Series.from_list([~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]])
       iex> Explorer.Series.to_iovec(series)
       [<<-719162::signed-32-native, 0::signed-32-native, 6129::signed-32-native>>]
 
-  Times are encoded as i64 representing nanoseconds from midnight:
+  Times are encoded as s64 representing nanoseconds from midnight:
 
       iex> series = Explorer.Series.from_list([~T[00:00:00.000000], ~T[23:59:59.999999]])
       iex> Explorer.Series.to_iovec(series)
       [<<0::signed-64-native, 86399999999000::signed-64-native>>]
 
-  Datetimes are encoded as i64 representing their precision from the Unix epoch (1970-01-01):
+  Datetimes are encoded as s64 representing their precision from the Unix epoch (1970-01-01):
 
       iex> series = Explorer.Series.from_list([~N[0001-01-01 00:00:00], ~N[1970-01-01 00:00:00], ~N[1986-10-13 01:23:45.987654]])
       iex> Explorer.Series.to_iovec(series)

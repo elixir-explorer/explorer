@@ -64,11 +64,11 @@ defmodule Explorer.Shared do
 
   def normalise_dtype(dtype) when dtype in @scalar_types, do: dtype
   def normalise_dtype(dtype) when dtype in [:float, :f64], do: {:f, 64}
-  def normalise_dtype(dtype) when dtype in [:integer, :i64, :s64], do: {:s, 64}
+  def normalise_dtype(dtype) when dtype in [:integer, :s64], do: {:s, 64}
   def normalise_dtype(:f32), do: {:f, 32}
-  def normalise_dtype(dtype) when dtype in [:i8, :s8], do: {:s, 8}
-  def normalise_dtype(dtype) when dtype in [:i16, :s16], do: {:s, 16}
-  def normalise_dtype(dtype) when dtype in [:i32, :s32], do: {:s, 32}
+  def normalise_dtype(:s8), do: {:s, 8}
+  def normalise_dtype(:s16), do: {:s, 16}
+  def normalise_dtype(:s32), do: {:s, 32}
   def normalise_dtype(:u8), do: {:u, 8}
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
