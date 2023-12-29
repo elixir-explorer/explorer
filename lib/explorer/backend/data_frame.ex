@@ -250,20 +250,14 @@ defmodule Explorer.Backend.DataFrame do
   Default inspect implementation for backends.
   """
   def inspect(df, backend, n_rows, inspect_opts, opts \\ [])
-      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
+      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows) or is_binary(n_rows)) and is_list(opts) do
     inspect_opts = %{inspect_opts | limit: @default_limit}
-    from_another_node? = Keyword.get(opts, :from_another_node, false)
+    elide_columns? = Keyword.get(opts, :elide_columns, false)
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
 
-    cols_algebra = build_cols_algebra(df, inspect_opts, from_another_node?)
-
-    df_info =
-      if from_another_node? do
-        "node: #{node(df.data.resource)}"
-      else
-        "#{n_rows || "???"} x #{length(cols_algebra)}"
-      end
+    cols_algebra = build_cols_algebra(df, inspect_opts, elide_columns?)
+    df_info = if(elide_columns?, do: n_rows, else: "#{n_rows || "???"} x #{length(cols_algebra)}")
 
     A.concat([
       A.color(backend, :atom, inspect_opts),
@@ -291,7 +285,7 @@ defmodule Explorer.Backend.DataFrame do
     end
   end
 
-  defp build_cols_algebra(df, inspect_opts, _from_another_node?) do
+  defp build_cols_algebra(df, inspect_opts, _elide_columns?) do
     for name <- DataFrame.names(df) do
       series = df[name]
 

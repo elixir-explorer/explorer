@@ -320,8 +320,8 @@ defmodule Explorer.Backend.Series do
   Default inspect implementation for backends.
   """
   def inspect(series, backend, n_rows, inspect_opts, opts \\ [])
-      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
-    from_another_node? = Keyword.get(opts, :from_another_node, false)
+      when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows) or is_binary(n_rows)) and is_list(opts) do
+    elide_columns? = Keyword.get(opts, :elide_columns, false)
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
 
@@ -332,19 +332,12 @@ defmodule Explorer.Backend.Series do
 
     dtype = A.color("#{type} ", :atom, inspect_opts)
 
-    series_info =
-      if from_another_node? do
-        "node: #{node(series.data.resource)}"
-      else
-        "#{n_rows || "???"}"
-      end
-
-    data = build_series_data(series, inspect_opts, from_another_node?)
+    data = build_series_data(series, inspect_opts, elide_columns?)
 
     A.concat([
       A.color(backend, :atom, inspect_opts),
       open,
-      series_info,
+      "#{n_rows || "???"}",
       close,
       A.line(),
       dtype,
@@ -356,7 +349,7 @@ defmodule Explorer.Backend.Series do
     "???"
   end
 
-  defp build_series_data(series, inspect_opts, _from_another_node?) do
+  defp build_series_data(series, inspect_opts, _elide_columns?) do
     series =
       case inspect_opts.limit do
         :infinity -> series
