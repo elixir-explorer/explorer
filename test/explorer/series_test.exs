@@ -4987,11 +4987,67 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "to_iovec/1" do
-    test "integer" do
-      series = Series.from_list([-1, 0, 1])
+    test "64-bit signed integer" do
+      series = Series.from_list([-1, 0, 1], dtype: :s64)
 
       assert Series.to_iovec(series) == [
                <<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>
+             ]
+    end
+
+    test "32-bit signed integer" do
+      series = Series.from_list([-25, 0, 12], dtype: :s32)
+
+      assert Series.to_iovec(series) == [
+               <<-25::signed-32-native, 0::signed-32-native, 12::signed-32-native>>
+             ]
+    end
+
+    test "16-bit signed integer" do
+      series = Series.from_list([-73, 0, 19], dtype: :s16)
+
+      assert Series.to_iovec(series) == [
+               <<-73::signed-16-native, 0::signed-16-native, 19::signed-16-native>>
+             ]
+    end
+
+    test "8-bit signed integer" do
+      series = Series.from_list([-3, 0, 63], dtype: :s8)
+
+      assert Series.to_iovec(series) == [
+               <<-3::signed-8-native, 0::signed-8-native, 63::signed-8-native>>
+             ]
+    end
+
+    test "64-bit unsigned integer" do
+      series = Series.from_list([1249123, 0, 1], dtype: :u64)
+
+      assert Series.to_iovec(series) == [
+               <<1249123::unsigned-64-native, 0::unsigned-64-native, 1::unsigned-64-native>>
+             ]
+    end
+
+    test "32-bit unsigned integer" do
+      series = Series.from_list([25, 0, 12], dtype: :u32)
+
+      assert Series.to_iovec(series) == [
+               <<25::unsigned-32-native, 0::unsigned-32-native, 12::unsigned-32-native>>
+             ]
+    end
+
+    test "16-bit unsigned integer" do
+      series = Series.from_list([73, 0, 19], dtype: :u16)
+
+      assert Series.to_iovec(series) == [
+               <<73::unsigned-16-native, 0::unsigned-16-native, 19::unsigned-16-native>>
+             ]
+    end
+
+    test "8-bit unsigned integer" do
+      series = Series.from_list([3, 0, 63], dtype: :u8)
+
+      assert Series.to_iovec(series) == [
+               <<3::unsigned-8-native, 0::unsigned-8-native, 63::unsigned-8-native>>
              ]
     end
 
