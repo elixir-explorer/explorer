@@ -5020,10 +5020,10 @@ defmodule Explorer.SeriesTest do
     end
 
     test "64-bit unsigned integer" do
-      series = Series.from_list([1249123, 0, 1], dtype: :u64)
+      series = Series.from_list([1_249_123, 0, 1], dtype: :u64)
 
       assert Series.to_iovec(series) == [
-               <<1249123::unsigned-64-native, 0::unsigned-64-native, 1::unsigned-64-native>>
+               <<1_249_123::unsigned-64-native, 0::unsigned-64-native, 1::unsigned-64-native>>
              ]
     end
 
