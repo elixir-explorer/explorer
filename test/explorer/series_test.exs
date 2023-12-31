@@ -4722,12 +4722,11 @@ defmodule Explorer.SeriesTest do
     test "replaces all occurences of pattern in string by replacement string" do
       series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
 
-      assert Series.replace(series, ",", "") |> Series.to_list() == [
-               "1200",
-               "1234567",
-               "asdf",
-               nil
-             ]
+      assert Series.replace(series, ",", "") |> Series.to_list() ==
+               ["1200", "1234567", "asdf", nil]
+
+      assert Series.replace(series, "[,]", "") |> Series.to_list() ==
+               ["1,200", "1,234,567", "asdf", nil]
     end
 
     test "doesn't work with non string series" do

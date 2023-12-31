@@ -1514,7 +1514,7 @@ pub fn s_replace(
     replacement: &str,
 ) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(
-        s1.utf8()?.replace_all(pattern, replacement)?.into(),
+        s1.utf8()?.replace_literal_all(pattern, replacement)?.into(),
     ))
 }
 
