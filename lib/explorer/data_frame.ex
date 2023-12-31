@@ -543,6 +543,9 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:encoding` - Encoding to use when reading the file. For now, the only possible values are `utf8` and `utf8-lossy`.
+      The utf8-lossy option means that invalid utf8 values are replaced with � characters. (default: `"utf8"`)
+
   """
   @doc type: :io
   @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
@@ -627,6 +630,7 @@ defmodule Explorer.DataFrame do
     * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
     * `:lazy` - force the results into the lazy version of the current backend.
+    * `:encoding` - Encoding to use when reading the file. For now, the only possible values are `utf8` and `utf8-lossy`. The utf8-lossy option means that invalid utf8 values are replaced with � characters. (default: `"utf8"`)
   """
   @doc type: :io
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
