@@ -34,7 +34,7 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([1, 2, 3])
 
       assert Series.to_list(s) === [1, 2, 3]
-      assert Series.dtype(s) == :integer
+      assert Series.dtype(s) == {:s, 64}
     end
 
     test "with floats" do
@@ -255,7 +255,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with 32-bit integers" do
-      for dtype <- [:i32, {:s, 32}] do
+      for dtype <- [:s32, {:s, 32}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
 
         assert s[0] === -1
@@ -265,7 +265,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with 16-bit integers" do
-      for dtype <- [:i16, {:s, 16}] do
+      for dtype <- [:s16, {:s, 16}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
 
         assert s[0] === -1
@@ -275,7 +275,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with 8-bit integers" do
-      for dtype <- [:i8, {:s, 8}] do
+      for dtype <- [:s8, {:s, 8}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
 
         assert s[0] === -1
@@ -609,7 +609,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, nil, 4])
 
       assert_raise ArgumentError,
-                   "fill_missing with :nan values require a float series, got :integer",
+                   "fill_missing with :nan values require a float series, got {:s, 64}",
                    fn -> Series.fill_missing(s1, :nan) end
     end
 
@@ -622,7 +622,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, nil, 4])
 
       assert_raise ArgumentError,
-                   "fill_missing with :infinity values require a float series, got :integer",
+                   "fill_missing with :infinity values require a float series, got {:s, 64}",
                    fn -> Series.fill_missing(s1, :infinity) end
     end
 
@@ -637,7 +637,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, nil, 4])
 
       assert_raise ArgumentError,
-                   "fill_missing with :neg_infinity values require a float series, got :integer",
+                   "fill_missing with :neg_infinity values require a float series, got {:s, 64}",
                    fn -> Series.fill_missing(s1, :neg_infinity) end
     end
   end
@@ -1514,7 +1514,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.add(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [5, 7, 9]
     end
 
@@ -1533,7 +1533,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.add(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [-1, 0, 1]
     end
 
@@ -1633,7 +1633,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.subtract(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [-3, -3, -3]
     end
 
@@ -1652,7 +1652,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.subtract(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [3, 4, 5]
     end
 
@@ -1744,7 +1744,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.multiply(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [4, 10, 18]
     end
 
@@ -1763,7 +1763,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [-2, -4, -6]
     end
 
@@ -1772,7 +1772,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.multiply(-2, s1)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [-2, -4, -6]
     end
 
@@ -1968,7 +1968,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.quotient(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [5, 5, 7]
     end
 
@@ -1977,7 +1977,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.quotient(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [-5, -5, -7]
     end
 
@@ -1986,7 +1986,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.quotient(101, s1)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [10, 5, 4]
     end
   end
@@ -1998,7 +1998,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.remainder(s1, s2)
 
-      assert s3.dtype == :integer
+      assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [0, 1, 1]
     end
 
@@ -2007,7 +2007,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.remainder(s1, -2)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [0, 1, 1]
     end
 
@@ -2016,7 +2016,7 @@ defmodule Explorer.SeriesTest do
 
       s2 = Series.remainder(101, s1)
 
-      assert s2.dtype == :integer
+      assert s2.dtype == {:s, 64}
       assert Series.to_list(s2) == [1, 1, 1]
     end
   end
@@ -2028,7 +2028,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, 4, 3]
     end
 
@@ -2067,7 +2067,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2077,7 +2077,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2087,7 +2087,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2096,7 +2096,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, 4, 9]
     end
 
@@ -2158,7 +2158,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(2, s1)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [2, 4, 8]
     end
 
@@ -2175,7 +2175,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(-2, s1)
 
-      assert result.dtype == :integer
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [-2, 4, -8]
     end
 
@@ -3537,7 +3537,7 @@ defmodule Explorer.SeriesTest do
 
       assert Series.size(s3) == 6
       assert Series.to_list(s3) == [1, 2, 3, 4, 5, 6]
-      assert Series.dtype(s3) == :integer
+      assert Series.dtype(s3) == {:s, 64}
     end
 
     test "concat float series" do
@@ -3567,7 +3567,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list(["a", "b", "c"])
 
       error_message =
-        "cannot concatenate series with mismatched dtypes: [:integer, :string]. " <>
+        "cannot concatenate series with mismatched dtypes: [{:s, 64}, :string]. " <>
           "First cast the series to the desired dtype."
 
       assert_raise ArgumentError, error_message, fn ->
@@ -4445,7 +4445,14 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([-50, 5, nil, 50])
       clipped1 = Series.clip(s1, 1, 10)
       assert Series.to_list(clipped1) == [1, 5, nil, 10]
-      assert clipped1.dtype == :integer
+      assert clipped1.dtype == {:s, 64}
+    end
+
+    test "with unsigned integers" do
+      s1 = Series.from_list([1, 5, nil, 50], dtype: :u16)
+      clipped1 = Series.clip(s1, 3, 10)
+      assert Series.to_list(clipped1) == [3, 5, nil, 10]
+      assert clipped1.dtype == {:u, 16}
     end
 
     test "with regular floats" do
@@ -4477,8 +4484,7 @@ defmodule Explorer.SeriesTest do
 
       assert_raise ArgumentError,
                    "Explorer.Series.clip/3 not implemented for dtype :string. " <>
-                     "Valid dtypes are [{:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, :integer, " <>
-                     "{:u, 8}, {:u, 16}, {:u, 32}, {:u, 64}, {:f, 32}, {:f, 64}]",
+                     "Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}",
                    fn -> Series.clip(Series.from_list(["a"]), 1, 10) end
     end
   end
@@ -4732,19 +4738,18 @@ defmodule Explorer.SeriesTest do
     test "replaces all occurences of pattern in string by replacement string" do
       series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
 
-      assert Series.replace(series, ",", "") |> Series.to_list() == [
-               "1200",
-               "1234567",
-               "asdf",
-               nil
-             ]
+      assert Series.replace(series, ",", "") |> Series.to_list() ==
+               ["1200", "1234567", "asdf", nil]
+
+      assert Series.replace(series, "[,]", "") |> Series.to_list() ==
+               ["1,200", "1,234,567", "asdf", nil]
     end
 
     test "doesn't work with non string series" do
       series = Series.from_list([1200, 1_234_567, nil])
 
       assert_raise ArgumentError,
-                   "Explorer.Series.replace/3 not implemented for dtype :integer. Valid dtypes are [:string]",
+                   "Explorer.Series.replace/3 not implemented for dtype {:s, 64}. Valid dtype is :string",
                    fn -> Series.replace(series, ",", "") end
     end
 
@@ -4997,11 +5002,67 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "to_iovec/1" do
-    test "integer" do
-      series = Series.from_list([-1, 0, 1])
+    test "64-bit signed integer" do
+      series = Series.from_list([-1, 0, 1], dtype: :s64)
 
       assert Series.to_iovec(series) == [
                <<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>
+             ]
+    end
+
+    test "32-bit signed integer" do
+      series = Series.from_list([-25, 0, 12], dtype: :s32)
+
+      assert Series.to_iovec(series) == [
+               <<-25::signed-32-native, 0::signed-32-native, 12::signed-32-native>>
+             ]
+    end
+
+    test "16-bit signed integer" do
+      series = Series.from_list([-73, 0, 19], dtype: :s16)
+
+      assert Series.to_iovec(series) == [
+               <<-73::signed-16-native, 0::signed-16-native, 19::signed-16-native>>
+             ]
+    end
+
+    test "8-bit signed integer" do
+      series = Series.from_list([-3, 0, 63], dtype: :s8)
+
+      assert Series.to_iovec(series) == [
+               <<-3::signed-8-native, 0::signed-8-native, 63::signed-8-native>>
+             ]
+    end
+
+    test "64-bit unsigned integer" do
+      series = Series.from_list([1_249_123, 0, 1], dtype: :u64)
+
+      assert Series.to_iovec(series) == [
+               <<1_249_123::unsigned-64-native, 0::unsigned-64-native, 1::unsigned-64-native>>
+             ]
+    end
+
+    test "32-bit unsigned integer" do
+      series = Series.from_list([25, 0, 12], dtype: :u32)
+
+      assert Series.to_iovec(series) == [
+               <<25::unsigned-32-native, 0::unsigned-32-native, 12::unsigned-32-native>>
+             ]
+    end
+
+    test "16-bit unsigned integer" do
+      series = Series.from_list([73, 0, 19], dtype: :u16)
+
+      assert Series.to_iovec(series) == [
+               <<73::unsigned-16-native, 0::unsigned-16-native, 19::unsigned-16-native>>
+             ]
+    end
+
+    test "8-bit unsigned integer" do
+      series = Series.from_list([3, 0, 63], dtype: :u8)
+
+      assert Series.to_iovec(series) == [
+               <<3::unsigned-8-native, 0::unsigned-8-native, 63::unsigned-8-native>>
              ]
     end
 
@@ -5087,7 +5148,7 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list([[-1], [0, 1]])
 
       assert_raise ArgumentError,
-                   "cannot convert series of dtype {:list, :integer} into iovec",
+                   "cannot convert series of dtype {:list, {:s, 64}} into iovec",
                    fn -> Series.to_iovec(series) end
     end
 
@@ -5095,21 +5156,98 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list([%{a: 1}, %{a: 2}])
 
       assert_raise ArgumentError,
-                   ~S'cannot convert series of dtype {:struct, %{"a" => :integer}} into iovec',
+                   ~S'cannot convert series of dtype {:struct, %{"a" => {:s, 64}}} into iovec',
                    fn -> Series.to_iovec(series) end
     end
   end
 
   describe "from_binary/2" do
-    test "integer" do
+    test "64-bit signed integer" do
       series =
         Series.from_binary(
           <<-1::signed-64-native, 0::signed-64-native, 1::signed-64-native>>,
           :integer
         )
 
-      assert series.dtype == :integer
+      assert series.dtype == {:s, 64}
       assert Series.to_list(series) == [-1, 0, 1]
+    end
+
+    test "32-bit signed integer" do
+      series =
+        Series.from_binary(
+          <<-1::signed-32-native, 0::signed-32-native, 1::signed-32-native>>,
+          :s32
+        )
+
+      assert series.dtype == {:s, 32}
+      assert Series.to_list(series) == [-1, 0, 1]
+    end
+
+    test "16-bit signed integer" do
+      series =
+        Series.from_binary(
+          <<-14::signed-16-native, 0::signed-16-native, 12::signed-16-native>>,
+          :s16
+        )
+
+      assert series.dtype == {:s, 16}
+      assert Series.to_list(series) == [-14, 0, 12]
+    end
+
+    test "8-bit signed integer" do
+      series =
+        Series.from_binary(
+          <<-2::signed-8-native, 0::signed-8-native, 3::signed-8-native>>,
+          :s8
+        )
+
+      assert series.dtype == {:s, 8}
+      assert Series.to_list(series) == [-2, 0, 3]
+    end
+
+    test "64-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<3::unsigned-64-native, 0::unsigned-64-native, 1::unsigned-64-native>>,
+          :u64
+        )
+
+      assert series.dtype == {:u, 64}
+      assert Series.to_list(series) == [3, 0, 1]
+    end
+
+    test "32-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<1_234_567::unsigned-32-native, 0::unsigned-32-native, 1::unsigned-32-native>>,
+          :u32
+        )
+
+      assert series.dtype == {:u, 32}
+      assert Series.to_list(series) == [1_234_567, 0, 1]
+    end
+
+    test "16-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<14::unsigned-16-native, 0::unsigned-16-native, 12::unsigned-16-native>>,
+          :u16
+        )
+
+      assert series.dtype == {:u, 16}
+      assert Series.to_list(series) == [14, 0, 12]
+    end
+
+    test "8-bit unsigned integer" do
+      series =
+        Series.from_binary(
+          <<255::unsigned-8-native, 0::unsigned-8-native, 3::unsigned-8-native>>,
+          :u8
+        )
+
+      assert series.dtype == {:u, 8}
+      assert Series.to_list(series) == [255, 0, 3]
     end
 
     test "float 64" do
@@ -5176,6 +5314,60 @@ defmodule Explorer.SeriesTest do
                ~N[1970-01-01 00:00:00],
                ~N[1986-10-13 01:23:45.987654]
              ]
+    end
+  end
+
+  describe "frequencies/1" do
+    test "integer" do
+      s = Series.from_list([1, 2, 3, 1, 3, 4, 1, 5, 6, 1, 2])
+
+      df = Series.frequencies(s)
+
+      assert Series.dtype(df[:values]) == {:s, 64}
+      assert Series.dtype(df[:counts]) == {:s, 64}
+
+      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+               values: [1, 2, 3, 4, 5, 6],
+               counts: [4, 2, 2, 1, 1, 1]
+             }
+    end
+
+    test "string" do
+      s = Series.from_list(["a", "a", "b", "c", "c", "c"])
+
+      df = Series.frequencies(s)
+
+      assert Series.dtype(df[:values]) == :string
+      assert Series.dtype(df[:counts]) == {:s, 64}
+
+      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+               values: ["c", "a", "b"],
+               counts: [3, 2, 1]
+             }
+    end
+
+    test "list of integer" do
+      s = Series.from_list([[1, 2], [3, 1, 3], [4, 1], [5, 6], [1, 2], [4, 1]])
+
+      df = Series.frequencies(s)
+
+      assert Series.dtype(df[:values]) == {:list, {:s, 64}}
+      assert Series.dtype(df[:counts]) == {:s, 64}
+
+      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+               values: [[1, 2], [4, 1], [3, 1, 3], [5, 6]],
+               counts: [2, 2, 1, 1]
+             }
+    end
+
+    test "list of list of string" do
+      s = Series.from_list([["a"], ["a", "b"], ["c"], ["c"], ["c"]])
+
+      assert_raise ArgumentError,
+                   "frequencies/1 only works with series of lists of numeric types, but list[string] was given",
+                   fn ->
+                     Series.frequencies(s)
+                   end
     end
   end
 end

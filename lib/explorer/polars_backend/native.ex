@@ -91,6 +91,7 @@ defmodule Explorer.PolarsBackend.Native do
         _has_header,
         _stop_after_n_rows,
         _skip_rows,
+        _skip_rows_after_header,
         _projection,
         _sep,
         _rechunk,
@@ -127,6 +128,7 @@ defmodule Explorer.PolarsBackend.Native do
         _has_header,
         _stop_after_n_rows,
         _skip_rows,
+        _skip_rows_after_header,
         _projection,
         _sep,
         _rechunk,
@@ -234,6 +236,7 @@ defmodule Explorer.PolarsBackend.Native do
         _has_header,
         _stop_after_n_rows,
         _skip_rows,
+        _skip_rows_after_header,
         _sep,
         _rechunk,
         _dtypes,
@@ -341,10 +344,10 @@ defmodule Explorer.PolarsBackend.Native do
   def s_from_list_duration(_name, _val, _precision), do: err()
   def s_from_list_f32(_name, _val), do: err()
   def s_from_list_f64(_name, _val), do: err()
-  def s_from_list_i8(_name, _val), do: err()
-  def s_from_list_i16(_name, _val), do: err()
-  def s_from_list_i32(_name, _val), do: err()
-  def s_from_list_i64(_name, _val), do: err()
+  def s_from_list_s8(_name, _val), do: err()
+  def s_from_list_s16(_name, _val), do: err()
+  def s_from_list_s32(_name, _val), do: err()
+  def s_from_list_s64(_name, _val), do: err()
   def s_from_list_u8(_name, _val), do: err()
   def s_from_list_u16(_name, _val), do: err()
   def s_from_list_u32(_name, _val), do: err()
@@ -356,9 +359,14 @@ defmodule Explorer.PolarsBackend.Native do
   def s_from_list_of_series_as_structs(_name, _val), do: err()
   def s_from_binary_f32(_name, _val), do: err()
   def s_from_binary_f64(_name, _val), do: err()
-  def s_from_binary_i32(_name, _val), do: err()
-  def s_from_binary_i64(_name, _val), do: err()
+  def s_from_binary_s8(_name, _val), do: err()
+  def s_from_binary_s16(_name, _val), do: err()
+  def s_from_binary_s32(_name, _val), do: err()
+  def s_from_binary_s64(_name, _val), do: err()
   def s_from_binary_u8(_name, _val), do: err()
+  def s_from_binary_u16(_name, _val), do: err()
+  def s_from_binary_u32(_name, _val), do: err()
+  def s_from_binary_u64(_name, _val), do: err()
   def s_not_equal(_s, _rhs), do: err()
   def s_or(_s, _s2), do: err()
   def s_peak_max(_s), do: err()

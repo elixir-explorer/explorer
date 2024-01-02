@@ -30,6 +30,7 @@ pub fn df_from_csv(
     has_header: bool,
     stop_after_n_rows: Option<usize>,
     skip_rows: usize,
+    skip_rows_after_header: usize,
     projection: Option<Vec<usize>>,
     delimiter_as_byte: u8,
     do_rechunk: bool,
@@ -53,6 +54,7 @@ pub fn df_from_csv(
         .with_n_rows(stop_after_n_rows)
         .with_separator(delimiter_as_byte)
         .with_skip_rows(skip_rows)
+        .with_skip_rows_after_header(skip_rows_after_header)
         .with_projection(projection)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
@@ -136,6 +138,7 @@ pub fn df_load_csv(
     has_header: bool,
     stop_after_n_rows: Option<usize>,
     skip_rows: usize,
+    skip_rows_after_header: usize,
     projection: Option<Vec<usize>>,
     delimiter_as_byte: u8,
     do_rechunk: bool,
@@ -160,6 +163,7 @@ pub fn df_load_csv(
         .with_n_rows(stop_after_n_rows)
         .with_separator(delimiter_as_byte)
         .with_skip_rows(skip_rows)
+        .with_skip_rows_after_header(skip_rows_after_header)
         .with_projection(projection)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)

@@ -14,6 +14,9 @@ defmodule Explorer.PolarsBackend.Series do
   defguardp is_non_finite(n) when n in [:nan, :infinity, :neg_infinity]
   defguardp is_numeric(n) when is_number(n) or is_non_finite(n)
 
+  @integer_types Explorer.Shared.integer_types()
+  @numeric_types Explorer.Shared.numeric_types()
+
   # Conversion
 
   @impl true
@@ -66,8 +69,8 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_categories)
 
   @impl true
-  def categorise(%Series{dtype: :integer} = series, %Series{dtype: dtype} = categories)
-      when dtype in [:string, :category],
+  def categorise(%Series{dtype: {integer_type, _}} = series, %Series{dtype: dtype} = categories)
+      when dtype in [:string, :category] and integer_type in [:s, :u],
       do: Shared.apply_series(series, :s_categorise, [categories.data])
 
   @impl true
@@ -324,8 +327,8 @@ defmodule Explorer.PolarsBackend.Series do
   def abs(%Series{} = s), do: Shared.apply_series(s, :s_abs, [])
 
   @impl true
-  def clip(%Series{dtype: :integer} = s, min, max)
-      when is_integer(min) and is_integer(max),
+  def clip(%Series{dtype: dtype} = s, min, max)
+      when dtype in @integer_types and is_integer(min) and is_integer(max),
       do: Shared.apply_series(s, :s_clip_integer, [min, max])
 
   def clip(%Series{} = s, min, max),
@@ -445,7 +448,13 @@ defmodule Explorer.PolarsBackend.Series do
   def n_distinct(series), do: Shared.apply_series(series, :s_n_distinct)
 
   @impl true
-  def frequencies(series) do
+  def frequencies(%Series{dtype: {:list, inner_dtype} = dtype})
+      when inner_dtype not in @numeric_types do
+    raise ArgumentError,
+          "frequencies/1 only works with series of lists of numeric types, but #{Explorer.Shared.dtype_to_string(dtype)} was given"
+  end
+
+  def frequencies(%Series{} = series) do
     Shared.apply(:s_frequencies, [series.data])
     |> Shared.create_dataframe()
     |> DataFrame.rename(["values", "counts"])
@@ -587,6 +596,12 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
+  def inspect(series, opts) when node(series.data.resource) != node() do
+    Explorer.Backend.Series.inspect(series, "Polars", "node: #{node(series.data.resource)}", opts,
+      elide_columns: true
+    )
+  end
+
   def inspect(series, opts) do
     Explorer.Backend.Series.inspect(series, "Polars", Series.size(series), opts)
   end

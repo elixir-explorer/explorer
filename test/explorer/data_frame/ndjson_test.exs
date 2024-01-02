@@ -122,7 +122,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
     end
 
     test "structs" do
-      assert_ndjson({:struct, %{"a" => :integer}}, [%{a: 1}], %{"a" => 1})
+      assert_ndjson({:struct, %{"a" => {:s, 64}}}, [%{a: 1}], %{"a" => 1})
     end
 
     # test "date" do
@@ -143,7 +143,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
       assert {:ok, df} = DF.from_ndjson(ndjson_path)
 
       assert DF.names(df) == ~w[a b c d]
-      assert DF.dtypes(df) == %{"a" => :integer, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
+      assert DF.dtypes(df) == %{"a" => {:s, 64}, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
 
       sliced = DF.slice(df, 0, 5)
 
@@ -164,7 +164,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
       assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, batch_size: 3)
 
       assert DF.names(df) == ~w[a b c d]
-      assert DF.dtypes(df) == %{"a" => :integer, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
+      assert DF.dtypes(df) == %{"a" => {:s, 64}, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
     end
 
     defp to_ndjson(tmp_dir) do

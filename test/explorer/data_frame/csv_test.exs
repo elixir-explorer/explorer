@@ -97,8 +97,8 @@ defmodule Explorer.DataFrame.CSVTest do
 
   describe "dtypes" do
     test "integer" do
-      assert_csv(:integer, "100", 100)
-      assert_csv(:integer, "-101", -101)
+      assert_csv({:s, 64}, "100", 100)
+      assert_csv({:s, 64}, "-101", -101)
     end
 
     test "float" do
@@ -364,6 +364,41 @@ defmodule Explorer.DataFrame.CSVTest do
       assert DF.to_columns(df, atom_keys: true) == %{
                c: ["e"],
                d: ["f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "skip_rows_after_header", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        """)
+
+      df = DF.from_csv!(csv, skip_rows_after_header: 1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: ["e"],
+               b: ["f"]
+             }
+    end
+
+    @tag :tmp_dir
+    test "skip_rows with skip_rows_after_header", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        a,b
+        c,d
+        e,f
+        g,h
+        """)
+
+      df = DF.from_csv!(csv, skip_rows: 1, skip_rows_after_header: 1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               c: ["g"],
+               d: ["h"]
              }
     end
 

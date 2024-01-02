@@ -132,12 +132,11 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def from_list(list, dtype, name) when is_list(list) do
     case dtype do
-      :integer -> Native.s_from_list_i64(name, list)
       # Signed integers
-      {:s, 8} -> Native.s_from_list_i8(name, list)
-      {:s, 16} -> Native.s_from_list_i16(name, list)
-      {:s, 32} -> Native.s_from_list_i32(name, list)
-      {:s, 64} -> Native.s_from_list_i64(name, list)
+      {:s, 8} -> Native.s_from_list_s8(name, list)
+      {:s, 16} -> Native.s_from_list_s16(name, list)
+      {:s, 32} -> Native.s_from_list_s32(name, list)
+      {:s, 64} -> Native.s_from_list_s64(name, list)
       # Unsigned integers
       {:u, 8} -> Native.s_from_list_u8(name, list)
       {:u, 16} -> Native.s_from_list_u16(name, list)
@@ -157,37 +156,59 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
+  # TODO: add more integer dtypes support
   def from_binary(binary, dtype, name \\ "") when is_binary(binary) do
     case dtype do
       :boolean ->
         Native.s_from_binary_u8(name, binary) |> Native.s_cast(dtype) |> ok()
 
       :date ->
-        Native.s_from_binary_i32(name, binary) |> Native.s_cast(dtype) |> ok()
+        Native.s_from_binary_s32(name, binary) |> Native.s_cast(dtype) |> ok()
 
       :time ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
+        Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:datetime, :millisecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
+        Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:datetime, :microsecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
+        Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:datetime, :nanosecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
+        Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:duration, :millisecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
+        Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:duration, :microsecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
+        Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:duration, :nanosecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
+        Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
-      :integer ->
-        Native.s_from_binary_i64(name, binary)
+      {:s, 8} ->
+        Native.s_from_binary_s8(name, binary)
+
+      {:s, 16} ->
+        Native.s_from_binary_s16(name, binary)
+
+      {:s, 32} ->
+        Native.s_from_binary_s32(name, binary)
+
+      {:s, 64} ->
+        Native.s_from_binary_s64(name, binary)
+
+      {:u, 8} ->
+        Native.s_from_binary_u8(name, binary)
+
+      {:u, 16} ->
+        Native.s_from_binary_u16(name, binary)
+
+      {:u, 32} ->
+        Native.s_from_binary_u32(name, binary)
+
+      {:u, 64} ->
+        Native.s_from_binary_u64(name, binary)
 
       {:f, 32} ->
         Native.s_from_binary_f32(name, binary)
@@ -227,8 +248,7 @@ defmodule Explorer.PolarsBackend.Shared do
   end
 
   def build_path_for_entry(%FSS.HTTP.Entry{} = entry) do
-    hash =
-      :crypto.hash(:sha256, entry.url) |> Base.url_encode64(padding: false)
+    hash = :crypto.hash(:sha256, entry.url) |> Base.url_encode64(padding: false)
 
     id = "http-file-#{hash}"
 

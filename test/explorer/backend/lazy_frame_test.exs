@@ -10,7 +10,7 @@ defmodule Explorer.Backend.LazyFrameTest do
              """
              #Explorer.DataFrame<
                LazyFrame[??? x 2]
-               a integer
+               a s64
                b f64
              >\
              """

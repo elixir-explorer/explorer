@@ -31,10 +31,10 @@ macro_rules! from_list {
     };
 }
 
-from_list!(s_from_list_i8, i8);
-from_list!(s_from_list_i16, i16);
-from_list!(s_from_list_i32, i32);
-from_list!(s_from_list_i64, i64);
+from_list!(s_from_list_s8, i8);
+from_list!(s_from_list_s16, i16);
+from_list!(s_from_list_s32, i32);
+from_list!(s_from_list_s64, i64);
 
 from_list!(s_from_list_u8, u8);
 from_list!(s_from_list_u16, u16);
@@ -212,9 +212,16 @@ macro_rules! from_binary {
 
 from_binary!(s_from_binary_f32, f32, 4);
 from_binary!(s_from_binary_f64, f64, 8);
-from_binary!(s_from_binary_i32, i32, 4);
-from_binary!(s_from_binary_i64, i64, 8);
+
+from_binary!(s_from_binary_s8, i8, 1);
+from_binary!(s_from_binary_s16, i16, 2);
+from_binary!(s_from_binary_s32, i32, 4);
+from_binary!(s_from_binary_s64, i64, 8);
+
 from_binary!(s_from_binary_u8, u8, 1);
+from_binary!(s_from_binary_u16, u16, 2);
+from_binary!(s_from_binary_u32, u32, 4);
+from_binary!(s_from_binary_u64, u64, 8);
 
 #[rustler::nif]
 pub fn s_name(data: ExSeries) -> Result<String, ExplorerError> {
@@ -1507,7 +1514,7 @@ pub fn s_replace(
     replacement: &str,
 ) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(
-        s1.utf8()?.replace_all(pattern, replacement)?.into(),
+        s1.utf8()?.replace_literal_all(pattern, replacement)?.into(),
     ))
 }
 

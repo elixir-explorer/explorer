@@ -41,6 +41,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         delimiter,
         nil_values,
         skip_rows,
+        skip_rows_after_header,
         header?,
         encoding,
         max_rows,
@@ -62,6 +63,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
           delimiter,
           nil_values,
           skip_rows,
+          skip_rows_after_header,
           header?,
           encoding,
           max_rows,
@@ -83,6 +85,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         <<delimiter::utf8>>,
         nil_values,
         skip_rows,
+        skip_rows_after_header,
         header?,
         encoding,
         max_rows,
@@ -105,6 +108,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         header?,
         max_rows,
         skip_rows,
+        skip_rows_after_header,
         with_projection,
         delimiter,
         true,
@@ -174,6 +178,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         <<delimiter::utf8>>,
         nil_values,
         skip_rows,
+        skip_rows_after_header,
         header?,
         encoding,
         max_rows,
@@ -196,6 +201,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         header?,
         max_rows,
         skip_rows,
+        skip_rows_after_header,
         with_projection,
         delimiter,
         true,
@@ -720,7 +726,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def slice(%DataFrame{} = df, %Series{dtype: :integer} = row_indices) do
+  def slice(%DataFrame{} = df, %Series{dtype: {:s, 64}} = row_indices) do
     Shared.apply_dataframe(df, df, :df_slice_by_series, [row_indices.data, df.groups])
   end
 
@@ -858,6 +864,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Inspect
 
   @impl true
+  def inspect(df, opts) when node(df.data.resource) != node() do
+    Explorer.Backend.DataFrame.inspect(df, "Polars", "node: #{node(df.data.resource)}", opts,
+      elide_columns: true
+    )
+  end
+
   def inspect(df, opts) do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
   end

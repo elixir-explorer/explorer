@@ -7,7 +7,7 @@ defmodule Explorer.Series.StructTest do
     test "allows struct values" do
       s = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}])
 
-      assert s.dtype == {:struct, %{"a" => :integer}}
+      assert s.dtype == {:struct, %{"a" => {:s, 64}}}
 
       assert Series.to_list(s) == [%{"a" => 1}, %{"a" => 3}, %{"a" => 5}]
     end
@@ -20,7 +20,7 @@ defmodule Explorer.Series.StructTest do
           %{a: 5, b: 6}
         ])
 
-      assert s.dtype == {:struct, %{"a" => :integer, "b" => :integer}}
+      assert s.dtype == {:struct, %{"a" => {:s, 64}, "b" => {:s, 64}}}
 
       assert Series.to_list(s) == [
                %{"a" => nil, "b" => 2},
@@ -37,7 +37,7 @@ defmodule Explorer.Series.StructTest do
           %{a: %{b: 3}}
         ])
 
-      assert s.dtype == {:struct, %{"a" => {:struct, %{"b" => :integer}}}}
+      assert s.dtype == {:struct, %{"a" => {:struct, %{"b" => {:s, 64}}}}}
 
       assert Series.to_list(s) == [
                %{"a" => %{"b" => 1}},
@@ -64,21 +64,21 @@ defmodule Explorer.Series.StructTest do
     test "allows nested lists with structs" do
       series = Series.from_list([[%{a: 1}, %{a: 2}], [%{a: 3}]])
 
-      assert series.dtype == {:list, {:struct, %{"a" => :integer}}}
+      assert series.dtype == {:list, {:struct, %{"a" => {:s, 64}}}}
       assert Series.to_list(series) == [[%{"a" => 1}, %{"a" => 2}], [%{"a" => 3}]]
     end
 
     test "errors when structs have mismatched types" do
       assert_raise ArgumentError,
-                   "the value %{a: \"a\"} does not match the inferred series dtype {:struct, %{\"a\" => :integer}}",
+                   "the value %{a: \"a\"} does not match the inferred series dtype {:struct, %{\"a\" => {:s, 64}}}",
                    fn -> Series.from_list([%{a: 1}, %{a: "a"}]) end
 
       assert_raise ArgumentError,
-                   "the value %{b: 1} does not match the inferred series dtype {:struct, %{\"a\" => :integer}}",
+                   "the value %{b: 1} does not match the inferred series dtype {:struct, %{\"a\" => {:s, 64}}}",
                    fn -> Series.from_list([%{a: 1}, %{b: 1}]) end
 
       assert_raise ArgumentError,
-                   "the value [%{a: \"a\"}] does not match the inferred series dtype {:list, {:struct, %{\"a\" => :integer}}}",
+                   "the value [%{a: \"a\"}] does not match the inferred series dtype {:list, {:struct, %{\"a\" => {:s, 64}}}}",
                    fn -> Series.from_list([[%{a: 1}], [%{a: "a"}]]) end
     end
   end

@@ -83,6 +83,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         _,
         _,
         _,
+        _,
         _
       ) do
     {:error,
@@ -96,6 +97,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         <<delimiter::utf8>>,
         nil_values,
         skip_rows,
+        skip_rows_after_header,
         header?,
         encoding,
         max_rows,
@@ -117,6 +119,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         header?,
         max_rows,
         skip_rows,
+        skip_rows_after_header,
         delimiter,
         true,
         Map.to_list(dtypes),
@@ -135,6 +138,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_csv(
         %Local.Entry{},
+        _,
         _,
         _,
         _,
@@ -232,6 +236,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         delimiter,
         nil_values,
         skip_rows,
+        skip_rows_after_header,
         header?,
         encoding,
         max_rows,
@@ -247,6 +252,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
              delimiter,
              nil_values,
              skip_rows,
+             skip_rows_after_header,
              header?,
              encoding,
              max_rows,
