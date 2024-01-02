@@ -31,8 +31,8 @@ defmodule Explorer.DataFrame.CSVTest do
 
     assert frame.dtypes == %{
              "city" => :string,
-             "lat" => :float,
-             "lng" => :float
+             "lat" => {:f, 64},
+             "lng" => {:f, 64}
            }
 
     assert_in_delta(57.653484, frame["lat"][0], f64_epsilon())
@@ -66,8 +66,8 @@ defmodule Explorer.DataFrame.CSVTest do
 
     assert frame.dtypes == %{
              "city" => :string,
-             "lat" => :float,
-             "lng" => :float
+             "lat" => {:f, 64},
+             "lng" => {:f, 64}
            }
 
     assert_in_delta(57.653484, frame["lat"][0], f64_epsilon())
@@ -102,9 +102,9 @@ defmodule Explorer.DataFrame.CSVTest do
     end
 
     test "float" do
-      assert_csv(:float, "2.3", 2.3)
-      assert_csv(:float, "57.653484", 57.653484)
-      assert_csv(:float, "-1.772232", -1.772232)
+      assert_csv({:f, 64}, "2.3", 2.3)
+      assert_csv({:f, 64}, "57.653484", 57.653484)
+      assert_csv({:f, 64}, "-1.772232", -1.772232)
     end
 
     test "boolean" do
@@ -231,7 +231,7 @@ defmodule Explorer.DataFrame.CSVTest do
         """)
 
       df = DF.from_csv!(csv)
-      assert %{"a" => :float} = Explorer.DataFrame.dtypes(df)
+      assert %{"a" => {:f, 64}} = Explorer.DataFrame.dtypes(df)
 
       csv =
         tmp_csv(config.tmp_dir, """
@@ -256,7 +256,7 @@ defmodule Explorer.DataFrame.CSVTest do
         """)
 
       df = DF.from_csv!(csv, infer_schema_length: @default_infer_schema_length + 1)
-      assert %{"a" => :float} = Explorer.DataFrame.dtypes(df)
+      assert %{"a" => {:f, 64}} = Explorer.DataFrame.dtypes(df)
     end
 
     @tag :tmp_dir
@@ -270,7 +270,7 @@ defmodule Explorer.DataFrame.CSVTest do
         """)
 
       df = DF.from_csv!(csv, infer_schema_length: nil)
-      assert %{"a" => :float} = Explorer.DataFrame.dtypes(df)
+      assert %{"a" => {:f, 64}} = Explorer.DataFrame.dtypes(df)
     end
 
     @tag :tmp_dir
@@ -284,7 +284,7 @@ defmodule Explorer.DataFrame.CSVTest do
         """)
 
       df = DF.from_csv!(csv, infer_schema_length: nil, max_rows: @default_infer_schema_length + 1)
-      assert %{"a" => :float} = Explorer.DataFrame.dtypes(df)
+      assert %{"a" => {:f, 64}} = Explorer.DataFrame.dtypes(df)
 
       csv =
         tmp_csv(config.tmp_dir, """
@@ -450,7 +450,7 @@ defmodule Explorer.DataFrame.CSVTest do
         8.1
         """)
 
-      df = DF.from_csv!(csv, dtypes: %{a: :float})
+      df = DF.from_csv!(csv, dtypes: %{a: {:f, 64}})
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [0.1, :nan, 4.2, :infinity, :neg_infinity, 8.1]
@@ -476,7 +476,7 @@ defmodule Explorer.DataFrame.CSVTest do
 
       csv = tmp_csv(config.tmp_dir, data)
 
-      df = DF.from_csv!(csv, eol_delimiter: "\r", dtypes: %{a: :float})
+      df = DF.from_csv!(csv, eol_delimiter: "\r", dtypes: %{a: {:f, 64}})
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [0.1, :nan, 4.2, :infinity, :neg_infinity, 8.1]

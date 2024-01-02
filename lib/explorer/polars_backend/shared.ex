@@ -9,7 +9,6 @@ defmodule Explorer.PolarsBackend.Shared do
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.Series, as: Series
 
-  @valid_dtypes Explorer.Shared.dtypes()
   @polars_df [PolarsDataFrame, PolarsLazyFrame]
 
   def apply(fun, args \\ []) do
@@ -72,8 +71,16 @@ defmodule Explorer.PolarsBackend.Shared do
   end
 
   def create_series(%PolarsSeries{} = polars_series) do
-    {:ok, dtype} = Native.s_dtype(polars_series)
-    Explorer.Backend.Series.new(polars_series, normalise_dtype(dtype))
+    dtype =
+      case Native.s_dtype(polars_series) do
+        {:ok, dtype} ->
+          dtype
+
+        {:error, reason} ->
+          raise ArgumentError, reason
+      end
+
+    Explorer.Backend.Series.new(polars_series, dtype)
   end
 
   def create_dataframe(polars_df) do
@@ -92,18 +99,53 @@ defmodule Explorer.PolarsBackend.Shared do
 
   defp df_dtypes(%PolarsDataFrame{} = polars_df) do
     {:ok, dtypes} = Native.df_dtypes(polars_df)
-    Enum.map(dtypes, &normalise_dtype/1)
+    dtypes
   end
 
   defp df_dtypes(%PolarsLazyFrame{} = polars_df) do
     {:ok, dtypes} = Native.lf_dtypes(polars_df)
-    Enum.map(dtypes, &normalise_dtype/1)
+    dtypes
   end
 
-  def from_list(list, dtype, name \\ "") when is_list(list) and dtype in @valid_dtypes do
+  def from_list(list, dtype), do: from_list(list, dtype, "")
+
+  def from_list(list, {:list, inner_dtype} = _dtype, name) when is_list(list) do
+    series =
+      Enum.map(list, fn maybe_inner_list ->
+        if is_list(maybe_inner_list), do: from_list(maybe_inner_list, inner_dtype, name)
+      end)
+
+    Native.s_from_list_of_series(name, series)
+  end
+
+  def from_list(list, {:struct, fields} = _dtype, name) when is_list(list) do
+    series =
+      for {column, values} <- Table.to_columns(list) do
+        column = to_string(column)
+        inner_type = Map.fetch!(fields, column)
+
+        from_list(values, inner_type, column)
+      end
+
+    Native.s_from_list_of_series_as_structs(name, series)
+  end
+
+  def from_list(list, dtype, name) when is_list(list) do
     case dtype do
       :integer -> Native.s_from_list_i64(name, list)
-      :float -> Native.s_from_list_f64(name, list)
+      # Signed integers
+      {:s, 8} -> Native.s_from_list_i8(name, list)
+      {:s, 16} -> Native.s_from_list_i16(name, list)
+      {:s, 32} -> Native.s_from_list_i32(name, list)
+      {:s, 64} -> Native.s_from_list_i64(name, list)
+      # Unsigned integers
+      {:u, 8} -> Native.s_from_list_u8(name, list)
+      {:u, 16} -> Native.s_from_list_u16(name, list)
+      {:u, 32} -> Native.s_from_list_u32(name, list)
+      {:u, 64} -> Native.s_from_list_u64(name, list)
+      # Floats
+      {:f, 32} -> Native.s_from_list_f32(name, list)
+      {:f, 64} -> Native.s_from_list_f64(name, list)
       :boolean -> Native.s_from_list_bool(name, list)
       :string -> Native.s_from_list_str(name, list)
       :category -> Native.s_from_list_categories(name, list)
@@ -118,72 +160,44 @@ defmodule Explorer.PolarsBackend.Shared do
   def from_binary(binary, dtype, name \\ "") when is_binary(binary) do
     case dtype do
       :boolean ->
-        Native.s_from_binary_u8(name, binary) |> Native.s_cast("boolean") |> ok()
+        Native.s_from_binary_u8(name, binary) |> Native.s_cast(dtype) |> ok()
 
       :date ->
-        Native.s_from_binary_i32(name, binary) |> Native.s_cast("date") |> ok()
+        Native.s_from_binary_i32(name, binary) |> Native.s_cast(dtype) |> ok()
 
       :time ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast("time") |> ok()
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:datetime, :millisecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[ms]") |> ok()
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:datetime, :microsecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[μs]") |> ok()
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:datetime, :nanosecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast("datetime[ns]") |> ok()
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:duration, :millisecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast("duration[ms]") |> ok()
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:duration, :microsecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast("duration[μs]") |> ok()
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:duration, :nanosecond} ->
-        Native.s_from_binary_i64(name, binary) |> Native.s_cast("duration[ns]") |> ok()
+        Native.s_from_binary_i64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       :integer ->
         Native.s_from_binary_i64(name, binary)
 
-      :float ->
+      {:f, 32} ->
+        Native.s_from_binary_f32(name, binary)
+
+      {:f, 64} ->
         Native.s_from_binary_f64(name, binary)
     end
   end
 
   defp ok({:ok, value}), do: value
-
-  def normalise_dtype("binary"), do: :binary
-  def normalise_dtype("bool"), do: :boolean
-  def normalise_dtype("cat"), do: :category
-  def normalise_dtype("date"), do: :date
-  def normalise_dtype("time"), do: :time
-  def normalise_dtype("datetime[ms]"), do: {:datetime, :millisecond}
-  def normalise_dtype("datetime[ns]"), do: {:datetime, :nanosecond}
-  def normalise_dtype("datetime[μs]"), do: {:datetime, :microsecond}
-  def normalise_dtype("duration[ms]"), do: {:duration, :millisecond}
-  def normalise_dtype("duration[ns]"), do: {:duration, :nanosecond}
-  def normalise_dtype("duration[μs]"), do: {:duration, :microsecond}
-  def normalise_dtype("f64"), do: :float
-  def normalise_dtype("i64"), do: :integer
-  def normalise_dtype("list[u32]"), do: :integer
-  def normalise_dtype("str"), do: :string
-
-  def internal_from_dtype(:binary), do: "binary"
-  def internal_from_dtype(:boolean), do: "bool"
-  def internal_from_dtype(:category), do: "cat"
-  def internal_from_dtype(:date), do: "date"
-  def internal_from_dtype(:time), do: "time"
-  def internal_from_dtype({:datetime, :millisecond}), do: "datetime[ms]"
-  def internal_from_dtype({:datetime, :nanosecond}), do: "datetime[ns]"
-  def internal_from_dtype({:datetime, :microsecond}), do: "datetime[μs]"
-  def internal_from_dtype({:duration, :millisecond}), do: "duration[ms]"
-  def internal_from_dtype({:duration, :nanosecond}), do: "duration[ns]"
-  def internal_from_dtype({:duration, :microsecond}), do: "duration[μs]"
-  def internal_from_dtype(:float), do: "f64"
-  def internal_from_dtype(:integer), do: "i64"
-  def internal_from_dtype(:string), do: "str"
 
   defp runtime_error(error) when is_binary(error), do: RuntimeError.exception(error)
 

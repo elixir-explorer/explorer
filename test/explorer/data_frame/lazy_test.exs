@@ -50,7 +50,7 @@ defmodule Explorer.DataFrame.LazyTest do
              "gas_flaring" => :integer,
              "gas_fuel" => :integer,
              "liquid_fuel" => :integer,
-             "per_capita" => :float,
+             "per_capita" => {:f, 64},
              "solid_fuel" => :integer,
              "total" => :integer,
              "year" => :integer
@@ -76,7 +76,7 @@ defmodule Explorer.DataFrame.LazyTest do
   gas_fuel integer [74, 7, 14565, 0, 374]
   cement integer [5, 177, 2598, 0, 204]
   gas_flaring integer [0, 0, 2623, 0, 3697]
-  per_capita float [0.08, 0.43, 0.9, 1.68, 0.37]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37]
   bunker_fuels integer [9, 7, 663, 0, 321]
 >)
   end
@@ -113,7 +113,7 @@ defmodule Explorer.DataFrame.LazyTest do
   gas_fuel integer [74, 7, 14565, 0, 374, ...]
   cement integer [5, 177, 2598, 0, 204, ...]
   gas_flaring integer [0, 0, 2623, 0, 3697, ...]
-  per_capita float [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels integer [9, 7, 663, 0, 321, ...]
 >)
   end
@@ -328,6 +328,7 @@ defmodule Explorer.DataFrame.LazyTest do
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
   end
 
+  @tag :cloud_integration
   test "to_parquet/2 - cloud with streaming enabled", %{ldf: ldf} do
     config = %FSS.S3.Config{
       access_key_id: "test",
@@ -339,9 +340,12 @@ defmodule Explorer.DataFrame.LazyTest do
     path = "s3://test-bucket/test-lazy-writes/wine-#{System.monotonic_time()}.parquet"
 
     ldf = DF.head(ldf, 15)
-    assert {:error, error} = DF.to_parquet(ldf, path, streaming: true, config: config)
+    assert :ok = DF.to_parquet(ldf, path, streaming: true, config: config)
 
-    assert error == ArgumentError.exception("streaming is not supported for writes to AWS S3")
+    df = DF.collect(ldf)
+    df1 = DF.from_parquet!(path, config: config)
+
+    assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
   end
 
   @tag :cloud_integration
@@ -513,8 +517,7 @@ defmodule Explorer.DataFrame.LazyTest do
     test "from_ipc/2", %{config: config} do
       path = "s3://test-bucket/test-lazy-writes/wine.ipc"
 
-      assert {:error, error} =
-               DF.from_ipc(path, config: config, lazy: true)
+      assert {:error, error} = DF.from_ipc(path, config: config, lazy: true)
 
       assert error ==
                ArgumentError.exception(
@@ -616,10 +619,10 @@ defmodule Explorer.DataFrame.LazyTest do
     end
   end
 
-  describe "arrange_with/2" do
+  describe "sort_with/2" do
     test "with a simple df and asc order" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"]] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [asc: ldf["a"]] end)
 
       df1 = DF.collect(ldf1)
 
@@ -631,7 +634,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     test "with a simple df one column and without order" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> ldf["a"] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> ldf["a"] end)
 
       df1 = DF.collect(ldf1)
 
@@ -643,7 +646,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     test "with a simple df and desc order" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [desc: ldf["a"]] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [desc: ldf["a"]] end)
 
       df1 = DF.collect(ldf1)
 
@@ -655,7 +658,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     test "with a simple df and just the lazy series" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [ldf["a"]] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [ldf["a"]] end)
 
       df1 = DF.collect(ldf1)
 
@@ -665,9 +668,9 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
 
-    test "with a simple df and arrange by two columns" do
+    test "with a simple df and sort_by by two columns" do
       ldf = DF.new([a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
 
       df1 = DF.collect(ldf1)
 
@@ -679,7 +682,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
     test "with a simple df and window function" do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf1 = DF.arrange_with(ldf, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
+      ldf1 = DF.sort_with(ldf, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
 
       df1 = DF.collect(ldf1)
 
@@ -694,9 +697,9 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.group_by(ldf, "b")
 
       assert_raise RuntimeError,
-                   "arrange_with/2 with groups is not supported yet for lazy frames",
+                   "sort_with/2 with groups is not supported yet for lazy frames",
                    fn ->
-                     DF.arrange_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+                     DF.sort_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
                    end
     end
   end
@@ -786,7 +789,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf1 = DF.mutate_with(ldf, fn _ -> [a: 1, b: 2.0, c: true] end)
 
       assert ldf1.names == ["d", "a", "b", "c"]
-      assert ldf1.dtypes == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
+      assert ldf1.dtypes == %{"a" => :integer, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
 
       df = DF.collect(ldf1)
 
@@ -806,11 +809,11 @@ defmodule Explorer.DataFrame.LazyTest do
 
       ldf1 =
         DF.mutate_with(ldf, fn ldf ->
-          [a: Series.cast(ldf["a"], :float)]
+          [a: Series.cast(ldf["a"], {:f, 64})]
         end)
 
       assert ldf1.names == ["a", "b"]
-      assert ldf1.dtypes == %{"a" => :float, "b" => :string}
+      assert ldf1.dtypes == %{"a" => {:f, 64}, "b" => :string}
 
       df = DF.collect(ldf1)
 
@@ -830,7 +833,7 @@ defmodule Explorer.DataFrame.LazyTest do
       assert_raise RuntimeError,
                    "mutate_with/2 with groups is not supported yet for lazy frames",
                    fn ->
-                     DF.mutate_with(ldf1, fn ldf -> [a: Series.cast(ldf["a"], :float)] end)
+                     DF.mutate_with(ldf1, fn ldf -> [a: Series.cast(ldf["a"], {:f, 64})] end)
                    end
     end
   end
@@ -1397,6 +1400,34 @@ defmodule Explorer.DataFrame.LazyTest do
                Explorer.DataFrame.from_query(conn, "INVALID SQL", [], lazy: true)
 
       assert Exception.message(error) =~ "syntax error"
+    end
+  end
+
+  describe "explode/2" do
+    test "explodes a list column" do
+      ldf = DF.new([letters: [~w(a e), ~w(b c d)], is_vowel: [true, false]], lazy: true)
+
+      ldf1 = DF.explode(ldf, :letters)
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["a", "e", "b", "c", "d"],
+               is_vowel: [true, true, false, false, false]
+             }
+    end
+  end
+
+  describe "unnest/2" do
+    test "unnests a struct column" do
+      ldf = DF.new([data: [%{x: 1, y: 2}, %{x: 3, y: 4}]], lazy: true)
+
+      ldf1 = DF.unnest(ldf, :data)
+      df1 = DF.collect(ldf1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               x: [1, 3],
+               y: [2, 4]
+             }
     end
   end
 end

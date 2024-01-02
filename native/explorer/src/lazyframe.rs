@@ -1,6 +1,6 @@
 use crate::{
-    dataframe::to_smart_strings, expressions::ex_expr_to_exprs, ExDataFrame, ExExpr, ExLazyFrame,
-    ExplorerError,
+    dataframe::to_smart_strings, datatypes::ExSeriesDtype, expressions::ex_expr_to_exprs,
+    ExDataFrame, ExExpr, ExLazyFrame, ExplorerError,
 };
 use polars::prelude::*;
 use std::result::Result;
@@ -55,13 +55,15 @@ pub fn lf_names(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn lf_dtypes(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
-    let lf = data.clone_inner();
-    Ok(lf
-        .schema()?
-        .iter_dtypes()
-        .map(|dtype| dtype.to_string())
-        .collect())
+pub fn lf_dtypes(data: ExLazyFrame) -> Result<Vec<ExSeriesDtype>, ExplorerError> {
+    let mut dtypes: Vec<ExSeriesDtype> = vec![];
+    let schema = data.clone_inner().schema()?;
+
+    for dtype in schema.iter_dtypes() {
+        dtypes.push(ExSeriesDtype::try_from(dtype)?)
+    }
+
+    Ok(dtypes)
 }
 
 #[rustler::nif]
@@ -83,6 +85,18 @@ pub fn lf_slice(data: ExLazyFrame, offset: i64, length: u32) -> Result<ExLazyFra
 }
 
 #[rustler::nif]
+pub fn lf_explode(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
+    let lf = data.clone_inner().explode(columns);
+    Ok(ExLazyFrame::new(lf))
+}
+
+#[rustler::nif]
+pub fn lf_unnest(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
+    let lf = data.clone_inner().unnest(columns);
+    Ok(ExLazyFrame::new(lf))
+}
+
+#[rustler::nif]
 pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
     let expr = ex_expr.clone_inner();
@@ -91,15 +105,13 @@ pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame,
 }
 
 #[rustler::nif]
-pub fn lf_arrange_with(
+pub fn lf_sort_with(
     data: ExLazyFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
+    maintain_order: bool,
+    nulls_last: bool,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    // Make these bools options
-    let maintain_order = true;
-    let nulls_last = false;
-
     let exprs = ex_expr_to_exprs(expressions);
     let ldf = data
         .clone_inner()

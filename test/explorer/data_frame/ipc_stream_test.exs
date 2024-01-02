@@ -14,10 +14,10 @@ defmodule Explorer.DataFrame.IPCStreamTest do
     assert DF.n_columns(df) == 5
 
     assert df.dtypes == %{
-             "sepal_length" => :float,
-             "sepal_width" => :float,
-             "petal_length" => :float,
-             "petal_width" => :float,
+             "sepal_length" => {:f, 64},
+             "sepal_width" => {:f, 64},
+             "petal_length" => {:f, 64},
+             "petal_width" => {:f, 64},
              "species" => :string
            }
 
@@ -77,9 +77,9 @@ defmodule Explorer.DataFrame.IPCStreamTest do
     end
 
     test "float" do
-      assert_ipc_stream(:float, "2.3", 2.3)
-      assert_ipc_stream(:float, "57.653484", 57.653484)
-      assert_ipc_stream(:float, "-1.772232", -1.772232)
+      assert_ipc_stream({:f, 64}, "2.3", 2.3)
+      assert_ipc_stream({:f, 64}, "57.653484", 57.653484)
+      assert_ipc_stream({:f, 64}, "-1.772232", -1.772232)
     end
 
     # cast not used as it is not implemented for boolean values
@@ -94,16 +94,38 @@ defmodule Explorer.DataFrame.IPCStreamTest do
     end
 
     test "date" do
-      assert_ipc_stream(:date, "19327", ~D[2022-12-01])
-      assert_ipc_stream(:date, "-3623", ~D[1960-01-31])
+      assert_ipc_stream(:date, "2022-12-01", ~D[2022-12-01])
+      assert_ipc_stream(:date, "1960-01-31", ~D[1960-01-31])
+
+      assert_ipc_stream(:date, 0, ~D[1970-01-01])
     end
 
     test "datetime" do
       assert_ipc_stream(
         {:datetime, :microsecond},
-        "1664624050123456",
+        ~N[2022-10-01 11:34:10.123456],
         ~N[2022-10-01 11:34:10.123456]
       )
+
+      assert_ipc_stream(
+        {:datetime, :microsecond},
+        0,
+        ~N[1970-01-01 00:00:00.000000]
+      )
+    end
+
+    test "list of integer" do
+      assert_ipc_stream({:list, :integer}, [["100"]], [100])
+      assert_ipc_stream({:list, :integer}, [["-101"]], [-101])
+    end
+
+    test "list of floats" do
+      assert_ipc_stream({:list, {:f, 64}}, [["100.42"]], [100.42])
+      assert_ipc_stream({:list, {:f, 64}}, [["-101.51"]], [-101.51])
+    end
+
+    test "struct" do
+      assert_ipc_stream({:struct, %{"a" => :integer}}, [%{a: 1}], %{"a" => 1})
     end
   end
 

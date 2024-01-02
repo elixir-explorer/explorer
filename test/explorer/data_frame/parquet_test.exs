@@ -14,10 +14,10 @@ defmodule Explorer.DataFrame.ParquetTest do
     assert DF.n_columns(frame) == 5
 
     assert frame.dtypes == %{
-             "sepal_length" => :float,
-             "sepal_width" => :float,
-             "petal_length" => :float,
-             "petal_width" => :float,
+             "sepal_length" => {:f, 64},
+             "sepal_width" => {:f, 64},
+             "petal_length" => {:f, 64},
+             "petal_width" => {:f, 64},
              "species" => :string
            }
 
@@ -148,10 +148,10 @@ defmodule Explorer.DataFrame.ParquetTest do
     assert DF.n_columns(frame) == 5
 
     assert frame.dtypes == %{
-             "sepal_length" => :float,
-             "sepal_width" => :float,
-             "petal_length" => :float,
-             "petal_width" => :float,
+             "sepal_length" => {:f, 64},
+             "sepal_width" => {:f, 64},
+             "petal_length" => {:f, 64},
+             "petal_width" => {:f, 64},
              "species" => :string
            }
 
@@ -177,9 +177,9 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
 
     test "float" do
-      assert_parquet(:float, "2.3", 2.3)
-      assert_parquet(:float, "57.653484", 57.653484)
-      assert_parquet(:float, "-1.772232", -1.772232)
+      assert_parquet({:f, 64}, "2.3", 2.3)
+      assert_parquet({:f, 64}, "57.653484", 57.653484)
+      assert_parquet({:f, 64}, "-1.772232", -1.772232)
     end
 
     # cast not used as it is not implemented for boolean values
@@ -194,16 +194,38 @@ defmodule Explorer.DataFrame.ParquetTest do
     end
 
     test "date" do
-      assert_parquet(:date, "19327", ~D[2022-12-01])
-      assert_parquet(:date, "-3623", ~D[1960-01-31])
+      assert_parquet(:date, 19327, ~D[2022-12-01])
+      assert_parquet(:date, -3623, ~D[1960-01-31])
+
+      assert_parquet(:date, ~D[2022-12-01], ~D[2022-12-01])
     end
 
     test "datetime" do
       assert_parquet(
         {:datetime, :microsecond},
-        "1664624050123456",
+        1_664_624_050_123_456,
         ~N[2022-10-01 11:34:10.123456]
       )
+
+      assert_parquet(
+        {:datetime, :microsecond},
+        ~N[2022-10-01 11:34:10.123456],
+        ~N[2022-10-01 11:34:10.123456]
+      )
+    end
+
+    test "list of integer" do
+      assert_parquet({:list, :integer}, [["100"]], [100])
+      assert_parquet({:list, :integer}, [["-101"]], [-101])
+    end
+
+    test "list of floats" do
+      assert_parquet({:list, {:f, 64}}, [["100.42"]], [100.42])
+      assert_parquet({:list, {:f, 64}}, [["-101.51"]], [-101.51])
+    end
+
+    test "struct" do
+      assert_parquet({:struct, %{"a" => :integer}}, [%{a: 1}], %{"a" => 1})
     end
   end
 

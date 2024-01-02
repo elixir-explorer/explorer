@@ -9,7 +9,7 @@ defmodule Explorer.Query do
   > All examples below assume you have defined aliased
   > `Explorer.DataFrame` to `DF` as shown below:
   >
-  >     alias Explorer.DataFrame, as: DF
+  >     require Explorer.DataFrame, as: DF
   >
 
   Queries convert regular Elixir code which compile to efficient
@@ -43,7 +43,7 @@ defmodule Explorer.Query do
 
   Queries are supported in the following operations:
 
-    * `Explorer.DataFrame.arrange/2`
+    * `Explorer.DataFrame.sort_by/2`
     * `Explorer.DataFrame.filter/2`
     * `Explorer.DataFrame.mutate/2`
     * `Explorer.DataFrame.summarise/2`
@@ -118,10 +118,10 @@ defmodule Explorer.Query do
       ...> )
       #Explorer.DataFrame<
         Polars[150 x 5]
-        sepal_length float [-1.0840606189132322, -1.3757361217598405, -1.66741162460645, -1.8132493760297554, -1.2298983703365365, ...]
-        sepal_width float [2.3722896125315045, -0.28722789030650403, 0.7765791108287005, 0.2446756102610982, 2.9041931130991068, ...]
-        petal_length float [-0.757639168744384, -0.757639168744384, -0.789760671093637, -0.7255176663951308, -0.757639168744384, ...]
-        petal_width float [-1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, ...]
+        sepal_length f64 [-1.0840606189132322, -1.3757361217598405, -1.66741162460645, -1.8132493760297554, -1.2298983703365365, ...]
+        sepal_width f64 [2.3722896125315045, -0.28722789030650403, 0.7765791108287005, 0.2446756102610982, 2.9041931130991068, ...]
+        petal_length f64 [-0.757639168744384, -0.757639168744384, -0.789760671093637, -0.7255176663951308, -0.757639168744384, ...]
+        petal_width f64 [-1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
@@ -136,10 +136,10 @@ defmodule Explorer.Query do
       ...> )
       #Explorer.DataFrame<
         Polars[150 x 5]
-        sepal_length float [-1.0840606189132322, -1.3757361217598405, -1.66741162460645, -1.8132493760297554, -1.2298983703365365, ...]
-        sepal_width float [2.3722896125315045, -0.28722789030650403, 0.7765791108287005, 0.2446756102610982, 2.9041931130991068, ...]
-        petal_length float [-0.757639168744384, -0.757639168744384, -0.789760671093637, -0.7255176663951308, -0.757639168744384, ...]
-        petal_width float [-1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, ...]
+        sepal_length f64 [-1.0840606189132322, -1.3757361217598405, -1.66741162460645, -1.8132493760297554, -1.2298983703365365, ...]
+        sepal_width f64 [2.3722896125315045, -0.28722789030650403, 0.7765791108287005, 0.2446756102610982, 2.9041931130991068, ...]
+        petal_length f64 [-0.757639168744384, -0.757639168744384, -0.789760671093637, -0.7255176663951308, -0.757639168744384, ...]
+        petal_width f64 [-1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
@@ -183,16 +183,16 @@ defmodule Explorer.Query do
 
       iex> iris = Explorer.Datasets.iris()
       iex> DF.mutate(iris,
-      ...>   for col <- across(), col.dtype == :float do
+      ...>   for col <- across(), col.dtype == {:f, 64} do
       ...>     {col.name, (col - mean(col)) / variance(col)}
       ...>   end
       ...> )
       #Explorer.DataFrame<
         Polars[150 x 5]
-        sepal_length float [-1.0840606189132322, -1.3757361217598405, -1.66741162460645, -1.8132493760297554, -1.2298983703365365, ...]
-        sepal_width float [2.3722896125315045, -0.28722789030650403, 0.7765791108287005, 0.2446756102610982, 2.9041931130991068, ...]
-        petal_length float [-0.757639168744384, -0.757639168744384, -0.789760671093637, -0.7255176663951308, -0.757639168744384, ...]
-        petal_width float [-1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, ...]
+        sepal_length f64 [-1.0840606189132322, -1.3757361217598405, -1.66741162460645, -1.8132493760297554, -1.2298983703365365, ...]
+        sepal_width f64 [2.3722896125315045, -0.28722789030650403, 0.7765791108287005, 0.2446756102610982, 2.9041931130991068, ...]
+        petal_length f64 [-0.757639168744384, -0.757639168744384, -0.789760671093637, -0.7255176663951308, -0.757639168744384, ...]
+        petal_width f64 [-1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, -1.714701435665471, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
@@ -205,20 +205,20 @@ defmodule Explorer.Query do
       iex> Explorer.Datasets.iris()
       ...> |> DF.group_by("species")
       ...> |> DF.summarise(
-      ...>   for col <- across(), col.dtype == :float do
+      ...>   for col <- across(), col.dtype == {:f, 64} do
       ...>     {"#{col.name}_mean", mean(col)}
       ...>   end
       ...> )
       #Explorer.DataFrame<
         Polars[3 x 5]
         species string ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
-        sepal_length_mean float [5.005999999999999, 5.936, 6.587999999999998]
-        sepal_width_mean float [3.4180000000000006, 2.7700000000000005, 2.9739999999999998]
-        petal_length_mean float [1.464, 4.26, 5.552]
-        petal_width_mean float [0.2439999999999999, 1.3259999999999998, 2.026]
+        sepal_length_mean f64 [5.005999999999999, 5.936, 6.587999999999998]
+        sepal_width_mean f64 [3.4180000000000006, 2.7700000000000005, 2.9739999999999998]
+        petal_length_mean f64 [1.464, 4.26, 5.552]
+        petal_width_mean f64 [0.2439999999999999, 1.3259999999999998, 2.026]
       >
 
-  `arrange` expects a list of columns to sort by, while for-comprehensions
+  `sort_by` expects a list of columns to sort by, while for-comprehensions
   in `filter` generate a list of conditions, which are joined using `and`.
   For example, to filter all entries have both sepal and petal length above
   average, using a filter on the column name, one could write:
@@ -231,10 +231,10 @@ defmodule Explorer.Query do
       ...> )
       #Explorer.DataFrame<
         Polars[70 x 5]
-        sepal_length float [7.0, 6.4, 6.9, 6.5, 6.3, ...]
-        sepal_width float [3.2, 3.2, 3.1, 2.8, 3.3, ...]
-        petal_length float [4.7, 4.5, 4.9, 4.6, 4.7, ...]
-        petal_width float [1.4, 1.5, 1.5, 1.5, 1.6, ...]
+        sepal_length f64 [7.0, 6.4, 6.9, 6.5, 6.3, ...]
+        sepal_width f64 [3.2, 3.2, 3.1, 2.8, 3.3, ...]
+        petal_length f64 [4.7, 4.5, 4.9, 4.6, 4.7, ...]
+        petal_width f64 [1.4, 1.5, 1.5, 1.5, 1.6, ...]
         species string ["Iris-versicolor", "Iris-versicolor", "Iris-versicolor", "Iris-versicolor", "Iris-versicolor", ...]
       >
 
@@ -678,7 +678,7 @@ defmodule Explorer.Query do
   end
 
   defp lazy_series_for_cond!(val, _clauses),
-    do: Explorer.Backend.LazySeries.from_list([val], Explorer.Shared.check_types!([val]))
+    do: Explorer.Backend.LazySeries.from_list([val], Explorer.Shared.dtype_from_list!([val]))
 
   @doc """
   Accesses a column by name.

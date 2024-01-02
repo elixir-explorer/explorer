@@ -13,7 +13,9 @@ data exploration to Elixir.
 
 Explorer high-level features are:
 
-- Simply typed series: `:binary`, `:boolean`, `:category`, `:date`, `:datetime`, `:duration`, `:float`, `:integer`, `:string`, and `:time`.
+- Simply typed series: `:binary`, `:boolean`, `:category`, `:date`, `:datetime`,
+  `:duration`, floats (`:f32` and `:f64`), `:integer`, `:string`, `:time`, and
+  `:list`
 
 - A powerful but constrained and opinionated API, so you spend less time looking
   for the right function and more time doing data manipulation.
@@ -219,13 +221,13 @@ Rust is going to be installed in the first compilation of the project. Otherwise
 install the correct version:
 
 ```sh
-rustup toolchain install nightly-2023-07-27
+rustup toolchain install nightly-2023-11-12
 ```
 
 You can also use [asdf](https://asdf-vm.com/):
 
 ```sh
-asdf install rust nightly-2023-07-27
+asdf install rust nightly-2023-11-12
 ```
 
 It's possible that you may need to install [`CMake`](https://cmake.org/) in order to build the project,
@@ -256,7 +258,6 @@ We support the following:
 - `aarch64-apple-darwin` - MacOS running on ARM 64 bits CPUs.
 - `aarch64-unknown-linux-gnu` - Linux running on ARM 64 bits CPUs, compiled with GCC.
 - `aarch64-unknown-linux-musl` - Linux running on ARM 64 bits CPUs, compiled with Musl.
-- `riscv64gc-unknown-linux-gnu` - Linux running on RISCV 64 bits CPUs, compiled with GCC.
 - `x86_64-apple-darwin` - MacOS running on Intel/AMD 64 bits CPUs.
 - `x86_64-pc-windows-msvc` - Windows running on Intel/AMD 64 bits CPUs, compiled with Visual C++.
 - `x86_64-pc-windows-gnu` - Windows running on Intel/AMD 64 bits CPUs, compiled with GCC.

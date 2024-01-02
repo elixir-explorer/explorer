@@ -1,14 +1,17 @@
 use crate::{
     atoms,
-    datatypes::{ExDate, ExDateTime, ExDuration, ExTime},
+    datatypes::{
+        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype,
+        ExSeriesIoType, ExTime, ExValidValue,
+    },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
 use encoding::encode_datetime;
 use polars::export::arrow::array::Utf8Array;
-use polars::functions::{cov, pearson_corr};
 use polars::prelude::*;
-use polars_ops::prelude::{cut, is_in, peaks::peak_max, peaks::peak_min, qcut};
+use polars_ops::chunked_array::cov::{cov, pearson_corr};
+use polars_ops::prelude::peaks::*;
 use rustler::{Binary, Encoder, Env, ListIterator, Term, TermType};
 use std::{result::Result, slice};
 
@@ -28,39 +31,54 @@ macro_rules! from_list {
     };
 }
 
+from_list!(s_from_list_i8, i8);
+from_list!(s_from_list_i16, i16);
+from_list!(s_from_list_i32, i32);
 from_list!(s_from_list_i64, i64);
+
+from_list!(s_from_list_u8, u8);
+from_list!(s_from_list_u16, u16);
 from_list!(s_from_list_u32, u32);
+from_list!(s_from_list_u64, u64);
+
 from_list!(s_from_list_bool, bool);
 from_list!(s_from_list_str, String);
 
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_f64(name: &str, val: Term) -> ExSeries {
-    let nan = atoms::nan();
-    let infinity = atoms::infinity();
-    let neg_infinity = atoms::neg_infinity();
+macro_rules! from_list_float {
+    ($name:ident, $type:ty, $module:ident) => {
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $name(name: &str, val: Term) -> ExSeries {
+            let nan = atoms::nan();
+            let infinity = atoms::infinity();
+            let neg_infinity = atoms::neg_infinity();
 
-    ExSeries::new(Series::new(
-        name,
-        val.decode::<ListIterator>()
-            .unwrap()
-            .map(|item| match item.get_type() {
-                TermType::Number => Some(item.decode::<f64>().unwrap()),
-                TermType::Atom => {
-                    if nan.eq(&item) {
-                        Some(f64::NAN)
-                    } else if infinity.eq(&item) {
-                        Some(f64::INFINITY)
-                    } else if neg_infinity.eq(&item) {
-                        Some(f64::NEG_INFINITY)
-                    } else {
-                        None
-                    }
-                }
-                term_type => panic!("from_list/2 not implemented for {term_type:?}"),
-            })
-            .collect::<Vec<Option<f64>>>(),
-    ))
+            ExSeries::new(Series::new(
+                name,
+                val.decode::<ListIterator>()
+                    .unwrap()
+                    .map(|item| match item.get_type() {
+                        TermType::Number => Some(item.decode::<$type>().unwrap()),
+                        TermType::Atom => {
+                            if nan.eq(&item) {
+                                Some($module::NAN)
+                            } else if infinity.eq(&item) {
+                                Some($module::INFINITY)
+                            } else if neg_infinity.eq(&item) {
+                                Some($module::NEG_INFINITY)
+                            } else {
+                                None
+                            }
+                        }
+                        term_type => panic!("from_list/2 not implemented for {term_type:?}"),
+                    })
+                    .collect::<Vec<Option<$type>>>(),
+            ))
+        }
+    };
 }
+
+from_list_float!(s_from_list_f32, f32, f32);
+from_list_float!(s_from_list_f64, f64, f64);
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
@@ -150,6 +168,35 @@ pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries 
     )
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_of_series(name: &str, series_vec: Vec<Option<ExSeries>>) -> ExSeries {
+    let lists: Vec<Option<Series>> = series_vec
+        .iter()
+        .map(|maybe_series| {
+            maybe_series
+                .as_ref()
+                .map(|ex_series| ex_series.clone_inner())
+        })
+        .collect();
+
+    ExSeries::new(Series::new(name, lists))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_of_series_as_structs(name: &str, series_vec: Vec<ExSeries>) -> ExSeries {
+    let struct_chunked = StructChunked::new(
+        name,
+        series_vec
+            .into_iter()
+            .map(|s| s.clone_inner())
+            .collect::<Vec<_>>()
+            .as_slice(),
+    )
+    .unwrap();
+
+    ExSeries::new(struct_chunked.into_series())
+}
+
 macro_rules! from_binary {
     ($name:ident, $type:ty, $bytes:expr) => {
         #[rustler::nif(schedule = "DirtyCpu")]
@@ -163,6 +210,7 @@ macro_rules! from_binary {
     };
 }
 
+from_binary!(s_from_binary_f32, f32, 4);
 from_binary!(s_from_binary_f64, f64, 8);
 from_binary!(s_from_binary_i32, i32, 4);
 from_binary!(s_from_binary_i64, i64, 8);
@@ -181,9 +229,13 @@ pub fn s_rename(data: ExSeries, name: &str) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn s_dtype(data: ExSeries) -> Result<String, ExplorerError> {
-    let dt = data.dtype().to_string();
-    Ok(dt)
+pub fn s_dtype(data: ExSeries) -> Result<ExSeriesDtype, ExplorerError> {
+    ExSeriesDtype::try_from(data.dtype())
+}
+
+#[rustler::nif]
+pub fn s_iotype(data: ExSeries) -> Result<ExSeriesIoType, ExplorerError> {
+    ExSeriesIoType::try_from(data.dtype())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -306,17 +358,15 @@ pub fn s_shift(series: ExSeries, offset: i64) -> Result<ExSeries, ExplorerError>
 pub fn s_sort(
     series: ExSeries,
     descending: bool,
+    maintain_order: bool,
+    multithreaded: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    // TODO: Make this an option
-    let maintain_order = true;
-    let multithreaded = false;
-
     let opts = SortOptions {
         descending,
-        nulls_last,
         maintain_order,
         multithreaded,
+        nulls_last,
     };
     Ok(ExSeries::new(series.sort_with(opts)))
 }
@@ -325,17 +375,15 @@ pub fn s_sort(
 pub fn s_argsort(
     series: ExSeries,
     descending: bool,
+    maintain_order: bool,
+    multithreaded: bool,
     nulls_last: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    // TODO: Make this an option
-    let maintain_order = true;
-    let multithreaded = false;
-
     let opts = SortOptions {
         descending,
-        nulls_last,
         maintain_order,
         multithreaded,
+        nulls_last,
     };
     let indices = series.arg_sort(opts).cast(&DataType::Int64)?;
     Ok(ExSeries::new(indices))
@@ -378,7 +426,7 @@ pub fn s_cut(
     let cut_series = cut(&series, bins, labels, left_close, true)?;
     let mut cut_df = DataFrame::from(cut_series.struct_()?.clone());
 
-    let cut_df = cut_df.insert_at_idx(0, series)?;
+    let cut_df = cut_df.insert_column(0, series)?;
 
     cut_df.set_column_names(&[
         "values",
@@ -412,7 +460,7 @@ pub fn s_qcut(
     )?;
 
     let mut qcut_df = DataFrame::from(qcut_series.struct_()?.clone());
-    let qcut_df = qcut_df.insert_at_idx(0, series)?;
+    let qcut_df = qcut_df.insert_column(0, series)?;
 
     qcut_df.set_column_names(&[
         "values",
@@ -475,7 +523,7 @@ pub fn s_is_nan(series: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_at_every(series: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(series.take_every(n)))
+    Ok(ExSeries::new(series.gather_every(n)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -485,9 +533,9 @@ pub fn s_series_equal(
     null_equal: bool,
 ) -> Result<bool, ExplorerError> {
     let result = if null_equal {
-        series.series_equal_missing(&other)
+        series.equals_missing(&other)
     } else {
-        series.series_equal(&other)
+        series.equals(&other)
     };
 
     Ok(result)
@@ -824,6 +872,46 @@ pub fn s_ewm_mean(
     Ok(ExSeries::new(s1))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_ewm_standard_deviation(
+    series: ExSeries,
+    alpha: f64,
+    adjust: bool,
+    bias: bool,
+    min_periods: usize,
+    ignore_nulls: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let opts = EWMOptions {
+        alpha,
+        adjust,
+        bias,
+        min_periods,
+        ignore_nulls,
+    };
+    let s1 = polars_ops::prelude::ewm_std(&series, opts)?;
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_ewm_variance(
+    series: ExSeries,
+    alpha: f64,
+    adjust: bool,
+    bias: bool,
+    min_periods: usize,
+    ignore_nulls: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let opts = EWMOptions {
+        alpha,
+        adjust,
+        bias,
+        min_periods,
+        ignore_nulls,
+    };
+    let s1 = polars_ops::prelude::ewm_var(&series, opts)?;
+    Ok(ExSeries::new(s1))
+}
+
 pub fn ewm_opts(alpha: f64, adjust: bool, min_periods: usize, ignore_nulls: bool) -> EWMOptions {
     EWMOptions {
         alpha,
@@ -920,6 +1008,14 @@ pub fn s_median(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_mode(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    match mode::mode(&s) {
+        Ok(s) => Ok(ExSeries::new(s)),
+        Err(e) => Err(e.into()),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     match s.dtype() {
         DataType::Int64 => Ok(ExSeries::new(s.product())),
@@ -929,19 +1025,19 @@ pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_variance(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
+pub fn s_variance(env: Env, s: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
     match s.dtype() {
-        DataType::Int64 => Ok(s.i64()?.var(1).encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.var(1), env)),
+        DataType::Int64 => Ok(s.i64()?.var(ddof).encode(env)),
+        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.var(ddof), env)),
         dt => panic!("var/1 not implemented for {dt:?}"),
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_standard_deviation(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
+pub fn s_standard_deviation(env: Env, s: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
     match s.dtype() {
-        DataType::Int64 => Ok(s.i64()?.std(1).encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.std(1), env)),
+        DataType::Int64 => Ok(s.i64()?.std(ddof).encode(env)),
+        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.std(ddof), env)),
         dt => panic!("std/1 not implemented for {dt:?}"),
     }
 }
@@ -962,24 +1058,52 @@ pub fn s_correlation(
     s1: ExSeries,
     s2: ExSeries,
     ddof: u8,
+    method: ExCorrelationMethod,
 ) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
-    let corr = pearson_corr(s1.f64()?, s2.f64()?, ddof);
+
+    let corr = match method {
+        ExCorrelationMethod::Pearson => pearson_corr(s1.f64()?, s2.f64()?, ddof),
+        ExCorrelationMethod::Spearman => {
+            let df = df!("s1" => s1, "s2" => s2)?
+                .lazy()
+                .with_column(spearman_rank_corr(col("s1"), col("s2"), ddof, true).alias("corr"))
+                .collect()?;
+            match df.column("corr")?.get(0)? {
+                AnyValue::Float64(x) => Some(x),
+                _ => None,
+            }
+        }
+    };
     Ok(term_from_optional_float(corr, env))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries) -> Result<Term, ExplorerError> {
+pub fn s_covariance(env: Env, s1: ExSeries, s2: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
-    let cov = cov(s1.f64()?, s2.f64()?);
+    let cov = cov(s1.f64()?, s2.f64()?, ddof);
     Ok(term_from_optional_float(cov, env))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_all(s: ExSeries) -> Result<bool, ExplorerError> {
+    let s = s.clone_inner();
+
+    Ok(s.bool()?.all())
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_any(s: ExSeries) -> Result<bool, ExplorerError> {
+    let s = s.clone_inner();
+
+    Ok(s.bool()?.any())
 }
 
 fn term_from_optional_float(option: Option<f64>, env: Env<'_>) -> Term<'_> {
     match option {
-        Some(float) => encoding::term_from_float(float, env),
+        Some(float) => encoding::term_from_float64(float, env),
         None => rustler::types::atom::nil().to_term(env),
     }
 }
@@ -991,25 +1115,25 @@ pub fn s_at(env: Env, series: ExSeries, idx: usize) -> Result<Term, ExplorerErro
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_sum(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    let new_series = polars_ops::prelude::cumsum(&series, reverse)?;
+    let new_series = polars_ops::prelude::cum_sum(&series, reverse)?;
     Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_max(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    let new_series = polars_ops::prelude::cummax(&series, reverse)?;
+    let new_series = polars_ops::prelude::cum_max(&series, reverse)?;
     Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_min(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    let new_series = polars_ops::prelude::cummin(&series, reverse)?;
+    let new_series = polars_ops::prelude::cum_min(&series, reverse)?;
     Ok(ExSeries::new(new_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_product(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
-    let new_series = polars_ops::prelude::cumprod(&series, reverse)?;
+    let new_series = polars_ops::prelude::cum_prod(&series, reverse)?;
     Ok(ExSeries::new(new_series))
 }
 
@@ -1150,31 +1274,9 @@ pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_cast(s: ExSeries, to_type: &str) -> Result<ExSeries, ExplorerError> {
-    let dtype = cast_str_to_dtype(to_type)?;
+pub fn s_cast(s: ExSeries, to_type: ExSeriesDtype) -> Result<ExSeries, ExplorerError> {
+    let dtype = DataType::try_from(&to_type)?;
     Ok(ExSeries::new(s.cast(&dtype)?))
-}
-
-pub fn cast_str_to_dtype(str_type: &str) -> Result<DataType, ExplorerError> {
-    match str_type {
-        "float" => Ok(DataType::Float64),
-        "integer" => Ok(DataType::Int64),
-        "date" => Ok(DataType::Date),
-        "time" => Ok(DataType::Time),
-        "datetime[ms]" => Ok(DataType::Datetime(TimeUnit::Milliseconds, None)),
-        "datetime[μs]" => Ok(DataType::Datetime(TimeUnit::Microseconds, None)),
-        "datetime[ns]" => Ok(DataType::Datetime(TimeUnit::Nanoseconds, None)),
-        "duration[ms]" => Ok(DataType::Duration(TimeUnit::Milliseconds)),
-        "duration[μs]" => Ok(DataType::Duration(TimeUnit::Microseconds)),
-        "duration[ns]" => Ok(DataType::Duration(TimeUnit::Nanoseconds)),
-        "boolean" => Ok(DataType::Boolean),
-        "string" => Ok(DataType::Utf8),
-        "binary" => Ok(DataType::Binary),
-        "category" => Ok(DataType::Categorical(None)),
-        _ => Err(ExplorerError::Other(format!(
-            "Cannot cast to dtype: {str_type}"
-        ))),
-    }
 }
 
 pub fn cast_str_to_f64(atom: &str) -> f64 {
@@ -1236,7 +1338,7 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
             } else {
                 let values: Vec<Option<&str>> = utf8s.into();
                 let array = Utf8Array::<i64>::from(values);
-                let mapping = RevMapping::Local(array);
+                let mapping = RevMapping::build_local(array);
 
                 let chunks = if s.dtype() == &DataType::Utf8 {
                     let ids: ChunkedArray<UInt32Type> = s
@@ -1290,60 +1392,48 @@ pub fn s_sample_frac(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_rank(
     series: ExSeries,
-    method: &str,
+    method: ExRankMethod,
     descending: bool,
     seed: Option<u64>,
 ) -> Result<ExSeries, ExplorerError> {
     let rank_method = parse_rank_method_options(method, descending);
+    let rank_data_type = match rank_method.method {
+        RankMethod::Average => DataType::Float64,
+        _ => DataType::Int64,
+    };
 
-    match rank_method.method {
-        RankMethod::Average => {
-            let new_s = series
-                .rank(rank_method, seed)
-                .cast(&DataType::Float64)?
-                .into_series();
+    let new_s = series
+        .rank(rank_method, seed)
+        .cast(&rank_data_type)?
+        .into_series();
 
-            Ok(ExSeries::new(new_s))
-        }
-        _ => {
-            let new_s = series
-                .rank(rank_method, seed)
-                .cast(&DataType::Int64)?
-                .into_series();
-
-            Ok(ExSeries::new(new_s))
-        }
-    }
+    Ok(ExSeries::new(new_s))
 }
 
-pub fn parse_rank_method_options(strategy: &str, descending: bool) -> RankOptions {
+pub fn parse_rank_method_options(strategy: ExRankMethod, descending: bool) -> RankOptions {
     match strategy {
-        "ordinal" => RankOptions {
+        ExRankMethod::Ordinal => RankOptions {
             method: RankMethod::Ordinal,
             descending,
         },
-        "random" => RankOptions {
+        ExRankMethod::Random => RankOptions {
             method: RankMethod::Random,
             descending,
         },
-        "average" => RankOptions {
+        ExRankMethod::Average => RankOptions {
             method: RankMethod::Average,
             descending,
         },
-        "min" => RankOptions {
+        ExRankMethod::Min => RankOptions {
             method: RankMethod::Min,
             descending,
         },
-        "max" => RankOptions {
+        ExRankMethod::Max => RankOptions {
             method: RankMethod::Max,
             descending,
         },
-        "dense" => RankOptions {
+        ExRankMethod::Dense => RankOptions {
             method: RankMethod::Dense,
-            descending,
-        },
-        _ => RankOptions {
-            method: RankMethod::Average,
             descending,
         },
     }
@@ -1476,6 +1566,16 @@ pub fn s_substring(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_split(s1: ExSeries, by: &str) -> Result<ExSeries, ExplorerError> {
+    let s2 = s1
+        .utf8()?
+        .split(&ChunkedArray::new("a", &[by]))
+        .into_series();
+
+    Ok(ExSeries::new(s2))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_round(s: ExSeries, decimals: u32) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(s.round(decimals)?.into_series()))
 }
@@ -1492,7 +1592,7 @@ pub fn s_ceil(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_abs(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s.abs()?.into_series()))
+    Ok(ExSeries::new(abs(&s)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1638,4 +1738,46 @@ pub fn s_acos(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.f64()?.apply_values(|o| o.atan()).into();
     Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_join(s1: ExSeries, separator: &str) -> Result<ExSeries, ExplorerError> {
+    let s2 = s1
+        .list()?
+        .lst_join(&ChunkedArray::new("a", &[separator]))?
+        .into_series();
+
+    Ok(ExSeries::new(s2))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_lengths(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s2 = s
+        .list()?
+        .lst_lengths()
+        .into_series()
+        .cast(&DataType::Int64)?;
+
+    Ok(ExSeries::new(s2))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+fn s_member(
+    s: ExSeries,
+    value: ExValidValue,
+    inner_dtype: ExSeriesDtype,
+) -> Result<ExSeries, ExplorerError> {
+    let inner_dtype = DataType::try_from(&inner_dtype)?;
+    let value_expr = value.lit_with_matching_precision(&inner_dtype);
+
+    let s2 = s
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s.name()).list().contains(value_expr)])
+        .collect()?
+        .column(s.name())?
+        .clone();
+
+    Ok(ExSeries::new(s2))
 }

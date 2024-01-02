@@ -7,18 +7,17 @@ defmodule Explorer.IOHelpers do
 
   require ExUnit.Assertions
 
-  @valid_dtypes Explorer.Shared.dtypes()
-
   def f64_epsilon, do: @f64_epsilon
 
   def assert_from_with_correct_type(type, value, parsed_value, reader_fun)
-      when type in @valid_dtypes and is_function(reader_fun, 1) do
-    df = List.wrap(value) |> Series.from_list() |> Series.cast(type) |> then(&DF.new(column: &1))
+      when is_function(reader_fun, 1) do
+    dtype = Explorer.Shared.normalise_dtype!(type)
+    df = List.wrap(value) |> Series.from_list() |> Series.cast(dtype) |> then(&DF.new(column: &1))
 
     %DF{} = df = reader_fun.(df)
 
     ExUnit.Assertions.assert(df[0][0] == parsed_value)
-    ExUnit.Assertions.assert(df[0].dtype == type)
+    ExUnit.Assertions.assert(df[0].dtype == dtype)
   end
 
   def tmp_filename(save_fun) when is_function(save_fun, 1) do

@@ -6,32 +6,13 @@ use polars::export::{arrow, arrow::ffi};
 use std::collections::HashMap;
 use std::result::Result;
 
+use crate::datatypes::ExSeriesDtype;
 use crate::ex_expr_to_exprs;
 use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 use smartstring::alias::String as SmartString;
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
-
-// Helper to normalize integers and float column dtypes.
-pub fn normalize_numeric_dtypes(df: &mut DataFrame) -> Result<DataFrame, crate::ExplorerError> {
-    let dtypes = df.dtypes().into_iter().enumerate();
-
-    for (idx, dtype) in dtypes {
-        match dtype {
-            DataType::UInt8
-            | DataType::UInt16
-            | DataType::UInt32
-            | DataType::Int8
-            | DataType::Int16
-            | DataType::Int32 => df.apply_at_idx(idx, |s| s.cast(&DataType::Int64).unwrap())?,
-            DataType::Float32 => df.apply_at_idx(idx, |s| s.cast(&DataType::Float64).unwrap())?,
-            _ => df,
-        };
-    }
-
-    Ok(df.clone())
-}
 
 fn to_string_names(names: Vec<&str>) -> Vec<String> {
     names.into_iter().map(|s| s.to_string()).collect()
@@ -77,9 +58,14 @@ pub fn df_names(df: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn df_dtypes(df: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
-    let result = df.dtypes().iter().map(|dtype| dtype.to_string()).collect();
-    Ok(result)
+pub fn df_dtypes(df: ExDataFrame) -> Result<Vec<ExSeriesDtype>, ExplorerError> {
+    let mut dtypes: Vec<ExSeriesDtype> = vec![];
+
+    for dtype in df.dtypes().iter() {
+        dtypes.push(ExSeriesDtype::try_from(dtype)?)
+    }
+
+    Ok(dtypes)
 }
 
 #[rustler::nif]
@@ -337,16 +323,28 @@ fn arrow_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_arrange(
+pub fn df_sort_by(
     df: ExDataFrame,
     by_columns: Vec<String>,
     reverse: Vec<bool>,
+    maintain_order: bool,
+    multithreaded: bool,
+    nulls_last: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    // TODO: make maintain_order an option.
-    let maintain_order = true;
     let new_df = if groups.is_empty() {
-        df.sort(by_columns, reverse, maintain_order)?
+        // Note: we cannot use either df.sort or df.sort_with_options.
+        // df.sort does not allow a nulls_last option.
+        // df.sort_with_options only allows a single column.
+        let by_columns = df.select_series(by_columns)?;
+        df.sort_impl(
+            by_columns,
+            reverse,
+            nulls_last,
+            maintain_order,
+            None,
+            multithreaded,
+        )?
     } else {
         df.group_by_stable(groups)?
             .apply(|df| df.sort(by_columns.clone(), reverse.clone(), maintain_order))?
@@ -356,18 +354,16 @@ pub fn df_arrange(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_arrange_with(
+pub fn df_sort_with(
     data: ExDataFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
+    maintain_order: bool,
+    nulls_last: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = data.clone_inner();
     let exprs = ex_expr_to_exprs(expressions);
-
-    // TODO: make these bools options
-    let nulls_last = false;
-    let maintain_order = true;
 
     let new_df = if groups.is_empty() {
         df.lazy()
@@ -497,8 +493,7 @@ pub fn df_describe(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_nil_count(df: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
-    let mut new_df = df.null_count();
-    let new_df = normalize_numeric_dtypes(&mut new_df)?;
+    let new_df = df.null_count();
     Ok(ExDataFrame::new(new_df))
 }
 
@@ -643,6 +638,18 @@ pub fn df_pivot_wider(
 
     new_df.set_column_names(&new_names)?;
 
+    Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_explode(df: ExDataFrame, columns: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
+    let new_df = df.explode(columns)?;
+    Ok(ExDataFrame::new(new_df))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_unnest(df: ExDataFrame, columns: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
+    let new_df = df.clone_inner().unnest(columns)?;
     Ok(ExDataFrame::new(new_df))
 }
 

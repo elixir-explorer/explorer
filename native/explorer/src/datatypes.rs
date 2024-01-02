@@ -1,3 +1,5 @@
+mod ex_dtypes;
+
 use crate::atoms;
 use crate::ExplorerError;
 use chrono::prelude::*;
@@ -15,6 +17,8 @@ use std::str::FromStr;
 
 #[cfg(feature = "aws")]
 use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
+
+pub use ex_dtypes::*;
 
 pub struct ExDataFrameRef(pub DataFrame);
 pub struct ExExprRef(pub Expr);
@@ -209,6 +213,12 @@ impl From<NaiveDate> for ExDate {
     }
 }
 
+impl Literal for ExDate {
+    fn lit(self) -> Expr {
+        NaiveDate::from(self).lit().dt().date()
+    }
+}
+
 #[derive(NifStruct, Copy, Clone, Debug)]
 #[module = "Explorer.Duration"]
 pub struct ExDuration {
@@ -219,6 +229,30 @@ pub struct ExDuration {
 impl From<ExDuration> for i64 {
     fn from(d: ExDuration) -> i64 {
         d.value
+    }
+}
+
+impl Literal for ExDuration {
+    fn lit(self) -> Expr {
+        // Note: it's tempting to use `.lit()` on a `chrono::Duration` struct in this function, but
+        // doing so will lose precision information as `chrono::Duration`s have no time units.
+        Expr::Literal(LiteralValue::Duration(
+            self.value,
+            time_unit_of_ex_duration(&self),
+        ))
+    }
+}
+
+fn time_unit_of_ex_duration(duration: &ExDuration) -> TimeUnit {
+    let precision = duration.precision;
+    if precision == atoms::millisecond() {
+        TimeUnit::Milliseconds
+    } else if precision == atoms::microsecond() {
+        TimeUnit::Microseconds
+    } else if precision == atoms::nanosecond() {
+        TimeUnit::Nanoseconds
+    } else {
+        panic!("unrecognized precision: {precision:?}")
     }
 }
 
@@ -314,6 +348,12 @@ impl From<NaiveDateTime> for ExDateTime {
     }
 }
 
+impl Literal for ExDateTime {
+    fn lit(self) -> Expr {
+        NaiveDateTime::from(self).lit()
+    }
+}
+
 #[derive(NifStruct, Copy, Clone, Debug)]
 #[module = "Time"]
 pub struct ExTime {
@@ -375,6 +415,83 @@ impl From<NaiveTime> for ExTime {
     }
 }
 
+impl Literal for ExTime {
+    fn lit(self) -> Expr {
+        Expr::Literal(LiteralValue::Time(self.into()))
+    }
+}
+
+/// Represents valid Elixir types that can be used as literals in Polars.
+pub enum ExValidValue<'a> {
+    I64(i64),
+    F64(f64),
+    Bool(bool),
+    Str(&'a str),
+    Date(ExDate),
+    Time(ExTime),
+    DateTime(ExDateTime),
+    Duration(ExDuration),
+}
+
+impl<'a> ExValidValue<'a> {
+    pub fn lit_with_matching_precision(self, data_type: &DataType) -> Expr {
+        match data_type {
+            DataType::Datetime(time_unit, _) => self.lit().dt().cast_time_unit(*time_unit),
+            DataType::Duration(time_unit) => self.lit().dt().cast_time_unit(*time_unit),
+            _ => self.lit(),
+        }
+    }
+}
+
+impl<'a> Literal for &ExValidValue<'a> {
+    fn lit(self) -> Expr {
+        match self {
+            ExValidValue::I64(v) => v.lit(),
+            ExValidValue::F64(v) => v.lit(),
+            ExValidValue::Bool(v) => v.lit(),
+            ExValidValue::Str(v) => v.lit(),
+            ExValidValue::Date(v) => v.lit(),
+            ExValidValue::Time(v) => v.lit(),
+            ExValidValue::DateTime(v) => v.lit(),
+            ExValidValue::Duration(v) => v.lit(),
+        }
+    }
+}
+
+impl<'a> rustler::Decoder<'a> for ExValidValue<'a> {
+    fn decode(term: rustler::Term<'a>) -> rustler::NifResult<Self> {
+        use rustler::*;
+
+        match term.get_type() {
+            TermType::Atom => term.decode::<bool>().map(ExValidValue::Bool),
+            TermType::Binary => term.decode::<&'a str>().map(ExValidValue::Str),
+            TermType::Number => {
+                if let Ok(i) = term.decode::<i64>() {
+                    Ok(ExValidValue::I64(i))
+                } else if let Ok(f) = term.decode::<f64>() {
+                    Ok(ExValidValue::F64(f))
+                } else {
+                    Err(rustler::Error::BadArg)
+                }
+            }
+            TermType::Map => {
+                if let Ok(date) = term.decode::<ExDate>() {
+                    Ok(ExValidValue::Date(date))
+                } else if let Ok(time) = term.decode::<ExTime>() {
+                    Ok(ExValidValue::Time(time))
+                } else if let Ok(datetime) = term.decode::<ExDateTime>() {
+                    Ok(ExValidValue::DateTime(datetime))
+                } else if let Ok(duration) = term.decode::<ExDuration>() {
+                    Ok(ExValidValue::Duration(duration))
+                } else {
+                    Err(rustler::Error::BadArg)
+                }
+            }
+            _ => Err(rustler::Error::BadArg),
+        }
+    }
+}
+
 // In Elixir this would be represented like this:
 // * `:uncompressed` for `ExParquetCompression::Uncompressed`
 // * `{:brotli, 7}` for `ExParquetCompression::Brotli(Some(7))`
@@ -386,6 +503,22 @@ pub enum ExParquetCompression {
     Snappy,
     Uncompressed,
     Zstd(Option<i32>),
+}
+
+#[derive(NifTaggedEnum)]
+pub enum ExCorrelationMethod {
+    Pearson,
+    Spearman,
+}
+
+#[derive(NifTaggedEnum)]
+pub enum ExRankMethod {
+    Average,
+    Min,
+    Max,
+    Dense,
+    Ordinal,
+    Random,
 }
 
 impl TryFrom<ExParquetCompression> for ParquetCompression {

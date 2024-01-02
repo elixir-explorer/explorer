@@ -110,11 +110,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         do: max_rows,
         else: infer_schema_length
 
-    dtypes =
-      Enum.map(dtypes, fn {column_name, dtype} ->
-        {column_name, Shared.internal_from_dtype(dtype)}
-      end)
-
     df =
       Native.lf_from_csv(
         entry.path,
@@ -124,7 +119,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         skip_rows,
         delimiter,
         true,
-        dtypes,
+        Map.to_list(dtypes),
         encoding,
         nil_values,
         parse_dates,
@@ -306,8 +301,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(_df, %S3.Entry{}, _compression, _streaming = true) do
-    {:error, ArgumentError.exception("streaming is not supported for writes to AWS S3")}
+  def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, {compression, level}, _streaming = true) do
+    case Native.lf_to_parquet_cloud(
+           ldf.data,
+           entry,
+           Shared.parquet_compression(compression, level)
+         ) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
   end
 
   @impl true
@@ -352,18 +354,32 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def arrange_with(%DF{groups: []} = df, out_df, column_pairs) do
+  def sort_with(
+        %DF{groups: []} = df,
+        out_df,
+        column_pairs,
+        maintain_order?,
+        multithreaded?,
+        nulls_last?
+      )
+      when is_boolean(maintain_order?) and is_boolean(multithreaded?) and
+             is_boolean(nulls_last?) do
     {directions, expressions} =
       column_pairs
       |> Enum.map(fn {direction, lazy_series} -> {direction == :desc, to_expr(lazy_series)} end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(df, out_df, :lf_arrange_with, [expressions, directions])
+    Shared.apply_dataframe(df, out_df, :lf_sort_with, [
+      expressions,
+      directions,
+      maintain_order?,
+      nulls_last?
+    ])
   end
 
   @impl true
-  def arrange_with(_df, _out_df, _directions) do
-    raise "arrange_with/2 with groups is not supported yet for lazy frames"
+  def sort_with(_df, _out_df, _directions, _maintain_order?, _multithreaded?, _nulls_last?) do
+    raise "sort_with/2 with groups is not supported yet for lazy frames"
   end
 
   @impl true
@@ -410,6 +426,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         names_to,
         values_to
       ])
+
+  @impl true
+  def explode(%DF{} = df, %DF{} = out_df, columns),
+    do: Shared.apply_dataframe(df, out_df, :lf_explode, [columns])
+
+  @impl true
+  def unnest(%DF{} = df, %DF{} = out_df, columns),
+    do: Shared.apply_dataframe(df, out_df, :lf_unnest, [columns])
 
   # Groups
 
@@ -473,6 +497,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   not_available_funs = [
+    correlation: 4,
+    covariance: 3,
     describe: 2,
     nil_count: 1,
     dummies: 3,

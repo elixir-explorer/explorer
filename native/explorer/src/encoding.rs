@@ -2,6 +2,7 @@ use chrono::prelude::*;
 use polars::export::arrow::array::GenericBinaryArray;
 use polars::prelude::*;
 use rustler::{Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
+use std::collections::HashMap;
 use std::{mem, slice};
 
 use crate::atoms::{
@@ -457,34 +458,41 @@ fn categorical_series_to_list<'b>(
     Ok(unsafe { Term::new(env, list) })
 }
 
-// Convert f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
-#[inline]
-fn float64_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
-    let nan_atom = nan().encode(env);
-    let neg_infinity_atom = neg_infinity().encode(env);
-    let infinity_atom = infinity().encode(env);
-    let nil_atom = atom::nil().encode(env);
+// Convert f32 and f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
+macro_rules! float_series_to_list {
+    ($name:ident, $convert_function:ident) => {
+        #[inline]
+        fn $name<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
+            let nan_atom = nan().encode(env);
+            let neg_infinity_atom = neg_infinity().encode(env);
+            let infinity_atom = infinity().encode(env);
+            let nil_atom = atom::nil().encode(env);
 
-    Ok(unsafe_iterator_series_to_list!(
-        env,
-        s.f64()?.into_iter().map(|option| {
-            match option {
-                Some(x) => {
-                    if x.is_finite() {
-                        x.encode(env)
-                    } else {
-                        match (x.is_nan(), x.is_sign_negative()) {
-                            (true, _) => nan_atom,
-                            (false, true) => neg_infinity_atom,
-                            (false, false) => infinity_atom,
+            Ok(unsafe_iterator_series_to_list!(
+                env,
+                s.$convert_function()?.into_iter().map(|option| {
+                    match option {
+                        Some(x) => {
+                            if x.is_finite() {
+                                x.encode(env)
+                            } else {
+                                match (x.is_nan(), x.is_sign_negative()) {
+                                    (true, _) => nan_atom,
+                                    (false, true) => neg_infinity_atom,
+                                    (false, false) => infinity_atom,
+                                }
+                            }
                         }
+                        None => nil_atom,
                     }
-                }
-                None => nil_atom,
-            }
-        })
-    ))
+                })
+            ))
+        }
+    };
 }
+
+float_series_to_list!(float64_series_to_list, f64);
+float_series_to_list!(float32_series_to_list, f32);
 
 macro_rules! series_to_list {
     ($s:ident, $env:ident, $convert_function:ident) => {
@@ -532,40 +540,74 @@ pub fn resource_term_from_value<'b>(
     }
 }
 
+// Macro for decoding both f32 and f64 to term.
+macro_rules! term_from_float {
+    ($name:ident, $type:ty) => {
+        pub fn $name(float: $type, env: Env<'_>) -> Term<'_> {
+            if float.is_finite() {
+                float.encode(env)
+            } else {
+                match (float.is_nan(), float.is_sign_negative()) {
+                    (true, _) => nan().encode(env),
+                    (false, true) => neg_infinity().encode(env),
+                    (false, false) => infinity().encode(env),
+                }
+            }
+        }
+    };
+}
+
+term_from_float!(term_from_float64, f64);
+term_from_float!(term_from_float32, f32);
+
 pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     match v {
         AnyValue::Null => Ok(None::<bool>.encode(env)),
         AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
         AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
+        AnyValue::Int8(v) => Ok(Some(v).encode(env)),
+        AnyValue::Int16(v) => Ok(Some(v).encode(env)),
+        AnyValue::Int32(v) => Ok(Some(v).encode(env)),
         AnyValue::Int64(v) => Ok(Some(v).encode(env)),
-        AnyValue::Float64(v) => Ok(Some(term_from_float(v, env)).encode(env)),
+        AnyValue::UInt8(v) => Ok(Some(v).encode(env)),
+        AnyValue::UInt16(v) => Ok(Some(v).encode(env)),
+        AnyValue::UInt32(v) => Ok(Some(v).encode(env)),
+        AnyValue::UInt64(v) => Ok(Some(v).encode(env)),
+        AnyValue::Float32(v) => Ok(Some(term_from_float32(v, env)).encode(env)),
+        AnyValue::Float64(v) => Ok(Some(term_from_float64(v, env)).encode(env)),
         AnyValue::Date(v) => encode_date(v, env),
         AnyValue::Time(v) => encode_time(v, env),
         AnyValue::Datetime(v, time_unit, None) => encode_datetime(v, time_unit, env),
         AnyValue::Duration(v, time_unit) => encode_duration(v, time_unit, env),
         AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
+        AnyValue::List(series) => list_from_series(ExSeries::new(series), env),
+        AnyValue::Struct(_, _, fields) => v
+            ._iter_struct_av()
+            .zip(fields)
+            .map(|(value, field)| Ok((field.name.as_str(), term_from_value(value, env)?)))
+            .collect::<Result<HashMap<_, _>, ExplorerError>>()
+            .map(|map| map.encode(env)),
         dt => panic!("cannot encode value {dt:?} to term"),
-    }
-}
-
-// Useful for series functions that can return float.
-pub fn term_from_float(float: f64, env: Env<'_>) -> Term<'_> {
-    if float.is_finite() {
-        float.encode(env)
-    } else {
-        match (float.is_nan(), float.is_sign_negative()) {
-            (true, _) => nan().encode(env),
-            (false, true) => neg_infinity().encode(env),
-            (false, false) => infinity().encode(env),
-        }
     }
 }
 
 pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     match s.dtype() {
         DataType::Boolean => series_to_list!(s, env, bool),
+
+        DataType::Int8 => series_to_list!(s, env, i8),
+        DataType::Int16 => series_to_list!(s, env, i16),
+        DataType::Int32 => series_to_list!(s, env, i32),
         DataType::Int64 => series_to_list!(s, env, i64),
+
+        DataType::UInt8 => series_to_list!(s, env, u8),
+        DataType::UInt16 => series_to_list!(s, env, u16),
+        DataType::UInt32 => series_to_list!(s, env, u32),
+        DataType::UInt64 => series_to_list!(s, env, u64),
+
+        DataType::Float32 => float32_series_to_list(&s, env),
         DataType::Float64 => float64_series_to_list(&s, env),
+
         DataType::Date => date_series_to_list(&s, env),
         DataType::Time => time_series_to_list(&s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(&s, *time_unit, env),
@@ -577,6 +619,20 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
             generic_binary_series_to_list(&s.resource, s.binary()?.downcast_iter(), env)
         }
         DataType::Categorical(Some(mapping)) => categorical_series_to_list(&s, env, mapping),
+        DataType::List(_inner_dtype) => s
+            .list()?
+            .into_iter()
+            .map(|item| match item {
+                Some(list) => list_from_series(ExSeries::new(list), env),
+                None => Ok(None::<bool>.encode(env)),
+            })
+            .collect::<Result<Vec<Term>, ExplorerError>>()
+            .map(|lists| lists.encode(env)),
+        DataType::Struct(_fields) => s
+            .iter()
+            .map(|value| term_from_value(value, env))
+            .collect::<Result<Vec<_>, ExplorerError>>()
+            .map(|values| values.encode(env)),
         dt => panic!("to_list/1 not implemented for {dt:?}"),
     }
 }
@@ -594,7 +650,11 @@ pub fn iovec_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
             }
             Ok([bin.release(env)].encode(env))
         }
+        DataType::Int8 => series_to_iovec!(resource, s, env, i8, i8),
+        DataType::Int16 => series_to_iovec!(resource, s, env, i16, i16),
+        DataType::Int32 => series_to_iovec!(resource, s, env, i32, i32),
         DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
+        DataType::Float32 => series_to_iovec!(resource, s, env, f32, f32),
         DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
         DataType::Date => series_to_iovec!(resource, s, env, date, i32),
         DataType::Time => series_to_iovec!(resource, s, env, time, i64),

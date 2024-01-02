@@ -13,7 +13,9 @@ defmodule Explorer.PolarsBackend.Expression do
   @type t :: %__MODULE__{resource: reference()}
 
   @all_expressions [
+    all: 1,
     add: 2,
+    any: 1,
     all_equal: 2,
     argmax: 1,
     argmin: 1,
@@ -51,6 +53,7 @@ defmodule Explorer.PolarsBackend.Expression do
     mean: 1,
     median: 1,
     min: 1,
+    mode: 1,
     n_distinct: 1,
     nil_count: 1,
     not_equal: 2,
@@ -69,19 +72,18 @@ defmodule Explorer.PolarsBackend.Expression do
     asin: 1,
     acos: 1,
     atan: 1,
-    standard_deviation: 1,
+    standard_deviation: 2,
     subtract: 2,
     sum: 1,
     unordered_distinct: 1,
-    variance: 1,
-    skew: 2,
-    covariance: 2
+    variance: 2,
+    skew: 2
   ]
 
   @first_only_expressions [
     quantile: 2,
-    argsort: 3,
-    sort: 3,
+    argsort: 5,
+    sort: 5,
     head: 2,
     tail: 2,
     peaks: 2,
@@ -93,6 +95,8 @@ defmodule Explorer.PolarsBackend.Expression do
     round: 2,
     clip_float: 3,
     clip_integer: 3,
+    variance: 2,
+    standard_deviation: 2,
 
     # Trigonometric operations
     acos: 1,
@@ -114,6 +118,8 @@ defmodule Explorer.PolarsBackend.Expression do
     window_sum: 5,
     window_standard_deviation: 5,
     ewm_mean: 5,
+    ewm_standard_deviation: 6,
+    ewm_variance: 6,
 
     # Conversions
     strptime: 2,
@@ -127,7 +133,13 @@ defmodule Explorer.PolarsBackend.Expression do
     rstrip: 2,
     downcase: 1,
     upcase: 1,
-    substring: 3
+    substring: 3,
+    split: 2,
+
+    # Lists
+    join: 2,
+    lengths: 1,
+    member: 3
   ]
 
   @custom_expressions [
@@ -145,7 +157,8 @@ defmodule Explorer.PolarsBackend.Expression do
     slice: 3,
     concat: 1,
     column: 1,
-    correlation: 3
+    correlation: 4,
+    covariance: 3
   ]
 
   missing =
@@ -158,8 +171,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
   def to_expr(%LazySeries{op: :cast, args: [lazy_series, dtype]}) do
     lazy_series_expr = to_expr(lazy_series)
-    dtype_expr = Explorer.Shared.dtype_to_string(dtype)
-    Native.expr_cast(lazy_series_expr, dtype_expr)
+    Native.expr_cast(lazy_series_expr, dtype)
   end
 
   def to_expr(%LazySeries{op: :fill_missing_with_strategy, args: [lazy_series, strategy]}) do
@@ -195,8 +207,12 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_concat(expr_list)
   end
 
-  def to_expr(%LazySeries{op: :correlation, args: [series1, series2, ddof]}) do
-    Native.expr_correlation(to_expr(series1), to_expr(series2), ddof)
+  def to_expr(%LazySeries{op: :correlation, args: [series1, series2, ddof, method]}) do
+    Native.expr_correlation(to_expr(series1), to_expr(series2), ddof, method)
+  end
+
+  def to_expr(%LazySeries{op: :covariance, args: [series1, series2, ddof]}) do
+    Native.expr_covariance(to_expr(series1), to_expr(series2), ddof)
   end
 
   def to_expr(%LazySeries{op: :format, args: [series_list]}) when is_list(series_list) do
@@ -249,10 +265,10 @@ defmodule Explorer.PolarsBackend.Expression do
 
     input_dtypes = Enum.map(args, &dtype/1)
     duration_dtype = Enum.find(input_dtypes, &match?({:duration, _}, &1))
-    numeric? = Enum.any?(input_dtypes, &(&1 in [:integer, :float]))
+    numeric? = Enum.any?(input_dtypes, &(&1 in [:integer, {:f, 32}, {:f, 64}]))
 
     if duration_dtype && numeric? do
-      wrap_in_cast(expr, duration_dtype)
+      Native.expr_cast(expr, duration_dtype)
     else
       expr
     end
@@ -262,8 +278,9 @@ defmodule Explorer.PolarsBackend.Expression do
     expr = Native.expr_divide(to_expr(left), to_expr(right))
 
     case {dtype(left), dtype(right)} do
-      {{:duration, _} = left_dtype, right_dtype} when right_dtype in [:integer, :float] ->
-        wrap_in_cast(expr, left_dtype)
+      {{:duration, _} = left_dtype, right_dtype}
+      when right_dtype in [:integer, {:f, 32}, {:f, 64}] ->
+        Native.expr_cast(expr, left_dtype)
 
       {_, _} ->
         expr
@@ -307,16 +324,11 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_describe_filter_plan(polars_df, expression)
   end
 
-  defp wrap_in_cast(lazy_series_expr, dtype) do
-    dtype_expr = Explorer.Shared.dtype_to_string(dtype)
-    Native.expr_cast(lazy_series_expr, dtype_expr)
-  end
-
   defp dtype(%LazySeries{dtype: dtype}), do: dtype
 
   defp dtype(%PolarsSeries{} = polars_series) do
     with {:ok, dtype} <- Native.s_dtype(polars_series) do
-      Explorer.PolarsBackend.Shared.normalise_dtype(dtype)
+      dtype
     end
   end
 end

@@ -3,8 +3,6 @@ defmodule Explorer.Backend.Series do
   The behaviour for series backends.
   """
 
-  @valid_dtypes Explorer.Shared.dtypes()
-
   @type t :: struct()
 
   @type s :: Explorer.Series.t()
@@ -68,7 +66,7 @@ defmodule Explorer.Backend.Series do
   @callback shift(s, offset :: integer, default :: nil) :: s
   @callback rank(
               s,
-              method :: String.t(),
+              method :: atom(),
               descending :: boolean(),
               seed :: option(integer())
             ) :: s | lazy_s()
@@ -82,16 +80,20 @@ defmodule Explorer.Backend.Series do
   @callback argmax(s) :: number() | non_finite() | lazy_s() | nil
   @callback mean(s) :: float() | non_finite() | lazy_s() | nil
   @callback median(s) :: float() | non_finite() | lazy_s() | nil
-  @callback variance(s) :: float() | non_finite() | lazy_s() | nil
-  @callback standard_deviation(s) :: float() | non_finite() | lazy_s() | nil
+  @callback mode(s) :: s | lazy_s()
+  @callback variance(s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
+  @callback standard_deviation(s, ddof :: non_neg_integer()) ::
+              float() | non_finite() | lazy_s() | nil
   @callback quantile(s, float()) ::
               number() | non_finite() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
   @callback nil_count(s) :: number() | lazy_s()
   @callback product(s) :: float() | non_finite() | lazy_s() | nil
   @callback skew(s, bias? :: boolean()) :: float() | non_finite() | lazy_s() | nil
-  @callback correlation(s, s, ddof :: non_neg_integer()) ::
+  @callback correlation(s, s, ddof :: non_neg_integer(), method :: atom()) ::
               float() | non_finite() | lazy_s() | nil
-  @callback covariance(s, s) :: float() | non_finite() | lazy_s() | nil
+  @callback covariance(s, s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
+  @callback all?(s) :: boolean() | lazy_s()
+  @callback any?(s) :: boolean() | lazy_s()
 
   # Cumulative
 
@@ -156,8 +158,20 @@ defmodule Explorer.Backend.Series do
 
   # Sort
 
-  @callback sort(s, descending? :: boolean(), nils_last :: boolean()) :: s
-  @callback argsort(s, descending? :: boolean(), nils_last :: boolean()) :: s
+  @callback sort(
+              s,
+              descending? :: boolean(),
+              maintain_order? :: boolean(),
+              multithreaded? :: boolean(),
+              nulls_last? :: boolean()
+            ) :: s
+  @callback argsort(
+              s,
+              descending? :: boolean(),
+              maintain_order? :: boolean(),
+              multithreaded? :: boolean(),
+              nulls_last? :: boolean()
+            ) :: s
   @callback reverse(s) :: s
 
   # Distinct
@@ -229,6 +243,24 @@ defmodule Explorer.Backend.Series do
               ignore_nils :: boolean()
             ) :: s
 
+  @callback ewm_standard_deviation(
+              s,
+              alpha :: float(),
+              adjust :: boolean(),
+              bias :: boolean(),
+              min_periods :: integer(),
+              ignore_nils :: boolean()
+            ) :: s
+
+  @callback ewm_variance(
+              s,
+              alpha :: float(),
+              adjust :: boolean(),
+              bias :: boolean(),
+              min_periods :: integer(),
+              ignore_nils :: boolean()
+            ) :: s
+
   # Nulls
 
   @callback fill_missing_with_strategy(s, :backward | :forward | :min | :max | :mean) :: s
@@ -254,6 +286,7 @@ defmodule Explorer.Backend.Series do
   @callback lstrip(s, String.t() | nil) :: s
   @callback rstrip(s, String.t() | nil) :: s
   @callback substring(s, integer(), non_neg_integer() | nil) :: s
+  @callback split(s, String.t()) :: s
 
   # Date / DateTime
 
@@ -266,12 +299,17 @@ defmodule Explorer.Backend.Series do
   @callback minute(s) :: s
   @callback second(s) :: s
 
+  # List
+  @callback join(s, String.t()) :: s
+  @callback lengths(s) :: s
+  @callback member?(s, valid_types()) :: s
+
   # Functions
 
   @doc """
   Create a new `Series`.
   """
-  def new(data, dtype) when dtype in @valid_dtypes do
+  def new(data, dtype) do
     %Explorer.Series{data: data, dtype: dtype}
   end
 
@@ -293,14 +331,16 @@ defmodule Explorer.Backend.Series do
 
     dtype = A.color("#{type} ", :atom, inspect_opts)
 
+    series =
+      case inspect_opts.limit do
+        :infinity -> series
+        limit when is_integer(limit) -> Series.slice(series, 0, limit + 1)
+      end
+
     data =
-      A.container_doc(
-        open,
-        series |> Series.slice(0, inspect_opts.limit + 1) |> Series.to_list(),
-        close,
-        inspect_opts,
-        &Explorer.Shared.to_string/2
-      )
+      series
+      |> Series.to_list()
+      |> Explorer.Shared.to_doc(inspect_opts)
 
     A.concat([
       A.color(backend, :atom, inspect_opts),

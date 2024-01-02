@@ -96,11 +96,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
         do: max_rows,
         else: infer_schema_length
 
-    dtypes =
-      Enum.map(dtypes, fn {column_name, dtype} ->
-        {column_name, Shared.internal_from_dtype(dtype)}
-      end)
-
     {columns, with_projection} = column_names_or_projection(columns)
 
     df =
@@ -114,7 +109,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         delimiter,
         true,
         columns,
-        dtypes,
+        Map.to_list(dtypes),
         encoding,
         nil_values,
         parse_dates,
@@ -192,11 +187,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
         do: max_rows,
         else: infer_schema_length
 
-    dtypes =
-      Enum.map(dtypes, fn {column_name, dtype} ->
-        {column_name, Shared.internal_from_dtype(dtype)}
-      end)
-
     {columns, with_projection} = column_names_or_projection(columns)
 
     df =
@@ -210,7 +200,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         delimiter,
         true,
         columns,
-        dtypes,
+        Map.to_list(dtypes),
         encoding,
         nil_values,
         parse_dates,
@@ -563,7 +553,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   # Like `Explorer.Series.from_list/2`, but gives a better error message with the series name.
   defp series_from_list!(name, list, dtype) do
-    type = Explorer.Shared.check_types!(list, dtype)
+    type = Explorer.Shared.dtype_from_list!(list, dtype)
     {list, type} = Explorer.Shared.cast_numerics(list, type)
     series = Shared.from_list(list, type, name)
     Explorer.Backend.Series.new(series, type)
@@ -653,16 +643,44 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def arrange_with(%DataFrame{} = df, out_df, column_pairs) do
-    {directions, expressions} =
-      column_pairs
-      |> Enum.map(fn {direction, lazy_series} ->
-        expr = to_expr(lazy_series)
-        {direction == :desc, expr}
-      end)
-      |> Enum.unzip()
+  def sort_with(
+        %DataFrame{} = df,
+        out_df,
+        column_pairs,
+        maintain_order?,
+        multithreaded?,
+        nulls_last?
+      )
+      when is_boolean(maintain_order?) and is_boolean(multithreaded?) and
+             is_boolean(nulls_last?) do
+    if Enum.all?(column_pairs, fn {_, %{op: op}} -> op == :column end) do
+      {directions, column_names} =
+        column_pairs
+        |> Enum.map(fn {dir, %{args: [col]}} -> {dir == :desc, col} end)
+        |> Enum.unzip()
 
-    Shared.apply_dataframe(df, out_df, :df_arrange_with, [expressions, directions, df.groups])
+      Shared.apply_dataframe(df, out_df, :df_sort_by, [
+        column_names,
+        directions,
+        maintain_order?,
+        multithreaded?,
+        nulls_last?,
+        df.groups
+      ])
+    else
+      {directions, expressions} =
+        column_pairs
+        |> Enum.map(fn {dir, lazy_series} -> {dir == :desc, to_expr(lazy_series)} end)
+        |> Enum.unzip()
+
+      Shared.apply_dataframe(df, out_df, :df_sort_with, [
+        expressions,
+        directions,
+        maintain_order?,
+        nulls_last?,
+        df.groups
+      ])
+    end
   end
 
   @impl true
@@ -758,6 +776,28 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> Shared.create_dataframe()
   end
 
+  @impl true
+  def explode(df, out_df, columns) do
+    Shared.apply_dataframe(df, out_df, :df_explode, [columns])
+  end
+
+  @impl true
+  def unnest(df, out_df, columns) do
+    Shared.apply_dataframe(df, out_df, :df_unnest, [columns])
+  end
+
+  @impl true
+  def correlation(df, out_df, ddof, method) do
+    pairwised(df, out_df, fn left, right ->
+      PolarsSeries.correlation(left, right, ddof, method)
+    end)
+  end
+
+  @impl true
+  def covariance(df, out_df, ddof) do
+    pairwised(df, out_df, fn left, right -> PolarsSeries.covariance(left, right, ddof) end)
+  end
+
   # Two or more table verbs
 
   @impl true
@@ -820,5 +860,26 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def inspect(df, opts) do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
+  end
+
+  # helpers
+
+  defp pairwised(df, out_df, operation) do
+    [column_name | cols] = out_df.names
+
+    pairwised_results =
+      Enum.map(cols, fn left ->
+        corr_series =
+          cols
+          |> Enum.map(fn right -> operation.(df[left], df[right]) end)
+          |> Shared.from_list({:f, 64})
+          |> Shared.create_series()
+
+        {left, corr_series}
+      end)
+
+    names_series = cols |> Shared.from_list(:string) |> Shared.create_series()
+
+    from_series([{column_name, names_series} | pairwised_results])
   end
 end

@@ -87,7 +87,8 @@ if Code.ensure_loaded?(Nx) do
     The following dtypes can be converted to tensors:
 
       * `:integer`
-      * `:float`
+      * `{:f, 32}`
+      * `{:f, 64}`
       * `:boolean`
       * `:date`
       * `{:datetime, :millisecond}`
@@ -249,7 +250,8 @@ if Code.ensure_loaded?(Nx) do
       :category,
       :date,
       :time,
-      :float,
+      {:f, 32},
+      {:f, 64},
       :integer,
       {:datetime, :millisecond},
       {:datetime, :microsecond},

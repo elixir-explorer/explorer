@@ -74,14 +74,14 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(%{floats: Series.from_list([1.0, 2.0]), integers: Series.from_list([1, 2])})
 
       assert DF.to_columns(df, atom_keys: true) == %{floats: [1.0, 2.0], integers: [1, 2]}
-      assert DF.dtypes(df) == %{"floats" => :float, "integers" => :integer}
+      assert DF.dtypes(df) == %{"floats" => {:f, 64}, "integers" => :integer}
     end
 
     test "from columnar data" do
       df = DF.new(%{floats: [1.0, 2.0], integers: [1, nil]})
 
       assert DF.to_columns(df, atom_keys: true) == %{floats: [1.0, 2.0], integers: [1, nil]}
-      assert DF.dtypes(df) == %{"floats" => :float, "integers" => :integer}
+      assert DF.dtypes(df) == %{"floats" => {:f, 64}, "integers" => :integer}
     end
 
     test "from columnar data with binaries" do
@@ -96,7 +96,11 @@ defmodule Explorer.DataFrameTest do
                binaries: [<<239, 191, 19>>, nil]
              }
 
-      assert DF.dtypes(df) == %{"floats" => :float, "integers" => :integer, "binaries" => :binary}
+      assert DF.dtypes(df) == %{
+               "floats" => {:f, 64},
+               "integers" => :integer,
+               "binaries" => :binary
+             }
     end
 
     test "from rows" do
@@ -127,7 +131,7 @@ defmodule Explorer.DataFrameTest do
         }
       ]
 
-      df = DF.new(rows, dtypes: [{:outliers, :binary}, {:ymax, :float}, {:ymin, :float}])
+      df = DF.new(rows, dtypes: [{:outliers, :binary}, {:ymax, {:f, 64}}, {:ymin, {:f, 64}}])
 
       assert DF.to_columns(df, atom_keys: true) == %{
                lower: [17.0, 12.0, 22.2],
@@ -143,12 +147,12 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.dtypes(df) == %{
-               "lower" => :float,
-               "middle" => :float,
+               "lower" => {:f, 64},
+               "middle" => {:f, 64},
                "outliers" => :binary,
-               "upper" => :float,
-               "ymax" => :float,
-               "ymin" => :float
+               "upper" => {:f, 64},
+               "ymax" => {:f, 64},
+               "ymin" => {:f, 64}
              }
     end
 
@@ -163,7 +167,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(%{floats: [1, 2.4, 3]})
 
       assert DF.to_columns(df, atom_keys: true) == %{floats: [1, 2.4, 3]}
-      assert DF.dtypes(df) == %{"floats" => :float}
+      assert DF.dtypes(df) == %{"floats" => {:f, 64}}
     end
 
     test "with binaries" do
@@ -645,7 +649,7 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate_with(df, fn ldf ->
-          [a: Series.cast(ldf["a"], :float)]
+          [a: Series.cast(ldf["a"], {:f, 64})]
         end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -654,7 +658,7 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert df1.names == ["a", "b"]
-      assert df1.dtypes == %{"a" => :float, "b" => :string}
+      assert df1.dtypes == %{"a" => {:f, 64}, "b" => :string}
     end
   end
 
@@ -699,7 +703,7 @@ defmodule Explorer.DataFrameTest do
                "c" => :integer,
                "d" => :integer,
                "e" => :integer,
-               "f" => :float,
+               "f" => {:f, 64},
                "g" => :string,
                "h" => :boolean,
                "i" => :date,
@@ -710,7 +714,7 @@ defmodule Explorer.DataFrameTest do
     test "changes a column" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-      df1 = DF.mutate(df, a: cast(a, :float))
+      df1 = DF.mutate(df, a: cast(a, {:f, 64}))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1.0, 2.0, 3.0],
@@ -718,7 +722,7 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert df1.names == ["a", "b"]
-      assert df1.dtypes == %{"a" => :float, "b" => :string}
+      assert df1.dtypes == %{"a" => {:f, 64}, "b" => :string}
     end
 
     test "adds new columns ordering, sorting and negating" do
@@ -732,7 +736,7 @@ defmodule Explorer.DataFrameTest do
           f: distinct(a),
           g: unordered_distinct(a),
           h: -a,
-          i: rank(a, method: "ordinal"),
+          i: rank(a, method: :ordinal),
           j: rank(c)
         )
 
@@ -761,7 +765,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :integer,
                "h" => :integer,
                "i" => :integer,
-               "j" => :float
+               "j" => {:f, 64}
              }
     end
 
@@ -801,12 +805,12 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer,
-               "calc8" => :float,
-               "calc9" => :float,
+               "calc8" => {:f, 64},
+               "calc9" => {:f, 64},
                "calc10" => :boolean
              }
     end
@@ -843,10 +847,10 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                # TODO: This should be float after #374 is resolved
                "calc5" => :integer,
-               "calc5_1" => :float,
+               "calc5_1" => {:f, 64},
                "calc6" => :integer,
                "calc7" => :integer
              }
@@ -883,7 +887,7 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer
@@ -921,7 +925,7 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer
@@ -964,7 +968,7 @@ defmodule Explorer.DataFrameTest do
                "calc1" => :integer,
                "calc2" => :integer,
                "calc3" => :integer,
-               "calc4" => :float,
+               "calc4" => {:f, 64},
                "calc5" => :integer,
                "calc6" => :integer,
                "calc7" => :integer
@@ -1007,11 +1011,11 @@ defmodule Explorer.DataFrameTest do
                "c" => :integer,
                "d" => :integer,
                "e" => :integer,
-               "f" => :float,
+               "f" => {:f, 64},
                "g" => :integer,
                "h" => :integer,
                "i" => :integer,
-               "j" => :float
+               "j" => {:f, 64}
              }
     end
 
@@ -1035,7 +1039,7 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "c" => :float
+               "c" => {:f, 64}
              }
     end
 
@@ -1044,19 +1048,19 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.mutate(df, c: covariance(a, b), d: correlation(a, b))
 
       assert df1 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
-               %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
+               %{a: [1], b: [4], c: [3.0], d: [0.5447047794019219]}
 
       df2 =
         DF.new(a: [1, 8, 3, nil], b: [4, 5, 2, nil])
         |> DF.mutate(c: covariance(a, b), d: correlation(a, b))
 
       assert df2 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
-               %{a: [1], b: [4], c: [3.0], d: [0.5447047794019223]}
+               %{a: [1], b: [4], c: [3.0], d: [0.5447047794019219]}
 
       df3 = DF.new(a: [1], b: [4]) |> DF.mutate(c: covariance(a, a), d: correlation(a, a))
 
       assert df3 |> DF.head(1) |> DF.to_columns(atom_keys: true) ==
-               %{a: [1], b: [4], c: [:nan], d: [nil]}
+               %{a: [1], b: [4], c: [:nan], d: [:nan]}
     end
 
     test "clip/3" do
@@ -1068,7 +1072,7 @@ defmodule Explorer.DataFrameTest do
 
       df2 = df |> DF.mutate(b: clip(a, 1.5, 10.5)) |> DF.select(:b)
       assert DF.to_columns(df2, atom_keys: true) == %{b: [1.5, 5.0, nil, 10.5]}
-      assert DF.dtypes(df2) == %{"b" => :float}
+      assert DF.dtypes(df2) == %{"b" => {:f, 64}}
 
       assert_raise ArgumentError,
                    ~r"expects both the min and max bounds to be numbers",
@@ -1081,8 +1085,7 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 =
-        DF.mutate(df, select1: select(a, b, c))
+      df1 = DF.mutate(df, select1: select(a, b, c))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1115,8 +1118,7 @@ defmodule Explorer.DataFrameTest do
       c = Series.from_list([6, 2, 1])
       df = DF.new(a: a, b: b, c: c)
 
-      df1 =
-        DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
+      df1 = DF.mutate(df, select1: select(a, "passed", "failed"), select2: select(b > c, 50, 0))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [true, false, true],
@@ -1155,13 +1157,13 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.dtypes(df1) == %{
                "a" => :integer,
-               "b" => :float,
-               "concat1" => :float,
-               "concat2" => :float,
-               "concat3" => :float,
-               "coalesce1" => :float,
-               "coalesce2" => :float,
-               "coalesce3" => :float
+               "b" => {:f, 64},
+               "concat1" => {:f, 64},
+               "concat2" => {:f, 64},
+               "concat3" => {:f, 64},
+               "coalesce1" => {:f, 64},
+               "coalesce2" => {:f, 64},
+               "coalesce3" => {:f, 64}
              }
     end
 
@@ -1187,19 +1189,19 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "b" => :float,
-               "c" => :float,
-               "d" => :float,
-               "e" => :float,
-               "f" => :float,
-               "g" => :float,
-               "h" => :float,
+               "b" => {:f, 64},
+               "c" => {:f, 64},
+               "d" => {:f, 64},
+               "e" => {:f, 64},
+               "f" => {:f, 64},
+               "g" => {:f, 64},
+               "h" => {:f, 64},
                "p" => :integer,
                "q" => :integer,
                "r" => :integer,
                "s" => :integer,
                "t" => :integer,
-               "z" => :float
+               "z" => {:f, 64}
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1285,7 +1287,7 @@ defmodule Explorer.DataFrameTest do
                "c" => :integer,
                "d" => :integer,
                "e" => :integer,
-               "f" => :float,
+               "f" => {:f, 64},
                "g" => :integer
              }
     end
@@ -1310,10 +1312,10 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :boolean,
-               "b" => :float,
+               "b" => {:f, 64},
                "c" => :boolean,
                "d" => :boolean,
-               "e" => :float
+               "e" => {:f, 64}
              }
     end
 
@@ -1449,8 +1451,8 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "b" => :float,
-               "c" => :float
+               "b" => {:f, 64},
+               "c" => {:f, 64}
              }
     end
 
@@ -1479,7 +1481,7 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :integer,
-               "b" => :float
+               "b" => {:f, 64}
              }
     end
 
@@ -1503,13 +1505,13 @@ defmodule Explorer.DataFrameTest do
       assert df2.names == ["a", "b", "c", "d", "e", "f", "g"]
 
       assert df2.dtypes == %{
-               "a" => :float,
-               "b" => :float,
-               "c" => :float,
-               "d" => :float,
-               "e" => :float,
-               "f" => :float,
-               "g" => :float
+               "a" => {:f, 64},
+               "b" => {:f, 64},
+               "c" => {:f, 64},
+               "d" => {:f, 64},
+               "e" => {:f, 64},
+               "f" => {:f, 64},
+               "g" => {:f, 64}
              }
     end
 
@@ -1593,8 +1595,7 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "replace characters in a string" do
-      df =
-        DF.new(a: ["2,000", "2,000,000", ","])
+      df = DF.new(a: ["2,000", "2,000,000", ","])
 
       df1 =
         DF.mutate(df,
@@ -1845,20 +1846,51 @@ defmodule Explorer.DataFrameTest do
       assert Series.to_list(df[:simple_result]) == ["Exceptional", "Passed", "Passed"]
       assert Series.to_list(df[:result]) == [nil, "Failed", nil]
     end
-  end
 
-  describe "arrange/3" do
-    test "raises with invalid column names", %{df: df} do
-      assert_raise ArgumentError,
-                   ~r"could not find column name \"test\"",
-                   fn -> DF.arrange(df, test) end
+    test "supports list operations" do
+      df =
+        DF.new(
+          a: [~w(a b c), ~w(d e f)],
+          b: [[1, 2, 3], [4, 5, 6]],
+          c: [
+            [~N[2021-01-01 00:00:00], ~N[2021-01-02 00:00:00]],
+            [~N[2021-01-03 00:00:00], ~N[2021-01-04 00:00:00]]
+          ]
+        )
+
+      df =
+        DF.mutate(df,
+          join: join(a, ","),
+          lengths: lengths(b),
+          member?: member?(c, ~N[2021-01-02 00:00:00])
+        )
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [~w(a b c), ~w(d e f)],
+               b: [[1, 2, 3], [4, 5, 6]],
+               c: [
+                 [~N[2021-01-01 00:00:00.000000], ~N[2021-01-02 00:00:00.000000]],
+                 [~N[2021-01-03 00:00:00.000000], ~N[2021-01-04 00:00:00.000000]]
+               ],
+               join: ["a,b,c", "d,e,f"],
+               lengths: [3, 3],
+               member?: [true, false]
+             }
     end
   end
 
-  describe "arrange_with/2" do
+  describe "sort_by/3" do
+    test "raises with invalid column names", %{df: df} do
+      assert_raise ArgumentError,
+                   ~r"could not find column name \"test\"",
+                   fn -> DF.sort_by(df, test) end
+    end
+  end
+
+  describe "sort_with/2" do
     test "with a simple df and asc order" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"]] end)
+      df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"]] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],
@@ -1868,7 +1900,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with a simple df one column and without order" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> ldf["a"] end)
+      df1 = DF.sort_with(df, fn ldf -> ldf["a"] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],
@@ -1878,7 +1910,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with a simple df and desc order" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> [desc: ldf["a"]] end)
+      df1 = DF.sort_with(df, fn ldf -> [desc: ldf["a"]] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [6, 5, 4, 3, 2, 1],
@@ -1888,7 +1920,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with a simple df and just the lazy series" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> [ldf["a"]] end)
+      df1 = DF.sort_with(df, fn ldf -> [ldf["a"]] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],
@@ -1896,9 +1928,9 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "with a simple df and arrange by two columns" do
+    test "with a simple df and sort_by by two columns" do
       df = DF.new(a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1])
-      df1 = DF.arrange_with(df, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+      df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 2, 3, 5, 6],
@@ -1908,7 +1940,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with a simple df and window function" do
       df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-      df1 = DF.arrange_with(df, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
+      df1 = DF.sort_with(df, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [5, 6, 3, 4, 2, 1],
@@ -1916,11 +1948,26 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "with a simple df and nils" do
+      df = DF.new(a: [1, 2, nil, 3])
+      df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :first)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [nil, 1, 2, 3]
+             }
+
+      df2 = DF.sort_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :last)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 3, nil]
+             }
+    end
+
     test "without a lazy series" do
       df = DF.new(a: [1, 2])
 
       assert_raise RuntimeError, "expecting a lazy series, got: :foo", fn ->
-        DF.arrange_with(df, fn _ldf -> [desc: :foo] end)
+        DF.sort_with(df, fn _ldf -> [desc: :foo] end)
       end
     end
 
@@ -1930,7 +1977,7 @@ defmodule Explorer.DataFrameTest do
       message = "expecting a valid direction, which is :asc or :desc, got: :descending"
 
       assert_raise RuntimeError, message, fn ->
-        DF.arrange_with(df, fn ldf -> [descending: ldf["a"]] end)
+        DF.sort_with(df, fn ldf -> [descending: ldf["a"]] end)
       end
     end
   end
@@ -2166,7 +2213,7 @@ defmodule Explorer.DataFrameTest do
              |              Explorer DataFrame: [rows: 150, columns: 5]              |
              +--------------+-------------+--------------+-------------+-------------+
              | sepal_length | sepal_width | petal_length | petal_width |   species   |
-             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
              +==============+=============+==============+=============+=============+
              | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
              +--------------+-------------+--------------+-------------+-------------+
@@ -2190,7 +2237,7 @@ defmodule Explorer.DataFrameTest do
              |              Explorer DataFrame: [rows: 150, columns: 5]              |
              +--------------+-------------+--------------+-------------+-------------+
              | sepal_length | sepal_width | petal_length | petal_width |   species   |
-             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
              +==============+=============+==============+=============+=============+
              | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
              +--------------+-------------+--------------+-------------+-------------+
@@ -2207,30 +2254,30 @@ defmodule Explorer.DataFrameTest do
         )
 
       assert capture_io(fn -> DF.print(df, limit: :infinity) end) == """
-             +--------------------------------------------+
-             | Explorer DataFrame: [rows: 9, columns: 3]  |
-             +---------------+--------------+-------------+
-             |       a       |      b       |      c      |
-             |   <integer>   |   <string>   |   <float>   |
-             +===============+==============+=============+
-             | 1             | a            | 9.1         |
-             +---------------+--------------+-------------+
-             | 2             | b            | 8.2         |
-             +---------------+--------------+-------------+
-             | 3             | c            | 7.3         |
-             +---------------+--------------+-------------+
-             | 4             | d            | 6.4         |
-             +---------------+--------------+-------------+
-             | 5             | e            | 5.5         |
-             +---------------+--------------+-------------+
-             | 6             | f            | 4.6         |
-             +---------------+--------------+-------------+
-             | 7             | g            | 3.7         |
-             +---------------+--------------+-------------+
-             | 8             | h            | 2.8         |
-             +---------------+--------------+-------------+
-             | 9             | i            | 1.9         |
-             +---------------+--------------+-------------+
+             +---------------------------------------------+
+             |  Explorer DataFrame: [rows: 9, columns: 3]  |
+             +----------------+---------------+------------+
+             |       a        |       b       |     c      |
+             |   <integer>    |   <string>    |   <f64>    |
+             +================+===============+============+
+             | 1              | a             | 9.1        |
+             +----------------+---------------+------------+
+             | 2              | b             | 8.2        |
+             +----------------+---------------+------------+
+             | 3              | c             | 7.3        |
+             +----------------+---------------+------------+
+             | 4              | d             | 6.4        |
+             +----------------+---------------+------------+
+             | 5              | e             | 5.5        |
+             +----------------+---------------+------------+
+             | 6              | f             | 4.6        |
+             +----------------+---------------+------------+
+             | 7              | g             | 3.7        |
+             +----------------+---------------+------------+
+             | 8              | h             | 2.8        |
+             +----------------+---------------+------------+
+             | 9              | i             | 1.9        |
+             +----------------+---------------+------------+
 
              """
     end
@@ -2243,7 +2290,7 @@ defmodule Explorer.DataFrameTest do
              |              Explorer DataFrame: [rows: ???, columns: 5]              |
              +--------------+-------------+--------------+-------------+-------------+
              | sepal_length | sepal_width | petal_length | petal_width |   species   |
-             |   <float>    |   <float>   |   <float>    |   <float>   |  <string>   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
              +==============+=============+==============+=============+=============+
              | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
              +--------------+-------------+--------------+-------------+-------------+
@@ -2917,6 +2964,30 @@ defmodule Explorer.DataFrameTest do
                      DF.pivot_wider(df, "variable", "value", id_columns: [:float_id])
                    end
     end
+
+    test "with a string values_from" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: ["x", "y"])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: ["x"],
+               b: ["y"]
+             }
+    end
+
+    test "with a date values_from" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [~D[2022-01-01], ~D[2023-01-01]])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [~D[2022-01-01]],
+               b: [~D[2023-01-01]]
+             }
+    end
   end
 
   describe "pivot_longer/3" do
@@ -3253,7 +3324,7 @@ defmodule Explorer.DataFrameTest do
         )
 
       assert DF.put(df, :a, i)[:a] |> Series.to_list() == [1, 1, 1]
-      assert DF.put(df, :a, f, dtype: :float)[:a] |> Series.to_list() == [1.0, 1.0, 1.0]
+      assert DF.put(df, :a, f, dtype: {:f, 64})[:a] |> Series.to_list() == [1.0, 1.0, 1.0]
 
       assert DF.put(df, :a, d, dtype: :date)[:a] |> Series.to_list() == [
                ~D[1969-12-31],
@@ -3262,7 +3333,7 @@ defmodule Explorer.DataFrameTest do
              ]
 
       assert DF.put(df, :c, i, dtype: :integer)[:c] |> Series.to_list() == [1, 1, 1]
-      assert DF.put(df, :c, f, dtype: :float)[:c] |> Series.to_list() == [1.0, 1.0, 1.0]
+      assert DF.put(df, :c, f, dtype: {:f, 64})[:c] |> Series.to_list() == [1.0, 1.0, 1.0]
 
       assert DF.put(df, :c, d, dtype: :date)[:c] |> Series.to_list() == [
                ~D[1969-12-31],
@@ -3271,7 +3342,7 @@ defmodule Explorer.DataFrameTest do
              ]
 
       assert DF.put(df, :d, i, dtype: :integer)[:d] |> Series.to_list() == [1, 1, 1]
-      assert DF.put(df, :d, f, dtype: :float)[:d] |> Series.to_list() == [1.0, 1.0, 1.0]
+      assert DF.put(df, :d, f, dtype: {:f, 64})[:d] |> Series.to_list() == [1.0, 1.0, 1.0]
 
       assert DF.put(df, :d, d)[:d] |> Series.to_list() == [
                ~D[1969-12-31],
@@ -3294,7 +3365,12 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       df1 = DF.describe(df)
 
-      assert df1.dtypes == %{"a" => :string, "b" => :float, "c" => :string, "describe" => :string}
+      assert df1.dtypes == %{
+               "a" => :string,
+               "b" => {:f, 64},
+               "c" => :string,
+               "describe" => :string
+             }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: ["3", "1", nil, nil, "d", nil, nil, nil, "f"],
@@ -3309,7 +3385,12 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.describe(df, percentiles: [0.3, 0.5, 0.8])
       df2 = DF.describe(df, percentiles: [0.5])
 
-      assert df1.dtypes == %{"a" => :string, "b" => :float, "c" => :string, "describe" => :string}
+      assert df1.dtypes == %{
+               "a" => :string,
+               "b" => {:f, 64},
+               "c" => :string,
+               "describe" => :string
+             }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: ["3", "1", nil, nil, "d", nil, nil, nil, "f"],
@@ -3513,7 +3594,7 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.dtypes(df1) == %{
                "total" => :integer,
-               "solid_fuel_mean" => :float,
+               "solid_fuel_mean" => {:f, 64},
                "gas_fuel_max" => :integer
              }
 
@@ -3523,6 +3604,35 @@ defmodule Explorer.DataFrameTest do
                total: [1094],
                gas_fuel_max: [390_719],
                solid_fuel_mean: [18212.27970749543]
+             }
+    end
+
+    test "allows returning the group as a list" do
+      df =
+        DF.new(
+          letters: ~w(a b c d e f g h i j),
+          is_vowel: [true, false, false, false, true, false, false, false, true, false]
+        )
+        |> DF.group_by(:is_vowel)
+        |> DF.summarise(letters: letters)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               is_vowel: [true, false],
+               letters: [["a", "e", "i"], ["b", "c", "d", "f", "g", "h", "j"]]
+             }
+
+      assert DF.dtypes(df) == %{"is_vowel" => :boolean, "letters" => {:list, :string}}
+    end
+
+    test "mode/1" do
+      df =
+        Datasets.iris()
+        |> DF.group_by(:species)
+        |> DF.summarise(petal_width_mode: mode(petal_width))
+
+      assert DF.to_columns(df) == %{
+               "petal_width_mode" => [[0.2], [1.3], [1.8]],
+               "species" => ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
              }
     end
 
@@ -3603,6 +3713,329 @@ defmodule Explorer.DataFrameTest do
                d: [2],
                e: [2],
                f: [2]
+             }
+    end
+
+    test "all?/1 and any?/1" do
+      df = DF.new([a: [true, false, true], nils: [nil, nil, nil]], dtypes: [nils: :boolean])
+
+      df1 =
+        DF.summarise(df,
+          all?: all?(a),
+          any?: any?(a),
+          all_nils?: all?(nils),
+          any_nils?: any?(nils)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               all?: [false],
+               any?: [true],
+               all_nils?: [true],
+               any_nils?: [false]
+             }
+    end
+  end
+
+  describe "explode/2" do
+    test "explodes a list column" do
+      df = DF.new(letters: [~w(a e), ~w(b c d)], is_vowel: [true, false])
+
+      df1 = DF.explode(df, :letters)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["a", "e", "b", "c", "d"],
+               is_vowel: [true, true, false, false, false]
+             }
+
+      assert DF.dtypes(df1) == %{"is_vowel" => :boolean, "letters" => :string}
+    end
+
+    test "works with multiple columns" do
+      df = DF.new(a: [[1, 2], [3, 4]], b: [[5, 6], [7, 8]], c: ["a", "b"])
+
+      df1 = DF.explode(df, [:a, :b])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4],
+               b: [5, 6, 7, 8],
+               c: ["a", "a", "b", "b"]
+             }
+    end
+
+    test "raises if the columns are not of the list type" do
+      df = DF.new(a: [1, 2, 3], b: [[1, 2], [3, 4], [5, 6]])
+
+      assert_raise ArgumentError,
+                   "explode/2 expects list columns, but the given columns have the types: [:integer]",
+                   fn -> DF.explode(df, :a) end
+
+      assert_raise ArgumentError,
+                   "explode/2 expects list columns, but the given columns have the types: [:integer, {:list, :integer}]",
+                   fn -> DF.explode(df, [:a, :b]) end
+    end
+  end
+
+  describe "unnest/2" do
+    test "unnests a struct column" do
+      df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}])
+
+      df1 = DF.unnest(df, :a)
+
+      assert DF.names(df1) == ["x", "y"]
+      assert DF.dtypes(df1) == %{"x" => :integer, "y" => :integer}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               x: [1, 3],
+               y: [2, 4]
+             }
+    end
+
+    test "unnests multiple struct columns at once" do
+      df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}], b: [%{z: 5}, %{z: 6}])
+
+      df1 = DF.unnest(df, [:a, :b])
+
+      assert DF.names(df1) == ["x", "y", "z"]
+      assert DF.dtypes(df1) == %{"x" => :integer, "y" => :integer, "z" => :integer}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               x: [1, 3],
+               y: [2, 4],
+               z: [5, 6]
+             }
+    end
+
+    test "unnests the columns in the right order" do
+      df =
+        DF.new(
+          before: [1, 2],
+          a: [%{x: 1}, %{x: 2}],
+          between: [3, 4],
+          x: [%{y: 1}, %{y: 2}],
+          after: [5, 6]
+        )
+
+      df1 = DF.unnest(df, [:a, :x])
+
+      assert DF.names(df1) == ["before", "x", "between", "y", "after"]
+
+      assert DF.dtypes(df1) == %{
+               "before" => :integer,
+               "x" => :integer,
+               "between" => :integer,
+               "y" => :integer,
+               "after" => :integer
+             }
+    end
+
+    test "errors if the column is not of the struct type" do
+      df = DF.new(a: [1, 2, 3])
+
+      assert_raise ArgumentError,
+                   "unnest/2 expects struct columns, but the given columns have the types: [:integer]",
+                   fn -> DF.unnest(df, :a) end
+    end
+
+    test "errors when unnesting columns with clashing names" do
+      df = DF.new(a: [%{x: 1}, %{x: 2}], x: [3, 4])
+
+      assert_raise RuntimeError,
+                   ~r/column with name 'x' has more than one occurrences/,
+                   fn -> DF.unnest(df, :a) end
+    end
+
+    test "errors when unnesting multiple columns with clashing names" do
+      df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}], b: [%{x: 5}, %{x: 6}])
+
+      assert_raise RuntimeError,
+                   ~r/column with name 'x' has more than one occurrences/,
+                   fn -> DF.unnest(df, [:a, :b]) end
+    end
+  end
+
+  describe "correlation/2" do
+    test "two integer columns" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0000000000000002, 0.5447047794019219],
+               cats: [0.5447047794019219, 1.0]
+             }
+    end
+
+    test "spearman rank method" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2])
+      df1 = DF.correlation(df, method: :spearman)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0, 0.5],
+               cats: [0.5, 1.0]
+             }
+    end
+
+    test "three integer columns and custom column name" do
+      df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1], frogs: [7, 8, 9])
+      df1 = DF.correlation(df, column_name: "variables")
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               variables: ["dogs", "cats", "frogs"],
+               dogs: [1.0, -1.0, 1.0],
+               cats: [-1.0, 1.0, -1.0],
+               frogs: [1.0, -1.0, 1.0]
+             }
+    end
+
+    test "two float columns" do
+      df = DF.new(dogs: [1.4, 8.6, 3.7], cats: [4.1, 5.3, 2.2])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.9999999999999999, 0.5642328261411999],
+               cats: [0.5642328261411999, 0.9999999999999998]
+             }
+    end
+
+    test "one column" do
+      df = DF.new(cats: [4, 5, 2])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats"],
+               cats: [1.0]
+             }
+    end
+
+    test "no numeric columns" do
+      df = DF.new(cats: ["susie", "tuka", "tobias", "terror"])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: []
+             }
+    end
+
+    test "ignores non numeric columns" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2], frogs: ["a", "b", "c"])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0000000000000002, 0.5447047794019219],
+               cats: [0.5447047794019219, 1.0]
+             }
+    end
+
+    test "subset of numeric columns" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2], frogs: [7, 8, 9])
+      df1 = DF.correlation(df, columns: [:dogs, :cats])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0000000000000002, 0.5447047794019219],
+               cats: [0.5447047794019219, 1.0]
+             }
+    end
+
+    test "the returned matrix preserves the order" do
+      df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1])
+      df1 = DF.correlation(df, columns: [:cats, :dogs])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats", "dogs"],
+               dogs: [-1.0, 1.0],
+               cats: [1.0, -1.0]
+             }
+    end
+  end
+
+  describe "covariance/2" do
+    test "two integer columns" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.6666666666666666, -1.0],
+               cats: [-1.0, 1.6666666666666667]
+             }
+    end
+
+    test "three integer columns and custom column name" do
+      df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1], frogs: [7, 8, 9])
+      df1 = DF.covariance(df, column_name: "variables")
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               variables: ["dogs", "cats", "frogs"],
+               dogs: [1.0, -1.0, 1.0],
+               cats: [-1.0, 1.0, -1.0],
+               frogs: [1.0, -1.0, 1.0]
+             }
+    end
+
+    test "two float columns" do
+      df = DF.new(dogs: [1.4, 8.6, 3.7], cats: [4.1, 5.3, 2.2])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [13.52333333333333, 3.2433333333333394],
+               cats: [3.2433333333333394, 2.4433333333333422]
+             }
+    end
+
+    test "one column" do
+      df = DF.new(cats: [4, 5, 2])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats"],
+               cats: [2.3333333333333357]
+             }
+    end
+
+    test "no numeric columns" do
+      df = DF.new(cats: ["susie", "tuka", "tobias", "terror"])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: []
+             }
+    end
+
+    test "ignores non numeric columns" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1], frogs: ["a", "b", "c", "d"])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.6666666666666666, -1.0],
+               cats: [-1.0, 1.6666666666666667]
+             }
+    end
+
+    test "subset of numeric columns" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1], frogs: [6, 7, 8, 9])
+      df1 = DF.covariance(df, columns: [:dogs, :cats])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.6666666666666666, -1.0],
+               cats: [-1.0, 1.6666666666666667]
+             }
+    end
+
+    test "the returned matrix preserves the order" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1])
+      df1 = DF.covariance(df, columns: [:cats, :dogs])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats", "dogs"],
+               dogs: [-1.0, 0.6666666666666666],
+               cats: [1.6666666666666667, -1.0]
              }
     end
   end

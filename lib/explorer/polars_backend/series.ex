@@ -35,29 +35,8 @@ defmodule Explorer.PolarsBackend.Series do
   def to_iovec(series), do: Shared.apply_series(series, :s_to_iovec)
 
   @impl true
-  def cast(%Series{dtype: :string} = series, {:datetime, precision}) do
-    Shared.apply_series(series, :s_strptime, [nil, Atom.to_string(precision)])
-  end
-
-  def cast(series, {:datetime, :millisecond}),
-    do: Shared.apply_series(series, :s_cast, ["datetime[ms]"])
-
-  def cast(series, {:datetime, :microsecond}),
-    do: Shared.apply_series(series, :s_cast, ["datetime[μs]"])
-
-  def cast(series, {:datetime, :nanosecond}),
-    do: Shared.apply_series(series, :s_cast, ["datetime[ns]"])
-
-  def cast(series, {:duration, :millisecond}),
-    do: Shared.apply_series(series, :s_cast, ["duration[ms]"])
-
-  def cast(series, {:duration, :microsecond}),
-    do: Shared.apply_series(series, :s_cast, ["duration[μs]"])
-
-  def cast(series, {:duration, :nanosecond}),
-    do: Shared.apply_series(series, :s_cast, ["duration[ns]"])
-
-  def cast(series, dtype), do: Shared.apply_series(series, :s_cast, [Atom.to_string(dtype)])
+  def cast(series, dtype),
+    do: Shared.apply_series(series, :s_cast, [dtype])
 
   @impl true
   def strptime(%Series{} = series, format_string) do
@@ -72,31 +51,14 @@ defmodule Explorer.PolarsBackend.Series do
   # Introspection
 
   @impl true
-  def dtype(series), do: series |> Shared.apply_series(:s_dtype) |> Shared.normalise_dtype()
+  def dtype(series), do: series |> Shared.apply_series(:s_dtype)
 
   @impl true
   def size(series), do: Shared.apply_series(series, :s_size)
 
   @impl true
   def iotype(series) do
-    case Shared.apply_series(series, :s_dtype) do
-      "u8" -> {:u, 8}
-      "u32" -> {:u, 32}
-      "i32" -> {:s, 32}
-      "i64" -> {:s, 64}
-      "f64" -> {:f, 64}
-      "bool" -> {:u, 8}
-      "date" -> {:s, 32}
-      "time" -> {:s, 64}
-      "datetime[ms]" -> {:s, 64}
-      "datetime[μs]" -> {:s, 64}
-      "datetime[ns]" -> {:s, 64}
-      "duration[ms]" -> {:s, 64}
-      "duration[μs]" -> {:s, 64}
-      "duration[ns]" -> {:s, 64}
-      "cat" -> {:u, 32}
-      dtype -> raise "cannot convert dtype #{inspect(dtype)} to iotype"
-    end
+    Shared.apply_series(series, :s_iotype)
   end
 
   @impl true
@@ -237,10 +199,14 @@ defmodule Explorer.PolarsBackend.Series do
   def median(series), do: Shared.apply_series(series, :s_median)
 
   @impl true
-  def variance(series), do: Shared.apply_series(series, :s_variance)
+  def mode(series), do: Shared.apply_series(series, :s_mode)
 
   @impl true
-  def standard_deviation(series), do: Shared.apply_series(series, :s_standard_deviation)
+  def variance(series, ddof), do: Shared.apply_series(series, :s_variance, [ddof])
+
+  @impl true
+  def standard_deviation(series, ddof),
+    do: Shared.apply_series(series, :s_standard_deviation, [ddof])
 
   @impl true
   def quantile(series, quantile),
@@ -254,12 +220,19 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_skew, [bias?])
 
   @impl true
-  def correlation(left, right, ddof),
-    do: Shared.apply_series(matching_size!(left, right), :s_correlation, [right.data, ddof])
+  def correlation(left, right, ddof, method),
+    do:
+      Shared.apply_series(matching_size!(left, right), :s_correlation, [right.data, ddof, method])
 
   @impl true
-  def covariance(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_covariance, [right.data])
+  def covariance(left, right, ddof),
+    do: Shared.apply_series(matching_size!(left, right), :s_covariance, [right.data, ddof])
+
+  @impl true
+  def all?(series), do: Shared.apply_series(series, :s_all)
+
+  @impl true
+  def any?(series), do: Shared.apply_series(series, :s_any)
 
   # Cumulative
 
@@ -356,7 +329,7 @@ defmodule Explorer.PolarsBackend.Series do
       do: Shared.apply_series(s, :s_clip_integer, [min, max])
 
   def clip(%Series{} = s, min, max),
-    do: s |> cast(:float) |> Shared.apply_series(:s_clip_float, [min * 1.0, max * 1.0])
+    do: s |> cast({:f, 64}) |> Shared.apply_series(:s_clip_float, [min * 1.0, max * 1.0])
 
   # Trigonometry
 
@@ -434,15 +407,27 @@ defmodule Explorer.PolarsBackend.Series do
   # Sort
 
   @impl true
-  def sort(series, descending?, nils_last?)
-      when is_boolean(descending?) and is_boolean(nils_last?) do
-    Shared.apply_series(series, :s_sort, [descending?, nils_last?])
+  def sort(series, descending?, maintain_order?, multithreaded?, nulls_last?)
+      when is_boolean(descending?) and is_boolean(maintain_order?) and is_boolean(multithreaded?) and
+             is_boolean(nulls_last?) do
+    Shared.apply_series(series, :s_sort, [
+      descending?,
+      maintain_order?,
+      multithreaded?,
+      nulls_last?
+    ])
   end
 
   @impl true
-  def argsort(series, descending?, nils_last?)
-      when is_boolean(descending?) and is_boolean(nils_last?) do
-    Shared.apply_series(series, :s_argsort, [descending?, nils_last?])
+  def argsort(series, descending?, maintain_order?, multithreaded?, nulls_last?)
+      when is_boolean(descending?) and is_boolean(maintain_order?) and is_boolean(multithreaded?) and
+             is_boolean(nulls_last?) do
+    Shared.apply_series(series, :s_argsort, [
+      descending?,
+      maintain_order?,
+      multithreaded?,
+      nulls_last?
+    ])
   end
 
   @impl true
@@ -548,6 +533,20 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_ewm_mean, [alpha, adjust, min_periods, ignore_nils])
   end
 
+  @impl true
+  def ewm_standard_deviation(series, alpha, adjust, bias, min_periods, ignore_nils) do
+    Shared.apply_series(
+      series,
+      :s_ewm_standard_deviation,
+      [alpha, adjust, bias, min_periods, ignore_nils]
+    )
+  end
+
+  @impl true
+  def ewm_variance(series, alpha, adjust, bias, min_periods, ignore_nils) do
+    Shared.apply_series(series, :s_ewm_variance, [alpha, adjust, bias, min_periods, ignore_nils])
+  end
+
   # Missing values
 
   @impl true
@@ -631,6 +630,10 @@ defmodule Explorer.PolarsBackend.Series do
   def substring(series, offset, length),
     do: Shared.apply_series(series, :s_substring, [offset, length])
 
+  @impl true
+  def split(series, by),
+    do: Shared.apply_series(series, :s_split, [by])
+
   # Float round
   @impl true
   def round(series, decimals),
@@ -676,6 +679,20 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def second(series),
     do: Shared.apply_series(series, :s_second)
+
+  # Lists
+
+  @impl true
+  def join(series, separator),
+    do: Shared.apply_series(series, :s_join, [separator])
+
+  @impl true
+  def lengths(series),
+    do: Shared.apply_series(series, :s_lengths)
+
+  @impl true
+  def member?(%Series{dtype: {:list, inner_dtype}} = series, value),
+    do: Shared.apply_series(series, :s_member, [value, inner_dtype])
 
   # Polars specific functions
 

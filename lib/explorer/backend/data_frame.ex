@@ -162,7 +162,14 @@ defmodule Explorer.Backend.DataFrame do
   @callback mask(df, mask :: series) :: df
   @callback filter_with(df, out_df :: df(), lazy_series()) :: df
   @callback mutate_with(df, out_df :: df(), mutations :: [{column_name(), lazy_series()}]) :: df
-  @callback arrange_with(df, out_df :: df(), directions :: [{:asc | :desc, lazy_series()}]) :: df
+  @callback sort_with(
+              df,
+              out_df :: df(),
+              directions :: [{:asc | :desc, lazy_series()}],
+              maintain_order? :: boolean(),
+              multithreaded? :: boolean(),
+              nulls_last? :: boolean()
+            ) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()]) :: df
   @callback rename(df, out_df :: df(), [{old :: column_name(), new :: column_name()}]) :: df
   @callback dummies(df, out_df :: df(), columns :: [column_name()]) :: df
@@ -195,6 +202,10 @@ defmodule Explorer.Backend.DataFrame do
   @callback put(df, out_df :: df(), column_name(), series()) :: df
   @callback describe(df, percentiles :: option(list(float()))) :: df()
   @callback nil_count(df) :: df()
+  @callback explode(df, out_df :: df(), columns :: [column_name()]) :: df()
+  @callback unnest(df, out_df :: df(), columns :: [column_name()]) :: df()
+  @callback correlation(df, out_df :: df(), ddof :: integer(), method :: atom()) :: df()
+  @callback covariance(df, out_df :: df(), ddof :: integer()) :: df()
 
   # Two or more table verbs
 
@@ -231,7 +242,7 @@ defmodule Explorer.Backend.DataFrame do
   end
 
   @default_limit 5
-  import Inspect.Algebra
+  alias Inspect.Algebra, as: A
 
   @doc """
   Default inspect implementation for backends.
@@ -239,35 +250,39 @@ defmodule Explorer.Backend.DataFrame do
   def inspect(df, backend, n_rows, inspect_opts, opts \\ [])
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows)) and is_list(opts) do
     inspect_opts = %{inspect_opts | limit: @default_limit}
-    open = color("[", :list, inspect_opts)
-    close = color("]", :list, inspect_opts)
+    open = A.color("[", :list, inspect_opts)
+    close = A.color("]", :list, inspect_opts)
 
     cols_algebra =
       for name <- DataFrame.names(df) do
         series = df[name]
 
-        values =
-          series
-          |> Series.slice(0, inspect_opts.limit + 1)
-          |> Series.to_list()
+        series =
+          case inspect_opts.limit do
+            :infinity -> series
+            limit when is_integer(limit) -> Series.slice(series, 0, limit + 1)
+          end
 
-        data = container_doc(open, values, close, inspect_opts, &Explorer.Shared.to_string/2)
+        data =
+          series
+          |> Series.to_list()
+          |> Explorer.Shared.to_doc(inspect_opts)
 
         type =
           series
           |> Series.dtype()
           |> Explorer.Shared.dtype_to_string()
 
-        concat([
-          line(),
-          color("#{name} ", :map, inspect_opts),
-          color("#{type} ", :atom, inspect_opts),
+        A.concat([
+          A.line(),
+          A.color("#{name} ", :map, inspect_opts),
+          A.color("#{type} ", :atom, inspect_opts),
           data
         ])
       end
 
-    concat([
-      color(backend, :atom, inspect_opts),
+    A.concat([
+      A.color(backend, :atom, inspect_opts),
       open,
       "#{n_rows || "???"} x #{length(cols_algebra)}",
       close,
@@ -277,10 +292,10 @@ defmodule Explorer.Backend.DataFrame do
 
   defp groups_algebra([_ | _] = groups, opts),
     do:
-      Inspect.Algebra.concat([
-        Inspect.Algebra.line(),
-        Inspect.Algebra.color("Groups: ", :atom, opts),
-        Inspect.Algebra.to_doc(groups, opts)
+      A.concat([
+        A.line(),
+        A.color("Groups: ", :atom, opts),
+        A.to_doc(groups, opts)
       ])
 
   defp groups_algebra([], _), do: ""

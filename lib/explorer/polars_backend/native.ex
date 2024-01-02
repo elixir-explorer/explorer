@@ -37,7 +37,6 @@ defmodule Explorer.PolarsBackend.Native do
       aarch64-apple-darwin
       aarch64-unknown-linux-gnu
       aarch64-unknown-linux-musl
-      riscv64gc-unknown-linux-gnu
       x86_64-apple-darwin
       x86_64-pc-windows-msvc
       x86_64-pc-windows-gnu
@@ -59,8 +58,20 @@ defmodule Explorer.PolarsBackend.Native do
   defstruct [:inner]
 
   def df_from_arrow_stream_pointer(_stream_ptr), do: err()
-  def df_arrange(_df, _by, _reverse, _groups), do: err()
-  def df_arrange_with(_df, _expressions, _directions, _groups), do: err()
+
+  def df_sort_by(_df, _by, _reverse, _maintain_order?, _multithreaded?, _nulls_last?, _groups),
+    do: err()
+
+  def df_sort_with(
+        _df,
+        _expressions,
+        _directions,
+        _maintain_order?,
+        _nulls_last?,
+        _groups
+      ),
+      do: err()
+
   def df_concat_columns(_df, _others), do: err()
   def df_concat_rows(_df, _others), do: err()
   def df_distinct(_df, _subset, _selection), do: err()
@@ -167,6 +178,8 @@ defmodule Explorer.PolarsBackend.Native do
   def df_width(_df), do: err()
   def df_describe(_df, _percentiles), do: err()
   def df_nil_count(_df), do: err()
+  def df_explode(_df, _columns), do: err()
+  def df_unnest(_df, _columns), do: err()
 
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
@@ -208,6 +221,8 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_select(_df, _columns), do: err()
   def lf_tail(_df, _n_rows), do: err()
   def lf_slice(_df, _offset, _length), do: err()
+  def lf_explode(_df, _columns), do: err()
+  def lf_unnest(_df, _columns), do: err()
   def lf_from_ipc(_filename), do: err()
   def lf_from_ndjson(_filename, _infer_schema_length, _batch_size), do: err()
   def lf_from_parquet(_filename, _stop_after_n_rows, _maybe_columns), do: err()
@@ -230,7 +245,16 @@ defmodule Explorer.PolarsBackend.Native do
       do: err()
 
   def lf_filter_with(_df, _expression), do: err()
-  def lf_arrange_with(_df, _expressions, _directions), do: err()
+
+  def lf_sort_with(
+        _df,
+        _expressions,
+        _directions,
+        _maintain_order?,
+        _nulls_last?
+      ),
+      do: err()
+
   def lf_distinct(_df, _subset, _selection), do: err()
   def lf_mutate_with(_df, _exprs), do: err()
   def lf_summarise_with(_df, _groups, _aggs), do: err()
@@ -241,15 +265,18 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_concat_rows(_dfs), do: err()
   def lf_concat_columns(_df, _others), do: err()
   def lf_to_parquet(_df, _filename, _compression, _streaming), do: err()
+  def lf_to_parquet_cloud(_df, _filename, _compression), do: err()
   def lf_to_ipc(_df, _filename, _compression, _streaming), do: err()
 
   # Series
   def s_as_str(_s), do: err()
   def s_add(_s, _other), do: err()
+  def s_all(_s), do: err()
   def s_and(_s, _s2), do: err()
+  def s_any(_s), do: err()
   def s_argmax(_s), do: err()
   def s_argmin(_s), do: err()
-  def s_argsort(_s, _descending?, _nils_last?), do: err()
+  def s_argsort(_s, _descending?, _maintain_order?, _multithreaded?, _nulls_last?), do: err()
   def s_cast(_s, _dtype), do: err()
   def s_categories(_s), do: err()
   def s_categorise(_s, _s_categories), do: err()
@@ -261,11 +288,12 @@ defmodule Explorer.PolarsBackend.Native do
   def s_cumulative_sum(_s, _reverse), do: err()
   def s_cumulative_product(_s, _reverse), do: err()
   def s_skew(_s, _bias), do: err()
-  def s_correlation(_s1, _s2, _ddof), do: err()
-  def s_covariance(_s1, _s2), do: err()
+  def s_correlation(_s1, _s2, _ddof, _method), do: err()
+  def s_covariance(_s1, _s2, _ddof), do: err()
   def s_distinct(_s), do: err()
   def s_divide(_s, _other), do: err()
   def s_dtype(_s), do: err()
+  def s_iotype(_s), do: err()
   def s_equal(_s, _rhs), do: err()
   def s_exp(_s), do: err()
   def s_abs(_s), do: err()
@@ -299,6 +327,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_median(_s), do: err()
   def s_product(_s), do: err()
   def s_min(_s), do: err()
+  def s_mode(_s), do: err()
   def s_multiply(_s, _other), do: err()
   def s_n_chunks(_s), do: err()
   def s_n_distinct(_s), do: err()
@@ -310,12 +339,22 @@ defmodule Explorer.PolarsBackend.Native do
   def s_from_list_time(_name, _val), do: err()
   def s_from_list_datetime(_name, _val, _precision), do: err()
   def s_from_list_duration(_name, _val, _precision), do: err()
+  def s_from_list_f32(_name, _val), do: err()
   def s_from_list_f64(_name, _val), do: err()
+  def s_from_list_i8(_name, _val), do: err()
+  def s_from_list_i16(_name, _val), do: err()
+  def s_from_list_i32(_name, _val), do: err()
   def s_from_list_i64(_name, _val), do: err()
+  def s_from_list_u8(_name, _val), do: err()
+  def s_from_list_u16(_name, _val), do: err()
   def s_from_list_u32(_name, _val), do: err()
+  def s_from_list_u64(_name, _val), do: err()
   def s_from_list_str(_name, _val), do: err()
   def s_from_list_binary(_name, _val), do: err()
   def s_from_list_categories(_name, _val), do: err()
+  def s_from_list_of_series(_name, _val), do: err()
+  def s_from_list_of_series_as_structs(_name, _val), do: err()
+  def s_from_binary_f32(_name, _val), do: err()
   def s_from_binary_f64(_name, _val), do: err()
   def s_from_binary_i32(_name, _val), do: err()
   def s_from_binary_i64(_name, _val), do: err()
@@ -346,8 +385,8 @@ defmodule Explorer.PolarsBackend.Native do
   def s_slice(_s, _offset, _length), do: err()
   def s_slice_by_indices(_s, _indices), do: err()
   def s_slice_by_series(_s, _series), do: err()
-  def s_sort(_s, _descending?, _nils_last?), do: err()
-  def s_standard_deviation(_s), do: err()
+  def s_sort(_s, _descending?, _maintain_order?, _multithreaded?, _nulls_last?), do: err()
+  def s_standard_deviation(_s, _ddof), do: err()
   def s_strip(_s, _string), do: err()
   def s_subtract(_s, _other), do: err()
   def s_sum(_s), do: err()
@@ -363,11 +402,12 @@ defmodule Explorer.PolarsBackend.Native do
   def s_frequencies(_s), do: err()
   def s_cut(_s, _bins, _labels, _break_point_label, _category_label), do: err()
   def s_substring(_s, _offset, _length), do: err()
+  def s_split(_s, _by), do: err()
 
   def s_qcut(_s, _quantiles, _labels, _break_point_label, _category_label),
     do: err()
 
-  def s_variance(_s), do: err()
+  def s_variance(_s, _ddof), do: err()
   def s_window_max(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_mean(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
   def s_window_median(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()
@@ -378,6 +418,8 @@ defmodule Explorer.PolarsBackend.Native do
     do: err()
 
   def s_ewm_mean(_s, _alpha, _adjust, _min_periods, _ignore_nils), do: err()
+  def s_ewm_standard_deviation(_s, _alpha, _adjust, _bias, _min_periods, _ignore_nils), do: err()
+  def s_ewm_variance(_s, _alpha, _adjust, _bias, _min_periods, _ignore_nils), do: err()
   def s_in(_s, _other), do: err()
   def s_day_of_week(_s), do: err()
   def s_day_of_year(_s), do: err()
@@ -393,6 +435,10 @@ defmodule Explorer.PolarsBackend.Native do
   def s_asin(_s), do: err()
   def s_acos(_s), do: err()
   def s_atan(_s), do: err()
+
+  def s_join(_s, _separator), do: err()
+  def s_lengths(_s), do: err()
+  def s_member(_s, _value, _inner_dtype), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

@@ -138,9 +138,9 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert DF.dtypes(df2) == %{
                "team" => :string,
-               "adv" => :float,
-               "cou" => :float,
-               "spo" => :float
+               "adv" => {:f, 64},
+               "cou" => {:f, 64},
+               "spo" => {:f, 64}
              }
 
       assert Series.to_list(df2["cou"]) == [1.0, 4.0]
@@ -163,7 +163,7 @@ defmodule Explorer.DataFrame.GroupedTest do
           total_min: min(total),
           cement_median: median(cement)
         )
-        |> DF.arrange(country)
+        |> DF.sort_by(country)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                country: [
@@ -380,7 +380,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
     test "with one group but no aggregation", %{df: df} do
       message = """
-      expecting summarise with an aggregation operation, but no aggregation was found in: #Explorer.Series<
+      expecting summarise with an aggregation operation or plain column, but none of which were found in: #Explorer.Series<
         LazySeries[???]
         integer (column("solid_fuel") + 50)
       >\
@@ -437,10 +437,10 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
-  describe "arrange/2" do
+  describe "sort_by/2" do
     test "sorts by group", %{df: df} do
-      df = DF.arrange(df, total)
-      grouped_df = df |> DF.group_by("country") |> DF.arrange(total)
+      df = DF.sort_by(df, total)
+      grouped_df = df |> DF.group_by("country") |> DF.sort_by(total)
 
       assert df["total"][0] == Series.min(df["total"])
 
@@ -452,12 +452,12 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
-  describe "arrange_with/2" do
+  describe "sort_with/2" do
     test "sorts by group", %{df: df} do
       grouped_df =
         df
         |> DF.group_by("country")
-        |> DF.arrange_with(fn ldf -> [asc: ldf["total"]] end)
+        |> DF.sort_with(fn ldf -> [asc: ldf["total"]] end)
 
       assert grouped_df
              |> DF.ungroup()
@@ -482,7 +482,7 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
 
       assert df2.names == ["a", "b", "c", "d"]
-      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :float}
+      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => {:f, 64}}
       assert df2.groups == ["c"]
     end
 
@@ -500,7 +500,7 @@ defmodule Explorer.DataFrame.GroupedTest do
              }
 
       assert df2.names == ["a", "b", "c", "d"]
-      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => :float}
+      assert df2.dtypes == %{"a" => :integer, "b" => :string, "c" => :integer, "d" => {:f, 64}}
       assert df2.groups == ["c"]
     end
   end
@@ -530,7 +530,7 @@ defmodule Explorer.DataFrame.GroupedTest do
                "a" => :integer,
                "b" => :string,
                "c" => :integer,
-               "d" => :float,
+               "d" => {:f, 64},
                "e" => :integer
              }
 
@@ -1199,7 +1199,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       stacked = DF.concat_rows([grouped_first, grouped_second])
 
       assert DF.groups(stacked) == ["a"]
-      assert DF.dtypes(stacked) == %{"a" => :float, "b" => :string}
+      assert DF.dtypes(stacked) == %{"a" => {:f, 64}, "b" => :string}
       assert DF.n_rows(stacked) == 6
     end
   end
@@ -1220,7 +1220,7 @@ defmodule Explorer.DataFrame.GroupedTest do
                "a" => :integer,
                "b" => :string,
                "c" => :integer,
-               "d" => :float
+               "d" => {:f, 64}
              }
 
       assert DF.n_rows(stacked) == 3
@@ -1241,7 +1241,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.dtypes(stacked) == %{
                "a" => :integer,
                "b" => :string,
-               "a_1" => :float,
+               "a_1" => {:f, 64},
                "d" => :integer
              }
 

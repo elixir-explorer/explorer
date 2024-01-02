@@ -13,10 +13,10 @@ defmodule Explorer.DataFrame.NDJSONTest do
     assert DF.n_columns(df) == 5
 
     assert df.dtypes == %{
-             "sepal_length" => :float,
-             "sepal_width" => :float,
-             "petal_length" => :float,
-             "petal_width" => :float,
+             "sepal_length" => {:f, 64},
+             "sepal_width" => {:f, 64},
+             "petal_length" => {:f, 64},
+             "petal_width" => {:f, 64},
              "species" => :string
            }
 
@@ -67,10 +67,10 @@ defmodule Explorer.DataFrame.NDJSONTest do
     assert DF.n_columns(df) == 5
 
     assert df.dtypes == %{
-             "sepal_length" => :float,
-             "sepal_width" => :float,
-             "petal_length" => :float,
-             "petal_width" => :float,
+             "sepal_length" => {:f, 64},
+             "sepal_width" => {:f, 64},
+             "petal_length" => {:f, 64},
+             "petal_width" => {:f, 64},
              "species" => :string
            }
 
@@ -95,9 +95,9 @@ defmodule Explorer.DataFrame.NDJSONTest do
     end
 
     test "float" do
-      assert_ndjson(:float, "2.3", 2.3)
-      assert_ndjson(:float, "57.653484", 57.653484)
-      assert_ndjson(:float, "-1.772232", -1.772232)
+      assert_ndjson({:f, 64}, "2.3", 2.3)
+      assert_ndjson({:f, 64}, "57.653484", 57.653484)
+      assert_ndjson({:f, 64}, "-1.772232", -1.772232)
     end
 
     # cast not used as it is not implemented for boolean values
@@ -109,6 +109,20 @@ defmodule Explorer.DataFrame.NDJSONTest do
     test "string" do
       assert_ndjson(:string, "some string", "some string")
       assert_ndjson(:string, "éphémère", "éphémère")
+    end
+
+    test "list of integer" do
+      assert_ndjson({:list, :integer}, [["100"]], [100])
+      assert_ndjson({:list, :integer}, [["-101"]], [-101])
+    end
+
+    test "list of floats" do
+      assert_ndjson({:list, {:f, 64}}, [["100.42"]], [100.42])
+      assert_ndjson({:list, {:f, 64}}, [["-101.51"]], [-101.51])
+    end
+
+    test "structs" do
+      assert_ndjson({:struct, %{"a" => :integer}}, [%{a: 1}], %{"a" => 1})
     end
 
     # test "date" do
@@ -129,7 +143,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
       assert {:ok, df} = DF.from_ndjson(ndjson_path)
 
       assert DF.names(df) == ~w[a b c d]
-      assert DF.dtypes(df) == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
+      assert DF.dtypes(df) == %{"a" => :integer, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
 
       sliced = DF.slice(df, 0, 5)
 
@@ -150,7 +164,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
       assert {:ok, df} = DF.from_ndjson(ndjson_path, infer_schema_length: 3, batch_size: 3)
 
       assert DF.names(df) == ~w[a b c d]
-      assert DF.dtypes(df) == %{"a" => :integer, "b" => :float, "c" => :boolean, "d" => :string}
+      assert DF.dtypes(df) == %{"a" => :integer, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
     end
 
     defp to_ndjson(tmp_dir) do

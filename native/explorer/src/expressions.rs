@@ -4,15 +4,16 @@
 // or an expression and returns an expression that is
 // wrapped in an Elixir struct.
 
-use chrono::{NaiveDate, NaiveDateTime};
 use polars::prelude::{
-    col, concat_str, cov, pearson_corr, when, IntoLazy, LiteralValue, SortOptions,
+    col, concat_str, cov, pearson_corr, spearman_rank_corr, when, IntoLazy, LiteralValue,
+    SortOptions,
 };
-use polars::prelude::{DataType, Expr, Literal, StrptimeOptions, TimeUnit};
+use polars::prelude::{DataType, EWMOptions, Expr, Literal, StrptimeOptions, TimeUnit};
 
-use crate::atoms::{microsecond, millisecond, nanosecond};
-use crate::datatypes::{ExDate, ExDateTime, ExDuration};
-use crate::series::{cast_str_to_dtype, cast_str_to_f64, ewm_opts, rolling_opts};
+use crate::datatypes::{
+    ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExValidValue,
+};
+use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 
 // Useful to get an ExExpr vec into a vec of expressions.
@@ -55,38 +56,17 @@ pub fn expr_atom(atom: &str) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_date(date: ExDate) -> ExExpr {
-    let naive_date = NaiveDate::from(date);
-    let expr = naive_date.lit().dt().date();
-    ExExpr::new(expr)
+    ExExpr::new(date.lit())
 }
 
 #[rustler::nif]
 pub fn expr_datetime(datetime: ExDateTime) -> ExExpr {
-    let naive_datetime = NaiveDateTime::from(datetime);
-    let expr = naive_datetime.lit();
-    ExExpr::new(expr)
+    ExExpr::new(datetime.lit())
 }
 
 #[rustler::nif]
 pub fn expr_duration(duration: ExDuration) -> ExExpr {
-    // Note: it's tempting to use `.lit()` on a `chrono::Duration` struct in this function, but
-    // doing so will lose precision information as `chrono::Duration`s have no time units.
-    let time_unit = time_unit_of_ex_duration(duration);
-    let expr = Expr::Literal(LiteralValue::Duration(duration.value, time_unit));
-    ExExpr::new(expr)
-}
-
-fn time_unit_of_ex_duration(duration: ExDuration) -> TimeUnit {
-    let precision = duration.precision;
-    if precision == millisecond() {
-        TimeUnit::Milliseconds
-    } else if precision == microsecond() {
-        TimeUnit::Microseconds
-    } else if precision == nanosecond() {
-        TimeUnit::Nanoseconds
-    } else {
-        panic!("unrecognized precision: {precision:?}")
-    }
+    ExExpr::new(duration.lit())
 }
 
 #[rustler::nif]
@@ -97,9 +77,9 @@ pub fn expr_series(series: ExSeries) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_cast(data: ExExpr, to_dtype: &str) -> ExExpr {
+pub fn expr_cast(data: ExExpr, to_dtype: ExSeriesDtype) -> ExExpr {
     let expr = data.clone_inner();
-    let to_dtype = cast_str_to_dtype(to_dtype).expect("dtype is not valid");
+    let to_dtype = DataType::try_from(&to_dtype).expect("dtype is not valid");
 
     ExExpr::new(expr.cast(to_dtype))
 }
@@ -238,7 +218,7 @@ pub fn expr_slice(expr: ExExpr, offset: i64, length: u32) -> ExExpr {
 pub fn expr_slice_by_indices(expr: ExExpr, indices_expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.take(indices_expr.clone_inner()))
+    ExExpr::new(expr.gather(indices_expr.clone_inner()))
 }
 
 #[rustler::nif]
@@ -259,7 +239,7 @@ pub fn expr_tail(expr: ExExpr, length: usize) -> ExExpr {
 pub fn expr_shift(expr: ExExpr, offset: i64, _default: Option<ExExpr>) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.shift(offset))
+    ExExpr::new(expr.shift(offset.into()))
 }
 
 #[rustler::nif]
@@ -289,7 +269,12 @@ pub fn expr_sample_frac(
 }
 
 #[rustler::nif]
-pub fn expr_rank(expr: ExExpr, method: &str, descending: bool, seed: Option<u64>) -> ExExpr {
+pub fn expr_rank(
+    expr: ExExpr,
+    method: ExRankMethod,
+    descending: bool,
+    seed: Option<u64>,
+) -> ExExpr {
     let expr = expr.clone_inner();
     let rank_options = crate::parse_rank_method_options(method, descending);
 
@@ -469,6 +454,13 @@ pub fn expr_median(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_mode(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.mode())
+}
+
+#[rustler::nif]
 pub fn expr_product(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
@@ -483,17 +475,17 @@ pub fn expr_abs(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_variance(expr: ExExpr) -> ExExpr {
+pub fn expr_variance(expr: ExExpr, ddof: u8) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.var(1))
+    ExExpr::new(expr.var(ddof))
 }
 
 #[rustler::nif]
-pub fn expr_standard_deviation(expr: ExExpr) -> ExExpr {
+pub fn expr_standard_deviation(expr: ExExpr, ddof: u8) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.std(1))
+    ExExpr::new(expr.std(ddof))
 }
 
 #[rustler::nif]
@@ -510,17 +502,42 @@ pub fn expr_skew(data: ExExpr, bias: bool) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_correlation(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
+pub fn expr_correlation(
+    left: ExExpr,
+    right: ExExpr,
+    ddof: u8,
+    method: ExCorrelationMethod,
+) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
-    ExExpr::new(pearson_corr(left_expr, right_expr, ddof))
+
+    match method {
+        ExCorrelationMethod::Pearson => ExExpr::new(pearson_corr(left_expr, right_expr, ddof)),
+        ExCorrelationMethod::Spearman => {
+            ExExpr::new(spearman_rank_corr(left_expr, right_expr, ddof, true))
+        }
+    }
 }
 
 #[rustler::nif]
-pub fn expr_covariance(left: ExExpr, right: ExExpr) -> ExExpr {
+pub fn expr_covariance(left: ExExpr, right: ExExpr, ddof: u8) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
-    ExExpr::new(cov(left_expr, right_expr))
+    ExExpr::new(cov(left_expr, right_expr, ddof))
+}
+
+#[rustler::nif]
+pub fn expr_all(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.all(true))
+}
+
+#[rustler::nif]
+pub fn expr_any(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.any(true))
 }
 
 #[rustler::nif]
@@ -648,25 +665,25 @@ pub fn expr_window_standard_deviation(
 #[rustler::nif]
 pub fn expr_cumulative_min(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
-    ExExpr::new(expr.cummin(reverse))
+    ExExpr::new(expr.cum_min(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_max(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
-    ExExpr::new(expr.cummax(reverse))
+    ExExpr::new(expr.cum_max(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
-    ExExpr::new(expr.cumsum(reverse))
+    ExExpr::new(expr.cum_sum(reverse))
 }
 
 #[rustler::nif]
 pub fn expr_cumulative_product(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
-    ExExpr::new(expr.cumprod(reverse))
+    ExExpr::new(expr.cum_prod(reverse))
 }
 
 #[rustler::nif]
@@ -683,6 +700,46 @@ pub fn expr_ewm_mean(
 }
 
 #[rustler::nif]
+pub fn expr_ewm_standard_deviation(
+    data: ExExpr,
+    alpha: f64,
+    adjust: bool,
+    bias: bool,
+    min_periods: usize,
+    ignore_nulls: bool,
+) -> ExExpr {
+    let expr = data.clone_inner();
+    let opts = EWMOptions {
+        alpha,
+        adjust,
+        bias,
+        min_periods,
+        ignore_nulls,
+    };
+    ExExpr::new(expr.ewm_std(opts))
+}
+
+#[rustler::nif]
+pub fn expr_ewm_variance(
+    data: ExExpr,
+    alpha: f64,
+    adjust: bool,
+    bias: bool,
+    min_periods: usize,
+    ignore_nulls: bool,
+) -> ExExpr {
+    let expr = data.clone_inner();
+    let opts = EWMOptions {
+        alpha,
+        adjust,
+        bias,
+        min_periods,
+        ignore_nulls,
+    };
+    ExExpr::new(expr.ewm_var(opts))
+}
+
+#[rustler::nif]
 pub fn expr_reverse(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
@@ -690,36 +747,40 @@ pub fn expr_reverse(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_sort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
+pub fn expr_sort(
+    expr: ExExpr,
+    descending: bool,
+    maintain_order: bool,
+    multithreaded: bool,
+    nulls_last: bool,
+) -> ExExpr {
     let expr = expr.clone_inner();
-
-    // TODO: make these bools options.
-    let multithreaded = false;
-    let maintain_order = true;
 
     let opts = SortOptions {
         descending,
-        nulls_last,
-        multithreaded,
         maintain_order,
+        multithreaded,
+        nulls_last,
     };
 
     ExExpr::new(expr.sort_with(opts))
 }
 
 #[rustler::nif]
-pub fn expr_argsort(expr: ExExpr, descending: bool, nulls_last: bool) -> ExExpr {
+pub fn expr_argsort(
+    expr: ExExpr,
+    descending: bool,
+    maintain_order: bool,
+    multithreaded: bool,
+    nulls_last: bool,
+) -> ExExpr {
     let expr = expr.clone_inner();
-
-    // TODO: make these bools options.
-    let multithreaded = false;
-    let maintain_order = true;
 
     let opts = SortOptions {
         descending,
-        nulls_last,
-        multithreaded,
         maintain_order,
+        multithreaded,
+        nulls_last,
     };
 
     ExExpr::new(expr.arg_sort(opts).cast(DataType::Int64))
@@ -968,4 +1029,29 @@ pub fn expr_second(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
     ExExpr::new(expr.dt().second().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_join(expr: ExExpr, sep: String) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.list().join(sep.lit()))
+}
+
+#[rustler::nif]
+pub fn expr_lengths(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.list().len().cast(DataType::Int64))
+}
+
+#[rustler::nif]
+pub fn expr_member(expr: ExExpr, value: ExValidValue, inner_dtype: ExSeriesDtype) -> ExExpr {
+    let expr = expr.clone_inner();
+    let inner_dtype = DataType::try_from(&inner_dtype).unwrap();
+
+    ExExpr::new(
+        expr.list()
+            .contains(value.lit_with_matching_precision(&inner_dtype)),
+    )
 }

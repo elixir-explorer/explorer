@@ -4,7 +4,7 @@ use std::io::BufWriter;
 use std::result::Result;
 
 use crate::dataframe::io::schema_from_dtypes_pairs;
-use crate::datatypes::{ExParquetCompression, ExS3Entry};
+use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
 use crate::{ExLazyFrame, ExplorerError};
 
 #[rustler::nif]
@@ -62,11 +62,9 @@ pub fn lf_from_parquet_cloud(
     _stop_after_n_rows: Option<usize>,
     _columns: Option<Vec<String>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"aws\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"aws\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -104,6 +102,45 @@ pub fn lf_to_parquet(
 
         Ok(())
     }
+}
+
+#[cfg(feature = "aws")]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_to_parquet_cloud(
+    data: ExLazyFrame,
+    ex_entry: ExS3Entry,
+    ex_compression: ExParquetCompression,
+) -> Result<(), ExplorerError> {
+    let lf = data.clone_inner();
+    let cloud_options = Some(ex_entry.config.to_cloud_options());
+    let compression = ParquetCompression::try_from(ex_compression)?;
+
+    let options = ParquetWriteOptions {
+        compression,
+        statistics: false,
+        row_group_size: None,
+        data_pagesize_limit: None,
+        maintain_order: false,
+    };
+
+    lf.with_comm_subplan_elim(false).sink_parquet_cloud(
+        ex_entry.to_string(),
+        cloud_options,
+        options,
+    )?;
+    Ok(())
+}
+
+#[cfg(not(feature = "aws"))]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_to_parquet_cloud(
+    _data: ExLazyFrame,
+    _ex_entry: ExS3Entry,
+    _ex_compression: ExParquetCompression,
+) -> Result<(), ExplorerError> {
+    Err(ExplorerError::Other("Explorer was compiled without the \"aws\" feature enabled. \
+        This is mostly due to this feature being incompatible with your computer's architecture. \
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -158,7 +195,7 @@ pub fn lf_from_csv(
     skip_rows: usize,
     delimiter_as_byte: u8,
     do_rechunk: bool,
-    dtypes: Vec<(&str, &str)>,
+    dtypes: Vec<(&str, ExSeriesDtype)>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,
@@ -208,9 +245,7 @@ pub fn lf_from_ndjson(
     _infer_schema_length: Option<usize>,
     _batch_size: usize,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    Err(ExplorerError::Other(format!(
-        "Explorer was compiled without the \"ndjson\" feature enabled. \
+    Err(ExplorerError::Other("Explorer was compiled without the \"ndjson\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
-        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation"
-    )))
+        Please read the section about precompilation in our README.md: https://github.com/elixir-explorer/explorer#precompilation".to_string()))
 }

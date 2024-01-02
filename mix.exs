@@ -69,7 +69,10 @@ defmodule Explorer.MixProject do
         # Explorer.Datasets,
         # Explorer.Query,
         # Explorer.Series,
-        # Explorer.TensorFrame,
+        "Custom data types": [
+          Explorer.Duration,
+          Explorer.TensorFrame
+        ],
         Backends: [
           Explorer.Backend,
           Explorer.Backend.DataFrame,
@@ -89,6 +92,7 @@ defmodule Explorer.MixProject do
         "Functions: Datetime ops": &(&1[:type] == :datetime_wise),
         "Functions: Float ops": &(&1[:type] == :float_wise),
         "Functions: String ops": &(&1[:type] == :string_wise),
+        "Functions: List ops": &(&1[:type] == :list_wise),
         "Functions: Introspection": &(&1[:type] == :introspection),
         "Functions: IO": &(&1[:type] == :io),
         "Functions: Shape": &(&1[:type] == :shape),
