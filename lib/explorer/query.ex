@@ -379,18 +379,16 @@ defmodule Explorer.Query do
   end
 
   defp traverse({:cond, _meta, [[do: clauses]]}, vars, state) do
-    clauses =
-      clauses
-      |> Enum.map(fn {:->, _, [[on_condition], on_true]} ->
-        {condition, _} = traverse(on_condition, vars, state)
-        {truthy, _} = traverse(on_true, vars, state)
-        {condition, truthy}
+    {clauses, vars} =
+      Enum.map_reduce(clauses, vars, fn {:->, _, [[on_condition], on_true]}, vars ->
+        {condition, vars} = traverse(on_condition, vars, state)
+        {truthy, vars} = traverse(on_true, vars, state)
+        {{condition, truthy}, vars}
       end)
-      |> Enum.reverse()
 
     body =
       quote do
-        Explorer.Query.__cond__(unquote(clauses))
+        Explorer.Query.__cond__(unquote(Enum.reverse(clauses)))
       end
 
     {body, vars}

@@ -1,6 +1,7 @@
 defmodule Explorer.QueryTest do
   use ExUnit.Case, async: true
 
+  alias Explorer.Series
   require Explorer.DataFrame, as: DF
   doctest Explorer.Query
 
@@ -17,6 +18,70 @@ defmodule Explorer.QueryTest do
     assert DF.new(a: [1, 2, 3])
            |> DF.filter(a < ^(two + three))
            |> DF.to_columns(atom_keys: true) == %{a: [1, 2, 3]}
+  end
+
+  describe "conditionals" do
+    test "support cond/1 macro" do
+      df = DF.new(%{names: ["Alice", "Bob", "John"], grade: [10, 4, 6]})
+
+      df =
+        DF.mutate(df,
+          simple_result:
+            cond do
+              grade > 9 -> "Exceptional"
+              grade > 5 -> "Passed"
+            end,
+          result:
+            cond do
+              grade > 9 -> "Exceptional"
+              grade > 5 -> "Passed"
+              true -> cast(grade, :string)
+            end
+        )
+
+      assert Series.to_list(df[:simple_result]) == ["Exceptional", nil, "Passed"]
+      assert Series.to_list(df[:result]) == ["Exceptional", "4", "Passed"]
+    end
+
+    test "support pins in clauses" do
+      df = DF.new(%{names: ["Alice", "Bob", "John"], grade: [10, 4, 6]})
+      column = :grade
+      passed = "Passed"
+      last = true
+
+      df =
+        DF.mutate(df,
+          result:
+            cond do
+              col(^column) > 9 -> "Exceptional"
+              col(^column) > 5 -> ^passed
+              ^last -> "Fallback"
+            end
+        )
+
+      assert Series.to_list(df[:result]) == ["Exceptional", "Fallback", "Passed"]
+    end
+
+    test "support if/2 and unless/2 macros" do
+      df = DF.new(%{names: ["Alice", "Bob", "John"], grade: [10, 4, 6]})
+
+      df =
+        DF.mutate(df,
+          simple_result:
+            if grade > 9 do
+              "Exceptional"
+            else
+              "Passed"
+            end,
+          result:
+            unless grade > 5 do
+              "Failed"
+            end
+        )
+
+      assert Series.to_list(df[:simple_result]) == ["Exceptional", "Passed", "Passed"]
+      assert Series.to_list(df[:result]) == [nil, "Failed", nil]
+    end
   end
 
   describe "comprehensions" do
