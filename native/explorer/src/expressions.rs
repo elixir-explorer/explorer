@@ -871,8 +871,8 @@ pub fn expr_substring(expr: ExExpr, offset: i64, length: Option<u64>) -> ExExpr 
 pub fn expr_replace(expr: ExExpr, pat: String, value: String) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().replace_all(
-        Expr::Literal(LiteralValue::Utf8(pat)),
-        Expr::Literal(LiteralValue::Utf8(value)),
+        Expr::Literal(LiteralValue::String(pat)),
+        Expr::Literal(LiteralValue::String(value)),
         true,
     ))
 }

@@ -36,9 +36,7 @@ object_store = { version = "0.8", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-# version = "0.35"
-git = "https://github.com/pola-rs/polars.git"
-rev = "38d016b61971c1ce3789fced9a7aa519983d5de9"
+version = "0.36"
 default-features = false
 features = [
   "abs",
@@ -55,6 +53,7 @@ features = [
   "group_by_list",
   "ipc",
   "ipc_streaming",
+  "horizontal_concat",
   "lazy",
   "lazy_regex",
   "log",
@@ -66,7 +65,7 @@ features = [
   "rolling_window",
   "rows",
   "simd",
-  "sort_multiple",
+  # "sort_multiple",
   "temporal",
   "to_dummies",
   "trigonometry",
@@ -83,9 +82,7 @@ features = [
 ]
 
 [dependencies.polars-ops]
-# version = "0.35"
-git = "https://github.com/pola-rs/polars.git"
-rev = "38d016b61971c1ce3789fced9a7aa519983d5de9"
+version = "0.36"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]

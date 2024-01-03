@@ -34,7 +34,8 @@ pub fn df_join(
     let how = match how {
         "left" => JoinType::Left,
         "inner" => JoinType::Inner,
-        "outer" => JoinType::Outer,
+        // TODO: should be true?
+        "outer" => JoinType::Outer { coalesce: true },
         "cross" => JoinType::Cross,
         _ => {
             return Err(ExplorerError::Other(format!(
@@ -484,11 +485,13 @@ pub fn df_put_column(df: ExDataFrame, series: ExSeries) -> Result<ExDataFrame, E
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_describe(
     df: ExDataFrame,
-    percentiles: Option<Vec<f64>>,
+    _percentiles: Option<Vec<f64>>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = df.describe(percentiles.as_deref())?;
+    // TODO: implement this here, because the feature was removed from Polars.
+    // let new_df = df.describe(percentiles.as_deref())?;
 
-    Ok(ExDataFrame::new(new_df))
+    // Ok(ExDataFrame::new(new_df))
+    Ok(df)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
