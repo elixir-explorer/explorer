@@ -3498,6 +3498,22 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s1) == :category
     end
 
+    test "string series to datetime" do
+      s = Series.from_list(["2023-08-29 17:39:43", "2023-08-29 17:20:09"])
+      ms = Series.cast(s, {:datetime, :millisecond})
+      us = Series.cast(s, {:datetime, :microsecond})
+      ns = Series.cast(s, {:datetime, :nanosecond})
+
+      assert Series.dtype(ms) == {:datetime, :millisecond}
+      assert Series.dtype(us) == {:datetime, :microsecond}
+      assert Series.dtype(ns) == {:datetime, :nanosecond}
+
+      expected = [~N[2023-08-29 17:39:43.000000], ~N[2023-08-29 17:20:09.000000]]
+      assert Series.to_list(ms) == expected
+      assert Series.to_list(us) == expected
+      assert Series.to_list(ns) == expected
+    end
+
     test "no-op with the same dtype" do
       s = Series.from_list([1, 2, 3])
       s1 = Series.cast(s, :integer)

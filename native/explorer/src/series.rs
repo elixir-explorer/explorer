@@ -2,7 +2,7 @@ use crate::{
     atoms,
     datatypes::{
         ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype,
-        ExSeriesIoType, ExTime, ExValidValue,
+        ExSeriesIoType, ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -94,6 +94,8 @@ pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
     )
 }
 
+// TODO: Phase out this function in favor of the `ExTimeUnit` enum.
+//       See `s_strptime` for an example.
 fn precision_to_timeunit(precision: &str) -> TimeUnit {
     match precision {
         "millisecond" => TimeUnit::Milliseconds,
@@ -1659,12 +1661,21 @@ pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_strptime(s: ExSeries, format_string: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_strptime(
+    s: ExSeries,
+    format_string: Option<&str>,
+    precision: Option<ExTimeUnit>,
+) -> Result<ExSeries, ExplorerError> {
+    let timeunit = match precision {
+        None => TimeUnit::Microseconds,
+        Some(precision) => TimeUnit::try_from(&precision)?,
+    };
+
     let s1 = s
         .utf8()?
         .as_datetime(
-            Some(format_string),
-            TimeUnit::Microseconds,
+            format_string,
+            timeunit,
             true,
             false,
             None,
