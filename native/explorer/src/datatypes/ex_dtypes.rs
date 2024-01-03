@@ -28,6 +28,18 @@ pub enum ExTimeUnit {
     Nanosecond,
 }
 
+impl TryFrom<&ExTimeUnit> for TimeUnit {
+    type Error = ExplorerError;
+
+    fn try_from(value: &ExTimeUnit) -> Result<Self, Self::Error> {
+        match value {
+            ExTimeUnit::Millisecond => Ok(TimeUnit::Milliseconds),
+            ExTimeUnit::Microsecond => Ok(TimeUnit::Microseconds),
+            ExTimeUnit::Nanosecond => Ok(TimeUnit::Nanoseconds),
+        }
+    }
+}
+
 #[derive(NifTaggedEnum)]
 pub enum ExSeriesDtype {
     Binary,

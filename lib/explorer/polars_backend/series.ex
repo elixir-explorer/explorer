@@ -39,7 +39,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def cast(%Series{dtype: :string} = series, {:datetime, precision}),
-    do: Shared.apply_series(series, :s_strptime, [nil, Atom.to_string(precision)])
+    do: Shared.apply_series(series, :s_strptime, [nil, precision])
 
   def cast(series, dtype),
     do: Shared.apply_series(series, :s_cast, [dtype])
