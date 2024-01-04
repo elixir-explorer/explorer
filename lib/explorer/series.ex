@@ -496,7 +496,17 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
-    * `:dtype` - The dtype of the series, it must match the underlying tensor type.
+    * `:dtype` - The dtype of the series that must match the underlying tensor type.
+
+      The series can have a different dtype if the tensor is compatible with it.
+      For example, a tensor of `{:u, 8}` can represent a series of `:boolean` dtype.
+
+      Here are the list of compatible tensor types and dtypes:
+
+      * `{:u, 8}` tensor as a `:boolean` series.
+      * `{:s, 32}` tensor as a `:date` series.
+      * `{:s, 64}` tensor as a `:time` series.
+      * `{:s, 64}` tensor as a `{:datetime, unit}` or `{:duration, unit}` series.
 
   ## Examples
 
@@ -516,22 +526,27 @@ defmodule Explorer.Series do
         f64 [1.0, 2.0, 3.0]
       >
 
-  Unsigned 8-bit tensors are assumed to be booleans:
-
       iex> tensor = Nx.tensor([1, 0, 1], type: :u8)
       iex> Explorer.Series.from_tensor(tensor)
       #Explorer.Series<
         Polars[3]
-        boolean [true, false, true]
+        u8 [1, 0, 1]
       >
-
-  Signed 32-bit tensors are assumed to be dates:
 
       iex> tensor = Nx.tensor([-719162, 0, 6129], type: :s32)
       iex> Explorer.Series.from_tensor(tensor)
       #Explorer.Series<
         Polars[3]
-        date [0001-01-01, 1970-01-01, 1986-10-13]
+        s32 [-719162, 0, 6129]
+      >
+
+  Booleans can be read from a tensor of `{:u, 8}` type if the dtype is explicitly given:
+
+      iex> tensor = Nx.tensor([1, 0, 1], type: :u8)
+      iex> Explorer.Series.from_tensor(tensor, dtype: :boolean)
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, false, true]
       >
 
   Times are signed 64-bit representing nanoseconds from midnight and
@@ -559,6 +574,8 @@ defmodule Explorer.Series do
     opts = Keyword.validate!(opts, [:dtype, :backend])
     type = Nx.type(tensor)
     {dtype, opts} = Keyword.pop_lazy(opts, :dtype, fn -> Shared.iotype_to_dtype!(type) end)
+
+    dtype = Shared.normalise_dtype!(dtype)
 
     if Shared.dtype_to_iotype!(dtype) != type do
       raise ArgumentError,

@@ -510,10 +510,9 @@ defmodule Explorer.Shared do
   """
   def iotype_to_dtype!(type) do
     case type do
-      {:f, _} -> type
-      {:s, 64} -> {:s, 64}
-      {:u, 8} -> :boolean
-      {:s, 32} -> :date
+      {:f, n} when n in [32, 64] -> type
+      {:s, n} when n in [8, 16, 32, 64] -> type
+      {:u, n} when n in [8, 16, 32, 64] -> type
       _ -> raise ArgumentError, "cannot convert binary/tensor type #{inspect(type)} into dtype"
     end
   end

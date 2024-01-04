@@ -3310,10 +3310,6 @@ defmodule Explorer.DataFrameTest do
       assert_raise ArgumentError,
                    "cannot convert dtype string into a binary/tensor type",
                    fn -> DF.put(df, :c, i) end
-
-      assert_raise ArgumentError,
-                   "cannot convert binary/tensor type {:u, 32} into dtype",
-                   fn -> DF.put(df, :e, Nx.tensor([1, 2, 3], type: {:u, 32})) end
     end
   end
 
