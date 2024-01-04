@@ -413,9 +413,7 @@ pub fn s_unordered_distinct(series: ExSeries) -> Result<ExSeries, ExplorerError>
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_frequencies(series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let mut df = series.value_counts(true, true)?;
-    let df = df
-        .try_apply("counts", |s| s.cast(&DataType::Int64))?
-        .clone();
+    let df = df.try_apply("count", |s| s.cast(&DataType::Int64))?.clone();
     Ok(ExDataFrame::new(df))
 }
 
@@ -796,16 +794,21 @@ pub fn s_window_mean(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_window_median(
     series: ExSeries,
-    _window_size: usize,
-    _weights: Option<Vec<f64>>,
-    _min_periods: Option<usize>,
-    _center: bool,
+    window_size: usize,
+    weights: Option<Vec<f64>>,
+    min_periods: Option<usize>,
+    center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    // let opts = rolling_opts(window_size, weights, min_periods, center);
-    // TODO: implement function because it was removed from Polars Series. It exists in Expr.
-    // let s1 = series.rolling_median(opts.into())?;
-    // Ok(ExSeries::new(s1))
-    Ok(series)
+    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let s1 = series
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(series.name()).rolling_median(opts)])
+        .collect()?
+        .column(series.name())?
+        .clone();
+    Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
