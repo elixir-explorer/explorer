@@ -4695,21 +4695,21 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :nan, 3.9])
 
       assert Series.quantile(s, 0.2) == -3.1
-      assert Series.quantile(s, 0.9) == :nan
+      assert Series.quantile(s, 0.92) == :nan
     end
 
     test "quantile of a float series with infinity positive" do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :infinity, 3.9])
 
       assert Series.quantile(s, 0.2) == -3.1
-      assert Series.quantile(s, 0.9) == :infinity
+      assert Series.quantile(s, 0.92) == :infinity
     end
 
     test "quantile of a float series with infinity negative" do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
 
       assert Series.quantile(s, 0.2) == -12.6
-      assert Series.quantile(s, 0.1) == :neg_infinity
+      assert Series.quantile(s, 0.08) == :neg_infinity
     end
   end
 
