@@ -219,7 +219,8 @@ pub fn lf_join(
     let how = match how {
         "left" => JoinType::Left,
         "inner" => JoinType::Inner,
-        "outer" => JoinType::Outer { coalesce: true },
+        "outer" => JoinType::Outer { coalesce: false },
+        "outer_coalesce" => JoinType::Outer { coalesce: true },
         "cross" => JoinType::Cross,
         _ => {
             return Err(ExplorerError::Other(format!(

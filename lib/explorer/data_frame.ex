@@ -4636,7 +4636,7 @@ defmodule Explorer.DataFrame do
 
   # Two table verbs
 
-  @valid_join_types [:inner, :left, :right, :outer, :cross]
+  @valid_join_types [:inner, :left, :right, :outer, :outer_coalesce, :cross]
 
   @doc """
   Join two tables.

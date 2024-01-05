@@ -460,7 +460,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def join(%DF{} = left, %DF{} = right, %DF{} = out_df, on, how)
-      when is_list(on) and how in [:left, :inner, :cross, :outer] do
+      when is_list(on) and how in [:left, :inner, :cross, :outer, :outer_coalesce] do
     how = Atom.to_string(how)
 
     {left_on, right_on} =
