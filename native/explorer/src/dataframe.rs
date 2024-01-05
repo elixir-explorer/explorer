@@ -35,7 +35,8 @@ pub fn df_join(
         "left" => JoinType::Left,
         "inner" => JoinType::Inner,
         // TODO: should be true?
-        "outer" => JoinType::Outer { coalesce: true },
+        "outer" => JoinType::Outer { coalesce: false },
+        "outer_coalesce" => JoinType::Outer { coalesce: true },
         "cross" => JoinType::Cross,
         _ => {
             return Err(ExplorerError::Other(format!(

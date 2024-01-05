@@ -2133,7 +2133,7 @@ defmodule Explorer.DataFrameTest do
       right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
 
       msg =
-        "join type is not valid: :inner_join. Valid options are: :inner, :left, :right, :outer, :cross"
+        "join type is not valid: :inner_join. Valid options are: :inner, :left, :right, :outer, :outer_coalesce, :cross"
 
       assert_raise ArgumentError, msg, fn -> DF.join(left, right, how: :inner_join) end
     end
