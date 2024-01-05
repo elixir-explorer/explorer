@@ -1,8 +1,8 @@
 use crate::{
     atoms,
     datatypes::{
-        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype,
-        ExSeriesIoType, ExTime, ExTimeUnit, ExValidValue,
+        DtypeGroup, ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod,
+        ExSeriesDtype, ExSeriesIoType, ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -171,7 +171,7 @@ pub fn s_from_list_binary(name: &str, val: Vec<Option<Binary>>) -> ExSeries {
 pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries {
     ExSeries::new(
         Series::new(name, val.as_slice())
-            .cast(&DataType::Categorical(None, CategoricalOrdering::default()))
+            .cast(&DataType::Categorical(None))
             .unwrap(),
     )
 }
@@ -960,11 +960,11 @@ pub fn s_to_iovec(env: Env, series: ExSeries) -> Result<Term, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sum(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Boolean => Ok(s.sum::<i64>()?.encode(env)),
-        DataType::Int64 => Ok(s.sum::<i64>()?.encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.sum::<f64>().ok(), env)),
-        dt => panic!("sum/1 not implemented for {dt:?}"),
+    match s.dtype_group() {
+        DtypeGroup::Boolean => Ok(s.sum::<i64>()?.encode(env)),
+        DtypeGroup::Signed | DtypeGroup::Unsigned => Ok(s.sum::<i64>()?.encode(env)),
+        DtypeGroup::Float => Ok(term_from_optional_float(s.sum::<f64>()?, env)),
+        _ => panic!("sum/1 not implemented for {:?}", &s.dtype()),
     }
 }
 
@@ -1010,20 +1010,19 @@ pub fn s_argmin(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_mean(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Boolean => Ok(s.mean().encode(env)),
-        DataType::Int64 => Ok(s.mean().encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.mean(), env)),
-        dt => panic!("mean/1 not implemented for {dt:?}"),
+    if s.dtype().is_numeric() {
+        Ok(term_from_optional_float(s.mean(), env))
+    } else {
+        panic!("mean/1 not implemented for {:?}", &s.dtype())
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_median(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(s.median().encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.median(), env)),
-        dt => panic!("median/1 not implemented for {dt:?}"),
+    if s.dtype().is_numeric() {
+        Ok(term_from_optional_float(s.median(), env))
+    } else {
+        panic!("median/1 not implemented for {:?}", &s.dtype())
     }
 }
 
@@ -1037,38 +1036,55 @@ pub fn s_mode(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(ExSeries::new(s.product())),
-        DataType::Float64 => Ok(ExSeries::new(s.product())),
-        dt => panic!("product/1 not implemented for {dt:?}"),
+    if s.dtype().is_numeric() {
+        Ok(ExSeries::new(s.product()))
+    } else {
+        panic!("product/1 not implemented for {:?}", &s.dtype())
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_variance(env: Env, s: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(s.i64()?.var(ddof).encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.var(ddof), env)),
-        dt => panic!("var/1 not implemented for {dt:?}"),
+pub fn s_variance(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
+    if s.dtype().is_numeric() {
+        let var_series = s
+            .clone_inner()
+            .into_frame()
+            .lazy()
+            .select([col(s.name()).var(ddof)])
+            .collect()?
+            .column(s.name())?
+            .clone();
+
+        Ok(ExSeries::new(var_series))
+    } else {
+        panic!("variance/2 not implemented for {:?}", &s.dtype())
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_standard_deviation(env: Env, s: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(s.i64()?.std(ddof).encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.std(ddof), env)),
-        dt => panic!("std/1 not implemented for {dt:?}"),
+pub fn s_standard_deviation(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
+    if s.dtype().is_numeric() {
+        let std_series = s
+            .clone_inner()
+            .into_frame()
+            .lazy()
+            .select([col(s.name()).std(ddof)])
+            .collect()?
+            .column(s.name())?
+            .clone();
+
+        Ok(ExSeries::new(std_series))
+    } else {
+        panic!("standard_deviation/2 not implemented for {:?}", &s.dtype())
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_skew(env: Env, s: ExSeries, bias: bool) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Float64 => Ok(s.skew(bias)?.encode(env)),
-        DataType::Int64 => Ok(s.skew(bias)?.encode(env)),
-        // DataType::Float64 => Ok(term_from_optional_float(s.skew(bias), env)),
-        dt => panic!("skew/2 not implemented for {dt:?}"),
+    if s.dtype().is_numeric() {
+        Ok(term_from_optional_float(s.skew(bias)?, env))
+    } else {
+        panic!("skew/2 not implemented for {:?}", &s.dtype())
     }
 }
 

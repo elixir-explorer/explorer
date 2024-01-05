@@ -148,6 +148,27 @@ impl Deref for ExLazyFrame {
     }
 }
 
+// Represents a group of dtypes.
+// Useful to simplify matches of dtypes. Notice that not all Polars dtypes matches
+// with the dtype groups: some of them are classified as "Unknown".
+pub enum DtypeGroup {
+    Signed,
+    Unsigned,
+    Float,
+    Boolean,
+    Decimal,
+    String,
+    Binary,
+    Date,
+    Datetime,
+    Duration,
+    Time,
+    List,
+    Struct,
+    Categorical,
+    Unknown,
+}
+
 impl ExSeries {
     pub fn new(s: Series) -> Self {
         Self {
@@ -158,6 +179,30 @@ impl ExSeries {
     // Returns a clone of the Series inside the ResourceArc container.
     pub fn clone_inner(&self) -> Series {
         self.resource.0.clone()
+    }
+
+    pub fn dtype_group(&self) -> &DtypeGroup {
+        match self.dtype() {
+            DataType::Boolean => &DtypeGroup::Boolean,
+            DataType::UInt8 | DataType::UInt16 | DataType::UInt32 | DataType::UInt64 => {
+                &DtypeGroup::Unsigned
+            }
+            DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 => {
+                &DtypeGroup::Signed
+            }
+            DataType::Float32 | DataType::Float64 => &DtypeGroup::Float,
+            DataType::Decimal(_, _) => &DtypeGroup::Decimal,
+            DataType::Utf8 => &DtypeGroup::String,
+            DataType::Binary => &DtypeGroup::Binary,
+            DataType::Date => &DtypeGroup::Date,
+            DataType::Datetime(_, _) => &DtypeGroup::Datetime,
+            DataType::Duration(_) => &DtypeGroup::Duration,
+            DataType::Time => &DtypeGroup::Time,
+            DataType::List(_) => &DtypeGroup::List,
+            DataType::Categorical(_) => &DtypeGroup::Categorical,
+            DataType::Struct(_) => &DtypeGroup::Struct,
+            _ => &DtypeGroup::Unknown,
+        }
     }
 }
 

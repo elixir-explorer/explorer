@@ -4075,6 +4075,13 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([1.2, 2.4, nil, 3.9, :infinity, :nan])
       assert Series.mean(s) == :nan
     end
+
+    test "mean of unsigned integer series" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, nil, 3], dtype: dtype)
+        assert Series.mean(s) == 2.0
+      end
+    end
   end
 
   describe "median/1" do
@@ -4096,6 +4103,13 @@ defmodule Explorer.SeriesTest do
     test "returns the median of a float series with an infinity number and nan" do
       s = Series.from_list([1.2, 2.4, nil, 3.9, :infinity, :nan])
       assert Series.median(s) == 3.9
+    end
+
+    test "median of unsigned integer series" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, nil, 3], dtype: dtype)
+        assert Series.median(s) == 2.0
+      end
     end
   end
 
@@ -4199,6 +4213,13 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([true, false, true])
       assert Series.sum(s) === 2
     end
+
+    test "sum of unsigned integers" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, 3, 4], dtype: dtype)
+        assert Series.sum(s) === 10
+      end
+    end
   end
 
   describe "product/1" do
@@ -4248,6 +4269,13 @@ defmodule Explorer.SeriesTest do
     test "product of a series with infinity" do
       s = Series.from_list([2.0, :infinity, 3.0])
       assert Series.product(s) === :infinity
+    end
+
+    test "product of unsigned integers" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, 3], dtype: dtype)
+        assert Series.product(s) === 6
+      end
     end
   end
 
@@ -4470,6 +4498,13 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([1, 2, 3, 4, 5, 23])
       assert Series.skew(s, bias: false) - 2.2905330058490514 < 1.0e-4
     end
+
+    test "skew of unsigned integer series" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, 3, nil, 1], dtype: dtype)
+        assert Series.skew(s) - 0.8545630383279711 < 1.0e-4
+      end
+    end
   end
 
   describe "clip/3" do
@@ -4621,6 +4656,13 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
       assert Series.variance(s) === :nan
     end
+
+    test "variance of unsigned integers" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, nil, 3], dtype: dtype)
+        assert Series.variance(s) === 1.0
+      end
+    end
   end
 
   describe "standard_deviation/1" do
@@ -4647,6 +4689,13 @@ defmodule Explorer.SeriesTest do
     test "standard deviation of a float series with infinity negative" do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
       assert Series.standard_deviation(s) === :nan
+    end
+
+    test "standard deviation of unsigned integer series" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, 3, nil], dtype: dtype)
+        assert Series.standard_deviation(s) === 1.0
+      end
     end
   end
 
