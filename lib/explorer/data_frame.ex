@@ -4698,11 +4698,13 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :outer)
       #Explorer.DataFrame<
-        Polars[4 x 3]
-        a s64 [1, 2, 4, 3]
+        Polars[4 x 4]
+        a s64 [1, 2, nil, 3]
         b string ["a", "b", nil, "c"]
+        a_right s64 [1, 2, 4, nil]
         c string ["d", "e", "f", nil]
       >
+
 
   Cross join:
 
@@ -4787,12 +4789,15 @@ defmodule Explorer.DataFrame do
       iex> grouped_right = Explorer.DataFrame.group_by(right, "c")
       iex> Explorer.DataFrame.join(grouped_left, grouped_right, how: :outer)
       #Explorer.DataFrame<
-        Polars[4 x 3]
+        Polars[4 x 4]
         Groups: ["b"]
-        a s64 [1, 2, 4, 3]
+        a s64 [1, 2, nil, 3]
         b string ["a", "b", nil, "c"]
+        a_right s64 [1, 2, 4, nil]
         c string ["d", "e", "f", nil]
       >
+
+
 
   A cross join operation is going to keep the groups from the left-hand side dataframe:
 
@@ -4884,7 +4889,7 @@ defmodule Explorer.DataFrame do
   defp out_df_for_join(how, left, right, on) do
     {_left_on, right_on} = Enum.unzip(on)
 
-    right_on = if how == :cross, do: [], else: right_on
+    right_on = if how in [:cross, :outer], do: [], else: right_on
 
     pairs = dtypes_pairs_for_common_join(left, right, right_on)
 
