@@ -2038,10 +2038,11 @@ defmodule Explorer.DataFrameTest do
                a: [1, 2, 2, 3],
                b: ["a", "b", "b", "c"],
                c: ["d", "e", "f", nil],
+               d: [1, 2, 2, nil],
                a_right: [5, 6, 7, nil]
              }
 
-      assert df2.names == ["a", "b", "c", "a_right"]
+      assert df2.names == ["a", "b", "d", "c", "a_right"]
 
       df3 = DF.join(left, right, how: :cross)
 
@@ -2099,10 +2100,11 @@ defmodule Explorer.DataFrameTest do
                a: [1, 2, 2, 3],
                b: ["a", "b", "b", "c"],
                c: ["d", "e", "f", nil],
-               d: [5, 6, 6, 7]
+               d: [5, 6, 6, 7],
+               d_right: [1, 2, 2, nil]
              }
 
-      assert df2.names == ["a", "b", "d", "c"]
+      assert df2.names == ["a", "b", "d", "d_right", "c"]
 
       df3 = DF.join(left, right, how: :cross)
 
