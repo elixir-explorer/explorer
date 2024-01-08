@@ -5657,7 +5657,7 @@ defmodule Explorer.DataFrame do
           mean_exprs ++ std_exprs ++ min_exprs ++ percentile_exprs ++ max_exprs
       end)
 
-    metric_row = df_metrics |> to_rows() |> hd()
+    metric_row = df_metrics |> collect() |> to_rows() |> hd()
     column_count = length(stat_cols)
 
     data =
