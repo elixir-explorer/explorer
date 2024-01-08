@@ -5631,7 +5631,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, percentiles: nil)
 
     if Enum.empty?(df.names) do
-      raise ArgumentError, message: "cannot describe a DataFrame without any columns"
+      raise ArgumentError, "cannot describe a DataFrame without any columns"
     end
 
     percentiles = process_percentiles(opts[:percentiles])
@@ -5661,9 +5661,9 @@ defmodule Explorer.DataFrame do
     new(data)
   end
 
-  def process_percentiles(nil), do: [0.25, 0.50, 0.75]
+  defp process_percentiles(nil), do: [0.25, 0.50, 0.75]
 
-  def process_percentiles(percentiles) do
+  defp process_percentiles(percentiles) do
     Enum.each(percentiles, fn p ->
       if p < 0 or p > 1 do
         raise ArgumentError, message: "percentiles must all be in the range [0, 1]"
