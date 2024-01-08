@@ -484,13 +484,76 @@ pub fn df_put_column(df: ExDataFrame, series: ExSeries) -> Result<ExDataFrame, E
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_describe(
     df: ExDataFrame,
-    _percentiles: Option<Vec<f64>>,
+    percentiles: Option<Vec<f64>>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    // TODO: implement this here, because the feature was removed from Polars.
-    // let new_df = df.describe(percentiles.as_deref())?;
+    let binding = df.schema();
+    let mut metrics = vec![
+        "count".to_string(),
+        "null_count".to_string(),
+        "mean".to_string(),
+        "std".to_string(),
+        "min".to_string(),
+    ];
 
-    // Ok(ExDataFrame::new(new_df))
-    Ok(df)
+    let mut exprs: Vec<Expr> = vec![
+        all().count().name().prefix("count:"),
+        all().null_count().name().prefix("null_count:"),
+    ];
+
+    for f in binding.iter_fields() {
+        let mut expr: Expr = if f.dtype.is_numeric() {
+            col(&f.name).mean()
+        } else {
+            lit(NULL)
+        };
+        expr = expr.alias(&format!("mean:{}", &f.name));
+        exprs.push(expr);
+    }
+    for f in binding.iter_fields() {
+        let mut expr: Expr = if f.dtype.is_numeric() {
+            col(&f.name).std(1)
+        } else {
+            lit(NULL)
+        };
+        expr = expr.alias(&format!("std:{}", &f.name));
+        exprs.push(expr);
+    }
+    for f in binding.iter_fields() {
+        let mut expr: Expr = if f.dtype.is_numeric() {
+            col(&f.name).min()
+        } else {
+            lit(NULL)
+        };
+        expr = expr.alias(&format!("min:{}", &f.name));
+        exprs.push(expr);
+    }
+
+    for p in percentiles.as_deref().unwrap().iter() {
+        let name = format!("{:.0}%", p * 100.0);
+        metrics.push(name.clone());
+        for f in binding.iter_fields() {
+            let mut expr: Expr = if f.dtype.is_numeric() {
+                col(&f.name).quantile(lit(*p), QuantileInterpolOptions::Nearest)
+            } else {
+                lit(NULL)
+            };
+            expr = expr.alias(&format!("{}:{}", name, &f.name));
+            exprs.push(expr);
+        }
+    }
+    metrics.push("max".to_string());
+    for f in binding.iter_fields() {
+        let mut expr: Expr = if f.dtype.is_numeric() {
+            col(&f.name).max()
+        } else {
+            lit(NULL)
+        };
+        expr = expr.alias(&format!("max:{}", &f.name));
+        exprs.push(expr);
+    }
+    let df_metrics = df.clone_inner().lazy().select(&exprs).collect()?;
+
+    Ok(ExDataFrame::new(df_metrics))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

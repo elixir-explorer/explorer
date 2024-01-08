@@ -5630,7 +5630,47 @@ defmodule Explorer.DataFrame do
   def describe(df, opts \\ []) do
     opts = Keyword.validate!(opts, percentiles: nil)
 
-    Shared.apply_impl(df, :describe, [opts[:percentiles]])
+    if Enum.empty?(df.names) do
+      raise ArgumentError, message: "cannot describe a DataFrame without any columns"
+    end
+
+    percentiles = process_percentiles(opts[:percentiles])
+    metrics = ["count", "null_count", "mean", "std", "min"]
+    columns = for m <- metrics, c <- df.names, do: "#{m}:#{c}"
+    p_metrics = for p <- percentiles, do: "#{trunc(p * 100)}%"
+    metrics = metrics ++ p_metrics ++ ["max"]
+
+    p_columns = for p <- p_metrics, c <- df.names, do: "#{p}:#{c}"
+    max_columns = for c <- df.names, do: "max:#{c}"
+    columns = columns ++ p_columns ++ max_columns
+
+    df_metrics = Shared.apply_impl(df, :describe, [percentiles])
+    metric_row = df_metrics |> to_rows() |> hd()
+
+    column_count = length(df.names)
+
+    data =
+      columns
+      |> Enum.chunk_every(column_count)
+      |> Enum.zip(metrics)
+      |> Enum.map(fn {list, metric} ->
+        r = Enum.map(list, &metric_row[&1])
+        df.names |> Enum.zip(r) |> Enum.into(%{name: metric})
+      end)
+
+    new(data)
+  end
+
+  def process_percentiles(nil), do: [0.25, 0.50, 0.75]
+
+  def process_percentiles(percentiles) do
+    Enum.each(percentiles, fn p ->
+      if p < 0 or p > 1 do
+        raise ArgumentError, message: "percentiles must all be in the range [0, 1]"
+      end
+    end)
+
+    Enum.sort(percentiles)
   end
 
   @doc """
