@@ -5608,21 +5608,17 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df)
       #Explorer.DataFrame<
-        Polars[9 x 4]
-        describe string ["count", "null_count", "mean", "std", "min", ...]
-        a string ["3", "1", nil, nil, "d", ...]
+        Polars[9 x 2]
+        describe string ["count", "nil_count", "mean", "std", "min", ...]
         b f64 [3.0, 0.0, 2.0, 1.0, 1.0, ...]
-        c string ["3", "0", nil, nil, "a", ...]
       >
 
       iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df, percentiles: [0.3, 0.5, 0.8])
       #Explorer.DataFrame<
-        Polars[9 x 4]
-        describe string ["count", "null_count", "mean", "std", "min", ...]
-        a string ["3", "1", nil, nil, "d", ...]
+        Polars[9 x 2]
+        describe string ["count", "nil_count", "mean", "std", "min", ...]
         b f64 [3.0, 0.0, 2.0, 1.0, 1.0, ...]
-        c string ["3", "0", nil, nil, "a", ...]
       >
   """
   @doc type: :single
@@ -5634,28 +5630,43 @@ defmodule Explorer.DataFrame do
       raise ArgumentError, "cannot describe a DataFrame without any columns"
     end
 
+    stat_cols = for {name, type} <- df.dtypes, type in Shared.numeric_types(), do: name
+
     percentiles = process_percentiles(opts[:percentiles])
-    metrics = ["count", "null_count", "mean", "std", "min"]
-    columns = for m <- metrics, c <- df.names, do: "#{m}:#{c}"
+    metrics = ["count", "nil_count", "mean", "std", "min"]
     p_metrics = for p <- percentiles, do: "#{trunc(p * 100)}%"
     metrics = metrics ++ p_metrics ++ ["max"]
 
-    p_columns = for p <- p_metrics, c <- df.names, do: "#{p}:#{c}"
-    max_columns = for c <- df.names, do: "max:#{c}"
-    columns = columns ++ p_columns ++ max_columns
+    df_metrics =
+      summarise_with(df, fn x ->
+        counts_exprs = for c <- stat_cols, do: {"count:#{c}", Series.count(x[c])}
+        nil_counts_exprs = for c <- stat_cols, do: {"nil_count:#{c}", Series.nil_count(x[c])}
 
-    df_metrics = Shared.apply_impl(df, :describe, [percentiles])
+        percentile_exprs =
+          for p <- percentiles,
+              c <- stat_cols,
+              do: {"#{trunc(p * 100)}%:#{c}", Series.quantile(x[c], p)}
+
+        mean_exprs = for c <- stat_cols, do: {"mean:#{c}", Series.mean(x[c])}
+        std_exprs = for c <- stat_cols, do: {"std:#{c}", Series.standard_deviation(x[c])}
+        min_exprs = for c <- stat_cols, do: {"min:#{c}", Series.min(x[c])}
+        max_exprs = for c <- stat_cols, do: {"max:#{c}", Series.max(x[c])}
+
+        counts_exprs ++
+          nil_counts_exprs ++
+          mean_exprs ++ std_exprs ++ min_exprs ++ percentile_exprs ++ max_exprs
+      end)
+
     metric_row = df_metrics |> to_rows() |> hd()
-
-    column_count = length(df.names)
+    column_count = length(stat_cols)
 
     data =
-      columns
+      df_metrics.names
       |> Enum.chunk_every(column_count)
       |> Enum.zip(metrics)
       |> Enum.map(fn {list, metric} ->
         r = Enum.map(list, &metric_row[&1])
-        df.names |> Enum.zip(r) |> Enum.into(%{name: metric})
+        stat_cols |> Enum.zip(r) |> Enum.into(%{describe: metric})
       end)
 
     new(data)
