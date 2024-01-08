@@ -637,12 +637,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def describe(%DataFrame{} = df, percentiles) do
-    Shared.apply(:df_describe, [df.data, percentiles])
-    |> Shared.create_dataframe()
-  end
-
-  @impl true
   def nil_count(%DataFrame{} = df) do
     Shared.apply(:df_nil_count, [df.data])
     |> Shared.create_dataframe()

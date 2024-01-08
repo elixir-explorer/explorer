@@ -564,7 +564,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
     match v {
         AnyValue::Null => Ok(None::<bool>.encode(env)),
         AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
-        AnyValue::Utf8(v) => Ok(Some(v).encode(env)),
+        AnyValue::String(v) => Ok(Some(v).encode(env)),
         AnyValue::Int8(v) => Ok(Some(v).encode(env)),
         AnyValue::Int16(v) => Ok(Some(v).encode(env)),
         AnyValue::Int32(v) => Ok(Some(v).encode(env)),
@@ -612,13 +612,13 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
         DataType::Time => time_series_to_list(&s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(&s, *time_unit, env),
         DataType::Duration(time_unit) => duration_series_to_list(&s, *time_unit, env),
-        DataType::Utf8 => {
-            generic_binary_series_to_list(&s.resource, s.utf8()?.downcast_iter(), env)
+        DataType::String => {
+            generic_binary_series_to_list(&s.resource, s.str()?.downcast_iter(), env)
         }
         DataType::Binary => {
             generic_binary_series_to_list(&s.resource, s.binary()?.downcast_iter(), env)
         }
-        DataType::Categorical(Some(mapping)) => categorical_series_to_list(&s, env, mapping),
+        DataType::Categorical(Some(mapping), _) => categorical_series_to_list(&s, env, mapping),
         DataType::List(_inner_dtype) => s
             .list()?
             .into_iter()
@@ -668,7 +668,7 @@ pub fn iovec_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
         DataType::Duration(_) => {
             series_to_iovec!(resource, s, env, duration, i64)
         }
-        DataType::Categorical(Some(_)) => {
+        DataType::Categorical(Some(_), _) => {
             let cat_series = s.cast(&DataType::UInt32)?;
 
             series_to_iovec!(resource, cat_series, env, u32, u32)

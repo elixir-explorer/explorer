@@ -34,7 +34,7 @@ pub fn df_join(
     let how = match how {
         "left" => JoinType::Left,
         "inner" => JoinType::Inner,
-        "outer" => JoinType::Outer,
+        "outer" => JoinType::Outer { coalesce: false },
         "cross" => JoinType::Cross,
         _ => {
             return Err(ExplorerError::Other(format!(
@@ -477,16 +477,6 @@ pub fn df_put_column(df: ExDataFrame, series: ExSeries) -> Result<ExDataFrame, E
     let mut df = df.clone();
     let s = series.clone_inner();
     let new_df = df.with_column(s)?.clone();
-
-    Ok(ExDataFrame::new(new_df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_describe(
-    df: ExDataFrame,
-    percentiles: Option<Vec<f64>>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = df.describe(percentiles.as_deref())?;
 
     Ok(ExDataFrame::new(new_df))
 }

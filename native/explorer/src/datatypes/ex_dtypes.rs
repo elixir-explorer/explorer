@@ -1,4 +1,5 @@
 use crate::ExplorerError;
+use polars::datatypes::CategoricalOrdering;
 use polars::datatypes::DataType;
 use polars::datatypes::Field;
 use polars::datatypes::TimeUnit;
@@ -64,7 +65,7 @@ impl TryFrom<&DataType> for ExSeriesDtype {
         match value {
             DataType::Binary => Ok(ExSeriesDtype::Binary),
             DataType::Boolean => Ok(ExSeriesDtype::Boolean),
-            DataType::Categorical(_) => Ok(ExSeriesDtype::Category),
+            DataType::Categorical(_, _) => Ok(ExSeriesDtype::Category),
             DataType::Date => Ok(ExSeriesDtype::Date),
             DataType::Float64 => Ok(ExSeriesDtype::F(64)),
             DataType::Float32 => Ok(ExSeriesDtype::F(32)),
@@ -79,7 +80,7 @@ impl TryFrom<&DataType> for ExSeriesDtype {
             DataType::UInt64 => Ok(ExSeriesDtype::U(64)),
 
             DataType::Time => Ok(ExSeriesDtype::Time),
-            DataType::Utf8 => Ok(ExSeriesDtype::String),
+            DataType::String => Ok(ExSeriesDtype::String),
             DataType::Datetime(TimeUnit::Nanoseconds, _) => {
                 Ok(ExSeriesDtype::Datetime(ExTimeUnit::Nanosecond))
             }
@@ -129,7 +130,9 @@ impl TryFrom<&ExSeriesDtype> for DataType {
         match value {
             ExSeriesDtype::Binary => Ok(DataType::Binary),
             ExSeriesDtype::Boolean => Ok(DataType::Boolean),
-            ExSeriesDtype::Category => Ok(DataType::Categorical(None)),
+            ExSeriesDtype::Category => {
+                Ok(DataType::Categorical(None, CategoricalOrdering::default()))
+            }
             ExSeriesDtype::Date => Ok(DataType::Date),
             ExSeriesDtype::F(64) => Ok(DataType::Float64),
             ExSeriesDtype::F(32) => Ok(DataType::Float32),
@@ -151,7 +154,7 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             ExSeriesDtype::U(size) => Err(ExplorerError::Other(format!(
                 "unsigned integer dtype of size {size} is not valid"
             ))),
-            ExSeriesDtype::String => Ok(DataType::Utf8),
+            ExSeriesDtype::String => Ok(DataType::String),
             ExSeriesDtype::Time => Ok(DataType::Time),
             ExSeriesDtype::Datetime(ExTimeUnit::Nanosecond) => {
                 Ok(DataType::Datetime(TimeUnit::Nanoseconds, None))
@@ -210,7 +213,7 @@ impl TryFrom<&DataType> for ExSeriesIoType {
             DataType::Datetime(_, _) => Ok(ExSeriesIoType::S(64)),
             DataType::Duration(_) => Ok(ExSeriesIoType::S(64)),
             DataType::Time => Ok(ExSeriesIoType::S(64)),
-            DataType::Categorical(_) => Ok(ExSeriesIoType::U(32)),
+            DataType::Categorical(_, _) => Ok(ExSeriesIoType::U(32)),
             _ => Err(ExplorerError::Other(format!(
                 "cannot convert dtype {value} to iotype"
             ))),

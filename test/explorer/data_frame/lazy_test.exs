@@ -1140,7 +1140,7 @@ defmodule Explorer.DataFrame.LazyTest do
       right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7]], lazy: true)
 
       ldf = DF.join(left, right, on: [{"a", "d"}], how: :outer)
-      assert ldf.names == ["a", "b", "c", "a_right"]
+      assert ldf.names == ["a", "b", "d", "c", "a_right"]
 
       df = DF.collect(ldf)
 
@@ -1148,6 +1148,7 @@ defmodule Explorer.DataFrame.LazyTest do
                a: [1, 2, 2, 3],
                b: ["a", "b", "b", "c"],
                c: ["d", "e", "f", nil],
+               d: [1, 2, 2, nil],
                a_right: [5, 6, 7, nil]
              }
     end
@@ -1226,7 +1227,7 @@ defmodule Explorer.DataFrame.LazyTest do
       right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"]], lazy: true)
 
       ldf = DF.join(left, right, on: [{"a", "d"}], how: :outer)
-      assert ldf.names == ["a", "b", "d", "c"]
+      assert ldf.names == ["a", "b", "d", "d_right", "c"]
 
       df = DF.collect(ldf)
 
@@ -1234,7 +1235,8 @@ defmodule Explorer.DataFrame.LazyTest do
                a: [1, 2, 2, 3],
                b: ["a", "b", "b", "c"],
                c: ["d", "e", "f", nil],
-               d: [5, 6, 6, 7]
+               d: [5, 6, 6, 7],
+               d_right: [1, 2, 2, nil]
              }
     end
 

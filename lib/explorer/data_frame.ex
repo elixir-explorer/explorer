@@ -4698,11 +4698,13 @@ defmodule Explorer.DataFrame do
       iex> right = Explorer.DataFrame.new(a: [1, 2, 4], c: ["d", "e", "f"])
       iex> Explorer.DataFrame.join(left, right, how: :outer)
       #Explorer.DataFrame<
-        Polars[4 x 3]
-        a s64 [1, 2, 4, 3]
+        Polars[4 x 4]
+        a s64 [1, 2, nil, 3]
         b string ["a", "b", nil, "c"]
+        a_right s64 [1, 2, 4, nil]
         c string ["d", "e", "f", nil]
       >
+
 
   Cross join:
 
@@ -4787,12 +4789,15 @@ defmodule Explorer.DataFrame do
       iex> grouped_right = Explorer.DataFrame.group_by(right, "c")
       iex> Explorer.DataFrame.join(grouped_left, grouped_right, how: :outer)
       #Explorer.DataFrame<
-        Polars[4 x 3]
+        Polars[4 x 4]
         Groups: ["b"]
-        a s64 [1, 2, 4, 3]
+        a s64 [1, 2, nil, 3]
         b string ["a", "b", nil, "c"]
+        a_right s64 [1, 2, 4, nil]
         c string ["d", "e", "f", nil]
       >
+
+
 
   A cross join operation is going to keep the groups from the left-hand side dataframe:
 
@@ -4884,7 +4889,7 @@ defmodule Explorer.DataFrame do
   defp out_df_for_join(how, left, right, on) do
     {_left_on, right_on} = Enum.unzip(on)
 
-    right_on = if how == :cross, do: [], else: right_on
+    right_on = if how in [:cross, :outer], do: [], else: right_on
 
     pairs = dtypes_pairs_for_common_join(left, right, right_on)
 
@@ -5603,21 +5608,17 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df)
       #Explorer.DataFrame<
-        Polars[9 x 4]
-        describe string ["count", "null_count", "mean", "std", "min", ...]
-        a string ["3", "1", nil, nil, "d", ...]
+        Polars[9 x 2]
+        describe string ["count", "nil_count", "mean", "std", "min", ...]
         b f64 [3.0, 0.0, 2.0, 1.0, 1.0, ...]
-        c string ["3", "0", nil, nil, "a", ...]
       >
 
       iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df, percentiles: [0.3, 0.5, 0.8])
       #Explorer.DataFrame<
-        Polars[9 x 4]
-        describe string ["count", "null_count", "mean", "std", "min", ...]
-        a string ["3", "1", nil, nil, "d", ...]
+        Polars[9 x 2]
+        describe string ["count", "nil_count", "mean", "std", "min", ...]
         b f64 [3.0, 0.0, 2.0, 1.0, 1.0, ...]
-        c string ["3", "0", nil, nil, "a", ...]
       >
   """
   @doc type: :single
@@ -5625,7 +5626,62 @@ defmodule Explorer.DataFrame do
   def describe(df, opts \\ []) do
     opts = Keyword.validate!(opts, percentiles: nil)
 
-    Shared.apply_impl(df, :describe, [opts[:percentiles]])
+    if Enum.empty?(df.names) do
+      raise ArgumentError, "cannot describe a DataFrame without any columns"
+    end
+
+    stat_cols = for {name, type} <- df.dtypes, type in Shared.numeric_types(), do: name
+
+    percentiles = process_percentiles(opts[:percentiles])
+    metrics = ["count", "nil_count", "mean", "std", "min"]
+    p_metrics = for p <- percentiles, do: "#{trunc(p * 100)}%"
+    metrics = metrics ++ p_metrics ++ ["max"]
+
+    df_metrics =
+      summarise_with(df, fn x ->
+        counts_exprs = for c <- stat_cols, do: {"count:#{c}", Series.count(x[c])}
+        nil_counts_exprs = for c <- stat_cols, do: {"nil_count:#{c}", Series.nil_count(x[c])}
+
+        percentile_exprs =
+          for p <- percentiles,
+              c <- stat_cols,
+              do: {"#{trunc(p * 100)}%:#{c}", Series.quantile(x[c], p)}
+
+        mean_exprs = for c <- stat_cols, do: {"mean:#{c}", Series.mean(x[c])}
+        std_exprs = for c <- stat_cols, do: {"std:#{c}", Series.standard_deviation(x[c])}
+        min_exprs = for c <- stat_cols, do: {"min:#{c}", Series.min(x[c])}
+        max_exprs = for c <- stat_cols, do: {"max:#{c}", Series.max(x[c])}
+
+        counts_exprs ++
+          nil_counts_exprs ++
+          mean_exprs ++ std_exprs ++ min_exprs ++ percentile_exprs ++ max_exprs
+      end)
+
+    metric_row = df_metrics |> collect() |> to_rows() |> hd()
+    column_count = length(stat_cols)
+
+    data =
+      df_metrics.names
+      |> Enum.chunk_every(column_count)
+      |> Enum.zip(metrics)
+      |> Enum.map(fn {list, metric} ->
+        r = Enum.map(list, &metric_row[&1])
+        stat_cols |> Enum.zip(r) |> Enum.into(%{describe: metric})
+      end)
+
+    new(data)
+  end
+
+  defp process_percentiles(nil), do: [0.25, 0.50, 0.75]
+
+  defp process_percentiles(percentiles) do
+    Enum.each(percentiles, fn p ->
+      if p < 0 or p > 1 do
+        raise ArgumentError, message: "percentiles must all be in the range [0, 1]"
+      end
+    end)
+
+    Enum.sort(percentiles)
   end
 
   @doc """

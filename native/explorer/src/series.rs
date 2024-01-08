@@ -165,7 +165,7 @@ pub fn s_from_list_binary(name: &str, val: Vec<Option<Binary>>) -> ExSeries {
 pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries {
     ExSeries::new(
         Series::new(name, val.as_slice())
-            .cast(&DataType::Categorical(None))
+            .cast(&DataType::Categorical(None, CategoricalOrdering::default()))
             .unwrap(),
     )
 }
@@ -255,10 +255,10 @@ pub fn s_slice(series: ExSeries, offset: i64, length: usize) -> Result<ExSeries,
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_format(series_vec: Vec<ExSeries>) -> Result<ExSeries, ExplorerError> {
     let mut iter = series_vec.iter();
-    let mut series = iter.next().unwrap().clone_inner().utf8()?.clone();
+    let mut series = iter.next().unwrap().clone_inner().str()?.clone();
 
     for s in iter {
-        series = series.concat(s.utf8()?);
+        series = series.concat(s.str()?);
     }
 
     Ok(ExSeries::new(series.into_series()))
@@ -413,9 +413,7 @@ pub fn s_unordered_distinct(series: ExSeries) -> Result<ExSeries, ExplorerError>
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_frequencies(series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let mut df = series.value_counts(true, true)?;
-    let df = df
-        .try_apply("counts", |s| s.cast(&DataType::Int64))?
-        .clone();
+    let df = df.try_apply("count", |s| s.cast(&DataType::Int64))?.clone();
     Ok(ExDataFrame::new(df))
 }
 
@@ -532,7 +530,7 @@ pub fn s_is_nan(series: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_at_every(series: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(series.gather_every(n)))
+    Ok(ExSeries::new(series.gather_every(n, 0)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -598,21 +596,21 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         DataType::Boolean
         | DataType::Int64
         | DataType::Float64
-        | DataType::Utf8
+        | DataType::String
         | DataType::Binary
         | DataType::Date
         | DataType::Time
         | DataType::Datetime(_, _) => is_in(&s, &rhs)?,
-        DataType::Categorical(Some(mapping)) => {
+        DataType::Categorical(Some(mapping), _) => {
             let l_logical = s.categorical()?.physical();
 
             match rhs.dtype() {
-                DataType::Utf8 => {
+                DataType::String => {
                     let mut r_ids: Vec<Option<u32>> = vec![];
 
                     // In case the right-hand is a series of strings, we only care
                     // about members in the category on the left, or if it's None.
-                    for opt in rhs.unique()?.utf8()?.into_iter() {
+                    for opt in rhs.unique()?.str()?.into_iter() {
                         match opt {
                             Some(slice) => {
                                 if let Some(id) = mapping.find(slice) {
@@ -627,7 +625,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 
                     is_in(&l_logical.clone().into_series(), &r_logical)?
                 }
-                DataType::Categorical(Some(rhs_mapping)) => {
+                DataType::Categorical(Some(rhs_mapping), _) => {
                     if !mapping.same_src(rhs_mapping) {
                         return Err(ExplorerError::Other(
                             "cannot compare categories from different sources. See Explorer.Series.categorise/2".into(),
@@ -712,7 +710,7 @@ pub fn s_fill_missing_with_bin(
     binary: Binary,
 ) -> Result<ExSeries, ExplorerError> {
     let s = match series.dtype() {
-        DataType::Utf8 => {
+        DataType::String => {
             if let Ok(_string) = std::str::from_utf8(&binary) {
                 // This casting is necessary just because it's not possible to fill UTF8 series.
                 unsafe {
@@ -720,7 +718,7 @@ pub fn s_fill_missing_with_bin(
                         .cast_unchecked(&DataType::Binary)?
                         .binary()?
                         .fill_null_with_values(&binary)?
-                        .cast_unchecked(&DataType::Utf8)?
+                        .cast_unchecked(&DataType::String)?
                 }
             } else {
                 return Err(ExplorerError::Other("cannot cast to string".into()));
@@ -802,7 +800,14 @@ pub fn s_window_median(
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
     let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_median(opts.into())?;
+    let s1 = series
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(series.name()).rolling_median(opts)])
+        .collect()?
+        .column(series.name())?
+        .clone();
     Ok(ExSeries::new(s1))
 }
 
@@ -950,9 +955,9 @@ pub fn s_to_iovec(env: Env, series: ExSeries) -> Result<Term, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sum(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
-        DataType::Boolean => Ok(s.sum::<i64>().encode(env)),
-        DataType::Int64 => Ok(s.sum::<i64>().encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.sum::<f64>(), env)),
+        DataType::Boolean => Ok(s.sum::<i64>()?.encode(env)),
+        DataType::Int64 => Ok(s.sum::<i64>()?.encode(env)),
+        DataType::Float64 => Ok(term_from_optional_float(s.sum::<f64>().ok(), env)),
         dt => panic!("sum/1 not implemented for {dt:?}"),
     }
 }
@@ -960,12 +965,12 @@ pub fn s_sum(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
-        DataType::Int64 => Ok(s.min::<i64>().encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.min::<f64>(), env)),
-        DataType::Date => Ok(s.min::<i32>().map(ExDate::from).encode(env)),
-        DataType::Time => Ok(s.min::<i64>().map(ExTime::from).encode(env)),
+        DataType::Int64 => Ok(s.min::<i64>()?.encode(env)),
+        DataType::Float64 => Ok(term_from_optional_float(s.min::<f64>()?, env)),
+        DataType::Date => Ok(s.min::<i32>()?.map(ExDate::from).encode(env)),
+        DataType::Time => Ok(s.min::<i64>()?.map(ExTime::from).encode(env)),
         DataType::Datetime(unit, None) => Ok(s
-            .min::<i64>()
+            .min::<i64>()?
             .map(|v| encode_datetime(v, *unit, env).unwrap())
             .encode(env)),
         dt => panic!("min/1 not implemented for {dt:?}"),
@@ -975,12 +980,12 @@ pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_max(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
-        DataType::Int64 => Ok(s.max::<i64>().encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.max::<f64>(), env)),
-        DataType::Date => Ok(s.max::<i32>().map(ExDate::from).encode(env)),
-        DataType::Time => Ok(s.max::<i64>().map(ExTime::from).encode(env)),
+        DataType::Int64 => Ok(s.max::<i64>()?.encode(env)),
+        DataType::Float64 => Ok(term_from_optional_float(s.max::<f64>()?, env)),
+        DataType::Date => Ok(s.max::<i32>()?.map(ExDate::from).encode(env)),
+        DataType::Time => Ok(s.max::<i64>()?.map(ExTime::from).encode(env)),
         DataType::Datetime(unit, None) => Ok(s
-            .max::<i64>()
+            .max::<i64>()?
             .map(|v| encode_datetime(v, *unit, env).unwrap())
             .encode(env)),
         dt => panic!("max/1 not implemented for {dt:?}"),
@@ -1300,7 +1305,7 @@ pub fn cast_str_to_f64(atom: &str) -> f64 {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_categories(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     match s.dtype() {
-        DataType::Categorical(Some(mapping)) => {
+        DataType::Categorical(Some(mapping), _) => {
             let size = mapping.len() as u32;
             let categories: Vec<&str> = (0..size).map(|id| mapping.get(id)).collect();
             let series = Series::new("categories", &categories);
@@ -1313,10 +1318,10 @@ pub fn s_categories(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerError> {
     match cat.dtype() {
-        DataType::Categorical(Some(mapping)) => {
-            let chunks = if s.dtype() == &DataType::Utf8 {
+        DataType::Categorical(Some(mapping), _) => {
+            let chunks = if s.dtype() == &DataType::String {
                 let ids: ChunkedArray<UInt32Type> = s
-                    .utf8()?
+                    .str()?
                     .into_iter()
                     .map(|opt_str| opt_str.and_then(|slice| mapping.find(slice)))
                     .collect();
@@ -1327,18 +1332,22 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
             };
 
             let categorical_chunks = unsafe {
-                CategoricalChunked::from_cats_and_rev_map_unchecked(chunks, mapping.clone())
+                CategoricalChunked::from_cats_and_rev_map_unchecked(
+                    chunks,
+                    mapping.clone(),
+                    CategoricalOrdering::default(),
+                )
             };
             Ok(ExSeries::new(categorical_chunks.into_series()))
         }
-        DataType::Utf8 => {
+        DataType::String => {
             if cat.len() != cat.unique()?.len() {
                 return Err(ExplorerError::Other(
                     "categories as strings cannot have duplicated values".into(),
                 ));
             };
 
-            let utf8s = cat.utf8()?;
+            let utf8s = cat.str()?;
 
             if utf8s.has_validity() {
                 Err(ExplorerError::Other(
@@ -1349,9 +1358,9 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
                 let array = Utf8Array::<i64>::from(values);
                 let mapping = RevMapping::build_local(array);
 
-                let chunks = if s.dtype() == &DataType::Utf8 {
+                let chunks = if s.dtype() == &DataType::String {
                     let ids: ChunkedArray<UInt32Type> = s
-                        .utf8()?
+                        .str()?
                         .into_iter()
                         .map(|opt_str| opt_str.and_then(|slice| mapping.find(slice)))
                         .collect();
@@ -1362,7 +1371,11 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
                 };
 
                 let categorical_chunks = unsafe {
-                    CategoricalChunked::from_cats_and_rev_map_unchecked(chunks, Arc::new(mapping))
+                    CategoricalChunked::from_cats_and_rev_map_unchecked(
+                        chunks,
+                        Arc::new(mapping),
+                        CategoricalOrdering::default(),
+                    )
                 };
 
                 Ok(ExSeries::new(categorical_chunks.into_series()))
@@ -1496,17 +1509,17 @@ pub fn s_not(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_contains(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s1.utf8()?.contains_literal(pattern)?.into()))
+    Ok(ExSeries::new(s1.str()?.contains_literal(pattern)?.into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_upcase(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s1.utf8()?.to_uppercase().into()))
+    Ok(ExSeries::new(s1.str()?.to_uppercase().into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_downcase(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s1.utf8()?.to_lowercase().into()))
+    Ok(ExSeries::new(s1.str()?.to_lowercase().into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1516,7 +1529,7 @@ pub fn s_replace(
     replacement: &str,
 ) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(
-        s1.utf8()?.replace_literal_all(pattern, replacement)?.into(),
+        s1.str()?.replace_literal_all(pattern, replacement)?.into(),
     ))
 }
 
@@ -1530,7 +1543,7 @@ pub fn s_strip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, Explorer
 
     // replace only replaces the leftmost match, so we need to call it twice.
     Ok(ExSeries::new(
-        s1.utf8()?
+        s1.str()?
             .replace(pattern.as_str(), "")?
             .replace(pattern.as_str(), "")?
             .into(),
@@ -1546,7 +1559,7 @@ pub fn s_lstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, Explore
     };
 
     Ok(ExSeries::new(
-        s1.utf8()?.replace(pattern.as_str(), "")?.into(),
+        s1.str()?.replace(pattern.as_str(), "")?.into(),
     ))
 }
 
@@ -1559,7 +1572,7 @@ pub fn s_rstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, Explore
     };
 
     Ok(ExSeries::new(
-        s1.utf8()?.replace(pattern.as_str(), "")?.into(),
+        s1.str()?.replace(pattern.as_str(), "")?.into(),
     ))
 }
 
@@ -1569,7 +1582,7 @@ pub fn s_substring(
     offset: i64,
     length: Option<u64>,
 ) -> Result<ExSeries, ExplorerError> {
-    let s2 = s1.utf8()?.str_slice(offset, length).into_series();
+    let s2 = s1.str()?.str_slice(offset, length).into_series();
 
     Ok(ExSeries::new(s2))
 }
@@ -1577,7 +1590,7 @@ pub fn s_substring(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_split(s1: ExSeries, by: &str) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
-        .utf8()?
+        .str()?
         .split(&ChunkedArray::new("a", &[by]))
         .into_series();
 
@@ -1672,14 +1685,14 @@ pub fn s_strptime(
     };
 
     let s1 = s
-        .utf8()?
+        .str()?
         .as_datetime(
             format_string,
             timeunit,
             true,
             false,
             None,
-            &Utf8Chunked::from_iter(std::iter::once("earliest")),
+            &StringChunked::from_iter(std::iter::once("earliest")),
         )?
         .into_series();
     Ok(ExSeries::new(s1))
