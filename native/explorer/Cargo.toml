@@ -65,7 +65,6 @@ features = [
   "rolling_window",
   "rows",
   "simd",
-  # "sort_multiple",
   "temporal",
   "to_dummies",
   "trigonometry",
