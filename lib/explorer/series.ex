@@ -3167,10 +3167,14 @@ defmodule Explorer.Series do
     end
   end
 
-  # TODO: fix the logic for integer dtypes
-  defp cast_to_add({:s, left}, {:s, right}), do: {:s, max(left, right)}
-  defp cast_to_add({:s, _}, {:f, _} = float), do: float
-  defp cast_to_add({:f, _} = float, {:s, _}), do: float
+  # Review the size needed for this operation.
+  defp cast_to_add({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
+    do: {int_type, max(left, right)}
+
+  defp cast_to_add({:s, _}, {:u, _}), do: {:s, 64}
+  defp cast_to_add({:u, _}, {:s, _}), do: {:s, 64}
+  defp cast_to_add({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
+  defp cast_to_add({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_add({:f, _}, {:f, _}), do: {:f, 64}
   defp cast_to_add(:date, {:duration, _}), do: :date
   defp cast_to_add({:duration, _}, :date), do: :date
@@ -3234,10 +3238,14 @@ defmodule Explorer.Series do
     end
   end
 
-  # TODO: fix the logic for new integer dtypes
-  defp cast_to_subtract({:s, left}, {:s, right}), do: {:s, max(left, right)}
-  defp cast_to_subtract({:s, _}, {:f, _} = float), do: float
-  defp cast_to_subtract({:f, _} = float, {:s, _}), do: float
+  # Review the size needed for this operation.
+  defp cast_to_subtract({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
+    do: {:s, min(64, 2 * max(left, right))}
+
+  defp cast_to_subtract({:s, _}, {:u, _}), do: {:s, 64}
+  defp cast_to_subtract({:u, _}, {:s, _}), do: {:s, 64}
+  defp cast_to_subtract({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
+  defp cast_to_subtract({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_subtract({:f, _}, {:f, _}), do: {:f, 64}
 
   defp cast_to_subtract(:date, :date), do: {:duration, :millisecond}

@@ -1638,6 +1638,36 @@ defmodule Explorer.SeriesTest do
                      Series.add(1, 2)
                    end
     end
+
+    test "adding two unsigned integer series of the same dtype together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u32)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [5, 7, 9]
+    end
+
+    test "adding two unsigned integer series of different dtype together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [5, 7, 9]
+    end
+
+    test "adding signed and unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [5, 7, 9]
+    end
   end
 
   describe "subtract/2" do
@@ -1748,6 +1778,36 @@ defmodule Explorer.SeriesTest do
 
       assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :neg_infinity, :nan]
+    end
+
+    test "subtracting two unsigned integer series of the same dtype together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s32)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [-3, -3, -3]
+    end
+
+    test "adding two unsigned integer series of different dtype together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [5, 7, 9]
+    end
+
+    test "adding signed and unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [5, 7, 9]
     end
   end
 
