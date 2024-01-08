@@ -79,7 +79,6 @@ rustler::init!(
         df_sort_with,
         df_concat_columns,
         df_concat_rows,
-        df_describe,
         df_nil_count,
         df_distinct,
         df_drop,

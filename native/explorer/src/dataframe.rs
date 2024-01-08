@@ -482,18 +482,6 @@ pub fn df_put_column(df: ExDataFrame, series: ExSeries) -> Result<ExDataFrame, E
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_describe(
-    df: ExDataFrame,
-    _percentiles: Option<Vec<f64>>,
-) -> Result<ExDataFrame, ExplorerError> {
-    // TODO: implement this here, because the feature was removed from Polars.
-    // let new_df = df.describe(percentiles.as_deref())?;
-
-    // Ok(ExDataFrame::new(new_df))
-    Ok(df)
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_nil_count(df: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
     let new_df = df.null_count();
     Ok(ExDataFrame::new(new_df))
