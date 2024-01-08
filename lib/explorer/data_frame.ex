@@ -5631,45 +5631,39 @@ defmodule Explorer.DataFrame do
     end
 
     stat_cols = for {name, type} <- df.dtypes, type in Shared.numeric_types(), do: name
-
     percentiles = process_percentiles(opts[:percentiles])
-    metrics = ["count", "nil_count", "mean", "std", "min"]
-    p_metrics = for p <- percentiles, do: "#{trunc(p * 100)}%"
-    metrics = metrics ++ p_metrics ++ ["max"]
 
-    df_metrics =
+    metrics_df =
       summarise_with(df, fn x ->
-        counts_exprs = for c <- stat_cols, do: {"count:#{c}", Series.count(x[c])}
-        nil_counts_exprs = for c <- stat_cols, do: {"nil_count:#{c}", Series.nil_count(x[c])}
-
-        percentile_exprs =
-          for p <- percentiles,
-              c <- stat_cols,
-              do: {"#{trunc(p * 100)}%:#{c}", Series.quantile(x[c], p)}
-
-        mean_exprs = for c <- stat_cols, do: {"mean:#{c}", Series.mean(x[c])}
-        std_exprs = for c <- stat_cols, do: {"std:#{c}", Series.standard_deviation(x[c])}
-        min_exprs = for c <- stat_cols, do: {"min:#{c}", Series.min(x[c])}
-        max_exprs = for c <- stat_cols, do: {"max:#{c}", Series.max(x[c])}
-
-        counts_exprs ++
-          nil_counts_exprs ++
-          mean_exprs ++ std_exprs ++ min_exprs ++ percentile_exprs ++ max_exprs
+        Enum.flat_map(stat_cols, fn c ->
+          [
+            {"count:#{c}", Series.count(x[c])},
+            {"nil_count:#{c}", Series.nil_count(x[c])},
+            {"mean:#{c}", Series.mean(x[c])},
+            {"std:#{c}", Series.standard_deviation(x[c])},
+            {"min:#{c}", Series.min(x[c])}
+          ] ++
+            for p <- percentiles do
+              {"#{trunc(p * 100)}%:#{c}", Series.quantile(x[c], p)}
+            end ++
+            [{"max:#{c}", Series.max(x[c])}]
+        end)
       end)
 
-    metric_row = df_metrics |> collect() |> to_rows() |> hd()
-    column_count = length(stat_cols)
+    [metrics_row] = metrics_df |> collect() |> to_rows()
+
+    metrics =
+      ["count", "nil_count", "mean", "std", "min"] ++
+        for(p <- percentiles, do: "#{trunc(p * 100)}%") ++ ["max"]
 
     data =
-      df_metrics.names
-      |> Enum.chunk_every(column_count)
-      |> Enum.zip(metrics)
-      |> Enum.map(fn {list, metric} ->
-        r = Enum.map(list, &metric_row[&1])
-        stat_cols |> Enum.zip(r) |> Enum.into(%{describe: metric})
+      metrics_df.names
+      |> Enum.chunk_every(length(metrics))
+      |> Enum.zip_with(stat_cols, fn metrics, col ->
+        {col, Enum.map(metrics, &metrics_row[&1])}
       end)
 
-    new(data)
+    new([{"describe", metrics} | data])
   end
 
   defp process_percentiles(nil), do: [0.25, 0.50, 0.75]

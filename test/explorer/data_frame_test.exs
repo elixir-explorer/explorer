@@ -3317,22 +3317,24 @@ defmodule Explorer.DataFrameTest do
 
   describe "describe/2" do
     test "default percentiles" do
-      df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: [10, 20, 30])
       df1 = DF.describe(df)
 
       assert df1.dtypes == %{
                "b" => {:f, 64},
+               "c" => {:f, 64},
                "describe" => :string
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
+               c: [3.0, 0.0, 20.0, 10.0, 10.0, 20.0, 20.0, 30.0, 30.0],
                describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"]
              }
     end
 
     test "custom percentiles" do
-      df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      df = DF.new(b: [1, 2, 3])
       df1 = DF.describe(df, percentiles: [0.3, 0.5, 0.8])
       df2 = DF.describe(df, percentiles: [0.5])
 
@@ -3353,7 +3355,7 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "no percentiles" do
-      df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
+      df = DF.new(b: [1, 2, 3])
       df1 = DF.describe(df, percentiles: [])
 
       assert DF.to_columns(df1, atom_keys: true) == %{
