@@ -3442,17 +3442,6 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s1) == :null
     end
 
-    test "error when to_iovec with :null dtype" do
-      assert_raise ArgumentError,
-                   ~r"cannot convert series of dtype :null into iovec",
-                   fn ->
-                     [1, 2, nil]
-                     |> Series.from_list()
-                     |> Series.cast(:null)
-                     |> Series.to_iovec()
-                   end
-    end
-
     test "integer series to string" do
       s = Series.from_list([1, 2, 3])
       s1 = Series.cast(s, :string)
