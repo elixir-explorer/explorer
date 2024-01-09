@@ -919,16 +919,20 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec cast(series :: Series.t(), dtype :: dtype()) :: Series.t()
-  def cast(%Series{dtype: original_dtype} = series, dtype) do
-    if normalised = Shared.normalise_dtype(dtype) do
-      if normalised == original_dtype do
-        series
-      else
-        apply_series(series, :cast, [normalised])
-      end
-    else
-      dtype_error("cast/2", dtype, Shared.dtypes())
-    end
+  def cast(series, dtype) do
+    dtype |> Shared.normalise_dtype() |> maybe_cast_series(series)
+  end
+
+  defp maybe_cast_series({:error, dtype}, _), do: dtype_error("cast/2", dtype, Shared.dtypes())
+
+  defp maybe_cast_series(dtype, %Series{dtype: dtype} = series), do: series
+
+  defp maybe_cast_series(normalised, series), do: apply_series(series, :cast, [normalised])
+
+  @doc type: :element_wise
+  @spec nil_(series :: Series.t()) :: Series.t()
+  def nil_(series) do
+    cast(series, nil)
   end
 
   @doc """

@@ -43,6 +43,7 @@ impl TryFrom<&ExTimeUnit> for TimeUnit {
 
 #[derive(NifTaggedEnum)]
 pub enum ExSeriesDtype {
+    Null,
     Binary,
     Boolean,
     Category,
@@ -63,6 +64,7 @@ impl TryFrom<&DataType> for ExSeriesDtype {
 
     fn try_from(value: &DataType) -> Result<Self, Self::Error> {
         match value {
+            DataType::Null => Ok(ExSeriesDtype::Null),
             DataType::Binary => Ok(ExSeriesDtype::Binary),
             DataType::Boolean => Ok(ExSeriesDtype::Boolean),
             DataType::Categorical(_, _) => Ok(ExSeriesDtype::Category),
@@ -128,6 +130,7 @@ impl TryFrom<&ExSeriesDtype> for DataType {
 
     fn try_from(value: &ExSeriesDtype) -> Result<Self, Self::Error> {
         match value {
+            ExSeriesDtype::Null => Ok(DataType::Null),
             ExSeriesDtype::Binary => Ok(DataType::Binary),
             ExSeriesDtype::Boolean => Ok(DataType::Boolean),
             ExSeriesDtype::Category => {

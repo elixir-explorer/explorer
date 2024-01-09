@@ -45,19 +45,24 @@ defmodule Explorer.Shared do
   Normalise a given dtype and return nil if is invalid.
   """
   def normalise_dtype({:list, inner}) do
-    if maybe_dtype = normalise_dtype(inner), do: {:list, maybe_dtype}
+    maybe_dtype = normalise_dtype(inner)
+
+    case maybe_dtype do
+      {:error, _} -> maybe_dtype
+      _ -> {:list, maybe_dtype}
+    end
   end
 
   def normalise_dtype({:struct, inner_types}) do
     inner_types
     |> Enum.reduce_while(%{}, fn {key, dtype}, normalized_dtypes ->
       case normalise_dtype(dtype) do
-        nil -> {:halt, nil}
+        {:error, dtype} -> {:halt, {:error, dtype}}
         dtype -> {:cont, Map.put(normalized_dtypes, key, dtype)}
       end
     end)
     |> then(fn
-      nil -> nil
+      {:error, dtype} -> {:error, dtype}
       normalized_dtypes -> {:struct, normalized_dtypes}
     end)
   end
@@ -73,17 +78,20 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
-  def normalise_dtype(_dtype), do: nil
+  def normalise_dtype(nil), do: :null
+  def normalise_dtype(dtype), do: {:error, dtype}
 
   @doc """
   Normalise a given dtype, but raise error in case it's invalid.
   """
   def normalise_dtype!(dtype) do
-    if maybe_dtype = normalise_dtype(dtype) do
-      maybe_dtype
-    else
-      raise ArgumentError,
-            "unsupported dtype #{inspect(dtype)}, expected one of #{inspect_dtypes(dtypes())}"
+    case normalise_dtype(dtype) do
+      {:error, _} ->
+        raise ArgumentError,
+              "unsupported dtype #{inspect(dtype)}, expected one of #{inspect_dtypes(dtypes())}"
+
+      _ ->
+        dtype
     end
   end
 
