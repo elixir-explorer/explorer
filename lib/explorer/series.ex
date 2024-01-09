@@ -3376,10 +3376,12 @@ defmodule Explorer.Series do
     end
   end
 
-  # Fix the logic for new integer dtypes
-  defp cast_to_divide({:s, _}, {:s, _}), do: {:f, 64}
-  defp cast_to_divide({:s, _}, {:f, _} = float), do: float
-  defp cast_to_divide({:f, _} = float, {:s, _}), do: float
+  # Review the size needed for this operation.
+  defp cast_to_divide({int_type, _}, {int_type, _}) when K.in(int_type, [:s, :u]), do: {:f, 64}
+  defp cast_to_divide({:s, _}, {:u, _}), do: {:f, 64}
+  defp cast_to_divide({:u, _}, {:s, _}), do: {:f, 64}
+  defp cast_to_divide({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
+  defp cast_to_divide({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_divide({:f, _}, {:f, _}), do: {:f, 64}
   defp cast_to_divide({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_divide({:duration, p}, {:f, _}), do: {:duration, p}

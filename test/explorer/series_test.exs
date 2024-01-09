@@ -2033,6 +2033,16 @@ defmodule Explorer.SeriesTest do
       assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :nan, :nan]
     end
+
+    test "dividing two unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.divide(s2, s1)
+
+      assert s3.dtype == {:f, 64}
+      assert Series.to_list(s3) == [4.0, 2.5, 2.0]
+    end
   end
 
   describe "quotient/2" do
