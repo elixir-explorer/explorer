@@ -3428,6 +3428,20 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "cast/2" do
+    test "integer series to null" do
+      s = Series.from_list([1, 2, 3])
+      s1 = Series.cast(s, :null)
+      assert Series.to_list(s1) == [nil, nil, nil]
+      assert Series.dtype(s1) == :null
+    end
+
+    test "string series to null" do
+      s = Series.from_list(["a", "b", "c"])
+      s1 = Series.cast(s, :null)
+      assert Series.to_list(s1) == [nil, nil, nil]
+      assert Series.dtype(s1) == :null
+    end
+
     test "integer series to string" do
       s = Series.from_list([1, 2, 3])
       s1 = Series.cast(s, :string)

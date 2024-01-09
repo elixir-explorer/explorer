@@ -505,6 +505,17 @@ macro_rules! series_to_list {
     };
 }
 
+#[inline]
+fn null_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
+    let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
+    let env_as_c_arg = env.as_c_arg();
+    let mut list = unsafe { list::make_list(env_as_c_arg, &[]) };
+    for _n in 0..s.len() {
+        list = unsafe { list::make_list_cell(env_as_c_arg, nil_as_c_arg, list) }
+    }
+    Ok(unsafe { Term::new(env, list) })
+}
+
 macro_rules! series_to_iovec {
     ($resource:ident, $s:ident, $env:ident, $convert_function:ident, $in_type:ty) => {{
         Ok(unsafe_iterator_series_to_list!(
@@ -593,6 +604,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
 
 pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     match s.dtype() {
+        DataType::Null => null_series_to_list(&s, env),
         DataType::Boolean => series_to_list!(s, env, bool),
 
         DataType::Int8 => series_to_list!(s, env, i8),
