@@ -963,38 +963,44 @@ pub fn s_sum(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype_group() {
         DtypeGroup::Boolean => Ok(s.sum::<i64>()?.encode(env)),
         DtypeGroup::Signed | DtypeGroup::Unsigned => Ok(s.sum::<i64>()?.encode(env)),
-        DtypeGroup::Float => Ok(term_from_optional_float(Some(s.sum::<f64>()?), env)),
+        DtypeGroup::Float => Ok(encoding::term_from_float64(s.sum::<f64>()?, env)),
         _ => panic!("sum/1 not implemented for {:?}", &s.dtype()),
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(s.min::<i64>()?.encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.min::<f64>()?, env)),
-        DataType::Date => Ok(s.min::<i32>()?.map(ExDate::from).encode(env)),
-        DataType::Time => Ok(s.min::<i64>()?.map(ExTime::from).encode(env)),
-        DataType::Datetime(unit, None) => Ok(s
-            .min::<i64>()?
-            .map(|v| encode_datetime(v, *unit, env).unwrap())
-            .encode(env)),
-        dt => panic!("min/1 not implemented for {dt:?}"),
+    match s.dtype_group() {
+        DtypeGroup::Signed | DtypeGroup::Unsigned => Ok(s.min::<i64>()?.encode(env)),
+        DtypeGroup::Float => Ok(term_from_optional_float(s.min::<f64>()?, env)),
+        DtypeGroup::Date => Ok(s.min::<i32>()?.map(ExDate::from).encode(env)),
+        DtypeGroup::Time => Ok(s.min::<i64>()?.map(ExTime::from).encode(env)),
+        DtypeGroup::Datetime => match s.dtype() {
+            DataType::Datetime(unit, _) => Ok(s
+                .min::<i64>()?
+                .map(|v| encode_datetime(v, *unit, env).unwrap())
+                .encode(env)),
+            _ => unreachable!("it should always be a datetime here"),
+        },
+        _dt => panic!("min/1 not implemented for {:?}", &s.dtype()),
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_max(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(s.max::<i64>()?.encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.max::<f64>()?, env)),
-        DataType::Date => Ok(s.max::<i32>()?.map(ExDate::from).encode(env)),
-        DataType::Time => Ok(s.max::<i64>()?.map(ExTime::from).encode(env)),
-        DataType::Datetime(unit, None) => Ok(s
-            .max::<i64>()?
-            .map(|v| encode_datetime(v, *unit, env).unwrap())
-            .encode(env)),
-        dt => panic!("max/1 not implemented for {dt:?}"),
+    match s.dtype_group() {
+        DtypeGroup::Signed | DtypeGroup::Unsigned => Ok(s.max::<i64>()?.encode(env)),
+        DtypeGroup::Float => Ok(term_from_optional_float(s.max::<f64>()?, env)),
+        DtypeGroup::Date => Ok(s.max::<i32>()?.map(ExDate::from).encode(env)),
+        DtypeGroup::Time => Ok(s.max::<i64>()?.map(ExTime::from).encode(env)),
+        DtypeGroup::Datetime => match s.dtype() {
+            DataType::Datetime(unit, _) => Ok(s
+                .max::<i64>()?
+                .map(|v| encode_datetime(v, *unit, env).unwrap())
+                .encode(env)),
+            _ => unreachable!("it should always be a datetime here"),
+        },
+        _dt => panic!("max/1 not implemented for {:?}", &s.dtype()),
     }
 }
 

@@ -271,8 +271,17 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
 
   @impl true
-  def subtract(_out_dtype, left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_subtract, [right.data])
+  def subtract(out_dtype, left, right) do
+    left = matching_size!(left, right)
+
+    {left, right} =
+      case {left.dtype, right.dtype} do
+        {{:u, _}, {:u, _}} -> {cast(left, out_dtype), right}
+        {_, _} -> {left, right}
+      end
+
+    Shared.apply_series(left, :s_subtract, [right.data])
+  end
 
   @impl true
   def multiply(out_dtype, left, right) do

@@ -1234,11 +1234,11 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: dtype} = categories)
-      when K.and(K.in(l_dtype, [{:s, 64}, :string]), K.in(dtype, [:string, :category])),
+      when K.and(K.in(l_dtype, [:string | @integer_types]), K.in(dtype, [:string, :category])),
       do: apply_series(series, :categorise, [categories])
 
   def categorise(%Series{dtype: l_dtype} = series, [head | _] = categories)
-      when K.and(K.in(l_dtype, [{:s, 64}, :string]), is_binary(head)),
+      when K.and(K.in(l_dtype, [:string | @integer_types]), is_binary(head)),
       do: apply_series(series, :categorise, [from_list(categories, dtype: :string)])
 
   # Slice and dice

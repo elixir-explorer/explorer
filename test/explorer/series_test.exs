@@ -1790,24 +1790,24 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(s3) == [-3, -3, -3]
     end
 
-    test "adding two unsigned integer series of different dtype together" do
-      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+    test "subtracting two unsigned integer series of different dtype together" do
+      s1 = Series.from_list([1, 2, nil, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, nil, 6], dtype: :u32)
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [-3, -3, nil, -3]
+    end
+
+    test "subtracting signed and unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
       s2 = Series.from_list([4, 5, 6], dtype: :u32)
 
       s3 = Series.subtract(s1, s2)
 
-      assert s3.dtype == {:u, 32}
-      assert Series.to_list(s3) == [5, 7, 9]
-    end
-
-    test "adding signed and unsigned integer series together" do
-      s1 = Series.from_list([1, 2, 3], dtype: :s16)
-      s2 = Series.from_list([4, 5, 6], dtype: :u32)
-
-      s3 = Series.add(s1, s2)
-
       assert s3.dtype == {:s, 64}
-      assert Series.to_list(s3) == [5, 7, 9]
+      assert Series.to_list(s3) == [-3, -3, -3]
     end
   end
 
@@ -3503,6 +3503,15 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(categorized) == ["c", "b", "a", "a", "c"]
       assert Series.dtype(categorized) == :category
     end
+
+    test "takes unsigned int series and categorise with categorical series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :category)
+      indexes = Series.from_list([0, 2, 1, 0, 2], dtype: :u32)
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == ["a", "c", "b", "a", "c"]
+      assert Series.dtype(categorized) == :category
+    end
   end
 
   describe "cast/2" do
@@ -4396,9 +4405,14 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "min/1" do
-    test "min of an integer series" do
+    test "min of a signed integer series" do
       s = Series.from_list([-3, 1, 2, nil, -2, -42, 3])
       assert Series.min(s) === -42
+    end
+
+    test "min of an unsigned integer series" do
+      s = Series.from_list([10, 15, 2, nil, 2, 42, 3], dtype: :u32)
+      assert Series.min(s) === 2
     end
 
     test "min of a float series" do
@@ -4423,9 +4437,14 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "max/1" do
-    test "max of an integer series" do
+    test "max of a signed integer series" do
       s = Series.from_list([-3, 1, 2, nil, -2, -42, 3])
       assert Series.max(s) === 3
+    end
+
+    test "min of an unsigned integer series" do
+      s = Series.from_list([10, 15, 2, nil, 2, 42, 3], dtype: :u32)
+      assert Series.max(s) === 42
     end
 
     test "max of a float series" do
