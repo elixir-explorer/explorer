@@ -171,7 +171,7 @@ pub fn s_from_list_binary(name: &str, val: Vec<Option<Binary>>) -> ExSeries {
 pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries {
     ExSeries::new(
         Series::new(name, val.as_slice())
-            .cast(&DataType::Categorical(None))
+            .cast(&DataType::Categorical(None, CategoricalOrdering::default()))
             .unwrap(),
     )
 }
@@ -963,7 +963,7 @@ pub fn s_sum(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype_group() {
         DtypeGroup::Boolean => Ok(s.sum::<i64>()?.encode(env)),
         DtypeGroup::Signed | DtypeGroup::Unsigned => Ok(s.sum::<i64>()?.encode(env)),
-        DtypeGroup::Float => Ok(term_from_optional_float(s.sum::<f64>()?, env)),
+        DtypeGroup::Float => Ok(term_from_optional_float(Some(s.sum::<f64>()?), env)),
         _ => panic!("sum/1 not implemented for {:?}", &s.dtype()),
     }
 }

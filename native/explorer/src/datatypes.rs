@@ -192,14 +192,14 @@ impl ExSeries {
             }
             DataType::Float32 | DataType::Float64 => &DtypeGroup::Float,
             DataType::Decimal(_, _) => &DtypeGroup::Decimal,
-            DataType::Utf8 => &DtypeGroup::String,
+            DataType::String => &DtypeGroup::String,
             DataType::Binary => &DtypeGroup::Binary,
             DataType::Date => &DtypeGroup::Date,
             DataType::Datetime(_, _) => &DtypeGroup::Datetime,
             DataType::Duration(_) => &DtypeGroup::Duration,
             DataType::Time => &DtypeGroup::Time,
             DataType::List(_) => &DtypeGroup::List,
-            DataType::Categorical(_) => &DtypeGroup::Categorical,
+            DataType::Categorical(_, _) => &DtypeGroup::Categorical,
             DataType::Struct(_) => &DtypeGroup::Struct,
             _ => &DtypeGroup::Unknown,
         }
