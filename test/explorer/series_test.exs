@@ -30,6 +30,20 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "from_list/1" do
+    test "with nils" do
+      s = Series.from_list([nil, nil, nil])
+
+      assert Series.to_list(s) === [nil, nil, nil]
+      assert Series.dtype(s) == :null
+    end
+
+    test "with non nils and dtype :null" do
+      s = Series.from_list([1, 2, 3], dtype: :null)
+
+      assert Series.to_list(s) === [nil, nil, nil]
+      assert Series.dtype(s) == :null
+    end
+
     test "with integers" do
       s = Series.from_list([1, 2, 3])
 

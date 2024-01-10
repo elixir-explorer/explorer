@@ -4,6 +4,13 @@ defmodule Explorer.Series.ListTest do
   alias Explorer.Series
 
   describe "from_list/2" do
+    test "list of list of nulls" do
+      series = Series.from_list([[nil, nil], [nil]])
+      assert series.dtype == {:list, :null}
+      assert series[0] == [nil, nil]
+      assert Series.to_list(series) == [[nil, nil], [nil]]
+    end
+
     test "list of lists of one integer" do
       series = Series.from_list([[1]])
 

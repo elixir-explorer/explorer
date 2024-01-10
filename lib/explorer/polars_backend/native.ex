@@ -336,6 +336,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_name(_s), do: err()
   def s_nil_count(_s), do: err()
   def s_not(_s), do: err()
+  def s_from_list_null(_name, _val), do: err()
   def s_from_list_bool(_name, _val), do: err()
   def s_from_list_date(_name, _val), do: err()
   def s_from_list_time(_name, _val), do: err()

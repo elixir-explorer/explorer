@@ -262,13 +262,8 @@ defmodule Explorer.Shared do
   """
   def dtype_from_list!(list, preferable_type \\ nil) do
     initial_type =
-      if leaf_dtype(preferable_type) in ([
-                                           :numeric,
-                                           :binary,
-                                           {:f, 32},
-                                           {:f, 64},
-                                           :category
-                                         ] ++ @integer_types),
+      if leaf_dtype(preferable_type) in ([:null, :numeric, :binary, {:f, 32}, {:f, 64}, :category] ++
+                                           @integer_types),
          do: preferable_type
 
     type =
@@ -314,6 +309,8 @@ defmodule Explorer.Shared do
   defp type(item, :category) when is_binary(item), do: :category
   defp type(item, _type) when is_binary(item), do: :string
 
+  defp type(nil, nil), do: :null
+  defp type(nil, :null), do: :null
   defp type(item, _type) when is_nil(item), do: nil
   defp type([], _type), do: nil
   defp type([_item | _] = items, type), do: {:list, result_list_type(items, type)}
@@ -353,6 +350,8 @@ defmodule Explorer.Shared do
   defp new_type_matches?(type, new_type)
 
   defp new_type_matches?(type, type), do: true
+
+  defp new_type_matches?(:null, _type), do: true
 
   defp new_type_matches?(nil, _new_type), do: true
 

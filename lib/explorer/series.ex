@@ -286,12 +286,12 @@ defmodule Explorer.Series do
         f64 [1.0, 2.0, -Inf, 4.0]
       >
 
-  Trying to create a "nil" series will, by default, result in a series of floats:
+  Trying to create a "nil" series will, by default, result in a series of null type:
 
       iex> Explorer.Series.from_list([nil, nil])
       #Explorer.Series<
         Polars[2]
-        f64 [nil, nil]
+        null [nil, nil]
       >
 
   You can specify the desired `dtype` for a series with the `:dtype` option.
