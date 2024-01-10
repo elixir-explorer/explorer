@@ -161,11 +161,11 @@ defmodule Explorer.Series.ListTest do
 
     test "mixing list of lists of strings and numbers" do
       assert_raise ArgumentError,
-                   "the value \"a\" does not match the inferred series dtype {:s, 64}",
+                   "the value \"a\" does not match the inferred dtype {:s, 64}",
                    fn -> Series.from_list([[1], ["a"]]) end
 
       assert_raise ArgumentError,
-                   "the value \"z\" does not match the inferred series dtype {:s, 64}",
+                   "the value \"z\" does not match the inferred dtype {:s, 64}",
                    fn -> Series.from_list([[[[[1, 2], ["z", "b"]]]]]) end
     end
   end

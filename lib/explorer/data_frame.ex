@@ -1732,7 +1732,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> Explorer.DataFrame.new(%{floats: [1.0, 2.0], ints: [1, "wrong"]})
-      ** (ArgumentError) cannot create series "ints": the value "wrong" does not match the inferred series dtype {:s, 64}
+      ** (ArgumentError) cannot create series "ints": the value "wrong" does not match the inferred dtype {:s, 64}
 
   From row data:
 

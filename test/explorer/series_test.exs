@@ -1133,11 +1133,11 @@ defmodule Explorer.SeriesTest do
     test "raises on value mismatch" do
       assert_raise ArgumentError,
                    "cannot invoke Explorer.Series.less/2 with mismatched dtypes: {:f, 64} and nil",
-                   fn -> Series.less(Series.from_list([]), nil) end
+                   fn -> Series.less(Series.from_list([12.3]), nil) end
 
       assert_raise ArgumentError,
                    ~r"HINT: we have noticed that one of the values is the atom Foo",
-                   fn -> Series.less(Series.from_list([]), Foo) end
+                   fn -> Series.less(Series.from_list([123]), Foo) end
     end
   end
 
@@ -4283,7 +4283,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "cumulative product of an empty series" do
-      s = Series.from_list([])
+      s = Series.from_list([], dtype: :float)
       p = Series.cumulative_product(s)
       assert Series.to_list(p) === []
     end

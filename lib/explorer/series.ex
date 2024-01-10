@@ -286,8 +286,14 @@ defmodule Explorer.Series do
         f64 [1.0, 2.0, -Inf, 4.0]
       >
 
-  Trying to create a "nil" series will, by default, result in a series of null type:
+  Trying to create an empty series or a series of nils will, by default,
+  result in a series of :null type:
 
+      iex> Explorer.Series.from_list([])
+      #Explorer.Series<
+        Polars[0]
+        null []
+      >
       iex> Explorer.Series.from_list([nil, nil])
       #Explorer.Series<
         Polars[2]
@@ -364,7 +370,7 @@ defmodule Explorer.Series do
   Mixing non-numeric data types will raise an ArgumentError:
 
       iex> Explorer.Series.from_list([1, "a"])
-      ** (ArgumentError) the value "a" does not match the inferred series dtype {:s, 64}
+      ** (ArgumentError) the value "a" does not match the inferred dtype {:s, 64}
   """
   @doc type: :conversion
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
@@ -375,7 +381,7 @@ defmodule Explorer.Series do
     normalised_dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
 
     type = Shared.dtype_from_list!(list, normalised_dtype)
-    {list, type} = Shared.cast_numerics(list, type)
+    list = Shared.cast_numerics(list, type)
 
     series = backend.from_list(list, type)
 
@@ -387,7 +393,7 @@ defmodule Explorer.Series do
   end
 
   defp from_same_value(%{data: %backend{}}, value) do
-    backend.from_list([value], Shared.dtype_from_list!([value], nil))
+    backend.from_list([value], Shared.dtype_from_list!([value]))
   end
 
   defp from_same_value(%{data: %backend{}}, value, dtype) do
@@ -2586,7 +2592,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.product(s)
       6
 
-      iex> s = Explorer.Series.from_list([])
+      iex> s = Explorer.Series.from_list([], dtype: :float)
       iex> Explorer.Series.product(s)
       1.0
 
@@ -4113,7 +4119,7 @@ defmodule Explorer.Series do
   end
 
   def (%Series{data: %backend{}} = left) in right when is_list(right),
-    do: left in backend.from_list(right, Shared.dtype_from_list!(right, nil))
+    do: left in backend.from_list(right, Shared.dtype_from_list!(right))
 
   ## Comparable (a superset of ordered)
 

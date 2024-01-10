@@ -87,15 +87,15 @@ defmodule Explorer.Series.StructTest do
 
     test "errors when structs have mismatched types" do
       assert_raise ArgumentError,
-                   "the value %{a: \"a\"} does not match the inferred series dtype {:struct, %{\"a\" => {:s, 64}}}",
+                   "the value \"a\" does not match the inferred dtype {:s, 64}",
                    fn -> Series.from_list([%{a: 1}, %{a: "a"}]) end
 
       assert_raise ArgumentError,
-                   "the value %{b: 1} does not match the inferred series dtype {:struct, %{\"a\" => {:s, 64}}}",
+                   "the value %{b: 1} does not match the inferred dtype {:struct, %{\"a\" => {:s, 64}}}",
                    fn -> Series.from_list([%{a: 1}, %{b: 1}]) end
 
       assert_raise ArgumentError,
-                   "the value [%{a: \"a\"}] does not match the inferred series dtype {:list, {:struct, %{\"a\" => {:s, 64}}}}",
+                   "the value \"a\" does not match the inferred dtype {:s, 64}",
                    fn -> Series.from_list([[%{a: 1}], [%{a: "a"}]]) end
     end
   end

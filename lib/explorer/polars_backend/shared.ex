@@ -123,7 +123,6 @@ defmodule Explorer.PolarsBackend.Shared do
       for {column, values} <- Table.to_columns(list) do
         column = to_string(column)
         inner_type = Map.fetch!(fields, column)
-
         from_list(values, inner_type, column)
       end
 

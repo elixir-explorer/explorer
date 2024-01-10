@@ -255,107 +255,103 @@ defmodule Explorer.Shared do
 
   @doc """
   Gets the `dtype` of a list or raise error if not possible.
-
-  It's possible to override the initial type by passing a preferable type.
-  This is useful in cases where you want to build the series in a target type,
-  without the need to cast it later.
   """
-  def dtype_from_list!(list, preferable_type \\ nil)
+  def dtype_from_list!(list) do
+    Enum.reduce(list, :null, &infer_type/2)
+  end
 
-  # :null always matches all types, so we don't need to check it
+  @doc """
+  Gets the dtype from the list according to the preferred type.
+
+  The dtype from the list is first computed standalone.
+  If the list can be directly instantiated as the preferred type,
+  then the preferred type is returned. Otherwise, the inferred type
+  is returned and a cast call to the preferred type is necessary.
+
+  If no preferred type is given (nil), then the inferred type is returned.
+  """
   def dtype_from_list!(_list, :null), do: :null
 
-  # If we have an empty list, we default to f64 unless something is given
-  def dtype_from_list!([], preferable_type), do: preferable_type || {:f, 64}
+  def dtype_from_list!(list, nil), do: dtype_from_list!(list)
 
-  def dtype_from_list!(list, preferable_type) do
-    preferable_types = [:null, :numeric, :binary, {:f, 32}, {:f, 64}, :category] ++ @integer_types
-
-    initial_type =
-      if leaf_dtype(preferable_type) in preferable_types,
-        do: preferable_type,
-        else: :null
-
-    Enum.reduce(list, initial_type, fn el, type ->
-      new_type = type(el, type) || type
-
-      if new_type_matches?(type, new_type) do
-        new_type
-      else
-        raise ArgumentError,
-              "the value #{inspect(el)} does not match the inferred series dtype #{inspect(type)}"
-      end
-    end)
+  def dtype_from_list!(list, preferred_type) do
+    list
+    |> dtype_from_list!()
+    |> merge_preferred(preferred_type)
   end
 
-  @numeric_types @integer_types ++ [{:f, 32}, {:f, 64}, :numeric]
+  @non_finite [:nan, :infinity, :neg_infinity]
 
-  defp type(%Date{} = _item, _type), do: :date
-  defp type(%Time{} = _item, _type), do: :time
-  defp type(%NaiveDateTime{} = _item, _type), do: {:datetime, :microsecond}
-  defp type(%Explorer.Duration{precision: precision} = _item, _type), do: {:duration, precision}
+  defp infer_type(nil, type), do: type
+  defp infer_type(item, :null), do: infer_type(item)
+  defp infer_type(integer, {:f, 64}) when is_integer(integer), do: {:f, 64}
+  defp infer_type(float, {:s, 64}) when is_float(float) or float in @non_finite, do: {:f, 64}
+  defp infer_type(list, {:list, type}) when is_list(list), do: infer_list(list, type)
+  defp infer_type(%{} = map, {:struct, inner}), do: infer_struct(map, inner)
 
-  defp type(item, type) when is_integer(item) and type in [{:f, 32}, {:f, 64}], do: :numeric
-  defp type(item, type) when is_float(item) and type in @integer_types, do: :numeric
-  defp type(item, type) when is_number(item) and type == :numeric, do: :numeric
+  defp infer_type(item, type) do
+    if infer_type(item) == type do
+      type
+    else
+      raise ArgumentError,
+            "the value #{inspect(item)} does not match the inferred dtype #{inspect(type)}"
+    end
+  end
 
-  defp type(item, type)
-       when item in [:nan, :infinity, :neg_infinity] and
-              type in @numeric_types,
-       do: :numeric
+  defp infer_type(%Date{} = _item), do: :date
+  defp infer_type(%Time{} = _item), do: :time
+  defp infer_type(%NaiveDateTime{} = _item), do: {:datetime, :microsecond}
+  defp infer_type(%Explorer.Duration{precision: precision} = _item), do: {:duration, precision}
+  defp infer_type(item) when is_integer(item), do: {:s, 64}
+  defp infer_type(item) when is_float(item) or item in @non_finite, do: {:f, 64}
+  defp infer_type(item) when is_boolean(item), do: :boolean
+  defp infer_type(item) when is_binary(item), do: :string
+  defp infer_type(list) when is_list(list), do: infer_list(list, :null)
+  defp infer_type(%{} = map), do: infer_struct(map, nil)
+  defp infer_type(item), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
-  defp type(item, {:s, _} = integer_type) when is_integer(item), do: integer_type
-  defp type(item, {:u, _} = integer_type) when is_integer(item) and item >= 0, do: integer_type
-  defp type(item, _type) when is_integer(item), do: {:s, 64}
-  defp type(item, {:f, _} = float_dtype) when is_float(item), do: float_dtype
-  defp type(item, _type) when is_float(item), do: {:f, 64}
-  defp type(item, _type) when item in [:nan, :infinity, :neg_infinity], do: {:f, 64}
-  defp type(item, _type) when is_boolean(item), do: :boolean
+  defp infer_list(list, type) do
+    {:list, Enum.reduce(list, type, &infer_type/2)}
+  end
 
-  defp type(item, :binary) when is_binary(item), do: :binary
-  defp type(item, :category) when is_binary(item), do: :category
-  defp type(item, _type) when is_binary(item), do: :string
-
-  defp type(nil, type), do: type
-  defp type(list, {:list, type}) when is_list(list), do: {:list, dtype_from_list!(list, type)}
-  defp type(list, _type) when is_list(list), do: {:list, dtype_from_list!(list)}
-
-  defp type(%{} = item, type) do
-    preferable_inner_types =
-      case type do
-        {:struct, %{} = inner_types} -> inner_types
-        _ -> %{}
-      end
-
-    inferred_inner_types =
-      for {key, value} <- item, into: %{} do
+  defp infer_struct(%{} = map, types) do
+    types =
+      for {key, value} <- map, into: %{} do
         key = to_string(key)
-        inner_type = Map.get(preferable_inner_types, key, :null)
-        {key, type(value, inner_type) || inner_type}
+
+        cond do
+          types == nil ->
+            {key, infer_type(value, :null)}
+
+          type = types[key] ->
+            {key, infer_type(value, type)}
+
+          true ->
+            raise ArgumentError,
+                  "the value #{inspect(map)} does not match the inferred dtype #{inspect({:struct, types})}"
+        end
       end
 
-    {:struct, inferred_inner_types}
+    {:struct, types}
   end
 
-  defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
+  defp merge_preferred(type, type), do: type
+  defp merge_preferred(:null, type), do: type
+  defp merge_preferred({:s, 64}, {:s, _} = type), do: type
+  defp merge_preferred({:s, 64}, {:f, _} = type), do: type
+  defp merge_preferred({:f, 64}, {:f, _} = type), do: type
+  defp merge_preferred(:string, type) when type in [:binary, :string, :category], do: type
 
-  defp new_type_matches?(type, new_type)
-
-  defp new_type_matches?(type, type), do: true
-  defp new_type_matches?(:null, _type), do: true
-  defp new_type_matches?(_type, :null), do: true
-
-  defp new_type_matches?({:struct, types}, {:struct, new_types}) do
-    Enum.all?(types, fn {key, type} ->
-      case new_types do
-        %{^key => new_type} -> new_type_matches?(type, new_type)
-        %{} -> false
-      end
-    end)
+  defp merge_preferred({:list, inferred}, {:list, preferred}) do
+    {:list, merge_preferred(inferred, preferred)}
   end
 
-  defp new_type_matches?(type, new_type) do
-    leaf_dtype(new_type) == :numeric and leaf_dtype(type) in numeric_types()
+  defp merge_preferred({:struct, inferred}, {:struct, preferred}) do
+    {:struct, Map.merge(inferred, preferred, fn _, v1, v2 -> merge_preferred(v1, v2) end)}
+  end
+
+  defp merge_preferred(inferred, _preferred) do
+    inferred
   end
 
   @doc """
@@ -367,44 +363,28 @@ defmodule Explorer.Shared do
   @doc """
   Downcasts lists of mixed numeric types (float and int) to float.
   """
-  def cast_numerics(list, dtype) do
-    {cast_numerics_deep(list, dtype), cast_numeric_dtype_to_float(dtype)}
-  end
-
-  defp cast_numerics_deep(list, {:struct, dtypes}) when is_list(list) do
+  def cast_numerics(list, {:struct, dtypes}) when is_list(list) do
     Enum.map(list, fn item ->
       Map.new(item, fn {field, inner_value} ->
         inner_dtype = Map.fetch!(dtypes, to_string(field))
-        [casted_value] = cast_numerics_deep([inner_value], inner_dtype)
-
+        [casted_value] = cast_numerics([inner_value], inner_dtype)
         {field, casted_value}
       end)
     end)
   end
 
-  defp cast_numerics_deep(list, {:list, inner_dtype}) when is_list(list) do
-    Enum.map(list, fn item -> cast_numerics_deep(item, inner_dtype) end)
+  def cast_numerics(list, {:list, inner_dtype}) when is_list(list) do
+    Enum.map(list, fn item -> cast_numerics(item, inner_dtype) end)
   end
 
-  defp cast_numerics_deep(list, :numeric), do: cast_numerics_to_floats(list)
-
-  defp cast_numerics_deep(list, _), do: list
-
-  defp cast_numerics_to_floats(list) do
+  def cast_numerics(list, {:f, _}) do
     Enum.map(list, fn
       item when item in [nil, :infinity, :neg_infinity, :nan] or is_float(item) -> item
       item -> item / 1
     end)
   end
 
-  defp cast_numeric_dtype_to_float({:struct, dtypes}),
-    do: {:struct, Map.new(dtypes, fn {f, inner} -> {f, cast_numeric_dtype_to_float(inner)} end)}
-
-  defp cast_numeric_dtype_to_float({:list, inner}),
-    do: {:list, cast_numeric_dtype_to_float(inner)}
-
-  defp cast_numeric_dtype_to_float(:numeric), do: {:f, 64}
-  defp cast_numeric_dtype_to_float(other), do: other
+  def cast_numerics(list, _), do: list
 
   @doc """
   Helper for shared behaviour in inspect.
