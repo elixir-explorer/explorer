@@ -355,7 +355,7 @@ defmodule Explorer.Shared do
 
   defp new_type_matches?(type, type), do: true
 
-  defp new_type_matches?(:null, type), do: true
+  defp new_type_matches?(:null, _type), do: true
 
   defp new_type_matches?(nil, _new_type), do: true
 
