@@ -4,6 +4,23 @@ defmodule Explorer.Series.StructTest do
   alias Explorer.Series
 
   describe "from_list/2" do
+    test "allows struct of all nil value" do
+      s =
+        Series.from_list([
+          %{a: nil, b: nil},
+          %{a: 3, b: nil},
+          %{a: 5, b: nil}
+        ])
+
+      assert s.dtype == {:struct, %{"a" => {:s, 64}, "b" => :null}}
+
+      assert Series.to_list(s) == [
+               %{"a" => nil, "b" => nil},
+               %{"a" => 3, "b" => nil},
+               %{"a" => 5, "b" => nil}
+             ]
+    end
+
     test "allows struct values" do
       s = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}])
 

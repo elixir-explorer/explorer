@@ -389,6 +389,7 @@ rustler::init!(
         s_not,
         s_log,
         s_log_natural,
+        s_from_list_null,
         s_from_list_bool,
         s_from_list_date,
         s_from_list_time,

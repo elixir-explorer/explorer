@@ -5063,7 +5063,7 @@ defmodule Explorer.DataFrame do
 
   defp types_are_numeric_compatible?(types, name, type) do
     types[name] != type and types[name] in Shared.numeric_types() and
-      type in Shared.numeric_types()
+      (type == :null or type in Shared.numeric_types())
   end
 
   defp cast_numeric_columns_to_float(dfs, changed_types) do
