@@ -2848,7 +2848,9 @@ defmodule Explorer.SeriesTest do
       require Explorer.Series
 
       s = Series.from_list([1, 2, 3, 4])
-      message = "could not find column name \"n\". The available entries are: [\"_\"]"
+
+      message =
+        "could not find column name \"n\". The available columns are: [\"_\"].\nIf you are attempting to interpolate a value, use ^n.\n"
 
       assert_raise ArgumentError, message, fn ->
         Series.filter(s, n > 2)
@@ -2896,7 +2898,9 @@ defmodule Explorer.SeriesTest do
       require Explorer.Series
 
       s = Series.from_list([1, 2, 3, 4])
-      message = "could not find column name \"n\". The available entries are: [\"_\"]"
+
+      message =
+        "could not find column name \"n\". The available columns are: [\"_\"].\nIf you are attempting to interpolate a value, use ^n.\n"
 
       assert_raise ArgumentError, message, fn ->
         Series.map(s, n * 2)
