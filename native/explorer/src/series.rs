@@ -22,6 +22,12 @@ pub fn s_as_str(data: ExSeries) -> Result<String, ExplorerError> {
     Ok(format!("{:?}", data.resource.0))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_null(name: &str, length: usize) -> ExSeries {
+    let s = Series::new_null(name, length);
+    ExSeries::new(Series::new(name, s))
+}
+
 macro_rules! from_list {
     ($name:ident, $type:ty) => {
         #[rustler::nif(schedule = "DirtyCpu")]
