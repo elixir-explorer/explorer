@@ -15,6 +15,7 @@ defmodule Explorer.Shared do
 
   @scalar_types @integer_types ++
                   [
+                    :null,
                     :binary,
                     :boolean,
                     :category,
@@ -73,7 +74,6 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
-  def normalise_dtype(:null), do: :null
   def normalise_dtype(_dtype), do: nil
 
   @doc """
