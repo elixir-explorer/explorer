@@ -225,9 +225,11 @@ defmodule Explorer.Shared do
   def maybe_raise_column_not_found(df, name) do
     unless Map.has_key?(df.dtypes, name) do
       raise ArgumentError,
-            List.to_string([
-              "could not find column name \"#{name}\"" | did_you_mean(name, df.names)
-            ])
+            List.to_string(
+              [
+                "could not find column name \"#{name}\"" | did_you_mean(name, df.names)
+              ] ++ ["\nIf you are attempting to interpolate a value, use ^#{name}.\n"]
+            )
     end
   end
 
@@ -553,7 +555,7 @@ defmodule Explorer.Shared do
           do: {distance, key}
 
     case suggestions do
-      [] -> [". The available entries are: #{inspect(available_keys)}"]
+      [] -> [". The available columns are: #{inspect(available_keys)}."]
       suggestions -> [". Did you mean:\n\n" | format_suggestions(suggestions)]
     end
   end
