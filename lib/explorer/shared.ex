@@ -15,6 +15,7 @@ defmodule Explorer.Shared do
 
   @scalar_types @integer_types ++
                   [
+                    :null,
                     :binary,
                     :boolean,
                     :category,
@@ -73,7 +74,6 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
-  def normalise_dtype(:null), do: :null
   def normalise_dtype(_dtype), do: nil
 
   @doc """
@@ -260,25 +260,32 @@ defmodule Explorer.Shared do
   This is useful in cases where you want to build the series in a target type,
   without the need to cast it later.
   """
-  def dtype_from_list!(list, preferable_type \\ nil) do
+  def dtype_from_list!(list, preferable_type \\ nil)
+
+  # :null always matches all types, so we don't need to check it
+  def dtype_from_list!(_list, :null), do: :null
+
+  # If we have an empty list, we default to f64 unless something is given
+  def dtype_from_list!([], preferable_type), do: preferable_type || {:f, 64}
+
+  def dtype_from_list!(list, preferable_type) do
+    preferable_types = [:null, :numeric, :binary, {:f, 32}, {:f, 64}, :category] ++ @integer_types
+
     initial_type =
-      if leaf_dtype(preferable_type) in ([:null, :numeric, :binary, {:f, 32}, {:f, 64}, :category] ++
-                                           @integer_types),
-         do: preferable_type
+      if leaf_dtype(preferable_type) in preferable_types,
+        do: preferable_type,
+        else: :null
 
-    type =
-      Enum.reduce(list, initial_type, fn el, type ->
-        new_type = type(el, type) || type
+    Enum.reduce(list, initial_type, fn el, type ->
+      new_type = type(el, type) || type
 
-        if new_type_matches?(type, new_type) do
-          new_type
-        else
-          raise ArgumentError,
-                "the value #{inspect(el)} does not match the inferred series dtype #{inspect(type)}"
-        end
-      end)
-
-    type || preferable_type || {:f, 64}
+      if new_type_matches?(type, new_type) do
+        new_type
+      else
+        raise ArgumentError,
+              "the value #{inspect(el)} does not match the inferred series dtype #{inspect(type)}"
+      end
+    end)
   end
 
   @numeric_types @integer_types ++ [{:f, 32}, {:f, 64}, :numeric]
@@ -309,11 +316,9 @@ defmodule Explorer.Shared do
   defp type(item, :category) when is_binary(item), do: :category
   defp type(item, _type) when is_binary(item), do: :string
 
-  defp type(nil, nil), do: :null
-  defp type(nil, :null), do: :null
-  defp type(item, _type) when is_nil(item), do: nil
-  defp type([], _type), do: nil
-  defp type([_item | _] = items, type), do: {:list, result_list_type(items, type)}
+  defp type(nil, type), do: type
+  defp type(list, {:list, type}) when is_list(list), do: {:list, dtype_from_list!(list, type)}
+  defp type(list, _type) when is_list(list), do: {:list, dtype_from_list!(list)}
 
   defp type(%{} = item, type) do
     preferable_inner_types =
@@ -325,9 +330,8 @@ defmodule Explorer.Shared do
     inferred_inner_types =
       for {key, value} <- item, into: %{} do
         key = to_string(key)
-        inner_type = Map.get(preferable_inner_types, key)
-
-        {key, type(value, inner_type) || Map.get(preferable_inner_types, key)}
+        inner_type = Map.get(preferable_inner_types, key, :null)
+        {key, type(value, inner_type) || inner_type}
       end
 
     {:struct, inferred_inner_types}
@@ -335,31 +339,17 @@ defmodule Explorer.Shared do
 
   defp type(item, _type), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
-  defp result_list_type(nil, _type), do: nil
-  defp result_list_type([], _type), do: nil
-
-  defp result_list_type([h | _tail] = items, type) when is_list(h) do
-    # Enum.flat_map/2 is used here becase we want to remove one level of nesting per iteraction.
-    {:list, result_list_type(Enum.flat_map(items, & &1), type)}
-  end
-
-  defp result_list_type(items, type) when is_list(items) do
-    dtype_from_list!(items, leaf_dtype(type))
-  end
-
   defp new_type_matches?(type, new_type)
 
   defp new_type_matches?(type, type), do: true
-
   defp new_type_matches?(:null, _type), do: true
-
-  defp new_type_matches?(nil, _new_type), do: true
+  defp new_type_matches?(_type, :null), do: true
 
   defp new_type_matches?({:struct, types}, {:struct, new_types}) do
     Enum.all?(types, fn {key, type} ->
-      case Map.fetch(new_types, key) do
-        {:ok, new_type} -> new_type_matches?(type, new_type)
-        :error -> false
+      case new_types do
+        %{^key => new_type} -> new_type_matches?(type, new_type)
+        %{} -> false
       end
     end)
   end
