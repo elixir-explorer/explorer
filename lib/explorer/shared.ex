@@ -266,13 +266,9 @@ defmodule Explorer.Shared do
                                            @integer_types),
          do: preferable_type
 
-    # require Logger
-
     type =
       Enum.reduce(list, initial_type, fn el, type ->
         new_type = type(el, type) || type
-        # require Logger
-        # Logger.info("new_type - #{inspect(new_type)}")
 
         if new_type_matches?(type, new_type) do
           new_type
@@ -282,8 +278,6 @@ defmodule Explorer.Shared do
         end
       end)
 
-    # Logger.info("type - #{inspect type}")
-    # || preferable_type || {:f, 64}
     type || preferable_type || {:f, 64}
   end
 
