@@ -135,6 +135,26 @@ defmodule Explorer.DataFrame.NDJSONTest do
     # end
   end
 
+  describe "nulls" do
+    test "column with a null and a non-null" do
+      df = DF.new(a: [nil, 1]) |> tmp_ndjson_file!() |> DF.from_ndjson!()
+      assert DF.dtypes(df) == %{"a" => {:s, 64}}
+      assert inspect(df) == ~s(#Explorer.DataFrame<
+  Polars[2 x 1]
+  a s64 [nil, 1]
+>)
+    end
+
+    test "column with only nulls" do
+      df = DF.new(a: [nil, nil]) |> tmp_ndjson_file!() |> DF.from_ndjson!()
+      assert DF.dtypes(df) == %{"a" => :null}
+      assert inspect(df) == ~s(#Explorer.DataFrame<
+  Polars[2 x 1]
+  a null [nil, nil]
+>)
+    end
+  end
+
   describe "from_ndjson/2 options" do
     @tag :tmp_dir
     test "reads from file with default options", %{tmp_dir: tmp_dir} do
