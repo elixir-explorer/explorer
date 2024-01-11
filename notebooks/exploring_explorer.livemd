@@ -112,17 +112,20 @@ DataFrame.to_csv(df, filename)
 
 `Explorer` supports the following `Series` `dtypes`:
 
+* `:null` - Null
 * `:binary` - Binaries (sequences of bytes)
 * `:boolean` - Boolean
 * `:category` - Strings but represented internally as integers
 * `:date` - Date type that unwraps to `Elixir.Date`
 * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
 * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
-* `{:f, 32}` - 32-bit floating point number
-* `:float` or `{:f, 64}` - 64-bit floating point number.
-* `:integer` - 64-bit signed integer
+* `{:f, size}` - a 32-bit or 64-bit floating point number
+* `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit signed integer 
+* `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer
 * `:string` - UTF-8 encoded binary
 * `:time` - Time type that unwraps to `Elixir.Time`
+* `:list` - a nested data type like `Elixir.List`. It is a sequence of values of same data type.
+* `:struct` - a nested data type like a `Elixir.Map`, but with same keys and matching data types.
 
 `Series` can be constructed from Elixir basic types. For example:
 
