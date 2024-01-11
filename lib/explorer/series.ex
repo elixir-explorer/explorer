@@ -2094,10 +2094,10 @@ defmodule Explorer.Series do
   def concat([%Series{} | _t] = series) do
     {null?, dtypes_map} =
       Enum.reduce(series, {false, %{}}, fn
-        %Series{dtype: :null}, {true, dtypes} = acc ->
+        %Series{dtype: :null}, {true, _dtypes} = acc ->
           acc
 
-        %Series{dtype: :null}, {_, dtypes} = acc ->
+        %Series{dtype: :null}, {_, dtypes} ->
           {true, dtypes}
 
         %Series{dtype: dt}, {null?, dtypes} when is_atom(dt) ->
@@ -2130,7 +2130,7 @@ defmodule Explorer.Series do
 
   defp maybe_cast(series, _, _), do: Enum.map(series, &cast(&1, {:f, 64}))
 
-  defp maybe_raise_mismatched!(series, [dtype]), do: series
+  defp maybe_raise_mismatched!(series, [_dtype]), do: series
 
   defp maybe_raise_mismatched!(series, dtypes) do
     if Enum.all?(dtypes, &is_numeric_dtype/1) do
