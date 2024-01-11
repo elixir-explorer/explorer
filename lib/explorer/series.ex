@@ -2092,24 +2092,31 @@ defmodule Explorer.Series do
   @doc type: :shape
   @spec concat([Series.t()]) :: Series.t()
   def concat([%Series{} | _t] = series) do
-    {null?, dtypes_map} = 
-      Enum.reduce(series, {false, %{}}, fn 
-        %Series{dtype: :null}, {true, dtypes} = acc -> acc
-        %Series{dtype: :null}, {_, dtypes} = acc -> {true, dtypes}
-        %Series{dtype: dt}, {null?, dtypes} when is_atom(dt) -> {null?, Map.put_new(dtypes, dt, dt)}
-        %Series{dtype: {type, n} = dt}, {null?, dtypes} -> 
-          dtypes = 
+    {null?, dtypes_map} =
+      Enum.reduce(series, {false, %{}}, fn
+        %Series{dtype: :null}, {true, dtypes} = acc ->
+          acc
+
+        %Series{dtype: :null}, {_, dtypes} = acc ->
+          {true, dtypes}
+
+        %Series{dtype: dt}, {null?, dtypes} when is_atom(dt) ->
+          {null?, Map.put_new(dtypes, dt, dt)}
+
+        %Series{dtype: {type, n} = dt}, {null?, dtypes} ->
+          dtypes =
             case dtypes[type] do
               nil -> Map.put(dtypes, type, dt)
               {_t, tn} when n > tn -> Map.put(dtypes, type, dt)
               _ -> dtypes
             end
+
           {null?, dtypes}
       end)
-    
+
     dtypes = Map.values(dtypes_map)
 
-    series = 
+    series =
       series
       |> maybe_raise_mismatched!(dtypes)
       |> maybe_cast(null?, dtypes)
@@ -2129,7 +2136,8 @@ defmodule Explorer.Series do
     if Enum.all?(dtypes, &is_numeric_dtype/1) do
       series
     else
-      dtypes = Enum.map(series, &(&1.dtype))
+      dtypes = Enum.map(series, & &1.dtype)
+
       raise ArgumentError,
             "cannot concatenate series with mismatched dtypes: #{inspect(dtypes)}. " <>
               "First cast the series to the desired dtype."
