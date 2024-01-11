@@ -124,8 +124,8 @@ DataFrame.to_csv(df, filename)
 * `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer
 * `:string` - UTF-8 encoded binary
 * `:time` - Time type that unwraps to `Elixir.Time`
-* `:list` - a nested data type like `Elixir.List`. It is a sequence of values of same data type.
-* `:struct` - a nested data type like a `Elixir.Map`, but with same keys and matching data types.
+* `:list` - a nested data type like `Elixir.List`. It is a sequence of values having the same data type.
+* `:struct` - a nested data type like a `Elixir.Map`, but with the same keys and matching data types.
 
 `Series` can be constructed from Elixir basic types. For example:
 
