@@ -1642,6 +1642,7 @@ defmodule Explorer.DataFrame do
 
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
     * `:dtypes` - A list/map of `{column_name, dtype}` pairs. (default: `[]`)
+    * `:lazy` - force the results into the lazy version of the current backend.
 
   ## Examples
 
