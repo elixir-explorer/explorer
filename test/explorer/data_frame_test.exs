@@ -665,12 +665,15 @@ defmodule Explorer.DataFrameTest do
   describe "mutate/2" do
     test "with nil" do
       df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
-      assert DF.mutate(df, c: nil) |> inspect() == ~s(#Explorer.DataFrame<
-  Polars[3 x 3]
-  strs string ["a", "b", "c"]
-  nums s64 [1, 2, 3]
-  c null [nil, nil, nil]
->)
+      df1 = DF.mutate(df, c: nil)
+      assert df1.names == ["strs", "nums", "c"]
+      assert df1.dtypes == %{"strs" => :string, "nums" => {:s, 64}, "c" => :null}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               strs: ["a", "b", "c"],
+               nums: [1, 2, 3],
+               c: [nil, nil, nil]
+             }
     end
 
     test "adds new columns" do
@@ -3539,10 +3542,9 @@ defmodule Explorer.DataFrameTest do
   describe "summarise/2" do
     test "summarise with nil" do
       df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
-      assert DF.summarise(df, c: nil) |> inspect() == ~s(#Explorer.DataFrame<
-  Polars[1 x 1]
-  c null [nil]
->)
+      df1 = DF.summarise(df, c: nil)
+      assert DF.dtypes(df1) == %{"c" => :null}
+      assert DF.to_columns(df1, atom_keys: true) == %{c: [nil]}
     end
 
     test "one column with aggregation and without groups", %{df: df} do
