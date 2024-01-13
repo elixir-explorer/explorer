@@ -5626,17 +5626,21 @@ defmodule Explorer.DataFrame do
       iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df)
       #Explorer.DataFrame<
-        Polars[9 x 2]
+        Polars[9 x 4]
         describe string ["count", "nil_count", "mean", "std", "min", ...]
+        a string ["2", "1", nil, nil, nil, ...]
         b f64 [3.0, 0.0, 2.0, 1.0, 1.0, ...]
+        c string ["3", "0", nil, nil, nil, ...]
       >
 
       iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
       iex> Explorer.DataFrame.describe(df, percentiles: [0.3, 0.5, 0.8])
       #Explorer.DataFrame<
-        Polars[9 x 2]
+        Polars[9 x 4]
         describe string ["count", "nil_count", "mean", "std", "min", ...]
+        a string ["2", "1", nil, nil, nil, ...]
         b f64 [3.0, 0.0, 2.0, 1.0, 1.0, ...]
+        c string ["3", "0", nil, nil, nil, ...]
       >
   """
   @doc type: :single
@@ -5648,23 +5652,30 @@ defmodule Explorer.DataFrame do
       raise ArgumentError, "cannot describe a DataFrame without any columns"
     end
 
-    stat_cols = for {name, type} <- df.dtypes, type in Shared.numeric_types(), do: name
+    stat_cols = df.names
     percentiles = process_percentiles(opts[:percentiles])
+    numeric_types = Shared.numeric_types()
+    datetime_types = Shared.datetime_types()
+    duration_types = Shared.duration_types()
 
     metrics_df =
       summarise_with(df, fn x ->
         Enum.flat_map(stat_cols, fn c ->
+          dt = x[c].dtype
+          numeric? = dt in numeric_types
+          min_max? = numeric? or dt in datetime_types or dt in duration_types
+
           [
             {"count:#{c}", Series.count(x[c])},
             {"nil_count:#{c}", Series.nil_count(x[c])},
-            {"mean:#{c}", Series.mean(x[c])},
-            {"std:#{c}", Series.standard_deviation(x[c])},
-            {"min:#{c}", Series.min(x[c])}
+            {"mean:#{c}", if(numeric?, do: Series.mean(x[c]))},
+            {"std:#{c}", if(numeric?, do: Series.standard_deviation(x[c]))},
+            {"min:#{c}", if(min_max?, do: Series.min(x[c]))}
           ] ++
             for p <- percentiles do
-              {"#{trunc(p * 100)}%:#{c}", Series.quantile(x[c], p)}
+              {"#{trunc(p * 100)}%:#{c}", if(numeric?, do: Series.quantile(x[c], p))}
             end ++
-            [{"max:#{c}", Series.max(x[c])}]
+            [{"max:#{c}", if(min_max?, do: Series.max(x[c]))}]
         end)
       end)
 
@@ -5678,7 +5689,11 @@ defmodule Explorer.DataFrame do
       metrics_df.names
       |> Enum.chunk_every(length(metrics))
       |> Enum.zip_with(stat_cols, fn metrics, col ->
-        {col, Enum.map(metrics, &metrics_row[&1])}
+        if df.dtypes[col] in numeric_types do
+          {col, Enum.map(metrics, &metrics_row[&1])}
+        else
+          {col, Enum.map(metrics, &(metrics_row[&1] && "#{metrics_row[&1]}"))}
+        end
       end)
 
     new([{"describe", metrics} | data])
