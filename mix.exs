@@ -96,7 +96,8 @@ defmodule Explorer.MixProject do
         "Functions: Introspection": &(&1[:type] == :introspection),
         "Functions: IO": &(&1[:type] == :io),
         "Functions: Shape": &(&1[:type] == :shape),
-        "Functions: Window": &(&1[:type] == :window)
+        "Functions: Window": &(&1[:type] == :window),
+        "Functions: Deprecated": &(&1[:type] == :deprecated)
       ],
       extras: ["notebooks/exploring_explorer.livemd", "CHANGELOG.md"],
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
