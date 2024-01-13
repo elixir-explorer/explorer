@@ -3341,7 +3341,7 @@ defmodule Explorer.DataFrameTest do
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               a: ["2", "1", "", "", "", "", "", "", ""],
+               a: ["2", "1", nil, nil, nil, nil, nil, nil, nil],
                b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
                c: [3.0, 0.0, 20.0, 10.0, 10.0, 20.0, 20.0, 30.0, 30.0],
                describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"]
@@ -3426,6 +3426,28 @@ defmodule Explorer.DataFrameTest do
                "number" => {:f, 64},
                "string" => :string,
                "time" => :string
+             }
+
+      assert DF.to_columns(describe_df, atom_keys: true) == %{
+               date: ["3", "1", nil, nil, nil, nil, nil, nil, nil],
+               datetime: [
+                 "3",
+                 "1",
+                 nil,
+                 nil,
+                 "1999-12-31 00:00:00.000000",
+                 nil,
+                 nil,
+                 nil,
+                 "2023-12-13 17:38:00.000000"
+               ],
+               describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"],
+               duration: ["3", "1", nil, nil, "1d", nil, nil, nil, "366d"],
+               list: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
+               null: ["0", "4", nil, nil, nil, nil, nil, nil, nil],
+               number: [3.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
+               string: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
+               time: ["3", "1", nil, nil, nil, nil, nil, nil, nil]
              }
     end
   end

@@ -5628,9 +5628,9 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[9 x 4]
         describe string ["count", "nil_count", "mean", "std", "min", ...]
-        a string ["2", "1", "", "", "", ...]
+        a string ["2", "1", nil, nil, nil, ...]
         b f64 [3.0, 0.0, 2.0, 1.0, 1.0, ...]
-        c string ["3", "0", "", "", "", ...]
+        c string ["3", "0", nil, nil, nil, ...]
       >
 
       iex> df = Explorer.DataFrame.new(a: ["d", nil, "f"], b: [1, 2, 3], c: ["a", "b", "c"])
@@ -5638,9 +5638,9 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[9 x 4]
         describe string ["count", "nil_count", "mean", "std", "min", ...]
-        a string ["2", "1", "", "", "", ...]
+        a string ["2", "1", nil, nil, nil, ...]
         b f64 [3.0, 0.0, 2.0, 1.0, 1.0, ...]
-        c string ["3", "0", "", "", "", ...]
+        c string ["3", "0", nil, nil, nil, ...]
       >
   """
   @doc type: :single
@@ -5663,7 +5663,7 @@ defmodule Explorer.DataFrame do
         Enum.flat_map(stat_cols, fn c ->
           dt = x[c].dtype
           numeric? = dt in numeric_types
-          min_max? = numeric? || dt in datetime_types || dt in duration_types
+          min_max? = numeric? or dt in datetime_types or dt in duration_types
 
           [
             {"count:#{c}", Series.count(x[c])},
@@ -5692,7 +5692,7 @@ defmodule Explorer.DataFrame do
         if df.dtypes[col] in numeric_types do
           {col, Enum.map(metrics, &metrics_row[&1])}
         else
-          {col, Enum.map(metrics, &"#{metrics_row[&1]}")}
+          {col, Enum.map(metrics, &(metrics_row[&1] && "#{metrics_row[&1]}"))}
         end
       end)
 
