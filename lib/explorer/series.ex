@@ -121,7 +121,8 @@ defmodule Explorer.Series do
   @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}, {:struct, :any}]
 
   @type dtype ::
-          :binary
+          :null
+          | :binary
           | :boolean
           | :category
           | :date
