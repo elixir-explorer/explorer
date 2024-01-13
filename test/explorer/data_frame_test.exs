@@ -3334,12 +3334,14 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.describe(df)
 
       assert df1.dtypes == %{
+               "a" => :string,
                "b" => {:f, 64},
                "c" => {:f, 64},
                "describe" => :string
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["2", "1", "", "", "", "", "", "", ""],
                b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
                c: [3.0, 0.0, 20.0, 10.0, 10.0, 20.0, 20.0, 30.0, 30.0],
                describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"]
@@ -3374,6 +3376,56 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{
                b: [3.0, 0.0, 2.0, 1.0, 1.0, 3.0],
                describe: ["count", "nil_count", "mean", "std", "min", "max"]
+             }
+    end
+
+    test "describe columns - max, min columns" do
+      df =
+        DF.new(
+          number: [1, 2, nil, 3],
+          list: [[], [], [], []],
+          null: [nil, nil, nil, nil],
+          string: ["a", "b", "c", "nil"],
+          date: [~D[2021-01-01], ~D[1999-12-31], nil, ~D[2023-01-01]],
+          time: [~T[00:02:03.000212], ~T[00:05:04.000456], ~T[00:07:04.000776], nil],
+          datetime: [
+            nil,
+            ~N[2021-01-01 00:00:00],
+            ~N[1999-12-31 00:00:00],
+            ~N[2023-12-13 17:38:00]
+          ],
+          duration: [
+            nil,
+            ~N[2020-01-01 00:00:00],
+            ~N[1999-11-30 00:00:00],
+            ~N[2023-12-12 17:38:00]
+          ]
+        )
+
+      df = DF.mutate(df, duration: datetime - duration)
+      describe_df = DF.describe(df)
+
+      assert df.dtypes == %{
+               "date" => :date,
+               "datetime" => {:datetime, :microsecond},
+               "duration" => {:duration, :microsecond},
+               "list" => {:list, :null},
+               "null" => :null,
+               "number" => {:s, 64},
+               "string" => :string,
+               "time" => :time
+             }
+
+      assert describe_df.dtypes == %{
+               "date" => :string,
+               "datetime" => :string,
+               "describe" => :string,
+               "duration" => :string,
+               "list" => :string,
+               "null" => :string,
+               "number" => {:f, 64},
+               "string" => :string,
+               "time" => :string
              }
     end
   end
