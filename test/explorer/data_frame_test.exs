@@ -663,6 +663,16 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "mutate/2" do
+    test "with nil" do
+      df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      assert DF.mutate(df, c: nil) |> inspect() == ~s(#Explorer.DataFrame<
+  Polars[3 x 3]
+  strs string ["a", "b", "c"]
+  nums s64 [1, 2, 3]
+  c null [nil, nil, nil]
+>)
+    end
+
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
@@ -3527,6 +3537,14 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "summarise/2" do
+    test "summarise with nil" do
+      df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      assert DF.summarise(df, c: nil) |> inspect() == ~s(#Explorer.DataFrame<
+  Polars[1 x 1]
+  c null [nil]
+>)
+    end
+
     test "one column with aggregation and without groups", %{df: df} do
       df1 =
         DF.summarise(df,
