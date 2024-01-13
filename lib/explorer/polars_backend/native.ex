@@ -200,6 +200,7 @@ defmodule Explorer.PolarsBackend.Native do
 
   # Then we generate for some specific expressions
   def expr_alias(_ex_expr, _alias_name), do: err()
+  def expr_nil(), do: err()
   def expr_atom(_atom), do: err()
   def expr_boolean(_bool), do: err()
   def expr_date(_date), do: err()

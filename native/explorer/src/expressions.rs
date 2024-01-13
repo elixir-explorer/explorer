@@ -25,6 +25,12 @@ pub fn ex_expr_to_exprs(ex_exprs: Vec<ExExpr>) -> Vec<Expr> {
 }
 
 #[rustler::nif]
+pub fn expr_nil() -> ExExpr {
+    let expr = Expr::Literal(LiteralValue::Null);
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
 pub fn expr_integer(number: i64) -> ExExpr {
     let expr = number.lit();
     ExExpr::new(expr)

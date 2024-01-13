@@ -140,6 +140,7 @@ rustler::init!(
         df_unnest,
         df_width,
         // expressions
+        expr_nil,
         expr_atom,
         expr_boolean,
         expr_cast,

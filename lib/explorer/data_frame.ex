@@ -2810,6 +2810,10 @@ defmodule Explorer.DataFrame do
                     "consider using `Explorer.Series.from_list/2` to create a `Series`, " <>
                     "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
 
+          nil ->
+            lazy_s = LazySeries.new(:lazy, [nil], :null)
+            Explorer.Backend.Series.new(lazy_s, :null)
+
           number when is_number(number) ->
             dtype = if is_integer(number), do: {:s, 64}, else: {:f, 64}
             lazy_s = LazySeries.new(:lazy, [number], dtype)
@@ -5361,9 +5365,22 @@ defmodule Explorer.DataFrame do
 
     result = fun.(ldf)
 
+    result =
+      Enum.map(result, fn
+        {key, nil} ->
+          lazy_s = LazySeries.new(:lazy, [nil], :null)
+          {key, Explorer.Backend.Series.new(lazy_s, :null)}
+
+        x ->
+          x
+      end)
+
     column_pairs =
       to_column_pairs(df, result, fn value ->
         case value do
+          %Series{data: %LazySeries{op: :lazy, args: [nil], dtype: :null}} ->
+            value
+
           %Series{data: %LazySeries{aggregation: true}} ->
             value
 
