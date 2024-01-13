@@ -663,6 +663,19 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "mutate/2" do
+    test "with nil" do
+      df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      df1 = DF.mutate(df, c: nil)
+      assert df1.names == ["strs", "nums", "c"]
+      assert df1.dtypes == %{"strs" => :string, "nums" => {:s, 64}, "c" => :null}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               strs: ["a", "b", "c"],
+               nums: [1, 2, 3],
+               c: [nil, nil, nil]
+             }
+    end
+
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
@@ -3527,6 +3540,13 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "summarise/2" do
+    test "summarise with nil" do
+      df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      df1 = DF.summarise(df, c: nil)
+      assert DF.dtypes(df1) == %{"c" => :null}
+      assert DF.to_columns(df1, atom_keys: true) == %{c: [nil]}
+    end
+
     test "one column with aggregation and without groups", %{df: df} do
       df1 =
         DF.summarise(df,
