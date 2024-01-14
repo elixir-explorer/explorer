@@ -1231,65 +1231,55 @@ pub fn s_n_distinct(s: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    match (s.dtype().is_integer(), other.dtype().is_integer()) {
-        (true, true) => {
-            let cast1 = s.cast(&DataType::Int64)?;
-            let mut iter1 = cast1.i64()?.into_iter();
+pub fn s_pow(
+    base_exseries: ExSeries,
+    base_exdtype: ExSeriesDtype,
+    exponent_exseries: ExSeries,
+    exponent_exdtype: ExSeriesDtype,
+) -> Result<ExSeries, ExplorerError> {
+    let df_with_result = if base_exseries.len() == exponent_exseries.len() {
+        df!(
+            "base" => base_exseries.clone_inner().into_series(),
+            "exponent" => exponent_exseries.clone_inner().into_series()
+        )?
+        .lazy()
+        .with_column((col("base").pow(col("exponent"))).alias("result"))
+    } else if base_exseries.len() == 1 {
+        let base = first(base_exseries, base_exdtype);
 
-            match other.strict_cast(&DataType::UInt32) {
-                Ok(casted) => {
-                    let mut iter2 = casted.u32()?.into_iter();
+        df!( "exponent" => exponent_exseries.clone_inner().into_series() )?
+            .lazy()
+            .with_column((base.lit().pow(col("exponent"))).alias("result"))
+    } else if exponent_exseries.len() == 1 {
+        let exponent = first(exponent_exseries, exponent_exdtype);
 
-                    let res = if s.len() == 1 {
-                        let v1 = iter1.next().unwrap();
-                        iter2
-                            .map(|v2| v1.and_then(|left| v2.map(|right| left.pow(right))))
-                            .collect()
-                    } else if other.len() == 1 {
-                        let v2 = iter2.next().unwrap();
-                        iter1
-                            .map(|v1| v1.and_then(|left| v2.map(|right| left.pow(right))))
-                            .collect()
-                    } else {
-                        iter1
-                            .zip(iter2)
-                            .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.pow(right))))
-                            .collect()
-                    };
+        df!( "base" => base_exseries.clone_inner().into_series() )?
+            .lazy()
+            .with_column((col("base").pow(exponent.lit())).alias("result"))
+    } else {
+        panic!("adsf")
+    };
 
-                    Ok(ExSeries::new(res))
-                }
-                Err(_) => Err(ExplorerError::Other(
-                    "negative exponent with an integer base".into(),
-                )),
-            }
-        }
-        (_, _) => {
-            let cast1 = s.cast(&DataType::Float64)?;
-            let cast2 = other.cast(&DataType::Float64)?;
-            let mut iter1 = cast1.f64()?.into_iter();
-            let mut iter2 = cast2.f64()?.into_iter();
+    let result = df_with_result.collect()?.column("result")?.clone();
 
-            let res = if s.len() == 1 {
-                let v1 = iter1.next().unwrap();
-                iter2
-                    .map(|v2| v1.and_then(|left| v2.map(|right| left.powf(right))))
-                    .collect()
-            } else if other.len() == 1 {
-                let v2 = iter2.next().unwrap();
-                iter1
-                    .map(|v1| v1.and_then(|left| v2.map(|right| left.powf(right))))
-                    .collect()
-            } else {
-                iter1
-                    .zip(iter2)
-                    .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.powf(right))))
-                    .collect()
-            };
+    Ok(ExSeries::new(result))
+}
 
-            Ok(ExSeries::new(res))
-        }
+fn first(exseries: ExSeries, exdtype: ExSeriesDtype) -> LiteralValue {
+    let dtype = DataType::try_from(&exdtype).unwrap();
+
+    match dtype {
+        DataType::UInt8 => LiteralValue::UInt8(exseries.u8().unwrap().get(0).unwrap()),
+        DataType::UInt16 => LiteralValue::UInt16(exseries.u16().unwrap().get(0).unwrap()),
+        DataType::UInt32 => LiteralValue::UInt32(exseries.u32().unwrap().get(0).unwrap()),
+        DataType::UInt64 => LiteralValue::UInt64(exseries.u64().unwrap().get(0).unwrap()),
+        DataType::Int8 => LiteralValue::Int8(exseries.i8().unwrap().get(0).unwrap()),
+        DataType::Int16 => LiteralValue::Int16(exseries.i16().unwrap().get(0).unwrap()),
+        DataType::Int32 => LiteralValue::Int32(exseries.i32().unwrap().get(0).unwrap()),
+        DataType::Int64 => LiteralValue::Int64(exseries.i64().unwrap().get(0).unwrap()),
+        DataType::Float32 => LiteralValue::Float32(exseries.f32().unwrap().get(0).unwrap()),
+        DataType::Float64 => LiteralValue::Float64(exseries.f64().unwrap().get(0).unwrap()),
+        _ => panic!("asdf"),
     }
 }
 

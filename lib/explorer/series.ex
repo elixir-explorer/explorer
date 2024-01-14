@@ -3428,7 +3428,21 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def pow(left, right), do: basic_numeric_operation(:pow, left, right)
+  def pow(left, right) do
+    # TODO: revert back to `basic_numeric_operation(:pow, left, right)` if/when we start inferring
+    # unsigned integer types from lists.
+    if K.or(match?(%Series{}, left), match?(%Series{}, right)) do
+      apply_series_list(:pow, [cast_for_pow(left), cast_for_pow(right)])
+    else
+      raise ArgumentError, "at least one input must be a series"
+    end
+  end
+
+  @non_finite [:nan, :infinity, :neg_infinity]
+  defp cast_for_pow(%Series{} = series), do: series
+  defp cast_for_pow(u) when K.and(is_integer(u), u >= 0), do: from_list([u], dtype: {:u, 64})
+  defp cast_for_pow(s) when K.and(is_integer(s), s < 0), do: from_list([s], dtype: {:s, 64})
+  defp cast_for_pow(f) when K.or(is_float(f), K.in(f, @non_finite)), do: from_list([f])
 
   @doc """
   Calculates the natural logarithm.

@@ -373,7 +373,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_peak_max(_s), do: err()
   def s_peak_min(_s), do: err()
   def s_select(_pred, _on_true, _on_false), do: err()
-  def s_pow(_s, _other), do: err()
+  def s_pow(_s, _s_dtype, _other, _other_dtype), do: err()
   def s_log_natural(_s_argument), do: err()
   def s_log(_s_argument, _base_as_float), do: err()
   def s_quantile(_s, _quantile, _strategy), do: err()
