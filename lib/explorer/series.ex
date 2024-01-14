@@ -3429,8 +3429,6 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
   def pow(left, right) do
-    # TODO: revert back to `basic_numeric_operation(:pow, left, right)` if/when we start inferring
-    # unsigned integer types from lists.
     if K.or(match?(%Series{}, left), match?(%Series{}, right)) do
       apply_series_list(:pow, [cast_for_pow(left), cast_for_pow(right)])
     else
