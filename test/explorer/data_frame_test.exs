@@ -299,7 +299,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
       message =
-        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:s, 64}"
+        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:f, 64}"
 
       assert_raise ArgumentError, message, fn ->
         DF.filter_with(df, fn ldf ->
@@ -819,7 +819,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64},
                "calc8" => {:f, 64},
