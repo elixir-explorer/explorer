@@ -1257,7 +1257,7 @@ pub fn s_pow(
             .lazy()
             .with_column((col("base").pow(exponent.lit())).alias("result"))
     } else {
-        panic!("adsf")
+        panic!("both series must have the same length or one must have length 1")
     };
 
     let result = df_with_result.collect()?.column("result")?.clone();
@@ -1279,7 +1279,7 @@ fn first(exseries: ExSeries, exdtype: ExSeriesDtype) -> LiteralValue {
         DataType::Int64 => LiteralValue::Int64(exseries.i64().unwrap().get(0).unwrap()),
         DataType::Float32 => LiteralValue::Float32(exseries.f32().unwrap().get(0).unwrap()),
         DataType::Float64 => LiteralValue::Float64(exseries.f64().unwrap().get(0).unwrap()),
-        _ => panic!("asdf"),
+        _ => panic!("unsupported dtype for pow: must be integer or float subtype"),
     }
 }
 
