@@ -861,8 +861,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               # TODO: This should be float after #374 is resolved
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc5_1" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
