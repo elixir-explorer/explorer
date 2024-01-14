@@ -4206,6 +4206,77 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Transpose a DataFrame.
+
+  > #### Warning {: .warning}
+  >
+  > This is an expensive operation since data is stored in a columnar format.
+
+  ## Options
+
+    * `:include_header` - if `true` column names are added as first column or header column. (default: `false`)
+    * `:header_name` - when `include_header` is `true`, sets name of the header column. (default: `column`)
+    * `:column_names` - names for non header columns. Length of column_names should match the row count of data frame. (default: `nil`)
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: ["d", nil], b: [1, 2], c: ["a", "b"])
+      iex> Explorer.DataFrame.transpose(df)
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        column_0 string ["d", "1", "a"]
+        column_1 string [nil, "2", "b"]
+      >
+
+      iex> df = Explorer.DataFrame.new(a: ["d", nil], b: [1, 2], c: ["a", "b"])
+      iex> Explorer.DataFrame.transpose(df, column_names: ["x", "y"])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        x string ["d", "1", "a"]
+        y string [nil, "2", "b"]
+      >
+
+      iex> df = Explorer.DataFrame.new(a: ["d", nil], b: [1, 2], c: ["a", "b"])
+      iex> Explorer.DataFrame.transpose(df, include_header: true, header_name: "name")
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        name string ["a", "b", "c"]
+        column_0 string ["d", "1", "a"]
+        column_1 string [nil, "2", "b"]
+      >
+  """
+  @doc type: :single
+  @spec transpose(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def transpose(df, opts \\ []) do
+    opts =
+      Keyword.validate!(opts, include_header: false, header_name: "column", column_names: nil)
+
+    include_header = opts[:include_header]
+    header_name = opts[:header_name]
+    keep_names_as = if include_header, do: to_column_name(header_name)
+    column_names = opts[:column_names] && Enum.map(opts[:column_names], &to_column_name/1)
+
+    names =
+      if column_names do
+        column_names
+      else
+        n = n_rows(df) - 1
+        for i <- 0..n, do: "column_#{i}"
+      end
+
+    names = if include_header, do: [header_name | names], else: names
+
+    out_df = %{
+      df
+      | names: names,
+        dtypes: Enum.map(names, fn n -> {n, :string} end) |> Enum.into(%{})
+    }
+
+    args = [out_df, keep_names_as, column_names]
+    Shared.apply_impl(df, :transpose, args)
+  end
+
+  @doc """
   Pivot data from wide to long.
 
   `pivot_longer/3` "lengthens" data, increasing the number of rows and

@@ -9,6 +9,7 @@ use std::result::Result;
 use crate::datatypes::ExSeriesDtype;
 use crate::ex_expr_to_exprs;
 use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
+use either::Either;
 use smartstring::alias::String as SmartString;
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
@@ -20,6 +21,17 @@ fn to_string_names(names: Vec<&str>) -> Vec<String> {
 
 pub fn to_smart_strings(slices: Vec<&str>) -> Vec<SmartString> {
     slices.into_iter().map(|s| s.into()).collect()
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_transpose(
+    df: ExDataFrame,
+    keep_names_as: Option<&str>,
+    new_col_names: Option<Vec<String>>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let column_names = new_col_names.map(Either::Right);
+    let new_df = df.clone_inner().transpose(keep_names_as, column_names)?;
+    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

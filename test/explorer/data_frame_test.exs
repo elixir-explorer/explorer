@@ -2722,6 +2722,83 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "transpose/2" do
+    test "without options" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      dft = DF.transpose(df)
+      assert DF.shape(df) == {3, 2}
+      assert DF.shape(dft) == {2, 3}
+      assert df.dtypes == %{"a" => {:s, 64}, "b" => :string}
+      assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "column_2" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "column_0" => ["1", "a"],
+               "column_1" => ["2", "b"],
+               "column_2" => ["3", "c"]
+             }
+    end
+
+    test "header column without name " do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      dft = DF.transpose(df, include_header: true)
+      assert DF.shape(df) == {2, 3}
+      assert DF.shape(dft) == {3, 3}
+      assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
+      assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "column" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "column" => ["a", "b", "c"],
+               "column_0" => ["32.0", "1", "a"],
+               "column_1" => ["33.0", "2", "b"]
+             }
+    end
+
+    test "header column with name " do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      dft = DF.transpose(df, include_header: true, header_name: "name")
+      assert DF.shape(df) == {2, 3}
+      assert DF.shape(dft) == {3, 3}
+      assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
+      assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "name" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "name" => ["a", "b", "c"],
+               "column_0" => ["32.0", "1", "a"],
+               "column_1" => ["33.0", "2", "b"]
+             }
+    end
+
+    test "with column names" do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      dft = DF.transpose(df, include_header: true, header_name: "name", column_names: ["x", "y"])
+      assert DF.shape(df) == {2, 3}
+      assert DF.shape(dft) == {3, 3}
+      assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
+      assert dft.dtypes == %{"name" => :string, "x" => :string, "y" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "name" => ["a", "b", "c"],
+               "x" => ["32.0", "1", "a"],
+               "y" => ["33.0", "2", "b"]
+             }
+    end
+
+    test "with column names < length of rows raises" do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      assert DF.shape(df) == {2, 3}
+
+      assert_raise RuntimeError,
+                   "Polars Error: lengths don't match: Length of new column names must be the same as the row count",
+                   fn ->
+                     DF.transpose(df,
+                       include_header: true,
+                       header_name: "name",
+                       column_names: ["x"]
+                     )
+                   end
+    end
+  end
+
   describe "pivot_wider/4" do
     test "with a single id" do
       df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
