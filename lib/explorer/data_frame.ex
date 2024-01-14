@@ -4214,9 +4214,8 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:include_header` - if `true` column names are added as first column or header column. (default: `false`)
-    * `:header_name` - when `include_header` is `true`, sets name of the header column. (default: `column`)
-    * `:column_names` - names for non header columns. Length of column_names should match the row count of data frame. (default: `nil`)
+    * `:header` - When a string is passed, name of the header column is set to the value. When `header` is `true`, name is set to `column` (default: `false`)
+    * `:columns` - names for non header columns. Length of column_names should match the row count of data frame. (default: `nil`)
 
   ## Examples
 
@@ -4229,7 +4228,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.DataFrame.new(a: ["d", nil], b: [1, 2], c: ["a", "b"])
-      iex> Explorer.DataFrame.transpose(df, column_names: ["x", "y"])
+      iex> Explorer.DataFrame.transpose(df, columns: ["x", "y"])
       #Explorer.DataFrame<
         Polars[3 x 2]
         x string ["d", "1", "a"]
@@ -4237,7 +4236,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.DataFrame.new(a: ["d", nil], b: [1, 2], c: ["a", "b"])
-      iex> Explorer.DataFrame.transpose(df, include_header: true, header_name: "name")
+      iex> Explorer.DataFrame.transpose(df, header: "name")
       #Explorer.DataFrame<
         Polars[3 x 3]
         name string ["a", "b", "c"]
@@ -4249,22 +4248,28 @@ defmodule Explorer.DataFrame do
   @spec transpose(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
   def transpose(df, opts \\ []) do
     opts =
-      Keyword.validate!(opts, include_header: false, header_name: "column", column_names: nil)
+      Keyword.validate!(opts, header: false, columns: nil)
 
-    include_header = opts[:include_header]
-    header_name = opts[:header_name]
-    keep_names_as = if include_header, do: to_column_name(header_name)
-    column_names = opts[:column_names] && Enum.map(opts[:column_names], &to_column_name/1)
+    header =
+      case opts[:header] do
+        false -> false
+        nil -> nil
+        true -> "column"
+        header -> to_column_name(header)
+      end
+
+    keep_names_as = if header, do: to_column_name(header)
+    columns = opts[:columns] && Enum.map(opts[:columns], &to_column_name/1)
 
     names =
-      if column_names do
-        column_names
+      if columns do
+        columns
       else
         n = n_rows(df) - 1
         for i <- 0..n, do: "column_#{i}"
       end
 
-    names = if include_header, do: [header_name | names], else: names
+    names = if header, do: [header | names], else: names
 
     out_df = %{
       df
@@ -4272,7 +4277,7 @@ defmodule Explorer.DataFrame do
         dtypes: Enum.map(names, fn n -> {n, :string} end) |> Enum.into(%{})
     }
 
-    args = [out_df, keep_names_as, column_names]
+    args = [out_df, keep_names_as, columns]
     Shared.apply_impl(df, :transpose, args)
   end
 

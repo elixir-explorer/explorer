@@ -2740,7 +2740,7 @@ defmodule Explorer.DataFrameTest do
 
     test "header column without name " do
       df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
-      dft = DF.transpose(df, include_header: true)
+      dft = DF.transpose(df, header: true)
       assert DF.shape(df) == {2, 3}
       assert DF.shape(dft) == {3, 3}
       assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
@@ -2755,7 +2755,7 @@ defmodule Explorer.DataFrameTest do
 
     test "header column with name " do
       df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
-      dft = DF.transpose(df, include_header: true, header_name: "name")
+      dft = DF.transpose(df, header: "name")
       assert DF.shape(df) == {2, 3}
       assert DF.shape(dft) == {3, 3}
       assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
@@ -2770,7 +2770,7 @@ defmodule Explorer.DataFrameTest do
 
     test "with column names" do
       df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
-      dft = DF.transpose(df, include_header: true, header_name: "name", column_names: ["x", "y"])
+      dft = DF.transpose(df, header: "name", columns: ["x", "y"])
       assert DF.shape(df) == {2, 3}
       assert DF.shape(dft) == {3, 3}
       assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
@@ -2791,9 +2791,8 @@ defmodule Explorer.DataFrameTest do
                    "Polars Error: lengths don't match: Length of new column names must be the same as the row count",
                    fn ->
                      DF.transpose(df,
-                       include_header: true,
-                       header_name: "name",
-                       column_names: ["x"]
+                       header: "name",
+                       columns: ["x"]
                      )
                    end
     end
