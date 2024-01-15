@@ -4253,7 +4253,6 @@ defmodule Explorer.DataFrame do
     header =
       case opts[:header] do
         false -> false
-        nil -> nil
         true -> "column"
         header -> to_column_name(header)
       end
