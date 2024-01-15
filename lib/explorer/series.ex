@@ -3428,19 +3428,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def pow(left, right) do
-    if K.or(match?(%Series{}, left), match?(%Series{}, right)) do
-      apply_series_list(:pow, [cast_for_pow(left), cast_for_pow(right)])
-    else
-      raise ArgumentError, "at least one input must be a series"
-    end
-  end
-
-  @non_finite [:nan, :infinity, :neg_infinity]
-  defp cast_for_pow(%Series{} = series), do: series
-  defp cast_for_pow(u) when K.and(is_integer(u), u >= 0), do: from_list([u], dtype: {:u, 64})
-  defp cast_for_pow(s) when K.and(is_integer(s), s < 0), do: from_list([s], dtype: {:s, 64})
-  defp cast_for_pow(f) when K.or(is_float(f), K.in(f, @non_finite)), do: from_list([f])
+  def pow(left, right), do: basic_numeric_operation(:pow, left, right)
 
   @doc """
   Calculates the natural logarithm.
@@ -3763,6 +3751,8 @@ defmodule Explorer.Series do
 
   def atan(%Series{dtype: dtype}),
     do: dtype_error("atan/1", dtype, [{:f, 32}, {:f, 64}])
+
+  defp basic_numeric_operation(operation, left, right, args \\ [])
 
   defp basic_numeric_operation(operation, %Series{} = left, right, args) when is_numeric(right),
     do: basic_numeric_operation(operation, left, from_same_value(left, right), args)

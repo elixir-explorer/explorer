@@ -1231,51 +1231,6 @@ pub fn s_n_distinct(s: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let df_with_result = match (s.len(), other.len()) {
-        (x, x1) if x == x1 => df!(
-            "base" => s.clone_inner().into_series(),
-            "exponent" => other.clone_inner().into_series()
-        )?
-        .lazy()
-        .with_column((col("base").pow(col("exponent"))).alias("result")),
-        (1, _) => {
-            let base = first(s);
-            df!( "exponent" => other.clone_inner().into_series() )?
-                .lazy()
-                .with_column((base.lit().pow(col("exponent"))).alias("result"))
-        }
-        (_, 1) => {
-            let exponent = first(other);
-            df!( "base" => s.clone_inner().into_series() )?
-                .lazy()
-                .with_column((col("base").pow(exponent.lit())).alias("result"))
-        }
-        _ => panic!("both series must have the same length or one must have length 1"),
-    };
-
-    let result = df_with_result.collect()?.column("result")?.clone();
-
-    Ok(ExSeries::new(result))
-}
-
-fn first(exseries: ExSeries) -> LiteralValue {
-    match exseries.dtype() {
-        DataType::UInt8 => LiteralValue::UInt8(exseries.u8().unwrap().get(0).unwrap()),
-        DataType::UInt16 => LiteralValue::UInt16(exseries.u16().unwrap().get(0).unwrap()),
-        DataType::UInt32 => LiteralValue::UInt32(exseries.u32().unwrap().get(0).unwrap()),
-        DataType::UInt64 => LiteralValue::UInt64(exseries.u64().unwrap().get(0).unwrap()),
-        DataType::Int8 => LiteralValue::Int8(exseries.i8().unwrap().get(0).unwrap()),
-        DataType::Int16 => LiteralValue::Int16(exseries.i16().unwrap().get(0).unwrap()),
-        DataType::Int32 => LiteralValue::Int32(exseries.i32().unwrap().get(0).unwrap()),
-        DataType::Int64 => LiteralValue::Int64(exseries.i64().unwrap().get(0).unwrap()),
-        DataType::Float32 => LiteralValue::Float32(exseries.f32().unwrap().get(0).unwrap()),
-        DataType::Float64 => LiteralValue::Float64(exseries.f64().unwrap().get(0).unwrap()),
-        _ => panic!("unsupported dtype for pow: must be integer or float subtype"),
-    }
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cast(s: ExSeries, to_type: ExSeriesDtype) -> Result<ExSeries, ExplorerError> {
     let dtype = DataType::try_from(&to_type)?;
     Ok(ExSeries::new(s.cast(&dtype)?))

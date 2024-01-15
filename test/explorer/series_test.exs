@@ -2185,7 +2185,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2)
 
-      assert result.dtype == {:s, 64}
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1, 4, 9]
     end
 

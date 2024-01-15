@@ -426,7 +426,6 @@ rustler::init!(
         s_peak_max,
         s_peak_min,
         s_select,
-        s_pow,
         s_quantile,
         s_quotient,
         s_rank,
