@@ -1836,9 +1836,29 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "multiply/2" do
-    test "multiplying two series together" do
+    test "multiplying two signed integer series together" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([4, 5, 6])
+
+      s3 = Series.multiply(s1, s2)
+
+      assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [4, 10, 18]
+    end
+
+    test "multiplying two unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.multiply(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [4, 10, 18]
+    end
+
+    test "multiplying signed and unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
 
       s3 = Series.multiply(s1, s2)
 

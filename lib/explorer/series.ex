@@ -3175,8 +3175,14 @@ defmodule Explorer.Series do
   defp cast_to_add({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
     do: {int_type, max(left, right)}
 
-  defp cast_to_add({:s, _}, {:u, _}), do: {:s, 64}
-  defp cast_to_add({:u, _}, {:s, _}), do: {:s, 64}
+  defp cast_to_add({:s, s_size}, {:u, u_size}) when u_size >= s_size,
+    do: {:s, min(64, u_size * 2)}
+
+  defp cast_to_add({:u, u_size}, {:s, s_size}) when u_size >= s_size,
+    do: {:s, min(64, u_size * 2)}
+
+  defp cast_to_add({:s, s_size}, {:u, _}), do: {:s, s_size}
+  defp cast_to_add({:u, _}, {:s, s_size}), do: {:s, s_size}
   defp cast_to_add({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_add({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_add({:f, _}, {:f, _}), do: {:f, 64}
@@ -3246,8 +3252,15 @@ defmodule Explorer.Series do
   defp cast_to_subtract({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
     do: {:s, min(64, 2 * max(left, right))}
 
-  defp cast_to_subtract({:s, _}, {:u, _}), do: {:s, 64}
-  defp cast_to_subtract({:u, _}, {:s, _}), do: {:s, 64}
+  defp cast_to_subtract({:s, s_size}, {:u, u_size}) when u_size >= s_size,
+    do: {:s, min(64, u_size * 2)}
+
+  defp cast_to_subtract({:u, u_size}, {:s, s_size}) when u_size >= s_size,
+    do: {:s, min(64, u_size * 2)}
+
+  defp cast_to_subtract({:s, s_size}, {:u, _}), do: {:s, s_size}
+  defp cast_to_subtract({:u, _}, {:s, s_size}), do: {:s, s_size}
+
   defp cast_to_subtract({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_subtract({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_subtract({:f, _}, {:f, _}), do: {:f, 64}
@@ -3305,11 +3318,22 @@ defmodule Explorer.Series do
     end
   end
 
-  # TODO: fix the logic for new dtypes
-  defp cast_to_multiply({:s, left}, {:s, right}), do: {:s, max(left, right)}
-  defp cast_to_multiply({:s, _}, {:f, _} = float), do: float
-  defp cast_to_multiply({:f, _} = float, {:s, _}), do: float
+  defp cast_to_multiply({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
+    do: {int_type, max(left, right)}
+
+  defp cast_to_multiply({:s, s_size}, {:u, u_size}) when u_size >= s_size,
+    do: {:s, min(64, u_size * 2)}
+
+  defp cast_to_multiply({:u, u_size}, {:s, s_size}) when u_size >= s_size,
+    do: {:s, min(64, u_size * 2)}
+
+  defp cast_to_multiply({:s, s_size}, {:u, _}), do: {:s, s_size}
+  defp cast_to_multiply({:u, _}, {:s, s_size}), do: {:s, s_size}
+
+  defp cast_to_multiply({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
+  defp cast_to_multiply({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_multiply({:f, _}, {:f, _}), do: {:f, 64}
+
   defp cast_to_multiply({:s, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_multiply({:f, _}, {:duration, p}), do: {:duration, p}
