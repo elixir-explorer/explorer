@@ -2787,8 +2787,8 @@ defmodule Explorer.DataFrameTest do
       df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
       assert DF.shape(df) == {2, 3}
 
-      assert_raise RuntimeError,
-                   "Polars Error: lengths don't match: Length of new column names must be the same as the row count",
+      assert_raise ArgumentError,
+                   ":columns - length of column names (1) must match the row count (2)",
                    fn ->
                      DF.transpose(df,
                        header: "name",
