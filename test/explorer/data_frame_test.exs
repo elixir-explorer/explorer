@@ -2788,7 +2788,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.shape(df) == {2, 3}
 
       assert_raise ArgumentError,
-                   ":columns - length of column names (1) must match the row count (2)",
+                   "invalid :columns option, length of column names (1) must match the row count (2)",
                    fn ->
                      DF.transpose(df,
                        header: "name",

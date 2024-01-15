@@ -4252,12 +4252,11 @@ defmodule Explorer.DataFrame do
 
     header =
       case opts[:header] do
-        false -> false
+        false -> nil
         true -> "column"
         header -> to_column_name(header)
       end
 
-    keep_names_as = if header, do: to_column_name(header)
     columns = opts[:columns] && Enum.map(opts[:columns], &to_column_name/1)
 
     df_length = n_rows(df)
@@ -4272,7 +4271,7 @@ defmodule Explorer.DataFrame do
 
         true ->
           raise ArgumentError,
-                ":columns - length of column names (#{length(columns)}) must match the row count (#{df_length})"
+                "invalid :columns option, length of column names (#{length(columns)}) must match the row count (#{df_length})"
       end
 
     names = if header, do: [header | names], else: names
@@ -4283,7 +4282,7 @@ defmodule Explorer.DataFrame do
         dtypes: Enum.map(names, fn n -> {n, :string} end) |> Enum.into(%{})
     }
 
-    args = [out_df, keep_names_as, columns]
+    args = [out_df, header, columns]
     Shared.apply_impl(df, :transpose, args)
   end
 
