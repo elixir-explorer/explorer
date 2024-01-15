@@ -799,7 +799,7 @@ defmodule Explorer.DataFrameTest do
           calc10: is_nan(divide(a * 0.0, 0.0))
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 4],
                calc1: [3, 4, 6],
                calc2: [-1, 0, 2],
@@ -843,7 +843,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(2, a)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 4],
                calc1: [3, 4, 6],
                calc2: [1, 0, -2],
