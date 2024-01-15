@@ -2048,6 +2048,18 @@ defmodule Explorer.SeriesTest do
       end
     end
 
+    test "pow(uint, sint) == float64" do
+      for u_base <- [8, 16, 32, 64], s_power <- [8, 16, 32, 64] do
+        base = Series.from_list([1, 2, 3], dtype: {:u, u_base})
+        power = Series.from_list([3, 2, 1], dtype: {:s, s_power})
+
+        result = Series.pow(base, power)
+
+        assert result.dtype == {:f, 64}
+        assert Series.to_list(result) == [1, 4, 3]
+      end
+    end
+
     test "pow(sint, uint) == sint" do
       for s_base <- [8, 16, 32, 64], u_power <- [8, 16, 32, 64] do
         base = Series.from_list([1, 2, 3], dtype: {:s, s_base})
@@ -2060,7 +2072,7 @@ defmodule Explorer.SeriesTest do
       end
     end
 
-    test "pow(sint, sint) == float" do
+    test "pow(sint, sint) == float64" do
       for s_base <- [8, 16, 32, 64], s_power <- [8, 16, 32, 64] do
         base = Series.from_list([1, 2, 3], dtype: {:s, s_base})
         power = Series.from_list([3, 2, 1], dtype: {:s, s_power})
