@@ -314,12 +314,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def pow(left, right),
-    do:
-      Shared.apply_series(matching_size!(left, right), :s_pow, [
-        left.dtype,
-        right.data,
-        right.dtype
-      ])
+    do: Shared.apply_series(matching_size!(left, right), :s_pow, [right.data])
 
   @impl true
   def log(%Series{} = argument), do: Shared.apply_series(argument, :s_log_natural, [])

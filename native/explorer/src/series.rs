@@ -1231,29 +1231,24 @@ pub fn s_n_distinct(s: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow(
-    base_exseries: ExSeries,
-    base_exdtype: ExSeriesDtype,
-    exponent_exseries: ExSeries,
-    exponent_exdtype: ExSeriesDtype,
-) -> Result<ExSeries, ExplorerError> {
-    let df_with_result = if base_exseries.len() == exponent_exseries.len() {
+pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let df_with_result = if s.len() == other.len() {
         df!(
-            "base" => base_exseries.clone_inner().into_series(),
-            "exponent" => exponent_exseries.clone_inner().into_series()
+            "base" => s.clone_inner().into_series(),
+            "exponent" => other.clone_inner().into_series()
         )?
         .lazy()
         .with_column((col("base").pow(col("exponent"))).alias("result"))
-    } else if base_exseries.len() == 1 {
-        let base = first(base_exseries, base_exdtype);
+    } else if s.len() == 1 {
+        let base = first(s);
 
-        df!( "exponent" => exponent_exseries.clone_inner().into_series() )?
+        df!( "exponent" => other.clone_inner().into_series() )?
             .lazy()
             .with_column((base.lit().pow(col("exponent"))).alias("result"))
-    } else if exponent_exseries.len() == 1 {
-        let exponent = first(exponent_exseries, exponent_exdtype);
+    } else if other.len() == 1 {
+        let exponent = first(other);
 
-        df!( "base" => base_exseries.clone_inner().into_series() )?
+        df!( "base" => s.clone_inner().into_series() )?
             .lazy()
             .with_column((col("base").pow(exponent.lit())).alias("result"))
     } else {
@@ -1265,8 +1260,8 @@ pub fn s_pow(
     Ok(ExSeries::new(result))
 }
 
-fn first(exseries: ExSeries, exdtype: ExSeriesDtype) -> LiteralValue {
-    let dtype = DataType::try_from(&exdtype).unwrap();
+fn first(exseries: ExSeries) -> LiteralValue {
+    let dtype = DataType::try_from(exseries.dtype().clone()).unwrap();
 
     match dtype {
         DataType::UInt8 => LiteralValue::UInt8(exseries.u8().unwrap().get(0).unwrap()),
