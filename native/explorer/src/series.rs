@@ -1232,27 +1232,26 @@ pub fn s_n_distinct(s: ExSeries) -> Result<usize, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let df_with_result = if s.len() == other.len() {
-        df!(
+    let df_with_result = match (s.len(), other.len()) {
+        (x, x1) if x == x1 => df!(
             "base" => s.clone_inner().into_series(),
             "exponent" => other.clone_inner().into_series()
         )?
         .lazy()
-        .with_column((col("base").pow(col("exponent"))).alias("result"))
-    } else if s.len() == 1 {
-        let base = first(s);
-
-        df!( "exponent" => other.clone_inner().into_series() )?
-            .lazy()
-            .with_column((base.lit().pow(col("exponent"))).alias("result"))
-    } else if other.len() == 1 {
-        let exponent = first(other);
-
-        df!( "base" => s.clone_inner().into_series() )?
-            .lazy()
-            .with_column((col("base").pow(exponent.lit())).alias("result"))
-    } else {
-        panic!("both series must have the same length or one must have length 1")
+        .with_column((col("base").pow(col("exponent"))).alias("result")),
+        (1, _) => {
+            let base = first(s);
+            df!( "exponent" => other.clone_inner().into_series() )?
+                .lazy()
+                .with_column((base.lit().pow(col("exponent"))).alias("result"))
+        }
+        (_, 1) => {
+            let exponent = first(other);
+            df!( "base" => s.clone_inner().into_series() )?
+                .lazy()
+                .with_column((col("base").pow(exponent.lit())).alias("result"))
+        }
+        _ => panic!("both series must have the same length or one must have length 1"),
     };
 
     let result = df_with_result.collect()?.column("result")?.clone();
