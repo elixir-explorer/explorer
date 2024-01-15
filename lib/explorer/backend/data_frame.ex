@@ -201,6 +201,12 @@ defmodule Explorer.Backend.DataFrame do
               names_to :: column_name(),
               values_to :: column_name()
             ) :: df
+  @callback transpose(
+              df,
+              out_df :: df(),
+              keep_names_as :: column_name(),
+              new_column_names :: [column_name()]
+            ) :: df
   @callback put(df, out_df :: df(), column_name(), series()) :: df
   @callback nil_count(df) :: df()
   @callback explode(df, out_df :: df(), columns :: [column_name()]) :: df()

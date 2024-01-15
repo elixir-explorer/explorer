@@ -125,6 +125,7 @@ rustler::init!(
         df_slice_by_series,
         df_summarise_with_exprs,
         df_tail,
+        df_transpose,
         df_to_csv,
         df_to_csv_cloud,
         df_to_dummies,

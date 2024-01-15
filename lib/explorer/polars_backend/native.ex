@@ -165,6 +165,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_slice_by_series(_df, _series, _groups), do: err()
   def df_summarise_with_exprs(_df, _groups_exprs, _aggs_pairs), do: err()
   def df_tail(_df, _length, _groups), do: err()
+  def df_transpose(_df, _keep_names_as, _new_col_names), do: err()
   def df_to_csv(_df, _filename, _has_headers, _delimiter), do: err()
   def df_to_csv_cloud(_df, _ex_entry, _has_headers, _delimiter), do: err()
   def df_to_dummies(_df, _columns), do: err()
