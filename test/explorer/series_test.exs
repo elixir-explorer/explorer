@@ -5584,4 +5584,54 @@ defmodule Explorer.SeriesTest do
                    end
     end
   end
+
+  describe "peaks/1" do
+    test "max with signed integers" do
+      s = Series.from_list([1, 2, 4, 1, 4])
+      peaks = Series.peaks(s)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, false, true, false, true]
+    end
+
+    test "max with unsigned integers" do
+      s = Series.from_list([1, 2, 4, 1, 4], dtype: :u32)
+      peaks = Series.peaks(s)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, false, true, false, true]
+    end
+
+    test "max with floats" do
+      s = Series.from_list([1.2, 2.3, 4.0, 4.1, 4.0])
+      peaks = Series.peaks(s)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, false, false, true, false]
+    end
+
+    test "min with signed integers" do
+      s = Series.from_list([5, 1, 2, 4, 1, 4])
+      peaks = Series.peaks(s, :min)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, true, false, false, true, false]
+    end
+
+    test "min with unsigned integers" do
+      s = Series.from_list([5, 1, 2, 4, 1, 4], dtype: :u32)
+      peaks = Series.peaks(s, :min)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, true, false, false, true, false]
+    end
+
+    test "min with floats" do
+      s = Series.from_list([1.2, 0.3, 4.0, 2.5, 4.0])
+      peaks = Series.peaks(s, :min)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, true, false, true, false]
+    end
+  end
 end

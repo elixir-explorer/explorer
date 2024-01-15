@@ -1223,8 +1223,19 @@ pub fn s_quantile<'a>(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_peak_max(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let ca = match s.dtype() {
+        DataType::Int8 => peak_max(s.i8()?),
+        DataType::Int16 => peak_max(s.i16()?),
+        DataType::Int32 => peak_max(s.i32()?),
         DataType::Int64 => peak_max(s.i64()?),
+
+        DataType::UInt8 => peak_max(s.u8()?),
+        DataType::UInt16 => peak_max(s.u16()?),
+        DataType::UInt32 => peak_max(s.u32()?),
+        DataType::UInt64 => peak_max(s.u64()?),
+
+        DataType::Float32 => peak_max(s.f32()?),
         DataType::Float64 => peak_max(s.f64()?),
+
         DataType::Date => peak_max(s.date()?),
         DataType::Time => peak_max(s.time()?),
         DataType::Datetime(_unit, None) => peak_max(s.datetime()?),
@@ -1238,8 +1249,19 @@ pub fn s_peak_max(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_peak_min(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let ca = match s.dtype() {
+        DataType::Int8 => peak_min(s.i8()?),
+        DataType::Int16 => peak_min(s.i16()?),
+        DataType::Int32 => peak_min(s.i32()?),
         DataType::Int64 => peak_min(s.i64()?),
+
+        DataType::UInt8 => peak_min(s.u8()?),
+        DataType::UInt16 => peak_min(s.u16()?),
+        DataType::UInt32 => peak_min(s.u32()?),
+        DataType::UInt64 => peak_min(s.u64()?),
+
+        DataType::Float32 => peak_min(s.f32()?),
         DataType::Float64 => peak_min(s.f64()?),
+
         DataType::Date => peak_min(s.date()?),
         DataType::Time => peak_min(s.time()?),
         DataType::Datetime(_unit, None) => peak_min(s.datetime()?),
