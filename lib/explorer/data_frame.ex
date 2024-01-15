@@ -4260,12 +4260,19 @@ defmodule Explorer.DataFrame do
     keep_names_as = if header, do: to_column_name(header)
     columns = opts[:columns] && Enum.map(opts[:columns], &to_column_name/1)
 
+    df_length = n_rows(df)
+
     names =
-      if columns do
-        columns
-      else
-        n = n_rows(df) - 1
-        for i <- 0..n, do: "column_#{i}"
+      cond do
+        columns == nil ->
+          for i <- 0..(df_length - 1), do: "column_#{i}"
+
+        length(columns) == df_length ->
+          columns
+
+        true ->
+          raise ArgumentError,
+                "lengths don't match: Length of new column names must be the same as the row count."
       end
 
     names = if header, do: [header | names], else: names
