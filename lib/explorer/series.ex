@@ -3402,7 +3402,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.pow(s, 3)
       #Explorer.Series<
         Polars[3]
-        s64 [8, 64, 216]
+        f64 [8.0, 64.0, 216.0]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
