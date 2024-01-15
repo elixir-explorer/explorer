@@ -1261,7 +1261,7 @@ pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 fn first(exseries: ExSeries) -> LiteralValue {
-    let dtype = DataType::try_from(exseries.dtype().clone()).unwrap();
+    let dtype = exseries.dtype().clone();
 
     match dtype {
         DataType::UInt8 => LiteralValue::UInt8(exseries.u8().unwrap().get(0).unwrap()),
