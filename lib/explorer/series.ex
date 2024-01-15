@@ -1337,6 +1337,10 @@ defmodule Explorer.Series do
 
   `predicate` must be a boolean series. `on_true` and `on_false` must be
   a series of the same size as `predicate` or a series of size 1.
+
+  It is possible to mix numeric series in the `on_true` and `on_false`,
+  and the resultant series will have the dtype of the greater side.
+  For example, `:u8` and `:s16` is going to result in `:s16` series.
   """
   @doc type: :element_wise
   @spec select(
