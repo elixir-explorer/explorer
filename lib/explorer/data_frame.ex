@@ -4272,7 +4272,7 @@ defmodule Explorer.DataFrame do
 
         true ->
           raise ArgumentError,
-                "length of :columns names #{length} must be the same as the row count (#{n_rows})"
+                ":columns - length of column names (#{length(columns)}) must match the row count (#{df_length})"
       end
 
     names = if header, do: [header | names], else: names
