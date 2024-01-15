@@ -3428,7 +3428,27 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def pow(left, right), do: basic_numeric_operation(:pow, left, right)
+  def pow(left, right) do
+    [left, right] = cast_for_arithmetic("pow/2", [left, right])
+
+    if out_dtype = cast_to_pow(dtype(left), dtype(right)) do
+      apply_series_list(:pow, [out_dtype, left, right])
+    else
+      dtype_mismatch_error("pow/2", left, right)
+    end
+  end
+
+  # TODO: ensure these types are correct.
+  defp cast_to_pow({:u, l}, {:u, r}), do: {:u, max(l, r)}
+  defp cast_to_pow({:u, _}, {:s, _}), do: {:f, 64}
+  defp cast_to_pow({:u, _}, {:f, f}), do: {:f, f}
+  defp cast_to_pow({:s, s}, {:u, u}), do: {:s, min(64, max(2 * u, s))}
+  defp cast_to_pow({:s, _}, {:s, _}), do: {:f, 64}
+  defp cast_to_pow({:s, _}, {:f, f}), do: {:f, f}
+  defp cast_to_pow({:f, f}, {:u, _}), do: {:f, f}
+  defp cast_to_pow({:f, f}, {:s, _}), do: {:f, f}
+  defp cast_to_pow({:f, f}, {:f, _}), do: {:f, f}
+  defp cast_to_pow(_, _), do: nil
 
   @doc """
   Calculates the natural logarithm.

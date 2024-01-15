@@ -313,7 +313,7 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(matching_size!(left, right), :s_remainder, [right.data])
 
   @impl true
-  def pow(left, right) do
+  def pow(out_dtype, left, right) do
     _ = matching_size!(left, right)
     left_lazy = Explorer.Backend.LazySeries.new(:column, ["base"], left.dtype)
     right_lazy = Explorer.Backend.LazySeries.new(:column, ["exponent"], right.dtype)
@@ -326,7 +326,7 @@ defmodule Explorer.PolarsBackend.Series do
       end
 
     df = Explorer.PolarsBackend.DataFrame.from_series(df_args)
-    pow = Explorer.Backend.LazySeries.new(:pow, pow_args, nil)
+    pow = Explorer.Backend.LazySeries.new(:pow, pow_args, out_dtype)
 
     Explorer.PolarsBackend.DataFrame.mutate_with(df, df, [{"pow", pow}])
     |> Explorer.PolarsBackend.DataFrame.pull("pow")

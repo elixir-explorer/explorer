@@ -883,7 +883,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(a, ^series)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 4],
                calc1: [3, 3, 6],
                calc2: [-1, 1, 2],
@@ -900,7 +900,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -921,7 +921,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(^series, a)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [2, 1, 2],
                calc1: [3, 3, 6],
                calc2: [-1, 1, 2],
@@ -938,7 +938,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -958,7 +958,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(b, c)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 3],
                b: [20, 40, 60],
                c: [10, 0, 8],
@@ -981,7 +981,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }

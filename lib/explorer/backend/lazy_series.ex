@@ -146,8 +146,8 @@ defmodule Explorer.Backend.LazySeries do
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
 
-  @basic_arithmetic_operations [:add, :subtract, :multiply, :divide]
-  @other_arithmetic_operations [:pow, :quotient, :remainder]
+  @basic_arithmetic_operations [:add, :subtract, :multiply, :divide, :pow]
+  @other_arithmetic_operations [:quotient, :remainder]
 
   @aggregation_operations [
     :sum,
