@@ -276,8 +276,15 @@ defmodule Explorer.PolarsBackend.Series do
 
     {left, right} =
       case {left.dtype, right.dtype} do
-        {{:u, _}, {:u, _}} -> {cast(left, out_dtype), right}
-        {_, _} -> {left, right}
+        {{:s, _}, {:s, _}} ->
+          {left, right}
+
+        {{l, _}, {r, _}}
+        when l in [:s, :f, :u] and r in [:s, :f, :u] ->
+          {cast(left, out_dtype), right}
+
+        {_, _} ->
+          {left, right}
       end
 
     Shared.apply_series(left, :s_subtract, [right.data])

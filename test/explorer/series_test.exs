@@ -1809,6 +1809,16 @@ defmodule Explorer.SeriesTest do
       assert s3.dtype == {:s, 64}
       assert Series.to_list(s3) == [-3, -3, -3]
     end
+
+    test "subtracting unsigned integer and float series" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u32)
+      s2 = Series.from_list([4.2, 5.2, 6.5])
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == {:f, 64}
+      assert Series.to_list(s3) == [-3.2, -3.2, -3.5]
+    end
   end
 
   describe "multiply/2" do
