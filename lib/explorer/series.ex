@@ -3772,8 +3772,6 @@ defmodule Explorer.Series do
   def atan(%Series{dtype: dtype}),
     do: dtype_error("atan/1", dtype, [{:f, 32}, {:f, 64}])
 
-  defp basic_numeric_operation(operation, left, right, args \\ [])
-
   defp basic_numeric_operation(operation, %Series{} = left, right, args) when is_numeric(right),
     do: basic_numeric_operation(operation, left, from_same_value(left, right), args)
 
