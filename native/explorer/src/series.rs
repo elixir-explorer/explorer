@@ -1260,8 +1260,8 @@ pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(result))
 }
 
-fn first(s: ExSeries) -> LiteralValue {
-    match s.dtype() {
+fn first(exseries: ExSeries) -> LiteralValue {
+    match exseries.dtype() {
         DataType::UInt8 => LiteralValue::UInt8(exseries.u8().unwrap().get(0).unwrap()),
         DataType::UInt16 => LiteralValue::UInt16(exseries.u16().unwrap().get(0).unwrap()),
         DataType::UInt32 => LiteralValue::UInt32(exseries.u32().unwrap().get(0).unwrap()),
