@@ -1241,32 +1241,46 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.in(s2) |> Series.to_list() == [false, true, false]
     end
 
-    test "with integer series" do
+    test "with signed integer series" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, 0, 3])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end
 
-    test "with integer series and nil on the left-hand side" do
+    test "with signed integer series and nil on the left-hand side" do
       s1 = Series.from_list([1, 2, 3, nil])
       s2 = Series.from_list([1, 0, 3])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, nil]
     end
 
-    test "with integer series and nil on the right-hand side" do
+    test "with signed integer series and nil on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, 0, 3, nil])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end
 
-    test "with integer series and nil on both sides" do
+    test "with signed integer series and nil on both sides" do
       s1 = Series.from_list([1, 2, 3, nil])
       s2 = Series.from_list([1, 0, 3, nil])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, nil]
+    end
+
+    test "with unsigned integer series" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([1, 0, 3], dtype: :u32)
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with unsigned and signed integer series" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([1, 0, 3], dtype: :u32)
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end
 
     test "with float series" do
