@@ -449,10 +449,10 @@ defmodule Explorer.DataFrame do
   And now you can make queries with:
 
       # For named connections
-      {:ok, _} = Explorer.DataFrame.from_query(MyApp.Conn, "SELECT 123")
+      {:ok, _} = Explorer.DataFrame.from_query(MyApp.Conn, "SELECT 123", [])
 
       # When using the conn PID directly
-      {:ok, _} = Explorer.DataFrame.from_query(conn, "SELECT 123")
+      {:ok, _} = Explorer.DataFrame.from_query(conn, "SELECT 123", [])
 
   ## Options
 
