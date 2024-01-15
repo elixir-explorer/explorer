@@ -2053,6 +2053,26 @@ defmodule Explorer.SeriesTest do
       assert s3.dtype == {:f, 64}
       assert Series.to_list(s3) == [4.0, 2.5, 2.0]
     end
+
+    test "dividing unsigned integer by signed integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, 6], dtype: :s8)
+
+      s3 = Series.divide(s2, s1)
+
+      assert s3.dtype == {:f, 64}
+      assert Series.to_list(s3) == [4.0, 2.5, 2.0]
+    end
+
+    test "dividing signed integer by unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u8)
+
+      s3 = Series.divide(s2, s1)
+
+      assert s3.dtype == {:f, 64}
+      assert Series.to_list(s3) == [4.0, 2.5, 2.0]
+    end
   end
 
   describe "quotient/2" do
