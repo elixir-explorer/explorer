@@ -3544,14 +3544,17 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec quotient(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
-  def quotient(%Series{dtype: {:s, 64}} = left, %Series{dtype: {:s, 64}} = right),
-    do: apply_series_list(:quotient, [left, right])
+  def quotient(%Series{dtype: l_dtype} = left, %Series{dtype: r_dtype} = right)
+      when K.and(K.in(l_dtype, @integer_types), K.in(r_dtype, @integer_types)),
+      do: apply_series_list(:quotient, [left, right])
 
-  def quotient(%Series{dtype: {:s, 64}} = left, right) when is_integer(right),
-    do: apply_series_list(:quotient, [left, from_list([right])])
+  def quotient(%Series{dtype: l_dtype} = left, right)
+      when K.and(K.in(l_dtype, @integer_types), is_integer(right)),
+      do: apply_series_list(:quotient, [left, from_list([right])])
 
-  def quotient(left, %Series{dtype: {:s, 64}} = right) when is_integer(left),
-    do: apply_series_list(:quotient, [from_list([left]), right])
+  def quotient(left, %Series{dtype: r_dtype} = right)
+      when K.and(K.in(r_dtype, @integer_types), is_integer(left)),
+      do: apply_series_list(:quotient, [from_list([left]), right])
 
   @doc """
   Computes the remainder of an element-wise integer division.

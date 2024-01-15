@@ -2090,13 +2090,33 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "quotient/2" do
-    test "quotient of two series" do
+    test "quotient of two signed series" do
       s1 = Series.from_list([10, 11, 15])
       s2 = Series.from_list([2, 2, 2])
 
       s3 = Series.quotient(s1, s2)
 
       assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [5, 5, 7]
+    end
+
+    test "quotient of two unsigned series" do
+      s1 = Series.from_list([10, 11, 15], dtype: :u32)
+      s2 = Series.from_list([2, 2, 2], dtype: :u8)
+
+      s3 = Series.quotient(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [5, 5, 7]
+    end
+
+    test "quotient of signed by unsigned series" do
+      s1 = Series.from_list([10, 11, 15], dtype: :s32)
+      s2 = Series.from_list([2, 2, 2], dtype: :u8)
+
+      s3 = Series.quotient(s1, s2)
+
+      assert s3.dtype == {:s, 32}
       assert Series.to_list(s3) == [5, 5, 7]
     end
 
