@@ -1840,7 +1840,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rank(s, method: :ordinal)
       #Explorer.Series<
         Polars[3]
-        s64 [1, 2, 3]
+        u32 [1, 2, 3]
       >
 
       iex> s = Explorer.Series.from_list([ ~N[2022-07-07 17:44:13.020548], ~N[2022-07-07 17:43:08.473561], ~N[2022-07-07 17:45:00.116337] ])

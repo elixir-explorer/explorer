@@ -1479,6 +1479,7 @@ pub fn s_rank(
     let rank_method = parse_rank_method_options(method, descending);
     let rank_data_type = match rank_method.method {
         RankMethod::Average => DataType::Float64,
+        RankMethod::Ordinal => DataType::UInt32,
         _ => DataType::Int64,
     };
 
