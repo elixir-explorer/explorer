@@ -3732,9 +3732,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dummies(df, "col_x")
       #Explorer.DataFrame<
         Polars[4 x 3]
-        col_x_a s64 [1, 0, 1, 0]
-        col_x_b s64 [0, 1, 0, 0]
-        col_x_c s64 [0, 0, 0, 1]
+        col_x_a u8 [1, 0, 1, 0]
+        col_x_b u8 [0, 1, 0, 0]
+        col_x_c u8 [0, 0, 0, 1]
       >
 
   Or multiple columns:
@@ -3743,12 +3743,12 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dummies(df, ["col_x", "col_y"])
       #Explorer.DataFrame<
         Polars[4 x 6]
-        col_x_a s64 [1, 0, 1, 0]
-        col_x_b s64 [0, 1, 0, 0]
-        col_x_c s64 [0, 0, 0, 1]
-        col_y_b s64 [1, 0, 1, 0]
-        col_y_a s64 [0, 1, 0, 0]
-        col_y_d s64 [0, 0, 0, 1]
+        col_x_a u8 [1, 0, 1, 0]
+        col_x_b u8 [0, 1, 0, 0]
+        col_x_c u8 [0, 0, 0, 1]
+        col_y_b u8 [1, 0, 1, 0]
+        col_y_a u8 [0, 1, 0, 0]
+        col_y_d u8 [0, 0, 0, 1]
       >
 
   Or all string columns:
@@ -3757,9 +3757,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dummies(df, fn _name, type -> type == :string end)
       #Explorer.DataFrame<
         Polars[4 x 3]
-        col_y_b s64 [1, 0, 1, 0]
-        col_y_a s64 [0, 1, 0, 0]
-        col_y_d s64 [0, 0, 0, 1]
+        col_y_b u8 [1, 0, 1, 0]
+        col_y_a u8 [0, 1, 0, 0]
+        col_y_d u8 [0, 0, 0, 1]
       >
 
   Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
@@ -3779,7 +3779,7 @@ defmodule Explorer.DataFrame do
           value <- Series.to_list(Series.distinct(df[column])),
           do: column <> "_#{value}"
 
-    out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:s, 64}}
+    out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:u, 8}}
 
     out_df = %{df | groups: [], names: out_columns, dtypes: out_dtypes}
     Shared.apply_impl(df, :dummies, [out_df, columns])
