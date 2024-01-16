@@ -3175,14 +3175,8 @@ defmodule Explorer.Series do
   defp cast_to_add({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
     do: {int_type, max(left, right)}
 
-  defp cast_to_add({:s, s_size}, {:u, u_size}) when u_size >= s_size,
-    do: {:s, min(64, u_size * 2)}
-
-  defp cast_to_add({:u, u_size}, {:s, s_size}) when u_size >= s_size,
-    do: {:s, min(64, u_size * 2)}
-
-  defp cast_to_add({:s, s_size}, {:u, _}), do: {:s, s_size}
-  defp cast_to_add({:u, _}, {:s, s_size}), do: {:s, s_size}
+  defp cast_to_add({:s, s_size}, {:u, u_size}), do: min(64, max(s_size, 2 * u_size))
+  defp cast_to_add({:u, s_size}, {:s, u_size}), do: min(64, max(s_size, 2 * u_size))
   defp cast_to_add({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_add({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_add({:f, _}, {:f, _}), do: {:f, 64}
