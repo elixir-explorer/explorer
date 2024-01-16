@@ -3376,7 +3376,7 @@ defmodule Explorer.Series do
   defp cast_to_divide({:u, _}, {:s, _}), do: {:f, 64}
   defp cast_to_divide({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
   defp cast_to_divide({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
-  defp cast_to_divide({:f, _}, {:f, _}), do: {:f, 64}
+  defp cast_to_divide({:f, left}, {:f, right}), do: {:f, max(left, right)}
   defp cast_to_divide({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_divide({:duration, p}, {:f, _}), do: {:duration, p}
   defp cast_to_divide(_, _), do: nil
