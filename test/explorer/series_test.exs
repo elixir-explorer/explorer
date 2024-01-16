@@ -2217,7 +2217,7 @@ defmodule Explorer.SeriesTest do
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:u, u_base}
+        assert result.dtype == {:u, max(u_base, u_power)}
         assert Series.to_list(result) == [1, 4, 3]
       end
     end
@@ -2241,7 +2241,8 @@ defmodule Explorer.SeriesTest do
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:s, s_base}
+        # Unsigned integers have twice the precision as signed integers.
+        assert result.dtype == {:s, min(64, max(s_base, 2 * u_power))}
         assert Series.to_list(result) == [1, 4, 3]
       end
     end
@@ -2277,7 +2278,7 @@ defmodule Explorer.SeriesTest do
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:f, 64}
+        assert result.dtype == {:f, f_power}
         assert Series.to_list(result) === [1.0, 4.0, 3.0]
       end
     end
@@ -2289,7 +2290,7 @@ defmodule Explorer.SeriesTest do
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:f, f_base}
+        assert result.dtype == {:f, max(f_base, f_power)}
         assert Series.to_list(result) === [1.0, 4.0, 3.0]
       end
     end

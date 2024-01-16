@@ -318,6 +318,10 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def pow(out_dtype, left, right) do
     _ = matching_size!(left, right)
+
+    # We need to pre-cast or we may lose precision.
+    left = Explorer.Series.cast(left, out_dtype)
+
     left_lazy = Explorer.Backend.LazySeries.new(:column, ["base"], left.dtype)
     right_lazy = Explorer.Backend.LazySeries.new(:column, ["exponent"], right.dtype)
 
