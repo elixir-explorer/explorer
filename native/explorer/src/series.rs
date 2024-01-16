@@ -1,8 +1,8 @@
 use crate::{
     atoms,
     datatypes::{
-        DtypeGroup, ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod,
-        ExSeriesDtype, ExSeriesIoType, ExTime, ExTimeUnit, ExValidValue,
+        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype,
+        ExSeriesIoType, ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -968,47 +968,62 @@ pub fn s_to_iovec(env: Env, series: ExSeries) -> Result<Term, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sum(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype_group() {
-        DtypeGroup::Boolean => Ok(s.sum::<i64>()?.encode(env)),
-        DtypeGroup::Signed | DtypeGroup::Unsigned => Ok(s.sum::<i64>()?.encode(env)),
-        DtypeGroup::Float => Ok(encoding::term_from_float64(s.sum::<f64>()?, env)),
-        _ => panic!("sum/1 not implemented for {:?}", &s.dtype()),
+    match s.dtype() {
+        DataType::Boolean => Ok(s.sum::<u32>()?.encode(env)),
+        DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 => {
+            Ok(s.sum::<i64>()?.encode(env))
+        }
+        DataType::UInt8 | DataType::UInt16 | DataType::UInt32 | DataType::UInt64 => {
+            Ok(s.sum::<u64>()?.encode(env))
+        }
+        DataType::Float32 | DataType::Float64 => {
+            Ok(encoding::term_from_float64(s.sum::<f64>()?, env))
+        }
+        dt => panic!("sum/1 not implemented for {dt:?}"),
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype_group() {
-        DtypeGroup::Signed | DtypeGroup::Unsigned => Ok(s.min::<i64>()?.encode(env)),
-        DtypeGroup::Float => Ok(term_from_optional_float(s.min::<f64>()?, env)),
-        DtypeGroup::Date => Ok(s.min::<i32>()?.map(ExDate::from).encode(env)),
-        DtypeGroup::Time => Ok(s.min::<i64>()?.map(ExTime::from).encode(env)),
-        DtypeGroup::Datetime => match s.dtype() {
-            DataType::Datetime(unit, _) => Ok(s
-                .min::<i64>()?
-                .map(|v| encode_datetime(v, *unit, env).unwrap())
-                .encode(env)),
-            _ => unreachable!("it should always be a datetime here"),
-        },
-        _dt => panic!("min/1 not implemented for {:?}", &s.dtype()),
+    match s.dtype() {
+        DataType::Int8 => Ok(s.min::<i8>()?.encode(env)),
+        DataType::Int16 => Ok(s.min::<i16>()?.encode(env)),
+        DataType::Int32 => Ok(s.min::<i32>()?.encode(env)),
+        DataType::Int64 => Ok(s.min::<i64>()?.encode(env)),
+        DataType::UInt8 => Ok(s.min::<u8>()?.encode(env)),
+        DataType::UInt16 => Ok(s.min::<u16>()?.encode(env)),
+        DataType::UInt32 => Ok(s.min::<u32>()?.encode(env)),
+        DataType::UInt64 => Ok(s.min::<u64>()?.encode(env)),
+        DataType::Float32 | DataType::Float64 => Ok(term_from_optional_float(s.min::<f64>()?, env)),
+        DataType::Date => Ok(s.min::<i32>()?.map(ExDate::from).encode(env)),
+        DataType::Time => Ok(s.min::<i64>()?.map(ExTime::from).encode(env)),
+        DataType::Datetime(unit, _) => Ok(s
+            .min::<i64>()?
+            .map(|v| encode_datetime(v, *unit, env).unwrap())
+            .encode(env)),
+        dt => panic!("min/1 not implemented for {dt:?}"),
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_max(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype_group() {
-        DtypeGroup::Signed | DtypeGroup::Unsigned => Ok(s.max::<i64>()?.encode(env)),
-        DtypeGroup::Float => Ok(term_from_optional_float(s.max::<f64>()?, env)),
-        DtypeGroup::Date => Ok(s.max::<i32>()?.map(ExDate::from).encode(env)),
-        DtypeGroup::Time => Ok(s.max::<i64>()?.map(ExTime::from).encode(env)),
-        DtypeGroup::Datetime => match s.dtype() {
-            DataType::Datetime(unit, _) => Ok(s
-                .max::<i64>()?
-                .map(|v| encode_datetime(v, *unit, env).unwrap())
-                .encode(env)),
-            _ => unreachable!("it should always be a datetime here"),
-        },
-        _dt => panic!("max/1 not implemented for {:?}", &s.dtype()),
+    match s.dtype() {
+        DataType::Int8 => Ok(s.max::<i8>()?.encode(env)),
+        DataType::Int16 => Ok(s.max::<i16>()?.encode(env)),
+        DataType::Int32 => Ok(s.max::<i32>()?.encode(env)),
+        DataType::Int64 => Ok(s.max::<i64>()?.encode(env)),
+        DataType::UInt8 => Ok(s.max::<u8>()?.encode(env)),
+        DataType::UInt16 => Ok(s.max::<u16>()?.encode(env)),
+        DataType::UInt32 => Ok(s.max::<u32>()?.encode(env)),
+        DataType::UInt64 => Ok(s.max::<u64>()?.encode(env)),
+        DataType::Float32 | DataType::Float64 => Ok(term_from_optional_float(s.max::<f64>()?, env)),
+        DataType::Date => Ok(s.max::<i32>()?.map(ExDate::from).encode(env)),
+        DataType::Time => Ok(s.max::<i64>()?.map(ExTime::from).encode(env)),
+        DataType::Datetime(unit, _) => Ok(s
+            .max::<i64>()?
+            .map(|v| encode_datetime(v, *unit, env).unwrap())
+            .encode(env)),
+        dt => panic!("max/1 not implemented for {dt:?}"),
     }
 }
 
