@@ -3441,16 +3441,12 @@ defmodule Explorer.Series do
     end
   end
 
-  # TODO: ensure these types are correct.
   defp cast_to_pow({:u, l}, {:u, r}), do: {:u, max(l, r)}
-  defp cast_to_pow({:u, _}, {:s, _}), do: {:f, 64}
-  defp cast_to_pow({:u, _}, {:f, f}), do: {:f, f}
   defp cast_to_pow({:s, s}, {:u, u}), do: {:s, min(64, max(2 * u, s))}
-  defp cast_to_pow({:s, _}, {:s, _}), do: {:f, 64}
-  defp cast_to_pow({:s, _}, {:f, f}), do: {:f, f}
-  defp cast_to_pow({:f, f}, {:u, _}), do: {:f, f}
-  defp cast_to_pow({:f, f}, {:s, _}), do: {:f, f}
-  defp cast_to_pow({:f, f}, {:f, _}), do: {:f, f}
+  defp cast_to_pow({:f, l}, {:f, r}), do: {:f, max(l, r)}
+  defp cast_to_pow({:f, l}, {n, _}) when K.in(n, [:u, :s]), do: {:f, l}
+  defp cast_to_pow({n, _}, {:f, r}) when K.in(n, [:u, :s]), do: {:f, r}
+  defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:f, 64}
   defp cast_to_pow(_, _), do: nil
 
   @doc """
