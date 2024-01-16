@@ -1805,13 +1805,13 @@ defmodule Explorer.SeriesTest do
     end
 
     test "subtracting two unsigned integer series of different dtype together" do
-      s1 = Series.from_list([1, 2, nil, 3], dtype: :u16)
-      s2 = Series.from_list([4, 5, nil, 6], dtype: :u32)
+      s1 = Series.from_list([4, 5, nil, 6], dtype: :u32)
+      s2 = Series.from_list([1, 2, nil, 3], dtype: :u16)
 
       s3 = Series.subtract(s1, s2)
 
-      assert s3.dtype == {:s, 64}
-      assert Series.to_list(s3) == [-3, -3, nil, -3]
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [3, 3, nil, 3]
     end
 
     test "subtracting signed and unsigned integer series together" do

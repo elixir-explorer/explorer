@@ -3193,6 +3193,8 @@ defmodule Explorer.Series do
   Subtracts right from left, element-wise.
 
   When mixing floats and integers, the resulting series will have dtype `{:f, 64}`.
+  In case both series are of unsigned integers, we will try to subtract,
+  but an exception is raised if overflow occurs.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -3243,9 +3245,6 @@ defmodule Explorer.Series do
       dtype_mismatch_error("subtract/2", left, right)
     end
   end
-
-  defp cast_to_subtract({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
-    do: {:s, min(64, 2 * max(left, right))}
 
   defp cast_to_subtract(:date, :date), do: {:duration, :millisecond}
   defp cast_to_subtract(:date, {:duration, _}), do: :date

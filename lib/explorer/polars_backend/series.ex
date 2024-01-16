@@ -271,12 +271,10 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
 
   @impl true
-  def subtract(out_dtype, left, right) do
+  def subtract(_out_dtype, left, right) do
     left = matching_size!(left, right)
 
-    # Different from most the of the arithmetic operations, we pass down
-    # the "out_dtype" to cast the left side in case it is an unsigned series.
-    Shared.apply_series(left, :s_subtract, [right.data, out_dtype])
+    Shared.apply_series(left, :s_subtract, [right.data])
   end
 
   @impl true
