@@ -477,11 +477,8 @@ pub fn df_to_dummies(df: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFram
     let dummies = df
         .select(selection)
         .and_then(|df| df.to_dummies(None, drop_first))?;
-    let series = dummies
-        .iter()
-        .map(|series| series.cast(&DataType::Int64).unwrap())
-        .collect();
-    Ok(ExDataFrame::new(DataFrame::new(series)?))
+
+    Ok(ExDataFrame::new(dummies))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

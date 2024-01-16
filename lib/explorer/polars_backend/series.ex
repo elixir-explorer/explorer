@@ -208,11 +208,11 @@ defmodule Explorer.PolarsBackend.Series do
   def mode(series), do: Shared.apply_series(series, :s_mode)
 
   @impl true
-  def variance(series, ddof), do: Shared.apply_series(series, :s_variance, [ddof])
+  def variance(series, ddof), do: series |> Shared.apply_series(:s_variance, [ddof]) |> at(0)
 
   @impl true
   def standard_deviation(series, ddof),
-    do: Shared.apply_series(series, :s_standard_deviation, [ddof])
+    do: series |> Shared.apply_series(:s_standard_deviation, [ddof]) |> at(0)
 
   @impl true
   def quantile(series, quantile),
@@ -271,8 +271,11 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
 
   @impl true
-  def subtract(_out_dtype, left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_subtract, [right.data])
+  def subtract(_out_dtype, left, right) do
+    left = matching_size!(left, right)
+
+    Shared.apply_series(left, :s_subtract, [right.data])
+  end
 
   @impl true
   def multiply(out_dtype, left, right) do

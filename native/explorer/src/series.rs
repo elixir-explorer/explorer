@@ -300,10 +300,11 @@ pub fn s_add(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError>
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_subtract(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s1 = other.clone_inner();
-    Ok(ExSeries::new(s - s1))
+pub fn s_subtract(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let left = lhs.clone_inner();
+    let right = rhs.clone_inner();
+
+    Ok(ExSeries::new(left - right))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -400,7 +401,7 @@ pub fn s_argsort(
         multithreaded,
         nulls_last,
     };
-    let indices = series.arg_sort(opts).cast(&DataType::Int64)?;
+    let indices = series.arg_sort(opts).into_series();
     Ok(ExSeries::new(indices))
 }
 
@@ -600,7 +601,15 @@ pub fn s_less_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerE
 pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = match s.dtype() {
         DataType::Boolean
+        | DataType::Int8
+        | DataType::Int16
+        | DataType::Int32
         | DataType::Int64
+        | DataType::UInt8
+        | DataType::UInt16
+        | DataType::UInt32
+        | DataType::UInt64
+        | DataType::Float32
         | DataType::Float64
         | DataType::String
         | DataType::Binary
@@ -961,9 +970,16 @@ pub fn s_to_iovec(env: Env, series: ExSeries) -> Result<Term, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_sum(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
-        DataType::Boolean => Ok(s.sum::<i64>()?.encode(env)),
-        DataType::Int64 => Ok(s.sum::<i64>()?.encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.sum::<f64>().ok(), env)),
+        DataType::Boolean => Ok(s.sum::<u32>()?.encode(env)),
+        DataType::Int8 | DataType::Int16 | DataType::Int32 | DataType::Int64 => {
+            Ok(s.sum::<i64>()?.encode(env))
+        }
+        DataType::UInt8 | DataType::UInt16 | DataType::UInt32 | DataType::UInt64 => {
+            Ok(s.sum::<u64>()?.encode(env))
+        }
+        DataType::Float32 | DataType::Float64 => {
+            Ok(encoding::term_from_float64(s.sum::<f64>()?, env))
+        }
         dt => panic!("sum/1 not implemented for {dt:?}"),
     }
 }
@@ -971,11 +987,18 @@ pub fn s_sum(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
+        DataType::Int8 => Ok(s.min::<i8>()?.encode(env)),
+        DataType::Int16 => Ok(s.min::<i16>()?.encode(env)),
+        DataType::Int32 => Ok(s.min::<i32>()?.encode(env)),
         DataType::Int64 => Ok(s.min::<i64>()?.encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.min::<f64>()?, env)),
+        DataType::UInt8 => Ok(s.min::<u8>()?.encode(env)),
+        DataType::UInt16 => Ok(s.min::<u16>()?.encode(env)),
+        DataType::UInt32 => Ok(s.min::<u32>()?.encode(env)),
+        DataType::UInt64 => Ok(s.min::<u64>()?.encode(env)),
+        DataType::Float32 | DataType::Float64 => Ok(term_from_optional_float(s.min::<f64>()?, env)),
         DataType::Date => Ok(s.min::<i32>()?.map(ExDate::from).encode(env)),
         DataType::Time => Ok(s.min::<i64>()?.map(ExTime::from).encode(env)),
-        DataType::Datetime(unit, None) => Ok(s
+        DataType::Datetime(unit, _) => Ok(s
             .min::<i64>()?
             .map(|v| encode_datetime(v, *unit, env).unwrap())
             .encode(env)),
@@ -986,11 +1009,18 @@ pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_max(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     match s.dtype() {
+        DataType::Int8 => Ok(s.max::<i8>()?.encode(env)),
+        DataType::Int16 => Ok(s.max::<i16>()?.encode(env)),
+        DataType::Int32 => Ok(s.max::<i32>()?.encode(env)),
         DataType::Int64 => Ok(s.max::<i64>()?.encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.max::<f64>()?, env)),
+        DataType::UInt8 => Ok(s.max::<u8>()?.encode(env)),
+        DataType::UInt16 => Ok(s.max::<u16>()?.encode(env)),
+        DataType::UInt32 => Ok(s.max::<u32>()?.encode(env)),
+        DataType::UInt64 => Ok(s.max::<u64>()?.encode(env)),
+        DataType::Float32 | DataType::Float64 => Ok(term_from_optional_float(s.max::<f64>()?, env)),
         DataType::Date => Ok(s.max::<i32>()?.map(ExDate::from).encode(env)),
         DataType::Time => Ok(s.max::<i64>()?.map(ExTime::from).encode(env)),
-        DataType::Datetime(unit, None) => Ok(s
+        DataType::Datetime(unit, _) => Ok(s
             .max::<i64>()?
             .map(|v| encode_datetime(v, *unit, env).unwrap())
             .encode(env)),
@@ -1010,20 +1040,19 @@ pub fn s_argmin(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_mean(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Boolean => Ok(s.mean().encode(env)),
-        DataType::Int64 => Ok(s.mean().encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.mean(), env)),
-        dt => panic!("mean/1 not implemented for {dt:?}"),
+    if s.dtype().is_numeric() {
+        Ok(term_from_optional_float(s.mean(), env))
+    } else {
+        panic!("mean/1 not implemented for {:?}", &s.dtype())
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_median(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(s.median().encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.median(), env)),
-        dt => panic!("median/1 not implemented for {dt:?}"),
+    if s.dtype().is_numeric() {
+        Ok(term_from_optional_float(s.median(), env))
+    } else {
+        panic!("median/1 not implemented for {:?}", &s.dtype())
     }
 }
 
@@ -1037,38 +1066,55 @@ pub fn s_mode(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(ExSeries::new(s.product())),
-        DataType::Float64 => Ok(ExSeries::new(s.product())),
-        dt => panic!("product/1 not implemented for {dt:?}"),
+    if s.dtype().is_numeric() {
+        Ok(ExSeries::new(s.product()))
+    } else {
+        panic!("product/1 not implemented for {:?}", &s.dtype())
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_variance(env: Env, s: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(s.i64()?.var(ddof).encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.var(ddof), env)),
-        dt => panic!("var/1 not implemented for {dt:?}"),
+pub fn s_variance(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
+    if s.dtype().is_numeric() {
+        let var_series = s
+            .clone_inner()
+            .into_frame()
+            .lazy()
+            .select([col(s.name()).var(ddof)])
+            .collect()?
+            .column(s.name())?
+            .clone();
+
+        Ok(ExSeries::new(var_series))
+    } else {
+        panic!("variance/2 not implemented for {:?}", &s.dtype())
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_standard_deviation(env: Env, s: ExSeries, ddof: u8) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Int64 => Ok(s.i64()?.std(ddof).encode(env)),
-        DataType::Float64 => Ok(term_from_optional_float(s.f64()?.std(ddof), env)),
-        dt => panic!("std/1 not implemented for {dt:?}"),
+pub fn s_standard_deviation(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
+    if s.dtype().is_numeric() {
+        let std_series = s
+            .clone_inner()
+            .into_frame()
+            .lazy()
+            .select([col(s.name()).std(ddof)])
+            .collect()?
+            .column(s.name())?
+            .clone();
+
+        Ok(ExSeries::new(std_series))
+    } else {
+        panic!("standard_deviation/2 not implemented for {:?}", &s.dtype())
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_skew(env: Env, s: ExSeries, bias: bool) -> Result<Term, ExplorerError> {
-    match s.dtype() {
-        DataType::Float64 => Ok(s.skew(bias)?.encode(env)),
-        DataType::Int64 => Ok(s.skew(bias)?.encode(env)),
-        // DataType::Float64 => Ok(term_from_optional_float(s.skew(bias), env)),
-        dt => panic!("skew/2 not implemented for {dt:?}"),
+    if s.dtype().is_numeric() {
+        Ok(term_from_optional_float(s.skew(bias)?, env))
+    } else {
+        panic!("skew/2 not implemented for {:?}", &s.dtype())
     }
 }
 
@@ -1193,8 +1239,19 @@ pub fn s_quantile<'a>(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_peak_max(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let ca = match s.dtype() {
+        DataType::Int8 => peak_max(s.i8()?),
+        DataType::Int16 => peak_max(s.i16()?),
+        DataType::Int32 => peak_max(s.i32()?),
         DataType::Int64 => peak_max(s.i64()?),
+
+        DataType::UInt8 => peak_max(s.u8()?),
+        DataType::UInt16 => peak_max(s.u16()?),
+        DataType::UInt32 => peak_max(s.u32()?),
+        DataType::UInt64 => peak_max(s.u64()?),
+
+        DataType::Float32 => peak_max(s.f32()?),
         DataType::Float64 => peak_max(s.f64()?),
+
         DataType::Date => peak_max(s.date()?),
         DataType::Time => peak_max(s.time()?),
         DataType::Datetime(_unit, None) => peak_max(s.datetime()?),
@@ -1208,8 +1265,19 @@ pub fn s_peak_max(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_peak_min(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let ca = match s.dtype() {
+        DataType::Int8 => peak_min(s.i8()?),
+        DataType::Int16 => peak_min(s.i16()?),
+        DataType::Int32 => peak_min(s.i32()?),
         DataType::Int64 => peak_min(s.i64()?),
+
+        DataType::UInt8 => peak_min(s.u8()?),
+        DataType::UInt16 => peak_min(s.u16()?),
+        DataType::UInt32 => peak_min(s.u32()?),
+        DataType::UInt64 => peak_min(s.u64()?),
+
+        DataType::Float32 => peak_min(s.f32()?),
         DataType::Float64 => peak_min(s.f64()?),
+
         DataType::Date => peak_min(s.date()?),
         DataType::Time => peak_min(s.time()?),
         DataType::Datetime(_unit, None) => peak_min(s.datetime()?),
@@ -1427,6 +1495,7 @@ pub fn s_rank(
     let rank_method = parse_rank_method_options(method, descending);
     let rank_data_type = match rank_method.method {
         RankMethod::Average => DataType::Float64,
+        RankMethod::Ordinal => DataType::UInt32,
         _ => DataType::Int64,
     };
 

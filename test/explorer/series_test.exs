@@ -1241,32 +1241,46 @@ defmodule Explorer.SeriesTest do
       assert s1 |> Series.in(s2) |> Series.to_list() == [false, true, false]
     end
 
-    test "with integer series" do
+    test "with signed integer series" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, 0, 3])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end
 
-    test "with integer series and nil on the left-hand side" do
+    test "with signed integer series and nil on the left-hand side" do
       s1 = Series.from_list([1, 2, 3, nil])
       s2 = Series.from_list([1, 0, 3])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, nil]
     end
 
-    test "with integer series and nil on the right-hand side" do
+    test "with signed integer series and nil on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, 0, 3, nil])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end
 
-    test "with integer series and nil on both sides" do
+    test "with signed integer series and nil on both sides" do
       s1 = Series.from_list([1, 2, 3, nil])
       s2 = Series.from_list([1, 0, 3, nil])
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true, nil]
+    end
+
+    test "with unsigned integer series" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([1, 0, 3], dtype: :u32)
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with unsigned and signed integer series" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([1, 0, 3], dtype: :u32)
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end
 
     test "with float series" do
@@ -1638,6 +1652,36 @@ defmodule Explorer.SeriesTest do
                      Series.add(1, 2)
                    end
     end
+
+    test "adding two unsigned integer series of the same dtype together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u32)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [5, 7, 9]
+    end
+
+    test "adding two unsigned integer series of different dtype together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [5, 7, 9]
+    end
+
+    test "adding signed and unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [5, 7, 9]
+    end
   end
 
   describe "subtract/2" do
@@ -1749,12 +1793,72 @@ defmodule Explorer.SeriesTest do
       assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :neg_infinity, :nan]
     end
+
+    test "subtracting two unsigned integer series of the same dtype together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s32)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [-3, -3, -3]
+    end
+
+    test "subtracting two unsigned integer series of different dtype together" do
+      s1 = Series.from_list([4, 5, nil, 6], dtype: :u32)
+      s2 = Series.from_list([1, 2, nil, 3], dtype: :u16)
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [3, 3, nil, 3]
+    end
+
+    test "subtracting signed and unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [-3, -3, -3]
+    end
+
+    test "subtracting unsigned integer and float series" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u32)
+      s2 = Series.from_list([4.2, 5.2, 6.5])
+
+      s3 = Series.subtract(s1, s2)
+
+      assert s3.dtype == {:f, 64}
+      assert Series.to_list(s3) == [-3.2, -3.2, -3.5]
+    end
   end
 
   describe "multiply/2" do
-    test "multiplying two series together" do
+    test "multiplying two signed integer series together" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([4, 5, 6])
+
+      s3 = Series.multiply(s1, s2)
+
+      assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [4, 10, 18]
+    end
+
+    test "multiplying two unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.multiply(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [4, 10, 18]
+    end
+
+    test "multiplying signed and unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
 
       s3 = Series.multiply(s1, s2)
 
@@ -1973,16 +2077,66 @@ defmodule Explorer.SeriesTest do
       assert s2.dtype == {:f, 64}
       assert Series.to_list(s2) == [:neg_infinity, :neg_infinity, :nan, :nan, :nan]
     end
+
+    test "dividing two unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u32)
+
+      s3 = Series.divide(s2, s1)
+
+      assert s3.dtype == {:f, 64}
+      assert Series.to_list(s3) == [4.0, 2.5, 2.0]
+    end
+
+    test "dividing unsigned integer by signed integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :u16)
+      s2 = Series.from_list([4, 5, 6], dtype: :s8)
+
+      s3 = Series.divide(s2, s1)
+
+      assert s3.dtype == {:f, 64}
+      assert Series.to_list(s3) == [4.0, 2.5, 2.0]
+    end
+
+    test "dividing signed integer by unsigned integer series together" do
+      s1 = Series.from_list([1, 2, 3], dtype: :s16)
+      s2 = Series.from_list([4, 5, 6], dtype: :u8)
+
+      s3 = Series.divide(s2, s1)
+
+      assert s3.dtype == {:f, 64}
+      assert Series.to_list(s3) == [4.0, 2.5, 2.0]
+    end
   end
 
   describe "quotient/2" do
-    test "quotient of two series" do
+    test "quotient of two signed series" do
       s1 = Series.from_list([10, 11, 15])
       s2 = Series.from_list([2, 2, 2])
 
       s3 = Series.quotient(s1, s2)
 
       assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [5, 5, 7]
+    end
+
+    test "quotient of two unsigned series" do
+      s1 = Series.from_list([10, 11, 15], dtype: :u32)
+      s2 = Series.from_list([2, 2, 2], dtype: :u8)
+
+      s3 = Series.quotient(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [5, 5, 7]
+    end
+
+    test "quotient of signed by unsigned series" do
+      s1 = Series.from_list([10, 11, 15], dtype: :s32)
+      s2 = Series.from_list([2, 2, 2], dtype: :u8)
+
+      s3 = Series.quotient(s1, s2)
+
+      assert s3.dtype == {:s, 32}
       assert Series.to_list(s3) == [5, 5, 7]
     end
 
@@ -2006,13 +2160,33 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "remainder/2" do
-    test "remainder of two series" do
+    test "remainder of two signed integer series" do
       s1 = Series.from_list([10, 11, 19])
       s2 = Series.from_list([2, 2, 2])
 
       s3 = Series.remainder(s1, s2)
 
       assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [0, 1, 1]
+    end
+
+    test "remainder of two unsigned integer series" do
+      s1 = Series.from_list([10, 11, 19], dtype: :u16)
+      s2 = Series.from_list([2, 2, 2], dtype: :u32)
+
+      s3 = Series.remainder(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [0, 1, 1]
+    end
+
+    test "remainder of signed and unsigned integer series" do
+      s1 = Series.from_list([10, 11, 19], dtype: :s16)
+      s2 = Series.from_list([2, 2, 2], dtype: :u8)
+
+      s3 = Series.remainder(s1, s2)
+
+      assert s3.dtype == {:s, 16}
       assert Series.to_list(s3) == [0, 1, 1]
     end
 
@@ -3245,6 +3419,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([3, 1, nil, 2])
 
       result = Series.argsort(s1)
+      assert Series.dtype(result) == {:u, 32}
 
       assert Series.to_list(result) == [1, 3, 0, 2]
     end
@@ -3441,6 +3616,15 @@ defmodule Explorer.SeriesTest do
       categorized = Series.categorise(indexes, categories)
 
       assert Series.to_list(categorized) == ["c", "b", "a", "a", "c"]
+      assert Series.dtype(categorized) == :category
+    end
+
+    test "takes unsigned int series and categorise with categorical series" do
+      categories = Series.from_list(["a", "b", "c"], dtype: :category)
+      indexes = Series.from_list([0, 2, 1, 0, 2], dtype: :u32)
+      categorized = Series.categorise(indexes, categories)
+
+      assert Series.to_list(categorized) == ["a", "c", "b", "a", "c"]
       assert Series.dtype(categorized) == :category
     end
   end
@@ -4075,6 +4259,13 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([1.2, 2.4, nil, 3.9, :infinity, :nan])
       assert Series.mean(s) == :nan
     end
+
+    test "mean of unsigned integer series" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, nil, 3], dtype: dtype)
+        assert Series.mean(s) == 2.0
+      end
+    end
   end
 
   describe "median/1" do
@@ -4096,6 +4287,13 @@ defmodule Explorer.SeriesTest do
     test "returns the median of a float series with an infinity number and nan" do
       s = Series.from_list([1.2, 2.4, nil, 3.9, :infinity, :nan])
       assert Series.median(s) == 3.9
+    end
+
+    test "median of unsigned integer series" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, nil, 3], dtype: dtype)
+        assert Series.median(s) == 2.0
+      end
     end
   end
 
@@ -4199,6 +4397,13 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([true, false, true])
       assert Series.sum(s) === 2
     end
+
+    test "sum of unsigned integers" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, 3, 4], dtype: dtype)
+        assert Series.sum(s) === 10
+      end
+    end
   end
 
   describe "product/1" do
@@ -4248,6 +4453,13 @@ defmodule Explorer.SeriesTest do
     test "product of a series with infinity" do
       s = Series.from_list([2.0, :infinity, 3.0])
       assert Series.product(s) === :infinity
+    end
+
+    test "product of unsigned integers" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, 3], dtype: dtype)
+        assert Series.product(s) === 6
+      end
     end
   end
 
@@ -4308,9 +4520,14 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "min/1" do
-    test "min of an integer series" do
+    test "min of a signed integer series" do
       s = Series.from_list([-3, 1, 2, nil, -2, -42, 3])
       assert Series.min(s) === -42
+    end
+
+    test "min of an unsigned integer series" do
+      s = Series.from_list([10, 15, 2, nil, 2, 42, 3], dtype: :u32)
+      assert Series.min(s) === 2
     end
 
     test "min of a float series" do
@@ -4335,9 +4552,14 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "max/1" do
-    test "max of an integer series" do
+    test "max of a signed integer series" do
       s = Series.from_list([-3, 1, 2, nil, -2, -42, 3])
       assert Series.max(s) === 3
+    end
+
+    test "min of an unsigned integer series" do
+      s = Series.from_list([10, 15, 2, nil, 2, 42, 3], dtype: :u32)
+      assert Series.max(s) === 42
     end
 
     test "max of a float series" do
@@ -4469,6 +4691,13 @@ defmodule Explorer.SeriesTest do
     test "returns the skew of an integer series (bias false)" do
       s = Series.from_list([1, 2, 3, 4, 5, 23])
       assert Series.skew(s, bias: false) - 2.2905330058490514 < 1.0e-4
+    end
+
+    test "skew of unsigned integer series" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, 3, nil, 1], dtype: dtype)
+        assert Series.skew(s) - 0.8545630383279711 < 1.0e-4
+      end
     end
   end
 
@@ -4621,6 +4850,13 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
       assert Series.variance(s) === :nan
     end
+
+    test "variance of unsigned integers" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, nil, 3], dtype: dtype)
+        assert Series.variance(s) === 1.0
+      end
+    end
   end
 
   describe "standard_deviation/1" do
@@ -4647,6 +4883,13 @@ defmodule Explorer.SeriesTest do
     test "standard deviation of a float series with infinity negative" do
       s = Series.from_list([-3.1, 1.2, 2.3, nil, -2.4, -12.6, :neg_infinity, 3.9])
       assert Series.standard_deviation(s) === :nan
+    end
+
+    test "standard deviation of unsigned integer series" do
+      for dtype <- [:u8, :u16, :u32, :u64] do
+        s = Series.from_list([1, 2, 3, nil], dtype: dtype)
+        assert Series.standard_deviation(s) === 1.0
+      end
     end
   end
 
@@ -5400,6 +5643,56 @@ defmodule Explorer.SeriesTest do
                    fn ->
                      Series.frequencies(s)
                    end
+    end
+  end
+
+  describe "peaks/1" do
+    test "max with signed integers" do
+      s = Series.from_list([1, 2, 4, 1, 4])
+      peaks = Series.peaks(s)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, false, true, false, true]
+    end
+
+    test "max with unsigned integers" do
+      s = Series.from_list([1, 2, 4, 1, 4], dtype: :u32)
+      peaks = Series.peaks(s)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, false, true, false, true]
+    end
+
+    test "max with floats" do
+      s = Series.from_list([1.2, 2.3, 4.0, 4.1, 4.0])
+      peaks = Series.peaks(s)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, false, false, true, false]
+    end
+
+    test "min with signed integers" do
+      s = Series.from_list([5, 1, 2, 4, 1, 4])
+      peaks = Series.peaks(s, :min)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, true, false, false, true, false]
+    end
+
+    test "min with unsigned integers" do
+      s = Series.from_list([5, 1, 2, 4, 1, 4], dtype: :u32)
+      peaks = Series.peaks(s, :min)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, true, false, false, true, false]
+    end
+
+    test "min with floats" do
+      s = Series.from_list([1.2, 0.3, 4.0, 2.5, 4.0])
+      peaks = Series.peaks(s, :min)
+
+      assert Series.dtype(peaks) == :boolean
+      assert Series.to_list(peaks) == [false, true, false, true, false]
     end
   end
 end
