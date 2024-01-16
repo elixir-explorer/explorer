@@ -300,10 +300,24 @@ pub fn s_add(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError>
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_subtract(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s = data.clone_inner();
-    let s1 = other.clone_inner();
-    Ok(ExSeries::new(s - s1))
+pub fn s_subtract(
+    lhs: ExSeries,
+    rhs: ExSeries,
+    out_dtype: ExSeriesDtype,
+) -> Result<ExSeries, ExplorerError> {
+    let left = lhs.clone_inner();
+    let right = rhs.clone_inner();
+
+    let l_ex_dtype = ExSeriesDtype::try_from(left.dtype())?;
+    let r_ex_dtype = ExSeriesDtype::try_from(right.dtype())?;
+    let out_dtype = DataType::try_from(&out_dtype)?;
+
+    match (l_ex_dtype, r_ex_dtype) {
+        (ExSeriesDtype::U(_), ExSeriesDtype::U(_) | ExSeriesDtype::S(_) | ExSeriesDtype::F(_)) => {
+            Ok(ExSeries::new(left.cast(&out_dtype)? - right))
+        }
+        (_, _) => Ok(ExSeries::new(left - right)),
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

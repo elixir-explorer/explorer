@@ -398,7 +398,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_sort(_s, _descending?, _maintain_order?, _multithreaded?, _nulls_last?), do: err()
   def s_standard_deviation(_s, _ddof), do: err()
   def s_strip(_s, _string), do: err()
-  def s_subtract(_s, _other), do: err()
+  def s_subtract(_s, _other, _ex_dtype), do: err()
   def s_sum(_s), do: err()
   def s_tail(_s, _length), do: err()
   def s_shift(_s, _offset), do: err()
