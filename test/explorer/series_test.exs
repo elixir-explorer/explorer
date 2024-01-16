@@ -2160,13 +2160,33 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "remainder/2" do
-    test "remainder of two series" do
+    test "remainder of two signed integer series" do
       s1 = Series.from_list([10, 11, 19])
       s2 = Series.from_list([2, 2, 2])
 
       s3 = Series.remainder(s1, s2)
 
       assert s3.dtype == {:s, 64}
+      assert Series.to_list(s3) == [0, 1, 1]
+    end
+
+    test "remainder of two unsigned integer series" do
+      s1 = Series.from_list([10, 11, 19], dtype: :u16)
+      s2 = Series.from_list([2, 2, 2], dtype: :u32)
+
+      s3 = Series.remainder(s1, s2)
+
+      assert s3.dtype == {:u, 32}
+      assert Series.to_list(s3) == [0, 1, 1]
+    end
+
+    test "remainder of signed and unsigned integer series" do
+      s1 = Series.from_list([10, 11, 19], dtype: :s16)
+      s2 = Series.from_list([2, 2, 2], dtype: :u8)
+
+      s3 = Series.remainder(s1, s2)
+
+      assert s3.dtype == {:s, 16}
       assert Series.to_list(s3) == [0, 1, 1]
     end
 

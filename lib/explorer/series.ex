@@ -3625,14 +3625,17 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec remainder(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
-  def remainder(%Series{dtype: {:s, 64}} = left, %Series{dtype: {:s, 64}} = right),
-    do: apply_series_list(:remainder, [left, right])
+  def remainder(%Series{dtype: l_dtype} = left, %Series{dtype: r_dtype} = right)
+      when K.and(K.in(l_dtype, @integer_types), K.in(r_dtype, @integer_types)),
+      do: apply_series_list(:remainder, [left, right])
 
-  def remainder(%Series{dtype: {:s, 64}} = left, right) when is_integer(right),
-    do: apply_series_list(:remainder, [left, from_list([right])])
+  def remainder(%Series{dtype: l_dtype} = left, right)
+      when K.and(K.in(l_dtype, @integer_types), is_integer(right)),
+      do: apply_series_list(:remainder, [left, from_list([right])])
 
-  def remainder(left, %Series{dtype: {:s, 64}} = right) when is_integer(left),
-    do: apply_series_list(:remainder, [from_list([left]), right])
+  def remainder(left, %Series{dtype: r_dtype} = right)
+      when K.and(K.in(r_dtype, @integer_types), is_integer(left)),
+      do: apply_series_list(:remainder, [from_list([left]), right])
 
   @doc """
   Computes the the sine of a number (in radians).
