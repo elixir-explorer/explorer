@@ -3099,6 +3099,7 @@ defmodule Explorer.Series do
     |> enforce_highest_precision()
   end
 
+  # TODO: maybe we can move this casting to Rust.
   defp enforce_highest_precision([
          %Series{dtype: {left_base, left_timeunit}} = left,
          %Series{dtype: {right_base, right_timeunit}} = right
@@ -3171,21 +3172,22 @@ defmodule Explorer.Series do
     end
   end
 
-  # Review the size needed for this operation.
-  defp cast_to_add({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
-    do: {int_type, max(left, right)}
-
-  defp cast_to_add({:s, s_size}, {:u, u_size}), do: min(64, max(s_size, 2 * u_size))
-  defp cast_to_add({:u, s_size}, {:s, u_size}), do: min(64, max(s_size, 2 * u_size))
-  defp cast_to_add({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
-  defp cast_to_add({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
-  defp cast_to_add({:f, _}, {:f, _}), do: {:f, 64}
   defp cast_to_add(:date, {:duration, _}), do: :date
   defp cast_to_add({:duration, _}, :date), do: :date
   defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_add(_, _), do: nil
+  defp cast_to_add(left, right), do: cast_numeric(left, right)
+
+  defp cast_numeric({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
+    do: {int_type, max(left, right)}
+
+  defp cast_numeric({:s, s_size}, {:u, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
+  defp cast_numeric({:u, s_size}, {:s, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
+  defp cast_numeric({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
+  defp cast_numeric({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
+  defp cast_numeric({:f, left}, {:f, right}), do: {:f, max(left, right)}
+  defp cast_numeric(_, _), do: nil
 
   @doc """
   Subtracts right from left, element-wise.
@@ -3242,29 +3244,15 @@ defmodule Explorer.Series do
     end
   end
 
-  # Review the size needed for this operation.
   defp cast_to_subtract({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
     do: {:s, min(64, 2 * max(left, right))}
-
-  defp cast_to_subtract({:s, s_size}, {:u, u_size}) when u_size >= s_size,
-    do: {:s, min(64, u_size * 2)}
-
-  defp cast_to_subtract({:u, u_size}, {:s, s_size}) when u_size >= s_size,
-    do: {:s, min(64, u_size * 2)}
-
-  defp cast_to_subtract({:s, s_size}, {:u, _}), do: {:s, s_size}
-  defp cast_to_subtract({:u, _}, {:s, s_size}), do: {:s, s_size}
-
-  defp cast_to_subtract({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
-  defp cast_to_subtract({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
-  defp cast_to_subtract({:f, _}, {:f, _}), do: {:f, 64}
 
   defp cast_to_subtract(:date, :date), do: {:duration, :millisecond}
   defp cast_to_subtract(:date, {:duration, _}), do: :date
   defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
   defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_subtract(_, _), do: nil
+  defp cast_to_subtract(left, right), do: cast_numeric(left, right)
 
   @doc """
   Multiplies left and right, element-wise.
@@ -3312,27 +3300,11 @@ defmodule Explorer.Series do
     end
   end
 
-  defp cast_to_multiply({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
-    do: {int_type, max(left, right)}
-
-  defp cast_to_multiply({:s, s_size}, {:u, u_size}) when u_size >= s_size,
-    do: {:s, min(64, u_size * 2)}
-
-  defp cast_to_multiply({:u, u_size}, {:s, s_size}) when u_size >= s_size,
-    do: {:s, min(64, u_size * 2)}
-
-  defp cast_to_multiply({:s, s_size}, {:u, _}), do: {:s, s_size}
-  defp cast_to_multiply({:u, _}, {:s, s_size}), do: {:s, s_size}
-
-  defp cast_to_multiply({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
-  defp cast_to_multiply({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
-  defp cast_to_multiply({:f, _}, {:f, _}), do: {:f, 64}
-
   defp cast_to_multiply({:s, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_multiply({:f, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:f, _}), do: {:duration, p}
-  defp cast_to_multiply(_, _), do: nil
+  defp cast_to_multiply(left, right), do: cast_numeric(left, right)
 
   @doc """
   Divides left by right, element-wise.
