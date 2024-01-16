@@ -316,8 +316,28 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(matching_size!(left, right), :s_remainder, [right.data])
 
   @impl true
-  def pow(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_pow, [right.data])
+  def pow(out_dtype, left, right) do
+    _ = matching_size!(left, right)
+
+    # We need to pre-cast or we may lose precision.
+    left = Explorer.Series.cast(left, out_dtype)
+
+    left_lazy = Explorer.Backend.LazySeries.new(:column, ["base"], left.dtype)
+    right_lazy = Explorer.Backend.LazySeries.new(:column, ["exponent"], right.dtype)
+
+    {df_args, pow_args} =
+      case {size(left), size(right)} do
+        {n, n} -> {[{"base", left}, {"exponent", right}], [left_lazy, right_lazy]}
+        {1, _} -> {[{"exponent", right}], [Explorer.Series.at(left, 0), right_lazy]}
+        {_, 1} -> {[{"base", left}], [left_lazy, Explorer.Series.at(right, 0)]}
+      end
+
+    df = Explorer.PolarsBackend.DataFrame.from_series(df_args)
+    pow = Explorer.Backend.LazySeries.new(:pow, pow_args, out_dtype)
+
+    Explorer.PolarsBackend.DataFrame.mutate_with(df, df, [{"pow", pow}])
+    |> Explorer.PolarsBackend.DataFrame.pull("pow")
+  end
 
   @impl true
   def log(%Series{} = argument), do: Shared.apply_series(argument, :s_log_natural, [])

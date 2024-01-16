@@ -299,7 +299,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
       message =
-        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:s, 64}"
+        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:f, 64}"
 
       assert_raise ArgumentError, message, fn ->
         DF.filter_with(df, fn ldf ->
@@ -799,7 +799,7 @@ defmodule Explorer.DataFrameTest do
           calc10: is_nan(divide(a * 0.0, 0.0))
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 4],
                calc1: [3, 4, 6],
                calc2: [-1, 0, 2],
@@ -819,7 +819,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64},
                "calc8" => {:f, 64},
@@ -843,7 +843,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(2, a)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 4],
                calc1: [3, 4, 6],
                calc2: [1, 0, -2],
@@ -861,8 +861,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               # TODO: This should be float after #374 is resolved
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc5_1" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
@@ -884,7 +883,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(a, ^series)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 4],
                calc1: [3, 3, 6],
                calc2: [-1, 1, 2],
@@ -901,7 +900,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -922,7 +921,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(^series, a)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [2, 1, 2],
                calc1: [3, 3, 6],
                calc2: [-1, 1, 2],
@@ -939,7 +938,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -959,7 +958,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(b, c)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 3],
                b: [20, 40, 60],
                c: [10, 0, 8],
@@ -982,7 +981,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }

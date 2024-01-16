@@ -2210,23 +2210,99 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "pow/2" do
-    test "pow of an integer series with an integer series" do
-      s1 = Series.from_list([1, 2, 3])
-      s2 = Series.from_list([3, 2, 1])
+    test "pow(uint, uint) == uint" do
+      for u_base <- [8, 16, 32, 64], u_power <- [8, 16, 32, 64] do
+        base = Series.from_list([1, 2, 3], dtype: {:u, u_base})
+        power = Series.from_list([3, 2, 1], dtype: {:u, u_power})
 
-      result = Series.pow(s1, s2)
+        result = Series.pow(base, power)
 
-      assert result.dtype == {:s, 64}
-      assert Series.to_list(result) == [1, 4, 3]
+        assert result.dtype == {:u, max(u_base, u_power)}
+        assert Series.to_list(result) == [1, 4, 3]
+      end
+    end
+
+    test "pow(uint, sint) == float64" do
+      for u_base <- [8, 16, 32, 64], s_power <- [8, 16, 32, 64] do
+        base = Series.from_list([1, 2, 3], dtype: {:u, u_base})
+        power = Series.from_list([3, 2, 1], dtype: {:s, s_power})
+
+        result = Series.pow(base, power)
+
+        assert result.dtype == {:f, 64}
+        assert Series.to_list(result) == [1, 4, 3]
+      end
+    end
+
+    test "pow(sint, uint) == sint" do
+      for s_base <- [8, 16, 32, 64], u_power <- [8, 16, 32, 64] do
+        base = Series.from_list([1, 2, 3], dtype: {:s, s_base})
+        power = Series.from_list([3, 2, 1], dtype: {:u, u_power})
+
+        result = Series.pow(base, power)
+
+        # Unsigned integers have twice the precision as signed integers.
+        assert result.dtype == {:s, min(64, max(s_base, 2 * u_power))}
+        assert Series.to_list(result) == [1, 4, 3]
+      end
+    end
+
+    test "pow(sint, sint) == float64" do
+      for s_base <- [8, 16, 32, 64], s_power <- [8, 16, 32, 64] do
+        base = Series.from_list([1, 2, 3], dtype: {:s, s_base})
+        power = Series.from_list([3, 2, 1], dtype: {:s, s_power})
+
+        result = Series.pow(base, power)
+
+        assert result.dtype == {:f, 64}
+        assert Series.to_list(result) === [1.0, 4.0, 3.0]
+      end
+    end
+
+    test "pow(float, uint_or_sint) = float" do
+      for f_base <- [32, 64], d_power <- [:s, :u], n_power <- [8, 16, 32, 64] do
+        base = Series.from_list([1, 2, 3], dtype: {:f, f_base})
+        power = Series.from_list([3, 2, 1], dtype: {d_power, n_power})
+
+        result = Series.pow(base, power)
+
+        assert result.dtype == {:f, f_base}
+        assert Series.to_list(result) === [1.0, 4.0, 3.0]
+      end
+    end
+
+    test "pow(uint_or_sint, float) = float" do
+      for d_base <- [:s, :u], n_base <- [8, 16, 32, 64], f_power <- [32, 64] do
+        base = Series.from_list([1, 2, 3], dtype: {d_base, n_base})
+        power = Series.from_list([3, 2, 1], dtype: {:f, f_power})
+
+        result = Series.pow(base, power)
+
+        assert result.dtype == {:f, f_power}
+        assert Series.to_list(result) === [1.0, 4.0, 3.0]
+      end
+    end
+
+    test "pow(float, float) = float" do
+      for f_base <- [32, 64], f_power <- [32, 64] do
+        base = Series.from_list([1, 2, 3], dtype: {:f, f_base})
+        power = Series.from_list([3, 2, 1], dtype: {:f, f_power})
+
+        result = Series.pow(base, power)
+
+        assert result.dtype == {:f, max(f_base, f_power)}
+        assert Series.to_list(result) === [1.0, 4.0, 3.0]
+      end
     end
 
     test "pow of an integer series with an integer series that contains negative integer" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, -2, 3])
 
-      assert_raise RuntimeError, ~r"negative exponent with an integer base", fn ->
-        Series.pow(s1, s2)
-      end
+      result = Series.pow(s1, s2)
+
+      assert result.dtype == {:f, 64}
+      assert Series.to_list(result) === [1.0, 0.25, 27.0]
     end
 
     test "pow of an integer series with a float series" do
@@ -2255,7 +2331,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:s, 64}
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2265,7 +2341,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:s, 64}
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2275,7 +2351,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:s, 64}
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2284,16 +2360,17 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2)
 
-      assert result.dtype == {:s, 64}
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1, 4, 9]
     end
 
     test "pow of an integer series with a negative integer scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
-      assert_raise RuntimeError,
-                   ~r"negative exponent with an integer base",
-                   fn -> Series.pow(s1, -2) end
+      result = Series.pow(s1, -2)
+
+      assert result.dtype == {:f, 64}
+      assert Series.to_list(result) === [1.0, 1 / 4, 1 / 9]
     end
 
     test "pow of an integer series with a float scalar value on the right-hand side" do
@@ -2346,16 +2423,17 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(2, s1)
 
-      assert result.dtype == {:s, 64}
-      assert Series.to_list(result) == [2, 4, 8]
+      assert result.dtype == {:f, 64}
+      assert Series.to_list(result) === [2.0, 4.0, 8.0]
     end
 
     test "pow of an integer series that contains negative integer with an integer scalar value on the left-hand side" do
       s1 = Series.from_list([1, -2, 3])
 
-      assert_raise RuntimeError, ~r"negative exponent with an integer base", fn ->
-        Series.pow(2, s1)
-      end
+      result = Series.pow(2, s1)
+
+      assert result.dtype == {:f, 64}
+      assert Series.to_list(result) === [2.0, 0.25, 8.0]
     end
 
     test "pow of an integer series with a negative integer scalar value on the left-hand side" do
@@ -2363,7 +2441,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(-2, s1)
 
-      assert result.dtype == {:s, 64}
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [-2, 4, -8]
     end
 

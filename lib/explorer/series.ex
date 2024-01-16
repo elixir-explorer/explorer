@@ -3405,7 +3405,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.pow(s, 3)
       #Explorer.Series<
         Polars[3]
-        s64 [8, 64, 216]
+        f64 [8.0, 64.0, 216.0]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
@@ -3431,7 +3431,23 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def pow(left, right), do: basic_numeric_operation(:pow, left, right)
+  def pow(left, right) do
+    [left, right] = cast_for_arithmetic("pow/2", [left, right])
+
+    if out_dtype = cast_to_pow(dtype(left), dtype(right)) do
+      apply_series_list(:pow, [out_dtype, left, right])
+    else
+      dtype_mismatch_error("pow/2", left, right)
+    end
+  end
+
+  defp cast_to_pow({:u, l}, {:u, r}), do: {:u, max(l, r)}
+  defp cast_to_pow({:s, s}, {:u, u}), do: {:s, min(64, max(2 * u, s))}
+  defp cast_to_pow({:f, l}, {:f, r}), do: {:f, max(l, r)}
+  defp cast_to_pow({:f, l}, {n, _}) when K.in(n, [:u, :s]), do: {:f, l}
+  defp cast_to_pow({n, _}, {:f, r}) when K.in(n, [:u, :s]), do: {:f, r}
+  defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:f, 64}
+  defp cast_to_pow(_, _), do: nil
 
   @doc """
   Calculates the natural logarithm.
@@ -3760,8 +3776,6 @@ defmodule Explorer.Series do
 
   def atan(%Series{dtype: dtype}),
     do: dtype_error("atan/1", dtype, [{:f, 32}, {:f, 64}])
-
-  defp basic_numeric_operation(operation, left, right, args \\ [])
 
   defp basic_numeric_operation(operation, %Series{} = left, right, args) when is_numeric(right),
     do: basic_numeric_operation(operation, left, from_same_value(left, right), args)

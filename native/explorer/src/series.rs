@@ -1299,69 +1299,6 @@ pub fn s_n_distinct(s: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_pow(s: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
-    match (s.dtype().is_integer(), other.dtype().is_integer()) {
-        (true, true) => {
-            let cast1 = s.cast(&DataType::Int64)?;
-            let mut iter1 = cast1.i64()?.into_iter();
-
-            match other.strict_cast(&DataType::UInt32) {
-                Ok(casted) => {
-                    let mut iter2 = casted.u32()?.into_iter();
-
-                    let res = if s.len() == 1 {
-                        let v1 = iter1.next().unwrap();
-                        iter2
-                            .map(|v2| v1.and_then(|left| v2.map(|right| left.pow(right))))
-                            .collect()
-                    } else if other.len() == 1 {
-                        let v2 = iter2.next().unwrap();
-                        iter1
-                            .map(|v1| v1.and_then(|left| v2.map(|right| left.pow(right))))
-                            .collect()
-                    } else {
-                        iter1
-                            .zip(iter2)
-                            .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.pow(right))))
-                            .collect()
-                    };
-
-                    Ok(ExSeries::new(res))
-                }
-                Err(_) => Err(ExplorerError::Other(
-                    "negative exponent with an integer base".into(),
-                )),
-            }
-        }
-        (_, _) => {
-            let cast1 = s.cast(&DataType::Float64)?;
-            let cast2 = other.cast(&DataType::Float64)?;
-            let mut iter1 = cast1.f64()?.into_iter();
-            let mut iter2 = cast2.f64()?.into_iter();
-
-            let res = if s.len() == 1 {
-                let v1 = iter1.next().unwrap();
-                iter2
-                    .map(|v2| v1.and_then(|left| v2.map(|right| left.powf(right))))
-                    .collect()
-            } else if other.len() == 1 {
-                let v2 = iter2.next().unwrap();
-                iter1
-                    .map(|v1| v1.and_then(|left| v2.map(|right| left.powf(right))))
-                    .collect()
-            } else {
-                iter1
-                    .zip(iter2)
-                    .map(|(v1, v2)| v1.and_then(|left| v2.map(|right| left.powf(right))))
-                    .collect()
-            };
-
-            Ok(ExSeries::new(res))
-        }
-    }
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cast(s: ExSeries, to_type: ExSeriesDtype) -> Result<ExSeries, ExplorerError> {
     let dtype = DataType::try_from(&to_type)?;
     Ok(ExSeries::new(s.cast(&dtype)?))
