@@ -400,7 +400,7 @@ pub fn s_argsort(
         multithreaded,
         nulls_last,
     };
-    let indices = series.arg_sort(opts).cast(&DataType::Int64)?;
+    let indices = series.arg_sort(opts).into_series();
     Ok(ExSeries::new(indices))
 }
 

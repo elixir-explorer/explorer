@@ -4445,14 +4445,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.argsort(s)
       #Explorer.Series<
         Polars[4]
-        s64 [3, 1, 2, 0]
+        u32 [3, 1, 2, 0]
       >
 
       iex> s = Explorer.Series.from_list([9, 3, 7, 1])
       iex> Explorer.Series.argsort(s, direction: :desc)
       #Explorer.Series<
         Polars[4]
-        s64 [0, 2, 1, 3]
+        u32 [0, 2, 1, 3]
       >
 
   """

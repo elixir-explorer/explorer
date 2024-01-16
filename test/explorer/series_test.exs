@@ -3419,6 +3419,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([3, 1, nil, 2])
 
       result = Series.argsort(s1)
+      assert Series.dtype(result) == {:u, 32}
 
       assert Series.to_list(result) == [1, 3, 0, 2]
     end
