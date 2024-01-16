@@ -449,10 +449,10 @@ defmodule Explorer.DataFrame do
   And now you can make queries with:
 
       # For named connections
-      {:ok, _} = Explorer.DataFrame.from_query(MyApp.Conn, "SELECT 123")
+      {:ok, _} = Explorer.DataFrame.from_query(MyApp.Conn, "SELECT 123", [])
 
       # When using the conn PID directly
-      {:ok, _} = Explorer.DataFrame.from_query(conn, "SELECT 123")
+      {:ok, _} = Explorer.DataFrame.from_query(conn, "SELECT 123", [])
 
   ## Options
 
@@ -3732,9 +3732,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dummies(df, "col_x")
       #Explorer.DataFrame<
         Polars[4 x 3]
-        col_x_a s64 [1, 0, 1, 0]
-        col_x_b s64 [0, 1, 0, 0]
-        col_x_c s64 [0, 0, 0, 1]
+        col_x_a u8 [1, 0, 1, 0]
+        col_x_b u8 [0, 1, 0, 0]
+        col_x_c u8 [0, 0, 0, 1]
       >
 
   Or multiple columns:
@@ -3743,12 +3743,12 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dummies(df, ["col_x", "col_y"])
       #Explorer.DataFrame<
         Polars[4 x 6]
-        col_x_a s64 [1, 0, 1, 0]
-        col_x_b s64 [0, 1, 0, 0]
-        col_x_c s64 [0, 0, 0, 1]
-        col_y_b s64 [1, 0, 1, 0]
-        col_y_a s64 [0, 1, 0, 0]
-        col_y_d s64 [0, 0, 0, 1]
+        col_x_a u8 [1, 0, 1, 0]
+        col_x_b u8 [0, 1, 0, 0]
+        col_x_c u8 [0, 0, 0, 1]
+        col_y_b u8 [1, 0, 1, 0]
+        col_y_a u8 [0, 1, 0, 0]
+        col_y_d u8 [0, 0, 0, 1]
       >
 
   Or all string columns:
@@ -3757,9 +3757,9 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.dummies(df, fn _name, type -> type == :string end)
       #Explorer.DataFrame<
         Polars[4 x 3]
-        col_y_b s64 [1, 0, 1, 0]
-        col_y_a s64 [0, 1, 0, 0]
-        col_y_d s64 [0, 0, 0, 1]
+        col_y_b u8 [1, 0, 1, 0]
+        col_y_a u8 [0, 1, 0, 0]
+        col_y_d u8 [0, 0, 0, 1]
       >
 
   Ranges, regexes, and functions are also accepted in column names, as in `select/2`.
@@ -3779,7 +3779,7 @@ defmodule Explorer.DataFrame do
           value <- Series.to_list(Series.distinct(df[column])),
           do: column <> "_#{value}"
 
-    out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:s, 64}}
+    out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:u, 8}}
 
     out_df = %{df | groups: [], names: out_columns, dtypes: out_dtypes}
     Shared.apply_impl(df, :dummies, [out_df, columns])
@@ -4203,6 +4203,87 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, seed: nil)
 
     sample(df, 1.0, seed: opts[:seed], shuffle: true)
+  end
+
+  @doc """
+  Transpose a DataFrame.
+
+  > #### Warning {: .warning}
+  >
+  > This is an expensive operation since data is stored in a columnar format.
+
+  ## Options
+
+    * `:header` - When a string is passed, name of the header column is set to the value. When `header` is `true`, name is set to `column` (default: `false`)
+    * `:columns` - names for non header columns. Length of column_names should match the row count of data frame. (default: `nil`)
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: ["d", nil], b: [1, 2], c: ["a", "b"])
+      iex> Explorer.DataFrame.transpose(df)
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        column_0 string ["d", "1", "a"]
+        column_1 string [nil, "2", "b"]
+      >
+
+      iex> df = Explorer.DataFrame.new(a: ["d", nil], b: [1, 2], c: ["a", "b"])
+      iex> Explorer.DataFrame.transpose(df, columns: ["x", "y"])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        x string ["d", "1", "a"]
+        y string [nil, "2", "b"]
+      >
+
+      iex> df = Explorer.DataFrame.new(a: ["d", nil], b: [1, 2], c: ["a", "b"])
+      iex> Explorer.DataFrame.transpose(df, header: "name")
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        name string ["a", "b", "c"]
+        column_0 string ["d", "1", "a"]
+        column_1 string [nil, "2", "b"]
+      >
+  """
+  @doc type: :single
+  @spec transpose(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def transpose(df, opts \\ []) do
+    opts =
+      Keyword.validate!(opts, header: false, columns: nil)
+
+    header =
+      case opts[:header] do
+        false -> nil
+        true -> "column"
+        header -> to_column_name(header)
+      end
+
+    columns = opts[:columns] && Enum.map(opts[:columns], &to_column_name/1)
+
+    df_length = n_rows(df)
+
+    names =
+      cond do
+        columns == nil ->
+          for i <- 0..(df_length - 1), do: "column_#{i}"
+
+        length(columns) == df_length ->
+          columns
+
+        true ->
+          raise ArgumentError,
+                "invalid :columns option, length of column names (#{length(columns)}) must match the row count (#{df_length})"
+      end
+
+    names = if header, do: [header | names], else: names
+
+    out_df = %{
+      df
+      | names: names,
+        dtypes: Enum.map(names, fn n -> {n, :string} end) |> Enum.into(%{})
+    }
+
+    args = [out_df, header, columns]
+    Shared.apply_impl(df, :transpose, args)
   end
 
   @doc """

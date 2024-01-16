@@ -777,6 +777,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def transpose(df, out_df, keep_names_as, new_col_names) do
+    Shared.apply_dataframe(df, out_df, :df_transpose, [keep_names_as, new_col_names])
+  end
+
+  @impl true
   def explode(df, out_df, columns) do
     Shared.apply_dataframe(df, out_df, :df_explode, [columns])
   end
