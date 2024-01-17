@@ -1062,9 +1062,9 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def lengths(series) do
-    data = new(:lengths, [lazy_series!(series)], {:s, 64})
+    data = new(:lengths, [lazy_series!(series)], {:u, 32})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:u, 32})
   end
 
   @impl true

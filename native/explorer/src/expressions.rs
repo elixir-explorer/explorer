@@ -1048,7 +1048,7 @@ pub fn expr_join(expr: ExExpr, sep: String) -> ExExpr {
 pub fn expr_lengths(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.list().len().cast(DataType::Int64))
+    ExExpr::new(expr.list().len())
 }
 
 #[rustler::nif]

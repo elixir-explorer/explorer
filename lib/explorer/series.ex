@@ -5925,7 +5925,7 @@ defmodule Explorer.Series do
       iex> Series.lengths(s)
       #Explorer.Series<
         Polars[2]
-        s64 [1, 2]
+        u32 [1, 2]
       >
 
   """

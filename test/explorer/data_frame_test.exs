@@ -1834,6 +1834,15 @@ defmodule Explorer.DataFrameTest do
           member?: member?(c, ~N[2021-01-02 00:00:00])
         )
 
+      assert DF.dtypes(df) == %{
+               "a" => {:list, :string},
+               "b" => {:list, {:s, 64}},
+               "c" => {:list, {:datetime, :microsecond}},
+               "join" => :string,
+               "lengths" => {:u, 32},
+               "member?" => :boolean
+             }
+
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [~w(a b c), ~w(d e f)],
                b: [[1, 2, 3], [4, 5, 6]],
