@@ -2097,56 +2097,27 @@ defmodule Explorer.Series do
   @doc type: :shape
   @spec concat([Series.t()]) :: Series.t()
   def concat([%Series{} | _t] = series) do
-    {null?, dtypes_map} =
-      Enum.reduce(series, {false, %{}}, fn
-        %Series{dtype: :null}, {true, _dtypes} = acc ->
-          acc
-
-        %Series{dtype: :null}, {_, dtypes} ->
-          {true, dtypes}
-
-        %Series{dtype: dt}, {null?, dtypes} when is_atom(dt) ->
-          {null?, Map.put_new(dtypes, dt, dt)}
-
-        %Series{dtype: {type, n} = dt}, {null?, dtypes} ->
-          dtypes =
-            case dtypes[type] do
-              nil -> Map.put(dtypes, type, dt)
-              {_t, tn} when n > tn -> Map.put(dtypes, type, dt)
-              _ -> dtypes
-            end
-
-          {null?, dtypes}
-      end)
-
-    dtypes = Map.values(dtypes_map)
-
     series =
-      series
-      |> maybe_raise_mismatched!(dtypes)
-      |> maybe_cast(null?, dtypes)
+      case series |> Enum.map(& &1.dtype) |> Enum.uniq() |> List.delete(:null) do
+        [] ->
+          series
+
+        [_] ->
+          series
+
+        dtypes ->
+          dtype =
+            Enum.reduce(dtypes, fn left, right ->
+              cast_numeric(left, right) ||
+                raise ArgumentError,
+                      "cannot concatenate series with mismatched dtypes: #{inspect(dtypes)}. " <>
+                        "First cast the series to the desired dtype."
+            end)
+
+          Enum.map(series, &cast(&1, dtype))
+      end
 
     impl!(series).concat(series)
-  end
-
-  defp maybe_cast(series, true, []), do: series
-
-  defp maybe_cast(series, _, [dtype]), do: Enum.map(series, &cast(&1, dtype))
-
-  defp maybe_cast(series, _, _), do: Enum.map(series, &cast(&1, {:f, 64}))
-
-  defp maybe_raise_mismatched!(series, [_dtype]), do: series
-
-  defp maybe_raise_mismatched!(series, dtypes) do
-    if Enum.all?(dtypes, &is_numeric_dtype/1) do
-      series
-    else
-      dtypes = Enum.map(series, & &1.dtype)
-
-      raise ArgumentError,
-            "cannot concatenate series with mismatched dtypes: #{inspect(dtypes)}. " <>
-              "First cast the series to the desired dtype."
-    end
   end
 
   @doc """
