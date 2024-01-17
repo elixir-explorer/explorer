@@ -3900,9 +3900,22 @@ defmodule Explorer.SeriesTest do
 
     test "from a series of indices" do
       s = Series.from_list(["a", "b", "c"])
-      s1 = Series.slice(s, Series.from_list([0, 2]))
 
-      assert Series.to_list(s1) == ["a", "c"]
+      for dtype <- [:u8, :s16, :s64] do
+        s1 = Series.slice(s, Series.from_list([0, 2], dtype: dtype))
+
+        assert Series.dtype(s1) == s.dtype
+        assert Series.to_list(s1) == ["a", "c"]
+      end
+    end
+
+    test "from a series of strings" do
+      s = Series.from_list(["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "Explorer.Series.slice/2 not implemented for dtype :string. " <>
+                     "Valid dtypes are {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}",
+                   fn -> Series.slice(s, Series.from_list(["0", "2"])) end
     end
 
     test "from a series of indices with a negative number" do

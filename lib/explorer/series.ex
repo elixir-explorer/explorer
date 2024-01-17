@@ -1937,8 +1937,8 @@ defmodule Explorer.Series do
   @doc """
   Slices the elements at the given indices as a new series.
 
-  The indices may be either a list of indices or a range.
-  A list of indices does not support negative numbers.
+  The indices may be either a list (or series) of indices or a range.
+  A list or series of indices does not support negative numbers.
   Ranges may be negative on either end, which are then
   normalized. Note ranges in Elixir are inclusive.
 
@@ -1978,11 +1978,11 @@ defmodule Explorer.Series do
   def slice(series, indices) when is_list(indices),
     do: apply_series(series, :slice, [indices])
 
-  def slice(series, %Series{dtype: {:s, 64}} = indices),
+  def slice(series, %Series{dtype: int_dtype} = indices) when K.in(int_dtype, @integer_types),
     do: apply_series(series, :slice, [indices])
 
   def slice(_series, %Series{dtype: invalid_dtype}),
-    do: dtype_error("slice/2", invalid_dtype, [{:s, 64}])
+    do: dtype_error("slice/2", invalid_dtype, @integer_types)
 
   def slice(series, first..last//1) do
     first = if first < 0, do: first + size(series), else: first

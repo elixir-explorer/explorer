@@ -1971,11 +1971,14 @@ defmodule Explorer.DataFrameTest do
 
     test "slice with series of integers indices" do
       df = DF.new(a: [1, 2, 3, 4, 5])
-      series = Series.from_list([2, 4])
 
-      df1 = DF.slice(df, series)
+      for dtype <- [:u8, :s16, :s64] do
+        series = Series.from_list([2, 4], dtype: dtype)
 
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
+        df1 = DF.slice(df, series)
+
+        assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
+      end
     end
 
     test "slice with ranges" do

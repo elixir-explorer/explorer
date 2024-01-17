@@ -264,6 +264,7 @@ defmodule Explorer.DataFrame do
 
   @default_infer_schema_length 1000
   @default_sample_nrows 5
+  @integer_types Explorer.Shared.integer_types()
 
   # Guards and helpers for columns
 
@@ -4020,8 +4021,8 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :slice, [row_indices])
   end
 
-  # TODO: consider accepting more integer dtypes
-  def slice(%DataFrame{} = df, %Series{dtype: {:s, 64}} = indices) do
+  def slice(%DataFrame{} = df, %Series{dtype: int_dtype} = indices)
+      when int_dtype in @integer_types do
     Shared.apply_impl(df, :slice, [indices])
   end
 
