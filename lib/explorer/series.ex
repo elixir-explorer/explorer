@@ -121,7 +121,8 @@ defmodule Explorer.Series do
   @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}, {:struct, :any}]
 
   @type dtype ::
-          :binary
+          :null
+          | :binary
           | :boolean
           | :category
           | :date
@@ -1233,11 +1234,11 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: dtype} = categories)
-      when K.and(K.in(l_dtype, [{:s, 64}, :string]), K.in(dtype, [:string, :category])),
+      when K.and(K.in(l_dtype, [:string | @integer_types]), K.in(dtype, [:string, :category])),
       do: apply_series(series, :categorise, [categories])
 
   def categorise(%Series{dtype: l_dtype} = series, [head | _] = categories)
-      when K.and(K.in(l_dtype, [{:s, 64}, :string]), is_binary(head)),
+      when K.and(K.in(l_dtype, [:string | @integer_types]), is_binary(head)),
       do: apply_series(series, :categorise, [from_list(categories, dtype: :string)])
 
   # Slice and dice
@@ -1336,6 +1337,10 @@ defmodule Explorer.Series do
 
   `predicate` must be a boolean series. `on_true` and `on_false` must be
   a series of the same size as `predicate` or a series of size 1.
+
+  It is possible to mix numeric series in the `on_true` and `on_false`,
+  and the resultant series will have the dtype of the greater side.
+  For example, `:u8` and `:s16` is going to result in `:s16` series.
   """
   @doc type: :element_wise
   @spec select(
@@ -1839,7 +1844,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rank(s, method: :ordinal)
       #Explorer.Series<
         Polars[3]
-        s64 [1, 2, 3]
+        u32 [1, 2, 3]
       >
 
       iex> s = Explorer.Series.from_list([ ~N[2022-07-07 17:44:13.020548], ~N[2022-07-07 17:43:08.473561], ~N[2022-07-07 17:45:00.116337] ])
@@ -3129,6 +3134,7 @@ defmodule Explorer.Series do
     |> enforce_highest_precision()
   end
 
+  # TODO: maybe we can move this casting to Rust.
   defp enforce_highest_precision([
          %Series{dtype: {left_base, left_timeunit}} = left,
          %Series{dtype: {right_base, right_timeunit}} = right
@@ -3201,22 +3207,29 @@ defmodule Explorer.Series do
     end
   end
 
-  # TODO: fix the logic for integer dtypes
-  defp cast_to_add({:s, left}, {:s, right}), do: {:s, max(left, right)}
-  defp cast_to_add({:s, _}, {:f, _} = float), do: float
-  defp cast_to_add({:f, _} = float, {:s, _}), do: float
-  defp cast_to_add({:f, _}, {:f, _}), do: {:f, 64}
   defp cast_to_add(:date, {:duration, _}), do: :date
   defp cast_to_add({:duration, _}, :date), do: :date
   defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_add(_, _), do: nil
+  defp cast_to_add(left, right), do: cast_numeric(left, right)
+
+  defp cast_numeric({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
+    do: {int_type, max(left, right)}
+
+  defp cast_numeric({:s, s_size}, {:u, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
+  defp cast_numeric({:u, s_size}, {:s, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
+  defp cast_numeric({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
+  defp cast_numeric({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
+  defp cast_numeric({:f, left}, {:f, right}), do: {:f, max(left, right)}
+  defp cast_numeric(_, _), do: nil
 
   @doc """
   Subtracts right from left, element-wise.
 
   When mixing floats and integers, the resulting series will have dtype `{:f, 64}`.
+  In case both series are of unsigned integers, we will try to subtract,
+  but an exception is raised if overflow occurs.
 
   At least one of the arguments must be a series. If both
   sizes are series, the series must have the same size or
@@ -3268,18 +3281,12 @@ defmodule Explorer.Series do
     end
   end
 
-  # TODO: fix the logic for new integer dtypes
-  defp cast_to_subtract({:s, left}, {:s, right}), do: {:s, max(left, right)}
-  defp cast_to_subtract({:s, _}, {:f, _} = float), do: float
-  defp cast_to_subtract({:f, _} = float, {:s, _}), do: float
-  defp cast_to_subtract({:f, _}, {:f, _}), do: {:f, 64}
-
   defp cast_to_subtract(:date, :date), do: {:duration, :millisecond}
   defp cast_to_subtract(:date, {:duration, _}), do: :date
   defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
   defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_subtract(_, _), do: nil
+  defp cast_to_subtract(left, right), do: cast_numeric(left, right)
 
   @doc """
   Multiplies left and right, element-wise.
@@ -3327,16 +3334,11 @@ defmodule Explorer.Series do
     end
   end
 
-  # TODO: fix the logic for new dtypes
-  defp cast_to_multiply({:s, left}, {:s, right}), do: {:s, max(left, right)}
-  defp cast_to_multiply({:s, _}, {:f, _} = float), do: float
-  defp cast_to_multiply({:f, _} = float, {:s, _}), do: float
-  defp cast_to_multiply({:f, _}, {:f, _}), do: {:f, 64}
   defp cast_to_multiply({:s, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_multiply({:f, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:f, _}), do: {:duration, p}
-  defp cast_to_multiply(_, _), do: nil
+  defp cast_to_multiply(left, right), do: cast_numeric(left, right)
 
   @doc """
   Divides left by right, element-wise.
@@ -3402,11 +3404,13 @@ defmodule Explorer.Series do
     end
   end
 
-  # Fix the logic for new integer dtypes
-  defp cast_to_divide({:s, _}, {:s, _}), do: {:f, 64}
-  defp cast_to_divide({:s, _}, {:f, _} = float), do: float
-  defp cast_to_divide({:f, _} = float, {:s, _}), do: float
-  defp cast_to_divide({:f, _}, {:f, _}), do: {:f, 64}
+  # Review the size needed for this operation.
+  defp cast_to_divide({int_type, _}, {int_type, _}) when K.in(int_type, [:s, :u]), do: {:f, 64}
+  defp cast_to_divide({:s, _}, {:u, _}), do: {:f, 64}
+  defp cast_to_divide({:u, _}, {:s, _}), do: {:f, 64}
+  defp cast_to_divide({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
+  defp cast_to_divide({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
+  defp cast_to_divide({:f, left}, {:f, right}), do: {:f, max(left, right)}
   defp cast_to_divide({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_divide({:duration, p}, {:f, _}), do: {:duration, p}
   defp cast_to_divide(_, _), do: nil
@@ -3436,7 +3440,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.pow(s, 3)
       #Explorer.Series<
         Polars[3]
-        s64 [8, 64, 216]
+        f64 [8.0, 64.0, 216.0]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
@@ -3462,7 +3466,23 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec pow(left :: Series.t() | number(), right :: Series.t() | number()) :: Series.t()
-  def pow(left, right), do: basic_numeric_operation(:pow, left, right)
+  def pow(left, right) do
+    [left, right] = cast_for_arithmetic("pow/2", [left, right])
+
+    if out_dtype = cast_to_pow(dtype(left), dtype(right)) do
+      apply_series_list(:pow, [out_dtype, left, right])
+    else
+      dtype_mismatch_error("pow/2", left, right)
+    end
+  end
+
+  defp cast_to_pow({:u, l}, {:u, r}), do: {:u, max(l, r)}
+  defp cast_to_pow({:s, s}, {:u, u}), do: {:s, min(64, max(2 * u, s))}
+  defp cast_to_pow({:f, l}, {:f, r}), do: {:f, max(l, r)}
+  defp cast_to_pow({:f, l}, {n, _}) when K.in(n, [:u, :s]), do: {:f, l}
+  defp cast_to_pow({n, _}, {:f, r}) when K.in(n, [:u, :s]), do: {:f, r}
+  defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:f, 64}
+  defp cast_to_pow(_, _), do: nil
 
   @doc """
   Calculates the natural logarithm.
@@ -3568,14 +3588,17 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec quotient(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
-  def quotient(%Series{dtype: {:s, 64}} = left, %Series{dtype: {:s, 64}} = right),
-    do: apply_series_list(:quotient, [left, right])
+  def quotient(%Series{dtype: l_dtype} = left, %Series{dtype: r_dtype} = right)
+      when K.and(K.in(l_dtype, @integer_types), K.in(r_dtype, @integer_types)),
+      do: apply_series_list(:quotient, [left, right])
 
-  def quotient(%Series{dtype: {:s, 64}} = left, right) when is_integer(right),
-    do: apply_series_list(:quotient, [left, from_list([right])])
+  def quotient(%Series{dtype: l_dtype} = left, right)
+      when K.and(K.in(l_dtype, @integer_types), is_integer(right)),
+      do: apply_series_list(:quotient, [left, from_list([right])])
 
-  def quotient(left, %Series{dtype: {:s, 64}} = right) when is_integer(left),
-    do: apply_series_list(:quotient, [from_list([left]), right])
+  def quotient(left, %Series{dtype: r_dtype} = right)
+      when K.and(K.in(r_dtype, @integer_types), is_integer(left)),
+      do: apply_series_list(:quotient, [from_list([left]), right])
 
   @doc """
   Computes the remainder of an element-wise integer division.
@@ -3618,14 +3641,17 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec remainder(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
-  def remainder(%Series{dtype: {:s, 64}} = left, %Series{dtype: {:s, 64}} = right),
-    do: apply_series_list(:remainder, [left, right])
+  def remainder(%Series{dtype: l_dtype} = left, %Series{dtype: r_dtype} = right)
+      when K.and(K.in(l_dtype, @integer_types), K.in(r_dtype, @integer_types)),
+      do: apply_series_list(:remainder, [left, right])
 
-  def remainder(%Series{dtype: {:s, 64}} = left, right) when is_integer(right),
-    do: apply_series_list(:remainder, [left, from_list([right])])
+  def remainder(%Series{dtype: l_dtype} = left, right)
+      when K.and(K.in(l_dtype, @integer_types), is_integer(right)),
+      do: apply_series_list(:remainder, [left, from_list([right])])
 
-  def remainder(left, %Series{dtype: {:s, 64}} = right) when is_integer(left),
-    do: apply_series_list(:remainder, [from_list([left]), right])
+  def remainder(left, %Series{dtype: r_dtype} = right)
+      when K.and(K.in(r_dtype, @integer_types), is_integer(left)),
+      do: apply_series_list(:remainder, [from_list([left]), right])
 
   @doc """
   Computes the the sine of a number (in radians).
@@ -3785,8 +3811,6 @@ defmodule Explorer.Series do
 
   def atan(%Series{dtype: dtype}),
     do: dtype_error("atan/1", dtype, [{:f, 32}, {:f, 64}])
-
-  defp basic_numeric_operation(operation, left, right, args \\ [])
 
   defp basic_numeric_operation(operation, %Series{} = left, right, args) when is_numeric(right),
     do: basic_numeric_operation(operation, left, from_same_value(left, right), args)
@@ -4435,14 +4459,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.argsort(s)
       #Explorer.Series<
         Polars[4]
-        s64 [3, 1, 2, 0]
+        u32 [3, 1, 2, 0]
       >
 
       iex> s = Explorer.Series.from_list([9, 3, 7, 1])
       iex> Explorer.Series.argsort(s, direction: :desc)
       #Explorer.Series<
         Polars[4]
-        s64 [0, 2, 1, 3]
+        u32 [0, 2, 1, 3]
       >
 
   """
@@ -5873,6 +5897,7 @@ defmodule Explorer.Series do
     do: dtype_error("week_of_year/1", dtype, @date_or_datetime_dtypes)
 
   @deprecated "Use cast(:date) instead"
+  @doc type: :deprecated
   def to_date(%Series{dtype: dtype} = series) when K.in(dtype, @datetime_dtypes),
     do: cast(series, :date)
 
@@ -5880,6 +5905,7 @@ defmodule Explorer.Series do
     do: dtype_error("to_date/1", dtype, @datetime_dtypes)
 
   @deprecated "Use cast(:time) instead"
+  @doc type: :deprecated
   def to_time(%Series{dtype: dtype} = series) when K.in(dtype, @datetime_dtypes),
     do: cast(series, :time)
 

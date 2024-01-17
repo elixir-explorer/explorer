@@ -165,6 +165,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_slice_by_series(_df, _series, _groups), do: err()
   def df_summarise_with_exprs(_df, _groups_exprs, _aggs_pairs), do: err()
   def df_tail(_df, _length, _groups), do: err()
+  def df_transpose(_df, _keep_names_as, _new_col_names), do: err()
   def df_to_csv(_df, _filename, _has_headers, _delimiter), do: err()
   def df_to_csv_cloud(_df, _ex_entry, _has_headers, _delimiter), do: err()
   def df_to_dummies(_df, _columns), do: err()
@@ -200,6 +201,7 @@ defmodule Explorer.PolarsBackend.Native do
 
   # Then we generate for some specific expressions
   def expr_alias(_ex_expr, _alias_name), do: err()
+  def expr_nil(), do: err()
   def expr_atom(_atom), do: err()
   def expr_boolean(_bool), do: err()
   def expr_date(_date), do: err()
@@ -372,7 +374,6 @@ defmodule Explorer.PolarsBackend.Native do
   def s_peak_max(_s), do: err()
   def s_peak_min(_s), do: err()
   def s_select(_pred, _on_true, _on_false), do: err()
-  def s_pow(_s, _other), do: err()
   def s_log_natural(_s_argument), do: err()
   def s_log(_s_argument, _base_as_float), do: err()
   def s_quantile(_s, _quantile, _strategy), do: err()

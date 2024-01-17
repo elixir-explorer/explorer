@@ -114,7 +114,7 @@ defmodule Explorer.Backend.Series do
   @callback divide(out_dtype :: dtype(), s, s) :: s
   @callback quotient(s, s) :: s
   @callback remainder(s, s) :: s
-  @callback pow(s, s) :: s
+  @callback pow(out_dtype :: dtype(), s, s) :: s
   @callback log(argument :: s) :: s
   @callback log(argument :: s, base :: float()) :: s
   @callback exp(s) :: s

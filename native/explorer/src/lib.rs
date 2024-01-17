@@ -125,6 +125,7 @@ rustler::init!(
         df_slice_by_series,
         df_summarise_with_exprs,
         df_tail,
+        df_transpose,
         df_to_csv,
         df_to_csv_cloud,
         df_to_dummies,
@@ -140,6 +141,7 @@ rustler::init!(
         df_unnest,
         df_width,
         // expressions
+        expr_nil,
         expr_atom,
         expr_boolean,
         expr_cast,
@@ -425,7 +427,6 @@ rustler::init!(
         s_peak_max,
         s_peak_min,
         s_select,
-        s_pow,
         s_quantile,
         s_quotient,
         s_rank,

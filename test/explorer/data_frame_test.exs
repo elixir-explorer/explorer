@@ -299,7 +299,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
       message =
-        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:s, 64}"
+        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:f, 64}"
 
       assert_raise ArgumentError, message, fn ->
         DF.filter_with(df, fn ldf ->
@@ -663,6 +663,19 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "mutate/2" do
+    test "with nil" do
+      df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      df1 = DF.mutate(df, c: nil)
+      assert df1.names == ["strs", "nums", "c"]
+      assert df1.dtypes == %{"strs" => :string, "nums" => {:s, 64}, "c" => :null}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               strs: ["a", "b", "c"],
+               nums: [1, 2, 3],
+               c: [nil, nil, nil]
+             }
+    end
+
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
@@ -786,7 +799,7 @@ defmodule Explorer.DataFrameTest do
           calc10: is_nan(divide(a * 0.0, 0.0))
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 4],
                calc1: [3, 4, 6],
                calc2: [-1, 0, 2],
@@ -806,7 +819,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64},
                "calc8" => {:f, 64},
@@ -830,7 +843,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(2, a)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 4],
                calc1: [3, 4, 6],
                calc2: [1, 0, -2],
@@ -848,8 +861,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               # TODO: This should be float after #374 is resolved
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc5_1" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
@@ -871,7 +883,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(a, ^series)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 4],
                calc1: [3, 3, 6],
                calc2: [-1, 1, 2],
@@ -888,7 +900,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -909,7 +921,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(^series, a)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [2, 1, 2],
                calc1: [3, 3, 6],
                calc2: [-1, 1, 2],
@@ -926,7 +938,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -946,7 +958,7 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(b, c)
         )
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
+      assert DF.to_columns(df1, atom_keys: true) === %{
                a: [1, 2, 3],
                b: [20, 40, 60],
                c: [10, 0, 8],
@@ -969,7 +981,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -2709,6 +2721,82 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "transpose/2" do
+    test "without options" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      dft = DF.transpose(df)
+      assert DF.shape(df) == {3, 2}
+      assert DF.shape(dft) == {2, 3}
+      assert df.dtypes == %{"a" => {:s, 64}, "b" => :string}
+      assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "column_2" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "column_0" => ["1", "a"],
+               "column_1" => ["2", "b"],
+               "column_2" => ["3", "c"]
+             }
+    end
+
+    test "header column without name " do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      dft = DF.transpose(df, header: true)
+      assert DF.shape(df) == {2, 3}
+      assert DF.shape(dft) == {3, 3}
+      assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
+      assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "column" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "column" => ["a", "b", "c"],
+               "column_0" => ["32.0", "1", "a"],
+               "column_1" => ["33.0", "2", "b"]
+             }
+    end
+
+    test "header column with name " do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      dft = DF.transpose(df, header: "name")
+      assert DF.shape(df) == {2, 3}
+      assert DF.shape(dft) == {3, 3}
+      assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
+      assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "name" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "name" => ["a", "b", "c"],
+               "column_0" => ["32.0", "1", "a"],
+               "column_1" => ["33.0", "2", "b"]
+             }
+    end
+
+    test "with column names" do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      dft = DF.transpose(df, header: "name", columns: ["x", "y"])
+      assert DF.shape(df) == {2, 3}
+      assert DF.shape(dft) == {3, 3}
+      assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
+      assert dft.dtypes == %{"name" => :string, "x" => :string, "y" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "name" => ["a", "b", "c"],
+               "x" => ["32.0", "1", "a"],
+               "y" => ["33.0", "2", "b"]
+             }
+    end
+
+    test "with column names < length of rows raises" do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      assert DF.shape(df) == {2, 3}
+
+      assert_raise ArgumentError,
+                   "invalid :columns option, length of column names (1) must match the row count (2)",
+                   fn ->
+                     DF.transpose(df,
+                       header: "name",
+                       columns: ["x"]
+                     )
+                   end
+    end
+  end
+
   describe "pivot_wider/4" do
     test "with a single id" do
       df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
@@ -3321,12 +3409,14 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.describe(df)
 
       assert df1.dtypes == %{
+               "a" => :string,
                "b" => {:f, 64},
                "c" => {:f, 64},
                "describe" => :string
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["2", "1", nil, nil, nil, nil, nil, nil, nil],
                b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
                c: [3.0, 0.0, 20.0, 10.0, 10.0, 20.0, 20.0, 30.0, 30.0],
                describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"]
@@ -3361,6 +3451,78 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df1, atom_keys: true) == %{
                b: [3.0, 0.0, 2.0, 1.0, 1.0, 3.0],
                describe: ["count", "nil_count", "mean", "std", "min", "max"]
+             }
+    end
+
+    test "describe columns - max, min columns" do
+      df =
+        DF.new(
+          number: [1, 2, nil, 3],
+          list: [[], [], [], []],
+          null: [nil, nil, nil, nil],
+          string: ["a", "b", "c", "nil"],
+          date: [~D[2021-01-01], ~D[1999-12-31], nil, ~D[2023-01-01]],
+          time: [~T[00:02:03.000212], ~T[00:05:04.000456], ~T[00:07:04.000776], nil],
+          datetime: [
+            nil,
+            ~N[2021-01-01 00:00:00],
+            ~N[1999-12-31 00:00:00],
+            ~N[2023-12-13 17:38:00]
+          ],
+          duration: [
+            nil,
+            ~N[2020-01-01 00:00:00],
+            ~N[1999-11-30 00:00:00],
+            ~N[2023-12-12 17:38:00]
+          ]
+        )
+
+      df = DF.mutate(df, duration: datetime - duration)
+      describe_df = DF.describe(df)
+
+      assert df.dtypes == %{
+               "date" => :date,
+               "datetime" => {:datetime, :microsecond},
+               "duration" => {:duration, :microsecond},
+               "list" => {:list, :null},
+               "null" => :null,
+               "number" => {:s, 64},
+               "string" => :string,
+               "time" => :time
+             }
+
+      assert describe_df.dtypes == %{
+               "date" => :string,
+               "datetime" => :string,
+               "describe" => :string,
+               "duration" => :string,
+               "list" => :string,
+               "null" => :string,
+               "number" => {:f, 64},
+               "string" => :string,
+               "time" => :string
+             }
+
+      assert DF.to_columns(describe_df, atom_keys: true) == %{
+               date: ["3", "1", nil, nil, nil, nil, nil, nil, nil],
+               datetime: [
+                 "3",
+                 "1",
+                 nil,
+                 nil,
+                 "1999-12-31 00:00:00.000000",
+                 nil,
+                 nil,
+                 nil,
+                 "2023-12-13 17:38:00.000000"
+               ],
+               describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"],
+               duration: ["3", "1", nil, nil, "1d", nil, nil, nil, "366d"],
+               list: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
+               null: ["0", "4", nil, nil, nil, nil, nil, nil, nil],
+               number: [3.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
+               string: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
+               time: ["3", "1", nil, nil, nil, nil, nil, nil, nil]
              }
     end
   end
@@ -3527,6 +3689,13 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "summarise/2" do
+    test "summarise with nil" do
+      df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      df1 = DF.summarise(df, c: nil)
+      assert DF.dtypes(df1) == %{"c" => :null}
+      assert DF.to_columns(df1, atom_keys: true) == %{c: [nil]}
+    end
+
     test "one column with aggregation and without groups", %{df: df} do
       df1 =
         DF.summarise(df,

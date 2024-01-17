@@ -307,6 +307,7 @@ defmodule Explorer.PolarsBackend.Expression do
     end
   end
 
+  def to_expr(nil), do: Native.expr_nil()
   def to_expr(bool) when is_boolean(bool), do: Native.expr_boolean(bool)
   def to_expr(atom) when is_atom(atom), do: Native.expr_atom(Atom.to_string(atom))
   def to_expr(binary) when is_binary(binary), do: Native.expr_string(binary)
