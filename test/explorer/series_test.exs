@@ -5677,7 +5677,7 @@ defmodule Explorer.SeriesTest do
       df = Series.frequencies(s)
 
       assert Series.dtype(df[:values]) == {:s, 64}
-      assert Series.dtype(df[:counts]) == {:s, 64}
+      assert Series.dtype(df[:counts]) == {:u, 32}
 
       assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
                values: [1, 2, 3, 4, 5, 6],
@@ -5691,7 +5691,7 @@ defmodule Explorer.SeriesTest do
       df = Series.frequencies(s)
 
       assert Series.dtype(df[:values]) == :string
-      assert Series.dtype(df[:counts]) == {:s, 64}
+      assert Series.dtype(df[:counts]) == {:u, 32}
 
       assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
                values: ["c", "a", "b"],
@@ -5705,7 +5705,7 @@ defmodule Explorer.SeriesTest do
       df = Series.frequencies(s)
 
       assert Series.dtype(df[:values]) == {:list, {:s, 64}}
-      assert Series.dtype(df[:counts]) == {:s, 64}
+      assert Series.dtype(df[:counts]) == {:u, 32}
 
       assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
                values: [[1, 2], [4, 1], [3, 1, 3], [5, 6]],

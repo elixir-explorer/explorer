@@ -284,7 +284,7 @@ pub fn expr_rank(
     let expr = expr.clone_inner();
     let rank_options = crate::parse_rank_method_options(method, descending);
 
-    ExExpr::new(expr.rank(rank_options, seed).cast(DataType::Float64))
+    ExExpr::new(expr.rank(rank_options, seed))
 }
 
 #[rustler::nif]
@@ -435,14 +435,14 @@ pub fn expr_max(expr: ExExpr) -> ExExpr {
 pub fn expr_argmax(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.arg_max().cast(DataType::Int64))
+    ExExpr::new(expr.arg_max())
 }
 
 #[rustler::nif]
 pub fn expr_argmin(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.arg_min().cast(DataType::Int64))
+    ExExpr::new(expr.arg_min())
 }
 
 #[rustler::nif]
@@ -559,21 +559,21 @@ pub fn expr_count(expr: ExExpr) -> ExExpr {
 
     // We need to add zero to work around a Polars bug
     // where casting a count returns the wrong result
-    ExExpr::new((expr.count() + 0.lit()).cast(DataType::Int64))
+    ExExpr::new(expr.count())
 }
 
 #[rustler::nif]
 pub fn expr_nil_count(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.null_count().cast(DataType::Int64))
+    ExExpr::new(expr.null_count())
 }
 
 #[rustler::nif]
 pub fn expr_n_distinct(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.n_unique().cast(DataType::Int64))
+    ExExpr::new(expr.n_unique())
 }
 
 #[rustler::nif]
@@ -789,7 +789,7 @@ pub fn expr_argsort(
         nulls_last,
     };
 
-    ExExpr::new(expr.arg_sort(opts).cast(DataType::Int64))
+    ExExpr::new(expr.arg_sort(opts))
 }
 
 #[rustler::nif]

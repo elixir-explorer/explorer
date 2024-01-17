@@ -4407,6 +4407,8 @@ defmodule Explorer.Series do
   @doc """
   Returns the indices that would sort the series.
 
+  The resultant series is going to have the `{:u, 32}` dtype.
+
   ## Options
 
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
@@ -4513,7 +4515,7 @@ defmodule Explorer.Series do
       #Explorer.DataFrame<
         Polars[3 x 2]
         values string ["c", "a", "b"]
-        counts s64 [3, 2, 1]
+        counts u32 [3, 2, 1]
       >
   """
   @doc type: :aggregation
@@ -4603,6 +4605,8 @@ defmodule Explorer.Series do
   `count/1` counts the elements inside the same group.
   If no group is in use, then count is going to return
   the size of the series.
+  It is also going to result in a lazy series of `{:u, 32}`
+  dtype.
 
   ## Examples
 
@@ -4616,6 +4620,13 @@ defmodule Explorer.Series do
 
   @doc """
   Counts the number of null elements in a series.
+
+  In the context of lazy series and `Explorer.Query`,
+  `count/1` counts the elements inside the same group.
+  If no group is in use, then count is going to return
+  the size of the series.
+  It is also going to result in a lazy series of `{:u, 32}`
+  dtype.
 
   ## Examples
 

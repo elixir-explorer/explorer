@@ -83,7 +83,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert DF.dtypes(df1) == %{
                "year" => {:s, 64},
-               "total" => {:s, 64}
+               "total" => {:u, 32}
              }
 
       assert DF.groups(df1) == []
@@ -531,7 +531,7 @@ defmodule Explorer.DataFrame.GroupedTest do
                "b" => :string,
                "c" => {:s, 64},
                "d" => {:f, 64},
-               "e" => {:s, 64}
+               "e" => {:u, 32}
              }
 
       assert df2.groups == ["c"]

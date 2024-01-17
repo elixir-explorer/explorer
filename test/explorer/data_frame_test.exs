@@ -772,12 +772,12 @@ defmodule Explorer.DataFrameTest do
                "a" => {:s, 64},
                "b" => :string,
                "c" => {:s, 64},
-               "d" => {:s, 64},
+               "d" => {:u, 32},
                "e" => :string,
                "f" => {:s, 64},
                "g" => {:s, 64},
                "h" => {:s, 64},
-               "i" => {:s, 64},
+               "i" => {:u, 32},
                "j" => {:f, 64}
              }
     end
@@ -1022,7 +1022,7 @@ defmodule Explorer.DataFrameTest do
                "b" => :string,
                "c" => {:s, 64},
                "d" => {:s, 64},
-               "e" => {:s, 64},
+               "e" => {:u, 32},
                "f" => {:f, 64},
                "g" => {:s, 64},
                "h" => {:s, 64},
@@ -3707,7 +3707,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.names(df1) == ["total", "solid_fuel_mean", "gas_fuel_max"]
 
       assert DF.dtypes(df1) == %{
-               "total" => {:s, 64},
+               "total" => {:u, 32},
                "solid_fuel_mean" => {:f, 64},
                "gas_fuel_max" => {:s, 64}
              }

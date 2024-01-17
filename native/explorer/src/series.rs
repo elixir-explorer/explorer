@@ -419,8 +419,7 @@ pub fn s_unordered_distinct(series: ExSeries) -> Result<ExSeries, ExplorerError>
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_frequencies(series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let mut df = series.value_counts(true, true)?;
-    let df = df.try_apply("count", |s| s.cast(&DataType::Int64))?.clone();
+    let df = series.value_counts(true, true)?;
     Ok(ExDataFrame::new(df))
 }
 
