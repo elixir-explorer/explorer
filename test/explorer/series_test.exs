@@ -94,6 +94,14 @@ defmodule Explorer.SeriesTest do
                    end
     end
 
+    test "signed integers and u64 - raises error" do
+      assert_raise ArgumentError,
+                   "the value 9223372036854775808 does not match the inferred dtype {:s, 64}",
+                   fn ->
+                     Series.from_list([-1, 9_223_372_036_854_775_808])
+                   end
+    end
+
     test "s16 integers with dtype s8 - raises error" do
       assert_raise ArgumentError,
                    "the value 32767 does not match the inferred dtype {:s, 8}",

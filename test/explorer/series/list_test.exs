@@ -44,11 +44,11 @@ defmodule Explorer.Series.ListTest do
     end
 
     test "list of lists of one negative integer & one u64 " do
-      series = Series.from_list([[-1, 9_223_372_036_854_775_808]])
-
-      assert series.dtype == {:list, {:u, 64}}
-      assert series[0] == [-1, 9_223_372_036_854_775_808]
-      assert Series.to_list(series) == [[1, 9_223_372_036_854_775_808]]
+      assert_raise ArgumentError,
+                   "the value 9223372036854775808 does not match the inferred dtype {:s, 64}",
+                   fn ->
+                     Series.from_list([[-1, 9_223_372_036_854_775_808]])
+                   end
     end
 
     test "list of lists of integers with one u64" do

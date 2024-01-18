@@ -45,6 +45,32 @@ defmodule Explorer.Series.StructTest do
       assert Series.to_list(s) == [%{"a" => 9_223_372_036_854_775_808}, %{"a" => 3}, %{"a" => 5}]
     end
 
+    test "allows struct values - list of u64 integers" do
+      s = Series.from_list([%{a: [9_223_372_036_854_775_808]}, %{a: [3]}, %{a: [5]}])
+
+      assert s.dtype == {:struct, %{"a" => {:list, {:u, 64}}}}
+
+      assert Series.to_list(s) == [
+               %{"a" => [9_223_372_036_854_775_808]},
+               %{"a" => [3]},
+               %{"a" => [5]}
+             ]
+    end
+
+    test "allows struct values - list of u64 integers with dtype" do
+      dtype = {:struct, %{"a" => {:list, {:u, 64}}}}
+      list = [%{"a" => [9_223_372_036_854_775_802]}, %{"a" => [3]}, %{"a" => [5]}]
+      s = Series.from_list(list, dtype: dtype)
+
+      assert s.dtype == {:struct, %{"a" => {:list, {:u, 64}}}}
+
+      assert Series.to_list(s) == [
+               %{"a" => [9_223_372_036_854_775_802]},
+               %{"a" => [3]},
+               %{"a" => [5]}
+             ]
+    end
+
     test "allows struct values - integers with dtype u32" do
       s = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}], dtype: {:struct, %{"a" => {:u, 32}}})
 
