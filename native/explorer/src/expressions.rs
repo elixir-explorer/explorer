@@ -557,8 +557,6 @@ pub fn expr_alias(expr: ExExpr, name: &str) -> ExExpr {
 pub fn expr_count(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    // We need to add zero to work around a Polars bug
-    // where casting a count returns the wrong result
     ExExpr::new(expr.count())
 }
 
