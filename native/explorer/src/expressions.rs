@@ -985,56 +985,56 @@ pub fn expr_clip_float(expr: ExExpr, min: f64, max: f64) -> ExExpr {
 pub fn expr_day_of_week(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().weekday().cast(DataType::Int64))
+    ExExpr::new(expr.dt().weekday())
 }
 
 #[rustler::nif]
 pub fn expr_day_of_year(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().ordinal_day().cast(DataType::Int64))
+    ExExpr::new(expr.dt().ordinal_day())
 }
 
 #[rustler::nif]
 pub fn expr_week_of_year(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().week().cast(DataType::Int64))
+    ExExpr::new(expr.dt().week())
 }
 
 #[rustler::nif]
 pub fn expr_month(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().month().cast(DataType::Int64))
+    ExExpr::new(expr.dt().month())
 }
 
 #[rustler::nif]
 pub fn expr_year(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().year().cast(DataType::Int64))
+    ExExpr::new(expr.dt().year())
 }
 
 #[rustler::nif]
 pub fn expr_hour(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().hour().cast(DataType::Int64))
+    ExExpr::new(expr.dt().hour())
 }
 
 #[rustler::nif]
 pub fn expr_minute(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().minute().cast(DataType::Int64))
+    ExExpr::new(expr.dt().minute())
 }
 
 #[rustler::nif]
 pub fn expr_second(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().second().cast(DataType::Int64))
+    ExExpr::new(expr.dt().second())
 }
 
 #[rustler::nif]

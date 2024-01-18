@@ -607,58 +607,58 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def day_of_week(%Series{} = s) do
-    data = new(:day_of_week, [lazy_series!(s)], {:s, 64})
+    data = new(:day_of_week, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def day_of_year(%Series{} = s) do
-    data = new(:day_of_year, [lazy_series!(s)], {:s, 64})
+    data = new(:day_of_year, [lazy_series!(s)], {:s, 16})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 16})
   end
 
   @impl true
   def week_of_year(%Series{} = s) do
-    data = new(:week_of_year, [lazy_series!(s)], {:s, 64})
+    data = new(:week_of_year, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def month(%Series{} = s) do
-    data = new(:month, [lazy_series!(s)], {:s, 64})
+    data = new(:month, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def year(%Series{} = s) do
-    data = new(:year, [lazy_series!(s)], {:s, 64})
+    data = new(:year, [lazy_series!(s)], {:s, 32})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 32})
   end
 
   @impl true
   def hour(%Series{} = s) do
-    data = new(:hour, [lazy_series!(s)], {:s, 64})
+    data = new(:hour, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def minute(%Series{} = s) do
-    data = new(:minute, [lazy_series!(s)], {:s, 64})
+    data = new(:minute, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def second(%Series{} = s) do
-    data = new(:second, [lazy_series!(s)], {:s, 64})
+    data = new(:second, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
