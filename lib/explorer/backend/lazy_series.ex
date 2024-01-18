@@ -806,9 +806,9 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def abs(%Series{} = series) do
-    data = new(:abs, [lazy_series!(series)], {:f, 64})
+    data = new(:abs, [lazy_series!(series)], series.dtype)
 
-    Backend.Series.new(data, {:f, 64})
+    Backend.Series.new(data, series.dtype)
   end
 
   @impl true
