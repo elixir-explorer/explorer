@@ -35,6 +35,46 @@ defmodule Explorer.Series.ListTest do
       assert Series.to_list(series) == [[[1]]]
     end
 
+    test "list of lists of one integer & one u64" do
+      series = Series.from_list([[1, 9_223_372_036_854_775_808]])
+
+      assert series.dtype == {:list, {:u, 64}}
+      assert series[0] == [1, 9_223_372_036_854_775_808]
+      assert Series.to_list(series) == [[1, 9_223_372_036_854_775_808]]
+    end
+
+    test "list of lists of one negative integer & one u64 " do
+      series = Series.from_list([[-1, 9_223_372_036_854_775_808]])
+
+      assert series.dtype == {:list, {:u, 64}}
+      assert series[0] == [-1, 9_223_372_036_854_775_808]
+      assert Series.to_list(series) == [[1, 9_223_372_036_854_775_808]]
+    end
+
+    test "list of lists of integers with one u64" do
+      series = Series.from_list([[0], [1], [2, 9_223_372_036_854_775_808], [3, nil, 4], nil, []])
+
+      assert series.dtype == {:list, {:u, 64}}
+      assert series[0] == [0]
+
+      assert Series.to_list(series) == [
+               [0],
+               [1],
+               [2, 9_223_372_036_854_775_808],
+               [3, nil, 4],
+               nil,
+               []
+             ]
+    end
+
+    test "list of lists of integers recursively - u64" do
+      series = Series.from_list([[[1, 9_223_372_036_854_775_808]]])
+
+      assert series.dtype == {:list, {:list, {:u, 64}}}
+      assert series[0] == [[1, 9_223_372_036_854_775_808]]
+      assert Series.to_list(series) == [[[1, 9_223_372_036_854_775_808]]]
+    end
+
     test "list of lists of floats recursively" do
       series = Series.from_list([[[1.52]]])
 

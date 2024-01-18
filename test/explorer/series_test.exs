@@ -51,6 +51,119 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == {:s, 64}
     end
 
+    test "with u64 integers" do
+      s = Series.from_list([9_223_372_036_854_775_808])
+
+      assert Series.to_list(s) === [9_223_372_036_854_775_808]
+      assert Series.dtype(s) == {:u, 64}
+    end
+
+    test "with integers (u64 at end)" do
+      s = Series.from_list([1, 2, 3, 9_223_372_036_854_775_808])
+
+      assert Series.to_list(s) === [1, 2, 3, 9_223_372_036_854_775_808]
+      assert Series.dtype(s) == {:u, 64}
+    end
+
+    test "with integers (u64 at start)" do
+      s = Series.from_list([9_223_372_036_854_775_808, 1, 2, 3])
+
+      assert Series.to_list(s) === [9_223_372_036_854_775_808, 1, 2, 3]
+      assert Series.dtype(s) == {:u, 64}
+    end
+
+    test "with u64 integers with dtype u64" do
+      s = Series.from_list([1, 2, 3, 9_223_372_036_854_775_808], dtype: {:u, 64})
+
+      assert Series.to_list(s) === [1, 2, 3, 9_223_372_036_854_775_808]
+      assert Series.dtype(s) == {:u, 64}
+    end
+
+    test "with u64 integers and floats" do
+      s = Series.from_list([1, 2, 3, 9_223_372_036_854_775_808, 5.0])
+
+      assert Series.to_list(s) === [1.0, 2.0, 3.0, 9.223372036854776e18, 5.0]
+      assert Series.dtype(s) == {:f, 64}
+    end
+
+    test "signed integers with dtype u64 - raises error" do
+      assert_raise ArgumentError,
+                   "the value -1 does not match the inferred dtype {:u, 64}",
+                   fn ->
+                     Series.from_list([-1, 2, 3], dtype: {:u, 64})
+                   end
+    end
+
+    test "s16 integers with dtype s8 - raises error" do
+      assert_raise ArgumentError,
+                   "the value 32767 does not match the inferred dtype {:s, 8}",
+                   fn ->
+                     Series.from_list([32_767, 32_766],
+                       dtype: {:s, 8}
+                     )
+                   end
+    end
+
+    test "s32 integers with dtype s16 - raises error" do
+      assert_raise ArgumentError,
+                   "the value 2147483647 does not match the inferred dtype {:s, 16}",
+                   fn ->
+                     Series.from_list([2_147_483_647, 2_147_483_646],
+                       dtype: {:s, 16}
+                     )
+                   end
+    end
+
+    test "s64 integers with dtype s32 - raises error" do
+      assert_raise ArgumentError,
+                   "the value 9223372036854775807 does not match the inferred dtype {:s, 32}",
+                   fn ->
+                     Series.from_list([9_223_372_036_854_775_807, 9_223_372_036_854_775_806],
+                       dtype: {:s, 32}
+                     )
+                   end
+    end
+
+    test "u16 integers with dtype u8 - raises error" do
+      assert_raise ArgumentError,
+                   "the value 32768 does not match the inferred dtype {:u, 8}",
+                   fn ->
+                     Series.from_list([32768, 32767],
+                       dtype: {:u, 8}
+                     )
+                   end
+    end
+
+    test "u32 integers with dtype u16 - raises error" do
+      assert_raise ArgumentError,
+                   "the value 9223372036854775807 does not match the inferred dtype {:u, 16}",
+                   fn ->
+                     Series.from_list([9_223_372_036_854_775_807, 9_223_372_036_854_775_806],
+                       dtype: {:u, 16}
+                     )
+                   end
+    end
+
+    test "u64 integers with dtype u32 - raises error" do
+      assert_raise ArgumentError,
+                   "the value 9223372036854775808 does not match the inferred dtype {:u, 32}",
+                   fn ->
+                     Series.from_list([9_223_372_036_854_775_808, 9_223_372_036_854_775_809],
+                       dtype: {:u, 32}
+                     )
+                   end
+    end
+
+    test "u64 integers with dtype s64 - raises error" do
+      assert_raise ArgumentError,
+                   "the value 9223372036854775808 does not match the inferred dtype {:s, 64}",
+                   fn ->
+                     Series.from_list([9_223_372_036_854_775_808, 9_223_372_036_854_775_809],
+                       dtype: {:s, 64}
+                     )
+                   end
+    end
+
     test "with floats" do
       s = Series.from_list([1, 2.4, 3])
       assert Series.to_list(s) === [1.0, 2.4, 3.0]

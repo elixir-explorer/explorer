@@ -29,6 +29,46 @@ defmodule Explorer.Series.StructTest do
       assert Series.to_list(s) == [%{"a" => 1}, %{"a" => 3}, %{"a" => 5}]
     end
 
+    test "allows struct values with dtype u64" do
+      s = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}], dtype: {:struct, %{"a" => {:u, 64}}})
+
+      assert s.dtype == {:struct, %{"a" => {:u, 64}}}
+
+      assert Series.to_list(s) == [%{"a" => 1}, %{"a" => 3}, %{"a" => 5}]
+    end
+
+    test "allows struct values - u64 integers" do
+      s = Series.from_list([%{a: 9_223_372_036_854_775_808}, %{a: 3}, %{a: 5}])
+
+      assert s.dtype == {:struct, %{"a" => {:u, 64}}}
+
+      assert Series.to_list(s) == [%{"a" => 9_223_372_036_854_775_808}, %{"a" => 3}, %{"a" => 5}]
+    end
+
+    test "allows struct values - integers with dtype u32" do
+      s = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}], dtype: {:struct, %{"a" => {:u, 32}}})
+
+      assert s.dtype == {:struct, %{"a" => {:u, 32}}}
+
+      assert Series.to_list(s) == [%{"a" => 1}, %{"a" => 3}, %{"a" => 5}]
+    end
+
+    test "allows struct values - integers with dtype s32" do
+      s = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}], dtype: {:struct, %{"a" => {:s, 32}}})
+
+      assert s.dtype == {:struct, %{"a" => {:s, 32}}}
+
+      assert Series.to_list(s) == [%{"a" => 1}, %{"a" => 3}, %{"a" => 5}]
+    end
+
+    test "allows struct values - s64 integers with dtype u64" do
+      s = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}], dtype: {:struct, %{"a" => {:u, 64}}})
+
+      assert s.dtype == {:struct, %{"a" => {:u, 64}}}
+
+      assert Series.to_list(s) == [%{"a" => 1}, %{"a" => 3}, %{"a" => 5}]
+    end
+
     test "allows structs with nil values" do
       s =
         Series.from_list([
