@@ -307,40 +307,40 @@ defmodule Explorer.SeriesTest do
 
     test "with 64-bit unsigned integers" do
       for dtype <- [:u64, {:u, 64}] do
-        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+        s = Series.from_list([0, 1, 2, 3, 2 ** 64 - 1, nil], dtype: dtype)
 
         assert s[3] === 3
-        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.to_list(s) === [0, 1, 2, 3, 2 ** 64 - 1, nil]
         assert Series.dtype(s) == {:u, 64}
       end
     end
 
     test "with 32-bit unsigned integers" do
       for dtype <- [:u32, {:u, 32}] do
-        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+        s = Series.from_list([0, 1, 2, 3, 2 ** 32 - 1, nil], dtype: dtype)
 
         assert s[3] === 3
-        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.to_list(s) === [0, 1, 2, 3, 2 ** 32 - 1, nil]
         assert Series.dtype(s) == {:u, 32}
       end
     end
 
     test "with 16-bit unsigned integers" do
       for dtype <- [:u16, {:u, 16}] do
-        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+        s = Series.from_list([0, 1, 2, 3, 2 ** 16 - 1, nil], dtype: dtype)
 
         assert s[1] === 1
-        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.to_list(s) === [0, 1, 2, 3, 2 ** 16 - 1, nil]
         assert Series.dtype(s) == {:u, 16}
       end
     end
 
     test "with 8-bit unsigned integers" do
       for dtype <- [:u8, {:u, 8}] do
-        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+        s = Series.from_list([0, 1, 2, 3, 2 ** 8 - 1, nil], dtype: dtype)
 
         assert s[1] === 1
-        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.to_list(s) === [0, 1, 2, 3, 2 ** 8 - 1, nil]
         assert Series.dtype(s) == {:u, 8}
       end
     end

@@ -337,6 +337,7 @@ defmodule Explorer.Shared do
 
   defp merge_preferred(type, type), do: type
   defp merge_preferred(:null, type), do: type
+  defp merge_preferred({:s, 64}, {:u, _} = type), do: type
   defp merge_preferred({:s, 64}, {:s, _} = type), do: type
   defp merge_preferred({:s, 64}, {:f, _} = type), do: type
   defp merge_preferred({:f, 64}, {:f, _} = type), do: type
