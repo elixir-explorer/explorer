@@ -1936,8 +1936,8 @@ defmodule Explorer.Series do
   @doc """
   Slices the elements at the given indices as a new series.
 
-  The indices may be either a list of indices or a range.
-  A list of indices does not support negative numbers.
+  The indices may be either a list (or series) of indices or a range.
+  A list or series of indices does not support negative numbers.
   Ranges may be negative on either end, which are then
   normalized. Note ranges in Elixir are inclusive.
 
@@ -1977,11 +1977,11 @@ defmodule Explorer.Series do
   def slice(series, indices) when is_list(indices),
     do: apply_series(series, :slice, [indices])
 
-  def slice(series, %Series{dtype: {:s, 64}} = indices),
+  def slice(series, %Series{dtype: int_dtype} = indices) when K.in(int_dtype, @integer_types),
     do: apply_series(series, :slice, [indices])
 
   def slice(_series, %Series{dtype: invalid_dtype}),
-    do: dtype_error("slice/2", invalid_dtype, [{:s, 64}])
+    do: dtype_error("slice/2", invalid_dtype, @integer_types)
 
   def slice(series, first..last//1) do
     first = if first < 0, do: first + size(series), else: first
@@ -4406,6 +4406,8 @@ defmodule Explorer.Series do
   @doc """
   Returns the indices that would sort the series.
 
+  The resultant series is going to have the `{:u, 32}` dtype.
+
   ## Options
 
     * `:direction` - `:asc` or `:desc`, meaning "ascending" or "descending", respectively.
@@ -4512,7 +4514,7 @@ defmodule Explorer.Series do
       #Explorer.DataFrame<
         Polars[3 x 2]
         values string ["c", "a", "b"]
-        counts s64 [3, 2, 1]
+        counts u32 [3, 2, 1]
       >
   """
   @doc type: :aggregation
@@ -4602,6 +4604,8 @@ defmodule Explorer.Series do
   `count/1` counts the elements inside the same group.
   If no group is in use, then count is going to return
   the size of the series.
+  It is also going to result in a lazy series of `{:u, 32}`
+  dtype.
 
   ## Examples
 
@@ -4615,6 +4619,13 @@ defmodule Explorer.Series do
 
   @doc """
   Counts the number of null elements in a series.
+
+  In the context of lazy series and `Explorer.Query`,
+  `count/1` counts the elements inside the same group.
+  If no group is in use, then count is going to return
+  the size of the series.
+  It is also going to result in a lazy series of `{:u, 32}`
+  dtype.
 
   ## Examples
 
@@ -5658,7 +5669,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.month(s)
       #Explorer.Series<
         Polars[4]
-        s64 [1, 2, 3, nil]
+        s8 [1, 2, 3, nil]
       >
 
   It can also be called on a datetime series.
@@ -5667,7 +5678,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.month(s)
       #Explorer.Series<
         Polars[4]
-        s64 [1, 2, 3, nil]
+        s8 [1, 2, 3, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5687,7 +5698,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [2023, 2022, 2021, nil]
+        s32 [2023, 2022, 2021, nil]
       >
 
   It can also be called on a datetime series.
@@ -5696,7 +5707,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [2023, 2022, 2021, nil]
+        s32 [2023, 2022, 2021, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5716,7 +5727,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.hour(s)
       #Explorer.Series<
         Polars[4]
-        s64 [0, 23, 12, nil]
+        s8 [0, 23, 12, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5736,7 +5747,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.minute(s)
       #Explorer.Series<
         Polars[4]
-        s64 [0, 59, 0, nil]
+        s8 [0, 59, 0, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5756,7 +5767,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.second(s)
       #Explorer.Series<
         Polars[4]
-        s64 [0, 59, 0, nil]
+        s8 [0, 59, 0, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5776,7 +5787,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.day_of_week(s)
       #Explorer.Series<
         Polars[4]
-        s64 [7, 1, 5, nil]
+        s8 [7, 1, 5, nil]
       >
 
   It can also be called on a datetime series.
@@ -5785,7 +5796,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.day_of_week(s)
       #Explorer.Series<
         Polars[4]
-        s64 [7, 1, 5, nil]
+        s8 [7, 1, 5, nil]
       >
   """
 
@@ -5808,7 +5819,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.day_of_year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [1, 2, 32, nil]
+        s16 [1, 2, 32, nil]
       >
 
   It can also be called on a datetime series.
@@ -5819,7 +5830,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.day_of_year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [1, 2, 32, nil]
+        s16 [1, 2, 32, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5844,7 +5855,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.week_of_year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [52, 1, 5, nil]
+        s8 [52, 1, 5, nil]
       >
 
   It can also be called on a datetime series.
@@ -5855,7 +5866,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.week_of_year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [52, 1, 5, nil]
+        s8 [52, 1, 5, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5913,7 +5924,7 @@ defmodule Explorer.Series do
       iex> Series.lengths(s)
       #Explorer.Series<
         Polars[2]
-        s64 [1, 2]
+        u32 [1, 2]
       >
 
   """

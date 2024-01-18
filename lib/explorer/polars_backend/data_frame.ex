@@ -720,7 +720,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def slice(%DataFrame{} = df, %Series{dtype: {:s, 64}} = row_indices) do
+  def slice(%DataFrame{} = df, %Series{} = row_indices) do
     Shared.apply_dataframe(df, df, :df_slice_by_series, [row_indices.data, df.groups])
   end
 

@@ -772,12 +772,12 @@ defmodule Explorer.DataFrameTest do
                "a" => {:s, 64},
                "b" => :string,
                "c" => {:s, 64},
-               "d" => {:s, 64},
+               "d" => {:u, 32},
                "e" => :string,
                "f" => {:s, 64},
                "g" => {:s, 64},
                "h" => {:s, 64},
-               "i" => {:s, 64},
+               "i" => {:u, 32},
                "j" => {:f, 64}
              }
     end
@@ -1022,7 +1022,7 @@ defmodule Explorer.DataFrameTest do
                "b" => :string,
                "c" => {:s, 64},
                "d" => {:s, 64},
-               "e" => {:s, 64},
+               "e" => {:u, 32},
                "f" => {:f, 64},
                "g" => {:s, 64},
                "h" => {:s, 64},
@@ -1213,7 +1213,7 @@ defmodule Explorer.DataFrameTest do
                "r" => {:s, 64},
                "s" => {:s, 64},
                "t" => {:s, 64},
-               "z" => {:f, 64}
+               "z" => {:s, 64}
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1252,7 +1252,7 @@ defmodule Explorer.DataFrameTest do
                r: [1, 3, 6, 10, 15, 21, 28, 36, 45, 55],
                s: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
                t: [1, 2, 6, 24, 120, 720, 5040, 40320, 362_880, 3_628_800],
-               z: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+               z: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
              }
     end
 
@@ -1774,19 +1774,19 @@ defmodule Explorer.DataFrameTest do
       assert df1.dtypes == %{
                "a" => :date,
                "b" => {:datetime, :microsecond},
-               "c" => {:s, 64},
-               "d" => {:s, 64},
-               "e" => {:s, 64},
-               "f" => {:s, 64},
-               "g" => {:s, 64},
-               "h" => {:s, 64},
-               "i" => {:s, 64},
-               "j" => {:s, 64},
-               "k" => {:s, 64},
-               "l" => {:s, 64},
-               "m" => {:s, 64},
-               "n" => {:s, 64},
-               "o" => {:s, 64}
+               "c" => {:s, 8},
+               "d" => {:s, 8},
+               "e" => {:s, 8},
+               "f" => {:s, 8},
+               "g" => {:s, 32},
+               "h" => {:s, 32},
+               "i" => {:s, 8},
+               "j" => {:s, 8},
+               "k" => {:s, 8},
+               "l" => {:s, 16},
+               "m" => {:s, 16},
+               "n" => {:s, 8},
+               "o" => {:s, 8}
              }
     end
 
@@ -1833,6 +1833,15 @@ defmodule Explorer.DataFrameTest do
           lengths: lengths(b),
           member?: member?(c, ~N[2021-01-02 00:00:00])
         )
+
+      assert DF.dtypes(df) == %{
+               "a" => {:list, :string},
+               "b" => {:list, {:s, 64}},
+               "c" => {:list, {:datetime, :microsecond}},
+               "join" => :string,
+               "lengths" => {:u, 32},
+               "member?" => :boolean
+             }
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [~w(a b c), ~w(d e f)],
@@ -1962,11 +1971,14 @@ defmodule Explorer.DataFrameTest do
 
     test "slice with series of integers indices" do
       df = DF.new(a: [1, 2, 3, 4, 5])
-      series = Series.from_list([2, 4])
 
-      df1 = DF.slice(df, series)
+      for dtype <- [:u8, :s16, :s64] do
+        series = Series.from_list([2, 4], dtype: dtype)
 
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
+        df1 = DF.slice(df, series)
+
+        assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
+      end
     end
 
     test "slice with ranges" do
@@ -3707,7 +3719,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.names(df1) == ["total", "solid_fuel_mean", "gas_fuel_max"]
 
       assert DF.dtypes(df1) == %{
-               "total" => {:s, 64},
+               "total" => {:u, 32},
                "solid_fuel_mean" => {:f, 64},
                "gas_fuel_max" => {:s, 64}
              }

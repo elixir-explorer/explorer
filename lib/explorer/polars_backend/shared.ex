@@ -156,7 +156,6 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
-  # TODO: add more integer dtypes support
   def from_binary(binary, dtype, name \\ "") when is_binary(binary) do
     case dtype do
       :boolean ->

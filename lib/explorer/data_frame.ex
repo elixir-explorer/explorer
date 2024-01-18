@@ -264,6 +264,7 @@ defmodule Explorer.DataFrame do
 
   @default_infer_schema_length 1000
   @default_sample_nrows 5
+  @integer_types Explorer.Shared.integer_types()
 
   # Guards and helpers for columns
 
@@ -2688,7 +2689,7 @@ defmodule Explorer.DataFrame do
         Groups: ["id"]
         id string ["a", "a", "b"]
         b s64 [1, 2, 3]
-        count s64 [2, 2, 1]
+        count u32 [2, 2, 1]
       >
 
   In case we want to get the average size of the petal length from the Iris dataset, we can:
@@ -2779,7 +2780,7 @@ defmodule Explorer.DataFrame do
         Groups: ["id"]
         id string ["a", "a", "b"]
         b s64 [1, 2, 3]
-        count s64 [2, 2, 1]
+        count u32 [2, 2, 1]
       >
 
   """
@@ -4020,8 +4021,8 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :slice, [row_indices])
   end
 
-  # TODO: consider accepting more integer dtypes
-  def slice(%DataFrame{} = df, %Series{dtype: {:s, 64}} = indices) do
+  def slice(%DataFrame{} = df, %Series{dtype: int_dtype} = indices)
+      when int_dtype in @integer_types do
     Shared.apply_impl(df, :slice, [indices])
   end
 
@@ -5423,7 +5424,7 @@ defmodule Explorer.DataFrame do
         Polars[5 x 3]
         year s64 [2010, 2011, 2012, 2013, 2014]
         total_max s64 [2393248, 2654360, 2734817, 2797384, 2806634]
-        countries s64 [217, 217, 220, 220, 220]
+        countries u32 [217, 217, 220, 220, 220]
       >
 
       iex> alias Explorer.{DataFrame, Series}
@@ -5432,7 +5433,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[1 x 2]
         total_max s64 [2806634]
-        countries s64 [222]
+        countries u32 [222]
       >
 
   """
@@ -5821,7 +5822,7 @@ defmodule Explorer.DataFrame do
         Polars[2 x 3]
         a string ["a", "b"]
         b s64 [1, nil]
-        counts s64 [2, 1]
+        counts u32 [2, 1]
       >
   """
   @doc type: :single
