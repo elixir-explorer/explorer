@@ -5670,7 +5670,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.month(s)
       #Explorer.Series<
         Polars[4]
-        s64 [1, 2, 3, nil]
+        s8 [1, 2, 3, nil]
       >
 
   It can also be called on a datetime series.
@@ -5679,7 +5679,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.month(s)
       #Explorer.Series<
         Polars[4]
-        s64 [1, 2, 3, nil]
+        s8 [1, 2, 3, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5699,7 +5699,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [2023, 2022, 2021, nil]
+        s32 [2023, 2022, 2021, nil]
       >
 
   It can also be called on a datetime series.
@@ -5708,7 +5708,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [2023, 2022, 2021, nil]
+        s32 [2023, 2022, 2021, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5728,7 +5728,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.hour(s)
       #Explorer.Series<
         Polars[4]
-        s64 [0, 23, 12, nil]
+        s8 [0, 23, 12, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5748,7 +5748,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.minute(s)
       #Explorer.Series<
         Polars[4]
-        s64 [0, 59, 0, nil]
+        s8 [0, 59, 0, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5768,7 +5768,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.second(s)
       #Explorer.Series<
         Polars[4]
-        s64 [0, 59, 0, nil]
+        s8 [0, 59, 0, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5788,7 +5788,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.day_of_week(s)
       #Explorer.Series<
         Polars[4]
-        s64 [7, 1, 5, nil]
+        s8 [7, 1, 5, nil]
       >
 
   It can also be called on a datetime series.
@@ -5797,7 +5797,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.day_of_week(s)
       #Explorer.Series<
         Polars[4]
-        s64 [7, 1, 5, nil]
+        s8 [7, 1, 5, nil]
       >
   """
 
@@ -5820,7 +5820,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.day_of_year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [1, 2, 32, nil]
+        s16 [1, 2, 32, nil]
       >
 
   It can also be called on a datetime series.
@@ -5831,7 +5831,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.day_of_year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [1, 2, 32, nil]
+        s16 [1, 2, 32, nil]
       >
   """
   @doc type: :datetime_wise
@@ -5856,7 +5856,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.week_of_year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [52, 1, 5, nil]
+        s8 [52, 1, 5, nil]
       >
 
   It can also be called on a datetime series.
@@ -5867,7 +5867,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.week_of_year(s)
       #Explorer.Series<
         Polars[4]
-        s64 [52, 1, 5, nil]
+        s8 [52, 1, 5, nil]
       >
   """
   @doc type: :datetime_wise

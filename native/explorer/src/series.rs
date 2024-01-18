@@ -1630,56 +1630,56 @@ pub fn s_abs(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_day_of_week(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.weekday()?.cast(&DataType::Int64)?;
+    let s1 = s.weekday()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_day_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.ordinal_day()?.cast(&DataType::Int64)?;
+    let s1 = s.ordinal_day()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_week_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.week()?.cast(&DataType::Int64)?;
+    let s1 = s.week()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.month()?.cast(&DataType::Int64)?;
+    let s1 = s.month()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.year()?.cast(&DataType::Int64)?;
+    let s1 = s.year()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_hour(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.hour()?.cast(&DataType::Int64)?;
+    let s1 = s.hour()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_minute(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.minute()?.cast(&DataType::Int64)?;
+    let s1 = s.minute()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.second()?.cast(&DataType::Int64)?;
+    let s1 = s.second()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
