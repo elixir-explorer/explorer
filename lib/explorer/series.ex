@@ -2099,7 +2099,7 @@ defmodule Explorer.Series do
     dtypes = series |> Enum.map(& &1.dtype) |> Enum.uniq()
 
     series =
-      case dtypes |> List.delete(:null) do
+      case List.delete(dtypes, :null) do
         [] ->
           series
 
