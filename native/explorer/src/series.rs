@@ -1,8 +1,8 @@
 use crate::{
     atoms,
     datatypes::{
-        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype,
-        ExSeriesIoType, ExTime, ExTimeUnit, ExValidValue,
+        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExTime,
+        ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -246,11 +246,6 @@ pub fn s_rename(data: ExSeries, name: &str) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif]
 pub fn s_dtype(data: ExSeries) -> Result<ExSeriesDtype, ExplorerError> {
     ExSeriesDtype::try_from(data.dtype())
-}
-
-#[rustler::nif]
-pub fn s_iotype(data: ExSeries) -> Result<ExSeriesIoType, ExplorerError> {
-    ExSeriesIoType::try_from(data.dtype())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

@@ -1068,7 +1068,6 @@ defmodule Explorer.Backend.LazySeries do
   @remaining_non_lazy_operations [
     at: 2,
     at_every: 2,
-    iotype: 1,
     categories: 1,
     categorise: 2,
     frequencies: 1,

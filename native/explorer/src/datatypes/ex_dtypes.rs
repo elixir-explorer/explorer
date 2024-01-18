@@ -189,37 +189,3 @@ impl TryFrom<&ExSeriesDtype> for DataType {
         }
     }
 }
-
-// Unsigned, Signed, Float
-#[derive(NifTaggedEnum)]
-pub enum ExSeriesIoType {
-    U(u8),
-    S(u8),
-    F(u8),
-}
-
-impl TryFrom<&DataType> for ExSeriesIoType {
-    type Error = ExplorerError;
-
-    fn try_from(value: &DataType) -> Result<Self, Self::Error> {
-        match value {
-            DataType::Boolean => Ok(ExSeriesIoType::U(8)),
-            DataType::UInt8 => Ok(ExSeriesIoType::U(8)),
-            DataType::UInt32 => Ok(ExSeriesIoType::U(32)),
-            DataType::Int8 => Ok(ExSeriesIoType::S(8)),
-            DataType::Int16 => Ok(ExSeriesIoType::S(16)),
-            DataType::Int32 => Ok(ExSeriesIoType::S(32)),
-            DataType::Int64 => Ok(ExSeriesIoType::S(64)),
-            DataType::Float64 => Ok(ExSeriesIoType::F(64)),
-            DataType::Float32 => Ok(ExSeriesIoType::F(32)),
-            DataType::Date => Ok(ExSeriesIoType::S(32)),
-            DataType::Datetime(_, _) => Ok(ExSeriesIoType::S(64)),
-            DataType::Duration(_) => Ok(ExSeriesIoType::S(64)),
-            DataType::Time => Ok(ExSeriesIoType::S(64)),
-            DataType::Categorical(_, _) => Ok(ExSeriesIoType::U(32)),
-            _ => Err(ExplorerError::Other(format!(
-                "cannot convert dtype {value} to iotype"
-            ))),
-        }
-    }
-}

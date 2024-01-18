@@ -1123,11 +1123,10 @@ defmodule Explorer.Series do
   """
   @doc type: :introspection
   @spec iotype(series :: Series.t()) :: {:s | :u | :f, non_neg_integer()} | :none
-  def iotype(%Series{dtype: dtype} = series) do
-    if is_io_dtype(dtype) do
-      apply_series(series, :iotype)
-    else
-      :none
+  def iotype(%Series{dtype: dtype}) do
+    case dtype do
+      :category -> {:u, 32}
+      other -> Shared.dtype_to_iotype(other)
     end
   end
 
