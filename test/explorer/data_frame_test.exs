@@ -2403,51 +2403,128 @@ defmodule Explorer.DataFrameTest do
     assert Series.to_list(s) == ~w(a b c)
   end
 
-  test "concat_rows/2" do
-    df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
-    df2 = DF.new(x: [4, 5, 6], y: ["d", "e", "f"])
-    df3 = DF.concat_rows(df1, df2)
+  describe "concat_rows/2" do
+    test "same dtype columns" do
+      df1 = DF.new(x: [1, 2, 3, 4], y: ["a", "b", nil, "c"])
+      df2 = DF.new(x: [4, 5, 6, 7], y: ["d", "e", "f", nil])
+      df3 = DF.concat_rows(df1, df2)
 
-    assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
-    assert Series.to_list(df3["y"]) == ~w(a b c d e f)
+      assert DF.dtypes(df3) == %{"x" => {:s, 64}, "y" => :string}
 
-    df2 = DF.new(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
-    df3 = DF.concat_rows(df1, df2)
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 4, 5, 6, 7]
+      assert Series.to_list(df3["y"]) == ["a", "b", nil] ++ ~w(c d e f) ++ [nil]
+    end
 
-    assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    test "mixing integer and floats" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
+      df3 = DF.concat_rows(df1, df2)
 
-    df4 = DF.new(x: [7, 8, 9], y: ["g", "h", nil])
-    df5 = DF.concat_rows(df3, df4)
+      assert DF.dtypes(df3) == %{"x" => {:f, 64}, "y" => :string}
 
-    assert Series.to_list(df5["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-    assert Series.to_list(df5["y"]) == ~w(a b c d e f g h) ++ [nil]
+      assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    end
 
-    df6 = DF.concat_rows([df1, df2, df4])
+    test "using unsigned integers" do
+      df1 =
+        DF.new(x: Series.from_list([1, 2, 3], dtype: :u16), y: Series.from_list(["a", "b", "c"]))
 
-    assert Series.to_list(df6["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-    assert Series.to_list(df6["y"]) == ~w(a b c d e f g h) ++ [nil]
+      df2 =
+        DF.new(x: Series.from_list([4, 5, 6], dtype: :u16), y: Series.from_list(["d", "e", "f"]))
 
-    assert_raise ArgumentError,
-                 "dataframes must have the same columns",
-                 fn -> DF.concat_rows(df1, DF.new(z: [7, 8, 9])) end
+      df3 = DF.concat_rows(df1, df2)
 
-    assert_raise ArgumentError,
-                 "dataframes must have the same columns",
-                 fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], z: [7, 8, 9])) end
+      assert DF.dtypes(df3) == %{"x" => {:u, 16}, "y" => :string}
 
-    assert_raise ArgumentError,
-                 "columns and dtypes must be identical for all dataframes",
-                 fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
-  end
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
+    end
 
-  test "concat_rows/2 rechunking logic when nil is introduced in the new dataframe" do
-    # this may panic without forced rechunking
-    df =
-      DF.new(x: [1.0, 2.0], y: [2.0, 3.0])
-      |> DF.concat_rows(DF.new(x: [nil], y: [nil]))
-      |> DF.mutate(z: correlation(x, y))
+    test "mixing unsigned integers" do
+      df1 =
+        DF.new(x: Series.from_list([1, 2, 3], dtype: :u16), y: Series.from_list(["a", "b", "c"]))
 
-    assert abs(df[:z][0] - 1.0) < 1.0e-4
+      df2 =
+        DF.new(x: Series.from_list([4, 5, 6], dtype: :u32), y: Series.from_list(["d", "e", "f"]))
+
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:u, 64}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
+    end
+
+    test "mixing signed and unsigned integers" do
+      df1 =
+        DF.new(x: Series.from_list([1, 2, 3], dtype: :u16), y: Series.from_list(["a", "b", "c"]))
+
+      df2 =
+        DF.new(x: Series.from_list([4, 5, 6], dtype: :s16), y: Series.from_list(["d", "e", "f"]))
+
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:s, 64}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
+    end
+
+    test "mixing floats" do
+      df1 =
+        DF.new(
+          x: Series.from_list([1.0, 2.0, 3.0], dtype: :f32),
+          y: Series.from_list(["a", "b", "c"])
+        )
+
+      df2 =
+        DF.new(
+          x: Series.from_list([4.0, 5.0, 6.0], dtype: :f64),
+          y: Series.from_list(["d", "e", "f"])
+        )
+
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:f, 64}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    end
+
+    test "concat dfs in a list" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(x: [4, 5, 6], y: ["d", "e", "f"])
+      df3 = DF.new(x: [7, 8, 9], y: ["g", "h", nil])
+
+      df4 = DF.concat_rows([df1, df2, df3])
+
+      assert DF.dtypes(df4) == %{"x" => {:s, 64}, "y" => :string}
+
+      assert Series.to_list(df4["x"]) == [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      assert Series.to_list(df4["y"]) == ~w(a b c d e f g h) ++ [nil]
+    end
+
+    test "with incompatible columns" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "dataframes must have the same columns",
+                   fn -> DF.concat_rows(df1, DF.new(z: [7, 8, 9])) end
+    end
+
+    test "with incompatible column dtypes" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "columns and dtypes must be identical for all dataframes",
+                   fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
+    end
+
+    test "rechunking logic when nil is introduced in the new dataframe" do
+      # this may panic without forced rechunking
+      df =
+        DF.new(x: [1.0, 2.0], y: [2.0, 3.0])
+        |> DF.concat_rows(DF.new(x: [nil], y: [nil]))
+        |> DF.mutate(z: correlation(x, y))
+
+      assert abs(df[:z][0] - 1.0) < 1.0e-4
+    end
   end
 
   describe "distinct/2" do
