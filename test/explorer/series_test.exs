@@ -51,6 +51,13 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == {:s, 64}
     end
 
+    test "with unsigned integers" do
+      s = Series.from_list([1, 2, 3], dtype: {:u, 64})
+
+      assert Series.to_list(s) === [1, 2, 3]
+      assert Series.dtype(s) == {:u, 64}
+    end
+
     test "with floats" do
       s = Series.from_list([1, 2.4, 3])
       assert Series.to_list(s) === [1.0, 2.4, 3.0]
@@ -3823,6 +3830,51 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "concat/1" do
+    test "concat null" do
+      sn = Series.from_list([nil, nil, nil])
+      sn1 = Series.from_list([nil, nil])
+      sr = Series.concat([sn, sn1])
+      assert sn.dtype == :null
+      assert sn1.dtype == :null
+      assert Series.size(sr) == 5
+      assert Series.to_list(sr) == [nil, nil, nil, nil, nil]
+      assert Series.dtype(sr) == :null
+    end
+
+    test "concat series of multiple signed and unsigned" do
+      sn = Series.from_list([nil])
+      u8 = Series.from_list([8], dtype: {:s, 8})
+      s8 = Series.from_list([9], dtype: {:u, 8})
+      s16 = Series.from_list([16], dtype: {:s, 16})
+      sr = Series.concat([sn, u8, s8, s16])
+      assert sr.dtype == {:s, 16}
+      assert Series.size(sr) == 4
+      assert Series.to_list(sr) == [nil, 8, 9, 16]
+    end
+
+    test "concat series of multiple signed and unsigned 64" do
+      sn = Series.from_list([nil])
+      u8 = Series.from_list([8], dtype: {:s, 8})
+      u64 = Series.from_list([1], dtype: {:u, 64})
+      s16 = Series.from_list([16], dtype: {:s, 16})
+      sr = Series.concat([sn, u8, u64, s16])
+      assert sr.dtype == {:s, 64}
+      assert Series.size(sr) == 4
+      assert Series.to_list(sr) == [nil, 8, 1, 16]
+    end
+
+    test "concat null with {:s, 8}" do
+      sn = Series.from_list([nil, nil, nil])
+      s1 = Series.from_list([4, 5, 6], dtype: {:s, 8})
+
+      sr = Series.concat([sn, s1])
+      assert sn.dtype == :null
+      assert s1.dtype == {:s, 8}
+      assert Series.size(sr) == 6
+      assert Series.to_list(sr) == [nil, nil, nil, 4, 5, 6]
+      assert Series.dtype(sr) == {:s, 8}
+    end
+
     test "concat integer series" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([4, 5, 6])
