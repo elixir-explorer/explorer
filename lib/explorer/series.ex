@@ -2096,13 +2096,15 @@ defmodule Explorer.Series do
   @doc type: :shape
   @spec concat([Series.t()]) :: Series.t()
   def concat([%Series{} | _t] = series) do
+    dtypes = series |> Enum.map(& &1.dtype) |> Enum.uniq()
+
     series =
-      case series |> Enum.map(& &1.dtype) |> Enum.uniq() |> List.delete(:null) do
+      case dtypes |> List.delete(:null) do
         [] ->
           series
 
-        [_] ->
-          series
+        [dtype] ->
+          if Enum.member?(dtypes, :null), do: Enum.map(series, &cast(&1, dtype)), else: series
 
         dtypes ->
           dtype =
