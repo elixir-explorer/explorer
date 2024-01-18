@@ -5082,12 +5082,12 @@ defmodule Explorer.DataFrame do
   "highest" dtype.
 
   For example, if a column is represented by `{:u, 16}` and `{:u, 32}`,
-  it will be casted to the highest unsigned integer dtype, which is
-  `{:u, 64}`.
+  it will be casted to the highest unsigned integer dtype between the two,
+  which is `{:u, 32}`.
   If it is mixing signed and unsigned integers, it will be casted to
-  the highest signed integer possible, which is `{:s, 64}`.
+  the highest signed integer possible.
   And if floats and integers are mixed together, Explorer will cast
-  them to the highest float dtype, which is `{:f, 64}`.
+  them to the float dtype `{:f, 64}`.
 
   When working with grouped dataframes, be aware that only groups from the first
   dataframe are kept in the resultant dataframe.
@@ -5146,14 +5146,10 @@ defmodule Explorer.DataFrame do
           types[name] == type ->
             changed_types
 
-          types_are_numeric_compatible?(types, name, type, Shared.unsigned_integer_types()) ->
-            Map.put(changed_types, name, {:u, 64})
+          types_are_numeric_compatible?(types, name, type) ->
+            new_dtype = Shared.merge_dtypes!(types[name], type)
 
-          types_are_numeric_compatible?(types, name, type, Shared.integer_types()) ->
-            Map.put(changed_types, name, {:s, 64})
-
-          types_are_numeric_compatible?(types, name, type, Shared.numeric_types()) ->
-            Map.put(changed_types, name, {:f, 64})
+            Map.put(changed_types, name, new_dtype)
 
           true ->
             raise ArgumentError,
@@ -5163,9 +5159,9 @@ defmodule Explorer.DataFrame do
     end)
   end
 
-  defp types_are_numeric_compatible?(types, name, type, types_group) do
-    types[name] != type and types[name] in types_group and
-      (type == :null or type in types_group)
+  defp types_are_numeric_compatible?(types, name, type) do
+    types[name] != type and types[name] in Shared.numeric_types() and
+      (type == :null or type in Shared.numeric_types())
   end
 
   # We cast even if the dtype is the same for some dfs, because it is no-op.

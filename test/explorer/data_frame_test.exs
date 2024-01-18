@@ -2448,7 +2448,7 @@ defmodule Explorer.DataFrameTest do
 
       df3 = DF.concat_rows(df1, df2)
 
-      assert DF.dtypes(df3) == %{"x" => {:u, 64}, "y" => :string}
+      assert DF.dtypes(df3) == %{"x" => {:u, 32}, "y" => :string}
 
       assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
     end
@@ -2462,7 +2462,7 @@ defmodule Explorer.DataFrameTest do
 
       df3 = DF.concat_rows(df1, df2)
 
-      assert DF.dtypes(df3) == %{"x" => {:s, 64}, "y" => :string}
+      assert DF.dtypes(df3) == %{"x" => {:s, 32}, "y" => :string}
 
       assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
     end
