@@ -720,7 +720,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :string,
                "h" => :boolean,
                "i" => :date,
-               "j" => {:datetime, :microsecond}
+               "j" => {:datetime, :nanosecond}
              }
     end
 
@@ -1026,7 +1026,7 @@ defmodule Explorer.DataFrameTest do
                "f" => {:f, 64},
                "g" => {:s, 64},
                "h" => {:s, 64},
-               "i" => {:s, 64},
+               "i" => {:f, 64},
                "j" => {:f, 64}
              }
     end
@@ -3540,7 +3540,8 @@ defmodule Explorer.DataFrameTest do
         DF.new(
           number: [1, 2, nil, 3],
           list: [[], [], [], []],
-          null: [nil, nil, nil, nil],
+          # TODO: enable "null" columns when problem with polars is solved.
+          # null: [nil, nil, nil, nil],
           string: ["a", "b", "c", "nil"],
           date: [~D[2021-01-01], ~D[1999-12-31], nil, ~D[2023-01-01]],
           time: [~T[00:02:03.000212], ~T[00:05:04.000456], ~T[00:07:04.000776], nil],
@@ -3559,18 +3560,19 @@ defmodule Explorer.DataFrameTest do
         )
 
       df = DF.mutate(df, duration: datetime - duration)
-      describe_df = DF.describe(df)
 
       assert df.dtypes == %{
                "date" => :date,
                "datetime" => {:datetime, :microsecond},
                "duration" => {:duration, :microsecond},
                "list" => {:list, :null},
-               "null" => :null,
+               # "null" => :null,
                "number" => {:s, 64},
                "string" => :string,
                "time" => :time
              }
+
+      describe_df = DF.describe(df)
 
       assert describe_df.dtypes == %{
                "date" => :string,
@@ -3578,7 +3580,7 @@ defmodule Explorer.DataFrameTest do
                "describe" => :string,
                "duration" => :string,
                "list" => :string,
-               "null" => :string,
+               # "null" => :string,
                "number" => {:f, 64},
                "string" => :string,
                "time" => :string
@@ -3600,7 +3602,7 @@ defmodule Explorer.DataFrameTest do
                describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"],
                duration: ["3", "1", nil, nil, "1d", nil, nil, nil, "366d"],
                list: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
-               null: ["0", "4", nil, nil, nil, nil, nil, nil, nil],
+               # null: ["0", "4", nil, nil, nil, nil, nil, nil, nil],
                number: [3.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
                string: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
                time: ["3", "1", nil, nil, nil, nil, nil, nil, nil]
@@ -3819,16 +3821,25 @@ defmodule Explorer.DataFrameTest do
       assert DF.dtypes(df) == %{"is_vowel" => :boolean, "letters" => {:list, :string}}
     end
 
-    test "mode/1" do
-      df =
-        Datasets.iris()
-        |> DF.group_by(:species)
-        |> DF.summarise(petal_width_mode: mode(petal_width))
+    test "mode/1 without groups (see grouped_test for groups)" do
+      df = DF.new(petal_width: [1, 2, 2, 3, 3, 120])
 
-      assert DF.to_columns(df) == %{
-               "petal_width_mode" => [[0.2], [1.3], [1.8]],
-               "species" => ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
+      df1 =
+        DF.summarise(df, petal_width_mode: mode(petal_width), petal_width_sum: sum(petal_width))
+
+      assert DF.dtypes(df1) == %{
+               "petal_width_mode" => {:list, {:s, 64}},
+               "petal_width_sum" => {:s, 64}
              }
+
+      result = DF.to_columns(df1)
+
+      assert result["petal_width_sum"] == [131]
+      # Since this does not maintain order, we need to check differently.
+      assert [[a, b]] = result["petal_width_mode"]
+
+      assert a in [2, 3]
+      assert b in [2, 3]
     end
 
     test "argmax/1 and argmin/1" do

@@ -330,7 +330,11 @@ defmodule Explorer.PolarsBackend.Series do
     df = Explorer.PolarsBackend.DataFrame.from_series(df_args)
     pow = Explorer.Backend.LazySeries.new(:pow, pow_args, out_dtype)
 
-    Explorer.PolarsBackend.DataFrame.mutate_with(df, df, [{"pow", pow}])
+    out_dtypes = Map.put(df.dtypes, "pow", out_dtype)
+    out_names = df.names ++ ["pow"]
+    out_df = %{df | dtypes: out_dtypes, names: out_names}
+
+    Explorer.PolarsBackend.DataFrame.mutate_with(df, out_df, [{"pow", pow}])
     |> Explorer.PolarsBackend.DataFrame.pull("pow")
   end
 

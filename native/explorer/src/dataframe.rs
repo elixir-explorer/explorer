@@ -574,7 +574,14 @@ pub fn df_summarise_with_exprs(
     let lf = df.clone_inner().lazy();
 
     let new_lf = if groups.is_empty() {
-        lf.with_columns(aggs).first()
+        // We do add a "shadow" column to be able to group by it.
+        // This is going to force some aggregations like "mode" to be always inside
+        // a "list".
+        let s = Series::new_null("__explorer_null_for_group__", 1);
+        lf.with_column(s.lit())
+            .group_by_stable(["__explorer_null_for_group__"])
+            .agg(aggs)
+            .select(&[col("*").exclude(["__explorer_null_for_group__"])])
     } else {
         lf.group_by_stable(groups).agg(aggs)
     };
