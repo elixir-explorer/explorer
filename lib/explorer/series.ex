@@ -15,6 +15,7 @@ defmodule Explorer.Series do
     * `{:f, size}` - a 64-bit or 32-bit floating point number
     * `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit signed integer number.
     * `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer number.
+    * `:null` - `nil`s exclusively
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
     * `{:list, dtype}` - A recursive dtype that can store lists. Examples: `{:list, :boolean}` or
