@@ -720,7 +720,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :string,
                "h" => :boolean,
                "i" => :date,
-               "j" => {:datetime, :microsecond}
+               "j" => {:datetime, :nanosecond}
              }
     end
 
@@ -1026,7 +1026,7 @@ defmodule Explorer.DataFrameTest do
                "f" => {:f, 64},
                "g" => {:s, 64},
                "h" => {:s, 64},
-               "i" => {:s, 64},
+               "i" => {:f, 64},
                "j" => {:f, 64}
              }
     end
@@ -3819,15 +3819,16 @@ defmodule Explorer.DataFrameTest do
       assert DF.dtypes(df) == %{"is_vowel" => :boolean, "letters" => {:list, :string}}
     end
 
-    test "mode/1" do
+    test "mode/1 without groups (see grouped_test for groups)" do
       df =
-        Datasets.iris()
-        |> DF.group_by(:species)
-        |> DF.summarise(petal_width_mode: mode(petal_width))
+        DF.summarise(Datasets.iris(), petal_width_mode: mode(petal_width))
+
+      assert DF.dtypes(df) == %{
+               "petal_width_mode" => {:f, 64}
+             }
 
       assert DF.to_columns(df) == %{
-               "petal_width_mode" => [[0.2], [1.3], [1.8]],
-               "species" => ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
+               "petal_width_mode" => [0.2]
              }
     end
 

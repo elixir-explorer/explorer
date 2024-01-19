@@ -263,6 +263,23 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert Series.min(series) == 2
     end
+
+    test "using mode" do
+      df =
+        Datasets.iris()
+        |> DF.group_by(:species)
+        |> DF.summarise(petal_width_mode: mode(petal_width))
+
+      assert DF.dtypes(df) == %{
+               "petal_width_mode" => {:list, {:f, 64}},
+               "species" => :string
+             }
+
+      assert DF.to_columns(df) == %{
+               "petal_width_mode" => [[0.2], [1.3], [1.8]],
+               "species" => ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
+             }
+    end
   end
 
   describe "summarise_with/2" do

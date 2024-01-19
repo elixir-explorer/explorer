@@ -2837,14 +2837,14 @@ defmodule Explorer.DataFrame do
             Explorer.Backend.Series.new(lazy_s, :date)
 
           datetime = %NaiveDateTime{} ->
-            lazy_s = LazySeries.new(:lazy, [datetime], {:datetime, :microsecond})
+            lazy_s = LazySeries.new(:lazy, [datetime], {:datetime, :nanosecond})
 
-            Explorer.Backend.Series.new(lazy_s, {:datetime, :microsecond})
+            Explorer.Backend.Series.new(lazy_s, {:datetime, :nanosecond})
 
           duration = %Explorer.Duration{precision: precision} ->
-            lazy_s = LazySeries.new(:lazy, [duration], {:datetime, precision})
+            lazy_s = LazySeries.new(:lazy, [duration], {:duration, precision})
 
-            Explorer.Backend.Series.new(lazy_s, {:datetime, precision})
+            Explorer.Backend.Series.new(lazy_s, {:duration, precision})
 
           other ->
             raise ArgumentError,
@@ -5440,8 +5440,8 @@ defmodule Explorer.DataFrame do
           lazy_s = LazySeries.new(:lazy, [nil], :null)
           {key, Explorer.Backend.Series.new(lazy_s, :null)}
 
-        x ->
-          x
+        pair ->
+          pair
       end)
 
     column_pairs =
@@ -5450,8 +5450,14 @@ defmodule Explorer.DataFrame do
           %Series{data: %LazySeries{op: :lazy, args: [nil], dtype: :null}} ->
             value
 
-          %Series{data: %LazySeries{aggregation: true}} ->
-            value
+          %Series{data: %LazySeries{aggregation: true} = lazy} = value ->
+            # This special case fix the "mode" dtype. But it shouldn't be here,
+            # since we won't catch "mode" operations that are nested.
+            if df.groups != [] and lazy.op == :mode and not match?({:list, _}, value.dtype) do
+              %{value | dtype: {:list, value.dtype}}
+            else
+              value
+            end
 
           %Series{data: %LazySeries{op: :column}} = value ->
             %{value | dtype: {:list, value.dtype}}

@@ -157,7 +157,7 @@ pub fn lf_summarise_with(
     let aggs = ex_expr_to_exprs(aggs);
 
     let new_lf = if groups.is_empty() {
-        ldf.with_columns(aggs).first()
+        ldf.select(aggs)
     } else {
         ldf.group_by_stable(groups).agg(aggs)
     };

@@ -574,7 +574,7 @@ pub fn df_summarise_with_exprs(
     let lf = df.clone_inner().lazy();
 
     let new_lf = if groups.is_empty() {
-        lf.with_columns(aggs).first()
+        lf.select(aggs)
     } else {
         lf.group_by_stable(groups).agg(aggs)
     };
