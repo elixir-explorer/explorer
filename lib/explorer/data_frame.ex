@@ -5078,7 +5078,16 @@ defmodule Explorer.DataFrame do
   Combine two or more dataframes row-wise (stack).
 
   Column names and dtypes must match. The only exception is for numeric
-  columns that can be mixed together, and casted automatically to float columns.
+  columns that can be mixed together, and casted automatically to the
+  "highest" dtype.
+
+  For example, if a column is represented by `{:u, 16}` and `{:u, 32}`,
+  it will be casted to the highest unsigned integer dtype between the two,
+  which is `{:u, 32}`.
+  If it is mixing signed and unsigned integers, it will be casted to
+  the highest signed integer possible.
+  And if floats and integers are mixed together, Explorer will cast
+  them to the float dtype `{:f, 64}`.
 
   When working with grouped dataframes, be aware that only groups from the first
   dataframe are kept in the resultant dataframe.
@@ -5113,7 +5122,7 @@ defmodule Explorer.DataFrame do
       if Enum.empty?(changed_types) do
         dfs
       else
-        cast_numeric_columns_to_float(dfs, changed_types)
+        cast_numeric_columns_to_changed_types(dfs, changed_types)
       end
 
     Shared.apply_impl(dfs, :concat_rows, [out_df])
@@ -5138,7 +5147,9 @@ defmodule Explorer.DataFrame do
             changed_types
 
           types_are_numeric_compatible?(types, name, type) ->
-            Map.put(changed_types, name, {:f, 64})
+            new_dtype = Shared.merge_dtypes!(types[name], type)
+
+            Map.put(changed_types, name, new_dtype)
 
           true ->
             raise ArgumentError,
@@ -5153,22 +5164,13 @@ defmodule Explorer.DataFrame do
       (type == :null or type in Shared.numeric_types())
   end
 
-  defp cast_numeric_columns_to_float(dfs, changed_types) do
-    # TODO: work with {:f, 32} as well
+  # We cast even if the dtype is the same for some dfs, because it is no-op.
+  defp cast_numeric_columns_to_changed_types(dfs, changed_types) do
     for df <- dfs do
-      # TODO: check if s64 is enough
-      columns =
-        for {name, {:s, 64}} <- df.dtypes,
-            changed_types[name] == {:f, 64},
-            do: name
-
-      if Enum.empty?(columns) do
-        df
-      else
-        mutate_with(ungroup(df), fn ldf ->
-          for column <- columns, do: {column, Series.cast(ldf[column], {:f, 64})}
-        end)
-      end
+      mutate_with(ungroup(df), fn ldf ->
+        for {column, target_type} <- changed_types,
+            do: {column, Series.cast(ldf[column], target_type)}
+      end)
     end
   end
 

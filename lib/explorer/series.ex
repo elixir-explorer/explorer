@@ -2109,7 +2109,7 @@ defmodule Explorer.Series do
         dtypes ->
           dtype =
             Enum.reduce(dtypes, fn left, right ->
-              cast_numeric(left, right) ||
+              Shared.merge_dtypes(left, right) ||
                 raise ArgumentError,
                       "cannot concatenate series with mismatched dtypes: #{inspect(dtypes)}. " <>
                         "First cast the series to the desired dtype."
@@ -3184,17 +3184,7 @@ defmodule Explorer.Series do
   defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_add(left, right), do: cast_numeric(left, right)
-
-  defp cast_numeric({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
-    do: {int_type, max(left, right)}
-
-  defp cast_numeric({:s, s_size}, {:u, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
-  defp cast_numeric({:u, s_size}, {:s, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
-  defp cast_numeric({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
-  defp cast_numeric({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
-  defp cast_numeric({:f, left}, {:f, right}), do: {:f, max(left, right)}
-  defp cast_numeric(_, _), do: nil
+  defp cast_to_add(left, right), do: Shared.merge_dtypes(left, right)
 
   @doc """
   Subtracts right from left, element-wise.
@@ -3258,7 +3248,7 @@ defmodule Explorer.Series do
   defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
   defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_subtract(left, right), do: cast_numeric(left, right)
+  defp cast_to_subtract(left, right), do: Shared.merge_dtypes(left, right)
 
   @doc """
   Multiplies left and right, element-wise.
@@ -3310,7 +3300,7 @@ defmodule Explorer.Series do
   defp cast_to_multiply({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_multiply({:f, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:f, _}), do: {:duration, p}
-  defp cast_to_multiply(left, right), do: cast_numeric(left, right)
+  defp cast_to_multiply(left, right), do: Shared.merge_dtypes(left, right)
 
   @doc """
   Divides left by right, element-wise.
