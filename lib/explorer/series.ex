@@ -8,8 +8,10 @@ defmodule Explorer.Series do
     * `:boolean` - Boolean
     * `:category` - Strings but represented internally as integers
     * `:date` - Date type that unwraps to `Elixir.Date`
-    * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
-    * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
+    * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond
+      precision that unwraps to `Elixir.NaiveDateTime`
+    * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond
+      precision that unwraps to `Explorer.Duration`
     * `{:f, size}` - a 64-bit or 32-bit floating point number
     * `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit signed integer number.
     * `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer number.
@@ -21,21 +23,13 @@ defmodule Explorer.Series do
       confused with Elixir's struct). This type unwraps to Elixir maps with string keys. Examples:
       `{:struct, %{"a" => :string}}` or a nested struct dtype like `{:struct, %{"a" => {:struct, %{"b" => :string}}}}`.
 
-  The following data type aliases are also supported:
+  When passing a dtype as argument, aliases are supported for convenience
+  and compatibility with the Elixir ecosystem:
 
+    * All numeric dtypes (signed integer, unsigned integer, and floats) can
+      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and o son
     * The atom `:float` as an alias for `{:f, 64}` to mirror Elixir's floats
-    * The atoms `:f32` and `:f64` as aliases to `{:f, 32}` and `{:f, 64}` for Nx compabitility
     * The atom `:integer` as an alias for `{:s, 64}` to mirror Elixir's integers
-    * There are serveral atoms to represent integer dtypes, and they also follow Nx naming for compatibility.
-      They are the following:
-      * `s8` as alias to `{:s, 8}`
-      * `s16` as alias to `{:s, 16}`
-      * `s32` as alias to `{:s, 32}`
-      * `s64` as alias to `{:s, 64}`
-      * `u8` as alias to `{:u, 8}`
-      * `u16` as alias to `{:u, 16}`
-      * `u32` as alias to `{:u, 32}`
-      * `u64` as alias to `{:u, 64}`
 
   A series must consist of a single data type only. Series may have `nil` values in them.
   The series `dtype` can be retrieved via the `dtype/1` function or directly accessed as
@@ -75,7 +69,24 @@ defmodule Explorer.Series do
         string ["foo", "bar", "baz"]
       >
 
-  ## Special `_` syntax
+  ## Casting numeric series (type promotion)
+
+  Series of integers and floats are automatically cast when executing certain
+  operations. For example, adding a series of s64 with f64 will return a list
+  of f64.
+
+  Numeric casting works like this:
+
+    * when working with the same numeric type but of different precisions,
+      the higher precision wins
+
+    * when working with unsigned integers and signed integers, unsigned integers
+      are cast to signed integers using double of its precision (maximum of 64 bits)
+
+    * when working with integers and floats, integers are always cast floats,
+      keep the floating number precision
+
+  ## Series queries
 
   DataFrames have named columns, so their queries use column names as variables:
 
@@ -87,10 +98,9 @@ defmodule Explorer.Series do
         col_name s64 [3]
       >
 
-  Series have no named columns.
-  (A series constitutes a single column, so no name is required.)
-  This means their queries can't use column names as variables.
-  Instead, series queries use the special `_` variable like so:
+  Series have no named columns (a series constitutes a single column,
+  so no name is required). This means their queries can't use column
+  names as variables. Instead, series queries use the special `_` variable like so:
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.filter(s, _ > 2)
@@ -243,12 +253,19 @@ defmodule Explorer.Series do
 
   ## Examples
 
-  Explorer will infer the type from the values in the list:
+  Explorer will infer the type from the values in the list.
+  Integers are always treated as `s64` and floats are always
+  treated as `f64`:
 
       iex> Explorer.Series.from_list([1, 2, 3])
       #Explorer.Series<
         Polars[3]
         s64 [1, 2, 3]
+      >
+      iex> Explorer.Series.from_list([1.0, 2.0, 3.0])
+      #Explorer.Series<
+        Polars[3]
+        f64 [1.0, 2.0, 3.0]
       >
 
   Series are nullable, so you may also include nils:
@@ -288,7 +305,7 @@ defmodule Explorer.Series do
       >
 
   Trying to create an empty series or a series of nils will, by default,
-  result in a series of :null type:
+  result in a series of `:null` type:
 
       iex> Explorer.Series.from_list([])
       #Explorer.Series<
@@ -299,6 +316,17 @@ defmodule Explorer.Series do
       #Explorer.Series<
         Polars[2]
         null [nil, nil]
+      >
+
+  A list of `Date`, `Time`, `NaiveDateTime`, and `Explorer.Duration` structs
+  are also supported, and they will become series with the respective dtypes:
+  `:date`, `:time`, `{:datetime, :microsecond}`, and `{:duration, precision}`.
+  For example:
+
+      iex> Explorer.Series.from_list([~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]])
+      #Explorer.Series<
+        Polars[3]
+        date [0001-01-01, 1970-01-01, 1986-10-13]
       >
 
   You can specify the desired `dtype` for a series with the `:dtype` option.
@@ -327,8 +355,9 @@ defmodule Explorer.Series do
         f64 [1.0, nil, 2.0]
       >
 
-  The `dtype` option is particulary important if a `:binary` series is desired, because
-  by default binary series will have the dtype of `:string`:
+  The `dtype` option is particulary important if a `:binary` series
+  is desired, because by default binary series will have the dtype
+  of `:string`:
 
       iex> Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>], dtype: :binary)
       #Explorer.Series<
