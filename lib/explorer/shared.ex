@@ -74,7 +74,6 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
-  def normalise_dtype({:s, -64}), do: {:s, 64}
   def normalise_dtype(_dtype), do: nil
 
   @doc """
@@ -258,9 +257,7 @@ defmodule Explorer.Shared do
   Gets the `dtype` of a list or raise error if not possible.
   """
   def dtype_from_list!(list) do
-    list
-    |> Enum.reduce(:null, &infer_type/2)
-    |> normalise_dtype!()
+    Enum.reduce(list, :null, &infer_type/2)
   end
 
   @doc """
@@ -279,34 +276,25 @@ defmodule Explorer.Shared do
 
   def dtype_from_list!(list, preferred_type) do
     list
-    |> Enum.reduce(:null, &infer_type/2)
-    |> merge_preferred!(preferred_type, list)
+    |> dtype_from_list!()
+    |> merge_preferred(preferred_type)
   end
 
   @non_finite [:nan, :infinity, :neg_infinity]
 
   defp infer_type(nil, type), do: type
   defp infer_type(item, :null), do: infer_type(item)
-  defp infer_type(integer, {:u, 64}) when is_integer(integer) and integer > 0, do: {:u, 64}
   defp infer_type(integer, {:f, 64}) when is_integer(integer), do: {:f, 64}
-  defp infer_type(float, {:u, _}) when is_float(float) or float in @non_finite, do: {:f, 64}
-  defp infer_type(float, {:s, _}) when is_float(float) or float in @non_finite, do: {:f, 64}
+  defp infer_type(float, {:s, 64}) when is_float(float) or float in @non_finite, do: {:f, 64}
   defp infer_type(list, {:list, type}) when is_list(list), do: infer_list(list, type)
   defp infer_type(%{} = map, {:struct, inner}), do: infer_struct(map, inner)
 
   defp infer_type(item, type) do
-    case {infer_type(item), type} do
-      {{:u, 64}, {:s, 64}} ->
-        {:u, 64}
-
-      {{:s, m}, {:s, n}} when m < 0 or n < 0 ->
-        type
-
-      {type, type} ->
-        type
-
-      _ ->
-        raise_infer_mismatch!(item, type)
+    if infer_type(item) == type do
+      type
+    else
+      raise ArgumentError,
+            "the value #{inspect(item)} does not match the inferred dtype #{inspect(type)}"
     end
   end
 
@@ -314,15 +302,7 @@ defmodule Explorer.Shared do
   defp infer_type(%Time{} = _item), do: :time
   defp infer_type(%NaiveDateTime{} = _item), do: {:datetime, :microsecond}
   defp infer_type(%Explorer.Duration{precision: precision} = _item), do: {:duration, precision}
-
-  defp infer_type(item) when is_integer(item) do
-    cond do
-      item < 0 -> {:s, -64}
-      item > 9_223_372_036_854_775_807 -> {:u, 64}
-      true -> {:s, 64}
-    end
-  end
-
+  defp infer_type(item) when is_integer(item), do: {:s, 64}
   defp infer_type(item) when is_float(item) or item in @non_finite, do: {:f, 64}
   defp infer_type(item) when is_boolean(item), do: :boolean
   defp infer_type(item) when is_binary(item), do: :string
@@ -347,102 +327,31 @@ defmodule Explorer.Shared do
             {key, infer_type(value, type)}
 
           true ->
-            raise_infer_mismatch!(map, {:struct, types})
+            raise ArgumentError,
+                  "the value #{inspect(map)} does not match the inferred dtype #{inspect({:struct, types})}"
         end
       end
 
     {:struct, types}
   end
 
-  defp infer_as_uint_type!(nil, type), do: type
+  defp merge_preferred(type, type), do: type
+  defp merge_preferred(:null, type), do: type
+  defp merge_preferred({:s, 64}, {:s, _} = type), do: type
+  defp merge_preferred({:s, 64}, {:f, _} = type), do: type
+  defp merge_preferred({:f, 64}, {:f, _} = type), do: type
+  defp merge_preferred(:string, type) when type in [:binary, :string, :category], do: type
 
-  defp infer_as_uint_type!(item, {:u, n} = type) do
-    cond do
-      item < 0 -> raise_infer_mismatch!(item, type)
-      n == 8 and item < 256 -> type
-      n == 16 and item < 2 ** 16 -> type
-      n == 32 and item < 2 ** 32 -> type
-      n == 64 and item < 2 ** 64 -> type
-      true -> raise_infer_mismatch!(item, type)
-    end
+  defp merge_preferred({:list, inferred}, {:list, preferred}) do
+    {:list, merge_preferred(inferred, preferred)}
   end
 
-  defp infer_as_int_type!(nil, type), do: type
-
-  defp infer_as_int_type!(item, {:s, n} = type) do
-    cond do
-      item < -9_223_372_036_854_775_808 or item > 9_223_372_036_854_775_807 ->
-        raise_infer_mismatch!(item, type)
-
-      n == 8 and item > -129 and item < 128 ->
-        type
-
-      n == 16 and item > -32_769 and item < 32_768 ->
-        type
-
-      n == 32 and item > -2_147_483_649 and item < 2_147_483_648 ->
-        type
-
-      n == 64 and item > -9_223_372_036_854_775_809 and item < 9_223_372_036_854_775_808 ->
-        type
-
-      true ->
-        raise_infer_mismatch!(item, type)
-    end
+  defp merge_preferred({:struct, inferred}, {:struct, preferred}) do
+    {:struct, Map.merge(inferred, preferred, fn _, v1, v2 -> merge_preferred(v1, v2) end)}
   end
 
-  defp merge_preferred!(type, type, _list), do: type
-  defp merge_preferred!(:null, type, _list), do: type
-  defp merge_preferred!({t, 64}, {:f, _} = type, _list) when t in [:s, :u], do: type
-
-  defp merge_preferred!({:s, _}, {:s, _} = type, list) do
-    Enum.reduce(list, type, &infer_as_int_type!/2)
-  end
-
-  defp merge_preferred!({:s, _}, {:u, _} = type, list) do
-    Enum.reduce(list, type, &infer_as_uint_type!/2)
-  end
-
-  defp merge_preferred!({:u, _}, {:s, _} = type, list) do
-    Enum.reduce(list, type, &infer_as_int_type!/2)
-  end
-
-  defp merge_preferred!({:u, _}, {:u, _} = type, list) do
-    Enum.reduce(list, type, &infer_as_uint_type!/2)
-  end
-
-  defp merge_preferred!({:f, 64}, {:f, _} = type, _list), do: type
-  defp merge_preferred!(:string, type, _list) when type in [:binary, :string, :category], do: type
-
-  defp merge_preferred!({:list, {x, 64} = inferred}, {:list, {y, _} = preferred}, list)
-       when x in [:s, :u] or y in [:s, :u] do
-    result = Enum.reduce(list, preferred, fn l, acc -> merge_preferred!(inferred, acc, l) end)
-    {:list, result}
-  end
-
-  defp merge_preferred!({:list, inferred}, {:list, preferred}, list) do
-    {:list, merge_preferred!(inferred, preferred, list)}
-  end
-
-  defp merge_preferred!({:struct, inferred}, {:struct, preferred}, list) do
-    result =
-      Map.merge(inferred, preferred, fn k, v1, v2 ->
-        v_list = Enum.map(list, & &1[k])
-        merge_preferred!(v1, v2, v_list)
-      end)
-
-    {:struct, result}
-  end
-
-  defp merge_preferred!(inferred, _preferred, _list) do
+  defp merge_preferred(inferred, _preferred) do
     inferred
-  end
-
-  defp raise_infer_mismatch!(item, type) do
-    type = if type == {:s, -64}, do: {:s, 64}, else: type
-
-    raise ArgumentError,
-          "the value #{inspect(item)} does not match the inferred dtype #{inspect(type)}"
   end
 
   @doc """
