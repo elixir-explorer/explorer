@@ -2103,7 +2103,8 @@ defmodule Explorer.Series do
   @doc """
   Concatenate one or more series.
 
-  The dtypes must match unless all are numeric, in which case all series will be downcast to float.
+  Type promotion may happen between numeric series or
+  null series. All other dtypes must match.
 
   ## Examples
 
@@ -2139,7 +2140,7 @@ defmodule Explorer.Series do
         dtypes ->
           dtype =
             Enum.reduce(dtypes, fn left, right ->
-              Shared.merge_dtypes(left, right) ||
+              Shared.merge_numeric_dtype(left, right) ||
                 raise ArgumentError,
                       "cannot concatenate series with mismatched dtypes: #{inspect(dtypes)}. " <>
                         "First cast the series to the desired dtype."
@@ -3214,7 +3215,7 @@ defmodule Explorer.Series do
   defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_add(left, right), do: Shared.merge_dtypes(left, right)
+  defp cast_to_add(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
   Subtracts right from left, element-wise.
@@ -3278,7 +3279,7 @@ defmodule Explorer.Series do
   defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
   defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_subtract(left, right), do: Shared.merge_dtypes(left, right)
+  defp cast_to_subtract(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
   Multiplies left and right, element-wise.
@@ -3330,7 +3331,7 @@ defmodule Explorer.Series do
   defp cast_to_multiply({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_multiply({:f, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:f, _}), do: {:duration, p}
-  defp cast_to_multiply(left, right), do: Shared.merge_dtypes(left, right)
+  defp cast_to_multiply(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
   Divides left by right, element-wise.

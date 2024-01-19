@@ -5119,10 +5119,15 @@ defmodule Explorer.DataFrame do
     out_df = %{head | dtypes: Map.merge(head.dtypes, changed_types)}
 
     dfs =
-      if Enum.empty?(changed_types) do
+      if changed_types == %{} do
         dfs
       else
-        cast_numeric_columns_to_changed_types(dfs, changed_types)
+        for df <- dfs do
+          mutate_with(ungroup(df), fn ldf ->
+            for {column, target_type} <- changed_types,
+                do: {column, Series.cast(ldf[column], target_type)}
+          end)
+        end
       end
 
     Shared.apply_impl(dfs, :concat_rows, [out_df])
@@ -5138,40 +5143,20 @@ defmodule Explorer.DataFrame do
       end
 
       Enum.reduce(df.dtypes, changed_types, fn {name, type}, changed_types ->
-        cond do
-          not Map.has_key?(types, name) ->
-            raise ArgumentError,
-                  "dataframes must have the same columns"
+        case types do
+          %{^name => current_type} ->
+            if dtype = Shared.merge_dtype(Map.get(changed_types, name, current_type), type) do
+              Map.put(changed_types, name, dtype)
+            else
+              raise ArgumentError,
+                    "columns and dtypes must be identical for all dataframes"
+            end
 
-          types[name] == type ->
-            changed_types
-
-          types_are_numeric_compatible?(types, name, type) ->
-            new_dtype = Shared.merge_dtypes!(types[name], type)
-
-            Map.put(changed_types, name, new_dtype)
-
-          true ->
-            raise ArgumentError,
-                  "columns and dtypes must be identical for all dataframes"
+          %{} ->
+            raise ArgumentError, "dataframes must have the same columns"
         end
       end)
     end)
-  end
-
-  defp types_are_numeric_compatible?(types, name, type) do
-    types[name] != type and types[name] in Shared.numeric_types() and
-      (type == :null or type in Shared.numeric_types())
-  end
-
-  # We cast even if the dtype is the same for some dfs, because it is no-op.
-  defp cast_numeric_columns_to_changed_types(dfs, changed_types) do
-    for df <- dfs do
-      mutate_with(ungroup(df), fn ldf ->
-        for {column, target_type} <- changed_types,
-            do: {column, Series.cast(ldf[column], target_type)}
-      end)
-    end
   end
 
   @doc """

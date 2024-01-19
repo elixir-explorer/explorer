@@ -388,28 +388,27 @@ defmodule Explorer.Shared do
   def cast_numerics(list, _), do: list
 
   @doc """
-  Merge two numeric dtypes to a valid precision.
+  Merge two dtypes.
   """
-  def merge_dtypes({int_type, left}, {int_type, right}) when int_type in [:s, :u],
-    do: {int_type, max(left, right)}
-
-  def merge_dtypes({:s, s_size}, {:u, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
-  def merge_dtypes({:u, s_size}, {:s, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
-  def merge_dtypes({int_type, _}, {:f, _} = float) when int_type in [:s, :u], do: float
-  def merge_dtypes({:f, _} = float, {int_type, _}) when int_type in [:s, :u], do: float
-  def merge_dtypes({:f, left}, {:f, right}), do: {:f, max(left, right)}
-  def merge_dtypes({:f, _} = float, :null), do: float
-  def merge_dtypes(:null, {:f, _} = float), do: float
-  def merge_dtypes(_, _), do: nil
+  def merge_dtype(dtype, dtype), do: dtype
+  def merge_dtype(:null, dtype), do: dtype
+  def merge_dtype(dtype, :null), do: dtype
+  def merge_dtype(ltype, rtype), do: merge_numeric_dtype(ltype, rtype)
 
   @doc """
-  Same as `merge_dtypes/2`, but raises if cannot find combination.
+  Merge two numeric dtypes to a valid precision.
   """
-  def merge_dtypes!(left, right) do
-    merge_dtypes(left, right) ||
-      raise ArgumentError,
-            "cannot find compatible dtype between #{inspect(left)} and #{inspect(right)}"
-  end
+  def merge_numeric_dtype({int_type, left}, {int_type, right}) when int_type in [:s, :u],
+    do: {int_type, max(left, right)}
+
+  def merge_numeric_dtype({:s, s_size}, {:u, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
+  def merge_numeric_dtype({:u, s_size}, {:s, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
+  def merge_numeric_dtype({int_type, _}, {:f, _} = float) when int_type in [:s, :u], do: float
+  def merge_numeric_dtype({:f, _} = float, {int_type, _}) when int_type in [:s, :u], do: float
+  def merge_numeric_dtype({:f, left}, {:f, right}), do: {:f, max(left, right)}
+  def merge_numeric_dtype({:f, _} = float, :null), do: float
+  def merge_numeric_dtype(:null, {:f, _} = float), do: float
+  def merge_numeric_dtype(_, _), do: nil
 
   @doc """
   Helper for shared behaviour in inspect.

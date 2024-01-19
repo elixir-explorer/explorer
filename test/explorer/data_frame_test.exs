@@ -2425,34 +2425,6 @@ defmodule Explorer.DataFrameTest do
       assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
     end
 
-    test "using unsigned integers" do
-      df1 =
-        DF.new(x: Series.from_list([1, 2, 3], dtype: :u16), y: Series.from_list(["a", "b", "c"]))
-
-      df2 =
-        DF.new(x: Series.from_list([4, 5, 6], dtype: :u16), y: Series.from_list(["d", "e", "f"]))
-
-      df3 = DF.concat_rows(df1, df2)
-
-      assert DF.dtypes(df3) == %{"x" => {:u, 16}, "y" => :string}
-
-      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
-    end
-
-    test "mixing unsigned integers" do
-      df1 =
-        DF.new(x: Series.from_list([1, 2, 3], dtype: :u16), y: Series.from_list(["a", "b", "c"]))
-
-      df2 =
-        DF.new(x: Series.from_list([4, 5, 6], dtype: :u32), y: Series.from_list(["d", "e", "f"]))
-
-      df3 = DF.concat_rows(df1, df2)
-
-      assert DF.dtypes(df3) == %{"x" => {:u, 32}, "y" => :string}
-
-      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
-    end
-
     test "mixing signed and unsigned integers" do
       df1 =
         DF.new(x: Series.from_list([1, 2, 3], dtype: :u16), y: Series.from_list(["a", "b", "c"]))
@@ -2485,6 +2457,26 @@ defmodule Explorer.DataFrameTest do
       assert DF.dtypes(df3) == %{"x" => {:f, 64}, "y" => :string}
 
       assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    end
+
+    test "mixing nulls, signed, unsigned integers, and floats" do
+      df1 =
+        DF.new(x: Series.from_list([1, 2], dtype: :u16), y: Series.from_list(["a", "b"]))
+
+      df2 =
+        DF.new(x: Series.from_list([3.0, 4.0], dtype: :f32), y: Series.from_list(["c", "d"]))
+
+      df3 =
+        DF.new(x: [nil, nil], y: [nil, nil])
+
+      df4 =
+        DF.new(x: Series.from_list([5, 6], dtype: :s16), y: Series.from_list(["e", "f"]))
+
+      df5 = DF.concat_rows([df1, df2, df3, df4])
+
+      assert DF.dtypes(df5) == %{"x" => {:f, 32}, "y" => :string}
+      assert Series.to_list(df5["x"]) == [1.0, 2.0, 3.0, 4.0, nil, nil, 5.0, 6.0]
+      assert Series.to_list(df5["y"]) == ["a", "b", "c", "d", nil, nil, "e", "f"]
     end
 
     test "concat dfs in a list" do
