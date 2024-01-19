@@ -225,9 +225,9 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def argsort(%Series{} = s, descending?, maintain_order?, multithreaded?, nulls_last?) do
     args = [lazy_series!(s), descending?, maintain_order?, multithreaded?, nulls_last?]
-    data = new(:argsort, args, {:s, 64}, aggregations?(args))
+    data = new(:argsort, args, {:u, 32}, aggregations?(args))
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:u, 32})
   end
 
   @impl true
@@ -486,9 +486,17 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def rank(%Series{} = series, method, descending, seed) do
     args = [series_or_lazy_series!(series), method, descending, seed]
-    data = new(:rank, args, series.dtype, true)
 
-    Backend.Series.new(data, series.dtype)
+    target_dtype =
+      if method == :ordinal do
+        {:u, 32}
+      else
+        series.dtype
+      end
+
+    data = new(:rank, args, target_dtype, true)
+
+    Backend.Series.new(data, target_dtype)
   end
 
   @impl true
@@ -599,58 +607,58 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def day_of_week(%Series{} = s) do
-    data = new(:day_of_week, [lazy_series!(s)], {:s, 64})
+    data = new(:day_of_week, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def day_of_year(%Series{} = s) do
-    data = new(:day_of_year, [lazy_series!(s)], {:s, 64})
+    data = new(:day_of_year, [lazy_series!(s)], {:s, 16})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 16})
   end
 
   @impl true
   def week_of_year(%Series{} = s) do
-    data = new(:week_of_year, [lazy_series!(s)], {:s, 64})
+    data = new(:week_of_year, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def month(%Series{} = s) do
-    data = new(:month, [lazy_series!(s)], {:s, 64})
+    data = new(:month, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def year(%Series{} = s) do
-    data = new(:year, [lazy_series!(s)], {:s, 64})
+    data = new(:year, [lazy_series!(s)], {:s, 32})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 32})
   end
 
   @impl true
   def hour(%Series{} = s) do
-    data = new(:hour, [lazy_series!(s)], {:s, 64})
+    data = new(:hour, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def minute(%Series{} = s) do
-    data = new(:minute, [lazy_series!(s)], {:s, 64})
+    data = new(:minute, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
   def second(%Series{} = s) do
-    data = new(:second, [lazy_series!(s)], {:s, 64})
+    data = new(:second, [lazy_series!(s)], {:s, 8})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true
@@ -686,11 +694,12 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, {:f, 64})
   end
 
-  # TODO: consider using `{:u, 64}` here.
-  defp dtype_for_agg_operation(op, _) when op in [:count, :nil_count, :n_distinct], do: {:s, 64}
+  defp dtype_for_agg_operation(op, _)
+       when op in [:count, :nil_count, :n_distinct, :argmin, :argmax],
+       do: {:u, 32}
 
   defp dtype_for_agg_operation(op, series)
-       when op in [:first, :last, :sum, :min, :max, :argmin, :argmax],
+       when op in [:first, :last, :sum, :min, :max],
        do: series.dtype
 
   defp dtype_for_agg_operation(op, _) when op in [:all?, :any?], do: :boolean
@@ -797,9 +806,9 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def abs(%Series{} = series) do
-    data = new(:abs, [lazy_series!(series)], {:f, 64})
+    data = new(:abs, [lazy_series!(series)], series.dtype)
 
-    Backend.Series.new(data, {:f, 64})
+    Backend.Series.new(data, series.dtype)
   end
 
   @impl true
@@ -819,11 +828,11 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def clip(%Series{dtype: {:s, 64}} = series, min, max)
-      when is_integer(min) and is_integer(max) do
-    data = new(:clip_integer, [lazy_series!(series), min, max], {:s, 64})
+  def clip(%Series{dtype: {s_or_u, _} = dtype} = series, min, max)
+      when s_or_u in [:s, :u] and is_integer(min) and is_integer(max) do
+    data = new(:clip_integer, [lazy_series!(series), min, max], dtype)
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, dtype)
   end
 
   def clip(%Series{} = series, min, max) do
@@ -1053,9 +1062,9 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def lengths(series) do
-    data = new(:lengths, [lazy_series!(series)], {:s, 64})
+    data = new(:lengths, [lazy_series!(series)], {:u, 32})
 
-    Backend.Series.new(data, {:s, 64})
+    Backend.Series.new(data, {:u, 32})
   end
 
   @impl true
@@ -1068,7 +1077,6 @@ defmodule Explorer.Backend.LazySeries do
   @remaining_non_lazy_operations [
     at: 2,
     at_every: 2,
-    iotype: 1,
     categories: 1,
     categorise: 2,
     frequencies: 1,

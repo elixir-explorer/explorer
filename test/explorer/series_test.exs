@@ -172,6 +172,13 @@ defmodule Explorer.SeriesTest do
                    end
     end
 
+    test "with unsigned integers" do
+      s = Series.from_list([1, 2, 3], dtype: {:u, 64})
+
+      assert Series.to_list(s) === [1, 2, 3]
+      assert Series.dtype(s) == {:u, 64}
+    end
+
     test "with floats" do
       s = Series.from_list([1, 2.4, 3])
       assert Series.to_list(s) === [1.0, 2.4, 3.0]
@@ -421,40 +428,40 @@ defmodule Explorer.SeriesTest do
 
     test "with 64-bit unsigned integers" do
       for dtype <- [:u64, {:u, 64}] do
-        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+        s = Series.from_list([0, 1, 2, 3, 2 ** 64 - 1, nil], dtype: dtype)
 
         assert s[3] === 3
-        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.to_list(s) === [0, 1, 2, 3, 2 ** 64 - 1, nil]
         assert Series.dtype(s) == {:u, 64}
       end
     end
 
     test "with 32-bit unsigned integers" do
       for dtype <- [:u32, {:u, 32}] do
-        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+        s = Series.from_list([0, 1, 2, 3, 2 ** 32 - 1, nil], dtype: dtype)
 
         assert s[3] === 3
-        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.to_list(s) === [0, 1, 2, 3, 2 ** 32 - 1, nil]
         assert Series.dtype(s) == {:u, 32}
       end
     end
 
     test "with 16-bit unsigned integers" do
       for dtype <- [:u16, {:u, 16}] do
-        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+        s = Series.from_list([0, 1, 2, 3, 2 ** 16 - 1, nil], dtype: dtype)
 
         assert s[1] === 1
-        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.to_list(s) === [0, 1, 2, 3, 2 ** 16 - 1, nil]
         assert Series.dtype(s) == {:u, 16}
       end
     end
 
     test "with 8-bit unsigned integers" do
       for dtype <- [:u8, {:u, 8}] do
-        s = Series.from_list([0, 1, 2, 3, nil], dtype: dtype)
+        s = Series.from_list([0, 1, 2, 3, 2 ** 8 - 1, nil], dtype: dtype)
 
         assert s[1] === 1
-        assert Series.to_list(s) === [0, 1, 2, 3, nil]
+        assert Series.to_list(s) === [0, 1, 2, 3, 2 ** 8 - 1, nil]
         assert Series.dtype(s) == {:u, 8}
       end
     end
@@ -3944,6 +3951,51 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "concat/1" do
+    test "concat null" do
+      sn = Series.from_list([nil, nil, nil])
+      sn1 = Series.from_list([nil, nil])
+      sr = Series.concat([sn, sn1])
+      assert sn.dtype == :null
+      assert sn1.dtype == :null
+      assert Series.size(sr) == 5
+      assert Series.to_list(sr) == [nil, nil, nil, nil, nil]
+      assert Series.dtype(sr) == :null
+    end
+
+    test "concat series of multiple signed and unsigned" do
+      sn = Series.from_list([nil])
+      u8 = Series.from_list([8], dtype: {:s, 8})
+      s8 = Series.from_list([9], dtype: {:u, 8})
+      s16 = Series.from_list([16], dtype: {:s, 16})
+      sr = Series.concat([sn, u8, s8, s16])
+      assert sr.dtype == {:s, 16}
+      assert Series.size(sr) == 4
+      assert Series.to_list(sr) == [nil, 8, 9, 16]
+    end
+
+    test "concat series of multiple signed and unsigned 64" do
+      sn = Series.from_list([nil])
+      u8 = Series.from_list([8], dtype: {:s, 8})
+      u64 = Series.from_list([1], dtype: {:u, 64})
+      s16 = Series.from_list([16], dtype: {:s, 16})
+      sr = Series.concat([sn, u8, u64, s16])
+      assert sr.dtype == {:s, 64}
+      assert Series.size(sr) == 4
+      assert Series.to_list(sr) == [nil, 8, 1, 16]
+    end
+
+    test "concat null with {:s, 8}" do
+      sn = Series.from_list([nil, nil, nil])
+      s1 = Series.from_list([4, 5, 6], dtype: {:s, 8})
+
+      sr = Series.concat([sn, s1])
+      assert sn.dtype == :null
+      assert s1.dtype == {:s, 8}
+      assert Series.size(sr) == 6
+      assert Series.to_list(sr) == [nil, nil, nil, 4, 5, 6]
+      assert Series.dtype(sr) == {:s, 8}
+    end
+
     test "concat integer series" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([4, 5, 6])
@@ -4021,9 +4073,22 @@ defmodule Explorer.SeriesTest do
 
     test "from a series of indices" do
       s = Series.from_list(["a", "b", "c"])
-      s1 = Series.slice(s, Series.from_list([0, 2]))
 
-      assert Series.to_list(s1) == ["a", "c"]
+      for dtype <- [:u8, :s16, :s64] do
+        s1 = Series.slice(s, Series.from_list([0, 2], dtype: dtype))
+
+        assert Series.dtype(s1) == s.dtype
+        assert Series.to_list(s1) == ["a", "c"]
+      end
+    end
+
+    test "from a series of strings" do
+      s = Series.from_list(["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "Explorer.Series.slice/2 not implemented for dtype :string. " <>
+                     "Valid dtypes are {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}",
+                   fn -> Series.slice(s, Series.from_list(["0", "2"])) end
     end
 
     test "from a series of indices with a negative number" do
@@ -5798,7 +5863,7 @@ defmodule Explorer.SeriesTest do
       df = Series.frequencies(s)
 
       assert Series.dtype(df[:values]) == {:s, 64}
-      assert Series.dtype(df[:counts]) == {:s, 64}
+      assert Series.dtype(df[:counts]) == {:u, 32}
 
       assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
                values: [1, 2, 3, 4, 5, 6],
@@ -5812,7 +5877,7 @@ defmodule Explorer.SeriesTest do
       df = Series.frequencies(s)
 
       assert Series.dtype(df[:values]) == :string
-      assert Series.dtype(df[:counts]) == {:s, 64}
+      assert Series.dtype(df[:counts]) == {:u, 32}
 
       assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
                values: ["c", "a", "b"],
@@ -5826,7 +5891,7 @@ defmodule Explorer.SeriesTest do
       df = Series.frequencies(s)
 
       assert Series.dtype(df[:values]) == {:list, {:s, 64}}
-      assert Series.dtype(df[:counts]) == {:s, 64}
+      assert Series.dtype(df[:counts]) == {:u, 32}
 
       assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
                values: [[1, 2], [4, 1], [3, 1, 3], [5, 6]],

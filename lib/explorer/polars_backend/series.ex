@@ -63,11 +63,6 @@ defmodule Explorer.PolarsBackend.Series do
   def size(series), do: Shared.apply_series(series, :s_size)
 
   @impl true
-  def iotype(series) do
-    Shared.apply_series(series, :s_iotype)
-  end
-
-  @impl true
   def categories(%Series{dtype: :category} = series),
     do: Shared.apply_series(series, :s_categories)
 

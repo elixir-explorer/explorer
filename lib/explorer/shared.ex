@@ -337,6 +337,7 @@ defmodule Explorer.Shared do
 
   defp merge_preferred(type, type), do: type
   defp merge_preferred(:null, type), do: type
+  defp merge_preferred({:s, 64}, {:u, _} = type), do: type
   defp merge_preferred({:s, 64}, {:s, _} = type), do: type
   defp merge_preferred({:s, 64}, {:f, _} = type), do: type
   defp merge_preferred({:f, 64}, {:f, _} = type), do: type
@@ -461,30 +462,44 @@ defmodule Explorer.Shared do
   end
 
   @doc """
-  Converts a dtype to a binary type when possible.
+  Converts a dtype to an iotype.
+
+  Note this is a subset of Series.iotype/1, given we can convert
+  a category series to iotype but we cannot generally convert
+  a category dtype to an iotype without the underlying categories.
   """
-  def dtype_to_iotype!(dtype) do
+  def dtype_to_iotype(dtype) do
     case dtype do
-      {:f, n} when n in [32, 64] -> dtype
-      {:s, n} when n in [8, 16, 32, 64] -> dtype
-      {:u, n} when n in [8, 16, 32, 64] -> dtype
+      {:f, _} -> dtype
+      {:s, _} -> dtype
+      {:u, _} -> dtype
       :boolean -> {:u, 8}
       :date -> {:s, 32}
       :time -> {:s, 64}
       {:datetime, _} -> {:s, 64}
       {:duration, _} -> {:s, 64}
-      _ -> raise ArgumentError, "cannot convert dtype #{dtype} into a binary/tensor type"
+      _ -> :none
     end
   end
 
   @doc """
-  Converts a binary type to dtype.
+  Raising version of `dtype_to_iotype/1`.
+  """
+  def dtype_to_iotype!(dtype) do
+    case dtype_to_iotype(dtype) do
+      :none -> raise ArgumentError, "cannot convert dtype #{dtype} into a binary/tensor type"
+      other -> other
+    end
+  end
+
+  @doc """
+  Converts an iotype to dtype.
   """
   def iotype_to_dtype!(type) do
     case type do
-      {:f, n} when n in [32, 64] -> type
-      {:s, n} when n in [8, 16, 32, 64] -> type
-      {:u, n} when n in [8, 16, 32, 64] -> type
+      {:f, _} -> type
+      {:s, _} -> type
+      {:u, _} -> type
       _ -> raise ArgumentError, "cannot convert binary/tensor type #{inspect(type)} into dtype"
     end
   end

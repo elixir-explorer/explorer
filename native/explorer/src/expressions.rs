@@ -284,7 +284,7 @@ pub fn expr_rank(
     let expr = expr.clone_inner();
     let rank_options = crate::parse_rank_method_options(method, descending);
 
-    ExExpr::new(expr.rank(rank_options, seed).cast(DataType::Float64))
+    ExExpr::new(expr.rank(rank_options, seed))
 }
 
 #[rustler::nif]
@@ -435,14 +435,14 @@ pub fn expr_max(expr: ExExpr) -> ExExpr {
 pub fn expr_argmax(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.arg_max().cast(DataType::Int64))
+    ExExpr::new(expr.arg_max())
 }
 
 #[rustler::nif]
 pub fn expr_argmin(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.arg_min().cast(DataType::Int64))
+    ExExpr::new(expr.arg_min())
 }
 
 #[rustler::nif]
@@ -557,23 +557,21 @@ pub fn expr_alias(expr: ExExpr, name: &str) -> ExExpr {
 pub fn expr_count(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    // We need to add zero to work around a Polars bug
-    // where casting a count returns the wrong result
-    ExExpr::new((expr.count() + 0.lit()).cast(DataType::Int64))
+    ExExpr::new(expr.count())
 }
 
 #[rustler::nif]
 pub fn expr_nil_count(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.null_count().cast(DataType::Int64))
+    ExExpr::new(expr.null_count())
 }
 
 #[rustler::nif]
 pub fn expr_n_distinct(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.n_unique().cast(DataType::Int64))
+    ExExpr::new(expr.n_unique())
 }
 
 #[rustler::nif]
@@ -789,7 +787,7 @@ pub fn expr_argsort(
         nulls_last,
     };
 
-    ExExpr::new(expr.arg_sort(opts).cast(DataType::Int64))
+    ExExpr::new(expr.arg_sort(opts))
 }
 
 #[rustler::nif]
@@ -985,56 +983,56 @@ pub fn expr_clip_float(expr: ExExpr, min: f64, max: f64) -> ExExpr {
 pub fn expr_day_of_week(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().weekday().cast(DataType::Int64))
+    ExExpr::new(expr.dt().weekday())
 }
 
 #[rustler::nif]
 pub fn expr_day_of_year(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().ordinal_day().cast(DataType::Int64))
+    ExExpr::new(expr.dt().ordinal_day())
 }
 
 #[rustler::nif]
 pub fn expr_week_of_year(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().week().cast(DataType::Int64))
+    ExExpr::new(expr.dt().week())
 }
 
 #[rustler::nif]
 pub fn expr_month(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().month().cast(DataType::Int64))
+    ExExpr::new(expr.dt().month())
 }
 
 #[rustler::nif]
 pub fn expr_year(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().year().cast(DataType::Int64))
+    ExExpr::new(expr.dt().year())
 }
 
 #[rustler::nif]
 pub fn expr_hour(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().hour().cast(DataType::Int64))
+    ExExpr::new(expr.dt().hour())
 }
 
 #[rustler::nif]
 pub fn expr_minute(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().minute().cast(DataType::Int64))
+    ExExpr::new(expr.dt().minute())
 }
 
 #[rustler::nif]
 pub fn expr_second(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().second().cast(DataType::Int64))
+    ExExpr::new(expr.dt().second())
 }
 
 #[rustler::nif]
@@ -1048,7 +1046,7 @@ pub fn expr_join(expr: ExExpr, sep: String) -> ExExpr {
 pub fn expr_lengths(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.list().len().cast(DataType::Int64))
+    ExExpr::new(expr.list().len())
 }
 
 #[rustler::nif]
