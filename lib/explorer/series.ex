@@ -2501,8 +2501,11 @@ defmodule Explorer.Series do
         string ["b"]
       >
 
-      s = Explorer.Series.from_list([1.0, 2.0, 2.0, 3.0, 3.0])
-      Explorer.Series.mode(s)
+  This function can return multiple entries, but the order is not guaranteed.
+  You may sort the series if desired.
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, 2.0, 3.0, 3.0])
+      iex> Explorer.Series.mode(s) |> Explorer.Series.sort()
       #Explorer.Series<
         Polars[2]
         f64 [2.0, 3.0]
@@ -2510,7 +2513,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec mode(series :: Series.t()) :: Series.t() | nil
-  def mode(%Series{dtype: {:list, _} = dtype}),
+  def mode(%Series{dtype: {composite, _} = dtype}) when K.in(composite, [:list, :struct]),
     do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
 
   def mode(%Series{} = series),

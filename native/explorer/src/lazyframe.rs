@@ -157,7 +157,14 @@ pub fn lf_summarise_with(
     let aggs = ex_expr_to_exprs(aggs);
 
     let new_lf = if groups.is_empty() {
-        ldf.select(aggs)
+        // We do add a "shadow" column to be able to group by it.
+        // This is going to force some aggregations like "mode" to be always inside
+        // a "list".
+        let s = Series::new_null("__explorer_null_for_group__", 1);
+        ldf.with_column(s.lit())
+            .group_by_stable(["__explorer_null_for_group__"])
+            .agg(aggs)
+            .select(&[col("*").exclude(["__explorer_null_for_group__"])])
     } else {
         ldf.group_by_stable(groups).agg(aggs)
     };

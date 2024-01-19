@@ -5450,16 +5450,10 @@ defmodule Explorer.DataFrame do
           %Series{data: %LazySeries{op: :lazy, args: [nil], dtype: :null}} ->
             value
 
-          %Series{data: %LazySeries{aggregation: true} = lazy} = value ->
-            # This special case fix the "mode" dtype. But it shouldn't be here,
-            # since we won't catch "mode" operations that are nested.
-            if df.groups != [] and lazy.op == :mode and not match?({:list, _}, value.dtype) do
-              %{value | dtype: {:list, value.dtype}}
-            else
-              value
-            end
+          %Series{data: %LazySeries{aggregation: true}} ->
+            value
 
-          %Series{data: %LazySeries{op: :column}} = value ->
+          %Series{data: %LazySeries{op: :column}} ->
             %{value | dtype: {:list, value.dtype}}
 
           %Series{data: %LazySeries{}} = series ->
