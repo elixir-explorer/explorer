@@ -725,7 +725,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def with_row_count(%DataFrame{} = df, %DataFrame{} = out_df, name, offset) do
+  def with_row_index(%DataFrame{} = df, %DataFrame{} = out_df, name, offset) do
     Shared.apply_dataframe(df, out_df, :df_with_row_count, [name, offset])
   end
 

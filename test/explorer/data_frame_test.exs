@@ -4235,7 +4235,7 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "with_row_count/2" do
+  describe "with_row_index/2" do
     test "basic example" do
       require Explorer.DataFrame, as: DF
 
@@ -4245,7 +4245,7 @@ defmodule Explorer.DataFrameTest do
           b: [2, 4, 6]
         )
 
-      df1 = DF.with_row_count(df)
+      df1 = DF.with_row_index(df)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                row_nr: [0, 1, 2],
@@ -4263,7 +4263,7 @@ defmodule Explorer.DataFrameTest do
           b: [2, 4, 6]
         )
 
-      df1 = DF.with_row_count(df, name: "id", offset: 1000)
+      df1 = DF.with_row_index(df, name: "id", offset: 1000)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                id: [1000, 1001, 1002],
@@ -4272,4 +4272,24 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "raises on bad offset" do
+      require Explorer.DataFrame, as: DF
+
+      df =
+        DF.new(
+          a: [1, 3, 5],
+          b: [2, 4, 6]
+        )
+
+      assert_raise ArgumentError, "offset cannot be negative", fn ->
+        DF.with_row_index(df, offset: -1)
+      end
+
+      error_message = "offset cannot be cannot be greater than the maximum index value of 2^32"
+
+      assert_raise ArgumentError, error_message, fn ->
+        DF.with_row_index(df, offset: 2 ** 32)
+      end
+    end
+  end
 end

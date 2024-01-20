@@ -4735,7 +4735,7 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> df = Explorer.DataFrame.new(a: [1, 3, 5], b: [2, 4, 6])
-      iex> Explorer.DataFrame.with_row_count(df)
+      iex> Explorer.DataFrame.with_row_index(df)
       #Explorer.DataFrame<
         Polars[3 x 3]
         row_nr u32 [0, 1, 2]
@@ -4744,7 +4744,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.DataFrame.new(a: [1, 3, 5], b: [2, 4, 6])
-      iex> Explorer.DataFrame.with_row_count(df, name: "id", offset: 1000)
+      iex> Explorer.DataFrame.with_row_index(df, name: "id", offset: 1000)
       #Explorer.DataFrame<
         Polars[3 x 3]
         id u32 [1000, 1001, 1002]
@@ -4754,16 +4754,26 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :single
-  @spec with_row_count(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
-  def with_row_count(%DataFrame{} = df, opts \\ []) do
+  @spec with_row_index(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
+  def with_row_index(%DataFrame{} = df, opts \\ []) do
     opts = Keyword.validate!(opts, name: "row_nr", offset: 0)
     name = opts[:name]
+    offset = opts[:offset]
+
+    if offset < 0 do
+      raise ArgumentError, "offset cannot be negative"
+    end
+
+    if offset >= 2 ** 32 do
+      raise ArgumentError,
+            "offset cannot be cannot be greater than the maximum index value of 2^32"
+    end
 
     new_names = [name | df.names]
     new_dtypes = Map.put(df.dtypes, name, {:s, 32})
 
     out_df = %{df | names: new_names, dtypes: new_dtypes}
-    Shared.apply_impl(df, :with_row_count, [out_df, name, opts[:offset]])
+    Shared.apply_impl(df, :with_row_index, [out_df, name, offset])
   end
 
   # Two table verbs
