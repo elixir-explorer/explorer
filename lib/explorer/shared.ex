@@ -330,24 +330,11 @@ defmodule Explorer.Shared do
   end
 
   defp infer_type(item, type, preferred, strict) do
-    case {infer_type(item, preferred, strict), type} do
-      {{:u, 64}, {:s, 64}} ->
-        {:u, 64}
-
-      {{:u, 64}, {:s, -64}} ->
-        raise_mismatched_dtype!(item, {:s, 64})
-
-      {{:s, _}, {:s, -64}} ->
-        type
-
-      {{:s, -64}, {:s, _}} ->
-        {:s, -64}
-
-      {type, type} ->
-        type
-
-      _ ->
-        raise_mismatched_dtype!(item, type)
+    if infer_type(item, preferred, strict) == type do
+      type
+    else
+      raise ArgumentError,
+            "the value #{inspect(item)} does not match the inferred dtype #{inspect(type)}"
     end
   end
 
@@ -361,18 +348,10 @@ defmodule Explorer.Shared do
   defp infer_type(item, _, false) when is_integer(item), do: {:s, 64}
 
   defp infer_type(item, nil, true) when is_integer(item) do
-    cond do
-      item > -9_223_372_036_854_775_809 and item < 0 ->
-        {:s, -64}
-
-      item < 9_223_372_036_854_775_808 ->
-        {:s, 64}
-
-      item > -1 and item > 9_223_372_036_854_775_807 ->
-        {:u, 64}
-
-      true ->
-        raise_mismatched_dtype!(item, {:s, 64})
+    if item > 9_223_372_036_854_775_807 do
+      raise_mismatched_dtype!(item, {:s, 64})
+    else
+      {:s, 64}
     end
   end
 
