@@ -36,7 +36,7 @@ defmodule Explorer.Series.ListTest do
     end
 
     test "list of lists of one integer & one u64" do
-      series = Series.from_list([[1, 9_223_372_036_854_775_808]])
+      series = Series.from_list([[1, 9_223_372_036_854_775_808]], dtype: {:list, {:u, 64}})
 
       assert series.dtype == {:list, {:u, 64}}
       assert series[0] == [1, 9_223_372_036_854_775_808]
@@ -47,12 +47,16 @@ defmodule Explorer.Series.ListTest do
       assert_raise ArgumentError,
                    "the value 9223372036854775808 does not match the inferred dtype {:s, 64}",
                    fn ->
-                     Series.from_list([[-1, 9_223_372_036_854_775_808]])
+                     Series.from_list([[-1, 9_223_372_036_854_775_808]], strict: true)
                    end
     end
 
     test "list of lists of integers with one u64" do
-      series = Series.from_list([[0], [1], [2, 9_223_372_036_854_775_808], [3, nil, 4], nil, []])
+      series =
+        Series.from_list([[0], [1], [2, 9_223_372_036_854_775_808], [3, nil, 4], nil, []],
+          dtype: {:list, {:u, 64}},
+          strict: true
+        )
 
       assert series.dtype == {:list, {:u, 64}}
       assert series[0] == [0]
@@ -68,7 +72,8 @@ defmodule Explorer.Series.ListTest do
     end
 
     test "list of lists of integers recursively - u64" do
-      series = Series.from_list([[[1, 9_223_372_036_854_775_808]]])
+      series =
+        Series.from_list([[[1, 9_223_372_036_854_775_808]]], dtype: {:list, {:list, {:u, 64}}})
 
       assert series.dtype == {:list, {:list, {:u, 64}}}
       assert series[0] == [[1, 9_223_372_036_854_775_808]]

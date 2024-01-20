@@ -410,7 +410,6 @@ defmodule Explorer.Shared do
     do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
   defp infer_list(list, type, preferred, strict) do
-    # &infer_type/2)}
     preferred =
       case preferred do
         {:list, preferred} -> preferred
