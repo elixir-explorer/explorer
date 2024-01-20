@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   module.
 
 - Add `unnest/2` to `Explorer.DataFrame`. It works by taking the fields of a "struct" -
-  the new dtype -, and transform them into columns.
+  the new dtype - and transform them into columns.
 
 - Add pairwise correlation - `Explorer.DataFrame.correlation/2` - to calculate the
   correlation between numeric columns inside a data frame.
