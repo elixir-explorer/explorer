@@ -251,6 +251,7 @@ defmodule Explorer.Series do
     * `:dtype` - Cast the series to a given `:dtype`. By default this is `nil`, which means
       that Explorer will infer the type from the values in the list.
       See the module docs for the list of valid dtypes and aliases.
+    * `:strict` - `boolean` defaults to `false`. When `true` infers exact data type of integers and raises on overflow and underflow
 
   ## Examples
 
@@ -406,12 +407,12 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
-    opts = Keyword.validate!(opts, [:dtype, :backend])
+    opts = Keyword.validate!(opts, [:dtype, :backend, strict: false])
     backend = backend_from_options!(opts)
 
     normalised_dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
 
-    type = Shared.dtype_from_list!(list, normalised_dtype)
+    type = Shared.dtype_from_list!(list, normalised_dtype, opts[:strict])
     list = Shared.cast_numerics(list, type)
 
     series = backend.from_list(list, type)

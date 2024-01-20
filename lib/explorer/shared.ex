@@ -258,9 +258,10 @@ defmodule Explorer.Shared do
   Gets the `dtype` of a list or raise error if not possible.
   """
   def dtype_from_list!(list) do
-    list
-    |> Enum.reduce(:null, &infer_type(&1, &2, nil))
-    |> normalise_dtype!()
+    dtype_from_list!(list, nil, false)
+    # list
+    # |> Enum.reduce(:null, &infer_type(&1, &2, nil, false))
+    # |> normalise_dtype!()
   end
 
   @doc """
@@ -273,54 +274,63 @@ defmodule Explorer.Shared do
 
   If no preferred type is given (nil), then the inferred type is returned.
   """
-  def dtype_from_list!(_list, :null), do: :null
+  def dtype_from_list!(list, preferred_type, strict \\ false)
+  def dtype_from_list!(_list, :null, _strict), do: :null
 
-  def dtype_from_list!(list, nil), do: dtype_from_list!(list)
-
-  def dtype_from_list!(list, preferred_type) do
+  # , do: dtype_from_list!(list, strict)
+  def dtype_from_list!(list, nil, strict) do
     list
-    |> Enum.reduce(:null, &infer_type(&1, &2, preferred_type))
+    |> Enum.reduce(:null, &infer_type(&1, &2, nil, strict))
+    |> normalise_dtype!()
+  end
+
+  def dtype_from_list!(list, preferred_type, strict) do
+    list
+    |> Enum.reduce(:null, &infer_type(&1, &2, preferred_type, strict))
     |> merge_preferred(preferred_type)
   end
 
   @non_finite [:nan, :infinity, :neg_infinity]
 
-  defp infer_type(nil, type, _preferred), do: type
-  defp infer_type(item, :null, preferred), do: infer_type(item, preferred)
+  defp infer_type(nil, type, _preferred, _strict), do: type
+  defp infer_type(item, :null, preferred, strict), do: infer_type(item, preferred, strict)
 
-  defp infer_type(integer, {:u, 64}, _preferred) when is_integer(integer) and integer > 0,
-    do: {:u, 64}
+  defp infer_type(integer, {:u, 64}, _preferred, _strict)
+       when is_integer(integer) and integer > 0,
+       do: {:u, 64}
 
-  defp infer_type(integer, {:f, 64}, _preferred) when is_integer(integer), do: {:f, 64}
+  defp infer_type(integer, {:f, 64}, _preferred, _strict) when is_integer(integer), do: {:f, 64}
 
-  defp infer_type(float, {:s, _}, _preferred) when is_float(float) or float in @non_finite,
-    do: {:f, 64}
+  defp infer_type(float, {:s, _}, _preferred, _strict)
+       when is_float(float) or float in @non_finite,
+       do: {:f, 64}
 
-  defp infer_type(float, {:u, 64}, _preferred) when is_float(float) or float in @non_finite,
-    do: {:f, 64}
+  defp infer_type(float, {:u, 64}, _preferred, _strict)
+       when is_float(float) or float in @non_finite,
+       do: {:f, 64}
 
-  defp infer_type(list, {:list, type}, preferred) when is_list(list) do
+  defp infer_type(list, {:list, type}, preferred, strict) when is_list(list) do
     preferred =
       case preferred do
         {:list, preferred} -> preferred
         _ -> preferred
       end
 
-    infer_list(list, type, preferred)
+    infer_list(list, type, preferred, strict)
   end
 
-  defp infer_type(%{} = map, {:struct, inner}, preferred) do
+  defp infer_type(%{} = map, {:struct, inner}, preferred, strict) do
     preferred =
       case preferred do
         {:struct, preferred} -> preferred
         _ -> preferred
       end
 
-    infer_struct(map, inner, preferred)
+    infer_struct(map, inner, preferred, strict)
   end
 
-  defp infer_type(item, type, preferred) do
-    case {infer_type(item, preferred), type} do
+  defp infer_type(item, type, preferred, strict) do
+    case {infer_type(item, preferred, strict), type} do
       {{:u, 64}, {:s, 64}} ->
         {:u, 64}
 
@@ -341,14 +351,16 @@ defmodule Explorer.Shared do
     end
   end
 
-  defp infer_type(%Date{} = _item, _preferred), do: :date
-  defp infer_type(%Time{} = _item, _preferred), do: :time
-  defp infer_type(%NaiveDateTime{} = _item, _preferred), do: {:datetime, :microsecond}
+  defp infer_type(%Date{} = _item, _preferred, _strict), do: :date
+  defp infer_type(%Time{} = _item, _preferred, _strict), do: :time
+  defp infer_type(%NaiveDateTime{} = _item, _preferred, _strict), do: {:datetime, :microsecond}
 
-  defp infer_type(%Explorer.Duration{precision: precision} = _item, _preferred),
+  defp infer_type(%Explorer.Duration{precision: precision} = _item, _preferred, _strict),
     do: {:duration, precision}
 
-  defp infer_type(item, nil) when is_integer(item) do
+  defp infer_type(item, _, false) when is_integer(item), do: {:s, 64}
+
+  defp infer_type(item, nil, true) when is_integer(item) do
     cond do
       item > -9_223_372_036_854_775_809 and item < 0 ->
         {:s, -64}
@@ -364,7 +376,7 @@ defmodule Explorer.Shared do
     end
   end
 
-  defp infer_type(item, preferred) when is_integer(item) do
+  defp infer_type(item, preferred, true) when is_integer(item) do
     case preferred do
       {:s, 8} when item > -129 and item < 128 ->
         preferred
@@ -404,16 +416,21 @@ defmodule Explorer.Shared do
     end
   end
 
-  defp infer_type(item, _preferred) when is_float(item) or item in @non_finite, do: {:f, 64}
-  defp infer_type(item, _preferred) when is_boolean(item), do: :boolean
-  defp infer_type(item, _preferred) when is_binary(item), do: :string
-  defp infer_type(list, preferred) when is_list(list), do: infer_list(list, :null, preferred)
-  defp infer_type(%{} = map, preferred), do: infer_struct(map, nil, preferred)
+  defp infer_type(item, _preferred, _strict) when is_float(item) or item in @non_finite,
+    do: {:f, 64}
 
-  defp infer_type(item, _preferred),
+  defp infer_type(item, _preferred, _strict) when is_boolean(item), do: :boolean
+  defp infer_type(item, _preferred, _strict) when is_binary(item), do: :string
+
+  defp infer_type(list, preferred, strict) when is_list(list),
+    do: infer_list(list, :null, preferred, strict)
+
+  defp infer_type(%{} = map, preferred, strict), do: infer_struct(map, nil, preferred, strict)
+
+  defp infer_type(item, _preferred, _strict),
     do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
 
-  defp infer_list(list, type, preferred) do
+  defp infer_list(list, type, preferred, strict) do
     # &infer_type/2)}
     preferred =
       case preferred do
@@ -421,20 +438,20 @@ defmodule Explorer.Shared do
         _ -> preferred
       end
 
-    {:list, Enum.reduce(list, type, &infer_type(&1, &2, preferred))}
+    {:list, Enum.reduce(list, type, &infer_type(&1, &2, preferred, strict))}
   end
 
-  defp infer_struct(%{} = map, types, preferred) do
+  defp infer_struct(%{} = map, types, preferred, strict) do
     types =
       for {key, value} <- map, into: %{} do
         key = to_string(key)
 
         cond do
           types == nil ->
-            {key, infer_type(value, :null, preferred)}
+            {key, infer_type(value, :null, preferred, strict)}
 
           type = types[key] ->
-            {key, infer_type(value, type, preferred)}
+            {key, infer_type(value, type, preferred, strict)}
 
           true ->
             raise_mismatched_dtype!(map, {:struct, types})
