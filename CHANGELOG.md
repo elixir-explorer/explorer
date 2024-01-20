@@ -7,6 +7,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `explode/2` to `Explorer.DataFrame`. This function is useful to expand
+  the contents of a `{:list, inner_dtype}` series into a "`inner_dtype`" series.
+
+- Add the new series functions `all?/1` and `any?/1`, to work with boolean series.
+
+- Add support for the "struct" dtype. This new dtype represents the struct
+  dtype from Polars/Arrow.
+
+- Add `map/2` and `map_with/2` to the `Explorer.Series` module.
+  This change enables the usage of the `Explore.Query` features in a series.
+
+- Add `sort_by/2` and `sort_with/2` to the `Explorer.Series` module.
+  This change enables the usage of the lazy computations and the `Explorer.Query`
+  module.
+
+- Add `unnest/2` to `Explorer.DataFrame`. It works by taking the fields of a "struct" -
+  the new dtype -, and transform them into columns.
+
+- Add pairwise correlation - `Explorer.DataFrame.correlation/2` - to calculate the
+  correlation between numeric columns inside a data frame.
+
+- Add pairwise covariance - `Explorer.DataFrame.covariance/2` - to calculate the
+  covariance between numeric columns inside a data frame.
+
+- Add support for more integer dtypes. This change introduces new signed and
+  unsigned integer dtypes:
+  - `{:s, 8}`, `{:s, 16}`, `{:s, 32}`
+  - `{:u, 8}`, `{:u, 16}`, `{:u, 32}`, `{:u, 64}`.
+
+  The existing `:integer` dtype is now represented as `{:s, 64}`, and it's still
+  the default dtype for integers. But series and data frames can now work with the
+  new dtypes. Short names for these new dtypes can be used in functions like
+  `Explorer.Series.from_list/2`. For example, `{:u, 32}` can be represented with
+  the atom `:u32`.
+
+  This may bring more interoperability with Nx, and with Arrow related things, like
+  ADBC and Parquet.
+
+- Add `ewm_standard_deviation/2` and `ewm_variance/2` to `Explorer.Series`.
+  They calculate the "exponentially weighted moving" variance and standard deviation.
+
+- Add support for `:skip_rows_after_header` option for the CSV reader functions.
+
+- Support `{:list, numeric_dtype}` for `Explorer.Series.frequencies/1`.
+
+- Support pins in `cond`, inside the context of `Explorer.Query`.
+
+- Introduce the `:null` dtype. This is a special dtype from Polars and Apache Arrow
+  to represent "all null" series.
+
+- Add `Explorer.DataFrame.transpose/2` to transpose a data frame.
+
+### Changed
+
+- Rename the functions related to sorting/arranging of the `Explorer.DataFrame`.
+  Now `arrange_with` is named `sort_with`, and `arrange` is `sort_by`.
+
+  The `sort_by/3` is a macro and it is going to work using the `Explorer.Query`
+  module. On the other side, the `sort_with/2` uses a callback function.
+
+- Remove unnecessary casts to `{:s, 64}` now that we support more integer dtypes.
+  It affects some functions, like the following in the `Explorer.Series` module:
+
+  - `argsort`
+  - `count`
+  - `rank`
+  - `day_of_week`, `day_of_year`, `week_of_year`, `month`, `year`, `hour`, `minute`, `second`
+  - `abs`
+  - `clip`
+  - `lengths`
+  - `slice`
+  - `n_distinct`
+  - `frequencies`
+
+  And also some functions from the `Explorer.DataFrame` module:
+
+  - `mutate` - mostly because of series changes
+  - `summarise` - mostly because of series changes
+  - `slice`
+
+### Fixed
+
+- Fix inspection of series and data frames between nodes.
+
+- Fix cast of `:string` series to `{:datetime, any()}`
+
+- Fix mismatched types in `Explorer.Series.pow/2`, making it more consistent.
+
+- Normalize sorting options.
+
+- Fix functions with dtype mismatching the result from Polars.
+  This fix is affecting the following functions:
+
+  - `quantile/2` in the context of a lazy series
+  - `mode/1` inside a summarisation
+  - `strftime/2` in the context of a lazy series
+  - `mutate_with/2` when creating a column from a `NaiveDateTime` or `Explorer.Duration`.
+
 ## [v0.7.2] - 2023-11-30
 
 ### Added
