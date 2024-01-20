@@ -251,7 +251,7 @@ defmodule Explorer.Series do
     * `:dtype` - Cast the series to a given `:dtype`. By default this is `nil`, which means
       that Explorer will infer the type from the values in the list.
       See the module docs for the list of valid dtypes and aliases.
-    * `:strict` - `boolean` defaults to `false`. When `true` infers exact data type of integers and raises on overflow and underflow
+    * `:strict` - when `true` raises on overflow and underflow - defaults to `false`.
 
   ## Examples
 
