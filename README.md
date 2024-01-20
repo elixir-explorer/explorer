@@ -62,7 +62,7 @@ Inside an Elixir script or [Livebook](https://livebook.dev):
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.7.0"}
+  {:explorer, "~> 0.8.0"}
 ])
 ```
 
@@ -71,7 +71,7 @@ Or in the `mix.exs` file of your application:
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.7.0"}
+    {:explorer, "~> 0.8.0"}
   ]
 end
 ```
@@ -142,7 +142,7 @@ Your dataframe is going to look like this:
 #Explorer.DataFrame<
   Polars[3 x 2]
   name string ["Everest", "K2", "Aconcagua"]
-  elevation integer [8848, 8611, 6962]
+  elevation s64 [8848, 8611, 6962]
 >
 ```
 
@@ -160,7 +160,7 @@ Prints:
 | Explorer DataFrame: [rows: 3, columns: 2] |
 +---------------------+---------------------+
 |        name         |      elevation      |
-|      <string>       |      <integer>      |
+|      <string>       |        <s64>        |
 +=====================+=====================+
 | Everest             | 8848                |
 +---------------------+---------------------+
@@ -197,7 +197,7 @@ The result is going to look like this:
 #Explorer.DataFrame<
   Polars[2 x 2]
   name string ["Everest", "K2"]
-  elevation integer [8848, 8611]
+  elevation s64 [8848, 8611]
 >
 ```
 
@@ -222,13 +222,13 @@ Rust is going to be installed in the first compilation of the project. Otherwise
 install the correct version:
 
 ```sh
-rustup toolchain install nightly-2023-11-12
+rustup toolchain install nightly-2023-12-23
 ```
 
 You can also use [asdf](https://asdf-vm.com/):
 
 ```sh
-asdf install rust nightly-2023-11-12
+asdf install rust nightly-2023-12-23
 ```
 
 It's possible that you may need to install [`CMake`](https://cmake.org/) in order to build the project,
