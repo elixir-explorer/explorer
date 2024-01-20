@@ -4738,7 +4738,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.with_row_index(df)
       #Explorer.DataFrame<
         Polars[3 x 3]
-        row_nr u32 [0, 1, 2]
+        index u32 [0, 1, 2]
         a s64 [1, 3, 5]
         b s64 [2, 4, 6]
       >
@@ -4756,7 +4756,7 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec with_row_index(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
   def with_row_index(%DataFrame{} = df, opts \\ []) do
-    opts = Keyword.validate!(opts, name: "row_nr", offset: 0)
+    opts = Keyword.validate!(opts, name: "index", offset: 0)
     name = opts[:name]
     offset = opts[:offset]
 

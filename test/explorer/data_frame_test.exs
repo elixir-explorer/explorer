@@ -4248,7 +4248,7 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.with_row_index(df)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               row_nr: [0, 1, 2],
+               index: [0, 1, 2],
                a: [1, 3, 5],
                b: [2, 4, 6]
              }
