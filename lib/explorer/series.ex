@@ -243,7 +243,7 @@ defmodule Explorer.Series do
   Creates a new series from a list.
 
   The list must consist of a single data type and nils. It is possible to have
-  a list of only nil values. In this case, the list will have the `:dtype` of float.
+  a list of only nil values. In this case, the list will have the `:dtype` of `:null`.
 
   ## Options
 
