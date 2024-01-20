@@ -720,7 +720,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :string,
                "h" => :boolean,
                "i" => :date,
-               "j" => {:datetime, :microsecond}
+               "j" => {:datetime, :nanosecond}
              }
     end
 
@@ -1026,7 +1026,7 @@ defmodule Explorer.DataFrameTest do
                "f" => {:f, 64},
                "g" => {:s, 64},
                "h" => {:s, 64},
-               "i" => {:s, 64},
+               "i" => {:f, 64},
                "j" => {:f, 64}
              }
     end
@@ -2403,51 +2403,120 @@ defmodule Explorer.DataFrameTest do
     assert Series.to_list(s) == ~w(a b c)
   end
 
-  test "concat_rows/2" do
-    df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
-    df2 = DF.new(x: [4, 5, 6], y: ["d", "e", "f"])
-    df3 = DF.concat_rows(df1, df2)
+  describe "concat_rows/2" do
+    test "same dtype columns" do
+      df1 = DF.new(x: [1, 2, 3, 4], y: ["a", "b", nil, "c"])
+      df2 = DF.new(x: [4, 5, 6, 7], y: ["d", "e", "f", nil])
+      df3 = DF.concat_rows(df1, df2)
 
-    assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
-    assert Series.to_list(df3["y"]) == ~w(a b c d e f)
+      assert DF.dtypes(df3) == %{"x" => {:s, 64}, "y" => :string}
 
-    df2 = DF.new(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
-    df3 = DF.concat_rows(df1, df2)
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 4, 5, 6, 7]
+      assert Series.to_list(df3["y"]) == ["a", "b", nil] ++ ~w(c d e f) ++ [nil]
+    end
 
-    assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    test "mixing integer and floats" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
+      df3 = DF.concat_rows(df1, df2)
 
-    df4 = DF.new(x: [7, 8, 9], y: ["g", "h", nil])
-    df5 = DF.concat_rows(df3, df4)
+      assert DF.dtypes(df3) == %{"x" => {:f, 64}, "y" => :string}
 
-    assert Series.to_list(df5["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-    assert Series.to_list(df5["y"]) == ~w(a b c d e f g h) ++ [nil]
+      assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    end
 
-    df6 = DF.concat_rows([df1, df2, df4])
+    test "mixing signed and unsigned integers" do
+      df1 =
+        DF.new(x: Series.from_list([1, 2, 3], dtype: :u16), y: Series.from_list(["a", "b", "c"]))
 
-    assert Series.to_list(df6["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-    assert Series.to_list(df6["y"]) == ~w(a b c d e f g h) ++ [nil]
+      df2 =
+        DF.new(x: Series.from_list([4, 5, 6], dtype: :s16), y: Series.from_list(["d", "e", "f"]))
 
-    assert_raise ArgumentError,
-                 "dataframes must have the same columns",
-                 fn -> DF.concat_rows(df1, DF.new(z: [7, 8, 9])) end
+      df3 = DF.concat_rows(df1, df2)
 
-    assert_raise ArgumentError,
-                 "dataframes must have the same columns",
-                 fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], z: [7, 8, 9])) end
+      assert DF.dtypes(df3) == %{"x" => {:s, 32}, "y" => :string}
 
-    assert_raise ArgumentError,
-                 "columns and dtypes must be identical for all dataframes",
-                 fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
-  end
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
+    end
 
-  test "concat_rows/2 rechunking logic when nil is introduced in the new dataframe" do
-    # this may panic without forced rechunking
-    df =
-      DF.new(x: [1.0, 2.0], y: [2.0, 3.0])
-      |> DF.concat_rows(DF.new(x: [nil], y: [nil]))
-      |> DF.mutate(z: correlation(x, y))
+    test "mixing floats" do
+      df1 =
+        DF.new(
+          x: Series.from_list([1.0, 2.0, 3.0], dtype: :f32),
+          y: Series.from_list(["a", "b", "c"])
+        )
 
-    assert abs(df[:z][0] - 1.0) < 1.0e-4
+      df2 =
+        DF.new(
+          x: Series.from_list([4.0, 5.0, 6.0], dtype: :f64),
+          y: Series.from_list(["d", "e", "f"])
+        )
+
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:f, 64}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    end
+
+    test "mixing nulls, signed, unsigned integers, and floats" do
+      df1 =
+        DF.new(x: Series.from_list([1, 2], dtype: :u16), y: Series.from_list(["a", "b"]))
+
+      df2 =
+        DF.new(x: Series.from_list([3.0, 4.0], dtype: :f32), y: Series.from_list(["c", "d"]))
+
+      df3 =
+        DF.new(x: [nil, nil], y: [nil, nil])
+
+      df4 =
+        DF.new(x: Series.from_list([5, 6], dtype: :s16), y: Series.from_list(["e", "f"]))
+
+      df5 = DF.concat_rows([df1, df2, df3, df4])
+
+      assert DF.dtypes(df5) == %{"x" => {:f, 32}, "y" => :string}
+      assert Series.to_list(df5["x"]) == [1.0, 2.0, 3.0, 4.0, nil, nil, 5.0, 6.0]
+      assert Series.to_list(df5["y"]) == ["a", "b", "c", "d", nil, nil, "e", "f"]
+    end
+
+    test "concat dfs in a list" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(x: [4, 5, 6], y: ["d", "e", "f"])
+      df3 = DF.new(x: [7, 8, 9], y: ["g", "h", nil])
+
+      df4 = DF.concat_rows([df1, df2, df3])
+
+      assert DF.dtypes(df4) == %{"x" => {:s, 64}, "y" => :string}
+
+      assert Series.to_list(df4["x"]) == [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      assert Series.to_list(df4["y"]) == ~w(a b c d e f g h) ++ [nil]
+    end
+
+    test "with incompatible columns" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "dataframes must have the same columns",
+                   fn -> DF.concat_rows(df1, DF.new(z: [7, 8, 9])) end
+    end
+
+    test "with incompatible column dtypes" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "columns and dtypes must be identical for all dataframes",
+                   fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
+    end
+
+    test "rechunking logic when nil is introduced in the new dataframe" do
+      # this may panic without forced rechunking
+      df =
+        DF.new(x: [1.0, 2.0], y: [2.0, 3.0])
+        |> DF.concat_rows(DF.new(x: [nil], y: [nil]))
+        |> DF.mutate(z: correlation(x, y))
+
+      assert abs(df[:z][0] - 1.0) < 1.0e-4
+    end
   end
 
   describe "distinct/2" do
@@ -3471,7 +3540,8 @@ defmodule Explorer.DataFrameTest do
         DF.new(
           number: [1, 2, nil, 3],
           list: [[], [], [], []],
-          null: [nil, nil, nil, nil],
+          # TODO: enable "null" columns when problem with polars is solved.
+          # null: [nil, nil, nil, nil],
           string: ["a", "b", "c", "nil"],
           date: [~D[2021-01-01], ~D[1999-12-31], nil, ~D[2023-01-01]],
           time: [~T[00:02:03.000212], ~T[00:05:04.000456], ~T[00:07:04.000776], nil],
@@ -3490,18 +3560,19 @@ defmodule Explorer.DataFrameTest do
         )
 
       df = DF.mutate(df, duration: datetime - duration)
-      describe_df = DF.describe(df)
 
       assert df.dtypes == %{
                "date" => :date,
                "datetime" => {:datetime, :microsecond},
                "duration" => {:duration, :microsecond},
                "list" => {:list, :null},
-               "null" => :null,
+               # "null" => :null,
                "number" => {:s, 64},
                "string" => :string,
                "time" => :time
              }
+
+      describe_df = DF.describe(df)
 
       assert describe_df.dtypes == %{
                "date" => :string,
@@ -3509,7 +3580,7 @@ defmodule Explorer.DataFrameTest do
                "describe" => :string,
                "duration" => :string,
                "list" => :string,
-               "null" => :string,
+               # "null" => :string,
                "number" => {:f, 64},
                "string" => :string,
                "time" => :string
@@ -3531,7 +3602,7 @@ defmodule Explorer.DataFrameTest do
                describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"],
                duration: ["3", "1", nil, nil, "1d", nil, nil, nil, "366d"],
                list: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
-               null: ["0", "4", nil, nil, nil, nil, nil, nil, nil],
+               # null: ["0", "4", nil, nil, nil, nil, nil, nil, nil],
                number: [3.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
                string: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
                time: ["3", "1", nil, nil, nil, nil, nil, nil, nil]
@@ -3750,16 +3821,25 @@ defmodule Explorer.DataFrameTest do
       assert DF.dtypes(df) == %{"is_vowel" => :boolean, "letters" => {:list, :string}}
     end
 
-    test "mode/1" do
-      df =
-        Datasets.iris()
-        |> DF.group_by(:species)
-        |> DF.summarise(petal_width_mode: mode(petal_width))
+    test "mode/1 without groups (see grouped_test for groups)" do
+      df = DF.new(petal_width: [1, 2, 2, 3, 3, 120])
 
-      assert DF.to_columns(df) == %{
-               "petal_width_mode" => [[0.2], [1.3], [1.8]],
-               "species" => ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
+      df1 =
+        DF.summarise(df, petal_width_mode: mode(petal_width), petal_width_sum: sum(petal_width))
+
+      assert DF.dtypes(df1) == %{
+               "petal_width_mode" => {:list, {:s, 64}},
+               "petal_width_sum" => {:s, 64}
              }
+
+      result = DF.to_columns(df1)
+
+      assert result["petal_width_sum"] == [131]
+      # Since this does not maintain order, we need to check differently.
+      assert [[a, b]] = result["petal_width_mode"]
+
+      assert a in [2, 3]
+      assert b in [2, 3]
     end
 
     test "argmax/1 and argmin/1" do

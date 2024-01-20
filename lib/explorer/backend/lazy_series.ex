@@ -478,9 +478,18 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def quantile(%Series{} = series, float) when is_float(float) do
     args = [lazy_series!(series), float]
-    data = new(:quantile, args, series.dtype, true)
+    # According to https://github.com/pola-rs/polars/issues/4796,
+    # it's expected that quantile returns float for integer columns.
+    dtype =
+      if series.dtype in Explorer.Shared.integer_types() do
+        {:f, 64}
+      else
+        series.dtype
+      end
 
-    Backend.Series.new(data, series.dtype)
+    data = new(:quantile, args, dtype, true)
+
+    Backend.Series.new(data, dtype)
   end
 
   @impl true
@@ -703,6 +712,7 @@ defmodule Explorer.Backend.LazySeries do
        do: series.dtype
 
   defp dtype_for_agg_operation(op, _) when op in [:all?, :any?], do: :boolean
+  defp dtype_for_agg_operation(:mode, series), do: {:list, series.dtype}
 
   defp dtype_for_agg_operation(_, _), do: {:f, 64}
 
@@ -821,7 +831,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def strftime(%Series{} = series, format_string) do
-    dtype = {:datetime, :microsecond}
+    dtype = :string
     data = new(:strftime, [lazy_series!(series), format_string], dtype)
 
     Backend.Series.new(data, dtype)

@@ -544,6 +544,9 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:encoding` - Encoding to use when reading the file. For now, the only possible values are `utf8` and `utf8-lossy`.
+      The utf8-lossy option means that invalid utf8 values are replaced with � characters. (default: `"utf8"`)
+
   """
   @doc type: :io
   @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
@@ -628,6 +631,9 @@ defmodule Explorer.DataFrame do
     * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
     * `:lazy` - force the results into the lazy version of the current backend.
+    * `:encoding` - Encoding to use when reading the file. For now, the only possible values are
+      `utf8` and `utf8-lossy`. The utf8-lossy option means that invalid utf8 values are
+      replaced with � characters. (default: `"utf8"`)
   """
   @doc type: :io
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
@@ -2837,14 +2843,14 @@ defmodule Explorer.DataFrame do
             Explorer.Backend.Series.new(lazy_s, :date)
 
           datetime = %NaiveDateTime{} ->
-            lazy_s = LazySeries.new(:lazy, [datetime], {:datetime, :microsecond})
+            lazy_s = LazySeries.new(:lazy, [datetime], {:datetime, :nanosecond})
 
-            Explorer.Backend.Series.new(lazy_s, {:datetime, :microsecond})
+            Explorer.Backend.Series.new(lazy_s, {:datetime, :nanosecond})
 
           duration = %Explorer.Duration{precision: precision} ->
-            lazy_s = LazySeries.new(:lazy, [duration], {:datetime, precision})
+            lazy_s = LazySeries.new(:lazy, [duration], {:duration, precision})
 
-            Explorer.Backend.Series.new(lazy_s, {:datetime, precision})
+            Explorer.Backend.Series.new(lazy_s, {:duration, precision})
 
           other ->
             raise ArgumentError,
@@ -5078,7 +5084,16 @@ defmodule Explorer.DataFrame do
   Combine two or more dataframes row-wise (stack).
 
   Column names and dtypes must match. The only exception is for numeric
-  columns that can be mixed together, and casted automatically to float columns.
+  columns that can be mixed together, and casted automatically to the
+  "highest" dtype.
+
+  For example, if a column is represented by `{:u, 16}` and `{:u, 32}`,
+  it will be casted to the highest unsigned integer dtype between the two,
+  which is `{:u, 32}`.
+  If it is mixing signed and unsigned integers, it will be casted to
+  the highest signed integer possible.
+  And if floats and integers are mixed together, Explorer will cast
+  them to the float dtype `{:f, 64}`.
 
   When working with grouped dataframes, be aware that only groups from the first
   dataframe are kept in the resultant dataframe.
@@ -5110,10 +5125,15 @@ defmodule Explorer.DataFrame do
     out_df = %{head | dtypes: Map.merge(head.dtypes, changed_types)}
 
     dfs =
-      if Enum.empty?(changed_types) do
+      if changed_types == %{} do
         dfs
       else
-        cast_numeric_columns_to_float(dfs, changed_types)
+        for df <- dfs do
+          mutate_with(ungroup(df), fn ldf ->
+            for {column, target_type} <- changed_types,
+                do: {column, Series.cast(ldf[column], target_type)}
+          end)
+        end
       end
 
     Shared.apply_impl(dfs, :concat_rows, [out_df])
@@ -5129,47 +5149,20 @@ defmodule Explorer.DataFrame do
       end
 
       Enum.reduce(df.dtypes, changed_types, fn {name, type}, changed_types ->
-        cond do
-          not Map.has_key?(types, name) ->
-            raise ArgumentError,
-                  "dataframes must have the same columns"
+        case types do
+          %{^name => current_type} ->
+            if dtype = Shared.merge_dtype(Map.get(changed_types, name, current_type), type) do
+              Map.put(changed_types, name, dtype)
+            else
+              raise ArgumentError,
+                    "columns and dtypes must be identical for all dataframes"
+            end
 
-          types[name] == type ->
-            changed_types
-
-          types_are_numeric_compatible?(types, name, type) ->
-            Map.put(changed_types, name, {:f, 64})
-
-          true ->
-            raise ArgumentError,
-                  "columns and dtypes must be identical for all dataframes"
+          %{} ->
+            raise ArgumentError, "dataframes must have the same columns"
         end
       end)
     end)
-  end
-
-  defp types_are_numeric_compatible?(types, name, type) do
-    types[name] != type and types[name] in Shared.numeric_types() and
-      (type == :null or type in Shared.numeric_types())
-  end
-
-  defp cast_numeric_columns_to_float(dfs, changed_types) do
-    # TODO: work with {:f, 32} as well
-    for df <- dfs do
-      # TODO: check if s64 is enough
-      columns =
-        for {name, {:s, 64}} <- df.dtypes,
-            changed_types[name] == {:f, 64},
-            do: name
-
-      if Enum.empty?(columns) do
-        df
-      else
-        mutate_with(ungroup(df), fn ldf ->
-          for column <- columns, do: {column, Series.cast(ldf[column], {:f, 64})}
-        end)
-      end
-    end
   end
 
   @doc """
@@ -5453,8 +5446,8 @@ defmodule Explorer.DataFrame do
           lazy_s = LazySeries.new(:lazy, [nil], :null)
           {key, Explorer.Backend.Series.new(lazy_s, :null)}
 
-        x ->
-          x
+        pair ->
+          pair
       end)
 
     column_pairs =
@@ -5466,7 +5459,7 @@ defmodule Explorer.DataFrame do
           %Series{data: %LazySeries{aggregation: true}} ->
             value
 
-          %Series{data: %LazySeries{op: :column}} = value ->
+          %Series{data: %LazySeries{op: :column}} ->
             %{value | dtype: {:list, value.dtype}}
 
           %Series{data: %LazySeries{}} = series ->

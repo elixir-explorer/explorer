@@ -8,11 +8,14 @@ defmodule Explorer.Series do
     * `:boolean` - Boolean
     * `:category` - Strings but represented internally as integers
     * `:date` - Date type that unwraps to `Elixir.Date`
-    * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
-    * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
+    * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond
+      precision that unwraps to `Elixir.NaiveDateTime`
+    * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond
+      precision that unwraps to `Explorer.Duration`
     * `{:f, size}` - a 64-bit or 32-bit floating point number
     * `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit signed integer number.
     * `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer number.
+    * `:null` - `nil`s exclusively
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
     * `{:list, dtype}` - A recursive dtype that can store lists. Examples: `{:list, :boolean}` or
@@ -21,21 +24,13 @@ defmodule Explorer.Series do
       confused with Elixir's struct). This type unwraps to Elixir maps with string keys. Examples:
       `{:struct, %{"a" => :string}}` or a nested struct dtype like `{:struct, %{"a" => {:struct, %{"b" => :string}}}}`.
 
-  The following data type aliases are also supported:
+  When passing a dtype as argument, aliases are supported for convenience
+  and compatibility with the Elixir ecosystem:
 
+    * All numeric dtypes (signed integer, unsigned integer, and floats) can
+      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and o son
     * The atom `:float` as an alias for `{:f, 64}` to mirror Elixir's floats
-    * The atoms `:f32` and `:f64` as aliases to `{:f, 32}` and `{:f, 64}` for Nx compabitility
     * The atom `:integer` as an alias for `{:s, 64}` to mirror Elixir's integers
-    * There are serveral atoms to represent integer dtypes, and they also follow Nx naming for compatibility.
-      They are the following:
-      * `s8` as alias to `{:s, 8}`
-      * `s16` as alias to `{:s, 16}`
-      * `s32` as alias to `{:s, 32}`
-      * `s64` as alias to `{:s, 64}`
-      * `u8` as alias to `{:u, 8}`
-      * `u16` as alias to `{:u, 16}`
-      * `u32` as alias to `{:u, 32}`
-      * `u64` as alias to `{:u, 64}`
 
   A series must consist of a single data type only. Series may have `nil` values in them.
   The series `dtype` can be retrieved via the `dtype/1` function or directly accessed as
@@ -75,7 +70,24 @@ defmodule Explorer.Series do
         string ["foo", "bar", "baz"]
       >
 
-  ## Special `_` syntax
+  ## Casting numeric series (type promotion)
+
+  Series of integers and floats are automatically cast when executing certain
+  operations. For example, adding a series of s64 with f64 will return a list
+  of f64.
+
+  Numeric casting works like this:
+
+    * when working with the same numeric type but of different precisions,
+      the higher precision wins
+
+    * when working with unsigned integers and signed integers, unsigned integers
+      are cast to signed integers using double of its precision (maximum of 64 bits)
+
+    * when working with integers and floats, integers are always cast floats,
+      keep the floating number precision
+
+  ## Series queries
 
   DataFrames have named columns, so their queries use column names as variables:
 
@@ -87,10 +99,9 @@ defmodule Explorer.Series do
         col_name s64 [3]
       >
 
-  Series have no named columns.
-  (A series constitutes a single column, so no name is required.)
-  This means their queries can't use column names as variables.
-  Instead, series queries use the special `_` variable like so:
+  Series have no named columns (a series constitutes a single column,
+  so no name is required). This means their queries can't use column
+  names as variables. Instead, series queries use the special `_` variable like so:
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.filter(s, _ > 2)
@@ -232,7 +243,7 @@ defmodule Explorer.Series do
   Creates a new series from a list.
 
   The list must consist of a single data type and nils. It is possible to have
-  a list of only nil values. In this case, the list will have the `:dtype` of float.
+  a list of only nil values. In this case, the list will have the `:dtype` of `:null`.
 
   ## Options
 
@@ -243,12 +254,19 @@ defmodule Explorer.Series do
 
   ## Examples
 
-  Explorer will infer the type from the values in the list:
+  Explorer will infer the type from the values in the list.
+  Integers are always treated as `s64` and floats are always
+  treated as `f64`:
 
       iex> Explorer.Series.from_list([1, 2, 3])
       #Explorer.Series<
         Polars[3]
         s64 [1, 2, 3]
+      >
+      iex> Explorer.Series.from_list([1.0, 2.0, 3.0])
+      #Explorer.Series<
+        Polars[3]
+        f64 [1.0, 2.0, 3.0]
       >
 
   Series are nullable, so you may also include nils:
@@ -288,7 +306,7 @@ defmodule Explorer.Series do
       >
 
   Trying to create an empty series or a series of nils will, by default,
-  result in a series of :null type:
+  result in a series of `:null` type:
 
       iex> Explorer.Series.from_list([])
       #Explorer.Series<
@@ -299,6 +317,17 @@ defmodule Explorer.Series do
       #Explorer.Series<
         Polars[2]
         null [nil, nil]
+      >
+
+  A list of `Date`, `Time`, `NaiveDateTime`, and `Explorer.Duration` structs
+  are also supported, and they will become series with the respective dtypes:
+  `:date`, `:time`, `{:datetime, :microsecond}`, and `{:duration, precision}`.
+  For example:
+
+      iex> Explorer.Series.from_list([~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]])
+      #Explorer.Series<
+        Polars[3]
+        date [0001-01-01, 1970-01-01, 1986-10-13]
       >
 
   You can specify the desired `dtype` for a series with the `:dtype` option.
@@ -327,8 +356,9 @@ defmodule Explorer.Series do
         f64 [1.0, nil, 2.0]
       >
 
-  The `dtype` option is particulary important if a `:binary` series is desired, because
-  by default binary series will have the dtype of `:string`:
+  The `dtype` option is particulary important if a `:binary` series
+  is desired, because by default binary series will have the dtype
+  of `:string`:
 
       iex> Explorer.Series.from_list([<<228, 146, 51>>, <<42, 209, 236>>], dtype: :binary)
       #Explorer.Series<
@@ -2073,7 +2103,8 @@ defmodule Explorer.Series do
   @doc """
   Concatenate one or more series.
 
-  The dtypes must match unless all are numeric, in which case all series will be downcast to float.
+  Type promotion may happen between numeric series or
+  null series. All other dtypes must match.
 
   ## Examples
 
@@ -2109,7 +2140,7 @@ defmodule Explorer.Series do
         dtypes ->
           dtype =
             Enum.reduce(dtypes, fn left, right ->
-              cast_numeric(left, right) ||
+              Shared.merge_numeric_dtype(left, right) ||
                 raise ArgumentError,
                       "cannot concatenate series with mismatched dtypes: #{inspect(dtypes)}. " <>
                         "First cast the series to the desired dtype."
@@ -2470,8 +2501,11 @@ defmodule Explorer.Series do
         string ["b"]
       >
 
-      s = Explorer.Series.from_list([1.0, 2.0, 2.0, 3.0, 3.0])
-      Explorer.Series.mode(s)
+  This function can return multiple entries, but the order is not guaranteed.
+  You may sort the series if desired.
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, 2.0, 3.0, 3.0])
+      iex> Explorer.Series.mode(s) |> Explorer.Series.sort()
       #Explorer.Series<
         Polars[2]
         f64 [2.0, 3.0]
@@ -2479,7 +2513,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec mode(series :: Series.t()) :: Series.t() | nil
-  def mode(%Series{dtype: {:list, _} = dtype}),
+  def mode(%Series{dtype: {composite, _} = dtype}) when K.in(composite, [:list, :struct]),
     do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
 
   def mode(%Series{} = series),
@@ -3184,17 +3218,7 @@ defmodule Explorer.Series do
   defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
   defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_add(left, right), do: cast_numeric(left, right)
-
-  defp cast_numeric({int_type, left}, {int_type, right}) when K.in(int_type, [:s, :u]),
-    do: {int_type, max(left, right)}
-
-  defp cast_numeric({:s, s_size}, {:u, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
-  defp cast_numeric({:u, s_size}, {:s, u_size}), do: {:s, max(min(64, u_size * 2), s_size)}
-  defp cast_numeric({int_type, _}, {:f, _} = float) when K.in(int_type, [:s, :u]), do: float
-  defp cast_numeric({:f, _} = float, {int_type, _}) when K.in(int_type, [:s, :u]), do: float
-  defp cast_numeric({:f, left}, {:f, right}), do: {:f, max(left, right)}
-  defp cast_numeric(_, _), do: nil
+  defp cast_to_add(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
   Subtracts right from left, element-wise.
@@ -3258,7 +3282,7 @@ defmodule Explorer.Series do
   defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
   defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
   defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
-  defp cast_to_subtract(left, right), do: cast_numeric(left, right)
+  defp cast_to_subtract(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
   Multiplies left and right, element-wise.
@@ -3310,7 +3334,7 @@ defmodule Explorer.Series do
   defp cast_to_multiply({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_multiply({:f, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:f, _}), do: {:duration, p}
-  defp cast_to_multiply(left, right), do: cast_numeric(left, right)
+  defp cast_to_multiply(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
   Divides left by right, element-wise.
