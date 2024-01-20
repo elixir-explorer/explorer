@@ -657,3 +657,13 @@ pub fn df_lazy(df: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
     let new_lf = df.clone_inner().lazy();
     Ok(ExLazyFrame::new(new_lf))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_with_row_count(
+    df: ExDataFrame,
+    name: &str,
+    offset: Option<IdxSize>,
+) -> Result<ExDataFrame, ExplorerError> {
+    let new_df = df.clone_inner().with_row_count(name, offset)?;
+    Ok(ExDataFrame::new(new_df))
+}

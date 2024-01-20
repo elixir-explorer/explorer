@@ -441,6 +441,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def unnest(%DF{} = df, %DF{} = out_df, columns),
     do: Shared.apply_dataframe(df, out_df, :lf_unnest, [columns])
 
+  @impl true
+  def with_row_count(%DF{} = df, %DF{} = out_df, name, offset) do
+    Shared.apply_dataframe(df, out_df, :lf_with_row_count, [name, offset])
+  end
+
   # Groups
 
   @impl true

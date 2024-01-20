@@ -282,3 +282,13 @@ pub fn lf_concat_columns(
 
     Ok(ExLazyFrame::new(out_df.drop_columns([id_column])))
 }
+
+#[rustler::nif]
+pub fn lf_with_row_count(
+    data: ExLazyFrame,
+    name: &str,
+    offset: Option<IdxSize>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let lf = data.clone_inner();
+    Ok(ExLazyFrame::new(lf.with_row_count(name, offset)))
+}

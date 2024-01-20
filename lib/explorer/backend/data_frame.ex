@@ -213,6 +213,13 @@ defmodule Explorer.Backend.DataFrame do
   @callback unnest(df, out_df :: df(), columns :: [column_name()]) :: df()
   @callback correlation(df, out_df :: df(), ddof :: integer(), method :: atom()) :: df()
   @callback covariance(df, out_df :: df(), ddof :: integer()) :: df()
+  @callback with_row_count(
+              df,
+              out_df :: df(),
+              option(column_name()),
+              offset :: option(integer())
+            ) ::
+              df
 
   # Two or more table verbs
 

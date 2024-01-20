@@ -724,6 +724,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Shared.apply_dataframe(df, df, :df_slice_by_series, [row_indices.data, df.groups])
   end
 
+  @impl true
+  def with_row_count(%DataFrame{} = df, %DataFrame{} = out_df, name, offset) do
+    Shared.apply_dataframe(df, out_df, :df_with_row_count, [name, offset])
+  end
+
   # TODO: If we expose group_indices at the Explorer.DataFrame level,
   # then we can implement this in pure Elixir.
   @impl true

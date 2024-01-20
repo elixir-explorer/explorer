@@ -4234,4 +4234,42 @@ defmodule Explorer.DataFrameTest do
              }
     end
   end
+
+  describe "with_row_count/2" do
+    test "basic example" do
+      require Explorer.DataFrame, as: DF
+
+      df =
+        DF.new(
+          a: [1, 3, 5],
+          b: [2, 4, 6]
+        )
+
+      df1 = DF.with_row_count(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               row_nr: [0, 1, 2],
+               a: [1, 3, 5],
+               b: [2, 4, 6]
+             }
+    end
+
+    test "name and offset" do
+      require Explorer.DataFrame, as: DF
+
+      df =
+        DF.new(
+          a: [1, 3, 5],
+          b: [2, 4, 6]
+        )
+
+      df1 = DF.with_row_count(df, name: "id", offset: 1000)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id: [1000, 1001, 1002],
+               a: [1, 3, 5],
+               b: [2, 4, 6]
+             }
+    end
+
 end
