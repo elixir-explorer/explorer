@@ -74,7 +74,6 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
-  def normalise_dtype({:s, -64}), do: {:s, 64}
   def normalise_dtype(_dtype), do: nil
 
   @doc """
@@ -259,9 +258,6 @@ defmodule Explorer.Shared do
   """
   def dtype_from_list!(list) do
     dtype_from_list!(list, nil, false)
-    # list
-    # |> Enum.reduce(:null, &infer_type(&1, &2, nil, false))
-    # |> normalise_dtype!()
   end
 
   @doc """
@@ -275,9 +271,9 @@ defmodule Explorer.Shared do
   If no preferred type is given (nil), then the inferred type is returned.
   """
   def dtype_from_list!(list, preferred_type, strict \\ false)
+
   def dtype_from_list!(_list, :null, _strict), do: :null
 
-  # , do: dtype_from_list!(list, strict)
   def dtype_from_list!(list, nil, strict) do
     list
     |> Enum.reduce(:null, &infer_type(&1, &2, nil, strict))
@@ -295,17 +291,13 @@ defmodule Explorer.Shared do
   defp infer_type(nil, type, _preferred, _strict), do: type
   defp infer_type(item, :null, preferred, strict), do: infer_type(item, preferred, strict)
 
-  defp infer_type(integer, {:u, 64}, _preferred, _strict)
-       when is_integer(integer) and integer > 0,
-       do: {:u, 64}
-
   defp infer_type(integer, {:f, 64}, _preferred, _strict) when is_integer(integer), do: {:f, 64}
 
   defp infer_type(float, {:s, _}, _preferred, _strict)
        when is_float(float) or float in @non_finite,
        do: {:f, 64}
 
-  defp infer_type(float, {:u, 64}, _preferred, _strict)
+  defp infer_type(float, {:u, _}, _preferred, _strict)
        when is_float(float) or float in @non_finite,
        do: {:f, 64}
 
@@ -348,7 +340,7 @@ defmodule Explorer.Shared do
   defp infer_type(item, _, false) when is_integer(item), do: {:s, 64}
 
   defp infer_type(item, nil, true) when is_integer(item) do
-    if item > 9_223_372_036_854_775_807 do
+    if item < -9_223_372_036_854_775_808 or item > 9_223_372_036_854_775_807 do
       raise_mismatched_dtype!(item, {:s, 64})
     else
       {:s, 64}
