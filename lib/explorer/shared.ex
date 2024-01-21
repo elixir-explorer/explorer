@@ -275,9 +275,7 @@ defmodule Explorer.Shared do
   def dtype_from_list!(_list, :null, _strict), do: :null
 
   def dtype_from_list!(list, nil, strict) do
-    list
-    |> Enum.reduce(:null, &infer_type(&1, &2, nil, strict))
-    |> normalise_dtype!()
+    Enum.reduce(list, :null, &infer_type(&1, &2, nil, strict))
   end
 
   def dtype_from_list!(list, preferred_type, strict) do
