@@ -4888,7 +4888,7 @@ defmodule Explorer.Series do
 
   ## Options
 
-    * `:alpha` - Optional smoothing factor which specifies the imporance given
+    * `:alpha` - Optional smoothing factor which specifies the importance given
       to most recent observations. It is a value such that, 0 < alpha <= 1. Defaults to 0.5.
 
     * `:adjust` - If set to true, it corrects the bias introduced by smoothing process.
@@ -4932,7 +4932,7 @@ defmodule Explorer.Series do
 
   ## Options
 
-    * `:alpha` - Optional smoothing factor which specifies the imporance given
+    * `:alpha` - Optional smoothing factor which specifies the importance given
       to most recent observations. It is a value such that, 0 < alpha <= 1. Defaults to 0.5.
 
     * `:adjust` - If set to true, it corrects the bias introduced by smoothing process.
@@ -4987,7 +4987,7 @@ defmodule Explorer.Series do
 
   ## Options
 
-    * `:alpha` - Optional smoothing factor which specifies the imporance given
+    * `:alpha` - Optional smoothing factor which specifies the importance given
       to most recent observations. It is a value such that, 0 < alpha <= 1. Defaults to 0.5.
 
     * `:adjust` - If set to true, it corrects the bias introduced by smoothing process.
