@@ -214,6 +214,8 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_string(_string), do: err()
   def expr_struct(_map), do: err()
 
+  def expr_int_range(_start, _end, _step, _dtype), do: err()
+
   # LazyFrame
   def lf_collect(_df), do: err()
   def lf_describe_plan(_df, _optimized), do: err()

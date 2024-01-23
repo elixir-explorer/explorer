@@ -4452,4 +4452,44 @@ defmodule Explorer.DataFrameTest do
              }
     end
   end
+
+  describe "row_index/2" do
+    test "len, int_range" do
+      df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
+
+      df1 = DF.mutate(df, x: len())
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 3, 5],
+               b: [2, 4, 6],
+               x: [3, 3, 3]
+             }
+
+      df2 = DF.mutate(df, x: int_range(0, 15, 5))
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 3, 5],
+               b: [2, 4, 6],
+               x: [0, 5, 10]
+             }
+    end
+
+    test "works" do
+      df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
+
+      df2 = DF.mutate(df, id: row_index()) |> DF.collect()
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 3, 5],
+               b: [2, 4, 6],
+               id: [0, 1, 2]
+             }
+
+      df3 = DF.mutate(df, id: int_range(0, len()))
+      assert DF.to_columns(df3) == DF.to_columns(df2)
+
+      df4 = DF.mutate_with(df, fn _ -> [id: Series.row_index()] end)
+      assert DF.to_columns(df4) == DF.to_columns(df2)
+    end
+  end
 end

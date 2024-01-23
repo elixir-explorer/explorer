@@ -1055,6 +1055,22 @@ pub fn expr_join(expr: ExExpr, sep: String) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_int_range(start: ExExpr, end: ExExpr, step: i64, dtype: ExSeriesDtype) -> ExExpr {
+    let start = start.clone_inner();
+    let end = end.clone_inner();
+    let dtype = DataType::try_from(&dtype).unwrap();
+    let expr = dsl::int_range(start, end, step, dtype);
+
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_len() -> ExExpr {
+    let expr = dsl::count();
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
 pub fn expr_lengths(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
