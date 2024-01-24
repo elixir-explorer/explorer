@@ -140,7 +140,7 @@ rustler::init!(
         df_to_parquet_cloud,
         df_unnest,
         df_width,
-        df_with_row_count,
+        df_with_row_index,
         // expressions
         expr_nil,
         expr_atom,
@@ -311,7 +311,7 @@ rustler::init!(
         lf_to_parquet,
         lf_to_parquet_cloud,
         lf_to_ipc,
-        lf_with_row_count,
+        lf_with_row_index,
         // series
         s_as_str,
         s_abs,

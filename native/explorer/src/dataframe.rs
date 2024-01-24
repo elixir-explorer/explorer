@@ -659,7 +659,7 @@ pub fn df_lazy(df: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_with_row_count(
+pub fn df_with_row_index(
     df: ExDataFrame,
     name: &str,
     offset: Option<IdxSize>,

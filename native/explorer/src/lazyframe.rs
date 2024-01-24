@@ -284,7 +284,7 @@ pub fn lf_concat_columns(
 }
 
 #[rustler::nif]
-pub fn lf_with_row_count(
+pub fn lf_with_row_index(
     data: ExLazyFrame,
     name: &str,
     offset: Option<IdxSize>,

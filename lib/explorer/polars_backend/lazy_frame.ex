@@ -443,7 +443,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def with_row_index(%DF{} = df, %DF{} = out_df, name, offset) do
-    Shared.apply_dataframe(df, out_df, :lf_with_row_count, [name, offset])
+    Shared.apply_dataframe(df, out_df, :lf_with_row_index, [name, offset])
   end
 
   # Groups

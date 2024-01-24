@@ -182,7 +182,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_nil_count(_df), do: err()
   def df_explode(_df, _columns), do: err()
   def df_unnest(_df, _columns), do: err()
-  def df_with_row_count(_df, _name, _offset), do: err()
+  def df_with_row_index(_df, _name, _offset), do: err()
 
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
@@ -272,7 +272,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_to_parquet(_df, _filename, _compression, _streaming), do: err()
   def lf_to_parquet_cloud(_df, _filename, _compression), do: err()
   def lf_to_ipc(_df, _filename, _compression, _streaming), do: err()
-  def lf_with_row_count(_df, _name, _offset), do: err()
+  def lf_with_row_index(_df, _name, _offset), do: err()
 
   # Series
   def s_as_str(_s), do: err()

@@ -726,7 +726,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def with_row_index(%DataFrame{} = df, %DataFrame{} = out_df, name, offset) do
-    Shared.apply_dataframe(df, out_df, :df_with_row_count, [name, offset])
+    Shared.apply_dataframe(df, out_df, :df_with_row_index, [name, offset])
   end
 
   # TODO: If we expose group_indices at the Explorer.DataFrame level,
