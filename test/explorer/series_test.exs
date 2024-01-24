@@ -64,6 +64,16 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == {:f, 64}
     end
 
+    test "float 32 overflow" do
+      assert_raise ArgumentError,
+                   "argument error",
+                   fn ->
+                     Series.from_list([1_055_028_234_663_852_885_981_170_418_348_451_692_544.0],
+                       dtype: {:f, 32}
+                     )
+                   end
+    end
+
     test "with nan" do
       s = Series.from_list([:nan, :nan, :nan])
       assert Series.to_list(s) === [:nan, :nan, :nan]
