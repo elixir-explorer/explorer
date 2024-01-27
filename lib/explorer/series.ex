@@ -6033,8 +6033,8 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :struct_wise
-  @spec field(Series.t(), Explorer.Backend.Series.valid_types()) :: Series.t()
-  def field(%Series{dtype: {:struct, dtype}} = series, name) do
+  @spec field(Series.t(), String.t()) :: Series.t()
+  def field(%Series{dtype: {:struct, dtype}} = series, name) when is_binary(name) do
     if Map.has_key?(dtype, name) do
       apply_series(series, :field, [name])
     else
