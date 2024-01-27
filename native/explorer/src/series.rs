@@ -1811,3 +1811,16 @@ fn s_member(
 
     Ok(ExSeries::new(s2))
 }
+
+#[rustler::nif]
+pub fn s_field(s: ExSeries, name: &str) -> Result<ExSeries, ExplorerError> {
+    let s2 = s
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s.name()).struct_().field_by_name(name).alias(name)])
+        .collect()?
+        .column(name)?
+        .clone();
+    Ok(ExSeries::new(s2))
+}

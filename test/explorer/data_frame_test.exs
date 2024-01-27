@@ -660,6 +660,21 @@ defmodule Explorer.DataFrameTest do
       assert df1.names == ["a", "b"]
       assert df1.dtypes == %{"a" => {:f, 64}, "b" => :string}
     end
+
+    test "extracts a field from struct to new column" do
+      df = DF.new([%{a: %{n: 1}}, %{a: %{n: 1}}])
+      df2 = DF.mutate(df, n: field(a, "n"))
+      assert df.dtypes == %{"a" => {:struct, %{"n" => {:s, 64}}}}
+      assert df2.dtypes == %{"a" => {:struct, %{"n" => {:s, 64}}}, "n" => {:s, 64}}
+    end
+
+    test "throws error when a field is not found in struct" do
+      df = DF.new([%{a: %{n: 1}}, %{a: %{n: 1}}])
+
+      assert_raise ArgumentError, "field \"m\" not found in fields [\"n\"]", fn ->
+        DF.mutate(df, n: field(a, "m"))
+      end
+    end
   end
 
   describe "mutate/2" do

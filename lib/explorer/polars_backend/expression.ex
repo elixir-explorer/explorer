@@ -139,7 +139,10 @@ defmodule Explorer.PolarsBackend.Expression do
     # Lists
     join: 2,
     lengths: 1,
-    member: 3
+    member: 3,
+
+    # Structs
+    field: 2
   ]
 
   @custom_expressions [

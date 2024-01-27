@@ -141,7 +141,9 @@ defmodule Explorer.Backend.LazySeries do
     # List functions
     join: 2,
     lengths: 1,
-    member: 3
+    member: 3,
+    # Struct functions
+    field: 2
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -1082,6 +1084,14 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:member, [lazy_series!(series), value, inner_dtype], :boolean)
 
     Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def field(%Series{dtype: {:struct, inner_dtype}} = series, name) do
+    dtype = inner_dtype[name]
+    data = new(:field, [lazy_series!(series), name], dtype)
+
+    Backend.Series.new(data, dtype)
   end
 
   @remaining_non_lazy_operations [

@@ -303,6 +303,9 @@ defmodule Explorer.Backend.Series do
   @callback lengths(s) :: s
   @callback member?(s, valid_types()) :: s
 
+  # Struct
+  @callback field(s, String.t()) :: s
+
   # Functions
 
   @doc """
