@@ -23,7 +23,8 @@ defmodule Explorer.SeriesTest do
           :float_wise,
           :string_wise,
           :datetime_wise,
-          :list_wise
+          :list_wise,
+          :struct_wise
         ] do
       flunk("invalid @doc type: #{inspect(metadata[:type])} for #{name}/#{arity}")
     end
@@ -5846,6 +5847,23 @@ defmodule Explorer.SeriesTest do
 
       assert Series.dtype(peaks) == :boolean
       assert Series.to_list(peaks) == [false, true, false, true, false]
+    end
+  end
+
+  describe "field/2" do
+    test "extract field" do
+      s = Series.from_list([%{a: 1}, %{a: 2}])
+      a = Series.field(s, "a")
+      assert s.dtype == {:struct, %{"a" => {:s, 64}}}
+      assert a.dtype == {:s, 64}
+    end
+
+    test "raise error - invalid field" do
+      s = Series.from_list([%{a: 1}, %{a: 2}])
+
+      assert_raise ArgumentError, "field \"m\" not found in fields [\"a\"]", fn ->
+        Series.field(s, "m")
+      end
     end
   end
 end

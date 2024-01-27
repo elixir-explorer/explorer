@@ -6032,7 +6032,7 @@ defmodule Explorer.Series do
         s64 [1, 2]
       >
   """
-  @doc type: :list_wise
+  @doc type: :struct_wise
   @spec field(Series.t(), Explorer.Backend.Series.valid_types()) :: Series.t()
   def field(%Series{dtype: {:struct, dtype}} = series, name) do
     if Map.has_key?(dtype, name) do
