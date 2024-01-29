@@ -1072,7 +1072,7 @@ pub fn expr_json_decode(
     ex_dtype: Option<ExSeriesDtype>,
     infer_schema_length: Option<usize>,
 ) -> ExExpr {
-    let dtype = ex_dtype.map(|x| DataType::try_from(&x).unwrap()); //DataType::try_from().unwrap();
+    let dtype = ex_dtype.map(|x| DataType::try_from(&x).unwrap());
     let expr = expr
         .clone_inner()
         .str()

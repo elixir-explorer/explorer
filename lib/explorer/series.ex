@@ -6044,7 +6044,7 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Decode json from string
+  Decode json from string.
 
   ## Examples
 
@@ -6054,6 +6054,8 @@ defmodule Explorer.Series do
         Polars[1]
         struct[1] [%{"a" => 1}]
       >
+
+  Will raise `RuntimeError` for invalid json.
   """
   @doc type: :struct_wise
   @spec json_decode(Series.t(), Keyword.t()) :: Series.t()
