@@ -6043,6 +6043,27 @@ defmodule Explorer.Series do
     end
   end
 
+  @doc """
+  Decode json from string
+
+  ## Examples
+
+      iex> s = Series.from_list(["{\\"a\\":1}"])
+      iex> Series.json_decode(s)
+      #Explorer.Series<
+        Polars[1]
+        struct[1] [%{"a" => 1}]
+      >
+  """
+  @doc type: :struct_wise
+  @spec json_decode(Series.t(), Keyword.t()) :: Series.t()
+  def json_decode(%Series{dtype: :string} = series, opts \\ []) do
+    opts = Keyword.validate!(opts, [:dtype, :infer_schema_length])
+    dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
+
+    apply_series(series, :json_decode, [dtype, opts[:infer_schema_length]])
+  end
+
   # Helpers
 
   defp apply_series(series, fun, args \\ []) do

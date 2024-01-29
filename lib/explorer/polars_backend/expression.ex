@@ -142,7 +142,8 @@ defmodule Explorer.PolarsBackend.Expression do
     member: 3,
 
     # Structs
-    field: 2
+    field: 2,
+    json_decode: 3
   ]
 
   @custom_expressions [

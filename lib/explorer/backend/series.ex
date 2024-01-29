@@ -305,6 +305,7 @@ defmodule Explorer.Backend.Series do
 
   # Struct
   @callback field(s, String.t()) :: s
+  @callback json_decode(s, dtype() | nil, non_neg_integer() | nil) :: s
 
   # Functions
 
