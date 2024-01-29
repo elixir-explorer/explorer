@@ -5670,7 +5670,15 @@ defmodule Explorer.DataFrame do
 
     values =
       headers
-      |> Enum.map(&Series.to_list(df[&1]))
+      |> Enum.map(fn n ->
+        s = df[n]
+        list = Series.to_list(s)
+
+        case s.dtype do
+          {:struct, _} -> Enum.map(list, &inspect/1)
+          _ -> list
+        end
+      end)
       |> Enum.zip_with(& &1)
 
     name_type = Enum.zip_with(headers, types, fn x, y -> x <> y end)
