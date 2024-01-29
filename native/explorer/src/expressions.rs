@@ -1059,3 +1059,9 @@ pub fn expr_member(expr: ExExpr, value: ExValidValue, inner_dtype: ExSeriesDtype
             .contains(value.lit_with_matching_precision(&inner_dtype)),
     )
 }
+
+#[rustler::nif]
+pub fn expr_field(expr: ExExpr, name: &str) -> ExExpr {
+    let expr = expr.clone_inner().struct_().field_by_name(name);
+    ExExpr::new(expr)
+}

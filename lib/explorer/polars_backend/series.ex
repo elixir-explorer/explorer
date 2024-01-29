@@ -734,6 +734,10 @@ defmodule Explorer.PolarsBackend.Series do
   def member?(%Series{dtype: {:list, inner_dtype}} = series, value),
     do: Shared.apply_series(series, :s_member, [value, inner_dtype])
 
+  @impl true
+  def field(%Series{dtype: {:struct, _inner_dtype}} = series, name),
+    do: Shared.apply_series(series, :s_field, [name])
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

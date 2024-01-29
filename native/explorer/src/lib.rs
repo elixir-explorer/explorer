@@ -278,6 +278,8 @@ rustler::init!(
         expr_join,
         expr_lengths,
         expr_member,
+        // struct expressions
+        expr_field,
         // lazyframe
         lf_collect,
         lf_describe_plan,
@@ -477,6 +479,7 @@ rustler::init!(
         s_join,
         s_lengths,
         s_member,
+        s_field,
     ],
     load = on_load
 );

@@ -6020,6 +6020,29 @@ defmodule Explorer.Series do
     apply_series(series, :transform, [fun])
   end
 
+  @doc """
+  Extracts a field from a struct series
+
+  ## Examples
+
+      iex> s = Series.from_list([%{a: 1}, %{a: 2}])
+      iex> Series.field(s, "a")
+      #Explorer.Series<
+        Polars[2]
+        s64 [1, 2]
+      >
+  """
+  @doc type: :struct_wise
+  @spec field(Series.t(), String.t()) :: Series.t()
+  def field(%Series{dtype: {:struct, dtype}} = series, name) when is_binary(name) do
+    if Map.has_key?(dtype, name) do
+      apply_series(series, :field, [name])
+    else
+      raise ArgumentError,
+            "field #{inspect(name)} not found in fields #{inspect(Map.keys(dtype))}"
+    end
+  end
+
   # Helpers
 
   defp apply_series(series, fun, args \\ []) do

@@ -448,5 +448,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_lengths(_s), do: err()
   def s_member(_s, _value, _inner_dtype), do: err()
 
+  def s_field(_s, _name), do: err()
+
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end
