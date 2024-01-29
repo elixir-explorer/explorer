@@ -5675,7 +5675,7 @@ defmodule Explorer.DataFrame do
         list = Series.to_list(s)
 
         case s.dtype do
-          {:struct, _} -> Enum.map(list, &"#{inspect(&1)}")
+          {:struct, _} -> Enum.map(list, &inspect/1)
           _ -> list
         end
       end)
