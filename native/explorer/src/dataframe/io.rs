@@ -11,13 +11,12 @@
 use polars::prelude::*;
 
 use rustler::{Binary, Env, NewBinary};
-use std::borrow::Borrow;
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Cursor};
-use std::ops::Deref;
 use std::result::Result;
 use std::sync::Arc;
+use std::collections::BTreeMap;
 
 use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
 use crate::{ExDataFrame, ExplorerError};
@@ -179,7 +178,7 @@ pub fn df_load_csv(
 
 // =========== deltalake =========== //
 
-use deltalake::arrow::array::*;
+// use deltalake::arrow::array::*;
 use deltalake::arrow::record_batch::RecordBatch;
 use deltalake::writer::{DeltaWriter, RecordBatchWriter};
 use deltalake::errors::DeltaTableError;
@@ -284,9 +283,9 @@ fn to_delta_datatype(from: &crate::dataframe::arrow::datatypes::ArrowDataType) -
 }
 
 fn to_delta_schema_field(from: &crate::dataframe::arrow::datatypes::Field) -> Result<deltalake::schema::SchemaField, ExplorerError> {
-    let metadata: std::collections::HashMap<_, serde_json::value::Value> = from.metadata.into_iter().map(|(key, value)| (key, serde_json::value::Value::String(value))).collect();
+    let metadata: std::collections::HashMap<_, serde_json::value::Value> = <BTreeMap<std::string::String, std::string::String> as Clone>::clone(&from.metadata).into_iter().map(|(key, value)| (key, serde_json::value::Value::String(value))).collect();
     let to_datatype = to_delta_datatype(&from.data_type)?;
-    Ok(deltalake::schema::SchemaField::new(from.name, to_datatype, from.is_nullable, metadata))
+    Ok(deltalake::schema::SchemaField::new(from.name.clone(), to_datatype, from.is_nullable, metadata))
 }
 
 fn to_delta_schema(from: &crate::dataframe::arrow::datatypes::ArrowSchema) -> Result<Vec<deltalake::schema::SchemaField>, ExplorerError> {
@@ -320,29 +319,26 @@ async fn do_df_to_delta(
                         .await
                         .unwrap()
                 }
-                Err(err) => panic!("{:?}", err),
+                Err(err) => return Err(err)?,
             };
 
             let writer_properties = WriterProperties::builder()
                 .set_compression(Compression::ZSTD(ZstdLevel::try_new(3).unwrap()))
                 .build();
 
-            if let Ok(mut writer) = RecordBatchWriter::for_table(&table) {
-                writer.with_writer_properties(writer_properties);
+            let mut writer = RecordBatchWriter::for_table(&table)?;
+            writer = writer.with_writer_properties(writer_properties);
 
-                let mut chunk_idx = 0usize;
-                while let Some(batch) = convert_to_batch(table, data, chunk_idx)? {
-                    writer.write(batch);
-                    chunk_idx += 1;
-                }
-
-                let adds = writer
-                    .flush_and_commit(&mut table)
-                    .await?;
-                Ok(adds)
-            } else {
-                Err(ExplorerError::Other(format!("Failed to make RecordBatchWriter")))
+            let mut chunk_idx = 0usize;
+            while let Some(batch) = convert_to_batch(&table, data, chunk_idx)? {
+                writer.write(batch).await?;
+                chunk_idx += 1;
             }
+
+            let adds = writer
+                .flush_and_commit(&mut table)
+                .await?;
+            Ok(adds)
         },
         Err(e) => {
             return Err(ExplorerError::Other(format!("Invalid table path: {:?}", e)));
@@ -357,23 +353,22 @@ fn convert_to_batch(table: &DeltaTable, data: &ExDataFrame, chunk_idx: usize) ->
     ) {
         let arrow_schema_ref = Arc::new(arrow_schema);
 
-        let arrow_array: Vec<Arc<dyn Array>> = data.get_columns().iter().map(|series| {
-            let arrow_series = series.to_arrow(chunk_idx).as_ref();
+        let arrow_array: Vec<deltalake::arrow::array::ArrayRef> = data.get_columns().iter().map(|series| {
+            let arrow_series = series.to_arrow(chunk_idx);
             match arrow_series.data_type() {
                 // todo: deltalake: add all other types
                 ArrowDataType::Int32 => {
-                    let arrow_series = arrow_series.as_any().downcast_ref::<Int32Array>().unwrap();
+                    let arrow_series = arrow_series.as_any().downcast_ref::<deltalake::arrow::array::ArrayRef>().unwrap();
                     // todo: deltalake: cast array type without copying data
                     //  from: &crate::dataframe::arrow::array::Int32Array, 
                     //  to:   &deltalake::arrow::array::Int32Array
-                    arrow_series
+                    arrow_series.clone()
                 }
                 _ => {
                     panic!("Unsupported data type: {:?}", arrow_series.data_type());
                     // Err(ExplorerError::Other(format!("Unsupported data type: {:?}", arrow_series.data_type())))
                 }
             }
-            Arc::new(arrow_series)
         }).collect();
 
         Ok(Some(RecordBatch::try_new(arrow_schema_ref, arrow_array).expect("Failed to create RecordBatch")))

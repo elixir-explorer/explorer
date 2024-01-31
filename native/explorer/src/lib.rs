@@ -128,6 +128,7 @@ rustler::init!(
         df_transpose,
         df_to_csv,
         df_to_csv_cloud,
+        df_to_delta,
         df_to_dummies,
         df_to_ipc,
         df_to_ipc_cloud,
