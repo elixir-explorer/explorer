@@ -36,7 +36,6 @@ deltalake = { version = "0.16.5", optional = true, default-features = true, feat
   "arrow",
   "parquet",
 ] }
-futures = "0.3.30"
 serde_json = "1.0.113"
 
 # MiMalloc won´t compile on Windows with the GCC compiler.

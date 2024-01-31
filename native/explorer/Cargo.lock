@@ -734,7 +734,6 @@ dependencies = [
  "chrono",
  "deltalake",
  "either",
- "futures",
  "mimalloc",
  "object_store 0.8.0",
  "polars",
