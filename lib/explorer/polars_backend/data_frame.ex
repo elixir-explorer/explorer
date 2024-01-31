@@ -223,6 +223,22 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
+  def to_delta(%DataFrame{data: df}, %Local.Entry{} = entry) do
+    case Native.df_to_delta(df, entry.path) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
+  end
+
+  @impl true
+  def to_delta(%DataFrame{data: df}, entry) do
+    case Native.df_to_delta(df, entry) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
+  end
+
+  @impl true
 
   def from_ndjson(%module{} = entry, infer_schema_length, batch_size)
       when module in [S3.Entry, HTTP.Entry] do

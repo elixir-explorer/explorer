@@ -12,6 +12,7 @@ use polars::prelude::*;
 
 use rustler::{Binary, Env, NewBinary};
 use std::convert::TryFrom;
+use std::f32::consts::E;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Cursor};
 use std::result::Result;
@@ -178,7 +179,6 @@ pub fn df_load_csv(
 
 // =========== deltalake =========== //
 
-// use deltalake::arrow::array::*;
 use deltalake::arrow::record_batch::RecordBatch;
 use deltalake::writer::{DeltaWriter, RecordBatchWriter};
 use deltalake::errors::DeltaTableError;
@@ -316,8 +316,7 @@ async fn do_df_to_delta(
                         .unwrap()
                         .create()
                         .with_columns(deltalake_schema)
-                        .await
-                        .unwrap()
+                        .await?
                 }
                 Err(err) => return Err(err)?,
             };

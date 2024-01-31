@@ -79,6 +79,9 @@ defmodule Explorer.Backend.DataFrame do
               eol_delimiter :: option(String.t())
             ) :: io_result(df)
 
+  # IO: deltalake
+  @callback to_delta(df, table_uri :: fs_entry()) :: ok_result()
+
   # IO: Parquet
   @callback from_parquet(
               entry :: fs_entry(),

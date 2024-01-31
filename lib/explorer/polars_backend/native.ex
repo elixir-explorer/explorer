@@ -168,6 +168,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_transpose(_df, _keep_names_as, _new_col_names), do: err()
   def df_to_csv(_df, _filename, _has_headers, _delimiter), do: err()
   def df_to_csv_cloud(_df, _ex_entry, _has_headers, _delimiter), do: err()
+  def df_to_delta(_df, _table_uri), do: err()
   def df_to_dummies(_df, _columns), do: err()
   def df_to_ipc(_df, _filename, _compression), do: err()
   def df_to_ipc_cloud(_df, _ex_entry, _compression), do: err()

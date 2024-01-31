@@ -1393,6 +1393,33 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Writes a dataframe to a deltalake format file.
+  """
+  @doc tyoe: :io
+  @spec to_delta(df :: DataFrame.t(), table_uri :: String.t() | fs_entry()) :: :ok | {:error, Exception.t()}
+  def to_delta(df, table_uri) do
+    Shared.apply_impl(df, :to_delta, [table_uri])
+  end
+
+  @doc """
+  Similar to `to_delta/2`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec to_delta!(df :: DataFrame.t(), table_uri :: String.t() | fs_entry()) :: :ok
+  def to_delta!(df, filename) do
+    case to_delta(df, filename) do
+      :ok ->
+        :ok
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "to_delta failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "to_delta failed: #{inspect(error)}"
+    end
+  end
+
+  @doc """
   Read a file of JSON objects or lists separated by new lines
 
   ## Options
