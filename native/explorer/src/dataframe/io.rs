@@ -352,6 +352,10 @@ fn convert_to_batch(table: &DeltaTable, data: &ExDataFrame, chunk_idx: usize) ->
         let arrow_schema_ref = Arc::new(arrow_schema);
 
         let arrow_array: Vec<deltalake::arrow::array::ArrayRef> = data.get_columns().iter().map(|series| {
+            // todo: deltalake: cast array type without copying data, e.g,:
+            //  from: &crate::dataframe::arrow::array::Int32Array, 
+            //  to:   &deltalake::arrow::array::Int32Array
+
             // attemp 1: 
             //   failed: downcast_ref() returns None
             // let arrow_series = series.to_arrow(chunk_idx);
@@ -360,7 +364,7 @@ fn convert_to_batch(table: &DeltaTable, data: &ExDataFrame, chunk_idx: usize) ->
             
             // attemp 2:
             //   failed: segmentation fault
-            let arrow_series = series.clone().to_arrow(chunk_idx);
+            let arrow_series = series.to_arrow(chunk_idx);
             let arrow_series = arrow_series.as_ref();
             let s: Arc<dyn deltalake::arrow::array::Array> = unsafe { std::mem::transmute(arrow_series) };
             s
