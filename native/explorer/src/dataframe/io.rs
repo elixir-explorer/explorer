@@ -11,9 +11,11 @@
 use polars::prelude::*;
 
 use rustler::{Binary, Env, NewBinary};
+use std::borrow::Borrow;
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Cursor};
+use std::ops::Deref;
 use std::result::Result;
 use std::sync::Arc;
 
@@ -173,6 +175,211 @@ pub fn df_load_csv(
         .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
 
     Ok(ExDataFrame::new(reader.finish()?))
+}
+
+// =========== deltalake =========== //
+
+use deltalake::arrow::array::*;
+use deltalake::arrow::record_batch::RecordBatch;
+use deltalake::writer::{DeltaWriter, RecordBatchWriter};
+use deltalake::errors::DeltaTableError;
+use deltalake::DeltaTable;
+use futures::executor;
+use deltalake::parquet::{
+    basic::{Compression, ZstdLevel},
+    file::properties::WriterProperties,
+};
+
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn df_to_delta(
+    data: ExDataFrame,
+    table_uri: &str
+) -> Result<i64, ExplorerError> {
+    Ok(executor::block_on(do_df_to_delta(&data, table_uri))?)
+}
+
+fn to_delta_datatype(from: &crate::dataframe::arrow::datatypes::ArrowDataType) -> Result<deltalake::schema::SchemaDataType, ExplorerError> {
+    match from {
+        ArrowDataType::Utf8 => Ok(deltalake::schema::SchemaDataType::primitive("string".to_string())),
+        ArrowDataType::LargeUtf8 => Ok(deltalake::schema::SchemaDataType::primitive("string".to_string())),
+        ArrowDataType::Int64 => Ok(deltalake::schema::SchemaDataType::primitive("long".to_string())), // undocumented type
+        ArrowDataType::Int32 => Ok(deltalake::schema::SchemaDataType::primitive("integer".to_string())),
+        ArrowDataType::Int16 => Ok(deltalake::schema::SchemaDataType::primitive("short".to_string())),
+        ArrowDataType::Int8 => Ok(deltalake::schema::SchemaDataType::primitive("byte".to_string())),
+        ArrowDataType::UInt64 => Ok(deltalake::schema::SchemaDataType::primitive("long".to_string())), // undocumented type
+        ArrowDataType::UInt32 => Ok(deltalake::schema::SchemaDataType::primitive("integer".to_string())),
+        ArrowDataType::UInt16 => Ok(deltalake::schema::SchemaDataType::primitive("short".to_string())),
+        ArrowDataType::UInt8 => Ok(deltalake::schema::SchemaDataType::primitive("byte".to_string())),
+        ArrowDataType::Float32 => Ok(deltalake::schema::SchemaDataType::primitive("float".to_string())),
+        ArrowDataType::Float64 => Ok(deltalake::schema::SchemaDataType::primitive("double".to_string())),
+        ArrowDataType::Boolean => Ok(deltalake::schema::SchemaDataType::primitive("boolean".to_string())),
+        ArrowDataType::Binary => Ok(deltalake::schema::SchemaDataType::primitive("binary".to_string())),
+        ArrowDataType::FixedSizeBinary(_) => {
+            Ok(deltalake::schema::SchemaDataType::primitive("binary".to_string()))
+        }
+        ArrowDataType::LargeBinary => {
+            Ok(deltalake::schema::SchemaDataType::primitive("binary".to_string()))
+        }
+        ArrowDataType::Decimal(p, s) => Ok(deltalake::schema::SchemaDataType::primitive(format!(
+            "decimal({p},{s})"
+        ))),
+        ArrowDataType::Decimal256(p, s) => Ok(deltalake::schema::SchemaDataType::primitive(format!(
+            "decimal({p},{s})"
+        ))),
+        ArrowDataType::Date32 => Ok(deltalake::schema::SchemaDataType::primitive("date".to_string())),
+        ArrowDataType::Date64 => Ok(deltalake::schema::SchemaDataType::primitive("date".to_string())),
+        ArrowDataType::Timestamp(crate::dataframe::arrow::datatypes::TimeUnit::Microsecond, None) => {
+            Ok(deltalake::schema::SchemaDataType::primitive("timestamp".to_string()))
+        }
+        ArrowDataType::Timestamp(crate::dataframe::arrow::datatypes::TimeUnit::Microsecond, Some(tz))
+            if tz.eq_ignore_ascii_case("utc") =>
+        {
+            Ok(deltalake::schema::SchemaDataType::primitive("timestamp".to_string()))
+        }
+        ArrowDataType::Struct(fields) => {
+            let converted_fields: Result<Vec<deltalake::schema::SchemaField>, _> = fields
+                .iter()
+                .map(|field| to_delta_schema_field(&field))
+                .collect();
+            Ok(deltalake::schema::SchemaDataType::r#struct(
+                deltalake::schema::SchemaTypeStruct::new(converted_fields?),
+            ))
+        }
+        ArrowDataType::List(field) => {
+            Ok(deltalake::schema::SchemaDataType::array(deltalake::schema::SchemaTypeArray::new(
+                Box::new(to_delta_datatype((*field).data_type())?),
+                (*field).is_nullable,
+            )))
+        }
+        ArrowDataType::LargeList(field) => {
+            Ok(deltalake::schema::SchemaDataType::array(deltalake::schema::SchemaTypeArray::new(
+                Box::new(to_delta_datatype((*field).data_type())?),
+                (*field).is_nullable,
+            )))
+        }
+        ArrowDataType::FixedSizeList(field, _) => {
+            Ok(deltalake::schema::SchemaDataType::array(deltalake::schema::SchemaTypeArray::new(
+                Box::new(to_delta_datatype((*field).data_type())?),
+                (*field).is_nullable,
+            )))
+        }
+        ArrowDataType::Map(field, _) => {
+            if let ArrowDataType::Struct(struct_fields) = field.data_type() {
+                let key_type = to_delta_datatype(struct_fields[0].data_type())?;
+                let value_type = to_delta_datatype(struct_fields[1].data_type())?;
+                let value_type_nullable = struct_fields[1].is_nullable;
+                Ok(deltalake::schema::SchemaDataType::map(deltalake::schema::SchemaTypeMap::new(
+                    Box::new(key_type),
+                    Box::new(value_type),
+                    value_type_nullable,
+                )))
+            } else {
+                panic!("DataType::Map should contain a struct field child");
+            }
+        }
+        s => Err(ExplorerError::Other(format!(
+            "Invalid data type for Delta Lake: {:?}", s
+        ))),
+    }
+}
+
+fn to_delta_schema_field(from: &crate::dataframe::arrow::datatypes::Field) -> Result<deltalake::schema::SchemaField, ExplorerError> {
+    let metadata: std::collections::HashMap<_, serde_json::value::Value> = from.metadata.into_iter().map(|(key, value)| (key, serde_json::value::Value::String(value))).collect();
+    let to_datatype = to_delta_datatype(&from.data_type)?;
+    Ok(deltalake::schema::SchemaField::new(from.name, to_datatype, from.is_nullable, metadata))
+}
+
+fn to_delta_schema(from: &crate::dataframe::arrow::datatypes::ArrowSchema) -> Result<Vec<deltalake::schema::SchemaField>, ExplorerError> {
+    let mut to_fields: Vec<deltalake::schema::SchemaField> = Vec::with_capacity(from.fields.capacity());
+    for field in from.fields.iter() {
+        let new_field = to_delta_schema_field(field)?;
+        to_fields.push(new_field);
+    }
+    
+    Ok(to_fields)
+}
+
+async fn do_df_to_delta(
+    data: &ExDataFrame, 
+    table_uri: &str
+) -> Result<i64, ExplorerError> {
+    match deltalake::Path::parse(&table_uri) {
+        Ok(table_path) => {
+            let maybe_table = deltalake::open_table(&table_path).await;
+            let polars_schema = data.schema();
+            let arrow_schema : crate::dataframe::arrow::datatypes::ArrowSchema = polars_schema.to_arrow();
+            let deltalake_schema = to_delta_schema(&arrow_schema)?;
+            let mut table = match maybe_table {
+                Ok(table) => table,
+                Err(DeltaTableError::NotATable(_)) => {
+                    deltalake::DeltaOps::try_from_uri(table_path)
+                        .await
+                        .unwrap()
+                        .create()
+                        .with_columns(deltalake_schema)
+                        .await
+                        .unwrap()
+                }
+                Err(err) => panic!("{:?}", err),
+            };
+
+            let writer_properties = WriterProperties::builder()
+                .set_compression(Compression::ZSTD(ZstdLevel::try_new(3).unwrap()))
+                .build();
+
+            if let Ok(mut writer) = RecordBatchWriter::for_table(&table) {
+                writer.with_writer_properties(writer_properties);
+
+                let mut chunk_idx = 0usize;
+                while let Some(batch) = convert_to_batch(table, data, chunk_idx)? {
+                    writer.write(batch);
+                    chunk_idx += 1;
+                }
+
+                let adds = writer
+                    .flush_and_commit(&mut table)
+                    .await?;
+                Ok(adds)
+            } else {
+                Err(ExplorerError::Other(format!("Failed to make RecordBatchWriter")))
+            }
+        },
+        Err(e) => {
+            return Err(ExplorerError::Other(format!("Invalid table path: {:?}", e)));
+        }
+    }
+}
+
+fn convert_to_batch(table: &DeltaTable, data: &ExDataFrame, chunk_idx: usize) -> Result<Option<RecordBatch>, ExplorerError> {
+    let metadata = table.get_metadata()?;
+    if let Ok(arrow_schema) = <deltalake::arrow::datatypes::Schema as TryFrom<&deltalake::schema::Schema>>::try_from(
+        &metadata.schema.clone(),
+    ) {
+        let arrow_schema_ref = Arc::new(arrow_schema);
+
+        let arrow_array: Vec<Arc<dyn Array>> = data.get_columns().iter().map(|series| {
+            let arrow_series = series.to_arrow(chunk_idx).as_ref();
+            match arrow_series.data_type() {
+                // todo: deltalake: add all other types
+                ArrowDataType::Int32 => {
+                    let arrow_series = arrow_series.as_any().downcast_ref::<Int32Array>().unwrap();
+                    // todo: deltalake: cast array type without copying data
+                    //  from: &crate::dataframe::arrow::array::Int32Array, 
+                    //  to:   &deltalake::arrow::array::Int32Array
+                    arrow_series
+                }
+                _ => {
+                    panic!("Unsupported data type: {:?}", arrow_series.data_type());
+                    // Err(ExplorerError::Other(format!("Unsupported data type: {:?}", arrow_series.data_type())))
+                }
+            }
+            Arc::new(arrow_series)
+        }).collect();
+
+        Ok(Some(RecordBatch::try_new(arrow_schema_ref, arrow_array).expect("Failed to create RecordBatch")))
+    } else {
+        Err(ExplorerError::Other(format!("Failed to convert Delta Lake schema to Arrow schema")))
+    }
 }
 
 // ============ Parquet ============ //

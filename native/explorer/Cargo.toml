@@ -31,6 +31,14 @@ tokio-util = { version = "0.7", default-features = false, features = [
 ], optional = true }
 object_store = { version = "0.8", default-features = false, optional = true }
 
+# deltalake
+deltalake = { version = "0.16.5", optional = true, default-features = true, features = [
+  "arrow",
+  "parquet",
+] }
+futures = "0.3.30"
+serde_json = "1.0.113"
+
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
 [target.'cfg(not(any(all(windows, target_env = "gnu"), all(target_os = "linux", target_env = "musl"))))'.dependencies]
@@ -86,7 +94,7 @@ version = "0.36"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]
-default = ["ndjson", "cloud", "nif_version_2_15"]
+default = ["ndjson", "deltalake", "cloud", "nif_version_2_15"]
 
 cloud = ["object_store", "tokio", "tokio-util", "aws", "polars/cloud", "polars/cloud_write"]
 ndjson = ["polars/json"]

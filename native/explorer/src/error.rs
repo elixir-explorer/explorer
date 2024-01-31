@@ -22,6 +22,8 @@ pub enum ExplorerError {
     Utf8(#[from] std::string::FromUtf8Error),
     #[error("Polars Error: {0}")]
     Polars(#[from] polars::prelude::PolarsError),
+    #[error("DeltaTable Error: {0}")]
+    DeltaTable(#[from] deltalake::DeltaTableError),
     #[error("Internal Error: {0}")]
     Internal(String),
     #[error("Generic Error: {0}")]
