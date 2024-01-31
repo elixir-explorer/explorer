@@ -42,55 +42,36 @@ defmodule Explorer.PolarsBackend.Shared do
   def apply_dataframe(%DataFrame{} = df, %DataFrame{} = out_df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
       {:ok, %module{} = new_df} when module in @polars_df ->
-        {struct?, dtypes} =
-          if @check_frames do
-            # We need to collect here, because the lazy frame may not have
-            # the full picture of the result yet.
-            check_df =
-              if match?(%PolarsLazyFrame{}, new_df) do
-                {:ok, new_df} = Native.lf_collect(new_df)
-                create_dataframe(new_df)
-              else
-                create_dataframe(new_df)
-              end
-
-            # When dealing with structs in mutate, we may not know dtype of struct series.
-            # We have to accept the dtype returned by polars, else we will have mismatch error.
-            {struct?, out_dtypes} =
-              if fun == :df_mutate_with_exprs do
-                Enum.reduce(check_df.dtypes, {false, out_df.dtypes}, fn
-                  {key, {:struct, _} = dtype}, {_, dtypes} -> {true, Map.put(dtypes, key, dtype)}
-                  _, acc -> acc
-                end)
-              else
-                {false, out_df.dtypes}
-              end
-
-            if Enum.sort(out_df.names) != Enum.sort(check_df.names) or
-                 out_dtypes != check_df.dtypes do
-              raise """
-              DataFrame mismatch.
-
-              expected:
-
-                  names: #{inspect(out_df.names)}
-                  dtypes: #{inspect(out_df.dtypes)}
-
-              got:
-
-                  names: #{inspect(check_df.names)}
-                  dtypes: #{inspect(check_df.dtypes)}
-              """
+        if @check_frames do
+          # We need to collect here, because the lazy frame may not have
+          # the full picture of the result yet.
+          check_df =
+            if match?(%PolarsLazyFrame{}, new_df) do
+              {:ok, new_df} = Native.lf_collect(new_df)
+              create_dataframe(new_df)
+            else
+              create_dataframe(new_df)
             end
 
-            {struct?, out_dtypes}
-          end
+          if Enum.sort(out_df.names) != Enum.sort(check_df.names) or
+               out_df.dtypes != check_df.dtypes do
+            raise """
+            DataFrame mismatch.
 
-        if struct? do
-          %{out_df | data: new_df, dtypes: dtypes}
-        else
-          %{out_df | data: new_df}
+            expected:
+
+                names: #{inspect(out_df.names)}
+                dtypes: #{inspect(out_df.dtypes)}
+
+            got:
+
+                names: #{inspect(check_df.names)}
+                dtypes: #{inspect(check_df.dtypes)}
+            """
+          end
         end
+
+        %{out_df | data: new_df}
 
       {:error, error} ->
         raise runtime_error(error)

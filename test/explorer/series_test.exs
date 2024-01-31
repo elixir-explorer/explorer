@@ -5866,4 +5866,20 @@ defmodule Explorer.SeriesTest do
       end
     end
   end
+
+  describe "json_decode/2" do
+    test "extracts struct from json" do
+      s = Series.from_list(["{\"n\": 1}"])
+      sj = Series.json_decode(s, {:struct, %{"n" => {:s, 64}}})
+      assert sj.dtype == {:struct, %{"n" => {:s, 64}}}
+      assert Series.to_list(sj) == [%{"n" => 1}]
+    end
+
+    test "extracts struct from json with dtype" do
+      s = Series.from_list(["{\"n\": 1}"])
+      sj = Series.json_decode(s, {:struct, %{"n" => {:f, 64}}})
+      assert sj.dtype == {:struct, %{"n" => {:f, 64}}}
+      assert Series.to_list(sj) == [%{"n" => 1.0}]
+    end
+  end
 end

@@ -739,8 +739,8 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_field, [name])
 
   @impl true
-  def json_decode(series, dtype, infer_schema_length),
-    do: Shared.apply_series(series, :s_json_decode, [dtype, infer_schema_length])
+  def json_decode(series, dtype),
+    do: Shared.apply_series(series, :s_json_decode, [dtype])
 
   # Polars specific functions
 

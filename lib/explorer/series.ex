@@ -6044,12 +6044,12 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Decode json from string.
+  Converts a string series containing valid json to a struct series.
 
   ## Examples
 
       iex> s = Series.from_list(["{\\"a\\":1}"])
-      iex> Series.json_decode(s)
+      iex> Series.json_decode(s, {:struct, %{"a" => {:s, 64}}})
       #Explorer.Series<
         Polars[1]
         struct[1] [%{"a" => 1}]
@@ -6058,12 +6058,11 @@ defmodule Explorer.Series do
   Will raise `RuntimeError` for invalid json.
   """
   @doc type: :struct_wise
-  @spec json_decode(Series.t(), Keyword.t()) :: Series.t()
-  def json_decode(%Series{dtype: :string} = series, opts \\ []) do
-    opts = Keyword.validate!(opts, [:dtype, :infer_schema_length])
-    dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
+  @spec json_decode(Series.t(), struct_dtype()) :: Series.t()
+  def json_decode(%Series{dtype: :string} = series, dtype) do
+    dtype = Shared.normalise_dtype!(dtype)
 
-    apply_series(series, :json_decode, [dtype, opts[:infer_schema_length]])
+    apply_series(series, :json_decode, [dtype])
   end
 
   # Helpers

@@ -144,7 +144,7 @@ defmodule Explorer.Backend.LazySeries do
     member: 3,
     # Struct functions
     field: 2,
-    json_decode: 3
+    json_decode: 2
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -1096,8 +1096,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def json_decode(series, dtype, infer_schema_length) do
-    data = new(:json_decode, [lazy_series!(series), dtype, infer_schema_length], dtype)
+  def json_decode(series, dtype) do
+    data = new(:json_decode, [lazy_series!(series), dtype], dtype)
 
     Backend.Series.new(data, dtype)
   end

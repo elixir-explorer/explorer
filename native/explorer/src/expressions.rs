@@ -1067,15 +1067,8 @@ pub fn expr_field(expr: ExExpr, name: &str) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_json_decode(
-    expr: ExExpr,
-    ex_dtype: Option<ExSeriesDtype>,
-    infer_schema_length: Option<usize>,
-) -> ExExpr {
-    let dtype = ex_dtype.map(|x| DataType::try_from(&x).unwrap());
-    let expr = expr
-        .clone_inner()
-        .str()
-        .json_decode(dtype, infer_schema_length);
+pub fn expr_json_decode(expr: ExExpr, ex_dtype: ExSeriesDtype) -> ExExpr {
+    let dtype = DataType::try_from(&ex_dtype).unwrap();
+    let expr = expr.clone_inner().str().json_decode(Some(dtype), None);
     ExExpr::new(expr)
 }

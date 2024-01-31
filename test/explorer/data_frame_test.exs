@@ -1870,32 +1870,6 @@ defmodule Explorer.DataFrameTest do
                member?: [true, false]
              }
     end
-
-    test "extracts struct from json - json_decode" do
-      df = DF.new([%{a: "{\"n\": 1}"}])
-      dfj = DF.mutate(df, aj: json_decode(a, dtype: {:struct, %{"n" => {:s, 64}}}))
-      assert dfj.dtypes == %{"a" => :string, "aj" => {:struct, %{"n" => {:s, 64}}}}
-      assert DF.to_rows(dfj) == [%{"a" => "{\"n\": 1}", "aj" => %{"n" => 1}}]
-    end
-
-    test "extracts struct from json - json_decode with dtype" do
-      df = DF.new([%{a: "{\"n\": 1}"}])
-      dfj = DF.mutate(df, aj: json_decode(a, dtype: {:struct, %{"n" => {:f, 64}}}))
-      assert dfj.dtypes == %{"a" => :string, "aj" => {:struct, %{"n" => {:f, 64}}}}
-      assert DF.to_rows(dfj) == [%{"a" => "{\"n\": 1}", "aj" => %{"n" => 1.0}}]
-    end
-
-    test "extracts struct from json - json_decode with infer_schema_length" do
-      df = DF.new([%{a: "{\"n\": 1}"}])
-
-      dfj =
-        DF.mutate(df,
-          aj: json_decode(a, infer_schema_length: 100)
-        )
-
-      assert dfj.dtypes == %{"a" => :string, "aj" => {:struct, %{"n" => {:s, 64}}}}
-      assert DF.to_rows(dfj) == [%{"a" => "{\"n\": 1}", "aj" => %{"n" => 1}}]
-    end
   end
 
   describe "sort_by/3" do
