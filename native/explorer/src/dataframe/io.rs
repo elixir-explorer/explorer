@@ -12,7 +12,6 @@ use polars::prelude::*;
 
 use rustler::{Binary, Env, NewBinary};
 use std::convert::TryFrom;
-use std::f32::consts::E;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Cursor};
 use std::result::Result;
@@ -183,18 +182,18 @@ use deltalake::arrow::record_batch::RecordBatch;
 use deltalake::writer::{DeltaWriter, RecordBatchWriter};
 use deltalake::errors::DeltaTableError;
 use deltalake::DeltaTable;
-use futures::executor;
 use deltalake::parquet::{
     basic::{Compression, ZstdLevel},
     file::properties::WriterProperties,
 };
+use tokio::runtime;
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn df_to_delta(
     data: ExDataFrame,
     table_uri: &str
 ) -> Result<i64, ExplorerError> {
-    Ok(executor::block_on(do_df_to_delta(&data, table_uri))?)
+    Ok(runtime::Builder::new_current_thread().build().unwrap().block_on(do_df_to_delta(&data, table_uri))?)
 }
 
 fn to_delta_datatype(from: &crate::dataframe::arrow::datatypes::ArrowDataType) -> Result<deltalake::schema::SchemaDataType, ExplorerError> {
@@ -353,21 +352,18 @@ fn convert_to_batch(table: &DeltaTable, data: &ExDataFrame, chunk_idx: usize) ->
         let arrow_schema_ref = Arc::new(arrow_schema);
 
         let arrow_array: Vec<deltalake::arrow::array::ArrayRef> = data.get_columns().iter().map(|series| {
-            let arrow_series = series.to_arrow(chunk_idx);
-            match arrow_series.data_type() {
-                // todo: deltalake: add all other types
-                ArrowDataType::Int32 => {
-                    let arrow_series = arrow_series.as_any().downcast_ref::<deltalake::arrow::array::ArrayRef>().unwrap();
-                    // todo: deltalake: cast array type without copying data
-                    //  from: &crate::dataframe::arrow::array::Int32Array, 
-                    //  to:   &deltalake::arrow::array::Int32Array
-                    arrow_series.clone()
-                }
-                _ => {
-                    panic!("Unsupported data type: {:?}", arrow_series.data_type());
-                    // Err(ExplorerError::Other(format!("Unsupported data type: {:?}", arrow_series.data_type())))
-                }
-            }
+            // attemp 1: 
+            //   failed: downcast_ref() returns None
+            // let arrow_series = series.to_arrow(chunk_idx);
+            // let arrow_series = arrow_series.as_any();
+            // let arrow_series = arrow_series.downcast_ref::<deltalake::arrow::array::ArrayRef>().unwrap();
+            
+            // attemp 2:
+            //   failed: segmentation fault
+            let arrow_series = series.clone().to_arrow(chunk_idx);
+            let arrow_series = arrow_series.as_ref();
+            let s: Arc<dyn deltalake::arrow::array::Array> = unsafe { std::mem::transmute(arrow_series) };
+            s
         }).collect();
 
         Ok(Some(RecordBatch::try_new(arrow_schema_ref, arrow_array).expect("Failed to create RecordBatch")))
