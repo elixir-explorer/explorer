@@ -4278,4 +4278,34 @@ defmodule Explorer.DataFrameTest do
              }
     end
   end
+
+  describe "json_decode/2" do
+    test "decodes primitives, lists, structs" do
+      df = DF.new([%{st: "{\"n\": 1}", f: "1.0", l: "[1]", dt: "1"}], lazy: true)
+
+      df1 =
+        DF.mutate(df,
+          st: json_decode(st, {:struct, %{"n" => {:s, 64}}}),
+          f: json_decode(f, {:f, 64}),
+          l: json_decode(l, {:list, {:s, 64}}),
+          dt: json_decode(dt, {:datetime, :microsecond})
+        )
+
+      assert df.dtypes == %{"dt" => :string, "f" => :string, "l" => :string, "st" => :string}
+
+      assert df1.dtypes == %{
+               "dt" => {:datetime, :microsecond},
+               "f" => {:f, 64},
+               "l" => {:list, {:s, 64}},
+               "st" => {:struct, %{"n" => {:s, 64}}}
+             }
+
+      assert df1 |> DF.collect() |> DF.to_columns() == %{
+               "dt" => [~N[1970-01-01 00:00:00.000001]],
+               "f" => [1.0],
+               "l" => [[1]],
+               "st" => [%{"n" => 1}]
+             }
+    end
+  end
 end

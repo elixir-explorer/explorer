@@ -5868,11 +5868,19 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "json_decode/2" do
-    test "extracts struct from json" do
-      s = Series.from_list(["{\"n\": 1}"])
-      sj = Series.json_decode(s, {:struct, %{"n" => {:s, 64}}})
-      assert sj.dtype == {:struct, %{"n" => {:s, 64}}}
-      assert Series.to_list(sj) == [%{"n" => 1}]
+    test "raises for invalid json" do
+      assert_raise RuntimeError,
+                   "Polars Error: error deserializing JSON: json parsing error: 'InternalError(TapeError) at character 1 ('a')'",
+                   fn ->
+                     Series.from_list(["a"]) |> Series.json_decode(:string)
+                   end
+    end
+
+    test "extracts primitive from json and nil for mismatch" do
+      s = Series.from_list(["1", "\"a\""])
+      sj = Series.json_decode(s, {:s, 64})
+      assert sj.dtype == {:s, 64}
+      assert Series.to_list(sj) == [1, nil]
     end
 
     test "extracts struct from json with dtype" do

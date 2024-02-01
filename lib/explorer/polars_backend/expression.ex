@@ -135,6 +135,7 @@ defmodule Explorer.PolarsBackend.Expression do
     upcase: 1,
     substring: 3,
     split: 2,
+    json_decode: 2,
 
     # Lists
     join: 2,
@@ -142,8 +143,7 @@ defmodule Explorer.PolarsBackend.Expression do
     member: 3,
 
     # Structs
-    field: 2,
-    json_decode: 2
+    field: 2
   ]
 
   @custom_expressions [

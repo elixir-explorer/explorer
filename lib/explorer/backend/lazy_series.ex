@@ -125,6 +125,7 @@ defmodule Explorer.Backend.LazySeries do
     downcase: 1,
     substring: 3,
     split: 2,
+    json_decode: 2,
     # Float round
     round: 2,
     floor: 1,
@@ -143,8 +144,7 @@ defmodule Explorer.Backend.LazySeries do
     lengths: 1,
     member: 3,
     # Struct functions
-    field: 2,
-    json_decode: 2
+    field: 2
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
