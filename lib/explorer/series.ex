@@ -6044,16 +6044,9 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Converts a string series containing valid json to a series.
+  Decodes a string series containing valid JSON according to `dtype`.
 
   ## Examples
-
-      iex> s = Series.from_list(["{\\"a\\":1}"])
-      iex> Series.json_decode(s, {:struct, %{"a" => {:s, 64}}})
-      #Explorer.Series<
-        Polars[1]
-        struct[1] [%{"a" => 1}]
-      >
 
       iex> s = Series.from_list(["1"])
       iex> Series.json_decode(s, {:s, 64})
@@ -6062,11 +6055,15 @@ defmodule Explorer.Series do
         s64 [1]
       >
 
-  Will raise `RuntimeError` if the string is invalid json. 
+      iex> s = Series.from_list(["{\\"a\\":1}"])
+      iex> Series.json_decode(s, {:struct, %{"a" => {:s, 64}}})
+      #Explorer.Series<
+        Polars[1]
+        struct[1] [%{"a" => 1}]
+      >
 
-  Decoded value will be nil incase of a dtype mismatch e.g. string and integer.
-
-  ## Examples
+  If the decoded value does not match the given `dtype`,
+  nil is returned for the given entry:
 
       iex> s = Series.from_list(["\\"1\\""])
       iex> Series.json_decode(s, {:s, 64})
@@ -6074,6 +6071,8 @@ defmodule Explorer.Series do
         Polars[1]
         s64 [nil]
       >
+
+  It raises an exception if the string is invalid JSON. 
   """
   @doc type: :string_wise
   @spec json_decode(Series.t(), dtype()) :: Series.t()
