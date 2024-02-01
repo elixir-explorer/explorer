@@ -24,6 +24,7 @@ defmodule Explorer.PolarsBackend.Expression do
     binary_in: 2,
     coalesce: 2,
     count: 1,
+    size: 1,
     day_of_week: 1,
     day_of_year: 1,
     week_of_year: 1,

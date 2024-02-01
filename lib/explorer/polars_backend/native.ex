@@ -390,6 +390,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_sample_frac(_s, _frac, _replace, _shuffle, _seed), do: err()
   def s_series_equal(_s, _other, _null_equal), do: err()
   def s_size(_s), do: err()
+  def s_count(_s), do: err()
   def s_slice(_s, _offset, _length), do: err()
   def s_slice_by_indices(_s, _indices), do: err()
   def s_slice_by_series(_s, _series), do: err()

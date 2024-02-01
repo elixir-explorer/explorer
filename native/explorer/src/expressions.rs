@@ -568,6 +568,13 @@ pub fn expr_nil_count(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_size(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.len())
+}
+
+#[rustler::nif]
 pub fn expr_n_distinct(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
