@@ -738,6 +738,10 @@ defmodule Explorer.PolarsBackend.Series do
   def field(%Series{dtype: {:struct, _inner_dtype}} = series, name),
     do: Shared.apply_series(series, :s_field, [name])
 
+  @impl true
+  def json_decode(series, dtype),
+    do: Shared.apply_series(series, :s_json_decode, [dtype])
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

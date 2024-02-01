@@ -135,6 +135,7 @@ defmodule Explorer.PolarsBackend.Expression do
     upcase: 1,
     substring: 3,
     split: 2,
+    json_decode: 2,
 
     # Lists
     join: 2,

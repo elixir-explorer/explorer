@@ -449,6 +449,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_member(_s, _value, _inner_dtype), do: err()
 
   def s_field(_s, _name), do: err()
+  def s_json_decode(_s, _dtype), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

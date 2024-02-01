@@ -829,6 +829,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "jsonpath_lib"
+version = "0.3.0"
+source = "git+https://github.com/ritchie46/jsonpath?branch=improve_compiled#24eaf0b4416edff38a4d1b6b17bc4b9f3f047b4b"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1395,17 +1405,20 @@ dependencies = [
  "either",
  "hashbrown 0.14.3",
  "indexmap",
+ "jsonpath_lib",
  "memchr",
  "num-traits",
  "polars-arrow",
  "polars-compute",
  "polars-core",
  "polars-error",
+ "polars-json",
  "polars-utils",
  "rand",
  "rand_distr",
  "rayon",
  "regex",
+ "serde_json",
  "smartstring",
  "version_check",
 ]
@@ -1909,6 +1922,7 @@ version = "1.0.111"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "176e46fa42316f18edd598015a5166857fc835ec732f5215eac6b7bdbf0a84f4"
 dependencies = [
+ "indexmap",
  "itoa",
  "ryu",
  "serde",

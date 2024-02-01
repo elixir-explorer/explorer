@@ -286,6 +286,7 @@ defmodule Explorer.Backend.Series do
   @callback rstrip(s, String.t() | nil) :: s
   @callback substring(s, integer(), non_neg_integer() | nil) :: s
   @callback split(s, String.t()) :: s
+  @callback json_decode(s, dtype()) :: s
 
   # Date / DateTime
 

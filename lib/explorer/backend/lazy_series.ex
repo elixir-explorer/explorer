@@ -125,6 +125,7 @@ defmodule Explorer.Backend.LazySeries do
     downcase: 1,
     substring: 3,
     split: 2,
+    json_decode: 2,
     # Float round
     round: 2,
     floor: 1,
@@ -1090,6 +1091,13 @@ defmodule Explorer.Backend.LazySeries do
   def field(%Series{dtype: {:struct, inner_dtype}} = series, name) do
     dtype = inner_dtype[name]
     data = new(:field, [lazy_series!(series), name], dtype)
+
+    Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def json_decode(series, dtype) do
+    data = new(:json_decode, [lazy_series!(series), dtype], dtype)
 
     Backend.Series.new(data, dtype)
   end

@@ -36,6 +36,9 @@ object_store = { version = "0.8", default-features = false, optional = true }
 [target.'cfg(not(any(all(windows, target_env = "gnu"), all(target_os = "linux", target_env = "musl"))))'.dependencies]
 mimalloc = { version = "*", default-features = false }
 
+[patch.crates-io]
+jsonpath_lib = { version = "0.3", git = "https://github.com/ritchie46/jsonpath", branch = "improve_compiled" }
+
 [dependencies.polars]
 version = "0.36"
 default-features = false
@@ -79,6 +82,7 @@ features = [
   "moment",
   "rank",
   "propagate_nans",
+  "extract_jsonpath"
 ]
 
 [dependencies.polars-ops]

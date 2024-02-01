@@ -280,6 +280,7 @@ rustler::init!(
         expr_member,
         // struct expressions
         expr_field,
+        expr_json_decode,
         // lazyframe
         lf_collect,
         lf_describe_plan,
@@ -480,6 +481,7 @@ rustler::init!(
         s_lengths,
         s_member,
         s_field,
+        s_json_decode,
     ],
     load = on_load
 );

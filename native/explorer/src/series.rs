@@ -1824,3 +1824,20 @@ pub fn s_field(s: ExSeries, name: &str) -> Result<ExSeries, ExplorerError> {
         .clone();
     Ok(ExSeries::new(s2))
 }
+
+#[rustler::nif]
+pub fn s_json_decode(s: ExSeries, ex_dtype: ExSeriesDtype) -> Result<ExSeries, ExplorerError> {
+    let dtype = DataType::try_from(&ex_dtype).unwrap();
+    let s2 = s
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s.name())
+            .str()
+            .json_decode(Some(dtype), None)
+            .alias(s.name())])
+        .collect()?
+        .column(s.name())?
+        .clone();
+    Ok(ExSeries::new(s2))
+}
