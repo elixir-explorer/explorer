@@ -1622,7 +1622,7 @@ defmodule Explorer.DataFrame do
   def lazy(df), do: Shared.apply_impl(df, :lazy)
 
   @deprecated "Use lazy/1 instead"
-  @doc type: :deprecated
+  @doc false
   def to_lazy(df), do: Shared.apply_impl(df, :lazy)
 
   @doc """
@@ -3173,7 +3173,7 @@ defmodule Explorer.DataFrame do
   end
 
   @deprecated "Use sort_by/3 instead"
-  @doc type: :deprecated
+  @doc false
   defmacro arrange(df, query, opts \\ []) do
     quote do
       Explorer.DataFrame.sort_by(unquote(df), unquote(query), unquote(opts))
@@ -3299,7 +3299,7 @@ defmodule Explorer.DataFrame do
   end
 
   @deprecated "Use sort_with/3 instead"
-  @doc type: :deprecated
+  @doc false
   def arrange_with(df, fun, opts \\ []), do: sort_with(df, fun, opts)
 
   @doc """
