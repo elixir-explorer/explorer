@@ -679,12 +679,6 @@ pub fn s_size(series: ExSeries) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif]
-pub fn s_count(series: ExSeries) -> Result<usize, ExplorerError> {
-    // There is no function equivalent for the `count` Expr, so we need to make our own.
-    Ok(series.len() - series.null_count())
-}
-
-#[rustler::nif]
 pub fn s_nil_count(series: ExSeries) -> Result<usize, ExplorerError> {
     Ok(series.null_count())
 }

@@ -390,7 +390,6 @@ rustler::init!(
         s_multiply,
         s_n_distinct,
         s_name,
-        s_count,
         s_nil_count,
         s_not,
         s_log,
