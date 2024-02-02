@@ -47,3 +47,9 @@ explorer-*.tar
 .nix-mix
 .nix-hex
 .direnv
+
+# Accommodate VSCode users with the rust-analyzer extension.
+# They need a symlink to `native/explorer/Cargo.toml` in the root directory.
+# When the symlink is present, rust-analyzer creates these artifacts:
+Cargo.lock
+target/
