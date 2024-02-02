@@ -173,7 +173,8 @@ defmodule Explorer.PolarsBackend.Series do
   # Aggregation
 
   @impl true
-  def count(series), do: Shared.apply_series(series, :s_size)
+  # There is no `count` equivalent in Polars, so we need to make our own.
+  def count(series), do: size(series) - nil_count(series)
 
   @impl true
   def nil_count(series), do: Shared.apply_series(series, :s_nil_count)

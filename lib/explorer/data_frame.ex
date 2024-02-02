@@ -5795,7 +5795,7 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Counts the number of null elements in each column.
+  Counts the number of `nil` elements in each column.
 
   ## Examples
 

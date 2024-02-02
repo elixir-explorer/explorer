@@ -751,6 +751,44 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "size/1, count/1, and count_nil/1" do
+    test "work with `nil` and `:nan` correctly" do
+      df =
+        DF.new(
+          a: [1, 2, 3],
+          b: [1, nil, 3],
+          c: [1, :nan, 3],
+          group: [1, 1, 2]
+        )
+        |> DF.group_by(:group)
+
+      assert df
+             |> DF.summarise(
+               a_count: count(a),
+               a_nil_count: nil_count(a),
+               a_size: size(a),
+               b_nil_count: nil_count(b),
+               b_count: count(b),
+               b_size: size(b),
+               c_count: count(c),
+               c_nil_count: nil_count(c),
+               c_size: size(c)
+             )
+             |> DF.to_columns(atom_keys: true) == %{
+               a_count: [2, 1],
+               a_nil_count: [0, 0],
+               a_size: [2, 1],
+               b_count: [1, 1],
+               b_nil_count: [1, 0],
+               b_size: [2, 1],
+               c_count: [2, 1],
+               c_nil_count: [0, 0],
+               c_size: [2, 1],
+               group: [1, 2]
+             }
+    end
+  end
+
   describe "n_columns/1" do
     test "groups don't affect counting of columns", %{df: df} do
       df1 = DF.group_by(df, ["year"])

@@ -1088,13 +1088,24 @@ defmodule Explorer.Series do
   def dtype(%Series{dtype: dtype}), do: dtype
 
   @doc """
-  Returns the size of the series.
+  Returns the number of elements in the series.
 
-  This is not allowed inside a lazy series. Use `count/1` instead.
+  See also:
+
+    * `count/1` - counts only the non-`nil` elements.
+    * `nil_count/1` - counts all `nil` elements.
 
   ## Examples
 
+  Basic example:
+
       iex> s = Explorer.Series.from_list([~D[1999-12-31], ~D[1989-01-01]])
+      iex> Explorer.Series.size(s)
+      2
+
+  With lists:
+
+      iex> s = Explorer.Series.from_list([[1, 2, 3], [4, 5]])
       iex> Explorer.Series.size(s)
       2
   """
@@ -4624,41 +4635,65 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Counts the number of elements in a series.
+  Counts the number of non-`nil` elements in a series.
 
-  In the context of lazy series and `Explorer.Query`,
-  `count/1` counts the elements inside the same group.
-  If no group is in use, then count is going to return
-  the size of the series.
-  It is also going to result in a lazy series of `{:u, 32}`
-  dtype.
+  See also:
+
+    * `count_nil/1` - counts only the `nil` elements.
+    * `size/1` - counts all elements.
 
   ## Examples
+
+  Without `nil`:
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.count(s)
       3
 
+  With `nil`:
+
+      iex> s = Explorer.Series.from_list(["a", nil, "c"])
+      iex> Explorer.Series.count(s)
+      2
+
+  With `:nan` (`:nan` does not count as `nil`):
+
+      iex> s = Explorer.Series.from_list([1, :nan, 3])
+      iex> Explorer.Series.count(s)
+      3
   """
   @doc type: :aggregation
   def count(series), do: apply_series(series, :count)
 
   @doc """
-  Counts the number of null elements in a series.
+  Counts the number of `nil` elements in a series.
 
-  In the context of lazy series and `Explorer.Query`,
-  `count/1` counts the elements inside the same group.
-  If no group is in use, then count is going to return
-  the size of the series.
-  It is also going to result in a lazy series of `{:u, 32}`
-  dtype.
+  When used in a query on grouped data, `count_nil/1` is a per-group operation.
+
+  See also:
+
+    * `count/1` - counts only the non-`nil` elements.
+    * `size/1` - counts all elements.
 
   ## Examples
 
-      iex> s = Explorer.Series.from_list(["a", nil, "c", nil, nil])
-      iex> Explorer.Series.nil_count(s)
-      3
+  Without `nil`s:
 
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.nil_count(s)
+      0
+
+  With `nil`s:
+
+      iex> s = Explorer.Series.from_list(["a", nil, "c"])
+      iex> Explorer.Series.nil_count(s)
+      1
+
+  With `:nan`s (`:nan` does not count as `nil`):
+
+      iex> s = Explorer.Series.from_list([1, :nan, 3])
+      iex> Explorer.Series.nil_count(s)
+      0
   """
   @doc type: :aggregation
   def nil_count(series), do: apply_series(series, :nil_count)
@@ -6072,7 +6107,7 @@ defmodule Explorer.Series do
         s64 [nil]
       >
 
-  It raises an exception if the string is invalid JSON. 
+  It raises an exception if the string is invalid JSON.
   """
   @doc type: :string_wise
   @spec json_decode(Series.t(), dtype()) :: Series.t()

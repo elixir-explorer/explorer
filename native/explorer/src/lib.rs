@@ -240,6 +240,7 @@ rustler::init!(
         expr_sum,
         expr_variance,
         expr_product,
+        expr_size,
         expr_skew,
         expr_correlation,
         expr_covariance,

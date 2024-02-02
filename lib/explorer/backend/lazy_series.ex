@@ -110,6 +110,7 @@ defmodule Explorer.Backend.LazySeries do
     last: 1,
     count: 1,
     nil_count: 1,
+    size: 1,
     skew: 2,
     correlation: 4,
     covariance: 3,
@@ -707,7 +708,7 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   defp dtype_for_agg_operation(op, _)
-       when op in [:count, :nil_count, :n_distinct, :argmin, :argmax],
+       when op in [:count, :nil_count, :size, :n_distinct, :argmin, :argmax],
        do: {:u, 32}
 
   defp dtype_for_agg_operation(op, series)
@@ -958,10 +959,10 @@ defmodule Explorer.Backend.LazySeries do
   defp to_elixir_ast(other), do: other
 
   @impl true
-  def size(_series) do
-    raise """
-    cannot retrieve the size of a lazy series, use count/1 instead
-    """
+  def size(series) do
+    data = new(:size, [lazy_series!(series)], {:u, 32})
+
+    Backend.Series.new(data, {:u, 32})
   end
 
   @impl true
