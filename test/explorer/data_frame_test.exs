@@ -2766,7 +2766,7 @@ defmodule Explorer.DataFrameTest do
     test "with keyword and a column that is duplicated" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-      assert_raise ArgumentError, ~r"duplicate column name \"g\"", fn ->
+      assert_raise ArgumentError, ~r"duplicate column name \"a\"", fn ->
         DF.rename(df, a: "first", a: "second")
       end
     end

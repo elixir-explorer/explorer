@@ -3609,6 +3609,7 @@ defmodule Explorer.DataFrame do
         df
 
       pairs ->
+        maybe_raise_column_duplicate(pairs)
         pairs_map = Map.new(pairs)
         old_dtypes = df.dtypes
 
@@ -3631,6 +3632,15 @@ defmodule Explorer.DataFrame do
         out_df = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: new_groups}
         Shared.apply_impl(df, :rename, [out_df, pairs])
     end
+  end
+
+  defp maybe_raise_column_duplicate(pairs) when is_column_pairs(pairs) do
+    Enum.reduce(pairs, MapSet.new(), fn {col, _val}, seen ->
+      case col in seen do
+        true -> raise ArgumentError, "duplicate column name \"#{col}\" in rename"
+        false -> MapSet.put(seen, col)
+      end
+    end)
   end
 
   defp check_new_names_length!(df, names) do
