@@ -168,6 +168,22 @@ defmodule Explorer.Series.ListTest do
                    "the value \"z\" does not match the inferred dtype {:s, 64}",
                    fn -> Series.from_list([[[[[1, 2], ["z", "b"]]]]]) end
     end
+
+    test "list of structs" do
+      series =
+        Series.from_list([[%{"a" => 42}], []], dtype: {:list, {:struct, %{"a" => :integer}}})
+
+      assert Series.dtype(series) == {:list, {:struct, %{"a" => {:s, 64}}}}
+      assert Series.to_list(Series.cast(series, Series.dtype(series))) == [[%{"a" => 42}], []]
+    end
+
+    test "list of structs with first empty" do
+      series =
+        Series.from_list([[], [%{"a" => 42}], []], dtype: {:list, {:struct, %{"a" => :integer}}})
+
+      assert Series.dtype(series) == {:list, {:struct, %{"a" => {:s, 64}}}}
+      assert Series.to_list(series) == [[], [%{"a" => 42}], []]
+    end
   end
 
   describe "cast/2" do

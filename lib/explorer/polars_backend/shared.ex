@@ -126,7 +126,7 @@ defmodule Explorer.PolarsBackend.Shared do
     Native.s_from_list_of_series(name, series)
   end
 
-  def from_list(list, {:struct, fields} = _dtype, name) when is_list(list) do
+  def from_list(list, {:struct, fields} = dtype, name) when is_list(list) do
     series =
       for {column, values} <- Table.to_columns(list) do
         column = to_string(column)
@@ -135,6 +135,14 @@ defmodule Explorer.PolarsBackend.Shared do
       end
 
     Native.s_from_list_of_series_as_structs(name, series)
+    |> then(fn polars_series ->
+      if Native.s_dtype(polars_series) != dtype do
+        {:ok, casted} = Native.s_cast(polars_series, dtype)
+        casted
+      else
+        polars_series
+      end
+    end)
   end
 
   def from_list(list, dtype, name) when is_list(list) do
