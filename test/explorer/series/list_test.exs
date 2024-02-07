@@ -174,7 +174,7 @@ defmodule Explorer.Series.ListTest do
         Series.from_list([[%{"a" => 42}], []], dtype: {:list, {:struct, %{"a" => :integer}}})
 
       assert Series.dtype(series) == {:list, {:struct, %{"a" => {:s, 64}}}}
-      assert Series.to_list(Series.cast(series, Series.dtype(series))) == [[%{"a" => 42}], []]
+      assert Series.to_list(series) == [[%{"a" => 42}], []]
     end
 
     test "list of structs with first empty" do
