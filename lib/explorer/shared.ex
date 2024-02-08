@@ -59,7 +59,7 @@ defmodule Explorer.Shared do
     end)
     |> then(fn
       nil -> nil
-      normalized_dtypes -> {:struct, List.keysort(normalized_dtypes, 0)}
+      normalized_dtypes -> {:struct, normalized_dtypes}
     end)
   end
 
@@ -353,15 +353,19 @@ defmodule Explorer.Shared do
   end
 
   defp merge_preferred({:struct, inferred}, {:struct, preferred}) do
-    # Optimize this.
-    result =
-      Map.merge(Map.new(inferred), Map.new(preferred), fn _, v1, v2 ->
-        merge_preferred(v1, v2)
-      end)
-      |> Map.to_list()
-      |> List.keysort(0)
+    {remaining, all_merged} =
+      Enum.reduce(preferred, {inferred, []}, fn {col, dtype}, {inferred_rest, merged} ->
+        case List.keytake(inferred_rest, col, 0) do
+          {{^col, inferred_dtype}, rest} ->
+            solved = merge_preferred(inferred_dtype, dtype)
+            {rest, List.keystore(merged, col, 0, {col, solved})}
 
-    {:struct, result}
+          nil ->
+            {inferred, List.keystore(merged, col, 0, {col, dtype})}
+        end
+      end)
+
+    {:struct, all_merged ++ remaining}
   end
 
   defp merge_preferred(inferred, _preferred) do

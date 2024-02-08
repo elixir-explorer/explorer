@@ -85,6 +85,24 @@ defmodule Explorer.Series.StructTest do
       assert Series.to_list(series) == [[%{"a" => 1}, %{"a" => 2}], [%{"a" => 3}]]
     end
 
+    test "preserves manually provided dtype order" do
+      series =
+        Series.from_list(
+          [%{"a" => "a", "b" => "b"}, %{"b" => "b", "a" => "a"}],
+          dtype: {:struct, [{"b", :string}, {"a", :string}]}
+        )
+
+      assert series.dtype == {:struct, [{"b", :string}, {"a", :string}]}
+
+      series1 =
+        Series.from_list(
+          [%{"a" => "a", "b" => "b"}, %{"b" => "b", "a" => "a"}],
+          dtype: {:struct, [{"a", :string}, {"b", :string}]}
+        )
+
+      assert series1.dtype == {:struct, [{"a", :string}, {"b", :string}]}
+    end
+
     test "errors when structs have mismatched types" do
       assert_raise ArgumentError,
                    "the value \"a\" does not match the inferred dtype {:s, 64}",
@@ -136,6 +154,16 @@ defmodule Explorer.Series.StructTest do
              ]
 
       assert Series.dtype(s1) == {:struct, [{"a", {:datetime, :microsecond}}]}
+    end
+
+    test "can cast dtype order" do
+      series =
+        Series.from_list([%{"a" => "a", "b" => "b"}, %{"b" => "b", "a" => "a"}],
+          dtype: {:struct, [{"a", :string}, {"b", :string}]}
+        )
+
+      casted = Series.cast(series, {:struct, [{"b", :string}, {"a", :string}]})
+      assert casted.dtype == {:struct, [{"b", :string}, {"a", :string}]}
     end
 
     test "errors when casting to invalid nested types" do

@@ -125,6 +125,24 @@ defmodule Explorer.DataFrame.NDJSONTest do
       assert_ndjson({:struct, %{"a" => {:s, 64}}}, [%{a: 1}], %{"a" => 1})
     end
 
+    test "infers correctly ordered dtype from ordered source" do
+      df =
+        """
+        {"col": {"b": "b", "a": "a"}}
+        """
+        |> DF.load_ndjson!()
+
+      assert df["col"].dtype == {:struct, [{"b", :string}, {"a", :string}]}
+
+      df1 =
+        """
+        {"col": {"a": "a", "b": "b"}}
+        """
+        |> DF.load_ndjson!()
+
+      assert df1["col"].dtype == {:struct, [{"a", :string}, {"b", :string}]}
+    end
+
     # test "date" do
     #   assert_ndjson(:date, "19327", ~D[2022-12-01])
     #   assert_ndjson(:date, "-3623", ~D[1960-01-31])

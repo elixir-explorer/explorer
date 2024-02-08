@@ -114,8 +114,6 @@ impl TryFrom<&DataType> for ExSeriesDtype {
                         .push((field.name().to_string(), Self::try_from(field.data_type())?));
                 }
 
-                struct_fields.sort_by(|(a, _), (b, _)| a.cmp(b));
-
                 Ok(ExSeriesDtype::Struct(struct_fields))
             }
 
