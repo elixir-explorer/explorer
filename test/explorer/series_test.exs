@@ -5585,7 +5585,7 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list([%{a: 1}, %{a: 2}])
 
       assert_raise ArgumentError,
-                   ~S'cannot convert series of dtype {:struct, %{"a" => {:s, 64}}} into iovec',
+                   ~S'cannot convert series of dtype {:struct, [{"a", {:s, 64}}]} into iovec',
                    fn -> Series.to_iovec(series) end
     end
   end
@@ -5854,7 +5854,7 @@ defmodule Explorer.SeriesTest do
     test "extract field" do
       s = Series.from_list([%{a: 1}, %{a: 2}])
       a = Series.field(s, "a")
-      assert s.dtype == {:struct, %{"a" => {:s, 64}}}
+      assert s.dtype == {:struct, [{"a", {:s, 64}}]}
       assert a.dtype == {:s, 64}
     end
 
@@ -5886,7 +5886,7 @@ defmodule Explorer.SeriesTest do
     test "extracts struct from json with dtype" do
       s = Series.from_list(["{\"n\": 1}"])
       sj = Series.json_decode(s, {:struct, %{"n" => {:f, 64}}})
-      assert sj.dtype == {:struct, %{"n" => {:f, 64}}}
+      assert sj.dtype == {:struct, [{"n", {:f, 64}}]}
       assert Series.to_list(sj) == [%{"n" => 1.0}]
     end
   end

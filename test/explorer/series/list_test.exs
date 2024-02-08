@@ -171,18 +171,28 @@ defmodule Explorer.Series.ListTest do
 
     test "list of structs" do
       series =
-        Series.from_list([[%{"a" => 42}], []], dtype: {:list, {:struct, %{"a" => :integer}}})
+        Series.from_list([[%{"a" => 42}], []], dtype: {:list, {:struct, [{"a", :integer}]}})
 
-      assert Series.dtype(series) == {:list, {:struct, %{"a" => {:s, 64}}}}
+      assert Series.dtype(series) == {:list, {:struct, [{"a", {:s, 64}}]}}
       assert Series.to_list(series) == [[%{"a" => 42}], []]
     end
 
     test "list of structs with first empty" do
       series =
-        Series.from_list([[], [%{"a" => 42}], []], dtype: {:list, {:struct, %{"a" => :integer}}})
+        Series.from_list([[], [%{"a" => 42}], []], dtype: {:list, {:struct, [{"a", :integer}]}})
 
-      assert Series.dtype(series) == {:list, {:struct, %{"a" => {:s, 64}}}}
+      assert Series.dtype(series) == {:list, {:struct, [{"a", {:s, 64}}]}}
       assert Series.to_list(series) == [[], [%{"a" => 42}], []]
+    end
+
+    test "list of structs and multiple fields" do
+      series =
+        Series.from_list([[], [%{"a" => 42, "b" => "f"}], []],
+          dtype: {:list, {:struct, [{"a", :integer}, {"b", :string}]}}
+        )
+
+      assert Series.dtype(series) == {:list, {:struct, [{"a", {:s, 64}}, {"b", :string}]}}
+      assert Series.to_list(series) == [[], [%{"a" => 42, "b" => "f"}], []]
     end
   end
 

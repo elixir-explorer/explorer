@@ -664,8 +664,8 @@ defmodule Explorer.DataFrameTest do
     test "extracts a field from struct to new column" do
       df = DF.new([%{a: %{n: 1}}, %{a: %{n: 1}}])
       df2 = DF.mutate(df, n: field(a, "n"))
-      assert df.dtypes == %{"a" => {:struct, %{"n" => {:s, 64}}}}
-      assert df2.dtypes == %{"a" => {:struct, %{"n" => {:s, 64}}}, "n" => {:s, 64}}
+      assert df.dtypes == %{"a" => {:struct, [{"n", {:s, 64}}]}}
+      assert df2.dtypes == %{"a" => {:struct, [{"n", {:s, 64}}]}, "n" => {:s, 64}}
     end
 
     test "throws error when a field is not found in struct" do
@@ -4297,7 +4297,7 @@ defmodule Explorer.DataFrameTest do
                "dt" => {:datetime, :microsecond},
                "f" => {:f, 64},
                "l" => {:list, {:s, 64}},
-               "st" => {:struct, %{"n" => {:s, 64}}}
+               "st" => {:struct, [{"n", {:s, 64}}]}
              }
 
       assert df1 |> DF.collect() |> DF.to_columns() == %{

@@ -130,7 +130,7 @@ defmodule Explorer.PolarsBackend.Shared do
     series =
       for {column, values} <- Table.to_columns(list) do
         column = to_string(column)
-        inner_type = Map.fetch!(fields, column)
+        {^column, inner_type} = List.keyfind!(fields, column, 0)
         from_list(values, inner_type, column)
       end
 
