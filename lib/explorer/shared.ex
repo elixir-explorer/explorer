@@ -53,13 +53,21 @@ defmodule Explorer.Shared do
     inner_types
     |> Enum.reduce_while([], fn {key, dtype}, normalized_dtypes ->
       case normalise_dtype(dtype) do
-        nil -> {:halt, nil}
-        dtype -> {:cont, List.keystore(normalized_dtypes, key, 0, {key, dtype})}
+        nil ->
+          {:halt, nil}
+
+        dtype ->
+          key = to_string(key)
+          {:cont, List.keystore(normalized_dtypes, key, 0, {key, dtype})}
       end
     end)
     |> then(fn
-      nil -> nil
-      normalized_dtypes -> {:struct, normalized_dtypes}
+      nil ->
+        nil
+
+      normalized_dtypes ->
+        {:struct,
+         if(is_map(inner_types), do: Enum.sort(normalized_dtypes), else: normalized_dtypes)}
     end)
   end
 
@@ -74,11 +82,6 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
-
-  def normalise_dtype({:struct, enum}) do
-    normalized = Enum.map(enum, fn {k, v} -> {to_string(k), normalize_dtype(v)} end)
-    {:struct, if(is_map(enum), do: Enum.sort(normalized), else: normalized)}
-  end
 
   def normalise_dtype(_dtype), do: nil
 

@@ -85,6 +85,18 @@ defmodule Explorer.Series.StructTest do
       assert Series.to_list(series) == [[%{"a" => 1}, %{"a" => 2}], [%{"a" => 3}]]
     end
 
+    test "allows custom dtype for struct values" do
+      s = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}], dtype: {:struct, a: :u8})
+      assert s.dtype == {:struct, [{"a", {:u, 8}}]}
+
+      assert Series.to_list(s) == [%{"a" => 1}, %{"a" => 3}, %{"a" => 5}]
+
+      s1 = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}], dtype: {:struct, %{"a" => :s16}})
+      assert s1.dtype == {:struct, [{"a", {:s, 16}}]}
+
+      assert Series.to_list(s1) == [%{"a" => 1}, %{"a" => 3}, %{"a" => 5}]
+    end
+
     test "preserves manually provided dtype order" do
       series =
         Series.from_list(
