@@ -75,8 +75,10 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
 
-  def normalise_dtype({:struct, map}) when is_map(map),
-    do: {:struct, map |> Map.to_list() |> List.keysort(0)}
+  def normalise_dtype({:struct, enum}) do
+    normalized = Enum.map(enum, fn {k, v} -> {to_string(k), normalize_dtype(v)} end)
+    {:struct, if(is_map(enum), do: Enum.sort(normalized), else: normalized)}
+  end
 
   def normalise_dtype(_dtype), do: nil
 
