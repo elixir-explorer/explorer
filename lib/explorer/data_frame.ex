@@ -5612,8 +5612,8 @@ defmodule Explorer.DataFrame do
       columns
       |> Enum.zip(dtypes)
       |> Enum.reduce({%{}, %{}}, fn {column, {:struct, inner_dtypes}}, {new_dtypes, new_names} ->
-        new_dtypes = Map.merge(new_dtypes, inner_dtypes)
-        new_names = Map.put(new_names, column, Map.keys(inner_dtypes))
+        new_dtypes = Map.merge(new_dtypes, Map.new(inner_dtypes))
+        new_names = Map.put(new_names, column, Enum.map(inner_dtypes, &elem(&1, 0)))
 
         {new_dtypes, new_names}
       end)

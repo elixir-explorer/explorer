@@ -4,7 +4,6 @@ use polars::datatypes::DataType;
 use polars::datatypes::Field;
 use polars::datatypes::TimeUnit;
 use rustler::NifTaggedEnum;
-use std::collections::HashMap;
 use std::ops::Deref;
 
 impl rustler::Encoder for Box<ExSeriesDtype> {
@@ -56,7 +55,7 @@ pub enum ExSeriesDtype {
     Datetime(ExTimeUnit),
     Duration(ExTimeUnit),
     List(Box<ExSeriesDtype>),
-    Struct(HashMap<String, ExSeriesDtype>),
+    Struct(Vec<(String, ExSeriesDtype)>),
 }
 
 impl TryFrom<&DataType> for ExSeriesDtype {
@@ -108,11 +107,11 @@ impl TryFrom<&DataType> for ExSeriesDtype {
             )?))),
 
             DataType::Struct(fields) => {
-                let mut struct_fields = HashMap::new();
+                let mut struct_fields = Vec::new();
 
                 for field in fields {
                     struct_fields
-                        .insert(field.name().to_string(), Self::try_from(field.data_type())?);
+                        .push((field.name().to_string(), Self::try_from(field.data_type())?));
                 }
 
                 Ok(ExSeriesDtype::Struct(struct_fields))

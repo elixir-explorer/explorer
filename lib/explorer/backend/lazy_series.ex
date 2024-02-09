@@ -1090,7 +1090,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def field(%Series{dtype: {:struct, inner_dtype}} = series, name) do
-    dtype = inner_dtype[name]
+    {^name, dtype} = List.keyfind!(inner_dtype, name, 0)
     data = new(:field, [lazy_series!(series), name], dtype)
 
     Backend.Series.new(data, dtype)

@@ -20,9 +20,9 @@ defmodule Explorer.Series do
     * `:time` - Time type that unwraps to `Elixir.Time`
     * `{:list, dtype}` - A recursive dtype that can store lists. Examples: `{:list, :boolean}` or
       a nested list dtype like `{:list, {:list, :boolean}}`.
-    * `{:struct, %{key => dtype}}` - A recursive dtype that can store Arrow/Polars structs (not to be
+    * `{:struct, [{key, dtype}]}` - A recursive dtype that can store Arrow/Polars structs (not to be
       confused with Elixir's struct). This type unwraps to Elixir maps with string keys. Examples:
-      `{:struct, %{"a" => :string}}` or a nested struct dtype like `{:struct, %{"a" => {:struct, %{"b" => :string}}}}`.
+      `{:struct, [{"a", :string}]}` or a nested struct dtype like `{:struct, [{"a", {:struct, [{"b", :string}]}}]}`.
 
   When passing a dtype as argument, aliases are supported for convenience
   and compatibility with the Elixir ecosystem:
@@ -151,7 +151,7 @@ defmodule Explorer.Series do
   @type datetime_dtype :: {:datetime, time_unit}
   @type duration_dtype :: {:duration, time_unit}
   @type list_dtype :: {:list, dtype()}
-  @type struct_dtype :: {:struct, %{String.t() => dtype()}}
+  @type struct_dtype :: {:struct, [{String.t(), dtype()}]}
 
   @type signed_integer_dtype :: {:s, 8} | {:s, 16} | {:s, 32} | {:s, 64}
   @type unsigned_integer_dtype :: {:u, 8} | {:u, 16} | {:u, 32} | {:u, 64}
@@ -6069,12 +6069,12 @@ defmodule Explorer.Series do
   """
   @doc type: :struct_wise
   @spec field(Series.t(), String.t()) :: Series.t()
-  def field(%Series{dtype: {:struct, dtype}} = series, name) when is_binary(name) do
-    if Map.has_key?(dtype, name) do
+  def field(%Series{dtype: {:struct, dtypes}} = series, name) when is_binary(name) do
+    if List.keymember?(dtypes, name, 0) do
       apply_series(series, :field, [name])
     else
       raise ArgumentError,
-            "field #{inspect(name)} not found in fields #{inspect(Map.keys(dtype))}"
+            "field #{inspect(name)} not found in fields #{inspect(Enum.map(dtypes, &elem(&1, 0)))}"
     end
   end
 
@@ -6091,7 +6091,7 @@ defmodule Explorer.Series do
       >
 
       iex> s = Series.from_list(["{\\"a\\":1}"])
-      iex> Series.json_decode(s, {:struct, %{"a" => {:s, 64}}})
+      iex> Series.json_decode(s, {:struct, [{"a", {:s, 64}}]})
       #Explorer.Series<
         Polars[1]
         struct[1] [%{"a" => 1}]

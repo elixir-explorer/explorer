@@ -51,15 +51,23 @@ defmodule Explorer.Shared do
 
   def normalise_dtype({:struct, inner_types}) do
     inner_types
-    |> Enum.reduce_while(%{}, fn {key, dtype}, normalized_dtypes ->
+    |> Enum.reduce_while([], fn {key, dtype}, normalized_dtypes ->
       case normalise_dtype(dtype) do
-        nil -> {:halt, nil}
-        dtype -> {:cont, Map.put(normalized_dtypes, key, dtype)}
+        nil ->
+          {:halt, nil}
+
+        dtype ->
+          key = to_string(key)
+          {:cont, List.keystore(normalized_dtypes, key, 0, {key, dtype})}
       end
     end)
     |> then(fn
-      nil -> nil
-      normalized_dtypes -> {:struct, normalized_dtypes}
+      nil ->
+        nil
+
+      normalized_dtypes ->
+        {:struct,
+         if(is_map(inner_types), do: Enum.sort(normalized_dtypes), else: normalized_dtypes)}
     end)
   end
 
@@ -74,6 +82,7 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
+
   def normalise_dtype(_dtype), do: nil
 
   @doc """
@@ -316,14 +325,15 @@ defmodule Explorer.Shared do
 
   defp infer_struct(%{} = map, types) do
     types =
-      for {key, value} <- map, into: %{} do
+      for {key, value} <- map do
         key = to_string(key)
 
         cond do
           types == nil ->
             {key, infer_type(value, :null)}
 
-          type = types[key] ->
+          result = List.keyfind(types, key, 0) ->
+            {^key, type} = result
             {key, infer_type(value, type)}
 
           true ->
@@ -332,7 +342,7 @@ defmodule Explorer.Shared do
         end
       end
 
-    {:struct, types}
+    {:struct, List.keysort(types, 0)}
   end
 
   defp merge_preferred(type, type), do: type
@@ -348,7 +358,19 @@ defmodule Explorer.Shared do
   end
 
   defp merge_preferred({:struct, inferred}, {:struct, preferred}) do
-    {:struct, Map.merge(inferred, preferred, fn _, v1, v2 -> merge_preferred(v1, v2) end)}
+    {remaining, all_merged} =
+      Enum.reduce(preferred, {inferred, []}, fn {col, dtype}, {inferred_rest, merged} ->
+        case List.keytake(inferred_rest, col, 0) do
+          {{^col, inferred_dtype}, rest} ->
+            solved = merge_preferred(inferred_dtype, dtype)
+            {rest, List.keystore(merged, col, 0, {col, solved})}
+
+          nil ->
+            {inferred, List.keystore(merged, col, 0, {col, dtype})}
+        end
+      end)
+
+    {:struct, all_merged ++ remaining}
   end
 
   defp merge_preferred(inferred, _preferred) do
@@ -366,8 +388,11 @@ defmodule Explorer.Shared do
   """
   def cast_numerics(list, {:struct, dtypes}) when is_list(list) do
     Enum.map(list, fn item ->
-      Map.new(item, fn {field, inner_value} ->
-        inner_dtype = Map.fetch!(dtypes, to_string(field))
+      Enum.map(item, fn {field, inner_value} ->
+        column = to_string(field)
+
+        {^column, inner_dtype} = List.keyfind!(dtypes, column, 0)
+
         [casted_value] = cast_numerics([inner_value], inner_dtype)
         {field, casted_value}
       end)
@@ -537,7 +562,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:duration, :microsecond}), do: "duration[μs]"
   def dtype_to_string({:duration, :nanosecond}), do: "duration[ns]"
   def dtype_to_string({:list, dtype}), do: "list[" <> dtype_to_string(dtype) <> "]"
-  def dtype_to_string({:struct, fields}), do: "struct[#{map_size(fields)}]"
+  def dtype_to_string({:struct, fields}), do: "struct[#{length(fields)}]"
   def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
   def dtype_to_string({:s, size}), do: "s" <> Integer.to_string(size)
   def dtype_to_string({:u, size}), do: "u" <> Integer.to_string(size)
