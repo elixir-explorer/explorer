@@ -342,7 +342,7 @@ defmodule Explorer.Shared do
         end
       end
 
-    {:struct, List.keysort(types, 0)}
+    {:struct, Enum.sort(types)}
   end
 
   defp merge_preferred(type, type), do: type

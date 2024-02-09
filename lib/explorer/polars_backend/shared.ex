@@ -126,23 +126,32 @@ defmodule Explorer.PolarsBackend.Shared do
     Native.s_from_list_of_series(name, series)
   end
 
-  def from_list(list, {:struct, fields} = dtype, name) when is_list(list) do
+  def from_list([], {:struct, _} = dtype, name) do
+    polars_series = Native.s_from_list_of_series_as_structs(name, [])
+    {:ok, casted} = Native.s_cast(polars_series, dtype)
+    casted
+  end
+
+  def from_list(list, {:struct, fields}, name) when is_list(list) do
+    columns = Table.to_columns(list)
+
     series =
-      for {column, values} <- Table.to_columns(list) do
-        column = to_string(column)
-        {^column, inner_type} = List.keyfind!(fields, column, 0)
-        from_list(values, inner_type, column)
+      for {field, inner_dtype} <- fields do
+        column =
+          Map.get_lazy(columns, field, fn ->
+            try do
+              String.to_existing_atom(field)
+            rescue
+              _ -> Map.fetch!(columns, field)
+            else
+              atom -> Map.fetch!(columns, atom)
+            end
+          end)
+
+        from_list(column, inner_dtype, field)
       end
 
     Native.s_from_list_of_series_as_structs(name, series)
-    |> then(fn polars_series ->
-      if Native.s_dtype(polars_series) != dtype do
-        {:ok, casted} = Native.s_cast(polars_series, dtype)
-        casted
-      else
-        polars_series
-      end
-    end)
   end
 
   def from_list(list, dtype, name) when is_list(list) do
