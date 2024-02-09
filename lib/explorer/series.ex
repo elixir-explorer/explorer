@@ -168,6 +168,7 @@ defmodule Explorer.Series do
           number()
           | non_finite()
           | boolean()
+          | map()
           | String.t()
           | Date.t()
           | Time.t()
