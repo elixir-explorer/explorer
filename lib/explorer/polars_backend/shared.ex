@@ -133,7 +133,13 @@ defmodule Explorer.PolarsBackend.Shared do
   end
 
   def from_list(list, {:struct, fields}, name) when is_list(list) do
-    columns = Table.to_columns(list)
+    columns =
+      list
+      |> Enum.map(fn
+        nil -> Enum.map(fields, fn {k, _} -> {k, nil} end)
+        x -> x
+      end)
+      |> Table.to_columns()
 
     series =
       for {field, inner_dtype} <- fields do
