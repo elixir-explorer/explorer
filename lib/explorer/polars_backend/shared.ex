@@ -136,10 +136,16 @@ defmodule Explorer.PolarsBackend.Shared do
     columns = Map.new(fields, fn {k, _v} -> {k, []} end)
 
     columns =
-      Enum.reduce(list, columns, fn row, columns ->
-        Enum.reduce(row, columns, fn {field, value}, columns ->
-          Map.update!(columns, field, &[value | &1])
-        end)
+      Enum.reduce(list, columns, fn
+        nil, columns ->
+          Enum.reduce(fields, columns, fn {field, _}, columns ->
+            Map.update!(columns, field, &[nil | &1])
+          end)
+
+        row, columns ->
+          Enum.reduce(row, columns, fn {field, value}, columns ->
+            Map.update!(columns, field, &[value | &1])
+          end)
       end)
 
     series =

@@ -387,13 +387,17 @@ defmodule Explorer.Shared do
   Downcasts lists of mixed numeric types (float and int) to float.
   """
   def cast_series(list, {:struct, dtypes}) when is_list(list) do
-    Enum.map(list, fn item ->
-      Enum.map(item, fn {field, inner_value} ->
-        column = to_string(field)
-        {^column, inner_dtype} = List.keyfind!(dtypes, column, 0)
-        [casted_value] = cast_series([inner_value], inner_dtype)
-        {column, casted_value}
-      end)
+    Enum.map(list, fn
+      nil ->
+        nil
+
+      item ->
+        Enum.map(item, fn {field, inner_value} ->
+          column = to_string(field)
+          {^column, inner_dtype} = List.keyfind!(dtypes, column, 0)
+          [casted_value] = cast_series([inner_value], inner_dtype)
+          {column, casted_value}
+        end)
     end)
   end
 
