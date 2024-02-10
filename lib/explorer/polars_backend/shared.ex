@@ -133,22 +133,21 @@ defmodule Explorer.PolarsBackend.Shared do
   end
 
   def from_list(list, {:struct, fields}, name) when is_list(list) do
-    columns = Table.to_columns(list)
+    columns = Map.new(fields, fn {k, _v} -> {k, []} end)
+
+    columns =
+      Enum.reduce(list, columns, fn row, columns ->
+        Enum.reduce(row, columns, fn {field, value}, columns ->
+          Map.update!(columns, field, &[value | &1])
+        end)
+      end)
 
     series =
       for {field, inner_dtype} <- fields do
-        column =
-          Map.get_lazy(columns, field, fn ->
-            try do
-              String.to_existing_atom(field)
-            rescue
-              _ -> Map.fetch!(columns, field)
-            else
-              atom -> Map.fetch!(columns, atom)
-            end
-          end)
-
-        from_list(column, inner_dtype, field)
+        columns
+        |> Map.fetch!(field)
+        |> Enum.reverse()
+        |> from_list(inner_dtype, field)
       end
 
     Native.s_from_list_of_series_as_structs(name, series)
