@@ -21,6 +21,17 @@ defmodule Explorer.Series.StructTest do
              ]
     end
 
+    test "allow nils" do
+      s = Series.from_list([nil, %{"a" => 1, "b" => 2}, nil])
+      assert s.dtype == {:struct, [{"a", {:s, 64}}, {"b", {:s, 64}}]}
+
+      assert Series.to_list(s) == [
+               %{"a" => nil, "b" => nil},
+               %{"a" => 1, "b" => 2},
+               %{"a" => nil, "b" => nil}
+             ]
+    end
+
     test "allows struct values" do
       s = Series.from_list([%{a: 1}, %{a: 3}, %{a: 5}])
 
