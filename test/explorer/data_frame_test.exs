@@ -691,6 +691,56 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "with map " do
+      df = DF.new(%{a: [1, nil, 3], b: ["a", "b", nil]})
+      df1 = DF.mutate(df, c: %{a: a, b: b, lit: 1, null: is_nil(a)})
+      assert df1.names == ["a", "b", "c"]
+
+      assert df1.dtypes == %{
+               "a" => {:s, 64},
+               "b" => :string,
+               "c" =>
+                 {:struct,
+                  [{"a", {:s, 64}}, {"b", :string}, {"lit", {:s, 64}}, {"null", :boolean}]}
+             }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, nil, 3],
+               b: ["a", "b", nil],
+               c: [
+                 %{"a" => 1, "b" => "a", "lit" => 1, "null" => false},
+                 %{"a" => nil, "b" => "b", "lit" => 1, "null" => true},
+                 %{"a" => 3, "b" => nil, "lit" => 1, "null" => false}
+               ]
+             }
+    end
+
+    test "with map nested" do
+      df = DF.new(%{a: [1, nil, 3], b: ["a", "b", nil]})
+      df1 = DF.mutate(df, c: %{s: %{a: a, b: b}})
+      assert df1.names == ["a", "b", "c"]
+
+      assert df1.dtypes == %{
+               "a" => {:s, 64},
+               "b" => :string,
+               "c" => {:struct, [{"s", {:struct, [{"a", {:s, 64}}, {"b", :string}]}}]}
+             }
+    end
+
+    test "add eager series to dataframe" do
+      df = DF.new([%{a: 1}, %{a: 2}, %{a: 3}])
+      s = Series.from_list(["x", "y", "z"])
+
+      df1 = DF.mutate(df, s: ^s, a1: a + 1)
+      assert df1.names == ["a", "s", "a1"]
+
+      assert df1.dtypes == %{
+               "a" => {:s, 64},
+               "s" => :string,
+               "a1" => {:s, 64}
+             }
+    end
+
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
@@ -1542,12 +1592,12 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "raises when adding eager series" do
+    test "raises when adding eager series whose length does not match dataframe's length" do
       df = DF.new(a: [1, 2, 3])
-      series = Series.from_list([4, 5, 6])
+      series = Series.from_list([4, 5, 6, 7])
 
-      assert_raise ArgumentError,
-                   "expecting a lazy series. Consider using `Explorer.DataFrame.put/3` to add eager series to your dataframe.",
+      assert_raise RuntimeError,
+                   "Polars Error: lengths don't match: unable to add a column of length 4 to a DataFrame of height 3",
                    fn ->
                      DF.mutate(df, b: ^series)
                    end

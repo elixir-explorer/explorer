@@ -282,6 +282,7 @@ rustler::init!(
         // struct expressions
         expr_field,
         expr_json_decode,
+        expr_struct,
         // lazyframe
         lf_collect,
         lf_describe_plan,
