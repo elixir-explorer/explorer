@@ -185,6 +185,14 @@ defmodule Explorer.Series.ListTest do
       assert Series.to_list(series) == [[], [%{"a" => 42}], []]
     end
 
+    test "list of list of lists of integers with two levels empty" do
+      values = [[], [[]], [[1]]]
+      series = Series.from_list(values)
+
+      assert Series.dtype(series) == {:list, {:list, {:s, 64}}}
+      assert Series.to_list(series) == values
+    end
+
     test "list of structs and multiple fields" do
       series =
         Series.from_list([[], [%{"a" => 42, "b" => "f"}], []],
