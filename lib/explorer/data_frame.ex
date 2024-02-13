@@ -3635,11 +3635,10 @@ defmodule Explorer.DataFrame do
   end
 
   defp maybe_raise_column_duplicate(pairs) when is_column_pairs(pairs) do
-    Enum.reduce(pairs, MapSet.new(), fn {col, _val}, seen ->
-      case col in seen do
-        true -> raise ArgumentError, "duplicate column name \"#{col}\" in rename"
-        false -> MapSet.put(seen, col)
-      end
+    Enum.reduce(pairs, [], fn {col, _val}, seen ->
+      if col in seen, do: raise(ArgumentError, "duplicate column name \"#{col}\" in rename")
+
+      [col | seen]
     end)
   end
 
