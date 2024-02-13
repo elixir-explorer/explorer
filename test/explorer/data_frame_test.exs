@@ -2766,8 +2766,24 @@ defmodule Explorer.DataFrameTest do
     test "with keyword and a column that is duplicated" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-      assert_raise ArgumentError, ~r"duplicate column name \"a\"", fn ->
+      assert_raise ArgumentError, ~r"duplicate source or target column for rename", fn ->
         DF.rename(df, a: "first", a: "second")
+      end
+    end
+
+    test "with mix of column names and indices" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"duplicate source or target column for rename", fn ->
+        DF.rename(df, [{"a", "first"}, {0, "g"}])
+      end
+    end
+
+    test "with binary tuples and a column that is duplicated" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"duplicate source or target column for rename", fn ->
+        DF.rename(df, [{"a", "first"}, {"a", "second"}])
       end
     end
 
