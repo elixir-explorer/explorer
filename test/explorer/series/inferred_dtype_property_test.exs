@@ -7,7 +7,7 @@ defmodule Explorer.Series.InferredDtypePropertyTest do
 
     * A maximum of 3 used quite a bit. This is intentional. Usually issues stem
       from empty lists, not really long lists. By keeping lists small, we can
-      iterate much quicker through the solution space.
+      iterate much quicker through the input space.
   """
   use ExUnit.Case, async: true
   use ExUnitProperties
