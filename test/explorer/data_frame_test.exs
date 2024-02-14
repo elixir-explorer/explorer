@@ -2813,6 +2813,38 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
+    test "with keyword and a column that is duplicated" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"duplicate source column for rename", fn ->
+        DF.rename(df, a: "first", a: "second")
+      end
+    end
+
+    test "with mix of column name and index that is duplicated" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"duplicate source column for rename", fn ->
+        DF.rename(df, [{"a", "first"}, {0, "g"}])
+      end
+    end
+
+    test "with string column names that are duplicated" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"duplicate source column for rename", fn ->
+        DF.rename(df, [{"a", "first"}, {"a", "second"}])
+      end
+    end
+
+    test "with string column names and a target that is duplicated" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise RuntimeError, ~r"duplicate column names found", fn ->
+        DF.rename(df, [{"a", "first"}, {"b", "first"}])
+      end
+    end
+
     test "with a map and a column that doesn't exist" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 

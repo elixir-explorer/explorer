@@ -533,7 +533,7 @@ pub fn df_rename_columns(
 ) -> Result<ExDataFrame, ExplorerError> {
     let mut df = df.clone();
     for (original, new_name) in renames {
-        df.rename(original, new_name).expect("should rename");
+        df.rename(original, new_name)?;
     }
 
     Ok(ExDataFrame::new(df))

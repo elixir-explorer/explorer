@@ -3613,6 +3613,10 @@ defmodule Explorer.DataFrame do
 
       pairs ->
         pairs_map = Map.new(pairs)
+
+        if Enum.count(pairs) != map_size(pairs_map),
+          do: raise(ArgumentError, "duplicate source column for rename")
+
         old_dtypes = df.dtypes
 
         for {name, _} <- pairs do
