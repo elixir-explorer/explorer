@@ -2800,7 +2800,7 @@ defmodule Explorer.DataFrame do
 
     result = fun.(ldf)
 
-    column_pairs = to_column_pairs(df, result, &value!/1)
+    column_pairs = to_column_pairs(df, result, &query_to_series!/1)
 
     new_dtypes =
       for {column_name, series} <- column_pairs, into: %{} do
@@ -2817,21 +2817,21 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
   end
 
-  defp value!(%Series{} = series), do: series
+  defp query_to_series!(%Series{} = series), do: series
 
-  defp value!(list) when is_list(list) do
+  defp query_to_series!(list) when is_list(list) do
     raise ArgumentError,
           "expecting a lazy series or scalar value, but instead got a list. " <>
             "consider using `Explorer.Series.from_list/2` to create a `Series`, " <>
             "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
   end
 
-  defp value!(scalar) do
-    lazy_s = lazy_series!(scalar)
+  defp query_to_series!(scalar) do
+    lazy_s = query_to_lazy_series!(scalar)
     Explorer.Backend.Series.new(lazy_s, lazy_s.dtype)
   end
 
-  defp lazy_series!(scalar) do
+  defp query_to_lazy_series!(scalar) do
     case scalar do
       %Series{data: %LazySeries{}} = series ->
         series.data
@@ -2861,7 +2861,7 @@ defmodule Explorer.DataFrame do
       map = %{} when not is_struct(map) ->
         {series_list, dtype_list} =
           Enum.reduce(map, {[], []}, fn {name, series}, {sl, dl} ->
-            lazy_series = lazy_series!(series)
+            lazy_series = query_to_lazy_series!(series)
             name = if is_atom(name), do: Atom.to_string(name), else: name
             {[{name, lazy_series} | sl], [{name, lazy_series.dtype} | dl]}
           end)
