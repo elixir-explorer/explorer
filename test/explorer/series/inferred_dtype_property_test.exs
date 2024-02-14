@@ -83,13 +83,17 @@ defmodule Explorer.Series.InferredDtypePropertyTest do
 
   defp sub_dtype_of?({:struct, sub_dtype_keyword}, {:struct, dtype_keyword})
        when is_list(sub_dtype_keyword) and is_list(dtype_keyword) do
-    # Note: the need to sort here indicates we may want to normalize the result
-    # of `Series.dtype/1`.
-    Enum.sort(sub_dtype_keyword)
-    |> Enum.zip(Enum.sort(dtype_keyword))
-    |> Enum.all?(fn {{sub_key, sub_value}, {key, value}} ->
-      sub_key == key and sub_dtype_of?(sub_value, value)
-    end)
+    if length(sub_dtype_keyword) != length(dtype_keyword) do
+      false
+    else
+      # Note: the need to sort here indicates we may want to normalize the result
+      # of `Series.dtype/1`.
+      Enum.sort(sub_dtype_keyword)
+      |> Enum.zip(Enum.sort(dtype_keyword))
+      |> Enum.all?(fn {{sub_key, sub_value}, {key, value}} ->
+        sub_key == key and sub_dtype_of?(sub_value, value)
+      end)
+    end
   end
 
   defp sub_dtype_of?(_sub_dtype, _dtype), do: false
