@@ -47,16 +47,15 @@ jobs:
       - run: mix deps.compile
       - name: Run tests
         run: mix test --warnings-as-errors
+      - name: Run property tests
+        run: |
+          mix test --only property --warnings-as-errors
       - name: Compile once again but without optional deps
         run: mix compile --force --warnings-as-errors --no-optional-deps
       - name: Run cloud integration tests
         run: |
           mix localstack.setup
           mix test --only cloud_integration
-      - name: Run property tests
-        run: |
-          mix localstack.setup
-          mix test --only property
 
   format:
     runs-on: ubuntu-latest
