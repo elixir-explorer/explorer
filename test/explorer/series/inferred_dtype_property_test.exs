@@ -22,8 +22,9 @@ defmodule Explorer.Series.InferredDtypePropertyTest do
   defp dtype_generator do
     scalar_dtype_generator = StreamData.constant({:s, 64})
 
-    # WARNING! This method of generation is slightly flawed. The struct
-    # generator could result a list of tuples with duplicate keys.
+    # We don't need complicated keys: single letter strings should suffice.
+    key_generator = StreamData.string(?a..?z, min_length: 1, max_length: 1)
+
     dtype_generator =
       StreamData.tree(scalar_dtype_generator, fn generator ->
         StreamData.one_of([
@@ -33,13 +34,10 @@ defmodule Explorer.Series.InferredDtypePropertyTest do
           }),
           StreamData.tuple({
             StreamData.constant(:struct),
-            StreamData.nonempty(
-              StreamData.list_of(
-                StreamData.tuple({
-                  StreamData.string(:alphanumeric, min_length: 1),
-                  generator
-                })
-              )
+            StreamData.map(
+              StreamData.nonempty(StreamData.map_of(key_generator, generator, max_length: 3)),
+              # Building the list from a map then ensures unique keys.
+              &Enum.to_list/1
             )
           })
         ])
