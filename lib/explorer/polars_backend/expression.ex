@@ -323,6 +323,15 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(%Explorer.Duration{} = duration), do: Native.expr_duration(duration)
   def to_expr(%PolarsSeries{} = polars_series), do: Native.expr_series(polars_series)
 
+  def to_expr(map) when is_map(map) do
+    expr_list =
+      Enum.map(map, fn {name, series} ->
+        series |> to_expr() |> alias_expr(name)
+      end)
+
+    Native.expr_struct(expr_list)
+  end
+
   # Used by Explorer.PolarsBackend.DataFrame
   def alias_expr(%__MODULE__{} = expr, alias_name) when is_binary(alias_name) do
     Native.expr_alias(expr, alias_name)

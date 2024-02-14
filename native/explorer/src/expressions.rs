@@ -4,17 +4,17 @@
 // or an expression and returns an expression that is
 // wrapped in an Elixir struct.
 
-use polars::prelude::{
-    col, concat_str, cov, pearson_corr, spearman_rank_corr, when, IntoLazy, LiteralValue,
-    SortOptions,
-};
-use polars::prelude::{DataType, EWMOptions, Expr, Literal, StrptimeOptions, TimeUnit};
-
 use crate::datatypes::{
     ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExValidValue,
 };
 use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
+use polars::lazy::dsl;
+use polars::prelude::{
+    col, concat_str, cov, pearson_corr, spearman_rank_corr, when, IntoLazy, LiteralValue,
+    SortOptions,
+};
+use polars::prelude::{DataType, EWMOptions, Expr, Literal, StrptimeOptions, TimeUnit};
 
 // Useful to get an ExExpr vec into a vec of expressions.
 pub fn ex_expr_to_exprs(ex_exprs: Vec<ExExpr>) -> Vec<Expr> {
@@ -1077,5 +1077,12 @@ pub fn expr_field(expr: ExExpr, name: &str) -> ExExpr {
 pub fn expr_json_decode(expr: ExExpr, ex_dtype: ExSeriesDtype) -> ExExpr {
     let dtype = DataType::try_from(&ex_dtype).unwrap();
     let expr = expr.clone_inner().str().json_decode(Some(dtype), None);
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_struct(ex_exprs: Vec<ExExpr>) -> ExExpr {
+    let exprs = ex_exprs.iter().map(|e| e.clone_inner()).collect();
+    let expr = dsl::as_struct(exprs);
     ExExpr::new(expr)
 }
