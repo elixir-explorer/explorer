@@ -271,6 +271,7 @@ rustler::init!(
         expr_rstrip,
         expr_substring,
         expr_replace,
+        expr_json_path_match,
         // float round expressions
         expr_round,
         expr_floor,
@@ -484,6 +485,7 @@ rustler::init!(
         s_member,
         s_field,
         s_json_decode,
+        s_json_path_match
     ],
     load = on_load
 );

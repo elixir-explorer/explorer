@@ -725,6 +725,16 @@ defmodule Explorer.DataFrameTest do
                "b" => :string,
                "c" => {:struct, [{"s", {:struct, [{"a", {:s, 64}}, {"b", :string}]}}]}
              }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, nil, 3],
+               b: ["a", "b", nil],
+               c: [
+                 %{"s" => %{"a" => 1, "b" => "a"}},
+                 %{"s" => %{"a" => nil, "b" => "b"}},
+                 %{"s" => %{"a" => 3, "b" => nil}}
+               ]
+             }
     end
 
     test "add eager series to dataframe" do
@@ -739,6 +749,58 @@ defmodule Explorer.DataFrameTest do
                "s" => :string,
                "a1" => {:s, 64}
              }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               a1: [2, 3, 4],
+               s: ["x", "y", "z"]
+             }
+    end
+
+    test "json_path_match/2 - extract value from a valid json string using json path" do
+      df = DF.new([%{a: ~s({"n": 1})}, %{a: ~s({"m": 1})}])
+      df1 = DF.mutate(df, m: json_path_match(a, "$.m"), n: json_path_match(a, "$.n"))
+      assert df1.names == ["a", "m", "n"]
+
+      assert df1.dtypes == %{
+               "a" => :string,
+               "n" => :string,
+               "m" => :string
+             }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["{\"n\": 1}", "{\"m\": 1}"],
+               n: ["1", nil],
+               m: [nil, "1"]
+             }
+    end
+
+    test "json_path_match/2 - extracts nil from invalidjson using json path" do
+      df = DF.new([%{a: ~s({"n": 1)}, %{a: ~s({"m": 1})}])
+      df1 = DF.mutate(df, m: json_path_match(a, "$.m"), n: json_path_match(a, "$.n"))
+      assert df1.names == ["a", "m", "n"]
+
+      assert df1.dtypes == %{
+               "a" => :string,
+               "n" => :string,
+               "m" => :string
+             }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["{\"n\": 1", "{\"m\": 1}"],
+               m: [nil, "1"],
+               n: [nil, nil]
+             }
+    end
+
+    test "json_path_match/2 - raises for invalid json path" do
+      df = DF.new([%{a: ~s({"n": 1})}, %{a: ~s({"m": 1})}])
+
+      assert_raise RuntimeError,
+                   "Polars Error: ComputeError(ErrString(\"error compiling JSONpath expression path error: \\nEof\\n\"))",
+                   fn ->
+                     DF.mutate(df, n: json_path_match(a, "$."))
+                   end
     end
 
     test "adds new columns" do

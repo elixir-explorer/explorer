@@ -6118,6 +6118,36 @@ defmodule Explorer.Series do
     apply_series(series, :json_decode, [dtype])
   end
 
+  @doc """
+  Extracts a string series using a [`JSONPath`](https://goessner.net/articles/JsonPath/) from a series. 
+
+  ## Examples
+
+      iex> s = Series.from_list(["{\\"a\\":1}", "{\\"a\\":2}"])
+      iex> Series.json_path_match(s, "$.a")
+      #Explorer.Series<
+        Polars[2]
+        string [\"1\", \"2\"]
+      >
+
+  If `JSONPath` is not found or if the string is invalid JSON or `nil`, 
+  nil is returned for the given entry:
+
+      iex> s = Series.from_list(["{\\"a\\":1}", nil, "{\\"a\\":2}"])
+      iex> Series.json_path_match(s, "$.b")
+      #Explorer.Series<
+        Polars[3]
+        string [nil, nil, nil]
+      >
+
+  It raises an exception if the `JSONPath` is invalid.
+  """
+  @doc type: :string_wise
+  @spec json_path_match(Series.t(), String.t()) :: Series.t()
+  def json_path_match(%Series{dtype: :string} = series, path) do
+    apply_series(series, :json_path_match, [path])
+  end
+
   # Helpers
 
   defp apply_series(series, fun, args \\ []) do

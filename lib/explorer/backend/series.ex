@@ -287,6 +287,7 @@ defmodule Explorer.Backend.Series do
   @callback substring(s, integer(), non_neg_integer() | nil) :: s
   @callback split(s, String.t()) :: s
   @callback json_decode(s, dtype()) :: s
+  @callback json_path_match(s, String.t()) :: s
 
   # Date / DateTime
 
