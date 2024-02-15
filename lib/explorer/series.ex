@@ -6119,7 +6119,7 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Extracts a string series using a [`JSONPath`](https://goessner.net/articles/JsonPath/) from a series. 
+  Extracts a string series using a [`json_path`](https://goessner.net/articles/JsonPath/) from a series. 
 
   ## Examples
 
@@ -6144,8 +6144,8 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec json_path_match(Series.t(), String.t()) :: Series.t()
-  def json_path_match(%Series{dtype: :string} = series, path) do
-    apply_series(series, :json_path_match, [path])
+  def json_path_match(%Series{dtype: :string} = series, json_path) do
+    apply_series(series, :json_path_match, [json_path])
   end
 
   # Helpers
