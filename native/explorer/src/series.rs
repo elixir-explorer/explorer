@@ -1843,8 +1843,8 @@ pub fn s_json_decode(s: ExSeries, ex_dtype: ExSeriesDtype) -> Result<ExSeries, E
 }
 
 #[rustler::nif]
-pub fn s_json_path_match(s: ExSeries, path: &str) -> Result<ExSeries, ExplorerError> {
-    let p = path.to_owned();
+pub fn s_json_path_match(s: ExSeries, json_path: &str) -> Result<ExSeries, ExplorerError> {
+    let p = json_path.to_owned();
     let function = move |s: Series| {
         let ca = s.str()?;
         match ca.json_path_match(&p) {

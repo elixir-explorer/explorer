@@ -1105,8 +1105,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def json_path_match(series, path) do
-    data = new(:json_path_match, [lazy_series!(series), path], :string)
+  def json_path_match(series, json_path) do
+    data = new(:json_path_match, [lazy_series!(series), json_path], :string)
 
     Backend.Series.new(data, :string)
   end

@@ -1086,8 +1086,8 @@ pub fn expr_json_decode(expr: ExExpr, ex_dtype: ExSeriesDtype) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_json_path_match(expr: ExExpr, path: &str) -> ExExpr {
-    let p = path.to_owned();
+pub fn expr_json_path_match(expr: ExExpr, json_path: &str) -> ExExpr {
+    let p = json_path.to_owned();
     let function = move |s: Series| {
         let ca = s.str()?;
         match ca.json_path_match(&p) {

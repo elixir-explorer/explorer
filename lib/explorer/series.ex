@@ -6130,7 +6130,7 @@ defmodule Explorer.Series do
         string [\"1\", \"2\"]
       >
 
-  If `JSONPath` is not found or if the string is invalid JSON or `nil`, 
+  If `json_path` is not found or if the string is invalid JSON or `nil`, 
   nil is returned for the given entry:
 
       iex> s = Series.from_list(["{\\"a\\":1}", nil, "{\\"a\\":2}"])
@@ -6140,7 +6140,7 @@ defmodule Explorer.Series do
         string [nil, nil, nil]
       >
 
-  It raises an exception if the `JSONPath` is invalid.
+  It raises an exception if the `json_path` is invalid.
   """
   @doc type: :string_wise
   @spec json_path_match(Series.t(), String.t()) :: Series.t()
