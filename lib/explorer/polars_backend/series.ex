@@ -743,6 +743,10 @@ defmodule Explorer.PolarsBackend.Series do
   def json_decode(series, dtype),
     do: Shared.apply_series(series, :s_json_decode, [dtype])
 
+  @impl true
+  def json_path_match(series, json_path),
+    do: Shared.apply_series(series, :s_json_path_match, [json_path])
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

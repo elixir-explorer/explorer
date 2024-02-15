@@ -127,6 +127,7 @@ defmodule Explorer.Backend.LazySeries do
     substring: 3,
     split: 2,
     json_decode: 2,
+    json_path_match: 2,
     # Float round
     round: 2,
     floor: 1,
@@ -1101,6 +1102,13 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:json_decode, [lazy_series!(series), dtype], dtype)
 
     Backend.Series.new(data, dtype)
+  end
+
+  @impl true
+  def json_path_match(series, json_path) do
+    data = new(:json_path_match, [lazy_series!(series), json_path], :string)
+
+    Backend.Series.new(data, :string)
   end
 
   @remaining_non_lazy_operations [

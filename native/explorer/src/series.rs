@@ -1841,3 +1841,26 @@ pub fn s_json_decode(s: ExSeries, ex_dtype: ExSeriesDtype) -> Result<ExSeries, E
         .clone();
     Ok(ExSeries::new(s2))
 }
+
+#[rustler::nif]
+pub fn s_json_path_match(s: ExSeries, json_path: &str) -> Result<ExSeries, ExplorerError> {
+    let p = json_path.to_owned();
+    let function = move |s: Series| {
+        let ca = s.str()?;
+        match ca.json_path_match(&p) {
+            Ok(ca) => Ok(Some(ca.into_series())),
+            Err(e) => Err(PolarsError::ComputeError(format!("{e:?}").into())),
+        }
+    };
+    let s2 = s
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s.name())
+            .map(function, GetOutput::from_type(DataType::String))
+            .alias(s.name())])
+        .collect()?
+        .column(s.name())?
+        .clone();
+    Ok(ExSeries::new(s2))
+}

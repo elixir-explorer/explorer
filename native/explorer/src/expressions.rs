@@ -4,6 +4,11 @@
 // or an expression and returns an expression that is
 // wrapped in an Elixir struct.
 
+use polars::error::PolarsError;
+
+use polars::prelude::{GetOutput, IntoSeries, Utf8JsonPathImpl};
+use polars::series::Series;
+
 use crate::datatypes::{
     ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExValidValue,
 };
@@ -1081,8 +1086,25 @@ pub fn expr_json_decode(expr: ExExpr, ex_dtype: ExSeriesDtype) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_json_path_match(expr: ExExpr, json_path: &str) -> ExExpr {
+    let p = json_path.to_owned();
+    let function = move |s: Series| {
+        let ca = s.str()?;
+        match ca.json_path_match(&p) {
+            Ok(ca) => Ok(Some(ca.into_series())),
+            Err(e) => Err(PolarsError::ComputeError(format!("{e:?}").into())),
+        }
+    };
+    let expr = expr
+        .clone_inner()
+        .map(function, GetOutput::from_type(DataType::String));
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
 pub fn expr_struct(ex_exprs: Vec<ExExpr>) -> ExExpr {
     let exprs = ex_exprs.iter().map(|e| e.clone_inner()).collect();
     let expr = dsl::as_struct(exprs);
+
     ExExpr::new(expr)
 }
