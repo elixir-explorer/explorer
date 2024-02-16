@@ -12,7 +12,7 @@ pub fn s_log(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {
     let neg_infinity = atoms::neg_infinity();
 
     let float = match base.get_type() {
-        TermType::Number => base.decode::<f64>().unwrap(),
+        TermType::Float => base.decode::<f64>().unwrap(),
         TermType::Atom => {
             if nan.eq(&base) {
                 f64::NAN
