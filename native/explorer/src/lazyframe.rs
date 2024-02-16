@@ -266,14 +266,14 @@ pub fn lf_concat_columns(
     others: Vec<ExLazyFrame>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let id_column = "__row_count_id__";
-    let first = data.clone_inner().with_row_count(id_column, None);
+    let first = data.clone_inner().with_row_index(id_column, None);
 
     // We need to be able to handle arbitrary column name overlap.
     // This builds up a join and suffixes conflicting names with _N where
     // N is the index of the df in the join array.
     let (out_df, _) = others
         .iter()
-        .map(|data| data.clone_inner().with_row_count(id_column, None))
+        .map(|data| data.clone_inner().with_row_index(id_column, None))
         .fold((first, 1), |(acc_df, count), df| {
             let suffix = format!("_{count}");
             let new_df = acc_df
@@ -287,5 +287,5 @@ pub fn lf_concat_columns(
             (new_df, count + 1)
         });
 
-    Ok(ExLazyFrame::new(out_df.drop_columns([id_column])))
+    Ok(ExLazyFrame::new(out_df.drop([id_column])))
 }

@@ -2981,7 +2981,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list([<<3>>, <<4>>], dtype: :binary)
 
       assert_raise RuntimeError,
-                   "Polars Error: invalid utf-8 sequence",
+                   "Polars Error: invalid utf8",
                    fn -> Series.format([s1, s2]) end
     end
 

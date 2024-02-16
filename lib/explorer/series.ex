@@ -1274,13 +1274,19 @@ defmodule Explorer.Series do
 
   """
   @doc type: :element_wise
-  def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: dtype} = categories)
-      when K.and(K.in(l_dtype, [:string | @integer_types]), K.in(dtype, [:string, :category])),
+  def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: :category} = categories)
+      when K.in(l_dtype, [:string | @integer_types]),
       do: apply_series(series, :categorise, [categories])
+
+  def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: :string} = categories)
+      when K.in(l_dtype, [:string | @integer_types]) do
+    categories = categories |> distinct() |> cast(:category)
+    apply_series(series, :categorise, [categories])
+  end
 
   def categorise(%Series{dtype: l_dtype} = series, [head | _] = categories)
       when K.and(K.in(l_dtype, [:string | @integer_types]), is_binary(head)),
-      do: apply_series(series, :categorise, [from_list(categories, dtype: :string)])
+      do: apply_series(series, :categorise, [from_list(categories, dtype: :category)])
 
   # Slice and dice
 
@@ -2086,7 +2092,7 @@ defmodule Explorer.Series do
       iex> s1 = Explorer.Series.from_list([<<1>>, <<239, 191, 19>>], dtype: :binary)
       iex> s2 = Explorer.Series.from_list([<<3>>, <<4>>], dtype: :binary)
       iex> Explorer.Series.format([s1, s2])
-      ** (RuntimeError) Polars Error: invalid utf-8 sequence
+      ** (RuntimeError) Polars Error: invalid utf8
   """
   @doc type: :shape
   @spec format([Series.t() | String.t()]) :: Series.t()
