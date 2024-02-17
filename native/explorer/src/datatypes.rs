@@ -465,15 +465,8 @@ impl<'a> rustler::Decoder<'a> for ExValidValue<'a> {
         match term.get_type() {
             TermType::Atom => term.decode::<bool>().map(ExValidValue::Bool),
             TermType::Binary => term.decode::<&'a str>().map(ExValidValue::Str),
-            TermType::Number => {
-                if let Ok(i) = term.decode::<i64>() {
-                    Ok(ExValidValue::I64(i))
-                } else if let Ok(f) = term.decode::<f64>() {
-                    Ok(ExValidValue::F64(f))
-                } else {
-                    Err(rustler::Error::BadArg)
-                }
-            }
+            TermType::Float => term.decode::<f64>().map(ExValidValue::F64),
+            TermType::Integer => term.decode::<i64>().map(ExValidValue::I64),
             TermType::Map => {
                 if let Ok(date) = term.decode::<ExDate>() {
                     Ok(ExValidValue::Date(date))
