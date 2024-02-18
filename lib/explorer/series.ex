@@ -2112,7 +2112,14 @@ defmodule Explorer.Series do
   @spec format([Series.t() | String.t()]) :: Series.t()
   def format([_ | _] = list) do
     list = cast_to_string(list)
-    impl!(list).format(list)
+
+    if impl = impl!(list) do
+      impl.format(list)
+    else
+      [hd | rest] = list
+      s = Series.from_list([hd], dtype: :string)
+      impl!([s]).format([s | rest])
+    end
   end
 
   defp cast_to_string(list) do
@@ -2125,8 +2132,6 @@ defmodule Explorer.Series do
 
       value when K.or(is_binary(value), K.is_nil(value)) ->
         value
-
-      # from_list([value], dtype: :string)
 
       other ->
         raise ArgumentError,

@@ -260,18 +260,6 @@ pub fn s_slice(series: ExSeries, offset: i64, length: usize) -> Result<ExSeries,
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_format(series_vec: Vec<ExSeries>) -> Result<ExSeries, ExplorerError> {
-    let mut iter = series_vec.iter();
-    let mut series = iter.next().unwrap().clone_inner().str()?.clone();
-
-    for s in iter {
-        series = series.concat(s.str()?);
-    }
-
-    Ok(ExSeries::new(series.into_series()))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_concat(series_vec: Vec<ExSeries>) -> Result<ExSeries, ExplorerError> {
     let mut iter = series_vec.iter();
     let mut series = iter.next().unwrap().clone_inner();

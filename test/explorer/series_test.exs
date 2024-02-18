@@ -3111,7 +3111,7 @@ defmodule Explorer.SeriesTest do
       s4 = Series.from_list(["m", "n", "o", "p"])
 
       assert Series.format([s1, " / ", s2, " - ", s3, " / ", s4]) |> Series.to_list() ==
-               ["a / e - i / m", "b / f - j / n", nil, "d / h - l / p"]
+               ["a / e - i / m", "b / f - j / n", "c / g -  / o", "d / h - l / p"]
     end
   end
 

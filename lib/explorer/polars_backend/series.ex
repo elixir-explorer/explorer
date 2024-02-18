@@ -134,7 +134,7 @@ defmodule Explorer.PolarsBackend.Series do
   def format(list) do
     {_, df_args, params} =
       Enum.reduce(list, {0, [], []}, fn s, {counter, df_args, params} ->
-        if is_binary(s) do
+        if is_binary(s) or Kernel.is_nil(s) do
           {counter, df_args, [s | params]}
         else
           counter = counter + 1
