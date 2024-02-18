@@ -1065,12 +1065,6 @@ pub fn expr_int_range(start: ExExpr, end: ExExpr, step: i64, dtype: ExSeriesDtyp
 }
 
 #[rustler::nif]
-pub fn expr_len() -> ExExpr {
-    let expr = dsl::count();
-    ExExpr::new(expr)
-}
-
-#[rustler::nif]
 pub fn expr_lengths(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 

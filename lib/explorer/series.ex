@@ -6024,12 +6024,8 @@ defmodule Explorer.Series do
   def member?(%Series{dtype: dtype}, _value),
     do: dtype_error("member?/2", dtype, [{:list, :_}])
 
-  def len() do
-    Explorer.Backend.LazySeries.len()
-  end
-
-  def row_index() do
-    Explorer.Backend.LazySeries.row_index()
+  def row_index(%Series{} = series) do
+    apply_series(series, :row_index)
   end
 
   def int_range(start, end_, step \\ 1) do

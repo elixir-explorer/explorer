@@ -167,7 +167,6 @@ rustler::init!(
         expr_head,
         expr_integer,
         expr_int_range,
-        expr_len,
         expr_peaks,
         expr_rank,
         expr_unary_not,

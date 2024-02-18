@@ -4454,10 +4454,10 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "row_index/2" do
-    test "len, int_range" do
+    test "int_range" do
       df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
 
-      df1 = DF.mutate(df, x: len())
+      df1 = DF.mutate(df, x: size(a))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 3, 5],
@@ -4477,7 +4477,7 @@ defmodule Explorer.DataFrameTest do
     test "works" do
       df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
 
-      df2 = DF.mutate(df, id: row_index()) |> DF.collect()
+      df2 = DF.mutate(df, id: row_index(a)) |> DF.collect()
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                a: [1, 3, 5],
@@ -4485,10 +4485,10 @@ defmodule Explorer.DataFrameTest do
                id: [0, 1, 2]
              }
 
-      df3 = DF.mutate(df, id: int_range(0, len()))
+      df3 = DF.mutate(df, id: int_range(0, size(a)))
       assert DF.to_columns(df3) == DF.to_columns(df2)
 
-      df4 = DF.mutate_with(df, fn _ -> [id: Series.row_index()] end)
+      df4 = DF.mutate_with(df, fn ldf -> [id: Series.row_index(ldf["a"])] end)
       assert DF.to_columns(df4) == DF.to_columns(df2)
     end
   end

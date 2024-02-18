@@ -146,9 +146,7 @@ defmodule Explorer.Backend.LazySeries do
     lengths: 1,
     member: 3,
     # Struct functions
-    field: 2,
-    # ?
-    len: 0
+    field: 2
   ]
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
@@ -1113,14 +1111,8 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, :string)
   end
 
-  def len() do
-    data = new(:len, [], {:u, 32})
-
-    Backend.Series.new(data, {:u, 32})
-  end
-
-  def row_index() do
-    data = new(:row_index, [], {:u, 32})
+  def row_index(series) do
+    data = new(:row_index, [lazy_series!(series)], {:u, 32})
 
     Backend.Series.new(data, {:u, 32})
   end
