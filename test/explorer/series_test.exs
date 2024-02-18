@@ -2917,6 +2917,10 @@ defmodule Explorer.SeriesTest do
       assert Series.format([s1, s2]) |> Series.to_list() == ["ac", "bd"]
     end
 
+    test "with two strings with nulls" do
+      assert Series.format(["a", nil, "b"]) |> Series.to_list() == ["ab"]
+    end
+
     test "with two strings" do
       assert Series.format(["a", "b"]) |> Series.to_list() == ["ab"]
     end
@@ -3727,6 +3731,42 @@ defmodule Explorer.SeriesTest do
 
       assert Series.to_list(categorized) == ["a", "c", "b", "a", "c"]
       assert Series.dtype(categorized) == :category
+    end
+
+    test "raise for string list with nils" do
+      categories = ["a", "b", "c", nil]
+      indexes = Series.from_list([0, 2, 1, 0, 2], dtype: :u32)
+
+      assert_raise ArgumentError,
+                   ~r"categories as strings cannot have nil values",
+                   fn -> Series.categorise(indexes, categories) end
+    end
+
+    test "raise for string list with duplicated" do
+      categories = ["a", "b", "c", "c"]
+      indexes = Series.from_list([0, 2, 1, 0, 2], dtype: :u32)
+
+      assert_raise ArgumentError,
+                   ~r"categories as strings cannot have duplicated values",
+                   fn -> Series.categorise(indexes, categories) end
+    end
+
+    test "raise for string series with nils" do
+      categories = Series.from_list(["a", "b", "c", nil], dtype: :string)
+      indexes = Series.from_list([0, 2, 1, 0, 2], dtype: :u32)
+
+      assert_raise ArgumentError,
+                   ~r"categories as strings cannot have nil values",
+                   fn -> Series.categorise(indexes, categories) end
+    end
+
+    test "raise for string series with duplicated" do
+      categories = Series.from_list(["a", "b", "c", "c"], dtype: :string)
+      indexes = Series.from_list([0, 2, 1, 0, 2], dtype: :u32)
+
+      assert_raise ArgumentError,
+                   ~r"categories as strings cannot have duplicated values",
+                   fn -> Series.categorise(indexes, categories) end
     end
   end
 
@@ -5361,6 +5401,12 @@ defmodule Explorer.SeriesTest do
   describe "join/2" do
     test "join/2" do
       series = Series.from_list([["1"], ["1", "2"]])
+
+      assert series |> Series.join("|") |> Series.to_list() == ["1", "1|2"]
+    end
+
+    test "with nulls" do
+      series = Series.from_list([["1"], ["1", nil, "2"]])
 
       assert series |> Series.join("|") |> Series.to_list() == ["1", "1|2"]
     end

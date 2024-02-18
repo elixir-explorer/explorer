@@ -1280,13 +1280,27 @@ defmodule Explorer.Series do
 
   def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: :string} = categories)
       when K.in(l_dtype, [:string | @integer_types]) do
-    categories = categories |> distinct() |> cast(:category)
+    if nil_count(categories) != 0,
+      do:
+        raise(
+          ArgumentError,
+          "categories as strings cannot have nil values"
+        )
+
+    if count(categories) != n_distinct(categories),
+      do:
+        raise(
+          ArgumentError,
+          "categories as strings cannot have duplicated values"
+        )
+
+    categories = cast(categories, :category)
     apply_series(series, :categorise, [categories])
   end
 
   def categorise(%Series{dtype: l_dtype} = series, [head | _] = categories)
       when K.and(K.in(l_dtype, [:string | @integer_types]), is_binary(head)),
-      do: apply_series(series, :categorise, [from_list(categories, dtype: :category)])
+      do: categorise(series, from_list(categories, dtype: :string))
 
   # Slice and dice
 
@@ -2109,8 +2123,10 @@ defmodule Explorer.Series do
       %Series{} = s ->
         cast(s, :string)
 
-      value when is_binary(value) ->
-        from_list([value], dtype: :string)
+      value when K.or(is_binary(value), K.is_nil(value)) ->
+        value
+
+      # from_list([value], dtype: :string)
 
       other ->
         raise ArgumentError,

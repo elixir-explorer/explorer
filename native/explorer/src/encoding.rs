@@ -603,11 +603,6 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
         DataType::Duration(time_unit) => duration_series_to_list(&s, *time_unit, env),
         DataType::Binary => generic_binary_series_to_list(&s.resource, &s, env),
         DataType::String => generic_string_series_to_list(&s, env),
-        //     generic_binary_series_to_list(&s.resource, s.str()?.downcast_iter(), env)
-        // }
-        // DataType::Binary => {
-        //     generic_binary_series_to_list(&s.resource, s.binary()?.downcast_iter(), env)
-        // }
         DataType::Categorical(Some(mapping), _) => categorical_series_to_list(&s, env, mapping),
         DataType::List(_inner_dtype) => s
             .list()?

@@ -1748,7 +1748,7 @@ pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_join(s1: ExSeries, separator: &str) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
         .list()?
-        .lst_join(&ChunkedArray::new("a", &[separator]), true)? //TODO: ignore_nulls
+        .lst_join(&ChunkedArray::new("a", &[separator]), true)?
         .into_series();
 
     Ok(ExSeries::new(s2))

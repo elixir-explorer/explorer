@@ -602,7 +602,7 @@ pub fn expr_last(expr: ExExpr) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_format(exprs: Vec<ExExpr>) -> ExExpr {
-    ExExpr::new(concat_str(ex_expr_to_exprs(exprs), "", true)) //TODO: ignore_nulls
+    ExExpr::new(concat_str(ex_expr_to_exprs(exprs), "", true))
 }
 
 #[rustler::nif]
@@ -1055,7 +1055,7 @@ pub fn expr_second(expr: ExExpr) -> ExExpr {
 pub fn expr_join(expr: ExExpr, sep: String) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.list().join(sep.lit(), true)) //TODO: ignore_nulls
+    ExExpr::new(expr.list().join(sep.lit(), true))
 }
 
 #[rustler::nif]
