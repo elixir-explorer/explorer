@@ -5855,23 +5855,6 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  describe "field/2" do
-    test "extract field" do
-      s = Series.from_list([%{a: 1}, %{a: 2}])
-      a = Series.field(s, "a")
-      assert s.dtype == {:struct, [{"a", {:s, 64}}]}
-      assert a.dtype == {:s, 64}
-    end
-
-    test "raise error - invalid field" do
-      s = Series.from_list([%{a: 1}, %{a: 2}])
-
-      assert_raise ArgumentError, "field \"m\" not found in fields [\"a\"]", fn ->
-        Series.field(s, "m")
-      end
-    end
-  end
-
   describe "json_decode/2" do
     test "raises for invalid json" do
       assert_raise RuntimeError,

@@ -6096,7 +6096,16 @@ defmodule Explorer.Series do
   @doc """
   Extracts a field from a struct series
 
+  The field can be an atom or string.
+
   ## Examples
+
+      iex> s = Series.from_list([%{a: 1}, %{a: 2}])
+      iex> Series.field(s, :a)
+      #Explorer.Series<
+        Polars[2]
+        s64 [1, 2]
+      >
 
       iex> s = Series.from_list([%{a: 1}, %{a: 2}])
       iex> Series.field(s, "a")
@@ -6106,8 +6115,11 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :struct_wise
-  @spec field(Series.t(), String.t()) :: Series.t()
-  def field(%Series{dtype: {:struct, dtypes}} = series, name) when is_binary(name) do
+  @spec field(Series.t(), String.t() | atom()) :: Series.t()
+  def field(%Series{dtype: {:struct, dtypes}} = series, name)
+      when K.or(is_binary(name), is_atom(name)) do
+    name = to_string(name)
+
     if List.keymember?(dtypes, name, 0) do
       apply_series(series, :field, [name])
     else

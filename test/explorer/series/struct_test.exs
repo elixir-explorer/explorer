@@ -223,4 +223,28 @@ defmodule Explorer.Series.StructTest do
              >\
              """
   end
+
+  describe "field/2" do
+    test "extract field using string key" do
+      s = Series.from_list([%{a: 1}, %{a: 2}])
+      a = Series.field(s, "a")
+      assert s.dtype == {:struct, [{"a", {:s, 64}}]}
+      assert a.dtype == {:s, 64}
+    end
+
+    test "extract field using atom key" do
+      s = Series.from_list([%{a: 1}, %{a: 2}])
+      a = Series.field(s, :a)
+      assert s.dtype == {:struct, [{"a", {:s, 64}}]}
+      assert a.dtype == {:s, 64}
+    end
+
+    test "raise error - invalid field" do
+      s = Series.from_list([%{a: 1}, %{a: 2}])
+
+      assert_raise ArgumentError, "field \"m\" not found in fields [\"a\"]", fn ->
+        Series.field(s, "m")
+      end
+    end
+  end
 end
