@@ -440,6 +440,7 @@ rustler::init!(
         s_rename,
         s_replace,
         s_reverse,
+        s_row_index,
         s_rstrip,
         s_sample_n,
         s_sample_frac,

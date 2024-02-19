@@ -237,11 +237,7 @@ defmodule Explorer.PolarsBackend.Series do
   def any?(series), do: Shared.apply_series(series, :s_any)
 
   @impl true
-  def row_index(series) do
-    Explorer.DataFrame.new(series: series)
-    |> Explorer.DataFrame.mutate_with(&[row_index: Series.row_index(&1[:series])])
-    |> Explorer.DataFrame.pull(:row_index)
-  end
+  def row_index(series), do: Shared.apply_series(series, :s_row_index)
 
   # Cumulative
 

@@ -383,6 +383,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_rename(_s, _name), do: err()
   def s_reverse(_s), do: err()
   def s_round(_s, _decimals), do: err()
+  def s_row_index(_s), do: err()
   def s_floor(_s), do: err()
   def s_ceil(_s), do: err()
   def s_rstrip(_s, _string), do: err()
