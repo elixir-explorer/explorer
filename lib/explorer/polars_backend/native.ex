@@ -210,11 +210,10 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_describe_filter_plan(_df, _expr), do: err()
   def expr_float(_number), do: err()
   def expr_integer(_number), do: err()
+  def expr_int_range(_start, _end, _step, _dtype), do: err()
   def expr_series(_series), do: err()
   def expr_string(_string), do: err()
   def expr_struct(_map), do: err()
-
-  def expr_int_range(_start, _end, _step, _dtype), do: err()
 
   # LazyFrame
   def lf_collect(_df), do: err()

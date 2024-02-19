@@ -116,6 +116,7 @@ defmodule Explorer.Backend.LazySeries do
     covariance: 3,
     all: 1,
     any: 1,
+    row_index: 1,
     # Strings
     contains: 2,
     replace: 3,
@@ -1111,39 +1112,11 @@ defmodule Explorer.Backend.LazySeries do
     Backend.Series.new(data, :string)
   end
 
+  @impl true
   def row_index(series) do
     data = new(:row_index, [lazy_series!(series)], {:u, 32})
 
     Backend.Series.new(data, {:u, 32})
-  end
-
-  def int_range(start, end_, step \\ 1) do
-    # TODO check boundaries?
-
-    # ** (RuntimeError) Polars Error: lengths don't match: unable to add a column of length 2 to
-    # a DataFrame of height 3
-
-    # TODO Should we also accept a Series? or only LazySeries?
-    {start, end_} =
-      case {start, end_} do
-        {%Series{}, %Series{}} ->
-          {lazy_series!(start), lazy_series!(end_)}
-
-        {%Series{}, _} ->
-          {lazy_series!(start), end_}
-
-        {_, %Series{}} ->
-          {start, lazy_series!(end_)}
-
-        {v1, v2} when is_integer(v1) and is_integer(v2) ->
-          {v1, v2}
-
-        {_, _} ->
-          raise ArgumentError, "invalid arguments"
-      end
-
-    data = new(:int_range, [start, end_, step], {:s, 64})
-    Backend.Series.new(data, {:s, 64})
   end
 
   @remaining_non_lazy_operations [

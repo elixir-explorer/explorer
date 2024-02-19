@@ -4453,43 +4453,24 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  describe "row_index/2" do
-    test "int_range" do
+  describe "row_index/1" do
+    test "works as row_count(), including offset" do
       df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
-
-      df1 = DF.mutate(df, x: size(a))
+      df1 = DF.mutate(df, index: row_index(a))
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 3, 5],
                b: [2, 4, 6],
-               x: [3, 3, 3]
+               index: [0, 1, 2]
              }
 
-      df2 = DF.mutate(df, x: int_range(0, 15, 5))
+      df2 = DF.mutate(df, id: row_index(a) + 1000)
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                a: [1, 3, 5],
                b: [2, 4, 6],
-               x: [0, 5, 10]
+               id: [1000, 1001, 1002]
              }
-    end
-
-    test "works" do
-      df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
-
-      df2 = DF.mutate(df, id: row_index(a)) |> DF.collect()
-
-      assert DF.to_columns(df2, atom_keys: true) == %{
-               a: [1, 3, 5],
-               b: [2, 4, 6],
-               id: [0, 1, 2]
-             }
-
-      df3 = DF.mutate(df, id: int_range(0, size(a)))
-      assert DF.to_columns(df3) == DF.to_columns(df2)
-
-      df4 = DF.mutate_with(df, fn ldf -> [id: Series.row_index(ldf["a"])] end)
-      assert DF.to_columns(df4) == DF.to_columns(df2)
     end
   end
 end

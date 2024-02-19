@@ -162,7 +162,6 @@ defmodule Explorer.PolarsBackend.Expression do
     slice: 2,
     slice: 3,
     row_index: 1,
-    int_range: 4,
     concat: 1,
     column: 1,
     correlation: 4,
@@ -299,16 +298,8 @@ defmodule Explorer.PolarsBackend.Expression do
   end
 
   def to_expr(%LazySeries{op: :row_index, args: [lazy_series]}) do
-    size = Native.expr_size(to_expr(lazy_series))
-    Native.expr_int_range(to_expr(0), size, 1, {:u, 32})
-  end
-
-  def to_expr(%LazySeries{
-        op: :int_range,
-        args: [start, end_, step],
-        dtype: dtype
-      }) do
-    Native.expr_int_range(to_expr(start), to_expr(end_), step, dtype)
+    size_expr = Native.expr_size(to_expr(lazy_series))
+    Native.expr_int_range(to_expr(0), size_expr, 1, {:u, 32})
   end
 
   for {op, arity} <- @all_expressions do

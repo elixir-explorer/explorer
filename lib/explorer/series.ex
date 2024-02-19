@@ -2909,6 +2909,44 @@ defmodule Explorer.Series do
   def any?(%Series{dtype: :boolean} = series), do: apply_series(series, :any?)
   def any?(%Series{dtype: dtype}), do: dtype_error("any?/1", dtype, [:boolean])
 
+  @doc """
+
+  Returns a series of N consecutive numbers, starting from 0.
+
+  ## Examples
+      iex> s = Series.from_list([nil, true, true])
+      iex> Series.row_index(s)
+      #Explorer.Series<
+        Polars[3]
+        u32 [0, 1, 2]
+      >
+
+  Can be used to add a row index as the first column in the DataFrame.
+  The resulting column does not have any special properties. It is a regular column of type
+  UInt32.
+
+      iex> require Explorer.DataFrame, as: DF
+      iex> df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
+      iex> DF.mutate(df, index: row_index(a)) |> DF.relocate("index", before: 0)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        index u32 [0, 1, 2]
+        a s64 [1, 3, 5]
+        b s64 [2, 4, 6]
+      >
+      iex> df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
+      iex> DF.mutate(df, id: row_index(a) + 1000)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        a s64 [1, 3, 5]
+        b s64 [2, 4, 6]
+        id s64 [1000, 1001, 1002]
+      >
+  """
+  @doc type: :shape
+  @spec row_index(Series.t()) :: Series.t()
+  def row_index(%Series{} = series), do: apply_series(series, :row_index)
+
   # Cumulative
 
   @doc """
@@ -6023,14 +6061,6 @@ defmodule Explorer.Series do
 
   def member?(%Series{dtype: dtype}, _value),
     do: dtype_error("member?/2", dtype, [{:list, :_}])
-
-  def row_index(%Series{} = series) do
-    apply_series(series, :row_index)
-  end
-
-  def int_range(start, end_, step \\ 1) do
-    Explorer.Backend.LazySeries.int_range(start, end_, step)
-  end
 
   # Escape hatch
 
