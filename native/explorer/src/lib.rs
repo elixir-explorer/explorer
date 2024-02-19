@@ -67,7 +67,12 @@ mod atoms {
         calendar,
         nan,
         infinity,
-        neg_infinity
+        neg_infinity,
+        ok,
+        error,
+        nil,
+        true_ = "true",
+        false_ = "false",
     }
 }
 

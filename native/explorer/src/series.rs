@@ -28,27 +28,47 @@ pub fn s_from_list_null(name: &str, length: usize) -> ExSeries {
     ExSeries::new(Series::new(name, s))
 }
 
-macro_rules! from_list {
-    ($name:ident, $type:ty) => {
+fn handle_list_decode_err(item: &Term, dtype: &str) -> Error {
+    let message = format!("the value {item:?} does not match the provided dtype {dtype}");
+    Error::Term(Box::new(message))
+}
+
+macro_rules! from_list_int {
+    ($name:ident, $type:ty, $dtype:expr) => {
         #[rustler::nif(schedule = "DirtyCpu")]
-        pub fn $name(name: &str, val: Vec<Option<$type>>) -> ExSeries {
-            ExSeries::new(Series::new(name, val.as_slice()))
+        pub fn $name(name: &str, val: Term) -> NifResult<ExSeries> {
+            let values: NifResult<Series> = val
+                .decode::<ListIterator>()?
+                .map(|item| match item.get_type() {
+                    TermType::Integer => item.decode::<Option<$type>>(),
+                    TermType::Atom => {
+                        if atoms::nil().eq(&item) {
+                            Ok(None)
+                        } else {
+                            Err(handle_list_decode_err(&item, &$dtype))
+                        }
+                    }
+                    _term_type => Err(handle_list_decode_err(&item, &$dtype)),
+                })
+                .collect::<NifResult<Series>>();
+
+            match values {
+                Ok(s) => Ok(ExSeries::new(s.with_name(&name))),
+                Err(x) => Err(x),
+            }
         }
     };
 }
 
-from_list!(s_from_list_s8, i8);
-from_list!(s_from_list_s16, i16);
-from_list!(s_from_list_s32, i32);
-from_list!(s_from_list_s64, i64);
+from_list_int!(s_from_list_s8, i8, "s8");
+from_list_int!(s_from_list_s16, i16, "s16");
+from_list_int!(s_from_list_s32, i32, "s32");
+from_list_int!(s_from_list_s64, i64, "s64");
 
-from_list!(s_from_list_u8, u8);
-from_list!(s_from_list_u16, u16);
-from_list!(s_from_list_u32, u32);
-from_list!(s_from_list_u64, u64);
-
-from_list!(s_from_list_bool, bool);
-from_list!(s_from_list_str, String);
+from_list_int!(s_from_list_u8, u8, "u8");
+from_list_int!(s_from_list_u16, u16, "u16");
+from_list_int!(s_from_list_u32, u32, "u32");
+from_list_int!(s_from_list_u64, u64, "u64");
 
 macro_rules! from_list_float {
     ($name:ident, $type:ty, $module:ident) => {
@@ -57,32 +77,31 @@ macro_rules! from_list_float {
             let nan = atoms::nan();
             let infinity = atoms::infinity();
             let neg_infinity = atoms::neg_infinity();
+            let type_name = stringify!($type);
 
-            let values: NifResult<Vec<Option<$type>>> = val
+            let values: NifResult<Series> = val
                 .decode::<ListIterator>()?
                 .map(|item| match item.get_type() {
                     TermType::Float => item.decode::<Option<$type>>(),
-                    TermType::Atom => Ok(if nan.eq(&item) {
-                        Some($module::NAN)
-                    } else if infinity.eq(&item) {
-                        Some($module::INFINITY)
-                    } else if neg_infinity.eq(&item) {
-                        Some($module::NEG_INFINITY)
-                    } else {
-                        None
-                    }),
-                    term_type => {
-                        let message = format!("from_list/2 not implemented for {term_type:?}");
-                        Err(Error::RaiseTerm(Box::new(message)))
+                    TermType::Atom => {
+                        if nan.eq(&item) {
+                            Ok(Some($module::NAN))
+                        } else if infinity.eq(&item) {
+                            Ok(Some($module::INFINITY))
+                        } else if neg_infinity.eq(&item) {
+                            Ok(Some($module::NEG_INFINITY))
+                        } else if atoms::nil().eq(&item) {
+                            Ok(None)
+                        } else {
+                            Err(handle_list_decode_err(&item, &type_name))
+                        }
                     }
+                    _term_type => Err(handle_list_decode_err(&item, &type_name)),
                 })
-                .collect::<NifResult<Vec<Option<$type>>>>();
+                .collect::<NifResult<Series>>();
 
-            match (values) {
-                Ok(x) => {
-                    let s = Series::new(name, x);
-                    Ok(ExSeries::new(s))
-                }
+            match values {
+                Ok(s) => Ok(ExSeries::new(s.with_name(&name))),
                 Err(x) => Err(x),
             }
         }
@@ -93,17 +112,102 @@ from_list_float!(s_from_list_f32, f32, f32);
 from_list_float!(s_from_list_f64, f64, f64);
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
-    ExSeries::new(
-        Series::new(
-            name,
-            val.iter()
-                .map(|d| d.map(|d| d.into()))
-                .collect::<Vec<Option<i32>>>(),
-        )
-        .cast(&DataType::Date)
-        .unwrap(),
-    )
+pub fn s_from_list_bool(name: &str, val: Term) -> NifResult<ExSeries> {
+    let dtype = "boolean";
+    let values: NifResult<Series> = val
+        .decode::<ListIterator>()?
+        .map(|item| match item.get_type() {
+            TermType::Atom => {
+                if atoms::nil().eq(&item) {
+                    Ok(None)
+                } else if atoms::true_().eq(&item) {
+                    Ok(Some(true))
+                } else if atoms::false_().eq(&item) {
+                    Ok(Some(false))
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            _term_type => Err(handle_list_decode_err(&item, dtype)),
+        })
+        .collect::<NifResult<Series>>();
+
+    match values {
+        Ok(s) => Ok(ExSeries::new(s.with_name(name))),
+        Err(x) => Err(x),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_str(name: &str, val: Term) -> NifResult<ExSeries> {
+    let dtype = "string";
+    let values: NifResult<Vec<Option<String>>> = val
+        .decode::<ListIterator>()?
+        .map(|item| match item.get_type() {
+            TermType::Binary => {
+                if let Ok(string) = item.decode::<String>() {
+                    Ok(Some(string))
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            TermType::Atom => {
+                if atoms::nil().eq(&item) {
+                    Ok(None)
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            _term_type => Err(handle_list_decode_err(&item, dtype)),
+        })
+        .collect::<NifResult<Vec<Option<String>>>>();
+
+    match values {
+        Ok(x) => {
+            let s = Series::new(name, x.as_slice());
+            Ok(ExSeries::new(s))
+        }
+        Err(x) => Err(x),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_date(name: &str, val: Term) -> NifResult<ExSeries> {
+    let dtype = "date";
+    let values: NifResult<Series> = val
+        .decode::<ListIterator>()?
+        .map(|item| match item.get_type() {
+            TermType::Map => {
+                if let Ok(date) = item.decode::<ExDate>() {
+                    Ok(Some(i32::from(date)))
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            TermType::Atom => {
+                if atoms::nil().eq(&item) {
+                    Ok(None)
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            _term_type => Err(handle_list_decode_err(&item, dtype)),
+        })
+        .collect::<NifResult<Series>>();
+
+    match values {
+        Ok(s) => {
+            match s
+                .with_name(name)
+                .cast(&DataType::Date)
+                .map_err(|e| Error::Term(Box::new(format!("{e:?}"))))
+            {
+                Ok(s) => Ok(ExSeries::new(s)),
+                Err(x) => Err(x),
+            }
+        }
+        Err(x) => Err(x),
+    }
 }
 
 // TODO: Phase out this function in favor of the `ExTimeUnit` enum.
@@ -118,68 +222,192 @@ fn precision_to_timeunit(precision: &str) -> TimeUnit {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision: &str) -> ExSeries {
+pub fn s_from_list_datetime(name: &str, val: Term, precision: &str) -> NifResult<ExSeries> {
     let timeunit = precision_to_timeunit(precision);
+    let dtype = "datetime";
 
-    ExSeries::new(
-        Series::new(
-            name,
-            val.iter()
-                .map(|dt| dt.map(|dt| dt.into()))
-                .collect::<Vec<Option<i64>>>(),
-        )
-        .cast(&DataType::Datetime(timeunit, None))
-        .unwrap(),
-    )
+    let values: NifResult<Series> = val
+        .decode::<ListIterator>()?
+        .map(|item| match item.get_type() {
+            TermType::Map => {
+                if let Ok(datetime) = item.decode::<ExDateTime>() {
+                    Ok(Some(i64::from(datetime)))
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            TermType::Atom => {
+                if atoms::nil().eq(&item) {
+                    Ok(None)
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            _term_type => Err(handle_list_decode_err(&item, dtype)),
+        })
+        .collect::<NifResult<Series>>();
+
+    match values {
+        Ok(s) => {
+            match s
+                .with_name(name)
+                .cast(&DataType::Datetime(timeunit, None))
+                .map_err(|e| Error::Term(Box::new(format!("{e:?}"))))
+            {
+                Ok(s) => Ok(ExSeries::new(s)),
+                Err(x) => Err(x),
+            }
+        }
+        Err(x) => Err(x),
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_duration(name: &str, val: Vec<Option<ExDuration>>, precision: &str) -> ExSeries {
+pub fn s_from_list_duration(name: &str, val: Term, precision: &str) -> NifResult<ExSeries> {
     let timeunit = precision_to_timeunit(precision);
+    let dtype = "duration";
 
-    ExSeries::new(
-        Series::new(
-            name,
-            val.iter()
-                .map(|d| d.map(|d| d.into()))
-                .collect::<Vec<Option<i64>>>(),
-        )
-        .cast(&DataType::Duration(timeunit))
-        .unwrap(),
-    )
+    let values: NifResult<Series> = val
+        .decode::<ListIterator>()?
+        .map(|item| match item.get_type() {
+            TermType::Map => {
+                if let Ok(duration) = item.decode::<ExDuration>() {
+                    Ok(Some(i64::from(duration)))
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            TermType::Atom => {
+                if atoms::nil().eq(&item) {
+                    Ok(None)
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            _term_type => Err(handle_list_decode_err(&item, dtype)),
+        })
+        .collect::<NifResult<Series>>();
+
+    match values {
+        Ok(s) => {
+            match s
+                .with_name(name)
+                .cast(&DataType::Duration(timeunit))
+                .map_err(|e| Error::Term(Box::new(format!("{e:?}"))))
+            {
+                Ok(s) => Ok(ExSeries::new(s)),
+                Err(x) => Err(x),
+            }
+        }
+        Err(x) => Err(x),
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_time(name: &str, val: Vec<Option<ExTime>>) -> ExSeries {
-    ExSeries::new(
-        Series::new(
-            name,
-            val.iter()
-                .map(|dt| dt.map(|dt| dt.into()))
-                .collect::<Vec<Option<i64>>>(),
-        )
-        .cast(&DataType::Time)
-        .unwrap(),
-    )
+pub fn s_from_list_time(name: &str, val: Term) -> NifResult<ExSeries> {
+    let dtype = "time";
+    let values: NifResult<Series> = val
+        .decode::<ListIterator>()?
+        .map(|item| match item.get_type() {
+            TermType::Map => {
+                if let Ok(time) = item.decode::<ExTime>() {
+                    Ok(Some(i64::from(time)))
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            TermType::Atom => {
+                if atoms::nil().eq(&item) {
+                    Ok(None)
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            _term_type => Err(handle_list_decode_err(&item, dtype)),
+        })
+        .collect::<NifResult<Series>>();
+
+    match values {
+        Ok(s) => {
+            match s
+                .with_name(name)
+                .cast(&DataType::Time)
+                .map_err(|e| Error::Term(Box::new(format!("{e:?}"))))
+            {
+                Ok(s) => Ok(ExSeries::new(s)),
+                Err(x) => Err(x),
+            }
+        }
+        Err(x) => Err(x),
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_binary(name: &str, val: Vec<Option<Binary>>) -> ExSeries {
-    ExSeries::new(Series::new(
-        name,
-        val.iter()
-            .map(|bin| bin.map(|bin| bin.as_slice()))
-            .collect::<Vec<Option<&[u8]>>>(),
-    ))
+pub fn s_from_list_binary(name: &str, val: Term) -> NifResult<ExSeries> {
+    let dtype = "binary";
+    let values: NifResult<Vec<Option<&[u8]>>> = val
+        .decode::<ListIterator>()?
+        .map(|item| match item.get_type() {
+            TermType::Binary => {
+                if let Ok(binary) = item.decode::<Binary>() {
+                    Ok(Some(binary.as_slice()))
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            TermType::Atom => {
+                if atoms::nil().eq(&item) {
+                    Ok(None)
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            _term_type => Err(handle_list_decode_err(&item, dtype)),
+        })
+        .collect::<NifResult<Vec<Option<&[u8]>>>>();
+
+    match values {
+        Ok(x) => Ok(ExSeries::new(Series::new(name, x))),
+        Err(x) => Err(x),
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries {
-    ExSeries::new(
-        Series::new(name, val.as_slice())
-            .cast(&DataType::Categorical(None, CategoricalOrdering::default()))
-            .unwrap(),
-    )
+pub fn s_from_list_categories(name: &str, val: Term) -> NifResult<ExSeries> {
+    let dtype = "category";
+    let values: NifResult<Vec<Option<String>>> = val
+        .decode::<ListIterator>()?
+        .map(|item| match item.get_type() {
+            TermType::Binary => {
+                if let Ok(string) = item.decode::<String>() {
+                    Ok(Some(string))
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            TermType::Atom => {
+                if atoms::nil().eq(&item) {
+                    Ok(None)
+                } else {
+                    Err(handle_list_decode_err(&item, dtype))
+                }
+            }
+            _term_type => Err(handle_list_decode_err(&item, dtype)),
+        })
+        .collect::<NifResult<Vec<Option<String>>>>();
+
+    match values {
+        Ok(x) => {
+            match Series::new(name, x.as_slice())
+                .cast(&DataType::Categorical(None, CategoricalOrdering::default()))
+                .map_err(|e| Error::Term(Box::new(format!("{e:?}"))))
+            {
+                Ok(s) => Ok(ExSeries::new(s)),
+                Err(x) => Err(x),
+            }
+        }
+        Err(x) => Err(x),
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
