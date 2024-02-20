@@ -2910,10 +2910,10 @@ defmodule Explorer.Series do
   def any?(%Series{dtype: dtype}), do: dtype_error("any?/1", dtype, [:boolean])
 
   @doc """
-
-  Returns a series of N consecutive numbers, starting from 0.
+  Returns a series of indexes for each item (row) in the series, starting from 0.
 
   ## Examples
+
       iex> s = Series.from_list([nil, true, true])
       iex> Series.row_index(s)
       #Explorer.Series<
@@ -2921,9 +2921,8 @@ defmodule Explorer.Series do
         u32 [0, 1, 2]
       >
 
-  Can be used to add a row index as the first column in the DataFrame.
-  The resulting column does not have any special properties. It is a regular column of type
-  UInt32.
+  This function can be used to add a row index as the first column of a dataframe.
+  The resulting column is a regular column of type `:u32`.
 
       iex> require Explorer.DataFrame, as: DF
       iex> df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
