@@ -2942,7 +2942,7 @@ defmodule Explorer.Series do
         id s64 [1000, 1001, 1002]
       >
   """
-  @doc type: :shape
+  @doc type: :element_wise
   @spec row_index(Series.t()) :: Series.t()
   def row_index(%Series{} = series), do: apply_series(series, :row_index)
 
@@ -6156,7 +6156,7 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Extracts a string series using a [`json_path`](https://goessner.net/articles/JsonPath/) from a series. 
+  Extracts a string series using a [`json_path`](https://goessner.net/articles/JsonPath/) from a series.
 
   ## Examples
 
@@ -6167,7 +6167,7 @@ defmodule Explorer.Series do
         string [\"1\", \"2\"]
       >
 
-  If `json_path` is not found or if the string is invalid JSON or `nil`, 
+  If `json_path` is not found or if the string is invalid JSON or `nil`,
   nil is returned for the given entry:
 
       iex> s = Series.from_list(["{\\"a\\":1}", nil, "{\\"a\\":2}"])
