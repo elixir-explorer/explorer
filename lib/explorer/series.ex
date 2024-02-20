@@ -2909,6 +2909,43 @@ defmodule Explorer.Series do
   def any?(%Series{dtype: :boolean} = series), do: apply_series(series, :any?)
   def any?(%Series{dtype: dtype}), do: dtype_error("any?/1", dtype, [:boolean])
 
+  @doc """
+  Returns a series of indexes for each item (row) in the series, starting from 0.
+
+  ## Examples
+
+      iex> s = Series.from_list([nil, true, true])
+      iex> Series.row_index(s)
+      #Explorer.Series<
+        Polars[3]
+        u32 [0, 1, 2]
+      >
+
+  This function can be used to add a row index as the first column of a dataframe.
+  The resulting column is a regular column of type `:u32`.
+
+      iex> require Explorer.DataFrame, as: DF
+      iex> df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
+      iex> DF.mutate(df, index: row_index(a)) |> DF.relocate("index", before: 0)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        index u32 [0, 1, 2]
+        a s64 [1, 3, 5]
+        b s64 [2, 4, 6]
+      >
+      iex> df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
+      iex> DF.mutate(df, id: row_index(a) + 1000)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        a s64 [1, 3, 5]
+        b s64 [2, 4, 6]
+        id s64 [1000, 1001, 1002]
+      >
+  """
+  @doc type: :shape
+  @spec row_index(Series.t()) :: Series.t()
+  def row_index(%Series{} = series), do: apply_series(series, :row_index)
+
   # Cumulative
 
   @doc """

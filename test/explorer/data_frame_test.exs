@@ -4452,4 +4452,25 @@ defmodule Explorer.DataFrameTest do
              }
     end
   end
+
+  describe "row_index/1" do
+    test "works as row_count(), including offset" do
+      df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
+      df1 = DF.mutate(df, index: row_index(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 3, 5],
+               b: [2, 4, 6],
+               index: [0, 1, 2]
+             }
+
+      df2 = DF.mutate(df, id: row_index(a) + 1000)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 3, 5],
+               b: [2, 4, 6],
+               id: [1000, 1001, 1002]
+             }
+    end
+  end
 end

@@ -1864,3 +1864,10 @@ pub fn s_json_path_match(s: ExSeries, json_path: &str) -> Result<ExSeries, Explo
         .clone();
     Ok(ExSeries::new(s2))
 }
+
+#[rustler::nif]
+pub fn s_row_index(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let len = u32::try_from(series.len())?;
+    let s = Series::new("row_index", 0..len);
+    Ok(ExSeries::new(s))
+}

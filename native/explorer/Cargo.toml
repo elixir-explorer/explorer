@@ -80,6 +80,7 @@ features = [
   "product",
   "peaks",
   "moment",
+  "range",
   "rank",
   "propagate_nans",
   "extract_jsonpath"
