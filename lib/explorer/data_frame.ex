@@ -4935,7 +4935,7 @@ defmodule Explorer.DataFrame do
     end
 
     {on, how} =
-      case {opts[:on], opts[:how]} do
+      case {List.wrap(opts[:on]), opts[:how]} do
         {[], :cross} ->
           {[], :cross}
 
