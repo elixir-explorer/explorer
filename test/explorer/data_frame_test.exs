@@ -2291,6 +2291,19 @@ defmodule Explorer.DataFrameTest do
       assert_raise ArgumentError, msg, fn -> DF.join(left, right, how: :inner_join) end
     end
 
+    test "with matching column indexes as single value" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
+
+      df = DF.join(left, right, on: 0)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"]
+             }
+    end
+
     test "with matching column indexes" do
       left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
       right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
