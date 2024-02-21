@@ -4751,7 +4751,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:on` - The columns to join on. Defaults to overlapping columns. Does not apply to cross join.
+    * `:on` - The column(s) to join on. Defaults to overlapping columns. Does not apply to cross join.
     * `:how` - One of the join types (as an atom) described above. Defaults to `:inner`.
 
   ## Examples
@@ -4935,7 +4935,7 @@ defmodule Explorer.DataFrame do
     end
 
     {on, how} =
-      case {opts[:on], opts[:how]} do
+      case {List.wrap(opts[:on]), opts[:how]} do
         {[], :cross} ->
           {[], :cross}
 

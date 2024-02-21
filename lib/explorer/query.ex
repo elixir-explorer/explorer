@@ -696,7 +696,7 @@ defmodule Explorer.Query do
   It is equivalent to `df[name]` but inside a query.
 
   This can also be used if you want to access a column
-  programatically, for example:
+  programmatically, for example:
 
       iex> df = Explorer.DataFrame.new(nums: [1, 2, 3])
       iex> name = :nums
@@ -706,7 +706,7 @@ defmodule Explorer.Query do
         nums s64 [3]
       >
 
-  For traversing multiple columns programatically,
+  For traversing multiple columns programmatically,
   see `across/0` and `across/1`.
   """
   defmacro col(name) do
