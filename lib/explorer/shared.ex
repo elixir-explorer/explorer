@@ -283,11 +283,14 @@ defmodule Explorer.Shared do
 
   def dtype_from_list!(list, nil), do: dtype_from_list!(list)
 
-  def dtype_from_list!(list, preferred_type) do
+  def dtype_from_list!(list, {prefix, _} = preferred_type) when prefix in [:list, :struct] do
     list
     |> dtype_from_list!()
     |> merge_preferred(preferred_type)
   end
+
+  # Skip Elixir-side checking for all but lists and structs
+  def dtype_from_list!(_list, preferred_type), do: preferred_type
 
   @non_finite [:nan, :infinity, :neg_infinity]
 
