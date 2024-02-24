@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.8.1] - 2024-02-24
+
+### Added
+
+- Add `Explorer.Series.field/2` to extract a field from a struct series.
+  It returns a new series with the field's dtype.
+
+- Add `Explorer.Series.json_decode/2` that can decode a string series containing
+  valid JSON objects according to `dtype`.
+
+- Add eager `count/1` and lazy `size/1` to `Explorer.Series`.
+
+- Add support for maps as expressions inside `Explorer.Query`. They are "converted"
+  to structs.
+
+- Add `json_path_match/2` to extract a string series from a string containing valid
+  JSON objects. See the article [JSONPath - XPath for JSON](https://goessner.net/articles/JsonPath/)
+  for details about JSON paths.
+
+- Add `Explorer.Series.row_index/1` to retrieve the index of rows starting from 0.
+
+- Add support for passing the `:on` column directly (instead of inside a list)
+  in `Explorer.DataFrame.join/3`.
+
+### Changed
+
+- Remove some deprecated functions from documentation.
+
+- Change internal representation of the `:struct` dtype to use list of tuples instead of a map
+  to represent the dtypes of each field. This shouldn't break because we normalise maps to lists
+  when a struct dtype is passed in `from_list/2` or `cast/2`.
+
+- Update Rustler minimum version to `~> 0.31`. Since Rustler is optional, this shouldn't affect
+  most of the users.
+
+### Fixed
+
+- Fix float overflow error to avoid crashing the VM, and instead it returns an argument error.
+
+- Fix `Explorer.DataFrame.print/2` for when the DF contains structs.
+
 ## [v0.8.0] - 2024-01-20
 
 ### Added
@@ -859,7 +900,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.8.1...HEAD
+[v0.8.1]: https://github.com/elixir-explorer/explorer/compare/v0.8.0...v0.8.1
 [v0.8.0]: https://github.com/elixir-explorer/explorer/compare/v0.7.2...v0.8.0
 [v0.7.2]: https://github.com/elixir-explorer/explorer/compare/v0.7.1...v0.7.2
 [v0.7.1]: https://github.com/elixir-explorer/explorer/compare/v0.7.0...v0.7.1
