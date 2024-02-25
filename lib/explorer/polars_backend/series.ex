@@ -132,10 +132,26 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def format(list) do
-    polars_series = for s <- list, do: s.data
+    {_, df_args, params} =
+      Enum.reduce(list, {0, [], []}, fn s, {counter, df_args, params} ->
+        if is_binary(s) or Kernel.is_nil(s) do
+          {counter, df_args, [s | params]}
+        else
+          counter = counter + 1
+          name = "#{counter}"
+          column = Explorer.Backend.LazySeries.new(:column, [name], :string)
+          {counter, [{name, s} | df_args], [column | params]}
+        end
+      end)
 
-    Shared.apply(:s_format, [polars_series])
-    |> Shared.create_series()
+    df = Explorer.PolarsBackend.DataFrame.from_series(df_args)
+    format_expr = Explorer.Backend.LazySeries.new(:format, [Enum.reverse(params)], :string)
+    out_dtypes = Map.put(df.dtypes, "result", :string)
+    out_names = ["result" | df.names]
+    out_df = %{df | dtypes: out_dtypes, names: out_names}
+
+    Explorer.PolarsBackend.DataFrame.mutate_with(df, out_df, [{"result", format_expr}])
+    |> Explorer.PolarsBackend.DataFrame.pull("result")
   end
 
   @impl true

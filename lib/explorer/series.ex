@@ -1274,13 +1274,27 @@ defmodule Explorer.Series do
 
   """
   @doc type: :element_wise
-  def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: dtype} = categories)
-      when K.and(K.in(l_dtype, [:string | @integer_types]), K.in(dtype, [:string, :category])),
+  def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: :category} = categories)
+      when K.in(l_dtype, [:string | @integer_types]),
       do: apply_series(series, :categorise, [categories])
+
+  def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: :string} = categories)
+      when K.in(l_dtype, [:string | @integer_types]) do
+    if nil_count(categories) != 0 do
+      raise(ArgumentError, "categories as strings cannot have nil values")
+    end
+
+    if count(categories) != n_distinct(categories) do
+      raise(ArgumentError, "categories as strings cannot have duplicated values")
+    end
+
+    categories = cast(categories, :category)
+    apply_series(series, :categorise, [categories])
+  end
 
   def categorise(%Series{dtype: l_dtype} = series, [head | _] = categories)
       when K.and(K.in(l_dtype, [:string | @integer_types]), is_binary(head)),
-      do: apply_series(series, :categorise, [from_list(categories, dtype: :string)])
+      do: categorise(series, from_list(categories, dtype: :string))
 
   # Slice and dice
 
@@ -2086,13 +2100,20 @@ defmodule Explorer.Series do
       iex> s1 = Explorer.Series.from_list([<<1>>, <<239, 191, 19>>], dtype: :binary)
       iex> s2 = Explorer.Series.from_list([<<3>>, <<4>>], dtype: :binary)
       iex> Explorer.Series.format([s1, s2])
-      ** (RuntimeError) Polars Error: invalid utf-8 sequence
+      ** (RuntimeError) Polars Error: invalid utf8
   """
   @doc type: :shape
   @spec format([Series.t() | String.t()]) :: Series.t()
   def format([_ | _] = list) do
     list = cast_to_string(list)
-    impl!(list).format(list)
+
+    if impl = impl!(list) do
+      impl.format(list)
+    else
+      [hd | rest] = list
+      s = Series.from_list([hd], dtype: :string)
+      impl!([s]).format([s | rest])
+    end
   end
 
   defp cast_to_string(list) do
@@ -2103,8 +2124,8 @@ defmodule Explorer.Series do
       %Series{} = s ->
         cast(s, :string)
 
-      value when is_binary(value) ->
-        from_list([value], dtype: :string)
+      value when K.or(is_binary(value), K.is_nil(value)) ->
+        value
 
       other ->
         raise ArgumentError,

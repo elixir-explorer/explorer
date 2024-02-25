@@ -9,6 +9,7 @@
 // Today we have the following formats: CSV, NDJSON, Parquet, Apache Arrow and Apache Arrow Stream.
 //
 use polars::prelude::*;
+use std::num::NonZeroUsize;
 
 use rustler::{Binary, Env, NewBinary};
 use std::convert::TryFrom;
@@ -503,6 +504,9 @@ pub fn df_from_ndjson(
 ) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
+    let batch_size = NonZeroUsize::new(batch_size).ok_or(ExplorerError::Other(
+        "\"batch_size\" expected to be non zero.".to_string(),
+    ))?;
     let reader = JsonReader::new(buf_reader)
         .with_json_format(JsonFormat::JsonLines)
         .with_batch_size(batch_size)
@@ -557,6 +561,9 @@ pub fn df_load_ndjson(
     batch_size: usize,
 ) -> Result<ExDataFrame, ExplorerError> {
     let cursor = Cursor::new(binary.as_slice());
+    let batch_size = NonZeroUsize::new(batch_size).ok_or(ExplorerError::Other(
+        "\"batch_size\" expected to be non zero.".to_string(),
+    ))?;
     let reader = JsonReader::new(cursor)
         .with_json_format(JsonFormat::JsonLines)
         .with_batch_size(batch_size)

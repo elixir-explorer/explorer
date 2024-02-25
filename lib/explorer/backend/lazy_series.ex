@@ -606,7 +606,12 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def format(list) do
-    series_list = Enum.map(list, &series_or_lazy_series!/1)
+    series_list =
+      Enum.map(list, fn
+        s when is_binary(s) -> s
+        s -> series_or_lazy_series!(s)
+      end)
+
     data = new(:format, [series_list], :string, aggregations?(series_list))
 
     Backend.Series.new(data, :string)

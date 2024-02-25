@@ -1,6 +1,7 @@
 use polars::prelude::*;
 use std::fs::File;
 use std::io::BufWriter;
+use std::num::NonZeroUsize;
 use std::result::Result;
 
 use crate::dataframe::io::schema_from_dtypes_pairs;
@@ -230,11 +231,14 @@ pub fn lf_from_csv(
 pub fn lf_from_ndjson(
     filename: String,
     infer_schema_length: Option<usize>,
-    batch_size: Option<usize>,
+    batch_size: usize,
 ) -> Result<ExLazyFrame, ExplorerError> {
+    let batch_size = NonZeroUsize::new(batch_size).ok_or(ExplorerError::Other(
+        "\"batch_size\" expected to be non zero.".to_string(),
+    ))?;
     let lf = LazyJsonLineReader::new(filename)
         .with_infer_schema_length(infer_schema_length)
-        .with_batch_size(batch_size)
+        .with_batch_size(Some(batch_size))
         .finish()?;
 
     Ok(ExLazyFrame::new(lf))

@@ -602,7 +602,7 @@ pub fn expr_last(expr: ExExpr) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_format(exprs: Vec<ExExpr>) -> ExExpr {
-    ExExpr::new(concat_str(ex_expr_to_exprs(exprs), ""))
+    ExExpr::new(concat_str(ex_expr_to_exprs(exprs), "", true))
 }
 
 #[rustler::nif]
@@ -879,8 +879,12 @@ pub fn expr_rstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_substring(expr: ExExpr, offset: i64, length: Option<u64>) -> ExExpr {
+    let length = match length {
+        Some(l) => l.lit(),
+        None => Expr::Literal(LiteralValue::Null),
+    };
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().slice(offset, length))
+    ExExpr::new(expr.str().slice(offset.lit(), length))
 }
 
 #[rustler::nif]
@@ -1051,7 +1055,7 @@ pub fn expr_second(expr: ExExpr) -> ExExpr {
 pub fn expr_join(expr: ExExpr, sep: String) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.list().join(sep.lit()))
+    ExExpr::new(expr.list().join(sep.lit(), true))
 }
 
 #[rustler::nif]

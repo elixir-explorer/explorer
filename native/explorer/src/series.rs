@@ -8,7 +8,7 @@ use crate::{
 };
 
 use encoding::encode_datetime;
-use polars::export::arrow::array::Utf8Array;
+
 use polars::prelude::*;
 use polars_ops::chunked_array::cov::{cov, pearson_corr};
 use polars_ops::prelude::peaks::*;
@@ -257,18 +257,6 @@ pub fn s_dtype(data: ExSeries) -> Result<ExSeriesDtype, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_slice(series: ExSeries, offset: i64, length: usize) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(series.slice(offset, length)))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_format(series_vec: Vec<ExSeries>) -> Result<ExSeries, ExplorerError> {
-    let mut iter = series_vec.iter();
-    let mut series = iter.next().unwrap().clone_inner().str()?.clone();
-
-    for s in iter {
-        series = series.concat(s.str()?);
-    }
-
-    Ok(ExSeries::new(series.into_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1346,51 +1334,11 @@ pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerErro
                 CategoricalChunked::from_cats_and_rev_map_unchecked(
                     chunks,
                     mapping.clone(),
+                    false,
                     CategoricalOrdering::default(),
                 )
             };
             Ok(ExSeries::new(categorical_chunks.into_series()))
-        }
-        DataType::String => {
-            if cat.len() != cat.unique()?.len() {
-                return Err(ExplorerError::Other(
-                    "categories as strings cannot have duplicated values".into(),
-                ));
-            };
-
-            let utf8s = cat.str()?;
-
-            if utf8s.has_validity() {
-                Err(ExplorerError::Other(
-                    "categories as strings cannot have nil values".into(),
-                ))
-            } else {
-                let values: Vec<Option<&str>> = utf8s.into();
-                let array = Utf8Array::<i64>::from(values);
-                let mapping = RevMapping::build_local(array);
-
-                let chunks = if s.dtype() == &DataType::String {
-                    let ids: ChunkedArray<UInt32Type> = s
-                        .str()?
-                        .into_iter()
-                        .map(|opt_str| opt_str.and_then(|slice| mapping.find(slice)))
-                        .collect();
-
-                    ids
-                } else {
-                    s.cast(&DataType::UInt32)?.u32()?.clone()
-                };
-
-                let categorical_chunks = unsafe {
-                    CategoricalChunked::from_cats_and_rev_map_unchecked(
-                        chunks,
-                        Arc::new(mapping),
-                        CategoricalOrdering::default(),
-                    )
-                };
-
-                Ok(ExSeries::new(categorical_chunks.into_series()))
-            }
         }
         _ => panic!("Cannot get categories from non categorical or string series"),
     }
@@ -1590,12 +1538,22 @@ pub fn s_rstrip(s1: ExSeries, pattern: Option<&str>) -> Result<ExSeries, Explore
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_substring(
-    s1: ExSeries,
+    s: ExSeries,
     offset: i64,
     length: Option<u64>,
 ) -> Result<ExSeries, ExplorerError> {
-    let s2 = s1.str()?.str_slice(offset, length).into_series();
-
+    let length = match length {
+        Some(l) => l.lit(),
+        None => Expr::Literal(LiteralValue::Null),
+    };
+    let s2 = s
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s.name()).str().slice(offset.lit(), length)])
+        .collect()?
+        .column(s.name())?
+        .clone();
     Ok(ExSeries::new(s2))
 }
 
@@ -1778,7 +1736,7 @@ pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_join(s1: ExSeries, separator: &str) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
         .list()?
-        .lst_join(&ChunkedArray::new("a", &[separator]))?
+        .lst_join(&ChunkedArray::new("a", &[separator]), true)?
         .into_series();
 
     Ok(ExSeries::new(s2))

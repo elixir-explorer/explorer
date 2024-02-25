@@ -1,5 +1,4 @@
 use chrono::prelude::*;
-use polars::export::arrow::array::GenericBinaryArray;
 use polars::prelude::*;
 use rustler::{Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
 use std::collections::HashMap;
@@ -15,7 +14,7 @@ use crate::datatypes::{
 use crate::ExplorerError;
 
 use rustler::types::atom;
-use rustler::wrapper::{binary, list, map, NIF_TERM};
+use rustler::wrapper::{list, map, NIF_TERM};
 
 // Encoding helpers
 
@@ -371,54 +370,32 @@ fn time_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Explore
     ))
 }
 
-fn generic_binary_series_to_list<'a, 'b, T, G>(
+fn generic_string_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
+    Ok(unsafe_iterator_series_to_list!(
+        env,
+        s.str()?.into_iter().map(|option| option.encode(env))
+    ))
+}
+
+fn generic_binary_series_to_list<'b>(
     resource: &ResourceArc<ExSeriesRef>,
-    iter: T,
+    s: &Series,
     env: Env<'b>,
-) -> Result<Term<'b>, ExplorerError>
-where
-    T: Iterator<Item = &'a G> + DoubleEndedIterator,
-    G: GenericBinaryArray<i64>,
-{
+) -> Result<Term<'b>, ExplorerError> {
     let env_as_c_arg = env.as_c_arg();
     let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
     let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
-
-    let list = iter.rfold(acc, |acc, array| {
-        // Create a binary per array buffer
-        let values = array.values();
-
-        let binary = unsafe { resource.make_binary_unsafe(env, |_| values) }
-            .to_term(env)
-            .as_c_arg();
-
-        // Offsets have one more element than values and validity,
-        // so we read the last one as the initial accumulator and skip it.
-        let len = array.offsets().len();
-        let iter = array.offsets()[0..len - 1].iter();
-        let mut last_offset = array.offsets()[len - 1] as NIF_TERM;
-
-        let mut validity_iter = match array.validity() {
-            Some(validity) => validity.iter(),
-            None => polars::export::arrow::bitmap::utils::BitmapIter::new(&[], 0, 0),
-        };
-
-        iter.rfold(acc, |acc, uncast_offset| {
-            let offset = *uncast_offset as NIF_TERM;
-
-            let term_as_c_arg = if validity_iter.next_back().unwrap_or(true) {
-                unsafe {
-                    binary::make_subbinary(env_as_c_arg, binary, offset, last_offset - offset)
-                }
-            } else {
-                nil_as_c_arg
+    let list = s.binary()?.downcast_iter().rfold(acc, |acc, array| {
+        array.iter().rfold(acc, |acc, v| {
+            let term_as_c_arg = match v {
+                Some(values) => unsafe { resource.make_binary_unsafe(env, |_| values) }
+                    .to_term(env)
+                    .as_c_arg(),
+                None => nil_as_c_arg,
             };
-
-            last_offset = offset;
             unsafe { list::make_list_cell(env_as_c_arg, term_as_c_arg, acc) }
         })
     });
-
     Ok(unsafe { Term::new(env, list) })
 }
 
@@ -624,12 +601,8 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
         DataType::Time => time_series_to_list(&s, env),
         DataType::Datetime(time_unit, None) => datetime_series_to_list(&s, *time_unit, env),
         DataType::Duration(time_unit) => duration_series_to_list(&s, *time_unit, env),
-        DataType::String => {
-            generic_binary_series_to_list(&s.resource, s.str()?.downcast_iter(), env)
-        }
-        DataType::Binary => {
-            generic_binary_series_to_list(&s.resource, s.binary()?.downcast_iter(), env)
-        }
+        DataType::Binary => generic_binary_series_to_list(&s.resource, &s, env),
+        DataType::String => generic_string_series_to_list(&s, env),
         DataType::Categorical(Some(mapping), _) => categorical_series_to_list(&s, env, mapping),
         DataType::List(_inner_dtype) => s
             .list()?
