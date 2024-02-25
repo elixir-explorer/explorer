@@ -147,7 +147,7 @@ defmodule Explorer.PolarsBackend.Series do
     df = Explorer.PolarsBackend.DataFrame.from_series(df_args)
     format_expr = Explorer.Backend.LazySeries.new(:format, [Enum.reverse(params)], :string)
     out_dtypes = Map.put(df.dtypes, "result", :string)
-    out_names = df.names ++ ["result"]
+    out_names = ["result" | df.names]
     out_df = %{df | dtypes: out_dtypes, names: out_names}
 
     Explorer.PolarsBackend.DataFrame.mutate_with(df, out_df, [{"result", format_expr}])

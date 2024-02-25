@@ -1280,19 +1280,13 @@ defmodule Explorer.Series do
 
   def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: :string} = categories)
       when K.in(l_dtype, [:string | @integer_types]) do
-    if nil_count(categories) != 0,
-      do:
-        raise(
-          ArgumentError,
-          "categories as strings cannot have nil values"
-        )
+    if nil_count(categories) != 0 do
+      raise(ArgumentError, "categories as strings cannot have nil values")
+    end
 
-    if count(categories) != n_distinct(categories),
-      do:
-        raise(
-          ArgumentError,
-          "categories as strings cannot have duplicated values"
-        )
+    if count(categories) != n_distinct(categories) do
+      raise(ArgumentError, "categories as strings cannot have duplicated values")
+    end
 
     categories = cast(categories, :category)
     apply_series(series, :categorise, [categories])
