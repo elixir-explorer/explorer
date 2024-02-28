@@ -3569,12 +3569,11 @@ defmodule Explorer.DataFrameTest do
       assert df.names == ["b"]
     end
 
-    test "drop column raises error with non-existent column" do
+    test "dropping a non-existent column fails silently" do
       df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
 
-      assert_raise ArgumentError, ~r"could not find column name \"g\"", fn ->
-        DF.discard(df, ["g"])
-      end
+      df1 = DF.discard(df, ["g"])
+      assert df.names == df1.names
     end
   end
 

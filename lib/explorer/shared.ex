@@ -154,7 +154,9 @@ defmodule Explorer.Shared do
   @doc """
   Normalize column names and raise if column does not exist.
   """
-  def to_existing_columns(df, columns) when is_list(columns) do
+  def to_existing_columns(df, columns, raise? \\ true)
+
+  def to_existing_columns(df, columns, raise?) when is_list(columns) do
     {columns, _cache} =
       Enum.map_reduce(columns, nil, fn
         column, maybe_map when is_integer(column) ->
@@ -164,39 +166,39 @@ defmodule Explorer.Shared do
 
         column, maybe_map when is_atom(column) ->
           column = Atom.to_string(column)
-          maybe_raise_column_not_found(df, column)
+          maybe_raise_column_not_found(df, column, raise?)
           {column, maybe_map}
 
         column, maybe_map when is_binary(column) ->
-          maybe_raise_column_not_found(df, column)
+          maybe_raise_column_not_found(df, column, raise?)
           {column, maybe_map}
       end)
 
     columns
   end
 
-  def to_existing_columns(%{names: names}, ..) do
+  def to_existing_columns(%{names: names}, .., _raise?) do
     names
   end
 
-  def to_existing_columns(%{names: names}, %Range{} = columns) do
+  def to_existing_columns(%{names: names}, %Range{} = columns, _raise?) do
     Enum.slice(names, columns)
   end
 
-  def to_existing_columns(%{names: names}, %Regex{} = columns) do
+  def to_existing_columns(%{names: names}, %Regex{} = columns, _raise?) do
     Enum.filter(names, &Regex.match?(columns, &1))
   end
 
-  def to_existing_columns(%{names: names}, callback) when is_function(callback, 1) do
+  def to_existing_columns(%{names: names}, callback, _raise?) when is_function(callback, 1) do
     Enum.filter(names, callback)
   end
 
-  def to_existing_columns(%{names: names, dtypes: dtypes}, callback)
+  def to_existing_columns(%{names: names, dtypes: dtypes}, callback, _raise?)
       when is_function(callback, 2) do
     Enum.filter(names, fn name -> callback.(name, dtypes[name]) end)
   end
 
-  def to_existing_columns(_, other) do
+  def to_existing_columns(_, other, _raise?) do
     raise ArgumentError, """
     invalid columns specification. Columns may be specified as one of:
 
@@ -231,8 +233,8 @@ defmodule Explorer.Shared do
   @doc """
   Raises if a column is not found.
   """
-  def maybe_raise_column_not_found(df, name) do
-    unless Map.has_key?(df.dtypes, name) do
+  def maybe_raise_column_not_found(df, name, raise? \\ true) do
+    if raise? and Map.has_key?(df.dtypes, name) == false do
       raise ArgumentError,
             List.to_string(
               [
