@@ -313,8 +313,8 @@ defmodule Explorer.DataFrame do
     do: for({name, idx} <- Enum.with_index(names), into: %{}, do: {idx, name})
 
   # Normalizes column names and raise if column does not exist.
-  defp to_existing_columns(df, columns) do
-    Explorer.Shared.to_existing_columns(df, columns)
+  defp to_existing_columns(df, columns, raise? \\ true) do
+    Explorer.Shared.to_existing_columns(df, columns, raise?)
   end
 
   # Normalizes the "columns" option for some IO operations.
@@ -2359,7 +2359,7 @@ defmodule Explorer.DataFrame do
   end
 
   def discard(df, columns) do
-    columns = to_existing_columns(df, columns) -- df.groups
+    columns = to_existing_columns(df, columns, false) -- df.groups
     columns_to_keep = df.names -- columns
     out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
     Shared.apply_impl(df, :select, [out_df])
