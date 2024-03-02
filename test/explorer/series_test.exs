@@ -5320,6 +5320,18 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "split_into" do
+    test "split_into/3 exclusive" do
+      series = Series.from_list(["Smith, John", "Jones, Jane"])
+      split_series = series |> Series.split_into(", ", ["Last Name", "First Name"])
+
+      assert Series.to_list(split_series) == [
+               %{"First Name" => "John", "Last Name" => "Smith"},
+               %{"First Name" => "Jane", "Last Name" => "Jones"}
+             ]
+    end
+  end
+
   describe "strptime/2 and strftime/2" do
     test "parse datetime from string" do
       series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])

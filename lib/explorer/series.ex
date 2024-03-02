@@ -5651,6 +5651,23 @@ defmodule Explorer.Series do
   def split(%Series{dtype: dtype}, _by),
     do: dtype_error("split/2", dtype, [:string])
 
+  @doc """
+  Split a string Series into a struct with fields determined by the list of
+  field names provided.  The length of the field names list determines how
+  many fields the resulting struct will have.  If the string cannot be split
+  into that many separate strings, null values will be provided for the
+  remaining fields.
+
+  ## Examples
+
+      iex> s = Series.from_list(["Smith, John", "Jones, Jane"])
+      iex> Series.split_into(s, ", ", ["Last Name", "First Name"])
+      #Explorer.Series<
+        Polars[2]
+        struct[2] [%{"First Name" => "John", "Last Name" => "Smith"}, %{"First Name" => "Jane", "Last Name" => "Jones"}]
+      >
+
+  """
   @doc type: :string_wise
   @spec split_into(Series.t(), String.t(), list(String.t() | atom())) :: Series.t()
   def split_into(%Series{dtype: :string} = series, by, fields) when is_binary(by),
