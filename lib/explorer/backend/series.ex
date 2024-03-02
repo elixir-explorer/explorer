@@ -287,6 +287,7 @@ defmodule Explorer.Backend.Series do
   @callback rstrip(s, String.t() | nil) :: s
   @callback substring(s, integer(), non_neg_integer() | nil) :: s
   @callback split(s, String.t()) :: s
+  @callback split_into(s, String.t(), list(String.t() | atom())) :: s
   @callback json_decode(s, dtype()) :: s
   @callback json_path_match(s, String.t()) :: s
 

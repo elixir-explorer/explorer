@@ -5651,6 +5651,14 @@ defmodule Explorer.Series do
   def split(%Series{dtype: dtype}, _by),
     do: dtype_error("split/2", dtype, [:string])
 
+  @doc type: :string_wise
+  @spec split_into(Series.t(), String.t(), list(String.t() | atom())) :: Series.t()
+  def split_into(%Series{dtype: :string} = series, by, fields) when is_binary(by),
+    do: apply_series(series, :split_into, [by, fields])
+
+  def split_into(%Series{dtype: dtype}, _by, _fields),
+    do: dtype_error("split_into/3", dtype, [:string])
+
   # Float
 
   @doc """

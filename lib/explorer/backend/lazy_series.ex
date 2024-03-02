@@ -127,6 +127,7 @@ defmodule Explorer.Backend.LazySeries do
     downcase: 1,
     substring: 3,
     split: 2,
+    split_into: 3,
     json_decode: 2,
     json_path_match: 2,
     # Float round
@@ -1051,6 +1052,13 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:split, [lazy_series!(series), by], :string)
 
     Backend.Series.new(data, {:list, :string})
+  end
+
+  @impl true
+  def split_into(series, by, fields) do
+    data = new(:split_into, [lazy_series!(series), by, fields], :string)
+
+    Backend.Series.new(data, {:list, :struct})
   end
 
   @impl true

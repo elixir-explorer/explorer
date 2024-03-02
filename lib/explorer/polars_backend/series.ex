@@ -694,6 +694,10 @@ defmodule Explorer.PolarsBackend.Series do
   def split(series, by),
     do: Shared.apply_series(series, :s_split, [by])
 
+  @impl true
+  def split_into(series, by, fields),
+    do: Shared.apply_series(series, :s_split_into, [by, fields])
+
   # Float round
   @impl true
   def round(series, decimals),

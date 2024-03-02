@@ -456,6 +456,7 @@ rustler::init!(
         s_strip,
         s_substring,
         s_split,
+        s_split_into,
         s_subtract,
         s_sum,
         s_tail,
