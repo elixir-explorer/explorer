@@ -888,6 +888,12 @@ pub fn expr_substring(expr: ExExpr, offset: i64, length: Option<u64>) -> ExExpr 
 }
 
 #[rustler::nif]
+pub fn expr_split(expr: ExExpr, substring: String) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().split(substring.lit()))
+}
+
+#[rustler::nif]
 pub fn expr_replace(expr: ExExpr, pat: String, value: String) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().replace_all(

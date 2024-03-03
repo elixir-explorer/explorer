@@ -1733,6 +1733,17 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "split a string by a substring" do
+      df = DF.new(a: ["foo,bar", "bar,baz"])
+
+      df1 = DF.mutate(df, b: split(a, ","))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["foo,bar", "bar,baz"],
+               b: [["foo", "bar"], ["bar", "baz"]]
+             }
+    end
+
     test "replace characters in a string" do
       df = DF.new(a: ["2,000", "2,000,000", ","])
 

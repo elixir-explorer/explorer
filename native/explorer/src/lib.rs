@@ -271,6 +271,7 @@ rustler::init!(
         expr_lstrip,
         expr_rstrip,
         expr_substring,
+        expr_split,
         expr_replace,
         expr_json_path_match,
         // float round expressions
