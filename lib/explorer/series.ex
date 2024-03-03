@@ -5652,10 +5652,11 @@ defmodule Explorer.Series do
     do: dtype_error("split/2", dtype, [:string])
 
   @doc """
-  Split a string Series into a struct with fields determined by the list of
-  field names provided.  The length of the field names list determines how
-  many fields the resulting struct will have.  If the string cannot be split
-  into that many separate strings, null values will be provided for the
+  Split a string Series into a struct of string `fields`.
+  
+  The length of the field names list determines how many times the
+  string will be split at most. If the string cannot be split into that
+  many separate strings, null values will be provided for the
   remaining fields.
 
   ## Examples
