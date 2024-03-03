@@ -1982,6 +1982,27 @@ defmodule Explorer.DataFrameTest do
                member?: [true, false]
              }
     end
+
+    test "splits a string column into multiple new columns" do
+      new_column_names = ["Last Name", "First Name"]
+      df = DF.new(%{names: ["Smith, John", "Jones, Jane"]})
+
+      df =
+        DF.mutate_with(df, fn ldf ->
+          %{names: Series.split_into(ldf[:names], ", ", new_column_names)}
+        end)
+        |> DF.unnest(:names)
+
+      assert DF.dtypes(df) == %{
+               "Last Name" => :string,
+               "First Name" => :string
+             }
+
+      assert DF.to_columns(df) == %{
+               "Last Name" => ["Smith", "Jones"],
+               "First Name" => ["John", "Jane"]
+             }
+    end
   end
 
   describe "sort_by/3" do
@@ -2618,17 +2639,13 @@ defmodule Explorer.DataFrameTest do
     end
 
     test "mixing nulls, signed, unsigned integers, and floats" do
-      df1 =
-        DF.new(x: Series.from_list([1, 2], dtype: :u16), y: Series.from_list(["a", "b"]))
+      df1 = DF.new(x: Series.from_list([1, 2], dtype: :u16), y: Series.from_list(["a", "b"]))
 
-      df2 =
-        DF.new(x: Series.from_list([3.0, 4.0], dtype: :f32), y: Series.from_list(["c", "d"]))
+      df2 = DF.new(x: Series.from_list([3.0, 4.0], dtype: :f32), y: Series.from_list(["c", "d"]))
 
-      df3 =
-        DF.new(x: [nil, nil], y: [nil, nil])
+      df3 = DF.new(x: [nil, nil], y: [nil, nil])
 
-      df4 =
-        DF.new(x: Series.from_list([5, 6], dtype: :s16), y: Series.from_list(["e", "f"]))
+      df4 = DF.new(x: Series.from_list([5, 6], dtype: :s16), y: Series.from_list(["e", "f"]))
 
       df5 = DF.concat_rows([df1, df2, df3, df4])
 

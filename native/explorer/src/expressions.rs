@@ -1115,11 +1115,11 @@ pub fn expr_json_path_match(expr: ExExpr, json_path: &str) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_split_into(expr: ExExpr, by: &str, names: Vec<String>) -> ExExpr {
+pub fn expr_split_into(expr: ExExpr, by: String, names: Vec<String>) -> ExExpr {
     let expr = expr
         .clone_inner()
         .str()
-        .splitn(by.into(), names.len())
+        .splitn(by.lit(), names.len())
         .struct_()
         .rename_fields(names);
 
