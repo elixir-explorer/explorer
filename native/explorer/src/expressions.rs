@@ -3,7 +3,6 @@
 // to the Rust side. Each function receives a basic type
 // or an expression and returns an expression that is
 // wrapped in an Elixir struct.
-
 use polars::error::PolarsError;
 
 use polars::prelude::{GetOutput, IntoSeries, Utf8JsonPathImpl};
@@ -1112,6 +1111,18 @@ pub fn expr_json_path_match(expr: ExExpr, json_path: &str) -> ExExpr {
     let expr = expr
         .clone_inner()
         .map(function, GetOutput::from_type(DataType::String));
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
+pub fn expr_split_into(expr: ExExpr, by: &str, names: Vec<String>) -> ExExpr {
+    let expr = expr
+        .clone_inner()
+        .str()
+        .splitn(by.into(), names.len())
+        .struct_()
+        .rename_fields(names);
+
     ExExpr::new(expr)
 }
 

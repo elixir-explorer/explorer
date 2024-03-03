@@ -273,6 +273,7 @@ rustler::init!(
         expr_substring,
         expr_replace,
         expr_json_path_match,
+        expr_split_into,
         // float round expressions
         expr_round,
         expr_floor,

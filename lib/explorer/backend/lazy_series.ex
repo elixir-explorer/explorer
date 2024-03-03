@@ -1058,7 +1058,7 @@ defmodule Explorer.Backend.LazySeries do
   def split_into(series, by, fields) do
     data = new(:split_into, [lazy_series!(series), by, fields], :string)
 
-    Backend.Series.new(data, {:list, :struct})
+    Backend.Series.new(data, {:struct, Enum.map(fields, &{&1, :string})})
   end
 
   @impl true
