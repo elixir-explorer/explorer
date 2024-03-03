@@ -3,6 +3,7 @@
 // to the Rust side. Each function receives a basic type
 // or an expression and returns an expression that is
 // wrapped in an Elixir struct.
+
 use polars::error::PolarsError;
 
 use polars::prelude::{GetOutput, IntoSeries, Utf8JsonPathImpl};
