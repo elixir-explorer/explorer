@@ -1569,22 +1569,21 @@ pub fn s_split(s1: ExSeries, by: &str) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_split_into(s1: ExSeries, by: &str, names: Vec<String>) -> Result<ExSeries, ExplorerError> {
-    let fields = s1
-        .str()?
-        .splitn(&ChunkedArray::new("a", &[by]), names.len())?
-        .fields()
-        .iter()
-        .zip(names.iter())
-        .map(|(s, name)| {
-            let mut s = s.clone();
-            s.rename(name);
-            s
-        })
-        .collect::<Vec<_>>();
+    let s2 = s1
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s1.name())
+            .str()
+            .splitn(by.lit(), names.len())
+            .struct_()
+            .rename_fields(names)
+            .alias(s1.name())])
+        .collect()?
+        .column(s1.name())?
+        .clone();
 
-    let result = StructChunked::new(s1.name(), &fields).map(|ca| ca.into_series())?;
-
-    Ok(ExSeries::new(result))
+    Ok(ExSeries::new(s2))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

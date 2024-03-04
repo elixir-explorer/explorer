@@ -5653,7 +5653,7 @@ defmodule Explorer.Series do
 
   @doc """
   Split a string Series into a struct of string `fields`.
-  
+
   The length of the field names list determines how many times the
   string will be split at most. If the string cannot be split into that
   many separate strings, null values will be provided for the
@@ -5671,10 +5671,10 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec split_into(Series.t(), String.t(), list(String.t() | atom())) :: Series.t()
-  def split_into(%Series{dtype: :string} = series, by, fields) when is_binary(by),
-    do: apply_series(series, :split_into, [by, fields])
+  def split_into(%Series{dtype: :string} = series, by, [_ | _] = fields) when is_binary(by),
+    do: apply_series(series, :split_into, [by, Enum.map(fields, &to_string/1)])
 
-  def split_into(%Series{dtype: dtype}, _by, _fields),
+  def split_into(%Series{dtype: dtype}, by, [_ | _]) when is_binary(by),
     do: dtype_error("split_into/3", dtype, [:string])
 
   # Float
