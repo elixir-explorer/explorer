@@ -1122,6 +1122,18 @@ pub fn expr_json_path_match(expr: ExExpr, json_path: &str) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_split_into(expr: ExExpr, by: String, names: Vec<String>) -> ExExpr {
+    let expr = expr
+        .clone_inner()
+        .str()
+        .splitn(by.lit(), names.len())
+        .struct_()
+        .rename_fields(names);
+
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
 pub fn expr_struct(ex_exprs: Vec<ExExpr>) -> ExExpr {
     let exprs = ex_exprs.iter().map(|e| e.clone_inner()).collect();
     let expr = dsl::as_struct(exprs);

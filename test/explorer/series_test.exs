@@ -5320,6 +5320,28 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "split_into" do
+    test "split_into/3 produces the correct number of fields in a struct" do
+      series = Series.from_list(["Smith, John", "Jones, Jane"])
+      split_series = series |> Series.split_into(", ", ["Last Name", "First Name"])
+
+      assert Series.to_list(split_series) == [
+               %{"First Name" => "John", "Last Name" => "Smith"},
+               %{"First Name" => "Jane", "Last Name" => "Jones"}
+             ]
+    end
+
+    test "split_into/3 produces a nil field when string cannot be split for every field" do
+      series = Series.from_list(["Smith-John", "Jones-Jane"])
+      split_series = series |> Series.split_into("-", ["Last Name", "First Name", "Middle Name"])
+
+      assert Series.to_list(split_series) == [
+               %{"First Name" => "John", "Last Name" => "Smith", "Middle Name" => nil},
+               %{"First Name" => "Jane", "Last Name" => "Jones", "Middle Name" => nil}
+             ]
+    end
+  end
+
   describe "strptime/2 and strftime/2" do
     test "parse datetime from string" do
       series = Series.from_list(["2023-01-05 12:34:56", "XYZ", nil])

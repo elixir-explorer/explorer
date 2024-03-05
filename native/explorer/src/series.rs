@@ -1568,6 +1568,25 @@ pub fn s_split(s1: ExSeries, by: &str) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_split_into(s1: ExSeries, by: &str, names: Vec<String>) -> Result<ExSeries, ExplorerError> {
+    let s2 = s1
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s1.name())
+            .str()
+            .splitn(by.lit(), names.len())
+            .struct_()
+            .rename_fields(names)
+            .alias(s1.name())])
+        .collect()?
+        .column(s1.name())?
+        .clone();
+
+    Ok(ExSeries::new(s2))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_round(s: ExSeries, decimals: u32) -> Result<ExSeries, ExplorerError> {
     Ok(ExSeries::new(s.round(decimals)?.into_series()))
 }
