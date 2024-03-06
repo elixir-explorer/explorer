@@ -3,7 +3,6 @@ use crate::{
     ExDataFrame, ExExpr, ExLazyFrame, ExplorerError,
 };
 use polars::prelude::*;
-use std::result::Result;
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;

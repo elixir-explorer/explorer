@@ -29,18 +29,15 @@ tokio-util = { version = "0.7", default-features = false, features = [
   "io",
   "io-util",
 ], optional = true }
-object_store = { version = "0.8", default-features = false, optional = true }
+object_store = { version = "0.9", default-features = false, optional = true }
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
 [target.'cfg(not(any(all(windows, target_env = "gnu"), all(target_os = "linux", target_env = "musl"))))'.dependencies]
 mimalloc = { version = "*", default-features = false }
 
-[patch.crates-io]
-jsonpath_lib = { version = "0.3", git = "https://github.com/ritchie46/jsonpath", branch = "improve_compiled" }
-
 [dependencies.polars]
-version = "0.37"
+version = "0.38"
 default-features = false
 features = [
   "abs",
@@ -86,7 +83,7 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.37"
+version = "0.38"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]

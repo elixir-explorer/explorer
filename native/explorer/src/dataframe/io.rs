@@ -12,11 +12,8 @@ use polars::prelude::*;
 use std::num::NonZeroUsize;
 
 use rustler::{Binary, Env, NewBinary};
-use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Cursor};
-use std::result::Result;
-use std::sync::Arc;
 
 use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
 use crate::{ExDataFrame, ExplorerError};

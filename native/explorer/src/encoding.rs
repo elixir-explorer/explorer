@@ -106,7 +106,7 @@ fn date_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Explore
 macro_rules! unsafe_encode_datetime {
     ($v: expr, $naive_datetime_struct_keys: ident, $calendar_iso_module: ident, $naive_datetime_module: ident, $env: ident) => {{
         let dt = timestamp_to_datetime($v);
-        let microseconds = dt.timestamp_subsec_micros();
+        let microseconds = dt.and_utc().timestamp_subsec_micros();
 
         // Limit the number of digits in the microsecond part of a timestamp to 6.
         // This is necessary because the microsecond part of Elixir is only 6 digits.

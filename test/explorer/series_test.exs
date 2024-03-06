@@ -2030,7 +2030,9 @@ defmodule Explorer.SeriesTest do
       s2 = Series.divide(s1, -2.5)
 
       assert s2.dtype == {:f, 64}
-      assert Series.to_list(s2) == [-0.4, -0.8, -1.2]
+
+      s3 = Series.round(s2, 5)
+      assert Series.to_list(s3) == [-0.4, -0.8, -1.2]
     end
 
     test "dividing a series with a nan value on the right-hand side" do

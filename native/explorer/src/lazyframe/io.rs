@@ -2,7 +2,6 @@ use polars::prelude::*;
 use std::fs::File;
 use std::io::BufWriter;
 use std::num::NonZeroUsize;
-use std::result::Result;
 
 use crate::dataframe::io::schema_from_dtypes_pairs;
 use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};

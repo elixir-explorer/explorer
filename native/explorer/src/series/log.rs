@@ -3,7 +3,6 @@ use crate::{ExSeries, ExplorerError};
 use polars::prelude::*;
 use rustler::{Term, TermType};
 use std::f64::consts::E;
-use std::result::Result;
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_log(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {

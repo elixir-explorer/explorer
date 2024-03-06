@@ -1,10 +1,8 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
-use polars::error::PolarsResult;
 use polars::export::{arrow, arrow::ffi};
 use std::collections::HashMap;
-use std::result::Result;
 
 use crate::datatypes::ExSeriesDtype;
 use crate::ex_expr_to_exprs;
@@ -595,19 +593,42 @@ pub fn df_pivot_wider(
     values_column: Vec<&str>,
     names_prefix: Option<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let mut counter: HashMap<String, u16> = HashMap::new();
+    // We need to preserve the original ID columns with a prefix,
+    // so if there is any "new column name" coming from a "value column"
+    // conflicting with some ID column, we can keep that ID column and
+    // the new column names.
+    let mut df = df.clone_inner();
+    let explorer_prefix = "__explorer_column_id__";
+    let temp_id_names: Vec<String> = id_columns
+        .iter()
+        .map(|id_name| format!("{explorer_prefix}{id_name}"))
+        .collect();
+
+    for (id_name, new_name) in id_columns.iter().zip(&temp_id_names) {
+        df.rename(id_name, new_name)?;
+    }
 
     let mut new_df = pivot_stable(
         &df,
-        values_column,
-        id_columns.clone(),
+        &temp_id_names,
         [pivot_column],
+        Some(values_column),
         false,
         Some(PivotAgg::First),
         None,
     )?;
 
-    let mut new_names = to_string_names(new_df.get_column_names());
+    // Instead of using the names from the pivoted DF, we go back
+    // and restore the original ID column names, so we can use our
+    // algo below to preserve all columns.
+    let clean_names = new_df
+        .get_column_names()
+        .iter()
+        .map(|name| name.trim_start_matches(explorer_prefix))
+        .collect();
+
+    let mut new_names = to_string_names(clean_names);
+    let mut counter: HashMap<String, u16> = HashMap::new();
 
     for name in new_names.iter_mut() {
         let original_name = name.clone();
