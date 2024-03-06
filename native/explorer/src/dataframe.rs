@@ -601,7 +601,7 @@ pub fn df_pivot_wider(
         &df,
         values_column,
         id_columns.clone(),
-        [pivot_column],
+        Some(vec![pivot_column]),
         false,
         Some(PivotAgg::First),
         None,
