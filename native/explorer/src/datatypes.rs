@@ -283,7 +283,9 @@ pub fn timestamp_to_datetime(microseconds: i64) -> NaiveDateTime {
         _ => microseconds % 1_000_000,
     };
     let nanoseconds = remainder.abs() * 1_000;
-    NaiveDateTime::from_timestamp_opt(seconds, nanoseconds.try_into().unwrap()).unwrap()
+    DateTime::<Utc>::from_timestamp(seconds, nanoseconds.try_into().unwrap())
+        .expect("construct a UTC")
+        .naive_utc()
 }
 
 // Limit the number of digits in the microsecond part of a timestamp to 6.
@@ -342,7 +344,10 @@ impl From<NaiveDateTime> for ExDateTime {
             hour: dt.hour(),
             minute: dt.minute(),
             second: dt.second(),
-            microsecond: (microseconds_six_digits(dt.timestamp_subsec_micros()), 6),
+            microsecond: (
+                microseconds_six_digits(dt.and_utc().timestamp_subsec_micros()),
+                6,
+            ),
         }
     }
 }
