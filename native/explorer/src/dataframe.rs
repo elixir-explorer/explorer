@@ -595,7 +595,7 @@ pub fn df_pivot_wider(
 ) -> Result<ExDataFrame, ExplorerError> {
     // We need to preserve the original ID columns with a prefix,
     // so if there is any "new column name" coming from a "value column"
-    // conflicting with some ID column, we can keep that ID column and.
+    // conflicting with some ID column, we can keep that ID column and
     // the new column names.
     let mut df = df.clone_inner();
     let explorer_prefix = "__explorer_column_id__";
