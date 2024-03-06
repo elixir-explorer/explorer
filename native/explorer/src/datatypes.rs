@@ -8,7 +8,6 @@ use chrono::prelude::*;
 use polars::prelude::cloud::CloudOptions;
 use polars::prelude::*;
 use rustler::{Atom, NifStruct, NifTaggedEnum, ResourceArc};
-use std::convert::TryInto;
 use std::fmt;
 use std::ops::Deref;
 

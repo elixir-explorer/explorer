@@ -13,7 +13,7 @@ use polars::prelude::*;
 use polars_ops::chunked_array::cov::{cov, pearson_corr};
 use polars_ops::prelude::peaks::*;
 use rustler::{Binary, Encoder, Env, Error, ListIterator, NifResult, Term, TermType};
-use std::{result::Result, slice};
+use std::slice;
 
 pub mod log;
 
