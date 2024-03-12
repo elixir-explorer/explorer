@@ -37,11 +37,11 @@ defmodule Explorer.MixProject do
   defp deps do
     [
       {:aws_signature, "~> 0.3"},
-      {:castore, "~> 1.0"},
       {:fss, "~> 0.1"},
       {:rustler_precompiled, "~> 0.7"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 3.1.1 or ~> 4.0.0"},
+      {:castore, "~> 1.0", optional: true},
       {:adbc, "~> 0.1", optional: true},
 
       ## Optional

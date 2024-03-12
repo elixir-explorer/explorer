@@ -158,16 +158,58 @@ defmodule Explorer.FSS.Utils do
   # Load SSL certificates
 
   defp http_ssl_opts() do
+    # TODO: Remove castore fallback when we require Elixir v1.17+
     # Use secure options, see https://gist.github.com/jonatanklosko/5e20ca84127f6b31bbe3906498e1a1d7
     [
       verify: :verify_peer,
-      cacertfile: CAStore.file_path() |> String.to_charlist(),
       # We need to increase depth because the default value is 1.
       # See: https://erlef.github.io/security-wg/secure_coding_and_deployment_hardening/ssl
       depth: 3,
       customize_hostname_check: [
         match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
       ]
-    ]
+    ] ++ cacerts_opts()
+  end
+
+  defp cacerts_opts do
+    cond do
+      certs = otp_cacerts() ->
+        [cacerts: certs]
+
+      Application.spec(:castore, :vsn) ->
+        [cacertfile: Application.app_dir(:castore, "priv/cacerts.pem")]
+
+      true ->
+        IO.warn("""
+        No certificate trust store was found.
+
+        A certificate trust store is required in
+        order to download locales for your configuration.
+        Since elixir_make could not detect a system
+        installed certificate trust store one of the
+        following actions may be taken:
+
+        1. Use OTP 25+ on an OS that has built-in certificate
+           trust store.
+
+        2. Install the hex package `castore`. It will
+           be automatically detected after recompilation.
+
+        """)
+
+        []
+    end
+  end
+
+  defp otp_cacerts do
+    if System.otp_release() >= "25" do
+      # cacerts_get/0 raises if no certs found
+      try do
+        :public_key.cacerts_get()
+      rescue
+        _ ->
+          nil
+      end
+    end
   end
 end
