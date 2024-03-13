@@ -54,6 +54,11 @@ defimpl Explorer.FSS, for: FSS.S3.Entry do
     %{host: host} = URI.parse(url)
     headers = [{"Host", host} | headers]
 
+    headers =
+      if entry.config.token,
+        do: [{"x-amz-security-token", entry.config.token} | headers],
+        else: headers
+
     :aws_signature.sign_v4(
       entry.config.access_key_id,
       entry.config.secret_access_key,
