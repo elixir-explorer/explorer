@@ -56,7 +56,7 @@ defimpl Explorer.FSS, for: FSS.S3.Entry do
 
     headers =
       if entry.config.token,
-        do: [{"x-amz-security-token", entry.config.token} | headers],
+        do: [{"X-Amz-Security-Token", entry.config.token} | headers],
         else: headers
 
     :aws_signature.sign_v4(
