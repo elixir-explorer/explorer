@@ -291,6 +291,24 @@ defmodule Explorer.Backend.DataFrame do
     end
   end
 
+  # TODO: revisit if this is the best approach
+  defp build_cols_algebra(%{data: nil} = df, inspect_opts, _elide_columns?) do
+    for name <- DataFrame.names(df) do
+      type =
+        df
+        |> DataFrame.dtypes()
+        |> Map.fetch!(name)
+        |> Explorer.Shared.dtype_to_string()
+
+      A.concat([
+        A.line(),
+        A.color("#{name} ", :map, inspect_opts),
+        A.color("#{type} ", :atom, inspect_opts),
+        "??"
+      ])
+    end
+  end
+
   defp build_cols_algebra(df, inspect_opts, _elide_columns?) do
     for name <- DataFrame.names(df) do
       series = df[name]

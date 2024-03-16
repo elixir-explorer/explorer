@@ -91,6 +91,7 @@ defmodule Explorer.PolarsBackend.Shared do
     Explorer.Backend.Series.new(polars_series, dtype)
   end
 
+  # We need to adapt this to create a lazy frame.
   def create_dataframe(polars_df) do
     Explorer.Backend.DataFrame.new(polars_df, df_names(polars_df), df_dtypes(polars_df))
   end

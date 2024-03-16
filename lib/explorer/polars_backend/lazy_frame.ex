@@ -7,16 +7,30 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Shared
   alias Explorer.PolarsBackend.DataFrame, as: Eager
-  alias Explorer.PolarsBackend.LazyFrame, as: PolarsLazyFrame
+  # alias Explorer.PolarsBackend.LazyFrame, as: PolarsLazyFrame
+  alias Explorer.PolarsBackend.LazyStack
 
   alias FSS.Local
   alias FSS.S3
 
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
 
-  defstruct resource: nil
+  defstruct polars_lazy_frame: nil, stack: []
 
-  @type t :: %__MODULE__{resource: reference()}
+  defmodule PolarsLazyFrame do
+    @moduledoc false
+
+    # This struct represents the lazy frame from the initialization
+    # of a lazy "pipeline". The idea is to be able to inspect it, but
+    # not to modify it until we collect.
+    # This struct is named ExLazyFrame in the Rust side.
+    defstruct resource: nil
+  end
+
+  @type polars_lazy_frame :: %PolarsLazyFrame{resource: reference()}
+  @typep group :: String.t()
+  @type operation :: {:head, [pos_integer()], [group()]} | {:tail, [pos_integer()], [group()]}
+  @type t :: %__MODULE__{polars_lazy_frame: polars_lazy_frame(), stack: list(operation())}
 
   @behaviour Explorer.Backend.DataFrame
 
@@ -29,7 +43,64 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def lazy(ldf), do: ldf
 
   @impl true
-  def collect(ldf), do: Shared.apply_dataframe(ldf, ldf, :lf_collect, [])
+  def collect(ldf) do
+    result = apply_operations(ldf)
+
+    # TODO: handle errors
+    {:ok, polars_df} = Native.lf_collect(result)
+
+    # NOTE: should we keep the groups like we do today?
+    %{ldf | data: polars_df}
+  end
+
+  defp apply_operations(ldf) do
+    ldf
+    |> LazyStack.stack_by_groups()
+    |> Enum.reduce(ldf.data.polars_lazy_frame, fn {groups, operations}, polars_ldf ->
+      # In the future we could apply all operations of a group in a single call.
+      # This would probably make the Rust code more complex.
+      Enum.reduce(operations, polars_ldf, fn operation, inner_ldf ->
+        case operation do
+          {:select, args} ->
+            # TODO: handle errors
+            {:ok, polars_ldf} =
+              apply(Native, :lf_select, [inner_ldf | args])
+
+            polars_ldf
+
+          {:filter_with = op, args} ->
+            [lseries, names] = args
+
+            {normalized_op, normalized_args} =
+              if groups == [] do
+                {"lf_#{op}", [to_expr(lseries)]}
+              else
+                {"lf_grouped_#{op}", [groups, to_expr(lseries), names -- groups]}
+              end
+
+            # TODO: handle errors
+            {:ok, polars_ldf} =
+              apply(Native, String.to_atom(normalized_op), [inner_ldf | normalized_args])
+
+            polars_ldf
+
+          {op, args} when op in [:head, :tail, :slice] ->
+            {normalized_op, normalized_args} =
+              if groups == [] do
+                {"lf_#{op}", args}
+              else
+                {"lf_grouped_#{op}", [groups | args]}
+              end
+
+            # TODO: handle errors
+            {:ok, polars_ldf} =
+              apply(Native, String.to_atom(normalized_op), [inner_ldf | normalized_args])
+
+            polars_ldf
+        end
+      end)
+    end)
+  end
 
   @impl true
   def from_tabular(tabular, dtypes),
@@ -41,25 +112,42 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Introspection
 
   @impl true
+  def inspect(%{data: %{stack: []}} = ldf, opts) do
+    case Native.lf_fetch(ldf.data.polars_lazy_frame, opts.limit) do
+      {:ok, df} ->
+        df = Explorer.Backend.DataFrame.new(df, ldf.names, ldf.dtypes)
+        df = %{df | groups: ldf.groups}
+
+        Explorer.Backend.DataFrame.inspect(df, "LazyPolars", nil, opts)
+
+      {:error, error} ->
+        raise "inspection error: #{inspect(error)}"
+    end
+  end
+
   def inspect(ldf, opts) do
-    df = Shared.apply_dataframe(ldf, ldf, :lf_fetch, [opts.limit])
-    Explorer.Backend.DataFrame.inspect(df, "LazyPolars", nil, opts)
+    df = Explorer.Backend.DataFrame.new(nil, ldf.names, ldf.dtypes)
+    df = %{df | groups: ldf.groups}
+    Explorer.Backend.DataFrame.inspect(df, "LazyPolars (stale)", nil, opts)
   end
 
   # Single table verbs
 
   @impl true
-  def head(ldf, rows), do: Shared.apply_dataframe(ldf, ldf, :lf_head, [rows])
+  def head(ldf, rows), do: LazyStack.push_operation(ldf, {:head, [rows]})
 
   @impl true
-  def tail(ldf, rows), do: Shared.apply_dataframe(ldf, ldf, :lf_tail, [rows])
+  def tail(ldf, rows), do: LazyStack.push_operation(ldf, {:tail, [rows]})
 
   @impl true
-  def select(ldf, out_ldf), do: Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
+  # Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
+  def select(_ldf, out_ldf), do: LazyStack.push_operation(out_ldf, {:select, [out_ldf.names]})
 
   @impl true
   def slice(ldf, offset, length),
-    do: Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length])
+    do: LazyStack.push_operation(ldf, {:slice, [offset, length]})
+
+  # do: Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length])
 
   # IO
 
@@ -345,18 +433,19 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Eager.to_ipc(eager_df, entry, compression, false)
   end
 
-  @impl true
-  def filter_with(
-        %DF{},
-        %DF{groups: [_ | _]},
-        %LazySeries{aggregation: true}
-      ) do
-    raise "filter_with/2 with groups and aggregations is not supported yet for lazy frames"
-  end
+  # @impl true
+  # def filter_with(
+  #       %DF{},
+  #       %DF{groups: [_ | _]},
+  #       %LazySeries{aggregation: true}
+  #     ) do
+  #   raise "filter_with/2 with groups and aggregations is not supported yet for lazy frames"
+  # end
 
   @impl true
-  def filter_with(df, out_df, %LazySeries{} = lseries) do
-    Shared.apply_dataframe(df, out_df, :lf_filter_with, [to_expr(lseries)])
+  def filter_with(_df, out_df, %LazySeries{} = lseries) do
+    # Shared.apply_dataframe(df, out_df, :lf_filter_with, [to_expr(lseries)])
+    LazyStack.push_operation(out_df, {:filter_with, [lseries, out_df.names]})
   end
 
   @impl true
@@ -444,16 +533,17 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Groups
 
   @impl true
-  def summarise_with(%DF{groups: groups} = df, %DF{} = out_df, column_pairs) do
+  def summarise_with(%DF{groups: groups}, %DF{} = out_df, column_pairs) do
     exprs =
       for {name, lazy_series} <- column_pairs do
         original_expr = to_expr(lazy_series)
         alias_expr(original_expr, name)
       end
 
-    groups_exprs = for group <- groups, do: Native.expr_column(group)
+    # groups_exprs = for group <- groups, do: Native.expr_column(group)
 
-    Shared.apply_dataframe(df, out_df, :lf_summarise_with, [groups_exprs, exprs])
+    # Shared.apply_dataframe(df, out_df, :lf_summarise_with, [groups_exprs, exprs])
+    LazyStack.push_operation(out_df, {:summarise_with, [exprs]}, groups)
   end
 
   # Two or more tables

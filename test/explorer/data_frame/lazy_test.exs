@@ -118,6 +118,22 @@ defmodule Explorer.DataFrame.LazyTest do
 >)
   end
 
+  test "inspect/1 after one operation", %{ldf: ldf} do
+    assert inspect(DF.head(ldf, 12)) == ~s{#Explorer.DataFrame<
+  LazyPolars (stale)[??? x 10]
+  year s64 ??
+  country string ??
+  total s64 ??
+  solid_fuel s64 ??
+  liquid_fuel s64 ??
+  gas_fuel s64 ??
+  cement s64 ??
+  gas_flaring s64 ??
+  per_capita f64 ??
+  bunker_fuels s64 ??
+>}
+  end
+
   @tag :tmp_dir
   test "from_csv/2 - with defaults", %{df: df, tmp_dir: tmp_dir} do
     path = Path.join([tmp_dir, "fossil_fuels.csv"])
