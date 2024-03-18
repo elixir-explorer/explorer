@@ -15,7 +15,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
 
-  defstruct polars_lazy_frame: nil, stack: []
+  defstruct frame: nil, stack: []
 
   defmodule PolarsLazyFrame do
     @moduledoc false
@@ -27,10 +27,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     defstruct resource: nil
   end
 
-  @type polars_lazy_frame :: %PolarsLazyFrame{resource: reference()}
+  @type frame :: %PolarsLazyFrame{resource: reference()}
   @typep group :: String.t()
   @type operation :: {:head, [pos_integer()], [group()]} | {:tail, [pos_integer()], [group()]}
-  @type t :: %__MODULE__{polars_lazy_frame: polars_lazy_frame(), stack: list(operation())}
+  @type t :: %__MODULE__{frame: frame(), stack: list(operation())}
 
   @behaviour Explorer.Backend.DataFrame
 
@@ -56,7 +56,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   defp apply_operations(ldf) do
     ldf
     |> LazyStack.stack_by_groups()
-    |> Enum.reduce(ldf.data.polars_lazy_frame, fn {groups, operations}, polars_ldf ->
+    |> Enum.reduce(ldf.data.frame, fn {groups, operations}, polars_ldf ->
       # In the future we could apply all operations of a group in a single call.
       # This would probably make the Rust code more complex.
       Enum.reduce(operations, polars_ldf, fn operation, inner_ldf ->
@@ -113,7 +113,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def inspect(%{data: %{stack: []}} = ldf, opts) do
-    case Native.lf_fetch(ldf.data.polars_lazy_frame, opts.limit) do
+    case Native.lf_fetch(ldf.data.frame, opts.limit) do
       {:ok, df} ->
         df = Explorer.Backend.DataFrame.new(df, ldf.names, ldf.dtypes)
         df = %{df | groups: ldf.groups}
