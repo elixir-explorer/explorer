@@ -104,9 +104,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   def inspect(ldf, opts) do
-    df = Explorer.Backend.DataFrame.new(nil, ldf.names, ldf.dtypes)
-    df = %{df | groups: ldf.groups}
-    Explorer.Backend.DataFrame.inspect(df, "LazyPolars (stale)", nil, opts)
+    Explorer.Backend.DataFrame.inspect(ldf, "LazyPolars (stale)", nil, opts, elide_columns: true)
   end
 
   # Single table verbs

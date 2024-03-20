@@ -113,16 +113,16 @@ defmodule Explorer.DataFrame.LazyTest do
   test "inspect/1 after one operation", %{ldf: ldf} do
     assert inspect(DF.head(ldf, 12)) == ~s{#Explorer.DataFrame<
   LazyPolars (stale)[??? x 10]
-  year s64 ??
-  country string ??
-  total s64 ??
-  solid_fuel s64 ??
-  liquid_fuel s64 ??
-  gas_fuel s64 ??
-  cement s64 ??
-  gas_flaring s64 ??
-  per_capita f64 ??
-  bunker_fuels s64 ??
+  year s64 ???
+  country string ???
+  total s64 ???
+  solid_fuel s64 ???
+  liquid_fuel s64 ???
+  gas_fuel s64 ???
+  cement s64 ???
+  gas_flaring s64 ???
+  per_capita f64 ???
+  bunker_fuels s64 ???
 >}
   end
 
