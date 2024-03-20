@@ -69,8 +69,9 @@ defmodule Explorer.DataFrame.LazyTest do
     new_ldf = ldf |> DF.slice(0, 5)
     assert new_ldf |> DF.names() == DF.names(ldf)
 
-    # Should we test the inner data?
-    assert [{:lf_slice, [0, 5]}] = new_ldf.data.stack
+    df = DF.collect(new_ldf)
+
+    assert DF.n_rows(df) == 5
   end
 
   test "discard/2", %{ldf: ldf} do
