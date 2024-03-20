@@ -58,15 +58,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   defp apply_operations(ldf) do
     ldf
     |> stack()
-    |> Enum.reduce_while(ldf.data.frame, fn {operation, args}, polars_ldf ->
+    |> Enum.reduce(ldf.data.frame, fn {operation, args}, polars_ldf ->
       args = normalise_operation_args(operation, args, polars_ldf)
 
       case apply(Native, operation, args) do
         {:ok, polars_ldf} ->
-          {:cont, polars_ldf}
+          polars_ldf
 
         {:error, error} when is_binary(error) ->
-          {:halt, RuntimeError.exception(error)}
+          raise RuntimeError.exception(error)
       end
     end)
   end
