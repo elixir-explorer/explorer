@@ -498,7 +498,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def lazy, do: Explorer.PolarsBackend.LazyFrame
 
   @impl true
-  def lazy(df), do: Shared.apply_dataframe(df, df, :df_lazy, [])
+  def lazy(df) do
+    case Native.df_lazy(df.data) do
+      {:ok, polars_df} ->
+        %{df | data: struct!(lazy(), frame: polars_df)}
+
+      {:error, error} ->
+        raise "error when assigning lazy frame: #{inspect(error)}"
+    end
+  end
 
   @impl true
   def collect(df), do: df
@@ -864,7 +872,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def inspect(df, opts) when node(df.data.resource) != node() do
-    Explorer.Backend.DataFrame.inspect(df, "Polars", "node: #{node(df.data.resource)}", opts,
+    Explorer.Backend.DataFrame.inspect(df, "Polars (node: #{node(df.data.resource)})", nil, opts,
       elide_columns: true
     )
   end

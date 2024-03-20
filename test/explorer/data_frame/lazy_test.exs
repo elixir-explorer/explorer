@@ -66,19 +66,12 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   test "slice/3", %{ldf: ldf} do
-    assert ldf |> DF.slice(0, 5) |> inspect() == ~s(#Explorer.DataFrame<
-  LazyPolars[??? x 10]
-  year s64 [2010, 2010, 2010, 2010, 2010]
-  country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA"]
-  total s64 [2308, 1254, 32500, 141, 7924]
-  solid_fuel s64 [627, 117, 332, 0, 0]
-  liquid_fuel s64 [1601, 953, 12381, 141, 3649]
-  gas_fuel s64 [74, 7, 14565, 0, 374]
-  cement s64 [5, 177, 2598, 0, 204]
-  gas_flaring s64 [0, 0, 2623, 0, 3697]
-  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37]
-  bunker_fuels s64 [9, 7, 663, 0, 321]
->)
+    new_ldf = ldf |> DF.slice(0, 5)
+    assert new_ldf |> DF.names() == DF.names(ldf)
+
+    df = DF.collect(new_ldf)
+
+    assert DF.n_rows(df) == 5
   end
 
   test "discard/2", %{ldf: ldf} do
@@ -102,7 +95,7 @@ defmodule Explorer.DataFrame.LazyTest do
     assert DF.lazy(ldf) == ldf
   end
 
-  test "inspect/1", %{ldf: ldf} do
+  test "inspect/1 without operations", %{ldf: ldf} do
     assert inspect(ldf) == ~s(#Explorer.DataFrame<
   LazyPolars[??? x 10]
   year s64 [2010, 2010, 2010, 2010, 2010, ...]
@@ -116,6 +109,22 @@ defmodule Explorer.DataFrame.LazyTest do
   per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
   bunker_fuels s64 [9, 7, 663, 0, 321, ...]
 >)
+  end
+
+  test "inspect/1 after one operation", %{ldf: ldf} do
+    assert inspect(DF.head(ldf, 12)) == ~s{#Explorer.DataFrame<
+  LazyPolars (stale)[??? x 10]
+  year s64 ???
+  country string ???
+  total s64 ???
+  solid_fuel s64 ???
+  liquid_fuel s64 ???
+  gas_fuel s64 ???
+  cement s64 ???
+  gas_flaring s64 ???
+  per_capita f64 ???
+  bunker_fuels s64 ???
+>}
   end
 
   @tag :tmp_dir
@@ -1290,6 +1299,22 @@ defmodule Explorer.DataFrame.LazyTest do
       assert DF.to_columns(df, atom_keys: true) == %{
                x: [1, 2, 3, 4, 5, 6],
                y: ~w(a b c d e f)
+             }
+    end
+
+    test "two simple DFs of the same dtypes and an operation in between" do
+      ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)
+      ldf2 = DF.new([x: [4, 5, 6], y: ["d", "e", "f"]], lazy: true)
+
+      ldf3 = DF.concat_rows(DF.head(ldf1, 2), ldf2)
+
+      assert ldf3.names == ["x", "y"]
+
+      df = DF.collect(ldf3)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               x: [1, 2, 4, 5, 6],
+               y: ~w(a b d e f)
              }
     end
 
