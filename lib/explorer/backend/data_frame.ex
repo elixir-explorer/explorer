@@ -291,7 +291,7 @@ defmodule Explorer.Backend.DataFrame do
     end
   end
 
-  # TODO: revisit if this is the best approach
+  # TODO: try to collapse this clause with the one that elides columns
   defp build_cols_algebra(%{data: nil} = df, inspect_opts, _elide_columns?) do
     for name <- DataFrame.names(df) do
       type =

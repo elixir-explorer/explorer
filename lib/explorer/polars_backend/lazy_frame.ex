@@ -7,8 +7,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Shared
   alias Explorer.PolarsBackend.DataFrame, as: Eager
-  # alias Explorer.PolarsBackend.LazyFrame, as: PolarsLazyFrame
-  alias Explorer.PolarsBackend.LazyStack
 
   alias FSS.Local
   alias FSS.S3
@@ -17,7 +15,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   defstruct frame: nil, stack: []
 
-  defmodule PolarsLazyFrame do
+  defmodule Frame do
     @moduledoc false
 
     # This struct represents the lazy frame from the initialization
@@ -27,9 +25,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     defstruct resource: nil
   end
 
-  @type frame :: %PolarsLazyFrame{resource: reference()}
-  @typep group :: String.t()
-  @type operation :: {:head, [pos_integer()], [group()]} | {:tail, [pos_integer()], [group()]}
+  @type frame :: %Frame{resource: reference()}
+  @type operation :: {name :: atom(), args :: list(any())}
   @type t :: %__MODULE__{frame: frame(), stack: list(operation())}
 
   @behaviour Explorer.Backend.DataFrame
@@ -44,62 +41,43 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def collect(ldf) do
-    result = apply_operations(ldf)
+    {:ok, polars_eager_df} =
+      ldf
+      |> apply_operations()
+      |> Native.lf_collect()
 
-    # TODO: handle errors
-    {:ok, polars_df} = Native.lf_collect(result)
+    %{ldf | data: polars_eager_df}
+  end
 
-    # NOTE: should we keep the groups like we do today?
-    %{ldf | data: polars_df}
+  defp stack(ldf), do: Enum.reverse(ldf.data.stack)
+
+  defp reset_stack(ldf) do
+    %{ldf | data: %{ldf.data | stack: []}}
   end
 
   defp apply_operations(ldf) do
     ldf
-    |> LazyStack.stack_by_groups()
-    |> Enum.reduce(ldf.data.frame, fn {groups, operations}, polars_ldf ->
-      # In the future we could apply all operations of a group in a single call.
-      # This would probably make the Rust code more complex.
-      Enum.reduce(operations, polars_ldf, fn operation, inner_ldf ->
-        case operation do
-          {:select, args} ->
-            # TODO: handle errors
-            {:ok, polars_ldf} =
-              apply(Native, :lf_select, [inner_ldf | args])
+    |> stack()
+    |> Enum.reduce(ldf.data.frame, fn {operation, args}, polars_ldf ->
+      args = normalise_operation_args(operation, args, polars_ldf)
 
-            polars_ldf
+      case apply(Native, operation, args) do
+        {:ok, polars_ldf} ->
+          polars_ldf
 
-          {:filter_with = op, args} ->
-            [lseries, names] = args
-
-            {normalized_op, normalized_args} =
-              if groups == [] do
-                {"lf_#{op}", [to_expr(lseries)]}
-              else
-                {"lf_grouped_#{op}", [groups, to_expr(lseries), names -- groups]}
-              end
-
-            # TODO: handle errors
-            {:ok, polars_ldf} =
-              apply(Native, String.to_atom(normalized_op), [inner_ldf | normalized_args])
-
-            polars_ldf
-
-          {op, args} when op in [:head, :tail, :slice] ->
-            {normalized_op, normalized_args} =
-              if groups == [] do
-                {"lf_#{op}", args}
-              else
-                {"lf_grouped_#{op}", [groups | args]}
-              end
-
-            # TODO: handle errors
-            {:ok, polars_ldf} =
-              apply(Native, String.to_atom(normalized_op), [inner_ldf | normalized_args])
-
-            polars_ldf
-        end
-      end)
+        {:error, error} when is_binary(error) ->
+          RuntimeError.exception(error)
+      end
     end)
+  end
+
+  defp normalise_operation_args(:lf_concat_rows, args, _polars_df), do: args
+  defp normalise_operation_args(_operation, args, polars_ldf), do: [polars_ldf | args]
+
+  defp push_operation(ldf, {operation, args}) do
+    stack = [{operation, args} | ldf.data.stack]
+
+    %{ldf | data: %{ldf.data | stack: stack}}
   end
 
   @impl true
@@ -134,20 +112,16 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Single table verbs
 
   @impl true
-  def head(ldf, rows), do: LazyStack.push_operation(ldf, {:head, [rows]})
+  def head(ldf, rows), do: push_operation(ldf, {:lf_head, [rows]})
 
   @impl true
-  def tail(ldf, rows), do: LazyStack.push_operation(ldf, {:tail, [rows]})
+  def tail(ldf, rows), do: push_operation(ldf, {:lf_tail, [rows]})
 
   @impl true
-  # Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
-  def select(_ldf, out_ldf), do: LazyStack.push_operation(out_ldf, {:select, [out_ldf.names]})
+  def select(_ldf, out_ldf), do: push_operation(out_ldf, {:lf_select, [out_ldf.names]})
 
   @impl true
-  def slice(ldf, offset, length),
-    do: LazyStack.push_operation(ldf, {:slice, [offset, length]})
-
-  # do: Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length])
+  def slice(ldf, offset, length), do: push_operation(ldf, {:lf_slice, [offset, length]})
 
   # IO
 
@@ -200,7 +174,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         do: max_rows,
         else: infer_schema_length
 
-    df =
+    result =
       Native.lf_from_csv(
         entry.path,
         infer_schema_length,
@@ -217,8 +191,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         char_byte(eol_delimiter)
       )
 
-    case df do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+    case result do
+      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(%__MODULE__{frame: polars_ldf})}
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -252,7 +226,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_parquet(%S3.Entry{} = entry, max_rows, columns) do
     case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(%__MODULE__{frame: polars_ldf})}
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -260,7 +234,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_parquet(%Local.Entry{} = entry, max_rows, columns) do
     case Native.lf_from_parquet(entry.path, max_rows, columns) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(%__MODULE__{frame: polars_ldf})}
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -274,7 +248,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
     case Native.lf_from_ndjson(entry.path, infer_schema_length, batch_size) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(%__MODULE__{frame: polars_ldf})}
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -288,7 +262,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_ipc(%Local.Entry{} = entry, columns) when is_nil(columns) do
     case Native.lf_from_ipc(entry.path) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(%__MODULE__{frame: polars_ldf})}
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -382,9 +356,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = df, %Local.Entry{} = entry, {compression, level}, streaming) do
+  def to_parquet(%DF{} = ldf, %Local.Entry{} = entry, {compression, level}, streaming) do
+    polars_df = apply_operations(ldf)
+
     case Native.lf_to_parquet(
-           df.data,
+           polars_df,
            entry.path,
            Shared.parquet_compression(compression, level),
            streaming
@@ -396,8 +372,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, {compression, level}, _streaming = true) do
+    polars_df = apply_operations(ldf)
+
     case Native.lf_to_parquet_cloud(
-           ldf.data,
+           polars_df,
            entry,
            Shared.parquet_compression(compression, level)
          ) do
@@ -414,8 +392,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_ipc(%DF{} = df, %Local.Entry{} = entry, {compression, _level}, streaming) do
-    case Native.lf_to_ipc(df.data, entry.path, Atom.to_string(compression), streaming) do
+  def to_ipc(%DF{} = ldf, %Local.Entry{} = entry, {compression, _level}, streaming) do
+    polars_df = apply_operations(ldf)
+
+    case Native.lf_to_ipc(polars_df, entry.path, Atom.to_string(compression), streaming) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
@@ -433,24 +413,23 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Eager.to_ipc(eager_df, entry, compression, false)
   end
 
-  # @impl true
-  # def filter_with(
-  #       %DF{},
-  #       %DF{groups: [_ | _]},
-  #       %LazySeries{aggregation: true}
-  #     ) do
-  #   raise "filter_with/2 with groups and aggregations is not supported yet for lazy frames"
-  # end
+  @impl true
+  def filter_with(
+        %DF{},
+        %DF{groups: [_ | _]},
+        %LazySeries{aggregation: true}
+      ) do
+    raise "filter_with/2 with groups and aggregations is not supported yet for lazy frames"
+  end
 
   @impl true
   def filter_with(_df, out_df, %LazySeries{} = lseries) do
-    # Shared.apply_dataframe(df, out_df, :lf_filter_with, [to_expr(lseries)])
-    LazyStack.push_operation(out_df, {:filter_with, [lseries, out_df.names]})
+    push_operation(out_df, {:lf_filter_with, [to_expr(lseries)]})
   end
 
   @impl true
   def sort_with(
-        %DF{groups: []} = df,
+        %DF{groups: []},
         out_df,
         column_pairs,
         maintain_order?,
@@ -464,12 +443,16 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       |> Enum.map(fn {direction, lazy_series} -> {direction == :desc, to_expr(lazy_series)} end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(df, out_df, :lf_sort_with, [
-      expressions,
-      directions,
-      maintain_order?,
-      nulls_last?
-    ])
+    push_operation(
+      out_df,
+      {:lf_sort_with,
+       [
+         expressions,
+         directions,
+         maintain_order?,
+         nulls_last?
+       ]}
+    )
   end
 
   @impl true
@@ -482,11 +465,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     maybe_columns_to_keep =
       if df.names != out_df.names, do: Enum.map(out_df.names, &Native.expr_column/1)
 
-    Shared.apply_dataframe(df, out_df, :lf_distinct, [columns, maybe_columns_to_keep])
+    push_operation(out_df, {:lf_distinct, [columns, maybe_columns_to_keep]})
   end
 
   @impl true
-  def mutate_with(%DF{} = df, %DF{groups: []} = out_df, column_pairs) do
+  def mutate_with(%DF{}, %DF{groups: []} = out_df, column_pairs) do
     exprs =
       for {name, lazy_series} <- column_pairs do
         lazy_series
@@ -494,7 +477,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         |> alias_expr(name)
       end
 
-    Shared.apply_dataframe(df, out_df, :lf_mutate_with, [exprs])
+    push_operation(out_df, {:lf_mutate_with, [exprs]})
   end
 
   @impl true
@@ -503,32 +486,36 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def rename(%DF{} = df, %DF{} = out_df, pairs),
-    do: Shared.apply_dataframe(df, out_df, :lf_rename_columns, [pairs])
+  def rename(%DF{}, %DF{} = out_df, pairs),
+    do: push_operation(out_df, {:lf_rename_columns, [pairs]})
 
   @impl true
   def drop_nil(%DF{} = df, columns) do
     exprs = for col <- columns, do: Native.expr_column(col)
-    Shared.apply_dataframe(df, df, :lf_drop_nils, [exprs])
+    push_operation(df, {:lf_drop_nils, [exprs]})
   end
 
   @impl true
-  def pivot_longer(%DF{} = df, %DF{} = out_df, cols_to_pivot, cols_to_keep, names_to, values_to),
+  def pivot_longer(%DF{}, %DF{} = out_df, cols_to_pivot, cols_to_keep, names_to, values_to),
     do:
-      Shared.apply_dataframe(df, out_df, :lf_pivot_longer, [
-        cols_to_keep,
-        cols_to_pivot,
-        names_to,
-        values_to
-      ])
+      push_operation(
+        out_df,
+        {:lf_pivot_longer,
+         [
+           cols_to_keep,
+           cols_to_pivot,
+           names_to,
+           values_to
+         ]}
+      )
 
   @impl true
-  def explode(%DF{} = df, %DF{} = out_df, columns),
-    do: Shared.apply_dataframe(df, out_df, :lf_explode, [columns])
+  def explode(%DF{}, %DF{} = out_df, columns),
+    do: push_operation(out_df, {:lf_explode, [columns]})
 
   @impl true
-  def unnest(%DF{} = df, %DF{} = out_df, columns),
-    do: Shared.apply_dataframe(df, out_df, :lf_unnest, [columns])
+  def unnest(%DF{}, %DF{} = out_df, columns),
+    do: push_operation(out_df, {:lf_unnest, [columns]})
 
   # Groups
 
@@ -540,16 +527,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         alias_expr(original_expr, name)
       end
 
-    # groups_exprs = for group <- groups, do: Native.expr_column(group)
+    groups_exprs = for group <- groups, do: Native.expr_column(group)
 
-    # Shared.apply_dataframe(df, out_df, :lf_summarise_with, [groups_exprs, exprs])
-    LazyStack.push_operation(out_df, {:summarise_with, [exprs]}, groups)
+    push_operation(out_df, {:lf_summarise_with, [groups_exprs, exprs]})
   end
 
   # Two or more tables
 
   @impl true
-  def join(%DF{} = left, %DF{} = right, %DF{} = out_df, on, how)
+  def join(%DF{} = _left, %DF{} = right, %DF{} = out_df, on, how)
       when is_list(on) and how in [:left, :inner, :cross, :outer] do
     how = Atom.to_string(how)
 
@@ -558,11 +544,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       |> Enum.map(fn {left, right} -> {Native.expr_column(left), Native.expr_column(right)} end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(left, out_df, :lf_join, [right.data, left_on, right_on, how, "_right"])
+    push_operation(
+      out_df,
+      {:lf_join, [apply_operations(right), left_on, right_on, how, "_right"]}
+    )
   end
 
   @impl true
-  def join(%DF{} = left, %DF{} = right, %DF{} = out_df, on, :right)
+  def join(%DF{} = left, %DF{} = _right, %DF{} = out_df, on, :right)
       when is_list(on) do
     # Right join is the opposite of left join. So we swap the "on" keys, and swap the DFs
     # in the join.
@@ -571,25 +560,37 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       |> Enum.map(fn {left, right} -> {Native.expr_column(right), Native.expr_column(left)} end)
       |> Enum.unzip()
 
-    Shared.apply_dataframe(right, out_df, :lf_join, [
-      left.data,
-      left_on,
-      right_on,
-      "left",
-      "_left"
-    ])
+    push_operation(
+      out_df,
+      {:lf_join,
+       [
+         apply_operations(left),
+         left_on,
+         right_on,
+         "left",
+         "_left"
+       ]}
+    )
   end
 
   @impl true
-  def concat_rows([%DF{} | _t] = dfs, %DF{} = out_df) do
-    polars_dfs = Enum.map(dfs, & &1.data)
-    %PolarsLazyFrame{} = polars_df = Shared.apply(:lf_concat_rows, [polars_dfs])
-    %{out_df | data: polars_df}
+  def concat_rows([%DF{} | _tail] = dfs, %DF{} = out_df) do
+    polars_dfs =
+      Enum.map(dfs, &apply_operations/1)
+
+    # Since we apply operations in all DFs, and out_df is pointing to the `head`,
+    # we need to reset the operations for `out_df` (they were applied already).
+    out_df
+    |> reset_stack()
+    |> push_operation({:lf_concat_rows, [polars_dfs]})
   end
 
   @impl true
-  def concat_columns([%DF{} = head | tail], %DF{} = out_df) do
-    Shared.apply_dataframe(head, out_df, :lf_concat_columns, [Enum.map(tail, & &1.data)])
+  def concat_columns([%DF{} | tail], %DF{} = out_df) do
+    # Out df is the "same" as `head`, so we ignore the first.
+    polars_dfs = Enum.map(tail, &apply_operations/1)
+
+    push_operation(out_df, {:lf_concat_columns, [polars_dfs]})
   end
 
   not_available_funs = [
