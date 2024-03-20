@@ -36,20 +36,6 @@ pub fn lf_head(data: ExLazyFrame, length: u32) -> Result<ExLazyFrame, ExplorerEr
 }
 
 #[rustler::nif]
-pub fn lf_grouped_head(
-    data: ExLazyFrame,
-    groups: Vec<String>,
-    length: usize,
-) -> Result<ExLazyFrame, ExplorerError> {
-    let lf = data.clone_inner();
-    let groups_exprs: Vec<Expr> = groups.iter().map(|group| col(group)).collect();
-
-    Ok(ExLazyFrame::new(
-        lf.group_by_stable(groups_exprs).head(Some(length)),
-    ))
-}
-
-#[rustler::nif]
 pub fn lf_tail(data: ExLazyFrame, length: u32) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
     Ok(ExLazyFrame::new(lf.tail(length)))
@@ -115,34 +101,6 @@ pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame,
     let expr = ex_expr.clone_inner();
 
     Ok(ExLazyFrame::new(ldf.filter(expr)))
-}
-
-#[rustler::nif]
-pub fn lf_grouped_filter_with(
-    data: ExLazyFrame,
-    groups: Vec<String>,
-    ex_expr: ExExpr,
-    names: Vec<String>,
-) -> Result<ExLazyFrame, ExplorerError> {
-    let ldf = data.clone_inner();
-    let expr = ex_expr.clone_inner();
-
-    let groups_exprs: Vec<Expr> = groups.iter().map(|group| col(group)).collect();
-    // We repeat the filter because the expression could use anything.
-    let agg_exprs: Vec<Expr> = names
-        .iter()
-        .map(|name| col(name).filter(expr.clone()))
-        .collect();
-
-    let names_exprs: Vec<Expr> = names.iter().map(|name| col(name)).collect();
-
-    Ok(ExLazyFrame::new(
-        ldf.group_by_stable(groups_exprs)
-            .agg(agg_exprs)
-            .explode(names_exprs),
-    ))
-
-    // Ok(ExLazyFrame::new(ldf.filter(expr)))
 }
 
 #[rustler::nif]

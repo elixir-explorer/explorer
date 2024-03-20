@@ -222,7 +222,6 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_dtypes(_df), do: err()
   def lf_fetch(_df, _n_rows), do: err()
   def lf_head(_df, _n_rows), do: err()
-  def lf_grouped_head(_df, _groups, _n_rows), do: err()
   def lf_names(_df), do: err()
   def lf_select(_df, _columns), do: err()
   def lf_tail(_df, _n_rows), do: err()
@@ -252,7 +251,6 @@ defmodule Explorer.PolarsBackend.Native do
       do: err()
 
   def lf_filter_with(_df, _expression), do: err()
-  def lf_grouped_filter_with(_df, _groups, _expression, _names), do: err()
 
   def lf_sort_with(
         _df,
