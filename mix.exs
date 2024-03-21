@@ -45,7 +45,7 @@ defmodule Explorer.MixProject do
       {:adbc, "~> 0.1", optional: true},
 
       ## Optional
-      {:rustler, "~> 0.31.0", optional: not (@dev? or @force_build?)},
+      {:rustler, "~> 0.32.0", optional: not (@dev? or @force_build?)},
       {:nx, "~> 0.4", optional: true},
 
       ## Test
