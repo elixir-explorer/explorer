@@ -467,6 +467,21 @@ defmodule Explorer.DataFrame.GroupedTest do
              |> DF.pull("total")
              |> Series.first() == 2175
     end
+
+    test "sorts by group keeping nils last" do
+      with_nil =
+        DF.new(%{
+          id: [1, 1, 1, 2, 2, 2, 3, 3, 3],
+          data: [1, 0.5, nil, 0.7, 1, 0.9, 0.2, 0.2, 0.3]
+        })
+
+      grouped = DF.group_by(with_nil, :id)
+
+      assert grouped |> DF.sort_by(data, nils: :last) |> DF.to_columns(atom_keys: true) == %{
+               data: [0.5, 1.0, nil, 0.7, 0.9, 1.0, 0.2, 0.2, 0.3],
+               id: [1, 1, 1, 2, 2, 2, 3, 3, 3]
+             }
+    end
   end
 
   describe "sort_with/2" do

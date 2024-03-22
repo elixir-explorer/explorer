@@ -354,8 +354,17 @@ pub fn df_sort_by(
             multithreaded,
         )?
     } else {
-        df.group_by_stable(groups)?
-            .apply(|df| df.sort(by_columns.clone(), reverse.clone(), maintain_order))?
+        df.group_by_stable(groups)?.apply(|df| {
+            let by_columns = df.select_series(&by_columns)?;
+            df.sort_impl(
+                by_columns,
+                reverse.clone(),
+                nulls_last,
+                maintain_order,
+                None,
+                multithreaded,
+            )
+        })?
     };
 
     Ok(ExDataFrame::new(new_df))
