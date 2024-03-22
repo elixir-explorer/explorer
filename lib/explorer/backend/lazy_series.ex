@@ -1063,21 +1063,24 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def round(series, decimals) when is_integer(decimals) and decimals >= 0 do
-    data = new(:round, [lazy_series!(series), decimals], {:f, 64})
+    args = [lazy_series!(series), decimals]
+    data = new(:round, args, {:f, 64}, aggregations?(args))
 
     Backend.Series.new(data, {:f, 64})
   end
 
   @impl true
   def floor(series) do
-    data = new(:floor, [lazy_series!(series)], {:f, 64})
+    args = [lazy_series!(series)]
+    data = new(:floor, args, {:f, 64}, aggregations?(args))
 
     Backend.Series.new(data, {:f, 64})
   end
 
   @impl true
   def ceil(series) do
-    data = new(:ceil, [lazy_series!(series)], {:f, 64})
+    args = [lazy_series!(series)]
+    data = new(:ceil, args, {:f, 64}, aggregations?(args))
 
     Backend.Series.new(data, {:f, 64})
   end
