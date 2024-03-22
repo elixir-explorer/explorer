@@ -777,7 +777,7 @@ pub fn s_window_sum(
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
     let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_sum(opts.into())?;
+    let s1 = series.rolling_sum(opts.try_into()?)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -790,7 +790,7 @@ pub fn s_window_mean(
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
     let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_mean(opts.into())?;
+    let s1 = series.rolling_mean(opts.try_into()?)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -823,7 +823,7 @@ pub fn s_window_max(
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
     let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_max(opts.into())?;
+    let s1 = series.rolling_max(opts.try_into()?)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -836,7 +836,7 @@ pub fn s_window_min(
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
     let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_min(opts.into())?;
+    let s1 = series.rolling_min(opts.try_into()?)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -849,7 +849,7 @@ pub fn s_window_standard_deviation(
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
     let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_std(opts.into())?;
+    let s1 = series.rolling_std(opts.try_into()?)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -1055,7 +1055,7 @@ pub fn s_mode(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     if s.dtype().is_numeric() {
-        Ok(ExSeries::new(s.product()))
+        Ok(ExSeries::new(s.product()?))
     } else {
         panic!("product/1 not implemented for {:?}", &s.dtype())
     }

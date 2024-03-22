@@ -4957,7 +4957,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_standard_deviation(s, 2)
       #Explorer.Series<
         Polars[5]
-        f64 [0.0, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 2.1213203435596424]
+        f64 [nil, 0.7071067811865476, 0.7071067811865476, 0.7071067811865476, 2.1213203435596424]
       >
 
       iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5, 6])

@@ -5374,16 +5374,16 @@ defmodule Explorer.DataFrame do
         total_min s64 [1, 2, 2, 2, 3]
       >
 
-  Suppose you want to get the mean petal length of each Iris species. You could do something
+  Suppose you want to get the mean sepal width of each Iris species. You could do something
   like this:
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped_df = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.summarise(grouped_df, mean_petal_length: mean(petal_length))
+      iex> Explorer.DataFrame.summarise(grouped_df, mean_sepal_width: round(mean(sepal_width), 3))
       #Explorer.DataFrame<
         Polars[3 x 2]
         species string ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
-        mean_petal_length f64 [1.464, 4.26, 5.552]
+        mean_sepal_width f64 [3.418, 2.77, 2.974]
       >
 
   In case aggregations for all the dataframe is what you want, you can use ungrouped
