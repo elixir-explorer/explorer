@@ -24,19 +24,19 @@ jobs:
     runs-on: ubuntu-latest
     name: test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/cache@v3
-        with:
-          path: |
-            _build/test/lib/explorer/native/explorer
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: test-native-${{ runner.os }}-${{ hashFiles('native/**/Cargo.lock') }}
-          restore-keys: |
-            test-native-${{ runner.os }}
+      # - uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       _build/test/lib/explorer/native/explorer
+      #       ~/.cargo/bin/
+      #       ~/.cargo/registry/index/
+      #       ~/.cargo/registry/cache/
+      #       ~/.cargo/git/db/
+      #     key: test-native-${{ runner.os }}-${{ hashFiles('native/**/Cargo.lock') }}
+      #     restore-keys: |
+      #       test-native-${{ runner.os }}
 
       - uses: erlef/setup-beam@v1
         with:
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     name: mix format
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "26.2.1"
