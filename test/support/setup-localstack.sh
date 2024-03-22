@@ -41,7 +41,7 @@ then
 fi
 
 # Run podman or docker.
-command "$container_tool" run -d -p 4566:4566 docker.io/localstack/localstack:2.0
+command "$container_tool" run -d -p 4566:4566 docker.io/localstack/localstack:s3-latest
 command "$container_tool" run -d -p 1338:1338 amazon/amazon-ec2-metadata-mock:v1.9.2 --imdsv2
 echo "waiting a little bit.."
 sleep 5
