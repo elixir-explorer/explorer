@@ -212,10 +212,10 @@ defmodule Explorer.Query do
       #Explorer.DataFrame<
         Polars[3 x 5]
         species string ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
-        sepal_length_mean f64 [5.005999999999999, 5.936, 6.587999999999998]
-        sepal_width_mean f64 [3.4180000000000006, 2.7700000000000005, 2.9739999999999998]
-        petal_length_mean f64 [1.464, 4.26, 5.552]
-        petal_width_mean f64 [0.2439999999999999, 1.3259999999999998, 2.026]
+        sepal_length_mean f64 [5.006, 5.936, 6.587999999999999]
+        sepal_width_mean f64 [3.418, 2.77, 2.974]
+        petal_length_mean f64 [1.464, 4.26, 5.5520000000000005]
+        petal_width_mean f64 [0.244, 1.3259999999999998, 2.026]
       >
 
   `sort_by` expects a list of columns to sort by, while for-comprehensions

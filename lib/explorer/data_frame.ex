@@ -5383,7 +5383,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         species string ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
-        mean_petal_length f64 [1.464, 4.26, 5.552]
+        mean_petal_length f64 [1.464, 4.26, 5.5520000000000005]
       >
 
   In case aggregations for all the dataframe is what you want, you can use ungrouped
