@@ -472,7 +472,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       with_nil =
         DF.new(%{
           id: [1, 1, 1, 2, 2, 2, 3, 3, 3],
-          data: [0.5, 1, nil, 0.7, 1, 0.9, 0.2, 0.2, 0.3]
+          data: [1, 0.5, nil, 0.7, 1, 0.9, 0.2, 0.2, 0.3]
         })
 
       grouped = DF.group_by(with_nil, :id)
