@@ -5379,7 +5379,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped_df = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.summarise(grouped_df, mean_sepal_width: mean(sepal_width))
+      iex> Explorer.DataFrame.summarise(grouped_df, mean_sepal_width: round(mean(sepal_width), 3))
       #Explorer.DataFrame<
         Polars[3 x 2]
         species string ["Iris-setosa", "Iris-versicolor", "Iris-virginica"]
