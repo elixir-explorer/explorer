@@ -366,12 +366,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_csv(%DF{data: _df}, %S3.Entry{}, _header?, _delimiter, _streaming = true) do
-    {:error, ArgumentError.exception("streaming is not supported for writes to AWS S3")}
-  end
-
-  @impl true
-  def to_csv(%DF{} = ldf, %S3.Entry{} = entry, header?, delimiter, _streaming = false) do
+  def to_csv(%DF{} = ldf, %S3.Entry{} = entry, header?, delimiter, _streaming) do
     eager_df = collect(ldf)
 
     Eager.to_csv(eager_df, entry, header?, delimiter, false)

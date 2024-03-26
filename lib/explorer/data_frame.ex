@@ -1329,15 +1329,15 @@ defmodule Explorer.DataFrame do
 
     * `:streaming` - Tells the backend if it should use streaming, which means
       that the dataframe is not loaded to the memory at once, and instead it is
-      written in chunks from a lazy dataframe.  This option is not supported when using an S3
-      entry.
+      written in chunks from a lazy dataframe.  Defaults to true on supported filesystems,
+      ignored on all others.
 
   """
   @doc type: :io
   @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
           :ok | {:error, Exception.t()}
   def to_csv(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: false, config: nil)
+    opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: true, config: nil)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
       Shared.apply_impl(df, :to_csv, [entry, opts[:header], opts[:delimiter], opts[:streaming]])

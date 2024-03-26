@@ -254,7 +254,7 @@ defmodule Explorer.DataFrame.LazyTest do
     path = Path.join([tmp_dir, "fossil_fuels.csv"])
 
     ldf = DF.head(ldf, 15)
-    DF.to_csv!(ldf, path)
+    assert :ok = DF.to_csv(ldf, path)
 
     df = DF.collect(ldf)
     df1 = DF.from_csv!(path)
@@ -263,11 +263,11 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   @tag :tmp_dir
-  test "to_csv/2 - with streaming enabled", %{ldf: ldf, tmp_dir: tmp_dir} do
+  test "to_csv/2 - with streaming disabled", %{ldf: ldf, tmp_dir: tmp_dir} do
     path = Path.join([tmp_dir, "fossil_fuels.csv"])
 
     ldf = DF.head(ldf, 15)
-    DF.to_csv!(ldf, path, streaming: true)
+    assert :ok = DF.to_csv(ldf, path, streaming: false)
 
     df = DF.collect(ldf)
     df1 = DF.from_csv!(path)
@@ -275,7 +275,8 @@ defmodule Explorer.DataFrame.LazyTest do
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
   end
 
-  test "to_csv/3 - cloud with streaming enabled", %{ldf: ldf} do
+  @tag :cloud_integration
+  test "to_csv/3 - cloud with streaming enabled - ignores streaming option", %{ldf: ldf} do
     config = %FSS.S3.Config{
       access_key_id: "test",
       secret_access_key: "test",
@@ -286,9 +287,12 @@ defmodule Explorer.DataFrame.LazyTest do
     path = "s3://test-bucket/test-lazy-writes/wine-#{System.monotonic_time()}.csv"
 
     ldf = DF.head(ldf, 15)
-    assert {:error, error} = DF.to_ipc(ldf, path, streaming: true, config: config)
+    assert :ok = DF.to_csv(ldf, path, streaming: true, config: config)
 
-    assert error == ArgumentError.exception("streaming is not supported for writes to AWS S3")
+    df = DF.collect(ldf)
+    df1 = DF.from_csv!(path, config: config)
+
+    assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
   end
 
   @tag :tmp_dir
