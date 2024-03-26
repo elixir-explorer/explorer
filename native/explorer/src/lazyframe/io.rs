@@ -243,7 +243,7 @@ pub fn lf_to_csv(
         let options = CsvWriterOptions {
             include_header: include_headers,
             maintain_order: true,
-            serialize_options: serialize_options,
+            serialize_options,
             ..Default::default()
         };
 
