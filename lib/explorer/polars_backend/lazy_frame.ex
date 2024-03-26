@@ -354,10 +354,12 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_csv(%DF{data: df}, %Local.Entry{} = entry, header?, delimiter, streaming) do
+  def to_csv(%DF{} = ldf, %Local.Entry{} = entry, header?, delimiter, streaming) do
     <<delimiter::utf8>> = delimiter
 
-    case Native.lf_to_csv(df, entry.path, header?, delimiter, streaming) do
+    polars_df = apply_operations(ldf)
+
+    case Native.lf_to_csv(polars_df, entry.path, header?, delimiter, streaming) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end

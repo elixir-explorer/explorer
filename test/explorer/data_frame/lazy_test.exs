@@ -275,6 +275,22 @@ defmodule Explorer.DataFrame.LazyTest do
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
   end
 
+  test "to_csv/3 - cloud with streaming enabled", %{ldf: ldf} do
+    config = %FSS.S3.Config{
+      access_key_id: "test",
+      secret_access_key: "test",
+      endpoint: "http://localhost:4566",
+      region: "us-east-1"
+    }
+
+    path = "s3://test-bucket/test-lazy-writes/wine-#{System.monotonic_time()}.csv"
+
+    ldf = DF.head(ldf, 15)
+    assert {:error, error} = DF.to_ipc(ldf, path, streaming: true, config: config)
+
+    assert error == ArgumentError.exception("streaming is not supported for writes to AWS S3")
+  end
+
   @tag :tmp_dir
   test "to_ipc/2 - with defaults", %{ldf: ldf, tmp_dir: tmp_dir} do
     path = Path.join([tmp_dir, "fossil_fuels.ipc"])

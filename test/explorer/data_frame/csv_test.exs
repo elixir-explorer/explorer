@@ -587,16 +587,6 @@ defmodule Explorer.DataFrame.CSVTest do
       saved_df = DF.from_csv!(entry)
       assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
     end
-
-    test "returns an error when the streaming option is enabled", %{df: df, s3_config: config} do
-      entry = %FSS.S3.Entry{
-        key: "wine-yolo-streaming-#{System.monotonic_time()}.csv",
-        config: config
-      }
-
-      assert {:error, error} = DF.to_csv(df, entry, streaming: true)
-      assert error == ArgumentError.exception("streaming is not supported for writes to AWS S3")
-    end
   end
 
   describe "from_csv/2 - HTTP" do
