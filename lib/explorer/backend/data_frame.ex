@@ -59,7 +59,13 @@ defmodule Explorer.Backend.DataFrame do
               parse_dates :: boolean(),
               eol_delimiter :: option(String.t())
             ) :: io_result(df)
-  @callback to_csv(df, entry :: fs_entry(), header? :: boolean(), delimiter :: String.t()) ::
+  @callback to_csv(
+              df,
+              entry :: fs_entry(),
+              header? :: boolean(),
+              delimiter :: String.t(),
+              streaming :: boolean()
+            ) ::
               ok_result()
   @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: io_result(binary())
 

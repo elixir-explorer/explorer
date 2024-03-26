@@ -1327,15 +1327,20 @@ defmodule Explorer.DataFrame do
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
+    * `:streaming` - Tells the backend if it should use streaming, which means
+      that the dataframe is not loaded to the memory at once, and instead it is
+      written in chunks from a lazy dataframe.  This option is not supported when using an S3
+      entry.
+
   """
   @doc type: :io
   @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
           :ok | {:error, Exception.t()}
   def to_csv(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",", config: nil)
+    opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: false, config: nil)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_csv, [entry, opts[:header], opts[:delimiter]])
+      Shared.apply_impl(df, :to_csv, [entry, opts[:header], opts[:delimiter], opts[:streaming]])
     end
   end
 
@@ -4261,8 +4266,7 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec transpose(df :: DataFrame.t(), opts :: Keyword.t()) :: DataFrame.t()
   def transpose(df, opts \\ []) do
-    opts =
-      Keyword.validate!(opts, header: false, columns: nil)
+    opts = Keyword.validate!(opts, header: false, columns: nil)
 
     header =
       case opts[:header] do
