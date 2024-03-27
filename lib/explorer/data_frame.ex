@@ -1329,7 +1329,7 @@ defmodule Explorer.DataFrame do
 
     * `:streaming` - Tells the backend if it should use streaming, which means
       that the dataframe is not loaded to the memory at once, and instead it is
-      written in chunks from a lazy dataframe.  Defaults to true on supported filesystems,
+      written in chunks from a lazy dataframe.  Defaults to true for local filesystems,
       ignored on all others.
 
   """
