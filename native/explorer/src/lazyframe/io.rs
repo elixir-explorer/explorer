@@ -225,6 +225,43 @@ pub fn lf_from_csv(
     Ok(ExLazyFrame::new(df))
 }
 
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_to_csv(
+    data: ExLazyFrame,
+    filename: &str,
+    include_headers: bool,
+    delimiter: u8,
+    streaming: bool,
+) -> Result<(), ExplorerError> {
+    let lf = data.clone_inner();
+    if streaming {
+        let serialize_options = SerializeOptions {
+            separator: delimiter,
+            ..Default::default()
+        };
+
+        let options = CsvWriterOptions {
+            include_header: include_headers,
+            maintain_order: true,
+            serialize_options,
+            ..Default::default()
+        };
+
+        lf.sink_csv(filename.into(), options)?;
+        Ok(())
+    } else {
+        let df = lf.collect()?;
+        let file = File::create(filename)?;
+        let mut buf_writer = BufWriter::new(file);
+
+        CsvWriter::new(&mut buf_writer)
+            .include_header(include_headers)
+            .with_separator(delimiter)
+            .finish(&mut df.clone())?;
+        Ok(())
+    }
+}
+
 #[cfg(feature = "ndjson")]
 #[rustler::nif]
 pub fn lf_from_ndjson(

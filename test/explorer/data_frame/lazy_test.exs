@@ -250,6 +250,52 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   @tag :tmp_dir
+  test "to_csv/2 - with defaults", %{ldf: ldf, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.csv"])
+
+    ldf = DF.head(ldf, 15)
+    assert :ok = DF.to_csv(ldf, path)
+
+    df = DF.collect(ldf)
+    df1 = DF.from_csv!(path)
+
+    assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
+  end
+
+  @tag :tmp_dir
+  test "to_csv/2 - with streaming disabled", %{ldf: ldf, tmp_dir: tmp_dir} do
+    path = Path.join([tmp_dir, "fossil_fuels.csv"])
+
+    ldf = DF.head(ldf, 15)
+    assert :ok = DF.to_csv(ldf, path, streaming: false)
+
+    df = DF.collect(ldf)
+    df1 = DF.from_csv!(path)
+
+    assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
+  end
+
+  @tag :cloud_integration
+  test "to_csv/3 - cloud with streaming enabled - ignores streaming option", %{ldf: ldf} do
+    config = %FSS.S3.Config{
+      access_key_id: "test",
+      secret_access_key: "test",
+      endpoint: "http://localhost:4566",
+      region: "us-east-1"
+    }
+
+    path = "s3://test-bucket/test-lazy-writes/wine-#{System.monotonic_time()}.csv"
+
+    ldf = DF.head(ldf, 15)
+    assert :ok = DF.to_csv(ldf, path, streaming: true, config: config)
+
+    df = DF.collect(ldf)
+    df1 = DF.from_csv!(path, config: config)
+
+    assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
+  end
+
+  @tag :tmp_dir
   test "to_ipc/2 - with defaults", %{ldf: ldf, tmp_dir: tmp_dir} do
     path = Path.join([tmp_dir, "fossil_fuels.ipc"])
 

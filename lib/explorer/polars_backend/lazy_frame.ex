@@ -354,6 +354,25 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
+  def to_csv(%DF{} = ldf, %Local.Entry{} = entry, header?, delimiter, streaming) do
+    <<delimiter::utf8>> = delimiter
+
+    polars_df = apply_operations(ldf)
+
+    case Native.lf_to_csv(polars_df, entry.path, header?, delimiter, streaming) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
+  end
+
+  @impl true
+  def to_csv(%DF{} = ldf, %S3.Entry{} = entry, header?, delimiter, _streaming) do
+    eager_df = collect(ldf)
+
+    Eager.to_csv(eager_df, entry, header?, delimiter, false)
+  end
+
+  @impl true
   def to_parquet(%DF{} = ldf, %Local.Entry{} = entry, {compression, level}, streaming) do
     polars_df = apply_operations(ldf)
 
@@ -573,8 +592,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def concat_rows([%DF{} | _tail] = dfs, %DF{} = out_df) do
-    polars_dfs =
-      Enum.map(dfs, &apply_operations/1)
+    polars_dfs = Enum.map(dfs, &apply_operations/1)
 
     # Since we apply operations in all DFs, and out_df is pointing to the `head`,
     # we need to reset the operations for `out_df` (they were applied already).
@@ -608,7 +626,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     put: 4,
     sample: 5,
     slice: 2,
-    to_csv: 4,
     to_ipc_stream: 3,
     to_ndjson: 2,
     to_rows: 2,

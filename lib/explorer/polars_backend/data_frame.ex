@@ -144,7 +144,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_csv(%DataFrame{data: df}, %Local.Entry{} = entry, header?, delimiter) do
+  def to_csv(%DataFrame{data: df}, %Local.Entry{} = entry, header?, delimiter, _streaming) do
     <<delimiter::utf8>> = delimiter
 
     case Native.df_to_csv(df, entry.path, header?, delimiter) do
@@ -154,7 +154,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_csv(%DataFrame{data: df}, %S3.Entry{} = entry, header?, delimiter) do
+  def to_csv(%DataFrame{data: df}, %S3.Entry{} = entry, header?, delimiter, _streaming) do
     <<delimiter::utf8>> = delimiter
 
     case Native.df_to_csv_cloud(df, entry, header?, delimiter) do
