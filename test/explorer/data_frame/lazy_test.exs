@@ -773,6 +773,44 @@ defmodule Explorer.DataFrame.LazyTest do
 
       assert DF.shape(df) == {2, 10}
     end
+
+    test "selects the first 2 rows of each group", %{ldf: ldf} do
+      ldf1 =
+        ldf
+        |> DF.group_by("country")
+        |> DF.head(2)
+
+      df = DF.collect(ldf1)
+
+      assert DF.shape(df) == {444, 10}
+    end
+  end
+
+  describe "tail/2" do
+    test "selects the last 5 rows by default", %{ldf: ldf} do
+      ldf1 = DF.tail(ldf)
+      df = DF.collect(ldf1)
+
+      assert DF.shape(df) == {5, 10}
+    end
+
+    test "selects the last 2 rows", %{ldf: ldf} do
+      ldf1 = DF.tail(ldf, 2)
+      df = DF.collect(ldf1)
+
+      assert DF.shape(df) == {2, 10}
+    end
+
+    test "selects the last 2 rows of each group", %{ldf: ldf} do
+      ldf1 =
+        ldf
+        |> DF.group_by("country")
+        |> DF.tail(2)
+
+      df = DF.collect(ldf1)
+
+      assert DF.shape(df) == {444, 10}
+    end
   end
 
   describe "distinct/2" do

@@ -30,15 +30,35 @@ pub fn lf_describe_plan(data: ExLazyFrame, optimized: bool) -> Result<String, Ex
 }
 
 #[rustler::nif]
-pub fn lf_head(data: ExLazyFrame, length: u32) -> Result<ExLazyFrame, ExplorerError> {
+pub fn lf_head(
+    data: ExLazyFrame,
+    length: u32,
+    groups: Vec<ExExpr>,
+) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
-    Ok(ExLazyFrame::new(lf.limit(length)))
+    let result_lf = if groups.is_empty() {
+        lf.limit(length)
+    } else {
+        lf.group_by_stable(groups).head(Some(length.try_into()?))
+    };
+
+    Ok(ExLazyFrame::new(result_lf))
 }
 
 #[rustler::nif]
-pub fn lf_tail(data: ExLazyFrame, length: u32) -> Result<ExLazyFrame, ExplorerError> {
+pub fn lf_tail(
+    data: ExLazyFrame,
+    length: u32,
+    groups: Vec<ExExpr>,
+) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
-    Ok(ExLazyFrame::new(lf.tail(length)))
+    let result_lf = if groups.is_empty() {
+        lf.tail(length)
+    } else {
+        lf.group_by_stable(groups).tail(Some(length.try_into()?))
+    };
+
+    Ok(ExLazyFrame::new(result_lf))
 }
 
 #[rustler::nif]

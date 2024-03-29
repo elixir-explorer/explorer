@@ -109,11 +109,13 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   # Single table verbs
 
-  @impl true
-  def head(ldf, rows), do: push_operation(ldf, {:lf_head, [rows]})
+  defp groups_exprs(groups), do: Enum.map(groups, &Native.expr_column/1)
 
   @impl true
-  def tail(ldf, rows), do: push_operation(ldf, {:lf_tail, [rows]})
+  def head(ldf, rows), do: push_operation(ldf, {:lf_head, [rows, groups_exprs(ldf.groups)]})
+
+  @impl true
+  def tail(ldf, rows), do: push_operation(ldf, {:lf_tail, [rows, groups_exprs(ldf.groups)]})
 
   @impl true
   def select(_ldf, out_ldf), do: push_operation(out_ldf, {:lf_select, [out_ldf.names]})

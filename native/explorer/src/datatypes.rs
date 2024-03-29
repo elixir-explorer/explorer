@@ -39,7 +39,7 @@ pub struct ExDataFrame {
     pub resource: ResourceArc<ExDataFrameRef>,
 }
 
-#[derive(NifStruct)]
+#[derive(NifStruct, Clone)]
 #[module = "Explorer.PolarsBackend.Expression"]
 pub struct ExExpr {
     pub resource: ResourceArc<ExExprRef>,
@@ -610,5 +610,11 @@ impl ExS3Config {
         }
 
         CloudOptions::default().with_aws(aws_opts)
+    }
+}
+
+impl From<ExExpr> for Expr {
+    fn from(ex_expr: ExExpr) -> Self {
+        ex_expr.clone_inner()
     }
 }
