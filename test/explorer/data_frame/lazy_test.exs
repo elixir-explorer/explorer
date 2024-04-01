@@ -74,6 +74,16 @@ defmodule Explorer.DataFrame.LazyTest do
     assert DF.n_rows(df) == 5
   end
 
+  test "slice/3 with groups", %{ldf: ldf} do
+    new_ldf = ldf |> DF.group_by("country") |> DF.slice(0, 2)
+    assert new_ldf |> DF.names() == DF.names(ldf)
+
+    df = DF.collect(new_ldf)
+
+    # Just like the head with 2 items per group.
+    assert DF.n_rows(df) == 444
+  end
+
   test "discard/2", %{ldf: ldf} do
     assert ldf |> DF.discard(["total", "cement"]) |> DF.names() == [
              "year",
@@ -664,13 +674,20 @@ defmodule Explorer.DataFrame.LazyTest do
 
       ldf_grouped = DF.group_by(ldf, "col1")
 
-      assert_raise RuntimeError,
-                   "filter_with/2 with groups and aggregations is not supported yet for lazy frames",
-                   fn ->
-                     DF.filter_with(ldf_grouped, fn ldf ->
-                       Series.greater(ldf["col2"], Series.mean(ldf["col2"]))
-                     end)
-                   end
+      ldf_grouped1 =
+        DF.filter_with(ldf_grouped, fn ldf ->
+          Series.greater(ldf["col2"], Series.mean(ldf["col2"]))
+        end)
+
+      df1 = DF.collect(ldf_grouped1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               col1: ["a", "b"],
+               col2: [5, 6],
+               col3: ["d", "j"]
+             }
+
+      assert DF.groups(df1) == ["col1"]
     end
   end
 
@@ -747,15 +764,41 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
 
-    test "raise when groups is in use" do
-      ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
-      ldf = DF.group_by(ldf, "b")
+    test "sort considering groups" do
+      # CSV from the Window Function section of the Polars guide.
+      # https://docs.pola.rs/user-guide/expressions/window/
+      psychic_pokemons = """
+      name,type 1,speed
+      Slowpoke,Water,15
+      Slowbro, Water,30
+      SlowbroMega Slowbro,Water,30
+      Exeggcute,Grass,40
+      Exeggutor,Grass,55
+      Starmie,Water,115
+      Jynx,Ice,95
+      """
 
-      assert_raise RuntimeError,
-                   "sort_with/2 with groups is not supported yet for lazy frames",
-                   fn ->
-                     DF.sort_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
-                   end
+      ldf = DF.load_csv!(psychic_pokemons, lazy: true)
+
+      assert DF.dtypes(ldf) == %{"name" => :string, "type 1" => :string, "speed" => {:s, 64}}
+
+      grouped_ldf = DF.group_by(ldf, "type 1")
+
+      # Some options are not available for sorting with groups.
+      # How to warn about them? (nils_last and maintain_order)
+      sorted_ldf = DF.sort_with(grouped_ldf, fn ldf -> [desc: ldf["speed"]] end)
+
+      df = DF.collect(sorted_ldf)
+
+      assert DF.to_rows(df, atom_keys: true) == [
+               %{name: "Starmie", speed: 115, "type 1": "Water"},
+               %{name: "Slowbro", speed: 30, "type 1": " Water"},
+               %{name: "SlowbroMega Slowbro", speed: 30, "type 1": "Water"},
+               %{name: "Exeggutor", speed: 55, "type 1": "Grass"},
+               %{name: "Exeggcute", speed: 40, "type 1": "Grass"},
+               %{name: "Slowpoke", speed: 15, "type 1": "Water"},
+               %{name: "Jynx", speed: 95, "type 1": "Ice"}
+             ]
     end
   end
 
@@ -919,15 +962,19 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf1.dtypes == df.dtypes
     end
 
-    test "raise when groups is in use" do
-      ldf = DF.new([a: [1, 2, 3], b: ["a", "b", "c"]], lazy: true)
+    test "calculates aggregations over groups" do
+      ldf = DF.new([a: [1, 16, 2, 3], b: ["a", "a", "b", "c"]], lazy: true)
       ldf1 = DF.group_by(ldf, "b")
 
-      assert_raise RuntimeError,
-                   "mutate_with/2 with groups is not supported yet for lazy frames",
-                   fn ->
-                     DF.mutate_with(ldf1, fn ldf -> [a: Series.cast(ldf["a"], {:f, 64})] end)
-                   end
+      ldf2 = DF.mutate_with(ldf1, fn ldf -> [c: Series.mean(ldf["a"])] end)
+
+      df = DF.collect(ldf2)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 16, 2, 3],
+               b: ["a", "a", "b", "c"],
+               c: [8.5, 8.5, 2, 3]
+             }
     end
   end
 

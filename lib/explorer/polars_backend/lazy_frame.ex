@@ -109,8 +109,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   # Single table verbs
 
-  defp groups_exprs(groups), do: Enum.map(groups, &Native.expr_column/1)
-
   @impl true
   def head(ldf, rows), do: push_operation(ldf, {:lf_head, [rows, groups_exprs(ldf.groups)]})
 
@@ -121,7 +119,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def select(_ldf, out_ldf), do: push_operation(out_ldf, {:lf_select, [out_ldf.names]})
 
   @impl true
-  def slice(ldf, offset, length), do: push_operation(ldf, {:lf_slice, [offset, length]})
+  def slice(ldf, offset, length),
+    do: push_operation(ldf, {:lf_slice, [offset, length, ldf.groups]})
+
+  defp groups_exprs(groups), do: Enum.map(groups, &Native.expr_column/1)
 
   # IO
 
@@ -433,22 +434,22 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def filter_with(
-        %DF{},
-        %DF{groups: [_ | _]},
-        %LazySeries{aggregation: true}
-      ) do
-    raise "filter_with/2 with groups and aggregations is not supported yet for lazy frames"
-  end
+  def filter_with(df, out_df, %LazySeries{} = lseries) do
+    expression =
+      if df.groups == [] do
+        to_expr(lseries)
+      else
+        lseries
+        |> to_expr()
+        |> Native.expr_over(groups_exprs(df.groups))
+      end
 
-  @impl true
-  def filter_with(_df, out_df, %LazySeries{} = lseries) do
-    push_operation(out_df, {:lf_filter_with, [to_expr(lseries)]})
+    push_operation(out_df, {:lf_filter_with, [expression]})
   end
 
   @impl true
   def sort_with(
-        %DF{groups: []},
+        %DF{} = df,
         out_df,
         column_pairs,
         maintain_order?,
@@ -462,21 +463,28 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       |> Enum.map(fn {direction, lazy_series} -> {direction == :desc, to_expr(lazy_series)} end)
       |> Enum.unzip()
 
-    push_operation(
-      out_df,
-      {:lf_sort_with,
-       [
-         expressions,
-         directions,
-         maintain_order?,
-         nulls_last?
-       ]}
-    )
-  end
-
-  @impl true
-  def sort_with(_df, _out_df, _directions, _maintain_order?, _multithreaded?, _nulls_last?) do
-    raise "sort_with/2 with groups is not supported yet for lazy frames"
+    if df.groups == [] do
+      push_operation(
+        out_df,
+        {:lf_sort_with,
+         [
+           expressions,
+           directions,
+           maintain_order?,
+           nulls_last?
+         ]}
+      )
+    else
+      push_operation(
+        out_df,
+        {:lf_grouped_sort_with,
+         [
+           expressions,
+           groups_exprs(df.groups),
+           directions
+         ]}
+      )
+    end
   end
 
   @impl true
@@ -488,20 +496,23 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def mutate_with(%DF{}, %DF{groups: []} = out_df, column_pairs) do
+  def mutate_with(%DF{} = df, %DF{} = out_df, column_pairs) do
+    maybe_over_groups_fun =
+      if df.groups == [] do
+        &Function.identity/1
+      else
+        fn expr -> Native.expr_over(expr, groups_exprs(df.groups)) end
+      end
+
     exprs =
       for {name, lazy_series} <- column_pairs do
         lazy_series
         |> to_expr()
+        |> then(maybe_over_groups_fun)
         |> alias_expr(name)
       end
 
     push_operation(out_df, {:lf_mutate_with, [exprs]})
-  end
-
-  @impl true
-  def mutate_with(_df, _out_df, _mutations) do
-    raise "mutate_with/2 with groups is not supported yet for lazy frames"
   end
 
   @impl true

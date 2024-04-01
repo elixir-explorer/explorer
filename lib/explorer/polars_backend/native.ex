@@ -211,6 +211,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_float(_number), do: err()
   def expr_integer(_number), do: err()
   def expr_int_range(_start, _end, _step, _dtype), do: err()
+  def expr_over(_ex_expr, _groups_exprs), do: err()
   def expr_series(_series), do: err()
   def expr_string(_string), do: err()
   def expr_struct(_map), do: err()
@@ -225,7 +226,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_names(_df), do: err()
   def lf_select(_df, _columns), do: err()
   def lf_tail(_df, _n_rows, _groups), do: err()
-  def lf_slice(_df, _offset, _length), do: err()
+  def lf_slice(_df, _offset, _length, _groups), do: err()
   def lf_explode(_df, _columns), do: err()
   def lf_unnest(_df, _columns), do: err()
   def lf_from_ipc(_filename), do: err()
@@ -258,6 +259,14 @@ defmodule Explorer.PolarsBackend.Native do
         _directions,
         _maintain_order?,
         _nulls_last?
+      ),
+      do: err()
+
+  def lf_grouped_sort_with(
+        _df,
+        _expressions,
+        _groups_expr,
+        _directions
       ),
       do: err()
 
