@@ -863,10 +863,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
         alias_expr(original_expr, name)
       end
 
-    groups_exprs = for group <- groups, do: Native.expr_column(group)
-
-    Shared.apply_dataframe(df, out_df, :df_summarise_with_exprs, [groups_exprs, exprs])
+    Shared.apply_dataframe(df, out_df, :df_summarise_with_exprs, [groups_exprs(groups), exprs])
   end
+
+  defp groups_exprs(groups), do: Enum.map(groups, &Native.expr_column/1)
 
   # Inspect
 

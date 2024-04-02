@@ -30,15 +30,35 @@ pub fn lf_describe_plan(data: ExLazyFrame, optimized: bool) -> Result<String, Ex
 }
 
 #[rustler::nif]
-pub fn lf_head(data: ExLazyFrame, length: u32) -> Result<ExLazyFrame, ExplorerError> {
+pub fn lf_head(
+    data: ExLazyFrame,
+    length: u32,
+    groups: Vec<ExExpr>,
+) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
-    Ok(ExLazyFrame::new(lf.limit(length)))
+    let result_lf = if groups.is_empty() {
+        lf.limit(length)
+    } else {
+        lf.group_by_stable(groups).head(Some(length.try_into()?))
+    };
+
+    Ok(ExLazyFrame::new(result_lf))
 }
 
 #[rustler::nif]
-pub fn lf_tail(data: ExLazyFrame, length: u32) -> Result<ExLazyFrame, ExplorerError> {
+pub fn lf_tail(
+    data: ExLazyFrame,
+    length: u32,
+    groups: Vec<ExExpr>,
+) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
-    Ok(ExLazyFrame::new(lf.tail(length)))
+    let result_lf = if groups.is_empty() {
+        lf.tail(length)
+    } else {
+        lf.group_by_stable(groups).tail(Some(length.try_into()?))
+    };
+
+    Ok(ExLazyFrame::new(result_lf))
 }
 
 #[rustler::nif]
@@ -78,9 +98,23 @@ pub fn lf_drop(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, Exp
 }
 
 #[rustler::nif]
-pub fn lf_slice(data: ExLazyFrame, offset: i64, length: u32) -> Result<ExLazyFrame, ExplorerError> {
+pub fn lf_slice(
+    data: ExLazyFrame,
+    offset: i64,
+    length: u32,
+    groups: Vec<String>,
+) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
-    Ok(ExLazyFrame::new(lf.slice(offset, length)))
+    let result_lf = if groups.is_empty() {
+        lf.slice(offset, length)
+    } else {
+        let groups_exprs: Vec<Expr> = groups.iter().map(|group| col(group)).collect();
+        lf.group_by_stable(groups_exprs)
+            .agg([col("*").slice(offset, length)])
+            .explode([col("*").exclude(groups)])
+    };
+
+    Ok(ExLazyFrame::new(result_lf))
 }
 
 #[rustler::nif]
@@ -97,10 +131,10 @@ pub fn lf_unnest(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, E
 
 #[rustler::nif]
 pub fn lf_filter_with(data: ExLazyFrame, ex_expr: ExExpr) -> Result<ExLazyFrame, ExplorerError> {
-    let ldf = data.clone_inner();
+    let lf = data.clone_inner();
     let expr = ex_expr.clone_inner();
 
-    Ok(ExLazyFrame::new(ldf.filter(expr)))
+    Ok(ExLazyFrame::new(lf.filter(expr)))
 }
 
 #[rustler::nif]
@@ -115,6 +149,23 @@ pub fn lf_sort_with(
     let ldf = data
         .clone_inner()
         .sort_by_exprs(exprs, directions, nulls_last, maintain_order);
+
+    Ok(ExLazyFrame::new(ldf))
+}
+
+#[rustler::nif]
+pub fn lf_grouped_sort_with(
+    data: ExLazyFrame,
+    expressions: Vec<ExExpr>,
+    groups: Vec<ExExpr>,
+    directions: Vec<bool>,
+) -> Result<ExLazyFrame, ExplorerError> {
+    // For grouped lazy frames, we need to use the `#sort_by` method that is
+    // less powerful, but can be used with `over`.
+    // See: https://docs.pola.rs/user-guide/expressions/window/#operations-per-group
+    let ldf = data
+        .clone_inner()
+        .with_columns([col("*").sort_by(expressions, directions).over(groups)]);
 
     Ok(ExLazyFrame::new(ldf))
 }

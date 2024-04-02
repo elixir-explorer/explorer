@@ -1140,3 +1140,9 @@ pub fn expr_struct(ex_exprs: Vec<ExExpr>) -> ExExpr {
 
     ExExpr::new(expr)
 }
+
+#[rustler::nif]
+pub fn expr_over(left: ExExpr, groups: Vec<ExExpr>) -> ExExpr {
+    let expr = left.clone_inner().over(groups);
+    ExExpr::new(expr)
+}
