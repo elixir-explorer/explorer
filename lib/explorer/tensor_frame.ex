@@ -245,19 +245,6 @@ if Code.ensure_loaded?(Nx) do
   end
 
   defimpl Nx.LazyContainer, for: DF do
-    @supported [
-      :boolean,
-      :category,
-      :date,
-      :time,
-      {:f, 32},
-      {:f, 64},
-      {:s, 64},
-      {:datetime, :millisecond},
-      {:datetime, :microsecond},
-      {:datetime, :nanosecond}
-    ]
-
     def traverse(df, acc, fun) do
       n_rows = DF.n_rows(df)
 
@@ -265,12 +252,14 @@ if Code.ensure_loaded?(Nx) do
         Enum.flat_map_reduce(DF.names(df), acc, fn name, acc ->
           series = df[name]
 
-          if series.dtype in @supported do
-            template = Nx.template({n_rows}, S.iotype(series))
-            {result, acc} = fun.(template, fn -> S.to_tensor(series) end, acc)
-            {[{name, result}], acc}
-          else
-            {[], acc}
+          case S.iotype(series) do
+            {_, _} = type ->
+              template = Nx.template({n_rows}, type)
+              {result, acc} = fun.(template, fn -> S.to_tensor(series) end, acc)
+              {[{name, result}], acc}
+
+            :none ->
+              {[], acc}
           end
         end)
 
