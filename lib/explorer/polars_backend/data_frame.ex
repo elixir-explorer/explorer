@@ -501,7 +501,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def lazy(df) do
     case Native.df_lazy(df.data) do
       {:ok, polars_df} ->
-        %{df | data: struct!(lazy(), frame: polars_df)}
+        %{df | data: polars_df}
 
       {:error, error} ->
         raise "error when assigning lazy frame: #{inspect(error)}"

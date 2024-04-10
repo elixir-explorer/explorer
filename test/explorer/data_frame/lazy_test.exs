@@ -106,35 +106,41 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   test "inspect/1 without operations", %{ldf: ldf} do
-    assert inspect(ldf) == ~s(#Explorer.DataFrame<
-  LazyPolars[??? x 10]
-  year s64 [2010, 2010, 2010, 2010, 2010, ...]
-  country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
-  total s64 [2308, 1254, 32500, 141, 7924, ...]
-  solid_fuel s64 [627, 117, 332, 0, 0, ...]
-  liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
-  gas_fuel s64 [74, 7, 14565, 0, 374, ...]
-  cement s64 [5, 177, 2598, 0, 204, ...]
-  gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
-  per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
-  bunker_fuels s64 [9, 7, 663, 0, 321, ...]
->)
+    assert inspect(ldf) ==
+             """
+             #Explorer.DataFrame<
+               LazyPolars[??? x 10]
+               year s64 [2010, 2010, 2010, 2010, 2010, ...]
+               country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+               total s64 [2308, 1254, 32500, 141, 7924, ...]
+               solid_fuel s64 [627, 117, 332, 0, 0, ...]
+               liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+               gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+               cement s64 [5, 177, 2598, 0, 204, ...]
+               gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
+               per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+               bunker_fuels s64 [9, 7, 663, 0, 321, ...]
+             >\
+             """
   end
 
   test "inspect/1 after one operation", %{ldf: ldf} do
-    assert inspect(DF.head(ldf, 12)) == ~s{#Explorer.DataFrame<
-  LazyPolars (stale)[??? x 10]
-  year s64 ???
-  country string ???
-  total s64 ???
-  solid_fuel s64 ???
-  liquid_fuel s64 ???
-  gas_fuel s64 ???
-  cement s64 ???
-  gas_flaring s64 ???
-  per_capita f64 ???
-  bunker_fuels s64 ???
->}
+    assert inspect(DF.head(ldf, 12)) ==
+             """
+             #Explorer.DataFrame<
+               LazyPolars[??? x 10]
+               year s64 [2010, 2010, 2010, 2010, 2010, ...]
+               country string ["AFGHANISTAN", "ALBANIA", "ALGERIA", "ANDORRA", "ANGOLA", ...]
+               total s64 [2308, 1254, 32500, 141, 7924, ...]
+               solid_fuel s64 [627, 117, 332, 0, 0, ...]
+               liquid_fuel s64 [1601, 953, 12381, 141, 3649, ...]
+               gas_fuel s64 [74, 7, 14565, 0, 374, ...]
+               cement s64 [5, 177, 2598, 0, 204, ...]
+               gas_flaring s64 [0, 0, 2623, 0, 3697, ...]
+               per_capita f64 [0.08, 0.43, 0.9, 1.68, 0.37, ...]
+               bunker_fuels s64 [9, 7, 663, 0, 321, ...]
+             >\
+             """
   end
 
   @tag :tmp_dir

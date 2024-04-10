@@ -46,7 +46,7 @@ pub struct ExExpr {
 }
 
 #[derive(NifStruct)]
-#[module = "Explorer.PolarsBackend.LazyFrame.Frame"]
+#[module = "Explorer.PolarsBackend.LazyFrame"]
 pub struct ExLazyFrame {
     pub resource: ResourceArc<ExLazyFrameRef>,
 }
