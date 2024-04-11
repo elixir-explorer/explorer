@@ -47,8 +47,10 @@ defmodule Explorer.PolarsBackend.Shared do
           # the full picture of the result yet.
           check_df =
             if match?(%PolarsLazyFrame{}, new_df) do
-              {:ok, new_df} = Native.lf_collect(new_df)
-              create_dataframe(new_df)
+              case Native.lf_collect(new_df) do
+                {:ok, new_df} -> create_dataframe(new_df)
+                {:error, error} -> raise runtime_error(error)
+              end
             else
               create_dataframe(new_df)
             end

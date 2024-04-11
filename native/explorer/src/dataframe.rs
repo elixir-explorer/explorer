@@ -32,35 +32,6 @@ pub fn df_transpose(
     Ok(ExDataFrame::new(new_df))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_join(
-    df: ExDataFrame,
-    other: ExDataFrame,
-    left_on: Vec<&str>,
-    right_on: Vec<&str>,
-    how: &str,
-    suffix: Option<String>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let how = match how {
-        "left" => JoinType::Left,
-        "inner" => JoinType::Inner,
-        "outer" => JoinType::Outer { coalesce: false },
-        "cross" => JoinType::Cross,
-        _ => {
-            return Err(ExplorerError::Other(format!(
-                "Join method {how} not supported"
-            )))
-        }
-    };
-
-    let mut join_args = JoinArgs::new(how);
-    join_args.suffix = suffix;
-
-    let new_df = df.join(&other, left_on, right_on, join_args)?;
-
-    Ok(ExDataFrame::new(new_df))
-}
-
 #[rustler::nif]
 pub fn df_names(df: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
     let names = to_string_names(df.get_column_names());
@@ -94,26 +65,6 @@ pub fn df_width(df: ExDataFrame) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_concat_rows(
-    data: ExDataFrame,
-    others: Vec<ExDataFrame>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let mut out_df = data.clone();
-    let names = out_df.get_column_names();
-    let dfs = others
-        .into_iter()
-        .map(|ex_df| ex_df.select(&names))
-        .collect::<Result<Vec<_>, _>>()?;
-
-    for df in dfs {
-        out_df.vstack_mut(&df)?;
-    }
-    // Follows recommendation from docs and rechunk after many vstacks.
-    out_df.as_single_chunk_par();
-    Ok(ExDataFrame::new(out_df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_concat_columns(
     data: ExDataFrame,
     others: Vec<ExDataFrame>,
@@ -144,15 +95,6 @@ pub fn df_concat_columns(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_drop_nils(
-    df: ExDataFrame,
-    subset: Option<Vec<String>>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = df.drop_nulls(subset.as_deref())?;
-    Ok(ExDataFrame::new(new_df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_drop(df: ExDataFrame, name: &str) -> Result<ExDataFrame, ExplorerError> {
     let new_df = df.drop(name)?;
     Ok(ExDataFrame::new(new_df))
@@ -170,12 +112,6 @@ pub fn df_pull(df: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerError> {
     Ok(series)
 }
 
-#[rustler::nif]
-pub fn df_select(df: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = df.select(selection)?;
-    Ok(ExDataFrame::new(new_df))
-}
-
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_mask(df: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     if let Ok(ca) = mask.bool() {
@@ -184,24 +120,6 @@ pub fn df_mask(df: ExDataFrame, mask: ExSeries) -> Result<ExDataFrame, ExplorerE
     } else {
         Err(ExplorerError::Other("Expected a boolean mask".into()))
     }
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_filter_with(
-    df: ExDataFrame,
-    ex_expr: ExExpr,
-    groups: Vec<String>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let exp = ex_expr.clone_inner();
-
-    let new_df = if groups.is_empty() {
-        df.clone_inner().lazy().filter(exp).collect()?
-    } else {
-        df.group_by_stable(groups)?
-            .apply(|df| df.lazy().filter(exp.clone()).collect())?
-    };
-
-    Ok(ExDataFrame::new(new_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -414,69 +332,6 @@ pub fn df_slice(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_head(
-    df: ExDataFrame,
-    length: Option<usize>,
-    groups: Vec<&str>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = if groups.is_empty() {
-        df.head(length)
-    } else {
-        df.group_by_stable(groups)?
-            .apply(|df| Ok(df.head(length)))?
-    };
-    Ok(ExDataFrame::new(new_df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_tail(
-    df: ExDataFrame,
-    length: Option<usize>,
-    groups: Vec<&str>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = if groups.is_empty() {
-        df.tail(length)
-    } else {
-        df.group_by_stable(groups)?
-            .apply(|df| Ok(df.tail(length)))?
-    };
-    Ok(ExDataFrame::new(new_df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_pivot_longer(
-    df: ExDataFrame,
-    id_vars: Vec<&str>,
-    value_vars: Vec<&str>,
-    names_to: String,
-    values_to: String,
-) -> Result<ExDataFrame, ExplorerError> {
-    let melt_opts = MeltArgs {
-        id_vars: to_smart_strings(id_vars),
-        value_vars: to_smart_strings(value_vars),
-        variable_name: Some(names_to.into()),
-        value_name: Some(values_to.into()),
-        streamable: true,
-    };
-    let new_df = df.melt2(melt_opts)?;
-    Ok(ExDataFrame::new(new_df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_distinct(
-    df: ExDataFrame,
-    subset: Vec<String>,
-    columns_to_keep: Option<Vec<&str>>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = df.unique_stable(Some(&subset), UniqueKeepStrategy::First, None)?;
-
-    match columns_to_keep {
-        Some(columns) => Ok(ExDataFrame::new(new_df.select(columns)?)),
-        None => Ok(ExDataFrame::new(new_df)),
-    }
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_to_dummies(df: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
     let drop_first = false;
     let dummies = df
@@ -501,45 +356,11 @@ pub fn df_nil_count(df: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
     Ok(ExDataFrame::new(new_df))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_mutate_with_exprs(
-    df: ExDataFrame,
-    columns: Vec<ExExpr>,
-    groups: Vec<&str>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let mutations = ex_expr_to_exprs(columns);
-    let new_df = if groups.is_empty() {
-        df.clone_inner()
-            .lazy()
-            .with_comm_subexpr_elim(false)
-            .with_columns(mutations)
-            .collect()?
-    } else {
-        df.group_by_stable(groups)?
-            .apply(|df| df.lazy().with_columns(&mutations).collect())?
-    };
-
-    Ok(ExDataFrame::new(new_df))
-}
-
 #[rustler::nif]
 pub fn df_from_series(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
     let columns = columns.into_iter().map(|c| c.clone_inner()).collect();
 
     let df = DataFrame::new(columns)?;
-
-    Ok(ExDataFrame::new(df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_rename_columns(
-    df: ExDataFrame,
-    renames: Vec<(&str, &str)>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let mut df = df.clone();
-    for (original, new_name) in renames {
-        df.rename(original, new_name)?;
-    }
 
     Ok(ExDataFrame::new(df))
 }
@@ -565,33 +386,6 @@ pub fn df_group_indices(
         .map(|series| ExSeries::new(series.unwrap()))
         .collect();
     Ok(series)
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_summarise_with_exprs(
-    df: ExDataFrame,
-    groups: Vec<ExExpr>,
-    aggs: Vec<ExExpr>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let groups = ex_expr_to_exprs(groups);
-    let aggs = ex_expr_to_exprs(aggs);
-
-    let lf = df.clone_inner().lazy();
-
-    let new_lf = if groups.is_empty() {
-        // We do add a "shadow" column to be able to group by it.
-        // This is going to force some aggregations like "mode" to be always inside
-        // a "list".
-        let s = Series::new_null("__explorer_null_for_group__", 1);
-        lf.with_column(s.lit())
-            .group_by_stable(["__explorer_null_for_group__"])
-            .agg(aggs)
-            .select(&[col("*").exclude(["__explorer_null_for_group__"])])
-    } else {
-        lf.group_by_stable(groups).agg(aggs)
-    };
-
-    Ok(ExDataFrame::new(new_lf.collect()?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -672,18 +466,6 @@ pub fn df_pivot_wider(
 
     new_df.set_column_names(&new_names)?;
 
-    Ok(ExDataFrame::new(new_df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_explode(df: ExDataFrame, columns: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = df.explode(columns)?;
-    Ok(ExDataFrame::new(new_df))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_unnest(df: ExDataFrame, columns: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
-    let new_df = df.clone_inner().unnest(columns)?;
     Ok(ExDataFrame::new(new_df))
 }
 
