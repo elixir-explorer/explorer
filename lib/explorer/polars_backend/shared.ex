@@ -9,6 +9,8 @@ defmodule Explorer.PolarsBackend.Shared do
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.Series, as: Series
 
+  @polars_df [PolarsDataFrame, PolarsLazyFrame]
+
   def apply(fun, args \\ []) do
     case apply(Native, fun, args) do
       {:ok, value} -> value
@@ -39,9 +41,17 @@ defmodule Explorer.PolarsBackend.Shared do
   # Applies to a dataframe. Expects a dataframe back.
   def apply_dataframe(%DataFrame{} = df, %DataFrame{} = out_df, fun, args) do
     case apply(Native, fun, [df.data | args]) do
-      {:ok, %PolarsDataFrame{} = new_df} ->
+      {:ok, %module{} = new_df} when module in @polars_df ->
         if @check_frames do
-          check_df = create_dataframe(new_df)
+          # We need to collect here, because the lazy frame may not have
+          # the full picture of the result yet.
+          check_df =
+            if match?(%PolarsLazyFrame{}, new_df) do
+              {:ok, new_df} = Native.lf_collect(new_df)
+              create_dataframe(new_df)
+            else
+              create_dataframe(new_df)
+            end
 
           if Enum.sort(out_df.names) != Enum.sort(check_df.names) or
                out_df.dtypes != check_df.dtypes do
@@ -90,8 +100,8 @@ defmodule Explorer.PolarsBackend.Shared do
     names
   end
 
-  defp df_names(%PolarsLazyFrame{frame: frame}) do
-    {:ok, names} = Native.lf_names(frame)
+  defp df_names(%PolarsLazyFrame{} = polars_df) do
+    {:ok, names} = Native.lf_names(polars_df)
     names
   end
 
@@ -100,8 +110,8 @@ defmodule Explorer.PolarsBackend.Shared do
     dtypes
   end
 
-  defp df_dtypes(%PolarsLazyFrame{frame: frame}) do
-    {:ok, dtypes} = Native.lf_dtypes(frame)
+  defp df_dtypes(%PolarsLazyFrame{} = polars_df) do
+    {:ok, dtypes} = Native.lf_dtypes(polars_df)
     dtypes
   end
 
