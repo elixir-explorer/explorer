@@ -73,17 +73,13 @@ defmodule Explorer.PolarsBackend.Native do
       do: err()
 
   def df_concat_columns(_df, _others), do: err()
-  def df_concat_rows(_df, _others), do: err()
-  def df_distinct(_df, _subset, _selection), do: err()
   def df_drop(_df, _name), do: err()
-  def df_drop_nils(_df, _subset), do: err()
   def df_dtypes(_df), do: err()
   def df_dump_csv(_df, _has_headers, _delimiter), do: err()
   def df_dump_ndjson(_df), do: err()
   def df_dump_parquet(_df, _compression), do: err()
   def df_dump_ipc(_df, _compression), do: err()
   def df_dump_ipc_stream(_df, _compression), do: err()
-  def df_filter_with(_df, _operation, _groups), do: err()
 
   def df_from_csv(
         _filename,
@@ -119,8 +115,6 @@ defmodule Explorer.PolarsBackend.Native do
   def df_from_series(_columns), do: err()
   def df_group_indices(_df, _column_names), do: err()
   def df_groups(_df, _column_names), do: err()
-  def df_head(_df, _length, _groups), do: err()
-  def df_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
 
   def df_load_csv(
         _binary,
@@ -147,24 +141,18 @@ defmodule Explorer.PolarsBackend.Native do
   def df_load_parquet(_binary), do: err()
 
   def df_mask(_df, _mask), do: err()
-  def df_mutate_with_exprs(_df, _exprs, _groups), do: err()
   def df_n_rows(_df), do: err()
   def df_names(_df), do: err()
-  def df_pivot_longer(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()
   def df_pivot_wider(_df, _id_columns, _pivot_column, _values_column, _names_prefix), do: err()
   def df_pull(_df, _name), do: err()
   def df_put_column(_df, _series), do: err()
-  def df_rename_columns(_df, _old_new_pairs), do: err()
   def df_sample_frac(_df, _frac, _with_replacement, _shuffle, _seed, _groups), do: err()
   def df_sample_n(_df, _n, _with_replacement, _shuffle, _seed, _groups), do: err()
-  def df_select(_df, _selection), do: err()
   def df_select_at_idx(_df, _idx), do: err()
   def df_shape(_df), do: err()
   def df_slice(_df, _offset, _length, _groups), do: err()
   def df_slice_by_indices(_df, _indices, _groups), do: err()
   def df_slice_by_series(_df, _series, _groups), do: err()
-  def df_summarise_with_exprs(_df, _groups_exprs, _aggs_pairs), do: err()
-  def df_tail(_df, _length, _groups), do: err()
   def df_transpose(_df, _keep_names_as, _new_col_names), do: err()
   def df_to_csv(_df, _filename, _has_headers, _delimiter), do: err()
   def df_to_csv_cloud(_df, _ex_entry, _has_headers, _delimiter), do: err()
@@ -180,8 +168,6 @@ defmodule Explorer.PolarsBackend.Native do
   def df_to_parquet_cloud(_df, _ex_entry, _compression), do: err()
   def df_width(_df), do: err()
   def df_nil_count(_df), do: err()
-  def df_explode(_df, _columns), do: err()
-  def df_unnest(_df, _columns), do: err()
 
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]

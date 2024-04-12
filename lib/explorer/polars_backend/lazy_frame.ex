@@ -41,6 +41,16 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Introspection
 
   @impl true
+  def inspect(ldf, opts) when node(ldf.data.resource) != node() do
+    Explorer.Backend.DataFrame.inspect(
+      ldf,
+      "LazyPolars (node: #{node(ldf.data.resource)})",
+      nil,
+      opts,
+      elide_columns: true
+    )
+  end
+
   def inspect(ldf, opts) do
     case Native.lf_fetch(ldf.data, opts.limit) do
       {:ok, df} ->
@@ -417,6 +427,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         ]
       )
     else
+      # TODO: log that we cannot set `maintain_order?` nor `nulls_last?`
+      # This is a limitation of the grouped lazy frame.
       Shared.apply_dataframe(
         df,
         out_df,

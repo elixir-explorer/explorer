@@ -190,10 +190,15 @@ pub fn lf_mutate_with(
     data: ExLazyFrame,
     columns: Vec<ExExpr>,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    let ldf = data.clone_inner();
     let mutations = ex_expr_to_exprs(columns);
+    // Maybe there is a bug when some expressions are in use without this "comm_subexpr_elim"
+    // turned off.
+    let ldf = data
+        .clone_inner()
+        .with_comm_subexpr_elim(false)
+        .with_columns(mutations);
 
-    Ok(ExLazyFrame::new(ldf.with_columns(mutations)))
+    Ok(ExLazyFrame::new(ldf))
 }
 
 #[rustler::nif]

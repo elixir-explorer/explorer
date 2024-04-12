@@ -2,6 +2,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @moduledoc false
 
   alias Explorer.DataFrame, as: DataFrame
+  alias Explorer.PolarsBackend.LazyFrame
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.PolarsBackend.Shared
@@ -11,7 +12,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   alias FSS.Local
   alias FSS.S3
 
-  import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
+  import Explorer.PolarsBackend.Expression, only: [to_expr: 1]
 
   defstruct resource: nil
 
@@ -604,16 +605,28 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Single table verbs
 
   @impl true
-  def head(%DataFrame{} = df, rows),
-    do: Shared.apply_dataframe(df, df, :df_head, [rows, df.groups])
+  def head(%DataFrame{} = df, rows) do
+    df
+    |> lazy()
+    |> LazyFrame.head(rows)
+    |> LazyFrame.collect()
+  end
 
   @impl true
-  def tail(%DataFrame{} = df, rows),
-    do: Shared.apply_dataframe(df, df, :df_tail, [rows, df.groups])
+  def tail(%DataFrame{} = df, rows) do
+    df
+    |> lazy()
+    |> LazyFrame.tail(rows)
+    |> LazyFrame.collect()
+  end
 
   @impl true
-  def select(df, out_df),
-    do: Shared.apply_dataframe(df, out_df, :df_select, [out_df.names])
+  def select(df, out_df) do
+    df
+    |> lazy()
+    |> LazyFrame.select(out_df)
+    |> LazyFrame.collect()
+  end
 
   @impl true
   def mask(df, %Series{} = mask),
@@ -621,20 +634,18 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def filter_with(df, out_df, %Explorer.Backend.LazySeries{} = lseries) do
-    expressions = to_expr(lseries)
-    Shared.apply_dataframe(df, out_df, :df_filter_with, [expressions, df.groups])
+    df
+    |> lazy()
+    |> LazyFrame.filter_with(out_df, lseries)
+    |> LazyFrame.collect()
   end
 
   @impl true
   def mutate_with(%DataFrame{} = df, %DataFrame{} = out_df, column_pairs) do
-    exprs =
-      for {name, lazy_series} <- column_pairs do
-        lazy_series
-        |> to_expr()
-        |> alias_expr(name)
-      end
-
-    Shared.apply_dataframe(df, out_df, :df_mutate_with_exprs, [exprs, df.groups])
+    df
+    |> lazy()
+    |> LazyFrame.mutate_with(out_df, column_pairs)
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -693,14 +704,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def distinct(%DataFrame{} = df, %DataFrame{} = out_df, columns) do
-    maybe_columns_to_keep = if df.names != out_df.names, do: out_df.names
-
-    Shared.apply_dataframe(df, out_df, :df_distinct, [columns, maybe_columns_to_keep])
+    df
+    |> lazy()
+    |> LazyFrame.distinct(out_df, columns)
+    |> LazyFrame.collect()
   end
 
   @impl true
-  def rename(%DataFrame{} = df, %DataFrame{} = out_df, pairs),
-    do: Shared.apply_dataframe(df, out_df, :df_rename_columns, [pairs])
+  def rename(%DataFrame{} = df, %DataFrame{} = out_df, pairs) do
+    df
+    |> lazy()
+    |> LazyFrame.rename(out_df, pairs)
+    |> LazyFrame.collect()
+  end
 
   @impl true
   def dummies(df, out_df, names),
@@ -758,16 +774,19 @@ defmodule Explorer.PolarsBackend.DataFrame do
       do: Shared.apply_dataframe(df, df, :df_slice, [offset, length, df.groups])
 
   @impl true
-  def drop_nil(df, columns), do: Shared.apply_dataframe(df, df, :df_drop_nils, [columns])
+  def drop_nil(df, columns) do
+    df
+    |> lazy()
+    |> LazyFrame.drop_nil(columns)
+    |> LazyFrame.collect()
+  end
 
   @impl true
-  def pivot_longer(df, out_df, columns_to_pivot, columns_to_keep, names_to, values_to) do
-    Shared.apply_dataframe(df, out_df, :df_pivot_longer, [
-      columns_to_keep,
-      columns_to_pivot,
-      names_to,
-      values_to
-    ])
+  def pivot_longer(df, out_df, cols_to_pivot, cols_to_keep, names_to, values_to) do
+    df
+    |> lazy()
+    |> LazyFrame.pivot_longer(out_df, cols_to_pivot, cols_to_keep, names_to, values_to)
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -791,12 +810,18 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def explode(df, out_df, columns) do
-    Shared.apply_dataframe(df, out_df, :df_explode, [columns])
+    df
+    |> lazy()
+    |> LazyFrame.explode(out_df, columns)
+    |> LazyFrame.collect()
   end
 
   @impl true
   def unnest(df, out_df, columns) do
-    Shared.apply_dataframe(df, out_df, :df_unnest, [columns])
+    df
+    |> lazy()
+    |> LazyFrame.unnest(out_df, columns)
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -814,32 +839,21 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Two or more table verbs
 
   @impl true
-  def join(left, right, out_df, on, :right) do
-    # Join right is just the "join left" with inverted DFs and swapped "on" instructions.
-    # If columns on left have the same names from right, and they are not in "on" instructions,
-    # then we add a suffix "_left".
-    {left_on, right_on} =
-      on
-      |> Enum.reverse()
-      |> Enum.map(fn {left, right} -> {right, left} end)
-      |> Enum.unzip()
-
-    args = [left.data, left_on, right_on, "left", "_left"]
-    Shared.apply_dataframe(right, out_df, :df_join, args)
-  end
-
-  @impl true
   def join(left, right, out_df, on, how) do
-    how = Atom.to_string(how)
-    {left_on, right_on} = Enum.unzip(on)
+    left = lazy(left)
+    right = lazy(right)
 
-    args = [right.data, left_on, right_on, how, "_right"]
-    Shared.apply_dataframe(left, out_df, :df_join, args)
+    ldf = LazyFrame.join(left, right, out_df, on, how)
+    LazyFrame.collect(ldf)
   end
 
   @impl true
-  def concat_rows([head | tail], out_df) do
-    Shared.apply_dataframe(head, out_df, :df_concat_rows, [Enum.map(tail, & &1.data)])
+  def concat_rows([_head | _tail] = dfs, out_df) do
+    lazy_dfs = Enum.map(dfs, &lazy/1)
+
+    lazy_dfs
+    |> LazyFrame.concat_rows(out_df)
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -856,17 +870,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Groups
 
   @impl true
-  def summarise_with(%DataFrame{groups: groups} = df, %DataFrame{} = out_df, column_pairs) do
-    exprs =
-      for {name, lazy_series} <- column_pairs do
-        original_expr = to_expr(lazy_series)
-        alias_expr(original_expr, name)
-      end
-
-    Shared.apply_dataframe(df, out_df, :df_summarise_with_exprs, [groups_exprs(groups), exprs])
+  def summarise_with(%DataFrame{} = df, %DataFrame{} = out_df, column_pairs) do
+    df
+    |> lazy()
+    |> LazyFrame.summarise_with(out_df, column_pairs)
+    |> LazyFrame.collect()
   end
-
-  defp groups_exprs(groups), do: Enum.map(groups, &Native.expr_column/1)
 
   # Inspect
 
