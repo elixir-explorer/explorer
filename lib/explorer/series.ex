@@ -5370,9 +5370,11 @@ defmodule Explorer.Series do
 
   > ### Notice {: .warning}
   >
-  > This function matches against a regular expression. It does not expect an Elixir regex, but
-  > a escaped string - you can use the `~S` sigil for escaping - that follows the [`regex`](https://docs.rs/regex/latest/regex/)
-  > Rust crate rules. This is because our backend, Polars, expects that format.
+  > This function matches against a regular expression. It does not expect an Elixir regex,
+  > but a escaped string and you can use the `~S` sigil for escaping it. Since each Explorer
+  > backend may have its own regular expression rules, you must consult their underlying
+  > engine. For the default backend (Polars), the rules are outlined in the Rust create named
+  > [`regex`](https://docs.rs/regex/latest/regex/).
   >
   > To match literal strings, you can use `contains/2`.
 
