@@ -1468,8 +1468,13 @@ pub fn s_not(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_contains(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s1.str()?.contains_literal(pattern)?.into()))
+pub fn s_contains(s1: ExSeries, pattern: &str, literal: bool) -> Result<ExSeries, ExplorerError> {
+    let chunked_array = if literal {
+        s1.str()?.contains_literal(pattern)?
+    } else {
+        s1.str()?.contains(pattern, true)?
+    };
+    Ok(ExSeries::new(chunked_array.into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1487,10 +1492,14 @@ pub fn s_replace(
     s1: ExSeries,
     pattern: &str,
     replacement: &str,
+    literal: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(
-        s1.str()?.replace_literal_all(pattern, replacement)?.into(),
-    ))
+    let chunked_array = if literal {
+        s1.str()?.replace_literal_all(pattern, replacement)?
+    } else {
+        s1.str()?.replace_all(pattern, replacement)?
+    };
+    Ok(ExSeries::new(chunked_array.into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

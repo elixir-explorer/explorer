@@ -659,8 +659,12 @@ defmodule Explorer.PolarsBackend.Series do
   # Strings
 
   @impl true
-  def contains(series, pattern),
-    do: Shared.apply_series(series, :s_contains, [pattern])
+  def contains(series, substring),
+    do: Shared.apply_series(series, :s_contains, [substring, true])
+
+  @impl true
+  def re_contains(series, pattern),
+    do: Shared.apply_series(series, :s_contains, [pattern, false])
 
   @impl true
   def upcase(series),
@@ -672,7 +676,11 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def replace(series, pattern, replacement),
-    do: Shared.apply_series(series, :s_replace, [pattern, replacement])
+    do: Shared.apply_series(series, :s_replace, [pattern, replacement, true])
+
+  @impl true
+  def re_replace(series, pattern, replacement),
+    do: Shared.apply_series(series, :s_replace, [pattern, replacement, false])
 
   @impl true
   def strip(series, str),

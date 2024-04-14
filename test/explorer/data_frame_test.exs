@@ -622,6 +622,20 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2, 3], b: [9, 8, 7]}
     end
+
+    test "filter using contains/2" do
+      df = DF.new(a: [1, 2, 3, nil], b: ["abc", "bcd", "def", nil])
+
+      df1 = DF.filter(df, contains(b, "b"))
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1, 2], b: ["abc", "bcd"]}
+    end
+
+    test "filter using re_contains/2" do
+      df = DF.new(a: [1, 2, 3, nil], b: ["abc", "bcd", "def", nil])
+
+      df1 = DF.filter(df, re_contains(b, ~S/^(b|d)/))
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [2, 3], b: ["bcd", "def"]}
+    end
   end
 
   describe "mutate_with/2" do
@@ -1749,12 +1763,14 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          b: replace(a, ",", "")
+          b: replace(a, ",", ""),
+          c: re_replace(a, ~S/\d{3}$/, "999")
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: ["2,000", "2,000,000", ","],
-               b: ["2000", "2000000", ""]
+               b: ["2000", "2000000", ""],
+               c: ["2,999", "2,000,999", ","]
              }
     end
 

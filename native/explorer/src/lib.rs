@@ -252,6 +252,7 @@ rustler::init!(
         expr_describe_filter_plan,
         // string expressions
         expr_contains,
+        expr_re_contains,
         expr_upcase,
         expr_downcase,
         expr_strip,
@@ -260,6 +261,7 @@ rustler::init!(
         expr_substring,
         expr_split,
         expr_replace,
+        expr_re_replace,
         expr_json_path_match,
         expr_split_into,
         // float round expressions

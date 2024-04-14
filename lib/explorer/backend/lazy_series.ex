@@ -119,7 +119,9 @@ defmodule Explorer.Backend.LazySeries do
     row_index: 1,
     # Strings
     contains: 2,
+    re_contains: 2,
     replace: 3,
+    re_replace: 3,
     lstrip: 2,
     rstrip: 2,
     strip: 2,
@@ -993,8 +995,15 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def contains(series, pattern) do
-    data = new(:contains, [lazy_series!(series), pattern], :boolean)
+  def contains(series, substring) do
+    data = new(:contains, [lazy_series!(series), substring], :boolean)
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def re_contains(series, pattern) do
+    data = new(:re_contains, [lazy_series!(series), pattern], :boolean)
 
     Backend.Series.new(data, :boolean)
   end
@@ -1014,8 +1023,15 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def replace(series, pattern, replacement) do
-    data = new(:replace, [lazy_series!(series), pattern, replacement], :string)
+  def replace(series, substring, replacement) do
+    data = new(:replace, [lazy_series!(series), substring, replacement], :string)
+
+    Backend.Series.new(data, :string)
+  end
+
+  @impl true
+  def re_replace(series, pattern, replacement) do
+    data = new(:re_replace, [lazy_series!(series), pattern, replacement], :string)
 
     Backend.Series.new(data, :string)
   end
