@@ -5211,11 +5211,15 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "replace/3" do
-    test "replaces all occurences of pattern in string by replacement string" do
+    test "replaces all occurences of a substring in string by replacement string" do
       series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
 
       assert Series.replace(series, ",", "") |> Series.to_list() ==
                ["1200", "1234567", "asdf", nil]
+    end
+
+    test "does not work with regex patterns" do
+      series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
 
       assert Series.replace(series, "[,]", "") |> Series.to_list() ==
                ["1,200", "1,234,567", "asdf", nil]
@@ -5229,11 +5233,11 @@ defmodule Explorer.SeriesTest do
                    fn -> Series.replace(series, ",", "") end
     end
 
-    test "raises error if pattern is not string" do
+    test "raises error if substring is not string" do
       series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
 
       assert_raise ArgumentError,
-                   "pattern and replacement in replace/3 need to be a string",
+                   "substring and replacement in replace/3 need to be a string",
                    fn -> Series.replace(series, 2, "") end
     end
 
@@ -5241,8 +5245,88 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
 
       assert_raise ArgumentError,
-                   "pattern and replacement in replace/3 need to be a string",
+                   "substring and replacement in replace/3 need to be a string",
                    fn -> Series.replace(series, ",", nil) end
+    end
+  end
+
+  describe "re_replace/3" do
+    test "replaces all occurences of pattern in string by replacement string" do
+      series = Series.from_list(["1,200.42", "1,234,567.54", "asdf", nil])
+
+      assert Series.re_replace(series, ~S/[^0-9]/, "") |> Series.to_list() ==
+               ["120042", "123456754", "", nil]
+    end
+
+    test "doesn't work with non string series" do
+      series = Series.from_list([1200, 1_234_567, nil])
+
+      assert_raise ArgumentError,
+                   "Explorer.Series.re_replace/3 not implemented for dtype {:s, 64}. Valid dtype is :string",
+                   fn -> Series.re_replace(series, ",", "") end
+    end
+
+    test "raises error if pattern is not string" do
+      series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
+
+      assert_raise ArgumentError,
+                   "pattern and replacement in re_replace/3 need to be a string",
+                   fn -> Series.re_replace(series, 2, "") end
+    end
+
+    test "raises error if replacement is not string" do
+      series = Series.from_list(["1,200", "1,234,567", "asdf", nil])
+
+      assert_raise ArgumentError,
+                   "pattern and replacement in re_replace/3 need to be a string",
+                   fn -> Series.re_replace(series, ",", nil) end
+    end
+
+    test "raises error if pattern is an Elixir regex" do
+      series = Series.from_list(["1,200.42", "1,234,567.54", "asdf", nil])
+
+      assert_raise ArgumentError,
+                   "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+                     "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`",
+                   fn ->
+                     Series.re_replace(series, ~r/[^0-9]/, "")
+                   end
+    end
+  end
+
+  describe "contains/2" do
+    test "check if a substring is inside the series" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+
+      assert Series.contains(series, "b") |> Series.to_list() ==
+               [true, true, false, nil]
+    end
+
+    test "does not work with regex patterns" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+
+      assert Series.contains(series, ~S/(b|d)/) |> Series.to_list() ==
+               [false, false, false, nil]
+    end
+  end
+
+  describe "re_contains/2" do
+    test "check if a pattern matches the contents of the series" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+
+      assert Series.re_contains(series, ~S/^(b|d)/) |> Series.to_list() ==
+               [false, true, true, nil]
+    end
+
+    test "raises error if pattern is an Elixir regex" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+
+      assert_raise ArgumentError,
+                   "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+                     "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`",
+                   fn ->
+                     Series.re_contains(series, ~r/^(b|d)/)
+                   end
     end
   end
 

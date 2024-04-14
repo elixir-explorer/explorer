@@ -5344,6 +5344,10 @@ defmodule Explorer.Series do
   @doc """
   Detects whether a string contains a substring.
 
+  > ### Notice {: .warning}
+  >
+  > This function detects only literal strings. For regular expressions, see `re_contains/2`.
+
   ## Examples
 
       iex> s = Explorer.Series.from_list(["abc", "def", "bcd"])
@@ -5355,11 +5359,45 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec contains(Series.t(), String.t()) :: Series.t()
-  def contains(%Series{dtype: :string} = series, pattern)
-      when K.is_binary(pattern),
-      do: apply_series(series, :contains, [pattern])
+  def contains(%Series{dtype: :string} = series, substring)
+      when K.is_binary(substring),
+      do: apply_series(series, :contains, [substring])
 
   def contains(%Series{dtype: dtype}, _), do: dtype_error("contains/2", dtype, [:string])
+
+  @doc """
+  Detects whether a string matches a pattern.
+
+  > ### Notice {: .warning}
+  >
+  > This function matches against a regular expression. It does not expect an Elixir regex, but
+  > a escaped string - you can use the `~S` sigil for escaping - that follows the [`regex`](https://docs.rs/regex/latest/regex/)
+  > Rust crate rules. This is because our backend, Polars, expects that format.
+  >
+  > To match literal strings, you can use `contains/2`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def", "bcd"])
+      iex> Explorer.Series.re_contains(s, ~S/(a|e)/)
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, true, false]
+      >
+  """
+  @doc type: :string_wise
+  @spec re_contains(Series.t(), String.t()) :: Series.t()
+  def re_contains(%Series{dtype: :string} = series, pattern)
+      when K.is_binary(pattern),
+      do: apply_series(series, :re_contains, [pattern])
+
+  def re_contains(%Series{dtype: :string}, %Regex{}) do
+    raise ArgumentError,
+          "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+            "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`"
+  end
+
+  def re_contains(%Series{dtype: dtype}, _), do: dtype_error("re_contains/2", dtype, [:string])
 
   @doc """
   Converts all characters to uppercase.
@@ -5400,9 +5438,13 @@ defmodule Explorer.Series do
   def downcase(%Series{dtype: dtype}), do: dtype_error("downcase/1", dtype, [:string])
 
   @doc """
-  Replaces all occurences of pattern with replacement in string series.
+  Replaces all occurences of a substring with replacement in string series.
 
-  Both pattern and replacement must be of type string.
+  Both substring and replacement must be of type string.
+
+  > ### Notice {: .warning}
+  >
+  > This function replaces only literal strings. For regular expressions, see `re_replace/3`.
 
   ## Examples
 
@@ -5415,14 +5457,85 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec replace(Series.t(), binary(), binary()) :: Series.t()
-  def replace(%Series{dtype: :string} = series, pattern, replacement)
-      when K.and(is_binary(pattern), is_binary(replacement)),
-      do: apply_series(series, :replace, [pattern, replacement])
+  def replace(%Series{dtype: :string} = series, substring, replacement)
+      when K.and(is_binary(substring), is_binary(replacement)),
+      do: apply_series(series, :replace, [substring, replacement])
 
   def replace(%Series{dtype: :string}, _, _),
-    do: raise(ArgumentError, "pattern and replacement in replace/3 need to be a string")
+    do: raise(ArgumentError, "substring and replacement in replace/3 need to be a string")
 
   def replace(%Series{dtype: dtype}, _, _), do: dtype_error("replace/3", dtype, [:string])
+
+  @doc """
+  Replaces all occurences of a pattern with replacement in string series.
+
+  Both pattern and replacement must be of type string. The replacement
+  can refer to groups captures by using the `${x}`, where `x` is a number starting from 1.
+  It can also refer to named groups using the same syntax.
+
+  > ### Notice {: .warning}
+  >
+  > This function matches against a regular expression. It does not expect an Elixir regex, but
+  > a escaped string - you can use the `~S` sigil for escaping - that follows the [`regex`](https://docs.rs/regex/latest/regex/)
+  > Rust crate rules. This is because our backend, Polars, expects that format.
+  >
+  > To replace by literal strings, you can use `replace/3`.
+
+  ## Examples
+
+      iex> series = Explorer.Series.from_list(["1.200,45", "1.234.567,30", "asdf", nil])
+      iex> Explorer.Series.re_replace(series, ~S/[,.]/, "")
+      #Explorer.Series<
+        Polars[4]
+        string ["120045", "123456730", "asdf", nil]
+      >
+
+      iex> series = Explorer.Series.from_list(["hat", "hut"])
+      iex> Explorer.Series.re_replace(series, ~S/h(.)t/, "b${1}d")
+      #Explorer.Series<
+        Polars[2]
+        string ["bad", "bud"]
+      >
+
+      iex> series = Explorer.Series.from_list(["hat", "hut"])
+      iex> Explorer.Series.re_replace(series, ~S/h(?<vowel>.)t/, "b${vowel}d")
+      #Explorer.Series<
+        Polars[2]
+        string ["bad", "bud"]
+      >
+
+  Apply case-insensitive string replacement using the `(?i)` flag - remember, from the `regex` Rust crate.
+
+      iex> series = Explorer.Series.from_list(["Foggy", "Rainy", "Sunny"])
+      iex> Explorer.Series.re_replace(series, ~S/(?i)foggy|rainy/, "Sunny")
+      #Explorer.Series<
+        Polars[3]
+        string ["Sunny", "Sunny", "Sunny"]
+      >
+
+  With an Elixir regex it causes an error:
+
+      iex> series = Explorer.Series.from_list(["hat", "hut"])
+      iex> Explorer.Series.re_replace(series, ~r/h(.)t/, "b${1}d")
+      ** (ArgumentError) standard regexes cannot be used as pattern because it may be incompatible with the backend. Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`
+
+  """
+  @doc type: :string_wise
+  @spec re_replace(Series.t(), binary(), binary()) :: Series.t()
+  def re_replace(%Series{dtype: :string} = series, pattern, replacement)
+      when K.and(is_binary(pattern), is_binary(replacement)),
+      do: apply_series(series, :re_replace, [pattern, replacement])
+
+  def re_replace(%Series{dtype: :string}, %Regex{}, _) do
+    raise ArgumentError,
+          "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+            "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`"
+  end
+
+  def re_replace(%Series{dtype: :string}, _, _),
+    do: raise(ArgumentError, "pattern and replacement in re_replace/3 need to be a string")
+
+  def re_replace(%Series{dtype: dtype}, _, _), do: dtype_error("re_replace/3", dtype, [:string])
 
   @doc """
   Returns a string series where all leading and trailing Unicode whitespaces

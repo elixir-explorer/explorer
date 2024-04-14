@@ -291,6 +291,10 @@ defmodule Explorer.Backend.Series do
   @callback json_decode(s, dtype()) :: s
   @callback json_path_match(s, String.t()) :: s
 
+  ## String - Regular expression versions
+  @callback re_contains(s, String.t()) :: s
+  @callback re_replace(s, String.t(), String.t()) :: s
+
   # Date / DateTime
 
   @callback day_of_week(s) :: s

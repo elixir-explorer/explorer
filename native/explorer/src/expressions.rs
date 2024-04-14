@@ -836,6 +836,12 @@ pub fn expr_contains(expr: ExExpr, pattern: &str) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_re_contains(expr: ExExpr, pattern: &str) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().contains(pattern.lit(), true))
+}
+
+#[rustler::nif]
 pub fn expr_upcase(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().to_uppercase())
@@ -896,11 +902,13 @@ pub fn expr_split(expr: ExExpr, substring: String) -> ExExpr {
 #[rustler::nif]
 pub fn expr_replace(expr: ExExpr, pat: String, value: String) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.str().replace_all(
-        Expr::Literal(LiteralValue::String(pat)),
-        Expr::Literal(LiteralValue::String(value)),
-        true,
-    ))
+    ExExpr::new(expr.str().replace_all(pat.lit(), value.lit(), true))
+}
+
+#[rustler::nif]
+pub fn expr_re_replace(expr: ExExpr, pat: String, value: String) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().replace_all(pat.lit(), value.lit(), false))
 }
 
 #[rustler::nif]
