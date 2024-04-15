@@ -5330,6 +5330,42 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "count_matches/2" do
+    test "count how many times a substring is inside the string" do
+      series = Series.from_list(["abc bz bb", "bcd b", "def", nil])
+
+      assert Series.count_matches(series, "b") |> Series.to_list() ==
+               [4, 2, 0, nil]
+    end
+
+    test "does not work with regex patterns" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+
+      assert Series.count_matches(series, ~S/(b|d)/) |> Series.to_list() ==
+               [0, 0, 0, nil]
+    end
+  end
+
+  describe "re_count_matches/2" do
+    test "count how many times a pattern matches the contents of the series" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+
+      assert Series.re_count_matches(series, ~S/(b|d)/) |> Series.to_list() ==
+               [1, 2, 1, nil]
+    end
+
+    test "raises error if pattern is an Elixir regex" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+
+      assert_raise ArgumentError,
+                   "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+                     "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`",
+                   fn ->
+                     Series.re_count_matches(series, ~r/^(b|d)/)
+                   end
+    end
+  end
+
   describe "strip, strip, lstrip, rstrip" do
     test "strip/1" do
       series = Series.from_list(["  123   ", "       2   ", "    20$    "])

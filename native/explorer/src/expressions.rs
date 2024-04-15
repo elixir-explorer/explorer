@@ -1154,3 +1154,15 @@ pub fn expr_over(left: ExExpr, groups: Vec<ExExpr>) -> ExExpr {
     let expr = left.clone_inner().over(groups);
     ExExpr::new(expr)
 }
+
+#[rustler::nif]
+pub fn expr_count_matches(expr: ExExpr, pattern: &str) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().count_matches(pattern.lit(), true))
+}
+
+#[rustler::nif]
+pub fn expr_re_count_matches(expr: ExExpr, pattern: &str) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().count_matches(pattern.lit(), false))
+}

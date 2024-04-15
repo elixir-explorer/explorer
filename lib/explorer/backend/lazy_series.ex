@@ -132,6 +132,8 @@ defmodule Explorer.Backend.LazySeries do
     split_into: 3,
     json_decode: 2,
     json_path_match: 2,
+    count_matches: 2,
+    re_count_matches: 2,
     # Float round
     round: 2,
     floor: 1,
@@ -1147,6 +1149,20 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def row_index(series) do
     data = new(:row_index, [lazy_series!(series)], {:u, 32})
+
+    Backend.Series.new(data, {:u, 32})
+  end
+
+  @impl true
+  def count_matches(series, substring) do
+    data = new(:count_matches, [lazy_series!(series), substring], {:u, 32})
+
+    Backend.Series.new(data, {:u, 32})
+  end
+
+  @impl true
+  def re_count_matches(series, pattern) do
+    data = new(:re_count_matches, [lazy_series!(series), pattern], {:u, 32})
 
     Backend.Series.new(data, {:u, 32})
   end

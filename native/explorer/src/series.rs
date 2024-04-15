@@ -1857,3 +1857,17 @@ pub fn s_row_index(series: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = Series::new("row_index", 0..len);
     Ok(ExSeries::new(s))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_count_matches(
+    s1: ExSeries,
+    pattern: &str,
+    literal: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let chunked_array = if literal {
+        s1.str()?.count_matches(pattern, true)?
+    } else {
+        s1.str()?.count_matches(pattern, false)?
+    };
+    Ok(ExSeries::new(chunked_array.into()))
+}

@@ -264,6 +264,8 @@ rustler::init!(
         expr_re_replace,
         expr_json_path_match,
         expr_split_into,
+        expr_count_matches,
+        expr_re_count_matches,
         // float round expressions
         expr_round,
         expr_floor,
@@ -327,6 +329,7 @@ rustler::init!(
         s_coalesce,
         s_concat,
         s_contains,
+        s_count_matches,
         s_cos,
         s_upcase,
         s_day_of_week,

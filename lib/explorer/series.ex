@@ -5794,6 +5794,68 @@ defmodule Explorer.Series do
   def split_into(%Series{dtype: dtype}, by, [_ | _]) when is_binary(by),
     do: dtype_error("split_into/3", dtype, [:string])
 
+  @doc """
+  Detects how many times a substring appears in a string.
+
+  > ### Notice {: .warning}
+  >
+  > This function detects only literal strings. For regular expressions, see `re_count_matches/2`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def", "bcd", nil])
+      iex> Explorer.Series.count_matches(s, "bc")
+      #Explorer.Series<
+        Polars[4]
+        u32 [1, 0, 1, nil]
+      >
+  """
+  @doc type: :string_wise
+  @spec count_matches(Series.t(), String.t()) :: Series.t()
+  def count_matches(%Series{dtype: :string} = series, substring)
+      when K.is_binary(substring),
+      do: apply_series(series, :count_matches, [substring])
+
+  def count_matches(%Series{dtype: dtype}, _),
+    do: dtype_error("count_matches/2", dtype, [:string])
+
+  @doc """
+  Count how many times a pattern matches a string.
+
+  > ### Notice {: .warning}
+  >
+  > This function matches against a regular expression. It does not expect an Elixir regex,
+  > but a escaped string and you can use the `~S` sigil for escaping it. Since each Explorer
+  > backend may have its own regular expression rules, you must consult their underlying
+  > engine. For the default backend (Polars), the rules are outlined in the Rust create named
+  > [`regex`](https://docs.rs/regex/latest/regex/).
+  >
+  > To count matching literal strings, you can use `count_matches/2`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def def", "bcd", nil])
+      iex> Explorer.Series.re_count_matches(s, ~S/(a|e)/)
+      #Explorer.Series<
+        Polars[4]
+        u32 [1, 2, 0, nil]
+      >
+  """
+  @doc type: :string_wise
+  @spec re_count_matches(Series.t(), String.t()) :: Series.t()
+  def re_count_matches(%Series{dtype: :string} = series, pattern)
+      when K.is_binary(pattern),
+      do: apply_series(series, :re_count_matches, [pattern])
+
+  def re_count_matches(%Series{dtype: :string}, %Regex{}) do
+    raise ArgumentError,
+          "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+            "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`"
+  end
+
+  def re_count_matches(%Series{dtype: dtype}, _),
+    do: dtype_error("re_count_matches/2", dtype, [:string])
+
   # Float
 
   @doc """

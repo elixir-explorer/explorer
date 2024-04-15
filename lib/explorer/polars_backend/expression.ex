@@ -141,6 +141,8 @@ defmodule Explorer.PolarsBackend.Expression do
     split_into: 3,
     json_decode: 2,
     json_path_match: 2,
+    count_matches: 2,
+    re_count_matches: 2,
 
     # Lists
     join: 2,

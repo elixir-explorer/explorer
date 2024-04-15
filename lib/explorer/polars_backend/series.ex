@@ -778,6 +778,16 @@ defmodule Explorer.PolarsBackend.Series do
   def json_path_match(series, json_path),
     do: Shared.apply_series(series, :s_json_path_match, [json_path])
 
+  @impl true
+  def count_matches(series, substring) do
+    Shared.apply_series(series, :s_count_matches, [substring, true])
+  end
+
+  @impl true
+  def re_count_matches(series, pattern) do
+    Shared.apply_series(series, :s_count_matches, [pattern, false])
+  end
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)
