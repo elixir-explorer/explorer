@@ -5856,6 +5856,90 @@ defmodule Explorer.Series do
   def re_count_matches(%Series{dtype: dtype}, _),
     do: dtype_error("re_count_matches/2", dtype, [:string])
 
+  @doc """
+  Scan for all matches for the given regex pattern.
+
+  Extract each successive non-overlapping regex match in an individual string as a list.
+
+  > ### Notice {: .warning}
+  >
+  > This function matches against a regular expression. It does not expect an Elixir regex,
+  > but a escaped string and you can use the `~S` sigil for escaping it. Since each Explorer
+  > backend may have its own regular expression rules, you must consult their underlying
+  > engine. For the default backend (Polars), the rules are outlined in the Rust create named
+  > [`regex`](https://docs.rs/regex/latest/regex/).
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def def", "bcd", nil])
+      iex> Explorer.Series.re_scan(s, ~S/(b|d)/)
+      #Explorer.Series<
+        Polars[4]
+        list[string] [["b"], ["d", "d"], ["b", "d"], nil]
+      >
+
+  """
+  @doc type: :string_wise
+  @spec re_scan(Series.t(), String.t()) :: Series.t()
+  def re_scan(%Series{dtype: :string} = series, pattern)
+      when K.is_binary(pattern),
+      do: apply_series(series, :re_scan, [pattern])
+
+  def re_scan(%Series{dtype: :string}, %Regex{}) do
+    raise ArgumentError,
+          "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+            "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`"
+  end
+
+  def re_scan(%Series{dtype: dtype}, _),
+    do: dtype_error("re_scan/2", dtype, [:string])
+
+  @doc """
+  Extract all capture groups as a struct for the given regex pattern.
+
+  All group names are strings. If your pattern contains unnamed groups, their numerical position
+  is converted to a string, starting from "1".
+
+  > ### Notice {: .warning}
+  >
+  > This function matches against a regular expression. It does not expect an Elixir regex,
+  > but a escaped string and you can use the `~S` sigil for escaping it. Since each Explorer
+  > backend may have its own regular expression rules, you must consult their underlying
+  > engine. For the default backend (Polars), the rules are outlined in the Rust create named
+  > [`regex`](https://docs.rs/regex/latest/regex/).
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def def", "bcd", nil])
+      iex> Explorer.Series.re_named_captures(s, ~S/(b|d)/)
+      #Explorer.Series<
+        Polars[4]
+        struct[1] [%{"1" => "b"}, %{"1" => "d"}, %{"1" => "b"}, %{"1" => nil}]
+      >
+
+      iex> s = Explorer.Series.from_list(["alice@service.com", "bob@example.com"])
+      iex> Explorer.Series.re_named_captures(s, ~S/(?<account>[^@]+)@(?<host>.*)/)
+      #Explorer.Series<
+        Polars[2]
+        struct[2] [%{"account" => "alice", "host" => "service.com"}, %{"account" => "bob", "host" => "example.com"}]
+      >
+
+  """
+  @doc type: :string_wise
+  @spec re_named_captures(Series.t(), String.t()) :: Series.t()
+  def re_named_captures(%Series{dtype: :string} = series, pattern)
+      when K.is_binary(pattern),
+      do: apply_series(series, :re_named_captures, [pattern])
+
+  def re_named_captures(%Series{dtype: :string}, %Regex{}) do
+    raise ArgumentError,
+          "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+            "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`"
+  end
+
+  def re_named_captures(%Series{dtype: dtype}, _),
+    do: dtype_error("re_named_captures/2", dtype, [:string])
+
   # Float
 
   @doc """

@@ -143,6 +143,7 @@ defmodule Explorer.PolarsBackend.Expression do
     json_path_match: 2,
     count_matches: 2,
     re_count_matches: 2,
+    re_scan: 2,
 
     # Lists
     join: 2,
@@ -170,6 +171,7 @@ defmodule Explorer.PolarsBackend.Expression do
     concat: 1,
     column: 1,
     correlation: 4,
+    re_named_captures: 2,
     covariance: 3
   ]
 

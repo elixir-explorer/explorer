@@ -134,6 +134,8 @@ defmodule Explorer.Backend.LazySeries do
     json_path_match: 2,
     count_matches: 2,
     re_count_matches: 2,
+    re_scan: 2,
+    re_named_captures: 2,
     # Float round
     round: 2,
     floor: 1,
@@ -1165,6 +1167,29 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:re_count_matches, [lazy_series!(series), pattern], {:u, 32})
 
     Backend.Series.new(data, {:u, 32})
+  end
+
+  @impl true
+  def re_scan(series, pattern) do
+    data = new(:re_scan, [lazy_series!(series), pattern], {:list, :string})
+
+    Backend.Series.new(data, {:list, :string})
+  end
+
+  @impl true
+  def re_named_captures(_series, _pattern) do
+    raise """
+    #{unsupported(:re_named_captures, 2)}
+
+    If you want to capture named groups from a column, you must do so outside of a query.
+    For example, instead of:
+
+        Explorer.DataFrame.mutate(df, new_column: re_named_captures(column, ~S/(a|b)/))
+
+    You must write:
+
+        Explorer.DataFrame.put(df, :new_column, Explorer.Series.re_named_captures(column, ~S/(a|b)/))
+    """
   end
 
   @remaining_non_lazy_operations [

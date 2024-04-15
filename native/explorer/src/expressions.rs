@@ -1166,3 +1166,9 @@ pub fn expr_re_count_matches(expr: ExExpr, pattern: &str) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().count_matches(pattern.lit(), false))
 }
+
+#[rustler::nif]
+pub fn expr_re_scan(expr: ExExpr, pattern: &str) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().extract_all(pattern.lit()))
+}

@@ -266,6 +266,7 @@ rustler::init!(
         expr_split_into,
         expr_count_matches,
         expr_re_count_matches,
+        expr_re_scan,
         // float round expressions
         expr_round,
         expr_floor,
@@ -330,6 +331,8 @@ rustler::init!(
         s_concat,
         s_contains,
         s_count_matches,
+        s_extract_all,
+        s_extract_groups,
         s_cos,
         s_upcase,
         s_day_of_week,

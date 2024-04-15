@@ -788,6 +788,16 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_count_matches, [pattern, false])
   end
 
+  @impl true
+  def re_scan(series, pattern) do
+    Shared.apply_series(series, :s_extract_all, [pattern])
+  end
+
+  @impl true
+  def re_named_captures(series, pattern) do
+    Shared.apply_series(series, :s_extract_groups, [pattern])
+  end
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

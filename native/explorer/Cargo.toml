@@ -79,7 +79,8 @@ features = [
   "range",
   "rank",
   "propagate_nans",
-  "extract_jsonpath"
+  "extract_jsonpath",
+  "extract_groups",
 ]
 
 [dependencies.polars-ops]

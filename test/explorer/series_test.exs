@@ -5366,6 +5366,84 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "re_scan/2" do
+    test "extract all matches" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+      series1 = Series.re_scan(series, ~S/(b|d)/)
+
+      assert Series.dtype(series1) == {:list, :string}
+      assert series1 |> Series.to_list() == [["b"], ["b", "d"], ["d"], nil]
+    end
+
+    test "raises error if pattern is an Elixir regex" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+
+      assert_raise ArgumentError,
+                   "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+                     "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`",
+                   fn ->
+                     Series.re_scan(series, ~r/^(b|d)/)
+                   end
+    end
+  end
+
+  describe "re_named_captures/2" do
+    test "extract all named groups" do
+      series =
+        Series.from_list([
+          "http://vote.com/ballon_dor?candidate=messi&ref=python",
+          "http://vote.com/ballon_dor?candidate=weghorst&ref=polars",
+          "http://vote.com/ballon_dor?error=404&ref=rust",
+          nil
+        ])
+
+      series1 = Series.re_named_captures(series, ~S/candidate=(?<candidate>\w+)&ref=(?<ref>\w+)/)
+
+      assert Series.dtype(series1) == {:struct, [{"candidate", :string}, {"ref", :string}]}
+
+      assert series1 |> Series.to_list() ==
+               [
+                 %{"candidate" => "messi", "ref" => "python"},
+                 %{"candidate" => "weghorst", "ref" => "polars"},
+                 %{"candidate" => nil, "ref" => nil},
+                 %{"candidate" => nil, "ref" => nil}
+               ]
+    end
+
+    test "extract all positional groups" do
+      series =
+        Series.from_list([
+          "http://vote.com/ballon_dor?candidate=messi&ref=python",
+          "http://vote.com/ballon_dor?candidate=weghorst&ref=polars",
+          "http://vote.com/ballon_dor?error=404&ref=rust",
+          nil
+        ])
+
+      series1 = Series.re_named_captures(series, ~S/candidate=(\w+)&ref=(\w+)/)
+
+      assert Series.dtype(series1) == {:struct, [{"1", :string}, {"2", :string}]}
+
+      assert series1 |> Series.to_list() ==
+               [
+                 %{"1" => "messi", "2" => "python"},
+                 %{"1" => "weghorst", "2" => "polars"},
+                 %{"1" => nil, "2" => nil},
+                 %{"1" => nil, "2" => nil}
+               ]
+    end
+
+    test "raises error if pattern is an Elixir regex" do
+      series = Series.from_list(["abc", "bcd", "def", nil])
+
+      assert_raise ArgumentError,
+                   "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+                     "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`",
+                   fn ->
+                     Series.re_named_captures(series, ~r/^(b|d)/)
+                   end
+    end
+  end
+
   describe "strip, strip, lstrip, rstrip" do
     test "strip/1" do
       series = Series.from_list(["  123   ", "       2   ", "    20$    "])

@@ -2030,6 +2030,39 @@ defmodule Explorer.DataFrameTest do
                "First Name" => ["John", "Jane"]
              }
     end
+
+    test "extract and count all matches from string" do
+      df = DF.new(a: ["$2,000", "$2,000,000", ",", nil])
+
+      df1 =
+        DF.mutate(df,
+          b: re_scan(a, ~S/\d+/),
+          c: re_count_matches(a, ~S/\d+/),
+          d: count_matches(a, "$")
+        )
+
+      assert DF.dtypes(df1) == %{
+               "a" => :string,
+               "b" => {:list, :string},
+               "c" => {:u, 32},
+               "d" => {:u, 32}
+             }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["$2,000", "$2,000,000", ",", nil],
+               b: [["2", "000"], ["2", "000", "000"], [], nil],
+               c: [2, 3, 0, nil],
+               d: [1, 1, 0, nil]
+             }
+    end
+
+    test "raise when try to extract groups" do
+      df = DF.new(a: ["2,000", "2,000,000", ",", nil])
+
+      assert_raise RuntimeError, fn ->
+        DF.mutate(df, b: re_named_captures(a, ~S/(\d+)/))
+      end
+    end
   end
 
   describe "sort_by/3" do
