@@ -290,10 +290,14 @@ defmodule Explorer.Backend.Series do
   @callback split_into(s, String.t(), list(String.t() | atom())) :: s
   @callback json_decode(s, dtype()) :: s
   @callback json_path_match(s, String.t()) :: s
+  @callback count_matches(s, String.t()) :: s
 
   ## String - Regular expression versions
   @callback re_contains(s, String.t()) :: s
   @callback re_replace(s, String.t(), String.t()) :: s
+  @callback re_count_matches(s, String.t()) :: s
+  @callback re_scan(s, String.t()) :: s
+  @callback re_named_captures(s, String.t()) :: s
 
   # Date / DateTime
 

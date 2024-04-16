@@ -1857,3 +1857,41 @@ pub fn s_row_index(series: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = Series::new("row_index", 0..len);
     Ok(ExSeries::new(s))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_count_matches(
+    s1: ExSeries,
+    pattern: &str,
+    literal: bool,
+) -> Result<ExSeries, ExplorerError> {
+    let chunked_array = if literal {
+        s1.str()?.count_matches(pattern, true)?
+    } else {
+        s1.str()?.count_matches(pattern, false)?
+    };
+    Ok(ExSeries::new(chunked_array.into()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_extract_all(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
+    let chunked_array = s1.str()?.extract_all(pattern)?;
+    Ok(ExSeries::new(chunked_array.into()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_extract_groups(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
+    let s2 = s1
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .with_column(
+            col(s1.name())
+                .str()
+                .extract_groups(pattern)?
+                .alias(s1.name()),
+        )
+        .collect()?
+        .column(s1.name())?
+        .clone();
+    Ok(ExSeries::new(s2))
+}
