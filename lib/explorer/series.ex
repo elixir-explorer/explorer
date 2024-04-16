@@ -5902,6 +5902,9 @@ defmodule Explorer.Series do
 
   > ### Notice {: .warning}
   >
+  > This function does not work inside the context of `Explorer.Query`. If you are working on
+  > a data frame, you first need to extract the series from it. See `Explorer.DataFrame.pull/2`.
+  >
   > This function matches against a regular expression. It does not expect an Elixir regex,
   > but a escaped string and you can use the `~S` sigil for escaping it. Since each Explorer
   > backend may have its own regular expression rules, you must consult their underlying
