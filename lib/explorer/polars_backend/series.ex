@@ -790,12 +790,20 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def re_scan(series, pattern) do
-    Shared.apply_series(series, :s_extract_all, [pattern])
+    Shared.apply_series(series, :s_re_scan, [pattern])
   end
 
   @impl true
   def re_named_captures(series, pattern) do
-    Shared.apply_series(series, :s_extract_groups, [pattern])
+    Shared.apply_series(series, :s_re_named_captures, [pattern])
+  end
+
+  @impl true
+  def re_dtype(regex_as_string) when is_binary(regex_as_string) do
+    case Explorer.PolarsBackend.Native.s_re_dtype(regex_as_string) do
+      {:ok, dtype} -> dtype
+      {:error, error} -> raise error
+    end
   end
 
   # Polars specific functions

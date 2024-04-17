@@ -298,6 +298,7 @@ defmodule Explorer.Backend.Series do
   @callback re_count_matches(s, String.t()) :: s
   @callback re_scan(s, String.t()) :: s
   @callback re_named_captures(s, String.t()) :: s
+  @callback re_dtype(String.t()) :: dtype()
 
   # Date / DateTime
 

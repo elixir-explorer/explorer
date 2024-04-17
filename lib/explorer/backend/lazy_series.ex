@@ -1194,19 +1194,15 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def re_named_captures(_series, _pattern) do
-    raise """
-    #{unsupported(:re_named_captures, 2)}
+  def re_named_captures(series, pattern) do
+    lazy_s = lazy_series!(series)
+    backend = lazy_s.backend
 
-    If you want to capture named groups from a column, you must do so outside of a query.
-    For example, instead of:
+    target_dtype = backend.re_dtype(pattern)
 
-        Explorer.DataFrame.mutate(df, new_column: re_named_captures(column, ~S/(a|b)/))
+    data = new(:re_named_captures, [lazy_s, pattern], target_dtype)
 
-    You must write:
-
-        Explorer.DataFrame.put(df, :new_column, Explorer.Series.re_named_captures(column, ~S/(a|b)/))
-    """
+    Backend.Series.new(data, target_dtype)
   end
 
   @remaining_non_lazy_operations [
@@ -1218,6 +1214,7 @@ defmodule Explorer.Backend.LazySeries do
     cut: 5,
     qcut: 5,
     mask: 2,
+    re_dtype: 1,
     to_iovec: 1,
     to_list: 1
   ]
