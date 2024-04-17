@@ -198,6 +198,8 @@ defmodule Explorer.Backend.LazySeries do
 
   @doc false
   def new(op, args, dtype, aggregation \\ false) do
+    dtype = Explorer.Shared.normalise_dtype!(dtype)
+
     %__MODULE__{op: op, args: args, dtype: dtype, aggregation: aggregation}
   end
 
