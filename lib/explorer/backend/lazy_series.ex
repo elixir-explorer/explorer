@@ -9,9 +9,15 @@ defmodule Explorer.Backend.LazySeries do
 
   @behaviour Explorer.Backend.Series
 
-  defstruct op: nil, args: [], dtype: nil, aggregation: false
+  defstruct op: nil, args: [], dtype: nil, aggregation: false, backend: nil
 
-  @type t :: %__MODULE__{op: atom(), args: list(), dtype: any(), aggregation: boolean()}
+  @type t :: %__MODULE__{
+          op: atom(),
+          args: list(),
+          dtype: any(),
+          aggregation: boolean(),
+          backend: nil | module()
+        }
 
   @operations [
     # Element-wise
@@ -199,8 +205,17 @@ defmodule Explorer.Backend.LazySeries do
   @doc false
   def new(op, args, dtype, aggregation \\ false) do
     dtype = Explorer.Shared.normalise_dtype!(dtype)
+    backend = backend_from_args(args)
 
-    %__MODULE__{op: op, args: args, dtype: dtype, aggregation: aggregation}
+    %__MODULE__{op: op, args: args, dtype: dtype, backend: backend, aggregation: aggregation}
+  end
+
+  defp backend_from_args(args) do
+    Enum.find(args, fn
+      %__MODULE__{} = arg -> arg.backend
+      %module{} -> module
+      _other -> nil
+    end)
   end
 
   @doc false
