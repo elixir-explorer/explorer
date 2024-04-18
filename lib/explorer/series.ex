@@ -5795,7 +5795,7 @@ defmodule Explorer.Series do
     do: dtype_error("split_into/3", dtype, [:string])
 
   @doc """
-  Detects how many times a substring appears in a string.
+  Count how many times a substring appears in a string.
 
   > ### Notice {: .warning}
   >
