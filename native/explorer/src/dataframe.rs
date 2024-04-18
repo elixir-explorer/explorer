@@ -474,3 +474,16 @@ pub fn df_lazy(df: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
     let new_lf = df.clone_inner().lazy();
     Ok(ExLazyFrame::new(new_lf))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_re_dtype(pattern: &str) -> Result<ExSeriesDtype, ExplorerError> {
+    let s = Series::new("dummy", [""])
+        .into_frame()
+        .lazy()
+        .with_column(col("dummy").str().extract_groups(pattern)?.alias("dummy"))
+        .collect()?
+        .column("dummy")?
+        .clone();
+    let ex_dtype = ExSeriesDtype::try_from(s.dtype())?;
+    Ok(ex_dtype)
+}

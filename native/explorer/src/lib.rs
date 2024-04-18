@@ -126,6 +126,7 @@ rustler::init!(
         df_to_parquet,
         df_to_parquet_cloud,
         df_width,
+        df_re_dtype,
         // expressions
         expr_nil,
         expr_atom,
@@ -334,7 +335,6 @@ rustler::init!(
         s_count_matches,
         s_re_scan,
         s_re_named_captures,
-        s_re_dtype,
         s_cos,
         s_upcase,
         s_day_of_week,

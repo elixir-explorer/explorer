@@ -890,6 +890,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
   end
 
+  @impl true
+  def re_dtype(regex_as_string) when is_binary(regex_as_string) do
+    case Explorer.PolarsBackend.Native.df_re_dtype(regex_as_string) do
+      {:ok, dtype} -> dtype
+      {:error, error} -> raise error
+    end
+  end
+
   # helpers
 
   defp pairwised(df, out_df, operation) do

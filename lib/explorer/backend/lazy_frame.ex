@@ -10,10 +10,10 @@ defmodule Explorer.Backend.LazyFrame do
   alias Explorer.Backend
   alias Explorer.Backend.LazySeries
 
-  defstruct dtypes: %{}, names: [], original_data: nil
+  defstruct dtypes: %{}, names: [], backend: nil
 
   @type t :: %__MODULE__{
-          original_data: Backend.DataFrame.t(),
+          backend: module(),
           dtypes: Backend.DataFrame.dtypes(),
           names: Backend.DataFrame.column_name()
         }
@@ -21,8 +21,10 @@ defmodule Explorer.Backend.LazyFrame do
 
   @doc false
   def new(df) do
+    %module{} = df.data
+
     Explorer.Backend.DataFrame.new(
-      %__MODULE__{names: df.names, dtypes: df.dtypes, original_data: df.data},
+      %__MODULE__{names: df.names, dtypes: df.dtypes, backend: module},
       df.names,
       df.dtypes
     )
@@ -74,19 +76,10 @@ defmodule Explorer.Backend.LazyFrame do
   @impl true
   def pull(df, column) do
     dtype_for_column = df.dtypes[column]
-    series_backend = get_series_backend(df.data.original_data)
 
-    data = LazySeries.new(:column, [column], dtype_for_column)
-    data = %{data | backend: series_backend}
+    data = LazySeries.new(:column, [column], dtype_for_column, false, df.data.backend)
 
     Backend.Series.new(data, dtype_for_column)
-  end
-
-  defp get_series_backend(%module{}) do
-    module
-    |> Module.split()
-    |> List.replace_at(-1, "Series")
-    |> Module.concat()
   end
 
   funs =

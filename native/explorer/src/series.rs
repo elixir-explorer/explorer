@@ -1895,16 +1895,3 @@ pub fn s_re_named_captures(s1: ExSeries, pattern: &str) -> Result<ExSeries, Expl
         .clone();
     Ok(ExSeries::new(s2))
 }
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_re_dtype(pattern: &str) -> Result<ExSeriesDtype, ExplorerError> {
-    let s = Series::new("dummy", [""])
-        .into_frame()
-        .lazy()
-        .with_column(col("dummy").str().extract_groups(pattern)?.alias("dummy"))
-        .collect()?
-        .column("dummy")?
-        .clone();
-    let ex_dtype = ExSeriesDtype::try_from(s.dtype())?;
-    Ok(ex_dtype)
-}

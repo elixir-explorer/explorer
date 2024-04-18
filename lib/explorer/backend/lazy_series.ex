@@ -203,9 +203,9 @@ defmodule Explorer.Backend.LazySeries do
   @float_predicates [:is_finite, :is_infinite, :is_nan]
 
   @doc false
-  def new(op, args, dtype, aggregation \\ false) do
+  def new(op, args, dtype, aggregation \\ false, backend \\ nil) do
     dtype = Explorer.Shared.normalise_dtype!(dtype)
-    backend = backend_from_args(args)
+    backend = backend || backend_from_args(args)
 
     %__MODULE__{op: op, args: args, dtype: dtype, backend: backend, aggregation: aggregation}
   end
@@ -1214,7 +1214,6 @@ defmodule Explorer.Backend.LazySeries do
     cut: 5,
     qcut: 5,
     mask: 2,
-    re_dtype: 1,
     to_iovec: 1,
     to_list: 1
   ]

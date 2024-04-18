@@ -168,6 +168,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_to_parquet_cloud(_df, _ex_entry, _compression), do: err()
   def df_width(_df), do: err()
   def df_nil_count(_df), do: err()
+  def df_re_dtype(_pattern), do: err()
 
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
@@ -288,7 +289,6 @@ defmodule Explorer.PolarsBackend.Native do
   def s_count_matches(_s, _pattern, _is_literal), do: err()
   def s_re_scan(_s, _pattern), do: err()
   def s_re_named_captures(_s, _pattern), do: err()
-  def s_re_dtype(_pattern), do: err()
   def s_cumulative_max(_s, _reverse), do: err()
   def s_cumulative_min(_s, _reverse), do: err()
   def s_cumulative_sum(_s, _reverse), do: err()
