@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   There is an important detail: we do not accept Elixir regexes, because we cannot
   guarantee that the backend supports it. Instead we accept a plain string that
-  is "scaped". This means that you can use the `~S` sigil to build that string.
+  is "escaped". This means that you can use the `~S` sigil to build that string.
   Example: `~S/(a|b)/`.
 
   The added functions are the following:
