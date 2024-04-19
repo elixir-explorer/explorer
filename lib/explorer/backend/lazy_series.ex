@@ -6,6 +6,7 @@ defmodule Explorer.Backend.LazySeries do
   """
   alias Explorer.Series
   alias Explorer.Backend
+  require Logger
 
   @behaviour Explorer.Backend.Series
 
@@ -213,7 +214,6 @@ defmodule Explorer.Backend.LazySeries do
   defp backend_from_args(args) do
     Enum.find(args, fn
       %__MODULE__{} = arg -> arg.backend
-      %module{} -> module
       _other -> nil
     end)
   end
@@ -1196,13 +1196,26 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def re_named_captures(series, pattern) do
     lazy_s = lazy_series!(series)
-    backend = lazy_s.backend
 
-    target_dtype = backend.re_dtype(pattern)
+    target_dtype = get_backend(lazy_s).re_dtype(pattern)
 
     data = new(:re_named_captures, [lazy_s, pattern], target_dtype)
 
     Backend.Series.new(data, target_dtype)
+  end
+
+  defp get_backend(%__MODULE__{} = lazy_series) do
+    lazy_series.backend || warning_with_default_backend()
+  end
+
+  defp warning_with_default_backend do
+    backend = Explorer.Backend.get()
+
+    Logger.warning(
+      "cannot get backend from LazySeries. Using the default one: #{inspect(backend)}"
+    )
+
+    :"#{backend}.DataFrame"
   end
 
   @remaining_non_lazy_operations [
