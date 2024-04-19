@@ -7,6 +7,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add functions to work with strings and regexes.
+
+  Some of the functions have the prefix "re_", because they accept a string that
+  represents a regular expression.
+
+  There is an important detail: we do not accept Elixir regexes, because we cannot
+  guarantee that the backend supports it. Instead we accept a plain string that
+  is "escaped". This means that you can use the `~S` sigil to build that string.
+  Example: `~S/(a|b)/`.
+
+  The added functions are the following:
+
+  - `Explorer.Series.split_into/3` - split a string series into a struct
+    of string fields. This function accepts a string as a separator.
+
+  - `Explorer.Series.re_contains/2` - check is the string series matches the regex
+    pattern. Like the "non regex" counterpart, it returns a boolean series.
+
+  - `Explorer.Series.re_replace/3` - replaces all occurences of a pattern with
+    replacement in string series. The replacement can refer to groups captures
+    by using the `${x}`, where `x` is the group index (starts with 1) or name.
+
+  - `Explorer.Series.count_matches/2` - count how many times a substring appears
+    in a string series.
+
+  - `Explorer.Series.re_count_matches/2` - count how many times a pattern matches
+    in a string series.
+
+  - `Explorer.Series.re_scan/2` - scan for all matches for the given regex pattern.
+    This is going to result in a series of lists of strings - `{:list, :string}`.
+
+  - `Explorer.Series.re_named_captures/2` - extract all capture groups as a struct
+    for the given regex pattern. In case the groups are not named, their positions
+    are used as names.
+
+- Enable the usage of system certificates if OTP version 25 or above.
+
+- Add support for the `:streaming` option in `Explorer.DataFrame.to_csv/3`.
+
+- Support operations with groups in the Lazy Polars backend. This change makes
+  the lazy frame implementation more useful, by supporting the usage of groups in
+  following functions:
+
+  - `Explorer.DataFrame.slice/3`
+
+  - `Explorer.DataFrame.head/2`
+
+  - `Explorer.DataFrame.tail/2`
+
+  - `Explorer.DataFrame.filter_with/2` and the macro version of it, `filter/2`.
+
+  - `Explorer.DataFrame.sort_with/3`, although it ignores "maintain order"
+    and "nulls last" options when used with groups.
+
+  - `Explorer.DataFrame.mutate_with/2` and its macro version, `mutate/2`.
+
+### Changed
+
+- We now avoid raising an exception if a non existent column is used in
+  `Explorer.DataFrame.discard/2`.
+
+- Make the dependency of `cacerts` optional. This is because people using
+  Erlang/OTP 25 or above can use the certificates provided by the system.
+  So you may need to add the dependency of `cacerts` if your OTP version
+  is older than that.
+
+- Some precision differences in float operations may appear. This is due to
+  an update in the Polars version to "v0.38.1". Polars is our default backend.
+
+### Fixed
+
+- Fix `Explorer.Series.split/2` inside the context of `Explorer.Query`.
+
+- Add optional `X-Amz-Security-Token` header to S3 request. This is needed
+  in case the user is passing down a `token` for authentication.
+
+- Fix `Explorer.DataFrame.sort_by/3` with groups to respect `:nils` option.
+  This is considering only the eager implementation.
+
+- Fix inspection of lazy frames in remote nodes.
+
 ## [v0.8.1] - 2024-02-24
 
 ### Added
