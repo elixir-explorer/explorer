@@ -1,7 +1,7 @@
 use crate::{
     atoms,
     datatypes::{
-        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExTime,
+        ExCorrelationMethod, ExDate, ExNaiveDateTime, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExTime,
         ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
@@ -118,8 +118,14 @@ fn precision_to_timeunit(precision: &str) -> TimeUnit {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision: &str) -> ExSeries {
+pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision: &str, time_zone: Option<&str>) -> ExSeries {
     let timeunit = precision_to_timeunit(precision);
+    let time_zone = match time_zone {
+        None => None,
+        Some(string) => Some(string.to_string()),
+    };
+
+    println!("{:?}", time_zone);
 
     ExSeries::new(
         Series::new(
@@ -128,7 +134,7 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision:
                 .map(|dt| dt.map(|dt| dt.into()))
                 .collect::<Vec<Option<i64>>>(),
         )
-        .cast(&DataType::Datetime(timeunit, None))
+        .cast(&DataType::Datetime(timeunit, time_zone))
         .unwrap(),
     )
 }
@@ -749,7 +755,7 @@ pub fn s_fill_missing_with_date(series: ExSeries, date: ExDate) -> Result<ExSeri
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_fill_missing_with_datetime(
     series: ExSeries,
-    datetime: ExDateTime,
+    datetime: ExNaiveDateTime,
 ) -> Result<ExSeries, ExplorerError> {
     let s = series
         .datetime()?
@@ -1210,7 +1216,7 @@ pub fn s_quantile<'a>(
             Some(microseconds) => Ok(ExTime::from(microseconds as i64).encode(env)),
         },
         DataType::Datetime(unit, None) => match s.datetime()?.quantile(quantile, strategy)? {
-            None => Ok(None::<ExDateTime>.encode(env)),
+            None => Ok(None::<ExNaiveDateTime>.encode(env)),
             Some(time) => Ok(encode_datetime(time as i64, *unit, env)
                 .unwrap()
                 .encode(env)),

@@ -311,8 +311,10 @@ defmodule Explorer.Shared do
 
   defp infer_type(%Date{} = _item), do: :date
   defp infer_type(%Time{} = _item), do: :time
+  defp infer_type(%DateTime{time_zone: tz} = _item), do: {:datetime, :microsecond, tz}
   defp infer_type(%NaiveDateTime{} = _item), do: {:datetime, :microsecond}
   defp infer_type(%Explorer.Duration{precision: precision} = _item), do: {:duration, precision}
+  defp infer_type(%_{} = item), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
   defp infer_type(item) when is_integer(item), do: {:s, 64}
   defp infer_type(item) when is_float(item) or item in @non_finite, do: {:f, 64}
   defp infer_type(item) when is_boolean(item), do: :boolean
@@ -559,18 +561,19 @@ defmodule Explorer.Shared do
   @doc """
   Converts dtype to its string representation.
   """
-  def dtype_to_string({:datetime, :millisecond}), do: "datetime[ms]"
-  def dtype_to_string({:datetime, :microsecond}), do: "datetime[μs]"
-  def dtype_to_string({:datetime, :nanosecond}), do: "datetime[ns]"
-  def dtype_to_string({:duration, :millisecond}), do: "duration[ms]"
-  def dtype_to_string({:duration, :microsecond}), do: "duration[μs]"
-  def dtype_to_string({:duration, :nanosecond}), do: "duration[ns]"
+  def dtype_to_string({:datetime, p}), do: "datetime[#{precision(p)}]"
+  def dtype_to_string({:datetime, p, tz}), do: "datetime[#{precision(p)}, #{tz}]"
+  def dtype_to_string({:duration, p}), do: "duration[#{precision(p)}]"
   def dtype_to_string({:list, dtype}), do: "list[" <> dtype_to_string(dtype) <> "]"
   def dtype_to_string({:struct, fields}), do: "struct[#{length(fields)}]"
   def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
   def dtype_to_string({:s, size}), do: "s" <> Integer.to_string(size)
   def dtype_to_string({:u, size}), do: "u" <> Integer.to_string(size)
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
+
+  defp precision(:millisecond), do: "ms"
+  defp precision(:microsecond), do: "μs"
+  defp precision(:nanosecond), do: "ns"
 
   @threshold 0.77
   @max_suggestions 5

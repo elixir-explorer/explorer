@@ -10,7 +10,7 @@ use polars::prelude::{GetOutput, IntoSeries, Utf8JsonPathImpl};
 use polars::series::Series;
 
 use crate::datatypes::{
-    ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExValidValue,
+    ExCorrelationMethod, ExDate, ExNaiveDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExValidValue,
 };
 use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
@@ -71,7 +71,7 @@ pub fn expr_date(date: ExDate) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_datetime(datetime: ExDateTime) -> ExExpr {
+pub fn expr_datetime(datetime: ExNaiveDateTime) -> ExExpr {
     ExExpr::new(datetime.lit())
 }
 
