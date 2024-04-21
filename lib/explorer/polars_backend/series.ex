@@ -790,12 +790,12 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def re_scan(series, pattern) do
-    Shared.apply_series(series, :s_extract_all, [pattern])
+    Shared.apply_series(series, :s_re_scan, [pattern])
   end
 
   @impl true
   def re_named_captures(series, pattern) do
-    Shared.apply_series(series, :s_extract_groups, [pattern])
+    Shared.apply_series(series, :s_re_named_captures, [pattern])
   end
 
   # Polars specific functions

@@ -575,6 +575,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Shared.apply_dataframe(head, out_df, :lf_concat_columns, [Enum.map(tail, & &1.data)])
   end
 
+  @impl true
+  def re_dtype(regex_as_string) when is_binary(regex_as_string) do
+    Eager.re_dtype(regex_as_string)
+  end
+
   not_available_funs = [
     correlation: 4,
     covariance: 3,

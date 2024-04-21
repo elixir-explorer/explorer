@@ -9,9 +9,15 @@ defmodule Explorer.Backend.LazySeries do
 
   @behaviour Explorer.Backend.Series
 
-  defstruct op: nil, args: [], dtype: nil, aggregation: false
+  defstruct op: nil, args: [], dtype: nil, aggregation: false, backend: nil
 
-  @type t :: %__MODULE__{op: atom(), args: list(), dtype: any(), aggregation: boolean()}
+  @type t :: %__MODULE__{
+          op: atom(),
+          args: list(),
+          dtype: any(),
+          aggregation: boolean(),
+          backend: nil | module()
+        }
 
   @operations [
     # Element-wise
@@ -197,8 +203,18 @@ defmodule Explorer.Backend.LazySeries do
   @float_predicates [:is_finite, :is_infinite, :is_nan]
 
   @doc false
-  def new(op, args, dtype, aggregation \\ false) do
-    %__MODULE__{op: op, args: args, dtype: dtype, aggregation: aggregation}
+  def new(op, args, dtype, aggregation \\ false, backend \\ nil) do
+    dtype = Explorer.Shared.normalise_dtype!(dtype)
+    backend = backend || backend_from_args(args)
+
+    %__MODULE__{op: op, args: args, dtype: dtype, backend: backend, aggregation: aggregation}
+  end
+
+  defp backend_from_args(args) do
+    Enum.find(args, fn
+      %__MODULE__{backend: backend} -> backend
+      _other -> nil
+    end)
   end
 
   @doc false
@@ -1177,19 +1193,20 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def re_named_captures(_series, _pattern) do
-    raise """
-    #{unsupported(:re_named_captures, 2)}
+  def re_named_captures(series, pattern) do
+    lazy_s = lazy_series!(series)
 
-    If you want to capture named groups from a column, you must do so outside of a query.
-    For example, instead of:
+    backend = get_backend(lazy_s, "re_named_captures/2")
+    target_dtype = backend.re_dtype(pattern)
 
-        Explorer.DataFrame.mutate(df, new_column: re_named_captures(column, ~S/(a|b)/))
+    data = new(:re_named_captures, [lazy_s, pattern], target_dtype)
 
-    You must write:
+    Backend.Series.new(data, target_dtype)
+  end
 
-        Explorer.DataFrame.put(df, :new_column, Explorer.Series.re_named_captures(column, ~S/(a|b)/))
-    """
+  defp get_backend(%__MODULE__{} = lazy_series, function) do
+    lazy_series.backend ||
+      raise "cannot get backend from Explorer.Backend.LazySeries for `#{function}`"
   end
 
   @remaining_non_lazy_operations [

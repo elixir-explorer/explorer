@@ -324,6 +324,8 @@ defmodule Explorer.Backend.Series do
   Create a new `Series`.
   """
   def new(data, dtype) do
+    dtype = Explorer.Shared.normalise_dtype!(dtype)
+
     %Explorer.Series{data: data, dtype: dtype}
   end
 

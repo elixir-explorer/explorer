@@ -162,6 +162,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback n_rows(df) :: integer()
   @callback inspect(df, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
 
+  @callback re_dtype(String.t()) :: dtype()
+
   # Single table verbs
 
   @callback head(df, rows :: integer()) :: df

@@ -1873,13 +1873,13 @@ pub fn s_count_matches(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_extract_all(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_re_scan(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
     let chunked_array = s1.str()?.extract_all(pattern)?;
     Ok(ExSeries::new(chunked_array.into()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_extract_groups(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
+pub fn s_re_named_captures(s1: ExSeries, pattern: &str) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
         .clone_inner()
         .into_frame()

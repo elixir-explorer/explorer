@@ -2056,12 +2056,38 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "raise when try to extract groups" do
-      df = DF.new(a: ["2,000", "2,000,000", ",", nil])
+    test "extract unnamed groups from regex in fields of a struct" do
+      df = DF.new(a: ["alice@example.com", "bob@example.com", nil])
 
-      assert_raise RuntimeError, fn ->
-        DF.mutate(df, b: re_named_captures(a, ~S/(\d+)/))
-      end
+      df1 = DF.mutate(df, b: re_named_captures(a, ~S/(.*[^@])@(.*)$/))
+
+      assert df1.dtypes["b"] == {:struct, [{"1", :string}, {"2", :string}]}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["alice@example.com", "bob@example.com", nil],
+               b: [
+                 %{"1" => "alice", "2" => "example.com"},
+                 %{"1" => "bob", "2" => "example.com"},
+                 %{"1" => nil, "2" => nil}
+               ]
+             }
+    end
+
+    test "extract named groups from regex in fields of a struct" do
+      df = DF.new(a: ["alice@example.com", "bob@example.com", nil])
+
+      df1 = DF.mutate(df, b: re_named_captures(a, ~S/(?<account>.*[^@])@(?<host>.*)$/))
+
+      assert df1.dtypes["b"] == {:struct, [{"account", :string}, {"host", :string}]}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["alice@example.com", "bob@example.com", nil],
+               b: [
+                 %{"account" => "alice", "host" => "example.com"},
+                 %{"account" => "bob", "host" => "example.com"},
+                 %{"account" => nil, "host" => nil}
+               ]
+             }
     end
   end
 

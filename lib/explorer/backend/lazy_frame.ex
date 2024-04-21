@@ -10,9 +10,10 @@ defmodule Explorer.Backend.LazyFrame do
   alias Explorer.Backend
   alias Explorer.Backend.LazySeries
 
-  defstruct dtypes: %{}, names: []
+  defstruct dtypes: %{}, names: [], backend: nil
 
   @type t :: %__MODULE__{
+          backend: module(),
           dtypes: Backend.DataFrame.dtypes(),
           names: Backend.DataFrame.column_name()
         }
@@ -20,8 +21,10 @@ defmodule Explorer.Backend.LazyFrame do
 
   @doc false
   def new(df) do
+    %module{} = df.data
+
     Explorer.Backend.DataFrame.new(
-      %__MODULE__{names: df.names, dtypes: df.dtypes},
+      %__MODULE__{names: df.names, dtypes: df.dtypes, backend: module},
       df.names,
       df.dtypes
     )
@@ -73,7 +76,9 @@ defmodule Explorer.Backend.LazyFrame do
   @impl true
   def pull(df, column) do
     dtype_for_column = df.dtypes[column]
-    data = LazySeries.new(:column, [column], dtype_for_column)
+
+    data = LazySeries.new(:column, [column], dtype_for_column, false, df.data.backend)
+
     Backend.Series.new(data, dtype_for_column)
   end
 

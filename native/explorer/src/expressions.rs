@@ -1172,3 +1172,13 @@ pub fn expr_re_scan(expr: ExExpr, pattern: &str) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().extract_all(pattern.lit()))
 }
+
+#[rustler::nif]
+pub fn expr_re_named_captures(expr: ExExpr, pattern: &str) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(
+        expr.str()
+            .extract_groups(pattern)
+            .expect("should extract groups"),
+    )
+}
