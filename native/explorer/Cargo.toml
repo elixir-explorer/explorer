@@ -79,6 +79,7 @@ features = [
   "streaming",
   "strings",
   "temporal",
+  "timezones",
   "to_dummies",
   "trigonometry",
 ]
