@@ -212,7 +212,7 @@ defmodule Explorer.Backend.LazySeries do
 
   defp backend_from_args(args) do
     Enum.find(args, fn
-      %__MODULE__{} = arg -> arg.backend
+      %__MODULE__{backend: backend} -> backend
       _other -> nil
     end)
   end
