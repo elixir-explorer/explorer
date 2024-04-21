@@ -106,17 +106,6 @@ pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
     )
 }
 
-// TODO: Phase out this function in favor of the `ExTimeUnit` enum.
-//       See `s_strptime` for an example.
-fn precision_to_timeunit(precision: &str) -> TimeUnit {
-    match precision {
-        "millisecond" => TimeUnit::Milliseconds,
-        "microsecond" => TimeUnit::Microseconds,
-        "nanosecond" => TimeUnit::Nanoseconds,
-        _ => panic!("Unknown datetime precision"),
-    }
-}
-
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_datetime(
     name: &str,
@@ -124,7 +113,7 @@ pub fn s_from_list_datetime(
     precision: ExTimeUnit,
     time_zone_str: Option<&str>
 ) -> ExSeries {
-    let timeunit = TimeUnit::try_from(&precision)?;
+    let timeunit = TimeUnit::try_from(&precision).unwrap();
     let time_zone = match time_zone_str {
         None => None,
         Some(string) => Some(string.to_string()),
@@ -143,8 +132,12 @@ pub fn s_from_list_datetime(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_duration(name: &str, val: Vec<Option<ExDuration>>, precision: &str) -> ExSeries {
-    let timeunit = precision_to_timeunit(precision);
+pub fn s_from_list_duration(
+    name: &str,
+    val: Vec<Option<ExDuration>>,
+    precision: ExTimeUnit
+) -> ExSeries {
+    let timeunit = TimeUnit::try_from(&precision).unwrap();
 
     ExSeries::new(
         Series::new(
