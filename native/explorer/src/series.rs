@@ -1,8 +1,8 @@
 use crate::{
     atoms,
     datatypes::{
-        ExCorrelationMethod, ExDate, ExNaiveDateTime, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExTime,
-        ExTimeUnit, ExValidValue,
+        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExRankMethod,
+        ExSeriesDtype, ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -111,13 +111,10 @@ pub fn s_from_list_datetime(
     name: &str,
     val: Vec<Option<ExDateTime>>,
     precision: ExTimeUnit,
-    time_zone_str: Option<&str>
+    time_zone_str: Option<&str>,
 ) -> ExSeries {
     let timeunit = TimeUnit::try_from(&precision).unwrap();
-    let time_zone = match time_zone_str {
-        None => None,
-        Some(string) => Some(string.to_string()),
-    };
+    let time_zone = time_zone_str.map(|s| s.to_string());
 
     ExSeries::new(
         Series::new(
@@ -135,7 +132,7 @@ pub fn s_from_list_datetime(
 pub fn s_from_list_duration(
     name: &str,
     val: Vec<Option<ExDuration>>,
-    precision: ExTimeUnit
+    precision: ExTimeUnit,
 ) -> ExSeries {
     let timeunit = TimeUnit::try_from(&precision).unwrap();
 

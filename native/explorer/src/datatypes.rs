@@ -301,7 +301,8 @@ pub fn timestamp_to_datetime_utc(microseconds: i64) -> DateTime<Utc> {
         _ => microseconds % 1_000_000,
     };
     let nanoseconds = remainder.abs() * 1_000;
-    DateTime::<Utc>::from_timestamp(seconds, nanoseconds.try_into().unwrap()).expect("construct a UTC")
+    DateTime::<Utc>::from_timestamp(seconds, nanoseconds.try_into().unwrap())
+        .expect("construct a UTC")
 }
 
 /// Converts a microsecond i64 to a `NaiveDateTime`.
