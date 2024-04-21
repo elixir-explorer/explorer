@@ -263,12 +263,12 @@ fn time_unit_of_ex_duration(duration: &ExDuration) -> TimeUnit {
 pub struct ExNaiveDateTime {
     pub calendar: Atom,
     pub day: u32,
-    pub month: u32,
-    pub year: i32,
     pub hour: u32,
-    pub minute: u32,
-    pub second: u32,
     pub microsecond: (u32, u32),
+    pub minute: u32,
+    pub month: u32,
+    pub second: u32,
+    pub year: i32,
 }
 
 #[derive(NifStruct, Copy, Clone, Debug)]
@@ -281,8 +281,11 @@ pub struct ExDateTime<'a> {
     pub minute: u32,
     pub month: u32,
     pub second: u32,
+    pub std_offset: u32,
     pub time_zone: &'a str,
+    pub utc_offset: u32,
     pub year: i32,
+    pub zone_abbr: &'a str,
 }
 
 pub use polars::export::arrow::temporal_conversions::date32_to_date as days_to_date;
