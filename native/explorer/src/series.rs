@@ -118,14 +118,17 @@ fn precision_to_timeunit(precision: &str) -> TimeUnit {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision: &str, time_zone: Option<&str>) -> ExSeries {
-    let timeunit = precision_to_timeunit(precision);
-    let time_zone = match time_zone {
+pub fn s_from_list_datetime(
+    name: &str,
+    val: Vec<Option<ExDateTime>>,
+    precision: ExTimeUnit,
+    time_zone_str: Option<&str>
+) -> ExSeries {
+    let timeunit = TimeUnit::try_from(&precision)?;
+    let time_zone = match time_zone_str {
         None => None,
         Some(string) => Some(string.to_string()),
     };
-
-    println!("{:?}", time_zone);
 
     ExSeries::new(
         Series::new(
