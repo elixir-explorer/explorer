@@ -2,7 +2,7 @@ defmodule Explorer.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-nx/explorer"
-  @version "0.8.2"
+  @version "0.8.3-dev"
   @dev? String.ends_with?(@version, "-dev")
   @force_build? System.get_env("EXPLORER_BUILD") in ["1", "true"]
 
@@ -83,7 +83,7 @@ defmodule Explorer.MixProject do
           Explorer.PolarsBackend
         ]
       ],
-      groups_for_functions: [
+      groups_for_docs: [
         "Functions: Conversion": &(&1[:type] == :conversion),
         "Functions: Single-table": &(&1[:type] == :single),
         "Functions: Multi-table": &(&1[:type] == :multi),
