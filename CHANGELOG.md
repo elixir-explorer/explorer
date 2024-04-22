@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.8.2] - 2024-04-22
+
 ### Added
 
 - Add functions to work with strings and regexes.
@@ -983,7 +985,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.8.2...HEAD
+[v0.8.2]: https://github.com/elixir-explorer/explorer/compare/v0.8.1...v0.8.2
 [v0.8.1]: https://github.com/elixir-explorer/explorer/compare/v0.8.0...v0.8.1
 [v0.8.0]: https://github.com/elixir-explorer/explorer/compare/v0.7.2...v0.8.0
 [v0.7.2]: https://github.com/elixir-explorer/explorer/compare/v0.7.1...v0.7.2
