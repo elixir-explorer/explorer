@@ -937,7 +937,9 @@ defmodule Explorer.DataFrameTest do
           calc7: remainder(a, 2),
           calc8: divide(a * 0.0, 0.0),
           calc9: divide(a, 0.0),
-          calc10: is_nan(divide(a * 0.0, 0.0))
+          calc10: is_nan(divide(a * 0.0, 0.0)),
+          calc11: is_finite(a * 1.0),
+          calc12: is_infinite(a * 1.0)
         )
 
       assert DF.to_columns(df1, atom_keys: true) === %{
@@ -951,7 +953,9 @@ defmodule Explorer.DataFrameTest do
                calc7: [1, 0, 0],
                calc8: [:nan, :nan, :nan],
                calc9: [:infinity, :infinity, :infinity],
-               calc10: [true, true, true]
+               calc10: [true, true, true],
+               calc11: [true, true, true],
+               calc12: [false, false, false]
              }
 
       assert DF.dtypes(df1) == %{
@@ -965,7 +969,9 @@ defmodule Explorer.DataFrameTest do
                "calc7" => {:s, 64},
                "calc8" => {:f, 64},
                "calc9" => {:f, 64},
-               "calc10" => :boolean
+               "calc10" => :boolean,
+               "calc11" => :boolean,
+               "calc12" => :boolean
              }
     end
 
