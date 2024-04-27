@@ -43,6 +43,7 @@ defmodule Explorer.MixProject do
       {:table_rex, "~> 3.1.1 or ~> 4.0.0"},
       {:castore, "~> 1.0", optional: true},
       {:adbc, "~> 0.1", optional: true},
+      {:tz, "~> 0.26"},
 
       ## Optional
       {:rustler, "~> 0.32.0", optional: not (@dev? or @force_build?)},
