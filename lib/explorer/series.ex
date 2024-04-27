@@ -10,7 +10,7 @@ defmodule Explorer.Series do
     * `:date` - Date type that unwraps to `Elixir.Date`
     * `{:naive_datetime, precision}` - Naive DateTime type with millisecond/microsecond/nanosecond
       precision that unwraps to `Elixir.NaiveDateTime`
-    * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond
+    * `{:datetime, precision, time_zone}` - DateTime type with millisecond/microsecond/nanosecond
       precision that unwraps to `Elixir.DateTime`
     * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond
       precision that unwraps to `Explorer.Duration`
@@ -199,32 +199,42 @@ defmodule Explorer.Series do
   defguardp is_precision(precision)
             when K.in(precision, [:millisecond, :microsecond, :nanosecond])
 
-  defguardp is_datetime_like(dtype)
-            when K.and(
-                   is_tuple(dtype),
-                   K.or(
-                     (tuple_size(dtype) == 2)
-                     |> K.and(elem(dtype, 0) == :naive_datetime)
-                     |> K.and(elem(dtype, 1) |> is_precision()),
-                     (tuple_size(dtype) == 3)
-                     |> K.and(elem(dtype, 0) == :datetime)
-                     |> K.and(elem(dtype, 1) |> is_precision())
-                     |> K.and(elem(dtype, 2) |> is_binary())
-                   )
-                 )
+  defguardp is_duration_dtype(dtype)
+            when is_tuple(dtype)
+                 |> K.and(tuple_size(dtype) == 2)
+                 |> K.and(elem(dtype, 0) == :duration)
+                 |> K.and(elem(dtype, 1) |> is_precision())
+
+  defguardp is_naive_datetime_dtype(dtype)
+            when is_tuple(dtype)
+                 |> K.and(tuple_size(dtype) == 2)
+                 |> K.and(elem(dtype, 0) == :naive_datetime)
+                 |> K.and(elem(dtype, 1) |> is_precision())
+
+  defguardp is_datetime_dtype(dtype)
+            when is_tuple(dtype)
+                 |> K.and(tuple_size(dtype) == 3)
+                 |> K.and(elem(dtype, 0) == :datetime)
+                 |> K.and(elem(dtype, 1) |> is_precision())
+                 |> K.and(elem(dtype, 2) |> is_binary())
+
+  defguardp is_datetime_like_dtype(dtype)
+            when is_datetime_dtype(dtype)
+                 |> K.or(is_naive_datetime_dtype(dtype))
 
   defguardp is_date_like_dtype(dtype)
             when (dtype == :date)
-                 |> K.or(dtype |> is_datetime_like())
+                 |> K.or(dtype |> is_datetime_like_dtype())
 
   defguardp is_time_like_dtype(dtype)
             when (dtype == :time)
-                 |> K.or(dtype |> is_datetime_like())
+                 |> K.or(dtype |> is_datetime_like_dtype())
 
   defguardp is_temporal_dtype(dtype)
             when (dtype == :date)
                  |> K.or(dtype == :time)
-                 |> K.or(dtype |> is_datetime_like())
+                 |> K.or(dtype |> is_datetime_like_dtype())
+                 |> K.or(dtype |> is_duration_dtype())
 
   defguardp is_numeric_or_temporal_dtype(dtype)
             when is_numeric_dtype(dtype)
@@ -359,7 +369,7 @@ defmodule Explorer.Series do
 
   A list of `Date`, `Time`, `NaiveDateTime`, `DateTime`, and
   `Explorer.Duration` structs are also supported, and they will become series
-  with the respective dtypes: `:date`, `:time`, `{:datetime, :microsecond}`,
+  with the respective dtypes: `:date`, `:time`, `{:naive_datetime, :microsecond}`,
   and `{:duration, precision}`.
   For example:
 
@@ -423,10 +433,10 @@ defmodule Explorer.Series do
 
   It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
 
-      iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: {:datetime, :microsecond})
+      iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: {:naive_datetime, :microsecond})
       #Explorer.Series<
         Polars[1]
-        datetime[μs] [2022-04-13 21:00:42.000000]
+        naive_datetime[μs] [2022-04-13 21:00:42.000000]
       >
 
   It is possible to create a series of `:time` from a list of nanoseconds since midnight.
@@ -524,10 +534,10 @@ defmodule Explorer.Series do
   Datetimes are encoded as s64 representing microseconds from the Unix epoch (1970-01-01):
 
       iex> binary = <<0::signed-64-native, 529550625987654::signed-64-native>>
-      iex> Explorer.Series.from_binary(binary, {:datetime, :microsecond})
+      iex> Explorer.Series.from_binary(binary, {:naive_datetime, :microsecond})
       #Explorer.Series<
         Polars[2]
-        datetime[μs] [1970-01-01 00:00:00.000000, 1986-10-13 01:23:45.987654]
+        naive_datetime[μs] [1970-01-01 00:00:00.000000, 1986-10-13 01:23:45.987654]
       >
 
   """
@@ -582,7 +592,7 @@ defmodule Explorer.Series do
       * `{:u, 8}` tensor as a `:boolean` series.
       * `{:s, 32}` tensor as a `:date` series.
       * `{:s, 64}` tensor as a `:time` series.
-      * `{:s, 64}` tensor as a `{:datetime, unit}` or `{:duration, unit}` series.
+      * `{:s, 64}` tensor as a `{:naive_datetime, unit}` or `{:duration, unit}` series.
 
   ## Examples
 
@@ -638,10 +648,10 @@ defmodule Explorer.Series do
   Datetimes are signed 64-bit and therefore must have their dtype explicitly given:
 
       iex> tensor = Nx.tensor([0, 529550625987654])
-      iex> Explorer.Series.from_tensor(tensor, dtype: {:datetime, :microsecond})
+      iex> Explorer.Series.from_tensor(tensor, dtype: {:naive_datetime, :microsecond})
       #Explorer.Series<
         Polars[2]
-        datetime[μs] [1970-01-01 00:00:00.000000, 1986-10-13 01:23:45.987654]
+        naive_datetime[μs] [1970-01-01 00:00:00.000000, 1986-10-13 01:23:45.987654]
       >
   """
   @doc type: :conversion
@@ -962,17 +972,17 @@ defmodule Explorer.Series do
   Note that `datetime` is represented as an integer of microseconds since Unix Epoch (1970-01-01 00:00:00).
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.cast(s, {:datetime, :microsecond})
+      iex> Explorer.Series.cast(s, {:naive_datetime, :microsecond})
       #Explorer.Series<
         Polars[3]
-        datetime[μs] [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
+        naive_datetime[μs] [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
       >
 
       iex> s = Explorer.Series.from_list([1649883642 * 1_000 * 1_000])
-      iex> Explorer.Series.cast(s, {:datetime, :microsecond})
+      iex> Explorer.Series.cast(s, {:naive_datetime, :microsecond})
       #Explorer.Series<
         Polars[1]
-        datetime[μs] [2022-04-13 21:00:42.000000]
+        naive_datetime[μs] [2022-04-13 21:00:42.000000]
       >
 
   You can also use `cast/2` to categorise a string:
@@ -1021,7 +1031,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.strptime(s, "%Y-%m-%d %H:%M:%S")
       #Explorer.Series<
         Polars[3]
-        datetime[μs] [2023-01-05 12:34:56.000000, nil, nil]
+        naive_datetime[μs] [2023-01-05 12:34:56.000000, nil, nil]
       >
   """
   @doc type: :element_wise
@@ -1051,7 +1061,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec strftime(series :: Series.t(), format_string :: String.t()) :: Series.t()
-  def strftime(%Series{dtype: dtype} = series, format_string) when is_datetime_like(dtype),
+  def strftime(%Series{dtype: dtype} = series, format_string) when is_datetime_like_dtype(dtype),
     do: apply_series(series, :strftime, [format_string])
 
   def strftime(%Series{dtype: dtype}, _format_string),
@@ -2353,11 +2363,11 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.min(s)
-      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are :date, :time, {:datetime, :microsecond}, {:datetime, :millisecond}, {:datetime, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
+      ** (ArgumentError) Explorer.Series.min/1 not implemented for dtype :string. Valid dtypes are :date, :time, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:naive_datetime, :microsecond}, {:naive_datetime, :millisecond}, {:naive_datetime, :nanosecond}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
   @spec min(series :: Series.t()) ::
-          number() | non_finite() | Date.t() | Time.t() | NaiveDateTime.t() | nil
+          number() | non_finite() | Date.t() | Time.t() | DateTime.t() | NaiveDateTime.t() | nil
   def min(%Series{dtype: dtype} = series) when is_numeric_or_temporal_dtype(dtype),
     do: apply_series(series, :min)
 
@@ -2372,6 +2382,7 @@ defmodule Explorer.Series do
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
     * `:date`
     * `:time`
+    * `:naive_datetime`
     * `:datetime`
     * `:duration`
 
@@ -2399,7 +2410,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.max(s)
-      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are :date, :time, {:datetime, :microsecond}, {:datetime, :millisecond}, {:datetime, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
+      ** (ArgumentError) Explorer.Series.max/1 not implemented for dtype :string. Valid dtypes are :date, :time, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:naive_datetime, :microsecond}, {:naive_datetime, :millisecond}, {:naive_datetime, :nanosecond}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
   @spec max(series :: Series.t()) ::
@@ -2449,7 +2460,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmax(s)
-      ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are :date, :time, {:datetime, :microsecond}, {:datetime, :millisecond}, {:datetime, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
+      ** (ArgumentError) Explorer.Series.argmax/1 not implemented for dtype :string. Valid dtypes are :date, :time, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:naive_datetime, :microsecond}, {:naive_datetime, :millisecond}, {:naive_datetime, :nanosecond}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
   @spec argmax(series :: Series.t()) :: number() | non_finite() | nil
@@ -2507,7 +2518,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list(["a", "b", "c"])
       iex> Explorer.Series.argmin(s)
-      ** (ArgumentError) Explorer.Series.argmin/1 not implemented for dtype :string. Valid dtypes are :date, :time, {:datetime, :microsecond}, {:datetime, :millisecond}, {:datetime, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
+      ** (ArgumentError) Explorer.Series.argmin/1 not implemented for dtype :string. Valid dtypes are :date, :time, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:naive_datetime, :microsecond}, {:naive_datetime, :millisecond}, {:naive_datetime, :nanosecond}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
   @spec argmin(series :: Series.t()) :: number() | non_finite() | nil
@@ -2644,7 +2655,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~N[2021-01-01 00:00:00], ~N[1999-12-31 00:00:00]])
       iex> Explorer.Series.variance(s)
-      ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype {:datetime, :microsecond}. Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
+      ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype {:naive_datetime, :microsecond}. Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
   @spec variance(series :: Series.t(), ddof :: non_neg_integer()) :: float() | non_finite() | nil
@@ -2761,7 +2772,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)
-      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are :date, :time, {:datetime, :microsecond}, {:datetime, :millisecond}, {:datetime, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
+      ** (ArgumentError) Explorer.Series.quantile/2 not implemented for dtype :boolean. Valid dtypes are any subtype of [:u, :s, :f, :date, :time, :naive_datetime, :datetime]
   """
   @doc type: :aggregation
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
@@ -2769,8 +2780,10 @@ defmodule Explorer.Series do
       when is_numeric_or_temporal_dtype(dtype),
       do: apply_series(series, :quantile, [quantile])
 
-  def quantile(%Series{dtype: dtype}, _),
-    do: dtype_error("quantile/2", dtype, @numeric_or_temporal_dtypes)
+  def quantile(%Series{dtype: dtype}, _) do
+    super_dtypes = [:u, :s, :f, :date, :time, :naive_datetime, :datetime]
+    super_dtype_error("quantile/2", dtype, super_dtypes)
+  end
 
   @doc """
   Compute the sample skewness of a series.
@@ -4405,8 +4418,8 @@ defmodule Explorer.Series do
   defp cast_to_ordered_series(:date, %Date{}), do: :date
   defp cast_to_ordered_series(:time, %Time{}), do: :time
 
-  defp cast_to_ordered_series({:datetime, _}, %NaiveDateTime{}),
-    do: {:datetime, :microsecond}
+  defp cast_to_ordered_series({:naive_datetime, _}, %NaiveDateTime{}),
+    do: {:naive_datetime, :microsecond}
 
   defp cast_to_ordered_series({:duration, _}, value)
        when is_integer(value),
@@ -6353,7 +6366,7 @@ defmodule Explorer.Series do
 
   @deprecated "Use cast(:date) instead"
   @doc type: :deprecated
-  def to_date(%Series{dtype: dtype} = series) when is_datetime_like(dtype),
+  def to_date(%Series{dtype: dtype} = series) when is_datetime_like_dtype(dtype),
     do: cast(series, :date)
 
   def to_date(%Series{dtype: dtype}),
@@ -6361,7 +6374,7 @@ defmodule Explorer.Series do
 
   @deprecated "Use cast(:time) instead"
   @doc type: :deprecated
-  def to_time(%Series{dtype: dtype} = series) when is_datetime_like(dtype),
+  def to_time(%Series{dtype: dtype} = series) when is_datetime_like_dtype(dtype),
     do: cast(series, :time)
 
   def to_time(%Series{dtype: dtype}),
@@ -6616,16 +6629,17 @@ defmodule Explorer.Series do
     raise(
       ArgumentError,
       "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. " <>
-        "Valid dtypes are any subtype of #{valid_super_dtypes}"
+        "Valid dtypes are any subtype of #{inspect(valid_super_dtypes)}"
     )
   end
 
   defp dtype_error(function, dtype, valid_dtypes) when is_list(valid_dtypes) do
-    raise(
-      ArgumentError,
-      "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. " <>
-        "Valid " <> Shared.inspect_dtypes(valid_dtypes, with_prefix: true)
-    )
+    raise ArgumentError, dtype_error_message(function, dtype, valid_dtypes)
+  end
+
+  defp dtype_error_message(function, dtype, valid_dtypes) when is_list(valid_dtypes) do
+    "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. " <>
+      "Valid " <> Shared.inspect_dtypes(valid_dtypes, with_prefix: true)
   end
 
   @spec dtype_mismatch_error(String.t(), any(), any(), [any()]) :: no_return()

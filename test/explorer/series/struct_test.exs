@@ -158,7 +158,7 @@ defmodule Explorer.Series.StructTest do
       assert Series.dtype(s1) == {:struct, [{"a", {:struct, [{"b", {:f, 64}}]}}]}
     end
 
-    test "structs with integers to structs with datetimes" do
+    test "structs with integers to structs with naive datetimes" do
       s =
         Series.from_list([
           %{a: 1},
@@ -167,7 +167,7 @@ defmodule Explorer.Series.StructTest do
           %{a: 1_649_883_642 * 1_000 * 1_000}
         ])
 
-      s1 = Series.cast(s, {:struct, [{"a", {:datetime, :microsecond}}]})
+      s1 = Series.cast(s, {:struct, [{"a", {:naive_datetime, :microsecond}}]})
 
       assert Series.to_list(s1) == [
                %{"a" => ~N[1970-01-01 00:00:00.000001]},
@@ -176,7 +176,7 @@ defmodule Explorer.Series.StructTest do
                %{"a" => ~N[2022-04-13 21:00:42.000000]}
              ]
 
-      assert Series.dtype(s1) == {:struct, [{"a", {:datetime, :microsecond}}]}
+      assert Series.dtype(s1) == {:struct, [{"a", {:naive_datetime, :microsecond}}]}
     end
 
     test "can cast dtype order" do

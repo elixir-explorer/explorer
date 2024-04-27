@@ -263,7 +263,7 @@ defmodule Explorer.SeriesTest do
         ~N[2353-03-07 00:39:35.702789]
       ]
 
-      assert Series.from_list(dates, dtype: {:datetime, :microsecond}) |> Series.to_list() ==
+      assert Series.from_list(dates, dtype: {:naive_datetime, :microsecond}) |> Series.to_list() ==
                dates
 
       today_in_days = Date.utc_today() |> Date.to_gregorian_days()
@@ -282,7 +282,7 @@ defmodule Explorer.SeriesTest do
           |> NaiveDateTime.add(:rand.uniform(60), :second)
         end
 
-      assert Series.from_list(dates, dtype: {:datetime, :microsecond}) |> Series.to_list() ==
+      assert Series.from_list(dates, dtype: {:naive_datetime, :microsecond}) |> Series.to_list() ==
                dates
     end
 
@@ -3830,9 +3830,9 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s3) == :time
     end
 
-    test "integer series to datetime" do
+    test "integer series to naive datetime" do
       s = Series.from_list([1, 2, 3])
-      s1 = Series.cast(s, {:datetime, :microsecond})
+      s1 = Series.cast(s, {:naive_datetime, :microsecond})
 
       assert Series.to_list(s1) == [
                ~N[1970-01-01 00:00:00.000001],
@@ -3840,13 +3840,13 @@ defmodule Explorer.SeriesTest do
                ~N[1970-01-01 00:00:00.000003]
              ]
 
-      assert Series.dtype(s1) == {:datetime, :microsecond}
+      assert Series.dtype(s1) == {:naive_datetime, :microsecond}
 
       s2 = Series.from_list([1_649_883_642 * 1_000 * 1_000])
-      s3 = Series.cast(s2, {:datetime, :microsecond})
+      s3 = Series.cast(s2, {:naive_datetime, :microsecond})
 
       assert Series.to_list(s3) == [~N[2022-04-13 21:00:42.000000]]
-      assert Series.dtype(s3) == {:datetime, :microsecond}
+      assert Series.dtype(s3) == {:naive_datetime, :microsecond}
     end
 
     test "string series to category" do
@@ -3857,15 +3857,15 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s1) == :category
     end
 
-    test "string series to datetime" do
+    test "string series to naive datetime" do
       s = Series.from_list(["2023-08-29 17:39:43", "2023-08-29 17:20:09"])
-      ms = Series.cast(s, {:datetime, :millisecond})
-      us = Series.cast(s, {:datetime, :microsecond})
-      ns = Series.cast(s, {:datetime, :nanosecond})
+      ms = Series.cast(s, {:naive_datetime, :millisecond})
+      us = Series.cast(s, {:naive_datetime, :microsecond})
+      ns = Series.cast(s, {:naive_datetime, :nanosecond})
 
-      assert Series.dtype(ms) == {:datetime, :millisecond}
-      assert Series.dtype(us) == {:datetime, :microsecond}
-      assert Series.dtype(ns) == {:datetime, :nanosecond}
+      assert Series.dtype(ms) == {:naive_datetime, :millisecond}
+      assert Series.dtype(us) == {:naive_datetime, :microsecond}
+      assert Series.dtype(ns) == {:naive_datetime, :nanosecond}
 
       expected = [~N[2023-08-29 17:39:43.000000], ~N[2023-08-29 17:20:09.000000]]
       assert Series.to_list(ms) == expected
@@ -6002,12 +6002,12 @@ defmodule Explorer.SeriesTest do
     end
 
     @tag :skip
-    test "datetime" do
+    test "naive datetime" do
       series =
         Series.from_binary(
           <<-62_135_596_800_000_000::signed-64-native, 0::signed-64-native,
             529_550_625_987_654::signed-64-native>>,
-          {:datetime, :microsecond}
+          {:naive_datetime, :microsecond}
         )
 
       # There is a precision problem here. Investigate.

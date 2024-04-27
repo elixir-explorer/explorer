@@ -100,15 +100,15 @@ defmodule Explorer.DataFrame.IPCStreamTest do
       assert_ipc_stream(:date, 0, ~D[1970-01-01])
     end
 
-    test "datetime" do
+    test "naive datetime" do
       assert_ipc_stream(
-        {:datetime, :microsecond},
+        {:naive_datetime, :microsecond},
         ~N[2022-10-01 11:34:10.123456],
         ~N[2022-10-01 11:34:10.123456]
       )
 
       assert_ipc_stream(
-        {:datetime, :microsecond},
+        {:naive_datetime, :microsecond},
         0,
         ~N[1970-01-01 00:00:00.000000]
       )

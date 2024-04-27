@@ -91,9 +91,9 @@ if Code.ensure_loaded?(Nx) do
       * `{:f, 64}`
       * `:boolean`
       * `:date`
-      * `{:datetime, :millisecond}`
-      * `{:datetime, :microsecond}`
-      * `{:datetime, :nanosecond}`
+      * `{:naive_datetime, :millisecond}`
+      * `{:naive_datetime, :microsecond}`
+      * `{:naive_datetime, :nanosecond}`
 
     See `Explorer.Series.to_iovec/1` and `Explorer.Series.to_tensor/1`
     to learn more about their internal representation.

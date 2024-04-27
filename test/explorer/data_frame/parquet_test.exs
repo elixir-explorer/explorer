@@ -200,15 +200,15 @@ defmodule Explorer.DataFrame.ParquetTest do
       assert_parquet(:date, ~D[2022-12-01], ~D[2022-12-01])
     end
 
-    test "datetime" do
+    test "naive datetime" do
       assert_parquet(
-        {:datetime, :microsecond},
+        {:naive_datetime, :microsecond},
         1_664_624_050_123_456,
         ~N[2022-10-01 11:34:10.123456]
       )
 
       assert_parquet(
-        {:datetime, :microsecond},
+        {:naive_datetime, :microsecond},
         ~N[2022-10-01 11:34:10.123456],
         ~N[2022-10-01 11:34:10.123456]
       )

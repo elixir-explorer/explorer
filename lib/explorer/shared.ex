@@ -102,7 +102,7 @@ defmodule Explorer.Shared do
   end
 
   @doc """
-  Supported datetime dtypes.
+  Supported naive datetime dtypes.
   """
   def naive_datetime_types, do: for(p <- @precisions, do: {:naive_datetime, p})
 

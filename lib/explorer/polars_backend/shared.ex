@@ -206,13 +206,13 @@ defmodule Explorer.PolarsBackend.Shared do
       :time ->
         Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
-      {:datetime, :millisecond} ->
+      {:naive_datetime, :millisecond} ->
         Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
-      {:datetime, :microsecond} ->
+      {:naive_datetime, :microsecond} ->
         Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
-      {:datetime, :nanosecond} ->
+      {:naive_datetime, :nanosecond} ->
         Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:duration, :millisecond} ->
