@@ -107,6 +107,26 @@ pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_naivedatetime(
+    name: &str,
+    val: Vec<Option<ExNaiveDateTime>>,
+    precision: ExTimeUnit,
+) -> ExSeries {
+    let timeunit = TimeUnit::try_from(&precision).unwrap();
+
+    ExSeries::new(
+        Series::new(
+            name,
+            val.iter()
+                .map(|dt| dt.map(|dt| dt.into()))
+                .collect::<Vec<Option<i64>>>(),
+        )
+        .cast(&DataType::Datetime(timeunit, None))
+        .unwrap(),
+    )
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_datetime(
     name: &str,
     val: Vec<Option<ExDateTime>>,
@@ -1678,7 +1698,7 @@ pub fn s_strptime(
 ) -> Result<ExSeries, ExplorerError> {
     let timeunit = match precision {
         None => TimeUnit::Microseconds,
-        Some(precision) => TimeUnit::try_from(&precision)?,
+        Some(precision) => TimeUnit::try_from(&precision).unwrap(),
     };
 
     let s1 = s

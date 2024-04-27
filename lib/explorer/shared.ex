@@ -312,7 +312,7 @@ defmodule Explorer.Shared do
   defp infer_type(%Date{} = _item), do: :date
   defp infer_type(%Time{} = _item), do: :time
   defp infer_type(%DateTime{time_zone: tz} = _item), do: {:datetime, :microsecond, tz}
-  defp infer_type(%NaiveDateTime{} = _item), do: {:datetime, :microsecond}
+  defp infer_type(%NaiveDateTime{} = _item), do: {:naive_datetime, :microsecond}
   defp infer_type(%Explorer.Duration{precision: precision} = _item), do: {:duration, precision}
   defp infer_type(%_{} = item), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
   defp infer_type(item) when is_integer(item), do: {:s, 64}

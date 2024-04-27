@@ -187,7 +187,7 @@ defmodule Explorer.PolarsBackend.Shared do
       :category -> Native.s_from_list_categories(name, list)
       :date -> Native.s_from_list_date(name, list)
       :time -> Native.s_from_list_time(name, list)
-      {:datetime, precision} -> Native.s_from_list_datetime(name, list, precision, nil)
+      {:naive_datetime, precision} -> Native.s_from_list_naivedatetime(name, list, precision)
       {:datetime, precision, tz} -> Native.s_from_list_datetime(name, list, precision, tz)
       {:duration, precision} -> Native.s_from_list_duration(name, list, precision)
       :binary -> Native.s_from_list_binary(name, list)
