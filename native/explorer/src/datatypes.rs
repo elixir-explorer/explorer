@@ -281,9 +281,9 @@ pub struct ExDateTime<'a> {
     pub minute: u32,
     pub month: u32,
     pub second: u32,
-    pub std_offset: u32,
+    pub std_offset: i32,
     pub time_zone: &'a str,
-    pub utc_offset: u32,
+    pub utc_offset: i32,
     pub year: i32,
     pub zone_abbr: &'a str,
 }
