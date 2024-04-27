@@ -252,9 +252,13 @@ macro_rules! unsafe_encode_datetime {
                         dt_tz.minute().encode($env).as_c_arg(),
                         dt_tz.month().encode($env).as_c_arg(),
                         dt_tz.second().encode($env).as_c_arg(),
-                        tz_offset.dst_offset().num_hours().encode($env).as_c_arg(),
+                        tz_offset.dst_offset().num_seconds().encode($env).as_c_arg(),
                         $time_zone.to_string().encode($env).as_c_arg(),
-                        tz_offset.base_utc_offset().num_hours().encode($env).as_c_arg(),
+                        tz_offset
+                            .base_utc_offset()
+                            .num_seconds()
+                            .encode($env)
+                            .as_c_arg(),
                         dt_tz.year().encode($env).as_c_arg(),
                         tz_offset.abbreviation().encode($env).as_c_arg(),
                     ],
