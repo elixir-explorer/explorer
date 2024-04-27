@@ -4,6 +4,10 @@ use rustler::{Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
 use std::collections::HashMap;
 use std::{mem, slice};
 
+use chrono_tz::OffsetComponents;
+use chrono_tz::OffsetName;
+use chrono_tz::Tz;
+
 use crate::atoms::{
     self, calendar, day, hour, infinity, microsecond, millisecond, minute, month, nan, nanosecond,
     neg_infinity, precision, second, std_offset, time_zone, utc_offset, value, year, zone_abbr,
@@ -219,8 +223,11 @@ macro_rules! unsafe_encode_datetime {
         $datetime_module: ident,
         $env: ident
     ) => {{
-        let dt = timestamp_to_datetime($v);
-        let microseconds = dt.and_utc().timestamp_subsec_micros();
+        let ndt = timestamp_to_datetime($v);
+        let microseconds = ndt.and_utc().timestamp_subsec_micros();
+        let tz = $time_zone.parse::<Tz>().unwrap();
+        let dt_tz = tz.from_local_datetime(&ndt).unwrap();
+        let tz_offset = dt_tz.offset();
 
         // Limit the number of digits in the microsecond part of a timestamp to 6.
         // This is necessary because the microsecond part of Elixir is only 6 digits.
@@ -239,19 +246,17 @@ macro_rules! unsafe_encode_datetime {
                     &[
                         $datetime_module,
                         $calendar_iso_module,
-                        dt.day().encode($env).as_c_arg(),
-                        dt.hour().encode($env).as_c_arg(),
+                        dt_tz.day().encode($env).as_c_arg(),
+                        dt_tz.hour().encode($env).as_c_arg(),
                         (limited_ms, 6).encode($env).as_c_arg(),
-                        dt.minute().encode($env).as_c_arg(),
-                        dt.month().encode($env).as_c_arg(),
-                        dt.second().encode($env).as_c_arg(),
-                        // std_offset
-                        0.encode($env).as_c_arg(),
+                        dt_tz.minute().encode($env).as_c_arg(),
+                        dt_tz.month().encode($env).as_c_arg(),
+                        dt_tz.second().encode($env).as_c_arg(),
+                        tz_offset.dst_offset().num_hours().encode($env).as_c_arg(),
                         $time_zone.to_string().encode($env).as_c_arg(),
-                        // utc_offset
-                        0.encode($env).as_c_arg(),
-                        dt.year().encode($env).as_c_arg(),
-                        "zone_abbr".encode($env).as_c_arg(),
+                        tz_offset.base_utc_offset().num_hours().encode($env).as_c_arg(),
+                        dt_tz.year().encode($env).as_c_arg(),
+                        tz_offset.abbreviation().encode($env).as_c_arg(),
                     ],
                 )
                 .unwrap(),

@@ -14,6 +14,7 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1"
 chrono = "0.4"
+chrono-tz = "0.9"
 rand = { version = "0.8", features = ["alloc"] }
 rand_pcg = "0.3"
 rustler = { version = "0.32", default-features = false, features = ["derive"] }
