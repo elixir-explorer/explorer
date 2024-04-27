@@ -7,7 +7,8 @@ use crate::{
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
-use encoding::encode_datetime;
+use encoding::encode_naive_datetime;
+// use encoding::encode_datetime;
 
 use polars::prelude::*;
 use polars_ops::chunked_array::cov::{cov, pearson_corr};
@@ -1007,7 +1008,7 @@ pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Time => Ok(s.min::<i64>()?.map(ExTime::from).encode(env)),
         DataType::Datetime(unit, _) => Ok(s
             .min::<i64>()?
-            .map(|v| encode_datetime(v, *unit, env).unwrap())
+            .map(|v| encode_naive_datetime(v, *unit, env).unwrap())
             .encode(env)),
         dt => panic!("min/1 not implemented for {dt:?}"),
     }
@@ -1029,7 +1030,7 @@ pub fn s_max(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Time => Ok(s.max::<i64>()?.map(ExTime::from).encode(env)),
         DataType::Datetime(unit, _) => Ok(s
             .max::<i64>()?
-            .map(|v| encode_datetime(v, *unit, env).unwrap())
+            .map(|v| encode_naive_datetime(v, *unit, env).unwrap())
             .encode(env)),
         dt => panic!("max/1 not implemented for {dt:?}"),
     }
@@ -1230,7 +1231,7 @@ pub fn s_quantile<'a>(
         },
         DataType::Datetime(unit, None) => match s.datetime()?.quantile(quantile, strategy)? {
             None => Ok(None::<ExNaiveDateTime>.encode(env)),
-            Some(time) => Ok(encode_datetime(time as i64, *unit, env)
+            Some(time) => Ok(encode_naive_datetime(time as i64, *unit, env)
                 .unwrap()
                 .encode(env)),
         },

@@ -50,13 +50,18 @@ defmodule Explorer.Series.DateTimeTest do
 
   describe "timezones" do
     test "UTC" do
-      datetimes = [~U[2024-01-01T12:00:00Z], ~U[2024-01-01T13:00:00Z], ~U[2024-01-01T14:00:00Z]]
+      datetimes_in = [
+        ~U[2024-01-01T12:00:00.000000Z],
+        ~U[2024-01-01T13:00:00.000000Z],
+        ~U[2024-01-01T14:00:00.000000Z]
+      ]
 
-      datetimes
-      |> Series.from_list()
-      |> IO.inspect()
-      |> Series.to_list()
-      |> IO.inspect()
+      datetimes_out =
+        datetimes_in
+        |> Series.from_list()
+        |> Series.to_list()
+
+      assert datetimes_out == datetimes_in
     end
   end
 end
