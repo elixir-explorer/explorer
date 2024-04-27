@@ -8,8 +8,10 @@ defmodule Explorer.Series do
     * `:boolean` - Boolean
     * `:category` - Strings but represented internally as integers
     * `:date` - Date type that unwraps to `Elixir.Date`
-    * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond
+    * `{:naive_datetime, precision}` - Naive DateTime type with millisecond/microsecond/nanosecond
       precision that unwraps to `Elixir.NaiveDateTime`
+    * `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond
+      precision that unwraps to `Elixir.DateTime`
     * `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond
       precision that unwraps to `Explorer.Duration`
     * `{:f, size}` - a 64-bit or 32-bit floating point number
@@ -119,13 +121,13 @@ defmodule Explorer.Series do
   alias Explorer.Duration
   alias Explorer.Shared
 
-  @datetime_dtypes Explorer.Shared.datetime_types()
+  @naive_datetime_dtypes Explorer.Shared.naive_datetime_types()
   @duration_dtypes Explorer.Shared.duration_types()
   @float_dtypes Explorer.Shared.float_types()
   @integer_types Explorer.Shared.integer_types()
 
-  @date_or_datetime_dtypes [:date | @datetime_dtypes]
-  @temporal_dtypes [:time | @date_or_datetime_dtypes ++ @duration_dtypes]
+  @date_or_naive_datetime_dtypes [:date | @naive_datetime_dtypes]
+  @temporal_dtypes [:time | @date_or_naive_datetime_dtypes ++ @duration_dtypes]
   @numeric_dtypes Explorer.Shared.numeric_types()
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
@@ -139,6 +141,7 @@ defmodule Explorer.Series do
           | :date
           | :time
           | :string
+          | naive_datetime_dtype
           | datetime_dtype
           | duration_dtype
           | float_dtype
@@ -148,7 +151,9 @@ defmodule Explorer.Series do
           | unsigned_integer_dtype
 
   @type time_unit :: :nanosecond | :microsecond | :millisecond
-  @type datetime_dtype :: {:datetime, time_unit}
+  @type time_zone :: String.t()
+  @type naive_datetime_dtype :: {:naive_datetime, time_unit}
+  @type datetime_dtype :: {:datetime, time_unit, time_zone}
   @type duration_dtype :: {:duration, time_unit}
   @type list_dtype :: {:list, dtype()}
   @type struct_dtype :: {:struct, [{String.t(), dtype()}]}
@@ -173,6 +178,7 @@ defmodule Explorer.Series do
           | Date.t()
           | Time.t()
           | NaiveDateTime.t()
+          | DateTime.t()
 
   @doc false
   @enforce_keys [:data, :dtype]
@@ -190,8 +196,39 @@ defmodule Explorer.Series do
   defguardp is_numeric_or_bool_dtype(dtype)
             when K.in(dtype, [:boolean | @numeric_dtypes])
 
+  defguardp is_precision(precision)
+            when K.in(precision, [:millisecond, :microsecond, :nanosecond])
+
+  defguardp is_datetime_like(dtype)
+            when K.and(
+                   is_tuple(dtype),
+                   K.or(
+                     (tuple_size(dtype) == 2)
+                     |> K.and(elem(dtype, 0) == :naive_datetime)
+                     |> K.and(elem(dtype, 1) |> is_precision()),
+                     (tuple_size(dtype) == 3)
+                     |> K.and(elem(dtype, 0) == :datetime)
+                     |> K.and(elem(dtype, 1) |> is_precision())
+                     |> K.and(elem(dtype, 2) |> is_binary())
+                   )
+                 )
+
+  defguardp is_date_like_dtype(dtype)
+            when (dtype == :date)
+                 |> K.or(dtype |> is_datetime_like())
+
+  defguardp is_time_like_dtype(dtype)
+            when (dtype == :time)
+                 |> K.or(dtype |> is_datetime_like())
+
+  defguardp is_temporal_dtype(dtype)
+            when (dtype == :date)
+                 |> K.or(dtype == :time)
+                 |> K.or(dtype |> is_datetime_like())
+
   defguardp is_numeric_or_temporal_dtype(dtype)
-            when K.in(dtype, @numeric_or_temporal_dtypes)
+            when is_numeric_dtype(dtype)
+                 |> K.or(dtype |> is_temporal_dtype())
 
   @impl true
   def fetch(series, idx) when is_integer(idx), do: {:ok, fetch!(series, idx)}
@@ -320,9 +357,10 @@ defmodule Explorer.Series do
         null [nil, nil]
       >
 
-  A list of `Date`, `Time`, `NaiveDateTime`, and `Explorer.Duration` structs
-  are also supported, and they will become series with the respective dtypes:
-  `:date`, `:time`, `{:datetime, :microsecond}`, and `{:duration, precision}`.
+  A list of `Date`, `Time`, `NaiveDateTime`, `DateTime`, and
+  `Explorer.Duration` structs are also supported, and they will become series
+  with the respective dtypes: `:date`, `:time`, `{:datetime, :microsecond}`,
+  and `{:duration, precision}`.
   For example:
 
       iex> Explorer.Series.from_list([~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]])
@@ -1013,11 +1051,11 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec strftime(series :: Series.t(), format_string :: String.t()) :: Series.t()
-  def strftime(%Series{dtype: dtype} = series, format_string) when K.in(dtype, @datetime_dtypes),
+  def strftime(%Series{dtype: dtype} = series, format_string) when is_datetime_like(dtype),
     do: apply_series(series, :strftime, [format_string])
 
   def strftime(%Series{dtype: dtype}, _format_string),
-    do: dtype_error("strftime/2", dtype, @datetime_dtypes)
+    do: dtype_error("strftime/2", dtype, :datetime_like)
 
   @doc """
   Clip (or clamp) the values in a series.
@@ -3212,17 +3250,33 @@ defmodule Explorer.Series do
 
   # TODO: maybe we can move this casting to Rust.
   defp enforce_highest_precision([
-         %Series{dtype: {left_base, left_timeunit}} = left,
-         %Series{dtype: {right_base, right_timeunit}} = right
+         %Series{dtype: {left_base, left_precision}} = left,
+         %Series{dtype: {right_base, right_precision}} = right
        ])
-       when K.and(is_atom(left_timeunit), is_atom(right_timeunit)) do
+       when K.and(is_precision(left_precision), is_precision(right_precision)) do
     # Higher precision wins, otherwise information is lost.
-    case {left_timeunit, right_timeunit} do
+    case {left_precision, right_precision} do
       {equal, equal} -> [left, right]
       {:nanosecond, _} -> [left, cast(right, {right_base, :nanosecond})]
       {_, :nanosecond} -> [cast(left, {left_base, :nanosecond}), right]
       {:microsecond, _} -> [left, cast(right, {right_base, :microsecond})]
       {_, :microsecond} -> [cast(left, {left_base, :microsecond}), right]
+    end
+  end
+
+  # TODO: maybe we can move this casting to Rust.
+  defp enforce_highest_precision([
+         %Series{dtype: {left_base, left_precision, left_time_zone}} = left,
+         %Series{dtype: {right_base, right_precision, right_time_zone}} = right
+       ])
+       when K.and(is_precision(left_precision), is_precision(right_precision)) do
+    # Higher precision wins, otherwise information is lost.
+    case {left_precision, right_precision} do
+      {equal, equal} -> [left, right]
+      {:nanosecond, _} -> [left, cast(right, {right_base, :nanosecond, right_time_zone})]
+      {_, :nanosecond} -> [cast(left, {left_base, :nanosecond, left_time_zone}), right]
+      {:microsecond, _} -> [left, cast(right, {right_base, :microsecond, right_time_zone})]
+      {_, :microsecond} -> [cast(left, {left_base, :microsecond, left_time_zone}), right]
     end
   end
 
@@ -3270,8 +3324,10 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec add(
-          left :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t(),
-          right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t()
+          left ::
+            Series.t() | number() | Date.t() | DateTime.t() | NaiveDateTime.t() | Duration.t(),
+          right ::
+            Series.t() | number() | Date.t() | DateTime.t() | NaiveDateTime.t() | Duration.t()
         ) :: Series.t()
   def add(left, right) do
     [left, right] = cast_for_arithmetic("add/2", [left, right])
@@ -3285,8 +3341,10 @@ defmodule Explorer.Series do
 
   defp cast_to_add(:date, {:duration, _}), do: :date
   defp cast_to_add({:duration, _}, :date), do: :date
-  defp cast_to_add({:datetime, p}, {:duration, p}), do: {:datetime, p}
-  defp cast_to_add({:duration, p}, {:datetime, p}), do: {:datetime, p}
+  defp cast_to_add({:naive_datetime, p}, {:duration, p}), do: {:naive_datetime, p}
+  defp cast_to_add({:duration, p}, {:naive_datetime, p}), do: {:naive_datetime, p}
+  defp cast_to_add({:datetime, p, tz}, {:duration, p}), do: {:datetime, p, tz}
+  defp cast_to_add({:duration, p}, {:datetime, p, tz}), do: {:datetime, p, tz}
   defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
   defp cast_to_add(left, right), do: Shared.merge_numeric_dtype(left, right)
 
@@ -3334,8 +3392,10 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec subtract(
-          left :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t(),
-          right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | Duration.t()
+          left ::
+            Series.t() | number() | Date.t() | DateTime.t() | NaiveDateTime.t() | Duration.t(),
+          right ::
+            Series.t() | number() | Date.t() | DateTime.t() | NaiveDateTime.t() | Duration.t()
         ) :: Series.t()
   def subtract(left, right) do
     [left, right] = cast_for_arithmetic("subtract/2", [left, right])
@@ -3349,8 +3409,10 @@ defmodule Explorer.Series do
 
   defp cast_to_subtract(:date, :date), do: {:duration, :millisecond}
   defp cast_to_subtract(:date, {:duration, _}), do: :date
-  defp cast_to_subtract({:datetime, p}, {:datetime, p}), do: {:duration, p}
-  defp cast_to_subtract({:datetime, p}, {:duration, p}), do: {:datetime, p}
+  defp cast_to_subtract({:naive_datetime, p}, {:naive_datetime, p}), do: {:duration, p}
+  defp cast_to_subtract({:naive_datetime, p}, {:duration, p}), do: {:naive_datetime, p}
+  defp cast_to_subtract({:datetime, p, tz}, {:datetime, p, tz}), do: {:duration, p}
+  defp cast_to_subtract({:datetime, p, tz}, {:duration, p}), do: {:datetime, p, tz}
   defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
   defp cast_to_subtract(left, right), do: Shared.merge_numeric_dtype(left, right)
 
@@ -6095,11 +6157,11 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec month(Series.t()) :: Series.t()
-  def month(%Series{dtype: dtype} = series) when K.in(dtype, @date_or_datetime_dtypes),
+  def month(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
     do: apply_series_list(:month, [series])
 
   def month(%Series{dtype: dtype}),
-    do: dtype_error("month/1", dtype, @date_or_datetime_dtypes)
+    do: super_dtype_error("month/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
   Returns the year number in the calendar date.
@@ -6124,11 +6186,11 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec year(Series.t()) :: Series.t()
-  def year(%Series{dtype: dtype} = series) when K.in(dtype, @date_or_datetime_dtypes),
+  def year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
     do: apply_series_list(:year, [series])
 
   def year(%Series{dtype: dtype}),
-    do: dtype_error("year/1", dtype, @date_or_datetime_dtypes)
+    do: super_dtype_error("year/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
   Returns the hour number from 0 to 23.
@@ -6144,11 +6206,11 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec hour(Series.t()) :: Series.t()
-  def hour(%Series{dtype: dtype} = series) when K.in(dtype, @datetime_dtypes),
+  def hour(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
     do: apply_series_list(:hour, [series])
 
   def hour(%Series{dtype: dtype}),
-    do: dtype_error("hour/1", dtype, @datetime_dtypes)
+    do: super_dtype_error("hour/1", dtype, [:time, :datetime, :naive_datetime])
 
   @doc """
   Returns the minute number from 0 to 59.
@@ -6164,11 +6226,11 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec minute(Series.t()) :: Series.t()
-  def minute(%Series{dtype: dtype} = series) when K.in(dtype, @datetime_dtypes),
+  def minute(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
     do: apply_series_list(:minute, [series])
 
   def minute(%Series{dtype: dtype}),
-    do: dtype_error("minute/1", dtype, @datetime_dtypes)
+    do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
 
   @doc """
   Returns the second number from 0 to 59.
@@ -6184,11 +6246,11 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec second(Series.t()) :: Series.t()
-  def second(%Series{dtype: dtype} = series) when K.in(dtype, @datetime_dtypes),
+  def second(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
     do: apply_series_list(:second, [series])
 
   def second(%Series{dtype: dtype}),
-    do: dtype_error("minute/1", dtype, @datetime_dtypes)
+    do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
 
   @doc """
   Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
@@ -6214,11 +6276,11 @@ defmodule Explorer.Series do
 
   @doc type: :datetime_wise
   @spec day_of_week(Series.t()) :: Series.t()
-  def day_of_week(%Series{dtype: dtype} = series) when K.in(dtype, @date_or_datetime_dtypes),
+  def day_of_week(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
     do: apply_series_list(:day_of_week, [series])
 
   def day_of_week(%Series{dtype: dtype}),
-    do: dtype_error("day_of_week/1", dtype, @date_or_datetime_dtypes)
+    do: super_dtype_error("day_of_week/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
   Returns the day-of-year number starting from 1.
@@ -6247,11 +6309,11 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec day_of_year(Series.t()) :: Series.t()
-  def day_of_year(%Series{dtype: dtype} = series) when K.in(dtype, @date_or_datetime_dtypes),
+  def day_of_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
     do: apply_series_list(:day_of_year, [series])
 
   def day_of_year(%Series{dtype: dtype}),
-    do: dtype_error("day_of_year/1", dtype, @date_or_datetime_dtypes)
+    do: super_dtype_error("day_of_year/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
   Returns the week-of-year number.
@@ -6283,27 +6345,27 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec week_of_year(Series.t()) :: Series.t()
-  def week_of_year(%Series{dtype: dtype} = series) when K.in(dtype, @date_or_datetime_dtypes),
+  def week_of_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
     do: apply_series_list(:week_of_year, [series])
 
   def week_of_year(%Series{dtype: dtype}),
-    do: dtype_error("week_of_year/1", dtype, @date_or_datetime_dtypes)
+    do: super_dtype_error("week_of_year/1", dtype, [:date, :datetime, :naive_datetime])
 
   @deprecated "Use cast(:date) instead"
   @doc type: :deprecated
-  def to_date(%Series{dtype: dtype} = series) when K.in(dtype, @datetime_dtypes),
+  def to_date(%Series{dtype: dtype} = series) when is_datetime_like(dtype),
     do: cast(series, :date)
 
   def to_date(%Series{dtype: dtype}),
-    do: dtype_error("to_date/1", dtype, @datetime_dtypes)
+    do: super_dtype_error("to_date/1", dtype, [:date, :datetime, :naive_datetime])
 
   @deprecated "Use cast(:time) instead"
   @doc type: :deprecated
-  def to_time(%Series{dtype: dtype} = series) when K.in(dtype, @datetime_dtypes),
+  def to_time(%Series{dtype: dtype} = series) when is_datetime_like(dtype),
     do: cast(series, :time)
 
   def to_time(%Series{dtype: dtype}),
-    do: dtype_error("to_time/1", dtype, @datetime_dtypes)
+    do: super_dtype_error("to_time/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
   Join all string items in a sublist and place a separator between them.
@@ -6548,6 +6610,14 @@ defmodule Explorer.Series do
     backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
 
     :"#{backend}.Series"
+  end
+
+  defp super_dtype_error(function, dtype, valid_super_dtypes) do
+    raise(
+      ArgumentError,
+      "Explorer.Series.#{function} not implemented for dtype #{inspect(dtype)}. " <>
+        "Valid dtypes are any subtype of #{valid_super_dtypes}"
+    )
   end
 
   defp dtype_error(function, dtype, valid_dtypes) when is_list(valid_dtypes) do

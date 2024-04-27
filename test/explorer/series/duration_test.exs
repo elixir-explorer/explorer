@@ -254,22 +254,22 @@ defmodule Explorer.Series.DurationTest do
 
     # Datetime
 
-    test "datetime[μs] + duration[μs]" do
+    test "naive_datetime[μs] + duration[μs]" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
       sum_s = Series.add(eleven_s, one_hour_s)
 
-      assert sum_s.dtype == {:datetime, :microsecond}
+      assert sum_s.dtype == {:naive_datetime, :microsecond}
       twelve_ndt = ~N[2023-08-20 12:00:00.0000000]
       assert Series.to_list(sum_s) == [twelve_ndt]
     end
 
-    test "duration[μs] + datetime[μs]" do
+    test "duration[μs] + naive_datetime[μs]" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
       sum_s = Series.add(one_hour_s, eleven_s)
 
-      assert sum_s.dtype == {:datetime, :microsecond}
+      assert sum_s.dtype == {:naive_datetime, :microsecond}
       twelve_ndt = ~N[2023-08-20 12:00:00.0000000]
       assert Series.to_list(sum_s) == [twelve_ndt]
     end
@@ -279,7 +279,7 @@ defmodule Explorer.Series.DurationTest do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
       sum_s = Series.add(eleven, one_hour_s)
 
-      assert sum_s.dtype == {:datetime, :microsecond}
+      assert sum_s.dtype == {:naive_datetime, :microsecond}
       assert Series.to_list(sum_s) == [~N[2023-08-20 12:00:00.0000000]]
     end
 
@@ -288,11 +288,11 @@ defmodule Explorer.Series.DurationTest do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
       sum_s = Series.add(one_hour_s, eleven)
 
-      assert sum_s.dtype == {:datetime, :microsecond}
+      assert sum_s.dtype == {:naive_datetime, :microsecond}
       assert Series.to_list(sum_s) == [~N[2023-08-20 12:00:00.0000000]]
     end
 
-    test "datetime[μs] + duration[ns] (different precisions)" do
+    test "naive_datetime[μs] + duration[ns] (different precisions)" do
       one_hour_ns = 3600 * 1_000_000_000
       one_hour_s = Series.from_list([one_hour_ns], dtype: {:duration, :nanosecond})
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
@@ -301,16 +301,16 @@ defmodule Explorer.Series.DurationTest do
       # Since we added a duration with :nanosecond precision from a datetime with :microsecond
       # precision, the resulting sum has :nanosecond precision since that was the highest
       # precision present in the operation.
-      assert sum_s.dtype == {:datetime, :nanosecond}
+      assert sum_s.dtype == {:naive_datetime, :nanosecond}
       assert Series.to_list(sum_s) == [~N[2023-08-20 12:00:00.0000000]]
     end
 
-    test "datetime[μs] + datetime[μs] raises ArgumentError" do
+    test "datetime[μs] + naive_datetime[μs] raises ArgumentError" do
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00]])
       twelve_s = Series.from_list([~N[2023-08-20 12:00:00]])
 
       assert_raise ArgumentError,
-                   "cannot invoke Explorer.Series.add/2 with mismatched dtypes: {:datetime, :microsecond} and {:datetime, :microsecond}",
+                   "cannot invoke Explorer.Series.add/2 with mismatched dtypes: {:naive_datetime, :microsecond} and {:naive_datetime, :microsecond}",
                    fn -> Series.add(eleven_s, twelve_s) end
     end
   end
@@ -392,9 +392,9 @@ defmodule Explorer.Series.DurationTest do
       assert Series.to_list(diff_s) == [@aug_20]
     end
 
-    # Datetime
+    # NaiveDatetime
 
-    test "datetime[μs] - datetime[μs]" do
+    test "naive_datetime[μs] - naive_datetime[μs]" do
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
       twelve_s = Series.from_list([~N[2023-08-20 12:00:00.0000000]])
       diff_s = Series.subtract(twelve_s, eleven_s)
@@ -403,16 +403,16 @@ defmodule Explorer.Series.DurationTest do
       assert Series.to_list(diff_s) == [@one_hour_duration_us]
     end
 
-    test "datetime[μs] - duration[μs]" do
+    test "naive_datetime[μs] - duration[μs]" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
       twelve_s = Series.from_list([~N[2023-08-20 12:00:00.0000000]])
       diff_s = Series.subtract(twelve_s, one_hour_s)
 
-      assert diff_s.dtype == {:datetime, :microsecond}
+      assert diff_s.dtype == {:naive_datetime, :microsecond}
       assert Series.to_list(diff_s) == [~N[2023-08-20 11:00:00.0000000]]
     end
 
-    test "NaiveDateTime - datetime[μs]" do
+    test "NaiveDateTime - naive_datetime[μs]" do
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
       twelve = ~N[2023-08-20 12:00:00.0000000]
       diff_s = Series.subtract(twelve, eleven_s)
@@ -421,7 +421,7 @@ defmodule Explorer.Series.DurationTest do
       assert Series.to_list(diff_s) == [@one_hour_duration_us]
     end
 
-    test "datetime[μs] - NaiveDateTime" do
+    test "naive_datetime[μs] - NaiveDateTime" do
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
       twelve = ~N[2023-08-20 12:00:00.0000000]
       diff_s = Series.subtract(eleven_s, twelve)
@@ -435,11 +435,11 @@ defmodule Explorer.Series.DurationTest do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
       diff_s = Series.subtract(twelve, one_hour_s)
 
-      assert diff_s.dtype == {:datetime, :microsecond}
+      assert diff_s.dtype == {:naive_datetime, :microsecond}
       assert Series.to_list(diff_s) == [~N[2023-08-20 11:00:00.0000000]]
     end
 
-    test "datetime[μs] - datetime[ns] (different precisions)" do
+    test "datetime[μs] - naive_datetime[ns] (different precisions)" do
       one_hour_ns = 3600 * 1_000_000_000
       one_hour_s = Series.from_list([one_hour_ns], dtype: {:duration, :nanosecond})
       twelve_s = Series.from_list([~N[2023-08-20 12:00:00.0000000]])
@@ -448,16 +448,16 @@ defmodule Explorer.Series.DurationTest do
       # Since we subtracted a duration with :nanosecond precision from a datetime with :microsecond
       # precision, the resulting difference has :nanosecond precision since that was the highest
       # precision present in the operation.
-      assert diff_s.dtype == {:datetime, :nanosecond}
+      assert diff_s.dtype == {:naive_datetime, :nanosecond}
       assert Series.to_list(diff_s) == [~N[2023-08-20 11:00:00.0000000]]
     end
 
-    test "duration[μs] - datetime[μs] raises ArgumentError" do
+    test "duration[μs] - naive_datetime[μs] raises ArgumentError" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
       twelve_s = Series.from_list([~N[2023-08-20 12:00:00]])
 
       assert_raise ArgumentError,
-                   "cannot invoke Explorer.Series.subtract/2 with mismatched dtypes: {:duration, :microsecond} and {:datetime, :microsecond}",
+                   "cannot invoke Explorer.Series.subtract/2 with mismatched dtypes: {:duration, :microsecond} and {:naive_datetime, :microsecond}",
                    fn -> Series.subtract(one_hour_s, twelve_s) end
     end
   end
@@ -663,8 +663,8 @@ defmodule Explorer.Series.DurationTest do
       assert inspect(df_with_diff) == """
              #Explorer.DataFrame<
                Polars[1 x 3]
-               eleven datetime[μs] [2023-08-20 11:00:00.000000]
-               twelve datetime[μs] [2023-08-20 12:00:00.000000]
+               eleven naive_datetime[μs] [2023-08-20 11:00:00.000000]
+               twelve naive_datetime[μs] [2023-08-20 12:00:00.000000]
                diff duration[μs] [1h]
              >\
              """
