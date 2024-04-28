@@ -252,7 +252,7 @@ defmodule Explorer.Series.DurationTest do
                    fn -> Series.add(aug_20_s, aug_21_s) end
     end
 
-    # Datetime
+    # Naive Datetime
 
     test "naive_datetime[μs] + duration[μs]" do
       one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
@@ -311,6 +311,68 @@ defmodule Explorer.Series.DurationTest do
 
       assert_raise ArgumentError,
                    "cannot invoke Explorer.Series.add/2 with mismatched dtypes: {:naive_datetime, :microsecond} and {:naive_datetime, :microsecond}",
+                   fn -> Series.add(eleven_s, twelve_s) end
+    end
+
+    # Datetime
+
+    test "datetime[μs, Etc/UTC] + duration[μs]" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+      eleven_s = Series.from_list([~U[2023-08-20 11:00:00.0000000Z]])
+      sum_s = Series.add(eleven_s, one_hour_s)
+
+      assert sum_s.dtype == {:datetime, :microsecond, "Etc/UTC"}
+      twelve_utc = ~U[2023-08-20 12:00:00.0000000Z]
+      assert Series.to_list(sum_s) == [twelve_utc]
+    end
+
+    test "duration[μs] + datetime[μs, Etc/UTC]" do
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+      eleven_s = Series.from_list([~U[2023-08-20 11:00:00.0000000Z]])
+      sum_s = Series.add(one_hour_s, eleven_s)
+
+      assert sum_s.dtype == {:datetime, :microsecond, "Etc/UTC"}
+      twelve_utc = ~U[2023-08-20 12:00:00.0000000Z]
+      assert Series.to_list(sum_s) == [twelve_utc]
+    end
+
+    test "DateTime + duration[μs]" do
+      eleven = ~U[2023-08-20 11:00:00.0000000Z]
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(eleven, one_hour_s)
+
+      assert sum_s.dtype == {:datetime, :microsecond, "Etc/UTC"}
+      assert Series.to_list(sum_s) == [~U[2023-08-20 12:00:00.0000000Z]]
+    end
+
+    test "duration[μs] + DateTime" do
+      eleven = ~U[2023-08-20 11:00:00.0000000Z]
+      one_hour_s = Series.from_list([@one_hour_us], dtype: {:duration, :microsecond})
+      sum_s = Series.add(one_hour_s, eleven)
+
+      assert sum_s.dtype == {:datetime, :microsecond, "Etc/UTC"}
+      assert Series.to_list(sum_s) == [~U[2023-08-20 12:00:00.0000000Z]]
+    end
+
+    test "datetime[μs, Etc/UTC] + duration[ns] (different precisions)" do
+      one_hour_ns = 3600 * 1_000_000_000
+      one_hour_s = Series.from_list([one_hour_ns], dtype: {:duration, :nanosecond})
+      eleven_s = Series.from_list([~U[2023-08-20 11:00:00.0000000Z]])
+      sum_s = Series.add(eleven_s, one_hour_s)
+
+      # Since we added a duration with :nanosecond precision from a datetime with :microsecond
+      # precision, the resulting sum has :nanosecond precision since that was the highest
+      # precision present in the operation.
+      assert sum_s.dtype == {:datetime, :nanosecond, "Etc/UTC"}
+      assert Series.to_list(sum_s) == [~U[2023-08-20 12:00:00.0000000Z]]
+    end
+
+    test "datetime[μs, Etc/UTC] + datetime[μs, Etc/UTC] raises ArgumentError" do
+      eleven_s = Series.from_list([~U[2023-08-20 11:00:00Z]])
+      twelve_s = Series.from_list([~U[2023-08-20 12:00:00Z]])
+
+      assert_raise ArgumentError,
+                   "cannot invoke Explorer.Series.add/2 with mismatched dtypes: {:datetime, :microsecond, \"Etc/UTC\"} and {:datetime, :microsecond, \"Etc/UTC\"}",
                    fn -> Series.add(eleven_s, twelve_s) end
     end
   end
@@ -392,7 +454,7 @@ defmodule Explorer.Series.DurationTest do
       assert Series.to_list(diff_s) == [@aug_20]
     end
 
-    # NaiveDatetime
+    # Naive Datetime
 
     test "naive_datetime[μs] - naive_datetime[μs]" do
       eleven_s = Series.from_list([~N[2023-08-20 11:00:00.0000000]])
