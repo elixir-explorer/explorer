@@ -3858,7 +3858,7 @@ defmodule Explorer.SeriesTest do
     end
 
     test "string series to naive datetime" do
-      s = Series.from_list(["2023-08-29 17:39:43", "2023-08-29 17:20:09"])
+      s = Series.from_list(["2023-08-29T17:39:43", "2023-08-29T17:20:09"])
       ms = Series.cast(s, {:naive_datetime, :millisecond})
       us = Series.cast(s, {:naive_datetime, :microsecond})
       ns = Series.cast(s, {:naive_datetime, :nanosecond})
@@ -3867,7 +3867,7 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(us) == {:naive_datetime, :microsecond}
       assert Series.dtype(ns) == {:naive_datetime, :nanosecond}
 
-      expected = [~N[2023-08-29 17:39:43.000000], ~N[2023-08-29 17:20:09.000000]]
+      expected = [~N[2023-08-29T17:39:43.000000], ~N[2023-08-29T17:20:09.000000]]
       assert Series.to_list(ms) == expected
       assert Series.to_list(us) == expected
       assert Series.to_list(ns) == expected
