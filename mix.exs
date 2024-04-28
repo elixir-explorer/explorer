@@ -43,7 +43,6 @@ defmodule Explorer.MixProject do
       {:table_rex, "~> 3.1.1 or ~> 4.0.0"},
       {:castore, "~> 1.0", optional: true},
       {:adbc, "~> 0.1", optional: true},
-      {:tz, "~> 0.26"},
 
       ## Optional
       {:rustler, "~> 0.32.0", optional: not (@dev? or @force_build?)},
@@ -52,6 +51,7 @@ defmodule Explorer.MixProject do
       ## Test
       {:bypass, "~> 2.1", only: :test},
       {:stream_data, "~> 0.6", only: :test},
+      {:tz, "~> 0.26", only: :test},
 
       ## Dev
       {:ex_doc, "~> 0.24", only: :dev},
