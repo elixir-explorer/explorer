@@ -3263,37 +3263,32 @@ defmodule Explorer.Series do
 
   # TODO: maybe we can move this casting to Rust.
   defp enforce_highest_precision([
-         %Series{dtype: {left_base, left_precision}} = left,
-         %Series{dtype: {right_base, right_precision}} = right
+         %Series{dtype: dtype_left} = left,
+         %Series{dtype: dtype_right} = right
        ])
-       when K.and(is_precision(left_precision), is_precision(right_precision)) do
+       when K.and(
+              K.or(is_datetime_like_dtype(dtype_left), is_duration_dtype(dtype_left)),
+              K.or(is_datetime_like_dtype(dtype_right), is_duration_dtype(dtype_right))
+            ) do
     # Higher precision wins, otherwise information is lost.
-    case {left_precision, right_precision} do
+    case {extract_precision(dtype_left), extract_precision(dtype_right)} do
       {equal, equal} -> [left, right]
-      {:nanosecond, _} -> [left, cast(right, {right_base, :nanosecond})]
-      {_, :nanosecond} -> [cast(left, {left_base, :nanosecond}), right]
-      {:microsecond, _} -> [left, cast(right, {right_base, :microsecond})]
-      {_, :microsecond} -> [cast(left, {left_base, :microsecond}), right]
-    end
-  end
-
-  # TODO: maybe we can move this casting to Rust.
-  defp enforce_highest_precision([
-         %Series{dtype: {left_base, left_precision, left_time_zone}} = left,
-         %Series{dtype: {right_base, right_precision, right_time_zone}} = right
-       ])
-       when K.and(is_precision(left_precision), is_precision(right_precision)) do
-    # Higher precision wins, otherwise information is lost.
-    case {left_precision, right_precision} do
-      {equal, equal} -> [left, right]
-      {:nanosecond, _} -> [left, cast(right, {right_base, :nanosecond, right_time_zone})]
-      {_, :nanosecond} -> [cast(left, {left_base, :nanosecond, left_time_zone}), right]
-      {:microsecond, _} -> [left, cast(right, {right_base, :microsecond, right_time_zone})]
-      {_, :microsecond} -> [cast(left, {left_base, :microsecond, left_time_zone}), right]
+      {:nanosecond, _} -> [left, cast(right, update_precision(dtype_right, :nanosecond))]
+      {_, :nanosecond} -> [cast(left, update_precision(dtype_left, :nanosecond)), right]
+      {:microsecond, _} -> [left, cast(right, update_precision(dtype_right, :microsecond))]
+      {_, :microsecond} -> [cast(left, update_precision(dtype_right, :microsecond)), right]
     end
   end
 
   defp enforce_highest_precision(args), do: args
+
+  defp extract_precision({:naive_datetime, precision}), do: precision
+  defp extract_precision({:datetime, precision, _time_zone}), do: precision
+  defp extract_precision({:duration, precision}), do: precision
+
+  defp update_precision({:naive_datetime, _old}, new), do: {:naive_datetime, new}
+  defp update_precision({:datetime, _old, time_zone}, new), do: {:datetime, new, time_zone}
+  defp update_precision({:duration, _old}, new), do: {:duration, new}
 
   @doc """
   Adds right to left, element-wise.
