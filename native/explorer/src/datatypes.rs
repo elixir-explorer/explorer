@@ -17,7 +17,8 @@ use std::str::FromStr;
 #[cfg(feature = "aws")]
 use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
-#[cfg(feature = "timezones")]
+use chrono_tz::OffsetComponents;
+use chrono_tz::OffsetName;
 use chrono_tz::Tz;
 
 pub use ex_dtypes::*;
@@ -271,23 +272,6 @@ pub struct ExNaiveDateTime {
     pub year: i32,
 }
 
-#[derive(NifStruct, Copy, Clone, Debug)]
-#[module = "DateTime"]
-pub struct ExDateTime<'a> {
-    pub calendar: Atom,
-    pub day: u32,
-    pub hour: u32,
-    pub microsecond: (u32, u32),
-    pub minute: u32,
-    pub month: u32,
-    pub second: u32,
-    pub std_offset: i32,
-    pub time_zone: &'a str,
-    pub utc_offset: i32,
-    pub year: i32,
-    pub zone_abbr: &'a str,
-}
-
 pub use polars::export::arrow::temporal_conversions::date32_to_date as days_to_date;
 
 pub fn timestamp_to_datetime_utc(microseconds: i64) -> DateTime<Utc> {
@@ -381,11 +365,28 @@ impl Literal for ExNaiveDateTime {
     }
 }
 
-impl From<i64> for ExDateTime<'_> {
-    fn from(microseconds: i64) -> Self {
-        timestamp_to_datetime_utc(microseconds).into()
-    }
+#[derive(NifStruct, Copy, Clone, Debug)]
+#[module = "DateTime"]
+pub struct ExDateTime<'a> {
+    pub calendar: Atom,
+    pub day: u32,
+    pub hour: u32,
+    pub microsecond: (u32, u32),
+    pub minute: u32,
+    pub month: u32,
+    pub second: u32,
+    pub std_offset: i64,
+    pub time_zone: &'a str,
+    pub utc_offset: i64,
+    pub year: i32,
+    pub zone_abbr: &'a str,
 }
+
+// impl From<i64> for ExDateTime<'_> {
+//     fn from(microseconds: i64) -> Self {
+//         timestamp_to_datetime_utc(microseconds).into()
+//     }
+// }
 
 impl From<ExDateTime<'_>> for i64 {
     fn from(dt: ExDateTime<'_>) -> i64 {
@@ -407,36 +408,49 @@ impl From<ExDateTime<'_>> for i64 {
     }
 }
 
-impl From<chrono::DateTime<chrono::Utc>> for ExDateTime<'static> {
-    fn from(dt: chrono::DateTime<chrono::Utc>) -> ExDateTime<'static> {
-        dt.timestamp_micros().into()
+// TODO-BILLY: finish this.
+impl<'a> From<DateTime<Tz>> for ExDateTime<'a> {
+    fn from(dt_tz: DateTime<Tz>) -> ExDateTime<'a> {
+        let & time_zone = dt_tz.offset().tz_id();
+        let & zone_abbr = dt_tz.offset().abbreviation();
+
+        ExDateTime {
+            calendar: atoms::calendar_iso_module(),
+            day: dt_tz.day(),
+            hour: dt_tz.hour(),
+            microsecond: (microseconds_six_digits(dt_tz.timestamp_subsec_micros()), 6),
+            minute: dt_tz.minute(),
+            month: dt_tz.month(),
+            second: dt_tz.second(),
+            std_offset: dt_tz.offset().dst_offset().num_seconds(),
+            time_zone: time_zone,
+            utc_offset: dt_tz.offset().base_utc_offset().num_seconds(),
+            year: dt_tz.year(),
+            zone_abbr: zone_abbr,
+        }
     }
 }
 
-// impl<Tz: chrono::TimeZone + std::str::FromStr> From<ExDateTime<'_>> for DateTime<Tz> {
-//     fn from(dt: ExDateTime<'_>) -> DateTime<Tz> where <Tz as FromStr>::Err: core::fmt::Debug {
-//         let tz: Tz = dt.time_zone.parse().unwrap();
-//         tz.ymd(dt.year, dt.month, dt.day)
-//             .and_hms_micro_opt(dt.hour, dt.minute, dt.second, dt.microsecond.0)
-//             .unwrap()
-//     }
-// }
+impl From<ExDateTime<'_>> for DateTime<Tz> {
+    fn from(ex_dt: ExDateTime<'_>) -> DateTime<Tz> {
+        let time_zone = ex_dt.time_zone.parse::<Tz>().unwrap();
 
-// impl From<DateTime<T=Tz>> for ExDateTime<'_> {
-//     fn from(dt: DateTime<T=Tz>) -> Self {
-//         ExDateTime {
-//             calendar: atoms::calendar_iso_module(),
-//             day: dt.day(),
-//             hour: dt.hour(),
-//             microsecond: (microseconds_six_digits(dt.and_utc().timestamp_subsec_micros()), 6),
-//             minute: dt.minute(),
-//             month: dt.month(),
-//             second: dt.second(),
-//             time_zone: dt.time_zone().to_string(),
-//             year: dt.year(),
-//         }
-//     }
-// }
+        // Best approach I could find to avoid warning:
+        // https://github.com/chronotope/chrono/issues/873#issuecomment-1333716953
+        let dt_tz_without_micro = time_zone
+            .with_ymd_and_hms(
+                ex_dt.year,
+                ex_dt.month,
+                ex_dt.day,
+                ex_dt.hour,
+                ex_dt.minute,
+                ex_dt.second,
+            )
+            .unwrap();
+        let micro = chrono::Duration::microseconds(ex_dt.microsecond.0.into());
+        dt_tz_without_micro + micro
+    }
+}
 
 // impl Literal for ExDateTime<'_> {
 //     fn lit(self) -> Expr {
