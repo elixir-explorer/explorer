@@ -17,8 +17,10 @@ use std::str::FromStr;
 #[cfg(feature = "aws")]
 use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
-use chrono_tz::OffsetComponents;
-use chrono_tz::OffsetName;
+// TODO: we'll need these again when we resolve the lifetime issues with
+// `ExDateTime` below.
+// use chrono_tz::OffsetComponents;
+// use chrono_tz::OffsetName;
 use chrono_tz::Tz;
 
 pub use ex_dtypes::*;
@@ -408,28 +410,29 @@ impl From<ExDateTime<'_>> for i64 {
     }
 }
 
-// TODO-BILLY: finish this.
-impl<'a> From<DateTime<Tz>> for ExDateTime<'a> {
-    fn from(dt_tz: DateTime<Tz>) -> ExDateTime<'a> {
-        let & time_zone = dt_tz.offset().tz_id();
-        let & zone_abbr = dt_tz.offset().abbreviation();
-
-        ExDateTime {
-            calendar: atoms::calendar_iso_module(),
-            day: dt_tz.day(),
-            hour: dt_tz.hour(),
-            microsecond: (microseconds_six_digits(dt_tz.timestamp_subsec_micros()), 6),
-            minute: dt_tz.minute(),
-            month: dt_tz.month(),
-            second: dt_tz.second(),
-            std_offset: dt_tz.offset().dst_offset().num_seconds(),
-            time_zone: time_zone,
-            utc_offset: dt_tz.offset().base_utc_offset().num_seconds(),
-            year: dt_tz.year(),
-            zone_abbr: zone_abbr,
-        }
-    }
-}
+// TODO: resolve the lifetime issues for `time_zone` and `zone_abbr`.
+//
+// impl<'a> From<DateTime<Tz>> for ExDateTime<'a> {
+//     fn from(dt_tz: DateTime<Tz>) -> ExDateTime<'a> {
+//         let & time_zone = dt_tz.offset().tz_id();
+//         let & zone_abbr = dt_tz.offset().abbreviation();
+//
+//         ExDateTime {
+//             calendar: atoms::calendar_iso_module(),
+//             day: dt_tz.day(),
+//             hour: dt_tz.hour(),
+//             microsecond: (microseconds_six_digits(dt_tz.timestamp_subsec_micros()), 6),
+//             minute: dt_tz.minute(),
+//             month: dt_tz.month(),
+//             second: dt_tz.second(),
+//             std_offset: dt_tz.offset().dst_offset().num_seconds(),
+//             time_zone: time_zone,
+//             utc_offset: dt_tz.offset().base_utc_offset().num_seconds(),
+//             year: dt_tz.year(),
+//             zone_abbr: zone_abbr,
+//         }
+//     }
+// }
 
 impl From<ExDateTime<'_>> for DateTime<Tz> {
     fn from(ex_dt: ExDateTime<'_>) -> DateTime<Tz> {
@@ -452,7 +455,8 @@ impl From<ExDateTime<'_>> for DateTime<Tz> {
     }
 }
 
-// impl Literal for ExDateTime<'_> {
+// TODO: Polars doesn't provide a default `Literal` impl. Find out why.
+// impl Literal for ExDateTime {
 //     fn lit(self) -> Expr {
 //         DateTime::from(self).lit()
 //     }
