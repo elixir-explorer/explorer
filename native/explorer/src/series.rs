@@ -108,7 +108,7 @@ pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_naivedatetime(
+pub fn s_from_list_naive_datetime(
     name: &str,
     val: Vec<Option<ExNaiveDateTime>>,
     precision: ExTimeUnit,
