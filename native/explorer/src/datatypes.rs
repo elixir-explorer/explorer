@@ -456,7 +456,7 @@ impl From<ExDateTime<'_>> for DateTime<Tz> {
 }
 
 // TODO: Polars doesn't provide a default `Literal` impl. Find out why.
-// impl Literal for ExDateTime {
+// impl Literal for ExDateTime<'_> {
 //     fn lit(self) -> Expr {
 //         DateTime::from(self).lit()
 //     }
