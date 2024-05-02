@@ -106,7 +106,7 @@ defmodule Explorer.Query do
 
   `Explorer.Query` leverages the power behind Elixir for-comprehensions
   to provide a powerful syntax for traversing several columns in a dataframe
-  at once. For example, imagine you want to standardization the data on the
+  at once. For example, imagine you want to standardize the data on the
   iris dataset, you could write this:
 
       iex> iris = Explorer.Datasets.iris()
