@@ -861,7 +861,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :string,
                "h" => :boolean,
                "i" => :date,
-               "j" => {:datetime, :nanosecond}
+               "j" => {:naive_datetime, :nanosecond}
              }
     end
 
@@ -1879,7 +1879,7 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "add columns with date and datetime operations" do
+    test "add columns with date and naive datetime operations" do
       df =
         DF.new(
           a: [~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil],
@@ -1933,7 +1933,7 @@ defmodule Explorer.DataFrameTest do
 
       assert df1.dtypes == %{
                "a" => :date,
-               "b" => {:datetime, :microsecond},
+               "b" => {:naive_datetime, :microsecond},
                "c" => {:s, 8},
                "d" => {:s, 8},
                "e" => {:s, 8},
@@ -1997,7 +1997,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.dtypes(df) == %{
                "a" => {:list, :string},
                "b" => {:list, {:s, 64}},
-               "c" => {:list, {:datetime, :microsecond}},
+               "c" => {:list, {:naive_datetime, :microsecond}},
                "join" => :string,
                "lengths" => {:u, 32},
                "member?" => :boolean
@@ -2545,7 +2545,7 @@ defmodule Explorer.DataFrameTest do
              |                Explorer DataFrame: [rows: 1, columns: 3]                 |
              +----------------------------+----------------------------+----------------+
              |         datetime1          |         datetime2          |    duration    |
-             |       <datetime[μs]>       |       <datetime[μs]>       | <duration[μs]> |
+             |    <naive_datetime[μs]>    |    <naive_datetime[μs]>    | <duration[μs]> |
              +============================+============================+================+
              | 2023-09-14 00:00:00.000000 | 2023-09-14 01:00:00.000000 | 1h             |
              +----------------------------+----------------------------+----------------+
@@ -3843,7 +3843,7 @@ defmodule Explorer.DataFrameTest do
           string: ["a", "b", "c", "nil"],
           date: [~D[2021-01-01], ~D[1999-12-31], nil, ~D[2023-01-01]],
           time: [~T[00:02:03.000212], ~T[00:05:04.000456], ~T[00:07:04.000776], nil],
-          datetime: [
+          naive_datetime: [
             nil,
             ~N[2021-01-01 00:00:00],
             ~N[1999-12-31 00:00:00],
@@ -3857,11 +3857,11 @@ defmodule Explorer.DataFrameTest do
           ]
         )
 
-      df = DF.mutate(df, duration: datetime - duration)
+      df = DF.mutate(df, duration: naive_datetime - duration)
 
       assert df.dtypes == %{
                "date" => :date,
-               "datetime" => {:datetime, :microsecond},
+               "naive_datetime" => {:naive_datetime, :microsecond},
                "duration" => {:duration, :microsecond},
                "list" => {:list, :null},
                # "null" => :null,
@@ -3874,7 +3874,7 @@ defmodule Explorer.DataFrameTest do
 
       assert describe_df.dtypes == %{
                "date" => :string,
-               "datetime" => :string,
+               "naive_datetime" => :string,
                "describe" => :string,
                "duration" => :string,
                "list" => :string,
@@ -3886,7 +3886,7 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_columns(describe_df, atom_keys: true) == %{
                date: ["3", "1", nil, nil, nil, nil, nil, nil, nil],
-               datetime: [
+               naive_datetime: [
                  "3",
                  "1",
                  nil,
@@ -4553,13 +4553,13 @@ defmodule Explorer.DataFrameTest do
           st: json_decode(st, {:struct, %{"n" => {:s, 64}}}),
           f: json_decode(f, {:f, 64}),
           l: json_decode(l, {:list, {:s, 64}}),
-          dt: json_decode(dt, {:datetime, :microsecond})
+          dt: json_decode(dt, {:naive_datetime, :microsecond})
         )
 
       assert df.dtypes == %{"dt" => :string, "f" => :string, "l" => :string, "st" => :string}
 
       assert df1.dtypes == %{
-               "dt" => {:datetime, :microsecond},
+               "dt" => {:naive_datetime, :microsecond},
                "f" => {:f, 64},
                "l" => {:list, {:s, 64}},
                "st" => {:struct, [{"n", {:s, 64}}]}

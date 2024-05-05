@@ -40,6 +40,16 @@ impl TryFrom<&ExTimeUnit> for TimeUnit {
     }
 }
 
+impl From<&TimeUnit> for ExTimeUnit {
+    fn from(value: &TimeUnit) -> ExTimeUnit {
+        match value {
+            TimeUnit::Milliseconds => ExTimeUnit::Millisecond,
+            TimeUnit::Microseconds => ExTimeUnit::Microsecond,
+            TimeUnit::Nanoseconds => ExTimeUnit::Nanosecond,
+        }
+    }
+}
+
 #[derive(NifTaggedEnum)]
 pub enum ExSeriesDtype {
     Null,
@@ -52,7 +62,8 @@ pub enum ExSeriesDtype {
     U(u8),
     String,
     Time,
-    Datetime(ExTimeUnit),
+    NaiveDatetime(ExTimeUnit),
+    Datetime(ExTimeUnit, String),
     Duration(ExTimeUnit),
     List(Box<ExSeriesDtype>),
     Struct(Vec<(String, ExSeriesDtype)>),
@@ -82,25 +93,11 @@ impl TryFrom<&DataType> for ExSeriesDtype {
 
             DataType::Time => Ok(ExSeriesDtype::Time),
             DataType::String => Ok(ExSeriesDtype::String),
-            DataType::Datetime(TimeUnit::Nanoseconds, _) => {
-                Ok(ExSeriesDtype::Datetime(ExTimeUnit::Nanosecond))
+            DataType::Datetime(tu, None) => Ok(ExSeriesDtype::NaiveDatetime(tu.into())),
+            DataType::Datetime(tu, Some(tz)) => {
+                Ok(ExSeriesDtype::Datetime(tu.into(), tz.to_string()))
             }
-            DataType::Datetime(TimeUnit::Microseconds, _) => {
-                Ok(ExSeriesDtype::Datetime(ExTimeUnit::Microsecond))
-            }
-            DataType::Datetime(TimeUnit::Milliseconds, _) => {
-                Ok(ExSeriesDtype::Datetime(ExTimeUnit::Millisecond))
-            }
-
-            DataType::Duration(TimeUnit::Nanoseconds) => {
-                Ok(ExSeriesDtype::Duration(ExTimeUnit::Nanosecond))
-            }
-            DataType::Duration(TimeUnit::Microseconds) => {
-                Ok(ExSeriesDtype::Duration(ExTimeUnit::Microsecond))
-            }
-            DataType::Duration(TimeUnit::Milliseconds) => {
-                Ok(ExSeriesDtype::Duration(ExTimeUnit::Millisecond))
-            }
+            DataType::Duration(tu) => Ok(ExSeriesDtype::Duration(tu.into())),
 
             DataType::List(inner) => Ok(ExSeriesDtype::List(Box::new(Self::try_from(
                 inner.as_ref(),
@@ -158,24 +155,14 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             ))),
             ExSeriesDtype::String => Ok(DataType::String),
             ExSeriesDtype::Time => Ok(DataType::Time),
-            ExSeriesDtype::Datetime(ExTimeUnit::Nanosecond) => {
-                Ok(DataType::Datetime(TimeUnit::Nanoseconds, None))
+            ExSeriesDtype::NaiveDatetime(ex_timeunit) => {
+                Ok(DataType::Datetime(ex_timeunit.try_into()?, None))
             }
-            ExSeriesDtype::Datetime(ExTimeUnit::Microsecond) => {
-                Ok(DataType::Datetime(TimeUnit::Microseconds, None))
-            }
-            ExSeriesDtype::Datetime(ExTimeUnit::Millisecond) => {
-                Ok(DataType::Datetime(TimeUnit::Milliseconds, None))
-            }
-            ExSeriesDtype::Duration(ExTimeUnit::Nanosecond) => {
-                Ok(DataType::Duration(TimeUnit::Nanoseconds))
-            }
-            ExSeriesDtype::Duration(ExTimeUnit::Microsecond) => {
-                Ok(DataType::Duration(TimeUnit::Microseconds))
-            }
-            ExSeriesDtype::Duration(ExTimeUnit::Millisecond) => {
-                Ok(DataType::Duration(TimeUnit::Milliseconds))
-            }
+            ExSeriesDtype::Datetime(ex_timeunit, tz_option) => Ok(DataType::Datetime(
+                ex_timeunit.try_into()?,
+                Some(tz_option.clone()),
+            )),
+            ExSeriesDtype::Duration(ex_timeunit) => Ok(DataType::Duration(ex_timeunit.try_into()?)),
             ExSeriesDtype::List(inner) => {
                 Ok(DataType::List(Box::new(Self::try_from(inner.as_ref())?)))
             }

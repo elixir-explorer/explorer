@@ -14,6 +14,7 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1"
 chrono = "0.4"
+chrono-tz = "0.9"
 rand = { version = "0.8", features = ["alloc"] }
 rand_pcg = "0.3"
 rustler = { version = "0.32", default-features = false, features = ["derive"] }
@@ -43,44 +44,45 @@ features = [
   "abs",
   "checked_arithmetic",
   "concat_str",
+  "cov",
   "cross_join",
+  "csv",
   "cum_agg",
   "cutqcut",
-  "csv",
-  "cov",
   "decompress-fast",
   "describe",
   "dtype-full",
+  "ewma",
+  "extract_groups",
+  "extract_jsonpath",
   "group_by_list",
-  "ipc",
   "ipc_streaming",
+  "ipc",
+  "is_in",
   "lazy",
-  "regex",
   "log",
   "mode",
+  "moment",
   "parquet",
+  "peaks",
   "performant",
   "pivot",
-  "random",
-  "rolling_window",
-  "rows",
-  "simd",
-  "temporal",
-  "to_dummies",
-  "trigonometry",
-  "is_in",
-  "streaming",
-  "strings",
-  "round_series",
-  "ewma",
   "product",
-  "peaks",
-  "moment",
+  "propagate_nans",
+  "random",
   "range",
   "rank",
-  "propagate_nans",
-  "extract_jsonpath",
-  "extract_groups",
+  "regex",
+  "rolling_window",
+  "round_series",
+  "rows",
+  "simd",
+  "streaming",
+  "strings",
+  "temporal",
+  "timezones",
+  "to_dummies",
+  "trigonometry",
 ]
 
 [dependencies.polars-ops]
@@ -90,7 +92,14 @@ features = ["abs", "ewma", "cum_agg", "cov"]
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
 
-cloud = ["object_store", "tokio", "tokio-util", "aws", "polars/cloud", "polars/cloud_write"]
+cloud = [
+  "object_store",
+  "tokio",
+  "tokio-util",
+  "aws",
+  "polars/cloud",
+  "polars/cloud_write",
+]
 ndjson = ["polars/json"]
 aws = ["object_store/aws", "polars/async", "polars/aws"]
 

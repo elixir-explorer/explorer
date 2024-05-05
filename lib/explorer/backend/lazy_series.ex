@@ -857,7 +857,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def strptime(%Series{} = series, format_string) do
-    dtype = {:datetime, :microsecond}
+    dtype = {:naive_datetime, :microsecond}
     data = new(:strptime, [lazy_series!(series), format_string], dtype)
 
     Backend.Series.new(data, dtype)

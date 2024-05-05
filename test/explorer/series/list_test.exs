@@ -135,10 +135,10 @@ defmodule Explorer.Series.ListTest do
       assert Series.to_list(series) == [[~D[2023-11-10]]]
     end
 
-    test "list of lists of one datetime" do
+    test "list of lists of one naive datetime" do
       series = Series.from_list([[~N[2023-11-10 00:19:30]]])
 
-      assert series.dtype == {:list, {:datetime, :microsecond}}
+      assert series.dtype == {:list, {:naive_datetime, :microsecond}}
       assert series[0] == [~N[2023-11-10 00:19:30.000000]]
       assert Series.to_list(series) == [[~N[2023-11-10 00:19:30.000000]]]
     end
@@ -235,9 +235,9 @@ defmodule Explorer.Series.ListTest do
       assert Series.to_list(s1) === [[[1.0, 2.0]], [[3.0, 4.0]]]
     end
 
-    test "list of integer series to list of datetime" do
+    test "list of integer series to list of naive datetime" do
       s = Series.from_list([[1, 2, 3], [1_649_883_642 * 1_000 * 1_000]])
-      s1 = Series.cast(s, {:list, {:datetime, :microsecond}})
+      s1 = Series.cast(s, {:list, {:naive_datetime, :microsecond}})
 
       assert Series.to_list(s1) == [
                [
@@ -248,7 +248,7 @@ defmodule Explorer.Series.ListTest do
                [~N[2022-04-13 21:00:42.000000]]
              ]
 
-      assert Series.dtype(s1) == {:list, {:datetime, :microsecond}}
+      assert Series.dtype(s1) == {:list, {:naive_datetime, :microsecond}}
     end
 
     test "deeper list of integers series to list of invalid dtype" do
@@ -314,7 +314,7 @@ defmodule Explorer.Series.ListTest do
                """
                #Explorer.Series<
                  Polars[1]
-                 list[datetime[μs]] [[2023-11-10 00:19:30.000000]]
+                 list[naive_datetime[μs]] [[2023-11-10 00:19:30.000000]]
                >\
                """
     end

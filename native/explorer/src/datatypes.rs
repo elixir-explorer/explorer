@@ -17,6 +17,12 @@ use std::str::FromStr;
 #[cfg(feature = "aws")]
 use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
+// TODO: we'll need these again when we resolve the lifetime issues with
+// `ExDateTime` below.
+// use chrono_tz::OffsetComponents;
+// use chrono_tz::OffsetName;
+use chrono_tz::Tz;
+
 pub use ex_dtypes::*;
 
 pub struct ExDataFrameRef(pub DataFrame);
@@ -257,22 +263,20 @@ fn time_unit_of_ex_duration(duration: &ExDuration) -> TimeUnit {
 
 #[derive(NifStruct, Copy, Clone, Debug)]
 #[module = "NaiveDateTime"]
-pub struct ExDateTime {
+pub struct ExNaiveDateTime {
     pub calendar: Atom,
     pub day: u32,
-    pub month: u32,
-    pub year: i32,
     pub hour: u32,
-    pub minute: u32,
-    pub second: u32,
     pub microsecond: (u32, u32),
+    pub minute: u32,
+    pub month: u32,
+    pub second: u32,
+    pub year: i32,
 }
 
 pub use polars::export::arrow::temporal_conversions::date32_to_date as days_to_date;
 
-/// Converts a microsecond i64 to a `NaiveDateTime`.
-/// This is because when getting a timestamp, it might have negative values.
-pub fn timestamp_to_datetime(microseconds: i64) -> NaiveDateTime {
+pub fn timestamp_to_datetime_utc(microseconds: i64) -> DateTime<Utc> {
     let sign = microseconds.signum();
     let seconds = match sign {
         -1 => microseconds / 1_000_000 - 1,
@@ -285,7 +289,12 @@ pub fn timestamp_to_datetime(microseconds: i64) -> NaiveDateTime {
     let nanoseconds = remainder.abs() * 1_000;
     DateTime::<Utc>::from_timestamp(seconds, nanoseconds.try_into().unwrap())
         .expect("construct a UTC")
-        .naive_utc()
+}
+
+/// Converts a microsecond i64 to a `NaiveDateTime`.
+/// This is because when getting a timestamp, it might have negative values.
+pub fn timestamp_to_datetime(microseconds: i64) -> NaiveDateTime {
+    timestamp_to_datetime_utc(microseconds).naive_utc()
 }
 
 // Limit the number of digits in the microsecond part of a timestamp to 6.
@@ -299,14 +308,14 @@ fn microseconds_six_digits(microseconds: u32) -> u32 {
     }
 }
 
-impl From<i64> for ExDateTime {
+impl From<i64> for ExNaiveDateTime {
     fn from(microseconds: i64) -> Self {
         timestamp_to_datetime(microseconds).into()
     }
 }
 
-impl From<ExDateTime> for i64 {
-    fn from(dt: ExDateTime) -> i64 {
+impl From<ExNaiveDateTime> for i64 {
+    fn from(dt: ExNaiveDateTime) -> i64 {
         let duration = NaiveDate::from_ymd_opt(dt.year, dt.month, dt.day)
             .unwrap()
             .and_hms_micro_opt(dt.hour, dt.minute, dt.second, dt.microsecond.0)
@@ -325,8 +334,8 @@ impl From<ExDateTime> for i64 {
     }
 }
 
-impl From<ExDateTime> for NaiveDateTime {
-    fn from(dt: ExDateTime) -> NaiveDateTime {
+impl From<ExNaiveDateTime> for NaiveDateTime {
+    fn from(dt: ExNaiveDateTime) -> NaiveDateTime {
         NaiveDate::from_ymd_opt(dt.year, dt.month, dt.day)
             .unwrap()
             .and_hms_micro_opt(dt.hour, dt.minute, dt.second, dt.microsecond.0)
@@ -334,9 +343,9 @@ impl From<ExDateTime> for NaiveDateTime {
     }
 }
 
-impl From<NaiveDateTime> for ExDateTime {
+impl From<NaiveDateTime> for ExNaiveDateTime {
     fn from(dt: NaiveDateTime) -> Self {
-        ExDateTime {
+        ExNaiveDateTime {
             calendar: atoms::calendar_iso_module(),
             day: dt.day(),
             month: dt.month(),
@@ -352,11 +361,106 @@ impl From<NaiveDateTime> for ExDateTime {
     }
 }
 
-impl Literal for ExDateTime {
+impl Literal for ExNaiveDateTime {
     fn lit(self) -> Expr {
         NaiveDateTime::from(self).lit()
     }
 }
+
+#[derive(NifStruct, Copy, Clone, Debug)]
+#[module = "DateTime"]
+pub struct ExDateTime<'a> {
+    pub calendar: Atom,
+    pub day: u32,
+    pub hour: u32,
+    pub microsecond: (u32, u32),
+    pub minute: u32,
+    pub month: u32,
+    pub second: u32,
+    pub std_offset: i64,
+    pub time_zone: &'a str,
+    pub utc_offset: i64,
+    pub year: i32,
+    pub zone_abbr: &'a str,
+}
+
+// impl From<i64> for ExDateTime<'_> {
+//     fn from(microseconds: i64) -> Self {
+//         timestamp_to_datetime_utc(microseconds).into()
+//     }
+// }
+
+impl From<ExDateTime<'_>> for i64 {
+    fn from(dt: ExDateTime<'_>) -> i64 {
+        let duration = NaiveDate::from_ymd_opt(dt.year, dt.month, dt.day)
+            .unwrap()
+            .and_hms_micro_opt(dt.hour, dt.minute, dt.second, dt.microsecond.0)
+            .unwrap()
+            .signed_duration_since(
+                NaiveDate::from_ymd_opt(1970, 1, 1)
+                    .unwrap()
+                    .and_hms_opt(0, 0, 0)
+                    .unwrap(),
+            );
+
+        match duration.num_microseconds() {
+            Some(us) => us,
+            None => duration.num_milliseconds() * 1_000,
+        }
+    }
+}
+
+// TODO: resolve the lifetime issues for `time_zone` and `zone_abbr`.
+//
+// impl<'a> From<DateTime<Tz>> for ExDateTime<'a> {
+//     fn from(dt_tz: DateTime<Tz>) -> ExDateTime<'a> {
+//         let & time_zone = dt_tz.offset().tz_id();
+//         let & zone_abbr = dt_tz.offset().abbreviation();
+//
+//         ExDateTime {
+//             calendar: atoms::calendar_iso_module(),
+//             day: dt_tz.day(),
+//             hour: dt_tz.hour(),
+//             microsecond: (microseconds_six_digits(dt_tz.timestamp_subsec_micros()), 6),
+//             minute: dt_tz.minute(),
+//             month: dt_tz.month(),
+//             second: dt_tz.second(),
+//             std_offset: dt_tz.offset().dst_offset().num_seconds(),
+//             time_zone: time_zone,
+//             utc_offset: dt_tz.offset().base_utc_offset().num_seconds(),
+//             year: dt_tz.year(),
+//             zone_abbr: zone_abbr,
+//         }
+//     }
+// }
+
+impl From<ExDateTime<'_>> for DateTime<Tz> {
+    fn from(ex_dt: ExDateTime<'_>) -> DateTime<Tz> {
+        let time_zone = ex_dt.time_zone.parse::<Tz>().unwrap();
+
+        // Best approach I could find to avoid warning:
+        // https://github.com/chronotope/chrono/issues/873#issuecomment-1333716953
+        let dt_tz_without_micro = time_zone
+            .with_ymd_and_hms(
+                ex_dt.year,
+                ex_dt.month,
+                ex_dt.day,
+                ex_dt.hour,
+                ex_dt.minute,
+                ex_dt.second,
+            )
+            .unwrap();
+        let micro = chrono::Duration::microseconds(ex_dt.microsecond.0.into());
+        dt_tz_without_micro + micro
+    }
+}
+
+// TODO: Polars doesn't provide a default `Literal` impl. Find out why.
+// impl Literal for ExDateTime<'_> {
+//     fn lit(self) -> Expr {
+//         DateTime::from(self).lit()
+//     }
+// }
 
 #[derive(NifStruct, Copy, Clone, Debug)]
 #[module = "Time"]
@@ -433,7 +537,7 @@ pub enum ExValidValue<'a> {
     Str(&'a str),
     Date(ExDate),
     Time(ExTime),
-    DateTime(ExDateTime),
+    DateTime(ExNaiveDateTime),
     Duration(ExDuration),
 }
 
@@ -476,7 +580,7 @@ impl<'a> rustler::Decoder<'a> for ExValidValue<'a> {
                     Ok(ExValidValue::Date(date))
                 } else if let Ok(time) = term.decode::<ExTime>() {
                     Ok(ExValidValue::Time(time))
-                } else if let Ok(datetime) = term.decode::<ExDateTime>() {
+                } else if let Ok(datetime) = term.decode::<ExNaiveDateTime>() {
                     Ok(ExValidValue::DateTime(datetime))
                 } else if let Ok(duration) = term.decode::<ExDuration>() {
                     Ok(ExValidValue::Duration(duration))

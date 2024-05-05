@@ -47,4 +47,52 @@ defmodule Explorer.Series.DateTimeTest do
       assert Series.second(series) |> Series.to_list() == [35, 35, 35]
     end
   end
+
+  describe "timezones" do
+    test "UTC" do
+      datetimes_in = [
+        ~U[2024-01-01T12:00:00.000000Z],
+        ~U[2024-01-01T13:00:00.000000Z],
+        ~U[2024-01-01T14:00:00.000000Z]
+      ]
+
+      datetimes_out =
+        datetimes_in
+        |> Series.from_list()
+        |> Series.to_list()
+
+      assert datetimes_out == datetimes_in
+    end
+
+    test "America/New_York" do
+      datetimes_in =
+        [
+          ~U[2024-01-01T12:00:00.000000Z],
+          ~U[2024-01-01T13:00:00.000000Z],
+          ~U[2024-01-01T14:00:00.000000Z]
+        ]
+        |> Enum.map(&DateTime.shift_zone!(&1, "America/New_York"))
+
+      datetimes_out =
+        datetimes_in
+        |> Series.from_list()
+        |> Series.to_list()
+
+      assert datetimes_out == datetimes_in
+    end
+
+    test "can't build a series from datetimes with non-matching timezones" do
+      datetimes_in =
+        [
+          ~U[2024-01-01T12:00:00.000000Z],
+          ~U[2024-01-01T13:00:00.000000Z] |> DateTime.shift_zone!("America/New_York")
+        ]
+
+      assert_raise(
+        ArgumentError,
+        "the value #DateTime<2024-01-01 08:00:00.000000-05:00 EST America/New_York> does not match the inferred dtype {:datetime, :microsecond, \"Etc/UTC\"}",
+        fn -> Series.from_list(datetimes_in) end
+      )
+    end
+  end
 end

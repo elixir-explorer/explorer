@@ -1,13 +1,14 @@
 use crate::{
     atoms,
     datatypes::{
-        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExRankMethod, ExSeriesDtype, ExTime,
-        ExTimeUnit, ExValidValue,
+        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExRankMethod,
+        ExSeriesDtype, ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
 
-use encoding::encode_datetime;
+use encoding::encode_naive_datetime;
+// use encoding::encode_datetime;
 
 use polars::prelude::*;
 use polars_ops::chunked_array::cov::{cov, pearson_corr};
@@ -106,20 +107,13 @@ pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
     )
 }
 
-// TODO: Phase out this function in favor of the `ExTimeUnit` enum.
-//       See `s_strptime` for an example.
-fn precision_to_timeunit(precision: &str) -> TimeUnit {
-    match precision {
-        "millisecond" => TimeUnit::Milliseconds,
-        "microsecond" => TimeUnit::Microseconds,
-        "nanosecond" => TimeUnit::Nanoseconds,
-        _ => panic!("Unknown datetime precision"),
-    }
-}
-
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision: &str) -> ExSeries {
-    let timeunit = precision_to_timeunit(precision);
+pub fn s_from_list_naive_datetime(
+    name: &str,
+    val: Vec<Option<ExNaiveDateTime>>,
+    precision: ExTimeUnit,
+) -> ExSeries {
+    let timeunit = TimeUnit::try_from(&precision).unwrap();
 
     ExSeries::new(
         Series::new(
@@ -134,8 +128,34 @@ pub fn s_from_list_datetime(name: &str, val: Vec<Option<ExDateTime>>, precision:
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_duration(name: &str, val: Vec<Option<ExDuration>>, precision: &str) -> ExSeries {
-    let timeunit = precision_to_timeunit(precision);
+pub fn s_from_list_datetime(
+    name: &str,
+    val: Vec<Option<ExDateTime>>,
+    precision: ExTimeUnit,
+    time_zone_str: Option<&str>,
+) -> ExSeries {
+    let timeunit = TimeUnit::try_from(&precision).unwrap();
+    let time_zone = time_zone_str.map(|s| s.to_string());
+
+    ExSeries::new(
+        Series::new(
+            name,
+            val.iter()
+                .map(|dt| dt.map(|dt| dt.into()))
+                .collect::<Vec<Option<i64>>>(),
+        )
+        .cast(&DataType::Datetime(timeunit, time_zone))
+        .unwrap(),
+    )
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_duration(
+    name: &str,
+    val: Vec<Option<ExDuration>>,
+    precision: ExTimeUnit,
+) -> ExSeries {
+    let timeunit = TimeUnit::try_from(&precision).unwrap();
 
     ExSeries::new(
         Series::new(
@@ -749,7 +769,7 @@ pub fn s_fill_missing_with_date(series: ExSeries, date: ExDate) -> Result<ExSeri
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_fill_missing_with_datetime(
     series: ExSeries,
-    datetime: ExDateTime,
+    datetime: ExNaiveDateTime,
 ) -> Result<ExSeries, ExplorerError> {
     let s = series
         .datetime()?
@@ -988,7 +1008,7 @@ pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Time => Ok(s.min::<i64>()?.map(ExTime::from).encode(env)),
         DataType::Datetime(unit, _) => Ok(s
             .min::<i64>()?
-            .map(|v| encode_datetime(v, *unit, env).unwrap())
+            .map(|v| encode_naive_datetime(v, *unit, env).unwrap())
             .encode(env)),
         dt => panic!("min/1 not implemented for {dt:?}"),
     }
@@ -1010,7 +1030,7 @@ pub fn s_max(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
         DataType::Time => Ok(s.max::<i64>()?.map(ExTime::from).encode(env)),
         DataType::Datetime(unit, _) => Ok(s
             .max::<i64>()?
-            .map(|v| encode_datetime(v, *unit, env).unwrap())
+            .map(|v| encode_naive_datetime(v, *unit, env).unwrap())
             .encode(env)),
         dt => panic!("max/1 not implemented for {dt:?}"),
     }
@@ -1210,8 +1230,8 @@ pub fn s_quantile<'a>(
             Some(microseconds) => Ok(ExTime::from(microseconds as i64).encode(env)),
         },
         DataType::Datetime(unit, None) => match s.datetime()?.quantile(quantile, strategy)? {
-            None => Ok(None::<ExDateTime>.encode(env)),
-            Some(time) => Ok(encode_datetime(time as i64, *unit, env)
+            None => Ok(None::<ExNaiveDateTime>.encode(env)),
+            Some(time) => Ok(encode_naive_datetime(time as i64, *unit, env)
                 .unwrap()
                 .encode(env)),
         },
@@ -1679,7 +1699,7 @@ pub fn s_strptime(
 ) -> Result<ExSeries, ExplorerError> {
     let timeunit = match precision {
         None => TimeUnit::Microseconds,
-        Some(precision) => TimeUnit::try_from(&precision)?,
+        Some(precision) => TimeUnit::try_from(&precision).unwrap(),
     };
 
     let s1 = s

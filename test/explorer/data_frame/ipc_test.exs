@@ -101,11 +101,15 @@ defmodule Explorer.DataFrame.IPCTest do
       assert_ipc(:date, ~D[2022-12-01], ~D[2022-12-01])
     end
 
-    test "datetime" do
-      assert_ipc({:datetime, :microsecond}, 1_664_624_050_123_456, ~N[2022-10-01 11:34:10.123456])
+    test "naive datetime" do
+      assert_ipc(
+        {:naive_datetime, :microsecond},
+        1_664_624_050_123_456,
+        ~N[2022-10-01 11:34:10.123456]
+      )
 
       assert_ipc(
-        {:datetime, :microsecond},
+        {:naive_datetime, :microsecond},
         ~N[2022-10-01 11:34:10.123456],
         ~N[2022-10-01 11:34:10.123456]
       )

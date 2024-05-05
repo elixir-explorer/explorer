@@ -50,6 +50,7 @@ mod atoms {
     rustler::atoms! {
         calendar_iso_module = "Elixir.Calendar.ISO",
         date_module = "Elixir.Date",
+        datetime_module = "Elixir.DateTime",
         duration_module = "Elixir.Explorer.Duration",
         naive_datetime_module = "Elixir.NaiveDateTime",
         time_module = "Elixir.Time",
@@ -67,7 +68,11 @@ mod atoms {
         calendar,
         nan,
         infinity,
-        neg_infinity
+        neg_infinity,
+        std_offset,
+        time_zone,
+        utc_offset,
+        zone_abbr,
     }
 }
 
@@ -403,6 +408,7 @@ rustler::init!(
         s_from_list_bool,
         s_from_list_date,
         s_from_list_time,
+        s_from_list_naive_datetime,
         s_from_list_datetime,
         s_from_list_duration,
         s_from_list_f32,

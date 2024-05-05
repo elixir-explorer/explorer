@@ -2857,7 +2857,10 @@ defmodule Explorer.DataFrame do
       date = %Date{} ->
         LazySeries.new(:lazy, [date], :date)
 
-      datetime = %NaiveDateTime{} ->
+      naive_datetime = %NaiveDateTime{} ->
+        LazySeries.new(:lazy, [naive_datetime], {:naive_datetime, :nanosecond})
+
+      datetime = %DateTime{} ->
         LazySeries.new(:lazy, [datetime], {:datetime, :nanosecond})
 
       duration = %Explorer.Duration{precision: precision} ->
@@ -2949,10 +2952,10 @@ defmodule Explorer.DataFrame do
   in microseconds from the Unix epoch:
 
       iex> df = Explorer.DataFrame.new([])
-      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]), dtype: {:datetime, :microsecond})
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]), dtype: {:naive_datetime, :microsecond})
       #Explorer.DataFrame<
         Polars[3 x 1]
-        a datetime[μs] [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
+        a naive_datetime[μs] [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
       >
 
   If there is already a column where we want to place the tensor,
@@ -2964,7 +2967,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.put(df, :a, Nx.tensor(529550625987654))
       #Explorer.DataFrame<
         Polars[1 x 1]
-        a datetime[μs] [1986-10-13 01:23:45.987654]
+        a naive_datetime[μs] [1986-10-13 01:23:45.987654]
       >
 
   This is particularly useful for categorical columns:
@@ -5749,7 +5752,7 @@ defmodule Explorer.DataFrame do
     stat_cols = df.names
     percentiles = process_percentiles(opts[:percentiles])
     numeric_types = Shared.numeric_types()
-    datetime_types = Shared.datetime_types()
+    naive_datetime_types = Shared.naive_datetime_types()
     duration_types = Shared.duration_types()
 
     metrics_df =
@@ -5757,7 +5760,7 @@ defmodule Explorer.DataFrame do
         Enum.flat_map(stat_cols, fn c ->
           dt = x[c].dtype
           numeric? = dt in numeric_types
-          min_max? = numeric? or dt in datetime_types or dt in duration_types
+          min_max? = numeric? or dt in naive_datetime_types or dt in duration_types
 
           [
             {"count:#{c}", Series.count(x[c])},

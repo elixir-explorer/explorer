@@ -13,7 +13,14 @@ defmodule Explorer.Shared do
     {:u, 64}
   ]
 
+  @precisions [:millisecond, :microsecond, :nanosecond]
+
+  @precision_types for d <- [:naive_datetime, :duration],
+                       p <- @precisions,
+                       do: {d, p}
+
   @scalar_types @integer_types ++
+                  @precision_types ++
                   [
                     :null,
                     :binary,
@@ -23,13 +30,7 @@ defmodule Explorer.Shared do
                     {:f, 32},
                     {:f, 64},
                     :string,
-                    :time,
-                    {:datetime, :microsecond},
-                    {:datetime, :millisecond},
-                    {:datetime, :nanosecond},
-                    {:duration, :microsecond},
-                    {:duration, :millisecond},
-                    {:duration, :nanosecond}
+                    :time
                   ]
 
   @doc """
@@ -71,6 +72,9 @@ defmodule Explorer.Shared do
     end)
   end
 
+  def normalise_dtype({:datetime, p, tz} = dtype) when p in @precisions and is_binary(tz),
+    do: dtype
+
   def normalise_dtype(dtype) when dtype in @scalar_types, do: dtype
   def normalise_dtype(dtype) when dtype in [:float, :f64], do: {:f, 64}
   def normalise_dtype(dtype) when dtype in [:integer, :s64], do: {:s, 64}
@@ -98,16 +102,14 @@ defmodule Explorer.Shared do
   end
 
   @doc """
-  Supported datetime dtypes.
+  Supported naive datetime dtypes.
   """
-  def datetime_types,
-    do: [{:datetime, :nanosecond}, {:datetime, :microsecond}, {:datetime, :millisecond}]
+  def naive_datetime_types, do: for(p <- @precisions, do: {:naive_datetime, p})
 
   @doc """
   Supported duration dtypes.
   """
-  def duration_types,
-    do: [{:duration, :nanosecond}, {:duration, :microsecond}, {:duration, :millisecond}]
+  def duration_types, do: for(p <- @precisions, do: {:duration, p})
 
   @doc """
   Supported float dtypes.
@@ -311,8 +313,10 @@ defmodule Explorer.Shared do
 
   defp infer_type(%Date{} = _item), do: :date
   defp infer_type(%Time{} = _item), do: :time
-  defp infer_type(%NaiveDateTime{} = _item), do: {:datetime, :microsecond}
+  defp infer_type(%DateTime{time_zone: tz} = _item), do: {:datetime, :microsecond, tz}
+  defp infer_type(%NaiveDateTime{} = _item), do: {:naive_datetime, :microsecond}
   defp infer_type(%Explorer.Duration{precision: precision} = _item), do: {:duration, precision}
+  defp infer_type(%_{} = item), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
   defp infer_type(item) when is_integer(item), do: {:s, 64}
   defp infer_type(item) when is_float(item) or item in @non_finite, do: {:f, 64}
   defp infer_type(item) when is_boolean(item), do: :boolean
@@ -528,7 +532,8 @@ defmodule Explorer.Shared do
       :boolean -> {:u, 8}
       :date -> {:s, 32}
       :time -> {:s, 64}
-      {:datetime, _} -> {:s, 64}
+      {:naive_datetime, _} -> {:s, 64}
+      {:datetime, _, _} -> {:s, 64}
       {:duration, _} -> {:s, 64}
       _ -> :none
     end
@@ -559,18 +564,19 @@ defmodule Explorer.Shared do
   @doc """
   Converts dtype to its string representation.
   """
-  def dtype_to_string({:datetime, :millisecond}), do: "datetime[ms]"
-  def dtype_to_string({:datetime, :microsecond}), do: "datetime[μs]"
-  def dtype_to_string({:datetime, :nanosecond}), do: "datetime[ns]"
-  def dtype_to_string({:duration, :millisecond}), do: "duration[ms]"
-  def dtype_to_string({:duration, :microsecond}), do: "duration[μs]"
-  def dtype_to_string({:duration, :nanosecond}), do: "duration[ns]"
+  def dtype_to_string({:naive_datetime, p}), do: "naive_datetime[#{precision_string(p)}]"
+  def dtype_to_string({:datetime, p, tz}), do: "datetime[#{precision_string(p)}, #{tz}]"
+  def dtype_to_string({:duration, p}), do: "duration[#{precision_string(p)}]"
   def dtype_to_string({:list, dtype}), do: "list[" <> dtype_to_string(dtype) <> "]"
   def dtype_to_string({:struct, fields}), do: "struct[#{length(fields)}]"
   def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
   def dtype_to_string({:s, size}), do: "s" <> Integer.to_string(size)
   def dtype_to_string({:u, size}), do: "u" <> Integer.to_string(size)
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
+
+  defp precision_string(:millisecond), do: "ms"
+  defp precision_string(:microsecond), do: "μs"
+  defp precision_string(:nanosecond), do: "ns"
 
   @threshold 0.77
   @max_suggestions 5

@@ -187,8 +187,9 @@ defmodule Explorer.PolarsBackend.Shared do
       :category -> Native.s_from_list_categories(name, list)
       :date -> Native.s_from_list_date(name, list)
       :time -> Native.s_from_list_time(name, list)
-      {:datetime, precision} -> Native.s_from_list_datetime(name, list, Atom.to_string(precision))
-      {:duration, precision} -> Native.s_from_list_duration(name, list, Atom.to_string(precision))
+      {:naive_datetime, precision} -> Native.s_from_list_naive_datetime(name, list, precision)
+      {:datetime, precision, tz} -> Native.s_from_list_datetime(name, list, precision, tz)
+      {:duration, precision} -> Native.s_from_list_duration(name, list, precision)
       :binary -> Native.s_from_list_binary(name, list)
       :null -> Native.s_from_list_null(name, length(list))
     end
@@ -205,13 +206,13 @@ defmodule Explorer.PolarsBackend.Shared do
       :time ->
         Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
-      {:datetime, :millisecond} ->
+      {:naive_datetime, :millisecond} ->
         Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
-      {:datetime, :microsecond} ->
+      {:naive_datetime, :microsecond} ->
         Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
-      {:datetime, :nanosecond} ->
+      {:naive_datetime, :nanosecond} ->
         Native.s_from_binary_s64(name, binary) |> Native.s_cast(dtype) |> ok()
 
       {:duration, :millisecond} ->
