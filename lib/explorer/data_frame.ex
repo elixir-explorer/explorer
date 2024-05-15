@@ -5397,10 +5397,10 @@ defmodule Explorer.DataFrame do
   dataframes:
 
       iex> df = Explorer.Datasets.iris()
-      iex> Explorer.DataFrame.summarise(df, mean_petal_length: mean(petal_length))
+      iex> Explorer.DataFrame.summarise(df, mean_petal_length: round(mean(petal_length), 2))
       #Explorer.DataFrame<
         Polars[1 x 1]
-        mean_petal_length f64 [3.758666666666666]
+        mean_petal_length f64 [3.76]
       >
 
   """
