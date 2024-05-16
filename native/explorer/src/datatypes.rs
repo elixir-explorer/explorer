@@ -420,10 +420,10 @@ impl<'a> From<&'a DateTime<Tz>> for ExDateTime<'a> {
             month: dt_tz.month(),
             second: dt_tz.second(),
             std_offset: dt_tz.offset().dst_offset().num_seconds(),
-            time_zone: time_zone,
+            time_zone,
             utc_offset: dt_tz.offset().base_utc_offset().num_seconds(),
             year: dt_tz.year(),
-            zone_abbr: zone_abbr,
+            zone_abbr,
         }
     }
 }
