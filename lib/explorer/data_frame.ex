@@ -4226,6 +4226,76 @@ defmodule Explorer.DataFrame do
 
     sample(df, 1.0, seed: opts[:seed], shuffle: true)
   end
+
+  @doc ~S"""
+  Make a new column by applying a native Elixir function to each row.
+
+  See also the version of this function for a single series:
+
+    * `Explorer.Series.transform/2`
+
+  ## Options
+
+    * `:atom_keys` - Configure if the intermediate maps should have atom keys.
+      (default: `false`)
+
+    * `:columns` - Columns to select before serializing.
+      It's recommended that you provide this argument and to set it to only
+      those columns needed by your function. Otherwise, you'll be serializing
+      unnecessary information.
+
+  ## Examples
+
+  Pre-selecting with `:columns`:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> df = DF.new(
+      ...>   numbers: [1, 2],
+      ...>   datetime_local: [~N[2024-01-01 00:00:00], ~N[2024-01-01 00:00:00]],
+      ...>   timezone: ["Etc/UTC", "America/New_York"]
+      ...> )
+      iex> DF.transform(df, "datetime_utc", [columns: ["datetime_local", "timezone"]], fn row ->
+      ...>   row["datetime_local"]
+      ...>   |> DateTime.from_naive!(row["timezone"])
+      ...>   |> DateTime.shift_zone!("Etc/UTC")
+      ...> end)
+      #Explorer.DataFrame<
+        Polars[2 x 4]
+        numbers s64 [1, 2]
+        datetime_local naive_datetime[μs] [2024-01-01 00:00:00.000000, 2024-01-01 00:00:00.000000]
+        timezone string ["Etc/UTC", "America/New_York"]
+        datetime_utc datetime[μs, Etc/UTC] [2024-01-01 00:00:00.000000Z, 2024-01-01 05:00:00.000000Z]
+      >
+
+  Converting to atoms with `:atom_keys`:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> df = DF.new(
+      ...>   major: [1, 2, 3],
+      ...>   minor: [11, 12, 13],
+      ...>   patch: [0, 0, 0]
+      ...> )
+      iex> DF.transform(df, :meets_requirements, [atom_keys: true], fn row ->
+      ...>   version = Version.parse!("#{row.major}.#{row.minor}.#{row.patch}")
+      ...>   Version.match?(version, "> 2.0.0")
+      ...> end)
+      #Explorer.DataFrame<
+        Polars[3 x 4]
+        major s64 [1, 2, 3]
+        minor s64 [11, 12, 13]
+        patch s64 [0, 0, 0]
+        meets_requirements boolean [false, true, true]
+      >
+
+  > ## Warning {: .warning}
+  >
+  > This is an expensive operation since data is stored in a columnar format.
+  > You must avoid converting a dataframe to rows, as that will transform and
+  > copy the whole dataframe in memory. Prefer to use the operations in this
+  > module rather than native Elixir ones whenever possible, as this module is
+  > optimized for large series and does not need to pay the serialization cost.
+  """
+  @doc type: :single
   @spec transform(DataFrame.t(), column_name(), Keyword.t(), fun()) ::
           DataFrame.t()
   def transform(df, new_col_name, opts \\ [], fun)
