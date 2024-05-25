@@ -4226,6 +4226,33 @@ defmodule Explorer.DataFrame do
 
     sample(df, 1.0, seed: opts[:seed], shuffle: true)
   end
+  @spec transform(DataFrame.t(), column_name(), Keyword.t(), fun()) ::
+          DataFrame.t()
+  def transform(df, new_col_name, opts \\ [], fun)
+      when is_column_name(new_col_name) and is_function(fun, 1) do
+    opts = Keyword.validate!(opts, atom_keys: false, columns: nil)
+
+    atom_keys? =
+      case Keyword.get(opts, :atom_keys) do
+        bool when is_boolean(bool) -> bool
+        other -> raise ArgumentError, "`:atom_keys` should be a boolean, found #{inspect(other)}"
+      end
+
+    df_selected =
+      case Keyword.get(opts, :columns) do
+        nil -> df
+        [] -> raise ArgumentError, "`:columns` list may not be empty"
+        columns when is_list(columns) -> select(df, columns)
+        other -> raise ArgumentError, "`:columns` should be a list, found #{inspect(other)}"
+      end
+
+    new_col =
+      df_selected
+      |> to_rows(atom_keys: atom_keys?)
+      |> Enum.map(fun)
+
+    put(df, new_col_name, new_col)
+  end
 
   @doc """
   Transpose a DataFrame.
