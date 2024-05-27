@@ -3617,7 +3617,7 @@ defmodule Explorer.Series do
   defp cast_to_pow({:f, l}, {:f, r}), do: {:f, max(l, r)}
   defp cast_to_pow({:f, l}, {n, _}) when K.in(n, [:u, :s]), do: {:f, l}
   defp cast_to_pow({n, _}, {:f, r}) when K.in(n, [:u, :s]), do: {:f, r}
-  defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:f, 64}
+  defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:s, 64}
   defp cast_to_pow(_, _), do: nil
 
   @doc """

@@ -146,9 +146,14 @@ pub fn lf_sort_with(
     nulls_last: bool,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let exprs = ex_expr_to_exprs(expressions);
+    let sort_options = SortMultipleOptions::new()
+        .with_nulls_last(nulls_last)
+        .with_maintain_order(maintain_order)
+        .with_order_descendings(directions);
+
     let ldf = data
         .clone_inner()
-        .sort_by_exprs(exprs, directions, nulls_last, maintain_order);
+        .sort_by_exprs(exprs, sort_options);
 
     Ok(ExLazyFrame::new(ldf))
 }
@@ -160,12 +165,16 @@ pub fn lf_grouped_sort_with(
     groups: Vec<ExExpr>,
     directions: Vec<bool>,
 ) -> Result<ExLazyFrame, ExplorerError> {
+    let sort_options = SortMultipleOptions::new()
+        // .with_nulls_last(nulls_last)
+        // .with_maintain_order(maintain_order)
+        .with_order_descendings(directions);
     // For grouped lazy frames, we need to use the `#sort_by` method that is
     // less powerful, but can be used with `over`.
     // See: https://docs.pola.rs/user-guide/expressions/window/#operations-per-group
     let ldf = data
         .clone_inner()
-        .with_columns([col("*").sort_by(expressions, directions).over(groups)]);
+        .with_columns([col("*").sort_by(expressions, sort_options).over(groups)]);
 
     Ok(ExLazyFrame::new(ldf))
 }

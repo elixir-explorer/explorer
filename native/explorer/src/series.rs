@@ -393,7 +393,7 @@ pub fn s_sort(
         multithreaded,
         nulls_last,
     };
-    Ok(ExSeries::new(series.sort_with(opts)))
+    Ok(ExSeries::new(series.sort_with(opts)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

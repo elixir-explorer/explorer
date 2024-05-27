@@ -258,30 +258,38 @@ pub fn df_sort_by(
     nulls_last: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
+    let sort_options = SortMultipleOptions::new()
+        .with_maintain_order(maintain_order)
+        .with_multithreaded(multithreaded)
+        .with_nulls_last(nulls_last)
+        .with_order_descendings(reverse);
+
     let new_df = if groups.is_empty() {
         // Note: we cannot use either df.sort or df.sort_with_options.
         // df.sort does not allow a nulls_last option.
         // df.sort_with_options only allows a single column.
-        let by_columns = df.select_series(by_columns)?;
-        df.sort_impl(
-            by_columns,
-            reverse,
-            nulls_last,
-            maintain_order,
-            None,
-            multithreaded,
-        )?
+        // let by_columns = df.select_series(by_columns)?;
+        df.sort(by_columns, sort_options)?
+        // df.sort_impl(
+        //     by_columns,
+        //     reverse,
+        //     nulls_last,
+        //     maintain_order,
+        //     None,
+        //     multithreaded,
+        // )?
     } else {
         df.group_by_stable(groups)?.apply(|df| {
-            let by_columns = df.select_series(&by_columns)?;
-            df.sort_impl(
-                by_columns,
-                reverse.clone(),
-                nulls_last,
-                maintain_order,
-                None,
-                multithreaded,
-            )
+            df.sort(by_columns.clone(), sort_options.clone())
+            // let by_columns = df.select_series(&by_columns)?;
+            // df.sort_impl(
+            //     by_columns,
+            //     reverse.clone(),
+            //     nulls_last,
+            //     maintain_order,
+            //     None,
+            //     multithreaded,
+            // )
         })?
     };
 
@@ -300,14 +308,20 @@ pub fn df_sort_with(
     let df = data.clone_inner();
     let exprs = ex_expr_to_exprs(expressions);
 
+    let sort_options = SortMultipleOptions::new()
+        .with_maintain_order(maintain_order)
+        // .with_multithreaded(multithreaded)
+        .with_nulls_last(nulls_last)
+        .with_order_descendings(directions);
+
     let new_df = if groups.is_empty() {
         df.lazy()
-            .sort_by_exprs(exprs, directions, nulls_last, maintain_order)
+            .sort_by_exprs(exprs, sort_options)
             .collect()?
     } else {
         df.group_by_stable(groups)?.apply(|df| {
             df.lazy()
-                .sort_by_exprs(&exprs, &directions, nulls_last, maintain_order)
+                .sort_by_exprs(&exprs, sort_options.clone())
                 .collect()
         })?
     };

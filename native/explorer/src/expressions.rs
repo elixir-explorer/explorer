@@ -780,7 +780,7 @@ pub fn expr_sort(
         nulls_last,
     };
 
-    ExExpr::new(expr.sort_with(opts))
+    ExExpr::new(expr.sort(opts))
 }
 
 #[rustler::nif]
