@@ -701,6 +701,9 @@ defmodule Explorer.DataFrame do
     * `:columns` - A list of column names or indexes to keep. If present,
       only these columns are read into the dataframe. (default: `nil`)
 
+    * `:rechunk` - Make sure that all columns are contiguous in memory
+      by aggregating the chunks into a single array. (default: `false`)
+
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
@@ -718,7 +721,8 @@ defmodule Explorer.DataFrame do
       Keyword.validate!(opts,
         max_rows: nil,
         columns: nil,
-        config: nil
+        config: nil,
+        rechunk: false
       )
 
     backend = backend_from_options!(backend_opts)
@@ -727,7 +731,8 @@ defmodule Explorer.DataFrame do
       backend.from_parquet(
         entry,
         opts[:max_rows],
-        to_columns_for_io(opts[:columns])
+        to_columns_for_io(opts[:columns]),
+        opts[:rechunk]
       )
     end
   end
