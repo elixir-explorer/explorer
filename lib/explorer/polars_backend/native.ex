@@ -196,6 +196,8 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_datetime(_datetime), do: err()
   def expr_duration(_duration), do: err()
   def expr_describe_filter_plan(_df, _expr), do: err()
+  def expr_to_json(_expr), do: err()
+  def expr_from_json(_expr), do: err()
   def expr_float(_number), do: err()
   def expr_integer(_number), do: err()
   def expr_int_range(_start, _end, _step, _dtype), do: err()

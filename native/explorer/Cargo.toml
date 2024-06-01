@@ -19,6 +19,7 @@ rand = { version = "0.8", features = ["alloc"] }
 rand_pcg = "0.3"
 rustler = { version = "0.32", default-features = false, features = ["derive"] }
 thiserror = "1"
+serde_json = "1"
 smartstring = "1"
 either = "1"
 
@@ -76,6 +77,8 @@ features = [
   "rolling_window",
   "round_series",
   "rows",
+  "serde",
+  "serde-lazy",
   "simd",
   "streaming",
   "strings",

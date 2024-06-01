@@ -831,6 +831,17 @@ pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
 }
 
 #[rustler::nif]
+pub fn expr_to_json(expr: ExExpr) -> String {
+    serde_json::to_string(&expr.clone_inner()).unwrap()
+}
+
+#[rustler::nif]
+pub fn expr_from_json(expr_json: String) -> ExExpr {
+    let expr: Expr = serde_json::from_str(&expr_json).unwrap();
+    ExExpr::new(expr)
+}
+
+#[rustler::nif]
 pub fn expr_contains(expr: ExExpr, pattern: &str) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().contains_literal(pattern.lit()))

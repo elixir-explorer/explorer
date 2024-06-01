@@ -258,6 +258,8 @@ rustler::init!(
         expr_ewm_variance,
         // inspect expressions
         expr_describe_filter_plan,
+        expr_to_json,
+        expr_from_json,
         // string expressions
         expr_contains,
         expr_re_contains,

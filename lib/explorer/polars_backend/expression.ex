@@ -356,6 +356,18 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_describe_filter_plan(polars_df, expression)
   end
 
+  def to_json(%__MODULE__{} = expression) do
+    expression
+    |> Native.expr_to_json()
+    |> Jason.decode!()
+  end
+
+  def from_json(%{} = json_map) do
+    json_map
+    |> Jason.encode!()
+    |> Native.expr_from_json()
+  end
+
   defp dtype(%LazySeries{dtype: dtype}), do: dtype
 
   defp dtype(%PolarsSeries{} = polars_series) do
