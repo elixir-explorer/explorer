@@ -1934,7 +1934,11 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:atom_keys` - Configure if the resultant maps should have atom keys. (default: `false`)
+    * `:atom_keys` - Configure if the resultant maps should have atom keys.
+      (default: `false`)
+
+    * `:names` - Column names to select for serializing.
+      By default all columns will be returned.
 
   ## Examples
 
@@ -1949,9 +1953,9 @@ defmodule Explorer.DataFrame do
   @doc type: :conversion
   @spec to_rows(df :: DataFrame.t(), Keyword.t()) :: [map()]
   def to_rows(df, opts \\ []) do
-    opts = Keyword.validate!(opts, atom_keys: false)
+    opts = Keyword.validate!(opts, atom_keys: false, names: nil)
 
-    Shared.apply_impl(df, :to_rows, [opts[:atom_keys]])
+    Shared.apply_impl(df, :to_rows, [opts[:atom_keys], opts[:names]])
   end
 
   @doc """
@@ -1965,8 +1969,14 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:atom_keys` - Configure if the resultant maps should have atom keys. (default: `false`)
-    * `:chunk_size` - Number of rows passed to `to_rows/2` while streaming over the data. (default: `1000`)
+    * `:atom_keys` - Configure if the resultant maps should have atom keys.
+      (default: `false`)
+
+    * `:chunk_size` - Number of rows passed to `to_rows/2` while streaming over
+      the data. (default: `1000`)
+
+    * `:names` - Column names to select for serializing.
+      By default all columns will be returned.
 
   ## Examples
 
@@ -1981,9 +1991,9 @@ defmodule Explorer.DataFrame do
   @doc type: :conversion
   @spec to_rows_stream(df :: DataFrame.t(), Keyword.t()) :: Enumerable.t()
   def to_rows_stream(df, opts \\ []) do
-    opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000)
+    opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000, names: nil)
 
-    Shared.apply_impl(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size]])
+    Shared.apply_impl(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size], opts[:names]])
   end
 
   # Introspection
@@ -4228,25 +4238,37 @@ defmodule Explorer.DataFrame do
   end
 
   @doc ~S"""
-  Make a new column by applying a native Elixir function to each row.
+  Make new columns by applying a native Elixir function to each row.
+
+  The native Elixir function should take a map (an element from
+  `to_rows_stream/2`) as input and return a map where the keys are the desired
+  new columns and the values are the values for that row.
 
   See also the version of this function for a single series:
 
     * `Explorer.Series.transform/2`
 
+  > ### Warning {: .warning}
+  >
+  > This is an expensive operation since data is stored in a columnar format.
+  > You should avoid converting a dataframe to rows where possible as it
+  > will incur significant overhead. Prefer instead to use the operations in
+  > this module rather than native Elixir ones. This function should only be
+  > used as a fallback when no equivalent DataFrame operation is available.
+
   ## Options
 
-    * `:atom_keys` - Configure if the intermediate maps should have atom keys.
-      (default: `false`)
+  All options which are valid for `to_rows_stream` are valid here.
 
-    * `:columns` - Columns to select before serializing.
-      It's recommended that you provide this argument and to set it to only
-      those columns needed by your function. Otherwise, you'll be serializing
-      unnecessary information.
+  > ### The `:names` field is recommended {: .info}
+  >
+  > It's recommended that you provide the `:names` option and to set it to only
+  > those column names needed by your function. Otherwise, you'll be serializing
+  > unnecessary information.
 
   ## Examples
 
-  Pre-selecting with `:columns`:
+  Pre-selecting with `:names`:
 
       iex> alias Explorer.DataFrame, as: DF
       iex> df = DF.new(
@@ -4254,10 +4276,13 @@ defmodule Explorer.DataFrame do
       ...>   datetime_local: [~N[2024-01-01 00:00:00], ~N[2024-01-01 00:00:00]],
       ...>   timezone: ["Etc/UTC", "America/New_York"]
       ...> )
-      iex> DF.transform(df, "datetime_utc", [columns: ["datetime_local", "timezone"]], fn row ->
-      ...>   row["datetime_local"]
-      ...>   |> DateTime.from_naive!(row["timezone"])
-      ...>   |> DateTime.shift_zone!("Etc/UTC")
+      iex> DF.transform(df, [names: ["datetime_local", "timezone"]], fn row ->
+      ...>   datetime_utc =
+      ...>     row["datetime_local"]
+      ...>     |> DateTime.from_naive!(row["timezone"])
+      ...>     |> DateTime.shift_zone!("Etc/UTC")
+      ...>
+      ...>   %{datetime_utc: datetime_utc}
       ...> end)
       #Explorer.DataFrame<
         Polars[2 x 4]
@@ -4275,9 +4300,9 @@ defmodule Explorer.DataFrame do
       ...>   minor: [11, 12, 13],
       ...>   patch: [0, 0, 0]
       ...> )
-      iex> DF.transform(df, :meets_requirements, [atom_keys: true], fn row ->
+      iex> DF.transform(df, [atom_keys: true], fn row ->
       ...>   version = Version.parse!("#{row.major}.#{row.minor}.#{row.patch}")
-      ...>   Version.match?(version, "> 2.0.0")
+      ...>   %{meets_requirements: Version.match?(version, "> 2.0.0")}
       ...> end)
       #Explorer.DataFrame<
         Polars[3 x 4]
@@ -4286,42 +4311,17 @@ defmodule Explorer.DataFrame do
         patch s64 [0, 0, 0]
         meets_requirements boolean [false, true, true]
       >
-
-  > ## Warning {: .warning}
-  >
-  > This is an expensive operation since data is stored in a columnar format.
-  > You must avoid converting a dataframe to rows, as that will transform and
-  > copy the whole dataframe in memory. Prefer to use the operations in this
-  > module rather than native Elixir ones whenever possible, as this module is
-  > optimized for large series and does not need to pay the serialization cost.
   """
   @doc type: :single
-  @spec transform(DataFrame.t(), column_name(), Keyword.t(), fun()) ::
-          DataFrame.t()
-  def transform(df, new_col_name, opts \\ [], fun)
-      when is_column_name(new_col_name) and is_function(fun, 1) do
-    opts = Keyword.validate!(opts, atom_keys: false, columns: nil)
+  @spec transform(DataFrame.t(), Keyword.t(), fun()) :: DataFrame.t()
+  def transform(df, opts \\ [], row_transform) when is_function(row_transform, 1) do
+    df_new =
+      df
+      |> to_rows_stream(opts)
+      |> Enum.map(row_transform)
+      |> new()
 
-    atom_keys? =
-      case Keyword.get(opts, :atom_keys) do
-        bool when is_boolean(bool) -> bool
-        other -> raise ArgumentError, "`:atom_keys` should be a boolean, found #{inspect(other)}"
-      end
-
-    df_selected =
-      case Keyword.get(opts, :columns) do
-        nil -> df
-        [] -> raise ArgumentError, "`:columns` list may not be empty"
-        columns when is_list(columns) -> select(df, columns)
-        other -> raise ArgumentError, "`:columns` should be a list, found #{inspect(other)}"
-      end
-
-    new_col =
-      df_selected
-      |> to_rows(atom_keys: atom_keys?)
-      |> Enum.map(fun)
-
-    put(df, new_col_name, new_col)
+    concat_columns(df, df_new)
   end
 
   @doc """

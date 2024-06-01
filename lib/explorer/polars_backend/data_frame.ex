@@ -578,8 +578,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_rows(%DataFrame{data: polars_df, names: names} = df, atom_keys?) do
-    keys = if atom_keys?, do: Enum.map(names, &String.to_atom/1), else: df.names
+  def to_rows(%DataFrame{data: polars_df, names: all_names}, atom_keys?, names) do
+    names = if names, do: names, else: all_names
+    keys = if atom_keys?, do: Enum.map(names, &String.to_atom/1), else: names
 
     names
     |> Enum.map(fn name ->
@@ -591,10 +592,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_rows_stream(%DataFrame{} = df, atom_keys?, chunk_size) do
+  def to_rows_stream(%DataFrame{} = df, atom_keys?, chunk_size, names) do
     Range.new(0, n_rows(df) - 1, chunk_size)
     |> Stream.map(&slice(df, &1, chunk_size))
-    |> Stream.flat_map(&to_rows(&1, atom_keys?))
+    |> Stream.flat_map(&to_rows(&1, atom_keys?, names))
   end
 
   # Introspection

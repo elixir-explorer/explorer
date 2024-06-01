@@ -6457,7 +6457,7 @@ defmodule Explorer.Series do
 
   See also the version of this function for a dataframe:
 
-    * `Explorer.DataFrame.transform/4`
+    * `Explorer.DataFrame.transform/3`
 
   ## Examples
 
