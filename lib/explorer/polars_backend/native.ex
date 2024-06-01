@@ -108,7 +108,8 @@ defmodule Explorer.PolarsBackend.Native do
         _filename,
         _stop_after_n_rows,
         _columns,
-        _projection
+        _projection,
+        _rechunk
       ),
       do: err()
 

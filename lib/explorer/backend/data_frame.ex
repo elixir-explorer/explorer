@@ -89,7 +89,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback from_parquet(
               entry :: fs_entry(),
               max_rows :: option(integer()),
-              columns :: columns_for_io()
+              columns :: columns_for_io(),
+              rechunk :: boolean()
             ) :: io_result(df)
   @callback to_parquet(
               df,

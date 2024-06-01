@@ -184,7 +184,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_parquet(%S3.Entry{} = entry, max_rows, columns) do
+  def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
       {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -192,7 +192,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_parquet(%Local.Entry{} = entry, max_rows, columns) do
+  def from_parquet(%Local.Entry{} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet(entry.path, max_rows, columns) do
       {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
       {:error, error} -> {:error, RuntimeError.exception(error)}

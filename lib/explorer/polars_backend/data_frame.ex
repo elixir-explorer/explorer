@@ -280,7 +280,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(%S3.Entry{} = entry, max_rows, columns) do
+  def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
     # We first read using a lazy dataframe, then we collect.
     with {:ok, ldf} <- Native.lf_from_parquet_cloud(entry, max_rows, columns),
          {:ok, df} <- Native.lf_collect(ldf) do
@@ -289,13 +289,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(%HTTP.Entry{} = entry, max_rows, columns) do
+  def from_parquet(%HTTP.Entry{} = entry, max_rows, columns, rechunk) do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
       entry = Local.from_path(path)
 
-      result = from_parquet(entry, max_rows, columns)
+      result = from_parquet(entry, max_rows, columns, rechunk)
 
       File.rm(path)
       result
@@ -303,7 +303,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(%Local.Entry{} = entry, max_rows, columns) do
+  def from_parquet(%Local.Entry{} = entry, max_rows, columns, rechunk) do
     {columns, with_projection} = column_names_or_projection(columns)
 
     df =
@@ -311,7 +311,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         entry.path,
         max_rows,
         columns,
-        with_projection
+        with_projection,
+        rechunk
       )
 
     case df do
