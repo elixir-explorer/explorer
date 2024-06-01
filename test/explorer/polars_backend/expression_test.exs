@@ -89,4 +89,69 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
                """)
     end
   end
+
+  describe "json" do
+    test "can convert exprs to/from json" do
+      lazy = %LazySeries{op: :column, args: ["a"]}
+      expr1 = Expression.to_expr(lazy)
+      json = Expression.to_json(expr1)
+      expr2 = Expression.from_json(json)
+
+      assert json == %{"Column" => "a"}
+      assert %Expression{} = expr2
+    end
+
+    test "can perform an unsupported operation via json-derived exprs" do
+      # Built in Python from:
+      # `pl.col("list_col_unsorted").list.sort().meta.serialize()`
+      list_col_sorted_expr_json = %{
+        "Function" => %{
+          "input" => [%{"Column" => "list_col_unsorted"}],
+          "function" => %{
+            "ListExpr" => %{
+              "Sort" => %{
+                "descending" => false,
+                "nulls_last" => false,
+                "multithreaded" => true,
+                "maintain_order" => false
+              }
+            }
+          },
+          "options" => %{
+            "collect_groups" => "ElementWise",
+            "fmt_str" => "",
+            "input_wildcard_expansion" => false,
+            "returns_scalar" => false,
+            "cast_to_supertypes" => false,
+            "allow_rename" => false,
+            "pass_name_to_apply" => false,
+            "changes_length" => false,
+            "check_lengths" => true,
+            "allow_group_aware" => true
+          }
+        }
+      }
+
+      df =
+        Explorer.DataFrame.new(%{
+          list_col_unsorted: [[1, 5, 3], [1, 1, 2, 0]]
+        })
+
+      new_name = "list_col_sorted"
+
+      expr =
+        list_col_sorted_expr_json
+        |> Expression.from_json()
+        |> Expression.alias_expr(new_name)
+
+      ldf = Explorer.DataFrame.lazy(df)
+      {:ok, lpdf_new} = Explorer.PolarsBackend.Native.lf_mutate_with(ldf.data, [expr])
+      {:ok, pdf_new} = Explorer.PolarsBackend.Native.lf_collect(lpdf_new)
+      df_new = Explorer.PolarsBackend.Shared.create_dataframe(pdf_new)
+
+      series = Explorer.DataFrame.to_series(df_new)
+      assert Explorer.Series.to_list(series["list_col_unsorted"]) == [[1, 5, 3], [1, 1, 2, 0]]
+      assert Explorer.Series.to_list(series["list_col_sorted"]) == [[1, 3, 5], [0, 1, 1, 2]]
+    end
+  end
 end
