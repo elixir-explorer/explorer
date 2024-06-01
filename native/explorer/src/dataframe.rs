@@ -315,9 +315,7 @@ pub fn df_sort_with(
         .with_order_descendings(directions);
 
     let new_df = if groups.is_empty() {
-        df.lazy()
-            .sort_by_exprs(exprs, sort_options)
-            .collect()?
+        df.lazy().sort_by_exprs(exprs, sort_options).collect()?
     } else {
         df.group_by_stable(groups)?.apply(|df| {
             df.lazy()

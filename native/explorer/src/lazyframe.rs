@@ -24,7 +24,7 @@ pub fn lf_describe_plan(data: ExLazyFrame, optimized: bool) -> Result<String, Ex
     let lf = data.clone_inner();
     let plan = match optimized {
         true => lf.describe_optimized_plan()?,
-        false => lf.describe_plan(),
+        false => lf.describe_plan().expect("error"),
     };
     Ok(plan)
 }
@@ -151,9 +151,7 @@ pub fn lf_sort_with(
         .with_maintain_order(maintain_order)
         .with_order_descendings(directions);
 
-    let ldf = data
-        .clone_inner()
-        .sort_by_exprs(exprs, sort_options);
+    let ldf = data.clone_inner().sort_by_exprs(exprs, sort_options);
 
     Ok(ExLazyFrame::new(ldf))
 }
@@ -290,7 +288,7 @@ pub fn lf_join(
     let how = match how {
         "left" => JoinType::Left,
         "inner" => JoinType::Inner,
-        "outer" => JoinType::Outer { coalesce: false },
+        "outer" => JoinType::Outer,
         "cross" => JoinType::Cross,
         _ => {
             return Err(ExplorerError::Other(format!(
