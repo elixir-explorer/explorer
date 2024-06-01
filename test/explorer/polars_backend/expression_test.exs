@@ -135,8 +135,8 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
       mutate_with_json = fn df, name, json ->
         expr =
           json
-          |> Expression.from_json()
-          |> Expression.alias_expr(name)
+          |> Explorer.PolarsBackend.Expression.from_json()
+          |> Explorer.PolarsBackend.Expression.alias_expr(name)
 
         ldf = Explorer.DataFrame.lazy(df)
         {:ok, lpdf_new} = Explorer.PolarsBackend.Native.lf_mutate_with(ldf.data, [expr])
