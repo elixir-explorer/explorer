@@ -132,22 +132,20 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
         }
       }
 
-      df =
-        Explorer.DataFrame.new(%{
-          list_col_unsorted: [[1, 5, 3], [1, 1, 2, 0]]
-        })
+      mutate_with_json = fn df, name, json ->
+        expr =
+          json
+          |> Expression.from_json()
+          |> Expression.alias_expr(name)
 
-      new_name = "list_col_sorted"
+        ldf = Explorer.DataFrame.lazy(df)
+        {:ok, lpdf_new} = Explorer.PolarsBackend.Native.lf_mutate_with(ldf.data, [expr])
+        {:ok, pdf_new} = Explorer.PolarsBackend.Native.lf_collect(lpdf_new)
+        Explorer.PolarsBackend.Shared.create_dataframe(pdf_new)
+      end
 
-      expr =
-        list_col_sorted_expr_json
-        |> Expression.from_json()
-        |> Expression.alias_expr(new_name)
-
-      ldf = Explorer.DataFrame.lazy(df)
-      {:ok, lpdf_new} = Explorer.PolarsBackend.Native.lf_mutate_with(ldf.data, [expr])
-      {:ok, pdf_new} = Explorer.PolarsBackend.Native.lf_collect(lpdf_new)
-      df_new = Explorer.PolarsBackend.Shared.create_dataframe(pdf_new)
+      df = Explorer.DataFrame.new(%{list_col_unsorted: [[1, 5, 3], [1, 1, 2, 0]]})
+      df_new = mutate_with_json.(df, "list_col_sorted", list_col_sorted_expr_json)
 
       series = Explorer.DataFrame.to_series(df_new)
       assert Explorer.Series.to_list(series["list_col_unsorted"]) == [[1, 5, 3], [1, 1, 2, 0]]
