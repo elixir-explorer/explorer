@@ -5946,6 +5946,22 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :covariance, [out_df, opts[:ddof]])
   end
 
+  # SQL
+
+  @doc """
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.execute_sql(df, "max(a)")
+      #Explorer.DataFrame<
+        Polars[1 x 1]
+        a s64 [3]
+      >
+  """
+  def execute_sql(%__MODULE__{} = df, sql_string) when is_binary(sql_string) do
+    Shared.apply_impl(df, :execute_sql, [sql_string])
+  end
+
   # Helpers
 
   defp backend_from_options!(opts) do

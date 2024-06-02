@@ -878,6 +878,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> LazyFrame.collect()
   end
 
+  # SQL
+
+  @impl true
+  def execute_sql(%DataFrame{} = df, sql_string) do
+    df
+    |> lazy()
+    |> LazyFrame.execute_sql(sql_string)
+    |> LazyFrame.collect()
+  end
+
   # Inspect
 
   @impl true
