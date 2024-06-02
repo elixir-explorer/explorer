@@ -1934,11 +1934,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:atom_keys` - Configure if the resultant maps should have atom keys.
-      (default: `false`)
-
-    * `:names` - Column names to select for serializing.
-      By default all columns will be returned.
+    * `:atom_keys` - Configure if the resultant maps should have atom keys. (default: `false`)
 
   ## Examples
 
@@ -1953,9 +1949,9 @@ defmodule Explorer.DataFrame do
   @doc type: :conversion
   @spec to_rows(df :: DataFrame.t(), Keyword.t()) :: [map()]
   def to_rows(df, opts \\ []) do
-    opts = Keyword.validate!(opts, atom_keys: false, names: nil)
+    opts = Keyword.validate!(opts, atom_keys: false)
 
-    Shared.apply_impl(df, :to_rows, [opts[:atom_keys], opts[:names]])
+    Shared.apply_impl(df, :to_rows, [opts[:atom_keys]])
   end
 
   @doc """
@@ -1969,14 +1965,8 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:atom_keys` - Configure if the resultant maps should have atom keys.
-      (default: `false`)
-
-    * `:chunk_size` - Number of rows passed to `to_rows/2` while streaming over
-      the data. (default: `1000`)
-
-    * `:names` - Column names to select for serializing.
-      By default all columns will be returned.
+    * `:atom_keys` - Configure if the resultant maps should have atom keys. (default: `false`)
+    * `:chunk_size` - Number of rows passed to `to_rows/2` while streaming over the data. (default: `1000`)
 
   ## Examples
 
@@ -1991,9 +1981,9 @@ defmodule Explorer.DataFrame do
   @doc type: :conversion
   @spec to_rows_stream(df :: DataFrame.t(), Keyword.t()) :: Enumerable.t()
   def to_rows_stream(df, opts \\ []) do
-    opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000, names: nil)
+    opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000)
 
-    Shared.apply_impl(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size], opts[:names]])
+    Shared.apply_impl(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size]])
   end
 
   # Introspection
@@ -4258,7 +4248,10 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-  All options which are valid for `to_rows_stream` are valid here.
+    * `:names` - Column names to select for serializing.
+      By default all columns will be returned.
+
+  Also, all options which are valid for `to_rows_stream` are valid here.
 
   > ### The `:names` field is recommended {: .info}
   >
@@ -4315,9 +4308,12 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec transform(DataFrame.t(), Keyword.t(), fun()) :: DataFrame.t()
   def transform(df, opts \\ [], row_transform) when is_function(row_transform, 1) do
+    {names, to_rows_stream_opts} = Keyword.pop(opts, :names, df.names)
+
     df_new =
       df
-      |> to_rows_stream(opts)
+      |> select(names)
+      |> to_rows_stream(to_rows_stream_opts)
       |> Enum.map(row_transform)
       |> new()
 

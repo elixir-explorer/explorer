@@ -599,8 +599,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     slice: 2,
     to_ipc_stream: 3,
     to_ndjson: 2,
-    to_rows: 3,
-    to_rows_stream: 4,
+    to_rows: 2,
+    to_rows_stream: 3,
     transpose: 4
   ]
 
