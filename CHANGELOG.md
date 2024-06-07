@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.8.3] - 2024-06-07
+
+### Added
+
+- Add new data type for datetimes with timezones: `{:datetime, precision, time_zone}`
+  The old dtype it now `{:naive_datetime, precision}`.
+
+- Add option to rechunk the dataframes when using `Explorer.DataFrame.from_parquet/3`
+
+### Changed
+
+- Change the `{:datetime, precision}` dtype to `{:naive_datetime, precision}`.
+  The idea is to mirror Elixir's datetime, and introduce support for time zones.
+
+### Fixed
+
+- Fix regression in `Explorer.DataFrame.concat_rows/2`.
+  It's possible to concat dataframes that are not aligned again.
+
 ## [v0.8.2] - 2024-04-22
 
 ### Added
@@ -985,7 +1004,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.8.3...HEAD
+[v0.8.3]: https://github.com/elixir-explorer/explorer/compare/v0.8.2...v0.8.3
 [v0.8.2]: https://github.com/elixir-explorer/explorer/compare/v0.8.1...v0.8.2
 [v0.8.1]: https://github.com/elixir-explorer/explorer/compare/v0.8.0...v0.8.1
 [v0.8.0]: https://github.com/elixir-explorer/explorer/compare/v0.7.2...v0.8.0
