@@ -63,6 +63,10 @@ macro_rules! from_list_float {
                 .decode::<ListIterator>()?
                 .map(|item| match item.get_type() {
                     TermType::Float => item.decode::<Option<$type>>(),
+                    TermType::Integer => {
+                        let int_value = item.decode::<i64>().unwrap();
+                        Ok(Some(int_value as $type))
+                    }
                     TermType::Atom => Ok(if nan.eq(&item) {
                         Some($module::NAN)
                     } else if infinity.eq(&item) {

@@ -461,7 +461,6 @@ defmodule Explorer.Series do
     normalised_dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
 
     type = Shared.dtype_from_list!(list, normalised_dtype)
-    list = Shared.cast_series(list, type)
 
     series = backend.from_list(list, type)
 

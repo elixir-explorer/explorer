@@ -390,37 +390,6 @@ defmodule Explorer.Shared do
   def leaf_dtype(dtype), do: dtype
 
   @doc """
-  Downcasts lists of mixed numeric types (float and int) to float.
-  """
-  def cast_series(list, {:struct, dtypes}) when is_list(list) do
-    Enum.map(list, fn
-      nil ->
-        nil
-
-      item ->
-        Enum.map(item, fn {field, inner_value} ->
-          column = to_string(field)
-          {^column, inner_dtype} = List.keyfind!(dtypes, column, 0)
-          [casted_value] = cast_series([inner_value], inner_dtype)
-          {column, casted_value}
-        end)
-    end)
-  end
-
-  def cast_series(list, {:list, inner_dtype}) when is_list(list) do
-    Enum.map(list, fn item -> cast_series(item, inner_dtype) end)
-  end
-
-  def cast_series(list, {:f, _}) do
-    Enum.map(list, fn
-      item when item in [nil, :infinity, :neg_infinity, :nan] or is_float(item) -> item
-      item -> item / 1
-    end)
-  end
-
-  def cast_series(list, _), do: list
-
-  @doc """
   Merge two dtypes.
   """
   def merge_dtype(dtype, dtype), do: dtype

@@ -152,7 +152,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
         row, columns ->
           Enum.reduce(row, columns, fn {field, value}, columns ->
-            Map.update!(columns, field, &[value | &1])
+            Map.update!(columns, to_string(field), &[value | &1])
           end)
       end)
 
