@@ -2865,8 +2865,8 @@ defmodule Explorer.DataFrame do
       naive_datetime = %NaiveDateTime{} ->
         LazySeries.new(:lazy, [naive_datetime], {:naive_datetime, :nanosecond})
 
-      datetime = %DateTime{} ->
-        LazySeries.new(:lazy, [datetime], {:datetime, :nanosecond})
+      datetime = %DateTime{time_zone: time_zone} ->
+        LazySeries.new(:lazy, [datetime], {:datetime, :nanosecond, time_zone})
 
       duration = %Explorer.Duration{precision: precision} ->
         LazySeries.new(:lazy, [duration], {:duration, precision})
