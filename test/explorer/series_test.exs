@@ -5,6 +5,8 @@ defmodule Explorer.SeriesTest do
 
   alias Explorer.Series
 
+  import ExUnit.CaptureLog
+
   doctest Explorer.Series
 
   test "defines doc metadata" do
@@ -284,6 +286,29 @@ defmodule Explorer.SeriesTest do
 
       assert Series.from_list(dates, dtype: {:naive_datetime, :microsecond}) |> Series.to_list() ==
                dates
+    end
+
+    test "with naive datetimes aliased" do
+      naive_datetimes = [
+        ~N[2022-04-13 15:44:31.560227],
+        ~N[1022-01-04 21:18:31.224123],
+        ~N[1988-11-23 06:36:16.158432],
+        ~N[2353-03-07 00:39:35.702789]
+      ]
+
+      dtype_alias = {:datetime, :microsecond}
+      dtype_actual = {:naive_datetime, :microsecond}
+
+      {series, warning} =
+        with_log(fn -> Series.from_list(naive_datetimes, dtype: dtype_alias) end)
+
+      assert Series.to_list(series) == naive_datetimes
+      assert Series.dtype(series) == dtype_actual
+
+      assert warning =~ """
+             The `{:datetime, _}` dtype has been deprecated.
+             Please use `{:naive_datetime, _}` instead.
+             """
     end
 
     test "with 32-bit integers" do
