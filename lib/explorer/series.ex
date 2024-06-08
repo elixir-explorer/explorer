@@ -30,7 +30,7 @@ defmodule Explorer.Series do
   and compatibility with the Elixir ecosystem:
 
     * All numeric dtypes (signed integer, unsigned integer, and floats) can
-      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and o son
+      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and so on
     * The atom `:float` as an alias for `{:f, 64}` to mirror Elixir's floats
     * The atom `:integer` as an alias for `{:s, 64}` to mirror Elixir's integers
 
