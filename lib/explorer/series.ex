@@ -33,6 +33,8 @@ defmodule Explorer.Series do
       be specified as an atom in the form of `:s32`, `:u8`, `:f32` and so on
     * The atom `:float` as an alias for `{:f, 64}` to mirror Elixir's floats
     * The atom `:integer` as an alias for `{:s, 64}` to mirror Elixir's integers
+    * The tuple `{:datetime, _}` as an alias for `{:naive_datetime, _}`.
+      Note: `{:datetime, _}` has been deprecated and using it will raise a warning.
 
   A series must consist of a single data type only. Series may have `nil` values in them.
   The series `dtype` can be retrieved via the `dtype/1` function or directly accessed as
@@ -370,7 +372,7 @@ defmodule Explorer.Series do
   A list of `Date`, `Time`, `NaiveDateTime`, `DateTime`, and
   `Explorer.Duration` structs are also supported, and they will become series
   with the respective dtypes: `:date`, `:time`, `{:naive_datetime, :microsecond}`,
-  and `{:duration, precision}`.
+  `{:datetime, :microsecond, time_zone}` and `{:duration, precision}`.
   For example:
 
       iex> Explorer.Series.from_list([~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]])
