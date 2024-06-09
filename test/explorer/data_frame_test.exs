@@ -861,7 +861,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :string,
                "h" => :boolean,
                "i" => :date,
-               "j" => {:naive_datetime, :nanosecond}
+               "j" => {:naive_datetime, :microsecond}
              }
     end
 

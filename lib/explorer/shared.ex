@@ -2,6 +2,8 @@ defmodule Explorer.Shared do
   # A collection of **private** helpers shared in Explorer.
   @moduledoc false
 
+  require Logger
+
   @integer_types [
     {:s, 8},
     {:s, 16},
@@ -86,6 +88,16 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
+
+  def normalise_dtype({:datetime, precision}) do
+    :ok =
+      Logger.warning("""
+      The `{:datetime, _}` dtype has been deprecated.
+      Please use `{:naive_datetime, _}` instead.
+      """)
+
+    {:naive_datetime, precision}
+  end
 
   def normalise_dtype(_dtype), do: nil
 
