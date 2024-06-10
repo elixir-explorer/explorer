@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v0.8.3] - 2024-06-07
+## [v0.8.3] - 2024-06-10
 
 ### Added
 
@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The idea is to mirror Elixir's datetime, and introduce support for time zones.
   Please note: `{:datetime, precision}` will work as an alias for `{:naive_datetime, precision}` for now but will raise a warning.
   The alias will be removed in a future release.
+
 - Literal `%NaiveDateTime{}` structs used in expressions will now have `:microsecond` precision.
   Previously they defaulted to `:nanosecond` precision.
   This was incorrect because `%NaiveDateTime{}` structs only have `:microsecond` precision.
