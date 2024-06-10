@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix regression in `Explorer.DataFrame.concat_rows/2`.
   It's possible to concat dataframes that are not aligned again.
 
+- Fix "is_finite" and "is_infinite" from `Series` to work in the context of a `Explorer.Query`.
+
 ## [v0.8.2] - 2024-04-22
 
 ### Added
