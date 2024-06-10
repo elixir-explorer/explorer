@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add new data type for datetimes with timezones: `{:datetime, precision, time_zone}`
-  The old dtype it now `{:naive_datetime, precision}`.
+  The old dtype is now `{:naive_datetime, precision}`.
 
 - Add option to rechunk the dataframes when using `Explorer.DataFrame.from_parquet/3`
 
@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Change the `{:datetime, precision}` dtype to `{:naive_datetime, precision}`.
   The idea is to mirror Elixir's datetime, and introduce support for time zones.
+  Please note: `{:datetime, precision}` will work as an alias for `{:naive_datetime, precision}` for now but will raise a warning.
+  The alias will be removed in a future release.
+- Literal `%NaiveDateTime{}` structs used in expressions will now have `:microsecond` precision.
+  Previously they defaulted to `:nanosecond` precision.
+  This was incorrect because `%NaiveDateTime{}` structs only have `:microsecond` precision.
 
 ### Fixed
 
