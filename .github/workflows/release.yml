@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Extract crate information
         shell: bash
@@ -73,7 +73,7 @@ jobs:
 
       - name: Build the project
         id: build-crate
-        uses: philss/rustler-precompiled-action@v1.1.3
+        uses: philss/rustler-precompiled-action@v1.1.4
         with:
           project-name: explorer
           project-version: ${{ env.PROJECT_VERSION }}
@@ -86,13 +86,13 @@ jobs:
           variant: ${{ matrix.job.variant }}
 
       - name: Artifact upload
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.build-crate.outputs.file-name }}
           path: ${{ steps.build-crate.outputs.file-path }}
 
       - name: Publish archives and packages
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             ${{ steps.build-crate.outputs.file-path }}
