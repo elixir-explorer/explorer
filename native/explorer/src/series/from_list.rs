@@ -1,8 +1,10 @@
+use crate::atoms;
 use crate::datatypes::{ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExTime, ExTimeUnit};
 use crate::{ExSeries, ExplorerError};
 
 use polars::prelude::*;
-use rustler::{ListIterator, Term, TermType};
+use rustler::{Binary, Error, ListIterator, NifResult, Term, TermType};
+use std::slice;
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_date(name: &str, val: Term) -> Result<ExSeries, ExplorerError> {
@@ -207,3 +209,151 @@ pub fn s_from_list_time(name: &str, val: Term) -> Result<ExSeries, ExplorerError
             ))
         })
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_null(name: &str, length: usize) -> ExSeries {
+    let s = Series::new_null(name, length);
+    ExSeries::new(Series::new(name, s))
+}
+
+macro_rules! from_list {
+    ($name:ident, $type:ty) => {
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $name(name: &str, val: Vec<Option<$type>>) -> ExSeries {
+            ExSeries::new(Series::new(name, val.as_slice()))
+        }
+    };
+}
+
+from_list!(s_from_list_s8, i8);
+from_list!(s_from_list_s16, i16);
+from_list!(s_from_list_s32, i32);
+from_list!(s_from_list_s64, i64);
+
+from_list!(s_from_list_u8, u8);
+from_list!(s_from_list_u16, u16);
+from_list!(s_from_list_u32, u32);
+from_list!(s_from_list_u64, u64);
+
+from_list!(s_from_list_bool, bool);
+from_list!(s_from_list_str, String);
+
+macro_rules! from_list_float {
+    ($name:ident, $type:ty, $module:ident) => {
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $name(name: &str, val: Term) -> NifResult<ExSeries> {
+            let nan = atoms::nan();
+            let infinity = atoms::infinity();
+            let neg_infinity = atoms::neg_infinity();
+
+            let values: NifResult<Vec<Option<$type>>> = val
+                .decode::<ListIterator>()?
+                .map(|item| match item.get_type() {
+                    TermType::Float => item.decode::<Option<$type>>(),
+                    TermType::Integer => {
+                        let int_value = item.decode::<i64>().unwrap();
+                        Ok(Some(int_value as $type))
+                    }
+                    TermType::Atom => Ok(if nan.eq(&item) {
+                        Some($module::NAN)
+                    } else if infinity.eq(&item) {
+                        Some($module::INFINITY)
+                    } else if neg_infinity.eq(&item) {
+                        Some($module::NEG_INFINITY)
+                    } else {
+                        None
+                    }),
+                    term_type => {
+                        let message = format!("from_list/2 not implemented for {term_type:?}");
+                        Err(Error::RaiseTerm(Box::new(message)))
+                    }
+                })
+                .collect::<NifResult<Vec<Option<$type>>>>();
+
+            match (values) {
+                Ok(x) => {
+                    let s = Series::new(name, x);
+                    Ok(ExSeries::new(s))
+                }
+                Err(x) => Err(x),
+            }
+        }
+    };
+}
+
+from_list_float!(s_from_list_f32, f32, f32);
+from_list_float!(s_from_list_f64, f64, f64);
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_binary(name: &str, val: Vec<Option<Binary>>) -> ExSeries {
+    ExSeries::new(Series::new(
+        name,
+        val.iter()
+            .map(|bin| bin.map(|bin| bin.as_slice()))
+            .collect::<Vec<Option<&[u8]>>>(),
+    ))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_categories(name: &str, val: Vec<Option<String>>) -> ExSeries {
+    ExSeries::new(
+        Series::new(name, val.as_slice())
+            .cast(&DataType::Categorical(None, CategoricalOrdering::default()))
+            .unwrap(),
+    )
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_of_series(name: &str, series_vec: Vec<Option<ExSeries>>) -> ExSeries {
+    let lists: Vec<Option<Series>> = series_vec
+        .iter()
+        .map(|maybe_series| {
+            maybe_series
+                .as_ref()
+                .map(|ex_series| ex_series.clone_inner())
+        })
+        .collect();
+
+    ExSeries::new(Series::new(name, lists))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_of_series_as_structs(name: &str, series_vec: Vec<ExSeries>) -> ExSeries {
+    let struct_chunked = StructChunked::new(
+        name,
+        series_vec
+            .into_iter()
+            .map(|s| s.clone_inner())
+            .collect::<Vec<_>>()
+            .as_slice(),
+    )
+    .unwrap();
+
+    ExSeries::new(struct_chunked.into_series())
+}
+
+macro_rules! from_binary {
+    ($name:ident, $type:ty, $bytes:expr) => {
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $name(name: &str, val: Binary) -> ExSeries {
+            let slice = val.as_slice();
+            let transmuted = unsafe {
+                slice::from_raw_parts(slice.as_ptr() as *const $type, slice.len() / $bytes)
+            };
+            ExSeries::new(Series::new(name, transmuted))
+        }
+    };
+}
+
+from_binary!(s_from_binary_f32, f32, 4);
+from_binary!(s_from_binary_f64, f64, 8);
+
+from_binary!(s_from_binary_s8, i8, 1);
+from_binary!(s_from_binary_s16, i16, 2);
+from_binary!(s_from_binary_s32, i32, 4);
+from_binary!(s_from_binary_s64, i64, 8);
+
+from_binary!(s_from_binary_u8, u8, 1);
+from_binary!(s_from_binary_u16, u16, 2);
+from_binary!(s_from_binary_u32, u32, 4);
+from_binary!(s_from_binary_u64, u64, 8);
