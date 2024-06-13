@@ -296,7 +296,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
-    * `:dtype` - Cast the series to a given `:dtype`. By default this is `nil`, which means
+    * `:dtype` - Create a series of a given `:dtype`. By default this is `nil`, which means
       that Explorer will infer the type from the values in the list.
       See the module docs for the list of valid dtypes and aliases.
 
@@ -387,12 +387,6 @@ defmodule Explorer.Series do
         s64 [nil, nil]
       >
 
-      iex> Explorer.Series.from_list([1, nil], dtype: :string)
-      #Explorer.Series<
-        Polars[2]
-        string ["1", nil]
-      >
-
       iex> Explorer.Series.from_list([1, 2], dtype: :f32)
       #Explorer.Series<
         Polars[2]
@@ -431,6 +425,14 @@ defmodule Explorer.Series do
         category ["EUA", "Brazil", "Poland"]
       >
 
+  It is possible to create a series of `:date` from a list of days since Unix Epoch.
+
+      iex> Explorer.Series.from_list([1, nil], dtype: :date)
+      #Explorer.Series<
+        Polars[2]
+        date [1970-01-02, nil]
+      >
+
   It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
 
       iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: {:naive_datetime, :microsecond})
@@ -451,6 +453,15 @@ defmodule Explorer.Series do
 
       iex> Explorer.Series.from_list([1, "a"])
       ** (ArgumentError) the value "a" does not match the inferred dtype {:s, 64}
+
+  But mixing integers and some of the types for `:date`, `:datetime`, `:time`, or `:duration`
+  will work if the desired dtype is given:
+
+      iex> Explorer.Series.from_list([1, nil, ~D[2024-06-13]], dtype: :date)
+      #Explorer.Series<
+        Polars[3]
+        date [1970-01-02, nil, 2024-06-13]
+      >
   """
   @doc type: :conversion
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
@@ -462,13 +473,7 @@ defmodule Explorer.Series do
 
     type = Shared.dtype_from_list!(list, normalised_dtype)
 
-    series = backend.from_list(list, type)
-
-    case normalised_dtype do
-      nil -> series
-      ^type -> series
-      other -> cast(series, other)
-    end
+    backend.from_list(list, type)
   end
 
   defp from_same_value(%{data: %backend{}}, value) do
