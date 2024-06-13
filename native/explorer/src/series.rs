@@ -1,8 +1,8 @@
 use crate::{
     atoms,
     datatypes::{
-        ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExRankMethod,
-        ExSeriesDtype, ExTime, ExTimeUnit, ExValidValue,
+        ExCorrelationMethod, ExDate, ExNaiveDateTime, ExRankMethod, ExSeriesDtype, ExTime,
+        ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -16,6 +16,7 @@ use polars_ops::prelude::peaks::*;
 use rustler::{Binary, Encoder, Env, Error, ListIterator, NifResult, Term, TermType};
 use std::slice;
 
+pub mod from_list;
 pub mod log;
 
 #[rustler::nif]
@@ -96,96 +97,6 @@ macro_rules! from_list_float {
 
 from_list_float!(s_from_list_f32, f32, f32);
 from_list_float!(s_from_list_f64, f64, f64);
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_date(name: &str, val: Vec<Option<ExDate>>) -> ExSeries {
-    ExSeries::new(
-        Series::new(
-            name,
-            val.iter()
-                .map(|d| d.map(|d| d.into()))
-                .collect::<Vec<Option<i32>>>(),
-        )
-        .cast(&DataType::Date)
-        .unwrap(),
-    )
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_naive_datetime(
-    name: &str,
-    val: Vec<Option<ExNaiveDateTime>>,
-    precision: ExTimeUnit,
-) -> ExSeries {
-    let timeunit = TimeUnit::try_from(&precision).unwrap();
-
-    ExSeries::new(
-        Series::new(
-            name,
-            val.iter()
-                .map(|dt| dt.map(|dt| dt.into()))
-                .collect::<Vec<Option<i64>>>(),
-        )
-        .cast(&DataType::Datetime(timeunit, None))
-        .unwrap(),
-    )
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_datetime(
-    name: &str,
-    val: Vec<Option<ExDateTime>>,
-    precision: ExTimeUnit,
-    time_zone_str: Option<&str>,
-) -> ExSeries {
-    let timeunit = TimeUnit::try_from(&precision).unwrap();
-    let time_zone = time_zone_str.map(|s| s.to_string());
-
-    ExSeries::new(
-        Series::new(
-            name,
-            val.iter()
-                .map(|dt| dt.map(|dt| dt.into()))
-                .collect::<Vec<Option<i64>>>(),
-        )
-        .cast(&DataType::Datetime(timeunit, time_zone))
-        .unwrap(),
-    )
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_duration(
-    name: &str,
-    val: Vec<Option<ExDuration>>,
-    precision: ExTimeUnit,
-) -> ExSeries {
-    let timeunit = TimeUnit::try_from(&precision).unwrap();
-
-    ExSeries::new(
-        Series::new(
-            name,
-            val.iter()
-                .map(|d| d.map(|d| d.into()))
-                .collect::<Vec<Option<i64>>>(),
-        )
-        .cast(&DataType::Duration(timeunit))
-        .unwrap(),
-    )
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_time(name: &str, val: Vec<Option<ExTime>>) -> ExSeries {
-    ExSeries::new(
-        Series::new(
-            name,
-            val.iter()
-                .map(|dt| dt.map(|dt| dt.into()))
-                .collect::<Vec<Option<i64>>>(),
-        )
-        .cast(&DataType::Time)
-        .unwrap(),
-    )
-}
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_binary(name: &str, val: Vec<Option<Binary>>) -> ExSeries {
