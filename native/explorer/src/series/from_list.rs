@@ -21,14 +21,14 @@ pub fn s_from_list_date(name: &str, val: Term) -> Result<ExSeries, ExplorerError
                 .decode::<ExDate>()
                 .map(|ex_date| Some(i32::from(ex_date)))
                 .map_err(|error| {
-                    let message = format!("cannot decode a valid date from term. error: {error:?}");
-                    ExplorerError::Other(message)
+                    ExplorerError::Other(format!(
+                        "cannot decode a valid date from term. error: {error:?}"
+                    ))
                 }),
             TermType::Atom => Ok(None),
-            term_type => {
-                let message = format!("from_list/2 for dates not implemented for {term_type:?}");
-                Err(ExplorerError::Other(message))
-            }
+            term_type => Err(ExplorerError::Other(format!(
+                "from_list/2 for dates not implemented for {term_type:?}"
+            ))),
         })
         .collect::<Result<Vec<Option<i32>>, ExplorerError>>()?;
 
@@ -62,16 +62,14 @@ pub fn s_from_list_naive_datetime(
                 .decode::<ExNaiveDateTime>()
                 .map(|ex_naive_datetime| Some(i64::from(ex_naive_datetime)))
                 .map_err(|error| {
-                    let message =
-                        format!("cannot decode a valid naive datetime from term. error: {error:?}");
-                    ExplorerError::Other(message)
+                    ExplorerError::Other(format!(
+                        "cannot decode a valid naive datetime from term. error: {error:?}"
+                    ))
                 }),
             TermType::Atom => Ok(None),
-            term_type => {
-                let message =
-                    format!("from_list/2 for naive datetimess not implemented for {term_type:?}");
-                Err(ExplorerError::Other(message))
-            }
+            term_type => Err(ExplorerError::Other(format!(
+                "from_list/2 for naive datetimes not implemented for {term_type:?}"
+            ))),
         })
         .collect::<Result<Vec<Option<i64>>, ExplorerError>>()?;
 
@@ -105,18 +103,16 @@ pub fn s_from_list_datetime(
             }),
             TermType::Map => item
                 .decode::<ExDateTime>()
-                .map(|ex_naive_datetime| Some(i64::from(ex_naive_datetime)))
+                .map(|ex_datetime| Some(i64::from(ex_datetime)))
                 .map_err(|error| {
-                    let message =
-                        format!("cannot decode a valid datetime from term. error: {error:?}");
-                    ExplorerError::Other(message)
+                    ExplorerError::Other(format!(
+                        "cannot decode a valid datetime from term. error: {error:?}"
+                    ))
                 }),
             TermType::Atom => Ok(None),
-            term_type => {
-                let message =
-                    format!("from_list/2 for datetimes not implemented for {term_type:?}");
-                Err(ExplorerError::Other(message))
-            }
+            term_type => Err(ExplorerError::Other(format!(
+                "from_list/2 for datetimes not implemented for {term_type:?}"
+            ))),
         })
         .collect::<Result<Vec<Option<i64>>, ExplorerError>>()?;
 
@@ -150,16 +146,14 @@ pub fn s_from_list_duration(
                 .decode::<ExDuration>()
                 .map(|ex_duration| Some(i64::from(ex_duration)))
                 .map_err(|error| {
-                    let message =
-                        format!("cannot decode a valid duration from term. error: {error:?}");
-                    ExplorerError::Other(message)
+                    ExplorerError::Other(format!(
+                        "cannot decode a valid duration from term. error: {error:?}"
+                    ))
                 }),
             TermType::Atom => Ok(None),
-            term_type => {
-                let message =
-                    format!("from_list/2 for datetimes not implemented for {term_type:?}");
-                Err(ExplorerError::Other(message))
-            }
+            term_type => Err(ExplorerError::Other(format!(
+                "from_list/2 for durations not implemented for {term_type:?}"
+            ))),
         })
         .collect::<Result<Vec<Option<i64>>, ExplorerError>>()?;
 
@@ -186,17 +180,16 @@ pub fn s_from_list_time(name: &str, val: Term) -> Result<ExSeries, ExplorerError
             }),
             TermType::Map => item
                 .decode::<ExTime>()
-                .map(|ex_duration| Some(i64::from(ex_duration)))
+                .map(|ex_time| Some(i64::from(ex_time)))
                 .map_err(|error| {
-                    let message =
-                        format!("cannot decode a valid duration from term. error: {error:?}");
-                    ExplorerError::Other(message)
+                    ExplorerError::Other(format!(
+                        "cannot decode a valid time from term. error: {error:?}"
+                    ))
                 }),
             TermType::Atom => Ok(None),
-            term_type => {
-                let message = format!("from_list/2 for time not implemented for {term_type:?}");
-                Err(ExplorerError::Other(message))
-            }
+            term_type => Err(ExplorerError::Other(format!(
+                "from_list/2 for time not implemented for {term_type:?}"
+            ))),
         })
         .collect::<Result<Vec<Option<i64>>, ExplorerError>>()?;
 
