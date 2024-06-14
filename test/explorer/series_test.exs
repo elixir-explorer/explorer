@@ -380,6 +380,22 @@ defmodule Explorer.SeriesTest do
         assert Series.dtype(s) == {:u, 8}
       end
     end
+
+    test "mixing dates and integers with `:date` dtype" do
+      s = Series.from_list([1, nil, ~D[2024-06-13]], dtype: :date)
+
+      assert s[0] == ~D[1970-01-02]
+      assert Series.to_list(s) === [~D[1970-01-02], nil, ~D[2024-06-13]]
+      assert Series.dtype(s) == :date
+    end
+
+    test "mixing dates and integers without a dtype" do
+      assert_raise ArgumentError,
+                   "the value ~D[2024-06-13] does not match the inferred dtype {:s, 64}",
+                   fn ->
+                     Series.from_list([1, nil, ~D[2024-06-13]])
+                   end
+    end
   end
 
   describe "fetch/2" do

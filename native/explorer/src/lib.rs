@@ -35,6 +35,7 @@ pub use error::ExplorerError;
 use expressions::*;
 use lazyframe::io::*;
 use lazyframe::*;
+use series::from_list::*;
 use series::log::*;
 use series::*;
 

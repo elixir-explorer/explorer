@@ -295,15 +295,8 @@ defmodule Explorer.Shared do
 
   If no preferred type is given (nil), then the inferred type is returned.
   """
-  def dtype_from_list!(_list, :null), do: :null
-
   def dtype_from_list!(list, nil), do: dtype_from_list!(list)
-
-  def dtype_from_list!(list, preferred_type) do
-    list
-    |> dtype_from_list!()
-    |> merge_preferred(preferred_type)
-  end
+  def dtype_from_list!(_list, preferred_type), do: preferred_type
 
   @non_finite [:nan, :infinity, :neg_infinity]
 
@@ -361,38 +354,6 @@ defmodule Explorer.Shared do
       end
 
     {:struct, Enum.sort(types)}
-  end
-
-  defp merge_preferred(type, type), do: type
-  defp merge_preferred(:null, type), do: type
-  defp merge_preferred({:s, 64}, {:u, _} = type), do: type
-  defp merge_preferred({:s, 64}, {:s, _} = type), do: type
-  defp merge_preferred({:s, 64}, {:f, _} = type), do: type
-  defp merge_preferred({:f, 64}, {:f, _} = type), do: type
-  defp merge_preferred(:string, type) when type in [:binary, :string, :category], do: type
-
-  defp merge_preferred({:list, inferred}, {:list, preferred}) do
-    {:list, merge_preferred(inferred, preferred)}
-  end
-
-  defp merge_preferred({:struct, inferred}, {:struct, preferred}) do
-    {remaining, all_merged} =
-      Enum.reduce(preferred, {inferred, []}, fn {col, dtype}, {inferred_rest, merged} ->
-        case List.keytake(inferred_rest, col, 0) do
-          {{^col, inferred_dtype}, rest} ->
-            solved = merge_preferred(inferred_dtype, dtype)
-            {rest, List.keystore(merged, col, 0, {col, solved})}
-
-          nil ->
-            {inferred, List.keystore(merged, col, 0, {col, dtype})}
-        end
-      end)
-
-    {:struct, all_merged ++ remaining}
-  end
-
-  defp merge_preferred(inferred, _preferred) do
-    inferred
   end
 
   @doc """

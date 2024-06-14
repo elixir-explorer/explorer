@@ -249,17 +249,17 @@ defmodule Explorer.DataFrameTest do
       assert DF.dtypes(df) == %{"integers" => {:s, 64}}
     end
 
-    test "with series of integers and dtype string" do
+    test "with series of integers and dtype date" do
       df =
-        DF.new(%{strings: [1, 2, 3]},
-          dtypes: [{:strings, :string}]
+        DF.new(%{dates: [0, 1, 2, 3]},
+          dtypes: [{:dates, :date}]
         )
 
       assert DF.to_columns(df, atom_keys: true) == %{
-               strings: ["1", "2", "3"]
+               dates: [~D[1970-01-01], ~D[1970-01-02], ~D[1970-01-03], ~D[1970-01-04]]
              }
 
-      assert DF.dtypes(df) == %{"strings" => :string}
+      assert DF.dtypes(df) == %{"dates" => :date}
     end
   end
 
