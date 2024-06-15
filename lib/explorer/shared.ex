@@ -88,6 +88,7 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
+  def normalise_dtype(:unknown), do: :unknown
 
   def normalise_dtype({:datetime, precision}) do
     :ok =

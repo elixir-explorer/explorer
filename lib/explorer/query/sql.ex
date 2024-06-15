@@ -10,8 +10,7 @@ defmodule Explorer.Query.Sql do
   @doc false
   def to_lazy_series(%__MODULE__{string: sql_string}) do
     aggregation? = true
-    # dtype_out = :unknown
-    dtype_out = {:s, 64}
+    dtype_out = :unknown
 
     Explorer.Backend.LazySeries.new(
       :sql,

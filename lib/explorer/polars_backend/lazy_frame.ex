@@ -29,7 +29,21 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def lazy(ldf), do: ldf
 
   @impl true
-  def collect(ldf), do: Shared.apply_dataframe(ldf, ldf, :lf_collect, [])
+  def collect(ldf) do
+    df = Shared.apply_dataframe(ldf, ldf, :lf_collect, [])
+
+    df =
+      if :unknown in Map.values(df.dtypes) do
+        # If an `:unknown` dtype is present, we were not able to determine the
+        # full set of dtypes from the expressions themselves and so we need to
+        # fetch them from Polars.
+        Shared.create_dataframe(df.data)
+      else
+        df
+      end
+
+    df
+  end
 
   @impl true
   def from_tabular(tabular, dtypes),

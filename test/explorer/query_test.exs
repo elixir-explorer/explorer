@@ -306,12 +306,15 @@ defmodule Explorer.QueryTest do
 
   describe "sql" do
     test "basic example" do
-      assert DF.new(a: [1, 2, 3])
-             |> DF.mutate(b: sql("max(a)"))
-             |> DF.to_columns(atom_keys: true) == %{
-               a: [1, 2, 3],
-               b: [3, 3, 3]
+      df1 = DF.new(a: [1, 2, 3])
+      df2 = DF.mutate(df1, b: sql("max(a)"))
+
+      assert DF.to_columns(df2) == %{
+               "a" => [1, 2, 3],
+               "b" => [3, 3, 3]
              }
+
+      assert df2.dtypes == %{"a" => {:s, 64}, "b" => {:s, 64}}
     end
   end
 
