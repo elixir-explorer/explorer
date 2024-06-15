@@ -713,6 +713,10 @@ defmodule Explorer.Query do
     quote do: Explorer.DataFrame.pull(unquote(df_var()), unquote(name))
   end
 
+  def sql(sql_string) do
+    Explorer.Query.Sql.new(sql_string)
+  end
+
   @doc """
   Accesses all columns in the dataframe.
 

@@ -642,6 +642,14 @@ pub fn expr_select(predicate: ExExpr, on_true: ExExpr, on_false: ExExpr) -> ExEx
     ExExpr::new(condition)
 }
 
+// sql
+
+#[rustler::nif]
+pub fn expr_sql(sql_string: &str) -> ExExpr {
+    let expr: Expr = polars::sql::sql_expr(sql_string).unwrap();
+    ExExpr::new(expr)
+}
+
 // window functions
 macro_rules! init_window_expr_fun {
     ($name:ident, $fun:ident) => {

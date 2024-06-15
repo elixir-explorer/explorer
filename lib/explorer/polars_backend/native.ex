@@ -201,6 +201,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_int_range(_start, _end, _step, _dtype), do: err()
   def expr_over(_ex_expr, _groups_exprs), do: err()
   def expr_series(_series), do: err()
+  def expr_sql(_string), do: err()
   def expr_string(_string), do: err()
   def expr_struct(_map), do: err()
 

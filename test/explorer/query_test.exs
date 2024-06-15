@@ -304,6 +304,17 @@ defmodule Explorer.QueryTest do
     end
   end
 
+  describe "sql" do
+    test "basic example" do
+      assert DF.new(a: [1, 2, 3])
+             |> DF.mutate(b: sql("max(a)"))
+             |> DF.to_columns(atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [3, 3, 3]
+             }
+    end
+  end
+
   test "raises on special forms" do
     assert_raise ArgumentError, "=/2 is not currently supported in Explorer.Query", fn ->
       Code.eval_quoted(

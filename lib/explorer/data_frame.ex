@@ -2871,6 +2871,9 @@ defmodule Explorer.DataFrame do
       duration = %Explorer.Duration{precision: precision} ->
         LazySeries.new(:lazy, [duration], {:duration, precision})
 
+      sql = %Explorer.Query.Sql{} ->
+        Explorer.Query.Sql.to_lazy_series(sql)
+
       map = %{} when not is_struct(map) ->
         {series_list, dtype_list} =
           Enum.reduce(map, {[], []}, fn {name, series}, {sl, dl} ->
@@ -5944,22 +5947,6 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
     out_df = pairwised_df(df, opts)
     Shared.apply_impl(df, :covariance, [out_df, opts[:ddof]])
-  end
-
-  # SQL
-
-  @doc """
-  ## Examples
-
-      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
-      iex> Explorer.DataFrame.execute_sql(df, "max(a)")
-      #Explorer.DataFrame<
-        Polars[1 x 1]
-        a s64 [3]
-      >
-  """
-  def execute_sql(%__MODULE__{} = df, sql_string) when is_binary(sql_string) do
-    Shared.apply_impl(df, :execute_sql, [sql_string])
   end
 
   # Helpers
