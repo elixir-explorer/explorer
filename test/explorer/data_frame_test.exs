@@ -861,7 +861,7 @@ defmodule Explorer.DataFrameTest do
                "g" => :string,
                "h" => :boolean,
                "i" => :date,
-               "j" => {:naive_datetime, :nanosecond}
+               "j" => {:naive_datetime, :microsecond}
              }
     end
 
@@ -2757,6 +2757,17 @@ defmodule Explorer.DataFrameTest do
 
       assert Series.to_list(df4["x"]) == [1, 2, 3, 4, 5, 6, 7, 8, 9]
       assert Series.to_list(df4["y"]) == ~w(a b c d e f g h) ++ [nil]
+    end
+
+    test "same dtype columns but columns not aligned" do
+      df1 = DF.new(x: [1, 2, 3, 4], y: ["a", "b", nil, "c"])
+      df2 = DF.new(y: ["d", "e", "f", nil], x: [4, 5, 6, 7])
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:s, 64}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 4, 5, 6, 7]
+      assert Series.to_list(df3["y"]) == ["a", "b", nil] ++ ~w(c d e f) ++ [nil]
     end
 
     test "with incompatible columns" do

@@ -30,7 +30,7 @@ defmodule Explorer.Series do
   and compatibility with the Elixir ecosystem:
 
     * All numeric dtypes (signed integer, unsigned integer, and floats) can
-      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and o son
+      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and so on
     * The atom `:float` as an alias for `{:f, 64}` to mirror Elixir's floats
     * The atom `:integer` as an alias for `{:s, 64}` to mirror Elixir's integers
 
@@ -370,7 +370,7 @@ defmodule Explorer.Series do
   A list of `Date`, `Time`, `NaiveDateTime`, `DateTime`, and
   `Explorer.Duration` structs are also supported, and they will become series
   with the respective dtypes: `:date`, `:time`, `{:naive_datetime, :microsecond}`,
-  and `{:duration, precision}`.
+  `{:datetime, :microsecond, time_zone}` and `{:duration, precision}`.
   For example:
 
       iex> Explorer.Series.from_list([~D[0001-01-01], ~D[1970-01-01], ~D[1986-10-13]])
@@ -461,7 +461,6 @@ defmodule Explorer.Series do
     normalised_dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
 
     type = Shared.dtype_from_list!(list, normalised_dtype)
-    list = Shared.cast_series(list, type)
 
     series = backend.from_list(list, type)
 

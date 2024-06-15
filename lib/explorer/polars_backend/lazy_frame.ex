@@ -564,7 +564,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def concat_rows([%DF{} | _tail] = dfs, %DF{} = out_df) do
-    polars_dfs = Enum.map(dfs, & &1.data)
+    polars_dfs = Enum.map(dfs, fn df -> select(df, out_df).data end)
     %__MODULE__{} = polars_df = Shared.apply(:lf_concat_rows, [polars_dfs])
 
     %{out_df | data: polars_df}

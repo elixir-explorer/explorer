@@ -2,6 +2,8 @@ defmodule Explorer.Shared do
   # A collection of **private** helpers shared in Explorer.
   @moduledoc false
 
+  require Logger
+
   @integer_types [
     {:s, 8},
     {:s, 16},
@@ -86,6 +88,16 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
+
+  def normalise_dtype({:datetime, precision}) do
+    :ok =
+      Logger.warning("""
+      The `{:datetime, _}` dtype has been deprecated.
+      Please use `{:naive_datetime, _}` instead.
+      """)
+
+    {:naive_datetime, precision}
+  end
 
   def normalise_dtype(_dtype), do: nil
 
@@ -388,37 +400,6 @@ defmodule Explorer.Shared do
   """
   def leaf_dtype({:list, inner_dtype}), do: leaf_dtype(inner_dtype)
   def leaf_dtype(dtype), do: dtype
-
-  @doc """
-  Downcasts lists of mixed numeric types (float and int) to float.
-  """
-  def cast_series(list, {:struct, dtypes}) when is_list(list) do
-    Enum.map(list, fn
-      nil ->
-        nil
-
-      item ->
-        Enum.map(item, fn {field, inner_value} ->
-          column = to_string(field)
-          {^column, inner_dtype} = List.keyfind!(dtypes, column, 0)
-          [casted_value] = cast_series([inner_value], inner_dtype)
-          {column, casted_value}
-        end)
-    end)
-  end
-
-  def cast_series(list, {:list, inner_dtype}) when is_list(list) do
-    Enum.map(list, fn item -> cast_series(item, inner_dtype) end)
-  end
-
-  def cast_series(list, {:f, _}) do
-    Enum.map(list, fn
-      item when item in [nil, :infinity, :neg_infinity, :nan] or is_float(item) -> item
-      item -> item / 1
-    end)
-  end
-
-  def cast_series(list, _), do: list
 
   @doc """
   Merge two dtypes.
