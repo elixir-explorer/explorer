@@ -594,13 +594,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     Eager.re_dtype(regex_as_string)
   end
 
-  @impl true
-  def execute_sql(ldf, sql_string) do
-    ldf.data
-    |> Native.lf_execute_sql(sql_string)
-    |> Shared.create_dataframe()
-  end
-
   not_available_funs = [
     correlation: 4,
     covariance: 3,

@@ -325,7 +325,6 @@ rustler::init!(
         lf_to_parquet_cloud,
         lf_to_ipc,
         lf_to_csv,
-        lf_execute_sql,
         // series
         s_as_str,
         s_abs,
