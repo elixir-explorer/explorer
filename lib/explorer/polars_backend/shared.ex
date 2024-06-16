@@ -88,7 +88,7 @@ defmodule Explorer.PolarsBackend.Shared do
         case Map.fetch(out_dtypes, key) do
           {:ok, ^check_value} -> {:cont, true}
           {:ok, :unknown} -> {:cont, true}
-          :error -> {:halt, false}
+          _ -> {:halt, false}
         end
       end)
     end
