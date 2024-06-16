@@ -714,7 +714,12 @@ defmodule Explorer.Query do
   end
 
   def sql(sql_string) do
-    Explorer.Query.Sql.new(sql_string)
+    lazy_series =
+      sql_string
+      |> Explorer.Query.Sql.new()
+      |> Explorer.Query.Sql.to_lazy_series()
+
+    Explorer.Backend.Series.new(lazy_series, :unknown)
   end
 
   @doc """
