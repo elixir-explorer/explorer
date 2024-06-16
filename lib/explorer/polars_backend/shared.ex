@@ -84,6 +84,7 @@ defmodule Explorer.PolarsBackend.Shared do
     if map_size(check_dtypes) != map_size(out_dtypes) do
       false
     else
+      # The dtypes for each key must either be the same or `:unknown`.
       Enum.reduce_while(check_dtypes, true, fn {key, check_value}, _ ->
         case Map.fetch(out_dtypes, key) do
           {:ok, ^check_value} -> {:cont, true}
