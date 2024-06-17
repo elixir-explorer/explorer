@@ -344,6 +344,18 @@ defmodule Explorer.QueryTest do
       assert DF.to_columns(df2) == %{"a" => [1, 3], "b" => ["a", "b"]}
       assert df2.dtypes == %{"a" => {:s, 64}, "b" => :string}
     end
+
+    test "non-root sql raises" do
+      assert_raise(
+        ArgumentError,
+        "sql statements are only supported at the root of queries",
+        fn ->
+          defmodule NoNonRootSql do
+            def fun(df), do: DF.filter(df, a < sql("max(a)"))
+          end
+        end
+      )
+    end
   end
 
   test "raises on special forms" do
