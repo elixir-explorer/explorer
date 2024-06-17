@@ -14,7 +14,7 @@ pub fn s_from_list_date(name: &str, val: Term) -> Result<ExSeries, ExplorerError
 
     let values: Vec<Option<i32>> = iterator
         .map(|item| match item.get_type() {
-            TermType::Integer => item.decode::<i32>().map(Some).map_err(|err| {
+            TermType::Integer => item.decode::<Option<i32>>().map_err(|err| {
                 ExplorerError::Other(format!("int number is too big for an i32: {err:?}"))
             }),
             TermType::Map => item
@@ -55,7 +55,7 @@ pub fn s_from_list_naive_datetime(
 
     let values: Vec<Option<i64>> = iterator
         .map(|item| match item.get_type() {
-            TermType::Integer => item.decode::<i64>().map(Some).map_err(|err| {
+            TermType::Integer => item.decode::<Option<i64>>().map_err(|err| {
                 ExplorerError::Other(format!("int number is too big for an i64: {err:?}"))
             }),
             TermType::Map => item
@@ -98,7 +98,7 @@ pub fn s_from_list_datetime(
 
     let values: Vec<Option<i64>> = iterator
         .map(|item| match item.get_type() {
-            TermType::Integer => item.decode::<i64>().map(Some).map_err(|err| {
+            TermType::Integer => item.decode::<Option<i64>>().map_err(|err| {
                 ExplorerError::Other(format!("int number is too big for an i64: {err:?}"))
             }),
             TermType::Map => item
@@ -139,7 +139,7 @@ pub fn s_from_list_duration(
 
     let values: Vec<Option<i64>> = iterator
         .map(|item| match item.get_type() {
-            TermType::Integer => item.decode::<i64>().map(Some).map_err(|err| {
+            TermType::Integer => item.decode::<Option<i64>>().map_err(|err| {
                 ExplorerError::Other(format!("int number is too big for an i64: {err:?}"))
             }),
             TermType::Map => item
@@ -175,7 +175,7 @@ pub fn s_from_list_time(name: &str, val: Term) -> Result<ExSeries, ExplorerError
 
     let values: Vec<Option<i64>> = iterator
         .map(|item| match item.get_type() {
-            TermType::Integer => item.decode::<i64>().map(Some).map_err(|err| {
+            TermType::Integer => item.decode::<Option<i64>>().map_err(|err| {
                 ExplorerError::Other(format!("int number is too big for an i64: {err:?}"))
             }),
             TermType::Map => item
