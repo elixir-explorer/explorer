@@ -583,9 +583,13 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def sql(ldf, sql_string, table_name) do
-    ldf.data
-    |> Native.lf_sql(sql_string, table_name)
-    |> Shared.create_dataframe()
+    with {:ok, polars_lf} <- Native.lf_sql(ldf.data, sql_string, table_name),
+         {:ok, names} <- Native.lf_names(polars_lf),
+         {:ok, dtypes} <- Native.lf_dtypes(polars_lf) do
+      Explorer.Backend.DataFrame.new(polars_lf, names, dtypes)
+    else
+      {:error, polars_error} -> raise polars_error
+    end
   end
 
   @impl true

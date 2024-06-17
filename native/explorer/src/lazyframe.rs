@@ -346,12 +346,18 @@ pub fn lf_concat_columns(
 }
 
 #[rustler::nif]
-pub fn lf_sql(lf: ExLazyFrame, sql_string: &str, table_name: &str) -> ExLazyFrame {
+pub fn lf_sql(
+    lf: ExLazyFrame,
+    sql_string: &str,
+    table_name: &str,
+) -> Result<ExLazyFrame, ExplorerError> {
     let mut ctx = polars::sql::SQLContext::new();
 
     let lf = lf.clone_inner();
     ctx.register(table_name, lf);
 
-    let lf_sql = ctx.execute(sql_string).unwrap();
-    ExLazyFrame::new(lf_sql)
+    match ctx.execute(sql_string) {
+        Ok(lf_sql) => Ok(ExLazyFrame::new(lf_sql)),
+        Err(polars_error) => Err(ExplorerError::Polars(polars_error)),
+    }
 }
