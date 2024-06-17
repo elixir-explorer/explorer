@@ -17,7 +17,7 @@ defmodule Explorer.Query.Sql do
       [sql_string],
       dtype_out,
       aggregation?,
-      Explorer.PolarsBackend
+      Explorer.Backend.get()
     )
   end
 end
