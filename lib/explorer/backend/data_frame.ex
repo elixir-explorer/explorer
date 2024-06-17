@@ -241,6 +241,10 @@ defmodule Explorer.Backend.DataFrame do
   @callback summarise_with(df, out_df :: df(), aggregations :: [{column_name(), lazy_series()}]) ::
               df
 
+  # SQL
+
+  @callback sql(df, sql_string :: binary(), table_name :: binary()) :: df()
+
   # Functions
   alias Explorer.{DataFrame, Series}
 

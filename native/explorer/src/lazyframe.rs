@@ -344,3 +344,14 @@ pub fn lf_concat_columns(
 
     Ok(ExLazyFrame::new(out_df.drop([id_column])))
 }
+
+#[rustler::nif]
+pub fn lf_sql(lf: ExLazyFrame, sql_string: &str, table_name: &str) -> ExLazyFrame {
+    let mut ctx = polars::sql::SQLContext::new();
+
+    let lf = lf.clone_inner();
+    ctx.register(table_name, lf);
+
+    let lf_sql = ctx.execute(sql_string).unwrap();
+    ExLazyFrame::new(lf_sql)
+}

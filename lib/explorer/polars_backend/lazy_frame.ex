@@ -585,6 +585,13 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
+  def sql(ldf, sql_string, table_name) do
+    ldf.data
+    |> Native.lf_sql(sql_string, table_name)
+    |> Shared.create_dataframe()
+  end
+
+  @impl true
   def concat_columns([%DF{} = head | tail], %DF{} = out_df) do
     Shared.apply_dataframe(head, out_df, :lf_concat_columns, [Enum.map(tail, & &1.data)])
   end

@@ -5949,6 +5949,52 @@ defmodule Explorer.DataFrame do
     Shared.apply_impl(df, :covariance, [out_df, opts[:ddof]])
   end
 
+  # SQL
+
+  @doc """
+  Create a dataframe from the result of a SQL query on an existing dataframe.
+
+  > ### SQL Query is Unvalidated {: .warning}
+  >
+  > Explorer does not validate the SQL query string provided. Instead it passes
+  > it directly to the backend. As such, the SQL dialect will be backend
+  > dependent and any errors will come directly from the backend.
+
+  ## `from` Clause
+
+  The `from` clause of the SQL query should reference a chosen table name. The
+  default name is `"df"`. See the examples for a custom table name.
+
+  ## Examples
+
+  Basic example:
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["x", "y", "y"])
+      iex> Explorer.DataFrame.sql(df, "select a, b from df group by b order by b")
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        a list[s64] [[1], [2, 3]]
+        b string ["x", "y"]
+      >
+
+  Custom table name:
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.sql(df, "select a + 1 from my_table", table_name: "my_table")
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        a s64 [2, 3, 4]
+      >
+  """
+  @doc type: :single
+  @spec sql(df :: DataFrame.t(), sql_string :: binary(), opts :: Keyword.t()) ::
+          df :: DataFrame.t()
+  def sql(%__MODULE__{} = df, sql_string, opts \\ [])
+      when is_binary(sql_string) and is_list(opts) do
+    [table_name: table_name] = Keyword.validate!(opts, table_name: "df")
+    Shared.apply_impl(df, :sql, [sql_string, table_name])
+  end
+
   # Helpers
 
   defp backend_from_options!(opts) do

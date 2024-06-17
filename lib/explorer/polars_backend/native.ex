@@ -273,6 +273,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_to_parquet_cloud(_df, _filename, _compression), do: err()
   def lf_to_ipc(_df, _filename, _compression, _streaming), do: err()
   def lf_to_csv(_df, _filename, _header, _delimiter, _streaming), do: err()
+  def lf_sql(_df, _sql_string, _table_name), do: err()
 
   # Series
   def s_as_str(_s), do: err()
