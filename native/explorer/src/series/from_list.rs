@@ -278,13 +278,14 @@ from_list_float!(s_from_list_f32, f32, f32);
 from_list_float!(s_from_list_f64, f64, f64);
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_binary(name: &str, val: Vec<Option<Binary>>) -> ExSeries {
-    ExSeries::new(Series::new(
-        name,
-        val.iter()
-            .map(|bin| bin.map(|bin| bin.as_slice()))
-            .collect::<Vec<Option<&[u8]>>>(),
-    ))
+pub fn s_from_list_binary(name: &str, val: Term) -> NifResult<ExSeries> {
+    val.decode::<ListIterator>()?
+        .map(|term| {
+            term.decode::<Option<Binary>>()
+                .map(|maybe_bin| maybe_bin.map(|bin| bin.as_slice()))
+        })
+        .collect::<NifResult<Vec<Option<&[u8]>>>>()
+        .map(|values| ExSeries::new(Series::new(name, values)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
