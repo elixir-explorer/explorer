@@ -271,8 +271,7 @@ macro_rules! from_list_float {
                 })
                 .collect::<NifResult<Vec<Option<$type>>>>()
                 .map(|values| {
-                    let s = Series::new(name, values);
-                    ExSeries::new(s)
+                    ExSeries::new(Series::new(name, values))
                 })
         }
     };
