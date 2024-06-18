@@ -85,11 +85,11 @@ defmodule Explorer.PolarsBackend.Shared do
       false
     else
       # The dtypes for each key must either be the same or `:unknown`.
-      Enum.reduce_while(check_dtypes, true, fn {key, check_value}, _ ->
+      Enum.all?(check_dtypes, fn {key, check_value} ->
         case Map.fetch(out_dtypes, key) do
-          {:ok, ^check_value} -> {:cont, true}
-          {:ok, :unknown} -> {:cont, true}
-          _ -> {:halt, false}
+          {:ok, ^check_value} -> true
+          {:ok, :unknown} -> true
+          _ -> false
         end
       end)
     end
