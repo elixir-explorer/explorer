@@ -2585,9 +2585,6 @@ defmodule Explorer.DataFrame do
       %Series{dtype: :boolean, data: %LazySeries{} = data} ->
         Shared.apply_impl(df, :filter_with, [df, data])
 
-      %Series{dtype: :unknown, data: %LazySeries{} = data} ->
-        Shared.apply_impl(df, :filter_with, [df, data])
-
       %Series{dtype: dtype, data: %LazySeries{}} ->
         raise ArgumentError,
               "expecting the function to return a boolean LazySeries, " <>

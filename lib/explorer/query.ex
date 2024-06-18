@@ -304,12 +304,12 @@ defmodule Explorer.Query do
 
     quote do
       fn unquote(df) ->
-        unquote(traverse_root(expression, df))
+        unquote(traverse(expression, df))
       end
     end
   end
 
-  defp traverse_root({:for, meta, [_ | _] = args}, df) do
+  defp traverse({:for, meta, [_ | _] = args}, df) do
     {args, [opts]} = Enum.split(args, Kernel.-(1))
 
     block =
@@ -328,7 +328,14 @@ defmodule Explorer.Query do
     {query, vars} =
       traverse(block, [], %{df: df, known_vars: known_vars, collect_pins_and_vars: true})
 
-    block = unquote_query(query, vars)
+    block =
+      quote do
+        unquote_splicing(Enum.reverse(vars))
+        import Kernel, only: unquote(@kernel_only)
+        import Explorer.Query, except: [query: 1]
+        import Explorer.Series
+        unquote(query)
+      end
 
     for = {:for, meta, args ++ [Keyword.put(opts, :do, block)]}
 
@@ -338,36 +345,10 @@ defmodule Explorer.Query do
     end
   end
 
-  # Allow `sql` only at root or as a value in a keyword list at root.
-  defp traverse_root([{_name, _expr} | _] = keyword, df) do
-    Enum.map(keyword, fn {name, expr} ->
-      case expr do
-        {:sql, _, _} -> {name, traverse_root(expr, df)}
-        _ -> {name, do_traverse_root(expr, df)}
-      end
-    end)
-  end
+  defp traverse(expression, df) do
+    {query, vars} =
+      traverse(expression, [], %{df: df, known_vars: %{}, collect_pins_and_vars: true})
 
-  defp traverse_root({:sql, meta, [arg]}, df) do
-    arg = do_traverse_root(arg, df)
-    sql = {:sql, meta, [arg]}
-
-    quote do
-      import Explorer.Query
-      unquote(sql)
-    end
-  end
-
-  defp traverse_root(expression, df) do
-    do_traverse_root(expression, df)
-  end
-
-  defp do_traverse_root(expression, df) do
-    {query, vars} = traverse(expression, df)
-    unquote_query(query, vars)
-  end
-
-  defp unquote_query(query, vars) do
     quote do
       unquote_splicing(Enum.reverse(vars))
       import Kernel, only: unquote(@kernel_only)
@@ -375,20 +356,6 @@ defmodule Explorer.Query do
       import Explorer.Series, except: [and: 2, or: 2, not: 1]
       unquote(query)
     end
-  end
-
-  defp traverse(expression, df) do
-    vars = []
-    state = %{df: df, known_vars: %{}, collect_pins_and_vars: true}
-    traverse(expression, vars, state)
-  end
-
-  defp traverse({:for, _meta, [_ | _]}, _vars, _state) do
-    raise ArgumentError, "for-comprehensions are only supported at the root of queries"
-  end
-
-  defp traverse({:sql, _meta, _args}, _vars, _state) do
-    raise ArgumentError, "sql statements are only supported at the root of queries"
   end
 
   defp traverse({:^, meta, [expr]}, vars, state) do
@@ -400,6 +367,10 @@ defmodule Explorer.Query do
       true ->
         {expr, vars}
     end
+  end
+
+  defp traverse({:for, _meta, [_ | _]}, _vars, _state) do
+    raise ArgumentError, "for-comprehensions are only supported at the root of queries"
   end
 
   defp traverse({:"::", meta, [left, right]}, vars, state) do
@@ -740,15 +711,6 @@ defmodule Explorer.Query do
   """
   defmacro col(name) do
     quote do: Explorer.DataFrame.pull(unquote(df_var()), unquote(name))
-  end
-
-  def sql(sql_string) do
-    lazy_series =
-      sql_string
-      |> Explorer.Query.Sql.new()
-      |> Explorer.Query.Sql.to_lazy_series()
-
-    Explorer.Backend.Series.new(lazy_series, :unknown)
   end
 
   @doc """

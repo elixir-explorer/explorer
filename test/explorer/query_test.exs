@@ -304,60 +304,6 @@ defmodule Explorer.QueryTest do
     end
   end
 
-  describe "sql" do
-    test "filter" do
-      df1 = DF.new(a: [1, 2, 3])
-      df2 = DF.filter(df1, sql("a < max(a)"))
-
-      assert DF.to_columns(df2) == %{"a" => [1, 2]}
-      assert df2.dtypes == %{"a" => {:s, 64}}
-    end
-
-    test "mutate" do
-      df1 = DF.new(a: [1, 2, 3])
-      df2 = DF.mutate(df1, b: sql("max(a)"))
-
-      assert DF.to_columns(df2) == %{
-               "a" => [1, 2, 3],
-               "b" => [3, 3, 3]
-             }
-
-      assert df2.dtypes == %{"a" => {:s, 64}, "b" => {:s, 64}}
-    end
-
-    test "sort" do
-      df1 = DF.new(a: [1, 3, 2], b: ["x", "y", "z"])
-      df2 = DF.sort_by(df1, sql("a"))
-
-      assert DF.to_columns(df2) == %{"a" => [1, 2, 3], "b" => ["x", "z", "y"]}
-      assert df2.dtypes == %{"a" => {:s, 64}, "b" => :string}
-    end
-
-    test "summarise" do
-      df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "b"])
-
-      df2 =
-        df1
-        |> DF.group_by("b")
-        |> DF.summarise(a: sql("max(a)"))
-
-      assert DF.to_columns(df2) == %{"a" => [1, 3], "b" => ["a", "b"]}
-      assert df2.dtypes == %{"a" => {:s, 64}, "b" => :string}
-    end
-
-    test "non-root sql raises" do
-      assert_raise(
-        ArgumentError,
-        "sql statements are only supported at the root of queries",
-        fn ->
-          defmodule NoNonRootSql do
-            def fun(df), do: DF.filter(df, a < sql("max(a)"))
-          end
-        end
-      )
-    end
-  end
-
   test "raises on special forms" do
     assert_raise ArgumentError, "=/2 is not currently supported in Explorer.Query", fn ->
       Code.eval_quoted(

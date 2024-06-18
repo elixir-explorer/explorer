@@ -243,8 +243,6 @@ rustler::init!(
         expr_covariance,
         expr_all,
         expr_any,
-        // sql
-        expr_sql,
         // window expressions
         expr_cumulative_max,
         expr_cumulative_min,
