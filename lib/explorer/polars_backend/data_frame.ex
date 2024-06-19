@@ -890,6 +890,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
   end
 
+  # SQL
+
+  @impl true
+  def sql(%DataFrame{} = df, sql_string, table_name) do
+    df
+    |> lazy()
+    |> LazyFrame.sql(sql_string, table_name)
+    |> LazyFrame.collect()
+  end
+
   @impl true
   def re_dtype(regex_as_string) when is_binary(regex_as_string) do
     case Explorer.PolarsBackend.Native.df_re_dtype(regex_as_string) do

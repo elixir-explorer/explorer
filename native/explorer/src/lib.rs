@@ -320,6 +320,7 @@ rustler::init!(
         lf_join,
         lf_concat_rows,
         lf_concat_columns,
+        lf_sql,
         lf_to_parquet,
         lf_to_parquet_cloud,
         lf_to_ipc,
