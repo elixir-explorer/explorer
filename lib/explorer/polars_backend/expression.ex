@@ -347,6 +347,18 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_struct(expr_list)
   end
 
+  def from_tree(%LazySeries{op: :col, args: [col]}) do
+    Native.expr_column(col)
+  end
+
+  def from_tree(%LazySeries{op: op, args: args}) when is_list(args) do
+    apply(Native, :"expr_#{op}", Enum.map(args, &from_tree/1))
+  end
+
+  def from_tree(literal) do
+    to_expr(literal)
+  end
+
   # Used by Explorer.PolarsBackend.DataFrame
   def alias_expr(%__MODULE__{} = expr, alias_name) when is_binary(alias_name) do
     Native.expr_alias(expr, alias_name)

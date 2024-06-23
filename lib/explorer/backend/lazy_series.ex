@@ -1,8 +1,20 @@
 defmodule Explorer.Backend.LazySeries do
   @moduledoc """
-  This is an opaque implementation of a Series.
+  A lazy series represents (roughly) a tree of instructions to build a new
+  series from one or more existing series.
 
-  It represents an operation with its arguments.
+  For example, if we wanted to create a new series from the addition of two
+  existing series `a` and `b`:
+
+      a + b
+
+  We would represent that with the following `LazySeries`:
+
+      sum =
+        %LazySeries{op: :add, args: [
+          %LazySeries{op: :col, args: ["a"]}
+          %LazySeries{op: :col, args: ["b"]}
+        ]}
   """
   alias Explorer.Series
   alias Explorer.Backend

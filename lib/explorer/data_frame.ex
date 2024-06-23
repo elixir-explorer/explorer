@@ -2526,6 +2526,34 @@ defmodule Explorer.DataFrame do
     end
   end
 
+  defmacro filter_ls(df, query_expression) do
+    quote do
+      require Explorer.Query
+
+      Explorer.DataFrame.filter_with_ls(
+        unquote(df),
+        Explorer.Query.new(unquote(query_expression))
+      )
+    end
+  end
+
+  def filter_with_ls(%DataFrame{} = df, %Explorer.Query{} = query) do
+    filter =
+      case query do
+        %Explorer.Query{lazy_series_list: [%LazySeries{} = filter]} ->
+          filter
+      end
+
+    # Do the Polars-specific logic here for the moment.
+    expr = Explorer.PolarsBackend.Expression.from_tree(filter)
+
+    with {:ok, plf} <- Explorer.PolarsBackend.Native.lf_filter_with(lazy(df).data, expr),
+         {:ok, pdf} <- Explorer.PolarsBackend.Native.lf_collect(plf),
+         df <- Explorer.PolarsBackend.Shared.create_dataframe(pdf) do
+      df
+    end
+  end
+
   @doc """
   Picks rows based on a callback function.
 

@@ -476,7 +476,7 @@ defmodule Explorer.Query do
   end
 
   # and and or are sent as is to queries
-  binary_delegates = [
+  @binary_mapping [
     ==: :equal,
     !=: :not_equal,
     >: :greater,
@@ -489,8 +489,10 @@ defmodule Explorer.Query do
     /: :divide,
     **: :pow
   ]
+  @binary_ops Keyword.keys(@binary_mapping)
+  binary_mapping = @binary_mapping
 
-  for {operator, delegate} <- binary_delegates do
+  for {operator, delegate} <- binary_mapping do
     @doc """
     Delegate to `Explorer.Series.#{delegate}/2`.
     """
@@ -747,4 +749,48 @@ defmodule Explorer.Query do
   end
 
   defp df_var(), do: quote(do: var!(df, Explorer.Query))
+
+  defstruct [:lazy_series_list]
+
+  defmacro new(expression) do
+    quote do
+      unquote(traverse_ls_root(expression))
+    end
+  end
+
+  @series_ops_with_arity Explorer.Backend.Series.behaviour_info(:callbacks)
+  @series_ops Keyword.keys(@series_ops_with_arity)
+  def traverse_ls_root(ast) do
+    lazy_series =
+      ast
+      |> Macro.prewalk(fn
+        {op, meta, args} when op in @binary_ops ->
+          {@binary_mapping[op], meta, args}
+
+        node ->
+          node
+      end)
+      |> Macro.postwalk(fn
+        {op, _, _} = node when op in @series_ops ->
+          lazy_series_ast(node)
+
+        {op, meta, nil} ->
+          lazy_series_ast({:col, meta, [to_string(op)]})
+
+        node ->
+          node
+      end)
+
+    quote do
+      %Explorer.Query{lazy_series_list: [unquote(lazy_series)]}
+    end
+  end
+
+  def lazy_series_ast({op, meta, args}) do
+    {:struct, meta,
+     [
+       {:__aliases__, [alias: false], [:Explorer, :Backend, :LazySeries]},
+       [op: op, args: args]
+     ]}
+  end
 end
