@@ -1,4 +1,4 @@
-defmodule Explorer.DataFrameTest do
+defmodule Explorer.NewApproachTest do
   use ExUnit.Case, async: true
 
   # Tests for most IO operations are in the data_frame folder
