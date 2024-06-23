@@ -2545,7 +2545,7 @@ defmodule Explorer.DataFrame do
       end
 
     # Do the Polars-specific logic here for the moment.
-    expr = Explorer.PolarsBackend.Expression.from_tree(filter)
+    expr = Explorer.PolarsBackend.Expression.to_expr(filter)
 
     with {:ok, plf} <- Explorer.PolarsBackend.Native.lf_filter_with(lazy(df).data, expr),
          {:ok, pdf} <- Explorer.PolarsBackend.Native.lf_collect(plf),

@@ -97,7 +97,7 @@ pub fn expr_cast(data: ExExpr, to_dtype: ExSeriesDtype) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_column(name: &str) -> ExExpr {
+pub fn expr_col(name: &str) -> ExExpr {
     let expr = col(name);
     ExExpr::new(expr)
 }

@@ -138,7 +138,7 @@ rustler::init!(
         expr_atom,
         expr_boolean,
         expr_cast,
-        expr_column,
+        expr_col,
         expr_date,
         expr_naive_datetime,
         // expr_datetime,

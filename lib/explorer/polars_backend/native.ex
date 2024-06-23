@@ -173,9 +173,27 @@ defmodule Explorer.PolarsBackend.Native do
 
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
+  @additional_expressions [
+    add: 2,
+    all: 1,
+    any: 1,
+    clip_float: 3,
+    clip_integer: 3,
+    divide: 2,
+    member: 3,
+    multiply: 2,
+    pow: 2,
+    sample_frac: 5,
+    sample_n: 5,
+    subtract: 2,
+  ]
 
   # We first generate functions for known operations.
-  for {op, arity} <- Explorer.Backend.LazySeries.operations() -- @multi_arity_expressions do
+  @known_ops Explorer.Backend.LazySeries.operations_with_arity()
+             |> Kernel.--(@multi_arity_expressions)
+             |> Kernel.++(@additional_expressions)
+             |> Enum.sort()
+  for {op, arity} <- @known_ops do
     args = Macro.generate_arguments(arity, __MODULE__)
     expr_op = :"expr_#{op}"
     def unquote(expr_op)(unquote_splicing(args)), do: err()

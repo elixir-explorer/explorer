@@ -11,7 +11,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias FSS.Local
   alias FSS.S3
 
-  import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
+  import Explorer.PolarsBackend.Expression, only: [to_expr: 1]
 
   # This resource is going to be a "ResourceArc" on Rust side.
   defstruct resource: nil
@@ -81,7 +81,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def slice(ldf, offset, length),
     do: Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length, ldf.groups])
 
-  defp groups_exprs(groups), do: Enum.map(groups, &Native.expr_column/1)
+  defp groups_exprs(groups), do: Enum.map(groups, &Native.expr_col/1)
 
   # IO
 
@@ -445,7 +445,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def distinct(%DF{} = df, %DF{} = out_df, columns) do
     maybe_columns_to_keep =
-      if df.names != out_df.names, do: Enum.map(out_df.names, &Native.expr_column/1)
+      if df.names != out_df.names, do: Enum.map(out_df.names, &Native.expr_col/1)
 
     Shared.apply_dataframe(df, out_df, :lf_distinct, [columns, maybe_columns_to_keep])
   end
@@ -464,7 +464,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         lazy_series
         |> to_expr()
         |> then(maybe_over_groups_fun)
-        |> alias_expr(name)
+        |> Native.expr_alias(name)
       end
 
     Shared.apply_dataframe(df, out_df, :lf_mutate_with, [exprs])
@@ -476,7 +476,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def drop_nil(%DF{} = df, columns) do
-    exprs = for col <- columns, do: Native.expr_column(col)
+    exprs = for col <- columns, do: Native.expr_col(col)
     Shared.apply_dataframe(df, df, :lf_drop_nils, [exprs])
   end
 
@@ -510,10 +510,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     exprs =
       for {name, lazy_series} <- column_pairs do
         original_expr = to_expr(lazy_series)
-        alias_expr(original_expr, name)
+        Native.expr_alias(original_expr, name)
       end
 
-    groups_exprs = for group <- groups, do: Native.expr_column(group)
+    groups_exprs = for group <- groups, do: Native.expr_col(group)
 
     Shared.apply_dataframe(df, out_df, :lf_summarise_with, [groups_exprs, exprs])
   end
@@ -527,7 +527,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
     {left_on, right_on} =
       on
-      |> Enum.map(fn {left, right} -> {Native.expr_column(left), Native.expr_column(right)} end)
+      |> Enum.map(fn {left, right} -> {Native.expr_col(left), Native.expr_col(right)} end)
       |> Enum.unzip()
 
     Shared.apply_dataframe(
@@ -545,7 +545,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     # in the join.
     {left_on, right_on} =
       on
-      |> Enum.map(fn {left, right} -> {Native.expr_column(right), Native.expr_column(left)} end)
+      |> Enum.map(fn {left, right} -> {Native.expr_col(right), Native.expr_col(left)} end)
       |> Enum.unzip()
 
     Shared.apply_dataframe(

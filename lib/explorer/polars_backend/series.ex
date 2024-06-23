@@ -798,6 +798,11 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_re_named_captures, [pattern])
   end
 
+  @impl true
+  def col(%Series{}) do
+    raise "Only implemented for `%LazySeries{}`."
+  end
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)

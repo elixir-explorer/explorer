@@ -5,8 +5,8 @@ defmodule Explorer.Backend.Series do
 
   @type t :: struct()
 
-  @type s :: Explorer.Series.t()
   @type lazy_s :: Explorer.Series.lazy_t()
+  @type s :: Explorer.Series.t() | lazy_s()
   @type df :: Explorer.DataFrame.t()
   @type dtype :: Explorer.Series.dtype()
 
@@ -317,6 +317,9 @@ defmodule Explorer.Backend.Series do
 
   # Struct
   @callback field(s, String.t()) :: s
+
+  # Lazy
+  @callback col(String.t()) :: lazy_s()
 
   # Functions
 
