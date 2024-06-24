@@ -6732,7 +6732,11 @@ defmodule Explorer.Series.Iterator do
 
     def slice(%{size: size, series: series, impl: impl}) do
       {:ok, size,
-       fn start, size ->
+       fn start, size, step ->
+         if step != 1 do
+           raise "Explorer.Series can only be sliced with step of 1"
+         end
+
          series
          |> impl.slice(start, size)
          |> impl.to_list()
