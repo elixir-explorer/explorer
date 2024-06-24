@@ -108,7 +108,8 @@ defmodule Explorer.PolarsBackend.Native do
         _filename,
         _stop_after_n_rows,
         _columns,
-        _projection
+        _projection,
+        _rechunk
       ),
       do: err()
 
@@ -192,7 +193,8 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_atom(_atom), do: err()
   def expr_boolean(_bool), do: err()
   def expr_date(_date), do: err()
-  def expr_datetime(_datetime), do: err()
+  def expr_naive_datetime(_datetime), do: err()
+  # def expr_datetime(_datetime), do: err()
   def expr_duration(_duration), do: err()
   def expr_describe_filter_plan(_df, _expr), do: err()
   def expr_float(_number), do: err()
@@ -270,6 +272,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_to_parquet_cloud(_df, _filename, _compression), do: err()
   def lf_to_ipc(_df, _filename, _compression, _streaming), do: err()
   def lf_to_csv(_df, _filename, _header, _delimiter, _streaming), do: err()
+  def lf_sql(_df, _sql_string, _table_name), do: err()
 
   # Series
   def s_as_str(_s), do: err()

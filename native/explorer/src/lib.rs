@@ -35,6 +35,7 @@ pub use error::ExplorerError;
 use expressions::*;
 use lazyframe::io::*;
 use lazyframe::*;
+use series::from_list::*;
 use series::log::*;
 use series::*;
 
@@ -139,7 +140,8 @@ rustler::init!(
         expr_cast,
         expr_column,
         expr_date,
-        expr_datetime,
+        expr_naive_datetime,
+        // expr_datetime,
         expr_duration,
         expr_day_of_week,
         expr_day_of_year,
@@ -318,6 +320,7 @@ rustler::init!(
         lf_join,
         lf_concat_rows,
         lf_concat_columns,
+        lf_sql,
         lf_to_parquet,
         lf_to_parquet_cloud,
         lf_to_ipc,

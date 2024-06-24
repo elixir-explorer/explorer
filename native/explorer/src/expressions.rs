@@ -67,8 +67,8 @@ pub fn expr_date(date: ExDate) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_datetime(datetime: ExNaiveDateTime) -> ExExpr {
-    ExExpr::new(datetime.lit())
+pub fn expr_naive_datetime(naive_datetime: ExNaiveDateTime) -> ExExpr {
+    ExExpr::new(naive_datetime.lit())
 }
 
 #[rustler::nif]

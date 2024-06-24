@@ -184,7 +184,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_parquet(%S3.Entry{} = entry, max_rows, columns) do
+  def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
       {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -192,7 +192,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_parquet(%Local.Entry{} = entry, max_rows, columns) do
+  def from_parquet(%Local.Entry{} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet(entry.path, max_rows, columns) do
       {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -564,10 +564,21 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def concat_rows([%DF{} | _tail] = dfs, %DF{} = out_df) do
-    polars_dfs = Enum.map(dfs, & &1.data)
+    polars_dfs = Enum.map(dfs, fn df -> select(df, out_df).data end)
     %__MODULE__{} = polars_df = Shared.apply(:lf_concat_rows, [polars_dfs])
 
     %{out_df | data: polars_df}
+  end
+
+  @impl true
+  def sql(ldf, sql_string, table_name) do
+    with {:ok, polars_lf} <- Native.lf_sql(ldf.data, sql_string, table_name),
+         {:ok, names} <- Native.lf_names(polars_lf),
+         {:ok, dtypes} <- Native.lf_dtypes(polars_lf) do
+      Explorer.Backend.DataFrame.new(polars_lf, names, dtypes)
+    else
+      {:error, polars_error} -> raise polars_error
+    end
   end
 
   @impl true

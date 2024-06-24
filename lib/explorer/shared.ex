@@ -2,6 +2,8 @@ defmodule Explorer.Shared do
   # A collection of **private** helpers shared in Explorer.
   @moduledoc false
 
+  require Logger
+
   @integer_types [
     {:s, 8},
     {:s, 16},
@@ -86,6 +88,16 @@ defmodule Explorer.Shared do
   def normalise_dtype(:u16), do: {:u, 16}
   def normalise_dtype(:u32), do: {:u, 32}
   def normalise_dtype(:u64), do: {:u, 64}
+
+  def normalise_dtype({:datetime, precision}) do
+    :ok =
+      Logger.warning("""
+      The `{:datetime, _}` dtype has been deprecated.
+      Please use `{:naive_datetime, _}` instead.
+      """)
+
+    {:naive_datetime, precision}
+  end
 
   def normalise_dtype(_dtype), do: nil
 
@@ -283,15 +295,8 @@ defmodule Explorer.Shared do
 
   If no preferred type is given (nil), then the inferred type is returned.
   """
-  def dtype_from_list!(_list, :null), do: :null
-
   def dtype_from_list!(list, nil), do: dtype_from_list!(list)
-
-  def dtype_from_list!(list, preferred_type) do
-    list
-    |> dtype_from_list!()
-    |> merge_preferred(preferred_type)
-  end
+  def dtype_from_list!(_list, preferred_type), do: preferred_type
 
   @non_finite [:nan, :infinity, :neg_infinity]
 
@@ -351,74 +356,11 @@ defmodule Explorer.Shared do
     {:struct, Enum.sort(types)}
   end
 
-  defp merge_preferred(type, type), do: type
-  defp merge_preferred(:null, type), do: type
-  defp merge_preferred({:s, 64}, {:u, _} = type), do: type
-  defp merge_preferred({:s, 64}, {:s, _} = type), do: type
-  defp merge_preferred({:s, 64}, {:f, _} = type), do: type
-  defp merge_preferred({:f, 64}, {:f, _} = type), do: type
-  defp merge_preferred(:string, type) when type in [:binary, :string, :category], do: type
-
-  defp merge_preferred({:list, inferred}, {:list, preferred}) do
-    {:list, merge_preferred(inferred, preferred)}
-  end
-
-  defp merge_preferred({:struct, inferred}, {:struct, preferred}) do
-    {remaining, all_merged} =
-      Enum.reduce(preferred, {inferred, []}, fn {col, dtype}, {inferred_rest, merged} ->
-        case List.keytake(inferred_rest, col, 0) do
-          {{^col, inferred_dtype}, rest} ->
-            solved = merge_preferred(inferred_dtype, dtype)
-            {rest, List.keystore(merged, col, 0, {col, solved})}
-
-          nil ->
-            {inferred, List.keystore(merged, col, 0, {col, dtype})}
-        end
-      end)
-
-    {:struct, all_merged ++ remaining}
-  end
-
-  defp merge_preferred(inferred, _preferred) do
-    inferred
-  end
-
   @doc """
   Returns the leaf dtype from a {:list, _} dtype, or itself.
   """
   def leaf_dtype({:list, inner_dtype}), do: leaf_dtype(inner_dtype)
   def leaf_dtype(dtype), do: dtype
-
-  @doc """
-  Downcasts lists of mixed numeric types (float and int) to float.
-  """
-  def cast_series(list, {:struct, dtypes}) when is_list(list) do
-    Enum.map(list, fn
-      nil ->
-        nil
-
-      item ->
-        Enum.map(item, fn {field, inner_value} ->
-          column = to_string(field)
-          {^column, inner_dtype} = List.keyfind!(dtypes, column, 0)
-          [casted_value] = cast_series([inner_value], inner_dtype)
-          {column, casted_value}
-        end)
-    end)
-  end
-
-  def cast_series(list, {:list, inner_dtype}) when is_list(list) do
-    Enum.map(list, fn item -> cast_series(item, inner_dtype) end)
-  end
-
-  def cast_series(list, {:f, _}) do
-    Enum.map(list, fn
-      item when item in [nil, :infinity, :neg_infinity, :nan] or is_float(item) -> item
-      item -> item / 1
-    end)
-  end
-
-  def cast_series(list, _), do: list
 
   @doc """
   Merge two dtypes.

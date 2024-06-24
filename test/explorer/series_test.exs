@@ -5,6 +5,8 @@ defmodule Explorer.SeriesTest do
 
   alias Explorer.Series
 
+  import ExUnit.CaptureLog
+
   doctest Explorer.Series
 
   test "defines doc metadata" do
@@ -286,6 +288,29 @@ defmodule Explorer.SeriesTest do
                dates
     end
 
+    test "with naive datetimes aliased" do
+      naive_datetimes = [
+        ~N[2022-04-13 15:44:31.560227],
+        ~N[1022-01-04 21:18:31.224123],
+        ~N[1988-11-23 06:36:16.158432],
+        ~N[2353-03-07 00:39:35.702789]
+      ]
+
+      dtype_alias = {:datetime, :microsecond}
+      dtype_actual = {:naive_datetime, :microsecond}
+
+      {series, warning} =
+        with_log(fn -> Series.from_list(naive_datetimes, dtype: dtype_alias) end)
+
+      assert Series.to_list(series) == naive_datetimes
+      assert Series.dtype(series) == dtype_actual
+
+      assert warning =~ """
+             The `{:datetime, _}` dtype has been deprecated.
+             Please use `{:naive_datetime, _}` instead.
+             """
+    end
+
     test "with 32-bit integers" do
       for dtype <- [:s32, {:s, 32}] do
         s = Series.from_list([-1, 0, 1, 2, 3, nil], dtype: dtype)
@@ -354,6 +379,22 @@ defmodule Explorer.SeriesTest do
         assert Series.to_list(s) === [0, 1, 2, 3, 2 ** 8 - 1, nil]
         assert Series.dtype(s) == {:u, 8}
       end
+    end
+
+    test "mixing dates and integers with `:date` dtype" do
+      s = Series.from_list([1, nil, ~D[2024-06-13]], dtype: :date)
+
+      assert s[0] == ~D[1970-01-02]
+      assert Series.to_list(s) === [~D[1970-01-02], nil, ~D[2024-06-13]]
+      assert Series.dtype(s) == :date
+    end
+
+    test "mixing dates and integers without a dtype" do
+      assert_raise ArgumentError,
+                   "the value ~D[2024-06-13] does not match the inferred dtype {:s, 64}",
+                   fn ->
+                     Series.from_list([1, nil, ~D[2024-06-13]])
+                   end
     end
   end
 

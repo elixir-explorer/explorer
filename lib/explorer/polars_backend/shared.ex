@@ -8,11 +8,12 @@ defmodule Explorer.PolarsBackend.Shared do
   alias Explorer.PolarsBackend.Native
   alias Explorer.PolarsBackend.Series, as: PolarsSeries
   alias Explorer.Series, as: Series
+  import Kernel, except: [apply: 2]
 
   @polars_df [PolarsDataFrame, PolarsLazyFrame]
 
   def apply(fun, args \\ []) do
-    case apply(Native, fun, args) do
+    case Kernel.apply(Native, fun, args) do
       {:ok, value} -> value
       {:error, error} -> raise runtime_error(error)
     end
@@ -152,7 +153,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
         row, columns ->
           Enum.reduce(row, columns, fn {field, value}, columns ->
-            Map.update!(columns, field, &[value | &1])
+            Map.update!(columns, to_string(field), &[value | &1])
           end)
       end)
 
@@ -185,11 +186,11 @@ defmodule Explorer.PolarsBackend.Shared do
       :boolean -> Native.s_from_list_bool(name, list)
       :string -> Native.s_from_list_str(name, list)
       :category -> Native.s_from_list_categories(name, list)
-      :date -> Native.s_from_list_date(name, list)
-      :time -> Native.s_from_list_time(name, list)
-      {:naive_datetime, precision} -> Native.s_from_list_naive_datetime(name, list, precision)
-      {:datetime, precision, tz} -> Native.s_from_list_datetime(name, list, precision, tz)
-      {:duration, precision} -> Native.s_from_list_duration(name, list, precision)
+      :date -> apply(:s_from_list_date, [name, list])
+      :time -> apply(:s_from_list_time, [name, list])
+      {:naive_datetime, precision} -> apply(:s_from_list_naive_datetime, [name, list, precision])
+      {:datetime, precision, tz} -> apply(:s_from_list_datetime, [name, list, precision, tz])
+      {:duration, precision} -> apply(:s_from_list_duration, [name, list, precision])
       :binary -> Native.s_from_list_binary(name, list)
       :null -> Native.s_from_list_null(name, length(list))
     end

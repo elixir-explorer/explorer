@@ -76,13 +76,14 @@ def deps do
 end
 ```
 
-Explorer will download a precompiled version of its native code upon installation. You can force a local build by setting the environment varaible `EXPLORER_BUILD=1` or via the following configuration:
+Explorer will download a precompiled version of its native code upon installation. You can force a local build by setting the environment variable `EXPLORER_BUILD=1` and including `:rustler` as a dependency:
 
 ```elixir
-config :rustler_precompiled, :force_build, explorer: true
+  {:explorer, "~> 0.8.0", system_env: %{"EXPLORER_BUILD" => "1"}},
+  {:rustler, ">= 0.0.0"}
 ```
 
-If necessary, you can clean up before rebuilding with `mix deps.clean explorer`.
+If necessary, clean up before rebuilding with `mix deps.clean explorer`.
 
 ## A glimpse of the API
 

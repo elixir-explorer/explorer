@@ -38,7 +38,7 @@ defmodule Explorer.PolarsBackend.Series do
   def to_iovec(series), do: Shared.apply_series(series, :s_to_iovec)
 
   @impl true
-  def cast(%Series{dtype: :string} = series, {:datetime, precision}),
+  def cast(%Series{dtype: :string} = series, {:naive_datetime, precision}),
     do: Shared.apply_series(series, :s_strptime, [nil, precision])
 
   def cast(series, dtype),

@@ -89,7 +89,8 @@ defmodule Explorer.Backend.DataFrame do
   @callback from_parquet(
               entry :: fs_entry(),
               max_rows :: option(integer()),
-              columns :: columns_for_io()
+              columns :: columns_for_io(),
+              rechunk :: boolean()
             ) :: io_result(df)
   @callback to_parquet(
               df,
@@ -239,6 +240,10 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback summarise_with(df, out_df :: df(), aggregations :: [{column_name(), lazy_series()}]) ::
               df
+
+  # SQL
+
+  @callback sql(df, sql_string :: binary(), table_name :: binary()) :: df()
 
   # Functions
   alias Explorer.{DataFrame, Series}

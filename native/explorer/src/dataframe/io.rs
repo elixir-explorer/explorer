@@ -191,6 +191,7 @@ pub fn df_from_parquet(
     stop_after_n_rows: Option<usize>,
     column_names: Option<Vec<String>>,
     projection: Option<Vec<usize>>,
+    rechunk: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let file = File::open(filename)?;
     let buf_reader = BufReader::new(file);
@@ -198,7 +199,8 @@ pub fn df_from_parquet(
     let reader = ParquetReader::new(buf_reader)
         .with_n_rows(stop_after_n_rows)
         .with_columns(column_names)
-        .with_projection(projection);
+        .with_projection(projection)
+        .set_rechunk(rechunk);
 
     Ok(ExDataFrame::new(reader.finish()?))
 }

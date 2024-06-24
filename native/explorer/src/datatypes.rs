@@ -363,7 +363,19 @@ impl From<NaiveDateTime> for ExNaiveDateTime {
 
 impl Literal for ExNaiveDateTime {
     fn lit(self) -> Expr {
-        NaiveDateTime::from(self).lit()
+        let ndt = NaiveDateTime::from(self);
+        // We can't call `ndt.lit()` because Polars defaults to nanoseconds
+        // for all years between 1386 and 2554, but Elixir only represents
+        // microsecond precision natively. This code is copied from the
+        // microsecond branch of their `.lit()` implementation.
+        //
+        // See here for details:
+        // polars-time-0.38.3/src/date_range.rs::in_nanoseconds_window
+        Expr::Literal(LiteralValue::DateTime(
+            ndt.and_utc().timestamp_micros(),
+            TimeUnit::Microseconds,
+            None,
+        ))
     }
 }
 

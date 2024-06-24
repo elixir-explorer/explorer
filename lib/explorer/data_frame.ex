@@ -701,6 +701,9 @@ defmodule Explorer.DataFrame do
     * `:columns` - A list of column names or indexes to keep. If present,
       only these columns are read into the dataframe. (default: `nil`)
 
+    * `:rechunk` - Make sure that all columns are contiguous in memory
+      by aggregating the chunks into a single array. (default: `false`)
+
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
@@ -718,7 +721,8 @@ defmodule Explorer.DataFrame do
       Keyword.validate!(opts,
         max_rows: nil,
         columns: nil,
-        config: nil
+        config: nil,
+        rechunk: false
       )
 
     backend = backend_from_options!(backend_opts)
@@ -727,7 +731,8 @@ defmodule Explorer.DataFrame do
       backend.from_parquet(
         entry,
         opts[:max_rows],
-        to_columns_for_io(opts[:columns])
+        to_columns_for_io(opts[:columns]),
+        opts[:rechunk]
       )
     end
   end
@@ -2858,10 +2863,10 @@ defmodule Explorer.DataFrame do
         LazySeries.new(:lazy, [date], :date)
 
       naive_datetime = %NaiveDateTime{} ->
-        LazySeries.new(:lazy, [naive_datetime], {:naive_datetime, :nanosecond})
+        LazySeries.new(:lazy, [naive_datetime], {:naive_datetime, :microsecond})
 
-      datetime = %DateTime{} ->
-        LazySeries.new(:lazy, [datetime], {:datetime, :nanosecond})
+      datetime = %DateTime{time_zone: time_zone} ->
+        LazySeries.new(:lazy, [datetime], {:datetime, :microsecond, time_zone})
 
       duration = %Explorer.Duration{precision: precision} ->
         LazySeries.new(:lazy, [duration], {:duration, precision})
@@ -5397,10 +5402,10 @@ defmodule Explorer.DataFrame do
   dataframes:
 
       iex> df = Explorer.Datasets.iris()
-      iex> Explorer.DataFrame.summarise(df, mean_petal_length: mean(petal_length))
+      iex> Explorer.DataFrame.summarise(df, mean_petal_length: round(mean(petal_length), 2))
       #Explorer.DataFrame<
         Polars[1 x 1]
-        mean_petal_length f64 [3.758666666666666]
+        mean_petal_length f64 [3.76]
       >
 
   """
@@ -5939,6 +5944,52 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
     out_df = pairwised_df(df, opts)
     Shared.apply_impl(df, :covariance, [out_df, opts[:ddof]])
+  end
+
+  # SQL
+
+  @doc """
+  Create a dataframe from the result of a SQL query on an existing dataframe.
+
+  > ### SQL Query is Unvalidated {: .warning}
+  >
+  > Explorer does not validate the SQL query string provided. Instead it passes
+  > it directly to the backend. As such, the SQL dialect will be backend
+  > dependent and any errors will come directly from the backend.
+
+  ## `from` Clause
+
+  The `from` clause of the SQL query should reference a chosen table name. The
+  default name is `"df"`. See the examples for a custom table name.
+
+  ## Examples
+
+  Basic example:
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["x", "y", "y"])
+      iex> Explorer.DataFrame.sql(df, "select a, b from df group by b order by b")
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        a list[s64] [[1], [2, 3]]
+        b string ["x", "y"]
+      >
+
+  Custom table name:
+
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.sql(df, "select a + 1 from my_table", table_name: "my_table")
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        a s64 [2, 3, 4]
+      >
+  """
+  @doc type: :single
+  @spec sql(df :: DataFrame.t(), sql_string :: binary(), opts :: Keyword.t()) ::
+          df :: DataFrame.t()
+  def sql(%__MODULE__{} = df, sql_string, opts \\ [])
+      when is_binary(sql_string) and is_list(opts) do
+    [table_name: table_name] = Keyword.validate!(opts, table_name: "df")
+    Shared.apply_impl(df, :sql, [sql_string, table_name])
   end
 
   # Helpers
