@@ -2157,29 +2157,27 @@ defmodule Explorer.Series do
   @doc type: :shape
   @spec format([Series.t() | String.t()]) :: Series.t()
   def format([_ | _] = list) do
-    list = cast_to_string(list)
+    case cast_to_string(list) do
+      {[head | tail], true} ->
+        apply_series_varargs(:format, [from_list([head], dtype: :string) | tail])
 
-    if impl = impl!(list) do
-      impl.format(list)
-    else
-      [hd | rest] = list
-      s = Series.from_list([hd], dtype: :string)
-      impl!([s]).format([s | rest])
+      {list, false} ->
+        apply_series_varargs(:format, list)
     end
   end
 
   defp cast_to_string(list) do
-    Enum.map(list, fn
-      %Series{dtype: :string} = s ->
-        s
+    Enum.map_reduce(list, true, fn
+      %Series{dtype: :string} = s, _literal? ->
+        {s, false}
 
-      %Series{} = s ->
-        cast(s, :string)
+      %Series{} = s, _literal? ->
+        {cast(s, :string), false}
 
-      value when K.or(is_binary(value), K.is_nil(value)) ->
-        value
+      value, literal? when K.or(is_binary(value), K.is_nil(value)) ->
+        {value, literal?}
 
-      other ->
+      other, _literal? ->
         raise ArgumentError,
               "format/1 expects a list of series or strings, got: #{inspect(other)}"
     end)
@@ -2234,7 +2232,7 @@ defmodule Explorer.Series do
           Enum.map(series, &cast(&1, dtype))
       end
 
-    impl!(series).concat(series)
+    apply_series_varargs(:concat, series)
   end
 
   @doc """
@@ -6170,7 +6168,7 @@ defmodule Explorer.Series do
   @doc type: :datetime_wise
   @spec month(Series.t()) :: Series.t()
   def month(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:month, [series])
+    do: apply_series(series, :month)
 
   def month(%Series{dtype: dtype}),
     do: super_dtype_error("month/1", dtype, [:date, :datetime, :naive_datetime])
@@ -6199,7 +6197,7 @@ defmodule Explorer.Series do
   @doc type: :datetime_wise
   @spec year(Series.t()) :: Series.t()
   def year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:year, [series])
+    do: apply_series(series, :year)
 
   def year(%Series{dtype: dtype}),
     do: super_dtype_error("year/1", dtype, [:date, :datetime, :naive_datetime])
@@ -6219,7 +6217,7 @@ defmodule Explorer.Series do
   @doc type: :datetime_wise
   @spec hour(Series.t()) :: Series.t()
   def hour(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
-    do: apply_series_list(:hour, [series])
+    do: apply_series(series, :hour)
 
   def hour(%Series{dtype: dtype}),
     do: super_dtype_error("hour/1", dtype, [:time, :datetime, :naive_datetime])
@@ -6239,7 +6237,7 @@ defmodule Explorer.Series do
   @doc type: :datetime_wise
   @spec minute(Series.t()) :: Series.t()
   def minute(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
-    do: apply_series_list(:minute, [series])
+    do: apply_series(series, :minute)
 
   def minute(%Series{dtype: dtype}),
     do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
@@ -6259,7 +6257,7 @@ defmodule Explorer.Series do
   @doc type: :datetime_wise
   @spec second(Series.t()) :: Series.t()
   def second(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
-    do: apply_series_list(:second, [series])
+    do: apply_series(series, :second)
 
   def second(%Series{dtype: dtype}),
     do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
@@ -6289,7 +6287,7 @@ defmodule Explorer.Series do
   @doc type: :datetime_wise
   @spec day_of_week(Series.t()) :: Series.t()
   def day_of_week(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:day_of_week, [series])
+    do: apply_series(series, :day_of_week)
 
   def day_of_week(%Series{dtype: dtype}),
     do: super_dtype_error("day_of_week/1", dtype, [:date, :datetime, :naive_datetime])
@@ -6587,26 +6585,27 @@ defmodule Explorer.Series do
   # Helpers
 
   defp apply_series(series, fun, args \\ []) do
-    if impl = impl!([series]) do
-      apply(impl, fun, [series | args])
-    else
-      raise ArgumentError,
-            "expected a series as argument for #{fun}, got: #{inspect(series)}" <>
-              maybe_hint([series])
-    end
+    apply(apply_series_impl!([series], fun), fun, [series | args])
   end
 
   defp apply_series_list(fun, series_or_scalars) when is_list(series_or_scalars) do
-    impl = impl!(series_or_scalars)
-    apply(impl, fun, series_or_scalars)
+    apply(apply_series_impl!(series_or_scalars, fun), fun, series_or_scalars)
   end
 
-  defp impl!([_ | _] = series_or_scalars) do
+  defp apply_series_varargs(fun, series_or_scalars) when is_list(series_or_scalars) do
+    apply(apply_series_impl!(series_or_scalars, fun), fun, [series_or_scalars])
+  end
+
+  # This function must only be invoked from apply_series*
+  defp apply_series_impl!([_ | _] = series_or_scalars, fun) do
     Enum.reduce(series_or_scalars, nil, fn
       %{data: %struct{}}, nil -> struct
       %{data: %struct{}}, impl -> pick_series_impl(impl, struct)
       _scalar, impl -> impl
-    end)
+    end) ||
+      raise ArgumentError,
+            "expected a series as argument for #{fun}, got: #{inspect(series_or_scalars)}" <>
+              maybe_hint(series_or_scalars)
   end
 
   defp pick_series_impl(struct, struct), do: struct
