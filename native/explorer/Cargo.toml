@@ -11,6 +11,9 @@ name = "explorer"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
 
+[build-dependencies]
+cc = "1.0"
+
 [dependencies]
 anyhow = "1"
 chrono = "0.4"

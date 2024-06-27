@@ -27,8 +27,7 @@ defmodule Explorer.Remote.LocalGC do
   """
   def track(local_gc, remote_pid, remote_ref)
       when is_pid(local_gc) and is_pid(remote_pid) and is_reference(remote_ref) do
-    # TODO: Explorer.Native.message_on_gc(local_gc, {remote_pid, remote_ref})
-    make_ref()
+    Explorer.PolarsBackend.Native.message_on_gc(local_gc, {remote_pid, remote_ref})
   end
 
   ## Callbacks
