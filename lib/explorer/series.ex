@@ -182,7 +182,7 @@ defmodule Explorer.Series do
 
   @doc false
   @enforce_keys [:data, :dtype]
-  defstruct [:data, :dtype, :name]
+  defstruct [:data, :dtype, :name, :remote]
 
   @behaviour Access
   @compile {:no_warn_undefined, Nx}

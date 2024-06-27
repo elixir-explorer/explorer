@@ -221,6 +221,9 @@ defmodule Explorer.Backend.LazySeries do
   def operations, do: @operations
 
   @impl true
+  def owner_reference(_), do: nil
+
+  @impl true
   def dtype(%Series{} = s), do: s.dtype
 
   @impl true

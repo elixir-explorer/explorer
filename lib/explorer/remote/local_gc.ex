@@ -23,7 +23,7 @@ defmodule Explorer.Remote.LocalGC do
   and it returns a NIF resource.
 
   Once the NIF resource is GCed, it sends a message `{:gc, payload}`
-  to the local GC process, whioch forwards it to the holder node.
+  to the local GC process, which forwards it to the holder node.
   """
   def track(local_gc, remote_pid, remote_ref)
       when is_pid(local_gc) and is_pid(remote_pid) and is_reference(remote_ref) do

@@ -600,6 +600,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Introspection
 
   @impl true
+  def owner_reference(df), do: df.data.resource
+
+  @impl true
   def n_rows(df), do: Shared.apply_dataframe(df, :df_n_rows)
 
   # Single table verbs

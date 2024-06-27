@@ -41,6 +41,9 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Introspection
 
   @impl true
+  def owner_reference(df), do: df.data.resource
+
+  @impl true
   def inspect(ldf, opts) when node(ldf.data.resource) != node() do
     Explorer.Backend.DataFrame.inspect(
       ldf,

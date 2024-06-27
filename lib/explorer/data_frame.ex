@@ -200,7 +200,7 @@ defmodule Explorer.DataFrame do
   alias FSS.S3
 
   @enforce_keys [:data, :groups, :names, :dtypes]
-  defstruct [:data, :groups, :names, :dtypes]
+  defstruct [:data, :groups, :names, :dtypes, :remote]
 
   @typedoc """
   Represents a column name as atom or string.

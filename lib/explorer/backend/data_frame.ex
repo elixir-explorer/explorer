@@ -160,9 +160,9 @@ defmodule Explorer.Backend.DataFrame do
 
   # Introspection
 
+  @callback owner_reference(df) :: reference() | nil
   @callback n_rows(df) :: integer()
   @callback inspect(df, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
-
   @callback re_dtype(String.t()) :: dtype()
 
   # Single table verbs

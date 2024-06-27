@@ -57,7 +57,10 @@ defmodule Explorer.PolarsBackend.Series do
   # Introspection
 
   @impl true
-  def dtype(series), do: series |> Shared.apply_series(:s_dtype)
+  def owner_reference(series), do: series.data.resource
+
+  @impl true
+  def dtype(series), do: Shared.apply_series(series, :s_dtype)
 
   @impl true
   def size(series), do: Shared.apply_series(series, :s_size)

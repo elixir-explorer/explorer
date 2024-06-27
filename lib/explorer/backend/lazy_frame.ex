@@ -31,6 +31,9 @@ defmodule Explorer.Backend.LazyFrame do
   end
 
   @impl true
+  def owner_reference(_), do: nil
+
+  @impl true
   def lazy, do: __MODULE__
 
   @impl true
