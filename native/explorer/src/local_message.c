@@ -46,9 +46,6 @@ int enif_send(ErlNifEnv *caller_env, ErlNifPid *to_pid, ErlNifEnv *msg_env,
 /// ----- minimal erlang nif api header -----
 
 static ERL_NIF_TERM kAtomError;
-static ERL_NIF_TERM kAtomEnifGetLocalPid;
-static ERL_NIF_TERM kAtomEnifAllocResource;
-static ERL_NIF_TERM kAtomEnifAllocEnv;
 
 void destruct_local_message(ErlNifEnv *env, void *obj) {
   printf("destruct_local_message is called, send value to pid\r\n");
@@ -64,23 +61,19 @@ ERL_NIF_TERM local_message_on_gc(ErlNifEnv *env, const ERL_NIF_TERM pid_term,
     return enif_make_badarg(env);
   }
   ErlNifPid pid;
-  ERL_NIF_TERM error_tuples[2] = {kAtomError, 0};
   if (!enif_get_local_pid(env, pid_term, &pid)) {
-    error_tuples[1] = kAtomEnifGetLocalPid;
-    return enif_make_tuple_from_array(env, error_tuples, 2);
+    return kAtomError;
   }
 
   struct message *m =
       enif_alloc_resource(message_resource, sizeof(struct message));
   if (!m) {
-    error_tuples[1] = kAtomEnifAllocResource;
-    return enif_make_tuple_from_array(env, error_tuples, 2);
+    return kAtomError;
   }
 
   m->env = enif_alloc_env();
   if (!m->env) {
-    error_tuples[1] = kAtomEnifAllocEnv;
-    return enif_make_tuple_from_array(env, error_tuples, 2);
+    return kAtomError;
   }
   m->pid = pid;
   m->value = enif_make_copy(m->env, term);
@@ -99,9 +92,6 @@ void local_message_open_resource(ErlNifEnv *env) {
   message_resource = rt;
 
   kAtomError = enif_make_atom(env, "error");
-  kAtomEnifGetLocalPid = enif_make_atom(env, "enif_get_local_pid");
-  kAtomEnifAllocResource = enif_make_atom(env, "enif_alloc_resource");
-  kAtomEnifAllocEnv = enif_make_atom(env, "enif_alloc_env");
 }
 
 #ifdef __cplusplus
