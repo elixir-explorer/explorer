@@ -23,8 +23,8 @@ mod encoding;
 mod error;
 mod expressions;
 mod lazyframe;
-mod series;
 mod local_message;
+mod series;
 
 use dataframe::io::*;
 use dataframe::*;
@@ -37,10 +37,10 @@ pub use error::ExplorerError;
 use expressions::*;
 use lazyframe::io::*;
 use lazyframe::*;
+use local_message::*;
 use series::from_list::*;
 use series::log::*;
 use series::*;
-use local_message::*;
 
 fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExDataFrameRef, env);
