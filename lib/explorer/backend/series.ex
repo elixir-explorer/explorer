@@ -10,7 +10,7 @@ defmodule Explorer.Backend.Series do
   @type df :: Explorer.DataFrame.t()
   @type dtype :: Explorer.Series.dtype()
 
-  @type valid_types ::
+  @type literal ::
           number()
           | boolean()
           | String.t()
@@ -59,8 +59,8 @@ defmodule Explorer.Backend.Series do
   @callback format(list(s)) :: s
   @callback concat(list(s)) :: s
   @callback coalesce(s, s) :: s
-  @callback first(s) :: valid_types() | lazy_s()
-  @callback last(s) :: valid_types() | lazy_s()
+  @callback first(s) :: literal() | lazy_s()
+  @callback last(s) :: literal() | lazy_s()
   @callback select(predicate :: s, s, s) :: s
   @callback shift(s, offset :: integer, default :: nil) :: s
   @callback rank(
@@ -264,7 +264,7 @@ defmodule Explorer.Backend.Series do
   # Nulls
 
   @callback fill_missing_with_strategy(s, :backward | :forward | :min | :max | :mean) :: s
-  @callback fill_missing_with_value(s, :nan | valid_types()) :: s
+  @callback fill_missing_with_value(s, :nan | literal()) :: s
   @callback is_nil(s) :: s
   @callback is_not_nil(s) :: s
 
@@ -313,7 +313,7 @@ defmodule Explorer.Backend.Series do
   # List
   @callback join(s, String.t()) :: s
   @callback lengths(s) :: s
-  @callback member?(s, valid_types()) :: s
+  @callback member?(s, literal()) :: s
 
   # Struct
   @callback field(s, String.t()) :: s
