@@ -24,24 +24,22 @@ defmodule Explorer.Remote do
   a process on the remote node and sets up a distributed
   garbage collector.
   """
-  def place(term) do
-    place(term, [], fn remote_ref, acc ->
-      local_gc = Explorer.Remote.LocalGC.whereis!()
-      {:ok, remote_pid} = Explorer.Remote.Holder.start_child(remote_ref, local_gc)
-      local_ref = Explorer.Remote.LocalGC.track(local_gc, remote_pid, remote_ref)
-      Explorer.Remote.Holder.hold(remote_pid, remote_ref, local_gc)
-      {local_ref, remote_pid}
-    end)
+  def place(remote_ref) do
+    local_gc = Explorer.Remote.LocalGC.whereis!()
+    {:ok, remote_pid} = Explorer.Remote.Holder.start_child(remote_ref, local_gc)
+    local_ref = Explorer.Remote.LocalGC.track(local_gc, remote_pid, remote_ref)
+    Explorer.Remote.Holder.hold(remote_pid, remote_ref, local_gc)
+    {local_ref, remote_pid}
   end
 
-  def place(tuple, acc) when is_tuple(tuple) do
-    tuple
-    |> Tuple.to_list()
-    |> place(acc)
-    |> List.to_tuple()
-  end
+  # def place(tuple, acc) when is_tuple(tuple) do
+  #   tuple
+  #   |> Tuple.to_list()
+  #   |> place(acc)
+  #   |> List.to_tuple()
+  # end
 
-  def place(list) when is_list(list) do
-    Enum.map(list, &place/1)
-  end
+  # def place(list) when is_list(list) do
+  #   Enum.map(list, &place/1)
+  # end
 end

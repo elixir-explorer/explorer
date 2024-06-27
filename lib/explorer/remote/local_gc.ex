@@ -6,10 +6,16 @@ defmodule Explorer.Remote.LocalGC do
 
   use GenServer
   @name __MODULE__
-  @timeout :infinity
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, :ok, name: @name)
+  end
+
+  @doc """
+  Locates the LocalGC process.
+  """
+  def whereis! do
+    Process.whereis(@name) || exit({:noproc, {__MODULE__, :whereis!, []}})
   end
 
   @doc """

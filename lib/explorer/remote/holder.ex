@@ -29,6 +29,7 @@ defmodule Explorer.Remote.Holder do
     {:ok, state}
   end
 
+  @impl true
   def handle_info({:gc, ref, pid}, state) do
     refs = pop_from_list(state.refs, ref, pid)
     pids = pop_from_list(state.pids, pid, ref)
