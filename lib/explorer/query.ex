@@ -268,6 +268,11 @@ defmodule Explorer.Query do
   you can fallback to the regular `_with` APIs.
   """
 
+  alias Explorer.Series
+  alias Explorer.Backend.LazySeries
+
+  defstruct [:series_list]
+
   # `and` and `or` are sent as is to queries
   @binary_mapping [
     ==: :equal,
@@ -284,9 +289,22 @@ defmodule Explorer.Query do
   ]
   @binary_ops Keyword.keys(@binary_mapping)
 
-  defstruct [:lazy_series_list]
+  def new(%Explorer.Series{data: %LazySeries{}} = series) do
+    new([series])
+  end
 
-  defmacro new(expression) do
+  def new(list) when is_list(list) do
+    %__MODULE__{series_list: normalize_aliases(list)}
+  end
+
+  def normalize_aliases(list) do
+    Enum.map(list, fn
+      {name, %Series{data: %LazySeries{}} = series} -> Series.rename(series, name)
+      %Series{data: %LazySeries{}} = series -> series
+    end)
+  end
+
+  defmacro new_expr(expression) do
     quote do
       unquote(traverse_ls_root(expression))
     end
@@ -316,7 +334,7 @@ defmodule Explorer.Query do
       end)
 
     quote do
-      %Explorer.Query{lazy_series_list: [unquote(lazy_series)]}
+      Explorer.Query.new(unquote(lazy_series))
     end
   end
 

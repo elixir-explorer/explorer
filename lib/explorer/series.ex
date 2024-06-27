@@ -4050,7 +4050,7 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
   def equal(left, right) do
-    if args = cast_for_comparable_operation(left, right) do
+    if args = cast_for_comparable_operation(left, right) |> dbg do
       apply_series_list(:equal, args)
     else
       dtype_mismatch_error("equal/2", left, right)
@@ -4354,6 +4354,8 @@ defmodule Explorer.Series do
 
   defp valid_comparable_series?(:category, :string), do: true
   defp valid_comparable_series?(:string, :category), do: true
+  defp valid_comparable_series?(:unknown, _), do: true
+  defp valid_comparable_series?(_, :unknown), do: true
 
   defp valid_comparable_series?(left_dtype, right_dtype),
     do: valid_ordered_series?(left_dtype, right_dtype)
@@ -4399,6 +4401,12 @@ defmodule Explorer.Series do
   defp valid_ordered_series?(dtype, dtype),
     do: true
 
+  defp valid_ordered_series?(:unknown, _),
+    do: true
+
+  defp valid_ordered_series?(_, :unknown),
+    do: true
+
   defp valid_ordered_series?(left_dtype, right_dtype)
        when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
        do: true
@@ -4426,6 +4434,9 @@ defmodule Explorer.Series do
 
   defp cast_to_ordered_series({:duration, _}, %Explorer.Duration{}),
     do: :duration
+
+  defp cast_to_ordered_series(:unknown, _value),
+    do: :unknown
 
   defp cast_to_ordered_series(_dtype, _value),
     do: nil
@@ -6584,6 +6595,15 @@ defmodule Explorer.Series do
     apply_series(series, :json_path_match, [json_path])
   end
 
+  def col(name) do
+    lazy_series = %Explorer.Backend.LazySeries{op: :col, args: [name]}
+    %Series{data: lazy_series, dtype: :unknown}
+  end
+
+  def rename(%Series{} = series, name) do
+    apply_series(series, :rename, [name])
+  end
+
   # Helpers
 
   defp apply_series(series, fun, args \\ []) do
@@ -6702,18 +6722,24 @@ defmodule Explorer.Series do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(series, opts) do
-      force_unfit(
-        concat([
-          color("#Explorer.Series<", :map, opts),
-          nest(
-            concat([line(), Shared.apply_impl(series, :inspect, [opts])]),
-            2
-          ),
-          line(),
-          color(">", :map, opts)
-        ])
-      )
+    def inspect(series, inspect_opts) do
+      # force_unfit(
+      #   concat([
+      #     color("#Explorer.Series<", :map, opts),
+      #     nest(
+      #       concat([line(), Shared.apply_impl(series, :inspect, [opts])]),
+      #       2
+      #     ),
+      #     line(),
+      #     color(">", :map, opts)
+      #   ])
+      # )
+      open = color("#Explorer.Series<", :map, inspect_opts)
+      separator = color(",", :map, inspect_opts)
+      close = color(">", :map, inspect_opts)
+      fun = &Shared.apply_impl(&1, :inspect, [&2])
+      opts = [separator: separator, break: :strict]
+      container_doc(open, [series], close, inspect_opts, fun, opts)
     end
   end
 end
