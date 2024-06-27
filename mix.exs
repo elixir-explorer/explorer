@@ -30,6 +30,7 @@ defmodule Explorer.MixProject do
   def application do
     [
       extra_applications: [:logger, :inets, :ssl],
+      mod: {Explorer.Application, []},
       env: [default_backend: Explorer.PolarsBackend]
     ]
   end
