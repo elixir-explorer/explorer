@@ -11,9 +11,6 @@ name = "explorer"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
 
-[build-dependencies]
-cc = "1.0"
-
 [dependencies]
 anyhow = "1"
 chrono = "0.4"
@@ -21,6 +18,7 @@ chrono-tz = "0.9"
 rand = { version = "0.8", features = ["alloc"] }
 rand_pcg = "0.3"
 rustler = { version = "0.32", default-features = false, features = ["derive"] }
+rustler_sys = "2"
 thiserror = "1"
 smartstring = "1"
 either = "1"

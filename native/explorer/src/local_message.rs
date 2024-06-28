@@ -1,18 +1,62 @@
-use rustler::wrapper::{NIF_ENV, NIF_TERM};
-use rustler::{Env, Term};
-use std::ffi::c_void;
 
-extern "C" {
-    pub fn local_message_open_resource(env: NIF_ENV) -> c_void;
-    fn local_message_on_gc(env: NIF_ENV, arg1: NIF_TERM, arg2: NIF_TERM) -> NIF_TERM;
+use rustler::{Term, LocalPid, NifStruct, ResourceArc};
+use rustler_sys::enif_send;
+use std::ops::Deref;
+
+#[derive(Clone)]
+pub struct LocalMessage<'a> {
+    pub pid: LocalPid,
+    pub term: Term<'a>,
+}
+
+impl<'a> Drop for LocalMessage<'a> {
+    fn drop(&mut self) {
+        let env = self.term.get_env();
+        unsafe {
+            enif_send(env.as_c_arg(), self.pid.as_c_arg(), env.as_c_arg(), self.term.as_c_arg());
+        }
+    }
+}
+
+pub struct ExLocalMessageRef<'a>(pub LocalMessage<'a>);
+
+impl<'a> ExLocalMessageRef<'a> {
+    pub fn new(m: LocalMessage<'a>) -> Self {
+        Self(m)
+    }
+}
+
+#[derive(NifStruct)]
+#[module = "Explorer.Remote.LocalGC"]
+pub struct ExLocalMessage<'a> {
+    pub resource: ResourceArc<ExLocalMessageRef<'a>>,
+}
+
+impl<'a> ExLocalMessage<'a> {
+    pub fn new(m: LocalMessage<'a>) -> Self {
+        Self {
+            resource: ResourceArc::new(ExLocalMessageRef::new(m)),
+        }
+    }
+
+    // Returns a clone of the DataFrame inside the ResourceArc container.
+    pub fn clone_inner(&self) -> LocalMessage<'a> {
+        self.resource.0.clone()
+    }
+}
+
+impl<'a> Deref for ExLocalMessage<'a> {
+    type Target = LocalMessage<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.resource.0
+    }
 }
 
 #[rustler::nif]
-pub fn message_on_gc<'a>(env: Env<'a>, pid: Term<'a>, term: Term<'a>) -> Term<'a> {
-    unsafe {
-        Term::new(
-            env,
-            local_message_on_gc(env.as_c_arg(), pid.as_c_arg(), term.as_c_arg()),
-        )
-    }
+pub fn message_on_gc<'a>(pid: LocalPid, term: Term<'a>) -> ExLocalMessage<'a> {
+    ExLocalMessage::new(LocalMessage{
+        pid,
+        term
+    })
 }

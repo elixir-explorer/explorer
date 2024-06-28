@@ -42,14 +42,12 @@ use series::from_list::*;
 use series::log::*;
 use series::*;
 
-fn on_load(env: Env, _info: Term) -> bool {
+fn on_load<'a>(env: Env, _info: Term) -> bool {
     rustler::resource!(ExDataFrameRef, env);
     rustler::resource!(ExExprRef, env);
     rustler::resource!(ExLazyFrameRef, env);
     rustler::resource!(ExSeriesRef, env);
-    unsafe {
-        local_message_open_resource(env.as_c_arg());
-    }
+    rustler::resource!(ExLocalMessageRef<'a>, env);
     true
 }
 
