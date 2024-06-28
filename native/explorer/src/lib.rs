@@ -23,6 +23,7 @@ mod encoding;
 mod error;
 mod expressions;
 mod lazyframe;
+mod local_message;
 mod series;
 
 use dataframe::io::*;
@@ -31,10 +32,12 @@ pub use datatypes::{
     ExDataFrame, ExDataFrameRef, ExExpr, ExExprRef, ExLazyFrame, ExLazyFrameRef, ExSeries,
     ExSeriesRef,
 };
+
 pub use error::ExplorerError;
 use expressions::*;
 use lazyframe::io::*;
 use lazyframe::*;
+use local_message::*;
 use series::from_list::*;
 use series::log::*;
 use series::*;
@@ -44,6 +47,9 @@ fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExExprRef, env);
     rustler::resource!(ExLazyFrameRef, env);
     rustler::resource!(ExSeriesRef, env);
+    unsafe {
+        local_message_open_resource(env.as_c_arg());
+    }
     true
 }
 
@@ -499,7 +505,9 @@ rustler::init!(
         s_member,
         s_field,
         s_json_decode,
-        s_json_path_match
+        s_json_path_match,
+        // local_message
+        message_on_gc
     ],
     load = on_load
 );
