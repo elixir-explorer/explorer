@@ -1,30 +1,40 @@
 defmodule Explorer.RemoteTest do
   use ExUnit.Case, async: true
+  import Explorer.RemoteHelpers
 
   @moduletag :distributed
   alias Explorer.Series
   alias Explorer.DataFrame
 
-  @node1 :"primary@127.0.0.1"
   @node2 :"secondary@127.0.0.1"
 
-  defmacrop remote_eval(node, binding \\ [], do: block) do
-    quote do
-      :erpc.call(unquote(node), Code, :eval_quoted, [
-        unquote(Macro.escape(block)),
-        unquote(binding)
-      ])
+  describe "remote calls" do
+    test "happens for non-placed series" do
+      {resource, _} =
+        remote_eval @node2 do
+          Explorer.Series.from_list([1, 2, 3])
+          |> Explorer.RemoteHelpers.keep()
+        end
+
+      assert inspect(resource) =~ """
+             #Explorer.Series<
+               secondary@127.0.0.1
+               Polars[3]
+               s64 [1, 2, 3]
+             >\
+             """
     end
   end
 
   describe "garbage collection" do
     test "happens once the resource is deallocated" do
-      remote_eval @node2 do
-        s = Explorer.Series.from_list([1, 2, 3])
-        Agent.start(fn -> s end)
-        s
-      end
-      |> dbg()
+      # {resource, _} =
+      #   remote_eval @node2 do
+      #     Explorer.Series.from_list([1, 2, 3])
+      #     |> Explorer.RemoteHelpers.keep()
+      #   end
+
+      # assert inspect(resource) =~ "OMG"
     end
   end
 

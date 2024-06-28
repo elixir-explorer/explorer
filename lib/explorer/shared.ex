@@ -631,8 +631,6 @@ defmodule Explorer.Shared do
 
   # TODO: What happens when a remote series is inside a lazy frame?
   defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback) do
-    :erlang.display(series_or_scalars)
-
     {series_nodes, {impl, remote}} =
       Enum.map_reduce(series_or_scalars, {nil, nil}, fn
         %{data: %impl{}} = series, {acc_impl, acc_remote} ->
@@ -649,17 +647,11 @@ defmodule Explorer.Shared do
               maybe_bad_column_hint(series_or_scalars)
     end
 
-    case remote do
-      nil ->
-        apply(impl, fun, args_callback.(series_or_scalars))
-
-      pid when is_pid(pid) ->
-        raise "execute this in synchrony"
-        :erpc.call(node(pid), impl, fun, args_callback.(series_or_scalars))
-
-      node ->
-        # TODO: Transfer arguments
-        :erpc.call(node, impl, fun, args_callback.(series_or_scalars))
+    if remote do
+      # TODO: Transfer arguments
+      Explorer.Remote.apply(remote, impl, fun, args_callback.(series_or_scalars))
+    else
+      apply(impl, fun, args_callback.(series_or_scalars))
     end
   end
 

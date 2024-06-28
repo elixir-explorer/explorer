@@ -6659,12 +6659,25 @@ defmodule Explorer.Series do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(series, opts) do
+    def inspect(%Explorer.Series{data: %struct{}} = series, opts) do
+      remote_ref =
+        case series.remote do
+          {_local_gc, _remote_pid, remote_ref} -> remote_ref
+          _ -> struct.owner_reference(series)
+        end
+
+      remote =
+        if Kernel.and(is_reference(remote_ref), node(remote_ref) != node()) do
+          concat(line(), Atom.to_string(node(remote_ref)))
+        else
+          empty()
+        end
+
       force_unfit(
         concat([
           color("#Explorer.Series<", :map, opts),
           nest(
-            concat([line(), apply_series(series, :inspect, [opts])]),
+            concat([remote, line(), apply_series(series, :inspect, [opts])]),
             2
           ),
           line(),

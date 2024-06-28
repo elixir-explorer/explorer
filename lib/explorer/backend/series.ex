@@ -342,12 +342,6 @@ defmodule Explorer.Backend.Series do
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
 
-    remote =
-      case series.remote do
-        {_local_gc, remote_pid, _remote_ref} -> " (node: #{node(remote_pid)})"
-        _ -> ""
-      end
-
     type =
       series
       |> Series.dtype()
@@ -361,7 +355,6 @@ defmodule Explorer.Backend.Series do
       open,
       "#{n_rows || "???"}",
       close,
-      remote,
       A.line(),
       dtype,
       data
