@@ -308,7 +308,6 @@ pub fn lf_join(
 #[rustler::nif]
 pub fn lf_concat_rows(lazy_frames: Vec<ExLazyFrame>) -> Result<ExLazyFrame, ExplorerError> {
     let inputs: Vec<LazyFrame> = lazy_frames.iter().map(|lf| lf.clone_inner()).collect();
-    // TODO: Make sure union args options are configurable
     let union_args = UnionArgs::default();
     let out_df = concat(inputs, union_args)?;
 

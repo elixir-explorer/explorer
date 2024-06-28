@@ -3266,7 +3266,6 @@ defmodule Explorer.Series do
     |> enforce_highest_precision()
   end
 
-  # TODO: maybe we can move this casting to Rust.
   defp enforce_highest_precision([
          %Series{dtype: dtype_left} = left,
          %Series{dtype: dtype_right} = right

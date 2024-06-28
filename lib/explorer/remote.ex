@@ -20,6 +20,9 @@ defmodule Explorer.Remote do
   # TODO: Make `collect` in dataframe transfer to the current node
   # TODO: Add `collect` to series
   # TODO: Add `compute` to dataframe
+  # TODO: Handle dataframes (remove Shared.apply_impl)
+  # TODO: Handle lazy series
+  # TODO: Handle mixed arguments
 
   @doc """
   Receives a data structure and traverses it looking

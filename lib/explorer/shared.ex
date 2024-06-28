@@ -261,7 +261,6 @@ defmodule Explorer.Shared do
   @doc """
   Applies a function with args using the implementation of a dataframe or series.
   """
-  # TODO: Remove this in favor of specific functions.
   def apply_impl(df_or_series_or_list, fun, args \\ []) do
     impl = impl!(df_or_series_or_list)
     apply(impl, fun, [df_or_series_or_list | args])
@@ -629,7 +628,6 @@ defmodule Explorer.Shared do
     apply_series_impl!(series_or_scalars, fun, &[&1])
   end
 
-  # TODO: What happens when a remote series is inside a lazy frame?
   defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback) do
     {series_nodes, {impl, remote}} =
       Enum.map_reduce(series_or_scalars, {nil, nil}, fn
@@ -648,7 +646,6 @@ defmodule Explorer.Shared do
     end
 
     if remote do
-      # TODO: Transfer arguments
       Explorer.Remote.apply(remote, impl, fun, args_callback.(series_or_scalars))
     else
       apply(impl, fun, args_callback.(series_or_scalars))
