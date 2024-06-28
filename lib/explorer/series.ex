@@ -1,3 +1,6 @@
+import Explorer.Shared,
+  only: [apply_series: 2, apply_series: 3, apply_series_list: 2, apply_series_varargs: 2]
+
 defmodule Explorer.Series do
   @moduledoc """
   The Series struct and API.
@@ -2601,7 +2604,7 @@ defmodule Explorer.Series do
     do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
 
   def mode(%Series{} = series),
-    do: Shared.apply_impl(series, :mode)
+    do: apply_series(series, :mode)
 
   @doc """
   Gets the median value of the series.
@@ -6584,39 +6587,6 @@ defmodule Explorer.Series do
 
   # Helpers
 
-  defp apply_series(series, fun, args \\ []) do
-    apply(apply_series_impl!([series], fun), fun, [series | args])
-  end
-
-  defp apply_series_list(fun, series_or_scalars) when is_list(series_or_scalars) do
-    apply(apply_series_impl!(series_or_scalars, fun), fun, series_or_scalars)
-  end
-
-  defp apply_series_varargs(fun, series_or_scalars) when is_list(series_or_scalars) do
-    apply(apply_series_impl!(series_or_scalars, fun), fun, [series_or_scalars])
-  end
-
-  # This function must only be invoked from apply_series*
-  defp apply_series_impl!([_ | _] = series_or_scalars, fun) do
-    Enum.reduce(series_or_scalars, nil, fn
-      %{data: %struct{}}, nil -> struct
-      %{data: %struct{}}, impl -> pick_series_impl(impl, struct)
-      _scalar, impl -> impl
-    end) ||
-      raise ArgumentError,
-            "expected a series as argument for #{fun}, got: #{inspect(series_or_scalars)}" <>
-              maybe_hint(series_or_scalars)
-  end
-
-  defp pick_series_impl(struct, struct), do: struct
-  defp pick_series_impl(Explorer.Backend.LazySeries, _), do: Explorer.Backend.LazySeries
-  defp pick_series_impl(_, Explorer.Backend.LazySeries), do: Explorer.Backend.LazySeries
-
-  defp pick_series_impl(struct1, struct2) do
-    raise "cannot invoke Explorer function because it relies on two incompatible series: " <>
-            "#{inspect(struct1)} and #{inspect(struct2)}"
-  end
-
   defp backend_from_options!(opts) do
     backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
 
@@ -6660,7 +6630,7 @@ defmodule Explorer.Series do
           ArgumentError,
           "expecting series for one of the sides, but got: " <>
             "#{dtype_or_inspect(left)} (lhs) and #{dtype_or_inspect(right)} (rhs)" <>
-            maybe_hint([left, right])
+            Shared.maybe_bad_column_hint([left, right])
         )
     end
   end
@@ -6669,24 +6639,12 @@ defmodule Explorer.Series do
     raise(
       ArgumentError,
       "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{dtype_or_inspect(left)} and " <>
-        "#{dtype_or_inspect(right)}" <> maybe_hint([left, right])
+        "#{dtype_or_inspect(right)}" <> Shared.maybe_bad_column_hint([left, right])
     )
   end
 
   defp dtype_or_inspect(%Series{dtype: dtype}), do: inspect(dtype)
   defp dtype_or_inspect(value), do: inspect(value)
-
-  defp maybe_hint(values) do
-    atom = Enum.find(values, &is_atom(&1))
-
-    if Kernel.and(atom != nil, String.starts_with?(Atom.to_string(atom), "Elixir.")) do
-      "\n\nHINT: we have noticed that one of the values is the atom #{inspect(atom)}. " <>
-        "If you are inside Explorer.Query and you want to access a column starting in uppercase, " <>
-        "you must write instead: col(\"#{inspect(atom)}\")"
-    else
-      ""
-    end
-  end
 
   defp check_dtypes_for_coalesce!(%Series{} = s1, %Series{} = s2) do
     # TODO: consider the unsigned types here.
@@ -6706,7 +6664,7 @@ defmodule Explorer.Series do
         concat([
           color("#Explorer.Series<", :map, opts),
           nest(
-            concat([line(), Shared.apply_impl(series, :inspect, [opts])]),
+            concat([line(), apply_series(series, :inspect, [opts])]),
             2
           ),
           line(),
@@ -6719,18 +6677,18 @@ end
 
 defmodule Explorer.Series.Iterator do
   @moduledoc false
-  defstruct [:series, :size, :impl]
+  defstruct [:series, :size]
 
-  def new(%{data: %impl{}} = series) do
-    %__MODULE__{series: series, size: impl.size(series), impl: impl}
+  def new(series) do
+    %__MODULE__{series: series, size: Explorer.Series.size(series)}
   end
 
   defimpl Enumerable do
-    def count(iterator), do: {:ok, iterator.size}
+    def count(%{size: size}), do: {:ok, size}
 
     def member?(_iterator, _value), do: {:error, __MODULE__}
 
-    def slice(%{size: size, series: series, impl: impl}) do
+    def slice(%{size: size, series: series}) do
       {:ok, size,
        fn start, size, step ->
          if step != 1 do
@@ -6738,26 +6696,26 @@ defmodule Explorer.Series.Iterator do
          end
 
          series
-         |> impl.slice(start, size)
-         |> impl.to_list()
+         |> Explorer.Series.slice(start, size)
+         |> Explorer.Series.to_list()
        end}
     end
 
-    def reduce(%{series: series, size: size, impl: impl}, acc, fun) do
-      reduce(series, impl, size, 0, acc, fun)
+    def reduce(%{series: series, size: size}, acc, fun) do
+      reduce(series, size, 0, acc, fun)
     end
 
-    defp reduce(_series, _impl, _size, _offset, {:halt, acc}, _fun), do: {:halted, acc}
+    defp reduce(_series, _size, _offset, {:halt, acc}, _fun), do: {:halted, acc}
 
-    defp reduce(series, impl, size, offset, {:suspend, acc}, fun) do
-      {:suspended, acc, &reduce(series, impl, size, offset, &1, fun)}
+    defp reduce(series, size, offset, {:suspend, acc}, fun) do
+      {:suspended, acc, &reduce(series, size, offset, &1, fun)}
     end
 
-    defp reduce(_series, _impl, size, size, {:cont, acc}, _fun), do: {:done, acc}
+    defp reduce(_series, size, size, {:cont, acc}, _fun), do: {:done, acc}
 
-    defp reduce(series, impl, size, offset, {:cont, acc}, fun) do
-      value = impl.at(series, offset)
-      reduce(series, impl, size, offset + 1, fun.(value, acc), fun)
+    defp reduce(series, size, offset, {:cont, acc}, fun) do
+      value = Explorer.Series.at(series, offset)
+      reduce(series, size, offset + 1, fun.(value, acc), fun)
     end
   end
 end

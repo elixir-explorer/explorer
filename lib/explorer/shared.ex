@@ -261,6 +261,7 @@ defmodule Explorer.Shared do
   @doc """
   Applies a function with args using the implementation of a dataframe or series.
   """
+  # TODO: Remove this in favor of specific functions.
   def apply_impl(df_or_series_or_list, fun, args \\ []) do
     impl = impl!(df_or_series_or_list)
     apply(impl, fun, [df_or_series_or_list | args])
@@ -599,5 +600,119 @@ defmodule Explorer.Shared do
     nulls_last? = nils == :last
 
     [descending?, maintain_order?, multithreaded?, nulls_last?]
+  end
+
+  ## Apply
+
+  @doc """
+  Applies a function to a series.
+  """
+  def apply_series(series, fun, args \\ []) do
+    apply_series_impl!([series], fun, &(&1 ++ args))
+  end
+
+  @doc """
+  Applies a function to a list of series.
+
+  The list is typically static and it is passed as arguments.
+  """
+  def apply_series_list(fun, series_or_scalars) when is_list(series_or_scalars) do
+    apply_series_impl!(series_or_scalars, fun, & &1)
+  end
+
+  @doc """
+  Applies a function to a list of unknown size of series.
+
+  The list is passed as a varargs to the backend.
+  """
+  def apply_series_varargs(fun, series_or_scalars) when is_list(series_or_scalars) do
+    apply_series_impl!(series_or_scalars, fun, &[&1])
+  end
+
+  # TODO: What happens when a remote series is inside a lazy frame?
+  defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback) do
+    :erlang.display(series_or_scalars)
+
+    {series_nodes, {impl, remote}} =
+      Enum.map_reduce(series_or_scalars, {nil, nil}, fn
+        %{data: %impl{}} = series, {acc_impl, acc_remote} ->
+          {node, remote} = remote_info(series, impl)
+          {{series, node}, {pick_series_impl(acc_impl, impl), pick_remote(acc_remote, remote)}}
+
+        scalar, acc ->
+          {scalar, acc}
+      end)
+
+    if is_nil(impl) do
+      raise ArgumentError,
+            "expected a series as argument for #{fun}, got: #{inspect(series_or_scalars)}" <>
+              maybe_bad_column_hint(series_or_scalars)
+    end
+
+    case remote do
+      nil ->
+        apply(impl, fun, args_callback.(series_or_scalars))
+
+      pid when is_pid(pid) ->
+        raise "execute this in synchrony"
+        :erpc.call(node(pid), impl, fun, args_callback.(series_or_scalars))
+
+      node ->
+        # TODO: Transfer arguments
+        :erpc.call(node, impl, fun, args_callback.(series_or_scalars))
+    end
+  end
+
+  # There is remote information and it is GCed by the current node.
+  # Which means that it resides on the remote node given by remote_pid.
+  defp remote_info(%{remote: {local_gc, remote_pid, _remote_ref}}, _impl)
+       when node(local_gc) == node(),
+       do: {node(remote_pid), remote_pid}
+
+  # There is remote information but it is actually local. Treat it as one.
+  defp remote_info(%{remote: {_local_gc, remote_pid, _remote_ref}}, _impl)
+       when node(remote_pid) == node(),
+       do: {node(), nil}
+
+  # We don't know the remote information, let's ask the backend
+  defp remote_info(df_or_series, impl) do
+    case impl.owner_reference(df_or_series) do
+      remote_ref when is_reference(remote_ref) and node(remote_ref) != node() ->
+        {node(remote_ref), node(remote_ref)}
+
+      _ ->
+        {node(), nil}
+    end
+  end
+
+  # We need to pick a remote, which one does not matter.
+  # The important is to keep the PID reference around, if there is one.
+  defp pick_remote(acc_remote, _remote) when is_pid(acc_remote), do: acc_remote
+  defp pick_remote(acc_remote, nil), do: acc_remote
+  defp pick_remote(_acc_remote, remote), do: remote
+
+  defp pick_series_impl(nil, impl), do: impl
+  defp pick_series_impl(impl, impl), do: impl
+  defp pick_series_impl(Explorer.Backend.LazySeries, _), do: Explorer.Backend.LazySeries
+  defp pick_series_impl(_, Explorer.Backend.LazySeries), do: Explorer.Backend.LazySeries
+
+  defp pick_series_impl(impl1, impl2) do
+    raise "cannot invoke Explorer function because it relies on two incompatible series: " <>
+            "#{inspect(impl1)} and #{inspect(impl2)}"
+  end
+
+  @doc """
+  A hint in case there is a bad column from a query.
+  """
+  def maybe_bad_column_hint(values) do
+    atom = Enum.find(values, &is_atom(&1))
+
+    if Kernel.and(atom != nil, String.starts_with?(Atom.to_string(atom), "Elixir.")) do
+      "\n\nHINT: we have noticed that one of the values is the atom #{inspect(atom)}. " <>
+        "If you are inside Explorer.Query and you want to access a column starting in uppercase, " <>
+        "you must write instead: col(\"#{inspect(atom)}\")"
+    else
+      ""
+    end
   end
 end

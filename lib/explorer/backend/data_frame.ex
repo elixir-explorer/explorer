@@ -304,7 +304,7 @@ defmodule Explorer.Backend.DataFrame do
     end
   end
 
-  defp build_cols_algebra(df, inspect_opts, _elide_columns?) do
+  defp build_cols_algebra(df, inspect_opts, false) do
     for name <- DataFrame.names(df) do
       series = df[name]
 

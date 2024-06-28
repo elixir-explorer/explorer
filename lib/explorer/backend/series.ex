@@ -339,9 +339,14 @@ defmodule Explorer.Backend.Series do
   def inspect(series, backend, n_rows, inspect_opts, opts \\ [])
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows) or is_binary(n_rows)) and
              is_list(opts) do
-    elide_columns? = Keyword.get(opts, :elide_columns, false)
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
+
+    remote =
+      case series.remote do
+        {_local_gc, remote_pid, _remote_ref} -> " (node: #{node(remote_pid)})"
+        _ -> ""
+      end
 
     type =
       series
@@ -349,25 +354,21 @@ defmodule Explorer.Backend.Series do
       |> Explorer.Shared.dtype_to_string()
 
     dtype = A.color("#{type} ", :atom, inspect_opts)
-
-    data = build_series_data(series, inspect_opts, elide_columns?)
+    data = build_series_data(series, inspect_opts)
 
     A.concat([
       A.color(backend, :atom, inspect_opts),
       open,
       "#{n_rows || "???"}",
       close,
+      remote,
       A.line(),
       dtype,
       data
     ])
   end
 
-  defp build_series_data(_series, _inspect_opts, true) do
-    "???"
-  end
-
-  defp build_series_data(series, inspect_opts, _elide_columns?) do
+  defp build_series_data(series, inspect_opts) do
     series =
       case inspect_opts.limit do
         :infinity -> series

@@ -1,13 +1,16 @@
 defmodule Explorer.Remote do
   @moduledoc """
   A module responsible for tracking remote dataframes
-  and performing distributed garbage collection.
+  and garbage collect them.
 
   A dataframe or a series must be manually placed in
-  a remote node for this to work. From that moment,
-  operations against said dataframe and series are
-  executed in the remote node, until the dataframe
-  is collected.
+  a remote node for this to work. This is done by
+  calling `place/2` on every node that receives a
+  copy of the remote dataframe.
+
+  From that moment, operations against said dataframe
+  and series are executed in the remote node, until
+  the dataframe is collected.
 
   If a remote reference is passed to a Series or
   DataFrame function, and they have not been placed,
@@ -20,10 +23,11 @@ defmodule Explorer.Remote do
 
   @doc """
   Receives a data structure and traverses it looking
-  for remote dataframes and series. If any is found,
-  it spawns a process on the remote node and sets up
-  a distributed garbage collector. This function only
-  traverses maps, lists, and tuples, it does not support
+  for remote dataframes and series.
+
+  If any is found, it spawns a process on the remote node
+  and sets up a distributed garbage collector. This function
+  only traverses maps, lists, and tuples, it does not support
   arbitrary structs (such as map sets).
 
   It returns the updated term and a list of remote PIDs

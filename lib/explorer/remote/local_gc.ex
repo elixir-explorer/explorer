@@ -27,7 +27,7 @@ defmodule Explorer.Remote.LocalGC do
   """
   def track(local_gc, remote_pid, remote_ref)
       when is_pid(local_gc) and is_pid(remote_pid) and is_reference(remote_ref) do
-    Explorer.PolarsBackend.Native.message_on_gc(local_gc, {remote_pid, remote_ref})
+    Explorer.PolarsBackend.Native.message_on_gc(local_gc, {:gc, remote_pid, remote_ref})
   end
 
   ## Callbacks
@@ -38,7 +38,7 @@ defmodule Explorer.Remote.LocalGC do
   end
 
   @impl true
-  def handle_info({:gc, {remote_pid, remote_ref}}, state) do
+  def handle_info({:gc, remote_pid, remote_ref}, state) do
     send(remote_pid, {:gc, remote_ref, self()})
     {:noreply, state}
   end
