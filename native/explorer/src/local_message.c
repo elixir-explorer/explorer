@@ -48,11 +48,9 @@ int enif_send(ErlNifEnv *caller_env, ErlNifPid *to_pid, ErlNifEnv *msg_env,
 static ERL_NIF_TERM kAtomError;
 
 void destruct_local_message(ErlNifEnv *env, void *obj) {
-  printf("destruct_local_message is called, send value to pid\r\n");
   struct message *m = (struct message *)obj;
   enif_send(env, &m->pid, m->env, m->value);
   enif_free_env(m->env);
-  printf("destruct_local_message end\r\n");
 }
 
 ERL_NIF_TERM local_message_on_gc(ErlNifEnv *env, const ERL_NIF_TERM pid_term,
