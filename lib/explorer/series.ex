@@ -749,6 +749,34 @@ defmodule Explorer.Series do
   end
 
   @doc """
+  Collects a series to the current node.
+
+  If the series is already in the current node, it works as a no-op.
+
+  ## Examples
+
+      series = Explorer.Series.from_list([1, 2, 3], node: :some@node)
+      Explorer.Series.collect(series)
+
+  """
+  @doc type: :conversion
+  @spec collect(series :: Series.t()) :: Series.t()
+  def collect(%Series{data: %impl{}} = series) do
+    case impl.owner_reference(series) do
+      ref when K.and(is_reference(ref), node(ref) != node()) ->
+        with {:ok, exported} <- :erpc.call(node(ref), impl, :owner_export, [series]),
+             {:ok, imported} <- impl.owner_import(exported) do
+          imported
+        else
+          {:error, exception} -> raise exception
+        end
+
+      _ ->
+        series
+    end
+  end
+
+  @doc """
   Converts a series to a list.
 
   > #### Warning {: .warning}

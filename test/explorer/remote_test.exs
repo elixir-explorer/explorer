@@ -27,14 +27,14 @@ defmodule Explorer.RemoteTest do
     end
 
     test "on binary mixed series" do
-      {remote, _} =
+      {remote2, _} =
         remote_eval @node2 do
           Explorer.Series.from_list([1, 2, 3])
           |> Explorer.RemoteHelpers.keep()
         end
 
       # Remote resources are placed even if not placed before
-      placed = S.add(remote, 3)
+      placed = S.add(remote2, 3)
       assert placed.remote != nil
 
       assert inspect(placed) =~ """
@@ -46,7 +46,7 @@ defmodule Explorer.RemoteTest do
              """
 
       # Placed and remote from the same node
-      placed = S.add(placed, remote)
+      placed = S.add(placed, remote2)
       assert placed.remote != nil
 
       assert inspect(placed) =~ """
@@ -58,13 +58,13 @@ defmodule Explorer.RemoteTest do
              """
 
       # Placed and remote from the different node
-      {remote, _} =
+      {remote3, _} =
         remote_eval @node3 do
           Explorer.Series.from_list([1, 2, 3])
           |> Explorer.RemoteHelpers.keep()
         end
 
-      placed = S.add(remote, placed)
+      placed = S.add(remote3, placed)
       assert placed.remote != nil
 
       assert inspect(placed) =~ """
@@ -72,6 +72,18 @@ defmodule Explorer.RemoteTest do
                secondary@127.0.0.1
                Polars[3]
                s64 [6, 9, 12]
+             >\
+             """
+
+      # And now varargs
+      placed = S.format([placed, "/", remote2, "/", remote3])
+      assert placed.remote != nil
+
+      assert inspect(placed) =~ """
+             #Explorer.Series<
+               secondary@127.0.0.1
+               Polars[3]
+               string ["6/1/1", "9/2/2", "12/3/3"]
              >\
              """
     end
@@ -101,10 +113,32 @@ defmodule Explorer.RemoteTest do
   describe "init placement" do
     test "series" do
       series = S.from_list([1, 2, 3], node: @node2)
-      assert series.remote
+      assert series.remote != nil
 
-      series = S.from_binary(<<1, 2, 3>>, {:s, 8}, node: @node2)
-      assert series.remote
+      assert inspect(series) =~ """
+             #Explorer.Series<
+               secondary@127.0.0.1
+               Polars[3]
+               s64 [1, 2, 3]
+             >\
+             """
+
+      collected = S.collect(series)
+      assert collected.remote == nil
+
+      series = S.from_binary(<<4, 5, 6>>, {:s, 8}, node: @node3)
+      assert series.remote != nil
+
+      assert inspect(series) =~ """
+             #Explorer.Series<
+               tertiary@127.0.0.1
+               Polars[3]
+               s8 [4, 5, 6]
+             >\
+             """
+
+      collected = S.collect(series)
+      assert collected.remote == nil
     end
   end
 end

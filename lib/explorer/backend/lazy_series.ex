@@ -1217,10 +1217,12 @@ defmodule Explorer.Backend.LazySeries do
     at_every: 2,
     categories: 1,
     categorise: 2,
-    frequencies: 1,
     cut: 5,
+    frequencies: 1,
     qcut: 5,
     mask: 2,
+    owner_import: 1,
+    owner_export: 1,
     to_iovec: 1,
     to_list: 1
   ]
