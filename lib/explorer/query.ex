@@ -334,7 +334,7 @@ defmodule Explorer.Query do
       end)
 
     quote do
-      Explorer.Query.new(unquote(lazy_series))
+      Explorer.Query.new(%Series{data: unquote(lazy_series), dtype: :unknown})
     end
   end
 

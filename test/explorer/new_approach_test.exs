@@ -24,16 +24,11 @@ defmodule Explorer.NewApproachTest do
 
   describe "filter_with_ls/2 (experimental)" do
     test "filter by a boolean value" do
-      # df = DF.new(a: [1, 2, 3], b: [true, true, false])
-      # filter = Series.col("b") |> Series.equal(false) |> IO.inspect()
-      Series.from_list([1]) |> IO.inspect()
-      Series.from_list([1]) |> Map.from_struct() |> IO.inspect()
-      # Series.col("b") |> IO.inspect()
-      # Series.col("b") |> Series.equal(false) |> IO.inspect()
+      df1 = DF.new(a: [1, 2, 3], b: [true, true, false])
+      filter = Series.col("b") |> Series.equal(false)
 
-      # df1 = DF.filter_with_ls(df, filter)
-
-      # assert DF.to_columns(df1, atom_keys: true) == %{a: [3], b: [false]}
+      df2 = DF.filter_with_ls(df1, filter)
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [false]}
     end
   end
 end

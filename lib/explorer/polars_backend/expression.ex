@@ -35,6 +35,8 @@ defmodule Explorer.PolarsBackend.Expression do
 
   def to_expr(%LazySeries{op: :col, args: [col]}), do: Native.expr_col(col)
 
+  def to_expr(%LazySeries{op: :lit, args: [lit]}), do: to_expr(lit)
+
   def to_expr(%LazySeries{op: op, args: args}) when is_list(args) do
     apply(Native, :"expr_#{op}", Enum.map(args, &to_expr/1))
   end

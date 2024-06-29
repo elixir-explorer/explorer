@@ -21,7 +21,13 @@ defmodule Explorer.PolarsBackend.Shared do
 
   # Applies to a series. Expects a series or a value back.
   def apply_series(%Series{} = series, fun, args \\ []) do
-    case apply(Native, fun, [series.data | args]) do
+    args =
+      Enum.map([series | args], fn
+        %Series{data: %PolarsSeries{} = polars_series} -> polars_series
+        other -> other
+      end)
+
+    case apply(Native, fun, args) do
       {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
       {:ok, value} -> value
       {:error, error} -> raise runtime_error(error)

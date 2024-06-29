@@ -174,7 +174,6 @@ defmodule Explorer.PolarsBackend.Native do
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
   @additional_expressions [
-    add: 2,
     all: 1,
     any: 1,
     clip_float: 3,
@@ -184,8 +183,7 @@ defmodule Explorer.PolarsBackend.Native do
     multiply: 2,
     pow: 2,
     sample_frac: 5,
-    sample_n: 5,
-    subtract: 2,
+    sample_n: 5
   ]
 
   # We first generate functions for known operations.
@@ -210,6 +208,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_nil(), do: err()
   def expr_atom(_atom), do: err()
   def expr_boolean(_bool), do: err()
+  def expr_col(_col), do: err()
   def expr_date(_date), do: err()
   def expr_naive_datetime(_datetime), do: err()
   # def expr_datetime(_datetime), do: err()

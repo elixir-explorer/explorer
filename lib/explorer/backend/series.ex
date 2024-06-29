@@ -5,166 +5,34 @@ defmodule Explorer.Backend.Series do
 
   @type t :: struct()
 
-  @type lazy_s :: Explorer.Series.lazy_t()
-  @type s :: Explorer.Series.t() | lazy_s()
+  @type s :: Explorer.Series.t()
   @type df :: Explorer.DataFrame.t()
   @type dtype :: Explorer.Series.dtype()
 
-  @type literal ::
-          number()
-          | boolean()
-          | String.t()
+  @type valid_types ::
+          boolean()
           | Date.t()
-          | Time.t()
-          | NaiveDateTime.t()
           | Explorer.Duration.t()
+          | NaiveDateTime.t()
+          | number()
+          | String.t()
+          | Time.t()
 
+  @type fill_missing_strategy :: :backward | :forward | :max | :mean | :min
+  # Delta degrees of freedom
+  @type ddof() :: s | non_neg_integer()
   @type non_finite :: Explorer.Series.non_finite()
-  @type option(type) :: type | nil
 
-  # Conversion
+  # Callbacks
 
-  @callback from_list(list(), dtype()) :: s
-  @callback from_binary(binary(), dtype()) :: s
-  @callback to_list(s) :: list()
-  @callback to_iovec(s) :: [binary()]
-  @callback cast(s, dtype) :: s
-  @callback categorise(s, s) :: s
-  @callback strptime(s, String.t()) :: s
-  @callback strftime(s, String.t()) :: s
-
-  # Introspection
-
-  @callback dtype(s) :: dtype()
-  @callback size(s) :: non_neg_integer() | lazy_s()
-  @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
-  @callback categories(s) :: s
-
-  # Slice and dice
-
-  @callback head(s, n :: integer()) :: s
-  @callback tail(s, n :: integer()) :: s
-  @callback sample(
-              s,
-              n_or_frac :: number(),
-              replacement :: boolean(),
-              shuffle :: boolean(),
-              seed :: option(integer())
-            ) :: s
-  @callback at(s, idx :: integer()) :: s
-  @callback at_every(s, integer()) :: s
-  @callback mask(s, mask :: s) :: s
-  @callback slice(s, indices :: list() | s()) :: s
-  @callback slice(s, offset :: integer(), length :: integer()) :: s
-  @callback format(list(s)) :: s
-  @callback concat(list(s)) :: s
-  @callback coalesce(s, s) :: s
-  @callback first(s) :: literal() | lazy_s()
-  @callback last(s) :: literal() | lazy_s()
-  @callback select(predicate :: s, s, s) :: s
-  @callback shift(s, offset :: integer, default :: nil) :: s
-  @callback rank(
-              s,
-              method :: atom(),
-              descending :: boolean(),
-              seed :: option(integer())
-            ) :: s | lazy_s()
-  # Aggregation
-
-  @callback count(s) :: number() | lazy_s()
-  @callback sum(s) :: number() | non_finite() | lazy_s() | nil
-  @callback min(s) :: number() | non_finite() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
-  @callback max(s) :: number() | non_finite() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
-  @callback argmin(s) :: number() | non_finite() | lazy_s() | nil
-  @callback argmax(s) :: number() | non_finite() | lazy_s() | nil
-  @callback mean(s) :: float() | non_finite() | lazy_s() | nil
-  @callback median(s) :: float() | non_finite() | lazy_s() | nil
-  @callback mode(s) :: s | lazy_s()
-  @callback variance(s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
-  @callback standard_deviation(s, ddof :: non_neg_integer()) ::
-              float() | non_finite() | lazy_s() | nil
-  @callback quantile(s, float()) ::
-              number() | non_finite() | Date.t() | NaiveDateTime.t() | lazy_s() | nil
-  @callback nil_count(s) :: number() | lazy_s()
-  @callback product(s) :: float() | non_finite() | lazy_s() | nil
-  @callback skew(s, bias? :: boolean()) :: float() | non_finite() | lazy_s() | nil
-  @callback correlation(s, s, ddof :: non_neg_integer(), method :: atom()) ::
-              float() | non_finite() | lazy_s() | nil
-  @callback covariance(s, s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
-  @callback all?(s) :: boolean() | lazy_s()
-  @callback any?(s) :: boolean() | lazy_s()
-  @callback row_index(s) :: s | lazy_s()
-
-  # Cumulative
-
-  @callback cumulative_max(s, reverse? :: boolean()) :: s
-  @callback cumulative_min(s, reverse? :: boolean()) :: s
-  @callback cumulative_sum(s, reverse? :: boolean()) :: s
-  @callback cumulative_product(s, reverse? :: boolean()) :: s
-
-  # Local minima/maxima
-
-  @callback peaks(s, :max | :min) :: s
-
-  # Arithmetic
-
-  @callback add(out_dtype :: dtype(), s, s) :: s
-  @callback subtract(out_dtype :: dtype(), s, s) :: s
-  @callback multiply(out_dtype :: dtype(), s, s) :: s
-  @callback divide(out_dtype :: dtype(), s, s) :: s
-  @callback quotient(s, s) :: s
-  @callback remainder(s, s) :: s
-  @callback pow(out_dtype :: dtype(), s, s) :: s
-  @callback log(argument :: s) :: s
-  @callback log(argument :: s, base :: float()) :: s
-  @callback exp(s) :: s
   @callback abs(s) :: s
-  @callback clip(s, number(), number()) :: s
-
-  # Trigonometry
-
   @callback acos(s) :: s
-  @callback asin(s) :: s
-  @callback atan(s) :: s
-  @callback cos(s) :: s
-  @callback sin(s) :: s
-  @callback tan(s) :: s
-
-  # Comparisons
-
-  @callback equal(s, s) :: s
-  @callback not_equal(s, s) :: s
-  @callback greater(s, s) :: s
-  @callback greater_equal(s, s) :: s
-  @callback less(s, s) :: s
-  @callback less_equal(s, s) :: s
-  @callback all_equal(s, s) :: boolean() | lazy_s()
-
-  @callback binary_and(s, s) :: s
-  @callback binary_or(s, s) :: s
-  @callback binary_in(s, s) :: s
-
-  # Float predicates
-  @callback is_finite(s) :: s
-  @callback is_infinite(s) :: s
-  @callback is_nan(s) :: s
-
-  # Float round
-  @callback round(s, decimals :: non_neg_integer()) :: s
-  @callback floor(s) :: s
-  @callback ceil(s) :: s
-
-  # Coercion
-
-  # Sort
-
-  @callback sort(
-              s,
-              descending? :: boolean(),
-              maintain_order? :: boolean(),
-              multithreaded? :: boolean(),
-              nulls_last? :: boolean()
-            ) :: s
+  @callback add(s, s) :: s
+  @callback all_equal(s, s) :: s | boolean()
+  @callback all?(s) :: s | boolean()
+  @callback any?(s) :: s | boolean()
+  @callback argmax(s) :: s | number() | non_finite() | nil
+  @callback argmin(s) :: s | number() | non_finite() | nil
   @callback argsort(
               s,
               descending? :: boolean(),
@@ -172,38 +40,164 @@ defmodule Explorer.Backend.Series do
               multithreaded? :: boolean(),
               nulls_last? :: boolean()
             ) :: s
-  @callback reverse(s) :: s
-
-  # Distinct
-
+  @callback asin(s) :: s
+  @callback at_every(s, integer()) :: s
+  @callback at(s, idx :: integer()) :: s
+  @callback atan(s) :: s
+  @callback binary_and(s, s) :: s
+  @callback binary_in(s, s) :: s
+  @callback binary_or(s, s) :: s
+  @callback cast(s, dtype) :: s
+  @callback categories(s) :: s
+  @callback categorise(s, s) :: s
+  @callback ceil(s) :: s
+  @callback clip(s, number(), number()) :: s
+  @callback coalesce(s, s) :: s
+  @callback concat(list(s)) :: s
+  @callback contains(s, String.t()) :: s
+  @callback correlation(s, s, ddof(), method :: atom()) :: s | float() | non_finite() | nil
+  @callback cos(s) :: s
+  @callback count_matches(s, String.t()) :: s
+  @callback count(s) :: s | number()
+  @callback covariance(s, s, ddof()) :: s | float() | non_finite() | nil
+  @callback cumulative_max(s, reverse? :: boolean()) :: s
+  @callback cumulative_min(s, reverse? :: boolean()) :: s
+  @callback cumulative_product(s, reverse? :: boolean()) :: s
+  @callback cumulative_sum(s, reverse? :: boolean()) :: s
+  @callback cut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) :: s | df
+  @callback day_of_week(s) :: s
+  @callback day_of_year(s) :: s
   @callback distinct(s) :: s
+  @callback divide(out_dtype :: dtype(), s, s) :: s
+  @callback downcase(s) :: s
+  @callback dtype(s) :: s | dtype()
+  @callback equal(s, s) :: s
+  @callback ewm_mean(
+              s,
+              alpha :: float(),
+              adjust :: boolean(),
+              min_periods :: integer(),
+              ignore_nils :: boolean()
+            ) :: s
+  @callback ewm_standard_deviation(
+              s,
+              alpha :: float(),
+              adjust :: boolean(),
+              bias :: boolean(),
+              min_periods :: integer(),
+              ignore_nils :: boolean()
+            ) :: s
+  @callback ewm_variance(
+              s,
+              alpha :: float(),
+              adjust :: boolean(),
+              bias :: boolean(),
+              min_periods :: integer(),
+              ignore_nils :: boolean()
+            ) :: s
+  @callback exp(s) :: s
+  @callback field(s, String.t()) :: s
+  @callback fill_missing_with_strategy(s, fill_missing_strategy()) :: s
+  @callback fill_missing_with_value(s, :nan | valid_types()) :: s
+  @callback first(s) :: s | valid_types()
+  @callback floor(s) :: s
+  @callback format(list(s)) :: s
+  @callback frequencies(s) :: s | df
+  @callback from_binary(binary(), dtype()) :: s
+  @callback from_list(list(), dtype()) :: s
+  @callback greater_equal(s, s) :: s
+  @callback greater(s, s) :: s
+  @callback head(s, n :: integer()) :: s
+  @callback hour(s) :: s
+  @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
+  @callback is_finite(s) :: s
+  @callback is_infinite(s) :: s
+  @callback is_nan(s) :: s
+  @callback is_nil(s) :: s
+  @callback is_not_nil(s) :: s
+  @callback join(s, String.t()) :: s
+  @callback json_decode(s, dtype()) :: s
+  @callback json_path_match(s, String.t()) :: s
+  @callback last(s) :: s | valid_types()
+  @callback lengths(s) :: s
+  @callback less_equal(s, s) :: s
+  @callback less(s, s) :: s
+  @callback log(s, base :: float()) :: s
+  @callback log(s) :: s
+  @callback lstrip(s, String.t() | nil) :: s
+  @callback mask(s, mask :: s) :: s
+  @callback max(s) :: s | number() | non_finite() | Date.t() | NaiveDateTime.t() | nil
+  @callback mean(s) :: s | float() | non_finite() | nil
+  @callback median(s) :: s | float() | non_finite() | nil
+  @callback member?(s, valid_types()) :: s
+  @callback min(s) :: s | number() | non_finite() | Date.t() | NaiveDateTime.t() | nil
+  @callback minute(s) :: s
+  @callback mode(s) :: s
+  @callback month(s) :: s
+  @callback multiply(out_dtype :: dtype(), s, s) :: s
+  @callback n_distinct(s) :: s | integer()
+  @callback nil_count(s) :: s | number()
+  @callback not_equal(s, s) :: s
+  @callback peaks(s, :max | :min) :: s
+  @callback pow(out_dtype :: dtype(), s, s) :: s
+  @callback product(s) :: s | float() | non_finite() | nil
+  @callback qcut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) :: s | df
+  @callback quantile(s, float()) ::
+              s | number() | non_finite() | Date.t() | NaiveDateTime.t() | nil
+  @callback quotient(s, s) :: s
+  @callback rank(s, method :: atom(), descending :: boolean(), seed :: integer() | nil) :: s
+  @callback re_contains(s, String.t()) :: s
+  @callback re_count_matches(s, String.t()) :: s
+  @callback re_named_captures(s, String.t()) :: s
+  @callback re_replace(s, String.t(), String.t()) :: s
+  @callback re_scan(s, String.t()) :: s
+  @callback remainder(s, s) :: s
+  @callback replace(s, String.t(), String.t()) :: s
+  @callback reverse(s) :: s
+  @callback round(s, decimals :: non_neg_integer()) :: s
+  @callback row_index(s) :: s
+  @callback rstrip(s, String.t() | nil) :: s
+  @callback sample(
+              s,
+              n_or_frac :: number(),
+              replacement :: boolean(),
+              shuffle :: boolean(),
+              seed :: integer() | nil
+            ) :: s
+  @callback second(s) :: s
+  @callback select(predicate :: s, s, s) :: s
+  @callback shift(s, offset :: integer, default :: nil) :: s
+  @callback sin(s) :: s
+  @callback size(s) :: s | non_neg_integer()
+  @callback skew(s, bias? :: boolean()) :: s | float() | non_finite() | nil
+  @callback slice(s, indices :: list() | s()) :: s
+  @callback slice(s, offset :: integer(), length :: integer()) :: s
+  @callback sort(
+              s,
+              descending? :: boolean(),
+              maintain_order? :: boolean(),
+              multithreaded? :: boolean(),
+              nulls_last? :: boolean()
+            ) :: s
+  @callback split_into(s, String.t(), list(String.t() | atom())) :: s
+  @callback split(s, String.t()) :: s
+  @callback standard_deviation(s, ddof()) :: s | float() | non_finite() | nil
+  @callback strftime(s, String.t()) :: s
+  @callback strip(s, String.t() | nil) :: s
+  @callback strptime(s, String.t()) :: s
+  @callback substring(s, integer(), non_neg_integer() | nil) :: s
+  @callback subtract(s, s) :: s
+  @callback sum(s) :: s | number() | non_finite() | nil
+  @callback tail(s, n :: integer()) :: s
+  @callback tan(s) :: s
+  @callback to_iovec(s) :: s | [binary()]
+  @callback to_list(s) :: s | list()
+  @callback transform(s, fun) :: s
+  @callback unary_not(s) :: s
   @callback unordered_distinct(s) :: s
-  @callback n_distinct(s) :: integer() | lazy_s()
-  @callback frequencies(s) :: df
-
-  # Categorisation
-
-  @callback cut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) ::
-              df
-  @callback qcut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) ::
-              df
-
-  # Rolling
-
-  @callback window_sum(
-              s,
-              window_size :: integer(),
-              weights :: [float()] | nil,
-              min_periods :: integer() | nil,
-              center :: boolean()
-            ) :: s
-  @callback window_min(
-              s,
-              window_size :: integer(),
-              weights :: [float()] | nil,
-              min_periods :: integer() | nil,
-              center :: boolean()
-            ) :: s
+  @callback upcase(s) :: s
+  @callback variance(s, ddof()) :: s | float() | non_finite() | nil
+  @callback week_of_year(s) :: s
   @callback window_max(
               s,
               window_size :: integer(),
@@ -225,6 +219,13 @@ defmodule Explorer.Backend.Series do
               min_periods :: integer() | nil,
               center :: boolean()
             ) :: s
+  @callback window_min(
+              s,
+              window_size :: integer(),
+              weights :: [float()] | nil,
+              min_periods :: integer() | nil,
+              center :: boolean()
+            ) :: s
   @callback window_standard_deviation(
               s,
               window_size :: integer(),
@@ -232,94 +233,14 @@ defmodule Explorer.Backend.Series do
               min_periods :: integer() | nil,
               center :: boolean()
             ) :: s
-
-  # Exponentially weighted windows
-
-  @callback ewm_mean(
+  @callback window_sum(
               s,
-              alpha :: float(),
-              adjust :: boolean(),
-              min_periods :: integer(),
-              ignore_nils :: boolean()
+              window_size :: integer(),
+              weights :: [float()] | nil,
+              min_periods :: integer() | nil,
+              center :: boolean()
             ) :: s
-
-  @callback ewm_standard_deviation(
-              s,
-              alpha :: float(),
-              adjust :: boolean(),
-              bias :: boolean(),
-              min_periods :: integer(),
-              ignore_nils :: boolean()
-            ) :: s
-
-  @callback ewm_variance(
-              s,
-              alpha :: float(),
-              adjust :: boolean(),
-              bias :: boolean(),
-              min_periods :: integer(),
-              ignore_nils :: boolean()
-            ) :: s
-
-  # Nulls
-
-  @callback fill_missing_with_strategy(s, :backward | :forward | :min | :max | :mean) :: s
-  @callback fill_missing_with_value(s, :nan | literal()) :: s
-  @callback is_nil(s) :: s
-  @callback is_not_nil(s) :: s
-
-  # Escape hatch
-
-  @callback transform(s, fun) :: s
-
-  # Inversions
-
-  @callback unary_not(s) :: s
-
-  # Strings
-
-  @callback contains(s, String.t()) :: s
-  @callback upcase(s) :: s
-  @callback downcase(s) :: s
-  @callback replace(s, String.t(), String.t()) :: s
-  @callback strip(s, String.t() | nil) :: s
-  @callback lstrip(s, String.t() | nil) :: s
-  @callback rstrip(s, String.t() | nil) :: s
-  @callback substring(s, integer(), non_neg_integer() | nil) :: s
-  @callback split(s, String.t()) :: s
-  @callback split_into(s, String.t(), list(String.t() | atom())) :: s
-  @callback json_decode(s, dtype()) :: s
-  @callback json_path_match(s, String.t()) :: s
-  @callback count_matches(s, String.t()) :: s
-
-  ## String - Regular expression versions
-  @callback re_contains(s, String.t()) :: s
-  @callback re_replace(s, String.t(), String.t()) :: s
-  @callback re_count_matches(s, String.t()) :: s
-  @callback re_scan(s, String.t()) :: s
-  @callback re_named_captures(s, String.t()) :: s
-
-  # Date / DateTime
-
-  @callback day_of_week(s) :: s
-  @callback day_of_year(s) :: s
-  @callback week_of_year(s) :: s
-  @callback month(s) :: s
   @callback year(s) :: s
-  @callback hour(s) :: s
-  @callback minute(s) :: s
-  @callback second(s) :: s
-
-  # List
-  @callback join(s, String.t()) :: s
-  @callback lengths(s) :: s
-  @callback member?(s, literal()) :: s
-
-  # Struct
-  @callback field(s, String.t()) :: s
-
-  # Lazy
-  @callback col(String.t()) :: lazy_s()
 
   # Functions
 

@@ -141,6 +141,7 @@ defmodule Explorer.Series do
           | :date
           | :time
           | :string
+          | :unknown
           | naive_datetime_dtype
           | datetime_dtype
           | duration_dtype
@@ -3344,8 +3345,8 @@ defmodule Explorer.Series do
   def add(left, right) do
     [left, right] = cast_for_arithmetic("add/2", [left, right])
 
-    if out_dtype = cast_to_add(dtype(left), dtype(right)) do
-      apply_series_list(:add, [out_dtype, left, right])
+    if _out_dtype = cast_to_add(dtype(left), dtype(right)) do
+      apply_series_list(:add, [left, right])
     else
       dtype_mismatch_error("add/2", left, right)
     end
@@ -3358,6 +3359,8 @@ defmodule Explorer.Series do
   defp cast_to_add({:datetime, p, tz}, {:duration, p}), do: {:datetime, p, tz}
   defp cast_to_add({:duration, p}, {:datetime, p, tz}), do: {:datetime, p, tz}
   defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
+  defp cast_to_add(:unknown, _), do: :unknown
+  defp cast_to_add(_, :unknown), do: :unknown
   defp cast_to_add(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
@@ -4050,7 +4053,7 @@ defmodule Explorer.Series do
           right :: Series.t() | number() | Date.t() | NaiveDateTime.t() | boolean() | String.t()
         ) :: Series.t()
   def equal(left, right) do
-    if args = cast_for_comparable_operation(left, right) |> dbg do
+    if args = cast_for_comparable_operation(left, right) do
       apply_series_list(:equal, args)
     else
       dtype_mismatch_error("equal/2", left, right)
@@ -6722,24 +6725,18 @@ defmodule Explorer.Series do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(series, inspect_opts) do
-      # force_unfit(
-      #   concat([
-      #     color("#Explorer.Series<", :map, opts),
-      #     nest(
-      #       concat([line(), Shared.apply_impl(series, :inspect, [opts])]),
-      #       2
-      #     ),
-      #     line(),
-      #     color(">", :map, opts)
-      #   ])
-      # )
-      open = color("#Explorer.Series<", :map, inspect_opts)
-      separator = color(",", :map, inspect_opts)
-      close = color(">", :map, inspect_opts)
-      fun = &Shared.apply_impl(&1, :inspect, [&2])
-      opts = [separator: separator, break: :strict]
-      container_doc(open, [series], close, inspect_opts, fun, opts)
+    def inspect(series, opts) do
+      force_unfit(
+        concat([
+          color("#Explorer.Series<", :map, opts),
+          nest(
+            concat([line(), Shared.apply_impl(series, :inspect, [opts])]),
+            2
+          ),
+          line(),
+          color(">", :map, opts)
+        ])
+      )
     end
   end
 end

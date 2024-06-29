@@ -6,7 +6,7 @@ defmodule Explorer.Backend.LazySeries do
   For example, if we wanted to create a new series from the addition of two
   existing series `a` and `b`:
 
-      a + b
+      sum = a + b
 
   We would represent that with the following `LazySeries`:
 
@@ -17,11 +17,11 @@ defmodule Explorer.Backend.LazySeries do
         ]}
   """
   alias Explorer.Backend
+  alias Explorer.Series
 
-  defstruct op: nil, args: [], dtype: nil, aggregation: false, backend: nil
+  defstruct op: nil, args: [], dtype: :unknown, aggregation: false, backend: nil
 
-  @behaviour Backend.Series
-
+  @type s :: Series.t()
   @type t :: %__MODULE__{
           op: atom(),
           args: list(),
@@ -30,29 +30,115 @@ defmodule Explorer.Backend.LazySeries do
           backend: nil | module()
         }
 
-  def new(op, args, dtype, aggregation \\ false, backend \\ nil) do
+  def new(op, args, dtype \\ :unknown, aggregation \\ false, backend \\ nil) do
     %__MODULE__{op: op, args: args, dtype: dtype, aggregation: aggregation, backend: backend}
   end
 
   @series_ops_with_arity Backend.Series.behaviour_info(:callbacks) |> Enum.sort()
-
-  for {op, arity} <- @series_ops_with_arity do
-    args = Macro.generate_arguments(arity, __MODULE__)
-
-    @impl Backend.Series
-    def unquote(op)(unquote_splicing(args)) do
-      %__MODULE__{op: unquote(op), args: unquote(args)}
-    end
-  end
+  @custom_ops [:from_list, :inspect]
 
   def operations, do: Keyword.keys(@series_ops_with_arity)
   def operations_with_arity, do: @series_ops_with_arity
 
+  for {op, arity} <- @series_ops_with_arity, op not in @custom_ops do
+    args = Macro.generate_arguments(arity, __MODULE__)
+
+    def unquote(op)(unquote_splicing(args)) do
+      Backend.LazySeries.__apply_lazy__(unquote(op), unquote(args))
+    end
+  end
+
+  @doc false
+  def __apply_lazy__(op, args) when is_atom(op) and is_list(args) do
+    args =
+      Enum.map(args, fn
+        %Series{data: %__MODULE__{} = lazy_series} -> lazy_series
+        other -> other
+      end)
+
+    %Explorer.Series{
+      data: %Explorer.Backend.LazySeries{op: op, args: args},
+      dtype: :unknown
+    }
+  end
+
   # Polars specific functions
 
-  def rename(%__MODULE__{} = lazy_series, name) do
-    %__MODULE__{op: :alias, args: [lazy_series, name]}
+  def col(name) do
+    __apply_lazy__(:col, [name])
   end
+
+  def rename(%Series{data: %__MODULE__{} = lazy_series}, name) do
+    __apply_lazy__(:alias, [lazy_series, name])
+  end
+
+  def from_list([literal], _dtype) do
+    __apply_lazy__(:lit, [literal])
+  end
+
+  def from_list(list, dtype) when is_list(list) do
+    __apply_lazy__(:from_list, [list, dtype])
+  end
+
+  def inspect(series, opts) do
+    alias Inspect.Algebra, as: A
+
+    open = A.color("(", :list, opts)
+    close = A.color(")", :list, opts)
+
+    dtype =
+      series
+      |> Explorer.Series.dtype()
+      |> Explorer.Shared.dtype_to_string()
+      |> A.color(:atom, opts)
+
+    A.concat([
+      A.color("LazySeries[???]", :atom, opts),
+      A.line(),
+      dtype,
+      " ",
+      open,
+      Code.quoted_to_algebra(to_elixir_ast(series.data)),
+      close
+    ])
+  end
+
+  @to_elixir_op %{
+    add: :+,
+    subtract: :-,
+    multiply: :*,
+    divide: :/,
+    pow: :**,
+    equal: :==,
+    not_equal: :!=,
+    greater: :>,
+    greater_equal: :>=,
+    less: :<,
+    less_equal: :<=,
+    binary_and: :and,
+    binary_or: :or,
+    binary_in: :in,
+    unary_not: :not
+  }
+
+  defp to_elixir_ast(%__MODULE__{op: :from_list, args: [[single], _]}) do
+    single
+  end
+
+  defp to_elixir_ast(%__MODULE__{op: op, args: args}) do
+    {Map.get(@to_elixir_op, op, op), [], Enum.map(args, &to_elixir_ast/1)}
+  end
+
+  defp to_elixir_ast(%Explorer.PolarsBackend.Series{} = series) do
+    series = Explorer.PolarsBackend.Shared.create_series(series)
+
+    case Explorer.Series.size(series) do
+      1 -> series[0]
+      _ -> series
+    end
+  end
+
+  defp to_elixir_ast(other), do: other
 
   defimpl Inspect do
     import Inspect.Algebra

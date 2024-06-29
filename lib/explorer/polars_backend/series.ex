@@ -1,6 +1,7 @@
 defmodule Explorer.PolarsBackend.Series do
   @moduledoc false
 
+  alias Explorer.Backend
   alias Explorer.DataFrame
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series
@@ -9,58 +10,144 @@ defmodule Explorer.PolarsBackend.Series do
 
   defstruct resource: nil
 
-  @behaviour Explorer.Backend.Series
-
-  defguardp is_non_finite(n) when n in [:nan, :infinity, :neg_infinity]
-  defguardp is_numeric(n) when is_number(n) or is_non_finite(n)
+  @behaviour Backend.Series
 
   @integer_types Explorer.Shared.integer_types()
   @numeric_types Explorer.Shared.numeric_types()
 
-  # Conversion
+  @ops_all Backend.Series.behaviour_info(:callbacks) |> Enum.sort()
+
+  # The first two arguments are series which must match in size (or have size 1).
+  @ops_matching_size [
+    add: 2,
+    all_equal: 2,
+    binary_and: 2,
+    binary_in: 2,
+    binary_or: 2,
+    correlation: 4,
+    covariance: 3,
+    equal: 2,
+    greater_equal: 2,
+    greater: 2,
+    less_equal: 2,
+    less: 2,
+    not_equal: 2,
+    quotient: 2,
+    remainder: 2,
+    subtract: 2
+  ]
+
+  for {op, arity} <- @ops_matching_size do
+    [s1, s2 | rest] = args = Macro.generate_arguments(arity, __MODULE__)
+
+    @impl Backend.Series
+    def unquote(op)(unquote_splicing(args)) do
+      s1 = matching_size!(unquote(s1), unquote(s2))
+      Shared.apply_series(s1, :"s_#{unquote(op)}", unquote([s2 | rest]))
+    end
+  end
+
+  # For certain string functions we have a regex-based counterpart.
+  @ops_re_pairs [
+    [contains: 2, re_contains: 2],
+    [count_matches: 2, re_count_matches: 2],
+    [replace: 3, re_replace: 3]
+  ]
+
+  for [{op, arity}, {re_op, re_arity}] <- @ops_re_pairs do
+    [series | rest] = args = Macro.generate_arguments(arity, __MODULE__)
+    @impl Backend.Series
+    def unquote(op)(unquote_splicing(args)) do
+      Shared.apply_series(unquote(series), :"s_#{unquote(op)}", unquote(rest) ++ [true])
+    end
+
+    [re_series | re_rest] = re_args = Macro.generate_arguments(re_arity, __MODULE__)
+    @impl Backend.Series
+    def unquote(re_op)(unquote_splicing(re_args)) do
+      Shared.apply_series(unquote(re_series), :"s_#{unquote(re_op)}", unquote(re_rest) ++ [false])
+    end
+  end
+
+  # Some functions require a custom definition.
+  @ops_custom [
+    cast: 2,
+    categories: 1,
+    categorise: 2,
+    clip: 3,
+    concat: 1,
+    correlation: 4,
+    count: 1,
+    covariance: 3,
+    cut: 5,
+    divide: 3,
+    field: 2,
+    fill_missing_with_strategy: 2,
+    fill_missing_with_value: 2,
+    first: 1,
+    format: 1,
+    frequencies: 1,
+    from_binary: 2,
+    from_list: 2,
+    inspect: 2,
+    is_nil: 1,
+    is_not_nil: 1,
+    last: 1,
+    log: 1,
+    member?: 2,
+    multiply: 3,
+    peaks: 2,
+    pow: 3,
+    qcut: 5,
+    quantile: 2,
+    sample: 5,
+    select: 3,
+    shift: 3,
+    slice: 2,
+    standard_deviation: 2,
+    strptime: 2,
+    transform: 2,
+    unary_not: 1,
+    variance: 2
+  ]
+
+  # All other functions have the default definition.
+  @default_ops @ops_all -- (@ops_matching_size ++ @ops_custom ++ List.flatten(@ops_re_pairs))
+  for {op, arity} <- @default_ops do
+    [series | rest] = args = Macro.generate_arguments(arity, __MODULE__)
+
+    @impl Backend.Series
+    def unquote(op)(unquote_splicing(args)) do
+      Shared.apply_series(unquote(series), :"s_#{unquote(op)}", [unquote_splicing(rest)])
+    end
+  end
 
   @impl true
   def from_list(data, type) when is_list(data) do
     series = Shared.from_list(data, type)
-    Explorer.Backend.Series.new(series, type)
+    Backend.Series.new(series, type)
   end
 
   @impl true
   def from_binary(data, dtype) when is_binary(data) do
     series = Shared.from_binary(data, dtype)
-    Explorer.Backend.Series.new(series, dtype)
+    Backend.Series.new(series, dtype)
   end
 
   @impl true
-  def to_list(series), do: Shared.apply_series(series, :s_to_list)
+  def cast(series, dtype) do
+    case {series.dtype, dtype} do
+      {:string, {:naive_datetime, precision}} ->
+        Shared.apply_series(series, :s_strptime, [nil, precision])
 
-  @impl true
-  def to_iovec(series), do: Shared.apply_series(series, :s_to_iovec)
-
-  @impl true
-  def cast(%Series{dtype: :string} = series, {:naive_datetime, precision}),
-    do: Shared.apply_series(series, :s_strptime, [nil, precision])
-
-  def cast(series, dtype),
-    do: Shared.apply_series(series, :s_cast, [dtype])
+      _ ->
+        Shared.apply_series(series, :s_cast, [dtype])
+    end
+  end
 
   @impl true
   def strptime(%Series{} = series, format_string) do
     Shared.apply_series(series, :s_strptime, [format_string, nil])
   end
-
-  @impl true
-  def strftime(%Series{} = series, format_string) do
-    Shared.apply_series(series, :s_strftime, [format_string])
-  end
-
-  # Introspection
-
-  @impl true
-  def dtype(series), do: series |> Shared.apply_series(:s_dtype)
-
-  @impl true
-  def size(series), do: Shared.apply_series(series, :s_size)
 
   @impl true
   def categories(%Series{dtype: :category} = series),
@@ -75,14 +162,6 @@ defmodule Explorer.PolarsBackend.Series do
   def categorise(%Series{dtype: :string} = series, %Series{dtype: dtype} = categories)
       when dtype in [:string, :category],
       do: Shared.apply_series(series, :s_categorise, [categories.data])
-
-  # Slice and dice
-
-  @impl true
-  def head(series, n_elements), do: Shared.apply_series(series, :s_head, [n_elements])
-
-  @impl true
-  def tail(series, n_elements), do: Shared.apply_series(series, :s_tail, [n_elements])
 
   @impl true
   def first(series), do: series[0]
@@ -104,31 +183,12 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def rank(series, method, descending, seed) do
-    Shared.apply_series(series, :s_rank, [method, descending, seed])
-  end
-
-  @impl true
-  def at_every(series, every_n),
-    do: Shared.apply_series(series, :s_at_every, [every_n])
-
-  @impl true
-  def mask(series, %Series{} = mask),
-    do: Shared.apply_series(series, :s_mask, [mask.data])
-
-  @impl true
   def slice(series, indices) when is_list(indices),
     do: Shared.apply_series(series, :s_slice_by_indices, [indices])
 
   @impl true
   def slice(series, %Series{} = indices),
     do: Shared.apply_series(series, :s_slice_by_series, [indices.data])
-
-  @impl true
-  def slice(series, offset, length), do: Shared.apply_series(series, :s_slice, [offset, length])
-
-  @impl true
-  def at(series, idx), do: Shared.apply_series(series, :s_at, [idx])
 
   @impl true
   def format(list) do
@@ -155,15 +215,10 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def concat([%Series{} | _] = series) do
-    polars_series = for s <- series, do: s.data
-
-    Shared.apply(:s_concat, [polars_series])
+  def concat(series_list) do
+    Shared.apply(:s_concat, [series_list])
     |> Shared.create_series()
   end
-
-  @impl true
-  def coalesce(s1, s2), do: Shared.apply_series(s1, :s_coalesce, [s2.data])
 
   @impl true
   def select(%Series{} = predicate, %Series{} = on_true, %Series{} = on_false) do
@@ -186,38 +241,9 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(predicate, :s_select, [on_true.data, on_false.data])
   end
 
-  # Aggregation
-
   @impl true
   # There is no `count` equivalent in Polars, so we need to make our own.
   def count(series), do: size(series) - nil_count(series)
-
-  @impl true
-  def nil_count(series), do: Shared.apply_series(series, :s_nil_count)
-
-  @impl true
-  def sum(series), do: Shared.apply_series(series, :s_sum)
-
-  @impl true
-  def min(series), do: Shared.apply_series(series, :s_min)
-
-  @impl true
-  def max(series), do: Shared.apply_series(series, :s_max)
-
-  @impl true
-  def argmin(series), do: Shared.apply_series(series, :s_argmin)
-
-  @impl true
-  def argmax(series), do: Shared.apply_series(series, :s_argmax)
-
-  @impl true
-  def mean(series), do: Shared.apply_series(series, :s_mean)
-
-  @impl true
-  def median(series), do: Shared.apply_series(series, :s_median)
-
-  @impl true
-  def mode(series), do: Shared.apply_series(series, :s_mode)
 
   @impl true
   def variance(series, ddof), do: series |> Shared.apply_series(:s_variance, [ddof]) |> at(0)
@@ -231,66 +257,8 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_quantile, [quantile, "nearest"])
 
   @impl true
-  def product(series), do: Shared.apply_series(series, :s_product)
-
-  @impl true
-  def skew(series, bias?),
-    do: Shared.apply_series(series, :s_skew, [bias?])
-
-  @impl true
-  def correlation(left, right, ddof, method),
-    do:
-      Shared.apply_series(matching_size!(left, right), :s_correlation, [right.data, ddof, method])
-
-  @impl true
-  def covariance(left, right, ddof),
-    do: Shared.apply_series(matching_size!(left, right), :s_covariance, [right.data, ddof])
-
-  @impl true
-  def all?(series), do: Shared.apply_series(series, :s_all)
-
-  @impl true
-  def any?(series), do: Shared.apply_series(series, :s_any)
-
-  @impl true
-  def row_index(series), do: Shared.apply_series(series, :s_row_index)
-
-  # Cumulative
-
-  @impl true
-  def cumulative_max(series, reverse?),
-    do: Shared.apply_series(series, :s_cumulative_max, [reverse?])
-
-  @impl true
-  def cumulative_min(series, reverse?),
-    do: Shared.apply_series(series, :s_cumulative_min, [reverse?])
-
-  @impl true
-  def cumulative_sum(series, reverse?),
-    do: Shared.apply_series(series, :s_cumulative_sum, [reverse?])
-
-  @impl true
-  def cumulative_product(series, reverse?),
-    do: Shared.apply_series(series, :s_cumulative_product, [reverse?])
-
-  # Local minima/maxima
-
-  @impl true
   def peaks(series, :max), do: Shared.apply_series(series, :s_peak_max)
   def peaks(series, :min), do: Shared.apply_series(series, :s_peak_min)
-
-  # Arithmetic
-
-  @impl true
-  def add(_out_dtype, left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
-
-  @impl true
-  def subtract(_out_dtype, left, right) do
-    left = matching_size!(left, right)
-
-    Shared.apply_series(left, :s_subtract, [right.data])
-  end
 
   @impl true
   def multiply(out_dtype, left, right) do
@@ -321,14 +289,6 @@ defmodule Explorer.PolarsBackend.Series do
       result
     end
   end
-
-  @impl true
-  def quotient(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_quotient, [right.data])
-
-  @impl true
-  def remainder(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_remainder, [right.data])
 
   @impl true
   def pow(out_dtype, left, right) do
@@ -362,135 +322,12 @@ defmodule Explorer.PolarsBackend.Series do
   def log(%Series{} = argument), do: Shared.apply_series(argument, :s_log_natural, [])
 
   @impl true
-  def log(%Series{} = argument, base) when is_numeric(base),
-    do: Shared.apply_series(argument, :s_log, [base])
-
-  @impl true
-  def exp(%Series{} = s), do: Shared.apply_series(s, :s_exp, [])
-
-  @impl true
-  def abs(%Series{} = s), do: Shared.apply_series(s, :s_abs, [])
-
-  @impl true
   def clip(%Series{dtype: dtype} = s, min, max)
       when dtype in @integer_types and is_integer(min) and is_integer(max),
       do: Shared.apply_series(s, :s_clip_integer, [min, max])
 
   def clip(%Series{} = s, min, max),
     do: s |> cast({:f, 64}) |> Shared.apply_series(:s_clip_float, [min * 1.0, max * 1.0])
-
-  # Trigonometry
-
-  @impl true
-  def sin(%Series{} = s), do: Shared.apply_series(s, :s_sin, [])
-
-  @impl true
-  def cos(%Series{} = s), do: Shared.apply_series(s, :s_cos, [])
-
-  @impl true
-  def tan(%Series{} = s), do: Shared.apply_series(s, :s_tan, [])
-
-  @impl true
-  def asin(%Series{} = s), do: Shared.apply_series(s, :s_asin, [])
-
-  @impl true
-  def acos(%Series{} = s), do: Shared.apply_series(s, :s_acos, [])
-
-  @impl true
-  def atan(%Series{} = s), do: Shared.apply_series(s, :s_atan, [])
-
-  # Comparisons
-
-  @impl true
-  def equal(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_equal, [right.data])
-
-  @impl true
-  def not_equal(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_not_equal, [right.data])
-
-  @impl true
-  def greater(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_greater, [right.data])
-
-  @impl true
-  def less(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_less, [right.data])
-
-  @impl true
-  def greater_equal(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_greater_equal, [right.data])
-
-  @impl true
-  def less_equal(left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_less_equal, [right.data])
-
-  @impl true
-  def all_equal(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(matching_size!(left, right), :s_series_equal, [right.data, true])
-
-  @impl true
-  def binary_in(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(left, :s_in, [right.data])
-
-  @impl true
-  def binary_and(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(matching_size!(left, right), :s_and, [right.data])
-
-  @impl true
-  def binary_or(%Series{} = left, %Series{} = right),
-    do: Shared.apply_series(matching_size!(left, right), :s_or, [right.data])
-
-  # Float predicates
-
-  @impl true
-  def is_finite(series), do: Shared.apply_series(series, :s_is_finite)
-
-  @impl true
-  def is_infinite(series), do: Shared.apply_series(series, :s_is_infinite)
-
-  @impl true
-  def is_nan(series), do: Shared.apply_series(series, :s_is_nan)
-
-  # Sort
-
-  @impl true
-  def sort(series, descending?, maintain_order?, multithreaded?, nulls_last?)
-      when is_boolean(descending?) and is_boolean(maintain_order?) and is_boolean(multithreaded?) and
-             is_boolean(nulls_last?) do
-    Shared.apply_series(series, :s_sort, [
-      descending?,
-      maintain_order?,
-      multithreaded?,
-      nulls_last?
-    ])
-  end
-
-  @impl true
-  def argsort(series, descending?, maintain_order?, multithreaded?, nulls_last?)
-      when is_boolean(descending?) and is_boolean(maintain_order?) and is_boolean(multithreaded?) and
-             is_boolean(nulls_last?) do
-    Shared.apply_series(series, :s_argsort, [
-      descending?,
-      maintain_order?,
-      multithreaded?,
-      nulls_last?
-    ])
-  end
-
-  @impl true
-  def reverse(series), do: Shared.apply_series(series, :s_reverse)
-
-  # Distinct
-
-  @impl true
-  def distinct(series), do: Shared.apply_series(series, :s_distinct)
-
-  @impl true
-  def unordered_distinct(series), do: Shared.apply_series(series, :s_unordered_distinct)
-
-  @impl true
-  def n_distinct(series), do: Shared.apply_series(series, :s_n_distinct)
 
   @impl true
   def frequencies(%Series{dtype: {:list, inner_dtype} = dtype})
@@ -539,70 +376,6 @@ defmodule Explorer.PolarsBackend.Series do
     |> Shared.create_dataframe()
   end
 
-  # Window
-
-  @impl true
-  def window_max(series, window_size, weights, min_periods, center) do
-    window_function(:s_window_max, series, window_size, weights, min_periods, center)
-  end
-
-  @impl true
-  def window_mean(series, window_size, weights, min_periods, center) do
-    window_function(:s_window_mean, series, window_size, weights, min_periods, center)
-  end
-
-  @impl true
-  def window_median(series, window_size, weights, min_periods, center) do
-    window_function(:s_window_median, series, window_size, weights, min_periods, center)
-  end
-
-  @impl true
-  def window_min(series, window_size, weights, min_periods, center) do
-    window_function(:s_window_min, series, window_size, weights, min_periods, center)
-  end
-
-  @impl true
-  def window_sum(series, window_size, weights, min_periods, center) do
-    window_function(:s_window_sum, series, window_size, weights, min_periods, center)
-  end
-
-  @impl true
-  def window_standard_deviation(series, window_size, weights, min_periods, center) do
-    window_function(
-      :s_window_standard_deviation,
-      series,
-      window_size,
-      weights,
-      min_periods,
-      center
-    )
-  end
-
-  defp window_function(operation, series, window_size, weights, min_periods, center) do
-    Shared.apply_series(series, operation, [window_size, weights, min_periods, center])
-  end
-
-  @impl true
-  def ewm_mean(series, alpha, adjust, min_periods, ignore_nils) do
-    Shared.apply_series(series, :s_ewm_mean, [alpha, adjust, min_periods, ignore_nils])
-  end
-
-  @impl true
-  def ewm_standard_deviation(series, alpha, adjust, bias, min_periods, ignore_nils) do
-    Shared.apply_series(
-      series,
-      :s_ewm_standard_deviation,
-      [alpha, adjust, bias, min_periods, ignore_nils]
-    )
-  end
-
-  @impl true
-  def ewm_variance(series, alpha, adjust, bias, min_periods, ignore_nils) do
-    Shared.apply_series(series, :s_ewm_variance, [alpha, adjust, bias, min_periods, ignore_nils])
-  end
-
-  # Missing values
-
   @impl true
   def fill_missing_with_strategy(series, strategy),
     do: Shared.apply_series(series, :s_fill_missing_with_strategy, [Atom.to_string(strategy)])
@@ -642,125 +415,19 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def inspect(series, opts) when node(series.data.resource) != node() do
-    Explorer.Backend.Series.inspect(series, "Polars", "node: #{node(series.data.resource)}", opts,
+    Backend.Series.inspect(series, "Polars", "node: #{node(series.data.resource)}", opts,
       elide_columns: true
     )
   end
 
   def inspect(series, opts) do
-    Explorer.Backend.Series.inspect(series, "Polars", Series.size(series), opts)
+    Backend.Series.inspect(series, "Polars", Series.size(series), opts)
   end
 
   # Inversions
 
   @impl true
   def unary_not(%Series{} = series), do: Shared.apply_series(series, :s_not, [])
-
-  # Strings
-
-  @impl true
-  def contains(series, substring),
-    do: Shared.apply_series(series, :s_contains, [substring, true])
-
-  @impl true
-  def re_contains(series, pattern),
-    do: Shared.apply_series(series, :s_contains, [pattern, false])
-
-  @impl true
-  def upcase(series),
-    do: Shared.apply_series(series, :s_upcase)
-
-  @impl true
-  def downcase(series),
-    do: Shared.apply_series(series, :s_downcase)
-
-  @impl true
-  def replace(series, pattern, replacement),
-    do: Shared.apply_series(series, :s_replace, [pattern, replacement, true])
-
-  @impl true
-  def re_replace(series, pattern, replacement),
-    do: Shared.apply_series(series, :s_replace, [pattern, replacement, false])
-
-  @impl true
-  def strip(series, str),
-    do: Shared.apply_series(series, :s_strip, [str])
-
-  @impl true
-  def lstrip(series, str),
-    do: Shared.apply_series(series, :s_lstrip, [str])
-
-  @impl true
-  def rstrip(series, str),
-    do: Shared.apply_series(series, :s_rstrip, [str])
-
-  @impl true
-  def substring(series, offset, length),
-    do: Shared.apply_series(series, :s_substring, [offset, length])
-
-  @impl true
-  def split(series, by),
-    do: Shared.apply_series(series, :s_split, [by])
-
-  @impl true
-  def split_into(series, by, fields),
-    do: Shared.apply_series(series, :s_split_into, [by, fields])
-
-  # Float round
-  @impl true
-  def round(series, decimals),
-    do: Shared.apply_series(series, :s_round, [decimals])
-
-  @impl true
-  def floor(series),
-    do: Shared.apply_series(series, :s_floor)
-
-  @impl true
-  def ceil(series),
-    do: Shared.apply_series(series, :s_ceil)
-
-  # Date / DateTime
-  @impl true
-  def day_of_week(series),
-    do: Shared.apply_series(series, :s_day_of_week)
-
-  @impl true
-  def day_of_year(series),
-    do: Shared.apply_series(series, :s_day_of_year)
-
-  @impl true
-  def week_of_year(series),
-    do: Shared.apply_series(series, :s_week_of_year)
-
-  @impl true
-  def month(series),
-    do: Shared.apply_series(series, :s_month)
-
-  @impl true
-  def year(series),
-    do: Shared.apply_series(series, :s_year)
-
-  @impl true
-  def hour(series),
-    do: Shared.apply_series(series, :s_hour)
-
-  @impl true
-  def minute(series),
-    do: Shared.apply_series(series, :s_minute)
-
-  @impl true
-  def second(series),
-    do: Shared.apply_series(series, :s_second)
-
-  # Lists
-
-  @impl true
-  def join(series, separator),
-    do: Shared.apply_series(series, :s_join, [separator])
-
-  @impl true
-  def lengths(series),
-    do: Shared.apply_series(series, :s_lengths)
 
   @impl true
   def member?(%Series{dtype: {:list, inner_dtype}} = series, value),
@@ -770,40 +437,11 @@ defmodule Explorer.PolarsBackend.Series do
   def field(%Series{dtype: {:struct, _inner_dtype}} = series, name),
     do: Shared.apply_series(series, :s_field, [name])
 
-  @impl true
-  def json_decode(series, dtype),
-    do: Shared.apply_series(series, :s_json_decode, [dtype])
+  # Polars specific functions
 
-  @impl true
-  def json_path_match(series, json_path),
-    do: Shared.apply_series(series, :s_json_path_match, [json_path])
-
-  @impl true
-  def count_matches(series, substring) do
-    Shared.apply_series(series, :s_count_matches, [substring, true])
-  end
-
-  @impl true
-  def re_count_matches(series, pattern) do
-    Shared.apply_series(series, :s_count_matches, [pattern, false])
-  end
-
-  @impl true
-  def re_scan(series, pattern) do
-    Shared.apply_series(series, :s_re_scan, [pattern])
-  end
-
-  @impl true
-  def re_named_captures(series, pattern) do
-    Shared.apply_series(series, :s_re_named_captures, [pattern])
-  end
-
-  @impl true
   def col(%Series{}) do
     raise "Only implemented for `%LazySeries{}`."
   end
-
-  # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)
   def rename(series, name), do: Shared.apply_series(series, :s_rename, [name])
@@ -817,17 +455,16 @@ defmodule Explorer.PolarsBackend.Series do
 
       i ->
         case size(other) do
-          1 ->
-            series
-
-          ^i ->
-            series
-
-          j ->
-            raise ArgumentError,
-                  "series must either have the same size or one of them must have size of 1, got: #{i} and #{j}"
+          1 -> series
+          ^i -> series
+          j -> raise_size_mismatch_error(i, j)
         end
     end
+  end
+
+  defp raise_size_mismatch_error(i, j) do
+    raise ArgumentError,
+          "series must either have the same size or one of them must have size of 1, got: #{i} and #{j}"
   end
 end
 
