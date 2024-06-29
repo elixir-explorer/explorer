@@ -299,6 +299,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
+    * `:node` - The Erlang node to allocate the series on.
     * `:dtype` - Create a series of a given `:dtype`. By default this is `nil`, which means
       that Explorer will infer the type from the values in the list.
       See the module docs for the list of valid dtypes and aliases.
@@ -469,14 +470,13 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
-    opts = Keyword.validate!(opts, [:dtype, :backend])
+    opts = Keyword.validate!(opts, [:dtype, :backend, :node])
     backend = backend_from_options!(opts)
 
     normalised_dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
 
-    type = Shared.dtype_from_list!(list, normalised_dtype)
-
-    backend.from_list(list, type)
+    dtype = Shared.dtype_from_list!(list, normalised_dtype)
+    Shared.apply_init(backend, :from_list, [list, dtype], opts)
   end
 
   defp from_same_value(%{data: %backend{}}, value) do
@@ -495,6 +495,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
+    * `:node` - The Erlang node to allocate the series on.
 
   ## Examples
 
@@ -565,7 +566,7 @@ defmodule Explorer.Series do
         ) ::
           Series.t()
   def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
-    opts = Keyword.validate!(opts, [:backend])
+    opts = Keyword.validate!(opts, [:backend, :node])
     dtype = Shared.normalise_dtype!(dtype)
 
     {_type, alignment} = dtype |> Shared.dtype_to_iotype!()
@@ -576,7 +577,7 @@ defmodule Explorer.Series do
     end
 
     backend = backend_from_options!(opts)
-    backend.from_binary(binary, dtype)
+    Shared.apply_init(backend, :from_binary, [binary, dtype], opts)
   end
 
   @doc """
@@ -589,6 +590,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
+    * `:node` - The Erlang node to allocate the series on.
     * `:dtype` - The dtype of the series that must match the underlying tensor type.
 
       The series can have a different dtype if the tensor is compatible with it.
@@ -664,7 +666,7 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
   def from_tensor(tensor, opts \\ []) when is_struct(tensor, Nx.Tensor) do
-    opts = Keyword.validate!(opts, [:dtype, :backend])
+    opts = Keyword.validate!(opts, [:dtype, :backend, :node])
     type = Nx.type(tensor)
     {dtype, opts} = Keyword.pop_lazy(opts, :dtype, fn -> Shared.iotype_to_dtype!(type) end)
 
@@ -677,7 +679,7 @@ defmodule Explorer.Series do
     end
 
     backend = backend_from_options!(opts)
-    tensor |> Nx.to_binary() |> backend.from_binary(dtype)
+    Shared.apply_init(backend, :from_binary, [Nx.to_binary(tensor), dtype], opts)
   end
 
   @doc """

@@ -97,4 +97,14 @@ defmodule Explorer.RemoteTest do
       assert_receive {:DOWN, ^ref, _, _, _}
     end
   end
+
+  describe "init placement" do
+    test "series" do
+      series = S.from_list([1, 2, 3], node: @node2)
+      assert series.remote
+
+      series = S.from_binary(<<1, 2, 3>>, {:s, 8}, node: @node2)
+      assert series.remote
+    end
+  end
 end

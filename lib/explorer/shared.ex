@@ -604,6 +604,17 @@ defmodule Explorer.Shared do
   ## Apply
 
   @doc """
+  Initializes a series or a dataframe with node placement.
+  """
+  def apply_init(impl, fun, args, opts) do
+    if node = opts[:node] do
+      Explorer.Remote.apply(node, impl, fun, [], fn _ -> args end)
+    else
+      apply(impl, fun, args)
+    end
+  end
+
+  @doc """
   Applies a function to a series.
   """
   def apply_series(series, fun, args \\ []) do
