@@ -41,13 +41,6 @@ defmodule Explorer.Remote do
   garbage collector.
   """
 
-  # TODO: Make `collect` in dataframe transfer to the current node
-  # TODO: Add `collect` to series
-  # TODO: Add `compute` to dataframe
-  # TODO: Handle dataframes (remove Shared.apply_impl)
-  # TODO: Handle lazy series
-  # TODO: Add `node` option to creation functions
-
   @doc """
   Receives a data structure and traverses it looking
   for remote dataframes and series.

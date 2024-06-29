@@ -79,33 +79,22 @@ defmodule Explorer.RemoteTest do
 
   describe "garbage collection" do
     test "happens once the resource is deallocated" do
-      # {resource, _} =
-      #   remote_eval @node2 do
-      #     Explorer.Series.from_list([1, 2, 3])
-      #     |> Explorer.RemoteHelpers.keep()
-      #   end
+      {resource, _} =
+        remote_eval @node2 do
+          Explorer.Series.from_list([1, 2, 3])
+          |> Explorer.RemoteHelpers.keep()
+        end
 
-      # assert inspect(resource) =~ "OMG"
+      {%{"foo" => [{resource}]}, [pid]} = Explorer.Remote.place(%{"foo" => [{resource}]})
+      assert node(pid) == @node2
+
+      ref = Process.monitor(pid)
+      assert :erpc.call(@node2, Process, :alive?, [pid])
+
+      # Hold a reference until before it is garbage collected
+      List.flatten([resource])
+      :erlang.garbage_collect(self())
+      assert_receive {:DOWN, ^ref, _, _, _}
     end
   end
-
-  # defp pry_request(sessions) do
-  #   :erlang.trace(Process.whereis(IEx.Broker), true, [:receive, tracer: self()])
-  #   patterns = for %{pid: pid} <- sessions, do: {[:_, pid, :_], [], []}
-  #   :erlang.trace_pattern(:receive, patterns, [])
-
-  #   task =
-  #     Task.async(fn ->
-  #       iex_context = :inside_pry
-  #       IEx.pry()
-  #     end)
-
-  #   for _ <- sessions do
-  #     assert_receive {:trace, _, :receive, {_, _, call}} when elem(call, 0) in [:accept, :refuse]
-  #   end
-
-  #   task
-  # after
-  #   :erlang.trace(Process.whereis(IEx.Broker), false, [:receive, tracer: self()])
-  # end
 end
