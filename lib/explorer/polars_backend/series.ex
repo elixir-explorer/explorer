@@ -54,10 +54,25 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_strftime, [format_string])
   end
 
-  # Introspection
+  # Ownership
 
   @impl true
   def owner_reference(series), do: series.data.resource
+
+  @impl true
+  def owner_export(series) do
+    Explorer.DataFrame.new(series: series)
+    |> Explorer.DataFrame.dump_ipc()
+  end
+
+  @impl true
+  def owner_import(dumped) do
+    with {:ok, df} <- Explorer.DataFrame.load_ipc(dumped) do
+      {:ok, df[:series]}
+    end
+  end
+
+  # Introspection
 
   @impl true
   def dtype(series), do: Shared.apply_series(series, :s_dtype)

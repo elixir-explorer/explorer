@@ -158,9 +158,14 @@ defmodule Explorer.Backend.DataFrame do
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
   @callback to_rows_stream(df, atom_keys? :: boolean(), chunk_size :: integer()) :: Enumerable.t()
 
-  # Introspection
+  # Ownership
 
   @callback owner_reference(df) :: reference() | nil
+  @callback owner_import(term()) :: io_result(df)
+  @callback owner_export(df) :: io_result(term())
+
+  # Introspection
+
   @callback n_rows(df) :: integer()
   @callback inspect(df, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
   @callback re_dtype(String.t()) :: dtype()

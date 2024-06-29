@@ -636,7 +636,7 @@ defmodule Explorer.Shared do
           {{series, node}, {pick_series_impl(acc_impl, impl), pick_remote(acc_remote, remote)}}
 
         scalar, acc ->
-          {scalar, acc}
+          {{scalar, nil}, acc}
       end)
 
     if is_nil(impl) do
@@ -646,9 +646,34 @@ defmodule Explorer.Shared do
     end
 
     if remote do
-      Explorer.Remote.apply(remote, impl, fun, args_callback.(series_or_scalars))
+      Explorer.Remote.apply(remote, impl, fun, series_nodes, args_callback)
     else
       apply(impl, fun, args_callback.(series_or_scalars))
+    end
+  end
+
+  defp pick_series_impl(nil, impl), do: impl
+  defp pick_series_impl(impl, impl), do: impl
+  defp pick_series_impl(Explorer.Backend.LazySeries, _), do: Explorer.Backend.LazySeries
+  defp pick_series_impl(_, Explorer.Backend.LazySeries), do: Explorer.Backend.LazySeries
+
+  defp pick_series_impl(impl1, impl2) do
+    raise "cannot invoke Explorer function because it relies on two incompatible series: " <>
+            "#{inspect(impl1)} and #{inspect(impl2)}"
+  end
+
+  @doc """
+  A hint in case there is a bad column from a query.
+  """
+  def maybe_bad_column_hint(values) do
+    atom = Enum.find(values, &is_atom(&1))
+
+    if Kernel.and(atom != nil, String.starts_with?(Atom.to_string(atom), "Elixir.")) do
+      "\n\nHINT: we have noticed that one of the values is the atom #{inspect(atom)}. " <>
+        "If you are inside Explorer.Query and you want to access a column starting in uppercase, " <>
+        "you must write instead: col(\"#{inspect(atom)}\")"
+    else
+      ""
     end
   end
 
@@ -679,29 +704,4 @@ defmodule Explorer.Shared do
   defp pick_remote(acc_remote, _remote) when is_pid(acc_remote), do: acc_remote
   defp pick_remote(acc_remote, nil), do: acc_remote
   defp pick_remote(_acc_remote, remote), do: remote
-
-  defp pick_series_impl(nil, impl), do: impl
-  defp pick_series_impl(impl, impl), do: impl
-  defp pick_series_impl(Explorer.Backend.LazySeries, _), do: Explorer.Backend.LazySeries
-  defp pick_series_impl(_, Explorer.Backend.LazySeries), do: Explorer.Backend.LazySeries
-
-  defp pick_series_impl(impl1, impl2) do
-    raise "cannot invoke Explorer function because it relies on two incompatible series: " <>
-            "#{inspect(impl1)} and #{inspect(impl2)}"
-  end
-
-  @doc """
-  A hint in case there is a bad column from a query.
-  """
-  def maybe_bad_column_hint(values) do
-    atom = Enum.find(values, &is_atom(&1))
-
-    if Kernel.and(atom != nil, String.starts_with?(Atom.to_string(atom), "Elixir.")) do
-      "\n\nHINT: we have noticed that one of the values is the atom #{inspect(atom)}. " <>
-        "If you are inside Explorer.Query and you want to access a column starting in uppercase, " <>
-        "you must write instead: col(\"#{inspect(atom)}\")"
-    else
-      ""
-    end
-  end
 end

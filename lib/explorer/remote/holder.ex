@@ -15,7 +15,7 @@ defmodule Explorer.Remote.Holder do
   end
 
   def hold(holder, ref, pid) when is_pid(pid) and node(ref) == node(holder) do
-    GenServer.call(holder, {:hold, ref, pid})
+    GenServer.call(holder, {:hold, ref, pid}, :infinity)
   end
 
   def start_link(pid) when is_pid(pid) do
@@ -27,6 +27,13 @@ defmodule Explorer.Remote.Holder do
     ref = Process.monitor(pid)
     state = %{owner_ref: ref, refs: %{}, pids: %{}}
     {:ok, state}
+  end
+
+  @impl true
+  def handle_call({:hold, ref, pid}, _from, state) do
+    refs = Map.update(state.refs, ref, [pid], &[pid | &1])
+    pids = Map.update(state.pids, pid, [ref], &[ref | &1])
+    {:reply, :ok, %{state | refs: refs, pids: pids}}
   end
 
   @impl true

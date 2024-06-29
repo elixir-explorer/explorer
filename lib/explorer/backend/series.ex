@@ -21,6 +21,7 @@ defmodule Explorer.Backend.Series do
 
   @type non_finite :: Explorer.Series.non_finite()
   @type option(type) :: type | nil
+  @type io_result(t) :: {:ok, t} | {:error, Exception.t()}
 
   # Conversion
 
@@ -33,9 +34,14 @@ defmodule Explorer.Backend.Series do
   @callback strptime(s, String.t()) :: s
   @callback strftime(s, String.t()) :: s
 
-  # Introspection
+  # Ownership
 
   @callback owner_reference(s) :: reference() | nil
+  @callback owner_import(term()) :: io_result(s)
+  @callback owner_export(s) :: io_result(term())
+
+  # Introspection
+
   @callback dtype(s) :: dtype()
   @callback size(s) :: non_neg_integer() | lazy_s()
   @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()

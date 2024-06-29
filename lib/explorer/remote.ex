@@ -1,20 +1,44 @@
 defmodule Explorer.Remote do
   @moduledoc """
-  A module responsible for tracking remote dataframes
-  and garbage collect them.
+  A module responsible for placing remote dataframes and
+  garbage collect them.
 
-  A dataframe or a series must be manually placed in
-  a remote node for this to work. This is done by
-  calling `place/2` on every node that receives a
-  copy of the remote dataframe.
+  The functions in `Explorer.DataFrame` and `Explorer.Series`
+  will automatically move operations on remote dataframes to
+  the nodes they belong to. This module provides additional
+  conveniences for manual placement.
 
-  From that moment, operations against said dataframe
-  and series are executed in the remote node, until
-  the dataframe is collected.
+  ## Implementation details
 
-  If a remote reference is passed to a Series or
-  DataFrame function, and they have not been placed,
-  their data will be transferred to the current node.
+  In order to understand what this module does, we need
+  to understand the challenges in working with remote series
+  and dataframes.
+
+  Series and dataframes are actually NIF resources: they are
+  pointers to blobs of memory operated by low-level libraries.
+  Those are represented in Erlang/Elixir as references (the
+  same as the one returned by `make_ref/0`). Once the reference
+  is garbage collected (based on refcounting), those NIF
+  resources are garbage collected and the memory is reclaimed.
+
+  When using Distributed Erlang, you may write this code:
+
+      remote_series = :erpc.call(node, Explorer.Series, :from_list, [[1, 2, 3]])
+
+  However, the code above will not work, because the series
+  will be allocated in the remote node and the remote node
+  won't hold a reference to said series! This means the series
+  is garbage collected and if we attempt to read it later on,
+  from the caller node, it will no longer exist. Therefore,
+  we must explicitly place these resources in remote nodes
+  by spawning processes to hold these refernces. That's what
+  the `place/2` function in this module does.
+
+  We also need to guarantee these resources are not kept
+  forever by these remote nodes, so `place/2` creates a
+  local NIF resource that notifies the remote resources
+  they have been GCed, effectively implementing a remote
+  garbage collector.
   """
 
   # TODO: Make `collect` in dataframe transfer to the current node
@@ -22,7 +46,7 @@ defmodule Explorer.Remote do
   # TODO: Add `compute` to dataframe
   # TODO: Handle dataframes (remove Shared.apply_impl)
   # TODO: Handle lazy series
-  # TODO: Handle mixed arguments
+  # TODO: Add `node` option to creation functions
 
   @doc """
   Receives a data structure and traverses it looking
@@ -111,20 +135,27 @@ defmodule Explorer.Remote do
   # If a pid is given, we assume the pid will hold those references
   # and avoid spawning new ones. If a node is given, regular placement
   # occurs.
-  def apply(pid, mod, fun, args) when is_pid(pid) do
-    apply(node(pid), mod, fun, args, &place_on_pid(&1, pid))
+  def apply(pid, mod, fun, resources, args_callback) when is_pid(pid) do
+    apply(node(pid), mod, fun, resources, args_callback, &place_on_pid(&1, pid))
   end
 
-  def apply(node, mod, fun, args) when is_atom(node) do
-    apply(node, mod, fun, args, &place_on_node(&1, []))
+  def apply(node, mod, fun, resources, args_callback) when is_atom(node) do
+    apply(node, mod, fun, resources, args_callback, &place_on_node(&1, []))
   end
 
-  defp apply(node, mod, fun, args, placing_function) do
+  defp apply(node, mod, fun, resources, args_callback, placing_function) do
+    resources =
+      Enum.map(resources, fn
+        {resource_data, resource_node} when resource_node == node or resource_node == nil ->
+          {:local, resource_data}
+
+        {%{data: %impl{}} = resource_data, resource_node} ->
+          {:remote, impl, owner_export(resource_node, impl, resource_data)}
+      end)
+
     message_ref = :erlang.make_ref()
-
-    child =
-      Node.spawn_link(node, __MODULE__, :remote_apply, [self(), message_ref, mod, fun, args])
-
+    remote_args = [self(), message_ref, mod, fun, resources, args_callback]
+    child = Node.spawn_link(node, __MODULE__, :remote_apply, remote_args)
     monitor_ref = Process.monitor(child)
 
     receive do
@@ -139,10 +170,30 @@ defmodule Explorer.Remote do
     end
   end
 
+  defp owner_export(resource_node, impl, resource_data) do
+    case :erpc.call(resource_node, impl, :owner_export, [resource_data]) do
+      {:ok, val} -> val
+      {:error, error} -> raise error
+    end
+  end
+
+  defp owner_import(impl, exported_data) do
+    case impl.owner_import(exported_data) do
+      {:ok, val} -> val
+      {:error, error} -> raise error
+    end
+  end
+
   @doc false
-  def remote_apply(parent, message_ref, mod, fun, args) do
+  def remote_apply(parent, message_ref, mod, fun, resources, args_callback) do
+    resources =
+      Enum.map(resources, fn
+        {:local, value} -> value
+        {:remote, impl, value} -> owner_import(impl, value)
+      end)
+
     monitor_ref = Process.monitor(parent)
-    result = apply(mod, fun, args)
+    result = apply(mod, fun, args_callback.(resources))
     send(parent, {message_ref, result})
 
     receive do

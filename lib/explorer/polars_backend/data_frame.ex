@@ -597,10 +597,18 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> Stream.flat_map(&to_rows(&1, atom_keys?))
   end
 
-  # Introspection
+  # Ownership
 
   @impl true
   def owner_reference(df), do: df.data.resource
+
+  @impl true
+  def owner_export(df), do: dump_ipc(df, {nil, nil})
+
+  @impl true
+  def owner_import(term), do: load_ipc(term, nil)
+
+  # Introspection
 
   @impl true
   def n_rows(df), do: Shared.apply_dataframe(df, :df_n_rows)
