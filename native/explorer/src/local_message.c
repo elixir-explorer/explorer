@@ -53,6 +53,14 @@ void destruct_local_message(ErlNifEnv *env, void *obj) {
   enif_free_env(m->env);
 }
 
+ERL_NIF_TERM is_message_when_gc(ErlNifEnv *env, const ERL_NIF_TERM term) {
+  struct message * m = NULL;
+  if (enif_get_resource(env, term, message_resource, (void **)&m)) {
+    return enif_make_atom(env, "true");  
+  }
+  return enif_make_atom(env, "false");
+}
+
 ERL_NIF_TERM local_message_on_gc(ErlNifEnv *env, const ERL_NIF_TERM pid_term,
                                  const ERL_NIF_TERM term) {
   if (!enif_is_pid(env, pid_term)) {
