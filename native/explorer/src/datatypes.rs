@@ -467,12 +467,27 @@ impl From<ExDateTime<'_>> for DateTime<Tz> {
     }
 }
 
-// TODO: Polars doesn't provide a default `Literal` impl. Find out why.
-// impl Literal for ExDateTime<'_> {
-//     fn lit(self) -> Expr {
-//         DateTime::from(self).lit()
-//     }
-// }
+impl<'tz> From<ExDateTime<'tz>> for NaiveDateTime {
+    fn from(dt: ExDateTime) -> NaiveDateTime {
+        NaiveDate::from_ymd_opt(dt.year, dt.month, dt.day)
+            .unwrap()
+            .and_hms_micro_opt(dt.hour, dt.minute, dt.second, dt.microsecond.0)
+            .unwrap()
+    }
+}
+
+impl<'tz> Literal for ExDateTime<'tz> {
+    fn lit(self) -> Expr {
+        let ndt = NaiveDateTime::from(self);
+        let time_zone = self.time_zone.to_string();
+
+        Expr::Literal(LiteralValue::DateTime(
+            ndt.and_utc().timestamp_micros(),
+            TimeUnit::Microseconds,
+            Some(time_zone),
+        ))
+    }
+}
 
 #[derive(NifStruct, Copy, Clone, Debug)]
 #[module = "Time"]

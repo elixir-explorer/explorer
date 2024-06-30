@@ -50,10 +50,19 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
       assert %Expression{} = Expression.to_expr(lazy)
     end
 
-    test "with datetime value" do
+    test "with naive datetime value" do
       lazy = %LazySeries{
         op: :equal,
         args: [%LazySeries{op: :column, args: ["col_b"]}, ~N[2022-07-07 18:09:17.824019]]
+      }
+
+      assert %Expression{} = Expression.to_expr(lazy)
+    end
+
+    test "with datetime value" do
+      lazy = %LazySeries{
+        op: :equal,
+        args: [%LazySeries{op: :column, args: ["col_b"]}, ~U[2022-07-07 18:09:17.824019Z]]
       }
 
       assert %Expression{} = Expression.to_expr(lazy)
