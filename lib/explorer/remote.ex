@@ -84,26 +84,12 @@ defmodule Explorer.Remote do
     {%{series | data: data}, acc}
   end
 
-  defp place(%Explorer.Series{data: %struct{}} = series, acc, fun) do
-    case struct.owner_reference(series) do
-      remote_ref when is_reference(remote_ref) and node(remote_ref) != remote_ref ->
-        {local_ref, remote_pid} = place_remote_ref(remote_ref, fun)
-        {%{series | remote: {local_ref, remote_pid, remote_ref}}, [remote_pid | acc]}
-
-      _ ->
-        {series, acc}
-    end
+  defp place(%Explorer.Series{data: %impl{}} = series, acc, fun) do
+    place_impl(impl, series, acc, fun)
   end
 
-  defp place(%Explorer.DataFrame{data: %struct{}} = df, acc, fun) do
-    case struct.owner_reference(df) do
-      remote_ref when is_reference(remote_ref) and node(remote_ref) != remote_ref ->
-        {local_ref, remote_pid} = place_remote_ref(remote_ref, fun)
-        {%{df | remote: {local_ref, remote_pid, remote_ref}}, [remote_pid | acc]}
-
-      _ ->
-        {df, acc}
-    end
+  defp place(%Explorer.DataFrame{data: %impl{}} = df, acc, fun) do
+    place_impl(impl, df, acc, fun)
   end
 
   defp place(%_{} = other, acc, _fun) do
@@ -123,6 +109,17 @@ defmodule Explorer.Remote do
 
   defp place(other, acc, _fun) do
     {other, acc}
+  end
+
+  defp place_impl(impl, struct, acc, fun) do
+    case impl.owner_reference(struct) do
+      remote_ref when is_reference(remote_ref) and node(remote_ref) != remote_ref ->
+        {local_ref, remote_pid} = place_remote_ref(remote_ref, fun)
+        {%{struct | remote: {local_ref, remote_pid, remote_ref}}, [remote_pid | acc]}
+
+      _ ->
+        {struct, acc}
+    end
   end
 
   defp place_remote_ref(remote_ref, fun) do
