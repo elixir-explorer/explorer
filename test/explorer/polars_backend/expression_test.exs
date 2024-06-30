@@ -64,7 +64,7 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
         op: :equal,
         args: [
           %LazySeries{op: :column, args: ["col_b"]},
-          Explorer.Series.from_list([1, 2, 3]).data
+          Explorer.Series.from_list([1, 2, 3])
         ]
       }
 

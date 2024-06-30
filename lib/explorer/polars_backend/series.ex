@@ -74,8 +74,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Introspection
 
-  @impl true
-  def dtype(series), do: Shared.apply_series(series, :s_dtype)
+  defp dtype(series), do: Shared.apply_series(series, :s_dtype)
 
   @impl true
   def size(series), do: Shared.apply_series(series, :s_size)
@@ -157,13 +156,13 @@ defmodule Explorer.PolarsBackend.Series do
         else
           counter = counter + 1
           name = "#{counter}"
-          column = Explorer.Backend.LazySeries.new(:column, [name], :string)
+          column = Explorer.Backend.LazySeries.unbacked(:column, [name], :string)
           {counter, [{name, s} | df_args], [column | params]}
         end
       end)
 
     df = Explorer.PolarsBackend.DataFrame.from_series(df_args)
-    format_expr = Explorer.Backend.LazySeries.new(:format, [Enum.reverse(params)], :string)
+    format_expr = Explorer.Backend.LazySeries.unbacked(:format, [Enum.reverse(params)], :string)
     out_dtypes = Map.put(df.dtypes, "result", :string)
     out_names = ["result" | df.names]
     out_df = %{df | dtypes: out_dtypes, names: out_names}
@@ -355,8 +354,8 @@ defmodule Explorer.PolarsBackend.Series do
     # We need to pre-cast or we may lose precision.
     left = Explorer.Series.cast(left, out_dtype)
 
-    left_lazy = Explorer.Backend.LazySeries.new(:column, ["base"], left.dtype)
-    right_lazy = Explorer.Backend.LazySeries.new(:column, ["exponent"], right.dtype)
+    left_lazy = Explorer.Backend.LazySeries.unbacked(:column, ["base"], left.dtype)
+    right_lazy = Explorer.Backend.LazySeries.unbacked(:column, ["exponent"], right.dtype)
 
     {df_args, pow_args} =
       case {size(left), size(right)} do
@@ -366,7 +365,7 @@ defmodule Explorer.PolarsBackend.Series do
       end
 
     df = Explorer.PolarsBackend.DataFrame.from_series(df_args)
-    pow = Explorer.Backend.LazySeries.new(:pow, pow_args, out_dtype)
+    pow = Explorer.Backend.LazySeries.unbacked(:pow, pow_args, out_dtype)
 
     out_dtypes = Map.put(df.dtypes, "pow", out_dtype)
     out_names = df.names ++ ["pow"]
@@ -843,7 +842,11 @@ defimpl Inspect, for: Explorer.PolarsBackend.Series do
 
   def inspect(s, _opts) do
     doc =
-      case Explorer.PolarsBackend.Native.s_as_str(s) do
+      try do
+        Explorer.PolarsBackend.Native.s_as_str(s)
+      rescue
+        _ -> inspect(s.resource)
+      else
         {:ok, str} -> str
         {:error, _} -> inspect(s.resource)
       end

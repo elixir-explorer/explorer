@@ -648,11 +648,13 @@ defmodule Explorer.Shared do
   end
 
   defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback) do
-    {series_nodes, {impl, remote}} =
-      Enum.map_reduce(series_or_scalars, {nil, nil}, fn
-        %{data: %impl{}} = series, {acc_impl, acc_remote} ->
+    {series_nodes, {impl, remote, transfer?}} =
+      Enum.map_reduce(series_or_scalars, {nil, nil, false}, fn
+        %{data: %impl{}} = series, {acc_impl, acc_remote, acc_transfer?} ->
           {node, remote} = remote_info(series, impl)
-          {{series, node}, {pick_series_impl(acc_impl, impl), pick_remote(acc_remote, remote)}}
+
+          {{series, node},
+           pick_series(acc_impl, impl, acc_remote, remote, acc_transfer? or remote != nil)}
 
         scalar, acc ->
           {{scalar, nil}, acc}
@@ -664,21 +666,30 @@ defmodule Explorer.Shared do
               maybe_bad_column_hint(series_or_scalars)
     end
 
-    if remote do
-      Explorer.Remote.apply(remote, impl, fun, series_nodes, args_callback)
+    if transfer? do
+      Explorer.Remote.apply(remote || node(), impl, fun, series_nodes, args_callback)
     else
       apply(impl, fun, args_callback.(series_or_scalars))
     end
   end
 
+  # The lazy series alwaus wins the remote, since we need to transfer
+  # it to the dataframe that started the lazy series.
+  defp pick_series(Explorer.Backend.LazySeries, _, acc_remote, _, transfer?),
+    do: {Explorer.Backend.LazySeries, acc_remote, transfer?}
+
+  defp pick_series(_, Explorer.Backend.LazySeries, _, remote, transfer?),
+    do: {Explorer.Backend.LazySeries, remote, transfer?}
+
+  defp pick_series(acc_impl, impl, acc_remote, remote, transfer?),
+    do: {pick_series_impl(acc_impl, impl), pick_remote(acc_remote, remote), transfer?}
+
   defp pick_series_impl(nil, impl), do: impl
   defp pick_series_impl(impl, impl), do: impl
-  defp pick_series_impl(Explorer.Backend.LazySeries, _), do: Explorer.Backend.LazySeries
-  defp pick_series_impl(_, Explorer.Backend.LazySeries), do: Explorer.Backend.LazySeries
 
-  defp pick_series_impl(impl1, impl2) do
+  defp pick_series_impl(acc_impl, impl) do
     raise "cannot invoke Explorer function because it relies on two incompatible series: " <>
-            "#{inspect(impl1)} and #{inspect(impl2)}"
+            "#{inspect(acc_impl)} and #{inspect(impl)}"
   end
 
   @doc """

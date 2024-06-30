@@ -3,8 +3,8 @@ defmodule Explorer.RemoteTest do
   import Explorer.RemoteHelpers
 
   @moduletag :distributed
+  require Explorer.DataFrame, as: DF
   alias Explorer.Series, as: S
-  alias Explorer.DataFrame, as: DF
 
   @node2 :"secondary@127.0.0.1"
   @node3 :"tertiary@127.0.0.1"
@@ -129,6 +129,87 @@ defmodule Explorer.RemoteTest do
                lng f64 [-1.778197, -3.17909, -3.335724, -2.179404]
              >\
              """
+    end
+  end
+
+  describe "lazy series" do
+    test "with local dataframe" do
+      df = DF.new(a: [1, 2, 3])
+      assert df.remote == nil
+
+      s2 = S.from_list([4, 5, 6], node: @node2)
+      assert s2.remote != nil
+
+      {s3, _} =
+        remote_eval @node3 do
+          Explorer.Series.from_list([7, 8, 9])
+          |> Explorer.RemoteHelpers.keep()
+        end
+
+      df = DF.mutate(df, a1: a - ^s2 + ^s3, a2: a + (^s2 - ^s3), a3: ^s3 + ^s2 + a)
+      assert df.remote == nil
+
+      assert DF.to_columns(df) == %{
+               "a" => [1, 2, 3],
+               "a1" => [4, 5, 6],
+               "a2" => [-2, -1, 0],
+               "a3" => [12, 15, 18]
+             }
+    end
+
+    test "with an unplaced remote dataframe" do
+      {df, _} =
+        remote_eval @node3 do
+          Explorer.DataFrame.new(a: [1, 2, 3])
+          |> Explorer.RemoteHelpers.keep()
+        end
+
+      s2 = S.from_list([4, 5, 6], node: @node2)
+      assert s2.remote != nil
+
+      s3 = Explorer.Series.from_list([7, 8, 9])
+      assert s3.remote == nil
+
+      df = DF.mutate(df, a1: a - ^s2 + ^s3, a2: a + (^s2 - ^s3), a3: ^s3 + ^s2 + a)
+      assert df.remote != nil
+
+      assert DF.to_columns(df) == %{
+               "a" => [1, 2, 3],
+               "a1" => [4, 5, 6],
+               "a2" => [-2, -1, 0],
+               "a3" => [12, 15, 18]
+             }
+    end
+
+    test "with a placed remote dataframe" do
+      df =
+        Explorer.DataFrame.load_csv!(
+          """
+          a
+          1
+          2
+          3
+          """,
+          node: @node3
+        )
+
+      assert df.remote != nil
+
+      s2 = S.from_list([4, 5, 6], node: @node2)
+      assert s2.remote != nil
+
+      s3 = Explorer.Series.from_list([7, 8, 9])
+      assert s3.remote == nil
+
+      df = DF.mutate(df, a1: a - ^s2 + ^s3, a2: a + (^s2 - ^s3), a3: ^s3 + ^s2 + a)
+      assert df.remote != nil
+
+      assert DF.to_columns(df) == %{
+               "a" => [1, 2, 3],
+               "a1" => [4, 5, 6],
+               "a2" => [-2, -1, 0],
+               "a3" => [12, 15, 18]
+             }
     end
   end
 

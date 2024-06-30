@@ -74,15 +74,14 @@ defmodule Explorer.Remote do
     Enum.map_reduce(list, acc, &place(&1, &2, fun))
   end
 
-  defp place(%Explorer.DataFrame{data: %struct{}} = df, acc, fun) do
-    case struct.owner_reference(df) do
-      remote_ref when is_reference(remote_ref) and node(remote_ref) != remote_ref ->
-        {local_ref, remote_pid} = place_remote_ref(remote_ref, fun)
-        {%{df | remote: {local_ref, remote_pid, remote_ref}}, [remote_pid | acc]}
+  defp place(%Explorer.Backend.LazySeries{args: args} = lazy_series, acc, fun) do
+    {args, acc} = Enum.map_reduce(args, acc, &place(&1, &2, fun))
+    {%{lazy_series | args: args}, acc}
+  end
 
-      _ ->
-        {df, acc}
-    end
+  defp place(%Explorer.Series{data: %Explorer.Backend.LazySeries{} = data} = series, acc, fun) do
+    {data, acc} = place(data, acc, fun)
+    {%{series | data: data}, acc}
   end
 
   defp place(%Explorer.Series{data: %struct{}} = series, acc, fun) do
@@ -93,6 +92,17 @@ defmodule Explorer.Remote do
 
       _ ->
         {series, acc}
+    end
+  end
+
+  defp place(%Explorer.DataFrame{data: %struct{}} = df, acc, fun) do
+    case struct.owner_reference(df) do
+      remote_ref when is_reference(remote_ref) and node(remote_ref) != remote_ref ->
+        {local_ref, remote_pid} = place_remote_ref(remote_ref, fun)
+        {%{df | remote: {local_ref, remote_pid, remote_ref}}, [remote_pid | acc]}
+
+      _ ->
+        {df, acc}
     end
   end
 
@@ -190,8 +200,13 @@ defmodule Explorer.Remote do
     send(parent, {message_ref, result})
 
     receive do
-      {^message_ref, :ok} -> Process.demonitor(monitor_ref, [:flush])
-      {:DOWN, ^monitor_ref, _, _, reason} -> exit(reason)
+      {^message_ref, :ok} ->
+        Process.demonitor(monitor_ref, [:flush])
+        # Call a remote function to prevent garbage collection from happening until we are done
+        Explorer.Remote.LocalGC.identity(result)
+
+      {:DOWN, ^monitor_ref, _, _, reason} ->
+        exit(reason)
     end
   end
 end

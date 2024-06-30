@@ -9,14 +9,15 @@ defmodule Explorer.Backend.LazySeries do
 
   @behaviour Explorer.Backend.Series
 
-  defstruct op: nil, args: [], dtype: nil, aggregation: false, backend: nil
+  defstruct op: nil, args: [], dtype: nil, aggregation: false, backend: nil, resource: nil
 
   @type t :: %__MODULE__{
           op: atom(),
           args: list(),
           dtype: any(),
           aggregation: boolean(),
-          backend: nil | module()
+          backend: nil | module(),
+          resource: nil
         }
 
   @operations [
@@ -202,29 +203,50 @@ defmodule Explorer.Backend.LazySeries do
 
   @float_predicates [:is_finite, :is_infinite, :is_nan]
 
-  @doc false
-  def new(op, args, dtype, aggregation \\ false, backend \\ nil) do
+  # Used only internally to build new series as we go.
+  defp new(op, args, dtype, aggregation \\ false) do
     dtype = Explorer.Shared.normalise_dtype!(dtype)
-    backend = backend || backend_from_args(args)
 
-    %__MODULE__{op: op, args: args, dtype: dtype, backend: backend, aggregation: aggregation}
+    {backend, resource} =
+      Enum.find_value(args, {nil, nil}, fn
+        %__MODULE__{backend: backend, resource: resource} when backend != nil ->
+          {backend, resource}
+
+        _other ->
+          nil
+      end)
+
+    %__MODULE__{
+      op: op,
+      args: args,
+      dtype: dtype,
+      backend: backend,
+      resource: resource,
+      aggregation: aggregation
+    }
   end
 
-  defp backend_from_args(args) do
-    Enum.find(args, fn
-      %__MODULE__{backend: backend} -> backend
-      _other -> nil
-    end)
+  @doc false
+  # This is called from places where we want to start a new lazy series
+  # and it has a backend that owns it.
+  def backed(op, args, dtype, resource, backend) do
+    dtype = Explorer.Shared.normalise_dtype!(dtype)
+    %__MODULE__{op: op, args: args, dtype: dtype, backend: backend, resource: resource}
+  end
+
+  @doc false
+  # This is called from places where we want to start a new lazy series
+  # and it has no backend that owns it.
+  def unbacked(op, args, dtype) do
+    dtype = Explorer.Shared.normalise_dtype!(dtype)
+    %__MODULE__{op: op, args: args, dtype: dtype}
   end
 
   @doc false
   def operations, do: @operations
 
   @impl true
-  def owner_reference(_), do: nil
-
-  @impl true
-  def dtype(%Series{} = s), do: s.dtype
+  def owner_reference(s), do: s.data.resource
 
   @impl true
   def cast(%Series{} = s, dtype) do
@@ -392,21 +414,21 @@ defmodule Explorer.Backend.LazySeries do
   defp binary_args(left, right) do
     case {left, right} do
       {%Series{}, %Series{}} ->
-        [left.data, right.data]
+        [data!(left), data!(right)]
 
       {%Series{dtype: dtype}, value}
       when dtype in [:binary, :string, :category] and is_binary(value) ->
-        [left.data, from_list([value], dtype).data]
+        [data!(left), from_list([value], dtype).data]
 
       {value, %Series{dtype: dtype}}
       when dtype in [:binary, :string, :category] and is_binary(value) ->
-        [from_list([value], dtype).data, right.data]
+        [from_list([value], dtype).data, data!(right)]
 
       {%Series{}, other} ->
-        [left.data, other]
+        [data!(left), other]
 
       {other, %Series{}} ->
-        [other, right.data]
+        [other, data!(right)]
     end
   end
 
@@ -781,8 +803,8 @@ defmodule Explorer.Backend.LazySeries do
   # Returns the inner `data` if it's a lazy series. Otherwise raises an error.
   defp lazy_series!(series) do
     case series do
-      %Series{data: %__MODULE__{}} ->
-        data!(series)
+      %Series{data: %__MODULE__{} = data} ->
+        data
 
       %Series{} ->
         raise ArgumentError, "expecting a LazySeries, but instead got #{inspect(series)}"
@@ -791,7 +813,7 @@ defmodule Explorer.Backend.LazySeries do
 
   defp series_or_lazy_series!(%Series{} = series), do: data!(series)
 
-  defp data!(%Series{data: data}), do: data
+  defp data!(%Series{data: %__MODULE__{} = data}), do: data
   defp data!(value), do: value
 
   defp aggregations?(args) do
@@ -980,9 +1002,7 @@ defmodule Explorer.Backend.LazySeries do
     {Map.get(@to_elixir_op, op, op), [], Enum.map(args, &to_elixir_ast/1)}
   end
 
-  defp to_elixir_ast(%Explorer.PolarsBackend.Series{} = series) do
-    series = Explorer.PolarsBackend.Shared.create_series(series)
-
+  defp to_elixir_ast(%Series{} = series) do
     case Explorer.Series.size(series) do
       1 -> series[0]
       _ -> series

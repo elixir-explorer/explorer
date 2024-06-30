@@ -42,7 +42,6 @@ defmodule Explorer.Backend.Series do
 
   # Introspection
 
-  @callback dtype(s) :: dtype()
   @callback size(s) :: non_neg_integer() | lazy_s()
   @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
   @callback categories(s) :: s

@@ -10,12 +10,13 @@ defmodule Explorer.Backend.LazyFrame do
   alias Explorer.Backend
   alias Explorer.Backend.LazySeries
 
-  defstruct dtypes: %{}, names: [], backend: nil
+  defstruct dtypes: %{}, names: [], backend: nil, resource: nil
 
   @type t :: %__MODULE__{
           backend: module(),
           dtypes: Backend.DataFrame.dtypes(),
-          names: Backend.DataFrame.column_name()
+          names: Backend.DataFrame.column_name(),
+          resource: reference() | nil
         }
   @behaviour Backend.DataFrame
 
@@ -24,7 +25,12 @@ defmodule Explorer.Backend.LazyFrame do
     %module{} = df.data
 
     Explorer.Backend.DataFrame.new(
-      %__MODULE__{names: df.names, dtypes: df.dtypes, backend: module},
+      %__MODULE__{
+        names: df.names,
+        dtypes: df.dtypes,
+        backend: module,
+        resource: module.owner_reference(df)
+      },
       df.names,
       df.dtypes
     )
@@ -77,10 +83,10 @@ defmodule Explorer.Backend.LazyFrame do
   defp groups_algebra([], _), do: ""
 
   @impl true
-  def pull(df, column) do
-    dtype_for_column = df.dtypes[column]
+  def pull(%{data: data, dtypes: dtypes}, column) do
+    dtype_for_column = dtypes[column]
 
-    data = LazySeries.new(:column, [column], dtype_for_column, false, df.data.backend)
+    data = LazySeries.backed(:column, [column], dtype_for_column, data.resource, data.backend)
 
     Backend.Series.new(data, dtype_for_column)
   end

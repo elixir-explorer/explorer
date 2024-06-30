@@ -12,6 +12,11 @@ defmodule Explorer.Remote.LocalGC do
   end
 
   @doc """
+  An identity function to prevent GC.
+  """
+  def identity(data), do: data
+
+  @doc """
   Locates the LocalGC process.
   """
   def whereis! do

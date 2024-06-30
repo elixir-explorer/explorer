@@ -2834,7 +2834,13 @@ defmodule Explorer.DataFrame do
 
     df_out = %{df | names: new_names, dtypes: Map.merge(df.dtypes, new_dtypes)}
 
-    column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
+    column_pairs =
+      for {name, %Series{data: data} = series} <- column_pairs do
+        case data do
+          %LazySeries{} -> {name, data}
+          _ -> {name, series}
+        end
+      end
 
     Shared.apply_dataframe(df, :mutate_with, [df_out, column_pairs])
   end
@@ -2859,29 +2865,29 @@ defmodule Explorer.DataFrame do
         series.data
 
       nil ->
-        LazySeries.new(:lazy, [nil], :null)
+        LazySeries.unbacked(:lazy, [nil], :null)
 
       number when is_number(number) ->
         dtype = if is_integer(number), do: {:s, 64}, else: {:f, 64}
-        LazySeries.new(:lazy, [number], dtype)
+        LazySeries.unbacked(:lazy, [number], dtype)
 
       string when is_binary(string) ->
-        LazySeries.new(:lazy, [string], :string)
+        LazySeries.unbacked(:lazy, [string], :string)
 
       boolean when is_boolean(boolean) ->
-        LazySeries.new(:lazy, [boolean], :boolean)
+        LazySeries.unbacked(:lazy, [boolean], :boolean)
 
       date = %Date{} ->
-        LazySeries.new(:lazy, [date], :date)
+        LazySeries.unbacked(:lazy, [date], :date)
 
       naive_datetime = %NaiveDateTime{} ->
-        LazySeries.new(:lazy, [naive_datetime], {:naive_datetime, :microsecond})
+        LazySeries.unbacked(:lazy, [naive_datetime], {:naive_datetime, :microsecond})
 
       datetime = %DateTime{time_zone: time_zone} ->
-        LazySeries.new(:lazy, [datetime], {:datetime, :microsecond, time_zone})
+        LazySeries.unbacked(:lazy, [datetime], {:datetime, :microsecond, time_zone})
 
       duration = %Explorer.Duration{precision: precision} ->
-        LazySeries.new(:lazy, [duration], {:duration, precision})
+        LazySeries.unbacked(:lazy, [duration], {:duration, precision})
 
       map = %{} when not is_struct(map) ->
         {series_list, dtype_list} =
@@ -2893,7 +2899,7 @@ defmodule Explorer.DataFrame do
 
         map = Enum.into(series_list, %{})
         dtype_list = Enum.sort(dtype_list)
-        LazySeries.new(:lazy, [map], {:struct, dtype_list})
+        LazySeries.unbacked(:lazy, [map], {:struct, dtype_list})
 
       other ->
         raise ArgumentError,
@@ -5474,7 +5480,7 @@ defmodule Explorer.DataFrame do
     result =
       Enum.map(result, fn
         {key, nil} ->
-          lazy_s = LazySeries.new(:lazy, [nil], :null)
+          lazy_s = LazySeries.unbacked(:lazy, [nil], :null)
           {key, Explorer.Backend.Series.new(lazy_s, :null)}
 
         pair ->
