@@ -19,7 +19,7 @@ pub fn message_on_gc<'a>(env: Env<'a>, pid: Term<'a>, term: Term<'a>) -> Term<'a
 }
 
 #[rustler::nif]
-pub fn is_message_when_gc<'a>(env: Env<'a>, term: Term<'a>) -> Term<'a> {
+pub fn is_message_on_gc<'a>(env: Env<'a>, term: Term<'a>) -> Term<'a> {
     unsafe {
         Term::new(
             env,

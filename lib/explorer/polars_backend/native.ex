@@ -460,7 +460,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_json_path_match(_s, _json_path), do: err()
 
   def message_on_gc(_pid, _payload), do: err()
-  def is_message_when_gc(_term), do: err()
+  def is_message_on_gc(_term), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

@@ -112,13 +112,21 @@ defmodule Explorer.Remote do
   end
 
   defp place_impl(impl, struct, acc, fun) do
-    case impl.owner_reference(struct) do
-      remote_ref when is_reference(remote_ref) and node(remote_ref) != remote_ref ->
-        {local_ref, remote_pid} = place_remote_ref(remote_ref, fun)
-        {%{struct | remote: {local_ref, remote_pid, remote_ref}}, [remote_pid | acc]}
-
+    with %{remote: {local_gc_ref, _, _}} <- struct,
+         true <-
+           is_reference(local_gc_ref) and node(local_gc_ref) == node() and
+             Explorer.Remote.LocalGC.alive?(local_gc_ref) do
+      {struct, acc}
+    else
       _ ->
-        {struct, acc}
+        case impl.owner_reference(struct) do
+          remote_ref when is_reference(remote_ref) and node(remote_ref) != remote_ref ->
+            {local_ref, remote_pid} = place_remote_ref(remote_ref, fun)
+            {%{struct | remote: {local_ref, remote_pid, remote_ref}}, [remote_pid | acc]}
+
+          _ ->
+            {struct, acc}
+        end
     end
   end
 

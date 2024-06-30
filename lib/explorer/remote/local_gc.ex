@@ -35,6 +35,13 @@ defmodule Explorer.Remote.LocalGC do
     Explorer.PolarsBackend.Native.message_on_gc(local_gc, {:gc, remote_pid, remote_ref})
   end
 
+  @doc """
+  Check is a local gc reference is alive.
+  """
+  def alive?(local_gc_ref) when is_reference(local_gc_ref) do
+    Explorer.PolarsBackend.Native.is_message_on_gc(local_gc_ref)
+  end
+
   ## Callbacks
 
   @impl true
