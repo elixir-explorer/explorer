@@ -47,9 +47,7 @@ fn on_load(env: Env, _info: Term) -> bool {
     rustler::resource!(ExExprRef, env);
     rustler::resource!(ExLazyFrameRef, env);
     rustler::resource!(ExSeriesRef, env);
-    unsafe {
-        local_message_open_resource(env.as_c_arg());
-    }
+    rustler::resource!(LocalMessage, env);
     true
 }
 
