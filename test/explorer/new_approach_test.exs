@@ -1,32 +1,26 @@
 defmodule Explorer.NewApproachTest do
   use ExUnit.Case, async: true
 
-  # Tests for most IO operations are in the data_frame folder
-  # Tests for summarise, group, ungroup are available in grouped_test.exs
+  require Explorer.Series, as: S
+  require Explorer.DataFrame, as: DF
+  require Explorer.Query, as: Query
 
-  # Doctests assume the module has been required
-  require Explorer.DataFrame
-  # doctest Explorer.DataFrame
+  test "demonstrate filter" do
+    df0 = DF.new(a: [1, 2, 3], b: [true, true, false])
 
-  # import ExUnit.CaptureIO
-  alias Explorer.DataFrame, as: DF
-  # alias Explorer.Datasets
-  alias Explorer.Series
+    # Filter inline
+    df1 = DF.filter(df0, b == false)
 
-  describe "filter/2" do
-    test "filter by a boolean value" do
-      df1 = DF.new(a: [1, 2, 3], b: [true, true, false])
-      df2 = DF.filter(df1, b == false)
-      assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [false]}
-    end
-  end
+    # Filter by building a lazy series with functions
+    filter2 = S.col("b") |> S.equal(false)
+    df2 = DF.filter_with(df0, filter2)
 
-  describe "filter_with/2" do
-    test "filter by a boolean value" do
-      df1 = DF.new(a: [1, 2, 3], b: [true, true, false])
-      filter = Series.col("b") |> Series.equal(false)
-      df2 = DF.filter_with(df1, filter)
-      assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [false]}
+    # Filter by building a lazy series with a macro
+    filter3 = Query.new(b == false)
+    df3 = DF.filter_with(df0, filter3)
+
+    for df <- [df1, df2, df3] do
+      assert DF.to_columns(df, atom_keys: true) == %{a: [3], b: [false]}
     end
   end
 end
