@@ -334,7 +334,7 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(number) when is_float(number), do: Native.expr_float(number)
   def to_expr(%Date{} = date), do: Native.expr_date(date)
   def to_expr(%NaiveDateTime{} = naive_datetime), do: Native.expr_naive_datetime(naive_datetime)
-  # def to_expr(%DateTime{} = datetime), do: Native.expr_datetime(datetime)
+  def to_expr(%DateTime{} = datetime), do: Native.expr_datetime(datetime)
   def to_expr(%Explorer.Duration{} = duration), do: Native.expr_duration(duration)
   def to_expr(%PolarsSeries{} = polars_series), do: Native.expr_series(polars_series)
 
