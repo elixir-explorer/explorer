@@ -588,7 +588,7 @@ defmodule Explorer.Shared do
   """
   def apply_init(impl, fun, args, opts) do
     if node = opts[:node] do
-      Explorer.Remote.apply(node, impl, fun, [], fn _ -> args end)
+      Explorer.Remote.apply(node, impl, fun, [], fn _ -> args end, true)
     else
       apply(impl, fun, args)
     end
@@ -597,7 +597,7 @@ defmodule Explorer.Shared do
   @doc """
   Applies a function with args using the implementation of a dataframe or series.
   """
-  def apply_dataframe(dfs_or_df, fun, args \\ []) do
+  def apply_dataframe(dfs_or_df, fun, args \\ [], place? \\ true) do
     {df_nodes, {impl, remote}} =
       dfs_or_df
       |> List.wrap()
@@ -608,7 +608,7 @@ defmodule Explorer.Shared do
 
     if remote do
       callback = if is_list(dfs_or_df), do: &[&1 | args], else: &[hd(&1) | args]
-      Explorer.Remote.apply(remote, impl, fun, df_nodes, callback)
+      Explorer.Remote.apply(remote, impl, fun, df_nodes, callback, place?)
     else
       apply(impl, fun, [dfs_or_df | args])
     end
@@ -625,8 +625,8 @@ defmodule Explorer.Shared do
   @doc """
   Applies a function to a series.
   """
-  def apply_series(series, fun, args \\ []) do
-    apply_series_impl!([series], fun, &(&1 ++ args))
+  def apply_series(series, fun, args \\ [], place? \\ true) do
+    apply_series_impl!([series], fun, &(&1 ++ args), place?)
   end
 
   @doc """
@@ -635,7 +635,7 @@ defmodule Explorer.Shared do
   The list is typically static and it is passed as arguments.
   """
   def apply_series_list(fun, series_or_scalars) when is_list(series_or_scalars) do
-    apply_series_impl!(series_or_scalars, fun, & &1)
+    apply_series_impl!(series_or_scalars, fun, & &1, true)
   end
 
   @doc """
@@ -644,10 +644,10 @@ defmodule Explorer.Shared do
   The list is passed as a varargs to the backend.
   """
   def apply_series_varargs(fun, series_or_scalars) when is_list(series_or_scalars) do
-    apply_series_impl!(series_or_scalars, fun, &[&1])
+    apply_series_impl!(series_or_scalars, fun, &[&1], true)
   end
 
-  defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback) do
+  defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback, place?) do
     {series_nodes, {impl, remote, transfer?}} =
       Enum.map_reduce(series_or_scalars, {nil, nil, false}, fn
         %{data: %impl{}} = series, {acc_impl, acc_remote, acc_transfer?} ->
@@ -667,7 +667,7 @@ defmodule Explorer.Shared do
     end
 
     if transfer? do
-      Explorer.Remote.apply(remote || node(), impl, fun, series_nodes, args_callback)
+      Explorer.Remote.apply(remote || node(), impl, fun, series_nodes, args_callback, place?)
     else
       apply(impl, fun, args_callback.(series_or_scalars))
     end

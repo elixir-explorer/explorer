@@ -689,7 +689,7 @@ defmodule Explorer.DataFrame do
           {:ok, String.t()} | {:error, Exception.t()}
   def dump_csv(df, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    Shared.apply_dataframe(df, :dump_csv, [opts[:header], opts[:delimiter]])
+    Shared.apply_dataframe(df, :dump_csv, [opts[:header], opts[:delimiter]], false)
   end
 
   @doc """
@@ -971,7 +971,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, compression: nil)
     compression = parquet_compression(opts[:compression])
 
-    Shared.apply_dataframe(df, :dump_parquet, [compression])
+    Shared.apply_dataframe(df, :dump_parquet, [compression], false)
   end
 
   @doc """
@@ -1161,7 +1161,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, compression: nil)
     compression = ipc_compression(opts[:compression])
 
-    Shared.apply_dataframe(df, :dump_ipc, [compression])
+    Shared.apply_dataframe(df, :dump_ipc, [compression], false)
   end
 
   @doc """
@@ -1350,7 +1350,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, compression: nil)
     compression = ipc_compression(opts[:compression])
 
-    Shared.apply_dataframe(df, :dump_ipc_stream, [compression])
+    Shared.apply_dataframe(df, :dump_ipc_stream, [compression], false)
   end
 
   @doc """
@@ -1520,7 +1520,7 @@ defmodule Explorer.DataFrame do
   @doc type: :io
   @spec dump_ndjson(df :: DataFrame.t()) :: {:ok, binary()} | {:error, Exception.t()}
   def dump_ndjson(df) do
-    Shared.apply_dataframe(df, :dump_ndjson, [])
+    Shared.apply_dataframe(df, :dump_ndjson, [], false)
   end
 
   @doc """
@@ -1968,7 +1968,7 @@ defmodule Explorer.DataFrame do
   def to_rows(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false)
 
-    Shared.apply_dataframe(df, :to_rows, [opts[:atom_keys]])
+    Shared.apply_dataframe(df, :to_rows, [opts[:atom_keys]], false)
   end
 
   @doc """
@@ -2000,7 +2000,7 @@ defmodule Explorer.DataFrame do
   def to_rows_stream(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000)
 
-    Shared.apply_dataframe(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size]])
+    Shared.apply_dataframe(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size]], false)
   end
 
   # Introspection

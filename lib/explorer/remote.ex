@@ -135,15 +135,17 @@ defmodule Explorer.Remote do
   # If a pid is given, we assume the pid will hold those references
   # and avoid spawning new ones. If a node is given, regular placement
   # occurs.
-  def apply(pid, mod, fun, resources, args_callback) when is_pid(pid) do
-    apply(node(pid), mod, fun, resources, args_callback, &place_on_pid(&1, pid))
+  def apply(pid, mod, fun, resources, args_callback, place?) when is_pid(pid) do
+    placing_callback = if place?, do: &place_on_pid(&1, pid), else: &{&1, []}
+    do_apply(node(pid), mod, fun, resources, args_callback, placing_callback)
   end
 
-  def apply(node, mod, fun, resources, args_callback) when is_atom(node) do
-    apply(node, mod, fun, resources, args_callback, &place_on_node(&1, []))
+  def apply(node, mod, fun, resources, args_callback, place?) when is_atom(node) do
+    placing_callback = if place?, do: &place_on_node(&1, []), else: &{&1, []}
+    do_apply(node, mod, fun, resources, args_callback, placing_callback)
   end
 
-  defp apply(node, mod, fun, resources, args_callback, placing_function) do
+  defp do_apply(node, mod, fun, resources, args_callback, placing_callback) do
     resources =
       Enum.map(resources, fn
         {resource_data, resource_node} when resource_node == node or resource_node == nil ->
@@ -161,7 +163,7 @@ defmodule Explorer.Remote do
     receive do
       {^message_ref, result} ->
         Process.demonitor(monitor_ref, [:flush])
-        {term, _acc} = placing_function.(result)
+        {term, _acc} = placing_callback.(result)
         send(child, {message_ref, :ok})
         term
 

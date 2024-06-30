@@ -1,5 +1,11 @@
 import Explorer.Shared,
-  only: [apply_series: 2, apply_series: 3, apply_series_list: 2, apply_series_varargs: 2]
+  only: [
+    apply_series: 2,
+    apply_series: 3,
+    apply_series: 4,
+    apply_series_list: 2,
+    apply_series_varargs: 2
+  ]
 
 defmodule Explorer.Series do
   @moduledoc """
@@ -794,7 +800,7 @@ defmodule Explorer.Series do
   """
   @doc type: :conversion
   @spec to_list(series :: Series.t()) :: list()
-  def to_list(series), do: apply_series(series, :to_list)
+  def to_list(series), do: apply_series(series, :to_list, [], false)
 
   @doc """
   Converts a series to an enumerable.
@@ -887,7 +893,7 @@ defmodule Explorer.Series do
   @spec to_iovec(series :: Series.t()) :: [binary]
   def to_iovec(%Series{dtype: dtype} = series) do
     if is_io_dtype(dtype) do
-      apply_series(series, :to_iovec)
+      apply_series(series, :to_iovec, [], false)
     else
       raise ArgumentError, "cannot convert series of dtype #{inspect(dtype)} into iovec"
     end
