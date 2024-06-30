@@ -40,6 +40,7 @@ extern ErlNifEnv *enif_alloc_env();
 extern void enif_free_env(ErlNifEnv *env);
 extern ERL_NIF_TERM enif_make_resource(ErlNifEnv *env, void *resource);
 extern void enif_release_resource(void *resource);
+extern int enif_get_resource(ErlNifEnv* env, ERL_NIF_TERM term, void* type, void** objp);
 int enif_send(ErlNifEnv *caller_env, ErlNifPid *to_pid, ErlNifEnv *msg_env,
               ERL_NIF_TERM msg);
 
