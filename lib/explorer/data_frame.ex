@@ -2326,7 +2326,8 @@ defmodule Explorer.DataFrame do
   def select(df, columns) do
     columns = to_existing_columns(df, columns)
     columns_to_keep = Enum.uniq(columns ++ df.groups)
-    out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
+
+    out_df = out_df(df, columns_to_keep, Map.take(df.dtypes, columns_to_keep))
     Shared.apply_dataframe(df, :select, [out_df])
   end
 
@@ -2383,7 +2384,8 @@ defmodule Explorer.DataFrame do
   def discard(df, columns) do
     columns = to_existing_columns(df, columns, false) -- df.groups
     columns_to_keep = df.names -- columns
-    out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
+
+    out_df = out_df(df, columns_to_keep, Map.take(df.dtypes, columns_to_keep))
     Shared.apply_dataframe(df, :select, [out_df])
   end
 
@@ -2831,8 +2833,7 @@ defmodule Explorer.DataFrame do
 
     mut_names = Enum.map(column_pairs, &elem(&1, 0))
     new_names = Enum.uniq(df.names ++ mut_names)
-
-    df_out = %{df | names: new_names, dtypes: Map.merge(df.dtypes, new_dtypes)}
+    out_df = out_df(df, new_names, Map.merge(df.dtypes, new_dtypes))
 
     column_pairs =
       for {name, %Series{data: data} = series} <- column_pairs do
@@ -2842,7 +2843,7 @@ defmodule Explorer.DataFrame do
         end
       end
 
-    Shared.apply_dataframe(df, :mutate_with, [df_out, column_pairs])
+    Shared.apply_dataframe(df, :mutate_with, [out_df, column_pairs])
   end
 
   defp query_to_series!(%Series{} = series), do: series
@@ -3048,7 +3049,7 @@ defmodule Explorer.DataFrame do
     name = to_column_name(column_name)
     new_names = append_unless_present(df.names, name)
 
-    out_df = %{df | names: new_names, dtypes: Map.put(df.dtypes, name, series.dtype)}
+    out_df = out_df(df, new_names, Map.put(df.dtypes, name, series.dtype))
     Shared.apply_dataframe(df, :put, [out_df, name, series])
   end
 
@@ -3416,7 +3417,7 @@ defmodule Explorer.DataFrame do
         else
           groups = df.groups
           keep = if groups == [], do: columns, else: Enum.uniq(groups ++ columns)
-          %{df | names: keep, dtypes: Map.take(df.dtypes, keep)}
+          out_df(df, keep, Map.take(df.dtypes, keep))
         end
 
       Shared.apply_dataframe(df, :distinct, [out_df, columns])
@@ -3666,7 +3667,7 @@ defmodule Explorer.DataFrame do
             Map.get(pairs_map, group, group)
           end
 
-        out_df = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: new_groups}
+        out_df = out_df(%{df | groups: new_groups}, new_names, Map.new(new_dtypes))
         Shared.apply_dataframe(df, :rename, [out_df, pairs])
     end
   end
@@ -3826,7 +3827,7 @@ defmodule Explorer.DataFrame do
 
     out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:u, 8}}
 
-    out_df = %{df | groups: [], names: out_columns, dtypes: out_dtypes}
+    out_df = out_df(%{df | groups: []}, out_columns, out_dtypes)
     Shared.apply_dataframe(df, :dummies, [out_df, columns])
   end
 
@@ -4319,12 +4320,8 @@ defmodule Explorer.DataFrame do
       end
 
     names = if header, do: [header | names], else: names
-
-    out_df = %{
-      df
-      | names: names,
-        dtypes: Enum.map(names, fn n -> {n, :string} end) |> Enum.into(%{})
-    }
+    dtypes = Map.new(names, fn n -> {n, :string} end)
+    out_df = out_df(df, names, dtypes)
 
     args = [out_df, header, columns]
     Shared.apply_dataframe(df, :transpose, args)
@@ -4503,12 +4500,12 @@ defmodule Explorer.DataFrame do
       |> Map.put(names_to, :string)
       |> Map.put(values_to, values_dtype)
 
-    out_df = %{
-      df
-      | names: columns_to_keep ++ [names_to, values_to],
-        dtypes: new_dtypes,
-        groups: df.groups -- columns_to_pivot
-    }
+    out_df =
+      out_df(
+        %{df | groups: df.groups -- columns_to_pivot},
+        columns_to_keep ++ [names_to, values_to],
+        new_dtypes
+      )
 
     args = [out_df, columns_to_pivot, columns_to_keep, names_to, values_to]
     Shared.apply_dataframe(df, :pivot_longer, args)
@@ -5009,22 +5006,19 @@ defmodule Explorer.DataFrame do
 
   defp out_df_for_join(:right, left, right, on) do
     {left_on, _right_on} = Enum.unzip(on)
-
     pairs = dtypes_pairs_for_common_join(right, left, left_on, "_left")
 
     {new_names, _} = Enum.unzip(pairs)
-    %{right | names: new_names, dtypes: Map.new(pairs)}
+    out_df(right, new_names, Map.new(pairs))
   end
 
   defp out_df_for_join(how, left, right, on) do
     {_left_on, right_on} = Enum.unzip(on)
-
     right_on = if how in [:cross, :outer], do: [], else: right_on
-
     pairs = dtypes_pairs_for_common_join(left, right, right_on)
 
     {new_names, _} = Enum.unzip(pairs)
-    %{left | names: new_names, dtypes: Map.new(pairs)}
+    out_df(left, new_names, Map.new(pairs))
   end
 
   defp dtypes_pairs_for_common_join(left, right, right_on, suffix \\ "_right") do
@@ -5099,7 +5093,7 @@ defmodule Explorer.DataFrame do
         {names ++ new_names, Map.merge(dtypes, Map.new(new_names_and_dtypes))}
       end)
 
-    out_df = %{head | names: names, dtypes: dtypes}
+    out_df = out_df(head, names, dtypes)
 
     Shared.apply_dataframe(dfs, :concat_columns, [out_df])
   end
@@ -5159,7 +5153,7 @@ defmodule Explorer.DataFrame do
   @spec concat_rows([DataFrame.t()]) :: DataFrame.t()
   def concat_rows([%DataFrame{} = head | _tail] = dfs) do
     changed_types = compute_changed_types_concat_rows(dfs)
-    out_df = %{head | dtypes: Map.merge(head.dtypes, changed_types)}
+    out_df = out_df(head, head.names, Map.merge(head.dtypes, changed_types))
 
     dfs =
       if changed_types == %{} do
@@ -5510,11 +5504,11 @@ defmodule Explorer.DataFrame do
 
     new_dtypes = names_with_dtypes_for_column_pairs(df, column_pairs)
     new_names = for {name, _} <- new_dtypes, do: name
-    df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: []}
+    out_df = out_df(%{df | groups: []}, new_names, Map.new(new_dtypes))
 
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
-    Shared.apply_dataframe(df, :summarise_with, [df_out, column_pairs])
+    Shared.apply_dataframe(df, :summarise_with, [out_df, column_pairs])
   end
 
   defp names_with_dtypes_for_column_pairs(df, column_pairs) do
@@ -5600,8 +5594,7 @@ defmodule Explorer.DataFrame do
         Map.update!(dtypes, column, fn {:list, inner_dtype} -> inner_dtype end)
       end)
 
-    out_df = %{df | dtypes: out_dtypes}
-
+    out_df = out_df(df, df.names, out_dtypes)
     Shared.apply_dataframe(df, :explode, [out_df, columns])
   end
 
@@ -5668,8 +5661,7 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    out_df = %{df | dtypes: out_dtypes, names: out_names}
-
+    out_df = out_df(df, out_names, out_dtypes)
     Shared.apply_dataframe(df, :unnest, [out_df, columns])
   end
 
@@ -5920,7 +5912,7 @@ defmodule Explorer.DataFrame do
         method: :pearson
       )
 
-    out_df = pairwised_df(df, opts)
+    out_df = pairwise_df(df, opts)
     Shared.apply_dataframe(df, :correlation, [out_df, opts[:ddof], opts[:method]])
   end
 
@@ -5960,7 +5952,7 @@ defmodule Explorer.DataFrame do
   @spec covariance(df :: DataFrame.t(), opts :: Keyword.t()) :: df :: DataFrame.t()
   def covariance(df, opts \\ []) do
     opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
-    out_df = pairwised_df(df, opts)
+    out_df = pairwise_df(df, opts)
     Shared.apply_dataframe(df, :covariance, [out_df, opts[:ddof]])
   end
 
@@ -6026,7 +6018,11 @@ defmodule Explorer.DataFrame do
     Series.dtype(df[name]) in Explorer.Shared.numeric_types()
   end
 
-  defp pairwised_df(df, opts) do
+  defp out_df(df, names, dtypes) do
+    %{df | names: names, dtypes: dtypes, remote: nil}
+  end
+
+  defp pairwise_df(df, opts) do
     column_name = to_column_name(opts[:column_name])
 
     cols =
@@ -6035,7 +6031,7 @@ defmodule Explorer.DataFrame do
       |> Enum.filter(fn name -> numeric_column?(df, name) end)
 
     out_dtypes = for col <- cols, into: %{column_name => :string}, do: {col, {:f, 64}}
-    %{df | dtypes: out_dtypes, names: [column_name | cols]}
+    out_df(df, [column_name | cols], out_dtypes)
   end
 
   defimpl Inspect do
