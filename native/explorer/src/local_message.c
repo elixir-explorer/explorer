@@ -54,7 +54,7 @@ void destruct_local_message(ErlNifEnv *env, void *obj) {
   enif_free_env(m->env);
 }
 
-ERL_NIF_TERM is_message_when_gc(ErlNifEnv *env, const ERL_NIF_TERM term) {
+ERL_NIF_TERM is_local_message_when_gc(ErlNifEnv *env, const ERL_NIF_TERM term) {
   struct message * m = NULL;
   if (enif_get_resource(env, term, message_resource, (void **)&m)) {
     return enif_make_atom(env, "true");  
