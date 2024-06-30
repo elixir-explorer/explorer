@@ -289,12 +289,12 @@ defmodule Explorer.Query do
   ]
   @binary_ops Keyword.keys(@binary_mapping)
 
-  def new(%Explorer.Series{data: %LazySeries{}} = series) do
-    new([series])
+  def from_series(%Series{data: %LazySeries{}} = series) do
+    series
   end
 
-  def new(list) when is_list(list) do
-    %__MODULE__{series_list: normalize_aliases(list)}
+  def from_series(list) when is_list(list) do
+    normalize_aliases(list)
   end
 
   def normalize_aliases(list) do
@@ -304,7 +304,7 @@ defmodule Explorer.Query do
     end)
   end
 
-  defmacro new_expr(expression) do
+  defmacro new(expression) do
     quote do
       unquote(traverse_ls_root(expression))
     end
@@ -334,15 +334,13 @@ defmodule Explorer.Query do
       end)
 
     quote do
-      Explorer.Query.new(%Series{data: unquote(lazy_series), dtype: :unknown})
+      Explorer.Query.from_series(%Series{data: unquote(lazy_series), dtype: :unknown})
     end
   end
 
-  def lazy_series_ast({op, meta, args}) do
-    {:struct, meta,
-     [
-       {:__aliases__, [alias: false], [:Explorer, :Backend, :LazySeries]},
-       [op: op, args: args]
-     ]}
+  def lazy_series_ast({op, _meta, args}) do
+    quote do
+      %LazySeries{op: unquote(op), args: unquote(args)}
+    end
   end
 end

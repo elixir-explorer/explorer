@@ -117,6 +117,7 @@ defmodule Explorer.Series do
   import Kernel, except: [and: 2, not: 1, in: 2]
 
   alias __MODULE__, as: Series
+  alias Explorer.Backend.LazySeries
   alias Kernel, as: K
   alias Explorer.Duration
   alias Explorer.Shared
@@ -1701,13 +1702,10 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec filter_with(
-          series :: Series.t(),
-          fun :: (Series.t() -> Series.lazy_t())
-        ) :: Series.t()
-  def filter_with(%Series{} = series, fun) when is_function(fun, 1) do
+  @spec filter_with(series :: Series.t(), filter :: Series.t()) :: Series.t()
+  def filter_with(%Series{} = series, %Series{data: %LazySeries{}} = filter) do
     Explorer.DataFrame.new(series: series)
-    |> Explorer.DataFrame.filter_with(&fun.(&1[:series]))
+    |> Explorer.DataFrame.filter_with(filter)
     |> Explorer.DataFrame.pull(:series)
   end
 

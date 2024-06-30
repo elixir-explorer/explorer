@@ -2522,40 +2522,8 @@ defmodule Explorer.DataFrame do
   defmacro filter(df, query) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.filter_with(unquote(df), Explorer.Query.query(unquote(query)))
+      Explorer.DataFrame.filter_with(unquote(df), Explorer.Query.new(unquote(query)))
     end
-  end
-
-  defmacro filter_ls(df, query_expression) do
-    quote do
-      require Explorer.Query
-
-      Explorer.DataFrame.filter_with_ls(
-        unquote(df),
-        Explorer.Query.new_expr(unquote(query_expression))
-      )
-    end
-  end
-
-  def filter_with_ls(%DataFrame{} = df, %Explorer.Query{} = query) do
-    filter =
-      case query do
-        %Explorer.Query{series_list: [%Series{} = filter]} ->
-          filter
-      end
-
-    # Do the Polars-specific logic here for the moment.
-    expr = Explorer.PolarsBackend.Expression.to_expr(filter.data)
-
-    with {:ok, plf} <- Explorer.PolarsBackend.Native.lf_filter_with(lazy(df).data, expr),
-         {:ok, pdf} <- Explorer.PolarsBackend.Native.lf_collect(plf),
-         df <- Explorer.PolarsBackend.Shared.create_dataframe(pdf) do
-      df
-    end
-  end
-
-  def filter_with_ls(%DataFrame{} = df, other) do
-    filter_with_ls(df, Explorer.Query.new(other))
   end
 
   @doc """
@@ -2606,44 +2574,10 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec filter_with(
-          df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> Series.lazy_t())
-        ) :: DataFrame.t()
-  def filter_with(df, fun) when is_function(fun, 1) do
-    ldf = Explorer.Backend.LazyFrame.new(df)
-
-    case fun.(ldf) do
-      %Series{dtype: :boolean, data: %LazySeries{} = data} ->
-        Shared.apply_impl(df, :filter_with, [df, data])
-
-      %Series{dtype: dtype, data: %LazySeries{}} ->
-        raise ArgumentError,
-              "expecting the function to return a boolean LazySeries, " <>
-                "but instead it returned a LazySeries of type " <>
-                inspect(dtype)
-
-      [%Series{dtype: :boolean, data: %LazySeries{}} | _rest] = lazy_series ->
-        first_non_boolean =
-          Enum.find(lazy_series, &(!match?(%Series{dtype: :boolean, data: %LazySeries{}}, &1)))
-
-        if is_nil(first_non_boolean) do
-          series = Enum.reduce(lazy_series, &Explorer.Backend.LazySeries.binary_and(&2, &1))
-
-          Shared.apply_impl(df, :filter_with, [df, series.data])
-        else
-          filter_without_boolean_series_error(first_non_boolean)
-        end
-
-      other ->
-        filter_without_boolean_series_error(other)
-    end
-  end
-
-  defp filter_without_boolean_series_error(term) do
-    raise ArgumentError,
-          "expecting the function to return a single or a list of boolean LazySeries, " <>
-            "but instead it contains:\n#{inspect(term)}"
+  @spec filter_with(df :: DataFrame.t(), filter :: Series.t()) :: DataFrame.t()
+  def filter_with(df, %Series{data: %LazySeries{} = filter}) do
+    # TODO: put back reduction over list of series.
+    Shared.apply_impl(df, :filter_with, [df, filter])
   end
 
   @doc """

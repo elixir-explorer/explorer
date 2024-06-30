@@ -13,21 +13,19 @@ defmodule Explorer.NewApproachTest do
   # alias Explorer.Datasets
   alias Explorer.Series
 
-  describe "filter_ls/2 (experimental)" do
+  describe "filter/2" do
     test "filter by a boolean value" do
-      df = DF.new(a: [1, 2, 3], b: [true, true, false])
-
-      df1 = DF.filter_ls(df, b == false)
-      assert DF.to_columns(df1, atom_keys: true) == %{a: [3], b: [false]}
+      df1 = DF.new(a: [1, 2, 3], b: [true, true, false])
+      df2 = DF.filter(df1, b == false)
+      assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [false]}
     end
   end
 
-  describe "filter_with_ls/2 (experimental)" do
+  describe "filter_with/2" do
     test "filter by a boolean value" do
       df1 = DF.new(a: [1, 2, 3], b: [true, true, false])
       filter = Series.col("b") |> Series.equal(false)
-
-      df2 = DF.filter_with_ls(df1, filter)
+      df2 = DF.filter_with(df1, filter)
       assert DF.to_columns(df2, atom_keys: true) == %{a: [3], b: [false]}
     end
   end
