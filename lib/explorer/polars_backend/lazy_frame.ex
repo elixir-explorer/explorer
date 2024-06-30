@@ -539,7 +539,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Two or more tables
 
   @impl true
-  def join(%DF{} = left, %DF{} = right, %DF{} = out_df, on, how)
+  def join([%DF{} = left, %DF{} = right], %DF{} = out_df, on, how)
       when is_list(on) and how in [:left, :inner, :cross, :outer] do
     how = Atom.to_string(how)
 
@@ -557,7 +557,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def join(%DF{} = left, %DF{} = right, %DF{} = out_df, on, :right)
+  def join([%DF{} = left, %DF{} = right], %DF{} = out_df, on, :right)
       when is_list(on) do
     # Right join is the opposite of left join. So we swap the "on" keys, and swap the DFs
     # in the join.

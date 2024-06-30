@@ -850,11 +850,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   # Two or more table verbs
 
   @impl true
-  def join(left, right, out_df, on, how) do
+  def join([left, right], out_df, on, how) do
     left = lazy(left)
     right = lazy(right)
 
-    ldf = LazyFrame.join(left, right, out_df, on, how)
+    ldf = LazyFrame.join([left, right], out_df, on, how)
     LazyFrame.compute(ldf)
   end
 

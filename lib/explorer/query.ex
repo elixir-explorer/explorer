@@ -743,7 +743,7 @@ defmodule Explorer.Query do
   def __across__(df, selector) do
     df
     |> Explorer.Shared.to_existing_columns(selector)
-    |> Enum.map(&%{Explorer.Shared.apply_impl(df, :pull, [&1]) | name: &1})
+    |> Enum.map(&%{Explorer.Shared.apply_dataframe(df, :pull, [&1]) | name: &1})
   end
 
   defp df_var(), do: quote(do: var!(df, Explorer.Query))

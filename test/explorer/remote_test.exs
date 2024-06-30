@@ -4,10 +4,22 @@ defmodule Explorer.RemoteTest do
 
   @moduletag :distributed
   alias Explorer.Series, as: S
-  # alias Explorer.DataFrame, as: DF
+  alias Explorer.DataFrame, as: DF
 
   @node2 :"secondary@127.0.0.1"
   @node3 :"tertiary@127.0.0.1"
+
+  @csv1 """
+  city,lat,lng
+  Elgin,57.653484,-3.335724
+  Stoke-on-Trent,53.002666,-2.179404
+  """
+
+  @csv2 """
+  city,lat,lng
+  Solihull,52.412811,-1.778197
+  Cardiff,51.481583,-3.17909
+  """
 
   describe "remote calls" do
     test "on unary non-placed series" do
@@ -87,6 +99,37 @@ defmodule Explorer.RemoteTest do
              >\
              """
     end
+
+    test "on varargs placed dataframes" do
+      df1 = DF.load_csv!(@csv1, node: @node2)
+      df2 = DF.load_csv!(@csv2, node: @node3)
+
+      placed = DF.concat_rows([df1, df2])
+      assert placed.remote != nil
+
+      assert inspect(placed) =~ """
+             #Explorer.DataFrame<
+               secondary@127.0.0.1
+               Polars[4 x 3]
+               city string ["Elgin", "Stoke-on-Trent", "Solihull", "Cardiff"]
+               lat f64 [57.653484, 53.002666, 52.412811, 51.481583]
+               lng f64 [-3.335724, -2.179404, -1.778197, -3.17909]
+             >\
+             """
+
+      placed = DF.concat_rows([df2, df1])
+      assert placed.remote != nil
+
+      assert inspect(placed) =~ """
+             #Explorer.DataFrame<
+               tertiary@127.0.0.1
+               Polars[4 x 3]
+               city string ["Solihull", "Cardiff", "Elgin", "Stoke-on-Trent"]
+               lat f64 [52.412811, 51.481583, 57.653484, 53.002666]
+               lng f64 [-1.778197, -3.17909, -3.335724, -2.179404]
+             >\
+             """
+    end
   end
 
   describe "garbage collection" do
@@ -139,6 +182,21 @@ defmodule Explorer.RemoteTest do
 
       collected = S.collect(series)
       assert collected.remote == nil
+    end
+
+    test "df" do
+      df = DF.load_csv!(@csv1, node: @node2)
+      assert df.remote != nil
+
+      assert inspect(df) =~ """
+             #Explorer.DataFrame<
+               secondary@127.0.0.1
+               Polars[2 x 3]
+               city string ["Elgin", "Stoke-on-Trent"]
+               lat f64 [57.653484, 53.002666]
+               lng f64 [-3.335724, -2.179404]
+             >\
+             """
     end
   end
 end

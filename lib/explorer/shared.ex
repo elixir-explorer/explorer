@@ -259,26 +259,6 @@ defmodule Explorer.Shared do
   end
 
   @doc """
-  Applies a function with args using the implementation of a dataframe or series.
-  """
-  def apply_impl(df_or_series_or_list, fun, args \\ []) do
-    impl = impl!(df_or_series_or_list)
-    apply(impl, fun, [df_or_series_or_list | args])
-  end
-
-  defp impl!(%{data: %struct{}}), do: struct
-
-  defp impl!([%{data: %first_struct{}} | _] = dfs) when is_list(dfs),
-    do: Enum.reduce(dfs, first_struct, fn %{data: %struct{}}, acc -> pick_impl(acc, struct) end)
-
-  defp pick_impl(struct, struct), do: struct
-
-  defp pick_impl(struct1, struct2) do
-    raise "cannot invoke Explorer function because it relies on two incompatible implementations: " <>
-            "#{inspect(struct1)} and #{inspect(struct2)}"
-  end
-
-  @doc """
   Gets the `dtype` of a list or raise error if not possible.
   """
   def dtype_from_list!(list) do
@@ -612,6 +592,34 @@ defmodule Explorer.Shared do
     else
       apply(impl, fun, args)
     end
+  end
+
+  @doc """
+  Applies a function with args using the implementation of a dataframe or series.
+  """
+  def apply_dataframe(dfs_or_df, fun, args \\ []) do
+    {df_nodes, {impl, remote}} =
+      dfs_or_df
+      |> List.wrap()
+      |> Enum.map_reduce({nil, nil}, fn %{data: %impl{}} = df, {acc_impl, acc_remote} ->
+        {node, remote} = remote_info(df, impl)
+        {{df, node}, {pick_df_impl(acc_impl, impl), pick_remote(acc_remote, remote)}}
+      end)
+
+    if remote do
+      callback = if is_list(dfs_or_df), do: &[&1 | args], else: &[hd(&1) | args]
+      Explorer.Remote.apply(remote, impl, fun, df_nodes, callback)
+    else
+      apply(impl, fun, [dfs_or_df | args])
+    end
+  end
+
+  defp pick_df_impl(nil, struct), do: struct
+  defp pick_df_impl(struct, struct), do: struct
+
+  defp pick_df_impl(struct1, struct2) do
+    raise "cannot invoke Explorer.DataFrame function because it relies on two incompatible implementations: " <>
+            "#{inspect(struct1)} and #{inspect(struct2)}"
   end
 
   @doc """

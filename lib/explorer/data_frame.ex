@@ -642,7 +642,12 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: true, config: nil)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_csv, [entry, opts[:header], opts[:delimiter], opts[:streaming]])
+      Shared.apply_dataframe(df, :to_csv, [
+        entry,
+        opts[:header],
+        opts[:delimiter],
+        opts[:streaming]
+      ])
     end
   end
 
@@ -684,7 +689,7 @@ defmodule Explorer.DataFrame do
           {:ok, String.t()} | {:error, Exception.t()}
   def dump_csv(df, opts \\ []) do
     opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
+    Shared.apply_dataframe(df, :dump_csv, [opts[:header], opts[:delimiter]])
   end
 
   @doc """
@@ -897,7 +902,7 @@ defmodule Explorer.DataFrame do
     compression = parquet_compression(opts[:compression])
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_parquet, [entry, compression, opts[:streaming]])
+      Shared.apply_dataframe(df, :to_parquet, [entry, compression, opts[:streaming]])
     end
   end
 
@@ -966,7 +971,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, compression: nil)
     compression = parquet_compression(opts[:compression])
 
-    Shared.apply_impl(df, :dump_parquet, [compression])
+    Shared.apply_dataframe(df, :dump_parquet, [compression])
   end
 
   @doc """
@@ -1105,7 +1110,7 @@ defmodule Explorer.DataFrame do
     compression = ipc_compression(opts[:compression])
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_ipc, [entry, compression, opts[:streaming]])
+      Shared.apply_dataframe(df, :to_ipc, [entry, compression, opts[:streaming]])
     end
   end
 
@@ -1156,7 +1161,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, compression: nil)
     compression = ipc_compression(opts[:compression])
 
-    Shared.apply_impl(df, :dump_ipc, [compression])
+    Shared.apply_dataframe(df, :dump_ipc, [compression])
   end
 
   @doc """
@@ -1297,7 +1302,7 @@ defmodule Explorer.DataFrame do
     compression = ipc_compression(opts[:compression])
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_ipc_stream, [entry, compression])
+      Shared.apply_dataframe(df, :to_ipc_stream, [entry, compression])
     end
   end
 
@@ -1345,7 +1350,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, compression: nil)
     compression = ipc_compression(opts[:compression])
 
-    Shared.apply_impl(df, :dump_ipc_stream, [compression])
+    Shared.apply_dataframe(df, :dump_ipc_stream, [compression])
   end
 
   @doc """
@@ -1477,7 +1482,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, config: nil)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_ndjson, [entry])
+      Shared.apply_dataframe(df, :to_ndjson, [entry])
     end
   end
 
@@ -1515,7 +1520,7 @@ defmodule Explorer.DataFrame do
   @doc type: :io
   @spec dump_ndjson(df :: DataFrame.t()) :: {:ok, binary()} | {:error, Exception.t()}
   def dump_ndjson(df) do
-    Shared.apply_impl(df, :dump_ndjson, [])
+    Shared.apply_dataframe(df, :dump_ndjson, [])
   end
 
   @doc """
@@ -1589,7 +1594,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :conversion
   @spec lazy?(df :: DataFrame.t()) :: boolean
-  def lazy?(%DataFrame{data: %struct{}}), do: struct.lazy() == struct
+  def lazy?(%DataFrame{data: %impl{}}), do: impl.lazy() == impl
 
   @doc """
   Converts the dataframe to the lazy version of the current backend.
@@ -1604,11 +1609,11 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :conversion
   @spec lazy(df :: DataFrame.t()) :: DataFrame.t()
-  def lazy(df), do: Shared.apply_impl(df, :lazy)
+  def lazy(df), do: Shared.apply_dataframe(df, :lazy)
 
   @deprecated "Use lazy/1 instead"
   @doc false
-  def to_lazy(df), do: Shared.apply_impl(df, :lazy)
+  def to_lazy(df), do: Shared.apply_dataframe(df, :lazy)
 
   @doc """
   Computes and collects a data frame to the current node.
@@ -1651,7 +1656,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :conversion
   @spec compute(df :: DataFrame.t()) :: DataFrame.t()
-  def compute(df), do: Shared.apply_impl(df, :compute)
+  def compute(df), do: Shared.apply_dataframe(df, :compute)
 
   @doc """
   Creates a new dataframe.
@@ -1895,7 +1900,7 @@ defmodule Explorer.DataFrame do
     atom_keys = opts[:atom_keys]
 
     for name <- df.names, into: %{} do
-      series = Shared.apply_impl(df, :pull, [name])
+      series = Shared.apply_dataframe(df, :pull, [name])
       key = if atom_keys, do: String.to_atom(name), else: name
       {key, Series.to_list(series)}
     end
@@ -1929,7 +1934,7 @@ defmodule Explorer.DataFrame do
 
     for name <- df.names, into: %{} do
       key = if atom_keys, do: String.to_atom(name), else: name
-      {key, Shared.apply_impl(df, :pull, [name])}
+      {key, Shared.apply_dataframe(df, :pull, [name])}
     end
   end
 
@@ -1963,7 +1968,7 @@ defmodule Explorer.DataFrame do
   def to_rows(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false)
 
-    Shared.apply_impl(df, :to_rows, [opts[:atom_keys]])
+    Shared.apply_dataframe(df, :to_rows, [opts[:atom_keys]])
   end
 
   @doc """
@@ -1995,7 +2000,7 @@ defmodule Explorer.DataFrame do
   def to_rows_stream(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000)
 
-    Shared.apply_impl(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size]])
+    Shared.apply_dataframe(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size]])
   end
 
   # Introspection
@@ -2056,7 +2061,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec n_rows(df :: DataFrame.t()) :: integer()
-  def n_rows(df), do: Shared.apply_impl(df, :n_rows)
+  def n_rows(df), do: Shared.apply_dataframe(df, :n_rows)
 
   @doc """
   Returns the number of columns in the dataframe.
@@ -2156,7 +2161,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :rows
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def head(df, nrows \\ @default_sample_nrows), do: Shared.apply_impl(df, :head, [nrows])
+  def head(df, nrows \\ @default_sample_nrows), do: Shared.apply_dataframe(df, :head, [nrows])
 
   @doc """
   Returns the last *n* rows of the dataframe.
@@ -2221,7 +2226,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :rows
   @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def tail(df, nrows \\ @default_sample_nrows), do: Shared.apply_impl(df, :tail, [nrows])
+  def tail(df, nrows \\ @default_sample_nrows), do: Shared.apply_dataframe(df, :tail, [nrows])
 
   @doc """
   Selects a subset of columns by name.
@@ -2322,7 +2327,7 @@ defmodule Explorer.DataFrame do
     columns = to_existing_columns(df, columns)
     columns_to_keep = Enum.uniq(columns ++ df.groups)
     out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
-    Shared.apply_impl(df, :select, [out_df])
+    Shared.apply_dataframe(df, :select, [out_df])
   end
 
   @doc """
@@ -2379,7 +2384,7 @@ defmodule Explorer.DataFrame do
     columns = to_existing_columns(df, columns, false) -- df.groups
     columns_to_keep = df.names -- columns
     out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
-    Shared.apply_impl(df, :select, [out_df])
+    Shared.apply_dataframe(df, :select, [out_df])
   end
 
   @doc """
@@ -2437,7 +2442,7 @@ defmodule Explorer.DataFrame do
         )
 
       true ->
-        Shared.apply_impl(df, :mask, [mask])
+        Shared.apply_dataframe(df, :mask, [mask])
     end
   end
 
@@ -2590,7 +2595,7 @@ defmodule Explorer.DataFrame do
 
     case fun.(ldf) do
       %Series{dtype: :boolean, data: %LazySeries{} = data} ->
-        Shared.apply_impl(df, :filter_with, [df, data])
+        Shared.apply_dataframe(df, :filter_with, [df, data])
 
       %Series{dtype: dtype, data: %LazySeries{}} ->
         raise ArgumentError,
@@ -2605,7 +2610,7 @@ defmodule Explorer.DataFrame do
         if is_nil(first_non_boolean) do
           series = Enum.reduce(lazy_series, &Explorer.Backend.LazySeries.binary_and(&2, &1))
 
-          Shared.apply_impl(df, :filter_with, [df, series.data])
+          Shared.apply_dataframe(df, :filter_with, [df, series.data])
         else
           filter_without_boolean_series_error(first_non_boolean)
         end
@@ -2831,7 +2836,7 @@ defmodule Explorer.DataFrame do
 
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
-    Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
+    Shared.apply_dataframe(df, :mutate_with, [df_out, column_pairs])
   end
 
   defp query_to_series!(%Series{} = series), do: series
@@ -3038,7 +3043,7 @@ defmodule Explorer.DataFrame do
     new_names = append_unless_present(df.names, name)
 
     out_df = %{df | names: new_names, dtypes: Map.put(df.dtypes, name, series.dtype)}
-    Shared.apply_impl(df, :put, [out_df, name, series])
+    Shared.apply_dataframe(df, :put, [out_df, name, series])
   end
 
   def put(%DataFrame{} = df, column_name, tensor, opts)
@@ -3318,7 +3323,7 @@ defmodule Explorer.DataFrame do
           raise "not a valid lazy series or sort_by instruction: #{inspect(other)}"
       end)
 
-    Shared.apply_impl(df, :sort_with, [df, dir_and_lazy_series_pairs] ++ opts)
+    Shared.apply_dataframe(df, :sort_with, [df, dir_and_lazy_series_pairs] ++ opts)
   end
 
   @deprecated "Use sort_with/3 instead"
@@ -3408,7 +3413,7 @@ defmodule Explorer.DataFrame do
           %{df | names: keep, dtypes: Map.take(df.dtypes, keep)}
         end
 
-      Shared.apply_impl(df, :distinct, [out_df, columns])
+      Shared.apply_dataframe(df, :distinct, [out_df, columns])
     else
       df
     end
@@ -3465,7 +3470,7 @@ defmodule Explorer.DataFrame do
 
   def drop_nil(df, columns) do
     columns = to_existing_columns(df, columns)
-    Shared.apply_impl(df, :drop_nil, [columns])
+    Shared.apply_dataframe(df, :drop_nil, [columns])
   end
 
   @doc """
@@ -3656,7 +3661,7 @@ defmodule Explorer.DataFrame do
           end
 
         out_df = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: new_groups}
-        Shared.apply_impl(df, :rename, [out_df, pairs])
+        Shared.apply_dataframe(df, :rename, [out_df, pairs])
     end
   end
 
@@ -3816,7 +3821,7 @@ defmodule Explorer.DataFrame do
     out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:u, 8}}
 
     out_df = %{df | groups: [], names: out_columns, dtypes: out_dtypes}
-    Shared.apply_impl(df, :dummies, [out_df, columns])
+    Shared.apply_dataframe(df, :dummies, [out_df, columns])
   end
 
   @doc """
@@ -3849,7 +3854,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp pull_existing(df, column) do
-    series = Shared.apply_impl(df, :pull, [column])
+    series = Shared.apply_dataframe(df, :pull, [column])
     %{series | name: column}
   end
 
@@ -3945,7 +3950,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :rows
   def slice(df, offset, length) when is_integer(offset) and is_integer(length) and length >= 0,
-    do: Shared.apply_impl(df, :slice, [offset, length])
+    do: Shared.apply_dataframe(df, :slice, [offset, length])
 
   @doc """
   Slices rows at the given indices as a new dataframe.
@@ -4051,12 +4056,12 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    Shared.apply_impl(df, :slice, [row_indices])
+    Shared.apply_dataframe(df, :slice, [row_indices])
   end
 
   def slice(%DataFrame{} = df, %Series{dtype: int_dtype} = indices)
       when int_dtype in @integer_types do
-    Shared.apply_impl(df, :slice, [indices])
+    Shared.apply_dataframe(df, :slice, [indices])
   end
 
   def slice(%DataFrame{groups: []} = df, first..last//1) do
@@ -4065,9 +4070,9 @@ defmodule Explorer.DataFrame do
     size = last - first + 1
 
     if first >= 0 and size >= 0 do
-      Shared.apply_impl(df, :slice, [first, size])
+      Shared.apply_dataframe(df, :slice, [first, size])
     else
-      Shared.apply_impl(df, :slice, [[]])
+      Shared.apply_dataframe(df, :slice, [[]])
     end
   end
 
@@ -4076,10 +4081,10 @@ defmodule Explorer.DataFrame do
   end
 
   def slice(%DataFrame{groups: [_ | _]} = df, row_indices) when is_list(row_indices),
-    do: Shared.apply_impl(df, :slice, [row_indices])
+    do: Shared.apply_dataframe(df, :slice, [row_indices])
 
   def slice(%DataFrame{groups: [_ | _]} = df, %Range{} = range),
-    do: Shared.apply_impl(df, :slice, [range])
+    do: Shared.apply_dataframe(df, :slice, [range])
 
   @doc """
   Sample rows from a dataframe.
@@ -4197,7 +4202,7 @@ defmodule Explorer.DataFrame do
       end
     end
 
-    Shared.apply_impl(df, :sample, [n_or_frac, opts[:replace], opts[:shuffle], opts[:seed]])
+    Shared.apply_dataframe(df, :sample, [n_or_frac, opts[:replace], opts[:shuffle], opts[:seed]])
   end
 
   @doc """
@@ -4316,7 +4321,7 @@ defmodule Explorer.DataFrame do
     }
 
     args = [out_df, header, columns]
-    Shared.apply_impl(df, :transpose, args)
+    Shared.apply_dataframe(df, :transpose, args)
   end
 
   @doc """
@@ -4500,7 +4505,7 @@ defmodule Explorer.DataFrame do
     }
 
     args = [out_df, columns_to_pivot, columns_to_keep, names_to, values_to]
-    Shared.apply_impl(df, :pivot_longer, args)
+    Shared.apply_dataframe(df, :pivot_longer, args)
   end
 
   @doc """
@@ -4743,7 +4748,7 @@ defmodule Explorer.DataFrame do
     end
 
     out_df =
-      Shared.apply_impl(df, :pivot_wider, [
+      Shared.apply_dataframe(df, :pivot_wider, [
         id_columns,
         names_from,
         values_from,
@@ -4987,7 +4992,7 @@ defmodule Explorer.DataFrame do
 
     out_df = out_df_for_join(how, left, right, on)
 
-    Shared.apply_impl(left, :join, [right, out_df, on, how])
+    Shared.apply_dataframe([left, right], :join, [out_df, on, how])
   end
 
   defp find_overlapping_columns(left_columns, right_columns) do
@@ -5090,7 +5095,7 @@ defmodule Explorer.DataFrame do
 
     out_df = %{head | names: names, dtypes: dtypes}
 
-    Shared.apply_impl(dfs, :concat_columns, [out_df])
+    Shared.apply_dataframe(dfs, :concat_columns, [out_df])
   end
 
   @doc """
@@ -5162,7 +5167,7 @@ defmodule Explorer.DataFrame do
         end
       end
 
-    Shared.apply_impl(dfs, :concat_rows, [out_df])
+    Shared.apply_dataframe(dfs, :concat_rows, [out_df])
   end
 
   defp compute_changed_types_concat_rows([head | tail]) do
@@ -5503,7 +5508,7 @@ defmodule Explorer.DataFrame do
 
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
-    Shared.apply_impl(df, :summarise_with, [df_out, column_pairs])
+    Shared.apply_dataframe(df, :summarise_with, [df_out, column_pairs])
   end
 
   defp names_with_dtypes_for_column_pairs(df, column_pairs) do
@@ -5591,7 +5596,7 @@ defmodule Explorer.DataFrame do
 
     out_df = %{df | dtypes: out_dtypes}
 
-    Shared.apply_impl(df, :explode, [out_df, columns])
+    Shared.apply_dataframe(df, :explode, [out_df, columns])
   end
 
   @doc """
@@ -5659,7 +5664,7 @@ defmodule Explorer.DataFrame do
 
     out_df = %{df | dtypes: out_dtypes, names: out_names}
 
-    Shared.apply_impl(df, :unnest, [out_df, columns])
+    Shared.apply_dataframe(df, :unnest, [out_df, columns])
   end
 
   @doc """
@@ -5836,7 +5841,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec nil_count(df :: DataFrame.t()) :: DataFrame.t()
-  def nil_count(df), do: Shared.apply_impl(df, :nil_count)
+  def nil_count(df), do: Shared.apply_dataframe(df, :nil_count)
 
   @doc """
   Creates a new dataframe with unique rows and the frequencies of each.
@@ -5910,7 +5915,7 @@ defmodule Explorer.DataFrame do
       )
 
     out_df = pairwised_df(df, opts)
-    Shared.apply_impl(df, :correlation, [out_df, opts[:ddof], opts[:method]])
+    Shared.apply_dataframe(df, :correlation, [out_df, opts[:ddof], opts[:method]])
   end
 
   @doc """
@@ -5950,7 +5955,7 @@ defmodule Explorer.DataFrame do
   def covariance(df, opts \\ []) do
     opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
     out_df = pairwised_df(df, opts)
-    Shared.apply_impl(df, :covariance, [out_df, opts[:ddof]])
+    Shared.apply_dataframe(df, :covariance, [out_df, opts[:ddof]])
   end
 
   # SQL
@@ -5996,7 +6001,7 @@ defmodule Explorer.DataFrame do
   def sql(%__MODULE__{} = df, sql_string, opts \\ [])
       when is_binary(sql_string) and is_list(opts) do
     [table_name: table_name] = Keyword.validate!(opts, table_name: "df")
-    Shared.apply_impl(df, :sql, [sql_string, table_name])
+    Shared.apply_dataframe(df, :sql, [sql_string, table_name])
   end
 
   # Helpers
@@ -6031,11 +6036,24 @@ defmodule Explorer.DataFrame do
     import Inspect.Algebra
 
     def inspect(df, opts) do
+      remote_ref =
+        case df.remote do
+          {_local_gc, _remote_pid, remote_ref} -> remote_ref
+          _ -> df.data.__struct__.owner_reference(df)
+        end
+
+      remote =
+        if is_reference(remote_ref) and node(remote_ref) != node() do
+          concat(line(), Atom.to_string(node(remote_ref)))
+        else
+          empty()
+        end
+
       force_unfit(
         concat([
           color("#Explorer.DataFrame<", :map, opts),
           nest(
-            concat([line(), Shared.apply_impl(df, :inspect, [opts])]),
+            concat([remote, line(), Shared.apply_dataframe(df, :inspect, [opts])]),
             2
           ),
           line(),
