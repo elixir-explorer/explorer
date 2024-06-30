@@ -474,6 +474,7 @@ defmodule Explorer.DataFrame do
   if Code.ensure_loaded?(Adbc) do
     def from_query(conn, query, params, opts)
         when is_binary(query) and is_list(params) and is_list(opts) do
+      opts = Keyword.validate!(opts, [:backend, :lazy])
       backend = backend_from_options!(opts)
       backend.from_query(conn, query, params)
     end
@@ -544,6 +545,8 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:node` - The Erlang node to allocate the data frame on.
+
     * `:encoding` - Encoding to use when reading the file. For now, the only possible values are `utf8` and `utf8-lossy`.
       The utf8-lossy option means that invalid utf8 values are replaced with � characters. (default: `"utf8"`)
 
@@ -552,7 +555,7 @@ defmodule Explorer.DataFrame do
   @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_csv(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -574,7 +577,7 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_csv(
+      args = [
         entry,
         check_dtypes!(opts[:dtypes]),
         opts[:delimiter],
@@ -588,7 +591,9 @@ defmodule Explorer.DataFrame do
         opts[:infer_schema_length],
         opts[:parse_dates],
         opts[:eol_delimiter]
-      )
+      ]
+
+      Shared.apply_init(backend, :from_csv, args, backend_opts)
     end
   end
 
@@ -611,35 +616,101 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Writes a dataframe to a delimited file.
+
+  Groups are ignored if the dataframe is using any.
+
+  ## Options
+
+    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
+
+    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
+    * `:streaming` - Tells the backend if it should use streaming, which means
+      that the dataframe is not loaded to the memory at once, and instead it is
+      written in chunks from a lazy dataframe.  Defaults to true for local filesystems,
+      ignored on all others.
+
+  """
+  @doc type: :io
+  @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
+          :ok | {:error, Exception.t()}
+  def to_csv(df, filename, opts \\ []) do
+    opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: true, config: nil)
+
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      Shared.apply_impl(df, :to_csv, [entry, opts[:header], opts[:delimiter], opts[:streaming]])
+    end
+  end
+
+  @doc """
+  Similar to `to_csv/3` but raises if there is a problem reading the CSV.
+  """
+  @doc type: :io
+  @spec to_csv!(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
+          :ok
+  def to_csv!(df, filename, opts \\ []) do
+    case to_csv(df, filename, opts) do
+      :ok ->
+        :ok
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "to_csv failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "to_csv failed: #{inspect(error)}"
+    end
+  end
+
+  @doc """
+  Writes a dataframe to a binary representation of a delimited file.
+
+  ## Options
+
+    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
+    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels() |> Explorer.DataFrame.head(2)
+      iex> Explorer.DataFrame.dump_csv(df)
+      {:ok, "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"}
+  """
+  @doc type: :io
+  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) ::
+          {:ok, String.t()} | {:error, Exception.t()}
+  def dump_csv(df, opts \\ []) do
+    opts = Keyword.validate!(opts, header: true, delimiter: ",")
+    Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
+  end
+
+  @doc """
+  Similar to `dump_csv/2`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec dump_csv!(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  def dump_csv!(df, opts \\ []) do
+    case dump_csv(df, opts) do
+      {:ok, csv} -> csv
+      {:error, error} -> raise "dump_csv failed: #{inspect(error)}"
+    end
+  end
+
+  @doc """
   Reads a representation of a CSV file into a dataframe.
 
   If the CSV is compressed, it is automatically decompressed.
 
-  ## Options
-
-    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
-    * `:dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
-      imputed from the first 1000 rows. (default: `[]`)
-    * `:header` - Does the file have a header of column names as the first row or not? (default: `true`)
-    * `:max_rows` - Maximum number of lines to read. (default: `nil`)
-    * `:nil_values` - A list of strings that should be interpreted as a nil values. (default: `[]`)
-    * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-    * `:skip_rows_after_header` - The number of lines to skip after the heqader row. (default: `0`)
-    * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
-    * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
-    * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
-    * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
-    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
-    * `:lazy` - force the results into the lazy version of the current backend.
-    * `:encoding` - Encoding to use when reading the file. For now, the only possible values are
-      `utf8` and `utf8-lossy`. The utf8-lossy option means that invalid utf8 values are
-      replaced with � characters. (default: `"utf8"`)
+  Accepts the same options as `from_csv/2`.
   """
   @doc type: :io
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_csv(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -659,7 +730,7 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(backend_opts)
 
-    backend.load_csv(
+    args = [
       contents,
       check_dtypes!(opts[:dtypes]),
       opts[:delimiter],
@@ -673,7 +744,9 @@ defmodule Explorer.DataFrame do
       opts[:infer_schema_length],
       opts[:parse_dates],
       opts[:eol_delimiter]
-    )
+    ]
+
+    Shared.apply_init(backend, :load_csv, args, backend_opts)
   end
 
   @doc """
@@ -710,12 +783,14 @@ defmodule Explorer.DataFrame do
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
 
     * `:lazy` - force the results into the lazy version of the current backend.
+
+    * `:node` - The Erlang node to allocate the data frame on.
   """
   @doc type: :io
   @spec from_parquet(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_parquet(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -728,12 +803,14 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_parquet(
+      args = [
         entry,
         opts[:max_rows],
         to_columns_for_io(opts[:columns]),
         opts[:rechunk]
-      )
+      ]
+
+      Shared.apply_init(backend, :from_parquet, args, backend_opts)
     end
   end
 
@@ -906,13 +983,16 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Reads a binary representation of a parquet file into a dataframe.
+
+  Accepts the same options as `from_parquet/2`.
   """
   @doc type: :io
   @spec load_parquet(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_parquet(contents, opts \\ []) do
+    opts = Keyword.validate!(opts, [:backend, :lazy, :node])
     backend = backend_from_options!(opts)
-    backend.load_parquet(contents)
+    Shared.apply_init(backend, :load_parquet, [contents], opts)
   end
 
   @doc """
@@ -944,12 +1024,14 @@ defmodule Explorer.DataFrame do
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
 
     * `:lazy` - force the results into the lazy version of the current backend.
+
+    * `:node` - The Erlang node to allocate the data frame on.
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -960,9 +1042,11 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_ipc(
-        entry,
-        to_columns_for_io(opts[:columns])
+      Shared.apply_init(
+        backend,
+        :from_ipc,
+        [entry, to_columns_for_io(opts[:columns])],
+        backend_opts
       )
     end
   end
@@ -1090,19 +1174,13 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a binary representing an IPC file into a dataframe.
 
-  ## Options
-
-    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
-
-    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
-
-    * `:lazy` - force the results into the lazy version of the current backend.
+  Accepts the same options as `from_ipc/2`.
   """
   @doc type: :io
   @spec load_ipc(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -1111,9 +1189,11 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(backend_opts)
 
-    backend.load_ipc(
-      contents,
-      to_columns_for_io(opts[:columns])
+    Shared.apply_init(
+      backend,
+      :load_ipc,
+      [contents, to_columns_for_io(opts[:columns])],
+      backend_opts
     )
   end
 
@@ -1145,6 +1225,8 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:node` - The Erlang node to allocate the data frame on.
+
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
@@ -1153,15 +1235,17 @@ defmodule Explorer.DataFrame do
   @spec from_ipc_stream(filename :: String.t() | fs_entry()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc_stream(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts = Keyword.validate!(opts, columns: nil, config: nil)
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_ipc_stream(
-        entry,
-        to_columns_for_io(opts[:columns])
+      Shared.apply_init(
+        backend,
+        :from_ipc_stream,
+        [entry, to_columns_for_io(opts[:columns])],
+        backend_opts
       )
     end
   end
@@ -1279,30 +1363,22 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a binary representing an IPC Stream file into a dataframe.
 
-  ## Options
-
-    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
-
-    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
-
-    * `:lazy` - force the results into the lazy version of the current backend.
+  Accepts the same options as `from_ipc_stream/2`.
   """
   @doc type: :io
   @spec load_ipc_stream(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc_stream(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
-
-    opts =
-      Keyword.validate!(opts,
-        columns: nil
-      )
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    opts = Keyword.validate!(opts, columns: nil)
 
     backend = backend_from_options!(backend_opts)
 
-    backend.load_ipc_stream(
-      contents,
-      to_columns_for_io(opts[:columns])
+    Shared.apply_init(
+      backend,
+      :load_ipc_stream,
+      [contents, to_columns_for_io(opts[:columns])],
+      backend_opts
     )
   end
 
@@ -1315,90 +1391,6 @@ defmodule Explorer.DataFrame do
     case load_ipc_stream(contents, opts) do
       {:ok, df} -> df
       {:error, error} -> raise "load_ipc_stream failed: #{inspect(error)}"
-    end
-  end
-
-  @doc """
-  Writes a dataframe to a delimited file.
-
-  Groups are ignored if the dataframe is using any.
-
-  ## Options
-
-    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
-
-    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
-
-    * `:config` - An optional struct, keyword list or map, normally associated with remote
-      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
-
-    * `:streaming` - Tells the backend if it should use streaming, which means
-      that the dataframe is not loaded to the memory at once, and instead it is
-      written in chunks from a lazy dataframe.  Defaults to true for local filesystems,
-      ignored on all others.
-
-  """
-  @doc type: :io
-  @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
-          :ok | {:error, Exception.t()}
-  def to_csv(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: true, config: nil)
-
-    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_csv, [entry, opts[:header], opts[:delimiter], opts[:streaming]])
-    end
-  end
-
-  @doc """
-  Similar to `to_csv/3` but raises if there is a problem reading the CSV.
-  """
-  @doc type: :io
-  @spec to_csv!(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
-          :ok
-  def to_csv!(df, filename, opts \\ []) do
-    case to_csv(df, filename, opts) do
-      :ok ->
-        :ok
-
-      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "to_csv failed: #{inspect(e.message)}"
-
-      {:error, error} ->
-        raise "to_csv failed: #{inspect(error)}"
-    end
-  end
-
-  @doc """
-  Writes a dataframe to a binary representation of a delimited file.
-
-  ## Options
-
-    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
-    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
-
-  ## Examples
-
-      iex> df = Explorer.Datasets.fossil_fuels() |> Explorer.DataFrame.head(2)
-      iex> Explorer.DataFrame.dump_csv(df)
-      {:ok, "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"}
-  """
-  @doc type: :io
-  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) ::
-          {:ok, String.t()} | {:error, Exception.t()}
-  def dump_csv(df, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
-  end
-
-  @doc """
-  Similar to `dump_csv/2`, but raises in case of error.
-  """
-  @doc type: :io
-  @spec dump_csv!(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
-  def dump_csv!(df, opts \\ []) do
-    case dump_csv(df, opts) do
-      {:ok, csv} -> csv
-      {:error, error} -> raise "dump_csv failed: #{inspect(error)}"
     end
   end
 
@@ -1418,6 +1410,8 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:node` - The Erlang node to allocate the data frame on.
+
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
@@ -1426,7 +1420,7 @@ defmodule Explorer.DataFrame do
   @spec from_ndjson(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ndjson(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -1438,11 +1432,8 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_ndjson(
-        entry,
-        opts[:infer_schema_length],
-        opts[:batch_size]
-      )
+      args = [entry, opts[:infer_schema_length], opts[:batch_size]]
+      Shared.apply_init(backend, :from_ndjson, args, backend_opts)
     end
   end
 
@@ -1542,25 +1533,13 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a representation of a NDJSON file into a dataframe.
 
-  ## Options
-
-    * `:batch_size` - Sets the batch size for reading rows.
-      This value may have significant impact in performance,
-      so adjust it for your needs (default: `1000`).
-
-    * `:infer_schema_length` - Maximum number of rows read for schema inference.
-      Setting this to nil will do a full table scan and will be slow (default: `1000`).
-
-    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
-
-    * `:lazy` - force the results into the lazy version of the current backend.
-
+  Accepts the same options as `from_ndjson/2`.
   """
   @doc type: :io
   @spec load_ndjson(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ndjson(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -1569,12 +1548,8 @@ defmodule Explorer.DataFrame do
       )
 
     backend = backend_from_options!(backend_opts)
-
-    backend.load_ndjson(
-      contents,
-      opts[:infer_schema_length],
-      opts[:batch_size]
-    )
+    args = [contents, opts[:infer_schema_length], opts[:batch_size]]
+    Shared.apply_init(backend, :load_ndjson, args, backend_opts)
   end
 
   @doc """
