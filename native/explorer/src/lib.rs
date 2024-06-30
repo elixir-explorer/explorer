@@ -507,7 +507,8 @@ rustler::init!(
         s_json_decode,
         s_json_path_match,
         // local_message
-        message_on_gc
+        message_on_gc,
+        is_message_when_gc
     ],
     load = on_load
 );

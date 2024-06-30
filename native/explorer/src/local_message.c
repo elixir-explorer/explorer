@@ -40,6 +40,7 @@ extern ErlNifEnv *enif_alloc_env();
 extern void enif_free_env(ErlNifEnv *env);
 extern ERL_NIF_TERM enif_make_resource(ErlNifEnv *env, void *resource);
 extern void enif_release_resource(void *resource);
+extern int enif_get_resource(ErlNifEnv* env, ERL_NIF_TERM term, void* type, void** objp);
 int enif_send(ErlNifEnv *caller_env, ErlNifPid *to_pid, ErlNifEnv *msg_env,
               ERL_NIF_TERM msg);
 
@@ -51,6 +52,14 @@ void destruct_local_message(ErlNifEnv *env, void *obj) {
   struct message *m = (struct message *)obj;
   enif_send(env, &m->pid, m->env, m->value);
   enif_free_env(m->env);
+}
+
+ERL_NIF_TERM is_local_message_when_gc(ErlNifEnv *env, const ERL_NIF_TERM term) {
+  struct message * m = NULL;
+  if (enif_get_resource(env, term, message_resource, (void **)&m)) {
+    return enif_make_atom(env, "true");  
+  }
+  return enif_make_atom(env, "false");
 }
 
 ERL_NIF_TERM local_message_on_gc(ErlNifEnv *env, const ERL_NIF_TERM pid_term,
