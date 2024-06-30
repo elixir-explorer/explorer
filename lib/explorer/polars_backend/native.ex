@@ -206,7 +206,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_struct(_map), do: err()
 
   # LazyFrame
-  def lf_collect(_df), do: err()
+  def lf_compute(_df), do: err()
   def lf_describe_plan(_df, _optimized), do: err()
   def lf_drop(_df, _columns), do: err()
   def lf_dtypes(_df), do: err()
@@ -458,6 +458,9 @@ defmodule Explorer.PolarsBackend.Native do
   def s_field(_s, _name), do: err()
   def s_json_decode(_s, _dtype), do: err()
   def s_json_path_match(_s, _json_path), do: err()
+
+  def message_on_gc(_pid, _payload), do: err()
+  def is_message_on_gc(_term), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

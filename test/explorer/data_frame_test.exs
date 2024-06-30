@@ -3556,6 +3556,10 @@ defmodule Explorer.DataFrameTest do
     assert DF.collect(df) == df
   end
 
+  test "compute/1 is no-op", %{df: df} do
+    assert DF.compute(df) == df
+  end
+
   test "lazy/1", %{df: df} do
     assert %Explorer.PolarsBackend.LazyFrame{} = DF.lazy(df).data
   end
@@ -4576,7 +4580,7 @@ defmodule Explorer.DataFrameTest do
                "st" => {:struct, [{"n", {:s, 64}}]}
              }
 
-      assert df1 |> DF.collect() |> DF.to_columns() == %{
+      assert df1 |> DF.compute() |> DF.to_columns() == %{
                "dt" => [~N[1970-01-01 00:00:00.000001]],
                "f" => [1.0],
                "l" => [[1]],

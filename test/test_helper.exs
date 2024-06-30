@@ -1,48 +1,33 @@
-defmodule Explorer.IOHelpers do
-  # https://doc.rust-lang.org/std/primitive.f64.html#associatedconstant.EPSILON
-  @f64_epsilon 2.2204460492503131e-16
+try_starting_epmd? = fn ->
+  case :os.type() do
+    {:unix, _} ->
+      {"", 0} == System.cmd("epmd", ["-daemon"])
 
-  alias Explorer.DataFrame, as: DF
-  alias Explorer.Series
-
-  require ExUnit.Assertions
-
-  def f64_epsilon, do: @f64_epsilon
-
-  def assert_from_with_correct_type(type, value, parsed_value, reader_fun)
-      when is_function(reader_fun, 1) do
-    dtype = Explorer.Shared.normalise_dtype!(type)
-    df = List.wrap(value) |> Series.from_list() |> Series.cast(dtype) |> then(&DF.new(column: &1))
-
-    %DF{} = df = reader_fun.(df)
-
-    ExUnit.Assertions.assert(df[0][0] == parsed_value)
-    ExUnit.Assertions.assert(df[0].dtype == dtype)
-  end
-
-  def tmp_filename(save_fun) when is_function(save_fun, 1) do
-    hash = :crypto.strong_rand_bytes(3) |> Base.encode16(case: :lower)
-
-    System.tmp_dir!()
-    |> Path.join("tmp-df-#{hash}.tmp")
-    |> tap(save_fun)
-  end
-
-  def tmp_file!(data) when is_binary(data) do
-    tmp_filename(fn filename -> :ok = File.write!(filename, data) end)
-  end
-
-  # Defines functions like `tmp_parquet_file!(df)`.
-  for format <- [:parquet, :ipc, :ipc_stream, :ndjson] do
-    fun_name = :"tmp_#{format}_file!"
-    to_name = :"to_#{format}"
-
-    def unquote(fun_name)(df) do
-      tmp_filename(fn filename -> :ok = apply(DF, unquote(to_name), [df, filename]) end)
-    end
+    _ ->
+      true
   end
 end
 
-Calendar.put_time_zone_database(Tz.TimeZoneDatabase)
+exclude =
+  cond do
+    :distributed in Keyword.get(ExUnit.configuration(), :exclude, []) ->
+      []
 
-ExUnit.start(exclude: [:cloud_integration, :property])
+    Code.ensure_loaded?(:peer) and try_starting_epmd?.() and
+        match?({:ok, _}, Node.start(:"primary@127.0.0.1", :longnames)) ->
+      {:ok, _pid, node2} = :peer.start(%{name: :"secondary@127.0.0.1"})
+      {:ok, _pid, node3} = :peer.start(%{name: :"tertiary@127.0.0.1", args: ~w(-hidden)c})
+
+      for node <- [node2, node3] do
+        true = :erpc.call(node, :code, :set_path, [:code.get_path()])
+        {:ok, _} = :erpc.call(node, :application, :ensure_all_started, [:explorer])
+      end
+
+      []
+
+    true ->
+      [:distributed]
+  end
+
+Calendar.put_time_zone_database(Tz.TimeZoneDatabase)
+ExUnit.start(exclude: [:cloud_integration, :property | exclude])

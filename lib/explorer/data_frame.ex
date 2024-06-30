@@ -200,7 +200,7 @@ defmodule Explorer.DataFrame do
   alias FSS.S3
 
   @enforce_keys [:data, :groups, :names, :dtypes]
-  defstruct [:data, :groups, :names, :dtypes]
+  defstruct [:data, :groups, :names, :dtypes, :remote]
 
   @typedoc """
   Represents a column name as atom or string.
@@ -474,6 +474,7 @@ defmodule Explorer.DataFrame do
   if Code.ensure_loaded?(Adbc) do
     def from_query(conn, query, params, opts)
         when is_binary(query) and is_list(params) and is_list(opts) do
+      opts = Keyword.validate!(opts, [:backend, :lazy])
       backend = backend_from_options!(opts)
       backend.from_query(conn, query, params)
     end
@@ -544,6 +545,8 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:node` - The Erlang node to allocate the data frame on.
+
     * `:encoding` - Encoding to use when reading the file. For now, the only possible values are `utf8` and `utf8-lossy`.
       The utf8-lossy option means that invalid utf8 values are replaced with � characters. (default: `"utf8"`)
 
@@ -552,7 +555,7 @@ defmodule Explorer.DataFrame do
   @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_csv(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -574,7 +577,7 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_csv(
+      args = [
         entry,
         check_dtypes!(opts[:dtypes]),
         opts[:delimiter],
@@ -588,7 +591,9 @@ defmodule Explorer.DataFrame do
         opts[:infer_schema_length],
         opts[:parse_dates],
         opts[:eol_delimiter]
-      )
+      ]
+
+      Shared.apply_init(backend, :from_csv, args, backend_opts)
     end
   end
 
@@ -611,35 +616,106 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
+  Writes a dataframe to a delimited file.
+
+  Groups are ignored if the dataframe is using any.
+
+  ## Options
+
+    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
+
+    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+
+    * `:config` - An optional struct, keyword list or map, normally associated with remote
+      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
+
+    * `:streaming` - Tells the backend if it should use streaming, which means
+      that the dataframe is not loaded to the memory at once, and instead it is
+      written in chunks from a lazy dataframe.  Defaults to true for local filesystems,
+      ignored on all others.
+
+  """
+  @doc type: :io
+  @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
+          :ok | {:error, Exception.t()}
+  def to_csv(df, filename, opts \\ []) do
+    opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: true, config: nil)
+
+    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
+      Shared.apply_dataframe(df, :to_csv, [
+        entry,
+        opts[:header],
+        opts[:delimiter],
+        opts[:streaming]
+      ])
+    end
+  end
+
+  @doc """
+  Similar to `to_csv/3` but raises if there is a problem reading the CSV.
+  """
+  @doc type: :io
+  @spec to_csv!(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
+          :ok
+  def to_csv!(df, filename, opts \\ []) do
+    case to_csv(df, filename, opts) do
+      :ok ->
+        :ok
+
+      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
+        raise module, "to_csv failed: #{inspect(e.message)}"
+
+      {:error, error} ->
+        raise "to_csv failed: #{inspect(error)}"
+    end
+  end
+
+  @doc """
+  Writes a dataframe to a binary representation of a delimited file.
+
+  ## Options
+
+    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
+    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+
+  ## Examples
+
+      iex> df = Explorer.Datasets.fossil_fuels() |> Explorer.DataFrame.head(2)
+      iex> Explorer.DataFrame.dump_csv(df)
+      {:ok, "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"}
+  """
+  @doc type: :io
+  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) ::
+          {:ok, String.t()} | {:error, Exception.t()}
+  def dump_csv(df, opts \\ []) do
+    opts = Keyword.validate!(opts, header: true, delimiter: ",")
+    Shared.apply_dataframe(df, :dump_csv, [opts[:header], opts[:delimiter]], false)
+  end
+
+  @doc """
+  Similar to `dump_csv/2`, but raises in case of error.
+  """
+  @doc type: :io
+  @spec dump_csv!(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  def dump_csv!(df, opts \\ []) do
+    case dump_csv(df, opts) do
+      {:ok, csv} -> csv
+      {:error, error} -> raise "dump_csv failed: #{inspect(error)}"
+    end
+  end
+
+  @doc """
   Reads a representation of a CSV file into a dataframe.
 
   If the CSV is compressed, it is automatically decompressed.
 
-  ## Options
-
-    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
-    * `:dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
-      imputed from the first 1000 rows. (default: `[]`)
-    * `:header` - Does the file have a header of column names as the first row or not? (default: `true`)
-    * `:max_rows` - Maximum number of lines to read. (default: `nil`)
-    * `:nil_values` - A list of strings that should be interpreted as a nil values. (default: `[]`)
-    * `:skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-    * `:skip_rows_after_header` - The number of lines to skip after the heqader row. (default: `0`)
-    * `:columns` - A list of column names or indexes to keep. If present, only these columns are read into the dataframe. (default: `nil`)
-    * `:infer_schema_length` Maximum number of rows read for schema inference. Setting this to nil will do a full table scan and will be slow (default: `1000`).
-    * `:parse_dates` - Automatically try to parse dates/ datetimes and time. If parsing fails, columns remain of dtype `string`
-    * `:eol_delimiter` - A single character used to represent new lines. (default: `"\n"`)
-    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
-    * `:lazy` - force the results into the lazy version of the current backend.
-    * `:encoding` - Encoding to use when reading the file. For now, the only possible values are
-      `utf8` and `utf8-lossy`. The utf8-lossy option means that invalid utf8 values are
-      replaced with � characters. (default: `"utf8"`)
+  Accepts the same options as `from_csv/2`.
   """
   @doc type: :io
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_csv(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -659,7 +735,7 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(backend_opts)
 
-    backend.load_csv(
+    args = [
       contents,
       check_dtypes!(opts[:dtypes]),
       opts[:delimiter],
@@ -673,7 +749,9 @@ defmodule Explorer.DataFrame do
       opts[:infer_schema_length],
       opts[:parse_dates],
       opts[:eol_delimiter]
-    )
+    ]
+
+    Shared.apply_init(backend, :load_csv, args, backend_opts)
   end
 
   @doc """
@@ -710,12 +788,14 @@ defmodule Explorer.DataFrame do
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
 
     * `:lazy` - force the results into the lazy version of the current backend.
+
+    * `:node` - The Erlang node to allocate the data frame on.
   """
   @doc type: :io
   @spec from_parquet(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_parquet(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -728,12 +808,14 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_parquet(
+      args = [
         entry,
         opts[:max_rows],
         to_columns_for_io(opts[:columns]),
         opts[:rechunk]
-      )
+      ]
+
+      Shared.apply_init(backend, :from_parquet, args, backend_opts)
     end
   end
 
@@ -820,7 +902,7 @@ defmodule Explorer.DataFrame do
     compression = parquet_compression(opts[:compression])
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_parquet, [entry, compression, opts[:streaming]])
+      Shared.apply_dataframe(df, :to_parquet, [entry, compression, opts[:streaming]])
     end
   end
 
@@ -889,7 +971,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, compression: nil)
     compression = parquet_compression(opts[:compression])
 
-    Shared.apply_impl(df, :dump_parquet, [compression])
+    Shared.apply_dataframe(df, :dump_parquet, [compression], false)
   end
 
   @doc """
@@ -906,13 +988,16 @@ defmodule Explorer.DataFrame do
 
   @doc """
   Reads a binary representation of a parquet file into a dataframe.
+
+  Accepts the same options as `from_parquet/2`.
   """
   @doc type: :io
   @spec load_parquet(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_parquet(contents, opts \\ []) do
+    opts = Keyword.validate!(opts, [:backend, :lazy, :node])
     backend = backend_from_options!(opts)
-    backend.load_parquet(contents)
+    Shared.apply_init(backend, :load_parquet, [contents], opts)
   end
 
   @doc """
@@ -944,12 +1029,14 @@ defmodule Explorer.DataFrame do
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
 
     * `:lazy` - force the results into the lazy version of the current backend.
+
+    * `:node` - The Erlang node to allocate the data frame on.
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -960,9 +1047,11 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_ipc(
-        entry,
-        to_columns_for_io(opts[:columns])
+      Shared.apply_init(
+        backend,
+        :from_ipc,
+        [entry, to_columns_for_io(opts[:columns])],
+        backend_opts
       )
     end
   end
@@ -1021,7 +1110,7 @@ defmodule Explorer.DataFrame do
     compression = ipc_compression(opts[:compression])
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_ipc, [entry, compression, opts[:streaming]])
+      Shared.apply_dataframe(df, :to_ipc, [entry, compression, opts[:streaming]])
     end
   end
 
@@ -1072,7 +1161,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, compression: nil)
     compression = ipc_compression(opts[:compression])
 
-    Shared.apply_impl(df, :dump_ipc, [compression])
+    Shared.apply_dataframe(df, :dump_ipc, [compression], false)
   end
 
   @doc """
@@ -1090,19 +1179,13 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a binary representing an IPC file into a dataframe.
 
-  ## Options
-
-    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
-
-    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
-
-    * `:lazy` - force the results into the lazy version of the current backend.
+  Accepts the same options as `from_ipc/2`.
   """
   @doc type: :io
   @spec load_ipc(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -1111,9 +1194,11 @@ defmodule Explorer.DataFrame do
 
     backend = backend_from_options!(backend_opts)
 
-    backend.load_ipc(
-      contents,
-      to_columns_for_io(opts[:columns])
+    Shared.apply_init(
+      backend,
+      :load_ipc,
+      [contents, to_columns_for_io(opts[:columns])],
+      backend_opts
     )
   end
 
@@ -1145,6 +1230,8 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:node` - The Erlang node to allocate the data frame on.
+
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
@@ -1153,15 +1240,17 @@ defmodule Explorer.DataFrame do
   @spec from_ipc_stream(filename :: String.t() | fs_entry()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc_stream(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts = Keyword.validate!(opts, columns: nil, config: nil)
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_ipc_stream(
-        entry,
-        to_columns_for_io(opts[:columns])
+      Shared.apply_init(
+        backend,
+        :from_ipc_stream,
+        [entry, to_columns_for_io(opts[:columns])],
+        backend_opts
       )
     end
   end
@@ -1213,7 +1302,7 @@ defmodule Explorer.DataFrame do
     compression = ipc_compression(opts[:compression])
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_ipc_stream, [entry, compression])
+      Shared.apply_dataframe(df, :to_ipc_stream, [entry, compression])
     end
   end
 
@@ -1261,7 +1350,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, compression: nil)
     compression = ipc_compression(opts[:compression])
 
-    Shared.apply_impl(df, :dump_ipc_stream, [compression])
+    Shared.apply_dataframe(df, :dump_ipc_stream, [compression], false)
   end
 
   @doc """
@@ -1279,30 +1368,22 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a binary representing an IPC Stream file into a dataframe.
 
-  ## Options
-
-    * `:columns` - List with the name or index of columns to be selected. Defaults to all columns.
-
-    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
-
-    * `:lazy` - force the results into the lazy version of the current backend.
+  Accepts the same options as `from_ipc_stream/2`.
   """
   @doc type: :io
   @spec load_ipc_stream(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc_stream(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
-
-    opts =
-      Keyword.validate!(opts,
-        columns: nil
-      )
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    opts = Keyword.validate!(opts, columns: nil)
 
     backend = backend_from_options!(backend_opts)
 
-    backend.load_ipc_stream(
-      contents,
-      to_columns_for_io(opts[:columns])
+    Shared.apply_init(
+      backend,
+      :load_ipc_stream,
+      [contents, to_columns_for_io(opts[:columns])],
+      backend_opts
     )
   end
 
@@ -1315,90 +1396,6 @@ defmodule Explorer.DataFrame do
     case load_ipc_stream(contents, opts) do
       {:ok, df} -> df
       {:error, error} -> raise "load_ipc_stream failed: #{inspect(error)}"
-    end
-  end
-
-  @doc """
-  Writes a dataframe to a delimited file.
-
-  Groups are ignored if the dataframe is using any.
-
-  ## Options
-
-    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
-
-    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
-
-    * `:config` - An optional struct, keyword list or map, normally associated with remote
-      file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
-
-    * `:streaming` - Tells the backend if it should use streaming, which means
-      that the dataframe is not loaded to the memory at once, and instead it is
-      written in chunks from a lazy dataframe.  Defaults to true for local filesystems,
-      ignored on all others.
-
-  """
-  @doc type: :io
-  @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
-          :ok | {:error, Exception.t()}
-  def to_csv(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: true, config: nil)
-
-    with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_csv, [entry, opts[:header], opts[:delimiter], opts[:streaming]])
-    end
-  end
-
-  @doc """
-  Similar to `to_csv/3` but raises if there is a problem reading the CSV.
-  """
-  @doc type: :io
-  @spec to_csv!(df :: DataFrame.t(), filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
-          :ok
-  def to_csv!(df, filename, opts \\ []) do
-    case to_csv(df, filename, opts) do
-      :ok ->
-        :ok
-
-      {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "to_csv failed: #{inspect(e.message)}"
-
-      {:error, error} ->
-        raise "to_csv failed: #{inspect(error)}"
-    end
-  end
-
-  @doc """
-  Writes a dataframe to a binary representation of a delimited file.
-
-  ## Options
-
-    * `:header` - Should the column names be written as the first line of the file? (default: `true`)
-    * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
-
-  ## Examples
-
-      iex> df = Explorer.Datasets.fossil_fuels() |> Explorer.DataFrame.head(2)
-      iex> Explorer.DataFrame.dump_csv(df)
-      {:ok, "year,country,total,solid_fuel,liquid_fuel,gas_fuel,cement,gas_flaring,per_capita,bunker_fuels\\n2010,AFGHANISTAN,2308,627,1601,74,5,0,0.08,9\\n2010,ALBANIA,1254,117,953,7,177,0,0.43,7\\n"}
-  """
-  @doc type: :io
-  @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) ::
-          {:ok, String.t()} | {:error, Exception.t()}
-  def dump_csv(df, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    Shared.apply_impl(df, :dump_csv, [opts[:header], opts[:delimiter]])
-  end
-
-  @doc """
-  Similar to `dump_csv/2`, but raises in case of error.
-  """
-  @doc type: :io
-  @spec dump_csv!(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
-  def dump_csv!(df, opts \\ []) do
-    case dump_csv(df, opts) do
-      {:ok, csv} -> csv
-      {:error, error} -> raise "dump_csv failed: #{inspect(error)}"
     end
   end
 
@@ -1418,6 +1415,8 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
+    * `:node` - The Erlang node to allocate the data frame on.
+
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
@@ -1426,7 +1425,7 @@ defmodule Explorer.DataFrame do
   @spec from_ndjson(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ndjson(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -1438,11 +1437,8 @@ defmodule Explorer.DataFrame do
     backend = backend_from_options!(backend_opts)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      backend.from_ndjson(
-        entry,
-        opts[:infer_schema_length],
-        opts[:batch_size]
-      )
+      args = [entry, opts[:infer_schema_length], opts[:batch_size]]
+      Shared.apply_init(backend, :from_ndjson, args, backend_opts)
     end
   end
 
@@ -1486,7 +1482,7 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, config: nil)
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
-      Shared.apply_impl(df, :to_ndjson, [entry])
+      Shared.apply_dataframe(df, :to_ndjson, [entry])
     end
   end
 
@@ -1524,7 +1520,7 @@ defmodule Explorer.DataFrame do
   @doc type: :io
   @spec dump_ndjson(df :: DataFrame.t()) :: {:ok, binary()} | {:error, Exception.t()}
   def dump_ndjson(df) do
-    Shared.apply_impl(df, :dump_ndjson, [])
+    Shared.apply_dataframe(df, :dump_ndjson, [], false)
   end
 
   @doc """
@@ -1542,25 +1538,13 @@ defmodule Explorer.DataFrame do
   @doc """
   Reads a representation of a NDJSON file into a dataframe.
 
-  ## Options
-
-    * `:batch_size` - Sets the batch size for reading rows.
-      This value may have significant impact in performance,
-      so adjust it for your needs (default: `1000`).
-
-    * `:infer_schema_length` - Maximum number of rows read for schema inference.
-      Setting this to nil will do a full table scan and will be slow (default: `1000`).
-
-    * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
-
-    * `:lazy` - force the results into the lazy version of the current backend.
-
+  Accepts the same options as `from_ndjson/2`.
   """
   @doc type: :io
   @spec load_ndjson(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ndjson(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
 
     opts =
       Keyword.validate!(opts,
@@ -1569,12 +1553,8 @@ defmodule Explorer.DataFrame do
       )
 
     backend = backend_from_options!(backend_opts)
-
-    backend.load_ndjson(
-      contents,
-      opts[:infer_schema_length],
-      opts[:batch_size]
-    )
+    args = [contents, opts[:infer_schema_length], opts[:batch_size]]
+    Shared.apply_init(backend, :load_ndjson, args, backend_opts)
   end
 
   @doc """
@@ -1614,7 +1594,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :conversion
   @spec lazy?(df :: DataFrame.t()) :: boolean
-  def lazy?(%DataFrame{data: %struct{}}), do: struct.lazy() == struct
+  def lazy?(%DataFrame{data: %impl{}}), do: impl.lazy() == impl
 
   @doc """
   Converts the dataframe to the lazy version of the current backend.
@@ -1629,22 +1609,54 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :conversion
   @spec lazy(df :: DataFrame.t()) :: DataFrame.t()
-  def lazy(df), do: Shared.apply_impl(df, :lazy)
+  def lazy(df), do: Shared.apply_dataframe(df, :lazy)
 
   @deprecated "Use lazy/1 instead"
   @doc false
-  def to_lazy(df), do: Shared.apply_impl(df, :lazy)
+  def to_lazy(df), do: Shared.apply_dataframe(df, :lazy)
 
   @doc """
-  Collects the lazy data frame into an eager one, computing the query.
+  Computes and collects a data frame to the current node.
 
-  It is the opposite of `lazy/1`. If already eager, this is a noop.
+  If the data frame is already in the current node, it is computed
+  but no transfer happens.
+
+  ## Examples
+
+      series = Explorer.Series.from_list([1, 2, 3], node: :some@node)
+      Explorer.Series.collect(series)
+
+  """
+  @doc type: :conversion
+  @spec collect(df :: DataFrame.t()) :: DataFrame.t()
+  def collect(df) do
+    %DataFrame{data: %impl{}} = df = compute(df)
+
+    case impl.owner_reference(df) do
+      ref when is_reference(ref) and node(ref) != node() ->
+        with {:ok, exported} <- :erpc.call(node(ref), impl, :owner_export, [df]),
+             {:ok, imported} <- impl.owner_import(exported) do
+          imported
+        else
+          {:error, exception} -> raise exception
+        end
+
+      _ ->
+        df
+    end
+  end
+
+  @doc """
+  Computes the lazy data frame into an eager one, exucting the query.
+
+  It is the opposite of `lazy/1`. If it is not a lazy data frame,
+  this is a noop.
 
   Collecting a grouped dataframe should return a grouped dataframe.
   """
   @doc type: :conversion
-  @spec collect(df :: DataFrame.t()) :: DataFrame.t()
-  def collect(df), do: Shared.apply_impl(df, :collect)
+  @spec compute(df :: DataFrame.t()) :: DataFrame.t()
+  def compute(df), do: Shared.apply_dataframe(df, :compute)
 
   @doc """
   Creates a new dataframe.
@@ -1888,7 +1900,7 @@ defmodule Explorer.DataFrame do
     atom_keys = opts[:atom_keys]
 
     for name <- df.names, into: %{} do
-      series = Shared.apply_impl(df, :pull, [name])
+      series = Shared.apply_dataframe(df, :pull, [name])
       key = if atom_keys, do: String.to_atom(name), else: name
       {key, Series.to_list(series)}
     end
@@ -1922,7 +1934,7 @@ defmodule Explorer.DataFrame do
 
     for name <- df.names, into: %{} do
       key = if atom_keys, do: String.to_atom(name), else: name
-      {key, Shared.apply_impl(df, :pull, [name])}
+      {key, Shared.apply_dataframe(df, :pull, [name])}
     end
   end
 
@@ -1956,7 +1968,7 @@ defmodule Explorer.DataFrame do
   def to_rows(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false)
 
-    Shared.apply_impl(df, :to_rows, [opts[:atom_keys]])
+    Shared.apply_dataframe(df, :to_rows, [opts[:atom_keys]], false)
   end
 
   @doc """
@@ -1988,7 +2000,7 @@ defmodule Explorer.DataFrame do
   def to_rows_stream(df, opts \\ []) do
     opts = Keyword.validate!(opts, atom_keys: false, chunk_size: 1_000)
 
-    Shared.apply_impl(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size]])
+    Shared.apply_dataframe(df, :to_rows_stream, [opts[:atom_keys], opts[:chunk_size]], false)
   end
 
   # Introspection
@@ -2049,7 +2061,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec n_rows(df :: DataFrame.t()) :: integer()
-  def n_rows(df), do: Shared.apply_impl(df, :n_rows)
+  def n_rows(df), do: Shared.apply_dataframe(df, :n_rows)
 
   @doc """
   Returns the number of columns in the dataframe.
@@ -2149,7 +2161,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :rows
   @spec head(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def head(df, nrows \\ @default_sample_nrows), do: Shared.apply_impl(df, :head, [nrows])
+  def head(df, nrows \\ @default_sample_nrows), do: Shared.apply_dataframe(df, :head, [nrows])
 
   @doc """
   Returns the last *n* rows of the dataframe.
@@ -2214,7 +2226,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :rows
   @spec tail(df :: DataFrame.t(), nrows :: integer()) :: DataFrame.t()
-  def tail(df, nrows \\ @default_sample_nrows), do: Shared.apply_impl(df, :tail, [nrows])
+  def tail(df, nrows \\ @default_sample_nrows), do: Shared.apply_dataframe(df, :tail, [nrows])
 
   @doc """
   Selects a subset of columns by name.
@@ -2314,8 +2326,9 @@ defmodule Explorer.DataFrame do
   def select(df, columns) do
     columns = to_existing_columns(df, columns)
     columns_to_keep = Enum.uniq(columns ++ df.groups)
-    out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
-    Shared.apply_impl(df, :select, [out_df])
+
+    out_df = out_df(df, columns_to_keep, Map.take(df.dtypes, columns_to_keep))
+    Shared.apply_dataframe(df, :select, [out_df])
   end
 
   @doc """
@@ -2371,8 +2384,9 @@ defmodule Explorer.DataFrame do
   def discard(df, columns) do
     columns = to_existing_columns(df, columns, false) -- df.groups
     columns_to_keep = df.names -- columns
-    out_df = %{df | names: columns_to_keep, dtypes: Map.take(df.dtypes, columns_to_keep)}
-    Shared.apply_impl(df, :select, [out_df])
+
+    out_df = out_df(df, columns_to_keep, Map.take(df.dtypes, columns_to_keep))
+    Shared.apply_dataframe(df, :select, [out_df])
   end
 
   @doc """
@@ -2430,7 +2444,7 @@ defmodule Explorer.DataFrame do
         )
 
       true ->
-        Shared.apply_impl(df, :mask, [mask])
+        Shared.apply_dataframe(df, :mask, [mask])
     end
   end
 
@@ -2583,7 +2597,7 @@ defmodule Explorer.DataFrame do
 
     case fun.(ldf) do
       %Series{dtype: :boolean, data: %LazySeries{} = data} ->
-        Shared.apply_impl(df, :filter_with, [df, data])
+        Shared.apply_dataframe(df, :filter_with, [df, data])
 
       %Series{dtype: dtype, data: %LazySeries{}} ->
         raise ArgumentError,
@@ -2598,7 +2612,7 @@ defmodule Explorer.DataFrame do
         if is_nil(first_non_boolean) do
           series = Enum.reduce(lazy_series, &Explorer.Backend.LazySeries.binary_and(&2, &1))
 
-          Shared.apply_impl(df, :filter_with, [df, series.data])
+          Shared.apply_dataframe(df, :filter_with, [df, series.data])
         else
           filter_without_boolean_series_error(first_non_boolean)
         end
@@ -2819,12 +2833,17 @@ defmodule Explorer.DataFrame do
 
     mut_names = Enum.map(column_pairs, &elem(&1, 0))
     new_names = Enum.uniq(df.names ++ mut_names)
+    out_df = out_df(df, new_names, Map.merge(df.dtypes, new_dtypes))
 
-    df_out = %{df | names: new_names, dtypes: Map.merge(df.dtypes, new_dtypes)}
+    column_pairs =
+      for {name, %Series{data: data} = series} <- column_pairs do
+        case data do
+          %LazySeries{} -> {name, data}
+          _ -> {name, series}
+        end
+      end
 
-    column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
-
-    Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
+    Shared.apply_dataframe(df, :mutate_with, [out_df, column_pairs])
   end
 
   defp query_to_series!(%Series{} = series), do: series
@@ -2847,29 +2866,29 @@ defmodule Explorer.DataFrame do
         series.data
 
       nil ->
-        LazySeries.new(:lazy, [nil], :null)
+        LazySeries.unbacked(:lazy, [nil], :null)
 
       number when is_number(number) ->
         dtype = if is_integer(number), do: {:s, 64}, else: {:f, 64}
-        LazySeries.new(:lazy, [number], dtype)
+        LazySeries.unbacked(:lazy, [number], dtype)
 
       string when is_binary(string) ->
-        LazySeries.new(:lazy, [string], :string)
+        LazySeries.unbacked(:lazy, [string], :string)
 
       boolean when is_boolean(boolean) ->
-        LazySeries.new(:lazy, [boolean], :boolean)
+        LazySeries.unbacked(:lazy, [boolean], :boolean)
 
       date = %Date{} ->
-        LazySeries.new(:lazy, [date], :date)
+        LazySeries.unbacked(:lazy, [date], :date)
 
       naive_datetime = %NaiveDateTime{} ->
-        LazySeries.new(:lazy, [naive_datetime], {:naive_datetime, :microsecond})
+        LazySeries.unbacked(:lazy, [naive_datetime], {:naive_datetime, :microsecond})
 
       datetime = %DateTime{time_zone: time_zone} ->
-        LazySeries.new(:lazy, [datetime], {:datetime, :microsecond, time_zone})
+        LazySeries.unbacked(:lazy, [datetime], {:datetime, :microsecond, time_zone})
 
       duration = %Explorer.Duration{precision: precision} ->
-        LazySeries.new(:lazy, [duration], {:duration, precision})
+        LazySeries.unbacked(:lazy, [duration], {:duration, precision})
 
       map = %{} when not is_struct(map) ->
         {series_list, dtype_list} =
@@ -2881,7 +2900,7 @@ defmodule Explorer.DataFrame do
 
         map = Enum.into(series_list, %{})
         dtype_list = Enum.sort(dtype_list)
-        LazySeries.new(:lazy, [map], {:struct, dtype_list})
+        LazySeries.unbacked(:lazy, [map], {:struct, dtype_list})
 
       other ->
         raise ArgumentError,
@@ -3030,8 +3049,8 @@ defmodule Explorer.DataFrame do
     name = to_column_name(column_name)
     new_names = append_unless_present(df.names, name)
 
-    out_df = %{df | names: new_names, dtypes: Map.put(df.dtypes, name, series.dtype)}
-    Shared.apply_impl(df, :put, [out_df, name, series])
+    out_df = out_df(df, new_names, Map.put(df.dtypes, name, series.dtype))
+    Shared.apply_dataframe(df, :put, [out_df, name, series])
   end
 
   def put(%DataFrame{} = df, column_name, tensor, opts)
@@ -3311,7 +3330,7 @@ defmodule Explorer.DataFrame do
           raise "not a valid lazy series or sort_by instruction: #{inspect(other)}"
       end)
 
-    Shared.apply_impl(df, :sort_with, [df, dir_and_lazy_series_pairs] ++ opts)
+    Shared.apply_dataframe(df, :sort_with, [df, dir_and_lazy_series_pairs] ++ opts)
   end
 
   @deprecated "Use sort_with/3 instead"
@@ -3398,10 +3417,10 @@ defmodule Explorer.DataFrame do
         else
           groups = df.groups
           keep = if groups == [], do: columns, else: Enum.uniq(groups ++ columns)
-          %{df | names: keep, dtypes: Map.take(df.dtypes, keep)}
+          out_df(df, keep, Map.take(df.dtypes, keep))
         end
 
-      Shared.apply_impl(df, :distinct, [out_df, columns])
+      Shared.apply_dataframe(df, :distinct, [out_df, columns])
     else
       df
     end
@@ -3458,7 +3477,7 @@ defmodule Explorer.DataFrame do
 
   def drop_nil(df, columns) do
     columns = to_existing_columns(df, columns)
-    Shared.apply_impl(df, :drop_nil, [columns])
+    Shared.apply_dataframe(df, :drop_nil, [columns])
   end
 
   @doc """
@@ -3648,8 +3667,8 @@ defmodule Explorer.DataFrame do
             Map.get(pairs_map, group, group)
           end
 
-        out_df = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: new_groups}
-        Shared.apply_impl(df, :rename, [out_df, pairs])
+        out_df = out_df(%{df | groups: new_groups}, new_names, Map.new(new_dtypes))
+        Shared.apply_dataframe(df, :rename, [out_df, pairs])
     end
   end
 
@@ -3808,8 +3827,8 @@ defmodule Explorer.DataFrame do
 
     out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:u, 8}}
 
-    out_df = %{df | groups: [], names: out_columns, dtypes: out_dtypes}
-    Shared.apply_impl(df, :dummies, [out_df, columns])
+    out_df = out_df(%{df | groups: []}, out_columns, out_dtypes)
+    Shared.apply_dataframe(df, :dummies, [out_df, columns])
   end
 
   @doc """
@@ -3842,7 +3861,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp pull_existing(df, column) do
-    series = Shared.apply_impl(df, :pull, [column])
+    series = Shared.apply_dataframe(df, :pull, [column])
     %{series | name: column}
   end
 
@@ -3938,7 +3957,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :rows
   def slice(df, offset, length) when is_integer(offset) and is_integer(length) and length >= 0,
-    do: Shared.apply_impl(df, :slice, [offset, length])
+    do: Shared.apply_dataframe(df, :slice, [offset, length])
 
   @doc """
   Slices rows at the given indices as a new dataframe.
@@ -4044,12 +4063,12 @@ defmodule Explorer.DataFrame do
           )
     end)
 
-    Shared.apply_impl(df, :slice, [row_indices])
+    Shared.apply_dataframe(df, :slice, [row_indices])
   end
 
   def slice(%DataFrame{} = df, %Series{dtype: int_dtype} = indices)
       when int_dtype in @integer_types do
-    Shared.apply_impl(df, :slice, [indices])
+    Shared.apply_dataframe(df, :slice, [indices])
   end
 
   def slice(%DataFrame{groups: []} = df, first..last//1) do
@@ -4058,9 +4077,9 @@ defmodule Explorer.DataFrame do
     size = last - first + 1
 
     if first >= 0 and size >= 0 do
-      Shared.apply_impl(df, :slice, [first, size])
+      Shared.apply_dataframe(df, :slice, [first, size])
     else
-      Shared.apply_impl(df, :slice, [[]])
+      Shared.apply_dataframe(df, :slice, [[]])
     end
   end
 
@@ -4069,10 +4088,10 @@ defmodule Explorer.DataFrame do
   end
 
   def slice(%DataFrame{groups: [_ | _]} = df, row_indices) when is_list(row_indices),
-    do: Shared.apply_impl(df, :slice, [row_indices])
+    do: Shared.apply_dataframe(df, :slice, [row_indices])
 
   def slice(%DataFrame{groups: [_ | _]} = df, %Range{} = range),
-    do: Shared.apply_impl(df, :slice, [range])
+    do: Shared.apply_dataframe(df, :slice, [range])
 
   @doc """
   Sample rows from a dataframe.
@@ -4190,7 +4209,7 @@ defmodule Explorer.DataFrame do
       end
     end
 
-    Shared.apply_impl(df, :sample, [n_or_frac, opts[:replace], opts[:shuffle], opts[:seed]])
+    Shared.apply_dataframe(df, :sample, [n_or_frac, opts[:replace], opts[:shuffle], opts[:seed]])
   end
 
   @doc """
@@ -4301,15 +4320,11 @@ defmodule Explorer.DataFrame do
       end
 
     names = if header, do: [header | names], else: names
-
-    out_df = %{
-      df
-      | names: names,
-        dtypes: Enum.map(names, fn n -> {n, :string} end) |> Enum.into(%{})
-    }
+    dtypes = Map.new(names, fn n -> {n, :string} end)
+    out_df = out_df(df, names, dtypes)
 
     args = [out_df, header, columns]
-    Shared.apply_impl(df, :transpose, args)
+    Shared.apply_dataframe(df, :transpose, args)
   end
 
   @doc """
@@ -4485,15 +4500,15 @@ defmodule Explorer.DataFrame do
       |> Map.put(names_to, :string)
       |> Map.put(values_to, values_dtype)
 
-    out_df = %{
-      df
-      | names: columns_to_keep ++ [names_to, values_to],
-        dtypes: new_dtypes,
-        groups: df.groups -- columns_to_pivot
-    }
+    out_df =
+      out_df(
+        %{df | groups: df.groups -- columns_to_pivot},
+        columns_to_keep ++ [names_to, values_to],
+        new_dtypes
+      )
 
     args = [out_df, columns_to_pivot, columns_to_keep, names_to, values_to]
-    Shared.apply_impl(df, :pivot_longer, args)
+    Shared.apply_dataframe(df, :pivot_longer, args)
   end
 
   @doc """
@@ -4736,7 +4751,7 @@ defmodule Explorer.DataFrame do
     end
 
     out_df =
-      Shared.apply_impl(df, :pivot_wider, [
+      Shared.apply_dataframe(df, :pivot_wider, [
         id_columns,
         names_from,
         values_from,
@@ -4980,7 +4995,7 @@ defmodule Explorer.DataFrame do
 
     out_df = out_df_for_join(how, left, right, on)
 
-    Shared.apply_impl(left, :join, [right, out_df, on, how])
+    Shared.apply_dataframe([left, right], :join, [out_df, on, how])
   end
 
   defp find_overlapping_columns(left_columns, right_columns) do
@@ -4991,22 +5006,19 @@ defmodule Explorer.DataFrame do
 
   defp out_df_for_join(:right, left, right, on) do
     {left_on, _right_on} = Enum.unzip(on)
-
     pairs = dtypes_pairs_for_common_join(right, left, left_on, "_left")
 
     {new_names, _} = Enum.unzip(pairs)
-    %{right | names: new_names, dtypes: Map.new(pairs)}
+    out_df(right, new_names, Map.new(pairs))
   end
 
   defp out_df_for_join(how, left, right, on) do
     {_left_on, right_on} = Enum.unzip(on)
-
     right_on = if how in [:cross, :outer], do: [], else: right_on
-
     pairs = dtypes_pairs_for_common_join(left, right, right_on)
 
     {new_names, _} = Enum.unzip(pairs)
-    %{left | names: new_names, dtypes: Map.new(pairs)}
+    out_df(left, new_names, Map.new(pairs))
   end
 
   defp dtypes_pairs_for_common_join(left, right, right_on, suffix \\ "_right") do
@@ -5081,9 +5093,9 @@ defmodule Explorer.DataFrame do
         {names ++ new_names, Map.merge(dtypes, Map.new(new_names_and_dtypes))}
       end)
 
-    out_df = %{head | names: names, dtypes: dtypes}
+    out_df = out_df(head, names, dtypes)
 
-    Shared.apply_impl(dfs, :concat_columns, [out_df])
+    Shared.apply_dataframe(dfs, :concat_columns, [out_df])
   end
 
   @doc """
@@ -5141,7 +5153,7 @@ defmodule Explorer.DataFrame do
   @spec concat_rows([DataFrame.t()]) :: DataFrame.t()
   def concat_rows([%DataFrame{} = head | _tail] = dfs) do
     changed_types = compute_changed_types_concat_rows(dfs)
-    out_df = %{head | dtypes: Map.merge(head.dtypes, changed_types)}
+    out_df = out_df(head, head.names, Map.merge(head.dtypes, changed_types))
 
     dfs =
       if changed_types == %{} do
@@ -5155,7 +5167,7 @@ defmodule Explorer.DataFrame do
         end
       end
 
-    Shared.apply_impl(dfs, :concat_rows, [out_df])
+    Shared.apply_dataframe(dfs, :concat_rows, [out_df])
   end
 
   defp compute_changed_types_concat_rows([head | tail]) do
@@ -5462,7 +5474,7 @@ defmodule Explorer.DataFrame do
     result =
       Enum.map(result, fn
         {key, nil} ->
-          lazy_s = LazySeries.new(:lazy, [nil], :null)
+          lazy_s = LazySeries.unbacked(:lazy, [nil], :null)
           {key, Explorer.Backend.Series.new(lazy_s, :null)}
 
         pair ->
@@ -5492,11 +5504,11 @@ defmodule Explorer.DataFrame do
 
     new_dtypes = names_with_dtypes_for_column_pairs(df, column_pairs)
     new_names = for {name, _} <- new_dtypes, do: name
-    df_out = %{df | names: new_names, dtypes: Map.new(new_dtypes), groups: []}
+    out_df = out_df(%{df | groups: []}, new_names, Map.new(new_dtypes))
 
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
-    Shared.apply_impl(df, :summarise_with, [df_out, column_pairs])
+    Shared.apply_dataframe(df, :summarise_with, [out_df, column_pairs])
   end
 
   defp names_with_dtypes_for_column_pairs(df, column_pairs) do
@@ -5582,9 +5594,8 @@ defmodule Explorer.DataFrame do
         Map.update!(dtypes, column, fn {:list, inner_dtype} -> inner_dtype end)
       end)
 
-    out_df = %{df | dtypes: out_dtypes}
-
-    Shared.apply_impl(df, :explode, [out_df, columns])
+    out_df = out_df(df, df.names, out_dtypes)
+    Shared.apply_dataframe(df, :explode, [out_df, columns])
   end
 
   @doc """
@@ -5650,9 +5661,8 @@ defmodule Explorer.DataFrame do
         end
       end)
 
-    out_df = %{df | dtypes: out_dtypes, names: out_names}
-
-    Shared.apply_impl(df, :unnest, [out_df, columns])
+    out_df = out_df(df, out_names, out_dtypes)
+    Shared.apply_dataframe(df, :unnest, [out_df, columns])
   end
 
   @doc """
@@ -5829,7 +5839,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :single
   @spec nil_count(df :: DataFrame.t()) :: DataFrame.t()
-  def nil_count(df), do: Shared.apply_impl(df, :nil_count)
+  def nil_count(df), do: Shared.apply_dataframe(df, :nil_count)
 
   @doc """
   Creates a new dataframe with unique rows and the frequencies of each.
@@ -5902,8 +5912,8 @@ defmodule Explorer.DataFrame do
         method: :pearson
       )
 
-    out_df = pairwised_df(df, opts)
-    Shared.apply_impl(df, :correlation, [out_df, opts[:ddof], opts[:method]])
+    out_df = pairwise_df(df, opts)
+    Shared.apply_dataframe(df, :correlation, [out_df, opts[:ddof], opts[:method]])
   end
 
   @doc """
@@ -5942,8 +5952,8 @@ defmodule Explorer.DataFrame do
   @spec covariance(df :: DataFrame.t(), opts :: Keyword.t()) :: df :: DataFrame.t()
   def covariance(df, opts \\ []) do
     opts = Keyword.validate!(opts, column_name: "names", columns: names(df), ddof: 1)
-    out_df = pairwised_df(df, opts)
-    Shared.apply_impl(df, :covariance, [out_df, opts[:ddof]])
+    out_df = pairwise_df(df, opts)
+    Shared.apply_dataframe(df, :covariance, [out_df, opts[:ddof]])
   end
 
   # SQL
@@ -5989,7 +5999,7 @@ defmodule Explorer.DataFrame do
   def sql(%__MODULE__{} = df, sql_string, opts \\ [])
       when is_binary(sql_string) and is_list(opts) do
     [table_name: table_name] = Keyword.validate!(opts, table_name: "df")
-    Shared.apply_impl(df, :sql, [sql_string, table_name])
+    Shared.apply_dataframe(df, :sql, [sql_string, table_name])
   end
 
   # Helpers
@@ -6008,7 +6018,11 @@ defmodule Explorer.DataFrame do
     Series.dtype(df[name]) in Explorer.Shared.numeric_types()
   end
 
-  defp pairwised_df(df, opts) do
+  defp out_df(df, names, dtypes) do
+    %{df | names: names, dtypes: dtypes, remote: nil}
+  end
+
+  defp pairwise_df(df, opts) do
     column_name = to_column_name(opts[:column_name])
 
     cols =
@@ -6017,18 +6031,31 @@ defmodule Explorer.DataFrame do
       |> Enum.filter(fn name -> numeric_column?(df, name) end)
 
     out_dtypes = for col <- cols, into: %{column_name => :string}, do: {col, {:f, 64}}
-    %{df | dtypes: out_dtypes, names: [column_name | cols]}
+    out_df(df, [column_name | cols], out_dtypes)
   end
 
   defimpl Inspect do
     import Inspect.Algebra
 
     def inspect(df, opts) do
+      remote_ref =
+        case df.remote do
+          {_local_gc, _remote_pid, remote_ref} -> remote_ref
+          _ -> df.data.__struct__.owner_reference(df)
+        end
+
+      remote =
+        if is_reference(remote_ref) and node(remote_ref) != node() do
+          concat(line(), Atom.to_string(node(remote_ref)))
+        else
+          empty()
+        end
+
       force_unfit(
         concat([
           color("#Explorer.DataFrame<", :map, opts),
           nest(
-            concat([line(), Shared.apply_impl(df, :inspect, [opts])]),
+            concat([remote, line(), Shared.apply_dataframe(df, :inspect, [opts])]),
             2
           ),
           line(),

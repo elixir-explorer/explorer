@@ -1,3 +1,12 @@
+import Explorer.Shared,
+  only: [
+    apply_series: 2,
+    apply_series: 3,
+    apply_series: 4,
+    apply_series_list: 2,
+    apply_series_varargs: 2
+  ]
+
 defmodule Explorer.Series do
   @moduledoc """
   The Series struct and API.
@@ -182,7 +191,7 @@ defmodule Explorer.Series do
 
   @doc false
   @enforce_keys [:data, :dtype]
-  defstruct [:data, :dtype, :name]
+  defstruct [:data, :dtype, :name, :remote]
 
   @behaviour Access
   @compile {:no_warn_undefined, Nx}
@@ -296,6 +305,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
+    * `:node` - The Erlang node to allocate the series on.
     * `:dtype` - Create a series of a given `:dtype`. By default this is `nil`, which means
       that Explorer will infer the type from the values in the list.
       See the module docs for the list of valid dtypes and aliases.
@@ -466,14 +476,13 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
-    opts = Keyword.validate!(opts, [:dtype, :backend])
+    opts = Keyword.validate!(opts, [:dtype, :backend, :node])
     backend = backend_from_options!(opts)
 
     normalised_dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
 
-    type = Shared.dtype_from_list!(list, normalised_dtype)
-
-    backend.from_list(list, type)
+    dtype = Shared.dtype_from_list!(list, normalised_dtype)
+    Shared.apply_init(backend, :from_list, [list, dtype], opts)
   end
 
   defp from_same_value(%{data: %backend{}}, value) do
@@ -492,6 +501,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
+    * `:node` - The Erlang node to allocate the series on.
 
   ## Examples
 
@@ -562,7 +572,7 @@ defmodule Explorer.Series do
         ) ::
           Series.t()
   def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
-    opts = Keyword.validate!(opts, [:backend])
+    opts = Keyword.validate!(opts, [:backend, :node])
     dtype = Shared.normalise_dtype!(dtype)
 
     {_type, alignment} = dtype |> Shared.dtype_to_iotype!()
@@ -573,7 +583,7 @@ defmodule Explorer.Series do
     end
 
     backend = backend_from_options!(opts)
-    backend.from_binary(binary, dtype)
+    Shared.apply_init(backend, :from_binary, [binary, dtype], opts)
   end
 
   @doc """
@@ -586,6 +596,7 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
+    * `:node` - The Erlang node to allocate the series on.
     * `:dtype` - The dtype of the series that must match the underlying tensor type.
 
       The series can have a different dtype if the tensor is compatible with it.
@@ -661,7 +672,7 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
   def from_tensor(tensor, opts \\ []) when is_struct(tensor, Nx.Tensor) do
-    opts = Keyword.validate!(opts, [:dtype, :backend])
+    opts = Keyword.validate!(opts, [:dtype, :backend, :node])
     type = Nx.type(tensor)
     {dtype, opts} = Keyword.pop_lazy(opts, :dtype, fn -> Shared.iotype_to_dtype!(type) end)
 
@@ -674,7 +685,7 @@ defmodule Explorer.Series do
     end
 
     backend = backend_from_options!(opts)
-    tensor |> Nx.to_binary() |> backend.from_binary(dtype)
+    Shared.apply_init(backend, :from_binary, [Nx.to_binary(tensor), dtype], opts)
   end
 
   @doc """
@@ -744,6 +755,34 @@ defmodule Explorer.Series do
   end
 
   @doc """
+  Collects a series to the current node.
+
+  If the series is already in the current node, it works as a no-op.
+
+  ## Examples
+
+      series = Explorer.Series.from_list([1, 2, 3], node: :some@node)
+      Explorer.Series.collect(series)
+
+  """
+  @doc type: :conversion
+  @spec collect(series :: Series.t()) :: Series.t()
+  def collect(%Series{data: %impl{}} = series) do
+    case impl.owner_reference(series) do
+      ref when K.and(is_reference(ref), node(ref) != node()) ->
+        with {:ok, exported} <- :erpc.call(node(ref), impl, :owner_export, [series]),
+             {:ok, imported} <- impl.owner_import(exported) do
+          imported
+        else
+          {:error, exception} -> raise exception
+        end
+
+      _ ->
+        series
+    end
+  end
+
+  @doc """
   Converts a series to a list.
 
   > #### Warning {: .warning}
@@ -761,7 +800,7 @@ defmodule Explorer.Series do
   """
   @doc type: :conversion
   @spec to_list(series :: Series.t()) :: list()
-  def to_list(series), do: apply_series(series, :to_list)
+  def to_list(series), do: apply_series(series, :to_list, [], false)
 
   @doc """
   Converts a series to an enumerable.
@@ -854,7 +893,7 @@ defmodule Explorer.Series do
   @spec to_iovec(series :: Series.t()) :: [binary]
   def to_iovec(%Series{dtype: dtype} = series) do
     if is_io_dtype(dtype) do
-      apply_series(series, :to_iovec)
+      apply_series(series, :to_iovec, [], false)
     else
       raise ArgumentError, "cannot convert series of dtype #{inspect(dtype)} into iovec"
     end
@@ -2601,7 +2640,7 @@ defmodule Explorer.Series do
     do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
 
   def mode(%Series{} = series),
-    do: Shared.apply_impl(series, :mode)
+    do: apply_series(series, :mode)
 
   @doc """
   Gets the median value of the series.
@@ -3263,7 +3302,6 @@ defmodule Explorer.Series do
     |> enforce_highest_precision()
   end
 
-  # TODO: maybe we can move this casting to Rust.
   defp enforce_highest_precision([
          %Series{dtype: dtype_left} = left,
          %Series{dtype: dtype_right} = right
@@ -6584,39 +6622,6 @@ defmodule Explorer.Series do
 
   # Helpers
 
-  defp apply_series(series, fun, args \\ []) do
-    apply(apply_series_impl!([series], fun), fun, [series | args])
-  end
-
-  defp apply_series_list(fun, series_or_scalars) when is_list(series_or_scalars) do
-    apply(apply_series_impl!(series_or_scalars, fun), fun, series_or_scalars)
-  end
-
-  defp apply_series_varargs(fun, series_or_scalars) when is_list(series_or_scalars) do
-    apply(apply_series_impl!(series_or_scalars, fun), fun, [series_or_scalars])
-  end
-
-  # This function must only be invoked from apply_series*
-  defp apply_series_impl!([_ | _] = series_or_scalars, fun) do
-    Enum.reduce(series_or_scalars, nil, fn
-      %{data: %struct{}}, nil -> struct
-      %{data: %struct{}}, impl -> pick_series_impl(impl, struct)
-      _scalar, impl -> impl
-    end) ||
-      raise ArgumentError,
-            "expected a series as argument for #{fun}, got: #{inspect(series_or_scalars)}" <>
-              maybe_hint(series_or_scalars)
-  end
-
-  defp pick_series_impl(struct, struct), do: struct
-  defp pick_series_impl(Explorer.Backend.LazySeries, _), do: Explorer.Backend.LazySeries
-  defp pick_series_impl(_, Explorer.Backend.LazySeries), do: Explorer.Backend.LazySeries
-
-  defp pick_series_impl(struct1, struct2) do
-    raise "cannot invoke Explorer function because it relies on two incompatible series: " <>
-            "#{inspect(struct1)} and #{inspect(struct2)}"
-  end
-
   defp backend_from_options!(opts) do
     backend = Explorer.Shared.backend_from_options!(opts) || Explorer.Backend.get()
 
@@ -6660,7 +6665,7 @@ defmodule Explorer.Series do
           ArgumentError,
           "expecting series for one of the sides, but got: " <>
             "#{dtype_or_inspect(left)} (lhs) and #{dtype_or_inspect(right)} (rhs)" <>
-            maybe_hint([left, right])
+            Shared.maybe_bad_column_hint([left, right])
         )
     end
   end
@@ -6669,24 +6674,12 @@ defmodule Explorer.Series do
     raise(
       ArgumentError,
       "cannot invoke Explorer.Series.#{function} with mismatched dtypes: #{dtype_or_inspect(left)} and " <>
-        "#{dtype_or_inspect(right)}" <> maybe_hint([left, right])
+        "#{dtype_or_inspect(right)}" <> Shared.maybe_bad_column_hint([left, right])
     )
   end
 
   defp dtype_or_inspect(%Series{dtype: dtype}), do: inspect(dtype)
   defp dtype_or_inspect(value), do: inspect(value)
-
-  defp maybe_hint(values) do
-    atom = Enum.find(values, &is_atom(&1))
-
-    if Kernel.and(atom != nil, String.starts_with?(Atom.to_string(atom), "Elixir.")) do
-      "\n\nHINT: we have noticed that one of the values is the atom #{inspect(atom)}. " <>
-        "If you are inside Explorer.Query and you want to access a column starting in uppercase, " <>
-        "you must write instead: col(\"#{inspect(atom)}\")"
-    else
-      ""
-    end
-  end
 
   defp check_dtypes_for_coalesce!(%Series{} = s1, %Series{} = s2) do
     # TODO: consider the unsigned types here.
@@ -6701,12 +6694,25 @@ defmodule Explorer.Series do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(series, opts) do
+    def inspect(%Explorer.Series{data: %struct{}} = series, opts) do
+      remote_ref =
+        case series.remote do
+          {_local_gc, _remote_pid, remote_ref} -> remote_ref
+          _ -> struct.owner_reference(series)
+        end
+
+      remote =
+        if Kernel.and(is_reference(remote_ref), node(remote_ref) != node()) do
+          concat(line(), Atom.to_string(node(remote_ref)))
+        else
+          empty()
+        end
+
       force_unfit(
         concat([
           color("#Explorer.Series<", :map, opts),
           nest(
-            concat([line(), Shared.apply_impl(series, :inspect, [opts])]),
+            concat([remote, line(), apply_series(series, :inspect, [opts])]),
             2
           ),
           line(),
@@ -6719,18 +6725,18 @@ end
 
 defmodule Explorer.Series.Iterator do
   @moduledoc false
-  defstruct [:series, :size, :impl]
+  defstruct [:series, :size]
 
-  def new(%{data: %impl{}} = series) do
-    %__MODULE__{series: series, size: impl.size(series), impl: impl}
+  def new(series) do
+    %__MODULE__{series: series, size: Explorer.Series.size(series)}
   end
 
   defimpl Enumerable do
-    def count(iterator), do: {:ok, iterator.size}
+    def count(%{size: size}), do: {:ok, size}
 
     def member?(_iterator, _value), do: {:error, __MODULE__}
 
-    def slice(%{size: size, series: series, impl: impl}) do
+    def slice(%{size: size, series: series}) do
       {:ok, size,
        fn start, size, step ->
          if step != 1 do
@@ -6738,26 +6744,26 @@ defmodule Explorer.Series.Iterator do
          end
 
          series
-         |> impl.slice(start, size)
-         |> impl.to_list()
+         |> Explorer.Series.slice(start, size)
+         |> Explorer.Series.to_list()
        end}
     end
 
-    def reduce(%{series: series, size: size, impl: impl}, acc, fun) do
-      reduce(series, impl, size, 0, acc, fun)
+    def reduce(%{series: series, size: size}, acc, fun) do
+      reduce(series, size, 0, acc, fun)
     end
 
-    defp reduce(_series, _impl, _size, _offset, {:halt, acc}, _fun), do: {:halted, acc}
+    defp reduce(_series, _size, _offset, {:halt, acc}, _fun), do: {:halted, acc}
 
-    defp reduce(series, impl, size, offset, {:suspend, acc}, fun) do
-      {:suspended, acc, &reduce(series, impl, size, offset, &1, fun)}
+    defp reduce(series, size, offset, {:suspend, acc}, fun) do
+      {:suspended, acc, &reduce(series, size, offset, &1, fun)}
     end
 
-    defp reduce(_series, _impl, size, size, {:cont, acc}, _fun), do: {:done, acc}
+    defp reduce(_series, size, size, {:cont, acc}, _fun), do: {:done, acc}
 
-    defp reduce(series, impl, size, offset, {:cont, acc}, fun) do
-      value = impl.at(series, offset)
-      reduce(series, impl, size, offset + 1, fun.(value, acc), fun)
+    defp reduce(series, size, offset, {:cont, acc}, fun) do
+      value = Explorer.Series.at(series, offset)
+      reduce(series, size, offset + 1, fun.(value, acc), fun)
     end
   end
 end

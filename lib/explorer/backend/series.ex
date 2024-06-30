@@ -21,6 +21,7 @@ defmodule Explorer.Backend.Series do
 
   @type non_finite :: Explorer.Series.non_finite()
   @type option(type) :: type | nil
+  @type io_result(t) :: {:ok, t} | {:error, Exception.t()}
 
   # Conversion
 
@@ -33,9 +34,14 @@ defmodule Explorer.Backend.Series do
   @callback strptime(s, String.t()) :: s
   @callback strftime(s, String.t()) :: s
 
+  # Ownership
+
+  @callback owner_reference(s) :: reference() | nil
+  @callback owner_import(term()) :: io_result(s)
+  @callback owner_export(s) :: io_result(term())
+
   # Introspection
 
-  @callback dtype(s) :: dtype()
   @callback size(s) :: non_neg_integer() | lazy_s()
   @callback inspect(s, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
   @callback categories(s) :: s
@@ -338,7 +344,6 @@ defmodule Explorer.Backend.Series do
   def inspect(series, backend, n_rows, inspect_opts, opts \\ [])
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows) or is_binary(n_rows)) and
              is_list(opts) do
-    elide_columns? = Keyword.get(opts, :elide_columns, false)
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
 
@@ -348,8 +353,7 @@ defmodule Explorer.Backend.Series do
       |> Explorer.Shared.dtype_to_string()
 
     dtype = A.color("#{type} ", :atom, inspect_opts)
-
-    data = build_series_data(series, inspect_opts, elide_columns?)
+    data = build_series_data(series, inspect_opts)
 
     A.concat([
       A.color(backend, :atom, inspect_opts),
@@ -362,11 +366,7 @@ defmodule Explorer.Backend.Series do
     ])
   end
 
-  defp build_series_data(_series, _inspect_opts, true) do
-    "???"
-  end
-
-  defp build_series_data(series, inspect_opts, _elide_columns?) do
+  defp build_series_data(series, inspect_opts) do
     series =
       case inspect_opts.limit do
         :infinity -> series
