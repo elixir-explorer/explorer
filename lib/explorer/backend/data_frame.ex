@@ -152,7 +152,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback lazy() :: module()
   @callback lazy(df) :: df
-  @callback collect(df) :: df
+  @callback compute(df) :: df
   @callback from_tabular(Table.Reader.t(), dtypes) :: df
   @callback from_series([{binary(), Series.t()}]) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]

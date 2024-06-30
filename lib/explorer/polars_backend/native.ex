@@ -206,7 +206,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_struct(_map), do: err()
 
   # LazyFrame
-  def lf_collect(_df), do: err()
+  def lf_compute(_df), do: err()
   def lf_describe_plan(_df, _optimized), do: err()
   def lf_drop(_df, _columns), do: err()
   def lf_dtypes(_df), do: err()

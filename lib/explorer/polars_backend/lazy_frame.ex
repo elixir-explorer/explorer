@@ -29,7 +29,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def lazy(ldf), do: ldf
 
   @impl true
-  def collect(ldf), do: Shared.apply_dataframe(ldf, ldf, :lf_collect, [])
+  def compute(ldf), do: Shared.apply_dataframe(ldf, ldf, :lf_compute, [])
 
   @impl true
   def from_tabular(tabular, dtypes),
@@ -42,6 +42,21 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def owner_reference(df), do: df.data.resource
+
+  @impl true
+  def owner_export(df) do
+    raise """
+    it is not possible to transfer a lazy data frame between nodes. \
+    You must collect the operands to the same node between continuing, got:
+
+    #{inspect(df)}
+    """
+  end
+
+  @impl true
+  def owner_import(_exported) do
+    raise "not implemented"
+  end
 
   @impl true
   def inspect(ldf, opts) when node(ldf.data.resource) != node() do
@@ -330,7 +345,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def to_csv(%DF{} = ldf, %S3.Entry{} = entry, header?, delimiter, _streaming) do
-    eager_df = collect(ldf)
+    eager_df = compute(ldf)
 
     Eager.to_csv(eager_df, entry, header?, delimiter, false)
   end
@@ -362,7 +377,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, compression, _streaming = false) do
-    eager_df = collect(ldf)
+    eager_df = compute(ldf)
 
     Eager.to_parquet(eager_df, entry, compression, false)
   end
@@ -382,7 +397,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def to_ipc(%DF{} = ldf, %S3.Entry{} = entry, compression, _streaming = false) do
-    eager_df = collect(ldf)
+    eager_df = compute(ldf)
 
     Eager.to_ipc(eager_df, entry, compression, false)
   end

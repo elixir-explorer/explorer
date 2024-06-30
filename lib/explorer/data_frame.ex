@@ -1636,15 +1636,47 @@ defmodule Explorer.DataFrame do
   def to_lazy(df), do: Shared.apply_impl(df, :lazy)
 
   @doc """
-  Collects the lazy data frame into an eager one, computing the query.
+  Computes and collects a data frame to the current node.
 
-  It is the opposite of `lazy/1`. If already eager, this is a noop.
+  If the data frame is already in the current node, it is computed
+  but no transfer happens.
+
+  ## Examples
+
+      series = Explorer.Series.from_list([1, 2, 3], node: :some@node)
+      Explorer.Series.collect(series)
+
+  """
+  @doc type: :conversion
+  @spec collect(df :: DataFrame.t()) :: DataFrame.t()
+  def collect(df) do
+    %DataFrame{data: %impl{}} = df = compute(df)
+
+    case impl.owner_reference(df) do
+      ref when is_reference(ref) and node(ref) != node() ->
+        with {:ok, exported} <- :erpc.call(node(ref), impl, :owner_export, [df]),
+             {:ok, imported} <- impl.owner_import(exported) do
+          imported
+        else
+          {:error, exception} -> raise exception
+        end
+
+      _ ->
+        df
+    end
+  end
+
+  @doc """
+  Computes the lazy data frame into an eager one, exucting the query.
+
+  It is the opposite of `lazy/1`. If it is not a lazy data frame,
+  this is a noop.
 
   Collecting a grouped dataframe should return a grouped dataframe.
   """
   @doc type: :conversion
-  @spec collect(df :: DataFrame.t()) :: DataFrame.t()
-  def collect(df), do: Shared.apply_impl(df, :collect)
+  @spec compute(df :: DataFrame.t()) :: DataFrame.t()
+  def compute(df), do: Shared.apply_impl(df, :compute)
 
   @doc """
   Creates a new dataframe.

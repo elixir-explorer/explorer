@@ -297,7 +297,7 @@ rustler::init!(
         expr_json_decode,
         expr_struct,
         // lazyframe
-        lf_collect,
+        lf_compute,
         lf_describe_plan,
         lf_drop,
         lf_dtypes,

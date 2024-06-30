@@ -283,7 +283,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
     # We first read using a lazy dataframe, then we collect.
     with {:ok, ldf} <- Native.lf_from_parquet_cloud(entry, max_rows, columns),
-         {:ok, df} <- Native.lf_collect(ldf) do
+         {:ok, df} <- Native.lf_compute(ldf) do
       {:ok, Shared.create_dataframe(df)}
     end
   end
@@ -511,7 +511,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def collect(df), do: df
+  def compute(df), do: df
 
   @impl true
   def from_tabular(tabular, dtypes) do
@@ -620,7 +620,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.head(rows)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -628,7 +628,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.tail(rows)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -636,7 +636,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.select(out_df)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -648,7 +648,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.filter_with(out_df, lseries)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -656,7 +656,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.mutate_with(out_df, column_pairs)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -718,7 +718,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.distinct(out_df, columns)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -726,7 +726,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.rename(out_df, pairs)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -789,7 +789,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.drop_nil(columns)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -797,7 +797,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.pivot_longer(out_df, cols_to_pivot, cols_to_keep, names_to, values_to)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -824,7 +824,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.explode(out_df, columns)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -832,7 +832,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.unnest(out_df, columns)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -855,7 +855,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     right = lazy(right)
 
     ldf = LazyFrame.join(left, right, out_df, on, how)
-    LazyFrame.collect(ldf)
+    LazyFrame.compute(ldf)
   end
 
   @impl true
@@ -864,7 +864,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     lazy_dfs
     |> LazyFrame.concat_rows(out_df)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -885,7 +885,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.summarise_with(out_df, column_pairs)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   # Inspect
@@ -902,7 +902,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.sql(sql_string, table_name)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true

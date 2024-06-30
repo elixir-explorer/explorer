@@ -4,7 +4,7 @@ defmodule Explorer.RemoteTest do
 
   @moduletag :distributed
   alias Explorer.Series, as: S
-  alias Explorer.DataFrame, as: DF
+  # alias Explorer.DataFrame, as: DF
 
   @node2 :"secondary@127.0.0.1"
   @node3 :"tertiary@127.0.0.1"

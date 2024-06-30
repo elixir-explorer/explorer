@@ -8,7 +8,7 @@ use polars::prelude::*;
 pub mod io;
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn lf_collect(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {
+pub fn lf_compute(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {
     let df = data.clone_inner().collect()?;
 
     Ok(ExDataFrame::new(df))
