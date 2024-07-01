@@ -31,9 +31,10 @@ defmodule Explorer.Remote.Holder do
 
   @impl true
   def handle_call({:hold, ref, pid}, _from, state) do
+    _ = Process.monitor(pid)
     refs = Map.update(state.refs, ref, [pid], &[pid | &1])
     pids = Map.update(state.pids, pid, [ref], &[ref | &1])
-    {:reply, :ok, %{state | refs: refs, pids: pids}}
+    {:reply, :ok, %{state | refs: refs, pids: pids, owner_ref: nil}}
   end
 
   @impl true
@@ -43,6 +44,8 @@ defmodule Explorer.Remote.Holder do
     noreply_or_stop(%{state | pids: pids, refs: refs})
   end
 
+  # We will only match this clause during initialization,
+  # the goal is to not leave orphaned processes.
   def handle_info({:DOWN, owner_ref, _, _, reason}, %{owner_ref: owner_ref} = state) do
     {:stop, reason, state}
   end
