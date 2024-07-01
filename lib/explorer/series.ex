@@ -3417,8 +3417,8 @@ defmodule Explorer.Series do
   def subtract(left, right) do
     [left, right] = cast_for_arithmetic("subtract/2", [left, right])
 
-    if out_dtype = cast_to_subtract(dtype(left), dtype(right)) do
-      apply_series_list(:subtract, [out_dtype, left, right])
+    if _out_dtype = cast_to_subtract(dtype(left), dtype(right)) do
+      apply_series_list(:subtract, [left, right])
     else
       dtype_mismatch_error("subtract/2", left, right)
     end
@@ -3431,6 +3431,8 @@ defmodule Explorer.Series do
   defp cast_to_subtract({:datetime, p, tz}, {:datetime, p, tz}), do: {:duration, p}
   defp cast_to_subtract({:datetime, p, tz}, {:duration, p}), do: {:datetime, p, tz}
   defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
+  defp cast_to_subtract(:unknown, _), do: :unknown
+  defp cast_to_subtract(_, :unknown), do: :unknown
   defp cast_to_subtract(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
@@ -6602,6 +6604,12 @@ defmodule Explorer.Series do
 
   def col(name) do
     lazy_series = %Explorer.Backend.LazySeries{op: :col, args: [name]}
+    %Series{data: lazy_series, dtype: :unknown}
+  end
+
+  def lit(literal) do
+    lazy_series = %Explorer.Backend.LazySeries{op: :lit, args: [literal]}
+    # TODO: determine dtype from literal.
     %Series{data: lazy_series, dtype: :unknown}
   end
 

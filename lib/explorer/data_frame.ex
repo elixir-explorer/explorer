@@ -3080,12 +3080,7 @@ defmodule Explorer.DataFrame do
   defmacro sort_by(df, query, opts \\ []) do
     quote do
       require Explorer.Query
-
-      Explorer.DataFrame.sort_with(
-        unquote(df),
-        Explorer.Query.query(unquote(query)),
-        unquote(opts)
-      )
+      Explorer.DataFrame.sort_with(unquote(df), Explorer.Query.new(unquote(query)), unquote(opts))
     end
   end
 
@@ -3181,19 +3176,14 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec sort_with(
           df :: DataFrame.t(),
-          (Explorer.Backend.LazyFrame.t() ->
-             Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}]),
+          Series.lazy_t() | [{:asc | :desc, Series.lazy_t()}],
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
-  def sort_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
+  def sort_with(%DataFrame{} = df, lazy_series_or_pairs, opts \\ []) do
     [_descending? | opts] = Shared.validate_sort_options!(opts)
 
-    ldf = Explorer.Backend.LazyFrame.new(df)
-
-    result = fun.(ldf)
-
     dir_and_lazy_series_pairs =
-      result
+      lazy_series_or_pairs
       |> List.wrap()
       |> Enum.map(fn
         {dir, %Series{data: %LazySeries{} = lazy_series}} when dir in [:asc, :desc] ->

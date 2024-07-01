@@ -42,4 +42,26 @@ defmodule Explorer.NewApproachTest do
       assert DF.to_columns(df, atom_keys: true) == %{a: [1, 2, 3], b: [4, 5, 6]}
     end
   end
+
+  test "sort" do
+    df0 = DF.new(a: [1, 2, 3])
+
+    # Sort inline
+    df1 = DF.sort_by(df0, 1 - a)
+
+    # Sort by building a lazy series with functions
+    sorter2 = S.lit(1) |> S.subtract(S.col("a"))
+    df2 = DF.sort_with(df0, sorter2)
+    # Again but with a direction
+    sorter3 = [desc: S.col("a")]
+    df3 = DF.sort_with(df0, sorter3)
+
+    # Sort by building a lazy series with a macro
+    sorter4 = Query.new(1 - a)
+    df4 = DF.sort_with(df0, sorter4)
+
+    for df <- [df1, df2, df3, df4] do
+      assert DF.to_columns(df, atom_keys: true) == %{a: [3, 2, 1]}
+    end
+  end
 end
