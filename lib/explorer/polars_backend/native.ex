@@ -72,7 +72,7 @@ defmodule Explorer.PolarsBackend.Native do
       ),
       do: err()
 
-  def df_concat_columns(_df, _others), do: err()
+  def df_concat_columns(_dfs), do: err()
   def df_drop(_df, _name), do: err()
   def df_dtypes(_df), do: err()
   def df_dump_csv(_df, _has_headers, _delimiter), do: err()
