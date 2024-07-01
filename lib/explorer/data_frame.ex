@@ -2694,7 +2694,7 @@ defmodule Explorer.DataFrame do
   defmacro mutate(df, mutations) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.mutate_with(unquote(df), Explorer.Query.query(unquote(mutations)))
+      Explorer.DataFrame.mutate_with(unquote(df), Explorer.Query.new(unquote(mutations)))
     end
   end
 
@@ -2767,16 +2767,13 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :single
-  @spec mutate_with(
-          df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
-        ) :: DataFrame.t()
-  def mutate_with(%DataFrame{} = df, fun) when is_function(fun) do
-    ldf = Explorer.Backend.LazyFrame.new(df)
-
-    result = fun.(ldf)
-
-    column_pairs = to_column_pairs(df, result, &query_to_series!/1)
+  @spec mutate_with(df :: DataFrame.t(), column_pairs(Series)) :: DataFrame.t()
+  def mutate_with(%DataFrame{} = df, column_pairs) do
+    column_pairs =
+      Enum.map(column_pairs, fn {key, value} ->
+        key = if is_atom(key), do: Atom.to_string(key), else: key
+        {key, value}
+      end)
 
     new_dtypes =
       for {column_name, series} <- column_pairs, into: %{} do
@@ -2791,68 +2788,6 @@ defmodule Explorer.DataFrame do
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
     Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
-  end
-
-  defp query_to_series!(%Series{} = series), do: series
-
-  defp query_to_series!(list) when is_list(list) do
-    raise ArgumentError,
-          "expecting a lazy series or scalar value, but instead got a list. " <>
-            "consider using `Explorer.Series.from_list/2` to create a `Series`, " <>
-            "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
-  end
-
-  defp query_to_series!(scalar) do
-    lazy_s = query_to_lazy_series!(scalar)
-    Explorer.Backend.Series.new(lazy_s, lazy_s.dtype)
-  end
-
-  defp query_to_lazy_series!(scalar) do
-    case scalar do
-      %Series{data: %LazySeries{}} = series ->
-        series.data
-
-      nil ->
-        LazySeries.new(:lazy, [nil], :null)
-
-      number when is_number(number) ->
-        dtype = if is_integer(number), do: {:s, 64}, else: {:f, 64}
-        LazySeries.new(:lazy, [number], dtype)
-
-      string when is_binary(string) ->
-        LazySeries.new(:lazy, [string], :string)
-
-      boolean when is_boolean(boolean) ->
-        LazySeries.new(:lazy, [boolean], :boolean)
-
-      date = %Date{} ->
-        LazySeries.new(:lazy, [date], :date)
-
-      naive_datetime = %NaiveDateTime{} ->
-        LazySeries.new(:lazy, [naive_datetime], {:naive_datetime, :microsecond})
-
-      datetime = %DateTime{time_zone: time_zone} ->
-        LazySeries.new(:lazy, [datetime], {:datetime, :microsecond, time_zone})
-
-      duration = %Explorer.Duration{precision: precision} ->
-        LazySeries.new(:lazy, [duration], {:duration, precision})
-
-      map = %{} when not is_struct(map) ->
-        {series_list, dtype_list} =
-          Enum.reduce(map, {[], []}, fn {name, series}, {sl, dl} ->
-            lazy_series = query_to_lazy_series!(series)
-            name = if is_atom(name), do: Atom.to_string(name), else: name
-            {[{name, lazy_series} | sl], [{name, lazy_series.dtype} | dl]}
-          end)
-
-        map = Enum.into(series_list, %{})
-        dtype_list = Enum.sort(dtype_list)
-        LazySeries.new(:lazy, [map], {:struct, dtype_list})
-
-      other ->
-        raise ArgumentError,
-              "expecting a lazy series or scalar value, but instead got #{inspect(other)}"
-    end
   end
 
   @doc """

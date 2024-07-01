@@ -289,6 +289,9 @@ defmodule Explorer.Query do
   ]
   @binary_ops Keyword.keys(@binary_mapping)
 
+  @series_ops_with_arity Explorer.Backend.Series.behaviour_info(:callbacks)
+  @series_ops Keyword.keys(@series_ops_with_arity)
+
   def from_series(%Series{data: %LazySeries{}} = series) do
     series
   end
@@ -306,13 +309,19 @@ defmodule Explorer.Query do
 
   defmacro new(expression) do
     quote do
-      unquote(traverse_ls_root(expression))
+      unquote(traverse_root(expression))
     end
   end
 
-  @series_ops_with_arity Explorer.Backend.Series.behaviour_info(:callbacks)
-  @series_ops Keyword.keys(@series_ops_with_arity)
-  def traverse_ls_root(ast) do
+  defp traverse_root(ast) do
+    if Keyword.keyword?(ast) do
+      Enum.map(ast, fn {key, value} -> {key, traverse(value)} end)
+    else
+      traverse(ast)
+    end
+  end
+
+  def traverse(ast) do
     lazy_series =
       ast
       |> Macro.prewalk(fn

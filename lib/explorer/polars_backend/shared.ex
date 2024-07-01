@@ -63,7 +63,7 @@ defmodule Explorer.PolarsBackend.Shared do
             end
 
           if Enum.sort(out_df.names) != Enum.sort(check_df.names) or
-               out_df.dtypes != check_df.dtypes do
+               not dtypes_match?(check_df.dtypes, out_df.dtypes) do
             raise """
             DataFrame mismatch.
 
@@ -84,6 +84,21 @@ defmodule Explorer.PolarsBackend.Shared do
 
       {:error, error} ->
         raise runtime_error(error)
+    end
+  end
+
+  defp dtypes_match?(check_dtypes, out_dtypes) do
+    if map_size(check_dtypes) != map_size(out_dtypes) do
+      false
+    else
+      # The dtypes for each key must either be the same or `:unknown`.
+      Enum.all?(check_dtypes, fn {key, check_value} ->
+        case Map.fetch(out_dtypes, key) do
+          {:ok, ^check_value} -> true
+          {:ok, :unknown} -> true
+          _ -> false
+        end
+      end)
     end
   end
 

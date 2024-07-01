@@ -3257,11 +3257,15 @@ defmodule Explorer.Series do
     args
     |> case do
       [%Series{}, %Series{}] -> args
-      [left, %Series{} = right] -> [from_list([left]), right]
-      [%Series{} = left, right] -> [left, from_list([right])]
+      [left, %Series{} = right] -> [upcast_scalar(left, right), right]
+      [%Series{} = left, right] -> [left, upcast_scalar(right, left)]
       [left, right] -> no_series_error(function, left, right)
     end
     |> enforce_highest_precision()
+  end
+
+  defp upcast_scalar(scalar, %Series{data: %backend{}, dtype: dtype}) do
+    backend.from_list([scalar], dtype)
   end
 
   # TODO: maybe we can move this casting to Rust.
