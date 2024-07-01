@@ -661,7 +661,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def put(%DataFrame{} = df, %DataFrame{} = out_df, new_column_name, series) do
-    series = PolarsSeries.rename(series, new_column_name)
+    series = PolarsSeries.rename(Explorer.Series.collect(series), new_column_name)
 
     Shared.apply_dataframe(df, out_df, :df_put_column, [series.data])
   end

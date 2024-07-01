@@ -130,6 +130,22 @@ defmodule Explorer.RemoteTest do
              >\
              """
     end
+
+    test "on local dataframe and remote series" do
+      df = DF.load_csv!(@csv1, node: @node2)
+
+      df = DF.put(df, "column", S.from_list([1, 2]))
+      assert df.remote != nil
+
+      df = DF.put(df, "column", S.from_list([1, 2], node: @node3))
+      assert df.remote != nil
+    end
+
+    test "on remote dataframe and local series" do
+      df = DF.load_csv!(@csv1)
+      df = DF.put(df, "column", S.from_list([1, 2], node: @node3))
+      assert df.remote == nil
+    end
   end
 
   describe "lazy series" do
