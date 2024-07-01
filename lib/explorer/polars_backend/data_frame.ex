@@ -837,14 +837,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def correlation(df, out_df, ddof, method) do
-    pairwised(df, out_df, fn left, right ->
+    pairwise(df, out_df, fn left, right ->
       PolarsSeries.correlation(left, right, ddof, method)
     end)
   end
 
   @impl true
   def covariance(df, out_df, ddof) do
-    pairwised(df, out_df, fn left, right -> PolarsSeries.covariance(left, right, ddof) end)
+    pairwise(df, out_df, fn left, right -> PolarsSeries.covariance(left, right, ddof) end)
   end
 
   # Two or more table verbs
@@ -871,11 +871,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def concat_columns([head | tail], out_df) do
     n_rows = n_rows(head)
 
-    if Enum.all?(tail, &(n_rows(&1) == n_rows)) do
-      Shared.apply_dataframe(head, out_df, :df_concat_columns, [Enum.map(tail, & &1.data)])
-    else
-      raise ArgumentError, "all dataframes must have the same number of rows"
-    end
+    tail =
+      Enum.map(tail, fn df ->
+        if n_rows(df) != n_rows do
+          raise ArgumentError, "all dataframes must have the same number of rows"
+        end
+
+        df.data
+      end)
+
+    Shared.apply_dataframe(head, out_df, :df_concat_columns, [tail])
   end
 
   # Groups
@@ -915,10 +920,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   # helpers
 
-  defp pairwised(df, out_df, operation) do
+  defp pairwise(df, out_df, operation) do
     [column_name | cols] = out_df.names
 
-    pairwised_results =
+    pairwise_results =
       Enum.map(cols, fn left ->
         corr_series =
           cols
@@ -931,6 +936,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     names_series = cols |> Shared.from_list(:string) |> Shared.create_series()
 
-    from_series([{column_name, names_series} | pairwised_results])
+    from_series([{column_name, names_series} | pairwise_results])
   end
 end
