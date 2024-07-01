@@ -69,29 +69,36 @@ pub fn df_concat_columns(
     data: ExDataFrame,
     others: Vec<ExDataFrame>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let id_column = "__row_count_id__";
-    let first = data.clone_inner().lazy().with_row_index(id_column, None);
+    let mut dfs: Vec<DataFrame> = vec![data.clone_inner()];
 
-    // We need to be able to handle arbitrary column name overlap.
-    // This builds up a join and suffixes conflicting names with _N where
-    // N is the index of the df in the join array.
-    let (out_df, _) = others
-        .iter()
-        .map(|data| data.clone_inner().lazy().with_row_index(id_column, None))
-        .fold((first, 1), |(acc_df, count), lazy_df| {
-            let suffix = format!("_{count}");
-            let new_df = acc_df
-                .join_builder()
-                .with(lazy_df)
-                .how(JoinType::Inner)
-                .left_on([col(id_column)])
-                .right_on([col(id_column)])
-                .suffix(suffix)
-                .finish();
-            (new_df, count + 1)
-        });
+    for (idx, df) in others.iter().enumerate() {
+        let mut df = df.clone_inner();
+        let previous_names: Vec<&str> = dfs
+            .iter()
+            .flat_map(|p_df| p_df.get_column_names())
+            .collect();
+        let names: Vec<String> = df
+            .get_column_names()
+            .iter()
+            .map(|name| {
+                if previous_names.contains(name) {
+                    let idx = idx + 1;
+                    format!("{name}_{idx}")
+                } else {
+                    name.to_string()
+                }
+            })
+            .collect();
 
-    Ok(ExDataFrame::new(out_df.drop([id_column]).collect()?))
+        // We need to rename duplicated columns with a suffix in order to prevent
+        // an error when concating horizontally.
+        df.set_column_names(&names)?;
+        dfs.push(df)
+    }
+
+    let df_diagonal_concat = polars::functions::concat_df_horizontal(&dfs)?;
+
+    Ok(ExDataFrame::new(df_diagonal_concat))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
