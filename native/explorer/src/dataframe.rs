@@ -2,7 +2,7 @@ use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
 use polars::export::{arrow, arrow::ffi};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::datatypes::ExSeriesDtype;
 use crate::ex_expr_to_exprs;
@@ -69,36 +69,31 @@ pub fn df_concat_columns(
     data: ExDataFrame,
     others: Vec<ExDataFrame>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let mut dfs: Vec<DataFrame> = vec![data.clone_inner()];
+    let mut previous_names = HashSet::new();
+    let mut out_df = data.clone_inner();
 
-    for (idx, df) in others.iter().enumerate() {
-        let mut df = df.clone_inner();
-        let previous_names: Vec<&str> = dfs
-            .iter()
-            .flat_map(|p_df| p_df.get_column_names())
-            .collect();
-        let names: Vec<String> = df
-            .get_column_names()
-            .iter()
-            .map(|name| {
-                if previous_names.contains(name) {
-                    let idx = idx + 1;
-                    format!("{name}_{idx}")
-                } else {
-                    name.to_string()
-                }
-            })
-            .collect();
-
-        // We need to rename duplicated columns with a suffix in order to prevent
-        // an error when concating horizontally.
-        df.set_column_names(&names)?;
-        dfs.push(df)
+    for name in out_df.get_column_names() {
+        previous_names.insert(name.to_string());
     }
 
-    let df_diagonal_concat = polars::functions::concat_df_horizontal(&dfs)?;
+    for (idx, ex_df) in others.iter().enumerate() {
+        let df = ex_df.clone_inner();
+        for col in df.get_columns() {
+            let name = col.name();
+            if previous_names.contains(name) {
+                let idx = idx + 1;
+                let new_name = format!("{name}_{idx}");
+                let new_col = col.clone().rename(&new_name).to_owned();
+                out_df.with_column(new_col)?;
+                previous_names.insert(new_name)
+            } else {
+                out_df.with_column(col.clone().to_owned())?;
+                previous_names.insert(name.to_string())
+            };
+        }
+    }
 
-    Ok(ExDataFrame::new(df_diagonal_concat))
+    Ok(ExDataFrame::new(out_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
