@@ -2323,8 +2323,9 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec sum(series :: Series.t()) :: number() | non_finite() | nil
-  def sum(%Series{dtype: dtype} = series) when is_numeric_or_bool_dtype(dtype),
-    do: apply_series(series, :sum)
+  def sum(%Series{dtype: dtype} = series)
+      when K.or(is_numeric_or_bool_dtype(dtype), dtype == :unknown),
+      do: apply_series(series, :sum)
 
   def sum(%Series{dtype: dtype}),
     do: dtype_error("sum/1", dtype, [:boolean | @numeric_dtypes])

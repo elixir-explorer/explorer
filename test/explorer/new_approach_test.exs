@@ -64,4 +64,25 @@ defmodule Explorer.NewApproachTest do
       assert DF.to_columns(df, atom_keys: true) == %{a: [3, 2, 1]}
     end
   end
+
+  test "summarise" do
+    df0 =
+      DF.new(a: [1, 2, 3], b: [true, true, false])
+      |> DF.group_by(:b)
+
+    # Summarise inline
+    df1 = DF.summarise(df0, sum: sum(a))
+
+    # Summarise by building a lazy series with functions
+    aggregation2 = S.col("a") |> S.sum()
+    df2 = DF.summarise_with(df0, sum: aggregation2)
+
+    # Sort by building a lazy series with a macro
+    aggregation3 = Query.new(sum(a))
+    df3 = DF.summarise_with(df0, sum: aggregation3)
+
+    for df <- [df1, df2, df3] do
+      assert DF.to_columns(df, atom_keys: true) == %{sum: [3, 3], b: [true, false]}
+    end
+  end
 end

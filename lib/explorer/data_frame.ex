@@ -5304,7 +5304,7 @@ defmodule Explorer.DataFrame do
   defmacro summarise(df, query) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.summarise_with(unquote(df), Explorer.Query.query(unquote(query)))
+      Explorer.DataFrame.summarise_with(unquote(df), Explorer.Query.new(unquote(query)))
     end
   end
 
@@ -5341,17 +5341,10 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :single
-  @spec summarise_with(
-          df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
-        ) :: DataFrame.t()
-  def summarise_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
-    ldf = Explorer.Backend.LazyFrame.new(df)
-
-    result = fun.(ldf)
-
+  @spec summarise_with(df :: DataFrame.t(), column_pairs(Series.lazy_t())) :: DataFrame.t()
+  def summarise_with(%DataFrame{} = df, series_pairs) do
     result =
-      Enum.map(result, fn
+      Enum.map(series_pairs, fn
         {key, nil} ->
           lazy_s = LazySeries.new(:lazy, [nil], :null)
           {key, Explorer.Backend.Series.new(lazy_s, :null)}
@@ -5363,18 +5356,21 @@ defmodule Explorer.DataFrame do
     column_pairs =
       to_column_pairs(df, result, fn value ->
         case value do
-          %Series{data: %LazySeries{op: :lazy, args: [nil], dtype: :null}} ->
+          %Series{data: %LazySeries{}} ->
             value
 
-          %Series{data: %LazySeries{aggregation: true}} ->
-            value
+          # %Series{data: %LazySeries{op: :lazy, args: [nil], dtype: :null}} ->
+          #   value
 
-          %Series{data: %LazySeries{op: :column}} ->
-            %{value | dtype: {:list, value.dtype}}
+          # %Series{data: %LazySeries{aggregation: true}} ->
+          #   value
 
-          %Series{data: %LazySeries{}} = series ->
-            raise "expecting summarise with an aggregation operation or plain column, " <>
-                    "but none of which were found in: #{inspect(series)}"
+          # %Series{data: %LazySeries{op: :column}} ->
+          #   %{value | dtype: {:list, value.dtype}}
+
+          # %Series{data: %LazySeries{}} = series ->
+          #   raise "expecting summarise with an aggregation operation or plain column, " <>
+          #           "but none of which were found in: #{inspect(series)}"
 
           other ->
             raise "expecting a lazy series, got: #{inspect(other)}"
