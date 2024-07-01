@@ -209,7 +209,7 @@ pub fn lf_from_csv(
 
     let df = LazyCsvReader::new(filename)
         .with_infer_schema_length(infer_schema_length)
-        .has_header(has_header)
+        .with_has_header(has_header)
         .with_try_parse_dates(parse_dates)
         .with_n_rows(stop_after_n_rows)
         .with_separator(delimiter_as_byte)
@@ -217,9 +217,9 @@ pub fn lf_from_csv(
         .with_skip_rows_after_header(skip_rows_after_header)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
-        .with_dtype_overwrite(Some(schema_from_dtypes_pairs(dtypes)?.as_ref()))
+        .with_dtype_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
         .with_null_values(Some(NullValues::AllColumns(null_vals)))
-        .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'))
+        .with_eol_char(eol_delimiter.unwrap_or(b'\n'))
         .finish()?;
 
     Ok(ExLazyFrame::new(df))

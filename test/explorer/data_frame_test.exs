@@ -1114,7 +1114,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [19, 38, 57],
                calc3: [3, 4, 3],
                calc4: [2.0, :infinity, 7.5],
-               calc5: [1.0, 4.0, 3.0],
+               calc5: [1, 4, 3],
                calc6: [2, nil, 7],
                calc7: [0, nil, 4]
              }
@@ -1128,7 +1128,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:f, 64},
+               "calc5" => {:s, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
