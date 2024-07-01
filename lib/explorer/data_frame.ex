@@ -5076,18 +5076,16 @@ defmodule Explorer.DataFrame do
   @doc type: :multi
   @spec concat_columns([DataFrame.t()]) :: DataFrame.t()
   def concat_columns([%DataFrame{} = head | tail] = dfs) do
-    {names, dtypes, _} =
-      for df <- tail, name <- df.names, reduce: {[], head.dtypes, 1} do
-        {names, dtypes, idx} ->
-          {new_name, idx} =
-            if Map.has_key?(dtypes, name) do
-              {name <> "_#{idx}", idx + 1}
-            else
-              {name, idx}
-            end
+    {{names, dtypes}, _} =
+      Enum.reduce(tail, {{[], head.dtypes}, 1}, fn df, {acc, idx} ->
+        acc =
+          Enum.reduce(df.names, acc, fn name, {names, dtypes} ->
+            new_name = if Map.has_key?(dtypes, name), do: name <> "_#{idx}", else: name
+            {[new_name | names], Map.put(dtypes, new_name, df.dtypes[name])}
+          end)
 
-          {[new_name | names], Map.put(dtypes, new_name, df.dtypes[name]), idx}
-      end
+        {acc, idx + 1}
+      end)
 
     out_df = out_df(head, head.names ++ Enum.reverse(names), dtypes)
     Shared.apply_dataframe(dfs, :concat_columns, [out_df])
