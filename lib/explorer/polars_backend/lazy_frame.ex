@@ -600,8 +600,9 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def concat_columns([%DF{} = head | tail], %DF{} = out_df) do
-    Shared.apply_dataframe(head, out_df, :lf_concat_columns, [Enum.map(tail, & &1.data)])
+  def concat_columns([%DF{data: head_data} | tail], %DF{} = out_df) do
+    out_ldf_data = Shared.apply(:lf_concat_columns, [[head_data | Enum.map(tail, & &1.data)]])
+    %{out_df | data: out_ldf_data}
   end
 
   @impl true

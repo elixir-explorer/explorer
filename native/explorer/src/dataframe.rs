@@ -2,7 +2,7 @@ use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
 use polars::export::{arrow, arrow::ffi};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::datatypes::ExSeriesDtype;
 use crate::ex_expr_to_exprs;
@@ -66,7 +66,7 @@ pub fn df_width(df: ExDataFrame) -> Result<usize, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_concat_columns(dfs: Vec<ExDataFrame>) -> Result<ExDataFrame, ExplorerError> {
-    let mut previous_names = HashSet::new();
+    let mut previous_names = PlHashSet::new();
 
     let cols = dfs
         .iter()
