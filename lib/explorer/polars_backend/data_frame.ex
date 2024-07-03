@@ -880,7 +880,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         df.data
       end)
 
-    Shared.apply_dataframe(head, out_df, :df_concat_columns, [tail])
+    out_data = Shared.apply(:df_concat_columns, [[head.data | tail]])
+    %{out_df | data: out_data}
   end
 
   # Groups

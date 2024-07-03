@@ -1524,7 +1524,7 @@ defmodule Explorer.DataFrame.LazyTest do
              }
     end
 
-    test "with a bigger df in the right side removes the last row" do
+    test "with a bigger df in the right side add nils for smaller columns" do
       ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)
       ldf2 = DF.new([z: [4, 5, 6, 7], a: ["d", "e", "f", "g"]], lazy: true)
 
@@ -1535,10 +1535,10 @@ defmodule Explorer.DataFrame.LazyTest do
       df = DF.compute(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
-               x: [1, 2, 3],
-               y: ["a", "b", "c"],
-               z: [4, 5, 6],
-               a: ["d", "e", "f"]
+               x: [1, 2, 3, nil],
+               y: ["a", "b", "c", nil],
+               z: [4, 5, 6, 7],
+               a: ["d", "e", "f", "g"]
              }
     end
   end
