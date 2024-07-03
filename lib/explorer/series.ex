@@ -6495,6 +6495,10 @@ defmodule Explorer.Series do
   converting to an `Elixir.List`, applying `Enum.map/2`, and then converting back to an
   `Explorer.Series`.
 
+  See also the version of this function for a dataframe:
+
+    * `Explorer.DataFrame.transform/3`
+
   ## Examples
 
       iex> s = Explorer.Series.from_list(["this ", " is", "great   "])

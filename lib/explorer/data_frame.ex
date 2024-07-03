@@ -4251,6 +4251,99 @@ defmodule Explorer.DataFrame do
     sample(df, 1.0, seed: opts[:seed], shuffle: true)
   end
 
+  @doc ~S"""
+  Make new columns by applying a native Elixir function to each row.
+
+  The native Elixir function should take a map (an element from
+  `to_rows_stream/2`) as input and return a map where the keys are the desired
+  new columns and the values are the values for that row.
+
+  See also the version of this function for a single series:
+
+    * `Explorer.Series.transform/2`
+
+  > ### Warning {: .warning}
+  >
+  > This is an expensive operation since data is stored in a columnar format.
+  > You should avoid converting a dataframe to rows where possible as it
+  > will incur significant overhead. Prefer instead to use the operations in
+  > this module rather than native Elixir ones. This function should only be
+  > used as a fallback when no equivalent DataFrame operation is available.
+
+  ## Options
+
+    * `:names` - Column names to select for serializing.
+      By default all columns will be returned.
+
+  Also, all options which are valid for `to_rows_stream` are valid here.
+
+  > ### The `:names` field is recommended {: .info}
+  >
+  > It's recommended that you provide the `:names` option and to set it to only
+  > those column names needed by your function. Otherwise, you'll be serializing
+  > unnecessary information.
+
+  ## Examples
+
+  Pre-selecting with `:names`:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> df = DF.new(
+      ...>   numbers: [1, 2],
+      ...>   datetime_local: [~N[2024-01-01 00:00:00], ~N[2024-01-01 00:00:00]],
+      ...>   timezone: ["Etc/UTC", "America/New_York"]
+      ...> )
+      iex> DF.transform(df, [names: ["datetime_local", "timezone"]], fn row ->
+      ...>   datetime_utc =
+      ...>     row["datetime_local"]
+      ...>     |> DateTime.from_naive!(row["timezone"])
+      ...>     |> DateTime.shift_zone!("Etc/UTC")
+      ...>
+      ...>   %{datetime_utc: datetime_utc}
+      ...> end)
+      #Explorer.DataFrame<
+        Polars[2 x 4]
+        numbers s64 [1, 2]
+        datetime_local naive_datetime[μs] [2024-01-01 00:00:00.000000, 2024-01-01 00:00:00.000000]
+        timezone string ["Etc/UTC", "America/New_York"]
+        datetime_utc datetime[μs, Etc/UTC] [2024-01-01 00:00:00.000000Z, 2024-01-01 05:00:00.000000Z]
+      >
+
+  Converting to atoms with `:atom_keys`:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> df = DF.new(
+      ...>   major: [1, 2, 3],
+      ...>   minor: [11, 12, 13],
+      ...>   patch: [0, 0, 0]
+      ...> )
+      iex> DF.transform(df, [atom_keys: true], fn row ->
+      ...>   version = Version.parse!("#{row.major}.#{row.minor}.#{row.patch}")
+      ...>   %{meets_requirements: Version.match?(version, "> 2.0.0")}
+      ...> end)
+      #Explorer.DataFrame<
+        Polars[3 x 4]
+        major s64 [1, 2, 3]
+        minor s64 [11, 12, 13]
+        patch s64 [0, 0, 0]
+        meets_requirements boolean [false, true, true]
+      >
+  """
+  @doc type: :single
+  @spec transform(DataFrame.t(), Keyword.t(), fun()) :: DataFrame.t()
+  def transform(df, opts \\ [], row_transform) when is_function(row_transform, 1) do
+    {names, to_rows_stream_opts} = Keyword.pop(opts, :names, df.names)
+
+    df_new =
+      df
+      |> select(names)
+      |> to_rows_stream(to_rows_stream_opts)
+      |> Enum.map(row_transform)
+      |> new()
+
+    concat_columns(df, df_new)
+  end
+
   @doc """
   Transpose a DataFrame.
 
