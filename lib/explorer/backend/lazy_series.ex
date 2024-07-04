@@ -35,7 +35,7 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @series_ops_with_arity Backend.Series.behaviour_info(:callbacks) |> Enum.sort()
-  @custom_ops [:from_list, :inspect]
+  @custom_ops [:divide, :from_list, :inspect, :multiply]
 
   def operations, do: Keyword.keys(@series_ops_with_arity)
   def operations_with_arity, do: @series_ops_with_arity
@@ -72,12 +72,22 @@ defmodule Explorer.Backend.LazySeries do
     __apply_lazy__(:alias, [lazy_series, name])
   end
 
+  # Custom ops
+
+  def divide(_out_dtype, left, right) do
+    __apply_lazy__(:divide, [left, right])
+  end
+
   def from_list([literal], _dtype) do
     __apply_lazy__(:lit, [literal])
   end
 
   def from_list(list, dtype) when is_list(list) do
     __apply_lazy__(:from_list, [list, dtype])
+  end
+
+  def multiply(_out_dtype, left, right) do
+    __apply_lazy__(:multiply, [left, right])
   end
 
   def inspect(series, opts) do
