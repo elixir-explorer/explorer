@@ -1681,7 +1681,7 @@ defmodule Explorer.Series do
       require Explorer.Query
 
       Explorer.DataFrame.new(_: unquote(series))
-      |> Explorer.DataFrame.filter_with(Explorer.Query.query(unquote(query)))
+      |> Explorer.DataFrame.filter_with(Explorer.Query.new(unquote(query)))
       |> Explorer.DataFrame.pull(:_)
     end
   end
@@ -1704,9 +1704,9 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec filter_with(series :: Series.t(), filter :: Series.t()) :: Series.t()
   def filter_with(%Series{} = series, %Series{data: %LazySeries{}} = filter) do
-    Explorer.DataFrame.new(series: series)
+    Explorer.DataFrame.new(_: series)
     |> Explorer.DataFrame.filter_with(filter)
-    |> Explorer.DataFrame.pull(:series)
+    |> Explorer.DataFrame.pull(:_)
   end
 
   @doc """
@@ -1897,12 +1897,12 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :shape
-  def sort_with(%Series{} = series, fun, opts \\ []) do
+  def sort_with(%Series{} = series, %Series{data: %LazySeries{}} = filter, opts \\ []) do
     {direction, opts} = Keyword.pop(opts, :direction, :asc)
 
-    Explorer.DataFrame.new(series: series)
-    |> Explorer.DataFrame.sort_with(&[{direction, fun.(&1[:series])}], opts)
-    |> Explorer.DataFrame.pull(:series)
+    Explorer.DataFrame.new(_: series)
+    |> Explorer.DataFrame.sort_with([{direction, filter}], opts)
+    |> Explorer.DataFrame.pull(:_)
   end
 
   @doc """
@@ -3789,17 +3789,47 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec remainder(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
-  def remainder(%Series{dtype: l_dtype} = left, %Series{dtype: r_dtype} = right)
-      when K.and(K.in(l_dtype, @integer_types), K.in(r_dtype, @integer_types)),
-      do: apply_series_list(:remainder, [left, right])
+  def remainder(left, right) do
+    [left, right] = wrap_literals_with_at_least_one_series([left, right])
 
-  def remainder(%Series{dtype: l_dtype} = left, right)
-      when K.and(K.in(l_dtype, @integer_types), is_integer(right)),
-      do: apply_series_list(:remainder, [left, from_list([right])])
+    if _out_dtype = cast_to_remainder(left, right) do
+      apply_series(left, :remainder, [right])
+    else
+      dtype_mismatch_error("remainder/2", left, right)
+    end
+  end
 
-  def remainder(left, %Series{dtype: r_dtype} = right)
-      when K.and(K.in(r_dtype, @integer_types), is_integer(left)),
-      do: apply_series_list(:remainder, [from_list([left]), right])
+  defp cast_to_remainder(%Series{dtype: left_dtype}, %Series{dtype: right_dtype}) do
+    case {left_dtype, right_dtype} do
+      {_, :unknown} -> :unknown
+      {:unknown, _} -> :unknown
+      _ -> Shared.merge_numeric_dtype(left_dtype, right_dtype)
+    end
+  end
+
+  defp wrap_literals_with_at_least_one_series(args) when is_list(args) do
+    if Enum.any?(args, &match?(%Series{}, &1)) do
+      wrap_literals(args)
+    else
+      raise ArgumentError, "expected at least one series"
+    end
+  end
+
+  # Given a list of arguments to series functions, properly wrap any literal
+  # in a `%Series{}`.
+  defp wrap_literals(args) when is_list(args) do
+    wrap_fun =
+      if Enum.any?(args, &match?(%Series{data: %LazySeries{}}, &1)) do
+        fn literal -> Series.lit(literal) end
+      else
+        fn literal -> Series.from_list([literal]) end
+      end
+
+    Enum.map(args, fn
+      %Series{} = series -> series
+      literal -> wrap_fun.(literal)
+    end)
+  end
 
   @doc """
   Computes the the sine of a number (in radians).
@@ -6608,10 +6638,41 @@ defmodule Explorer.Series do
     %Series{data: lazy_series, dtype: :unknown}
   end
 
+  def _ do
+    col("_")
+  end
+
   def lit(literal) do
     lazy_series = %Explorer.Backend.LazySeries{op: :lit, args: [literal]}
-    # TODO: determine dtype from literal.
-    %Series{data: lazy_series, dtype: :unknown}
+
+    dtype =
+      case infer_literal_dtype(literal) do
+        {:ok, dtype} -> dtype
+        {:error, _} -> raise ArgumentError, "invalid literal: #{inspect(literal)}"
+      end
+
+    %Series{data: lazy_series, dtype: dtype}
+  end
+
+  # TODO: alter Shared logic to expose its internal inference as a function.
+  @non_finite [:nan, :infinity, :neg_infinity]
+  defp infer_literal_dtype(literal) do
+    case literal do
+      %Date{} -> {:ok, :date}
+      %Time{} -> {:ok, :time}
+      %DateTime{time_zone: tz} -> {:ok, {:datetime, :microsecond, tz}}
+      %NaiveDateTime{} -> {:ok, {:naive_datetime, :microsecond}}
+      %Explorer.Duration{precision: precision} -> {:ok, {:duration, precision}}
+      item when is_integer(item) -> {:ok, {:s, 64}}
+      item when is_float(item) -> {:ok, {:f, 64}}
+      item when K.in(item, @non_finite) -> {:ok, {:f, 64}}
+      item when is_boolean(item) -> {:ok, :boolean}
+      item when is_binary(item) -> {:ok, :string}
+      list when is_list(list) -> {:error, :list}
+      %_{} -> {:error, :unrecognized_struct}
+      %{} -> {:error, :map}
+      _ -> {:error, :unrecognized_term}
+    end
   end
 
   def rename(%Series{} = series, name) do
