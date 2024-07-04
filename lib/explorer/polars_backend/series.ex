@@ -61,7 +61,7 @@ defmodule Explorer.PolarsBackend.Series do
     [re_series | re_rest] = re_args = Macro.generate_arguments(re_arity, __MODULE__)
     @impl Backend.Series
     def unquote(re_op)(unquote_splicing(re_args)) do
-      Shared.apply_series(unquote(re_series), :"s_#{unquote(re_op)}", unquote(re_rest) ++ [false])
+      Shared.apply_series(unquote(re_series), :"s_#{unquote(op)}", unquote(re_rest) ++ [false])
     end
   end
 
