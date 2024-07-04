@@ -3021,7 +3021,7 @@ defmodule Explorer.Series do
         Polars[3 x 3]
         a s64 [1, 3, 5]
         b s64 [2, 4, 6]
-        id s64 [1000, 1001, 1002]
+        id u32 [1000, 1001, 1002]
       >
   """
   @doc type: :element_wise

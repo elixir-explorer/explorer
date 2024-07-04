@@ -17,8 +17,8 @@ use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 use polars::lazy::dsl;
 use polars::prelude::{
-    col, concat_str, cov, pearson_corr, spearman_rank_corr, when, IntoLazy, LiteralValue,
-    SortOptions,
+    col, concat_str, cov, int_range, pearson_corr, spearman_rank_corr, when, IntoLazy,
+    LiteralValue, SortOptions,
 };
 use polars::prelude::{DataType, EWMOptions, Expr, Literal, StrptimeOptions, TimeUnit};
 
@@ -231,6 +231,13 @@ pub fn expr_slice_by_indices(expr: ExExpr, indices_expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
     ExExpr::new(expr.gather(indices_expr.clone_inner()))
+}
+
+#[rustler::nif]
+pub fn expr_row_index(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+    let row_index = int_range(dsl::lit(0), expr.len(), 1, DataType::UInt32);
+    ExExpr::new(row_index)
 }
 
 #[rustler::nif]

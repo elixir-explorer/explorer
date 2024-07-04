@@ -164,6 +164,7 @@ rustler::init!(
         expr_over,
         expr_peaks,
         expr_rank,
+        expr_row_index,
         expr_unary_not,
         expr_sample_frac,
         expr_sample_n,
