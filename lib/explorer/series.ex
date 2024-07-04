@@ -3256,17 +3256,12 @@ defmodule Explorer.Series do
 
   defp cast_for_arithmetic(function, [_, _] = args) do
     args
+    |> wrap_literals_with_at_least_one_series()
     |> case do
-      [%Series{}, %Series{}] -> args
-      [left, %Series{} = right] -> [upcast_scalar(left, right), right]
-      [%Series{} = left, right] -> [left, upcast_scalar(right, left)]
+      [%Series{}, %Series{}] = wrapped -> wrapped
       [left, right] -> no_series_error(function, left, right)
     end
     |> enforce_highest_precision()
-  end
-
-  defp upcast_scalar(scalar, %Series{data: %backend{}, dtype: dtype}) do
-    backend.from_list([scalar], dtype)
   end
 
   # TODO: maybe we can move this casting to Rust.
