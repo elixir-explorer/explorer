@@ -45,6 +45,14 @@ defmodule Explorer.PolarsBackend.Expression do
     apply(Native, :expr_format, [Enum.map(args, &to_expr/1)])
   end
 
+  # These ops have an optional extra arg that defaults to `false`.
+  @cumulative_ops [:cumulative_min, :cumulative_max, :cumulative_product, :cumulative_sum]
+  for op <- @cumulative_ops do
+    def to_expr(%LazySeries{op: unquote(op), args: [arg]}) do
+      apply(Native, :"expr_#{unquote(op)}", [to_expr(arg), false])
+    end
+  end
+
   def to_expr(%LazySeries{op: op, args: args}) when is_list(args) do
     apply(Native, :"expr_#{op}", Enum.map(args, &to_expr/1))
   end
