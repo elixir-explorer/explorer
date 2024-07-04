@@ -1774,10 +1774,10 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  def map_with(%Series{} = series, fun) when is_function(fun, 1) do
-    Explorer.DataFrame.new(series: series)
-    |> Explorer.DataFrame.mutate_with(&[series: fun.(&1[:series])])
-    |> Explorer.DataFrame.pull(:series)
+  def map_with(%Series{} = series, %Series{data: %LazySeries{}} = mapper) do
+    Explorer.DataFrame.new(_: series)
+    |> Explorer.DataFrame.mutate_with(_: mapper)
+    |> Explorer.DataFrame.pull(:_)
   end
 
   @doc """
@@ -2372,8 +2372,9 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec min(series :: Series.t()) ::
           number() | non_finite() | Date.t() | Time.t() | DateTime.t() | NaiveDateTime.t() | nil
-  def min(%Series{dtype: dtype} = series) when is_numeric_or_temporal_dtype(dtype),
-    do: apply_series(series, :min)
+  def min(%Series{dtype: dtype} = series)
+      when K.or(is_numeric_or_temporal_dtype(dtype), dtype == :unknown),
+      do: apply_series(series, :min)
 
   def min(%Series{dtype: dtype}), do: dtype_error("min/1", dtype, @numeric_or_temporal_dtypes)
 

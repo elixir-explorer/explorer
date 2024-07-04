@@ -383,6 +383,8 @@ defmodule Explorer.Shared do
   def merge_numeric_dtype({:f, left}, {:f, right}), do: {:f, max(left, right)}
   def merge_numeric_dtype({:f, _} = float, :null), do: float
   def merge_numeric_dtype(:null, {:f, _} = float), do: float
+  def merge_numeric_dtype(:unknown, _), do: :unknown
+  def merge_numeric_dtype(_, :unknown), do: :unknown
   def merge_numeric_dtype(_, _), do: nil
 
   @doc """

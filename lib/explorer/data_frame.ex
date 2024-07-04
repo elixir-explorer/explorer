@@ -2767,7 +2767,7 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :single
-  @spec mutate_with(df :: DataFrame.t(), column_pairs(Series)) :: DataFrame.t()
+  @spec mutate_with(df :: DataFrame.t(), column_pairs(Series.lazy_t())) :: DataFrame.t()
   def mutate_with(%DataFrame{} = df, column_pairs) do
     column_pairs =
       Enum.map(column_pairs, fn {key, value} ->
