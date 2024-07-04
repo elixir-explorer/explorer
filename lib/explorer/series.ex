@@ -1693,8 +1693,9 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> series = Explorer.Series.from_list([1, 2, 3])
-      iex> is_odd = fn s -> s |> Explorer.Series.remainder(2) |> Explorer.Series.equal(1) end
+      iex> alias Explorer.Series
+      iex> series = Series.from_list([1, 2, 3])
+      iex> is_odd = Series._() |> Series.remainder(2) |> Series.equal(1)
       iex> Explorer.Series.filter_with(series, is_odd)
       #Explorer.Series<
         Polars[2]
@@ -1758,16 +1759,17 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Maps a series with a callback function.
+  Maps a series with a lazy series.
 
   This function only works with lazy computations.
   See `transform/2` for a version that works with any Elixir function.
 
   ## Examples
 
-      iex> series = Explorer.Series.from_list([2, 3, 4])
-      iex> shift_left = fn s -> Explorer.Series.subtract(s, Explorer.Series.min(s)) end
-      iex> Explorer.Series.map_with(series, shift_left)
+      iex> alias Explorer.Series
+      iex> series = Series.from_list([2, 3, 4])
+      iex> shift_left = Series.subtract(Series._(), Series.min(Series._()))
+      iex> Series.map_with(series, shift_left)
       #Explorer.Series<
         Polars[3]
         s64 [0, 1, 2]
@@ -1875,22 +1877,25 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.sort_with(s, &Explorer.Series.remainder(&1, 3))
+      iex> alias Explorer.Series
+      iex> s = Series.from_list([1, 2, 3])
+      iex> Series.sort_with(s, Series.remainder(Series._(), 3))
       #Explorer.Series<
         Polars[3]
         s64 [3, 1, 2]
       >
 
-      iex> s = Explorer.Series.from_list([1, 2, 3])
-      iex> Explorer.Series.sort_with(s, &Explorer.Series.remainder(&1, 3), direction: :desc)
+      iex> alias Explorer.Series
+      iex> s = Series.from_list([1, 2, 3])
+      iex> Series.sort_with(s, Series.remainder(Series._(), 3), direction: :desc)
       #Explorer.Series<
         Polars[3]
         s64 [2, 1, 3]
       >
 
-      iex> s = Explorer.Series.from_list([1, nil, 2, 3])
-      iex> Explorer.Series.sort_with(s, &Explorer.Series.multiply(-2, &1), nils: :first)
+      iex> alias Explorer.Series
+      iex> s = Series.from_list([1, nil, 2, 3])
+      iex> Series.sort_with(s, Series.multiply(-2, Series._()), nils: :first)
       #Explorer.Series<
         Polars[4]
         s64 [nil, 3, 2, 1]
