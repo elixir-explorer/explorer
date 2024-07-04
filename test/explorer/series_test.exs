@@ -7,7 +7,7 @@ defmodule Explorer.SeriesTest do
 
   import ExUnit.CaptureLog
 
-  # doctest Explorer.Series
+  doctest Explorer.Series
 
   test "defines doc metadata" do
     {:docs_v1, _, :elixir, "text/markdown", _docs, _metadata, entries} =
