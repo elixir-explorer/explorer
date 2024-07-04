@@ -19,13 +19,19 @@ defmodule Explorer.PolarsBackend.Shared do
     end
   end
 
+  # Apply a fun where the only input is a list of series.
+  def apply_list(fun, [series_list]) when is_list(series_list) do
+    series_list = Enum.map(series_list, &unwrap_series/1)
+
+    case Kernel.apply(Native, fun, [series_list]) do
+      {:ok, value} -> value
+      {:error, error} -> raise runtime_error(error)
+    end
+  end
+
   # Applies to a series. Expects a series or a value back.
   def apply_series(%Series{} = series, fun, args \\ []) do
-    args =
-      Enum.map([series | args], fn
-        %Series{data: %PolarsSeries{} = polars_series} -> polars_series
-        other -> other
-      end)
+    args = Enum.map([series | args], &unwrap_series/1)
 
     case apply(Native, fun, args) do
       {:ok, %PolarsSeries{} = new_series} -> create_series(new_series)
@@ -33,6 +39,9 @@ defmodule Explorer.PolarsBackend.Shared do
       {:error, error} -> raise runtime_error(error)
     end
   end
+
+  defp unwrap_series(%Series{data: %PolarsSeries{} = polars_series}), do: polars_series
+  defp unwrap_series(other), do: other
 
   # Applies to a dataframe. Expects a series or a value back.
   def apply_dataframe(%DataFrame{} = df, fun, args \\ []) do

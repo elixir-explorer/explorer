@@ -216,7 +216,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def concat(series_list) do
-    Shared.apply(:s_concat, [series_list])
+    Shared.apply_list(:s_concat, [series_list])
     |> Shared.create_series()
   end
 
