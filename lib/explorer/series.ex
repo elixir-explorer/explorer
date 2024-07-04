@@ -3255,12 +3255,8 @@ defmodule Explorer.Series do
   # Arithmetic
 
   defp cast_for_arithmetic(function, [_, _] = args) do
-    args
-    |> wrap_literals_with_at_least_one_series()
-    |> case do
-      [%Series{}, %Series{}] = wrapped -> wrapped
-      [left, right] -> no_series_error(function, left, right)
-    end
+    function
+    |> wrap_literals_with_at_least_one_series(args)
     |> enforce_highest_precision()
   end
 
@@ -3785,7 +3781,7 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec remainder(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
   def remainder(left, right) do
-    [left, right] = wrap_literals_with_at_least_one_series([left, right])
+    [left, right] = wrap_literals_with_at_least_one_series("remainder/2", [left, right])
 
     if _out_dtype = cast_to_remainder(left, right) do
       apply_series(left, :remainder, [right])
@@ -3802,11 +3798,15 @@ defmodule Explorer.Series do
     end
   end
 
-  defp wrap_literals_with_at_least_one_series(args) when is_list(args) do
+  defp wrap_literals_with_at_least_one_series(function, args) when is_list(args) do
     if Enum.any?(args, &match?(%Series{}, &1)) do
       wrap_literals(args)
     else
-      raise ArgumentError, "expected at least one series"
+      case args do
+        [left, right] -> no_series_error(function, left, right)
+        # TODO: homogenize this error
+        _ -> raise ArgumentError, "expected at least one series"
+      end
     end
   end
 
