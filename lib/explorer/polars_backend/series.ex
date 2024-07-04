@@ -31,7 +31,6 @@ defmodule Explorer.PolarsBackend.Series do
   # The first two arguments are series which must match in size (or have size 1).
   @ops_matching_size [
     add: 2,
-    all_equal: 2,
     correlation: 4,
     covariance: 3,
     equal: 2,
@@ -78,6 +77,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Some functions require a custom definition.
   @ops_custom [
+    all_equal: 2,
     binary_and: 2,
     binary_in: 2,
     binary_or: 2,
@@ -339,6 +339,10 @@ defmodule Explorer.PolarsBackend.Series do
 
   def clip(%Series{} = s, min, max),
     do: s |> cast({:f, 64}) |> Shared.apply_series(:s_clip_float, [min * 1.0, max * 1.0])
+
+  @impl true
+  def all_equal(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(matching_size!(left, right), :s_series_equal, [right.data, true])
 
   @impl true
   def binary_in(%Series{} = left, %Series{} = right),
