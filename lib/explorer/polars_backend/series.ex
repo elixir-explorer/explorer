@@ -22,7 +22,6 @@ defmodule Explorer.PolarsBackend.Series do
     add: 2,
     all_equal: 2,
     binary_and: 2,
-    binary_in: 2,
     binary_or: 2,
     correlation: 4,
     covariance: 3,
@@ -70,6 +69,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Some functions require a custom definition.
   @ops_custom [
+    binary_in: 2,
     cast: 2,
     categories: 1,
     categorise: 2,
@@ -328,6 +328,10 @@ defmodule Explorer.PolarsBackend.Series do
 
   def clip(%Series{} = s, min, max),
     do: s |> cast({:f, 64}) |> Shared.apply_series(:s_clip_float, [min * 1.0, max * 1.0])
+
+  @impl true
+  def binary_in(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(left, :s_in, [right.data])
 
   @impl true
   def frequencies(%Series{dtype: {:list, inner_dtype} = dtype})
