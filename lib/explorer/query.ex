@@ -325,8 +325,11 @@ defmodule Explorer.Query do
     lazy_series =
       ast
       |> Macro.prewalk(fn
-        {op, meta, args} when op in @binary_ops ->
+        {op, meta, [_, _] = args} when op in @binary_ops ->
           {@binary_mapping[op], meta, args}
+
+        {:-, meta, [arg]} ->
+          {:multiply, meta, [-1, arg]}
 
         node ->
           node
