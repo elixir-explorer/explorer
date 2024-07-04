@@ -21,8 +21,6 @@ defmodule Explorer.PolarsBackend.Series do
   @ops_matching_size [
     add: 2,
     all_equal: 2,
-    binary_and: 2,
-    binary_or: 2,
     correlation: 4,
     covariance: 3,
     equal: 2,
@@ -69,7 +67,9 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Some functions require a custom definition.
   @ops_custom [
+    binary_and: 2,
     binary_in: 2,
+    binary_or: 2,
     cast: 2,
     categories: 1,
     categorise: 2,
@@ -332,6 +332,14 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def binary_in(%Series{} = left, %Series{} = right),
     do: Shared.apply_series(left, :s_in, [right.data])
+
+  @impl true
+  def binary_and(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(matching_size!(left, right), :s_and, [right.data])
+
+  @impl true
+  def binary_or(%Series{} = left, %Series{} = right),
+    do: Shared.apply_series(matching_size!(left, right), :s_or, [right.data])
 
   @impl true
   def frequencies(%Series{dtype: {:list, inner_dtype} = dtype})
