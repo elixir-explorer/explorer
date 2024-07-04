@@ -1664,7 +1664,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([1, 2, 3])
       iex> Explorer.Series.filter(s, cumulative_max(_))
-      ** (ArgumentError) expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:s, 64}
+      ** (RuntimeError) Polars Error: filter predicate must be of type `Boolean`, got `i64`
 
   Which can be addressed by converting it to boolean:
 
