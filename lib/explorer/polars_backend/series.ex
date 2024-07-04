@@ -17,6 +17,17 @@ defmodule Explorer.PolarsBackend.Series do
 
   @ops_all Backend.Series.behaviour_info(:callbacks) |> Enum.sort()
 
+  # Map an Elixir operation to its Native counterpart.
+  defp native_op(op) when is_atom(op) do
+    op =
+      op
+      |> Atom.to_string()
+      |> String.replace_trailing("?", "")
+      |> String.replace_trailing("!", "")
+
+    :"s_#{op}"
+  end
+
   # The first two arguments are series which must match in size (or have size 1).
   @ops_matching_size [
     add: 2,
@@ -40,7 +51,7 @@ defmodule Explorer.PolarsBackend.Series do
     @impl Backend.Series
     def unquote(op)(unquote_splicing(args)) do
       s1 = matching_size!(unquote(s1), unquote(s2))
-      Shared.apply_series(s1, :"s_#{unquote(op)}", unquote([s2 | rest]))
+      Shared.apply_series(s1, native_op(unquote(op)), unquote([s2 | rest]))
     end
   end
 
@@ -55,13 +66,13 @@ defmodule Explorer.PolarsBackend.Series do
     [series | rest] = args = Macro.generate_arguments(arity, __MODULE__)
     @impl Backend.Series
     def unquote(op)(unquote_splicing(args)) do
-      Shared.apply_series(unquote(series), :"s_#{unquote(op)}", unquote(rest) ++ [true])
+      Shared.apply_series(unquote(series), native_op(unquote(op)), unquote(rest) ++ [true])
     end
 
     [re_series | re_rest] = re_args = Macro.generate_arguments(re_arity, __MODULE__)
     @impl Backend.Series
     def unquote(re_op)(unquote_splicing(re_args)) do
-      Shared.apply_series(unquote(re_series), :"s_#{unquote(op)}", unquote(re_rest) ++ [false])
+      Shared.apply_series(unquote(re_series), native_op(unquote(op)), unquote(re_rest) ++ [false])
     end
   end
 
@@ -117,7 +128,7 @@ defmodule Explorer.PolarsBackend.Series do
 
     @impl Backend.Series
     def unquote(op)(unquote_splicing(args)) do
-      Shared.apply_series(unquote(series), :"s_#{unquote(op)}", [unquote_splicing(rest)])
+      Shared.apply_series(unquote(series), native_op(unquote(op)), [unquote_splicing(rest)])
     end
   end
 
