@@ -1,3 +1,5 @@
+import Kernel, except: [if: 2, unless: 2]
+
 defmodule Explorer.Query do
   @moduledoc ~S"""
   High-level query for Explorer.
@@ -268,13 +270,218 @@ defmodule Explorer.Query do
   you can fallback to the regular `_with` APIs.
   """
 
-  alias Explorer.Series
-  alias Explorer.Backend.LazySeries
+  kernel_all = Kernel.__info__(:functions) ++ Kernel.__info__(:macros)
 
-  defstruct [:series_list]
+  kernel_only = [
+    @: 1,
+    |>: 2,
+    dbg: 0,
+    dbg: 1,
+    dbg: 2,
+    sigil_c: 2,
+    sigil_C: 2,
+    sigil_D: 2,
+    sigil_N: 2,
+    sigil_s: 2,
+    sigil_S: 2,
+    sigil_w: 2,
+    sigil_W: 2,
+    tap: 2,
+    then: 2
+  ]
 
-  # `and` and `or` are sent as is to queries
-  @binary_mapping [
+  @kernel_only kernel_only -- kernel_only -- kernel_all
+
+  defmacro new(expression) do
+    quote do
+      unquote(traverse_root(expression, nil))
+    end
+  end
+
+  @doc """
+  Builds an anonymous function from a query.
+
+  This is the entry point used by `Explorer.DataFrame.filter/2`
+  and friends to convert queries into anonymous functions.
+  See the moduledoc for more information.
+  """
+  defmacro query(expression) do
+    df = df_var()
+
+    quote do
+      unquote(traverse_root(expression, df))
+    end
+  end
+
+  defp traverse_root({:for, meta, [_ | _] = args}, df) do
+    {args, [opts]} = Enum.split(args, Kernel.-(1))
+
+    block =
+      Keyword.get(opts, :do) || raise ArgumentError, "expected do-block in for-comprehension"
+
+    {args, known_vars} =
+      Enum.map_reduce(args, %{}, fn
+        {:<-, meta, [pattern, generator]}, acc ->
+          generator = traverse_for(generator, df, acc)
+          {{:<-, meta, [pattern, generator]}, collect_pattern_vars(pattern, acc)}
+
+        other, acc ->
+          {traverse_for(other, df, acc), acc}
+      end)
+
+    {query, vars} =
+      traverse(block, [], %{df: df, known_vars: known_vars, collect_pins_and_vars: true})
+
+    block = unquote_query(query, vars)
+
+    for_comprehension = {:for, meta, args ++ [Keyword.put(opts, :do, block)]}
+
+    quote do
+      import Explorer.Query, only: [across: 0, across: 1]
+      unquote(for_comprehension)
+    end
+  end
+
+  defp traverse_root(expression, _df) do
+    {query, vars} = traverse(expression)
+    unquote_query(query, vars)
+  end
+
+  defp unquote_query(query, vars) do
+    quote do
+      unquote_splicing(Enum.reverse(vars))
+      import Kernel, only: unquote(@kernel_only)
+      import Explorer.Query, except: [query: 1]
+      import Explorer.Backend.LazySeries, except: [and: 2, or: 2, not: 1]
+      unquote(query)
+    end
+  end
+
+  defp traverse(expression) do
+    vars = []
+    state = %{known_vars: %{}, collect_pins_and_vars: true}
+    traverse(expression, vars, state)
+  end
+
+  defp traverse({:for, _meta, [_ | _]}, _vars, _state) do
+    raise ArgumentError, "for-comprehensions are only supported at the root of queries"
+  end
+
+  defp traverse({:^, meta, [expr]}, vars, state) do
+    cond do
+      state.collect_pins_and_vars ->
+        var = Macro.unique_var(:pin, __MODULE__)
+        {var, [{:=, meta, [var, expr]} | vars]}
+
+      true ->
+        {expr, vars}
+    end
+  end
+
+  defp traverse({:"::", meta, [left, right]}, vars, state) do
+    {left, vars} = traverse(left, vars, state)
+    {{:"::", meta, [left, right]}, vars}
+  end
+
+  defp traverse({:cond, _meta, [[do: clauses]]}, vars, state) do
+    {clauses, vars} =
+      Enum.map_reduce(clauses, vars, fn {:->, _, [[on_condition], on_true]}, vars ->
+        {condition, vars} = traverse(on_condition, vars, state)
+        {truthy, vars} = traverse(on_true, vars, state)
+        {{condition, truthy}, vars}
+      end)
+
+    body =
+      quote do
+        Explorer.Query.__cond__(unquote(Enum.reverse(clauses)))
+      end
+
+    {body, vars}
+  end
+
+  defp traverse({var, _meta, ctx} = expr, vars, state)
+       when Kernel.and(is_atom(var), is_atom(ctx)) do
+    cond do
+      Map.has_key?(state.known_vars, {var, ctx}) ->
+        {expr, vars}
+
+      state.collect_pins_and_vars ->
+        {quote(do: Explorer.Backend.LazySeries.col(unquote(var))), vars}
+
+      true ->
+        raise ArgumentError, "undefined variable \"#{Macro.to_string(expr)}\""
+    end
+  end
+
+  defp traverse({left, meta, right}, vars, state) do
+    cond do
+      Kernel.and(
+        Kernel.and(is_atom(left), is_list(right)),
+        special_form_defines_var?(left, right)
+      ) ->
+        raise ArgumentError,
+              "#{left}/#{length(right)} is not currently supported in Explorer.Query"
+
+      true ->
+        {left, vars} = traverse(left, vars, state)
+        {right, vars} = traverse(right, vars, state)
+        {{left, meta, right}, vars}
+    end
+  end
+
+  defp traverse({left, right}, vars, state) do
+    {left, vars} = traverse(left, vars, state)
+    {right, vars} = traverse(right, vars, state)
+    {{left, right}, vars}
+  end
+
+  defp traverse(list, vars, state) when is_list(list) do
+    Enum.map_reduce(list, vars, &traverse(&1, &2, state))
+  end
+
+  defp traverse(other, vars, _state), do: {other, vars}
+
+  defp special_form_defines_var?(:=, [_, _]), do: true
+  defp special_form_defines_var?(:case, [_, _]), do: true
+  defp special_form_defines_var?(:receive, [_]), do: true
+  defp special_form_defines_var?(:try, [_]), do: true
+  defp special_form_defines_var?(:with, [_ | _]), do: true
+  defp special_form_defines_var?(_, _), do: false
+
+  defp traverse_for(expr, _df, known_vars) do
+    {expr, []} =
+      traverse(expr, [], %{known_vars: known_vars, collect_pins_and_vars: false})
+
+    expr
+  end
+
+  defp collect_pattern_vars({:when, _, [pattern, _]}, known_vars) do
+    collect_pattern_vars(pattern, known_vars)
+  end
+
+  defp collect_pattern_vars(expr, known_vars) do
+    expr
+    |> Macro.prewalk(known_vars, fn
+      {:"::", _, [left, _right]}, acc ->
+        {left, acc}
+
+      {skip, _, [_ | _]}, acc when skip in [:^, :@, :quote] ->
+        {:ok, acc}
+
+      {:_, _, context}, acc when is_atom(context) ->
+        {:ok, acc}
+
+      {name, _meta, context}, acc when Kernel.and(is_atom(name), is_atom(context)) ->
+        {:ok, Map.put(acc, {name, context}, true)}
+
+      node, acc ->
+        {node, acc}
+    end)
+    |> elem(1)
+  end
+
+  # and and or are sent as is to queries
+  binary_delegates = [
     ==: :equal,
     !=: :not_equal,
     >: :greater,
@@ -287,72 +494,227 @@ defmodule Explorer.Query do
     /: :divide,
     **: :pow
   ]
-  @binary_ops Keyword.keys(@binary_mapping)
 
-  @series_ops_with_arity Explorer.Backend.Series.behaviour_info(:callbacks)
-  @series_ops Keyword.keys(@series_ops_with_arity)
-
-  def from_series(%Series{data: %LazySeries{}} = series) do
-    series
+  for {operator, delegate} <- binary_delegates do
+    @doc """
+    Delegate to `Explorer.Backend.LazySeries.#{delegate}/2`.
+    """
+    def unquote(operator)(left, right) do
+      Explorer.Backend.LazySeries.__apply_lazy__(unquote(delegate), [left, right])
+    end
   end
 
-  def from_series(list) when is_list(list) do
-    normalize_aliases(list)
+  @doc """
+  Unary minus operator.
+
+  Works with numbers and series.
+  """
+  def -number when is_number(number), do: Kernel.-(number)
+
+  def -series when is_struct(series, Explorer.Series),
+    do: Explorer.Series.multiply(series, Kernel.-(1))
+
+  @doc """
+  Unary plus operator.
+
+  Works with numbers and series.
+  """
+  def +number when is_number(number), do: number
+  def +series when is_struct(series, Explorer.Series), do: series
+
+  @doc """
+  Binary and operator.
+
+  Works with boolean and series.
+  """
+  def left and right when Kernel.and(is_boolean(left), is_boolean(right)),
+    do: Kernel.and(left, right)
+
+  def left and right, do: Explorer.Series.and(boolean!(left), boolean!(right))
+
+  @doc """
+  Binary or operator.
+
+  Works with boolean and series.
+  """
+  def left or right when Kernel.or(is_boolean(left), is_boolean(right)),
+    do: Kernel.or(left, right)
+
+  def left or right, do: Explorer.Series.or(boolean!(left), boolean!(right))
+
+  @doc """
+  Unary not operator.
+
+  Works with boolean and series.
+  """
+  def not value when is_boolean(value), do: Kernel.not(value)
+
+  def not value, do: Explorer.Series.not(boolean!(value))
+
+  defp boolean!(%Explorer.Series{dtype: :boolean} = series), do: series
+  defp boolean!(value) when is_boolean(value), do: Explorer.Series.from_list([value])
+
+  defp boolean!(other) do
+    raise ArgumentError,
+          "boolean operators require either a boolean (true/false) or a boolean series, got: #{inspect(other)}"
   end
 
-  def normalize_aliases(list) do
-    Enum.map(list, fn
-      {name, %Series{data: %LazySeries{}} = series} -> Series.rename(series, name)
-      %Series{data: %LazySeries{}} = series -> series
+  @doc """
+  String concatenation operator.
+
+  Works with strings and series of strings.
+
+  ## Examples
+
+      DF.mutate(df, name: first_name <> " " <> last_name)
+
+  If you want to convert concatenate non-string
+  series, you can explicitly cast them to string
+  before:
+
+      DF.mutate(df, name: cast(year, :string) <> "-" <> cast(month, :string))
+
+  Or use format:
+
+      DF.mutate(df, name: format([year, "-", month]))
+  """
+  defmacro left <> right do
+    parts = [left | extract_concatenations(right)]
+
+    quote do
+      unquote(__MODULE__).__concatenate__(unquote(parts))
+    end
+  end
+
+  defp extract_concatenations({:<>, _, [left, right]}), do: [left | extract_concatenations(right)]
+  defp extract_concatenations(other), do: [other]
+
+  @doc false
+  def __concatenate__(parts) do
+    case validate_concatenation(parts, true) do
+      true -> IO.iodata_to_binary(parts)
+      false -> Explorer.Series.format(parts)
+    end
+  end
+
+  @error_message "the string concatenation operator (<>) inside Explorer.Query expects either " <>
+                   "an Elixir string or a Series with :string dtype, got: "
+
+  defp validate_concatenation([%Explorer.Series{dtype: :string} | parts], _all_binary?) do
+    validate_concatenation(parts, false)
+  end
+
+  defp validate_concatenation([%Explorer.Series{} = part | _parts], _all_binary?) do
+    raise ArgumentError,
+          <<@error_message, inspect(part)::binary,
+            " (use cast(series, :string) to convert an existing series)"::binary>>
+  end
+
+  defp validate_concatenation([part | parts], all_binary?) when is_binary(part) do
+    validate_concatenation(parts, all_binary?)
+  end
+
+  defp validate_concatenation([part | _parts], _all_binary?) do
+    raise ArgumentError,
+          <<@error_message, inspect(part)::binary,
+            " (use Kernel.to_string(value) to convert an existing value to string)">>
+  end
+
+  defp validate_concatenation([], all_binary?), do: all_binary?
+
+  @doc """
+  Provides `if/2` conditionals inside queries.
+  """
+  def if(condition, do: do_clause) do
+    if(condition, do: do_clause, else: nil)
+  end
+
+  def if(condition, do: do_clause, else: else_clause) do
+    __cond__([{true, else_clause}, {condition, do_clause}])
+  end
+
+  def if(_condition, _arguments) do
+    raise ArgumentError,
+          "invalid or duplicate keys for if, only \"do\" and an optional \"else\" are permitted"
+  end
+
+  @doc """
+  Provides `unless/2` conditionals inside queries.
+  """
+  def unless(condition, do: do_clause) do
+    unless(condition, do: do_clause, else: nil)
+  end
+
+  def unless(condition, do: do_clause, else: else_clause) do
+    __cond__([{true, do_clause}, {condition, else_clause}])
+  end
+
+  def unless(_condition, _arguments) do
+    raise ArgumentError,
+          "invalid or duplicate keys for unless, only \"do\" and an optional \"else\" are permitted"
+  end
+
+  @doc false
+  def __cond__(clauses) do
+    Enum.reduce(clauses, nil, fn
+      {true, truthy}, _acc ->
+        lazy_series_for_cond!(truthy, clauses)
+
+      {false, _truthy}, acc ->
+        lazy_series_for_cond!(acc, clauses)
+
+      {%Explorer.Series{} = predicate, truthy}, acc ->
+        on_true = lazy_series_for_cond!(truthy, clauses)
+        on_false = lazy_series_for_cond!(acc, clauses)
+        Explorer.Backend.LazySeries.select(predicate, on_true, on_false)
+
+      {other, _truthy}, _acc ->
+        raise ArgumentError,
+              "conditionals expect predicates to be series or a boolean, got: #{inspect(other)}"
     end)
   end
 
-  defmacro new(expression) do
+  defp lazy_series_for_cond!(%Explorer.Series{} = val, _clauses), do: val
+
+  defp lazy_series_for_cond!(nil, clauses) do
+    {_, non_empty_clause} = Enum.find(clauses, fn {_condition, truthy} -> truthy end)
+    series = lazy_series_for_cond!(non_empty_clause, clauses)
+    Explorer.Backend.LazySeries.from_list([nil], series.dtype)
+  end
+
+  defp lazy_series_for_cond!(val, _clauses),
+    do: Explorer.Backend.LazySeries.from_list([val], Explorer.Shared.dtype_from_list!([val]))
+
+  @doc """
+  Accesses all columns in the dataframe.
+
+  This is the equivalent to `across(..)`.
+
+  See the module docs for more information.
+  """
+  defmacro across() do
     quote do
-      unquote(traverse_root(expression))
+      Explorer.Query.__across__(unquote(df_var()), ..)
     end
   end
 
-  defp traverse_root(ast) do
-    if Keyword.keyword?(ast) do
-      Enum.map(ast, fn {key, value} -> {key, traverse(value)} end)
-    else
-      traverse(ast)
-    end
-  end
+  @doc """
+  Accesses the columns given by `selector` in the dataframe.
 
-  def traverse(ast) do
-    lazy_series =
-      ast
-      |> Macro.prewalk(fn
-        {op, meta, [_, _] = args} when op in @binary_ops ->
-          {@binary_mapping[op], meta, args}
+  `across/1` is used as the generator inside for-comprehensions.
 
-        {:-, meta, [arg]} ->
-          {:multiply, meta, [-1, arg]}
-
-        node ->
-          node
-      end)
-      |> Macro.postwalk(fn
-        {op, _, _} = node when op in @series_ops ->
-          lazy_series_ast(node)
-
-        {op, meta, nil} ->
-          lazy_series_ast({:col, meta, [to_string(op)]})
-
-        node ->
-          node
-      end)
-
+  See the module docs for more information.
+  """
+  defmacro across(selector) do
     quote do
-      Explorer.Query.from_series(%Series{data: unquote(lazy_series), dtype: :unknown})
+      Explorer.Query.__across__(unquote(df_var()), unquote(selector))
     end
   end
 
-  def lazy_series_ast({op, _meta, args}) do
-    quote do
-      %LazySeries{op: unquote(op), args: unquote(args)}
-    end
+  @doc false
+  def __across__(df, selector) do
+    Explorer.Shared.to_existing_columns(df, selector)
   end
+
+  defp df_var(), do: quote(do: var!(df, Explorer.Query))
 end

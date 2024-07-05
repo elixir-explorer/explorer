@@ -48,8 +48,16 @@ defmodule Explorer.Backend.LazySeries do
     end
   end
 
+  # These ops have an optional extra arg that defaults to `false`.
+  @cumulative_ops [:cumulative_min, :cumulative_max, :cumulative_product, :cumulative_sum]
+  for op <- @cumulative_ops do
+    def unquote(op)(lazy_series) do
+      __apply_lazy__(unquote(op), [lazy_series])
+    end
+  end
+
   @doc false
-  def __apply_lazy__(op, args) when is_atom(op) and is_list(args) do
+  def __apply_lazy__(op, args, dtype \\ :unknown) when is_atom(op) and is_list(args) do
     args =
       Enum.map(args, fn
         %Series{data: %__MODULE__{} = lazy_series} -> lazy_series
@@ -58,15 +66,14 @@ defmodule Explorer.Backend.LazySeries do
 
     %Explorer.Series{
       data: %Explorer.Backend.LazySeries{op: op, args: args},
-      dtype: :unknown
+      dtype: dtype
     }
   end
 
   # Polars specific functions
 
-  def col(name) do
-    __apply_lazy__(:col, [name])
-  end
+  def col(name) when is_atom(name), do: name |> Atom.to_string() |> col()
+  def col(name) when is_binary(name), do: __apply_lazy__(:col, [name])
 
   def rename(%Series{data: %__MODULE__{} = lazy_series}, name) do
     __apply_lazy__(:alias, [lazy_series, name])
@@ -78,12 +85,16 @@ defmodule Explorer.Backend.LazySeries do
     __apply_lazy__(:divide, [left, right])
   end
 
-  def from_list([literal], _dtype) do
-    __apply_lazy__(:lit, [literal])
+  def from_list(list, dtype \\ :unknown) when is_list(list) do
+    case list do
+      # [] -> TODO: figure out what do to here...
+      [literal] -> lit(literal, dtype)
+      [_ | _] -> __apply_lazy__(:from_list, [list, dtype])
+    end
   end
 
-  def from_list(list, dtype) when is_list(list) do
-    __apply_lazy__(:from_list, [list, dtype])
+  def lit(literal, dtype \\ :unknown) do
+    __apply_lazy__(:lit, [literal], dtype)
   end
 
   def multiply(_out_dtype, left, right) do

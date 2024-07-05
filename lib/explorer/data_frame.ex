@@ -2694,7 +2694,7 @@ defmodule Explorer.DataFrame do
   defmacro mutate(df, mutations) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.mutate_with(unquote(df), Explorer.Query.new(unquote(mutations)))
+      Explorer.DataFrame.mutate_with(unquote(df), Explorer.Query.query(unquote(mutations)))
     end
   end
 
