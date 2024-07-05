@@ -733,26 +733,26 @@ defmodule Explorer.Series.DurationTest do
     end
 
     test "mutate/2 with scalar Duration" do
-      # require Explorer.DataFrame
-      # alias Explorer.DataFrame, as: DF
+      require Explorer.DataFrame
+      alias Explorer.DataFrame, as: DF
 
-      # ms = %Duration{value: 1_000, precision: :millisecond}
-      # us = %Duration{value: 1_000, precision: :microsecond}
-      # ns = %Duration{value: 1_000, precision: :nanosecond}
+      ms = %Duration{value: 1_000, precision: :millisecond}
+      us = %Duration{value: 1_000, precision: :microsecond}
+      ns = %Duration{value: 1_000, precision: :nanosecond}
 
-      # df = DF.new([])
+      df = DF.new([])
 
-      # df = DF.mutate(df, ms: ^ms)
-      # assert df["ms"].dtype == {:duration, :millisecond}
-      # assert Series.to_list(df["ms"]) == [ms]
+      df = DF.mutate(df, ms: ^ms)
+      assert df["ms"].dtype == {:duration, :millisecond}
+      assert Series.to_list(df["ms"]) == [ms]
 
-      # df = DF.mutate(df, us: ^us)
-      # assert df["us"].dtype == {:duration, :microsecond}
-      # assert Series.to_list(df["us"]) == [us]
+      df = DF.mutate(df, us: ^us)
+      assert df["us"].dtype == {:duration, :microsecond}
+      assert Series.to_list(df["us"]) == [us]
 
-      # df = DF.mutate(df, ns: ^ns)
-      # assert df["ns"].dtype == {:duration, :nanosecond}
-      # assert Series.to_list(df["ns"]) == [ns]
+      df = DF.mutate(df, ns: ^ns)
+      assert df["ns"].dtype == {:duration, :nanosecond}
+      assert Series.to_list(df["ns"]) == [ns]
     end
 
     # There used to be an issue with Polars where `duration + date` was not supported but

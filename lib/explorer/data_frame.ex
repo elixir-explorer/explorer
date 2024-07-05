@@ -2771,7 +2771,18 @@ defmodule Explorer.DataFrame do
   def mutate_with(%DataFrame{} = df, column_pairs) do
     column_pairs =
       Enum.map(column_pairs, fn {key, value} ->
-        key = if is_atom(key), do: Atom.to_string(key), else: key
+        key =
+          case key do
+            atom when is_atom(atom) -> Atom.to_string(atom)
+            string when is_binary(string) -> string
+          end
+
+        value =
+          case value do
+            %Series{data: %LazySeries{}} = series -> series
+            literal -> Series.lit(literal)
+          end
+
         {key, value}
       end)
 
