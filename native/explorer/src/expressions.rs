@@ -838,15 +838,17 @@ pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
 }
 
 #[rustler::nif]
-pub fn expr_contains(expr: ExExpr, pattern: &str) -> ExExpr {
-    let expr = expr.clone_inner();
-    ExExpr::new(expr.str().contains_literal(pattern.lit()))
+pub fn expr_contains(ex_expr: ExExpr, pattern: ExExpr) -> ExExpr {
+    let expr = ex_expr.clone_inner();
+    let pattern_expr = pattern.clone_inner();
+    ExExpr::new(expr.str().contains_literal(pattern_expr))
 }
 
 #[rustler::nif]
-pub fn expr_re_contains(expr: ExExpr, pattern: &str) -> ExExpr {
-    let expr = expr.clone_inner();
-    ExExpr::new(expr.str().contains(pattern.lit(), true))
+pub fn expr_re_contains(ex_expr: ExExpr, pattern: ExExpr) -> ExExpr {
+    let expr = ex_expr.clone_inner();
+    let pattern_expr = pattern.clone_inner();
+    ExExpr::new(expr.str().contains(pattern_expr, true))
 }
 
 #[rustler::nif]

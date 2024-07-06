@@ -2425,8 +2425,9 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec max(series :: Series.t()) ::
           number() | non_finite() | Date.t() | Time.t() | NaiveDateTime.t() | nil
-  def max(%Series{dtype: dtype} = series) when is_numeric_or_temporal_dtype(dtype),
-    do: apply_series(series, :max)
+  def max(%Series{dtype: dtype} = series)
+      when K.or(is_numeric_or_temporal_dtype(dtype), dtype == :unknown),
+      do: apply_series(series, :max)
 
   def max(%Series{dtype: dtype}), do: dtype_error("max/1", dtype, @numeric_or_temporal_dtypes)
 
@@ -2562,7 +2563,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec mean(series :: Series.t()) :: float() | non_finite() | nil
-  def mean(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+  def mean(%Series{dtype: dtype} = series) when K.or(is_numeric_dtype(dtype), dtype == :unknown),
     do: apply_series(series, :mean)
 
   def mean(%Series{dtype: dtype}),
@@ -3074,7 +3075,7 @@ defmodule Explorer.Series do
   def cumulative_max(series, opts \\ [])
 
   def cumulative_max(%Series{dtype: dtype} = series, opts)
-      when is_numeric_or_temporal_dtype(dtype) do
+      when K.or(is_numeric_or_temporal_dtype(dtype), dtype == :unknown) do
     opts = Keyword.validate!(opts, reverse: false)
     apply_series(series, :cumulative_max, [opts[:reverse]])
   end
@@ -3627,6 +3628,8 @@ defmodule Explorer.Series do
   defp cast_to_pow({:f, l}, {n, _}) when K.in(n, [:u, :s]), do: {:f, l}
   defp cast_to_pow({n, _}, {:f, r}) when K.in(n, [:u, :s]), do: {:f, r}
   defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:f, 64}
+  defp cast_to_pow(:unknown, _), do: :unknown
+  defp cast_to_pow(_, :unknown), do: :unknown
   defp cast_to_pow(_, _), do: nil
 
   @doc """
@@ -4003,7 +4006,9 @@ defmodule Explorer.Series do
          %Series{dtype: right_dtype} = right,
          args
        )
-       when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype)),
+       when K.and(is_numeric_dtype(left_dtype), is_numeric_dtype(right_dtype))
+            |> K.or(left_dtype == :unknown)
+            |> K.or(right_dtype == :unknown),
        do: apply_series_list(operation, [left, right | args])
 
   defp basic_numeric_operation(operation, %Series{} = left, %Series{} = right, args),
@@ -4499,11 +4504,21 @@ defmodule Explorer.Series do
 
   """
   @doc type: :element_wise
-  def (%Series{dtype: :boolean} = left) and (%Series{dtype: :boolean} = right),
-    do: apply_series_list(:binary_and, [left, right])
+  def (%Series{} = left) and (%Series{} = right) do
+    case {left, right} do
+      {%Series{dtype: :boolean}, %Series{dtype: :boolean}} ->
+        apply_series_list(:binary_and, [left, right])
 
-  def (%Series{} = left) and (%Series{} = right),
-    do: dtype_mismatch_error("and/2", left, right, [:boolean])
+      {%Series{data: %LazySeries{}}, %Series{}} ->
+        apply_series_list(:binary_and, [left, right])
+
+      {%Series{}, %Series{data: %LazySeries{}}} ->
+        apply_series_list(:binary_and, [left, right])
+
+      _ ->
+        dtype_mismatch_error("and/2", left, right, [:boolean])
+    end
+  end
 
   @doc """
   Returns a boolean mask of `left or right`, element-wise.
@@ -4524,11 +4539,21 @@ defmodule Explorer.Series do
 
   """
   @doc type: :element_wise
-  def (%Series{dtype: :boolean} = left) or (%Series{dtype: :boolean} = right),
-    do: apply_series_list(:binary_or, [left, right])
+  def (%Series{} = left) or (%Series{} = right) do
+    case {left, right} do
+      {%Series{data: %LazySeries{}}, %Series{}} ->
+        apply_series_list(:binary_or, [left, right])
 
-  def (%Series{} = left) or (%Series{} = right),
-    do: dtype_mismatch_error("or/2", left, right, [:boolean])
+      {%Series{}, %Series{data: %LazySeries{}}} ->
+        apply_series_list(:binary_or, [left, right])
+
+      {%Series{dtype: :boolean}, %Series{dtype: :boolean}} ->
+        apply_series_list(:binary_or, [left, right])
+
+      _ ->
+        dtype_mismatch_error("or/2", left, right, [:boolean])
+    end
+  end
 
   @doc """
   Checks equality between two entire series.
@@ -5483,8 +5508,8 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec contains(Series.t(), String.t()) :: Series.t()
-  def contains(%Series{dtype: :string} = series, substring)
-      when K.is_binary(substring),
+  def contains(%Series{dtype: dtype} = series, substring)
+      when K.and(K.or(dtype == :string, dtype == :unknown), K.is_binary(substring)),
       do: apply_series(series, :contains, [substring])
 
   def contains(%Series{dtype: dtype}, _), do: dtype_error("contains/2", dtype, [:string])
@@ -5513,11 +5538,12 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec re_contains(Series.t(), String.t()) :: Series.t()
-  def re_contains(%Series{dtype: :string} = series, pattern)
-      when K.is_binary(pattern),
+  def re_contains(%Series{dtype: dtype} = series, pattern)
+      when K.and(K.or(dtype == :string, dtype == :unknown), K.is_binary(pattern)),
       do: apply_series(series, :re_contains, [pattern])
 
-  def re_contains(%Series{dtype: :string}, %Regex{}) do
+  def re_contains(%Series{dtype: dtype}, %Regex{})
+      when K.or(dtype == :string, dtype == :unknown) do
     raise ArgumentError,
           "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
             "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`"

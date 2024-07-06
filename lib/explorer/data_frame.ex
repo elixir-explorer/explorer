@@ -2574,10 +2574,19 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec filter_with(df :: DataFrame.t(), filter :: Series.t()) :: DataFrame.t()
-  def filter_with(df, %Series{data: %LazySeries{} = filter}) do
-    # TODO: put back reduction over list of series.
-    Shared.apply_impl(df, :filter_with, [df, filter])
+  @spec filter_with(df :: DataFrame.t(), filter :: Series.t() | [Series.t()]) :: DataFrame.t()
+  def filter_with(df, filter_list) when is_list(filter_list) do
+    filter_with(df, Enum.reduce(filter_list, &Series.and(&1, &2)))
+  end
+
+  def filter_with(df, %Series{} = filter) do
+    case filter do
+      %Series{data: %LazySeries{} = lazy_filter} ->
+        Shared.apply_impl(df, :filter_with, [df, lazy_filter])
+
+      %Series{dtype: :boolean} = filter ->
+        mask(df, filter)
+    end
   end
 
   @doc """

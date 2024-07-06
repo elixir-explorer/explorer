@@ -352,7 +352,7 @@ defmodule Explorer.Query do
       unquote_splicing(Enum.reverse(vars))
       import Kernel, only: unquote(@kernel_only)
       import Explorer.Query, except: [query: 1]
-      import Explorer.Backend.LazySeries, except: [and: 2, or: 2, not: 1]
+      import Explorer.Series, except: [and: 2, or: 2, not: 1]
       unquote(query)
     end
   end
@@ -552,6 +552,7 @@ defmodule Explorer.Query do
   def not value, do: Explorer.Series.not(boolean!(value))
 
   defp boolean!(%Explorer.Series{dtype: :boolean} = series), do: series
+  defp boolean!(%Explorer.Series{data: %Explorer.Backend.LazySeries{}} = series), do: series
   defp boolean!(value) when is_boolean(value), do: Explorer.Series.from_list([value])
 
   defp boolean!(other) do

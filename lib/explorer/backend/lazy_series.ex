@@ -35,7 +35,7 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @series_ops_with_arity Backend.Series.behaviour_info(:callbacks) |> Enum.sort()
-  @custom_ops [:divide, :from_list, :inspect, :multiply]
+  @custom_ops [:divide, :from_list, :inspect, :multiply, :pow]
 
   def operations, do: Keyword.keys(@series_ops_with_arity)
   def operations_with_arity, do: @series_ops_with_arity
@@ -46,6 +46,16 @@ defmodule Explorer.Backend.LazySeries do
     def unquote(op)(unquote_splicing(args)) do
       Backend.LazySeries.__apply_lazy__(unquote(op), unquote(args))
     end
+  end
+
+  # Ops with default arguments.
+
+  def correlation(left, right) do
+    __apply_lazy__(:correlation, [left, right, 1, :pearson])
+  end
+
+  def covariance(left, right) do
+    __apply_lazy__(:covariance, [left, right, 1])
   end
 
   # These ops have an optional extra arg that defaults to `false`.
@@ -99,6 +109,10 @@ defmodule Explorer.Backend.LazySeries do
 
   def multiply(_out_dtype, left, right) do
     __apply_lazy__(:multiply, [left, right])
+  end
+
+  def pow(_out_dtype, left, right) do
+    __apply_lazy__(:pow, [left, right])
   end
 
   def inspect(series, opts) do

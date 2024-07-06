@@ -23,6 +23,9 @@ defmodule Explorer.PolarsBackend.Expression do
   # def to_expr(%DateTime{} = datetime), do: Native.expr_datetime(datetime)
   def to_expr(%Explorer.Duration{} = duration), do: Native.expr_duration(duration)
   def to_expr(%PolarsSeries{} = polars_series), do: Native.expr_series(polars_series)
+  # TODO: move the unwrapping upstream so this module can be unaware of the need.
+  # See: test/explorer/data_frame_test.exs:"filter_with/2"."filter columns with equal comparison"
+  def to_expr(%Explorer.Series{data: %PolarsSeries{} = polars_series}), do: to_expr(polars_series)
 
   def to_expr(map) when is_map(map) and not is_struct(map) do
     expr_list =
@@ -45,13 +48,25 @@ defmodule Explorer.PolarsBackend.Expression do
     apply(Native, :expr_format, [Enum.map(args, &to_expr/1)])
   end
 
-  # These ops have an optional extra arg that defaults to `false`.
-  @cumulative_ops [:cumulative_min, :cumulative_max, :cumulative_product, :cumulative_sum]
-  for op <- @cumulative_ops do
-    def to_expr(%LazySeries{op: unquote(op), args: [arg]}) do
-      apply(Native, :"expr_#{unquote(op)}", [to_expr(arg), false])
+  # The trailing arguments to these functions should not be converted to exprs.
+
+  @cumulative_ops [:cumulative_max, :cumulative_min, :cumulative_product, :cumulative_sum]
+  @window_ops [:window_max, :window_mean, :window_median, :window_min, :window_sum]
+  @ops_arity_1 @cumulative_ops ++ @window_ops
+  for op <- @ops_arity_1 do
+    def to_expr(%LazySeries{op: unquote(op), args: [arg | opts]}) do
+      apply(Native, :"expr_#{unquote(op)}", [to_expr(arg) | opts])
     end
   end
+
+  @ops_arity_2 [:correlation, :covariance]
+  for op <- @ops_arity_2 do
+    def to_expr(%LazySeries{op: unquote(op), args: [left, right | opts]}) do
+      apply(Native, :"expr_#{unquote(op)}", [to_expr(left), to_expr(right) | opts])
+    end
+  end
+
+  # Default
 
   def to_expr(%LazySeries{op: op, args: args}) when is_list(args) do
     apply(Native, :"expr_#{op}", Enum.map(args, &to_expr/1))
