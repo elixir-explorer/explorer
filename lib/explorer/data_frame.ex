@@ -2807,7 +2807,17 @@ defmodule Explorer.DataFrame do
 
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
-    Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
+    df = Shared.apply_impl(df, :mutate_with, [df_out, column_pairs])
+
+    # HACK
+    # We can't (currently) pre-compute the output dtypes from lazy-backed
+    # series ahead of time. Here, we post-compute it for the time being until
+    # we have a better plan for pre-computing.
+    {:ok, dtypes} = Explorer.PolarsBackend.Native.df_dtypes(df.data)
+    {:ok, names} = Explorer.PolarsBackend.Native.df_names(df.data)
+    df = %{df | dtypes: Map.new(Enum.zip(names, dtypes))}
+
+    df
   end
 
   @doc """
