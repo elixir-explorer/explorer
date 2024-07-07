@@ -50,17 +50,42 @@ defmodule Explorer.PolarsBackend.Expression do
 
   # The trailing arguments to these functions should not be converted to exprs.
 
-  @cumulative_ops [:cumulative_max, :cumulative_min, :cumulative_product, :cumulative_sum]
-  @window_ops [:window_max, :window_mean, :window_median, :window_min, :window_sum]
-  @ops_arity_1 @cumulative_ops ++ @window_ops
-  for op <- @ops_arity_1 do
+  @ops_first_1_only [
+    :argsort,
+    :cast,
+    :clip_float,
+    :clip_integer,
+    :cumulative_max,
+    :cumulative_min,
+    :cumulative_product,
+    :cumulative_sum,
+    :field,
+    :head,
+    :peaks,
+    :quantile,
+    :rank,
+    :round,
+    :sample_frac,
+    :sample_n,
+    :skew,
+    :sort,
+    :standard_deviation,
+    :tail,
+    :variance,
+    :window_max,
+    :window_mean,
+    :window_median,
+    :window_min,
+    :window_sum
+  ]
+  for op <- @ops_first_1_only do
     def to_expr(%LazySeries{op: unquote(op), args: [arg | opts]}) do
       apply(Native, :"expr_#{unquote(op)}", [to_expr(arg) | opts])
     end
   end
 
-  @ops_arity_2 [:correlation, :covariance]
-  for op <- @ops_arity_2 do
+  @ops_first_2_only [:correlation, :covariance]
+  for op <- @ops_first_2_only do
     def to_expr(%LazySeries{op: unquote(op), args: [left, right | opts]}) do
       apply(Native, :"expr_#{unquote(op)}", [to_expr(left), to_expr(right) | opts])
     end

@@ -1042,8 +1042,9 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec strptime(series :: Series.t(), format_string :: String.t()) :: Series.t()
-  def strptime(%Series{dtype: dtype} = series, format_string) when K.in(dtype, [:string]),
-    do: apply_series(series, :strptime, [format_string])
+  def strptime(%Series{dtype: dtype} = series, format_string)
+      when K.in(dtype, [:string, :unknown]),
+      do: apply_series(series, :strptime, [format_string])
 
   def strptime(%Series{dtype: dtype}, _format_string),
     do: dtype_error("strptime/2", dtype, [:string])
@@ -1104,7 +1105,8 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec clip(series :: Series.t(), min :: number(), max :: number()) :: Series.t()
-  def clip(%Series{dtype: dtype} = series, min, max) when is_numeric_dtype(dtype) do
+  def clip(%Series{dtype: dtype} = series, min, max)
+      when K.or(is_numeric_dtype(dtype), dtype == :unknown) do
     if !K.and(is_number(min), is_number(max)) do
       raise ArgumentError,
             "Explorer.Series.clip/3 expects both the min and max bounds to be numbers"
@@ -1251,7 +1253,9 @@ defmodule Explorer.Series do
   """
   @doc type: :introspection
   @spec categories(series :: Series.t()) :: Series.t()
-  def categories(%Series{dtype: :category} = series), do: apply_series(series, :categories)
+  def categories(%Series{dtype: dtype} = series) when K.in(dtype, [:category, :unknown]),
+    do: apply_series(series, :categories)
+
   def categories(%Series{dtype: dtype}), do: dtype_error("categories/1", dtype, [:category])
 
   @doc """
@@ -1328,27 +1332,32 @@ defmodule Explorer.Series do
 
   """
   @doc type: :element_wise
-  def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: :category} = categories)
-      when K.in(l_dtype, [:string | @integer_types]),
-      do: apply_series(series, :categorise, [categories])
-
-  def categorise(%Series{dtype: l_dtype} = series, %Series{dtype: :string} = categories)
-      when K.in(l_dtype, [:string | @integer_types]) do
-    if nil_count(categories) != 0 do
-      raise(ArgumentError, "categories as strings cannot have nil values")
-    end
-
-    if count(categories) != n_distinct(categories) do
-      raise(ArgumentError, "categories as strings cannot have duplicated values")
-    end
-
-    categories = cast(categories, :category)
-    apply_series(series, :categorise, [categories])
+  def categorise(%Series{} = series, categories) when is_list(categories) do
+    categorise(series, from_list(categories, dtype: :string))
   end
 
-  def categorise(%Series{dtype: l_dtype} = series, [head | _] = categories)
-      when K.and(K.in(l_dtype, [:string | @integer_types]), is_binary(head)),
-      do: categorise(series, from_list(categories, dtype: :string))
+  def categorise(%Series{dtype: dtype} = series, %Series{} = categories)
+      when K.in(dtype, [:string, :unknown | @integer_types]) do
+    categories =
+      case categories.dtype do
+        :category ->
+          categories
+
+        :string ->
+          cond do
+            nil_count(categories) != 0 ->
+              raise(ArgumentError, "categories as strings cannot have nil values")
+
+            count(categories) != n_distinct(categories) ->
+              raise(ArgumentError, "categories as strings cannot have duplicated values")
+
+            true ->
+              cast(categories, :category)
+          end
+      end
+
+    apply_series(series, :categorise, [categories])
+  end
 
   # Slice and dice
 
@@ -1458,25 +1467,28 @@ defmodule Explorer.Series do
           on_false :: Series.t() | inferable_scalar()
         ) ::
           Series.t()
-  def select(%Series{dtype: predicate_dtype} = predicate, on_true, on_false) do
-    if predicate_dtype != :boolean do
-      raise ArgumentError,
-            "Explorer.Series.select/3 expect the first argument to be a series of booleans, got: #{inspect(predicate_dtype)}"
-    end
-
-    %Series{dtype: on_true_dtype} = on_true = maybe_from_list(on_true)
-    %Series{dtype: on_false_dtype} = on_false = maybe_from_list(on_false)
-
+  def select(%Series{} = predicate, %Series{} = on_true, %Series{} = on_false) do
     cond do
-      K.and(is_numeric_dtype(on_true_dtype), is_numeric_dtype(on_false_dtype)) ->
+      K.not(K.in(predicate.dtype, [:boolean, :unknown])) ->
+        raise ArgumentError,
+              "Explorer.Series.select/3 expect the first argument to be a series of booleans, got: #{inspect(predicate.dtype)}"
+
+      K.and(is_numeric_dtype(on_true.dtype), is_numeric_dtype(on_false.dtype)) ->
         apply_series_list(:select, [predicate, on_true, on_false])
 
-      on_true_dtype == on_false_dtype ->
+      on_true.dtype == on_false.dtype ->
+        apply_series_list(:select, [predicate, on_true, on_false])
+
+      K.or(on_true.dtype == :unknown, on_false.dtype == :unknown) ->
         apply_series_list(:select, [predicate, on_true, on_false])
 
       true ->
-        dtype_mismatch_error("select/3", on_true_dtype, on_false_dtype)
+        dtype_mismatch_error("select/3", on_true.dtype, on_false.dtype)
     end
+  end
+
+  def select(%Series{} = predicate, on_true, on_false) do
+    select(predicate, maybe_from_list(on_true), maybe_from_list(on_false))
   end
 
   defp maybe_from_list(%Series{} = series), do: series
@@ -4599,6 +4611,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   def not (%Series{dtype: :boolean} = series), do: apply_series(series, :unary_not, [])
+  def not (%Series{dtype: :unknown} = series), do: apply_series(series, :unary_not, [])
   def not %Series{dtype: dtype}, do: dtype_error("not/1", dtype, [:boolean])
 
   # Sort
@@ -6579,15 +6592,21 @@ defmodule Explorer.Series do
   """
   @doc type: :struct_wise
   @spec field(Series.t(), String.t() | atom()) :: Series.t()
-  def field(%Series{dtype: {:struct, dtypes}} = series, name)
-      when K.or(is_binary(name), is_atom(name)) do
-    name = to_string(name)
+  def field(%Series{dtype: dtype} = series, name) when K.or(is_binary(name), is_atom(name)) do
+    case dtype do
+      {:struct, dtypes} ->
+        unless List.keymember?(dtypes, name, 0) do
+          fields = Enum.map(dtypes, &elem(&1, 0))
+          raise ArgumentError, "field #{inspect(name)} not found in fields #{inspect(fields)}"
+        end
 
-    if List.keymember?(dtypes, name, 0) do
-      apply_series(series, :field, [name])
-    else
-      raise ArgumentError,
-            "field #{inspect(name)} not found in fields #{inspect(Enum.map(dtypes, &elem(&1, 0)))}"
+        apply_series(series, :field, [name])
+
+      :unknown ->
+        apply_series(series, :field, [name])
+
+      _ ->
+        dtype_error("field/2", dtype, [{:struct, :any}])
     end
   end
 

@@ -622,58 +622,56 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  # describe "mutate_with/2" do
-  #   test "adds new columns" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+  describe "mutate_with/2" do
+    test "adds new columns" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-  #     df1 =
-  #       DF.mutate_with(df, fn ldf ->
-  #         [c: Series.add(ldf["a"], 5), d: Series.add(2, ldf["a"])]
-  #       end)
+      df1 =
+        DF.mutate_with(df,
+          c: Series.add(Series.col("a"), 5),
+          d: Series.add(2, Series.col("a"))
+        )
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 2, 3],
-  #              b: ["a", "b", "c"],
-  #              c: [6, 7, 8],
-  #              d: [3, 4, 5]
-  #            }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: ["a", "b", "c"],
+               c: [6, 7, 8],
+               d: [3, 4, 5]
+             }
 
-  #     assert df1.names == ["a", "b", "c", "d"]
-  #     assert df1.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:s, 64}}
-  #   end
+      assert df1.names == ["a", "b", "c", "d"]
+      assert df1.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:s, 64}}
+    end
 
-  #   test "changes a column" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+    test "changes a column" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-  #     df1 =
-  #       DF.mutate_with(df, fn ldf ->
-  #         [a: Series.cast(ldf["a"], {:f, 64})]
-  #       end)
+      df1 = DF.mutate_with(df, a: Series.cast(Series.col("a"), {:f, 64}))
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1.0, 2.0, 3.0],
-  #              b: ["a", "b", "c"]
-  #            }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1.0, 2.0, 3.0],
+               b: ["a", "b", "c"]
+             }
 
-  #     assert df1.names == ["a", "b"]
-  #     assert df1.dtypes == %{"a" => {:f, 64}, "b" => :string}
-  #   end
+      assert df1.names == ["a", "b"]
+      assert df1.dtypes == %{"a" => {:f, 64}, "b" => :string}
+    end
 
-  #   test "extracts a field from struct to new column" do
-  #     df = DF.new([%{a: %{n: 1}}, %{a: %{n: 1}}])
-  #     df2 = DF.mutate(df, n: field(a, "n"))
-  #     assert df.dtypes == %{"a" => {:struct, [{"n", {:s, 64}}]}}
-  #     assert df2.dtypes == %{"a" => {:struct, [{"n", {:s, 64}}]}, "n" => {:s, 64}}
-  #   end
+    test "extracts a field from struct to new column" do
+      df = DF.new([%{a: %{n: 1}}, %{a: %{n: 1}}])
+      df2 = DF.mutate_with(df, n: Series.field(Series.col("a"), "n"))
+      assert df.dtypes == %{"a" => {:struct, [{"n", {:s, 64}}]}}
+      assert df2.dtypes == %{"a" => {:struct, [{"n", {:s, 64}}]}, "n" => {:s, 64}}
+    end
 
-  #   test "throws error when a field is not found in struct" do
-  #     df = DF.new([%{a: %{n: 1}}, %{a: %{n: 1}}])
+    test "throws error when a field is not found in struct" do
+      df = DF.new([%{a: %{n: 1}}, %{a: %{n: 1}}])
 
-  #     assert_raise ArgumentError, "field \"m\" not found in fields [\"n\"]", fn ->
-  #       DF.mutate(df, n: field(a, "m"))
-  #     end
-  #   end
-  # end
+      assert_raise RuntimeError, ~r"^Polars Error: .+", fn ->
+        DF.mutate_with(df, n: Series.field(Series.col("a"), "m"))
+      end
+    end
+  end
 
   # describe "mutate/2" do
   #   test "with nil" do
