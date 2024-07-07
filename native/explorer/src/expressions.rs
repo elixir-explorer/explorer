@@ -17,7 +17,7 @@ use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 use polars::lazy::dsl;
 use polars::prelude::{
-    col, concat_str, cov, int_range, pearson_corr, spearman_rank_corr, when, IntoLazy,
+    col, concat_expr, concat_str, cov, int_range, pearson_corr, spearman_rank_corr, when, IntoLazy,
     LiteralValue, SortOptions,
 };
 use polars::prelude::{DataType, EWMOptions, Expr, Literal, StrptimeOptions, TimeUnit};
@@ -614,15 +614,8 @@ pub fn expr_format(exprs: Vec<ExExpr>) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_concat(exprs: Vec<ExExpr>) -> ExExpr {
-    let mut iter = exprs.iter();
-    let mut result = iter.next().unwrap().clone_inner();
-
-    for expr in iter {
-        result = result.append(expr.clone_inner(), false);
-    }
-
-    ExExpr::new(result)
+pub fn expr_concat(ex_exprs: Vec<ExExpr>) -> ExExpr {
+    ExExpr::new(concat_expr(ex_expr_to_exprs(ex_exprs), false).unwrap())
 }
 
 #[rustler::nif]

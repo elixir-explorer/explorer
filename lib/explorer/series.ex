@@ -2247,7 +2247,10 @@ defmodule Explorer.Series do
                         "First cast the series to the desired dtype."
             end)
 
-          Enum.map(series, &cast(&1, dtype))
+          case dtype do
+            :unknown -> series
+            _ -> Enum.map(series, &cast(&1, dtype))
+          end
       end
 
     impl!(series).concat(series)
@@ -2648,8 +2651,9 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec median(series :: Series.t()) :: float() | non_finite() | nil
-  def median(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
-    do: apply_series(series, :median)
+  def median(%Series{dtype: dtype} = series)
+      when K.or(is_numeric_dtype(dtype), dtype == :unknown),
+      do: apply_series(series, :median)
 
   def median(%Series{dtype: dtype}),
     do: dtype_error("median/1", dtype, @numeric_dtypes)
@@ -2800,7 +2804,7 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec quantile(series :: Series.t(), quantile :: float()) :: any()
   def quantile(%Series{dtype: dtype} = series, quantile)
-      when is_numeric_or_temporal_dtype(dtype),
+      when K.or(is_numeric_or_temporal_dtype(dtype), dtype == :unknown),
       do: apply_series(series, :quantile, [quantile])
 
   def quantile(%Series{dtype: dtype}, _) do
@@ -2848,7 +2852,8 @@ defmodule Explorer.Series do
   @spec skew(series :: Series.t(), opts :: Keyword.t()) :: float() | non_finite() | nil
   def skew(series, opts \\ [])
 
-  def skew(%Series{dtype: dtype} = series, opts) when is_numeric_dtype(dtype) do
+  def skew(%Series{dtype: dtype} = series, opts)
+      when K.or(is_numeric_dtype(dtype), dtype == :unknown) do
     opts = Keyword.validate!(opts, bias: true)
     apply_series(series, :skew, [opts[:bias]])
   end
@@ -3139,7 +3144,7 @@ defmodule Explorer.Series do
   def cumulative_min(series, opts \\ [])
 
   def cumulative_min(%Series{dtype: dtype} = series, opts)
-      when is_numeric_or_temporal_dtype(dtype) do
+      when K.or(is_numeric_or_temporal_dtype(dtype), dtype == :unknown) do
     opts = Keyword.validate!(opts, reverse: false)
     apply_series(series, :cumulative_min, [opts[:reverse]])
   end
@@ -3181,7 +3186,7 @@ defmodule Explorer.Series do
   def cumulative_sum(series, opts \\ [])
 
   def cumulative_sum(%Series{dtype: dtype} = series, opts)
-      when is_numeric_dtype(dtype) do
+      when K.or(is_numeric_dtype(dtype), dtype == :unknown) do
     opts = Keyword.validate!(opts, reverse: false)
     apply_series(series, :cumulative_sum, [opts[:reverse]])
   end
@@ -3222,7 +3227,7 @@ defmodule Explorer.Series do
   def cumulative_product(series, opts \\ [])
 
   def cumulative_product(%Series{dtype: dtype} = series, opts)
-      when is_numeric_dtype(dtype) do
+      when K.or(is_numeric_dtype(dtype), dtype == :unknown) do
     opts = Keyword.validate!(opts, reverse: false)
     apply_series(series, :cumulative_product, [opts[:reverse]])
   end
@@ -3265,7 +3270,7 @@ defmodule Explorer.Series do
   def peaks(series, max_or_min \\ :max)
 
   def peaks(%Series{dtype: dtype} = series, max_or_min)
-      when is_numeric_or_temporal_dtype(dtype),
+      when K.or(is_numeric_or_temporal_dtype(dtype), dtype == :unknown),
       do: apply_series(series, :peaks, [max_or_min])
 
   def peaks(%Series{dtype: dtype}, _),
@@ -3571,6 +3576,8 @@ defmodule Explorer.Series do
   defp cast_to_divide({:f, left}, {:f, right}), do: {:f, max(left, right)}
   defp cast_to_divide({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_divide({:duration, p}, {:f, _}), do: {:duration, p}
+  defp cast_to_divide(:unknown, _), do: :unknown
+  defp cast_to_divide(_, :unknown), do: :unknown
   defp cast_to_divide(_, _), do: nil
 
   @doc """
@@ -3748,17 +3755,16 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec quotient(left :: Series.t(), right :: Series.t() | integer()) :: Series.t()
-  def quotient(%Series{dtype: l_dtype} = left, %Series{dtype: r_dtype} = right)
-      when K.and(K.in(l_dtype, @integer_types), K.in(r_dtype, @integer_types)),
-      do: apply_series_list(:quotient, [left, right])
+  def quotient(left, right) do
+    [left, right] = wrap_literals_with_at_least_one_series("quotient/2", [left, right])
+    both_integer? = K.and(K.in(left.dtype, @integer_types), K.in(right.dtype, @integer_types))
 
-  def quotient(%Series{dtype: l_dtype} = left, right)
-      when K.and(K.in(l_dtype, @integer_types), is_integer(right)),
-      do: apply_series_list(:quotient, [left, from_list([right])])
-
-  def quotient(left, %Series{dtype: r_dtype} = right)
-      when K.and(K.in(r_dtype, @integer_types), is_integer(left)),
-      do: apply_series_list(:quotient, [from_list([left]), right])
+    if K.or(K.in(:unknown, [left.dtype, right.dtype]), both_integer?) do
+      apply_series_list(:quotient, [left, right])
+    else
+      dtype_mismatch_error("quotient/2", left, right)
+    end
+  end
 
   @doc """
   Computes the remainder of an element-wise integer division.
@@ -3805,7 +3811,7 @@ defmodule Explorer.Series do
     [left, right] = wrap_literals_with_at_least_one_series("remainder/2", [left, right])
 
     if _out_dtype = cast_to_remainder(left, right) do
-      apply_series(left, :remainder, [right])
+      apply_series_list(:remainder, [left, right])
     else
       dtype_mismatch_error("remainder/2", left, right)
     end
@@ -5406,7 +5412,7 @@ defmodule Explorer.Series do
         ) :: Series.t()
   def fill_missing(%Series{} = series, value)
       when K.in(value, [:nan, :infinity, :neg_infinity]) do
-    if K.not(K.in(series.dtype, [{:f, 32}, {:f, 64}])) do
+    if K.not(K.in(series.dtype, [{:f, 32}, {:f, 64}, :unknown])) do
       raise ArgumentError,
             "fill_missing with :#{value} values require a float series, got #{inspect(series.dtype)}"
     end
@@ -5495,7 +5501,7 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec abs(series :: Series.t()) :: Series.t()
-  def abs(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+  def abs(%Series{dtype: dtype} = series) when K.or(is_numeric_dtype(dtype), dtype == :unknown),
     do: apply_series(series, :abs)
 
   def abs(%Series{dtype: dtype}),
@@ -6185,8 +6191,9 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec is_finite(Series.t()) :: Series.t()
-  def is_finite(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
-    do: apply_series(series, :is_finite)
+  def is_finite(%Series{dtype: dtype} = series)
+      when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+      do: apply_series(series, :is_finite)
 
   def is_finite(%Series{dtype: dtype}), do: dtype_error("is_finite/1", dtype, @float_dtypes)
 
@@ -6206,8 +6213,9 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec is_infinite(Series.t()) :: Series.t()
-  def is_infinite(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
-    do: apply_series(series, :is_infinite)
+  def is_infinite(%Series{dtype: dtype} = series)
+      when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+      do: apply_series(series, :is_infinite)
 
   def is_infinite(%Series{dtype: dtype}),
     do: dtype_error("is_infinite/1", dtype, @float_dtypes)
@@ -6228,8 +6236,9 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec is_nan(Series.t()) :: Series.t()
-  def is_nan(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
-    do: apply_series(series, :is_nan)
+  def is_nan(%Series{dtype: dtype} = series)
+      when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+      do: apply_series(series, :is_nan)
 
   def is_nan(%Series{dtype: dtype}), do: dtype_error("is_nan/1", dtype, @float_dtypes)
 
@@ -6704,6 +6713,7 @@ defmodule Explorer.Series do
   @non_finite [:nan, :infinity, :neg_infinity]
   defp infer_literal_dtype(literal) do
     case literal do
+      nil -> {:ok, :null}
       %Date{} -> {:ok, :date}
       %Time{} -> {:ok, :time}
       %DateTime{time_zone: tz} -> {:ok, {:datetime, :microsecond, tz}}
@@ -6836,6 +6846,8 @@ defmodule Explorer.Series do
       {dtype, dtype} -> :ok
       {{:s, _}, {:f, _}} -> :ok
       {{:f, _}, {:s, _}} -> :ok
+      {:unknown, _} -> :ok
+      {_, :unknown} -> :ok
       {left, right} -> dtype_mismatch_error("coalesce/2", left, right)
     end
   end

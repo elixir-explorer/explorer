@@ -26,6 +26,8 @@ defmodule Explorer.PolarsBackend.Expression do
   # TODO: move the unwrapping upstream so this module can be unaware of the need.
   # See: test/explorer/data_frame_test.exs:"filter_with/2"."filter columns with equal comparison"
   def to_expr(%Explorer.Series{data: %PolarsSeries{} = polars_series}), do: to_expr(polars_series)
+  # TODO: (probably) move the unwrapping upstream.
+  def to_expr(%Explorer.Series{data: %LazySeries{} = lazy_series}), do: to_expr(lazy_series)
 
   def to_expr(map) when is_map(map) and not is_struct(map) do
     expr_list =
@@ -43,9 +45,38 @@ defmodule Explorer.PolarsBackend.Expression do
 
   def to_expr(%LazySeries{op: :lit, args: [lit]}), do: to_expr(lit)
 
-  # TODO: generically handle ops whose only arg is a list of args?
-  def to_expr(%LazySeries{op: :format, args: [args]}) when is_list(args) do
-    apply(Native, :expr_format, [Enum.map(args, &to_expr/1)])
+  def to_expr(%LazySeries{op: :clip, args: [series, min_num, max_num]}) do
+    lazy_series =
+      if is_integer(min_num) and is_integer(max_num) do
+        %LazySeries{op: :clip_integer, args: [series, min_num, max_num]}
+      else
+        %LazySeries{op: :clip_float, args: [series, 1.0 * min_num, 1.0 * max_num]}
+      end
+
+    to_expr(lazy_series)
+  end
+
+  def to_expr(%LazySeries{op: :peaks, args: [series, method]}) do
+    method =
+      case method do
+        method when is_binary(method) -> method
+        method when is_atom(method) -> Atom.to_string(method)
+      end
+
+    apply(Native, :expr_peaks, [to_expr(series), method])
+  end
+
+  def to_expr(%LazySeries{op: :fill_missing_with_strategy, args: [series, strategy]})
+      when is_atom(strategy) do
+    args = [to_expr(series), Atom.to_string(strategy)]
+    apply(Native, :expr_fill_missing_with_strategy, args)
+  end
+
+  @ops_only_arg_is_list [:concat, :format]
+  for op <- @ops_only_arg_is_list do
+    def to_expr(%LazySeries{op: unquote(op), args: [args]}) when is_list(args) do
+      apply(Native, :"expr_#{unquote(op)}", [Enum.map(args, &to_expr/1)])
+    end
   end
 
   # The trailing arguments to these functions should not be converted to exprs.
@@ -59,7 +90,11 @@ defmodule Explorer.PolarsBackend.Expression do
     :cumulative_min,
     :cumulative_product,
     :cumulative_sum,
+    :ewm_mean,
+    :ewm_standard_deviation,
+    :ewm_variance,
     :field,
+    :fill_missing,
     :head,
     :peaks,
     :quantile,
@@ -68,6 +103,7 @@ defmodule Explorer.PolarsBackend.Expression do
     :sample_frac,
     :sample_n,
     :skew,
+    :slice,
     :sort,
     :standard_deviation,
     :tail,
@@ -76,6 +112,7 @@ defmodule Explorer.PolarsBackend.Expression do
     :window_mean,
     :window_median,
     :window_min,
+    :window_standard_deviation,
     :window_sum
   ]
   for op <- @ops_first_1_only do

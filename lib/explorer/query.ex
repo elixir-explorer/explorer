@@ -349,11 +349,17 @@ defmodule Explorer.Query do
 
   defp unquote_query(query, vars) do
     quote do
-      unquote_splicing(Enum.reverse(vars))
-      import Kernel, only: unquote(@kernel_only)
-      import Explorer.Query, except: [query: 1]
-      import Explorer.Series, except: [and: 2, or: 2, not: 1]
-      unquote(query)
+      # Prevent the imports from leaking by wrapping everything in a function
+      # that we immediately execute.
+      fun = fn ->
+        unquote_splicing(Enum.reverse(vars))
+        import Kernel, only: unquote(@kernel_only)
+        import Explorer.Query, except: [query: 1]
+        import Explorer.Series, except: [and: 2, or: 2, not: 1]
+        unquote(query)
+      end
+
+      fun.()
     end
   end
 
