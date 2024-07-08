@@ -242,6 +242,19 @@ defmodule Explorer.Series do
             when is_numeric_dtype(dtype)
                  |> K.or(dtype |> is_temporal_dtype())
 
+  defguardp is_list_dtype(dtype)
+            when is_tuple(dtype)
+                 |> K.and(tuple_size(dtype) == 2)
+                 |> K.and(elem(dtype, 0) == :list)
+
+  defguardp is_struct_dtype(dtype)
+            when is_tuple(dtype)
+                 |> K.and(tuple_size(dtype) == 2)
+                 |> K.and(elem(dtype, 0) == :struct)
+
+  defguardp is_composite_dtype(dtype)
+            when K.or(is_list_dtype(dtype), is_struct_dtype(dtype))
+
   @impl true
   def fetch(series, idx) when is_integer(idx), do: {:ok, fetch!(series, idx)}
   def fetch(series, indices) when is_list(indices), do: {:ok, slice(series, indices)}
@@ -2490,8 +2503,9 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec argmax(series :: Series.t()) :: number() | non_finite() | nil
-  def argmax(%Series{dtype: dtype} = series) when is_numeric_or_temporal_dtype(dtype),
-    do: apply_series(series, :argmax)
+  def argmax(%Series{dtype: dtype} = series)
+      when K.or(is_numeric_or_temporal_dtype(dtype), dtype == :unknown),
+      do: apply_series(series, :argmax)
 
   def argmax(%Series{dtype: dtype}),
     do: dtype_error("argmax/1", dtype, @numeric_or_temporal_dtypes)
@@ -2548,8 +2562,9 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec argmin(series :: Series.t()) :: number() | non_finite() | nil
-  def argmin(%Series{dtype: dtype} = series) when is_numeric_or_temporal_dtype(dtype),
-    do: apply_series(series, :argmin)
+  def argmin(%Series{dtype: dtype} = series)
+      when K.or(is_numeric_or_temporal_dtype(dtype), dtype == :unknown),
+      do: apply_series(series, :argmin)
 
   def argmin(%Series{dtype: dtype}),
     do: dtype_error("argmin/1", dtype, @numeric_or_temporal_dtypes)
@@ -2621,7 +2636,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec mode(series :: Series.t()) :: Series.t() | nil
-  def mode(%Series{dtype: {composite, _} = dtype}) when K.in(composite, [:list, :struct]),
+  def mode(%Series{dtype: dtype}) when K.or(is_composite_dtype(dtype), dtype == :unknown),
     do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
 
   def mode(%Series{} = series),
@@ -2688,8 +2703,9 @@ defmodule Explorer.Series do
   @spec variance(series :: Series.t(), ddof :: non_neg_integer()) :: float() | non_finite() | nil
   def variance(series, ddof \\ 1)
 
-  def variance(%Series{dtype: dtype} = series, ddof) when is_numeric_dtype(dtype),
-    do: apply_series(series, :variance, [ddof])
+  def variance(%Series{dtype: dtype} = series, ddof)
+      when K.or(is_numeric_dtype(dtype), dtype == :unknown),
+      do: apply_series(series, :variance, [ddof])
 
   def variance(%Series{dtype: dtype}, _), do: dtype_error("variance/1", dtype, @numeric_dtypes)
 
@@ -2724,8 +2740,9 @@ defmodule Explorer.Series do
           float() | non_finite() | nil
   def standard_deviation(series, ddof \\ 1)
 
-  def standard_deviation(%Series{dtype: dtype} = series, ddof) when is_numeric_dtype(dtype),
-    do: apply_series(series, :standard_deviation, [ddof])
+  def standard_deviation(%Series{dtype: dtype} = series, ddof)
+      when K.or(is_numeric_dtype(dtype), dtype == :unknown),
+      do: apply_series(series, :standard_deviation, [ddof])
 
   def standard_deviation(%Series{dtype: dtype}, _),
     do: dtype_error("standard_deviation/1", dtype, @numeric_dtypes)
@@ -2757,8 +2774,9 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec product(series :: Series.t()) :: float() | non_finite() | nil
-  def product(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
-    do: at(apply_series(series, :product), 0)
+  def product(%Series{dtype: dtype} = series)
+      when K.or(is_numeric_dtype(dtype), dtype == :unknown),
+      do: at(apply_series(series, :product), 0)
 
   def product(%Series{dtype: dtype}),
     do: dtype_error("product/1", dtype, @numeric_dtypes)
@@ -2965,6 +2983,7 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec all?(series :: Series.t()) :: boolean()
   def all?(%Series{dtype: :boolean} = series), do: apply_series(series, :all?)
+  def all?(%Series{dtype: :unknown} = series), do: apply_series(series, :all?)
   def all?(%Series{dtype: dtype}), do: dtype_error("all?/1", dtype, [:boolean])
 
   @doc """
@@ -3007,6 +3026,7 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec any?(series :: Series.t()) :: boolean()
   def any?(%Series{dtype: :boolean} = series), do: apply_series(series, :any?)
+  def any?(%Series{dtype: :unknown} = series), do: apply_series(series, :any?)
   def any?(%Series{dtype: dtype}), do: dtype_error("any?/1", dtype, [:boolean])
 
   @doc """
@@ -5590,7 +5610,7 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec upcase(Series.t()) :: Series.t()
-  def upcase(%Series{dtype: :string} = series),
+  def upcase(%Series{dtype: dtype} = series) when K.in(dtype, [:string, :unknown]),
     do: apply_series(series, :upcase)
 
   def upcase(%Series{dtype: dtype}), do: dtype_error("upcase/1", dtype, [:string])
@@ -5609,7 +5629,7 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec downcase(Series.t()) :: Series.t()
-  def downcase(%Series{dtype: :string} = series),
+  def downcase(%Series{dtype: dtype} = series) when K.in(dtype, [:string, :unknown]),
     do: apply_series(series, :downcase)
 
   def downcase(%Series{dtype: dtype}), do: dtype_error("downcase/1", dtype, [:string])
@@ -5634,14 +5654,18 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec replace(Series.t(), binary(), binary()) :: Series.t()
-  def replace(%Series{dtype: :string} = series, substring, replacement)
-      when K.and(is_binary(substring), is_binary(replacement)),
-      do: apply_series(series, :replace, [substring, replacement])
+  def replace(%Series{dtype: dtype} = series, substring, replacement) do
+    cond do
+      K.not(K.in(dtype, [:string, :unknown])) ->
+        dtype_error("replace/3", dtype, [:string])
 
-  def replace(%Series{dtype: :string}, _, _),
-    do: raise(ArgumentError, "substring and replacement in replace/3 need to be a string")
+      K.not(K.and(is_binary(substring), is_binary(replacement))) ->
+        raise(ArgumentError, "substring and replacement in replace/3 need to be a string")
 
-  def replace(%Series{dtype: dtype}, _, _), do: dtype_error("replace/3", dtype, [:string])
+      true ->
+        apply_series(series, :replace, [substring, replacement])
+    end
+  end
 
   @doc """
   Replaces all occurences of a pattern with replacement in string series.
@@ -5701,20 +5725,23 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec re_replace(Series.t(), binary(), binary()) :: Series.t()
-  def re_replace(%Series{dtype: :string} = series, pattern, replacement)
-      when K.and(is_binary(pattern), is_binary(replacement)),
-      do: apply_series(series, :re_replace, [pattern, replacement])
+  def re_replace(%Series{dtype: dtype} = series, pattern, replacement) do
+    cond do
+      K.not(K.in(dtype, [:string, :unknown])) ->
+        dtype_error("re_replace/3", dtype, [:string])
 
-  def re_replace(%Series{dtype: :string}, %Regex{}, _) do
-    raise ArgumentError,
-          "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
-            "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`"
+      match?(%Regex{}, pattern) ->
+        raise ArgumentError,
+              "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
+                "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`"
+
+      K.not(K.and(is_binary(pattern), is_binary(replacement))) ->
+        raise ArgumentError, "pattern and replacement in re_replace/3 need to be a string"
+
+      true ->
+        apply_series(series, :re_replace, [pattern, replacement])
+    end
   end
-
-  def re_replace(%Series{dtype: :string}, _, _),
-    do: raise(ArgumentError, "pattern and replacement in re_replace/3 need to be a string")
-
-  def re_replace(%Series{dtype: dtype}, _, _), do: dtype_error("re_replace/3", dtype, [:string])
 
   @doc """
   Returns a string series where all leading and trailing Unicode whitespaces
@@ -5732,7 +5759,7 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec strip(Series.t()) :: Series.t()
-  def strip(%Series{dtype: :string} = series),
+  def strip(%Series{dtype: dtype} = series) when K.in(dtype, [:string, :unknown]),
     do: apply_series(series, :strip, [nil])
 
   @doc """
@@ -5760,8 +5787,9 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec strip(Series.t(), String.t()) :: Series.t()
-  def strip(%Series{dtype: :string} = series, string) when is_binary(string),
-    do: apply_series(series, :strip, [string])
+  def strip(%Series{dtype: dtype} = series, string)
+      when K.and(K.in(dtype, [:string, :unknown]), is_binary(string)),
+      do: apply_series(series, :strip, [string])
 
   def strip(%Series{dtype: dtype}, _string), do: dtype_error("strip/2", dtype, [:string])
 
@@ -5779,7 +5807,7 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec lstrip(Series.t()) :: Series.t()
-  def lstrip(%Series{dtype: :string} = series),
+  def lstrip(%Series{dtype: dtype} = series) when K.in(dtype, [:string, :unknown]),
     do: apply_series(series, :lstrip, [nil])
 
   @doc """
@@ -5805,8 +5833,9 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec lstrip(Series.t(), String.t()) :: Series.t()
-  def lstrip(%Series{dtype: :string} = series, string) when is_binary(string),
-    do: apply_series(series, :lstrip, [string])
+  def lstrip(%Series{dtype: dtype} = series, string)
+      when K.and(K.in(dtype, [:string, :unknown]), is_binary(string)),
+      do: apply_series(series, :lstrip, [string])
 
   def lstrip(%Series{dtype: dtype}, _string),
     do: dtype_error("lstrip/2", dtype, [:string])
@@ -5825,7 +5854,7 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec rstrip(Series.t()) :: Series.t()
-  def rstrip(%Series{dtype: :string} = series),
+  def rstrip(%Series{dtype: dtype} = series) when K.in(dtype, [:string, :unknown]),
     do: apply_series(series, :rstrip, [nil])
 
   @doc """
@@ -5852,8 +5881,9 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec rstrip(Series.t(), String.t()) :: Series.t()
-  def rstrip(%Series{dtype: :string} = series, string) when is_binary(string),
-    do: apply_series(series, :rstrip, [string])
+  def rstrip(%Series{dtype: dtype} = series, string)
+      when K.and(K.in(dtype, [:string, :unknown]), is_binary(string)),
+      do: apply_series(series, :rstrip, [string])
 
   def rstrip(%Series{dtype: dtype}, _string),
     do: dtype_error("rstrip/2", dtype, [:string])
@@ -5880,8 +5910,9 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec substring(Series.t(), integer()) :: Series.t()
-  def substring(%Series{dtype: :string} = series, offset) when is_integer(offset),
-    do: apply_series(series, :substring, [offset, nil])
+  def substring(%Series{dtype: dtype} = series, offset)
+      when K.and(K.in(dtype, [:string, :unknown]), is_integer(offset)),
+      do: apply_series(series, :substring, [offset, nil])
 
   @doc """
   Returns a string sliced from the offset to the length provided, supporting
@@ -5912,10 +5943,11 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec substring(Series.t(), integer(), integer()) :: Series.t()
-  def substring(%Series{dtype: :string} = series, offset, length)
-      when is_integer(offset)
-      when is_integer(length)
-      when length >= 0,
+  def substring(%Series{dtype: dtype} = series, offset, length)
+      when K.in(dtype, [:string, :unknown])
+           |> K.and(is_integer(offset))
+           |> K.and(is_integer(length))
+           |> K.and(length >= 0),
       do: apply_series(series, :substring, [offset, length])
 
   def substring(%Series{dtype: dtype}, _offset, _length),
@@ -5936,8 +5968,8 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec split(Series.t(), String.t()) :: Series.t()
-  def split(%Series{dtype: :string} = series, by)
-      when is_binary(by),
+  def split(%Series{dtype: dtype} = series, by)
+      when K.and(K.in(dtype, [:string, :unknown]), is_binary(by)),
       do: apply_series(series, :split, [by])
 
   def split(%Series{dtype: dtype}, _by),
@@ -5963,8 +5995,9 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec split_into(Series.t(), String.t(), list(String.t() | atom())) :: Series.t()
-  def split_into(%Series{dtype: :string} = series, by, [_ | _] = fields) when is_binary(by),
-    do: apply_series(series, :split_into, [by, Enum.map(fields, &to_string/1)])
+  def split_into(%Series{dtype: dtype} = series, by, [_ | _] = fields)
+      when K.and(K.in(dtype, [:string, :unknown]), is_binary(by)),
+      do: apply_series(series, :split_into, [by, Enum.map(fields, &to_string/1)])
 
   def split_into(%Series{dtype: dtype}, by, [_ | _]) when is_binary(by),
     do: dtype_error("split_into/3", dtype, [:string])
@@ -5987,8 +6020,8 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec count_matches(Series.t(), String.t()) :: Series.t()
-  def count_matches(%Series{dtype: :string} = series, substring)
-      when K.is_binary(substring),
+  def count_matches(%Series{dtype: dtype} = series, substring)
+      when K.and(K.in(dtype, [:string, :unknown]), K.is_binary(substring)),
       do: apply_series(series, :count_matches, [substring])
 
   def count_matches(%Series{dtype: dtype}, _),
@@ -6018,11 +6051,11 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec re_count_matches(Series.t(), String.t()) :: Series.t()
-  def re_count_matches(%Series{dtype: :string} = series, pattern)
-      when K.is_binary(pattern),
+  def re_count_matches(%Series{dtype: dtype} = series, pattern)
+      when K.and(K.in(dtype, [:string, :unknown]), K.is_binary(pattern)),
       do: apply_series(series, :re_count_matches, [pattern])
 
-  def re_count_matches(%Series{dtype: :string}, %Regex{}) do
+  def re_count_matches(%Series{dtype: dtype}, %Regex{}) when K.in(dtype, [:string, :unknown]) do
     raise ArgumentError,
           "standard regexes cannot be used as pattern because it may be incompatible with the backend. " <>
             "Please use the `~S` sigil or extract the source from the regex with `Regex.source/1`"
@@ -6056,8 +6089,8 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec re_scan(Series.t(), String.t()) :: Series.t()
-  def re_scan(%Series{dtype: :string} = series, pattern)
-      when K.is_binary(pattern),
+  def re_scan(%Series{dtype: dtype} = series, pattern)
+      when K.and(K.in(dtype, [:string, :unknown]), K.is_binary(pattern)),
       do: apply_series(series, :re_scan, [pattern])
 
   def re_scan(%Series{dtype: :string}, %Regex{}) do
@@ -6105,8 +6138,8 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec re_named_captures(Series.t(), String.t()) :: Series.t()
-  def re_named_captures(%Series{dtype: :string} = series, pattern)
-      when K.is_binary(pattern),
+  def re_named_captures(%Series{dtype: dtype} = series, pattern)
+      when K.and(K.in(dtype, [:string, :unknown]), K.is_binary(pattern)),
       do: apply_series(series, :re_named_captures, [pattern])
 
   def re_named_captures(%Series{dtype: :string}, %Regex{}) do
@@ -6135,13 +6168,12 @@ defmodule Explorer.Series do
   @doc type: :float_wise
   @spec round(Series.t(), non_neg_integer()) :: Series.t()
   def round(%Series{dtype: dtype} = series, decimals)
-      when K.and(
-             K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
-             K.and(is_integer(decimals), decimals >= 0)
-           ),
+      when K.in(dtype, [:unknown | @float_dtypes])
+           |> K.and(is_integer(decimals))
+           |> K.and(decimals >= 0),
       do: apply_series(series, :round, [decimals])
 
-  def round(%Series{dtype: dtype}, _) when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+  def round(%Series{dtype: dtype}, _) when K.in(dtype, [:unknown | @float_dtypes]),
     do: raise(ArgumentError, "second argument to round/2 must be a non-negative integer")
 
   def round(%Series{dtype: dtype}, _), do: dtype_error("round/2", dtype, @float_dtypes)
@@ -6160,7 +6192,7 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec floor(Series.t()) :: Series.t()
-  def floor(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
+  def floor(%Series{dtype: dtype} = series) when K.in(dtype, [:unknown, @float_dtypes]),
     do: apply_series(series, :floor)
 
   def floor(%Series{dtype: dtype}), do: dtype_error("floor/1", dtype, @float_dtypes)
@@ -6179,7 +6211,7 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec ceil(Series.t()) :: Series.t()
-  def ceil(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
+  def ceil(%Series{dtype: dtype} = series) when K.in(dtype, [:unknown | @float_dtypes]),
     do: apply_series(series, :ceil)
 
   def ceil(%Series{dtype: dtype}), do: dtype_error("ceil/1", dtype, @float_dtypes)
@@ -6276,8 +6308,9 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec month(Series.t()) :: Series.t()
-  def month(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:month, [series])
+  def month(%Series{dtype: dtype} = series)
+      when K.or(is_date_like_dtype(dtype), dtype == :unknown),
+      do: apply_series_list(:month, [series])
 
   def month(%Series{dtype: dtype}),
     do: super_dtype_error("month/1", dtype, [:date, :datetime, :naive_datetime])
@@ -6305,8 +6338,9 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec year(Series.t()) :: Series.t()
-  def year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:year, [series])
+  def year(%Series{dtype: dtype} = series)
+      when K.or(is_date_like_dtype(dtype), dtype == :unknown),
+      do: apply_series_list(:year, [series])
 
   def year(%Series{dtype: dtype}),
     do: super_dtype_error("year/1", dtype, [:date, :datetime, :naive_datetime])
@@ -6325,8 +6359,9 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec hour(Series.t()) :: Series.t()
-  def hour(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
-    do: apply_series_list(:hour, [series])
+  def hour(%Series{dtype: dtype} = series)
+      when K.or(is_time_like_dtype(dtype), dtype == :unknown),
+      do: apply_series_list(:hour, [series])
 
   def hour(%Series{dtype: dtype}),
     do: super_dtype_error("hour/1", dtype, [:time, :datetime, :naive_datetime])
@@ -6345,8 +6380,9 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec minute(Series.t()) :: Series.t()
-  def minute(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
-    do: apply_series_list(:minute, [series])
+  def minute(%Series{dtype: dtype} = series)
+      when K.or(is_time_like_dtype(dtype), dtype == :unknown),
+      do: apply_series_list(:minute, [series])
 
   def minute(%Series{dtype: dtype}),
     do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
@@ -6365,8 +6401,9 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec second(Series.t()) :: Series.t()
-  def second(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
-    do: apply_series_list(:second, [series])
+  def second(%Series{dtype: dtype} = series)
+      when K.or(is_time_like_dtype(dtype), dtype == :unknown),
+      do: apply_series_list(:second, [series])
 
   def second(%Series{dtype: dtype}),
     do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
@@ -6395,8 +6432,9 @@ defmodule Explorer.Series do
 
   @doc type: :datetime_wise
   @spec day_of_week(Series.t()) :: Series.t()
-  def day_of_week(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:day_of_week, [series])
+  def day_of_week(%Series{dtype: dtype} = series)
+      when K.or(is_date_like_dtype(dtype), dtype == :unknown),
+      do: apply_series_list(:day_of_week, [series])
 
   def day_of_week(%Series{dtype: dtype}),
     do: super_dtype_error("day_of_week/1", dtype, [:date, :datetime, :naive_datetime])
@@ -6428,8 +6466,9 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec day_of_year(Series.t()) :: Series.t()
-  def day_of_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:day_of_year, [series])
+  def day_of_year(%Series{dtype: dtype} = series)
+      when K.or(is_date_like_dtype(dtype), dtype == :unknown),
+      do: apply_series_list(:day_of_year, [series])
 
   def day_of_year(%Series{dtype: dtype}),
     do: super_dtype_error("day_of_year/1", dtype, [:date, :datetime, :naive_datetime])
@@ -6464,24 +6503,27 @@ defmodule Explorer.Series do
   """
   @doc type: :datetime_wise
   @spec week_of_year(Series.t()) :: Series.t()
-  def week_of_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:week_of_year, [series])
+  def week_of_year(%Series{dtype: dtype} = series)
+      when K.or(is_date_like_dtype(dtype), dtype == :unknown),
+      do: apply_series_list(:week_of_year, [series])
 
   def week_of_year(%Series{dtype: dtype}),
     do: super_dtype_error("week_of_year/1", dtype, [:date, :datetime, :naive_datetime])
 
   @deprecated "Use cast(:date) instead"
   @doc type: :deprecated
-  def to_date(%Series{dtype: dtype} = series) when is_datetime_like_dtype(dtype),
-    do: cast(series, :date)
+  def to_date(%Series{dtype: dtype} = series)
+      when K.or(is_datetime_like_dtype(dtype), dtype == :unknown),
+      do: cast(series, :date)
 
   def to_date(%Series{dtype: dtype}),
     do: super_dtype_error("to_date/1", dtype, [:date, :datetime, :naive_datetime])
 
   @deprecated "Use cast(:time) instead"
   @doc type: :deprecated
-  def to_time(%Series{dtype: dtype} = series) when is_datetime_like_dtype(dtype),
-    do: cast(series, :time)
+  def to_time(%Series{dtype: dtype} = series)
+      when K.or(is_datetime_like_dtype(dtype), dtype == :unknown),
+      do: cast(series, :time)
 
   def to_time(%Series{dtype: dtype}),
     do: super_dtype_error("to_time/1", dtype, [:date, :datetime, :naive_datetime])
@@ -6501,8 +6543,8 @@ defmodule Explorer.Series do
   """
   @doc type: :list_wise
   @spec join(Series.t(), String.t()) :: Series.t()
-  def join(%Series{dtype: {:list, :string}} = series, separator)
-      when is_binary(separator),
+  def join(%Series{dtype: dtype} = series, separator)
+      when K.and(K.in(dtype, [{:list, :string}, :unknown]), is_binary(separator)),
       do: apply_series(series, :join, [separator])
 
   def join(%Series{dtype: dtype}, _separator),
@@ -6523,7 +6565,7 @@ defmodule Explorer.Series do
   """
   @doc type: :list_wise
   @spec lengths(Series.t()) :: Series.t()
-  def lengths(%Series{dtype: {:list, _}} = series),
+  def lengths(%Series{dtype: dtype} = series) when K.or(is_list_dtype(dtype), dtype == :unknown),
     do: apply_series(series, :lengths)
 
   def lengths(%Series{dtype: dtype}),
@@ -6544,11 +6586,18 @@ defmodule Explorer.Series do
   """
   @doc type: :list_wise
   @spec member?(Series.t(), Explorer.Backend.Series.valid_types()) :: Series.t()
-  def member?(%Series{dtype: {:list, dtype}} = series, value) do
-    if cast_to_comparable_series(dtype, value) do
-      apply_series(series, :member?, [value])
-    else
-      dtype_mismatch_error("member?/2", series, value)
+  def member?(%Series{dtype: dtype} = series, value)
+      when K.or(is_list_dtype(dtype), dtype == :unknown) do
+    case dtype do
+      :unknown ->
+        apply_series(series, :member?, [value])
+
+      {:list, inner_dtype} ->
+        if cast_to_comparable_series(inner_dtype, value) do
+          apply_series(series, :member?, [value])
+        else
+          dtype_mismatch_error("member?/2", series, value)
+        end
     end
   end
 
@@ -6661,7 +6710,7 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec json_decode(Series.t(), dtype()) :: Series.t()
-  def json_decode(%Series{dtype: :string} = series, dtype) do
+  def json_decode(%Series{dtype: dtype} = series, dtype) when K.in(dtype, [:string, :unknown]) do
     dtype = Shared.normalise_dtype!(dtype)
 
     apply_series(series, :json_decode, [dtype])
@@ -6693,7 +6742,8 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec json_path_match(Series.t(), String.t()) :: Series.t()
-  def json_path_match(%Series{dtype: :string} = series, json_path) do
+  def json_path_match(%Series{dtype: dtype} = series, json_path)
+      when K.in(dtype, [:string, :unknown]) do
     apply_series(series, :json_path_match, [json_path])
   end
 
@@ -6710,8 +6760,10 @@ defmodule Explorer.Series do
     lazy_series = %Explorer.Backend.LazySeries{op: :lit, args: [literal]}
 
     dtype =
-      case infer_literal_dtype(literal) do
+      case infer_scalar_dtype(literal) do
         {:ok, dtype} -> dtype
+        {:error, :list} -> infer_list_dtype(literal)
+        {:error, :map} -> infer_struct_dtype(literal)
         {:error, _} -> raise ArgumentError, "invalid literal: #{inspect(literal)}"
       end
 
@@ -6720,8 +6772,8 @@ defmodule Explorer.Series do
 
   # TODO: alter Shared logic to expose its internal inference as a function.
   @non_finite [:nan, :infinity, :neg_infinity]
-  defp infer_literal_dtype(literal) do
-    case literal do
+  defp infer_scalar_dtype(maybe_scalar) do
+    case maybe_scalar do
       nil -> {:ok, :null}
       %Date{} -> {:ok, :date}
       %Time{} -> {:ok, :time}
@@ -6738,6 +6790,19 @@ defmodule Explorer.Series do
       %{} -> {:error, :map}
       _ -> {:error, :unrecognized_term}
     end
+  end
+
+  defp infer_list_dtype(list) when is_list(list) do
+    Shared.dtype_from_list!(list)
+  end
+
+  defp infer_struct_dtype(%{} = map) when K.not(is_struct(map)) do
+    Map.new(map, fn {key, value} ->
+      case infer_scalar_dtype(value) do
+        {:ok, dtype} -> {key, dtype}
+        {:error, _} -> raise ArgumentError, "unable to infer struct dtype from #{inspect(map)}"
+      end
+    end)
   end
 
   def rename(%Series{} = series, name) do

@@ -8,7 +8,7 @@ defmodule Explorer.DataFrameTest do
   require Explorer.DataFrame
   # doctest Explorer.DataFrame
 
-  # import ExUnit.CaptureIO
+  import ExUnit.CaptureIO
   alias Explorer.DataFrame, as: DF
   alias Explorer.Datasets
   alias Explorer.Series
@@ -2182,778 +2182,777 @@ defmodule Explorer.DataFrameTest do
   #   end
   # end
 
-  # describe "slice/2" do
-  #   test "slice with integer indices" do
-  #     df = DF.new(a: [1, 2, 3, 4, 5])
-
-  #     df1 = DF.slice(df, [2, 4])
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
-  #   end
+  describe "slice/2" do
+    test "slice with integer indices" do
+      df = DF.new(a: [1, 2, 3, 4, 5])
+
+      df1 = DF.slice(df, [2, 4])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
+    end
 
-  #   test "slice with series of integers indices" do
-  #     df = DF.new(a: [1, 2, 3, 4, 5])
+    test "slice with series of integers indices" do
+      df = DF.new(a: [1, 2, 3, 4, 5])
 
-  #     for dtype <- [:u8, :s16, :s64] do
-  #       series = Series.from_list([2, 4], dtype: dtype)
-
-  #       df1 = DF.slice(df, series)
-
-  #       assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
-  #     end
-  #   end
+      for dtype <- [:u8, :s16, :s64] do
+        series = Series.from_list([2, 4], dtype: dtype)
+
+        df1 = DF.slice(df, series)
+
+        assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 5]}
+      end
+    end
 
-  #   test "slice with ranges" do
-  #     df = DF.new(a: [1, 2, 3, 4, 5])
+    test "slice with ranges" do
+      df = DF.new(a: [1, 2, 3, 4, 5])
 
-  #     df1 = DF.slice(df, -3..-1)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 4, 5]}
-  #   end
-
-  #   test "raises with index out of bounds", %{df: df} do
-  #     assert_raise ArgumentError,
-  #                  "requested row index (2000) out of bounds (-1094:1094)",
-  #                  fn -> DF.slice(df, [1, 2, 3, 2000]) end
-  #   end
-  # end
-
-  # describe "join/3" do
-  #   test "raises if no overlapping columns" do
-  #     assert_raise ArgumentError,
-  #                  ~r"could not find any overlapping columns",
-  #                  fn ->
-  #                    left = DF.new(a: [1, 2, 3])
-  #                    right = DF.new(b: [1, 2, 3])
-  #                    DF.join(left, right)
-  #                  end
-  #   end
-
-  #   test "doesn't raise if no overlapping columns on cross join" do
-  #     left = DF.new(a: [1, 2, 3])
-  #     right = DF.new(b: [1, 2, 3])
-  #     joined = DF.join(left, right, how: :cross)
-  #     assert %DF{} = joined
+      df1 = DF.slice(df, -3..-1)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [3, 4, 5]}
+    end
+
+    test "raises with index out of bounds", %{df: df} do
+      assert_raise ArgumentError,
+                   "requested row index (2000) out of bounds (-1094:1094)",
+                   fn -> DF.slice(df, [1, 2, 3, 2000]) end
+    end
+  end
+
+  describe "join/3" do
+    test "raises if no overlapping columns" do
+      assert_raise ArgumentError,
+                   ~r"could not find any overlapping columns",
+                   fn ->
+                     left = DF.new(a: [1, 2, 3])
+                     right = DF.new(b: [1, 2, 3])
+                     DF.join(left, right)
+                   end
+    end
+
+    test "doesn't raise if no overlapping columns on cross join" do
+      left = DF.new(a: [1, 2, 3])
+      right = DF.new(b: [1, 2, 3])
+      joined = DF.join(left, right, how: :cross)
+      assert %DF{} = joined
 
-  #     assert DF.names(joined) == ["a", "b"]
-  #     assert DF.n_rows(joined) == 9
-  #   end
+      assert DF.names(joined) == ["a", "b"]
+      assert DF.n_rows(joined) == 9
+    end
 
-  #   test "with a custom 'on'" do
-  #     left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-  #     right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"])
+    test "with a custom 'on'" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"])
 
-  #     df = DF.join(left, right, on: [{"a", "d"}])
+      df = DF.join(left, right, on: [{"a", "d"}])
 
-  #     assert DF.to_columns(df, atom_keys: true) == %{
-  #              a: [1, 2, 2],
-  #              b: ["a", "b", "b"],
-  #              c: ["d", "e", "f"]
-  #            }
-  #   end
-
-  #   test "with a custom 'on' but with repeated column on right side" do
-  #     left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-  #     right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7])
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"]
+             }
+    end
+
+    test "with a custom 'on' but with repeated column on right side" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"], a: [5, 6, 7])
 
-  #     df = DF.join(left, right, on: [{"a", "d"}])
+      df = DF.join(left, right, on: [{"a", "d"}])
 
-  #     assert DF.to_columns(df, atom_keys: true) == %{
-  #              a: [1, 2, 2],
-  #              b: ["a", "b", "b"],
-  #              c: ["d", "e", "f"],
-  #              a_right: [5, 6, 7]
-  #            }
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               a_right: [5, 6, 7]
+             }
 
-  #     assert df.names == ["a", "b", "c", "a_right"]
+      assert df.names == ["a", "b", "c", "a_right"]
 
-  #     df1 = DF.join(left, right, on: [{"a", "d"}], how: :left)
+      df1 = DF.join(left, right, on: [{"a", "d"}], how: :left)
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 2, 2, 3],
-  #              b: ["a", "b", "b", "c"],
-  #              c: ["d", "e", "f", nil],
-  #              a_right: [5, 6, 7, nil]
-  #            }
-
-  #     assert df1.names == ["a", "b", "c", "a_right"]
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               a_right: [5, 6, 7, nil]
+             }
+
+      assert df1.names == ["a", "b", "c", "a_right"]
 
-  #     df2 = DF.join(left, right, on: [{"a", "d"}], how: :outer)
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              a: [1, 2, 2, 3],
-  #              b: ["a", "b", "b", "c"],
-  #              c: ["d", "e", "f", nil],
-  #              d: [1, 2, 2, nil],
-  #              a_right: [5, 6, 7, nil]
-  #            }
+      df2 = DF.join(left, right, on: [{"a", "d"}], how: :outer)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               d: [1, 2, 2, nil],
+               a_right: [5, 6, 7, nil]
+             }
 
-  #     assert df2.names == ["a", "b", "d", "c", "a_right"]
+      assert df2.names == ["a", "b", "d", "c", "a_right"]
 
-  #     df3 = DF.join(left, right, how: :cross)
+      df3 = DF.join(left, right, how: :cross)
 
-  #     assert DF.to_columns(df3, atom_keys: true) == %{
-  #              a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
-  #              a_right: [5, 6, 7, 5, 6, 7, 5, 6, 7],
-  #              b: ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
-  #              c: ["d", "e", "f", "d", "e", "f", "d", "e", "f"],
-  #              d: [1, 2, 2, 1, 2, 2, 1, 2, 2]
-  #            }
+      assert DF.to_columns(df3, atom_keys: true) == %{
+               a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
+               a_right: [5, 6, 7, 5, 6, 7, 5, 6, 7],
+               b: ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
+               c: ["d", "e", "f", "d", "e", "f", "d", "e", "f"],
+               d: [1, 2, 2, 1, 2, 2, 1, 2, 2]
+             }
 
-  #     assert df3.names == ["a", "b", "d", "c", "a_right"]
+      assert df3.names == ["a", "b", "d", "c", "a_right"]
 
-  #     df4 = DF.join(left, right, on: [{"a", "d"}], how: :right)
+      df4 = DF.join(left, right, on: [{"a", "d"}], how: :right)
 
-  #     assert DF.to_columns(df4, atom_keys: true) == %{
-  #              a: [5, 6, 7],
-  #              b: ["a", "b", "b"],
-  #              c: ["d", "e", "f"],
-  #              d: [1, 2, 2]
-  #            }
+      assert DF.to_columns(df4, atom_keys: true) == %{
+               a: [5, 6, 7],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               d: [1, 2, 2]
+             }
 
-  #     assert df4.names == ["d", "c", "a", "b"]
-  #   end
+      assert df4.names == ["d", "c", "a", "b"]
+    end
 
-  #   test "with a custom 'on' but with repeated column on left side" do
-  #     left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], d: [5, 6, 7])
-  #     right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"])
+    test "with a custom 'on' but with repeated column on left side" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], d: [5, 6, 7])
+      right = DF.new(d: [1, 2, 2], c: ["d", "e", "f"])
 
-  #     df = DF.join(left, right, on: [{"a", "d"}])
+      df = DF.join(left, right, on: [{"a", "d"}])
 
-  #     assert DF.to_columns(df, atom_keys: true) == %{
-  #              a: [1, 2, 2],
-  #              b: ["a", "b", "b"],
-  #              c: ["d", "e", "f"],
-  #              d: [5, 6, 6]
-  #            }
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               d: [5, 6, 6]
+             }
 
-  #     assert df.names == ["a", "b", "d", "c"]
+      assert df.names == ["a", "b", "d", "c"]
 
-  #     df1 = DF.join(left, right, on: [{"a", "d"}], how: :left)
+      df1 = DF.join(left, right, on: [{"a", "d"}], how: :left)
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 2, 2, 3],
-  #              b: ["a", "b", "b", "c"],
-  #              c: ["d", "e", "f", nil],
-  #              d: [5, 6, 6, 7]
-  #            }
-
-  #     assert df1.names == ["a", "b", "d", "c"]
-
-  #     df2 = DF.join(left, right, on: [{"a", "d"}], how: :outer)
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              a: [1, 2, 2, 3],
-  #              b: ["a", "b", "b", "c"],
-  #              c: ["d", "e", "f", nil],
-  #              d: [5, 6, 6, 7],
-  #              d_right: [1, 2, 2, nil]
-  #            }
-
-  #     assert df2.names == ["a", "b", "d", "d_right", "c"]
-
-  #     df3 = DF.join(left, right, how: :cross)
-
-  #     assert DF.to_columns(df3, atom_keys: true) == %{
-  #              a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
-  #              b: ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
-  #              c: ["d", "e", "f", "d", "e", "f", "d", "e", "f"],
-  #              d: [5, 5, 5, 6, 6, 6, 7, 7, 7],
-  #              d_right: [1, 2, 2, 1, 2, 2, 1, 2, 2]
-  #            }
-
-  #     assert df3.names == ["a", "b", "d", "d_right", "c"]
-
-  #     df4 = DF.join(left, right, on: [{"a", "d"}], how: :right)
-
-  #     assert DF.to_columns(df4, atom_keys: true) == %{
-  #              b: ["a", "b", "b"],
-  #              c: ["d", "e", "f"],
-  #              d: [1, 2, 2],
-  #              d_left: [5, 6, 6]
-  #            }
-
-  #     assert df4.names == ["d", "c", "b", "d_left"]
-  #   end
-
-  #   test "with invalid join strategy" do
-  #     left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-  #     right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
-
-  #     msg =
-  #       "join type is not valid: :inner_join. Valid options are: :inner, :left, :right, :outer, :cross"
-
-  #     assert_raise ArgumentError, msg, fn -> DF.join(left, right, how: :inner_join) end
-  #   end
-
-  #   test "with matching column indexes as single value" do
-  #     left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-  #     right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
-
-  #     df = DF.join(left, right, on: 0)
-
-  #     assert DF.to_columns(df, atom_keys: true) == %{
-  #              a: [1, 2, 2],
-  #              b: ["a", "b", "b"],
-  #              c: ["d", "e", "f"]
-  #            }
-  #   end
-
-  #   test "with matching column indexes" do
-  #     left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-  #     right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
-
-  #     df = DF.join(left, right, on: [0])
-
-  #     assert DF.to_columns(df, atom_keys: true) == %{
-  #              a: [1, 2, 2],
-  #              b: ["a", "b", "b"],
-  #              c: ["d", "e", "f"]
-  #            }
-  #   end
-
-  #   test "with no matching column indexes" do
-  #     left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-  #     right = DF.new(c: ["d", "e", "f"], a: [1, 2, 2])
-
-  #     msg = "the column given to option `:on` is not the same for both dataframes"
-
-  #     assert_raise ArgumentError, msg, fn -> DF.join(left, right, on: [0]) end
-  #   end
-  # end
-
-  # describe "table/1" do
-  #   test "prints 5 rows by default" do
-  #     df = Datasets.iris()
-
-  #     assert capture_io(fn -> DF.print(df) end) == """
-  #            +-----------------------------------------------------------------------+
-  #            |              Explorer DataFrame: [rows: 150, columns: 5]              |
-  #            +--------------+-------------+--------------+-------------+-------------+
-  #            | sepal_length | sepal_width | petal_length | petal_width |   species   |
-  #            |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
-  #            +==============+=============+==============+=============+=============+
-  #            | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
-  #            +--------------+-------------+--------------+-------------+-------------+
-  #            | 4.9          | 3.0         | 1.4          | 0.2         | Iris-setosa |
-  #            +--------------+-------------+--------------+-------------+-------------+
-  #            | 4.7          | 3.2         | 1.3          | 0.2         | Iris-setosa |
-  #            +--------------+-------------+--------------+-------------+-------------+
-  #            | 4.6          | 3.1         | 1.5          | 0.2         | Iris-setosa |
-  #            +--------------+-------------+--------------+-------------+-------------+
-  #            | 5.0          | 3.6         | 1.4          | 0.2         | Iris-setosa |
-  #            +--------------+-------------+--------------+-------------+-------------+
-
-  #            """
-  #   end
-
-  #   test "accepts limit keyword param" do
-  #     df = Datasets.iris()
-
-  #     assert capture_io(fn -> DF.print(df, limit: 1) end) == """
-  #            +-----------------------------------------------------------------------+
-  #            |              Explorer DataFrame: [rows: 150, columns: 5]              |
-  #            +--------------+-------------+--------------+-------------+-------------+
-  #            | sepal_length | sepal_width | petal_length | petal_width |   species   |
-  #            |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
-  #            +==============+=============+==============+=============+=============+
-  #            | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
-  #            +--------------+-------------+--------------+-------------+-------------+
-
-  #            """
-  #   end
-
-  #   test "accepts limit: :infinity" do
-  #     df =
-  #       DF.new(
-  #         a: [1, 2, 3, 4, 5, 6, 7, 8, 9],
-  #         b: ~w[a b c d e f g h i],
-  #         c: [9.1, 8.2, 7.3, 6.4, 5.5, 4.6, 3.7, 2.8, 1.9]
-  #       )
-
-  #     assert capture_io(fn -> DF.print(df, limit: :infinity) end) == """
-  #            +--------------------------------------------+
-  #            | Explorer DataFrame: [rows: 9, columns: 3]  |
-  #            +-------------+----------------+-------------+
-  #            |      a      |       b        |      c      |
-  #            |    <s64>    |    <string>    |    <f64>    |
-  #            +=============+================+=============+
-  #            | 1           | a              | 9.1         |
-  #            +-------------+----------------+-------------+
-  #            | 2           | b              | 8.2         |
-  #            +-------------+----------------+-------------+
-  #            | 3           | c              | 7.3         |
-  #            +-------------+----------------+-------------+
-  #            | 4           | d              | 6.4         |
-  #            +-------------+----------------+-------------+
-  #            | 5           | e              | 5.5         |
-  #            +-------------+----------------+-------------+
-  #            | 6           | f              | 4.6         |
-  #            +-------------+----------------+-------------+
-  #            | 7           | g              | 3.7         |
-  #            +-------------+----------------+-------------+
-  #            | 8           | h              | 2.8         |
-  #            +-------------+----------------+-------------+
-  #            | 9           | i              | 1.9         |
-  #            +-------------+----------------+-------------+
-
-  #            """
-  #   end
-
-  #   test "works with lazy" do
-  #     df = Datasets.iris() |> DF.lazy()
-
-  #     assert capture_io(fn -> DF.print(df, limit: 1) end) == """
-  #            +-----------------------------------------------------------------------+
-  #            |              Explorer DataFrame: [rows: ???, columns: 5]              |
-  #            +--------------+-------------+--------------+-------------+-------------+
-  #            | sepal_length | sepal_width | petal_length | petal_width |   species   |
-  #            |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
-  #            +==============+=============+==============+=============+=============+
-  #            | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
-  #            +--------------+-------------+--------------+-------------+-------------+
-
-  #            """
-  #   end
-
-  #   test "works with tuple dtypes" do
-  #     df =
-  #       [datetime1: [~N[2023-09-14 00:00:00]], datetime2: [~N[2023-09-14 01:00:00]]]
-  #       |> DF.new()
-  #       |> DF.mutate(duration: datetime2 - datetime1)
-
-  #     assert capture_io(fn -> DF.print(df, limit: 1) end) == """
-  #            +--------------------------------------------------------------------------+
-  #            |                Explorer DataFrame: [rows: 1, columns: 3]                 |
-  #            +----------------------------+----------------------------+----------------+
-  #            |         datetime1          |         datetime2          |    duration    |
-  #            |    <naive_datetime[μs]>    |    <naive_datetime[μs]>    | <duration[μs]> |
-  #            +============================+============================+================+
-  #            | 2023-09-14 00:00:00.000000 | 2023-09-14 01:00:00.000000 | 1h             |
-  #            +----------------------------+----------------------------+----------------+
-
-  #            """
-  #   end
-
-  #   test "works with structs" do
-  #     df = DF.new([%{n: %{a: 1}, m: 2}, %{n: %{a: 2}, m: 3}])
-
-  #     assert capture_io(fn -> DF.print(df) end) == """
-  #            +-------------------------------------------+
-  #            | Explorer DataFrame: [rows: 2, columns: 2] |
-  #            +------------------+------------------------+
-  #            |        m         |           n            |
-  #            |      <s64>       |      <struct[1]>       |
-  #            +==================+========================+
-  #            | 2                | %{"a" => 1}            |
-  #            +------------------+------------------------+
-  #            | 3                | %{"a" => 2}            |
-  #            +------------------+------------------------+
-
-  #            """
-  #   end
-  # end
-
-  # test "fetch/2" do
-  #   df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
-
-  #   assert Series.to_list(df[:a]) == [1, 2, 3]
-  #   assert Series.to_list(df["a"]) == [1, 2, 3]
-  #   assert DF.to_columns(df[["a"]]) == %{"a" => [1, 2, 3]}
-  #   assert DF.to_columns(df[[:a, :c]]) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
-  #   assert DF.to_columns(df[0..-2//1]) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
-  #   assert DF.to_columns(df[-3..-1]) == DF.to_columns(df)
-  #   assert DF.to_columns(df[..]) == DF.to_columns(df)
-
-  #   assert %Series{} = s1 = df[0]
-  #   assert Series.to_list(s1) == [1, 2, 3]
-
-  #   assert %Series{} = s2 = df[2]
-  #   assert Series.to_list(s2) == [4.0, 5.1, 6.2]
-
-  #   assert %Series{} = s3 = df[-1]
-  #   assert Series.to_list(s3) == [4.0, 5.1, 6.2]
-
-  #   assert %DF{} = df2 = df[1..2]
-  #   assert DF.names(df2) == ["b", "c"]
-
-  #   assert %DF{} = df3 = df[-2..-1]
-  #   assert DF.names(df3) == ["b", "c"]
-
-  #   assert_raise ArgumentError,
-  #                "no column exists at index 100",
-  #                fn -> df[100] end
-
-  #   assert_raise ArgumentError,
-  #                ~r"could not find column name \"class\"",
-  #                fn -> df[:class] end
-
-  #   assert DF.to_columns(df[0..100]) == DF.to_columns(df)
-  # end
-
-  # test "pop/2" do
-  #   df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
-
-  #   {s1, df2} = Access.pop(df1, "a")
-  #   assert Series.to_list(s1) == [1, 2, 3]
-  #   assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
-
-  #   {s1, df2} = Access.pop(df1, :a)
-  #   assert Series.to_list(s1) == [1, 2, 3]
-  #   assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
-
-  #   {s1, df2} = Access.pop(df1, 0)
-  #   assert Series.to_list(s1) == [1, 2, 3]
-  #   assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
-
-  #   {s1, df2} = Access.pop(df1, -3)
-  #   assert Series.to_list(s1) == [1, 2, 3]
-  #   assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
-
-  #   {df3, df4} = Access.pop(df1, ["a", "c"])
-  #   assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
-  #   assert DF.to_columns(df4) == %{"b" => ["a", "b", "c"]}
-
-  #   {df3, df4} = Access.pop(df1, 0..1)
-  #   assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
-  #   assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
-
-  #   {df3, df4} = Access.pop(df1, 0..-2//1)
-  #   assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
-  #   assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
-
-  #   assert {%Series{} = s2, %DF{} = df5} = Access.pop(df1, :a)
-  #   assert Series.to_list(s2) == Series.to_list(df1[:a])
-  #   assert DF.names(df1) -- DF.names(df5) == ["a"]
-
-  #   assert {%Series{} = s3, %DF{} = df6} = Access.pop(df1, 0)
-  #   assert Series.to_list(s3) == Series.to_list(df1[:a])
-  #   assert DF.names(df1) -- DF.names(df6) == ["a"]
-  # end
-
-  # test "get_and_update/3" do
-  #   df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #   {s, df2} =
-  #     Access.get_and_update(df1, "a", fn current_value ->
-  #       {current_value, Series.from_list([0, 0, 0])}
-  #     end)
-
-  #   assert s.name == "a"
-
-  #   assert Series.to_list(s) == [1, 2, 3]
-  #   assert DF.to_columns(df2, atom_keys: true) == %{a: [0, 0, 0], b: ["a", "b", "c"]}
-  # end
-
-  # test "pull/2" do
-  #   df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #   s = DF.pull(df1, "b")
-
-  #   assert %Series{} = s
-  #   assert s.name == "b"
-
-  #   assert Series.to_list(s) == ~w(a b c)
-  # end
-
-  # describe "concat_rows/2" do
-  #   test "same dtype columns" do
-  #     df1 = DF.new(x: [1, 2, 3, 4], y: ["a", "b", nil, "c"])
-  #     df2 = DF.new(x: [4, 5, 6, 7], y: ["d", "e", "f", nil])
-  #     df3 = DF.concat_rows(df1, df2)
-
-  #     assert DF.dtypes(df3) == %{"x" => {:s, 64}, "y" => :string}
-
-  #     assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 4, 5, 6, 7]
-  #     assert Series.to_list(df3["y"]) == ["a", "b", nil] ++ ~w(c d e f) ++ [nil]
-  #   end
-
-  #   test "mixing integer and floats" do
-  #     df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
-  #     df2 = DF.new(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
-  #     df3 = DF.concat_rows(df1, df2)
-
-  #     assert DF.dtypes(df3) == %{"x" => {:f, 64}, "y" => :string}
-
-  #     assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
-  #   end
-
-  #   test "mixing signed and unsigned integers" do
-  #     df1 =
-  #       DF.new(x: Series.from_list([1, 2, 3], dtype: :u16), y: Series.from_list(["a", "b", "c"]))
-
-  #     df2 =
-  #       DF.new(x: Series.from_list([4, 5, 6], dtype: :s16), y: Series.from_list(["d", "e", "f"]))
-
-  #     df3 = DF.concat_rows(df1, df2)
-
-  #     assert DF.dtypes(df3) == %{"x" => {:s, 32}, "y" => :string}
-
-  #     assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
-  #   end
-
-  #   test "mixing floats" do
-  #     df1 =
-  #       DF.new(
-  #         x: Series.from_list([1.0, 2.0, 3.0], dtype: :f32),
-  #         y: Series.from_list(["a", "b", "c"])
-  #       )
-
-  #     df2 =
-  #       DF.new(
-  #         x: Series.from_list([4.0, 5.0, 6.0], dtype: :f64),
-  #         y: Series.from_list(["d", "e", "f"])
-  #       )
-
-  #     df3 = DF.concat_rows(df1, df2)
-
-  #     assert DF.dtypes(df3) == %{"x" => {:f, 64}, "y" => :string}
-
-  #     assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
-  #   end
-
-  #   test "mixing nulls, signed, unsigned integers, and floats" do
-  #     df1 = DF.new(x: Series.from_list([1, 2], dtype: :u16), y: Series.from_list(["a", "b"]))
-
-  #     df2 = DF.new(x: Series.from_list([3.0, 4.0], dtype: :f32), y: Series.from_list(["c", "d"]))
-
-  #     df3 = DF.new(x: [nil, nil], y: [nil, nil])
-
-  #     df4 = DF.new(x: Series.from_list([5, 6], dtype: :s16), y: Series.from_list(["e", "f"]))
-
-  #     df5 = DF.concat_rows([df1, df2, df3, df4])
-
-  #     assert DF.dtypes(df5) == %{"x" => {:f, 32}, "y" => :string}
-  #     assert Series.to_list(df5["x"]) == [1.0, 2.0, 3.0, 4.0, nil, nil, 5.0, 6.0]
-  #     assert Series.to_list(df5["y"]) == ["a", "b", "c", "d", nil, nil, "e", "f"]
-  #   end
-
-  #   test "concat dfs in a list" do
-  #     df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
-  #     df2 = DF.new(x: [4, 5, 6], y: ["d", "e", "f"])
-  #     df3 = DF.new(x: [7, 8, 9], y: ["g", "h", nil])
-
-  #     df4 = DF.concat_rows([df1, df2, df3])
-
-  #     assert DF.dtypes(df4) == %{"x" => {:s, 64}, "y" => :string}
-
-  #     assert Series.to_list(df4["x"]) == [1, 2, 3, 4, 5, 6, 7, 8, 9]
-  #     assert Series.to_list(df4["y"]) == ~w(a b c d e f g h) ++ [nil]
-  #   end
-
-  #   test "same dtype columns but columns not aligned" do
-  #     df1 = DF.new(x: [1, 2, 3, 4], y: ["a", "b", nil, "c"])
-  #     df2 = DF.new(y: ["d", "e", "f", nil], x: [4, 5, 6, 7])
-  #     df3 = DF.concat_rows(df1, df2)
-
-  #     assert DF.dtypes(df3) == %{"x" => {:s, 64}, "y" => :string}
-
-  #     assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 4, 5, 6, 7]
-  #     assert Series.to_list(df3["y"]) == ["a", "b", nil] ++ ~w(c d e f) ++ [nil]
-  #   end
-
-  #   test "with incompatible columns" do
-  #     df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
-
-  #     assert_raise ArgumentError,
-  #                  "dataframes must have the same columns",
-  #                  fn -> DF.concat_rows(df1, DF.new(z: [7, 8, 9])) end
-  #   end
-
-  #   test "with incompatible column dtypes" do
-  #     df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
-
-  #     assert_raise ArgumentError,
-  #                  "columns and dtypes must be identical for all dataframes",
-  #                  fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
-  #   end
-
-  # test "rechunking logic when nil is introduced in the new dataframe" do
-  #   # this may panic without forced rechunking
-  #   df =
-  #     DF.new(x: [1.0, 2.0], y: [2.0, 3.0])
-  #     |> DF.concat_rows(DF.new(x: [nil], y: [nil]))
-  #     |> DF.mutate(z: correlation(x, y))
-
-  #   assert abs(df[:z][0] - 1.0) < 1.0e-4
-  # end
-
-  # end
-
-  # describe "distinct/2" do
-  #   test "with lists", %{df: df} do
-  #     df1 = DF.distinct(df, [:year, :country])
-  #     assert DF.names(df1) == ["year", "country"]
-
-  #     assert DF.shape(df1) == {1094, 2}
-
-  #     df1 = DF.distinct(df, [0, 1])
-  #     assert DF.names(df1) == ["year", "country"]
-
-  #     assert df == DF.distinct(df, [])
-
-  #     df2 = DF.distinct(df, [:year, :country], keep_all: true)
-  #     assert DF.names(df2) == DF.names(df)
-  #   end
-
-  #   test "with one column", %{df: df} do
-  #     df1 = DF.distinct(df, [:country])
-  #     assert DF.names(df1) == ["country"]
-
-  #     assert DF.shape(df1) == {222, 1}
-  #   end
-
-  #   test "with ranges", %{df: df} do
-  #     df1 = DF.distinct(df, 0..1//1)
-  #     assert DF.names(df1) == ["year", "country"]
-
-  #     df2 = DF.distinct(df)
-  #     assert DF.names(df2) == DF.names(df)
-
-  #     df3 = DF.distinct(df, ..)
-  #     assert DF.names(df3) == DF.names(df)
-
-  #     assert df == DF.distinct(df, 100..200)
-  #   end
-  # end
-
-  # test "drop_nil/2" do
-  #   df = DF.new(a: [1, 2, nil], b: [1, nil, 3])
-
-  #   df1 = DF.drop_nil(df)
-  #   assert DF.to_columns(df1) == %{"a" => [1], "b" => [1]}
-
-  #   df2 = DF.drop_nil(df, :a)
-  #   assert DF.to_columns(df2) == %{"a" => [1, 2], "b" => [1, nil]}
-
-  #   # Empty list do nothing.
-  #   df3 = DF.drop_nil(df, [])
-  #   assert DF.to_columns(df3) == %{"a" => [1, 2, nil], "b" => [1, nil, 3]}
-
-  #   assert_raise ArgumentError,
-  #                "no column exists at index 3",
-  #                fn -> DF.drop_nil(df, [3, 4, 5]) end
-
-  #   # It takes the slice of columns in the range
-  #   df4 = DF.drop_nil(df, 0..200)
-  #   assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
-  # end
-
-  # describe "relocate/3" do
-  #   test "with single column" do
-  #     df =
-  #       DF.new(
-  #         first: ["a", "b", "a"],
-  #         second: ["x", "y", "z"],
-  #         third: [2.2, 3.3, nil],
-  #         last: [1, 3, 1]
-  #       )
-
-  #     df1 = DF.relocate(df, "first", after: "second")
-
-  #     assert df1.names == ["second", "first", "third", "last"]
-  #     assert Series.to_list(df1["first"]) == Series.to_list(df["first"])
-  #     assert Series.to_list(df1["second"]) == Series.to_list(df["second"])
-  #     assert Series.to_list(df1["third"]) == Series.to_list(df["third"])
-  #     assert Series.to_list(df1["last"]) == Series.to_list(df["last"])
-
-  #     df2 = DF.relocate(df, "second", before: "last")
-  #     assert df2.names == ["first", "third", "second", "last"]
-
-  #     df3 = DF.relocate(df, 0, after: 3)
-  #     assert df3.names == ["second", "third", "last", "first"]
-  #   end
-
-  #   test "with multiple columns" do
-  #     df =
-  #       DF.new(
-  #         first: ["a", "b", "a"],
-  #         second: ["x", "y", "z"],
-  #         third: [2.2, 3.3, nil],
-  #         last: [1, 3, 1]
-  #       )
-
-  #     df1 = DF.relocate(df, ["third", 1], before: -1)
-  #     assert df1.names == ["first", "third", "second", "last"]
-
-  #     df2 = DF.relocate(df, ["first", "last"], after: "third")
-  #     assert df2.names == ["second", "third", "first", "last"]
-
-  #     df3 = DF.relocate(df, ["second", "last"], before: 0)
-  #     assert df3.names == ["second", "last", "first", "third"]
-
-  #     df4 = DF.relocate(df, ["third", "second"], after: "second")
-  #     assert df4.names == ["first", "third", "second", "last"]
-
-  #     df5 = DF.relocate(df, [], after: "second")
-  #     assert df5.names == ["first", "second", "third", "last"]
-  #   end
-
-  #   test "with negative index" do
-  #     df =
-  #       DF.new(
-  #         a: ["a value", "some other value", "a third value!"],
-  #         b: [0, 5, -2],
-  #         c: [nil, nil, nil]
-  #       )
-
-  #     df1 = DF.relocate(df, "a", after: -1)
-  #     assert df1.names == ["b", "c", "a"]
-
-  #     df2 = DF.relocate(df, 0, before: -1)
-  #     assert df2.names == ["b", "a", "c"]
-
-  #     df3 = DF.relocate(df, [2, "a"], after: -1)
-  #     assert df3.names == ["b", "c", "a"]
-  #   end
-
-  #   test "with index at start" do
-  #     df =
-  #       DF.new(
-  #         a: ["a value", "some other value", "a third value!"],
-  #         b: [0, 5, -2],
-  #         c: [nil, nil, nil]
-  #       )
-
-  #     df1 = DF.relocate(df, "c", after: 0)
-  #     assert df1.names == ["a", "c", "b"]
-
-  #     df2 = DF.relocate(df, 2, before: 0)
-  #     assert df2.names == ["c", "a", "b"]
-
-  #     df3 = DF.relocate(df, ["b", "a"], after: 0)
-  #     assert df3.names == ["b", "a", "c"]
-  #   end
-
-  #   test "with both positioning parameters" do
-  #     df =
-  #       DF.new(
-  #         a: [0, 5, -2],
-  #         b: [nil, nil, nil]
-  #       )
-
-  #     assert_raise ArgumentError,
-  #                  "only one location must be given. Got both before: \"a\" and after: 1",
-  #                  fn -> DF.relocate(df, 0, before: "a", after: 1) end
-  #   end
-
-  #   test "ordered DataFrame output after relocation" do
-  #     df1 =
-  #       Explorer.DataFrame.new(
-  #         a: [1, 2],
-  #         b: [5.1, 5.2],
-  #         c: [4, 5],
-  #         d: ["yes", "no"],
-  #         e: [4, 1]
-  #       )
-
-  #     df2 = DF.relocate(df1, [4, 0], before: 2)
-  #     assert df2.names == ["b", "e", "a", "c", "d"]
-
-  #     assert DF.dump_csv(df2) ==
-  #              {:ok, "b,e,a,c,d\n5.1,4,1,4,yes\n5.2,1,2,5,no\n"}
-  #   end
-  # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               d: [5, 6, 6, 7]
+             }
+
+      assert df1.names == ["a", "b", "d", "c"]
+
+      df2 = DF.join(left, right, on: [{"a", "d"}], how: :outer)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 2, 3],
+               b: ["a", "b", "b", "c"],
+               c: ["d", "e", "f", nil],
+               d: [5, 6, 6, 7],
+               d_right: [1, 2, 2, nil]
+             }
+
+      assert df2.names == ["a", "b", "d", "d_right", "c"]
+
+      df3 = DF.join(left, right, how: :cross)
+
+      assert DF.to_columns(df3, atom_keys: true) == %{
+               a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
+               b: ["a", "a", "a", "b", "b", "b", "c", "c", "c"],
+               c: ["d", "e", "f", "d", "e", "f", "d", "e", "f"],
+               d: [5, 5, 5, 6, 6, 6, 7, 7, 7],
+               d_right: [1, 2, 2, 1, 2, 2, 1, 2, 2]
+             }
+
+      assert df3.names == ["a", "b", "d", "d_right", "c"]
+
+      df4 = DF.join(left, right, on: [{"a", "d"}], how: :right)
+
+      assert DF.to_columns(df4, atom_keys: true) == %{
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"],
+               d: [1, 2, 2],
+               d_left: [5, 6, 6]
+             }
+
+      assert df4.names == ["d", "c", "b", "d_left"]
+    end
+
+    test "with invalid join strategy" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
+
+      msg =
+        "join type is not valid: :inner_join. Valid options are: :inner, :left, :right, :outer, :cross"
+
+      assert_raise ArgumentError, msg, fn -> DF.join(left, right, how: :inner_join) end
+    end
+
+    test "with matching column indexes as single value" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
+
+      df = DF.join(left, right, on: 0)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"]
+             }
+    end
+
+    test "with matching column indexes" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(a: [1, 2, 2], c: ["d", "e", "f"])
+
+      df = DF.join(left, right, on: [0])
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, 2, 2],
+               b: ["a", "b", "b"],
+               c: ["d", "e", "f"]
+             }
+    end
+
+    test "with no matching column indexes" do
+      left = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      right = DF.new(c: ["d", "e", "f"], a: [1, 2, 2])
+
+      msg = "the column given to option `:on` is not the same for both dataframes"
+
+      assert_raise ArgumentError, msg, fn -> DF.join(left, right, on: [0]) end
+    end
+  end
+
+  describe "table/1" do
+    test "prints 5 rows by default" do
+      df = Datasets.iris()
+
+      assert capture_io(fn -> DF.print(df) end) == """
+             +-----------------------------------------------------------------------+
+             |              Explorer DataFrame: [rows: 150, columns: 5]              |
+             +--------------+-------------+--------------+-------------+-------------+
+             | sepal_length | sepal_width | petal_length | petal_width |   species   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
+             +==============+=============+==============+=============+=============+
+             | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 4.9          | 3.0         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 4.7          | 3.2         | 1.3          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 4.6          | 3.1         | 1.5          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+             | 5.0          | 3.6         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+
+             """
+    end
+
+    test "accepts limit keyword param" do
+      df = Datasets.iris()
+
+      assert capture_io(fn -> DF.print(df, limit: 1) end) == """
+             +-----------------------------------------------------------------------+
+             |              Explorer DataFrame: [rows: 150, columns: 5]              |
+             +--------------+-------------+--------------+-------------+-------------+
+             | sepal_length | sepal_width | petal_length | petal_width |   species   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
+             +==============+=============+==============+=============+=============+
+             | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+
+             """
+    end
+
+    test "accepts limit: :infinity" do
+      df =
+        DF.new(
+          a: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+          b: ~w[a b c d e f g h i],
+          c: [9.1, 8.2, 7.3, 6.4, 5.5, 4.6, 3.7, 2.8, 1.9]
+        )
+
+      assert capture_io(fn -> DF.print(df, limit: :infinity) end) == """
+             +--------------------------------------------+
+             | Explorer DataFrame: [rows: 9, columns: 3]  |
+             +-------------+----------------+-------------+
+             |      a      |       b        |      c      |
+             |    <s64>    |    <string>    |    <f64>    |
+             +=============+================+=============+
+             | 1           | a              | 9.1         |
+             +-------------+----------------+-------------+
+             | 2           | b              | 8.2         |
+             +-------------+----------------+-------------+
+             | 3           | c              | 7.3         |
+             +-------------+----------------+-------------+
+             | 4           | d              | 6.4         |
+             +-------------+----------------+-------------+
+             | 5           | e              | 5.5         |
+             +-------------+----------------+-------------+
+             | 6           | f              | 4.6         |
+             +-------------+----------------+-------------+
+             | 7           | g              | 3.7         |
+             +-------------+----------------+-------------+
+             | 8           | h              | 2.8         |
+             +-------------+----------------+-------------+
+             | 9           | i              | 1.9         |
+             +-------------+----------------+-------------+
+
+             """
+    end
+
+    test "works with lazy" do
+      df = Datasets.iris() |> DF.lazy()
+
+      assert capture_io(fn -> DF.print(df, limit: 1) end) == """
+             +-----------------------------------------------------------------------+
+             |              Explorer DataFrame: [rows: ???, columns: 5]              |
+             +--------------+-------------+--------------+-------------+-------------+
+             | sepal_length | sepal_width | petal_length | petal_width |   species   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
+             +==============+=============+==============+=============+=============+
+             | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
+             +--------------+-------------+--------------+-------------+-------------+
+
+             """
+    end
+
+    test "works with tuple dtypes" do
+      df =
+        [datetime1: [~N[2023-09-14 00:00:00]], datetime2: [~N[2023-09-14 01:00:00]]]
+        |> DF.new()
+        |> DF.mutate(duration: datetime2 - datetime1)
+
+      assert capture_io(fn -> DF.print(df, limit: 1) end) == """
+             +--------------------------------------------------------------------------+
+             |                Explorer DataFrame: [rows: 1, columns: 3]                 |
+             +----------------------------+----------------------------+----------------+
+             |         datetime1          |         datetime2          |    duration    |
+             |    <naive_datetime[μs]>    |    <naive_datetime[μs]>    | <duration[μs]> |
+             +============================+============================+================+
+             | 2023-09-14 00:00:00.000000 | 2023-09-14 01:00:00.000000 | 1h             |
+             +----------------------------+----------------------------+----------------+
+
+             """
+    end
+
+    test "works with structs" do
+      df = DF.new([%{n: %{a: 1}, m: 2}, %{n: %{a: 2}, m: 3}])
+
+      assert capture_io(fn -> DF.print(df) end) == """
+             +-------------------------------------------+
+             | Explorer DataFrame: [rows: 2, columns: 2] |
+             +------------------+------------------------+
+             |        m         |           n            |
+             |      <s64>       |      <struct[1]>       |
+             +==================+========================+
+             | 2                | %{"a" => 1}            |
+             +------------------+------------------------+
+             | 3                | %{"a" => 2}            |
+             +------------------+------------------------+
+
+             """
+    end
+  end
+
+  test "fetch/2" do
+    df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
+
+    assert Series.to_list(df[:a]) == [1, 2, 3]
+    assert Series.to_list(df["a"]) == [1, 2, 3]
+    assert DF.to_columns(df[["a"]]) == %{"a" => [1, 2, 3]}
+    assert DF.to_columns(df[[:a, :c]]) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
+    assert DF.to_columns(df[0..-2//1]) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
+    assert DF.to_columns(df[-3..-1]) == DF.to_columns(df)
+    assert DF.to_columns(df[..]) == DF.to_columns(df)
+
+    assert %Series{} = s1 = df[0]
+    assert Series.to_list(s1) == [1, 2, 3]
+
+    assert %Series{} = s2 = df[2]
+    assert Series.to_list(s2) == [4.0, 5.1, 6.2]
+
+    assert %Series{} = s3 = df[-1]
+    assert Series.to_list(s3) == [4.0, 5.1, 6.2]
+
+    assert %DF{} = df2 = df[1..2]
+    assert DF.names(df2) == ["b", "c"]
+
+    assert %DF{} = df3 = df[-2..-1]
+    assert DF.names(df3) == ["b", "c"]
+
+    assert_raise ArgumentError,
+                 "no column exists at index 100",
+                 fn -> df[100] end
+
+    assert_raise ArgumentError,
+                 ~r"could not find column name \"class\"",
+                 fn -> df[:class] end
+
+    assert DF.to_columns(df[0..100]) == DF.to_columns(df)
+  end
+
+  test "pop/2" do
+    df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "c"], c: [4.0, 5.1, 6.2])
+
+    {s1, df2} = Access.pop(df1, "a")
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
+    {s1, df2} = Access.pop(df1, :a)
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
+    {s1, df2} = Access.pop(df1, 0)
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
+    {s1, df2} = Access.pop(df1, -3)
+    assert Series.to_list(s1) == [1, 2, 3]
+    assert DF.to_columns(df2) == %{"b" => ["a", "b", "c"], "c" => [4.0, 5.1, 6.2]}
+
+    {df3, df4} = Access.pop(df1, ["a", "c"])
+    assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
+    assert DF.to_columns(df4) == %{"b" => ["a", "b", "c"]}
+
+    {df3, df4} = Access.pop(df1, 0..1)
+    assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
+    assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
+
+    {df3, df4} = Access.pop(df1, 0..-2//1)
+    assert DF.to_columns(df3) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
+    assert DF.to_columns(df4) == %{"c" => [4.0, 5.1, 6.2]}
+
+    assert {%Series{} = s2, %DF{} = df5} = Access.pop(df1, :a)
+    assert Series.to_list(s2) == Series.to_list(df1[:a])
+    assert DF.names(df1) -- DF.names(df5) == ["a"]
+
+    assert {%Series{} = s3, %DF{} = df6} = Access.pop(df1, 0)
+    assert Series.to_list(s3) == Series.to_list(df1[:a])
+    assert DF.names(df1) -- DF.names(df6) == ["a"]
+  end
+
+  test "get_and_update/3" do
+    df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+    {s, df2} =
+      Access.get_and_update(df1, "a", fn current_value ->
+        {current_value, Series.from_list([0, 0, 0])}
+      end)
+
+    assert s.name == "a"
+
+    assert Series.to_list(s) == [1, 2, 3]
+    assert DF.to_columns(df2, atom_keys: true) == %{a: [0, 0, 0], b: ["a", "b", "c"]}
+  end
+
+  test "pull/2" do
+    df1 = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+    s = DF.pull(df1, "b")
+
+    assert %Series{} = s
+    assert s.name == "b"
+
+    assert Series.to_list(s) == ~w(a b c)
+  end
+
+  describe "concat_rows/2" do
+    test "same dtype columns" do
+      df1 = DF.new(x: [1, 2, 3, 4], y: ["a", "b", nil, "c"])
+      df2 = DF.new(x: [4, 5, 6, 7], y: ["d", "e", "f", nil])
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:s, 64}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 4, 5, 6, 7]
+      assert Series.to_list(df3["y"]) == ["a", "b", nil] ++ ~w(c d e f) ++ [nil]
+    end
+
+    test "mixing integer and floats" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(x: [4.0, 5.0, 6.0], y: ["d", "e", "f"])
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:f, 64}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    end
+
+    test "mixing signed and unsigned integers" do
+      df1 =
+        DF.new(x: Series.from_list([1, 2, 3], dtype: :u16), y: Series.from_list(["a", "b", "c"]))
+
+      df2 =
+        DF.new(x: Series.from_list([4, 5, 6], dtype: :s16), y: Series.from_list(["d", "e", "f"]))
+
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:s, 32}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 5, 6]
+    end
+
+    test "mixing floats" do
+      df1 =
+        DF.new(
+          x: Series.from_list([1.0, 2.0, 3.0], dtype: :f32),
+          y: Series.from_list(["a", "b", "c"])
+        )
+
+      df2 =
+        DF.new(
+          x: Series.from_list([4.0, 5.0, 6.0], dtype: :f64),
+          y: Series.from_list(["d", "e", "f"])
+        )
+
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:f, 64}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    end
+
+    test "mixing nulls, signed, unsigned integers, and floats" do
+      df1 = DF.new(x: Series.from_list([1, 2], dtype: :u16), y: Series.from_list(["a", "b"]))
+
+      df2 = DF.new(x: Series.from_list([3.0, 4.0], dtype: :f32), y: Series.from_list(["c", "d"]))
+
+      df3 = DF.new(x: [nil, nil], y: [nil, nil])
+
+      df4 = DF.new(x: Series.from_list([5, 6], dtype: :s16), y: Series.from_list(["e", "f"]))
+
+      df5 = DF.concat_rows([df1, df2, df3, df4])
+
+      assert DF.dtypes(df5) == %{"x" => {:f, 32}, "y" => :string}
+      assert Series.to_list(df5["x"]) == [1.0, 2.0, 3.0, 4.0, nil, nil, 5.0, 6.0]
+      assert Series.to_list(df5["y"]) == ["a", "b", "c", "d", nil, nil, "e", "f"]
+    end
+
+    test "concat dfs in a list" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(x: [4, 5, 6], y: ["d", "e", "f"])
+      df3 = DF.new(x: [7, 8, 9], y: ["g", "h", nil])
+
+      df4 = DF.concat_rows([df1, df2, df3])
+
+      assert DF.dtypes(df4) == %{"x" => {:s, 64}, "y" => :string}
+
+      assert Series.to_list(df4["x"]) == [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      assert Series.to_list(df4["y"]) == ~w(a b c d e f g h) ++ [nil]
+    end
+
+    test "same dtype columns but columns not aligned" do
+      df1 = DF.new(x: [1, 2, 3, 4], y: ["a", "b", nil, "c"])
+      df2 = DF.new(y: ["d", "e", "f", nil], x: [4, 5, 6, 7])
+      df3 = DF.concat_rows(df1, df2)
+
+      assert DF.dtypes(df3) == %{"x" => {:s, 64}, "y" => :string}
+
+      assert Series.to_list(df3["x"]) == [1, 2, 3, 4, 4, 5, 6, 7]
+      assert Series.to_list(df3["y"]) == ["a", "b", nil] ++ ~w(c d e f) ++ [nil]
+    end
+
+    test "with incompatible columns" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "dataframes must have the same columns",
+                   fn -> DF.concat_rows(df1, DF.new(z: [7, 8, 9])) end
+    end
+
+    test "with incompatible column dtypes" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "columns and dtypes must be identical for all dataframes",
+                   fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
+    end
+
+    test "rechunking logic when nil is introduced in the new dataframe" do
+      # this may panic without forced rechunking
+      df =
+        DF.new(x: [1.0, 2.0], y: [2.0, 3.0])
+        |> DF.concat_rows(DF.new(x: [nil], y: [nil]))
+        |> DF.mutate(z: correlation(x, y))
+
+      assert abs(df[:z][0] - 1.0) < 1.0e-4
+    end
+  end
+
+  describe "distinct/2" do
+    test "with lists", %{df: df} do
+      df1 = DF.distinct(df, [:year, :country])
+      assert DF.names(df1) == ["year", "country"]
+
+      assert DF.shape(df1) == {1094, 2}
+
+      df1 = DF.distinct(df, [0, 1])
+      assert DF.names(df1) == ["year", "country"]
+
+      assert df == DF.distinct(df, [])
+
+      df2 = DF.distinct(df, [:year, :country], keep_all: true)
+      assert DF.names(df2) == DF.names(df)
+    end
+
+    test "with one column", %{df: df} do
+      df1 = DF.distinct(df, [:country])
+      assert DF.names(df1) == ["country"]
+
+      assert DF.shape(df1) == {222, 1}
+    end
+
+    test "with ranges", %{df: df} do
+      df1 = DF.distinct(df, 0..1//1)
+      assert DF.names(df1) == ["year", "country"]
+
+      df2 = DF.distinct(df)
+      assert DF.names(df2) == DF.names(df)
+
+      df3 = DF.distinct(df, ..)
+      assert DF.names(df3) == DF.names(df)
+
+      assert df == DF.distinct(df, 100..200)
+    end
+  end
+
+  test "drop_nil/2" do
+    df = DF.new(a: [1, 2, nil], b: [1, nil, 3])
+
+    df1 = DF.drop_nil(df)
+    assert DF.to_columns(df1) == %{"a" => [1], "b" => [1]}
+
+    df2 = DF.drop_nil(df, :a)
+    assert DF.to_columns(df2) == %{"a" => [1, 2], "b" => [1, nil]}
+
+    # Empty list do nothing.
+    df3 = DF.drop_nil(df, [])
+    assert DF.to_columns(df3) == %{"a" => [1, 2, nil], "b" => [1, nil, 3]}
+
+    assert_raise ArgumentError,
+                 "no column exists at index 3",
+                 fn -> DF.drop_nil(df, [3, 4, 5]) end
+
+    # It takes the slice of columns in the range
+    df4 = DF.drop_nil(df, 0..200)
+    assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
+  end
+
+  describe "relocate/3" do
+    test "with single column" do
+      df =
+        DF.new(
+          first: ["a", "b", "a"],
+          second: ["x", "y", "z"],
+          third: [2.2, 3.3, nil],
+          last: [1, 3, 1]
+        )
+
+      df1 = DF.relocate(df, "first", after: "second")
+
+      assert df1.names == ["second", "first", "third", "last"]
+      assert Series.to_list(df1["first"]) == Series.to_list(df["first"])
+      assert Series.to_list(df1["second"]) == Series.to_list(df["second"])
+      assert Series.to_list(df1["third"]) == Series.to_list(df["third"])
+      assert Series.to_list(df1["last"]) == Series.to_list(df["last"])
+
+      df2 = DF.relocate(df, "second", before: "last")
+      assert df2.names == ["first", "third", "second", "last"]
+
+      df3 = DF.relocate(df, 0, after: 3)
+      assert df3.names == ["second", "third", "last", "first"]
+    end
+
+    test "with multiple columns" do
+      df =
+        DF.new(
+          first: ["a", "b", "a"],
+          second: ["x", "y", "z"],
+          third: [2.2, 3.3, nil],
+          last: [1, 3, 1]
+        )
+
+      df1 = DF.relocate(df, ["third", 1], before: -1)
+      assert df1.names == ["first", "third", "second", "last"]
+
+      df2 = DF.relocate(df, ["first", "last"], after: "third")
+      assert df2.names == ["second", "third", "first", "last"]
+
+      df3 = DF.relocate(df, ["second", "last"], before: 0)
+      assert df3.names == ["second", "last", "first", "third"]
+
+      df4 = DF.relocate(df, ["third", "second"], after: "second")
+      assert df4.names == ["first", "third", "second", "last"]
+
+      df5 = DF.relocate(df, [], after: "second")
+      assert df5.names == ["first", "second", "third", "last"]
+    end
+
+    test "with negative index" do
+      df =
+        DF.new(
+          a: ["a value", "some other value", "a third value!"],
+          b: [0, 5, -2],
+          c: [nil, nil, nil]
+        )
+
+      df1 = DF.relocate(df, "a", after: -1)
+      assert df1.names == ["b", "c", "a"]
+
+      df2 = DF.relocate(df, 0, before: -1)
+      assert df2.names == ["b", "a", "c"]
+
+      df3 = DF.relocate(df, [2, "a"], after: -1)
+      assert df3.names == ["b", "c", "a"]
+    end
+
+    test "with index at start" do
+      df =
+        DF.new(
+          a: ["a value", "some other value", "a third value!"],
+          b: [0, 5, -2],
+          c: [nil, nil, nil]
+        )
+
+      df1 = DF.relocate(df, "c", after: 0)
+      assert df1.names == ["a", "c", "b"]
+
+      df2 = DF.relocate(df, 2, before: 0)
+      assert df2.names == ["c", "a", "b"]
+
+      df3 = DF.relocate(df, ["b", "a"], after: 0)
+      assert df3.names == ["b", "a", "c"]
+    end
+
+    test "with both positioning parameters" do
+      df =
+        DF.new(
+          a: [0, 5, -2],
+          b: [nil, nil, nil]
+        )
+
+      assert_raise ArgumentError,
+                   "only one location must be given. Got both before: \"a\" and after: 1",
+                   fn -> DF.relocate(df, 0, before: "a", after: 1) end
+    end
+
+    test "ordered DataFrame output after relocation" do
+      df1 =
+        Explorer.DataFrame.new(
+          a: [1, 2],
+          b: [5.1, 5.2],
+          c: [4, 5],
+          d: ["yes", "no"],
+          e: [4, 1]
+        )
+
+      df2 = DF.relocate(df1, [4, 0], before: 2)
+      assert df2.names == ["b", "e", "a", "c", "d"]
+
+      assert DF.dump_csv(df2) ==
+               {:ok, "b,e,a,c,d\n5.1,4,1,4,yes\n5.2,1,2,5,no\n"}
+    end
+  end
 
   # describe "rename/2" do
   #   test "with lists" do

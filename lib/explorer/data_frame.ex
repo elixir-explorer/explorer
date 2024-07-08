@@ -5069,10 +5069,13 @@ defmodule Explorer.DataFrame do
         dfs
       else
         for df <- dfs do
-          mutate_with(ungroup(df), fn ldf ->
-            for {column, target_type} <- changed_types,
-                do: {column, Series.cast(ldf[column], target_type)}
-          end)
+          df
+          |> ungroup()
+          |> mutate_with(
+            for {column, target_type} <- changed_types do
+              {column, Series.cast(Series.col(column), target_type)}
+            end
+          )
         end
       end
 
