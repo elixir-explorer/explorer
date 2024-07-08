@@ -56,6 +56,19 @@ defmodule Explorer.PolarsBackend.Expression do
     to_expr(lazy_series)
   end
 
+  def to_expr(%LazySeries{op: :fill_missing_with_strategy, args: [series, strategy]})
+      when is_atom(strategy) do
+    args = [to_expr(series), Atom.to_string(strategy)]
+    apply(Native, :expr_fill_missing_with_strategy, args)
+  end
+
+  def to_expr(%LazySeries{op: :log, args: [series | args]}) do
+    case args do
+      [base] -> apply(Native, :expr_log, [to_expr(series), base])
+      [] -> apply(Native, :expr_log_natural, [to_expr(series)])
+    end
+  end
+
   def to_expr(%LazySeries{op: :peaks, args: [series, method]}) do
     method =
       case method do
@@ -66,11 +79,24 @@ defmodule Explorer.PolarsBackend.Expression do
     apply(Native, :expr_peaks, [to_expr(series), method])
   end
 
-  def to_expr(%LazySeries{op: :fill_missing_with_strategy, args: [series, strategy]})
-      when is_atom(strategy) do
-    args = [to_expr(series), Atom.to_string(strategy)]
-    apply(Native, :expr_fill_missing_with_strategy, args)
+  def to_expr(%LazySeries{op: :sample, args: [series, value | opts]}) do
+    case value do
+      n when is_integer(n) -> apply(Native, :expr_sample_n, [to_expr(series), n | opts])
+      f when is_float(f) -> apply(Native, :expr_sample_frac, [to_expr(series), f | opts])
+    end
   end
+
+  def to_expr(%LazySeries{op: :slice, args: [series | args]}) do
+    case args do
+      [%mod{} = indices] when mod == LazySeries or mod == Explorer.Series ->
+        apply(Native, :expr_slice_by_indices, [to_expr(series), to_expr(indices)])
+
+      [offset, size] ->
+        apply(Native, :expr_slice, [to_expr(series), offset, size])
+    end
+  end
+
+  # The only argument to these functions is a list of exprs.
 
   @ops_only_arg_is_list [:concat, :format]
   for op <- @ops_only_arg_is_list do
@@ -102,8 +128,8 @@ defmodule Explorer.PolarsBackend.Expression do
     :round,
     :sample_frac,
     :sample_n,
+    :shift,
     :skew,
-    :slice,
     :sort,
     :standard_deviation,
     :tail,

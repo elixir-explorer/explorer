@@ -1460,201 +1460,201 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    # test "add columns with head+shift" do
-    #   df = DF.new(a: [1, 2, 3])
+    test "add columns with head+shift" do
+      df = DF.new(a: [1, 2, 3])
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       b: head(shift(a, 3), 3),
-    #       c: head(shift(a, 2), 3),
-    #       d: head(shift(a, 1), 3),
-    #       e: head(shift(a, 0), 3),
-    #       f: head(shift(a, -1), 3),
-    #       g: head(shift(a, -2), 3),
-    #       h: head(shift(a, -3), 3)
-    #     )
+      df1 =
+        DF.mutate(df,
+          b: head(shift(a, 3), 3),
+          c: head(shift(a, 2), 3),
+          d: head(shift(a, 1), 3),
+          e: head(shift(a, 0), 3),
+          f: head(shift(a, -1), 3),
+          g: head(shift(a, -2), 3),
+          h: head(shift(a, -3), 3)
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [1, 2, 3],
-    #            b: [nil, nil, nil],
-    #            c: [nil, nil, 1],
-    #            d: [nil, 1, 2],
-    #            e: [1, 2, 3],
-    #            f: [2, 3, nil],
-    #            g: [3, nil, nil],
-    #            h: [nil, nil, nil]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [nil, nil, nil],
+               c: [nil, nil, 1],
+               d: [nil, 1, 2],
+               e: [1, 2, 3],
+               f: [2, 3, nil],
+               g: [3, nil, nil],
+               h: [nil, nil, nil]
+             }
+    end
 
-    # test "add columns with sampling" do
-    #   df = DF.new(a: [1, 2, 3, 4, 5])
+    test "add columns with sampling" do
+      df = DF.new(a: [1, 2, 3, 4, 5])
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       b: sample(a, 5, seed: 100, shuffle: true),
-    #       c: sample(a, 1.0, seed: 99, shuffle: true),
-    #       d: sample(a, 3, seed: 98, shuffle: true) |> concat(from_list([0, 0]))
-    #     )
+      df1 =
+        DF.mutate(df,
+          b: sample(a, 5, seed: 100, shuffle: true),
+          c: sample(a, 1.0, seed: 99, shuffle: true),
+          d: sample(a, 3, seed: 98, shuffle: true) |> concat(from_list([0, 0]))
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [1, 2, 3, 4, 5],
-    #            b: [5, 3, 2, 1, 4],
-    #            c: [1, 3, 2, 4, 5],
-    #            d: [4, 2, 5, 0, 0]
-    #          }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5],
+               b: [5, 3, 2, 1, 4],
+               c: [1, 3, 2, 4, 5],
+               d: [4, 2, 5, 0, 0]
+             }
 
-    #   assert df1.dtypes == %{
-    #            "a" => {:s, 64},
-    #            "b" => {:s, 64},
-    #            "c" => {:s, 64},
-    #            "d" => {:s, 64}
-    #          }
-    # end
+      assert df1.dtypes == %{
+               "a" => {:s, 64},
+               "b" => {:s, 64},
+               "c" => {:s, 64},
+               "d" => {:s, 64}
+             }
+    end
 
-    # test "keeps the column order" do
-    #   df = DF.new(e: [1, 2, 3], c: ["a", "b", "c"], a: [1.2, 2.3, 4.5])
+    test "keeps the column order" do
+      df = DF.new(e: [1, 2, 3], c: ["a", "b", "c"], a: [1.2, 2.3, 4.5])
 
-    #   df1 = DF.mutate(df, d: 1, b: 2)
+      df1 = DF.mutate(df, d: 1, b: 2)
 
-    #   assert df1.names == ["e", "c", "a", "d", "b"]
-    # end
+      assert df1.names == ["e", "c", "a", "d", "b"]
+    end
 
-    # test "operations on boolean column" do
-    #   df = DF.new(a: [true, false, true, nil], b: [true, false, false, true])
+    test "operations on boolean column" do
+      df = DF.new(a: [true, false, true, nil], b: [true, false, false, true])
 
-    #   df1 = DF.mutate(df, c: not a, d: a and b, e: a or b)
+      df1 = DF.mutate(df, c: not a, d: a and b, e: a or b)
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [true, false, true, nil],
-    #            b: [true, false, false, true],
-    #            c: [false, true, false, nil],
-    #            d: [true, false, false, nil],
-    #            e: [true, false, true, true]
-    #          }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [true, false, true, nil],
+               b: [true, false, false, true],
+               c: [false, true, false, nil],
+               d: [true, false, false, nil],
+               e: [true, false, true, true]
+             }
 
-    #   assert df1.names == ["a", "b", "c", "d", "e"]
+      assert df1.names == ["a", "b", "c", "d", "e"]
 
-    #   assert df1.dtypes == %{
-    #            "a" => :boolean,
-    #            "b" => :boolean,
-    #            "c" => :boolean,
-    #            "d" => :boolean,
-    #            "e" => :boolean
-    #          }
-    # end
+      assert df1.dtypes == %{
+               "a" => :boolean,
+               "b" => :boolean,
+               "c" => :boolean,
+               "d" => :boolean,
+               "e" => :boolean
+             }
+    end
 
-    # test "adds a slice of another column with a list of indices" do
-    #   df = DF.new(a: [1, 2, 4])
+    test "adds a slice of another column with a list of indices" do
+      df = DF.new(a: [1, 2, 4])
 
-    #   # nil is needed to make the column equals the size of the df.
-    #   df1 = DF.mutate(df, b: slice(a, [1, 2, nil]))
+      # nil is needed to make the column equals the size of the df.
+      df1 = DF.mutate(df, b: slice(a, [1, 2, nil]))
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [1, 2, 4],
-    #            b: [2, 4, nil]
-    #          }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 4],
+               b: [2, 4, nil]
+             }
 
-    #   assert DF.dtypes(df1) == %{
-    #            "a" => {:s, 64},
-    #            "b" => {:s, 64}
-    #          }
-    # end
+      assert DF.dtypes(df1) == %{
+               "a" => {:s, 64},
+               "b" => {:s, 64}
+             }
+    end
 
-    # test "adds a slice of another column with a series of indices" do
-    #   df = DF.new(a: [1, 2, 4])
+    test "adds a slice of another column with a series of indices" do
+      df = DF.new(a: [1, 2, 4])
 
-    #   # nil is needed to make the column equals the size of the df.
-    #   df1 = DF.mutate(df, b: slice(a, from_list([1, 2, nil])))
+      # nil is needed to make the column equals the size of the df.
+      df1 = DF.mutate(df, b: slice(a, from_list([1, 2, nil])))
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [1, 2, 4],
-    #            b: [2, 4, nil]
-    #          }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 4],
+               b: [2, 4, nil]
+             }
 
-    #   assert DF.dtypes(df1) == %{
-    #            "a" => {:s, 64},
-    #            "b" => {:s, 64}
-    #          }
-    # end
+      assert DF.dtypes(df1) == %{
+               "a" => {:s, 64},
+               "b" => {:s, 64}
+             }
+    end
 
-    # test "adds a column with log" do
-    #   df = DF.new(a: [8, 16, 64])
+    test "adds a column with log" do
+      df = DF.new(a: [8, 16, 64])
 
-    #   df1 = DF.mutate(df, b: log(a, 2), c: log(a))
+      df1 = DF.mutate(df, b: log(a, 2), c: log(a))
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [8, 16, 64],
-    #            b: [3.0, 4.0, 6.0],
-    #            c: [2.0794415416798357, 2.772588722239781, 4.1588830833596715]
-    #          }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [8, 16, 64],
+               b: [3.0, 4.0, 6.0],
+               c: [2.0794415416798357, 2.772588722239781, 4.1588830833596715]
+             }
 
-    #   assert df1.names == ["a", "b", "c"]
+      assert df1.names == ["a", "b", "c"]
 
-    #   assert df1.dtypes == %{
-    #            "a" => {:s, 64},
-    #            "b" => {:f, 64},
-    #            "c" => {:f, 64}
-    #          }
-    # end
+      assert df1.dtypes == %{
+               "a" => {:s, 64},
+               "b" => {:f, 64},
+               "c" => {:f, 64}
+             }
+    end
 
-    # test "adds a column with round" do
-    #   df = DF.new(a: [1.2345, 2.3456, 3.4567, 4.5678])
+    test "adds a column with round" do
+      df = DF.new(a: [1.2345, 2.3456, 3.4567, 4.5678])
 
-    #   df1 = DF.mutate(df, b: round(a, 2))
+      df1 = DF.mutate(df, b: round(a, 2))
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [1.2345, 2.3456, 3.4567, 4.5678],
-    #            b: [1.23, 2.35, 3.46, 4.57]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1.2345, 2.3456, 3.4567, 4.5678],
+               b: [1.23, 2.35, 3.46, 4.57]
+             }
+    end
 
-    # test "adds a column with exponential" do
-    #   df = DF.new(a: [1, 2, 3])
+    test "adds a column with exponential" do
+      df = DF.new(a: [1, 2, 3])
 
-    #   df1 = DF.mutate(df, b: exp(a))
+      df1 = DF.mutate(df, b: exp(a))
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [1, 2, 3],
-    #            b: [2.718281828459045, 7.38905609893065, 20.085536923187668]
-    #          }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [2.718281828459045, 7.38905609893065, 20.085536923187668]
+             }
 
-    #   assert df1.names == ["a", "b"]
+      assert df1.names == ["a", "b"]
 
-    #   assert df1.dtypes == %{
-    #            "a" => {:s, 64},
-    #            "b" => {:f, 64}
-    #          }
-    # end
+      assert df1.dtypes == %{
+               "a" => {:s, 64},
+               "b" => {:f, 64}
+             }
+    end
 
-    # test "add columns with trignometric functions" do
-    #   pi = :math.pi()
-    #   df = DF.new(a: [0, pi / 2, pi])
+    test "add columns with trignometric functions" do
+      pi = :math.pi()
+      df = DF.new(a: [0, pi / 2, pi])
 
-    #   df1 = DF.mutate(df, b: sin(a), c: cos(a), d: tan(a))
-    #   df2 = DF.mutate(df1, e: asin(b), f: acos(c), g: atan(d))
+      df1 = DF.mutate(df, b: sin(a), c: cos(a), d: tan(a))
+      df2 = DF.mutate(df1, e: asin(b), f: acos(c), g: atan(d))
 
-    #   assert DF.to_columns(df2, atom_keys: true) == %{
-    #            a: [0, pi / 2, pi],
-    #            b: [0, 1, 1.2246467991473532e-16],
-    #            c: [1.0, 6.123233995736766e-17, -1.0],
-    #            d: [0.0, 1.633123935319537e16, -1.2246467991473532e-16],
-    #            e: [0, pi / 2, 1.2246467991473532e-16],
-    #            f: [0, pi / 2, pi],
-    #            g: [0, pi / 2, -1.2246467991473532e-16]
-    #          }
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [0, pi / 2, pi],
+               b: [0, 1, 1.2246467991473532e-16],
+               c: [1.0, 6.123233995736766e-17, -1.0],
+               d: [0.0, 1.633123935319537e16, -1.2246467991473532e-16],
+               e: [0, pi / 2, 1.2246467991473532e-16],
+               f: [0, pi / 2, pi],
+               g: [0, pi / 2, -1.2246467991473532e-16]
+             }
 
-    #   assert df2.names == ["a", "b", "c", "d", "e", "f", "g"]
+      assert df2.names == ["a", "b", "c", "d", "e", "f", "g"]
 
-    #   assert df2.dtypes == %{
-    #            "a" => {:f, 64},
-    #            "b" => {:f, 64},
-    #            "c" => {:f, 64},
-    #            "d" => {:f, 64},
-    #            "e" => {:f, 64},
-    #            "f" => {:f, 64},
-    #            "g" => {:f, 64}
-    #          }
-    # end
+      assert df2.dtypes == %{
+               "a" => {:f, 64},
+               "b" => {:f, 64},
+               "c" => {:f, 64},
+               "d" => {:f, 64},
+               "e" => {:f, 64},
+               "f" => {:f, 64},
+               "g" => {:f, 64}
+             }
+    end
 
     # test "raises when adding eager series whose length does not match dataframe's length" do
     #   df = DF.new(a: [1, 2, 3])

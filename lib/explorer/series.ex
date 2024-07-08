@@ -2099,7 +2099,7 @@ defmodule Explorer.Series do
   @doc type: :shape
   @spec slice(series :: Series.t(), indices :: [integer()] | Range.t() | Series.t()) :: Series.t()
   def slice(series, indices) when is_list(indices),
-    do: apply_series(series, :slice, [indices])
+    do: slice(series, from_list(indices))
 
   def slice(series, %Series{dtype: int_dtype} = indices) when K.in(int_dtype, @integer_types),
     do: apply_series(series, :slice, [indices])
@@ -3699,7 +3699,7 @@ defmodule Explorer.Series do
   @doc type: :element_wise
   @spec log(argument :: Series.t(), base :: number()) :: Series.t()
   def log(%Series{dtype: dtype} = series, base)
-      when K.and(is_numeric_dtype(dtype), is_number(base)) do
+      when K.and(K.or(is_numeric_dtype(dtype), dtype == :unknown), is_number(base)) do
     if base <= 0, do: raise(ArgumentError, "base must be a positive number")
     if base == 1, do: raise(ArgumentError, "base cannot be equal to 1")
 
@@ -3874,8 +3874,9 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec sin(series :: Series.t()) :: Series.t()
-  def sin(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
-    do: apply_series(series, :sin)
+  def sin(%Series{dtype: dtype} = series)
+      when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+      do: apply_series(series, :sin)
 
   def sin(%Series{dtype: dtype}),
     do: dtype_error("sin/1", dtype, [{:f, 32}, {:f, 64}])
@@ -3901,8 +3902,9 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec cos(series :: Series.t()) :: Series.t()
-  def cos(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
-    do: apply_series(series, :cos)
+  def cos(%Series{dtype: dtype} = series)
+      when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+      do: apply_series(series, :cos)
 
   def cos(%Series{dtype: dtype}),
     do: dtype_error("cos/1", dtype, [{:f, 32}, {:f, 64}])
@@ -3928,8 +3930,9 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec tan(series :: Series.t()) :: Series.t()
-  def tan(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
-    do: apply_series(series, :tan)
+  def tan(%Series{dtype: dtype} = series)
+      when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+      do: apply_series(series, :tan)
 
   def tan(%Series{dtype: dtype}),
     do: dtype_error("tan/1", dtype, [{:f, 32}, {:f, 64}])
@@ -3954,8 +3957,9 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec asin(series :: Series.t()) :: Series.t()
-  def asin(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
-    do: apply_series(series, :asin)
+  def asin(%Series{dtype: dtype} = series)
+      when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+      do: apply_series(series, :asin)
 
   def asin(%Series{dtype: dtype}),
     do: dtype_error("asin/1", dtype, [{:f, 32}, {:f, 64}])
@@ -3980,8 +3984,9 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec acos(series :: Series.t()) :: Series.t()
-  def acos(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
-    do: apply_series(series, :acos)
+  def acos(%Series{dtype: dtype} = series)
+      when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+      do: apply_series(series, :acos)
 
   def acos(%Series{dtype: dtype}),
     do: dtype_error("acos/1", dtype, [{:f, 32}, {:f, 64}])
@@ -4006,8 +4011,9 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec atan(series :: Series.t()) :: Series.t()
-  def atan(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
-    do: apply_series(series, :atan)
+  def atan(%Series{dtype: dtype} = series)
+      when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+      do: apply_series(series, :atan)
 
   def atan(%Series{dtype: dtype}),
     do: dtype_error("atan/1", dtype, [{:f, 32}, {:f, 64}])
@@ -6128,11 +6134,14 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec round(Series.t(), non_neg_integer()) :: Series.t()
-  def round(%Series{dtype: {:f, _}} = series, decimals)
-      when K.and(is_integer(decimals), decimals >= 0),
+  def round(%Series{dtype: dtype} = series, decimals)
+      when K.and(
+             K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
+             K.and(is_integer(decimals), decimals >= 0)
+           ),
       do: apply_series(series, :round, [decimals])
 
-  def round(%Series{dtype: {:f, _}}, _),
+  def round(%Series{dtype: dtype}, _) when K.or(K.in(dtype, @float_dtypes), dtype == :unknown),
     do: raise(ArgumentError, "second argument to round/2 must be a non-negative integer")
 
   def round(%Series{dtype: dtype}, _), do: dtype_error("round/2", dtype, @float_dtypes)
