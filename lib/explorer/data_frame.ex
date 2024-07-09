@@ -5378,12 +5378,8 @@ defmodule Explorer.DataFrame do
   def summarise_with(%DataFrame{} = df, series_pairs) do
     result =
       Enum.map(series_pairs, fn
-        {key, nil} ->
-          lazy_s = LazySeries.new(:lazy, [nil], :null)
-          {key, Explorer.Backend.Series.new(lazy_s, :null)}
-
-        pair ->
-          pair
+        {key, nil} -> {key, LazySeries.lit(nil, :null)}
+        pair -> pair
       end)
 
     column_pairs =
@@ -5681,25 +5677,27 @@ defmodule Explorer.DataFrame do
     duration_types = Shared.duration_types()
 
     metrics_df =
-      summarise_with(df, fn x ->
-        Enum.flat_map(stat_cols, fn c ->
-          dt = x[c].dtype
+      summarise_with(
+        df,
+        Enum.flat_map(stat_cols, fn col_name ->
+          col = Series.col(col_name)
+          dt = df[col_name].dtype
           numeric? = dt in numeric_types
           min_max? = numeric? or dt in naive_datetime_types or dt in duration_types
 
           [
-            {"count:#{c}", Series.count(x[c])},
-            {"nil_count:#{c}", Series.nil_count(x[c])},
-            {"mean:#{c}", if(numeric?, do: Series.mean(x[c]))},
-            {"std:#{c}", if(numeric?, do: Series.standard_deviation(x[c]))},
-            {"min:#{c}", if(min_max?, do: Series.min(x[c]))}
+            {"count:#{col_name}", Series.count(col)},
+            {"nil_count:#{col_name}", Series.nil_count(col)},
+            {"mean:#{col_name}", if(numeric?, do: Series.mean(col))},
+            {"std:#{col_name}", if(numeric?, do: Series.standard_deviation(col))},
+            {"min:#{col_name}", if(min_max?, do: Series.min(col))}
           ] ++
             for p <- percentiles do
-              {"#{trunc(p * 100)}%:#{c}", if(numeric?, do: Series.quantile(x[c], p))}
+              {"#{trunc(p * 100)}%:#{col_name}", if(numeric?, do: Series.quantile(col, p))}
             end ++
-            [{"max:#{c}", if(min_max?, do: Series.max(x[c]))}]
+            [{"max:#{col_name}", if(min_max?, do: Series.max(col))}]
         end)
-      end)
+      )
 
     [metrics_row] = metrics_df |> collect() |> to_rows()
 

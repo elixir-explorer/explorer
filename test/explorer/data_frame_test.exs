@@ -2954,956 +2954,948 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  # describe "rename/2" do
-  #   test "with lists" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #     df1 = DF.rename(df, ["c", "d"])
-
-  #     assert DF.names(df1) == ["c", "d"]
-  #     assert df1.names == ["c", "d"]
-  #     assert Series.to_list(df1["c"]) == Series.to_list(df["a"])
-  #   end
-
-  #   test "with keyword" do
-  #     df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
-  #     df1 = DF.rename(df, a: "first")
-
-  #     assert df1.names == ["first", "b"]
-  #     assert Series.to_list(df1["first"]) == Series.to_list(df["a"])
-  #   end
-
-  #   test "with a map" do
-  #     df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
-  #     df1 = DF.rename(df, %{"a" => "first", "b" => "second"})
-
-  #     assert df1.names == ["first", "second"]
-  #     assert Series.to_list(df1["first"]) == Series.to_list(df["a"])
-  #     assert Series.to_list(df1["second"]) == Series.to_list(df["b"])
-  #   end
-
-  #   test "with keyword and a column that doesn't exist" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #     assert_raise ArgumentError, ~r"could not find column name \"g\"", fn ->
-  #       DF.rename(df, g: "first")
-  #     end
-  #   end
-
-  #   test "with keyword and a column that is duplicated" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #     assert_raise ArgumentError, ~r"duplicate source column for rename", fn ->
-  #       DF.rename(df, a: "first", a: "second")
-  #     end
-  #   end
-
-  #   test "with mix of column name and index that is duplicated" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #     assert_raise ArgumentError, ~r"duplicate source column for rename", fn ->
-  #       DF.rename(df, [{"a", "first"}, {0, "g"}])
-  #     end
-  #   end
-
-  #   test "with string column names that are duplicated" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #     assert_raise ArgumentError, ~r"duplicate source column for rename", fn ->
-  #       DF.rename(df, [{"a", "first"}, {"a", "second"}])
-  #     end
-  #   end
-
-  #   test "with string column names and a target that is duplicated" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #     assert_raise RuntimeError, ~r"column with name 'first' has more than one occurrences", fn ->
-  #       DF.rename(df, [{"a", "first"}, {"b", "first"}])
-  #     end
-  #   end
-
-  #   test "with a map and a column that doesn't exist" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #     assert_raise ArgumentError, ~r"could not find column name \"i\"", fn ->
-  #       DF.rename(df, %{"a" => "first", "i" => "foo"})
-  #     end
-  #   end
-
-  #   test "with a mismatch size of columns" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-
-  #     assert_raise ArgumentError,
-  #                  "list of new names must match the number of columns in the dataframe; found 3 new name(s), but the supplied dataframe has 2 column(s)",
-  #                  fn ->
-  #                    DF.rename(df, ["first", "second", "third"])
-  #                  end
-  #   end
-  # end
-
-  # describe "rename_with/2" do
-  #   test "with lists", %{df: df} do
-  #     df_names = DF.names(df)
-
-  #     df1 = DF.rename_with(df, ["total", "cement"], &String.upcase/1)
-  #     df1_names = DF.names(df1)
-
-  #     assert df_names -- df1_names == ["total", "cement"]
-  #     assert df1_names -- df_names == ["TOTAL", "CEMENT"]
-
-  #     assert df1.names == [
-  #              "year",
-  #              "country",
-  #              "TOTAL",
-  #              "solid_fuel",
-  #              "liquid_fuel",
-  #              "gas_fuel",
-  #              "CEMENT",
-  #              "gas_flaring",
-  #              "per_capita",
-  #              "bunker_fuels"
-  #            ]
-  #   end
-
-  #   test "with ranges", %{df: df} do
-  #     df_names = DF.names(df)
-
-  #     df1 = DF.rename_with(df, 0..1, &String.upcase/1)
-  #     df1_names = DF.names(df1)
-
-  #     assert df_names -- df1_names == ["year", "country"]
-  #     assert df1_names -- df_names == ["YEAR", "COUNTRY"]
-
-  #     df2 = DF.rename_with(df, &String.upcase/1)
-
-  #     assert Enum.all?(DF.names(df2), &String.match?(&1, ~r/[A-Z]+/))
-  #   end
-
-  #   test "with a filter function", %{df: df} do
-  #     df_names = DF.names(df)
-
-  #     df1 = DF.rename_with(df, &String.starts_with?(&1, "tot"), &String.upcase/1)
-  #     df1_names = DF.names(df1)
-
-  #     assert df_names -- df1_names == ["total"]
-  #     assert df1_names -- df_names == ["TOTAL"]
-
-  #     df2 = DF.rename_with(df, &String.starts_with?(&1, "non-existent"), &String.upcase/1)
-
-  #     assert df2 == df
-  #   end
-  # end
-
-  # describe "transpose/2" do
-  #   test "without options" do
-  #     df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
-  #     dft = DF.transpose(df)
-  #     assert DF.shape(df) == {3, 2}
-  #     assert DF.shape(dft) == {2, 3}
-  #     assert df.dtypes == %{"a" => {:s, 64}, "b" => :string}
-  #     assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "column_2" => :string}
-
-  #     assert DF.to_columns(dft) == %{
-  #              "column_0" => ["1", "a"],
-  #              "column_1" => ["2", "b"],
-  #              "column_2" => ["3", "c"]
-  #            }
-  #   end
-
-  #   test "header column without name " do
-  #     df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
-  #     dft = DF.transpose(df, header: true)
-  #     assert DF.shape(df) == {2, 3}
-  #     assert DF.shape(dft) == {3, 3}
-  #     assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
-  #     assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "column" => :string}
-
-  #     assert DF.to_columns(dft) == %{
-  #              "column" => ["a", "b", "c"],
-  #              "column_0" => ["32.0", "1", "a"],
-  #              "column_1" => ["33.0", "2", "b"]
-  #            }
-  #   end
-
-  #   test "header column with name " do
-  #     df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
-  #     dft = DF.transpose(df, header: "name")
-  #     assert DF.shape(df) == {2, 3}
-  #     assert DF.shape(dft) == {3, 3}
-  #     assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
-  #     assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "name" => :string}
-
-  #     assert DF.to_columns(dft) == %{
-  #              "name" => ["a", "b", "c"],
-  #              "column_0" => ["32.0", "1", "a"],
-  #              "column_1" => ["33.0", "2", "b"]
-  #            }
-  #   end
-
-  #   test "with column names" do
-  #     df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
-  #     dft = DF.transpose(df, header: "name", columns: ["x", "y"])
-  #     assert DF.shape(df) == {2, 3}
-  #     assert DF.shape(dft) == {3, 3}
-  #     assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
-  #     assert dft.dtypes == %{"name" => :string, "x" => :string, "y" => :string}
-
-  #     assert DF.to_columns(dft) == %{
-  #              "name" => ["a", "b", "c"],
-  #              "x" => ["32.0", "1", "a"],
-  #              "y" => ["33.0", "2", "b"]
-  #            }
-  #   end
-
-  #   test "with column names < length of rows raises" do
-  #     df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
-  #     assert DF.shape(df) == {2, 3}
-
-  #     assert_raise ArgumentError,
-  #                  "invalid :columns option, length of column names (1) must match the row count (2)",
-  #                  fn ->
-  #                    DF.transpose(df,
-  #                      header: "name",
-  #                      columns: ["x"]
-  #                    )
-  #                  end
-  #   end
-  # end
-
-  # describe "pivot_wider/4" do
-  #   test "with a single id" do
-  #     df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
-
-  #     df2 = DF.pivot_wider(df1, "variable", "value")
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              id: [1],
-  #              a: [1],
-  #              b: [2]
-  #            }
-  #   end
-
-  #   test "with a category" do
-  #     df1 =
-  #       DF.new(id: [1, 1, 1])
-  #       |> DF.put(:category, Series.from_list(["a", "b", "a"], dtype: :category))
-  #       |> DF.pivot_wider("category", "category")
-
-  #     assert DF.dtypes(df1) == %{"a" => :category, "b" => :category, "id" => {:s, 64}}
-  #     assert DF.to_columns(df1, atom_keys: true) == %{id: [1], a: ["a"], b: ["b"]}
-  #   end
-
-  #   test "with a single id discarding any other column" do
-  #     df1 = DF.new(id: [1, 1], x: [6, 12], variable: ["a", "b"], value: [1, 2])
-
-  #     df2 = DF.pivot_wider(df1, "variable", "value", id_columns: [:id])
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              id: [1],
-  #              a: [1],
-  #              b: [2]
-  #            }
-  #   end
-
-  #   test "with a single id and names prefix" do
-  #     df1 = DF.new(id: [1, 1], variable: ["1", "2"], value: [1.0, 2.0])
-
-  #     df2 =
-  #       DF.pivot_wider(df1, "variable", "value",
-  #         id_columns: ["id"],
-  #         names_prefix: "column_"
-  #       )
-
-  #     assert DF.to_columns(
-  #              df2,
-  #              atom_keys: true
-  #            ) == %{id: [1], column_1: [1.0], column_2: [2.0]}
-
-  #     assert df2.names == ["id", "column_1", "column_2"]
-  #   end
-
-  #   test "with a single id but with a nil value in the variable series" do
-  #     df1 = DF.new(id: [1, 1, 1], variable: ["a", "b", nil], value: [1, 2, 3])
-
-  #     df2 = DF.pivot_wider(df1, "variable", "value")
-
-  #     assert DF.to_columns(df2) == %{
-  #              "id" => [1],
-  #              "a" => [1],
-  #              "b" => [2],
-  #              "nil" => [3]
-  #            }
-  #   end
-
-  #   test "with multiple id columns" do
-  #     df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
-  #     df1 = DF.pivot_wider(df, "variable", "value")
-
-  #     assert DF.names(df1) == ["id", "other_id", "a", "b"]
-  #     assert df1.names == ["id", "other_id", "a", "b"]
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              id: [1, 1],
-  #              other_id: [4, 5],
-  #              a: [1, nil],
-  #              b: [nil, 2]
-  #            }
-  #   end
-
-  #   test "with multiple id columns and one id equal to a variable name" do
-  #     df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], b: [4, 5])
-  #     df1 = DF.pivot_wider(df, "variable", "value")
-
-  #     assert DF.names(df1) == ["id", "b", "a", "b_1"]
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              id: [1, 1],
-  #              b: [4, 5],
-  #              a: [1, nil],
-  #              b_1: [nil, 2]
-  #            }
-  #   end
-
-  #   test "with multiple id columns and one id equal to a variable name, but with prefix option" do
-  #     df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], b: [4, 5])
-  #     df1 = DF.pivot_wider(df, "variable", "value", names_prefix: "col_")
-
-  #     assert DF.names(df1) == ["id", "b", "col_a", "col_b"]
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              id: [1, 1],
-  #              b: [4, 5],
-  #              col_a: [1, nil],
-  #              col_b: [nil, 2]
-  #            }
-  #   end
-
-  #   test "with a single id column ignoring other columns" do
-  #     df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
-
-  #     df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id])
-  #     assert DF.names(df2) == ["id", "a", "b"]
-
-  #     df2 = DF.pivot_wider(df, "variable", "value", id_columns: [0])
-  #     assert DF.names(df2) == ["id", "a", "b"]
-  #     assert df2.names == ["id", "a", "b"]
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              id: [1],
-  #              a: [1],
-  #              b: [2]
-  #            }
-  #   end
-
-  #   test "with a single id column and repeated values" do
-  #     df = DF.new(id: [1, 1, 2, 2], variable: ["a", "b", "a", "b"], value: [1, 2, 3, 4])
-
-  #     df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id])
-  #     assert DF.names(df2) == ["id", "a", "b"]
-
-  #     df2 = DF.pivot_wider(df, "variable", "value", id_columns: [0])
-  #     assert DF.names(df2) == ["id", "a", "b"]
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              id: [1, 2],
-  #              a: [1, 3],
-  #              b: [2, 4]
-  #            }
-  #   end
-
-  #   test "with a single id column and repeated values with names prefix" do
-  #     df = DF.new(id: [1, 1, 2, 2], variable: ["a", "b", "a", "b"], value: [1, 2, 3, 4])
-
-  #     df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id], names_prefix: "prefix_")
-  #     assert DF.names(df2) == ["id", "prefix_a", "prefix_b"]
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              id: [1, 2],
-  #              prefix_a: [1, 3],
-  #              prefix_b: [2, 4]
-  #            }
-  #   end
-
-  #   test "with a filter function for id columns" do
-  #     df = DF.new(id_main: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
-
-  #     df1 = DF.pivot_wider(df, "variable", "value", id_columns: &String.starts_with?(&1, "id"))
-  #     assert DF.names(df1) == ["id_main", "a", "b"]
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              id_main: [1],
-  #              a: [1],
-  #              b: [2]
-  #            }
-  #   end
-
-  #   test "with multiple value columns expand the new column names" do
-  #     df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], another_value: [6, 9])
-
-  #     df2 = DF.pivot_wider(df1, "variable", ["value", "another_value"])
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              id: [1],
-  #              value_variable_a: [1],
-  #              value_variable_b: [2],
-  #              another_value_variable_a: [6],
-  #              another_value_variable_b: [9]
-  #            }
-  #   end
-
-  #   test "without an id column" do
-  #     df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
-
-  #     assert_raise ArgumentError,
-  #                  "id_columns must select at least one existing column, but [] selects none. Note that float columns are discarded from the selection.",
-  #                  fn ->
-  #                    DF.pivot_wider(df, "variable", "value", id_columns: [])
-  #                  end
-
-  #     assert_raise ArgumentError,
-  #                  ~r/id_columns must select at least one existing column, but/,
-  #                  fn ->
-  #                    DF.pivot_wider(df, "variable", "value",
-  #                      id_columns: &String.starts_with?(&1, "none")
-  #                    )
-  #                  end
-  #   end
-
-  #   test "with an id column of type float" do
-  #     df = DF.new(float_id: [1.5, 1.6], variable: ["a", "b"], value: [1, 2])
-
-  #     assert_raise ArgumentError,
-  #                  "id_columns must select at least one existing column, but 0..-1//1 selects none. Note that float columns are discarded from the selection.",
-  #                  fn ->
-  #                    DF.pivot_wider(df, "variable", "value")
-  #                  end
-
-  #     assert_raise ArgumentError,
-  #                  "id_columns must select at least one existing column, but [:float_id] selects none. Note that float columns are discarded from the selection.",
-  #                  fn ->
-  #                    DF.pivot_wider(df, "variable", "value", id_columns: [:float_id])
-  #                  end
-  #   end
-
-  #   test "with a string values_from" do
-  #     df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: ["x", "y"])
-
-  #     df2 = DF.pivot_wider(df1, "variable", "value")
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              id: [1],
-  #              a: ["x"],
-  #              b: ["y"]
-  #            }
-  #   end
-
-  #   test "with a date values_from" do
-  #     df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [~D[2022-01-01], ~D[2023-01-01]])
-
-  #     df2 = DF.pivot_wider(df1, "variable", "value")
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              id: [1],
-  #              a: [~D[2022-01-01]],
-  #              b: [~D[2023-01-01]]
-  #            }
-  #   end
-  # end
-
-  # describe "pivot_longer/3" do
-  #   test "without selecting columns", %{df: df} do
-  #     df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), select: [])
-
-  #     assert df.names == ["variable", "value"]
-  #     assert df.dtypes == %{"variable" => :string, "value" => {:s, 64}}
-  #     assert DF.shape(df) == {3282, 2}
-  #   end
-
-  #   test "selecting some columns", %{df: df} do
-  #     df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), select: ["year", "country"])
-
-  #     assert df.names == ["year", "country", "variable", "value"]
-
-  #     assert df.dtypes == %{
-  #              "year" => {:s, 64},
-  #              "country" => :string,
-  #              "variable" => :string,
-  #              "value" => {:s, 64}
-  #            }
-
-  #     assert DF.shape(df) == {3282, 4}
-  #   end
-
-  #   test "selecting all the columns (not passing select option)", %{df: df} do
-  #     df = DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]))
-
-  #     assert df.names == [
-  #              "year",
-  #              "country",
-  #              "total",
-  #              "cement",
-  #              "gas_flaring",
-  #              "per_capita",
-  #              "variable",
-  #              "value"
-  #            ]
-
-  #     assert DF.shape(df) == {4376, 8}
-  #   end
-
-  #   test "dropping some columns", %{df: df} do
-  #     df =
-  #       DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]),
-  #         discard: ["gas_flaring", "cement"]
-  #       )
-
-  #     assert df.names == [
-  #              "year",
-  #              "country",
-  #              "total",
-  #              "per_capita",
-  #              "variable",
-  #              "value"
-  #            ]
-  #   end
-
-  #   test "select and discard with the same columns discards the columns", %{df: df} do
-  #     df =
-  #       DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]),
-  #         select: ["gas_flaring", "cement"],
-  #         discard: fn name -> name == "cement" end
-  #       )
-
-  #     assert df.names == [
-  #              "gas_flaring",
-  #              "variable",
-  #              "value"
-  #            ]
-  #   end
-
-  #   test "with pivot column in the same list of select columns", %{df: df} do
-  #     assert_raise ArgumentError,
-  #                  "selected columns must not include columns to pivot, but found \"solid_fuel\" in both",
-  #                  fn ->
-  #                    DF.pivot_longer(df, &String.ends_with?(&1, "fuel"),
-  #                      select: ["year", "country", "solid_fuel"]
-  #                    )
-  #                  end
-  #   end
-
-  #   test "with multiple types of columns to pivot", %{df: df} do
-  #     assert_raise ArgumentError,
-  #                  "columns to pivot must include columns with the same dtype, but found multiple dtypes: :string and {:s, 64}",
-  #                  fn ->
-  #                    DF.pivot_longer(df, &(&1 in ["solid_fuel", "country"]))
-  #                  end
-  #   end
-  # end
-
-  # describe "table reader integration" do
-  #   test "eager" do
-  #     df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
-
-  #     assert df |> Table.to_rows() |> Enum.to_list() == [
-  #              %{"x" => 1, "y" => "a"},
-  #              %{"x" => 2, "y" => "b"},
-  #              %{"x" => 3, "y" => "c"}
-  #            ]
-
-  #     columns = Table.to_columns(df)
-  #     assert Enum.to_list(columns["x"]) == [1, 2, 3]
-  #     assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
-
-  #     assert {:columns, %{count: 3}, _} = Table.Reader.init(df)
-  #   end
-
-  #   test "lazy" do
-  #     df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"]) |> DF.lazy()
-
-  #     assert df |> Table.to_rows() |> Enum.to_list() == [
-  #              %{"x" => 1, "y" => "a"},
-  #              %{"x" => 2, "y" => "b"},
-  #              %{"x" => 3, "y" => "c"}
-  #            ]
-
-  #     columns = Table.to_columns(df)
-  #     assert Enum.to_list(columns["x"]) == [1, 2, 3]
-  #     assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
-
-  #     assert {:columns, %{count: 3}, _} = Table.Reader.init(df)
-  #   end
-  # end
-
-  # test "collect/1 is no-op", %{df: df} do
-  #   assert DF.collect(df) == df
-  # end
-
-  # test "compute/1 is no-op", %{df: df} do
-  #   assert DF.compute(df) == df
-  # end
-
-  # test "lazy/1", %{df: df} do
-  #   assert %Explorer.PolarsBackend.LazyFrame{} = DF.lazy(df).data
-  # end
-
-  # describe "to_rows/2" do
-  #   test "converts rows to maps" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-
-  #     assert [
-  #              %{"a" => "a", "b" => 1},
-  #              %{"a" => "b", "b" => 2},
-  #              %{"a" => "c", "b" => 3}
-  #            ] == DF.to_rows(df)
-  #   end
-
-  #   test "converts rows to maps with atom keys" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-
-  #     assert [
-  #              %{a: "a", b: 1},
-  #              %{a: "b", b: 2},
-  #              %{a: "c", b: 3}
-  #            ] == DF.to_rows(df, atom_keys: true)
-  #   end
-  # end
-
-  # defp lazy?(stream) do
-  #   match?(%Stream{}, stream) or is_function(stream, 2)
-  # end
-
-  # describe "to_rows_stream/2" do
-  #   test "converts rows to stream of maps" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-  #     stream = DF.to_rows_stream(df)
-
-  #     assert lazy?(stream)
-
-  #     assert [
-  #              %{"a" => "a", "b" => 1},
-  #              %{"a" => "b", "b" => 2},
-  #              %{"a" => "c", "b" => 3}
-  #            ] == Enum.to_list(stream)
-  #   end
-
-  #   test "converts rows to stream of maps with atom keys" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-  #     stream = DF.to_rows_stream(df, atom_keys: true)
-
-  #     assert lazy?(stream)
-
-  #     assert [
-  #              %{a: "a", b: 1},
-  #              %{a: "b", b: 2},
-  #              %{a: "c", b: 3}
-  #            ] == Enum.to_list(stream)
-  #   end
-  # end
-
-  # describe "select/2" do
-  #   test "keep column names" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-  #     df = DF.select(df, ["a"])
-
-  #     assert DF.names(df) == ["a"]
-  #     assert df.names == ["a"]
-  #   end
-
-  #   test "keep column positions" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-  #     df = DF.select(df, [1])
-
-  #     assert DF.names(df) == ["b"]
-  #     assert df.names == ["b"]
-  #   end
-
-  #   test "keep column range" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
-  #     df = DF.select(df, 1..2)
-
-  #     assert DF.names(df) == ["b", "c"]
-  #     assert df.names == ["b", "c"]
-  #   end
-
-  #   test "keep columns matching callback" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
-  #     df = DF.select(df, fn name -> name in ~w(a c) end)
-
-  #     assert DF.names(df) == ["a", "c"]
-  #     assert df.names == ["a", "c"]
-  #   end
-
-  #   test "keep column raises error with non-existent column" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-
-  #     assert_raise ArgumentError, ~r"could not find column name \"g\"", fn ->
-  #       DF.select(df, ["g"])
-  #     end
-  #   end
-  # end
-
-  # describe "discard/2" do
-  #   test "drop column names" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-  #     df = DF.discard(df, ["a"])
-
-  #     assert DF.names(df) == ["b"]
-  #     assert df.names == ["b"]
-  #   end
-
-  #   test "drop column positions" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-  #     df = DF.discard(df, [1])
-
-  #     assert DF.names(df) == ["a"]
-  #     assert df.names == ["a"]
-  #   end
-
-  #   test "drop column range" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
-  #     df = DF.discard(df, 1..2)
-
-  #     assert DF.names(df) == ["a"]
-  #     assert df.names == ["a"]
-  #   end
-
-  #   test "drop columns matching callback" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
-  #     df = DF.discard(df, fn name -> name in ~w(a c) end)
-
-  #     assert DF.names(df) == ["b"]
-  #     assert df.names == ["b"]
-  #   end
-
-  #   test "dropping a non-existent column fails silently" do
-  #     df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
-
-  #     df1 = DF.discard(df, ["g"])
-  #     assert df.names == df1.names
-  #   end
-  # end
-
-  # describe "head/2" do
-  #   test "selects the first 5 rows by default", %{df: df} do
-  #     df1 = DF.head(df)
-  #     assert DF.shape(df1) == {5, 10}
-  #   end
-
-  #   test "selects the first 2 rows", %{df: df} do
-  #     df1 = DF.head(df, 2)
-  #     assert DF.shape(df1) == {2, 10}
-  #   end
-  # end
-
-  # describe "tail/2" do
-  #   test "selects the last 5 rows by default", %{df: df} do
-  #     df1 = DF.tail(df)
-  #     assert DF.shape(df1) == {5, 10}
-  #   end
-
-  #   test "selects the last 2 rows", %{df: df} do
-  #     df1 = DF.tail(df, 2)
-  #     assert DF.shape(df1) == {2, 10}
-  #   end
-  # end
-
-  # describe "put/3" do
-  #   test "adds a new column to a dataframe" do
-  #     df = DF.new(a: [1, 2, 3])
-  #     df1 = DF.put(df, :b, Series.transform(df[:a], fn n -> n * 2 end))
-
-  #     assert DF.names(df1) == ["a", "b"]
-  #     assert DF.dtypes(df1) == %{"a" => {:s, 64}, "b" => {:s, 64}}
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 2, 3],
-  #              b: [2, 4, 6]
-  #            }
-  #   end
-
-  #   test "replaces a column in the dataframe" do
-  #     df = DF.new(a: [1, 2, 3])
-  #     df1 = DF.put(df, :a, Series.transform(df[:a], fn n -> n * 2 end))
-
-  #     assert DF.names(df1) == ["a"]
-  #     assert DF.dtypes(df1) == %{"a" => {:s, 64}}
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [2, 4, 6]
-  #            }
-  #   end
-
-  #   test "with tensors" do
-  #     i = Nx.tensor(1)
-  #     f = Nx.tensor([1.0], type: :f64)
-  #     d = Nx.tensor([-1, 0, 1], type: :s32)
-
-  #     df =
-  #       DF.new(
-  #         a: [1, 2, 3],
-  #         b: [4.0, 5.0, 6.0],
-  #         c: ["a", "b", "c"],
-  #         d: [~D[1970-01-01], ~D[1980-01-01], ~D[1990-01-01]]
-  #       )
-
-  #     assert DF.put(df, :a, i)[:a] |> Series.to_list() == [1, 1, 1]
-  #     assert DF.put(df, :a, f, dtype: {:f, 64})[:a] |> Series.to_list() == [1.0, 1.0, 1.0]
-
-  #     assert DF.put(df, :a, d, dtype: :date)[:a] |> Series.to_list() == [
-  #              ~D[1969-12-31],
-  #              ~D[1970-01-01],
-  #              ~D[1970-01-02]
-  #            ]
-
-  #     assert DF.put(df, :c, i, dtype: :integer)[:c] |> Series.to_list() == [1, 1, 1]
-  #     assert DF.put(df, :c, f, dtype: {:f, 64})[:c] |> Series.to_list() == [1.0, 1.0, 1.0]
-
-  #     assert DF.put(df, :c, d, dtype: :date)[:c] |> Series.to_list() == [
-  #              ~D[1969-12-31],
-  #              ~D[1970-01-01],
-  #              ~D[1970-01-02]
-  #            ]
-
-  #     assert DF.put(df, :d, i, dtype: :integer)[:d] |> Series.to_list() == [1, 1, 1]
-  #     assert DF.put(df, :d, f, dtype: {:f, 64})[:d] |> Series.to_list() == [1.0, 1.0, 1.0]
-
-  #     assert DF.put(df, :d, d)[:d] |> Series.to_list() == [
-  #              ~D[1969-12-31],
-  #              ~D[1970-01-01],
-  #              ~D[1970-01-02]
-  #            ]
-
-  #     assert_raise ArgumentError,
-  #                  "cannot convert dtype string into a binary/tensor type",
-  #                  fn -> DF.put(df, :c, i) end
-  #   end
-  # end
-
-  # describe "describe/2" do
-  #   test "default percentiles" do
-  #     df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: [10, 20, 30])
-  #     df1 = DF.describe(df)
-
-  #     assert df1.dtypes == %{
-  #              "a" => :string,
-  #              "b" => {:f, 64},
-  #              "c" => {:f, 64},
-  #              "describe" => :string
-  #            }
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: ["2", "1", nil, nil, nil, nil, nil, nil, nil],
-  #              b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
-  #              c: [3.0, 0.0, 20.0, 10.0, 10.0, 20.0, 20.0, 30.0, 30.0],
-  #              describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"]
-  #            }
-  #   end
-
-  #   test "custom percentiles" do
-  #     df = DF.new(b: [1, 2, 3])
-  #     df1 = DF.describe(df, percentiles: [0.3, 0.5, 0.8])
-  #     df2 = DF.describe(df, percentiles: [0.5])
-
-  #     assert df1.dtypes == %{
-  #              "b" => {:f, 64},
-  #              "describe" => :string
-  #            }
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
-  #              describe: ["count", "nil_count", "mean", "std", "min", "30%", "50%", "80%", "max"]
-  #            }
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 3.0],
-  #              describe: ["count", "nil_count", "mean", "std", "min", "50%", "max"]
-  #            }
-  #   end
-
-  #   test "no percentiles" do
-  #     df = DF.new(b: [1, 2, 3])
-  #     df1 = DF.describe(df, percentiles: [])
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              b: [3.0, 0.0, 2.0, 1.0, 1.0, 3.0],
-  #              describe: ["count", "nil_count", "mean", "std", "min", "max"]
-  #            }
-  #   end
-
-  #   test "describe columns - max, min columns" do
-  #     df =
-  #       DF.new(
-  #         number: [1, 2, nil, 3],
-  #         list: [[], [], [], []],
-  #         # TODO: enable "null" columns when problem with polars is solved.
-  #         # null: [nil, nil, nil, nil],
-  #         string: ["a", "b", "c", "nil"],
-  #         date: [~D[2021-01-01], ~D[1999-12-31], nil, ~D[2023-01-01]],
-  #         time: [~T[00:02:03.000212], ~T[00:05:04.000456], ~T[00:07:04.000776], nil],
-  #         naive_datetime: [
-  #           nil,
-  #           ~N[2021-01-01 00:00:00],
-  #           ~N[1999-12-31 00:00:00],
-  #           ~N[2023-12-13 17:38:00]
-  #         ],
-  #         duration: [
-  #           nil,
-  #           ~N[2020-01-01 00:00:00],
-  #           ~N[1999-11-30 00:00:00],
-  #           ~N[2023-12-12 17:38:00]
-  #         ]
-  #       )
-
-  #     df = DF.mutate(df, duration: naive_datetime - duration)
-
-  #     assert df.dtypes == %{
-  #              "date" => :date,
-  #              "naive_datetime" => {:naive_datetime, :microsecond},
-  #              "duration" => {:duration, :microsecond},
-  #              "list" => {:list, :null},
-  #              # "null" => :null,
-  #              "number" => {:s, 64},
-  #              "string" => :string,
-  #              "time" => :time
-  #            }
-
-  #     describe_df = DF.describe(df)
-
-  #     assert describe_df.dtypes == %{
-  #              "date" => :string,
-  #              "naive_datetime" => :string,
-  #              "describe" => :string,
-  #              "duration" => :string,
-  #              "list" => :string,
-  #              # "null" => :string,
-  #              "number" => {:f, 64},
-  #              "string" => :string,
-  #              "time" => :string
-  #            }
-
-  #     assert DF.to_columns(describe_df, atom_keys: true) == %{
-  #              date: ["3", "1", nil, nil, nil, nil, nil, nil, nil],
-  #              naive_datetime: [
-  #                "3",
-  #                "1",
-  #                nil,
-  #                nil,
-  #                "1999-12-31 00:00:00.000000",
-  #                nil,
-  #                nil,
-  #                nil,
-  #                "2023-12-13 17:38:00.000000"
-  #              ],
-  #              describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"],
-  #              duration: ["3", "1", nil, nil, "1d", nil, nil, nil, "366d"],
-  #              list: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
-  #              # null: ["0", "4", nil, nil, nil, nil, nil, nil, nil],
-  #              number: [3.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
-  #              string: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
-  #              time: ["3", "1", nil, nil, nil, nil, nil, nil, nil]
-  #            }
-  #   end
-  # end
+  describe "rename/2" do
+    test "with lists" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      df1 = DF.rename(df, ["c", "d"])
+
+      assert DF.names(df1) == ["c", "d"]
+      assert df1.names == ["c", "d"]
+      assert Series.to_list(df1["c"]) == Series.to_list(df["a"])
+    end
+
+    test "with keyword" do
+      df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
+      df1 = DF.rename(df, a: "first")
+
+      assert df1.names == ["first", "b"]
+      assert Series.to_list(df1["first"]) == Series.to_list(df["a"])
+    end
+
+    test "with a map" do
+      df = DF.new(a: ["a", "b", "a"], b: [1, 3, 1])
+      df1 = DF.rename(df, %{"a" => "first", "b" => "second"})
+
+      assert df1.names == ["first", "second"]
+      assert Series.to_list(df1["first"]) == Series.to_list(df["a"])
+      assert Series.to_list(df1["second"]) == Series.to_list(df["b"])
+    end
+
+    test "with keyword and a column that doesn't exist" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"could not find column name \"g\"", fn ->
+        DF.rename(df, g: "first")
+      end
+    end
+
+    test "with keyword and a column that is duplicated" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"duplicate source column for rename", fn ->
+        DF.rename(df, a: "first", a: "second")
+      end
+    end
+
+    test "with mix of column name and index that is duplicated" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"duplicate source column for rename", fn ->
+        DF.rename(df, [{"a", "first"}, {0, "g"}])
+      end
+    end
+
+    test "with string column names that are duplicated" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"duplicate source column for rename", fn ->
+        DF.rename(df, [{"a", "first"}, {"a", "second"}])
+      end
+    end
+
+    test "with string column names and a target that is duplicated" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise RuntimeError, ~r"column with name 'first' has more than one occurrences", fn ->
+        DF.rename(df, [{"a", "first"}, {"b", "first"}])
+      end
+    end
+
+    test "with a map and a column that doesn't exist" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError, ~r"could not find column name \"i\"", fn ->
+        DF.rename(df, %{"a" => "first", "i" => "foo"})
+      end
+    end
+
+    test "with a mismatch size of columns" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+
+      assert_raise ArgumentError,
+                   "list of new names must match the number of columns in the dataframe; found 3 new name(s), but the supplied dataframe has 2 column(s)",
+                   fn ->
+                     DF.rename(df, ["first", "second", "third"])
+                   end
+    end
+  end
+
+  describe "rename_with/2" do
+    test "with lists", %{df: df} do
+      df_names = DF.names(df)
+
+      df1 = DF.rename_with(df, ["total", "cement"], &String.upcase/1)
+      df1_names = DF.names(df1)
+
+      assert df_names -- df1_names == ["total", "cement"]
+      assert df1_names -- df_names == ["TOTAL", "CEMENT"]
+
+      assert df1.names == [
+               "year",
+               "country",
+               "TOTAL",
+               "solid_fuel",
+               "liquid_fuel",
+               "gas_fuel",
+               "CEMENT",
+               "gas_flaring",
+               "per_capita",
+               "bunker_fuels"
+             ]
+    end
+
+    test "with ranges", %{df: df} do
+      df_names = DF.names(df)
+
+      df1 = DF.rename_with(df, 0..1, &String.upcase/1)
+      df1_names = DF.names(df1)
+
+      assert df_names -- df1_names == ["year", "country"]
+      assert df1_names -- df_names == ["YEAR", "COUNTRY"]
+
+      df2 = DF.rename_with(df, &String.upcase/1)
+
+      assert Enum.all?(DF.names(df2), &String.match?(&1, ~r/[A-Z]+/))
+    end
+
+    test "with a filter function", %{df: df} do
+      df_names = DF.names(df)
+
+      df1 = DF.rename_with(df, &String.starts_with?(&1, "tot"), &String.upcase/1)
+      df1_names = DF.names(df1)
+
+      assert df_names -- df1_names == ["total"]
+      assert df1_names -- df_names == ["TOTAL"]
+
+      df2 = DF.rename_with(df, &String.starts_with?(&1, "non-existent"), &String.upcase/1)
+
+      assert df2 == df
+    end
+  end
+
+  describe "transpose/2" do
+    test "without options" do
+      df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
+      dft = DF.transpose(df)
+      assert DF.shape(df) == {3, 2}
+      assert DF.shape(dft) == {2, 3}
+      assert df.dtypes == %{"a" => {:s, 64}, "b" => :string}
+      assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "column_2" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "column_0" => ["1", "a"],
+               "column_1" => ["2", "b"],
+               "column_2" => ["3", "c"]
+             }
+    end
+
+    test "header column without name " do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      dft = DF.transpose(df, header: true)
+      assert DF.shape(df) == {2, 3}
+      assert DF.shape(dft) == {3, 3}
+      assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
+      assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "column" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "column" => ["a", "b", "c"],
+               "column_0" => ["32.0", "1", "a"],
+               "column_1" => ["33.0", "2", "b"]
+             }
+    end
+
+    test "header column with name " do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      dft = DF.transpose(df, header: "name")
+      assert DF.shape(df) == {2, 3}
+      assert DF.shape(dft) == {3, 3}
+      assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
+      assert dft.dtypes == %{"column_0" => :string, "column_1" => :string, "name" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "name" => ["a", "b", "c"],
+               "column_0" => ["32.0", "1", "a"],
+               "column_1" => ["33.0", "2", "b"]
+             }
+    end
+
+    test "with column names" do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      dft = DF.transpose(df, header: "name", columns: ["x", "y"])
+      assert DF.shape(df) == {2, 3}
+      assert DF.shape(dft) == {3, 3}
+      assert df.dtypes == %{"a" => {:f, 64}, "b" => {:s, 64}, "c" => :string}
+      assert dft.dtypes == %{"name" => :string, "x" => :string, "y" => :string}
+
+      assert DF.to_columns(dft) == %{
+               "name" => ["a", "b", "c"],
+               "x" => ["32.0", "1", "a"],
+               "y" => ["33.0", "2", "b"]
+             }
+    end
+
+    test "with column names < length of rows raises" do
+      df = Explorer.DataFrame.new(a: [32.0, 33.0], b: [1, 2], c: ["a", "b"])
+      assert DF.shape(df) == {2, 3}
+
+      assert_raise ArgumentError,
+                   "invalid :columns option, length of column names (1) must match the row count (2)",
+                   fn ->
+                     DF.transpose(df,
+                       header: "name",
+                       columns: ["x"]
+                     )
+                   end
+    end
+  end
+
+  describe "pivot_wider/4" do
+    test "with a single id" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [1],
+               b: [2]
+             }
+    end
+
+    test "with a category" do
+      df1 =
+        DF.new(id: [1, 1, 1])
+        |> DF.put(:category, Series.from_list(["a", "b", "a"], dtype: :category))
+        |> DF.pivot_wider("category", "category")
+
+      assert DF.dtypes(df1) == %{"a" => :category, "b" => :category, "id" => {:s, 64}}
+      assert DF.to_columns(df1, atom_keys: true) == %{id: [1], a: ["a"], b: ["b"]}
+    end
+
+    test "with a single id discarding any other column" do
+      df1 = DF.new(id: [1, 1], x: [6, 12], variable: ["a", "b"], value: [1, 2])
+
+      df2 = DF.pivot_wider(df1, "variable", "value", id_columns: [:id])
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [1],
+               b: [2]
+             }
+    end
+
+    test "with a single id and names prefix" do
+      df1 = DF.new(id: [1, 1], variable: ["1", "2"], value: [1.0, 2.0])
+
+      df2 =
+        DF.pivot_wider(df1, "variable", "value",
+          id_columns: ["id"],
+          names_prefix: "column_"
+        )
+
+      assert DF.to_columns(
+               df2,
+               atom_keys: true
+             ) == %{id: [1], column_1: [1.0], column_2: [2.0]}
+
+      assert df2.names == ["id", "column_1", "column_2"]
+    end
+
+    test "with a single id but with a nil value in the variable series" do
+      df1 = DF.new(id: [1, 1, 1], variable: ["a", "b", nil], value: [1, 2, 3])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2) == %{
+               "id" => [1],
+               "a" => [1],
+               "b" => [2],
+               "nil" => [3]
+             }
+    end
+
+    test "with multiple id columns" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
+      df1 = DF.pivot_wider(df, "variable", "value")
+
+      assert DF.names(df1) == ["id", "other_id", "a", "b"]
+      assert df1.names == ["id", "other_id", "a", "b"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id: [1, 1],
+               other_id: [4, 5],
+               a: [1, nil],
+               b: [nil, 2]
+             }
+    end
+
+    test "with multiple id columns and one id equal to a variable name" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], b: [4, 5])
+      df1 = DF.pivot_wider(df, "variable", "value")
+
+      assert DF.names(df1) == ["id", "b", "a", "b_1"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id: [1, 1],
+               b: [4, 5],
+               a: [1, nil],
+               b_1: [nil, 2]
+             }
+    end
+
+    test "with multiple id columns and one id equal to a variable name, but with prefix option" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], b: [4, 5])
+      df1 = DF.pivot_wider(df, "variable", "value", names_prefix: "col_")
+
+      assert DF.names(df1) == ["id", "b", "col_a", "col_b"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id: [1, 1],
+               b: [4, 5],
+               col_a: [1, nil],
+               col_b: [nil, 2]
+             }
+    end
+
+    test "with a single id column ignoring other columns" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
+
+      df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id])
+      assert DF.names(df2) == ["id", "a", "b"]
+
+      df2 = DF.pivot_wider(df, "variable", "value", id_columns: [0])
+      assert DF.names(df2) == ["id", "a", "b"]
+      assert df2.names == ["id", "a", "b"]
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [1],
+               b: [2]
+             }
+    end
+
+    test "with a single id column and repeated values" do
+      df = DF.new(id: [1, 1, 2, 2], variable: ["a", "b", "a", "b"], value: [1, 2, 3, 4])
+
+      df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id])
+      assert DF.names(df2) == ["id", "a", "b"]
+
+      df2 = DF.pivot_wider(df, "variable", "value", id_columns: [0])
+      assert DF.names(df2) == ["id", "a", "b"]
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1, 2],
+               a: [1, 3],
+               b: [2, 4]
+             }
+    end
+
+    test "with a single id column and repeated values with names prefix" do
+      df = DF.new(id: [1, 1, 2, 2], variable: ["a", "b", "a", "b"], value: [1, 2, 3, 4])
+
+      df2 = DF.pivot_wider(df, "variable", "value", id_columns: [:id], names_prefix: "prefix_")
+      assert DF.names(df2) == ["id", "prefix_a", "prefix_b"]
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1, 2],
+               prefix_a: [1, 3],
+               prefix_b: [2, 4]
+             }
+    end
+
+    test "with a filter function for id columns" do
+      df = DF.new(id_main: [1, 1], variable: ["a", "b"], value: [1, 2], other: [4, 5])
+
+      df1 = DF.pivot_wider(df, "variable", "value", id_columns: &String.starts_with?(&1, "id"))
+      assert DF.names(df1) == ["id_main", "a", "b"]
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               id_main: [1],
+               a: [1],
+               b: [2]
+             }
+    end
+
+    test "with multiple value columns expand the new column names" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], another_value: [6, 9])
+
+      df2 = DF.pivot_wider(df1, "variable", ["value", "another_value"])
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               value_variable_a: [1],
+               value_variable_b: [2],
+               another_value_variable_a: [6],
+               another_value_variable_b: [9]
+             }
+    end
+
+    test "without an id column" do
+      df = DF.new(id: [1, 1], variable: ["a", "b"], value: [1, 2], other_id: [4, 5])
+
+      assert_raise ArgumentError,
+                   "id_columns must select at least one existing column, but [] selects none. Note that float columns are discarded from the selection.",
+                   fn ->
+                     DF.pivot_wider(df, "variable", "value", id_columns: [])
+                   end
+
+      assert_raise ArgumentError,
+                   ~r/id_columns must select at least one existing column, but/,
+                   fn ->
+                     DF.pivot_wider(df, "variable", "value",
+                       id_columns: &String.starts_with?(&1, "none")
+                     )
+                   end
+    end
+
+    test "with an id column of type float" do
+      df = DF.new(float_id: [1.5, 1.6], variable: ["a", "b"], value: [1, 2])
+
+      assert_raise ArgumentError,
+                   "id_columns must select at least one existing column, but 0..-1//1 selects none. Note that float columns are discarded from the selection.",
+                   fn ->
+                     DF.pivot_wider(df, "variable", "value")
+                   end
+
+      assert_raise ArgumentError,
+                   "id_columns must select at least one existing column, but [:float_id] selects none. Note that float columns are discarded from the selection.",
+                   fn ->
+                     DF.pivot_wider(df, "variable", "value", id_columns: [:float_id])
+                   end
+    end
+
+    test "with a string values_from" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: ["x", "y"])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: ["x"],
+               b: ["y"]
+             }
+    end
+
+    test "with a date values_from" do
+      df1 = DF.new(id: [1, 1], variable: ["a", "b"], value: [~D[2022-01-01], ~D[2023-01-01]])
+
+      df2 = DF.pivot_wider(df1, "variable", "value")
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               id: [1],
+               a: [~D[2022-01-01]],
+               b: [~D[2023-01-01]]
+             }
+    end
+  end
+
+  describe "pivot_longer/3" do
+    test "without selecting columns", %{df: df} do
+      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), select: [])
+
+      assert df.names == ["variable", "value"]
+      assert df.dtypes == %{"variable" => :string, "value" => {:s, 64}}
+      assert DF.shape(df) == {3282, 2}
+    end
+
+    test "selecting some columns", %{df: df} do
+      df = DF.pivot_longer(df, &String.ends_with?(&1, "fuel"), select: ["year", "country"])
+
+      assert df.names == ["year", "country", "variable", "value"]
+
+      assert df.dtypes == %{
+               "year" => {:s, 64},
+               "country" => :string,
+               "variable" => :string,
+               "value" => {:s, 64}
+             }
+
+      assert DF.shape(df) == {3282, 4}
+    end
+
+    test "selecting all the columns (not passing select option)", %{df: df} do
+      df = DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]))
+
+      assert df.names == [
+               "year",
+               "country",
+               "total",
+               "cement",
+               "gas_flaring",
+               "per_capita",
+               "variable",
+               "value"
+             ]
+
+      assert DF.shape(df) == {4376, 8}
+    end
+
+    test "dropping some columns", %{df: df} do
+      df =
+        DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]),
+          discard: ["gas_flaring", "cement"]
+        )
+
+      assert df.names == [
+               "year",
+               "country",
+               "total",
+               "per_capita",
+               "variable",
+               "value"
+             ]
+    end
+
+    test "select and discard with the same columns discards the columns", %{df: df} do
+      df =
+        DF.pivot_longer(df, &String.ends_with?(&1, ["fuel", "fuels"]),
+          select: ["gas_flaring", "cement"],
+          discard: fn name -> name == "cement" end
+        )
+
+      assert df.names == [
+               "gas_flaring",
+               "variable",
+               "value"
+             ]
+    end
+
+    test "with pivot column in the same list of select columns", %{df: df} do
+      assert_raise ArgumentError,
+                   "selected columns must not include columns to pivot, but found \"solid_fuel\" in both",
+                   fn ->
+                     DF.pivot_longer(df, &String.ends_with?(&1, "fuel"),
+                       select: ["year", "country", "solid_fuel"]
+                     )
+                   end
+    end
+
+    test "with multiple types of columns to pivot", %{df: df} do
+      assert_raise ArgumentError,
+                   "columns to pivot must include columns with the same dtype, but found multiple dtypes: :string and {:s, 64}",
+                   fn ->
+                     DF.pivot_longer(df, &(&1 in ["solid_fuel", "country"]))
+                   end
+    end
+  end
+
+  describe "table reader integration" do
+    test "eager" do
+      df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+
+      assert df |> Table.to_rows() |> Enum.to_list() == [
+               %{"x" => 1, "y" => "a"},
+               %{"x" => 2, "y" => "b"},
+               %{"x" => 3, "y" => "c"}
+             ]
+
+      columns = Table.to_columns(df)
+      assert Enum.to_list(columns["x"]) == [1, 2, 3]
+      assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
+
+      assert {:columns, %{count: 3}, _} = Table.Reader.init(df)
+    end
+
+    test "lazy" do
+      df = DF.new(x: [1, 2, 3], y: ["a", "b", "c"]) |> DF.lazy()
+
+      assert df |> Table.to_rows() |> Enum.to_list() == [
+               %{"x" => 1, "y" => "a"},
+               %{"x" => 2, "y" => "b"},
+               %{"x" => 3, "y" => "c"}
+             ]
+
+      columns = Table.to_columns(df)
+      assert Enum.to_list(columns["x"]) == [1, 2, 3]
+      assert Enum.to_list(columns["y"]) == ["a", "b", "c"]
+
+      assert {:columns, %{count: 3}, _} = Table.Reader.init(df)
+    end
+  end
+
+  test "lazy/1", %{df: df} do
+    assert %Explorer.PolarsBackend.LazyFrame{} = DF.lazy(df).data
+  end
+
+  describe "to_rows/2" do
+    test "converts rows to maps" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+
+      assert [
+               %{"a" => "a", "b" => 1},
+               %{"a" => "b", "b" => 2},
+               %{"a" => "c", "b" => 3}
+             ] == DF.to_rows(df)
+    end
+
+    test "converts rows to maps with atom keys" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+
+      assert [
+               %{a: "a", b: 1},
+               %{a: "b", b: 2},
+               %{a: "c", b: 3}
+             ] == DF.to_rows(df, atom_keys: true)
+    end
+  end
+
+  defp lazy?(stream) do
+    match?(%Stream{}, stream) or is_function(stream, 2)
+  end
+
+  describe "to_rows_stream/2" do
+    test "converts rows to stream of maps" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      stream = DF.to_rows_stream(df)
+
+      assert lazy?(stream)
+
+      assert [
+               %{"a" => "a", "b" => 1},
+               %{"a" => "b", "b" => 2},
+               %{"a" => "c", "b" => 3}
+             ] == Enum.to_list(stream)
+    end
+
+    test "converts rows to stream of maps with atom keys" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      stream = DF.to_rows_stream(df, atom_keys: true)
+
+      assert lazy?(stream)
+
+      assert [
+               %{a: "a", b: 1},
+               %{a: "b", b: 2},
+               %{a: "c", b: 3}
+             ] == Enum.to_list(stream)
+    end
+  end
+
+  describe "select/2" do
+    test "keep column names" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      df = DF.select(df, ["a"])
+
+      assert DF.names(df) == ["a"]
+      assert df.names == ["a"]
+    end
+
+    test "keep column positions" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      df = DF.select(df, [1])
+
+      assert DF.names(df) == ["b"]
+      assert df.names == ["b"]
+    end
+
+    test "keep column range" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
+      df = DF.select(df, 1..2)
+
+      assert DF.names(df) == ["b", "c"]
+      assert df.names == ["b", "c"]
+    end
+
+    test "keep columns matching callback" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
+      df = DF.select(df, fn name -> name in ~w(a c) end)
+
+      assert DF.names(df) == ["a", "c"]
+      assert df.names == ["a", "c"]
+    end
+
+    test "keep column raises error with non-existent column" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+
+      assert_raise ArgumentError, ~r"could not find column name \"g\"", fn ->
+        DF.select(df, ["g"])
+      end
+    end
+  end
+
+  describe "discard/2" do
+    test "drop column names" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      df = DF.discard(df, ["a"])
+
+      assert DF.names(df) == ["b"]
+      assert df.names == ["b"]
+    end
+
+    test "drop column positions" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      df = DF.discard(df, [1])
+
+      assert DF.names(df) == ["a"]
+      assert df.names == ["a"]
+    end
+
+    test "drop column range" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
+      df = DF.discard(df, 1..2)
+
+      assert DF.names(df) == ["a"]
+      assert df.names == ["a"]
+    end
+
+    test "drop columns matching callback" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3], c: [42.0, 42.1, 42.2])
+      df = DF.discard(df, fn name -> name in ~w(a c) end)
+
+      assert DF.names(df) == ["b"]
+      assert df.names == ["b"]
+    end
+
+    test "dropping a non-existent column fails silently" do
+      df = DF.new(a: ["a", "b", "c"], b: [1, 2, 3])
+
+      df1 = DF.discard(df, ["g"])
+      assert df.names == df1.names
+    end
+  end
+
+  describe "head/2" do
+    test "selects the first 5 rows by default", %{df: df} do
+      df1 = DF.head(df)
+      assert DF.shape(df1) == {5, 10}
+    end
+
+    test "selects the first 2 rows", %{df: df} do
+      df1 = DF.head(df, 2)
+      assert DF.shape(df1) == {2, 10}
+    end
+  end
+
+  describe "tail/2" do
+    test "selects the last 5 rows by default", %{df: df} do
+      df1 = DF.tail(df)
+      assert DF.shape(df1) == {5, 10}
+    end
+
+    test "selects the last 2 rows", %{df: df} do
+      df1 = DF.tail(df, 2)
+      assert DF.shape(df1) == {2, 10}
+    end
+  end
+
+  describe "put/3" do
+    test "adds a new column to a dataframe" do
+      df = DF.new(a: [1, 2, 3])
+      df1 = DF.put(df, :b, Series.transform(df[:a], fn n -> n * 2 end))
+
+      assert DF.names(df1) == ["a", "b"]
+      assert DF.dtypes(df1) == %{"a" => {:s, 64}, "b" => {:s, 64}}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               b: [2, 4, 6]
+             }
+    end
+
+    test "replaces a column in the dataframe" do
+      df = DF.new(a: [1, 2, 3])
+      df1 = DF.put(df, :a, Series.transform(df[:a], fn n -> n * 2 end))
+
+      assert DF.names(df1) == ["a"]
+      assert DF.dtypes(df1) == %{"a" => {:s, 64}}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [2, 4, 6]
+             }
+    end
+
+    test "with tensors" do
+      i = Nx.tensor(1)
+      f = Nx.tensor([1.0], type: :f64)
+      d = Nx.tensor([-1, 0, 1], type: :s32)
+
+      df =
+        DF.new(
+          a: [1, 2, 3],
+          b: [4.0, 5.0, 6.0],
+          c: ["a", "b", "c"],
+          d: [~D[1970-01-01], ~D[1980-01-01], ~D[1990-01-01]]
+        )
+
+      assert DF.put(df, :a, i)[:a] |> Series.to_list() == [1, 1, 1]
+      assert DF.put(df, :a, f, dtype: {:f, 64})[:a] |> Series.to_list() == [1.0, 1.0, 1.0]
+
+      assert DF.put(df, :a, d, dtype: :date)[:a] |> Series.to_list() == [
+               ~D[1969-12-31],
+               ~D[1970-01-01],
+               ~D[1970-01-02]
+             ]
+
+      assert DF.put(df, :c, i, dtype: :integer)[:c] |> Series.to_list() == [1, 1, 1]
+      assert DF.put(df, :c, f, dtype: {:f, 64})[:c] |> Series.to_list() == [1.0, 1.0, 1.0]
+
+      assert DF.put(df, :c, d, dtype: :date)[:c] |> Series.to_list() == [
+               ~D[1969-12-31],
+               ~D[1970-01-01],
+               ~D[1970-01-02]
+             ]
+
+      assert DF.put(df, :d, i, dtype: :integer)[:d] |> Series.to_list() == [1, 1, 1]
+      assert DF.put(df, :d, f, dtype: {:f, 64})[:d] |> Series.to_list() == [1.0, 1.0, 1.0]
+
+      assert DF.put(df, :d, d)[:d] |> Series.to_list() == [
+               ~D[1969-12-31],
+               ~D[1970-01-01],
+               ~D[1970-01-02]
+             ]
+
+      assert_raise ArgumentError,
+                   "cannot convert dtype string into a binary/tensor type",
+                   fn -> DF.put(df, :c, i) end
+    end
+  end
+
+  describe "describe/2" do
+    test "default percentiles" do
+      df = DF.new(a: ["d", nil, "f"], b: [1, 2, 3], c: [10, 20, 30])
+      df1 = DF.describe(df)
+
+      assert df1.dtypes == %{
+               "a" => :string,
+               "b" => {:f, 64},
+               "c" => {:f, 64},
+               "describe" => :string
+             }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["2", "1", nil, nil, nil, nil, nil, nil, nil],
+               b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
+               c: [3.0, 0.0, 20.0, 10.0, 10.0, 20.0, 20.0, 30.0, 30.0],
+               describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"]
+             }
+    end
+
+    test "custom percentiles" do
+      df = DF.new(b: [1, 2, 3])
+      df1 = DF.describe(df, percentiles: [0.3, 0.5, 0.8])
+      df2 = DF.describe(df, percentiles: [0.5])
+
+      assert df1.dtypes == %{
+               "b" => {:f, 64},
+               "describe" => :string
+             }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
+               describe: ["count", "nil_count", "mean", "std", "min", "30%", "50%", "80%", "max"]
+             }
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               b: [3.0, 0.0, 2.0, 1.0, 1.0, 2.0, 3.0],
+               describe: ["count", "nil_count", "mean", "std", "min", "50%", "max"]
+             }
+    end
+
+    test "no percentiles" do
+      df = DF.new(b: [1, 2, 3])
+      df1 = DF.describe(df, percentiles: [])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               b: [3.0, 0.0, 2.0, 1.0, 1.0, 3.0],
+               describe: ["count", "nil_count", "mean", "std", "min", "max"]
+             }
+    end
+
+    test "describe columns - max, min columns" do
+      df =
+        DF.new(
+          number: [1, 2, nil, 3],
+          list: [[], [], [], []],
+          # TODO: enable "null" columns when problem with polars is solved.
+          # null: [nil, nil, nil, nil],
+          string: ["a", "b", "c", "nil"],
+          date: [~D[2021-01-01], ~D[1999-12-31], nil, ~D[2023-01-01]],
+          time: [~T[00:02:03.000212], ~T[00:05:04.000456], ~T[00:07:04.000776], nil],
+          naive_datetime: [
+            nil,
+            ~N[2021-01-01 00:00:00],
+            ~N[1999-12-31 00:00:00],
+            ~N[2023-12-13 17:38:00]
+          ],
+          duration: [
+            nil,
+            ~N[2020-01-01 00:00:00],
+            ~N[1999-11-30 00:00:00],
+            ~N[2023-12-12 17:38:00]
+          ]
+        )
+
+      df = DF.mutate(df, duration: naive_datetime - duration)
+
+      assert df.dtypes == %{
+               "date" => :date,
+               "naive_datetime" => {:naive_datetime, :microsecond},
+               "duration" => {:duration, :microsecond},
+               "list" => {:list, :null},
+               # "null" => :null,
+               "number" => {:s, 64},
+               "string" => :string,
+               "time" => :time
+             }
+
+      describe_df = DF.describe(df)
+
+      assert describe_df.dtypes == %{
+               "date" => :string,
+               "naive_datetime" => :string,
+               "describe" => :string,
+               "duration" => :string,
+               "list" => :string,
+               # "null" => :string,
+               "number" => {:f, 64},
+               "string" => :string,
+               "time" => :string
+             }
+
+      assert DF.to_columns(describe_df, atom_keys: true) == %{
+               date: ["3", "1", nil, nil, nil, nil, nil, nil, nil],
+               naive_datetime: [
+                 "3",
+                 "1",
+                 nil,
+                 nil,
+                 "1999-12-31 00:00:00.000000",
+                 nil,
+                 nil,
+                 nil,
+                 "2023-12-13 17:38:00.000000"
+               ],
+               describe: ["count", "nil_count", "mean", "std", "min", "25%", "50%", "75%", "max"],
+               duration: ["3", "1", nil, nil, "1d", nil, nil, nil, "366d"],
+               list: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
+               # null: ["0", "4", nil, nil, nil, nil, nil, nil, nil],
+               number: [3.0, 1.0, 2.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0],
+               string: ["4", "0", nil, nil, nil, nil, nil, nil, nil],
+               time: ["3", "1", nil, nil, nil, nil, nil, nil, nil]
+             }
+    end
+  end
 
   # describe "frequencies/1" do
   #   test "multiple columns with and without nils" do
