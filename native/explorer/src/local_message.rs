@@ -1,29 +1,42 @@
-use rustler::wrapper::{NIF_ENV, NIF_TERM};
-use rustler::{Env, Term};
-use std::ffi::c_void;
+use rustler::env::SavedTerm;
+use rustler::{Env, LocalPid, OwnedEnv, Resource, ResourceArc, Term};
 
-extern "C" {
-    pub fn local_message_open_resource(env: NIF_ENV) -> c_void;
-    fn local_message_on_gc(env: NIF_ENV, arg1: NIF_TERM, arg2: NIF_TERM) -> NIF_TERM;
-    fn is_local_message_when_gc(env: NIF_ENV, arg1: NIF_TERM) -> NIF_TERM;
+pub struct LocalMessage {
+    pid: LocalPid,
+    env: OwnedEnv,
+    term: SavedTerm,
 }
 
-#[rustler::nif]
-pub fn message_on_gc<'a>(env: Env<'a>, pid: Term<'a>, term: Term<'a>) -> Term<'a> {
-    unsafe {
-        Term::new(
-            env,
-            local_message_on_gc(env.as_c_arg(), pid.as_c_arg(), term.as_c_arg()),
-        )
+impl LocalMessage {
+    pub fn new(pid: LocalPid, term: Term<'_>) -> Self {
+        let env = OwnedEnv::new();
+        let term = env.save(term);
+        Self { pid, env, term }
+    }
+}
+
+// This is only safe because we only use the object for its destructor
+unsafe impl Sync for LocalMessage {}
+
+#[rustler::resource_impl]
+impl Resource for LocalMessage {
+    fn destructor(self, env: Env) {
+        let owned_env = self.env;
+
+        // If the send fails, the other process is gone.
+        owned_env.run(|owned_env| {
+            let term = self.term.load(owned_env);
+            let _ = env.send(&self.pid, term);
+        });
     }
 }
 
 #[rustler::nif]
-pub fn is_message_on_gc<'a>(env: Env<'a>, term: Term<'a>) -> Term<'a> {
-    unsafe {
-        Term::new(
-            env,
-            is_local_message_when_gc(env.as_c_arg(), term.as_c_arg()),
-        )
-    }
+pub fn message_on_gc(pid: LocalPid, term: Term<'_>) -> ResourceArc<LocalMessage> {
+    LocalMessage::new(pid, term).into()
+}
+
+#[rustler::nif]
+pub fn is_message_on_gc(term: Term<'_>) -> bool {
+    term.decode::<ResourceArc<LocalMessage>>().is_ok()
 }

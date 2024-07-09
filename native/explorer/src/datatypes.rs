@@ -7,7 +7,7 @@ use chrono::prelude::*;
 #[cfg(feature = "cloud")]
 use polars::prelude::cloud::CloudOptions;
 use polars::prelude::*;
-use rustler::{Atom, NifStruct, NifTaggedEnum, ResourceArc};
+use rustler::{Atom, NifStruct, NifTaggedEnum, Resource, ResourceArc};
 use std::fmt;
 use std::ops::Deref;
 
@@ -22,9 +22,24 @@ use chrono_tz::{OffsetComponents, OffsetName, Tz};
 pub use ex_dtypes::*;
 
 pub struct ExDataFrameRef(pub DataFrame);
+
+#[rustler::resource_impl]
+impl Resource for ExDataFrameRef {}
+
 pub struct ExExprRef(pub Expr);
+
+#[rustler::resource_impl]
+impl Resource for ExExprRef {}
+
 pub struct ExLazyFrameRef(pub LazyFrame);
+
+#[rustler::resource_impl]
+impl Resource for ExLazyFrameRef {}
+
 pub struct ExSeriesRef(pub Series);
+
+#[rustler::resource_impl]
+impl Resource for ExSeriesRef {}
 
 // The structs that start with "Ex" are related to the modules in Elixir.
 // Some of them are just wrappers around Polars data structs.
