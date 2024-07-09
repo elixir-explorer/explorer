@@ -5768,8 +5768,8 @@ defmodule Explorer.DataFrame do
   def frequencies(%DataFrame{} = df, [col | _] = columns) do
     df
     |> group_by(columns)
-    |> summarise_with(&[counts: Series.count(&1[col])])
-    |> sort_with(&[desc: &1[:counts]])
+    |> summarise_with(counts: Series.count(Series.col(col)))
+    |> sort_with(desc: Series.col(:counts))
   end
 
   def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")

@@ -3897,32 +3897,32 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  # describe "frequencies/1" do
-  #   test "multiple columns with and without nils" do
-  #     df =
-  #       DF.new(
-  #         a: [1, 1, 1, 2, 3, 3],
-  #         b: [true, true, true, false, false, false],
-  #         c: ["a", nil, "a", nil, "a", nil]
-  #       )
+  describe "frequencies/1" do
+    test "multiple columns with and without nils" do
+      df =
+        DF.new(
+          a: [1, 1, 1, 2, 3, 3],
+          b: [true, true, true, false, false, false],
+          c: ["a", nil, "a", nil, "a", nil]
+        )
 
-  #     assert DF.frequencies(df, [:a, :b]) |> DF.to_columns(atom_keys: true) ==
-  #              %{a: [1, 3, 2], b: [true, false, false], counts: [3, 2, 1]}
+      assert DF.frequencies(df, [:a, :b]) |> DF.to_columns(atom_keys: true) ==
+               %{a: [1, 3, 2], b: [true, false, false], counts: [3, 2, 1]}
 
-  #     assert DF.frequencies(df, [:a, :c]) |> DF.to_columns(atom_keys: true) ==
-  #              %{a: [1, 1, 2, 3, 3], c: ["a", nil, nil, "a", nil], counts: [2, 1, 1, 1, 1]}
-  #   end
+      assert DF.frequencies(df, [:a, :c]) |> DF.to_columns(atom_keys: true) ==
+               %{a: [1, 1, 2, 3, 3], c: ["a", nil, nil, "a", nil], counts: [2, 1, 1, 1, 1]}
+    end
 
-  #   test "invalid columns args" do
-  #     assert_raise ArgumentError,
-  #                  ~r/cannot be empty/,
-  #                  fn -> DF.new(a: [1]) |> DF.frequencies([]) end
+    test "invalid columns args" do
+      assert_raise ArgumentError,
+                   ~r/cannot be empty/,
+                   fn -> DF.new(a: [1]) |> DF.frequencies([]) end
 
-  #     assert_raise ArgumentError,
-  #                  ~r/could not find column name/,
-  #                  fn -> DF.new(a: [1]) |> DF.frequencies([:x]) end
-  #   end
-  # end
+      assert_raise ArgumentError,
+                   ~r/could not find column name/,
+                   fn -> DF.new(a: [1]) |> DF.frequencies([:x]) end
+    end
+  end
 
   # describe "nil_count/1" do
   #   test "various dtypes" do

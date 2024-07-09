@@ -6747,7 +6747,11 @@ defmodule Explorer.Series do
     apply_series(series, :json_path_match, [json_path])
   end
 
-  def col(name) do
+  def col(name) when is_atom(name) do
+    name |> Atom.to_string() |> col()
+  end
+
+  def col(name) when is_binary(name) do
     lazy_series = %Explorer.Backend.LazySeries{op: :col, args: [name]}
     %Series{data: lazy_series, dtype: :unknown}
   end
