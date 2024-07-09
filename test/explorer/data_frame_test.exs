@@ -3924,663 +3924,666 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  # describe "nil_count/1" do
-  #   test "various dtypes" do
-  #     require Explorer.DataFrame, as: DF
-
-  #     df =
-  #       DF.new(
-  #         a: [1, nil, 3],
-  #         b: [6.0, nil, :nan],
-  #         c: ["a", "b", "a"],
-  #         d: ["a", nil, nil],
-  #         e: [nil, nil, nil]
-  #       )
-
-  #     df1 = DF.nil_count(df)
-  #     assert DF.to_columns(df1, atom_keys: true) == %{a: [1], b: [1], c: [0], d: [2], e: [3]}
-  #   end
-  # end
-
-  # describe "concat_columns/1" do
-  #   test "combine columns of both data frames" do
-  #     df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
-  #     df2 = DF.new(z: [4, 5, 6], a: ["d", "e", "f"])
-
-  #     df = DF.concat_columns([df1, df2])
-
-  #     assert df.names == ["x", "y", "z", "a"]
-
-  #     assert DF.to_columns(df, atom_keys: true) == %{
-  #              x: [1, 2, 3],
-  #              y: ["a", "b", "c"],
-  #              z: [4, 5, 6],
-  #              a: ["d", "e", "f"]
-  #            }
-  #   end
-
-  #   test "with conflicting names add number suffix" do
-  #     df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
-  #     df2 = DF.new(x: [4, 5, 6], a: ["d", "e", "f"])
-
-  #     df = DF.concat_columns([df1, df2])
-  #     assert df.names == ["x", "y", "x_1", "a"]
-
-  #     assert DF.to_columns(df, atom_keys: true) == %{
-  #              x: [1, 2, 3],
-  #              y: ["a", "b", "c"],
-  #              x_1: [4, 5, 6],
-  #              a: ["d", "e", "f"]
-  #            }
-  #   end
-  # end
-
-  # describe "sample/3" do
-  #   test "sampling by integer" do
-  #     df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-
-  #     df1 = DF.sample(df, 3, seed: 100)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              letters: ["j", "f", "h"],
-  #              numbers: [10, 6, 8]
-  #            }
-  #   end
-
-  #   test "sampling by fraction (float)" do
-  #     df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-
-  #     df1 = DF.sample(df, 0.2, seed: 100)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              letters: ["f", "g"],
-  #              numbers: [6, 7]
-  #            }
-  #   end
-
-  #   test "sampling by integer with same size of the dataframe" do
-  #     df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-
-  #     df1 = DF.sample(df, 10, seed: 100)
-
-  #     # Without "shuffle", returns the same DF.
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              letters: ~w(a b c d e f g h i j),
-  #              numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  #            }
-  #   end
-
-  #   test "sampling by integer with same size of the dataframe and with shuffle" do
-  #     df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-
-  #     df1 = DF.sample(df, 10, seed: 100, shuffle: true)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
-  #              numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
-  #            }
-  #   end
-
-  #   test "sampling by fraction the all rows of the dataframe" do
-  #     df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-
-  #     df1 = DF.sample(df, 1.0, seed: 100)
-
-  #     # Without "shuffle", returns the same DF.
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              letters: ~w(a b c d e f g h i j),
-  #              numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  #            }
-  #   end
-
-  #   test "sampling by fraction with all rows and with shuffle" do
-  #     df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-
-  #     df1 = DF.sample(df, 1.0, seed: 100, shuffle: true)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
-  #              numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
-  #            }
-  #   end
-  # end
-
-  # describe "shuffle/2" do
-  #   test "shuffles the dataframe rows" do
-  #     df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-
-  #     df1 = DF.shuffle(df, seed: 100)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
-  #              numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
-  #            }
-  #   end
-  # end
-
-  # describe "summarise/2" do
-  #   test "summarise with nil" do
-  #     df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
-  #     df1 = DF.summarise(df, c: nil)
-  #     assert DF.dtypes(df1) == %{"c" => :null}
-  #     assert DF.to_columns(df1, atom_keys: true) == %{c: [nil]}
-  #   end
-
-  #   test "one column with aggregation and without groups", %{df: df} do
-  #     df1 =
-  #       DF.summarise(df,
-  #         total: count(total),
-  #         solid_fuel_mean: mean(solid_fuel),
-  #         gas_fuel_max: max(gas_fuel)
-  #       )
-
-  #     assert DF.names(df1) == ["total", "solid_fuel_mean", "gas_fuel_max"]
-
-  #     assert DF.dtypes(df1) == %{
-  #              "total" => {:u, 32},
-  #              "solid_fuel_mean" => {:f, 64},
-  #              "gas_fuel_max" => {:s, 64}
-  #            }
-
-  #     assert DF.groups(df1) == []
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              total: [1094],
-  #              gas_fuel_max: [390_719],
-  #              solid_fuel_mean: [18212.27970749543]
-  #            }
-  #   end
-
-  #   test "allows returning the group as a list" do
-  #     df =
-  #       DF.new(
-  #         letters: ~w(a b c d e f g h i j),
-  #         is_vowel: [true, false, false, false, true, false, false, false, true, false]
-  #       )
-  #       |> DF.group_by(:is_vowel)
-  #       |> DF.summarise(letters: letters)
-
-  #     assert DF.to_columns(df, atom_keys: true) == %{
-  #              is_vowel: [true, false],
-  #              letters: [["a", "e", "i"], ["b", "c", "d", "f", "g", "h", "j"]]
-  #            }
-
-  #     assert DF.dtypes(df) == %{"is_vowel" => :boolean, "letters" => {:list, :string}}
-  #   end
-
-  #   test "mode/1 without groups (see grouped_test for groups)" do
-  #     df = DF.new(petal_width: [1, 2, 2, 3, 3, 120])
-
-  #     df1 =
-  #       DF.summarise(df, petal_width_mode: mode(petal_width), petal_width_sum: sum(petal_width))
-
-  #     assert DF.dtypes(df1) == %{
-  #              "petal_width_mode" => {:list, {:s, 64}},
-  #              "petal_width_sum" => {:s, 64}
-  #            }
-
-  #     result = DF.to_columns(df1)
-
-  #     assert result["petal_width_sum"] == [131]
-  #     # Since this does not maintain order, we need to check differently.
-  #     assert [[a, b]] = result["petal_width_mode"]
-
-  #     assert a in [2, 3]
-  #     assert b in [2, 3]
-  #   end
-
-  #   test "argmax/1 and argmin/1" do
-  #     df =
-  #       DF.new(
-  #         a: [1, 2, 3, nil],
-  #         b: [1.3, nil, 5.4, 2.6],
-  #         c: [nil, ~D[2023-01-01], ~D[2022-01-01], ~D[2021-01-01]],
-  #         d: [
-  #           ~N[2023-01-01 00:00:00],
-  #           ~N[2022-01-01 00:00:00],
-  #           ~N[2021-01-01 00:00:00],
-  #           nil
-  #         ],
-  #         e: [
-  #           ~N[2023-01-01 10:00:00],
-  #           ~N[2022-01-01 01:00:00],
-  #           ~N[2021-01-01 00:10:00],
-  #           nil
-  #         ],
-  #         f: [1.0, :infinity, :neg_infinity, nil]
-  #       )
-  #       |> DF.mutate(e: cast(e, :time))
-
-  #     df1 =
-  #       DF.summarise(df,
-  #         a: argmax(a),
-  #         b: argmax(b),
-  #         c: argmax(c),
-  #         d: argmax(d),
-  #         e: argmax(e),
-  #         f: argmax(f)
-  #       )
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [2],
-  #              b: [2],
-  #              c: [1],
-  #              d: [0],
-  #              e: [0],
-  #              f: [1]
-  #            }
-
-  #     df2 =
-  #       DF.summarise(df,
-  #         a: argmin(fill_missing(a, :max)),
-  #         b: argmin(fill_missing(b, :max)),
-  #         c: argmin(fill_missing(c, :max)),
-  #         d: argmin(fill_missing(d, :max)),
-  #         e: argmin(fill_missing(e, :max)),
-  #         f: argmin(fill_missing(f, :max))
-  #       )
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              a: [0],
-  #              b: [0],
-  #              c: [3],
-  #              d: [2],
-  #              e: [2],
-  #              f: [2]
-  #            }
-
-  #     df3 =
-  #       DF.summarise(df,
-  #         a: argmin(a),
-  #         b: argmin(b),
-  #         c: argmin(c),
-  #         d: argmin(d),
-  #         e: argmin(e),
-  #         f: argmin(f)
-  #       )
-
-  #     assert DF.to_columns(df3, atom_keys: true) == %{
-  #              a: [0],
-  #              b: [0],
-  #              c: [3],
-  #              d: [2],
-  #              e: [2],
-  #              f: [2]
-  #            }
-  #   end
-
-  #   test "all?/1 and any?/1" do
-  #     df = DF.new([a: [true, false, true], nils: [nil, nil, nil]], dtypes: [nils: :boolean])
-
-  #     df1 =
-  #       DF.summarise(df,
-  #         all?: all?(a),
-  #         any?: any?(a),
-  #         all_nils?: all?(nils),
-  #         any_nils?: any?(nils)
-  #       )
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              all?: [false],
-  #              any?: [true],
-  #              all_nils?: [true],
-  #              any_nils?: [false]
-  #            }
-  #   end
-  # end
-
-  # describe "explode/2" do
-  #   test "explodes a list column" do
-  #     df = DF.new(letters: [~w(a e), ~w(b c d)], is_vowel: [true, false])
-
-  #     df1 = DF.explode(df, :letters)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              letters: ["a", "e", "b", "c", "d"],
-  #              is_vowel: [true, true, false, false, false]
-  #            }
-
-  #     assert DF.dtypes(df1) == %{"is_vowel" => :boolean, "letters" => :string}
-  #   end
-
-  #   test "works with multiple columns" do
-  #     df = DF.new(a: [[1, 2], [3, 4]], b: [[5, 6], [7, 8]], c: ["a", "b"])
-
-  #     df1 = DF.explode(df, [:a, :b])
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 2, 3, 4],
-  #              b: [5, 6, 7, 8],
-  #              c: ["a", "a", "b", "b"]
-  #            }
-  #   end
-
-  #   test "raises if the columns are not of the list type" do
-  #     df = DF.new(a: [1, 2, 3], b: [[1, 2], [3, 4], [5, 6]])
-
-  #     assert_raise ArgumentError,
-  #                  "explode/2 expects list columns, but the given columns have the types: {:s, 64}",
-  #                  fn -> DF.explode(df, :a) end
-
-  #     assert_raise ArgumentError,
-  #                  "explode/2 expects list columns, but the given columns have the types: {:list, {:s, 64}} and {:s, 64}",
-  #                  fn -> DF.explode(df, [:a, :b]) end
-  #   end
-  # end
-
-  # describe "unnest/2" do
-  #   test "unnests a struct column" do
-  #     df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}])
-
-  #     df1 = DF.unnest(df, :a)
-
-  #     assert DF.names(df1) == ["x", "y"]
-  #     assert DF.dtypes(df1) == %{"x" => {:s, 64}, "y" => {:s, 64}}
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              x: [1, 3],
-  #              y: [2, 4]
-  #            }
-  #   end
-
-  #   test "unnests multiple struct columns at once" do
-  #     df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}], b: [%{z: 5}, %{z: 6}])
-
-  #     df1 = DF.unnest(df, [:a, :b])
-
-  #     assert DF.names(df1) == ["x", "y", "z"]
-  #     assert DF.dtypes(df1) == %{"x" => {:s, 64}, "y" => {:s, 64}, "z" => {:s, 64}}
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              x: [1, 3],
-  #              y: [2, 4],
-  #              z: [5, 6]
-  #            }
-  #   end
-
-  #   test "unnests the columns in the right order" do
-  #     df =
-  #       DF.new(
-  #         before: [1, 2],
-  #         a: [%{x: 1}, %{x: 2}],
-  #         between: [3, 4],
-  #         x: [%{y: 1}, %{y: 2}],
-  #         after: [5, 6]
-  #       )
-
-  #     df1 = DF.unnest(df, [:a, :x])
-
-  #     assert DF.names(df1) == ["before", "x", "between", "y", "after"]
-
-  #     assert DF.dtypes(df1) == %{
-  #              "before" => {:s, 64},
-  #              "x" => {:s, 64},
-  #              "between" => {:s, 64},
-  #              "y" => {:s, 64},
-  #              "after" => {:s, 64}
-  #            }
-  #   end
-
-  #   test "errors if the column is not of the struct type" do
-  #     df = DF.new(a: [1, 2, 3])
-
-  #     assert_raise ArgumentError,
-  #                  "unnest/2 expects struct columns, but the given columns have the types: {:s, 64}",
-  #                  fn -> DF.unnest(df, :a) end
-  #   end
-
-  #   test "errors when unnesting columns with clashing names" do
-  #     df = DF.new(a: [%{x: 1}, %{x: 2}], x: [3, 4])
-
-  #     assert_raise RuntimeError,
-  #                  ~r/column with name 'x' has more than one occurrences/,
-  #                  fn -> DF.unnest(df, :a) end
-  #   end
-
-  #   test "errors when unnesting multiple columns with clashing names" do
-  #     df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}], b: [%{x: 5}, %{x: 6}])
-
-  #     assert_raise RuntimeError,
-  #                  ~r/column with name 'x' has more than one occurrences/,
-  #                  fn -> DF.unnest(df, [:a, :b]) end
-  #   end
-  # end
-
-  # describe "correlation/2" do
-  #   test "two integer columns" do
-  #     df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2])
-  #     df1 = DF.correlation(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["dogs", "cats"],
-  #              dogs: [1.0000000000000002, 0.5447047794019219],
-  #              cats: [0.5447047794019219, 1.0]
-  #            }
-  #   end
-
-  #   test "spearman rank method" do
-  #     df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2])
-  #     df1 = DF.correlation(df, method: :spearman)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["dogs", "cats"],
-  #              dogs: [1.0, 0.5],
-  #              cats: [0.5, 1.0]
-  #            }
-  #   end
-
-  #   test "three integer columns and custom column name" do
-  #     df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1], frogs: [7, 8, 9])
-  #     df1 = DF.correlation(df, column_name: "variables")
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              variables: ["dogs", "cats", "frogs"],
-  #              dogs: [1.0, -1.0, 1.0],
-  #              cats: [-1.0, 1.0, -1.0],
-  #              frogs: [1.0, -1.0, 1.0]
-  #            }
-  #   end
-
-  #   test "two float columns" do
-  #     df = DF.new(dogs: [1.4, 8.6, 3.7], cats: [4.1, 5.3, 2.2])
-  #     df1 = DF.correlation(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["dogs", "cats"],
-  #              dogs: [0.9999999999999999, 0.5642328261411999],
-  #              cats: [0.5642328261411999, 0.9999999999999998]
-  #            }
-  #   end
-
-  #   test "one column" do
-  #     df = DF.new(cats: [4, 5, 2])
-  #     df1 = DF.correlation(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["cats"],
-  #              cats: [1.0]
-  #            }
-  #   end
-
-  #   test "no numeric columns" do
-  #     df = DF.new(cats: ["susie", "tuka", "tobias", "terror"])
-  #     df1 = DF.correlation(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: []
-  #            }
-  #   end
-
-  #   test "ignores non numeric columns" do
-  #     df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2], frogs: ["a", "b", "c"])
-  #     df1 = DF.correlation(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["dogs", "cats"],
-  #              dogs: [1.0000000000000002, 0.5447047794019219],
-  #              cats: [0.5447047794019219, 1.0]
-  #            }
-  #   end
-
-  #   test "subset of numeric columns" do
-  #     df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2], frogs: [7, 8, 9])
-  #     df1 = DF.correlation(df, columns: [:dogs, :cats])
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["dogs", "cats"],
-  #              dogs: [1.0000000000000002, 0.5447047794019219],
-  #              cats: [0.5447047794019219, 1.0]
-  #            }
-  #   end
-
-  #   test "the returned matrix preserves the order" do
-  #     df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1])
-  #     df1 = DF.correlation(df, columns: [:cats, :dogs])
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["cats", "dogs"],
-  #              dogs: [-1.0, 1.0],
-  #              cats: [1.0, -1.0]
-  #            }
-  #   end
-  # end
-
-  # describe "covariance/2" do
-  #   test "two integer columns" do
-  #     df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1])
-  #     df1 = DF.covariance(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["dogs", "cats"],
-  #              dogs: [0.6666666666666666, -1.0],
-  #              cats: [-1.0, 1.6666666666666667]
-  #            }
-  #   end
-
-  #   test "three integer columns and custom column name" do
-  #     df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1], frogs: [7, 8, 9])
-  #     df1 = DF.covariance(df, column_name: "variables")
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              variables: ["dogs", "cats", "frogs"],
-  #              dogs: [1.0, -1.0, 1.0],
-  #              cats: [-1.0, 1.0, -1.0],
-  #              frogs: [1.0, -1.0, 1.0]
-  #            }
-  #   end
-
-  #   test "two float columns" do
-  #     df = DF.new(dogs: [1.4, 8.6, 3.7], cats: [4.1, 5.3, 2.2])
-  #     df1 = DF.covariance(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["dogs", "cats"],
-  #              dogs: [13.52333333333333, 3.2433333333333394],
-  #              cats: [3.2433333333333394, 2.4433333333333422]
-  #            }
-  #   end
-
-  #   test "one column" do
-  #     df = DF.new(cats: [4, 5, 2])
-  #     df1 = DF.covariance(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["cats"],
-  #              cats: [2.3333333333333357]
-  #            }
-  #   end
-
-  #   test "no numeric columns" do
-  #     df = DF.new(cats: ["susie", "tuka", "tobias", "terror"])
-  #     df1 = DF.covariance(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: []
-  #            }
-  #   end
-
-  #   test "ignores non numeric columns" do
-  #     df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1], frogs: ["a", "b", "c", "d"])
-  #     df1 = DF.covariance(df)
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["dogs", "cats"],
-  #              dogs: [0.6666666666666666, -1.0],
-  #              cats: [-1.0, 1.6666666666666667]
-  #            }
-  #   end
-
-  #   test "subset of numeric columns" do
-  #     df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1], frogs: [6, 7, 8, 9])
-  #     df1 = DF.covariance(df, columns: [:dogs, :cats])
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["dogs", "cats"],
-  #              dogs: [0.6666666666666666, -1.0],
-  #              cats: [-1.0, 1.6666666666666667]
-  #            }
-  #   end
-
-  #   test "the returned matrix preserves the order" do
-  #     df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1])
-  #     df1 = DF.covariance(df, columns: [:cats, :dogs])
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              names: ["cats", "dogs"],
-  #              dogs: [-1.0, 0.6666666666666666],
-  #              cats: [1.6666666666666667, -1.0]
-  #            }
-  #   end
-  # end
-
-  # describe "json_decode/2" do
-  #   test "decodes primitives, lists, structs" do
-  #     df = DF.new([%{st: "{\"n\": 1}", f: "1.0", l: "[1]", dt: "1"}], lazy: true)
-
-  #     df1 =
-  #       DF.mutate(df,
-  #         st: json_decode(st, {:struct, %{"n" => {:s, 64}}}),
-  #         f: json_decode(f, {:f, 64}),
-  #         l: json_decode(l, {:list, {:s, 64}}),
-  #         dt: json_decode(dt, {:naive_datetime, :microsecond})
-  #       )
-
-  #     assert df.dtypes == %{"dt" => :string, "f" => :string, "l" => :string, "st" => :string}
-
-  #     assert df1.dtypes == %{
-  #              "dt" => {:naive_datetime, :microsecond},
-  #              "f" => {:f, 64},
-  #              "l" => {:list, {:s, 64}},
-  #              "st" => {:struct, [{"n", {:s, 64}}]}
-  #            }
-
-  #     assert df1 |> DF.compute() |> DF.to_columns() == %{
-  #              "dt" => [~N[1970-01-01 00:00:00.000001]],
-  #              "f" => [1.0],
-  #              "l" => [[1]],
-  #              "st" => [%{"n" => 1}]
-  #            }
-  #   end
-  # end
-
-  # describe "row_index/1" do
-  #   test "works as row_count(), including offset" do
-  #     df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
-  #     df1 = DF.mutate(df, index: row_index(a))
-
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 3, 5],
-  #              b: [2, 4, 6],
-  #              index: [0, 1, 2]
-  #            }
-
-  #     df2 = DF.mutate(df, id: row_index(a) + 1000)
-
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              a: [1, 3, 5],
-  #              b: [2, 4, 6],
-  #              id: [1000, 1001, 1002]
-  #            }
-  #   end
-  # end
+  describe "nil_count/1" do
+    test "various dtypes" do
+      require Explorer.DataFrame, as: DF
+
+      df =
+        DF.new(
+          a: [1, nil, 3],
+          b: [6.0, nil, :nan],
+          c: ["a", "b", "a"],
+          d: ["a", nil, nil],
+          e: [nil, nil, nil]
+        )
+
+      df1 = DF.nil_count(df)
+      assert DF.to_columns(df1, atom_keys: true) == %{a: [1], b: [1], c: [0], d: [2], e: [3]}
+    end
+  end
+
+  describe "concat_columns/1" do
+    test "combine columns of both data frames" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(z: [4, 5, 6], a: ["d", "e", "f"])
+
+      df = DF.concat_columns([df1, df2])
+
+      assert df.names == ["x", "y", "z", "a"]
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               x: [1, 2, 3],
+               y: ["a", "b", "c"],
+               z: [4, 5, 6],
+               a: ["d", "e", "f"]
+             }
+    end
+
+    test "with conflicting names add number suffix" do
+      df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
+      df2 = DF.new(x: [4, 5, 6], a: ["d", "e", "f"])
+
+      df = DF.concat_columns([df1, df2])
+      assert df.names == ["x", "y", "x_1", "a"]
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               x: [1, 2, 3],
+               y: ["a", "b", "c"],
+               x_1: [4, 5, 6],
+               a: ["d", "e", "f"]
+             }
+    end
+  end
+
+  describe "sample/3" do
+    test "sampling by integer" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 3, seed: 100)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["j", "f", "h"],
+               numbers: [10, 6, 8]
+             }
+    end
+
+    test "sampling by fraction (float)" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 0.2, seed: 100)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["f", "g"],
+               numbers: [6, 7]
+             }
+    end
+
+    test "sampling by integer with same size of the dataframe" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 10, seed: 100)
+
+      # Without "shuffle", returns the same DF.
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ~w(a b c d e f g h i j),
+               numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+             }
+    end
+
+    test "sampling by integer with same size of the dataframe and with shuffle" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 10, seed: 100, shuffle: true)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
+               numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+             }
+    end
+
+    test "sampling by fraction the all rows of the dataframe" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 1.0, seed: 100)
+
+      # Without "shuffle", returns the same DF.
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ~w(a b c d e f g h i j),
+               numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+             }
+    end
+
+    test "sampling by fraction with all rows and with shuffle" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.sample(df, 1.0, seed: 100, shuffle: true)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
+               numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+             }
+    end
+  end
+
+  describe "shuffle/2" do
+    test "shuffles the dataframe rows" do
+      df = DF.new(letters: ~w(a b c d e f g h i j), numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+      df1 = DF.shuffle(df, seed: 100)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
+               numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+             }
+    end
+  end
+
+  describe "summarise/2" do
+    test "summarise with nil" do
+      df = DF.new(strs: ["a", "b", "c"], nums: [1, 2, 3])
+      df1 = DF.summarise(df, c: nil)
+      assert DF.dtypes(df1) == %{"c" => :null}
+      assert DF.to_columns(df1, atom_keys: true) == %{c: [nil]}
+    end
+
+    test "one column with aggregation and without groups", %{df: df} do
+      df1 =
+        DF.summarise(df,
+          total: count(total),
+          solid_fuel_mean: mean(solid_fuel),
+          gas_fuel_max: max(gas_fuel)
+        )
+
+      assert DF.names(df1) == ["total", "solid_fuel_mean", "gas_fuel_max"]
+
+      assert DF.dtypes(df1) == %{
+               "total" => {:u, 32},
+               "solid_fuel_mean" => {:f, 64},
+               "gas_fuel_max" => {:s, 64}
+             }
+
+      assert DF.groups(df1) == []
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               total: [1094],
+               gas_fuel_max: [390_719],
+               solid_fuel_mean: [18212.27970749543]
+             }
+    end
+
+    test "allows returning the group as a list" do
+      df =
+        DF.new(
+          letters: ~w(a b c d e f g h i j),
+          is_vowel: [true, false, false, false, true, false, false, false, true, false]
+        )
+        |> DF.group_by(:is_vowel)
+        |> DF.summarise(letters: letters)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               is_vowel: [true, false],
+               letters: [["a", "e", "i"], ["b", "c", "d", "f", "g", "h", "j"]]
+             }
+
+      assert DF.dtypes(df) == %{"is_vowel" => :boolean, "letters" => {:list, :string}}
+    end
+
+    test "mode/1 without groups (see grouped_test for groups)" do
+      df = DF.new(petal_width: [1, 2, 2, 3, 3, 120])
+
+      df1 =
+        DF.summarise(df,
+          petal_width_mode: mode(petal_width),
+          petal_width_sum: sum(petal_width)
+        )
+
+      assert DF.dtypes(df1) == %{
+               "petal_width_mode" => {:list, {:s, 64}},
+               "petal_width_sum" => {:s, 64}
+             }
+
+      result = DF.to_columns(df1)
+
+      assert result["petal_width_sum"] == [131]
+      # Since this does not maintain order, we need to check differently.
+      assert [[a, b]] = result["petal_width_mode"]
+
+      assert a in [2, 3]
+      assert b in [2, 3]
+    end
+
+    test "argmax/1 and argmin/1" do
+      df =
+        DF.new(
+          a: [1, 2, 3, nil],
+          b: [1.3, nil, 5.4, 2.6],
+          c: [nil, ~D[2023-01-01], ~D[2022-01-01], ~D[2021-01-01]],
+          d: [
+            ~N[2023-01-01 00:00:00],
+            ~N[2022-01-01 00:00:00],
+            ~N[2021-01-01 00:00:00],
+            nil
+          ],
+          e: [
+            ~N[2023-01-01 10:00:00],
+            ~N[2022-01-01 01:00:00],
+            ~N[2021-01-01 00:10:00],
+            nil
+          ],
+          f: [1.0, :infinity, :neg_infinity, nil]
+        )
+        |> DF.mutate(e: cast(e, :time))
+
+      df1 =
+        DF.summarise(df,
+          a: argmax(a),
+          b: argmax(b),
+          c: argmax(c),
+          d: argmax(d),
+          e: argmax(e),
+          f: argmax(f)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [2],
+               b: [2],
+               c: [1],
+               d: [0],
+               e: [0],
+               f: [1]
+             }
+
+      df2 =
+        DF.summarise(df,
+          a: argmin(fill_missing(a, :max)),
+          b: argmin(fill_missing(b, :max)),
+          c: argmin(fill_missing(c, :max)),
+          d: argmin(fill_missing(d, :max)),
+          e: argmin(fill_missing(e, :max)),
+          f: argmin(fill_missing(f, :max))
+        )
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [0],
+               b: [0],
+               c: [3],
+               d: [2],
+               e: [2],
+               f: [2]
+             }
+
+      df3 =
+        DF.summarise(df,
+          a: argmin(a),
+          b: argmin(b),
+          c: argmin(c),
+          d: argmin(d),
+          e: argmin(e),
+          f: argmin(f)
+        )
+
+      assert DF.to_columns(df3, atom_keys: true) == %{
+               a: [0],
+               b: [0],
+               c: [3],
+               d: [2],
+               e: [2],
+               f: [2]
+             }
+    end
+
+    test "all?/1 and any?/1" do
+      df = DF.new([a: [true, false, true], nils: [nil, nil, nil]], dtypes: [nils: :boolean])
+
+      df1 =
+        DF.summarise(df,
+          all?: all?(a),
+          any?: any?(a),
+          all_nils?: all?(nils),
+          any_nils?: any?(nils)
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               all?: [false],
+               any?: [true],
+               all_nils?: [true],
+               any_nils?: [false]
+             }
+    end
+  end
+
+  describe "explode/2" do
+    test "explodes a list column" do
+      df = DF.new(letters: [~w(a e), ~w(b c d)], is_vowel: [true, false])
+
+      df1 = DF.explode(df, :letters)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               letters: ["a", "e", "b", "c", "d"],
+               is_vowel: [true, true, false, false, false]
+             }
+
+      assert DF.dtypes(df1) == %{"is_vowel" => :boolean, "letters" => :string}
+    end
+
+    test "works with multiple columns" do
+      df = DF.new(a: [[1, 2], [3, 4]], b: [[5, 6], [7, 8]], c: ["a", "b"])
+
+      df1 = DF.explode(df, [:a, :b])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4],
+               b: [5, 6, 7, 8],
+               c: ["a", "a", "b", "b"]
+             }
+    end
+
+    test "raises if the columns are not of the list type" do
+      df = DF.new(a: [1, 2, 3], b: [[1, 2], [3, 4], [5, 6]])
+
+      assert_raise ArgumentError,
+                   "explode/2 expects list columns, but the given columns have the types: {:s, 64}",
+                   fn -> DF.explode(df, :a) end
+
+      assert_raise ArgumentError,
+                   "explode/2 expects list columns, but the given columns have the types: {:list, {:s, 64}} and {:s, 64}",
+                   fn -> DF.explode(df, [:a, :b]) end
+    end
+  end
+
+  describe "unnest/2" do
+    test "unnests a struct column" do
+      df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}])
+
+      df1 = DF.unnest(df, :a)
+
+      assert DF.names(df1) == ["x", "y"]
+      assert DF.dtypes(df1) == %{"x" => {:s, 64}, "y" => {:s, 64}}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               x: [1, 3],
+               y: [2, 4]
+             }
+    end
+
+    test "unnests multiple struct columns at once" do
+      df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}], b: [%{z: 5}, %{z: 6}])
+
+      df1 = DF.unnest(df, [:a, :b])
+
+      assert DF.names(df1) == ["x", "y", "z"]
+      assert DF.dtypes(df1) == %{"x" => {:s, 64}, "y" => {:s, 64}, "z" => {:s, 64}}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               x: [1, 3],
+               y: [2, 4],
+               z: [5, 6]
+             }
+    end
+
+    test "unnests the columns in the right order" do
+      df =
+        DF.new(
+          before: [1, 2],
+          a: [%{x: 1}, %{x: 2}],
+          between: [3, 4],
+          x: [%{y: 1}, %{y: 2}],
+          after: [5, 6]
+        )
+
+      df1 = DF.unnest(df, [:a, :x])
+
+      assert DF.names(df1) == ["before", "x", "between", "y", "after"]
+
+      assert DF.dtypes(df1) == %{
+               "before" => {:s, 64},
+               "x" => {:s, 64},
+               "between" => {:s, 64},
+               "y" => {:s, 64},
+               "after" => {:s, 64}
+             }
+    end
+
+    test "errors if the column is not of the struct type" do
+      df = DF.new(a: [1, 2, 3])
+
+      assert_raise ArgumentError,
+                   "unnest/2 expects struct columns, but the given columns have the types: {:s, 64}",
+                   fn -> DF.unnest(df, :a) end
+    end
+
+    test "errors when unnesting columns with clashing names" do
+      df = DF.new(a: [%{x: 1}, %{x: 2}], x: [3, 4])
+
+      assert_raise RuntimeError,
+                   ~r/column with name 'x' has more than one occurrences/,
+                   fn -> DF.unnest(df, :a) end
+    end
+
+    test "errors when unnesting multiple columns with clashing names" do
+      df = DF.new(a: [%{x: 1, y: 2}, %{x: 3, y: 4}], b: [%{x: 5}, %{x: 6}])
+
+      assert_raise RuntimeError,
+                   ~r/column with name 'x' has more than one occurrences/,
+                   fn -> DF.unnest(df, [:a, :b]) end
+    end
+  end
+
+  describe "correlation/2" do
+    test "two integer columns" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0000000000000002, 0.5447047794019219],
+               cats: [0.5447047794019219, 1.0]
+             }
+    end
+
+    test "spearman rank method" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2])
+      df1 = DF.correlation(df, method: :spearman)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0, 0.5],
+               cats: [0.5, 1.0]
+             }
+    end
+
+    test "three integer columns and custom column name" do
+      df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1], frogs: [7, 8, 9])
+      df1 = DF.correlation(df, column_name: "variables")
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               variables: ["dogs", "cats", "frogs"],
+               dogs: [1.0, -1.0, 1.0],
+               cats: [-1.0, 1.0, -1.0],
+               frogs: [1.0, -1.0, 1.0]
+             }
+    end
+
+    test "two float columns" do
+      df = DF.new(dogs: [1.4, 8.6, 3.7], cats: [4.1, 5.3, 2.2])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.9999999999999999, 0.5642328261411999],
+               cats: [0.5642328261411999, 0.9999999999999998]
+             }
+    end
+
+    test "one column" do
+      df = DF.new(cats: [4, 5, 2])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats"],
+               cats: [1.0]
+             }
+    end
+
+    test "no numeric columns" do
+      df = DF.new(cats: ["susie", "tuka", "tobias", "terror"])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: []
+             }
+    end
+
+    test "ignores non numeric columns" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2], frogs: ["a", "b", "c"])
+      df1 = DF.correlation(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0000000000000002, 0.5447047794019219],
+               cats: [0.5447047794019219, 1.0]
+             }
+    end
+
+    test "subset of numeric columns" do
+      df = DF.new(dogs: [1, 8, 3], cats: [4, 5, 2], frogs: [7, 8, 9])
+      df1 = DF.correlation(df, columns: [:dogs, :cats])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [1.0000000000000002, 0.5447047794019219],
+               cats: [0.5447047794019219, 1.0]
+             }
+    end
+
+    test "the returned matrix preserves the order" do
+      df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1])
+      df1 = DF.correlation(df, columns: [:cats, :dogs])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats", "dogs"],
+               dogs: [-1.0, 1.0],
+               cats: [1.0, -1.0]
+             }
+    end
+  end
+
+  describe "covariance/2" do
+    test "two integer columns" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.6666666666666666, -1.0],
+               cats: [-1.0, 1.6666666666666667]
+             }
+    end
+
+    test "three integer columns and custom column name" do
+      df = DF.new(dogs: [1, 2, 3], cats: [3, 2, 1], frogs: [7, 8, 9])
+      df1 = DF.covariance(df, column_name: "variables")
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               variables: ["dogs", "cats", "frogs"],
+               dogs: [1.0, -1.0, 1.0],
+               cats: [-1.0, 1.0, -1.0],
+               frogs: [1.0, -1.0, 1.0]
+             }
+    end
+
+    test "two float columns" do
+      df = DF.new(dogs: [1.4, 8.6, 3.7], cats: [4.1, 5.3, 2.2])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [13.52333333333333, 3.2433333333333394],
+               cats: [3.2433333333333394, 2.4433333333333422]
+             }
+    end
+
+    test "one column" do
+      df = DF.new(cats: [4, 5, 2])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats"],
+               cats: [2.3333333333333357]
+             }
+    end
+
+    test "no numeric columns" do
+      df = DF.new(cats: ["susie", "tuka", "tobias", "terror"])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: []
+             }
+    end
+
+    test "ignores non numeric columns" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1], frogs: ["a", "b", "c", "d"])
+      df1 = DF.covariance(df)
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.6666666666666666, -1.0],
+               cats: [-1.0, 1.6666666666666667]
+             }
+    end
+
+    test "subset of numeric columns" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1], frogs: [6, 7, 8, 9])
+      df1 = DF.covariance(df, columns: [:dogs, :cats])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["dogs", "cats"],
+               dogs: [0.6666666666666666, -1.0],
+               cats: [-1.0, 1.6666666666666667]
+             }
+    end
+
+    test "the returned matrix preserves the order" do
+      df = DF.new(dogs: [1, 0, 2, 1], cats: [2, 3, 0, 1])
+      df1 = DF.covariance(df, columns: [:cats, :dogs])
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               names: ["cats", "dogs"],
+               dogs: [-1.0, 0.6666666666666666],
+               cats: [1.6666666666666667, -1.0]
+             }
+    end
+  end
+
+  describe "json_decode/2" do
+    test "decodes primitives, lists, structs" do
+      df = DF.new([%{st: "{\"n\": 1}", f: "1.0", l: "[1]", dt: "1"}], lazy: true)
+
+      df1 =
+        DF.mutate(df,
+          st: json_decode(st, {:struct, %{"n" => {:s, 64}}}),
+          f: json_decode(f, {:f, 64}),
+          l: json_decode(l, {:list, {:s, 64}}),
+          dt: json_decode(dt, {:naive_datetime, :microsecond})
+        )
+
+      assert df.dtypes == %{"dt" => :string, "f" => :string, "l" => :string, "st" => :string}
+
+      assert df1.dtypes == %{
+               "dt" => {:naive_datetime, :microsecond},
+               "f" => {:f, 64},
+               "l" => {:list, {:s, 64}},
+               "st" => {:struct, [{"n", {:s, 64}}]}
+             }
+
+      assert df1 |> DF.collect() |> DF.to_columns() == %{
+               "dt" => [~N[1970-01-01 00:00:00.000001]],
+               "f" => [1.0],
+               "l" => [[1]],
+               "st" => [%{"n" => 1}]
+             }
+    end
+  end
+
+  describe "row_index/1" do
+    test "works as row_count(), including offset" do
+      df = DF.new(a: [1, 3, 5], b: [2, 4, 6])
+      df1 = DF.mutate(df, index: row_index(a))
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 3, 5],
+               b: [2, 4, 6],
+               index: [0, 1, 2]
+             }
+
+      df2 = DF.mutate(df, id: row_index(a) + 1000)
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 3, 5],
+               b: [2, 4, 6],
+               id: [1000, 1001, 1002]
+             }
+    end
+  end
 end

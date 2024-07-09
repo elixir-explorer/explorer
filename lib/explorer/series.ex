@@ -2636,7 +2636,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec mode(series :: Series.t()) :: Series.t() | nil
-  def mode(%Series{dtype: dtype}) when K.or(is_composite_dtype(dtype), dtype == :unknown),
+  def mode(%Series{dtype: dtype}) when is_composite_dtype(dtype),
     do: dtype_error("mode/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
 
   def mode(%Series{} = series),
