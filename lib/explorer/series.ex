@@ -6710,7 +6710,11 @@ defmodule Explorer.Series do
   """
   @doc type: :string_wise
   @spec json_decode(Series.t(), dtype()) :: Series.t()
-  def json_decode(%Series{dtype: dtype} = series, dtype) when K.in(dtype, [:string, :unknown]) do
+  def json_decode(%Series{} = series, dtype) do
+    unless K.in(series.dtype, [:string, :unknown]) do
+      dtype_error("json_decode/2", series.dtype, [:string])
+    end
+
     dtype = Shared.normalise_dtype!(dtype)
 
     apply_series(series, :json_decode, [dtype])

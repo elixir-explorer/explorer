@@ -122,6 +122,7 @@ defmodule Explorer.PolarsBackend.Expression do
     :field,
     :fill_missing,
     :head,
+    :json_decode,
     :peaks,
     :quantile,
     :rank,

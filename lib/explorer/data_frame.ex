@@ -2815,6 +2815,13 @@ defmodule Explorer.DataFrame do
   end
 
   defp hack_post_compute_dtypes(df) do
+    # Not sure why I sometimes need to do this.
+    df =
+      case df.data do
+        %Explorer.PolarsBackend.DataFrame{} -> df
+        %Explorer.PolarsBackend.LazyFrame{} -> Explorer.PolarsBackend.LazyFrame.collect(df)
+      end
+
     # HACK
     # We can't (currently) pre-compute the output dtypes from lazy-backed
     # series ahead of time. Here, we post-compute it for the time being until
