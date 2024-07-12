@@ -95,7 +95,7 @@ defmodule Explorer.DataFrame do
   - [Parquet](https://databricks.com/glossary/what-is-parquet)
   - [Arrow IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-file-format)
   - [Arrow Streaming IPC](https://arrow.apache.org/docs/format/Columnar.html#ipc-streaming-format)
-  - [Newline Delimited JSON](http://ndjson.org)
+  - [Newline Delimited JSON](https://github.com/ndjson/ndjson-spec)
   - Databases via `Adbc` in `from_query/3`
 
   The convention Explorer uses is to have `from_*` and `to_*` functions to read and write
