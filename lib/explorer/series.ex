@@ -1081,8 +1081,9 @@ defmodule Explorer.Series do
   """
   @doc type: :element_wise
   @spec strftime(series :: Series.t(), format_string :: String.t()) :: Series.t()
-  def strftime(%Series{dtype: dtype} = series, format_string) when is_datetime_like_dtype(dtype),
-    do: apply_series(series, :strftime, [format_string])
+  def strftime(%Series{dtype: dtype} = series, format_string)
+      when K.or(is_datetime_like_dtype(dtype), dtype == :unknown),
+      do: apply_series(series, :strftime, [format_string])
 
   def strftime(%Series{dtype: dtype}, _format_string),
     do: dtype_error("strftime/2", dtype, :datetime_like)
@@ -6771,7 +6772,7 @@ defmodule Explorer.Series do
       case infer_scalar_dtype(literal) do
         {:ok, dtype} -> dtype
         {:error, :list} -> infer_list_dtype(literal)
-        {:error, :map} -> infer_struct_dtype(literal)
+        {:error, :map} -> :unknown
         {:error, _} -> raise ArgumentError, "invalid literal: #{inspect(literal)}"
       end
 
@@ -6802,15 +6803,6 @@ defmodule Explorer.Series do
 
   defp infer_list_dtype(list) when is_list(list) do
     Shared.dtype_from_list!(list)
-  end
-
-  defp infer_struct_dtype(%{} = map) when K.not(is_struct(map)) do
-    Map.new(map, fn {key, value} ->
-      case infer_scalar_dtype(value) do
-        {:ok, dtype} -> {key, dtype}
-        {:error, _} -> raise ArgumentError, "unable to infer struct dtype from #{inspect(map)}"
-      end
-    end)
   end
 
   def rename(%Series{} = series, name) do

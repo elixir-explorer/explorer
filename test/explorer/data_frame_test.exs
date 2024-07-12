@@ -687,117 +687,117 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    # test "with map " do
-    #   df = DF.new(%{a: [1, nil, 3], b: ["a", "b", nil]})
-    #   df1 = DF.mutate(df, c: %{a: a, b: b, lit: 1, null: is_nil(a)})
-    #   assert df1.names |> Enum.sort() == ["a", "b", "c"]
+    test "with map " do
+      df = DF.new(%{a: [1, nil, 3], b: ["a", "b", nil]})
+      df1 = DF.mutate(df, c: %{a: a, b: b, lit: 1, null: is_nil(a)})
+      assert df1.names |> Enum.sort() == ["a", "b", "c"]
 
-    #   assert df1.dtypes == %{
-    #            "a" => {:s, 64},
-    #            "b" => :string,
-    #            "c" =>
-    #              {:struct,
-    #               [{"a", {:s, 64}}, {"b", :string}, {"lit", {:s, 64}}, {"null", :boolean}]}
-    #          }
+      assert df1.dtypes == %{
+               "a" => {:s, 64},
+               "b" => :string,
+               "c" =>
+                 {:struct,
+                  [{"a", {:s, 64}}, {"b", :string}, {"lit", {:s, 64}}, {"null", :boolean}]}
+             }
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [1, nil, 3],
-    #            b: ["a", "b", nil],
-    #            c: [
-    #              %{"a" => 1, "b" => "a", "lit" => 1, "null" => false},
-    #              %{"a" => nil, "b" => "b", "lit" => 1, "null" => true},
-    #              %{"a" => 3, "b" => nil, "lit" => 1, "null" => false}
-    #            ]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, nil, 3],
+               b: ["a", "b", nil],
+               c: [
+                 %{"a" => 1, "b" => "a", "lit" => 1, "null" => false},
+                 %{"a" => nil, "b" => "b", "lit" => 1, "null" => true},
+                 %{"a" => 3, "b" => nil, "lit" => 1, "null" => false}
+               ]
+             }
+    end
 
-    # test "with map nested" do
-    #   df = DF.new(%{a: [1, nil, 3], b: ["a", "b", nil]})
-    #   df1 = DF.mutate(df, c: %{s: %{a: a, b: b}})
-    #   assert df1.names |> Enum.sort() == ["a", "b", "c"]
+    test "with map nested" do
+      df = DF.new(%{a: [1, nil, 3], b: ["a", "b", nil]})
+      df1 = DF.mutate(df, c: %{s: %{a: a, b: b}})
+      assert df1.names |> Enum.sort() == ["a", "b", "c"]
 
-    #   assert df1.dtypes == %{
-    #            "a" => {:s, 64},
-    #            "b" => :string,
-    #            "c" => {:struct, [{"s", {:struct, [{"a", {:s, 64}}, {"b", :string}]}}]}
-    #          }
+      assert df1.dtypes == %{
+               "a" => {:s, 64},
+               "b" => :string,
+               "c" => {:struct, [{"s", {:struct, [{"a", {:s, 64}}, {"b", :string}]}}]}
+             }
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [1, nil, 3],
-    #            b: ["a", "b", nil],
-    #            c: [
-    #              %{"s" => %{"a" => 1, "b" => "a"}},
-    #              %{"s" => %{"a" => nil, "b" => "b"}},
-    #              %{"s" => %{"a" => 3, "b" => nil}}
-    #            ]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, nil, 3],
+               b: ["a", "b", nil],
+               c: [
+                 %{"s" => %{"a" => 1, "b" => "a"}},
+                 %{"s" => %{"a" => nil, "b" => "b"}},
+                 %{"s" => %{"a" => 3, "b" => nil}}
+               ]
+             }
+    end
 
-    # test "add eager series to dataframe" do
-    #   df = DF.new([%{a: 1}, %{a: 2}, %{a: 3}])
-    #   s = Series.from_list(["x", "y", "z"])
+    test "add eager series to dataframe" do
+      df = DF.new([%{a: 1}, %{a: 2}, %{a: 3}])
+      s = Series.from_list(["x", "y", "z"])
 
-    #   df1 = DF.mutate(df, s: ^s, a1: a + 1)
-    #   assert df1.names == ["a", "s", "a1"]
+      df1 = DF.mutate(df, s: ^s, a1: a + 1)
+      assert df1.names == ["a", "s", "a1"]
 
-    #   assert df1.dtypes == %{
-    #            "a" => {:s, 64},
-    #            "s" => :string,
-    #            "a1" => {:s, 64}
-    #          }
+      assert df1.dtypes == %{
+               "a" => {:s, 64},
+               "s" => :string,
+               "a1" => {:s, 64}
+             }
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [1, 2, 3],
-    #            a1: [2, 3, 4],
-    #            s: ["x", "y", "z"]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3],
+               a1: [2, 3, 4],
+               s: ["x", "y", "z"]
+             }
+    end
 
-    # test "json_path_match/2 - extract value from a valid json string using json path" do
-    #   df = DF.new([%{a: ~s({"n": 1})}, %{a: ~s({"m": 1})}])
-    #   df1 = DF.mutate(df, m: json_path_match(a, "$.m"), n: json_path_match(a, "$.n"))
-    #   assert df1.names == ["a", "m", "n"]
+    test "json_path_match/2 - extract value from a valid json string using json path" do
+      df = DF.new([%{a: ~s({"n": 1})}, %{a: ~s({"m": 1})}])
+      df1 = DF.mutate(df, m: json_path_match(a, "$.m"), n: json_path_match(a, "$.n"))
+      assert df1.names == ["a", "m", "n"]
 
-    #   assert df1.dtypes == %{
-    #            "a" => :string,
-    #            "n" => :string,
-    #            "m" => :string
-    #          }
+      assert df1.dtypes == %{
+               "a" => :string,
+               "n" => :string,
+               "m" => :string
+             }
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["{\"n\": 1}", "{\"m\": 1}"],
-    #            n: ["1", nil],
-    #            m: [nil, "1"]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["{\"n\": 1}", "{\"m\": 1}"],
+               n: ["1", nil],
+               m: [nil, "1"]
+             }
+    end
 
-    # test "json_path_match/2 - extracts nil from invalidjson using json path" do
-    #   df = DF.new([%{a: ~s({"n": 1)}, %{a: ~s({"m": 1})}])
-    #   df1 = DF.mutate(df, m: json_path_match(a, "$.m"), n: json_path_match(a, "$.n"))
-    #   assert df1.names == ["a", "m", "n"]
+    test "json_path_match/2 - extracts nil from invalidjson using json path" do
+      df = DF.new([%{a: ~s({"n": 1)}, %{a: ~s({"m": 1})}])
+      df1 = DF.mutate(df, m: json_path_match(a, "$.m"), n: json_path_match(a, "$.n"))
+      assert df1.names == ["a", "m", "n"]
 
-    #   assert df1.dtypes == %{
-    #            "a" => :string,
-    #            "n" => :string,
-    #            "m" => :string
-    #          }
+      assert df1.dtypes == %{
+               "a" => :string,
+               "n" => :string,
+               "m" => :string
+             }
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["{\"n\": 1", "{\"m\": 1}"],
-    #            m: [nil, "1"],
-    #            n: [nil, nil]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["{\"n\": 1", "{\"m\": 1}"],
+               m: [nil, "1"],
+               n: [nil, nil]
+             }
+    end
 
-    # test "json_path_match/2 - raises for invalid json path" do
-    #   df = DF.new([%{a: ~s({"n": 1})}, %{a: ~s({"m": 1})}])
+    test "json_path_match/2 - raises for invalid json path" do
+      df = DF.new([%{a: ~s({"n": 1})}, %{a: ~s({"m": 1})}])
 
-    #   assert_raise RuntimeError,
-    #                "Polars Error: ComputeError(ErrString(\"error compiling JSONpath expression path error: \\nEof\\n\"))",
-    #                fn ->
-    #                  DF.mutate(df, n: json_path_match(a, "$."))
-    #                end
-    # end
+      assert_raise RuntimeError,
+                   "Polars Error: ComputeError(ErrString(\"error compiling JSONpath expression path error: \\nEof\\n\"))",
+                   fn ->
+                     DF.mutate(df, n: json_path_match(a, "$."))
+                   end
+    end
 
     test "adds new columns" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
@@ -1656,281 +1656,281 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    # test "raises when adding eager series whose length does not match dataframe's length" do
-    #   df = DF.new(a: [1, 2, 3])
-    #   series = Series.from_list([4, 5, 6, 7])
+    test "raises when adding eager series whose length does not match dataframe's length" do
+      df = DF.new(a: [1, 2, 3])
+      series = Series.from_list([4, 5, 6, 7])
 
-    #   assert_raise RuntimeError,
-    #                "Polars Error: lengths don't match: unable to add a column of length 4 to a DataFrame of height 3",
-    #                fn ->
-    #                  DF.mutate(df, b: ^series)
-    #                end
-    # end
+      assert_raise RuntimeError,
+                   "Polars Error: lengths don't match: unable to add a column of length 4 to a DataFrame of height 3",
+                   fn ->
+                     DF.mutate(df, b: ^series)
+                   end
+    end
 
-    # test "raises when adding list" do
-    #   df = DF.new(a: [1, 2, 3])
-    #   series = [4, 5, 6]
+    test "raises when adding list" do
+      df = DF.new(a: [1, 2, 3])
+      series = [4, 5, 6]
 
-    #   error =
-    #     "expecting a lazy series or scalar value, but instead got a list. " <>
-    #       "consider using `Explorer.Series.from_list/2` to create a `Series`, " <>
-    #       "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
+      error =
+        "expecting a lazy series or scalar value, but instead got a list. " <>
+          "consider using `Explorer.Series.from_list/2` to create a `Series`, " <>
+          "and then `Explorer.DataFrame.put/3` to add the series to your dataframe."
 
-    #   assert_raise ArgumentError, error, fn ->
-    #     DF.mutate(df, b: ^series)
-    #   end
-    # end
+      assert_raise ArgumentError, error, fn ->
+        DF.mutate(df, b: ^series)
+      end
+    end
 
-    # test "slice strings" do
-    #   df =
-    #     DF.new(
-    #       a: ["_hello", "_world", "_foo", "_bar"],
-    #       b: ["venus", "earth", "mars", "jupiter"],
-    #       c: ["_foo", "_bar", "_baz", "_quox"],
-    #       d: ["_foo", "_bar", "_baz", "_quox"],
-    #       e: ["_foo", "_bar", "_baz", "_quox"]
-    #     )
+    test "slice strings" do
+      df =
+        DF.new(
+          a: ["_hello", "_world", "_foo", "_bar"],
+          b: ["venus", "earth", "mars", "jupiter"],
+          c: ["_foo", "_bar", "_baz", "_quox"],
+          d: ["_foo", "_bar", "_baz", "_quox"],
+          e: ["_foo", "_bar", "_baz", "_quox"]
+        )
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       f: substring(a, 1),
-    #       g: substring(b, 2, 5),
-    #       h: substring(c, -3),
-    #       i: substring(d, 6, 10),
-    #       j: substring(e, -15, 2)
-    #     )
+      df1 =
+        DF.mutate(df,
+          f: substring(a, 1),
+          g: substring(b, 2, 5),
+          h: substring(c, -3),
+          i: substring(d, 6, 10),
+          j: substring(e, -15, 2)
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["_hello", "_world", "_foo", "_bar"],
-    #            b: ["venus", "earth", "mars", "jupiter"],
-    #            c: ["_foo", "_bar", "_baz", "_quox"],
-    #            d: ["_foo", "_bar", "_baz", "_quox"],
-    #            e: ["_foo", "_bar", "_baz", "_quox"],
-    #            f: ["hello", "world", "foo", "bar"],
-    #            g: ["nus", "rth", "rs", "piter"],
-    #            h: ["foo", "bar", "baz", "uox"],
-    #            i: ["", "", "", ""],
-    #            j: ["_f", "_b", "_b", "_q"]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["_hello", "_world", "_foo", "_bar"],
+               b: ["venus", "earth", "mars", "jupiter"],
+               c: ["_foo", "_bar", "_baz", "_quox"],
+               d: ["_foo", "_bar", "_baz", "_quox"],
+               e: ["_foo", "_bar", "_baz", "_quox"],
+               f: ["hello", "world", "foo", "bar"],
+               g: ["nus", "rth", "rs", "piter"],
+               h: ["foo", "bar", "baz", "uox"],
+               i: ["", "", "", ""],
+               j: ["_f", "_b", "_b", "_q"]
+             }
+    end
 
-    # test "strip characters from string" do
-    #   df =
-    #     DF.new(
-    #       a: ["£2", "3£", "£200£", "£££20"],
-    #       b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
-    #     )
+    test "strip characters from string" do
+      df =
+        DF.new(
+          a: ["£2", "3£", "£200£", "£££20"],
+          b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
+        )
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       c: strip(a, "£"),
-    #       d: strip(b)
-    #     )
+      df1 =
+        DF.mutate(df,
+          c: strip(a, "£"),
+          d: strip(b)
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["£2", "3£", "£200£", "£££20"],
-    #            b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
-    #            c: ["2", "3", "200", "20"],
-    #            d: ["sent", "received", "words", "lots of pound signs"]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["£2", "3£", "£200£", "£££20"],
+               b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
+               c: ["2", "3", "200", "20"],
+               d: ["sent", "received", "words", "lots of pound signs"]
+             }
+    end
 
-    # test "split a string by a substring" do
-    #   df = DF.new(a: ["foo,bar", "bar,baz"])
+    test "split a string by a substring" do
+      df = DF.new(a: ["foo,bar", "bar,baz"])
 
-    #   df1 = DF.mutate(df, b: split(a, ","))
+      df1 = DF.mutate(df, b: split(a, ","))
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["foo,bar", "bar,baz"],
-    #            b: [["foo", "bar"], ["bar", "baz"]]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["foo,bar", "bar,baz"],
+               b: [["foo", "bar"], ["bar", "baz"]]
+             }
+    end
 
-    # test "replace characters in a string" do
-    #   df = DF.new(a: ["2,000", "2,000,000", ","])
+    test "replace characters in a string" do
+      df = DF.new(a: ["2,000", "2,000,000", ","])
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       b: replace(a, ",", ""),
-    #       c: re_replace(a, ~S/\d{3}$/, "999")
-    #     )
+      df1 =
+        DF.mutate(df,
+          b: replace(a, ",", ""),
+          c: re_replace(a, ~S/\d{3}$/, "999")
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["2,000", "2,000,000", ","],
-    #            b: ["2000", "2000000", ""],
-    #            c: ["2,999", "2,000,999", ","]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["2,000", "2,000,000", ","],
+               b: ["2000", "2000000", ""],
+               c: ["2,999", "2,000,999", ","]
+             }
+    end
 
-    # test "strip multiple characters from string" do
-    #   df =
-    #     DF.new(
-    #       a: ["ababhelloabab", "abababworldabababa", "abab", "bbbbaaaabhelloba"],
-    #       b: ["nx_hello", "world_nx", "nx_nx_xn", "more_nx"]
-    #     )
+    test "strip multiple characters from string" do
+      df =
+        DF.new(
+          a: ["ababhelloabab", "abababworldabababa", "abab", "bbbbaaaabhelloba"],
+          b: ["nx_hello", "world_nx", "nx_nx_xn", "more_nx"]
+        )
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       c: strip(a, "ab"),
-    #       d: strip(b, "nx_")
-    #     )
+      df1 =
+        DF.mutate(df,
+          c: strip(a, "ab"),
+          d: strip(b, "nx_")
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["ababhelloabab", "abababworldabababa", "abab", "bbbbaaaabhelloba"],
-    #            b: ["nx_hello", "world_nx", "nx_nx_xn", "more_nx"],
-    #            c: ["hello", "world", "", "hello"],
-    #            d: ["hello", "world", "", "more"]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["ababhelloabab", "abababworldabababa", "abab", "bbbbaaaabhelloba"],
+               b: ["nx_hello", "world_nx", "nx_nx_xn", "more_nx"],
+               c: ["hello", "world", "", "hello"],
+               d: ["hello", "world", "", "more"]
+             }
+    end
 
-    # test "strip trailing characters from string" do
-    #   df =
-    #     DF.new(
-    #       a: ["£2", "3£", "£200£", "£££20"],
-    #       b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
-    #     )
+    test "strip trailing characters from string" do
+      df =
+        DF.new(
+          a: ["£2", "3£", "£200£", "£££20"],
+          b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
+        )
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       c: rstrip(a, "£"),
-    #       d: rstrip(b)
-    #     )
+      df1 =
+        DF.mutate(df,
+          c: rstrip(a, "£"),
+          d: rstrip(b)
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["£2", "3£", "£200£", "£££20"],
-    #            b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
-    #            c: ["£2", "3", "£200", "£££20"],
-    #            d: ["   sent", " received", "  words", "lots of pound signs"]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["£2", "3£", "£200£", "£££20"],
+               b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
+               c: ["£2", "3", "£200", "£££20"],
+               d: ["   sent", " received", "  words", "lots of pound signs"]
+             }
+    end
 
-    # test "strip leading characters from string" do
-    #   df =
-    #     DF.new(
-    #       a: ["£2", "3£", "£200£", "£££20"],
-    #       b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
-    #     )
+    test "strip leading characters from string" do
+      df =
+        DF.new(
+          a: ["£2", "3£", "£200£", "£££20"],
+          b: ["   sent   ", " received", "  words  ", "lots of pound signs    "]
+        )
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       c: lstrip(a, "£"),
-    #       d: lstrip(b)
-    #     )
+      df1 =
+        DF.mutate(df,
+          c: lstrip(a, "£"),
+          d: lstrip(b)
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["£2", "3£", "£200£", "£££20"],
-    #            b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
-    #            c: ["2", "3£", "200£", "20"],
-    #            d: ["sent   ", "received", "words  ", "lots of pound signs    "]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["£2", "3£", "£200£", "£££20"],
+               b: ["   sent   ", " received", "  words  ", "lots of pound signs    "],
+               c: ["2", "3£", "200£", "20"],
+               d: ["sent   ", "received", "words  ", "lots of pound signs    "]
+             }
+    end
 
-    # test "conversion between string and datetime" do
-    #   df =
-    #     DF.new(
-    #       a: ["2023-01-05 12:34:56", nil],
-    #       b: ["2023/30/01 00:11:22", "XYZ"],
-    #       c: [~N[2023-01-05 12:34:56.000000], nil],
-    #       d: [~N[2023-01-30 00:11:22.000000], nil]
-    #     )
+    test "conversion between string and datetime" do
+      df =
+        DF.new(
+          a: ["2023-01-05 12:34:56", nil],
+          b: ["2023/30/01 00:11:22", "XYZ"],
+          c: [~N[2023-01-05 12:34:56.000000], nil],
+          d: [~N[2023-01-30 00:11:22.000000], nil]
+        )
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       c: strptime(a, "%Y-%m-%d %H:%M:%S"),
-    #       d: strptime(b, "%Y/%d/%m %H:%M:%S")
-    #     )
+      df1 =
+        DF.mutate(df,
+          c: strptime(a, "%Y-%m-%d %H:%M:%S"),
+          d: strptime(b, "%Y/%d/%m %H:%M:%S")
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["2023-01-05 12:34:56", nil],
-    #            b: ["2023/30/01 00:11:22", "XYZ"],
-    #            c: [~N[2023-01-05 12:34:56.000000], nil],
-    #            d: [~N[2023-01-30 00:11:22.000000], nil]
-    #          }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["2023-01-05 12:34:56", nil],
+               b: ["2023/30/01 00:11:22", "XYZ"],
+               c: [~N[2023-01-05 12:34:56.000000], nil],
+               d: [~N[2023-01-30 00:11:22.000000], nil]
+             }
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       a: strftime(c, "%Y-%m-%d %H:%M:%S"),
-    #       b: strftime(d, "%Y/%d/%m %H:%M:%S")
-    #     )
+      df1 =
+        DF.mutate(df,
+          a: strftime(c, "%Y-%m-%d %H:%M:%S"),
+          b: strftime(d, "%Y/%d/%m %H:%M:%S")
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["2023-01-05 12:34:56", nil],
-    #            b: ["2023/30/01 00:11:22", nil],
-    #            c: [~N[2023-01-05 12:34:56.000000], nil],
-    #            d: [~N[2023-01-30 00:11:22.000000], nil]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["2023-01-05 12:34:56", nil],
+               b: ["2023/30/01 00:11:22", nil],
+               c: [~N[2023-01-05 12:34:56.000000], nil],
+               d: [~N[2023-01-30 00:11:22.000000], nil]
+             }
+    end
 
-    # test "add columns with date and naive datetime operations" do
-    #   df =
-    #     DF.new(
-    #       a: [~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil],
-    #       b: [
-    #         ~N[2023-01-15 01:01:01],
-    #         ~N[2022-02-16 02:02:02],
-    #         ~N[2021-03-20 03:03:03.003030],
-    #         nil
-    #       ]
-    #     )
+    test "add columns with date and naive datetime operations" do
+      df =
+        DF.new(
+          a: [~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil],
+          b: [
+            ~N[2023-01-15 01:01:01],
+            ~N[2022-02-16 02:02:02],
+            ~N[2021-03-20 03:03:03.003030],
+            nil
+          ]
+        )
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       c: day_of_week(a),
-    #       d: day_of_week(b),
-    #       e: month(a),
-    #       f: month(b),
-    #       g: year(a),
-    #       h: year(b),
-    #       i: hour(b),
-    #       j: minute(b),
-    #       k: second(b),
-    #       l: day_of_year(a),
-    #       m: day_of_year(b),
-    #       n: week_of_year(a),
-    #       o: week_of_year(b)
-    #     )
+      df1 =
+        DF.mutate(df,
+          c: day_of_week(a),
+          d: day_of_week(b),
+          e: month(a),
+          f: month(b),
+          g: year(a),
+          h: year(b),
+          i: hour(b),
+          j: minute(b),
+          k: second(b),
+          l: day_of_year(a),
+          m: day_of_year(b),
+          n: week_of_year(a),
+          o: week_of_year(b)
+        )
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: [~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil],
-    #            b: [
-    #              ~N[2023-01-15 01:01:01.000000],
-    #              ~N[2022-02-16 02:02:02.000000],
-    #              ~N[2021-03-20 03:03:03.003030],
-    #              nil
-    #            ],
-    #            c: [7, 3, 6, nil],
-    #            d: [7, 3, 6, nil],
-    #            e: [1, 2, 3, nil],
-    #            f: [1, 2, 3, nil],
-    #            g: [2023, 2022, 2021, nil],
-    #            h: [2023, 2022, 2021, nil],
-    #            i: [1, 2, 3, nil],
-    #            j: [1, 2, 3, nil],
-    #            k: [1, 2, 3, nil],
-    #            l: [15, 47, 79, nil],
-    #            m: [15, 47, 79, nil],
-    #            n: [2, 7, 11, nil],
-    #            o: [2, 7, 11, nil]
-    #          }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil],
+               b: [
+                 ~N[2023-01-15 01:01:01.000000],
+                 ~N[2022-02-16 02:02:02.000000],
+                 ~N[2021-03-20 03:03:03.003030],
+                 nil
+               ],
+               c: [7, 3, 6, nil],
+               d: [7, 3, 6, nil],
+               e: [1, 2, 3, nil],
+               f: [1, 2, 3, nil],
+               g: [2023, 2022, 2021, nil],
+               h: [2023, 2022, 2021, nil],
+               i: [1, 2, 3, nil],
+               j: [1, 2, 3, nil],
+               k: [1, 2, 3, nil],
+               l: [15, 47, 79, nil],
+               m: [15, 47, 79, nil],
+               n: [2, 7, 11, nil],
+               o: [2, 7, 11, nil]
+             }
 
-    #   assert df1.dtypes == %{
-    #            "a" => :date,
-    #            "b" => {:naive_datetime, :microsecond},
-    #            "c" => {:s, 8},
-    #            "d" => {:s, 8},
-    #            "e" => {:s, 8},
-    #            "f" => {:s, 8},
-    #            "g" => {:s, 32},
-    #            "h" => {:s, 32},
-    #            "i" => {:s, 8},
-    #            "j" => {:s, 8},
-    #            "k" => {:s, 8},
-    #            "l" => {:s, 16},
-    #            "m" => {:s, 16},
-    #            "n" => {:s, 8},
-    #            "o" => {:s, 8}
-    #          }
-    # end
+      assert df1.dtypes == %{
+               "a" => :date,
+               "b" => {:naive_datetime, :microsecond},
+               "c" => {:s, 8},
+               "d" => {:s, 8},
+               "e" => {:s, 8},
+               "f" => {:s, 8},
+               "g" => {:s, 32},
+               "h" => {:s, 32},
+               "i" => {:s, 8},
+               "j" => {:s, 8},
+               "k" => {:s, 8},
+               "l" => {:s, 16},
+               "m" => {:s, 16},
+               "n" => {:s, 8},
+               "o" => {:s, 8}
+             }
+    end
 
     test "add columns with select/3" do
       df1 = DF.new(a: [1, 2, 3]) |> DF.mutate(x: select(a <= 2.5, a, 2.5))
@@ -1958,229 +1958,230 @@ defmodule Explorer.DataFrameTest do
       assert Series.to_list(df7[:x]) == [~D[2023-01-15], ~D[2023-01-01], ~D[2023-01-01]]
     end
 
-    # test "supports list operations" do
-    #   df =
-    #     DF.new(
-    #       a: [~w(a b c), ~w(d e f)],
-    #       b: [[1, 2, 3], [4, 5, 6]],
-    #       c: [
-    #         [~N[2021-01-01 00:00:00], ~N[2021-01-02 00:00:00]],
-    #         [~N[2021-01-03 00:00:00], ~N[2021-01-04 00:00:00]]
-    #       ]
-    #     )
+    test "supports list operations" do
+      df =
+        DF.new(
+          a: [~w(a b c), ~w(d e f)],
+          b: [[1, 2, 3], [4, 5, 6]],
+          c: [
+            [~N[2021-01-01 00:00:00], ~N[2021-01-02 00:00:00]],
+            [~N[2021-01-03 00:00:00], ~N[2021-01-04 00:00:00]]
+          ]
+        )
 
-    #   df =
-    #     DF.mutate(df,
-    #       join: join(a, ","),
-    #       lengths: lengths(b),
-    #       member?: member?(c, ~N[2021-01-02 00:00:00])
-    #     )
+      df =
+        DF.mutate(df,
+          join: join(a, ","),
+          lengths: lengths(b),
+          member?: member?(c, ~N[2021-01-02 00:00:00])
+        )
 
-    #   assert DF.dtypes(df) == %{
-    #            "a" => {:list, :string},
-    #            "b" => {:list, {:s, 64}},
-    #            "c" => {:list, {:naive_datetime, :microsecond}},
-    #            "join" => :string,
-    #            "lengths" => {:u, 32},
-    #            "member?" => :boolean
-    #          }
+      assert DF.dtypes(df) == %{
+               "a" => {:list, :string},
+               "b" => {:list, {:s, 64}},
+               "c" => {:list, {:naive_datetime, :microsecond}},
+               "join" => :string,
+               "lengths" => {:u, 32},
+               "member?" => :boolean
+             }
 
-    #   assert DF.to_columns(df, atom_keys: true) == %{
-    #            a: [~w(a b c), ~w(d e f)],
-    #            b: [[1, 2, 3], [4, 5, 6]],
-    #            c: [
-    #              [~N[2021-01-01 00:00:00.000000], ~N[2021-01-02 00:00:00.000000]],
-    #              [~N[2021-01-03 00:00:00.000000], ~N[2021-01-04 00:00:00.000000]]
-    #            ],
-    #            join: ["a,b,c", "d,e,f"],
-    #            lengths: [3, 3],
-    #            member?: [true, false]
-    #          }
-    # end
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [~w(a b c), ~w(d e f)],
+               b: [[1, 2, 3], [4, 5, 6]],
+               c: [
+                 [~N[2021-01-01 00:00:00.000000], ~N[2021-01-02 00:00:00.000000]],
+                 [~N[2021-01-03 00:00:00.000000], ~N[2021-01-04 00:00:00.000000]]
+               ],
+               join: ["a,b,c", "d,e,f"],
+               lengths: [3, 3],
+               member?: [true, false]
+             }
+    end
 
-    # test "splits a string column into multiple new columns" do
-    #   new_column_names = ["Last Name", "First Name"]
-    #   df = DF.new(%{names: ["Smith, John", "Jones, Jane"]})
+    test "splits a string column into multiple new columns" do
+      new_column_names = ["Last Name", "First Name"]
+      df = DF.new(%{names: ["Smith, John", "Jones, Jane"]})
 
-    #   df =
-    #     DF.mutate_with(df, fn ldf ->
-    #       %{names: Series.split_into(ldf[:names], ", ", new_column_names)}
-    #     end)
-    #     |> DF.unnest(:names)
+      df =
+        DF.mutate_with(
+          df,
+          %{names: Series.split_into(Series.col("names"), ", ", new_column_names)}
+        )
+        |> DF.unnest(:names)
 
-    #   assert DF.dtypes(df) == %{
-    #            "Last Name" => :string,
-    #            "First Name" => :string
-    #          }
+      assert DF.dtypes(df) == %{
+               "Last Name" => :string,
+               "First Name" => :string
+             }
 
-    #   assert DF.to_columns(df) == %{
-    #            "Last Name" => ["Smith", "Jones"],
-    #            "First Name" => ["John", "Jane"]
-    #          }
-    # end
+      assert DF.to_columns(df) == %{
+               "Last Name" => ["Smith", "Jones"],
+               "First Name" => ["John", "Jane"]
+             }
+    end
 
-    # test "extract and count all matches from string" do
-    #   df = DF.new(a: ["$2,000", "$2,000,000", ",", nil])
+    test "extract and count all matches from string" do
+      df = DF.new(a: ["$2,000", "$2,000,000", ",", nil])
 
-    #   df1 =
-    #     DF.mutate(df,
-    #       b: re_scan(a, ~S/\d+/),
-    #       c: re_count_matches(a, ~S/\d+/),
-    #       d: count_matches(a, "$")
-    #     )
+      df1 =
+        DF.mutate(df,
+          b: re_scan(a, ~S/\d+/),
+          c: re_count_matches(a, ~S/\d+/),
+          d: count_matches(a, "$")
+        )
 
-    #   assert DF.dtypes(df1) == %{
-    #            "a" => :string,
-    #            "b" => {:list, :string},
-    #            "c" => {:u, 32},
-    #            "d" => {:u, 32}
-    #          }
+      assert DF.dtypes(df1) == %{
+               "a" => :string,
+               "b" => {:list, :string},
+               "c" => {:u, 32},
+               "d" => {:u, 32}
+             }
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["$2,000", "$2,000,000", ",", nil],
-    #            b: [["2", "000"], ["2", "000", "000"], [], nil],
-    #            c: [2, 3, 0, nil],
-    #            d: [1, 1, 0, nil]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["$2,000", "$2,000,000", ",", nil],
+               b: [["2", "000"], ["2", "000", "000"], [], nil],
+               c: [2, 3, 0, nil],
+               d: [1, 1, 0, nil]
+             }
+    end
 
-    # test "extract unnamed groups from regex in fields of a struct" do
-    #   df = DF.new(a: ["alice@example.com", "bob@example.com", nil])
+    test "extract unnamed groups from regex in fields of a struct" do
+      df = DF.new(a: ["alice@example.com", "bob@example.com", nil])
 
-    #   df1 = DF.mutate(df, b: re_named_captures(a, ~S/(.*[^@])@(.*)$/))
+      df1 = DF.mutate(df, b: re_named_captures(a, ~S/(.*[^@])@(.*)$/))
 
-    #   assert df1.dtypes["b"] == {:struct, [{"1", :string}, {"2", :string}]}
+      assert df1.dtypes["b"] == {:struct, [{"1", :string}, {"2", :string}]}
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["alice@example.com", "bob@example.com", nil],
-    #            b: [
-    #              %{"1" => "alice", "2" => "example.com"},
-    #              %{"1" => "bob", "2" => "example.com"},
-    #              %{"1" => nil, "2" => nil}
-    #            ]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["alice@example.com", "bob@example.com", nil],
+               b: [
+                 %{"1" => "alice", "2" => "example.com"},
+                 %{"1" => "bob", "2" => "example.com"},
+                 %{"1" => nil, "2" => nil}
+               ]
+             }
+    end
 
-    # test "extract named groups from regex in fields of a struct" do
-    #   df = DF.new(a: ["alice@example.com", "bob@example.com", nil])
+    test "extract named groups from regex in fields of a struct" do
+      df = DF.new(a: ["alice@example.com", "bob@example.com", nil])
 
-    #   df1 = DF.mutate(df, b: re_named_captures(a, ~S/(?<account>.*[^@])@(?<host>.*)$/))
+      df1 = DF.mutate(df, b: re_named_captures(a, ~S/(?<account>.*[^@])@(?<host>.*)$/))
 
-    #   assert df1.dtypes["b"] == {:struct, [{"account", :string}, {"host", :string}]}
+      assert df1.dtypes["b"] == {:struct, [{"account", :string}, {"host", :string}]}
 
-    #   assert DF.to_columns(df1, atom_keys: true) == %{
-    #            a: ["alice@example.com", "bob@example.com", nil],
-    #            b: [
-    #              %{"account" => "alice", "host" => "example.com"},
-    #              %{"account" => "bob", "host" => "example.com"},
-    #              %{"account" => nil, "host" => nil}
-    #            ]
-    #          }
-    # end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: ["alice@example.com", "bob@example.com", nil],
+               b: [
+                 %{"account" => "alice", "host" => "example.com"},
+                 %{"account" => "bob", "host" => "example.com"},
+                 %{"account" => nil, "host" => nil}
+               ]
+             }
+    end
   end
 
-  # describe "sort_by/3" do
-  #   test "raises with invalid column names", %{df: df} do
-  #     assert_raise ArgumentError,
-  #                  ~r"could not find column name \"test\"",
-  #                  fn -> DF.sort_by(df, test) end
-  #   end
-  # end
+  describe "sort_by/3" do
+    test "raises with invalid column names", %{df: df} do
+      assert_raise RuntimeError,
+                   ~r"not found: test",
+                   fn -> DF.sort_by(df, test) end
+    end
+  end
 
-  # describe "sort_with/2" do
-  #   test "with a simple df and asc order" do
-  #     df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-  #     df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"]] end)
+  describe "sort_with/2" do
+    test "with a simple df and asc order" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.sort_with(df, asc: Series.col("a"))
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 2, 3, 4, 5, 6],
-  #              b: ["a", "b", "c", "d", "e", "f"]
-  #            }
-  #   end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
 
-  #   test "with a simple df one column and without order" do
-  #     df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-  #     df1 = DF.sort_with(df, fn ldf -> ldf["a"] end)
+    test "with a simple df one column and without order" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.sort_with(df, Series.col("a"))
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 2, 3, 4, 5, 6],
-  #              b: ["a", "b", "c", "d", "e", "f"]
-  #            }
-  #   end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
 
-  #   test "with a simple df and desc order" do
-  #     df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-  #     df1 = DF.sort_with(df, fn ldf -> [desc: ldf["a"]] end)
+    test "with a simple df and desc order" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.sort_with(df, desc: Series.col("a"))
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [6, 5, 4, 3, 2, 1],
-  #              b: ["f", "e", "d", "c", "b", "a"]
-  #            }
-  #   end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [6, 5, 4, 3, 2, 1],
+               b: ["f", "e", "d", "c", "b", "a"]
+             }
+    end
 
-  #   test "with a simple df and just the lazy series" do
-  #     df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-  #     df1 = DF.sort_with(df, fn ldf -> [ldf["a"]] end)
+    test "with a simple df and just the lazy series" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.sort_with(df, Series.col("a"))
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 2, 3, 4, 5, 6],
-  #              b: ["a", "b", "c", "d", "e", "f"]
-  #            }
-  #   end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 3, 4, 5, 6],
+               b: ["a", "b", "c", "d", "e", "f"]
+             }
+    end
 
-  #   test "with a simple df and sort_by by two columns" do
-  #     df = DF.new(a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1])
-  #     df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
+    test "with a simple df and sort_by by two columns" do
+      df = DF.new(a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1])
+      df1 = DF.sort_with(df, asc: Series.col("a"), asc: Series.col("b"))
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [1, 2, 2, 3, 5, 6],
-  #              b: [1.1, 2.2, 2.5, 3.3, 5.1, 4.0]
-  #            }
-  #   end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 2, 3, 5, 6],
+               b: [1.1, 2.2, 2.5, 3.3, 5.1, 4.0]
+             }
+    end
 
-  #   test "with a simple df and window function" do
-  #     df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
-  #     df1 = DF.sort_with(df, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
+    test "with a simple df and window function" do
+      df = DF.new(a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"])
+      df1 = DF.sort_with(df, desc: Series.window_mean(Series.col("a"), 2))
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [5, 6, 3, 4, 2, 1],
-  #              b: ["e", "f", "c", "d", "b", "a"]
-  #            }
-  #   end
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [5, 6, 3, 4, 2, 1],
+               b: ["e", "f", "c", "d", "b", "a"]
+             }
+    end
 
-  #   test "with a simple df and nils" do
-  #     df = DF.new(a: [1, 2, nil, 3])
-  #     df1 = DF.sort_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :first)
+    test "with a simple df and nils" do
+      df = DF.new(a: [1, 2, nil, 3])
+      df1 = DF.sort_with(df, [asc: Series.col("a")], nils: :first)
 
-  #     assert DF.to_columns(df1, atom_keys: true) == %{
-  #              a: [nil, 1, 2, 3]
-  #            }
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [nil, 1, 2, 3]
+             }
 
-  #     df2 = DF.sort_with(df, fn ldf -> [asc: ldf["a"]] end, nils: :last)
+      df2 = DF.sort_with(df, [asc: Series.col("a")], nils: :last)
 
-  #     assert DF.to_columns(df2, atom_keys: true) == %{
-  #              a: [1, 2, 3, nil]
-  #            }
-  #   end
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 3, nil]
+             }
+    end
 
-  #   test "without a lazy series" do
-  #     df = DF.new(a: [1, 2])
+    test "without a lazy series" do
+      df = DF.new(a: [1, 2])
 
-  #     assert_raise RuntimeError, "expecting a lazy series, got: :foo", fn ->
-  #       DF.sort_with(df, fn _ldf -> [desc: :foo] end)
-  #     end
-  #   end
+      assert_raise RuntimeError, "expecting a lazy series, got: :foo", fn ->
+        DF.sort_with(df, desc: :foo)
+      end
+    end
 
-  #   test "with wrong direction" do
-  #     df = DF.new(a: [1, 2])
+    test "with wrong direction" do
+      df = DF.new(a: [1, 2])
 
-  #     message = "expecting a valid direction, which is :asc or :desc, got: :descending"
+      message = "expecting a valid direction, which is :asc or :desc, got: :descending"
 
-  #     assert_raise RuntimeError, message, fn ->
-  #       DF.sort_with(df, fn ldf -> [descending: ldf["a"]] end)
-  #     end
-  #   end
-  # end
+      assert_raise RuntimeError, message, fn ->
+        DF.sort_with(df, descending: Series.col("a"))
+      end
+    end
+  end
 
   describe "slice/2" do
     test "slice with integer indices" do

@@ -2788,7 +2788,8 @@ defmodule Explorer.DataFrame do
 
         value =
           case value do
-            %Series{data: %LazySeries{}} = series -> series
+            # %Series{data: %LazySeries{}} = series -> series
+            %Series{} = series -> series
             literal -> Series.lit(literal)
           end
 

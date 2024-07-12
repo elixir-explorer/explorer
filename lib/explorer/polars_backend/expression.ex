@@ -32,7 +32,7 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(map) when is_map(map) and not is_struct(map) do
     expr_list =
       Enum.map(map, fn {name, series} ->
-        series |> to_expr() |> Native.expr_alias(name)
+        series |> to_expr() |> Native.expr_alias(to_string(name))
       end)
 
     Native.expr_struct(expr_list)
@@ -42,6 +42,17 @@ defmodule Explorer.PolarsBackend.Expression do
 
   # TODO: remove the `:column` op in favor of `:col`.
   def to_expr(%LazySeries{op: :column, args: [col]}), do: Native.expr_col(col)
+
+  def to_expr(%LazySeries{op: :lit, args: [map]}) when is_map(map) and not is_struct(map) do
+    expr_list =
+      map
+      |> Enum.sort()
+      |> Enum.map(fn {name, series} ->
+        series |> to_expr() |> Native.expr_alias(to_string(name))
+      end)
+
+    Native.expr_struct(expr_list)
+  end
 
   def to_expr(%LazySeries{op: :lit, args: [lit]}), do: to_expr(lit)
 
@@ -98,7 +109,7 @@ defmodule Explorer.PolarsBackend.Expression do
 
   # The only argument to these functions is a list of exprs.
 
-  @ops_only_arg_is_list [:concat, :format]
+  @ops_only_arg_is_list [:concat, :format, :struct]
   for op <- @ops_only_arg_is_list do
     def to_expr(%LazySeries{op: unquote(op), args: [args]}) when is_list(args) do
       apply(Native, :"expr_#{unquote(op)}", [Enum.map(args, &to_expr/1)])
@@ -148,6 +159,7 @@ defmodule Explorer.PolarsBackend.Expression do
     :split,
     :standard_deviation,
     :strip,
+    :strftime,
     :strptime,
     :substring,
     :tail,
