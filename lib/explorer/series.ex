@@ -6193,7 +6193,7 @@ defmodule Explorer.Series do
   """
   @doc type: :float_wise
   @spec floor(Series.t()) :: Series.t()
-  def floor(%Series{dtype: dtype} = series) when K.in(dtype, [:unknown, @float_dtypes]),
+  def floor(%Series{dtype: dtype} = series) when K.in(dtype, [:unknown | @float_dtypes]),
     do: apply_series(series, :floor)
 
   def floor(%Series{dtype: dtype}), do: dtype_error("floor/1", dtype, @float_dtypes)
