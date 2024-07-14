@@ -2406,7 +2406,7 @@ defmodule Explorer.DataFrame do
   Instead, do this:
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
-      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["col2"], 1) end)
+      iex> Explorer.DataFrame.filter_with(df, Explorer.Series.greater(Explorer.Series.col("col2"), 1))
       #Explorer.DataFrame<
         Polars[2 x 2]
         col1 string ["b", "c"]
@@ -2538,7 +2538,7 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
-      iex> Explorer.DataFrame.filter_with(df, &Explorer.Series.greater(&1["col2"], 2))
+      iex> Explorer.DataFrame.filter_with(df, Explorer.Series.greater(Explorer.Series.col("col2"), 2))
       #Explorer.DataFrame<
         Polars[1 x 2]
         col1 string ["c"]
@@ -2546,7 +2546,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.DataFrame.new(col1: ["a", "b", "c"], col2: [1, 2, 3])
-      iex> Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.equal(df["col1"], "b") end)
+      iex> Explorer.DataFrame.filter_with(df, Explorer.Series.equal(Explorer.Series.col("col1"), "b"))
       #Explorer.DataFrame<
         Polars[1 x 2]
         col1 string ["b"]
@@ -2562,7 +2562,10 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.filter_with(grouped, &Explorer.Series.greater(&1["petal_length"], Explorer.Series.mean(&1["petal_length"])))
+      iex> petal_length = Explorer.Series.col("petal_length")
+      iex> Explorer.DataFrame.filter_with(grouped,
+      iex>   Explorer.Series.greater(petal_length, Explorer.Series.mean(petal_length))
+      iex> )
       #Explorer.DataFrame<
         Polars[79 x 5]
         Groups: ["species"]
@@ -2724,7 +2727,9 @@ defmodule Explorer.DataFrame do
   Here is an example of a new column that sums the value of two other columns:
 
       iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate_with(df, &[c: Explorer.Series.add(&1["a"], &1["b"])])
+      iex> Explorer.DataFrame.mutate_with(df,
+      iex>   c: Explorer.Series.add(Explorer.Series.col("a"), Explorer.Series.col("b"))
+      iex> )
       #Explorer.DataFrame<
         Polars[3 x 3]
         a s64 [4, 5, 6]
@@ -2735,7 +2740,7 @@ defmodule Explorer.DataFrame do
   You can overwrite existing columns as well:
 
       iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate_with(df, &[b: Explorer.Series.pow(&1["b"], 2)])
+      iex> Explorer.DataFrame.mutate_with(df, b: Explorer.Series.pow(Explorer.Series.col("b"), 2))
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
@@ -2745,10 +2750,11 @@ defmodule Explorer.DataFrame do
   It's possible to "reuse" a variable for different computations:
 
       iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
-      iex> Explorer.DataFrame.mutate_with(df, fn ldf ->
-      iex>   c = Explorer.Series.add(ldf["a"], ldf["b"])
-      iex>   [c: c, d: Explorer.Series.window_sum(c, 2)]
-      iex> end)
+      iex> c = Explorer.Series.add(Explorer.Series.col("a"), Explorer.Series.col("b"))
+      iex> Explorer.DataFrame.mutate_with(df,
+      iex>   c: c,
+      iex>   d: Explorer.Series.window_sum(c, 2)
+      iex> )
       #Explorer.DataFrame<
         Polars[3 x 4]
         a s64 [4, 5, 6]
@@ -2765,7 +2771,7 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.DataFrame.new(id: ["a", "a", "b"], b: [1, 2, 3])
       iex> grouped = Explorer.DataFrame.group_by(df, :id)
-      iex> Explorer.DataFrame.mutate_with(grouped, &[count: Explorer.Series.count(&1["b"])])
+      iex> Explorer.DataFrame.mutate_with(grouped, count: Explorer.Series.count(Explorer.Series.col("b")))
       #Explorer.DataFrame<
         Polars[3 x 3]
         Groups: ["id"]
@@ -3164,7 +3170,7 @@ defmodule Explorer.DataFrame do
   A single column name will sort ascending by that column:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.sort_with(df, &(&1["a"]))
+      iex> Explorer.DataFrame.sort_with(df, Explorer.Series.col("a"))
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
@@ -3174,7 +3180,7 @@ defmodule Explorer.DataFrame do
   You can also sort descending:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", "a"], b: [1, 2, 3])
-      iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"]])
+      iex> Explorer.DataFrame.sort_with(df, desc: Explorer.Series.col("a"))
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["c", "b", "a"]
@@ -3184,7 +3190,7 @@ defmodule Explorer.DataFrame do
   You can specify how `nil`s are sorted:
 
       iex> df = Explorer.DataFrame.new(a: ["b", "c", nil, "a"])
-      iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"]], nils: :first)
+      iex> Explorer.DataFrame.sort_with(df, [desc: Explorer.Series.col("a")], nils: :first)
       #Explorer.DataFrame<
         Polars[4 x 1]
         a string [nil, "c", "b", "a"]
@@ -3193,7 +3199,10 @@ defmodule Explorer.DataFrame do
   Sorting by more than one column sorts them in the order they are entered:
 
       iex> df = Explorer.DataFrame.new(a: [3, 1, 3], b: [2, 1, 3])
-      iex> Explorer.DataFrame.sort_with(df, &[desc: &1["a"], asc: &1["b"]])
+      iex> Explorer.DataFrame.sort_with(df,
+      iex>   desc: Explorer.Series.col("a"),
+      iex>   asc: Explorer.Series.col("b")
+      iex> )
       #Explorer.DataFrame<
         Polars[3 x 2]
         a s64 [3, 3, 1]
@@ -3204,7 +3213,10 @@ defmodule Explorer.DataFrame do
 
       iex> df = Explorer.Datasets.iris()
       iex> grouped = Explorer.DataFrame.group_by(df, "species")
-      iex> Explorer.DataFrame.sort_with(grouped, &[desc: &1["species"], asc: &1["sepal_width"]])
+      iex> Explorer.DataFrame.sort_with(grouped,
+      iex>   desc: Explorer.Series.col("species"),
+      iex>   asc: Explorer.Series.col("sepal_width")
+      iex> )
       #Explorer.DataFrame<
         Polars[150 x 5]
         Groups: ["species"]
@@ -5367,7 +5379,10 @@ defmodule Explorer.DataFrame do
 
       iex> alias Explorer.{DataFrame, Series}
       iex> df = Explorer.Datasets.fossil_fuels() |> DataFrame.group_by("year")
-      iex> DataFrame.summarise_with(df, &[total_max: Series.max(&1["total"]), countries: Series.n_distinct(&1["country"])])
+      iex> DataFrame.summarise_with(df,
+      iex>   total_max: Series.max(Series.col("total")),
+      iex>   countries: Series.n_distinct(Series.col("country"))
+      iex> )
       #Explorer.DataFrame<
         Polars[5 x 3]
         year s64 [2010, 2011, 2012, 2013, 2014]
@@ -5377,7 +5392,10 @@ defmodule Explorer.DataFrame do
 
       iex> alias Explorer.{DataFrame, Series}
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> DataFrame.summarise_with(df, &[total_max: Series.max(&1["total"]), countries: Series.n_distinct(&1["country"])])
+      iex> DataFrame.summarise_with(df,
+      iex>   total_max: Series.max(Series.col("total")),
+      iex>   countries: Series.n_distinct(Series.col("country"))
+      iex> )
       #Explorer.DataFrame<
         Polars[1 x 2]
         total_max s64 [2806634]
