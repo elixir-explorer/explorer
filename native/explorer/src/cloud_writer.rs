@@ -95,7 +95,6 @@ mod tests {
 
     use polars::df;
     use polars::prelude::DataFrame;
-    use polars::prelude::NamedFrom;
 
     fn example_dataframe() -> DataFrame {
         df!(

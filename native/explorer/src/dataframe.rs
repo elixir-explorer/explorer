@@ -264,7 +264,7 @@ pub fn df_sort_by(
         .with_maintain_order(maintain_order)
         .with_multithreaded(multithreaded)
         .with_nulls_last(nulls_last)
-        .with_order_descendings(reverse);
+        .with_order_descending_multi(reverse);
 
     let new_df = if groups.is_empty() {
         // Note: we cannot use either df.sort or df.sort_with_options.
@@ -314,7 +314,7 @@ pub fn df_sort_with(
         .with_maintain_order(maintain_order)
         // .with_multithreaded(multithreaded)
         .with_nulls_last(nulls_last)
-        .with_order_descendings(directions);
+        .with_order_descending_multi(directions);
 
     let new_df = if groups.is_empty() {
         df.lazy().sort_by_exprs(exprs, sort_options).collect()?
@@ -428,7 +428,7 @@ pub fn df_pivot_wider(
     let mut new_df = pivot_stable(
         &df,
         &temp_id_names,
-        [pivot_column],
+        Some([pivot_column]),
         Some(values_column),
         false,
         Some(PivotAgg::First),

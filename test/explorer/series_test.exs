@@ -2290,7 +2290,7 @@ defmodule Explorer.SeriesTest do
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:f, 64}
+        assert result.dtype == {:s, 64}
         assert Series.to_list(result) == [1, 4, 3]
       end
     end
@@ -2315,8 +2315,8 @@ defmodule Explorer.SeriesTest do
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:f, 64}
-        assert Series.to_list(result) === [1.0, 4.0, 3.0]
+        assert result.dtype == {:s, 64}
+        assert Series.to_list(result) === [1, 4, 3]
       end
     end
 
@@ -2392,7 +2392,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:f, 64}
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2402,7 +2402,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:f, 64}
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2412,7 +2412,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:f, 64}
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2421,7 +2421,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2)
 
-      assert result.dtype == {:f, 64}
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, 4, 9]
     end
 

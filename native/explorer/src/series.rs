@@ -70,29 +70,32 @@ pub fn s_mask(series: ExSeries, filter: ExSeries) -> Result<ExSeries, ExplorerEr
 pub fn s_add(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
     let s1 = other.clone_inner();
-    Ok(ExSeries::new(s + s1))
+    let result = s + s1;
+    Ok(ExSeries::new(result?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_subtract(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let left = lhs.clone_inner();
     let right = rhs.clone_inner();
-
-    Ok(ExSeries::new(left - right))
+    let result = left - right;
+    Ok(ExSeries::new(result?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_multiply(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
     let s1 = other.clone_inner();
-    Ok(ExSeries::new(s * s1))
+    let result = s * s1;
+    Ok(ExSeries::new(result?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_divide(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner().cast(&DataType::Float64)?;
     let s1 = other.clone_inner().cast(&DataType::Float64)?;
-    Ok(ExSeries::new(s / s1))
+    let result = s / s1;
+    Ok(ExSeries::new(result?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -106,9 +109,9 @@ pub fn s_remainder(data: ExSeries, other: ExSeries) -> Result<ExSeries, Explorer
     let s1 = other.clone_inner();
     let div = checked_div(data, other)?;
     let mult = s1 * div;
-    let result = s - mult;
+    let result = s - mult?;
 
-    Ok(ExSeries::new(result))
+    Ok(ExSeries::new(result?))
 }
 
 // There is a bug in Polars where broadcast is not applied to checked_div
@@ -193,7 +196,7 @@ pub fn s_unordered_distinct(series: ExSeries) -> Result<ExSeries, ExplorerError>
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_frequencies(series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let df = series.value_counts(true, true)?;
+    let df = series.value_counts(true, true, "counts".to_string(), false)?;
     Ok(ExDataFrame::new(df))
 }
 
@@ -1007,16 +1010,13 @@ pub fn s_quantile<'a>(
                 .unwrap()
                 .encode(env)),
         },
-        _ => todo!(),
-        // _ =>
-        // s.agg_quantile(quantile, strategy)
-
-        // encoding::term_from_value(
-        //     s.quantile_as_series(quantile, strategy)?
-        //         .cast(dtype)?
-        //         .get(0)?,
-        //     env,
-        // ),
+        _ => encoding::term_from_value(
+            s.quantile_reduce(quantile, strategy)?
+                .into_series("quantile")
+                .cast(dtype)?
+                .get(0)?,
+            env,
+        ),
     }
 }
 

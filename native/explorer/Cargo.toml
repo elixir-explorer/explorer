@@ -38,7 +38,7 @@ object_store = { version = "0.9", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.41"
+version = "0.41.3"
 default-features = false
 features = [
   "abs",
@@ -87,7 +87,7 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.41"
+version = "0.41.3"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]

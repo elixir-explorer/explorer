@@ -2778,7 +2778,7 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[3 x 2]
         a string ["a", "b", "c"]
-        b f64 [1.0, 4.0, 9.0]
+        b s64 [1, 4, 9]
       >
 
   It's possible to "reuse" a variable for different computations:

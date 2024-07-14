@@ -63,7 +63,7 @@ pub fn lf_tail(
 
 #[rustler::nif]
 pub fn lf_names(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
-    let lf = data.clone_inner();
+    let mut lf = data.clone_inner();
     let names = lf
         .schema()?
         .iter_names()
@@ -149,7 +149,7 @@ pub fn lf_sort_with(
     let sort_options = SortMultipleOptions::new()
         .with_nulls_last(nulls_last)
         .with_maintain_order(maintain_order)
-        .with_order_descendings(directions);
+        .with_order_descending_multi(directions);
 
     let ldf = data.clone_inner().sort_by_exprs(exprs, sort_options);
 
@@ -166,7 +166,7 @@ pub fn lf_grouped_sort_with(
     let sort_options = SortMultipleOptions::new()
         // .with_nulls_last(nulls_last)
         // .with_maintain_order(maintain_order)
-        .with_order_descendings(directions);
+        .with_order_descending_multi(directions);
     // For grouped lazy frames, we need to use the `#sort_by` method that is
     // less powerful, but can be used with `over`.
     // See: https://docs.pola.rs/user-guide/expressions/window/#operations-per-group
@@ -265,14 +265,14 @@ pub fn lf_pivot_longer(
     values_to: String,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
-    let melt_opts = MeltArgs {
-        id_vars: to_smart_strings(id_vars),
-        value_vars: to_smart_strings(value_vars),
+    let unpivot_opts = UnpivotArgs {
+        on: to_smart_strings(id_vars),
+        index: to_smart_strings(value_vars),
         variable_name: Some(names_to.into()),
         value_name: Some(values_to.into()),
         streamable: true,
     };
-    let new_df = ldf.melt(melt_opts);
+    let new_df = ldf.unpivot(unpivot_opts);
     Ok(ExLazyFrame::new(new_df))
 }
 
@@ -288,7 +288,7 @@ pub fn lf_join(
     let how = match how {
         "left" => JoinType::Left,
         "inner" => JoinType::Inner,
-        "outer" => JoinType::Outer,
+        "outer" => JoinType::Full,
         "cross" => JoinType::Cross,
         _ => {
             return Err(ExplorerError::Other(format!(
@@ -329,7 +329,7 @@ pub fn lf_concat_columns(ldfs: Vec<ExLazyFrame>) -> Result<ExLazyFrame, Explorer
         .iter()
         .enumerate()
         .map(|(idx, ex_ldf)| {
-            let ldf = ex_ldf.clone_inner();
+            let mut ldf = ex_ldf.clone_inner();
             let names: Vec<String> = ldf
                 .schema()
                 .expect("should be able to get schema")

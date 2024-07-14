@@ -52,7 +52,7 @@ pub fn df_from_csv(
         .with_skip_rows_after_header(skip_rows_after_header)
         .with_projection(projection.map(Arc::new))
         .with_rechunk(do_rechunk)
-        .with_columns(column_names.map(Arc::new))
+        .with_columns(column_names.map(Arc::from))
         .with_schema_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
         .with_parse_options(
             CsvParseOptions::default()
@@ -146,7 +146,7 @@ pub fn df_load_csv(
     delimiter_as_byte: u8,
     do_rechunk: bool,
     column_names: Option<Vec<String>>,
-    dtypes: Vec<(&str, ExSeriesDtype)>,
+    dtypes: Option<Vec<(&str, ExSeriesDtype)>>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,
@@ -159,16 +159,21 @@ pub fn df_load_csv(
 
     let cursor = Cursor::new(binary.as_slice());
 
-    let dataframe = CsvReadOptions::default()
+    let read_options = match dtypes {
+        Some(val) => CsvReadOptions::default().with_schema(Some(schema_from_dtypes_pairs(val)?)),
+        None => CsvReadOptions::default(),
+    };
+
+    let dataframe = read_options
         .with_has_header(has_header)
         .with_infer_schema_length(infer_schema_length)
         .with_n_rows(stop_after_n_rows)
-        .with_columns(column_names.map(Arc::new))
+        .with_columns(column_names.map(Arc::from))
         .with_skip_rows(skip_rows)
         .with_skip_rows_after_header(skip_rows_after_header)
         .with_projection(projection.map(Arc::new))
         .with_rechunk(do_rechunk)
-        .with_schema(Some(schema_from_dtypes_pairs(dtypes)?))
+        //.with_schema(Some(schema_from_dtypes_pairs(dtypes)?))
         .with_parse_options(
             CsvParseOptions::default()
                 .with_separator(delimiter_as_byte)
@@ -519,7 +524,7 @@ pub fn df_from_ndjson(
     let reader = JsonReader::new(buf_reader)
         .with_json_format(JsonFormat::JsonLines)
         .with_batch_size(batch_size)
-        .infer_schema_len(infer_schema_length);
+        .infer_schema_len(infer_schema_length.and_then(NonZeroUsize::new));
 
     Ok(ExDataFrame::new(reader.finish()?))
 }
@@ -576,7 +581,7 @@ pub fn df_load_ndjson(
     let reader = JsonReader::new(cursor)
         .with_json_format(JsonFormat::JsonLines)
         .with_batch_size(batch_size)
-        .infer_schema_len(infer_schema_length);
+        .infer_schema_len(infer_schema_length.and_then(NonZeroUsize::new));
 
     Ok(ExDataFrame::new(reader.finish()?))
 }

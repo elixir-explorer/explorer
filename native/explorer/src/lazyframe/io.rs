@@ -81,14 +81,14 @@ pub fn lf_to_parquet(
     if streaming {
         let options = ParquetWriteOptions {
             compression,
-            statistics: false,
+            statistics: StatisticsOptions::empty(),
             row_group_size: None,
             data_pagesize_limit: None,
             maintain_order: false,
         };
 
         lf.with_comm_subplan_elim(false)
-            .sink_parquet(filename.into(), options)?;
+            .sink_parquet(filename, options)?;
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -117,7 +117,7 @@ pub fn lf_to_parquet_cloud(
 
     let options = ParquetWriteOptions {
         compression,
-        statistics: false,
+        statistics: StatisticsOptions::empty(),
         row_group_size: None,
         data_pagesize_limit: None,
         maintain_order: false,
@@ -172,7 +172,7 @@ pub fn lf_to_ipc(
             maintain_order: false,
         };
         lf.with_comm_subplan_elim(false)
-            .sink_ipc(filename.into(), options)?;
+            .sink_ipc(filename, options)?;
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -248,7 +248,7 @@ pub fn lf_to_csv(
         };
 
         lf.with_comm_subplan_elim(false)
-            .sink_csv(filename.into(), options)?;
+            .sink_csv(filename, options)?;
         Ok(())
     } else {
         let df = lf.collect()?;
@@ -274,7 +274,7 @@ pub fn lf_from_ndjson(
         "\"batch_size\" expected to be non zero.".to_string(),
     ))?;
     let lf = LazyJsonLineReader::new(filename)
-        .with_infer_schema_length(infer_schema_length)
+        .with_infer_schema_length(infer_schema_length.and_then(NonZeroUsize::new))
         .with_batch_size(Some(batch_size))
         .finish()?;
 
