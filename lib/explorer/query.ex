@@ -264,7 +264,7 @@ defmodule Explorer.Query do
 
   is equivalent to
 
-      Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["nums"], 2) end)
+      Explorer.DataFrame.filter_with(df, Explorer.Series.greater(Explorer.Series.col("nums"), 2))
 
   This means that, whenever you want to generate queries programatically,
   you can fallback to the regular `_with` APIs.
@@ -305,9 +305,7 @@ defmodule Explorer.Query do
   and friends to convert queries into anonymous functions.
   See the moduledoc for more information.
   """
-  defmacro query(expression) do
-    df = df_var()
-
+  defmacro query(df, expression) do
     quote do
       unquote(traverse_root(expression, df))
     end
@@ -322,22 +320,28 @@ defmodule Explorer.Query do
     {args, known_vars} =
       Enum.map_reduce(args, %{}, fn
         {:<-, meta, [pattern, generator]}, acc ->
-          generator = traverse_for(generator, df, acc)
+          generator = traverse_for(generator, acc)
           {{:<-, meta, [pattern, generator]}, collect_pattern_vars(pattern, acc)}
 
         other, acc ->
-          {traverse_for(other, df, acc), acc}
+          {traverse_for(other, acc), acc}
       end)
 
-    {query, vars} =
-      traverse(block, [], %{df: df, known_vars: known_vars, collect_pins_and_vars: true})
-
+    {query, vars} = traverse(block, [], %{known_vars: known_vars, collect_pins_and_vars: true})
     block = unquote_query(query, vars)
+
+    across_ast = {:., [], [{:__aliases__, [alias: false], [:Explorer, :Query]}, :across]}
+
+    args =
+      Macro.prewalk(args, fn
+        {:across, meta, []} -> {across_ast, meta, [df]}
+        {:across, meta, [selector]} -> {across_ast, meta, [df, selector]}
+        node -> node
+      end)
 
     for_comprehension = {:for, meta, args ++ [Keyword.put(opts, :do, block)]}
 
     quote do
-      import Explorer.Query, only: [across: 0, across: 1]
       unquote(for_comprehension)
     end
   end
@@ -454,10 +458,8 @@ defmodule Explorer.Query do
   defp special_form_defines_var?(:with, [_ | _]), do: true
   defp special_form_defines_var?(_, _), do: false
 
-  defp traverse_for(expr, _df, known_vars) do
-    {expr, []} =
-      traverse(expr, [], %{known_vars: known_vars, collect_pins_and_vars: false})
-
+  defp traverse_for(expr, known_vars) do
+    {expr, []} = traverse(expr, [], %{known_vars: known_vars, collect_pins_and_vars: false})
     expr
   end
 
@@ -607,7 +609,8 @@ defmodule Explorer.Query do
   @error_message "the string concatenation operator (<>) inside Explorer.Query expects either " <>
                    "an Elixir string or a Series with :string dtype, got: "
 
-  defp validate_concatenation([%Explorer.Series{dtype: :string} | parts], _all_binary?) do
+  defp validate_concatenation([%Explorer.Series{dtype: dtype} | parts], _all_binary?)
+       when dtype in [:string, :unknown] do
     validate_concatenation(parts, false)
   end
 
@@ -693,35 +696,15 @@ defmodule Explorer.Query do
     do: Explorer.Backend.LazySeries.from_list([val], Explorer.Shared.dtype_from_list!([val]))
 
   @doc """
-  Accesses all columns in the dataframe.
-
-  This is the equivalent to `across(..)`.
-
-  See the module docs for more information.
-  """
-  defmacro across() do
-    quote do
-      Explorer.Query.__across__(unquote(df_var()), ..)
-    end
-  end
-
-  @doc """
   Accesses the columns given by `selector` in the dataframe.
 
   `across/1` is used as the generator inside for-comprehensions.
 
   See the module docs for more information.
   """
-  defmacro across(selector) do
-    quote do
-      Explorer.Query.__across__(unquote(df_var()), unquote(selector))
-    end
+  def across(df, selector \\ ..) do
+    df
+    |> Explorer.Shared.to_existing_columns(selector)
+    |> Enum.map(&%{Explorer.DataFrame.pull(df, &1) | name: &1})
   end
-
-  @doc false
-  def __across__(df, selector) do
-    Explorer.Shared.to_existing_columns(df, selector)
-  end
-
-  defp df_var(), do: quote(do: var!(df, Explorer.Query))
 end

@@ -2522,7 +2522,11 @@ defmodule Explorer.DataFrame do
   defmacro filter(df, query) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.filter_with(unquote(df), Explorer.Query.new(unquote(query)))
+
+      Explorer.DataFrame.filter_with(
+        unquote(df),
+        Explorer.Query.query(unquote(df), unquote(query))
+      )
     end
   end
 
@@ -2706,7 +2710,11 @@ defmodule Explorer.DataFrame do
   defmacro mutate(df, mutations) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.mutate_with(unquote(df), Explorer.Query.query(unquote(mutations)))
+
+      Explorer.DataFrame.mutate_with(
+        unquote(df),
+        Explorer.Query.query(unquote(df), unquote(mutations))
+      )
     end
   end
 
@@ -5361,7 +5369,11 @@ defmodule Explorer.DataFrame do
   defmacro summarise(df, query) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.summarise_with(unquote(df), Explorer.Query.new(unquote(query)))
+
+      Explorer.DataFrame.summarise_with(
+        unquote(df),
+        Explorer.Query.query(unquote(df), unquote(query))
+      )
     end
   end
 

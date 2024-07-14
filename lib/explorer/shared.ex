@@ -212,7 +212,9 @@ defmodule Explorer.Shared do
     Enum.filter(names, fn name -> callback.(name, dtypes[name]) end)
   end
 
-  def to_existing_columns(_, other, _raise?) do
+  def to_existing_columns(df, other, _raise?) do
+    df |> IO.inspect()
+
     raise ArgumentError, """
     invalid columns specification. Columns may be specified as one of:
 

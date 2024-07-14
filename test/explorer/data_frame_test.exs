@@ -6,7 +6,7 @@ defmodule Explorer.DataFrameTest do
 
   # Doctests assume the module has been required
   require Explorer.DataFrame
-  # doctest Explorer.DataFrame
+  doctest Explorer.DataFrame
 
   import ExUnit.CaptureIO
   alias Explorer.DataFrame, as: DF

@@ -6661,6 +6661,8 @@ defmodule Explorer.Series do
   @doc type: :struct_wise
   @spec field(Series.t(), String.t() | atom()) :: Series.t()
   def field(%Series{dtype: dtype} = series, name) when K.or(is_binary(name), is_atom(name)) do
+    name = to_string(name)
+
     case dtype do
       {:struct, dtypes} ->
         unless List.keymember?(dtypes, name, 0) do
