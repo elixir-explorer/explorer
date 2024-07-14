@@ -300,14 +300,24 @@ pub fn lf_join(
     let ldf = data.clone_inner();
     let ldf1 = other.clone_inner();
 
-    let new_ldf = ldf
-        .join_builder()
-        .with(ldf1)
-        .how(how)
-        .left_on(ex_expr_to_exprs(left_on))
-        .right_on(ex_expr_to_exprs(right_on))
-        .suffix(suffix)
-        .finish();
+    let new_ldf = match how {
+        // Cross-joins no longer accept keys.
+        // https://github.com/pola-rs/polars/pull/17305
+        JoinType::Cross => ldf
+            .join_builder()
+            .with(ldf1)
+            .how(JoinType::Cross)
+            .suffix(suffix)
+            .finish(),
+        _ => ldf
+            .join_builder()
+            .with(ldf1)
+            .how(how)
+            .left_on(ex_expr_to_exprs(left_on))
+            .right_on(ex_expr_to_exprs(right_on))
+            .suffix(suffix)
+            .finish(),
+    };
 
     Ok(ExLazyFrame::new(new_ldf))
 }
