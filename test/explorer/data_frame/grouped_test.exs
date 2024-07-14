@@ -395,7 +395,6 @@ defmodule Explorer.DataFrame.GroupedTest do
         df
         |> DF.group_by(["year"])
         |> DF.summarise_with(add: Series.add(Series.col("solid_fuel"), 50))
-        |> dbg()
       end
     end
 
