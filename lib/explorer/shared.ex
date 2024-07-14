@@ -259,26 +259,6 @@ defmodule Explorer.Shared do
   end
 
   @doc """
-  Applies a function with args using the implementation of a dataframe or series.
-  """
-  def apply_impl(df_or_series_or_list, fun, args \\ []) do
-    impl = impl!(df_or_series_or_list)
-    apply(impl, fun, [df_or_series_or_list | args])
-  end
-
-  defp impl!(%{data: %struct{}}), do: struct
-
-  defp impl!([%{data: %first_struct{}} | _] = dfs) when is_list(dfs),
-    do: Enum.reduce(dfs, first_struct, fn %{data: %struct{}}, acc -> pick_impl(acc, struct) end)
-
-  defp pick_impl(struct, struct), do: struct
-
-  defp pick_impl(struct1, struct2) do
-    raise "cannot invoke Explorer function because it relies on two incompatible implementations: " <>
-            "#{inspect(struct1)} and #{inspect(struct2)}"
-  end
-
-  @doc """
   Gets the `dtype` of a list or raise error if not possible.
   """
   def dtype_from_list!(list) do
@@ -600,4 +580,158 @@ defmodule Explorer.Shared do
 
     [descending?, maintain_order?, multithreaded?, nulls_last?]
   end
+
+  ## Apply
+
+  @doc """
+  Initializes a series or a dataframe with node placement.
+  """
+  def apply_init(impl, fun, args, opts) do
+    if node = opts[:node] do
+      Explorer.Remote.apply(node, impl, fun, [], fn _ -> args end, true)
+    else
+      apply(impl, fun, args)
+    end
+  end
+
+  @doc """
+  Applies a function with args using the implementation of a dataframe or series.
+  """
+  def apply_dataframe(dfs_or_df, fun, args \\ [], place? \\ true) do
+    {df_nodes, {impl, remote}} =
+      dfs_or_df
+      |> List.wrap()
+      |> Enum.map_reduce({nil, nil}, fn %{data: %impl{}} = df, {acc_impl, acc_remote} ->
+        {node, remote} = remote_info(df, impl)
+        {{df, node}, {pick_df_impl(acc_impl, impl), pick_remote(acc_remote, remote)}}
+      end)
+
+    if remote do
+      callback = if is_list(dfs_or_df), do: &[&1 | args], else: &[hd(&1) | args]
+      Explorer.Remote.apply(remote, impl, fun, df_nodes, callback, place?)
+    else
+      apply(impl, fun, [dfs_or_df | args])
+    end
+  end
+
+  defp pick_df_impl(nil, struct), do: struct
+  defp pick_df_impl(struct, struct), do: struct
+
+  defp pick_df_impl(struct1, struct2) do
+    raise "cannot invoke Explorer.DataFrame function because it relies on two incompatible implementations: " <>
+            "#{inspect(struct1)} and #{inspect(struct2)}"
+  end
+
+  @doc """
+  Applies a function to a series.
+  """
+  def apply_series(series, fun, args \\ [], place? \\ true) do
+    apply_series_impl!([series], fun, &(&1 ++ args), place?)
+  end
+
+  @doc """
+  Applies a function to a list of series.
+
+  The list is typically static and it is passed as arguments.
+  """
+  def apply_series_list(fun, series_or_scalars) when is_list(series_or_scalars) do
+    apply_series_impl!(series_or_scalars, fun, & &1, true)
+  end
+
+  @doc """
+  Applies a function to a list of unknown size of series.
+
+  The list is passed as a varargs to the backend.
+  """
+  def apply_series_varargs(fun, series_or_scalars) when is_list(series_or_scalars) do
+    apply_series_impl!(series_or_scalars, fun, &[&1], true)
+  end
+
+  defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback, place?) do
+    {series_nodes, {impl, remote, transfer?}} =
+      Enum.map_reduce(series_or_scalars, {nil, nil, false}, fn
+        %{data: %impl{}} = series, {acc_impl, acc_remote, acc_transfer?} ->
+          {node, remote} = remote_info(series, impl)
+
+          {{series, node},
+           pick_series(acc_impl, impl, acc_remote, remote, acc_transfer? or remote != nil)}
+
+        scalar, acc ->
+          {{scalar, nil}, acc}
+      end)
+
+    if is_nil(impl) do
+      raise ArgumentError,
+            "expected a series as argument for #{fun}, got: #{inspect(series_or_scalars)}" <>
+              maybe_bad_column_hint(series_or_scalars)
+    end
+
+    if transfer? do
+      Explorer.Remote.apply(remote || node(), impl, fun, series_nodes, args_callback, place?)
+    else
+      apply(impl, fun, args_callback.(series_or_scalars))
+    end
+  end
+
+  # The lazy series alwaus wins the remote, since we need to transfer
+  # it to the dataframe that started the lazy series.
+  defp pick_series(Explorer.Backend.LazySeries, _, acc_remote, _, transfer?),
+    do: {Explorer.Backend.LazySeries, acc_remote, transfer?}
+
+  defp pick_series(_, Explorer.Backend.LazySeries, _, remote, transfer?),
+    do: {Explorer.Backend.LazySeries, remote, transfer?}
+
+  defp pick_series(acc_impl, impl, acc_remote, remote, transfer?),
+    do: {pick_series_impl(acc_impl, impl), pick_remote(acc_remote, remote), transfer?}
+
+  defp pick_series_impl(nil, impl), do: impl
+  defp pick_series_impl(impl, impl), do: impl
+
+  defp pick_series_impl(acc_impl, impl) do
+    raise "cannot invoke Explorer function because it relies on two incompatible series: " <>
+            "#{inspect(acc_impl)} and #{inspect(impl)}"
+  end
+
+  @doc """
+  A hint in case there is a bad column from a query.
+  """
+  def maybe_bad_column_hint(values) do
+    atom = Enum.find(values, &is_atom(&1))
+
+    if Kernel.and(atom != nil, String.starts_with?(Atom.to_string(atom), "Elixir.")) do
+      "\n\nHINT: we have noticed that one of the values is the atom #{inspect(atom)}. " <>
+        "If you are inside Explorer.Query and you want to access a column starting in uppercase, " <>
+        "you must write instead: col(\"#{inspect(atom)}\")"
+    else
+      ""
+    end
+  end
+
+  # There is remote information and it is GCed by the current node.
+  # Which means that it resides on the remote node given by remote_pid.
+  defp remote_info(%{remote: {local_gc, remote_pid, _remote_ref}}, _impl)
+       when node(local_gc) == node(),
+       do: {node(remote_pid), remote_pid}
+
+  # There is remote information but it is actually local. Treat it as one.
+  defp remote_info(%{remote: {_local_gc, remote_pid, _remote_ref}}, _impl)
+       when node(remote_pid) == node(),
+       do: {node(), nil}
+
+  # We don't know the remote information, let's ask the backend
+  defp remote_info(df_or_series, impl) do
+    case impl.owner_reference(df_or_series) do
+      remote_ref when is_reference(remote_ref) and node(remote_ref) != node() ->
+        {node(remote_ref), node(remote_ref)}
+
+      _ ->
+        {node(), nil}
+    end
+  end
+
+  # We need to pick a remote, which one does not matter.
+  # The important is to keep the PID reference around, if there is one.
+  defp pick_remote(acc_remote, _remote) when is_pid(acc_remote), do: acc_remote
+  defp pick_remote(acc_remote, nil), do: acc_remote
+  defp pick_remote(_acc_remote, remote), do: remote
 end

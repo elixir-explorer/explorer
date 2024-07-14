@@ -14,6 +14,7 @@ defmodule Explorer.MixProject do
         "Series (one-dimensional) and dataframes (two-dimensional) for fast data exploration in Elixir",
       version: @version,
       elixir: "~> 1.14",
+      elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
       deps: deps(),
       docs: docs(),
@@ -30,9 +31,13 @@ defmodule Explorer.MixProject do
   def application do
     [
       extra_applications: [:logger, :inets, :ssl],
+      mod: {Explorer.Application, []},
       env: [default_backend: Explorer.PolarsBackend]
     ]
   end
+
+  defp elixirc_paths(:test), do: ~w(lib test/support)
+  defp elixirc_paths(_), do: ~w(lib)
 
   defp deps do
     [

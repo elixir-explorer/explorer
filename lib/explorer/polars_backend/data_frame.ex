@@ -283,7 +283,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
     # We first read using a lazy dataframe, then we collect.
     with {:ok, ldf} <- Native.lf_from_parquet_cloud(entry, max_rows, columns),
-         {:ok, df} <- Native.lf_collect(ldf) do
+         {:ok, df} <- Native.lf_compute(ldf) do
       {:ok, Shared.create_dataframe(df)}
     end
   end
@@ -511,7 +511,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def collect(df), do: df
+  def compute(df), do: df
 
   @impl true
   def from_tabular(tabular, dtypes) do
@@ -597,6 +597,17 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> Stream.flat_map(&to_rows(&1, atom_keys?))
   end
 
+  # Ownership
+
+  @impl true
+  def owner_reference(df), do: df.data.resource
+
+  @impl true
+  def owner_export(df), do: dump_ipc(df, {nil, nil})
+
+  @impl true
+  def owner_import(term), do: load_ipc(term, nil)
+
   # Introspection
 
   @impl true
@@ -609,7 +620,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.head(rows)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -617,7 +628,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.tail(rows)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -625,7 +636,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.select(out_df)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -637,7 +648,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.filter_with(out_df, lseries)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -645,12 +656,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.mutate_with(out_df, column_pairs)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
   def put(%DataFrame{} = df, %DataFrame{} = out_df, new_column_name, series) do
-    series = PolarsSeries.rename(series, new_column_name)
+    series = PolarsSeries.rename(Explorer.Series.collect(series), new_column_name)
 
     Shared.apply_dataframe(df, out_df, :df_put_column, [series.data])
   end
@@ -707,7 +718,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.distinct(out_df, columns)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -715,7 +726,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.rename(out_df, pairs)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -778,7 +789,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.drop_nil(columns)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -786,7 +797,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.pivot_longer(out_df, cols_to_pivot, cols_to_keep, names_to, values_to)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -813,7 +824,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.explode(out_df, columns)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -821,30 +832,30 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.unnest(out_df, columns)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
   def correlation(df, out_df, ddof, method) do
-    pairwised(df, out_df, fn left, right ->
+    pairwise(df, out_df, fn left, right ->
       PolarsSeries.correlation(left, right, ddof, method)
     end)
   end
 
   @impl true
   def covariance(df, out_df, ddof) do
-    pairwised(df, out_df, fn left, right -> PolarsSeries.covariance(left, right, ddof) end)
+    pairwise(df, out_df, fn left, right -> PolarsSeries.covariance(left, right, ddof) end)
   end
 
   # Two or more table verbs
 
   @impl true
-  def join(left, right, out_df, on, how) do
+  def join([left, right], out_df, on, how) do
     left = lazy(left)
     right = lazy(right)
 
-    ldf = LazyFrame.join(left, right, out_df, on, how)
-    LazyFrame.collect(ldf)
+    ldf = LazyFrame.join([left, right], out_df, on, how)
+    LazyFrame.compute(ldf)
   end
 
   @impl true
@@ -853,18 +864,24 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     lazy_dfs
     |> LazyFrame.concat_rows(out_df)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
   def concat_columns([head | tail], out_df) do
     n_rows = n_rows(head)
 
-    if Enum.all?(tail, &(n_rows(&1) == n_rows)) do
-      Shared.apply_dataframe(head, out_df, :df_concat_columns, [Enum.map(tail, & &1.data)])
-    else
-      raise ArgumentError, "all dataframes must have the same number of rows"
-    end
+    tail =
+      Enum.map(tail, fn df ->
+        if n_rows(df) != n_rows do
+          raise ArgumentError, "all dataframes must have the same number of rows"
+        end
+
+        df.data
+      end)
+
+    out_data = Shared.apply(:df_concat_columns, [[head.data | tail]])
+    %{out_df | data: out_data}
   end
 
   # Groups
@@ -874,18 +891,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.summarise_with(out_df, column_pairs)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   # Inspect
 
   @impl true
-  def inspect(df, opts) when node(df.data.resource) != node() do
-    Explorer.Backend.DataFrame.inspect(df, "Polars (node: #{node(df.data.resource)})", nil, opts,
-      elide_columns: true
-    )
-  end
-
   def inspect(df, opts) do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
   end
@@ -897,7 +908,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.sql(sql_string, table_name)
-    |> LazyFrame.collect()
+    |> LazyFrame.compute()
   end
 
   @impl true
@@ -910,10 +921,10 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   # helpers
 
-  defp pairwised(df, out_df, operation) do
+  defp pairwise(df, out_df, operation) do
     [column_name | cols] = out_df.names
 
-    pairwised_results =
+    pairwise_results =
       Enum.map(cols, fn left ->
         corr_series =
           cols
@@ -926,6 +937,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     names_series = cols |> Shared.from_list(:string) |> Shared.create_series()
 
-    from_series([{column_name, names_series} | pairwised_results])
+    from_series([{column_name, names_series} | pairwise_results])
   end
 end

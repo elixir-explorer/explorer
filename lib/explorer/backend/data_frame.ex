@@ -152,17 +152,22 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback lazy() :: module()
   @callback lazy(df) :: df
-  @callback collect(df) :: df
+  @callback compute(df) :: df
   @callback from_tabular(Table.Reader.t(), dtypes) :: df
   @callback from_series([{binary(), Series.t()}]) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
   @callback to_rows_stream(df, atom_keys? :: boolean(), chunk_size :: integer()) :: Enumerable.t()
 
+  # Ownership
+
+  @callback owner_reference(df) :: reference() | nil
+  @callback owner_import(term()) :: io_result(df)
+  @callback owner_export(df) :: io_result(term())
+
   # Introspection
 
   @callback n_rows(df) :: integer()
   @callback inspect(df, opts :: Inspect.Opts.t()) :: Inspect.Algebra.t()
-
   @callback re_dtype(String.t()) :: dtype()
 
   # Single table verbs
@@ -226,8 +231,7 @@ defmodule Explorer.Backend.DataFrame do
   # Two or more table verbs
 
   @callback join(
-              left :: df(),
-              right :: df(),
+              [df()],
               out_df :: df(),
               on :: list({column_name(), column_name()}),
               how :: :left | :inner | :outer | :right | :cross
@@ -304,7 +308,7 @@ defmodule Explorer.Backend.DataFrame do
     end
   end
 
-  defp build_cols_algebra(df, inspect_opts, _elide_columns?) do
+  defp build_cols_algebra(df, inspect_opts, false) do
     for name <- DataFrame.names(df) do
       series = df[name]
 

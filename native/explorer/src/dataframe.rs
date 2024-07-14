@@ -65,33 +65,35 @@ pub fn df_width(df: ExDataFrame) -> Result<usize, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn df_concat_columns(
-    data: ExDataFrame,
-    others: Vec<ExDataFrame>,
-) -> Result<ExDataFrame, ExplorerError> {
-    let id_column = "__row_count_id__";
-    let first = data.clone_inner().lazy().with_row_index(id_column, None);
+pub fn df_concat_columns(dfs: Vec<ExDataFrame>) -> Result<ExDataFrame, ExplorerError> {
+    let mut previous_names = PlHashSet::new();
 
-    // We need to be able to handle arbitrary column name overlap.
-    // This builds up a join and suffixes conflicting names with _N where
-    // N is the index of the df in the join array.
-    let (out_df, _) = others
+    let cols = dfs
         .iter()
-        .map(|data| data.clone_inner().lazy().with_row_index(id_column, None))
-        .fold((first, 1), |(acc_df, count), lazy_df| {
-            let suffix = format!("_{count}");
-            let new_df = acc_df
-                .join_builder()
-                .with(lazy_df)
-                .how(JoinType::Inner)
-                .left_on([col(id_column)])
-                .right_on([col(id_column)])
-                .suffix(suffix)
-                .finish();
-            (new_df, count + 1)
-        });
+        .enumerate()
+        .flat_map(|(idx, ex_df)| {
+            let df = ex_df.clone_inner();
 
-    Ok(ExDataFrame::new(out_df.drop([id_column]).collect()?))
+            df.get_columns()
+                .iter()
+                .map(|col| {
+                    let name = col.name();
+                    if previous_names.contains(name) {
+                        let new_name = format!("{name}_{idx}");
+                        previous_names.insert(new_name.clone());
+                        col.clone().rename(&new_name).to_owned()
+                    } else {
+                        previous_names.insert(name.to_string());
+                        col.clone().to_owned()
+                    }
+                })
+                .collect::<Vec<Series>>()
+        })
+        .collect::<Vec<Series>>();
+
+    let out_df = DataFrame::new(cols)?;
+
+    Ok(ExDataFrame::new(out_df))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

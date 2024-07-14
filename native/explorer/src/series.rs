@@ -206,7 +206,6 @@ pub fn s_cut(
     category_label: Option<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let series = series.clone_inner();
-    // TODO: Put this bool as option
     let left_close = false;
 
     // Cut is going to return a Series of a Struct. We need to convert it to a DF.
@@ -233,7 +232,6 @@ pub fn s_qcut(
     category_label: Option<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let series = series.clone_inner();
-    // TODO: Put these bools as options
     let left_close = false;
     let allow_duplicates = false;
 

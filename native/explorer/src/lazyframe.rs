@@ -8,7 +8,7 @@ use polars::prelude::*;
 pub mod io;
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn lf_collect(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {
+pub fn lf_compute(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {
     let df = data.clone_inner().collect()?;
 
     Ok(ExDataFrame::new(df))
@@ -315,41 +315,53 @@ pub fn lf_join(
 #[rustler::nif]
 pub fn lf_concat_rows(lazy_frames: Vec<ExLazyFrame>) -> Result<ExLazyFrame, ExplorerError> {
     let inputs: Vec<LazyFrame> = lazy_frames.iter().map(|lf| lf.clone_inner()).collect();
-    // TODO: Make sure union args options are configurable
     let union_args = UnionArgs::default();
     let out_df = concat(inputs, union_args)?;
 
     Ok(ExLazyFrame::new(out_df))
 }
 
-#[rustler::nif]
-pub fn lf_concat_columns(
-    data: ExLazyFrame,
-    others: Vec<ExLazyFrame>,
-) -> Result<ExLazyFrame, ExplorerError> {
-    let id_column = "__row_count_id__";
-    let first = data.clone_inner().with_row_index(id_column, None);
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn lf_concat_columns(ldfs: Vec<ExLazyFrame>) -> Result<ExLazyFrame, ExplorerError> {
+    let mut previous_names = PlHashSet::new();
 
-    // We need to be able to handle arbitrary column name overlap.
-    // This builds up a join and suffixes conflicting names with _N where
-    // N is the index of the df in the join array.
-    let (out_df, _) = others
+    let renamed_ldfs: Vec<LazyFrame> = ldfs
         .iter()
-        .map(|data| data.clone_inner().with_row_index(id_column, None))
-        .fold((first, 1), |(acc_df, count), df| {
-            let suffix = format!("_{count}");
-            let new_df = acc_df
-                .join_builder()
-                .with(df)
-                .how(JoinType::Inner)
-                .left_on([col(id_column)])
-                .right_on([col(id_column)])
-                .suffix(suffix)
-                .finish();
-            (new_df, count + 1)
-        });
+        .enumerate()
+        .map(|(idx, ex_ldf)| {
+            let ldf = ex_ldf.clone_inner();
+            let names: Vec<String> = ldf
+                .schema()
+                .expect("should be able to get schema")
+                .iter_names()
+                .map(|smart_string| smart_string.to_string())
+                .collect();
 
-    Ok(ExLazyFrame::new(out_df.drop([id_column])))
+            let mut substitutions = vec![];
+
+            for name in names {
+                if previous_names.contains(&name) {
+                    let new_name = format!("{name}_{idx}");
+                    previous_names.insert(new_name.clone());
+                    substitutions.push((name, new_name))
+                } else {
+                    previous_names.insert(name.clone());
+                }
+            }
+
+            if substitutions.is_empty() {
+                ldf
+            } else {
+                let (existing, new): (Vec<String>, Vec<String>) =
+                    substitutions.iter().cloned().unzip();
+                ldf.rename(existing, new)
+            }
+        })
+        .collect();
+
+    let out_ldf = concat_lf_horizontal(renamed_ldfs, UnionArgs::default())?;
+
+    Ok(ExLazyFrame::new(out_ldf))
 }
 
 #[rustler::nif]

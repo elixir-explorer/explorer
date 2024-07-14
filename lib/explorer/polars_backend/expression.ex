@@ -238,12 +238,14 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(%LazySeries{op: :slice, args: [lazy_series, lazy_series_or_list]}) do
     indices =
       if is_list(lazy_series_or_list) do
-        Explorer.PolarsBackend.Shared.from_list(lazy_series_or_list, {:s, 64})
-      else
         lazy_series_or_list
+        |> Explorer.PolarsBackend.Shared.from_list({:s, 64})
+        |> Native.expr_series()
+      else
+        to_expr(lazy_series_or_list)
       end
 
-    Native.expr_slice_by_indices(to_expr(lazy_series), to_expr(indices))
+    Native.expr_slice_by_indices(to_expr(lazy_series), indices)
   end
 
   def to_expr(%LazySeries{op: :slice, args: [lazy_series, offset, length]}) do
@@ -334,9 +336,14 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(number) when is_float(number), do: Native.expr_float(number)
   def to_expr(%Date{} = date), do: Native.expr_date(date)
   def to_expr(%NaiveDateTime{} = naive_datetime), do: Native.expr_naive_datetime(naive_datetime)
-  # def to_expr(%DateTime{} = datetime), do: Native.expr_datetime(datetime)
+  def to_expr(%DateTime{} = datetime), do: Native.expr_datetime(datetime)
   def to_expr(%Explorer.Duration{} = duration), do: Native.expr_duration(duration)
-  def to_expr(%PolarsSeries{} = polars_series), do: Native.expr_series(polars_series)
+
+  def to_expr(%Explorer.Series{data: %PolarsSeries{} = polars_series}),
+    do: Native.expr_series(polars_series)
+
+  def to_expr(%_{} = struct),
+    do: raise("unsupported struct in expression: #{inspect(struct)}")
 
   def to_expr(map) when is_map(map) do
     expr_list =
@@ -358,10 +365,5 @@ defmodule Explorer.PolarsBackend.Expression do
   end
 
   defp dtype(%LazySeries{dtype: dtype}), do: dtype
-
-  defp dtype(%PolarsSeries{} = polars_series) do
-    with {:ok, dtype} <- Native.s_dtype(polars_series) do
-      dtype
-    end
-  end
+  defp dtype(%Explorer.Series{dtype: dtype}), do: dtype
 end

@@ -72,7 +72,7 @@ defmodule Explorer.PolarsBackend.Native do
       ),
       do: err()
 
-  def df_concat_columns(_df, _others), do: err()
+  def df_concat_columns(_dfs), do: err()
   def df_drop(_df, _name), do: err()
   def df_dtypes(_df), do: err()
   def df_dump_csv(_df, _has_headers, _delimiter), do: err()
@@ -194,7 +194,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_boolean(_bool), do: err()
   def expr_date(_date), do: err()
   def expr_naive_datetime(_datetime), do: err()
-  # def expr_datetime(_datetime), do: err()
+  def expr_datetime(_datetime), do: err()
   def expr_duration(_duration), do: err()
   def expr_describe_filter_plan(_df, _expr), do: err()
   def expr_float(_number), do: err()
@@ -206,7 +206,7 @@ defmodule Explorer.PolarsBackend.Native do
   def expr_struct(_map), do: err()
 
   # LazyFrame
-  def lf_collect(_df), do: err()
+  def lf_compute(_df), do: err()
   def lf_describe_plan(_df, _optimized), do: err()
   def lf_drop(_df, _columns), do: err()
   def lf_dtypes(_df), do: err()
@@ -267,7 +267,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_pivot_longer(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()
   def lf_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
   def lf_concat_rows(_dfs), do: err()
-  def lf_concat_columns(_df, _others), do: err()
+  def lf_concat_columns(_ldfs), do: err()
   def lf_to_parquet(_df, _filename, _compression, _streaming), do: err()
   def lf_to_parquet_cloud(_df, _filename, _compression), do: err()
   def lf_to_ipc(_df, _filename, _compression, _streaming), do: err()
@@ -458,6 +458,9 @@ defmodule Explorer.PolarsBackend.Native do
   def s_field(_s, _name), do: err()
   def s_json_decode(_s, _dtype), do: err()
   def s_json_path_match(_s, _json_path), do: err()
+
+  def message_on_gc(_pid, _payload), do: err()
+  def is_message_on_gc(_term), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end
