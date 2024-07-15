@@ -5,8 +5,12 @@ defmodule Explorer.Remote do
 
   The functions in `Explorer.DataFrame` and `Explorer.Series`
   will automatically move operations on remote dataframes to
-  the nodes they belong to. This module provides additional
-  conveniences for manual placement.
+  the nodes they belong to. `Explorer` also integrates with
+  `FLAME` and automatically tracks remote dataframes and
+  series returned from `FLAME` calls when the `:track_resources`
+  option is enabled.
+
+  This module provides additional conveniences for manual placement.
 
   ## Implementation details
 
@@ -214,6 +218,14 @@ defmodule Explorer.Remote do
 
       {:DOWN, ^monitor_ref, _, _, reason} ->
         exit(reason)
+    end
+  end
+end
+
+if Code.ensure_loaded?(FLAME.Trackable) do
+  defimpl FLAME.Trackable, for: [Explorer.DataFrame, Explorer.Series, Explorer.Backend.LazySeries] do
+    def track(data, acc, _node) do
+      Explorer.Remote.place(data, acc)
     end
   end
 end
