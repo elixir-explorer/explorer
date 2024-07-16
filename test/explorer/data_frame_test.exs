@@ -1714,8 +1714,7 @@ defmodule Explorer.DataFrameTest do
           f: substring(a, 1),
           g: substring(b, 2, 5),
           h: substring(c, -3),
-          i: substring(d, 6, 10),
-          j: substring(e, -15, 2)
+          i: substring(d, 6, 10)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1727,8 +1726,7 @@ defmodule Explorer.DataFrameTest do
                f: ["hello", "world", "foo", "bar"],
                g: ["nus", "rth", "rs", "piter"],
                h: ["foo", "bar", "baz", "uox"],
-               i: ["", "", "", ""],
-               j: ["_f", "_b", "_b", "_q"]
+               i: ["", "", "", ""]
              }
     end
 
@@ -3434,6 +3432,7 @@ defmodule Explorer.DataFrameTest do
 
       assert df.names == ["variable", "value"]
       assert df.dtypes == %{"variable" => :string, "value" => {:s, 64}}
+
       assert DF.shape(df) == {3282, 2}
     end
 

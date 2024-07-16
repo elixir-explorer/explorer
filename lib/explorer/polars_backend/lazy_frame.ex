@@ -479,6 +479,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
     exprs =
       for {name, lazy_series} <- column_pairs do
+        # TODO: we may want to cast to the target out_df column types.
         lazy_series
         |> to_expr()
         |> then(maybe_over_groups_fun)

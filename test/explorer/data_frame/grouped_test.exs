@@ -578,11 +578,11 @@ defmodule Explorer.DataFrame.GroupedTest do
           a = ldf["a"]
 
           [
-            # b: Series.window_max(a, 2, weights: [1.0, 2.0])
+            b: Series.window_max(a, 2, weights: [1.0, 2.0]),
             c: Series.window_mean(a, 2, weights: [0.25, 0.75]),
             d: Series.window_median(a, 2, weights: [0.25, 0.75]),
-            # e: Series.window_min(a, 2, weights: [1.0, 2.0])
-            # f: Series.window_sum(a, 2, weights: [1.0, 2.0])
+            e: Series.window_min(a, 2, weights: [1.0, 2.0]),
+            f: Series.window_sum(a, 2, weights: [1.0, 2.0]),
             g: Series.window_standard_deviation(a, 2),
             p: Series.cumulative_max(a),
             q: Series.cumulative_min(a),

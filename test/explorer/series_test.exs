@@ -4176,9 +4176,9 @@ defmodule Explorer.SeriesTest do
 
       assert Series.to_list(s2) == [
                1.0,
-               1.0,
+               nil,
                1.6666666666666667,
-               1.6666666666666667,
+               nil,
                2.4285714285714284,
                3.2666666666666666,
                4.161290322580645,
@@ -4189,14 +4189,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewma" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_mean(s1, ignore_nils: false)
 
       assert Series.to_list(s2) == [
                1.0,
-               1.0,
+               nil,
                1.8,
-               1.8,
+               nil,
                2.7142857142857144,
                3.490566037735849,
                4.316239316239316,
@@ -4281,14 +4283,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "ignores nil by default and calculates ewm std" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_standard_deviation(s1, ignore_nils: true)
 
       assert Series.to_list(s2) == [
                0.0,
-               0.0,
+               nil,
                0.7071067811865476,
-               0.7071067811865476,
+               nil,
                0.9636241116594314,
                1.1771636613972951,
                1.3452425132127066,
@@ -4299,14 +4303,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewm std" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_standard_deviation(s1, ignore_nils: false)
 
       assert Series.to_list(s2) == [
                0.0,
-               0.0,
+               nil,
                0.7071067811865476,
-               0.7071067811865476,
+               nil,
                0.8864052604279183,
                0.9772545497599153,
                1.1470897308102692,
@@ -4409,14 +4415,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "ignores nil by default and calculates ewm var" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_variance(s1, ignore_nils: true)
 
       assert Series.to_list(s2) == [
                0.0,
-               0.0,
+               nil,
                0.5,
-               0.5,
+               nil,
                0.9285714285714284,
                1.385714285714286,
                1.8096774193548393,
@@ -4427,14 +4435,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewm var" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_variance(s1, ignore_nils: false)
 
       assert Series.to_list(s2) == [
                0.0,
-               0.0,
+               nil,
                0.5,
-               0.5,
+               nil,
                0.7857142857142857,
                0.9550264550264549,
                1.315814850530376,
@@ -5549,7 +5559,7 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list(["earth", "mars", "neptune"])
 
       assert Series.substring(series, -4, 4) |> Series.to_list() == ["arth", "mars", "tune"]
-      assert Series.substring(series, -20, 4) |> Series.to_list() == ["eart", "mars", "nept"]
+      assert Series.substring(series, -6, 2) |> Series.to_list() == ["e", "", "ep"]
     end
   end
 

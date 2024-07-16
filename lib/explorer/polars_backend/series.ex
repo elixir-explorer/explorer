@@ -596,6 +596,13 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   defp window_function(operation, series, window_size, weights, min_periods, center) do
+    series =
+      if weights == [] do
+        series
+      else
+        cast(series, {:f, 64})
+      end
+
     Shared.apply_series(series, operation, [window_size, weights, min_periods, center])
   end
 
