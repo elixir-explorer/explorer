@@ -455,6 +455,16 @@ defmodule Explorer.DataFrame do
       # When using the conn PID directly
       {:ok, _} = Explorer.DataFrame.from_query(conn, "SELECT 123", [])
 
+  Parameterized queries are possible by passing a list of parameters as the third argument. The
+  query string will use a different placeholder depending on the driver. For example, `?` for
+  SQLite and `$1`, `$2`, etc. for PostgreSQL.
+
+      # For SQLite
+      {:ok, _} = Explorer.DataFrame.from_query(conn, "SELECT ?", [123])
+
+      # When using PostgreSQL
+      {:ok, _} = Explorer.DataFrame.from_query(conn, "SELECT $1", [123])
+
   ## Options
 
     * `:backend` - The Explorer backend to use. Defaults to the value returned by `Explorer.Backend.get/0`.
