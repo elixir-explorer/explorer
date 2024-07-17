@@ -266,8 +266,8 @@ pub fn lf_pivot_longer(
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
     let unpivot_opts = UnpivotArgs {
-        on: to_smart_strings(id_vars),
-        index: to_smart_strings(value_vars),
+        index: to_smart_strings(id_vars),
+        on: to_smart_strings(value_vars),
         variable_name: Some(names_to.into()),
         value_name: Some(values_to.into()),
         streamable: true,
