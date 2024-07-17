@@ -427,8 +427,8 @@ pub fn df_pivot_wider(
 
     let mut new_df = pivot_stable(
         &df,
-        &temp_id_names,
-        Some([pivot_column]),
+        [pivot_column],
+        Some(temp_id_names),
         Some(values_column),
         false,
         Some(PivotAgg::First),
