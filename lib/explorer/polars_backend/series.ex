@@ -597,7 +597,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   defp window_function(operation, series, window_size, weights, min_periods, center) do
     series =
-      if Kernel.in(weights, [[], nil]) do
+      if List.wrap(weights) == [] do
         series
       else
         cast(series, {:f, 64})
