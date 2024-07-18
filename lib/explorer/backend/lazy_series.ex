@@ -166,7 +166,7 @@ defmodule Explorer.Backend.LazySeries do
 
   @comparison_operations [:equal, :not_equal, :greater, :greater_equal, :less, :less_equal]
 
-  @basic_arithmetic_operations [:add, :subtract, :multiply, :divide, :pow]
+  @basic_arithmetic_operations [:add, :subtract, :multiply, :divide]
   @other_arithmetic_operations [:quotient, :remainder]
 
   @aggregation_operations [
@@ -451,6 +451,15 @@ defmodule Explorer.Backend.LazySeries do
 
       Backend.Series.new(data, dtype)
     end
+  end
+
+  @impl true
+  def pow(dtype, %Series{} = left, %Series{} = right) do
+    # Cast from the main module is needed because we may be seeing a series from another backend.
+    args = [data!(Explorer.Series.cast(left, dtype)), data!(right)]
+    data = new(:pow, args, dtype, aggregations?(args))
+
+    Backend.Series.new(data, dtype)
   end
 
   for op <- @other_arithmetic_operations do

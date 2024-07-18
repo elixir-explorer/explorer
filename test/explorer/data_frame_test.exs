@@ -299,7 +299,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
       message =
-        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:s, 64}"
+        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:f, 64}"
 
       assert_raise ArgumentError, message, fn ->
         DF.filter_with(df, fn ldf ->
@@ -948,7 +948,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [-1, 0, 2],
                calc3: [2, 4, 8],
                calc4: [0.5, 1.0, 2.0],
-               calc5: [1, 4, 16],
+               calc5: [1.0, 4.0, 16.0],
                calc6: [0, 1, 2],
                calc7: [1, 0, 0],
                calc8: [:nan, :nan, :nan],
@@ -964,7 +964,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64},
                "calc8" => {:f, 64},
@@ -985,7 +985,6 @@ defmodule Explorer.DataFrameTest do
           calc3: multiply(2, a),
           calc4: divide(2, a),
           calc5: pow(2, a),
-          calc5_1: pow(2.0, a),
           calc6: quotient(2, a),
           calc7: remainder(2, a)
         )
@@ -996,8 +995,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [1, 0, -2],
                calc3: [2, 4, 8],
                calc4: [2.0, 1.0, 0.5],
-               calc5: [2, 4, 16],
-               calc5_1: [2.0, 4.0, 16.0],
+               calc5: [2.0, 4.0, 16.0],
                calc6: [2, 1, 0],
                calc7: [0, 0, 2]
              }
@@ -1008,8 +1006,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
-               "calc5_1" => {:f, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -1017,6 +1014,7 @@ defmodule Explorer.DataFrameTest do
 
     test "adds some columns with arithmetic operations on (lazy series, series)" do
       df = DF.new(a: [1, 2, 4])
+      # TODO: check remainder and quotient in case they have a u32 on the right side.
       series = Explorer.Series.from_list([2, 1, 2])
 
       df1 =
@@ -1036,7 +1034,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [-1, 1, 2],
                calc3: [2, 2, 8],
                calc4: [0.5, 2.0, 2.0],
-               calc5: [1, 2, 16],
+               calc5: [1.0, 2.0, 16.0],
                calc6: [0, 2, 2],
                calc7: [1, 0, 0]
              }
@@ -1047,7 +1045,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -1074,7 +1072,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [-1, 1, 2],
                calc3: [2, 2, 8],
                calc4: [0.5, 2.0, 2.0],
-               calc5: [1, 2, 16],
+               calc5: [1.0, 2.0, 16.0],
                calc6: [0, 2, 2],
                calc7: [1, 0, 0]
              }
@@ -1085,7 +1083,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -1114,7 +1112,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [19, 38, 57],
                calc3: [3, 4, 3],
                calc4: [2.0, :infinity, 7.5],
-               calc5: [1, 4, 3],
+               calc5: [1.0, 4.0, 3.0],
                calc6: [2, nil, 7],
                calc7: [0, nil, 4]
              }
@@ -1128,7 +1126,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:s, 64},
+               "calc5" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }

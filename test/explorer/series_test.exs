@@ -2290,8 +2290,8 @@ defmodule Explorer.SeriesTest do
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:s, 64}
-        assert Series.to_list(result) == [1, 4, 3]
+        assert result.dtype == {:f, 64}
+        assert Series.to_list(result) == [1.0, 4.0, 3.0]
       end
     end
 
@@ -2315,8 +2315,8 @@ defmodule Explorer.SeriesTest do
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:s, 64}
-        assert Series.to_list(result) === [1, 4, 3]
+        assert result.dtype == {:f, 64}
+        assert Series.to_list(result) === [1.0, 4.0, 3.0]
       end
     end
 
@@ -2392,13 +2392,13 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:s, 64}
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
     test "pow of an integer series that contains nil with an integer series" do
       s1 = Series.from_list([1, nil, 3])
-      s2 = Series.from_list([3, 2, 1])
+      s2 = Series.from_list([3, 2, 1], dtype: :u32)
 
       result = Series.pow(s1, s2)
 
@@ -2408,7 +2408,7 @@ defmodule Explorer.SeriesTest do
 
     test "pow of an integer series that contains nil with an integer series also with nil" do
       s1 = Series.from_list([1, nil, 3])
-      s2 = Series.from_list([3, nil, 1])
+      s2 = Series.from_list([3, nil, 1], dtype: :u32)
 
       result = Series.pow(s1, s2)
 
@@ -2421,7 +2421,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2)
 
-      assert result.dtype == {:s, 64}
+      assert result.dtype == {:f, 64}
       assert Series.to_list(result) == [1, 4, 9]
     end
 
