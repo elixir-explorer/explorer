@@ -4758,14 +4758,14 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 9]
         product_id s64 [1, 2]
-        property_value_property_product_id s64 [1, 2]
-        property_value_property_width_cm s64 [42, 35]
-        property_value_property_height_cm s64 [40, 20]
-        property_value_property_length_cm s64 [64, 40]
-        another_value_property_product_id s64 [1, 2]
-        another_value_property_width_cm s64 [43, 36]
-        another_value_property_height_cm s64 [41, 21]
-        another_value_property_length_cm s64 [65, 42]
+        property_value_product_id s64 [1, 2]
+        property_value_width_cm s64 [42, 35]
+        property_value_height_cm s64 [40, 20]
+        property_value_length_cm s64 [64, 40]
+        another_value_product_id s64 [1, 2]
+        another_value_width_cm s64 [43, 36]
+        another_value_height_cm s64 [41, 21]
+        another_value_length_cm s64 [65, 42]
       >
 
   ## Grouped examples

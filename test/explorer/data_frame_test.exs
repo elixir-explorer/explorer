@@ -3360,10 +3360,10 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                id: [1],
-               value_variable_a: [1],
-               value_variable_b: [2],
-               another_value_variable_a: [6],
-               another_value_variable_b: [9]
+               value_a: [1],
+               value_b: [2],
+               another_value_a: [6],
+               another_value_b: [9]
              }
     end
 
