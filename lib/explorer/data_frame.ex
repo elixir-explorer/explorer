@@ -6063,7 +6063,7 @@ defmodule Explorer.DataFrame do
   Basic example:
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["x", "y", "y"])
-      iex> Explorer.DataFrame.sql(df, "select a, b from df group by b order by b")
+      iex> Explorer.DataFrame.sql(df, "select ARRAY_AGG(a), b from df group by b order by b")
       #Explorer.DataFrame<
         Polars[2 x 2]
         a list[s64] [[1], [2, 3]]
