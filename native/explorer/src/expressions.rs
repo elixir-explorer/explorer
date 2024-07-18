@@ -652,7 +652,10 @@ macro_rules! init_window_expr_fun {
             min_periods: Option<usize>,
             center: bool,
         ) -> ExExpr {
-            let expr = data.clone_inner();
+            let expr = match weights.as_deref() {
+                Some([]) | None => data.clone_inner(),
+                _ => data.clone_inner().cast(DataType::Float64),
+            };
             let opts = rolling_opts_fixed_window(window_size, weights, min_periods, center);
             ExExpr::new(expr.$fun(opts))
         }
