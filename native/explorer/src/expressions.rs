@@ -33,13 +33,13 @@ pub fn expr_nil() -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_integer(number: i64) -> ExExpr {
-    let expr = number.lit();
+    let expr = Expr::Literal(LiteralValue::Int64(number));
     ExExpr::new(expr)
 }
 
 #[rustler::nif]
 pub fn expr_float(number: f64) -> ExExpr {
-    let expr = number.lit();
+    let expr = Expr::Literal(LiteralValue::Float64(number));
     ExExpr::new(expr)
 }
 
