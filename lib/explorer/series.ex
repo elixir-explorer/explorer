@@ -3595,8 +3595,12 @@ defmodule Explorer.Series do
   Raises a numeric series to the power of the exponent.
 
   At least one of the arguments must be a series. If both
-  sizes are series, the series must have the same size or
+  sides are series, the series must have the same size or
   at last one of them must have size of 1.
+
+  Note that this operation can fail if the exponent is a
+  signed integer series or scalar containing negative values,
+  and the base is also of an integer type.
 
   ## Supported dtypes
 
