@@ -173,7 +173,6 @@ pub fn df_load_csv(
         .with_skip_rows_after_header(skip_rows_after_header)
         .with_projection(projection.map(Arc::new))
         .with_rechunk(do_rechunk)
-        //.with_schema(Some(schema_from_dtypes_pairs(dtypes)?))
         .with_parse_options(
             CsvParseOptions::default()
                 .with_separator(delimiter_as_byte)

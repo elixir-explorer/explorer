@@ -267,32 +267,10 @@ pub fn df_sort_by(
         .with_order_descending_multi(reverse);
 
     let new_df = if groups.is_empty() {
-        // Note: we cannot use either df.sort or df.sort_with_options.
-        // df.sort does not allow a nulls_last option.
-        // df.sort_with_options only allows a single column.
-        // let by_columns = df.select_series(by_columns)?;
         df.sort(by_columns, sort_options)?
-        // df.sort_impl(
-        //     by_columns,
-        //     reverse,
-        //     nulls_last,
-        //     maintain_order,
-        //     None,
-        //     multithreaded,
-        // )?
     } else {
-        df.group_by_stable(groups)?.apply(|df| {
-            df.sort(by_columns.clone(), sort_options.clone())
-            // let by_columns = df.select_series(&by_columns)?;
-            // df.sort_impl(
-            //     by_columns,
-            //     reverse.clone(),
-            //     nulls_last,
-            //     maintain_order,
-            //     None,
-            //     multithreaded,
-            // )
-        })?
+        df.group_by_stable(groups)?
+            .apply(|df| df.sort(by_columns.clone(), sort_options.clone()))?
     };
 
     Ok(ExDataFrame::new(new_df))
@@ -304,6 +282,7 @@ pub fn df_sort_with(
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
     maintain_order: bool,
+    multithreaded: bool,
     nulls_last: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
@@ -312,7 +291,7 @@ pub fn df_sort_with(
 
     let sort_options = SortMultipleOptions::new()
         .with_maintain_order(maintain_order)
-        // .with_multithreaded(multithreaded)
+        .with_multithreaded(multithreaded)
         .with_nulls_last(nulls_last)
         .with_order_descending_multi(directions);
 

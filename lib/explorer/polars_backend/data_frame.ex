@@ -712,6 +712,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         expressions,
         directions,
         maintain_order?,
+        multithreaded?,
         nulls_last?,
         df.groups
       ])
