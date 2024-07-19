@@ -3598,9 +3598,6 @@ defmodule Explorer.Series do
   sizes are series, the series must have the same size or
   at last one of them must have size of 1.
 
-  In case the expoent is a signed integer number or series,
-  the resultant series will be of `{:f, 64}` dtype.
-
   ## Supported dtypes
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
@@ -3617,13 +3614,6 @@ defmodule Explorer.Series do
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
       iex> Explorer.Series.pow(s, 3)
-      #Explorer.Series<
-        Polars[3]
-        f64 [8.0, 64.0, 216.0]
-      >
-
-      iex> s = [2, 4, 6] |> Explorer.Series.from_list()
-      iex> Explorer.Series.pow(s, Explorer.Series.from_list([3], dtype: :u32))
       #Explorer.Series<
         Polars[3]
         s64 [8, 64, 216]
@@ -3667,7 +3657,7 @@ defmodule Explorer.Series do
   defp cast_to_pow({:f, l}, {:f, r}), do: {:f, max(l, r)}
   defp cast_to_pow({:f, l}, {n, _}) when K.in(n, [:u, :s]), do: {:f, l}
   defp cast_to_pow({n, _}, {:f, r}) when K.in(n, [:u, :s]), do: {:f, r}
-  defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:f, 64}
+  defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:s, 64}
   defp cast_to_pow(_, _), do: nil
 
   @doc """
