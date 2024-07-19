@@ -49,11 +49,11 @@ defmodule Explorer.PolarsBackend.Shared do
           check_df =
             if match?(%PolarsLazyFrame{}, new_df) do
               case Native.lf_compute(new_df) do
-                {:ok, new_df} -> create_dataframe(new_df)
+                {:ok, new_df} -> create_dataframe!(new_df)
                 {:error, error} -> raise runtime_error(error)
               end
             else
-              create_dataframe(new_df)
+              create_dataframe!(new_df)
             end
 
           if Enum.sort(out_df.names) != Enum.sort(check_df.names) or
@@ -95,27 +95,34 @@ defmodule Explorer.PolarsBackend.Shared do
   end
 
   def create_dataframe(polars_df) do
-    Explorer.Backend.DataFrame.new(polars_df, df_names(polars_df), df_dtypes(polars_df))
+    with {:ok, names} <- df_names(polars_df), {:ok, dtypes} <- df_dtypes(polars_df) do
+      {:ok, Explorer.Backend.DataFrame.new(polars_df, names, dtypes)}
+    else
+      {:error, error} -> {:error, runtime_error(error)}
+    end
+  end
+
+  def create_dataframe!(polars_df) do
+    case create_dataframe(polars_df) do
+      {:ok, df} -> df
+      {:error, error} -> raise error
+    end
   end
 
   defp df_names(%PolarsDataFrame{} = polars_df) do
-    {:ok, names} = Native.df_names(polars_df)
-    names
+    Native.df_names(polars_df)
   end
 
   defp df_names(%PolarsLazyFrame{} = polars_df) do
-    {:ok, names} = Native.lf_names(polars_df)
-    names
+    Native.lf_names(polars_df)
   end
 
   defp df_dtypes(%PolarsDataFrame{} = polars_df) do
-    {:ok, dtypes} = Native.df_dtypes(polars_df)
-    dtypes
+    Native.df_dtypes(polars_df)
   end
 
   defp df_dtypes(%PolarsLazyFrame{} = polars_df) do
-    {:ok, dtypes} = Native.lf_dtypes(polars_df)
-    dtypes
+    Native.lf_dtypes(polars_df)
   end
 
   def from_list(list, dtype), do: from_list(list, dtype, "")

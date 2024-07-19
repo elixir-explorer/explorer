@@ -170,7 +170,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       )
 
     case result do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -204,7 +204,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -212,7 +212,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_parquet(%Local.Entry{} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet(entry.path, max_rows, columns) do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -226,7 +226,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
     case Native.lf_from_ndjson(entry.path, infer_schema_length, batch_size) do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -240,7 +240,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_ipc(%Local.Entry{} = entry, columns) when is_nil(columns) do
     case Native.lf_from_ipc(entry.path) do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end

@@ -518,7 +518,7 @@ defmodule Explorer.PolarsBackend.Series do
 
   def frequencies(%Series{} = series) do
     Shared.apply(:s_frequencies, [series.data])
-    |> Shared.create_dataframe()
+    |> Shared.create_dataframe!()
     |> DataFrame.rename(["values", "counts"])
   end
 
@@ -534,7 +534,7 @@ defmodule Explorer.PolarsBackend.Series do
            category_label
          ) do
       {:ok, polars_df} ->
-        Shared.create_dataframe(polars_df)
+        Shared.create_dataframe!(polars_df)
 
       {:error, "Polars Error: lengths don't match: " <> _rest} ->
         raise ArgumentError, "lengths don't match: labels count must equal bins count"
@@ -553,7 +553,7 @@ defmodule Explorer.PolarsBackend.Series do
       break_point_label,
       category_label
     ])
-    |> Shared.create_dataframe()
+    |> Shared.create_dataframe!()
   end
 
   # Window
