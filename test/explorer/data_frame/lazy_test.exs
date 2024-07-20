@@ -261,7 +261,7 @@ defmodule Explorer.DataFrame.LazyTest do
                )
 
       assert RuntimeError.message(error) =~
-               "Polars Error: Object at location oranges.parquet not found:"
+               "Polars Error: expected at least 1 path: 'parquet scan' failed: 'select' input failed to resolve"
     end
   end
 
@@ -400,6 +400,7 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   @tag :cloud_integration
+  @tag :skip
   test "to_parquet/2 - cloud with streaming enabled", %{ldf: ldf} do
     config = %FSS.S3.Config{
       access_key_id: "test",

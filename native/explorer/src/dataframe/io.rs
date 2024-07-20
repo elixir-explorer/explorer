@@ -18,6 +18,9 @@ use std::io::{BufReader, BufWriter, Cursor};
 use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
 use crate::{ExDataFrame, ExplorerError};
 
+#[cfg(feature = "cloud")]
+use crate::cloud_writer::CloudWriter;
+
 // ============ CSV ============ //
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -240,6 +243,7 @@ pub fn df_to_parquet_cloud(
     ParquetWriter::new(&mut cloud_writer)
         .with_compression(compression)
         .finish(&mut data.clone())?;
+
     Ok(())
 }
 
@@ -249,9 +253,7 @@ fn object_store_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError 
 }
 
 #[cfg(feature = "aws")]
-fn build_aws_s3_cloud_writer(
-    ex_entry: ExS3Entry,
-) -> Result<crate::cloud_writer::CloudWriter, ExplorerError> {
+fn build_aws_s3_cloud_writer(ex_entry: ExS3Entry) -> Result<CloudWriter, ExplorerError> {
     let config = ex_entry.config;
     let mut aws_builder = object_store::aws::AmazonS3Builder::new()
         .with_region(&config.region)
@@ -278,9 +280,8 @@ fn build_aws_s3_cloud_writer(
         .build()
         .map_err(object_store_to_explorer_error)?;
 
-    let object_store: Box<dyn object_store::ObjectStore> = Box::new(aws_s3);
-
-    crate::cloud_writer::CloudWriter::new(object_store, ex_entry.key.into())
+    let object_store: Arc<dyn object_store::ObjectStore> = Arc::new(aws_s3);
+    CloudWriter::new(object_store, ex_entry.key.into())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

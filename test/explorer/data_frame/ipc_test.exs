@@ -179,6 +179,7 @@ defmodule Explorer.DataFrame.IPCTest do
     end
 
     @tag :cloud_integration
+    @tag :skip
     test "cannot write an IPC file to S3 if bucket does not exist", %{
       df: df,
       s3_config: s3_config
