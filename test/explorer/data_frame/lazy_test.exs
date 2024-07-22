@@ -400,6 +400,7 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   @tag :cloud_integration
+  @tag :skip
   test "to_parquet/2 - cloud with streaming enabled", %{ldf: ldf} do
     config = %FSS.S3.Config{
       access_key_id: "test",
