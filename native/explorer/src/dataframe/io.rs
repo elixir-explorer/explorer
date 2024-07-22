@@ -113,6 +113,9 @@ pub fn df_to_csv_cloud(
         .include_header(include_headers)
         .with_separator(delimiter)
         .finish(&mut data.clone())?;
+
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
@@ -244,6 +247,8 @@ pub fn df_to_parquet_cloud(
         .with_compression(compression)
         .finish(&mut data.clone())?;
 
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
@@ -365,6 +370,9 @@ pub fn df_to_ipc_cloud(
     IpcWriter::new(&mut cloud_writer)
         .with_compression(compression)
         .finish(&mut data.clone())?;
+
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
@@ -467,6 +475,9 @@ pub fn df_to_ipc_stream_cloud(
     IpcStreamWriter::new(&mut cloud_writer)
         .with_compression(compression)
         .finish(&mut data.clone())?;
+
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
@@ -549,6 +560,9 @@ pub fn df_to_ndjson_cloud(data: ExDataFrame, ex_entry: ExS3Entry) -> Result<(), 
     JsonWriter::new(&mut cloud_writer)
         .with_json_format(JsonFormat::JsonLines)
         .finish(&mut data.clone())?;
+
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
