@@ -364,15 +364,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, {compression, level}, _streaming = true) do
-    case Native.lf_to_parquet_cloud(
-           ldf.data,
-           entry,
-           Shared.parquet_compression(compression, level)
-         ) do
-      {:ok, _} -> :ok
-      {:error, error} -> {:error, RuntimeError.exception(error)}
-    end
+  def to_parquet(%DF{} = _ldf, %S3.Entry{} = _entry, {_compression, _level}, _streaming = true) do
+    raise "streaming of a lazy frame to the cloud using parquet is currently unavailable. Please try again disabling the `:streaming` option."
   end
 
   @impl true
