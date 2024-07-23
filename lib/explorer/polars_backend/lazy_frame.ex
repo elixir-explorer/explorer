@@ -363,32 +363,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     end
   end
 
-  # @impl true
-  # def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, {compression, level}, _streaming = true) do
-  #   case Native.lf_to_parquet_cloud(
-  #          ldf.data,
-  #          entry,
-  #          Shared.parquet_compression(compression, level)
-  #        ) do
-  #     {:ok, _} -> :ok
-  #     {:error, error} -> {:error, RuntimeError.exception(error)}
-  #   end
-  # end
-
   @impl true
   def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, {compression, level}, _streaming = true) do
-    fifo_name = "explorer-fifo-" <> Base.encode16(:crypto.strong_rand_bytes(24), case: :lower)
-    fifo_path = "/tmp/" <> fifo_name
-    System.cmd("mkfifo", [fifo_path])
-
-    compression = Shared.parquet_compression(compression, level)
-    fs_writer = Task.async(fn -> Native.lf_to_parquet(ldf.data, fifo_path, compression, true) end)
-    cloud_writer = Task.async(fn -> Native.fifo_file_to_cloud(fifo_path, entry, fs_writer.pid) end)
-
-    case Task.await_many([fs_writer, cloud_writer], :infinity) do
-      [{:ok, _}, {:ok, _}] -> :ok
+    case Native.lf_to_parquet_cloud(
+           ldf.data,
+           entry,
+           Shared.parquet_compression(compression, level)
+         ) do
+      {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
-      other -> dbg(other)
     end
   end
 

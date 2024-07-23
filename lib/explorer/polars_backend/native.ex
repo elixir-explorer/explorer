@@ -463,7 +463,5 @@ defmodule Explorer.PolarsBackend.Native do
   def message_on_gc(_pid, _payload), do: err()
   def is_message_on_gc(_term), do: err()
 
-  def fifo_file_to_cloud(_fifo_path, _ex_entry, _task_pid), do: err()
-
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end
