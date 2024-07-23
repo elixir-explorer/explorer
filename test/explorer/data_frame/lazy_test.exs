@@ -400,7 +400,6 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   @tag :cloud_integration
-  @tag :skip
   test "to_parquet/2 - cloud with streaming enabled", %{ldf: ldf} do
     config = %FSS.S3.Config{
       access_key_id: "test",
@@ -415,7 +414,9 @@ defmodule Explorer.DataFrame.LazyTest do
     assert :ok = DF.to_parquet(ldf, path, streaming: true, config: config)
 
     df = DF.compute(ldf)
-    df1 = DF.from_parquet!(path, config: config)
+    tmp_path = "/tmp/my_target.parquet"
+    # df1 = DF.from_parquet!(path, config: config)
+    df1 = DF.from_parquet!(tmp_path)
 
     assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
   end

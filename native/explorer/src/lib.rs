@@ -16,6 +16,9 @@ static GLOBAL: MiMalloc = MiMalloc;
 #[cfg(feature = "cloud")]
 mod cloud_writer;
 
+// Global IO functions that are exported as NIFs.
+mod io;
+
 mod dataframe;
 mod datatypes;
 mod encoding;
