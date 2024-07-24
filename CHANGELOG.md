@@ -9,22 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The `Explorer.Series.pow/2` function does not cast to float when exponent is signed
-  integer anymore. We are following the way Polars works now, which is to try to execute
-  the operation, or raise an exception in case the exponent is negative.
+- `Explorer.Series.pow/2` no longer casts to float when the exponent is a signed
+  integer. We are following the way Polars works now, which is to try to execute
+  the operation or raise an exception in case the exponent is negative.
 
-- When pivoting wider with multiple `:values_from` columns, the name is not going to
-  have the prefix of the `names_from` argument.
+- `Explorer.Series.pivot_wider/4` no longer includes the `names_from` column
+  name in the new columns when `values_from` is a list of columns. This is more
+  consistent with its behaviour when `values_from` is a single column.
 
-- The `Explorer.Series.substring/3` function no more cycle to the back of string if
-  the negative offset surpass the beginning of that string. In that case, an empty
+- `Explorer.Series.substring/3` no longer cycles to the end of the string if the
+  negative offset surpasses the beginning of that string. In that case, an empty
   string is returned.
 
-- All the series functions related to "EWM" are now propagating the `nil` values instead
-  of filling the missing values with the previous one.
+- The `Explorer.Series.ewm_*` functions no longer replace `nil` values with the
+  value at the previous index. They now propogate `nil` values through to the
+  result series.
 
-- Saving a dataframe as a Parque file to S3 services no longer works when streaming is
-  enabled. This is temporary due to a bug in Polars. An exception should be raised instead.
+- Saving a dataframe as a Parquet file to S3 services no longer works when
+  streaming is enabled. This is temporary due to a bug in Polars. An exception
+  should be raised instead.
 
 ## [v0.8.3] - 2024-06-10
 
