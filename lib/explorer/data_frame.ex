@@ -4745,8 +4745,7 @@ defmodule Explorer.DataFrame do
 
   Multiple columns are accepted for the `values_from` parameter, but the behaviour is slightly
   different for the naming of new columns in the resultant dataframe. The new columns are going
-  to be prefixed by the name of the original value column, followed by an underscore and the
-  original column name, followed by the name of the variable.
+  to be prefixed by the name of the original value column, followed by the name of the variable.
 
       iex> df = Explorer.DataFrame.new(
       iex>   product_id: [1, 1, 1, 1, 2, 2, 2, 2],

@@ -164,8 +164,6 @@ pub fn lf_grouped_sort_with(
     directions: Vec<bool>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let sort_options = SortMultipleOptions::new()
-        // .with_nulls_last(nulls_last)
-        // .with_maintain_order(maintain_order)
         .with_order_descending_multi(directions);
     // For grouped lazy frames, we need to use the `#sort_by` method that is
     // less powerful, but can be used with `over`.

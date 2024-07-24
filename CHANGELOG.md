@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The `Explorer.Series.pow/2` function does not cast to float when exponent is signed
+  integer anymore. We are following the way Polars works now, which is to try to execute
+  the operation, or raise an exception in case the exponent is negative.
+
+- When pivoting wider with multiple `:values_from` columns, the name is not going to
+  have the prefix of the `names_from` argument.
+
+- The `Explorer.Series.substring/3` function no more cycle to the back of string if
+  the negative offset surpass the beginning of that string. In that case, an empty
+  string is returned.
+
+- All the series functions related to "EWM" are now propagating the `nil` values instead
+  of filling the missing values with the previous one.
+
+- Saving a dataframe as a Parque file to S3 services no longer works when streaming is
+  enabled. This is temporary due to a bug in Polars. An exception should be raised instead.
+
 ## [v0.8.3] - 2024-06-10
 
 ### Added
