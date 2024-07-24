@@ -3595,8 +3595,12 @@ defmodule Explorer.Series do
   Raises a numeric series to the power of the exponent.
 
   At least one of the arguments must be a series. If both
-  sizes are series, the series must have the same size or
+  sides are series, the series must have the same size or
   at last one of them must have size of 1.
+
+  Note that this operation can fail if the exponent is a
+  signed integer series or scalar containing negative values,
+  and the base is also of an integer type.
 
   ## Supported dtypes
 
@@ -3616,7 +3620,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.pow(s, 3)
       #Explorer.Series<
         Polars[3]
-        f64 [8.0, 64.0, 216.0]
+        s64 [8, 64, 216]
       >
 
       iex> s = [2, 4, 6] |> Explorer.Series.from_list()
@@ -3657,7 +3661,7 @@ defmodule Explorer.Series do
   defp cast_to_pow({:f, l}, {:f, r}), do: {:f, max(l, r)}
   defp cast_to_pow({:f, l}, {n, _}) when K.in(n, [:u, :s]), do: {:f, l}
   defp cast_to_pow({n, _}, {:f, r}) when K.in(n, [:u, :s]), do: {:f, r}
-  defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:f, 64}
+  defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:s, 64}
   defp cast_to_pow(_, _), do: nil
 
   @doc """

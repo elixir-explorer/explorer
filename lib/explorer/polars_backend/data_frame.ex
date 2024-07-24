@@ -32,7 +32,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     with {:ok, df_result} <- adbc_result,
          {:ok, df} <- df_result,
-         do: {:ok, Shared.create_dataframe(df)}
+         do: Shared.create_dataframe(df)
   end
 
   @impl true
@@ -122,7 +122,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       )
 
     case df do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -195,6 +195,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     {columns, with_projection} = column_names_or_projection(columns)
 
+    dtypes_list =
+      if not Enum.empty?(dtypes) do
+        Map.to_list(dtypes)
+      end
+
     df =
       Native.df_load_csv(
         contents,
@@ -207,7 +212,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         delimiter,
         true,
         columns,
-        Map.to_list(dtypes),
+        dtypes_list,
         encoding,
         nil_values,
         parse_dates,
@@ -215,7 +220,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       )
 
     case df do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -242,7 +247,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
     case Native.df_from_ndjson(entry.path, infer_schema_length, batch_size) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -274,7 +279,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def load_ndjson(contents, infer_schema_length, batch_size) when is_binary(contents) do
     case Native.df_load_ndjson(contents, infer_schema_length, batch_size) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -284,7 +289,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     # We first read using a lazy dataframe, then we collect.
     with {:ok, ldf} <- Native.lf_from_parquet_cloud(entry, max_rows, columns),
          {:ok, df} <- Native.lf_compute(ldf) do
-      {:ok, Shared.create_dataframe(df)}
+      Shared.create_dataframe(df)
     end
   end
 
@@ -316,7 +321,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       )
 
     case df do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -370,7 +375,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def load_parquet(contents) when is_binary(contents) do
     case Native.df_load_parquet(contents) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -394,7 +399,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     {columns, projection} = column_names_or_projection(columns)
 
     case Native.df_from_ipc(entry.path, columns, projection) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -428,7 +433,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     {columns, projection} = column_names_or_projection(columns)
 
     case Native.df_load_ipc(contents, columns, projection) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -452,7 +457,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     {columns, projection} = column_names_or_projection(columns)
 
     case Native.df_from_ipc_stream(entry.path, columns, projection) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -486,7 +491,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     {columns, projection} = column_names_or_projection(columns)
 
     case Native.df_load_ipc_stream(contents, columns, projection) do
-      {:ok, df} -> {:ok, Shared.create_dataframe(df)}
+      {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -556,7 +561,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     list = Enum.map(list, & &1.data)
 
     Shared.apply(:df_from_series, [list])
-    |> Shared.create_dataframe()
+    |> Shared.create_dataframe!()
   end
 
   defp to_column_name!(column_name) when is_binary(column_name), do: column_name
@@ -669,7 +674,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def nil_count(%DataFrame{} = df) do
     Shared.apply(:df_nil_count, [df.data])
-    |> Shared.create_dataframe()
+    |> Shared.create_dataframe!()
   end
 
   @impl true
@@ -707,6 +712,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         expressions,
         directions,
         maintain_order?,
+        multithreaded?,
         nulls_last?,
         df.groups
       ])
@@ -811,7 +817,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       values_from,
       names_prefix_optional
     ])
-    |> Shared.create_dataframe()
+    |> Shared.create_dataframe!()
   end
 
   @impl true

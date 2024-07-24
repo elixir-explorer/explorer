@@ -2283,14 +2283,14 @@ defmodule Explorer.SeriesTest do
       end
     end
 
-    test "pow(uint, sint) == float64" do
+    test "pow(uint, sint) == sint" do
       for u_base <- [8, 16, 32, 64], s_power <- [8, 16, 32, 64] do
         base = Series.from_list([1, 2, 3], dtype: {:u, u_base})
         power = Series.from_list([3, 2, 1], dtype: {:s, s_power})
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:f, 64}
+        assert result.dtype == {:s, 64}
         assert Series.to_list(result) == [1, 4, 3]
       end
     end
@@ -2308,15 +2308,15 @@ defmodule Explorer.SeriesTest do
       end
     end
 
-    test "pow(sint, sint) == float64" do
+    test "pow(sint, sint) == sint" do
       for s_base <- [8, 16, 32, 64], s_power <- [8, 16, 32, 64] do
         base = Series.from_list([1, 2, 3], dtype: {:s, s_base})
         power = Series.from_list([3, 2, 1], dtype: {:s, s_power})
 
         result = Series.pow(base, power)
 
-        assert result.dtype == {:f, 64}
-        assert Series.to_list(result) === [1.0, 4.0, 3.0]
+        assert result.dtype == {:s, 64}
+        assert Series.to_list(result) === [1, 4, 3]
       end
     end
 
@@ -2360,10 +2360,13 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, -2, 3])
 
-      result = Series.pow(s1, s2)
+      message =
+        "Polars Error: invalid operation: invalid operation: conversion from `i64` to `u32` failed in column 'exponent' for 1 out of 3 values: [-2]\n\n" <>
+          "Hint: if you were trying to raise an integer to a negative integer power, please cast your base or exponent to float first."
 
-      assert result.dtype == {:f, 64}
-      assert Series.to_list(result) === [1.0, 0.25, 27.0]
+      assert_raise RuntimeError, message, fn ->
+        Series.pow(s1, s2)
+      end
     end
 
     test "pow of an integer series with a float series" do
@@ -2392,7 +2395,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:f, 64}
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2402,7 +2405,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:f, 64}
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2412,7 +2415,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, s2)
 
-      assert result.dtype == {:f, 64}
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, nil, 3]
     end
 
@@ -2421,17 +2424,20 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(s1, 2)
 
-      assert result.dtype == {:f, 64}
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [1, 4, 9]
     end
 
     test "pow of an integer series with a negative integer scalar value on the right-hand side" do
       s1 = Series.from_list([1, 2, 3])
 
-      result = Series.pow(s1, -2)
+      message =
+        "Polars Error: invalid operation: invalid operation: conversion from `i64` to `u32` failed in column 'literal' for 1 out of 1 values: [-2]\n\n" <>
+          "Hint: if you were trying to raise an integer to a negative integer power, please cast your base or exponent to float first."
 
-      assert result.dtype == {:f, 64}
-      assert Series.to_list(result) === [1.0, 1 / 4, 1 / 9]
+      assert_raise RuntimeError, message, fn ->
+        Series.pow(s1, -2)
+      end
     end
 
     test "pow of an integer series with a float scalar value on the right-hand side" do
@@ -2484,17 +2490,20 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(2, s1)
 
-      assert result.dtype == {:f, 64}
-      assert Series.to_list(result) === [2.0, 4.0, 8.0]
+      assert result.dtype == {:s, 64}
+      assert Series.to_list(result) === [2, 4, 8]
     end
 
     test "pow of an integer series that contains negative integer with an integer scalar value on the left-hand side" do
       s1 = Series.from_list([1, -2, 3])
 
-      result = Series.pow(2, s1)
+      message =
+        "Polars Error: invalid operation: invalid operation: conversion from `i64` to `u32` failed in column 'exponent' for 1 out of 3 values: [-2]\n\n" <>
+          "Hint: if you were trying to raise an integer to a negative integer power, please cast your base or exponent to float first."
 
-      assert result.dtype == {:f, 64}
-      assert Series.to_list(result) === [2.0, 0.25, 8.0]
+      assert_raise RuntimeError, message, fn ->
+        Series.pow(2, s1)
+      end
     end
 
     test "pow of an integer series with a negative integer scalar value on the left-hand side" do
@@ -2502,7 +2511,7 @@ defmodule Explorer.SeriesTest do
 
       result = Series.pow(-2, s1)
 
-      assert result.dtype == {:f, 64}
+      assert result.dtype == {:s, 64}
       assert Series.to_list(result) == [-2, 4, -8]
     end
 
@@ -4176,9 +4185,9 @@ defmodule Explorer.SeriesTest do
 
       assert Series.to_list(s2) == [
                1.0,
-               1.0,
+               nil,
                1.6666666666666667,
-               1.6666666666666667,
+               nil,
                2.4285714285714284,
                3.2666666666666666,
                4.161290322580645,
@@ -4189,14 +4198,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewma" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_mean(s1, ignore_nils: false)
 
       assert Series.to_list(s2) == [
                1.0,
-               1.0,
+               nil,
                1.8,
-               1.8,
+               nil,
                2.7142857142857144,
                3.490566037735849,
                4.316239316239316,
@@ -4281,14 +4292,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "ignores nil by default and calculates ewm std" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_standard_deviation(s1, ignore_nils: true)
 
       assert Series.to_list(s2) == [
                0.0,
-               0.0,
+               nil,
                0.7071067811865476,
-               0.7071067811865476,
+               nil,
                0.9636241116594314,
                1.1771636613972951,
                1.3452425132127066,
@@ -4299,14 +4312,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewm std" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_standard_deviation(s1, ignore_nils: false)
 
       assert Series.to_list(s2) == [
                0.0,
-               0.0,
+               nil,
                0.7071067811865476,
-               0.7071067811865476,
+               nil,
                0.8864052604279183,
                0.9772545497599153,
                1.1470897308102692,
@@ -4409,14 +4424,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "ignores nil by default and calculates ewm var" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_variance(s1, ignore_nils: true)
 
       assert Series.to_list(s2) == [
                0.0,
-               0.0,
+               nil,
                0.5,
-               0.5,
+               nil,
                0.9285714285714284,
                1.385714285714286,
                1.8096774193548393,
@@ -4427,14 +4444,16 @@ defmodule Explorer.SeriesTest do
     end
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewm var" do
+      # The idea is to ignore or not the `nils` in the calculation. But `nils` are
+      # always propagated.
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_variance(s1, ignore_nils: false)
 
       assert Series.to_list(s2) == [
                0.0,
-               0.0,
+               nil,
                0.5,
-               0.5,
+               nil,
                0.7857142857142857,
                0.9550264550264549,
                1.315814850530376,
@@ -5549,7 +5568,7 @@ defmodule Explorer.SeriesTest do
       series = Series.from_list(["earth", "mars", "neptune"])
 
       assert Series.substring(series, -4, 4) |> Series.to_list() == ["arth", "mars", "tune"]
-      assert Series.substring(series, -20, 4) |> Series.to_list() == ["eart", "mars", "nept"]
+      assert Series.substring(series, -6, 2) |> Series.to_list() == ["e", "", "ep"]
     end
   end
 

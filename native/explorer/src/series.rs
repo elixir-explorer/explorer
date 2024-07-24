@@ -9,7 +9,7 @@ use crate::{
 use encoding::encode_naive_datetime;
 // use encoding::encode_datetime;
 
-use polars::prelude::*;
+use polars::prelude::*; //{lazy::dsl::Expr, };
 use polars_ops::chunked_array::cov::{cov, pearson_corr};
 use polars_ops::prelude::peaks::*;
 use rustler::{Binary, Encoder, Env, Term};
@@ -70,29 +70,32 @@ pub fn s_mask(series: ExSeries, filter: ExSeries) -> Result<ExSeries, ExplorerEr
 pub fn s_add(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
     let s1 = other.clone_inner();
-    Ok(ExSeries::new(s + s1))
+    let result = s + s1;
+    Ok(ExSeries::new(result?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_subtract(lhs: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let left = lhs.clone_inner();
     let right = rhs.clone_inner();
-
-    Ok(ExSeries::new(left - right))
+    let result = left - right;
+    Ok(ExSeries::new(result?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_multiply(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner();
     let s1 = other.clone_inner();
-    Ok(ExSeries::new(s * s1))
+    let result = s * s1;
+    Ok(ExSeries::new(result?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_divide(data: ExSeries, other: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = data.clone_inner().cast(&DataType::Float64)?;
     let s1 = other.clone_inner().cast(&DataType::Float64)?;
-    Ok(ExSeries::new(s / s1))
+    let result = s / s1;
+    Ok(ExSeries::new(result?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -106,9 +109,9 @@ pub fn s_remainder(data: ExSeries, other: ExSeries) -> Result<ExSeries, Explorer
     let s1 = other.clone_inner();
     let div = checked_div(data, other)?;
     let mult = s1 * div;
-    let result = s - mult;
+    let result = s - mult?;
 
-    Ok(ExSeries::new(result))
+    Ok(ExSeries::new(result?))
 }
 
 // There is a bug in Polars where broadcast is not applied to checked_div
@@ -158,7 +161,7 @@ pub fn s_sort(
         multithreaded,
         nulls_last,
     };
-    Ok(ExSeries::new(series.sort_with(opts)))
+    Ok(ExSeries::new(series.sort_with(opts)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -193,7 +196,7 @@ pub fn s_unordered_distinct(series: ExSeries) -> Result<ExSeries, ExplorerError>
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_frequencies(series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let df = series.value_counts(true, true)?;
+    let df = series.value_counts(true, true, "counts".to_string(), false)?;
     Ok(ExDataFrame::new(df))
 }
 
@@ -559,8 +562,8 @@ pub fn s_window_sum(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_sum(opts.try_into()?)?;
+    let opts = rolling_opts_fixed_window(window_size, weights, min_periods, center);
+    let s1 = series.rolling_sum(opts)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -572,8 +575,8 @@ pub fn s_window_mean(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_mean(opts.try_into()?)?;
+    let opts = rolling_opts_fixed_window(window_size, weights, min_periods, center);
+    let s1 = series.rolling_mean(opts)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -585,7 +588,7 @@ pub fn s_window_median(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let opts = rolling_opts_fixed_window(window_size, weights, min_periods, center);
     let s1 = series
         .clone_inner()
         .into_frame()
@@ -605,8 +608,8 @@ pub fn s_window_max(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_max(opts.try_into()?)?;
+    let opts = rolling_opts_fixed_window(window_size, weights, min_periods, center);
+    let s1 = series.rolling_max(opts)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -618,8 +621,8 @@ pub fn s_window_min(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_min(opts.try_into()?)?;
+    let opts = rolling_opts_fixed_window(window_size, weights, min_periods, center);
+    let s1 = series.rolling_min(opts)?;
     Ok(ExSeries::new(s1))
 }
 
@@ -631,27 +634,27 @@ pub fn s_window_standard_deviation(
     min_periods: Option<usize>,
     center: bool,
 ) -> Result<ExSeries, ExplorerError> {
-    let opts = rolling_opts(window_size, weights, min_periods, center);
-    let s1 = series.rolling_std(opts.try_into()?)?;
+    let opts = rolling_opts_fixed_window(window_size, weights, min_periods, center);
+    let s1 = series.rolling_std(opts)?;
     Ok(ExSeries::new(s1))
 }
 
 // Used for rolling functions - also see "expressions" module
-pub fn rolling_opts(
+pub fn rolling_opts_fixed_window(
     window_size: usize,
     weights: Option<Vec<f64>>,
     min_periods: Option<usize>,
     center: bool,
-) -> RollingOptions {
-    let min_periods = if let Some(mp) = min_periods {
+) -> RollingOptionsFixedWindow {
+    let min_periods: usize = if let Some(mp) = min_periods {
         mp
     } else {
         window_size
     };
-    let window_size_duration = Duration::new(window_size as i64);
+    // let window_size_duration = Duration::new(window_size as i64);
 
-    RollingOptions {
-        window_size: window_size_duration,
+    RollingOptionsFixedWindow {
+        window_size,
         weights,
         min_periods,
         center,
@@ -838,7 +841,16 @@ pub fn s_mode(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     if s.dtype().is_numeric() {
-        Ok(ExSeries::new(s.product()?))
+        let series = s
+            .clone_inner()
+            .into_frame()
+            .lazy()
+            .select([col(s.name()).product()])
+            .collect()?
+            .column(s.name())?
+            .clone();
+
+        Ok(ExSeries::new(series))
     } else {
         panic!("product/1 not implemented for {:?}", &s.dtype())
     }
@@ -999,7 +1011,8 @@ pub fn s_quantile<'a>(
                 .encode(env)),
         },
         _ => encoding::term_from_value(
-            s.quantile_as_series(quantile, strategy)?
+            s.quantile_reduce(quantile, strategy)?
+                .into_series("quantile")
                 .cast(dtype)?
                 .get(0)?,
             env,
@@ -1612,26 +1625,17 @@ pub fn s_json_decode(s: ExSeries, ex_dtype: ExSeriesDtype) -> Result<ExSeries, E
 }
 
 #[rustler::nif]
-pub fn s_json_path_match(s: ExSeries, json_path: &str) -> Result<ExSeries, ExplorerError> {
-    let p = json_path.to_owned();
-    let function = move |s: Series| {
-        let ca = s.str()?;
-        match ca.json_path_match(&p) {
-            Ok(ca) => Ok(Some(ca.into_series())),
-            Err(e) => Err(PolarsError::ComputeError(format!("{e:?}").into())),
-        }
-    };
-    let s2 = s
+pub fn s_json_path_match(s: ExSeries, json_path: String) -> Result<ExSeries, ExplorerError> {
+    let var_series = s
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s.name())
-            .map(function, GetOutput::from_type(DataType::String))
-            .alias(s.name())])
+        .select([col(s.name()).str().json_path_match(json_path.lit())])
         .collect()?
         .column(s.name())?
         .clone();
-    Ok(ExSeries::new(s2))
+
+    Ok(ExSeries::new(var_series))
 }
 
 #[rustler::nif]

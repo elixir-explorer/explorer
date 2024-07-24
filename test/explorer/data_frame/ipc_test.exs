@@ -188,8 +188,11 @@ defmodule Explorer.DataFrame.IPCTest do
 
       assert {:error, error} = DF.to_ipc(df, path, config: s3_config)
 
-      assert error ==
-               RuntimeError.exception("Generic Error: Could not put multipart to path " <> key)
+      assert %RuntimeError{message: message} = error
+
+      assert message =~ "cannot read information from file, which means the upload failed."
+      assert message =~ "Object at location test-writes/wine"
+      assert message =~ "Client error with status 404 Not Found: No Body"
     end
   end
 

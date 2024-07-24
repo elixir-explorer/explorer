@@ -81,14 +81,14 @@ pub fn lf_to_parquet(
     if streaming {
         let options = ParquetWriteOptions {
             compression,
-            statistics: false,
+            statistics: StatisticsOptions::empty(),
             row_group_size: None,
             data_pagesize_limit: None,
             maintain_order: false,
         };
 
         lf.with_comm_subplan_elim(false)
-            .sink_parquet(filename.into(), options)?;
+            .sink_parquet(filename, options)?;
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -117,7 +117,7 @@ pub fn lf_to_parquet_cloud(
 
     let options = ParquetWriteOptions {
         compression,
-        statistics: false,
+        statistics: StatisticsOptions::empty(),
         row_group_size: None,
         data_pagesize_limit: None,
         maintain_order: false,
@@ -172,7 +172,7 @@ pub fn lf_to_ipc(
             maintain_order: false,
         };
         lf.with_comm_subplan_elim(false)
-            .sink_ipc(filename.into(), options)?;
+            .sink_ipc(filename, options)?;
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -209,7 +209,7 @@ pub fn lf_from_csv(
 
     let df = LazyCsvReader::new(filename)
         .with_infer_schema_length(infer_schema_length)
-        .has_header(has_header)
+        .with_has_header(has_header)
         .with_try_parse_dates(parse_dates)
         .with_n_rows(stop_after_n_rows)
         .with_separator(delimiter_as_byte)
@@ -217,9 +217,9 @@ pub fn lf_from_csv(
         .with_skip_rows_after_header(skip_rows_after_header)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
-        .with_dtype_overwrite(Some(schema_from_dtypes_pairs(dtypes)?.as_ref()))
+        .with_dtype_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
         .with_null_values(Some(NullValues::AllColumns(null_vals)))
-        .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'))
+        .with_eol_char(eol_delimiter.unwrap_or(b'\n'))
         .finish()?;
 
     Ok(ExLazyFrame::new(df))
@@ -248,7 +248,7 @@ pub fn lf_to_csv(
         };
 
         lf.with_comm_subplan_elim(false)
-            .sink_csv(filename.into(), options)?;
+            .sink_csv(filename, options)?;
         Ok(())
     } else {
         let df = lf.collect()?;
@@ -274,7 +274,7 @@ pub fn lf_from_ndjson(
         "\"batch_size\" expected to be non zero.".to_string(),
     ))?;
     let lf = LazyJsonLineReader::new(filename)
-        .with_infer_schema_length(infer_schema_length)
+        .with_infer_schema_length(infer_schema_length.and_then(NonZeroUsize::new))
         .with_batch_size(Some(batch_size))
         .finish()?;
 

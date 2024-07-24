@@ -170,7 +170,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       )
 
     case result do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -204,7 +204,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -212,7 +212,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_parquet(%Local.Entry{} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet(entry.path, max_rows, columns) do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -226,7 +226,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
     case Native.lf_from_ndjson(entry.path, infer_schema_length, batch_size) do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -240,7 +240,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_ipc(%Local.Entry{} = entry, columns) when is_nil(columns) do
     case Native.lf_from_ipc(entry.path) do
-      {:ok, polars_ldf} -> {:ok, Shared.create_dataframe(polars_ldf)}
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
@@ -364,15 +364,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, {compression, level}, _streaming = true) do
-    case Native.lf_to_parquet_cloud(
-           ldf.data,
-           entry,
-           Shared.parquet_compression(compression, level)
-         ) do
-      {:ok, _} -> :ok
-      {:error, error} -> {:error, RuntimeError.exception(error)}
-    end
+  def to_parquet(%DF{} = _ldf, %S3.Entry{} = _entry, {_compression, _level}, _streaming = true) do
+    raise "streaming of a lazy frame to the cloud using parquet is currently unavailable. Please try again disabling the `:streaming` option."
   end
 
   @impl true

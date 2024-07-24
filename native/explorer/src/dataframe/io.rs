@@ -18,6 +18,9 @@ use std::io::{BufReader, BufWriter, Cursor};
 use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
 use crate::{ExDataFrame, ExplorerError};
 
+#[cfg(feature = "cloud")]
+use crate::cloud_writer::CloudWriter;
+
 // ============ CSV ============ //
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -44,24 +47,29 @@ pub fn df_from_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let reader = CsvReader::from_path(filename)?
-        .infer_schema(infer_schema_length)
-        .has_header(has_header)
-        .truncate_ragged_lines(true)
-        .with_try_parse_dates(parse_dates)
+    let dataframe = CsvReadOptions::default()
+        .with_infer_schema_length(infer_schema_length)
+        .with_has_header(has_header)
         .with_n_rows(stop_after_n_rows)
-        .with_separator(delimiter_as_byte)
         .with_skip_rows(skip_rows)
         .with_skip_rows_after_header(skip_rows_after_header)
-        .with_projection(projection)
+        .with_projection(projection.map(Arc::new))
         .with_rechunk(do_rechunk)
-        .with_encoding(encoding)
-        .with_columns(column_names)
-        .with_dtypes(Some(schema_from_dtypes_pairs(dtypes)?))
-        .with_null_values(Some(NullValues::AllColumns(null_vals)))
-        .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
+        .with_columns(column_names.map(Arc::from))
+        .with_schema_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
+        .with_parse_options(
+            CsvParseOptions::default()
+                .with_encoding(encoding)
+                .with_truncate_ragged_lines(true)
+                .with_try_parse_dates(parse_dates)
+                .with_separator(delimiter_as_byte)
+                .with_eol_char(eol_delimiter.unwrap_or(b'\n'))
+                .with_null_values(Some(NullValues::AllColumns(null_vals))),
+        )
+        .try_into_reader_with_file_path(Some(filename.into()))?
+        .finish();
 
-    Ok(ExDataFrame::new(reader.finish()?))
+    Ok(ExDataFrame::new(dataframe?))
 }
 
 pub fn schema_from_dtypes_pairs(
@@ -105,6 +113,9 @@ pub fn df_to_csv_cloud(
         .include_header(include_headers)
         .with_separator(delimiter)
         .finish(&mut data.clone())?;
+
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
@@ -141,7 +152,7 @@ pub fn df_load_csv(
     delimiter_as_byte: u8,
     do_rechunk: bool,
     column_names: Option<Vec<String>>,
-    dtypes: Vec<(&str, ExSeriesDtype)>,
+    dtypes: Option<Vec<(&str, ExSeriesDtype)>>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,
@@ -154,23 +165,32 @@ pub fn df_load_csv(
 
     let cursor = Cursor::new(binary.as_slice());
 
-    let reader = CsvReader::new(cursor)
-        .infer_schema(infer_schema_length)
-        .has_header(has_header)
-        .with_try_parse_dates(parse_dates)
+    let read_options = match dtypes {
+        Some(val) => CsvReadOptions::default().with_schema(Some(schema_from_dtypes_pairs(val)?)),
+        None => CsvReadOptions::default(),
+    };
+
+    let dataframe = read_options
+        .with_has_header(has_header)
+        .with_infer_schema_length(infer_schema_length)
         .with_n_rows(stop_after_n_rows)
-        .with_separator(delimiter_as_byte)
+        .with_columns(column_names.map(Arc::from))
         .with_skip_rows(skip_rows)
         .with_skip_rows_after_header(skip_rows_after_header)
-        .with_projection(projection)
+        .with_projection(projection.map(Arc::new))
         .with_rechunk(do_rechunk)
-        .with_encoding(encoding)
-        .with_columns(column_names)
-        .with_dtypes(Some(schema_from_dtypes_pairs(dtypes)?))
-        .with_null_values(Some(NullValues::AllColumns(null_vals)))
-        .with_end_of_line_char(eol_delimiter.unwrap_or(b'\n'));
+        .with_parse_options(
+            CsvParseOptions::default()
+                .with_separator(delimiter_as_byte)
+                .with_encoding(encoding)
+                .with_null_values(Some(NullValues::AllColumns(null_vals)))
+                .with_try_parse_dates(parse_dates)
+                .with_eol_char(eol_delimiter.unwrap_or(b'\n')),
+        )
+        .into_reader_with_file_handle(cursor)
+        .finish();
 
-    Ok(ExDataFrame::new(reader.finish()?))
+    Ok(ExDataFrame::new(dataframe?))
 }
 
 // ============ Parquet ============ //
@@ -226,6 +246,9 @@ pub fn df_to_parquet_cloud(
     ParquetWriter::new(&mut cloud_writer)
         .with_compression(compression)
         .finish(&mut data.clone())?;
+
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
@@ -235,9 +258,7 @@ fn object_store_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError 
 }
 
 #[cfg(feature = "aws")]
-fn build_aws_s3_cloud_writer(
-    ex_entry: ExS3Entry,
-) -> Result<crate::cloud_writer::CloudWriter, ExplorerError> {
+fn build_aws_s3_cloud_writer(ex_entry: ExS3Entry) -> Result<CloudWriter, ExplorerError> {
     let config = ex_entry.config;
     let mut aws_builder = object_store::aws::AmazonS3Builder::new()
         .with_region(&config.region)
@@ -264,9 +285,8 @@ fn build_aws_s3_cloud_writer(
         .build()
         .map_err(object_store_to_explorer_error)?;
 
-    let object_store: Box<dyn object_store::ObjectStore> = Box::new(aws_s3);
-
-    crate::cloud_writer::CloudWriter::new(object_store, ex_entry.key.into())
+    let object_store: Arc<dyn object_store::ObjectStore> = Arc::new(aws_s3);
+    CloudWriter::new(object_store, ex_entry.key.into())
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -350,6 +370,9 @@ pub fn df_to_ipc_cloud(
     IpcWriter::new(&mut cloud_writer)
         .with_compression(compression)
         .finish(&mut data.clone())?;
+
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
@@ -452,6 +475,9 @@ pub fn df_to_ipc_stream_cloud(
     IpcStreamWriter::new(&mut cloud_writer)
         .with_compression(compression)
         .finish(&mut data.clone())?;
+
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
@@ -509,7 +535,7 @@ pub fn df_from_ndjson(
     let reader = JsonReader::new(buf_reader)
         .with_json_format(JsonFormat::JsonLines)
         .with_batch_size(batch_size)
-        .infer_schema_len(infer_schema_length);
+        .infer_schema_len(infer_schema_length.and_then(NonZeroUsize::new));
 
     Ok(ExDataFrame::new(reader.finish()?))
 }
@@ -534,6 +560,9 @@ pub fn df_to_ndjson_cloud(data: ExDataFrame, ex_entry: ExS3Entry) -> Result<(), 
     JsonWriter::new(&mut cloud_writer)
         .with_json_format(JsonFormat::JsonLines)
         .finish(&mut data.clone())?;
+
+    let _ = cloud_writer.finish()?;
+
     Ok(())
 }
 
@@ -566,7 +595,7 @@ pub fn df_load_ndjson(
     let reader = JsonReader::new(cursor)
         .with_json_format(JsonFormat::JsonLines)
         .with_batch_size(batch_size)
-        .infer_schema_len(infer_schema_length);
+        .infer_schema_len(infer_schema_length.and_then(NonZeroUsize::new));
 
     Ok(ExDataFrame::new(reader.finish()?))
 }

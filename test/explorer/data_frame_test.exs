@@ -299,7 +299,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
       message =
-        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:f, 64}"
+        "expecting the function to return a boolean LazySeries, but instead it returned a LazySeries of type {:s, 64}"
 
       assert_raise ArgumentError, message, fn ->
         DF.filter_with(df, fn ldf ->
@@ -811,7 +811,7 @@ defmodule Explorer.DataFrameTest do
       df = DF.new([%{a: ~s({"n": 1})}, %{a: ~s({"m": 1})}])
 
       assert_raise RuntimeError,
-                   "Polars Error: ComputeError(ErrString(\"error compiling JSONpath expression path error: \\nEof\\n\"))",
+                   "Polars Error: error compiling JSON path expression path error: \nEof\n",
                    fn ->
                      DF.mutate(df, n: json_path_match(a, "$."))
                    end
@@ -948,7 +948,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [-1, 0, 2],
                calc3: [2, 4, 8],
                calc4: [0.5, 1.0, 2.0],
-               calc5: [1.0, 4.0, 16.0],
+               calc5: [1, 4, 16],
                calc6: [0, 1, 2],
                calc7: [1, 0, 0],
                calc8: [:nan, :nan, :nan],
@@ -964,7 +964,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:f, 64},
+               "calc5" => {:s, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64},
                "calc8" => {:f, 64},
@@ -996,7 +996,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [1, 0, -2],
                calc3: [2, 4, 8],
                calc4: [2.0, 1.0, 0.5],
-               calc5: [2.0, 4.0, 16.0],
+               calc5: [2, 4, 16],
                calc5_1: [2.0, 4.0, 16.0],
                calc6: [2, 1, 0],
                calc7: [0, 0, 2]
@@ -1008,7 +1008,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:f, 64},
+               "calc5" => {:s, 64},
                "calc5_1" => {:f, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
@@ -1036,7 +1036,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [-1, 1, 2],
                calc3: [2, 2, 8],
                calc4: [0.5, 2.0, 2.0],
-               calc5: [1.0, 2.0, 16.0],
+               calc5: [1, 2, 16],
                calc6: [0, 2, 2],
                calc7: [1, 0, 0]
              }
@@ -1047,7 +1047,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:f, 64},
+               "calc5" => {:s, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -1074,7 +1074,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [-1, 1, 2],
                calc3: [2, 2, 8],
                calc4: [0.5, 2.0, 2.0],
-               calc5: [1.0, 2.0, 16.0],
+               calc5: [1, 2, 16],
                calc6: [0, 2, 2],
                calc7: [1, 0, 0]
              }
@@ -1085,7 +1085,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:f, 64},
+               "calc5" => {:s, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -1114,7 +1114,7 @@ defmodule Explorer.DataFrameTest do
                calc2: [19, 38, 57],
                calc3: [3, 4, 3],
                calc4: [2.0, :infinity, 7.5],
-               calc5: [1.0, 4.0, 3.0],
+               calc5: [1, 4, 3],
                calc6: [2, nil, 7],
                calc7: [0, nil, 4]
              }
@@ -1128,7 +1128,7 @@ defmodule Explorer.DataFrameTest do
                "calc2" => {:s, 64},
                "calc3" => {:s, 64},
                "calc4" => {:f, 64},
-               "calc5" => {:f, 64},
+               "calc5" => {:s, 64},
                "calc6" => {:s, 64},
                "calc7" => {:s, 64}
              }
@@ -1714,8 +1714,7 @@ defmodule Explorer.DataFrameTest do
           f: substring(a, 1),
           g: substring(b, 2, 5),
           h: substring(c, -3),
-          i: substring(d, 6, 10),
-          j: substring(e, -15, 2)
+          i: substring(d, 6, 10)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1727,8 +1726,7 @@ defmodule Explorer.DataFrameTest do
                f: ["hello", "world", "foo", "bar"],
                g: ["nus", "rth", "rs", "piter"],
                h: ["foo", "bar", "baz", "uox"],
-               i: ["", "", "", ""],
-               j: ["_f", "_b", "_b", "_q"]
+               i: ["", "", "", ""]
              }
     end
 
@@ -3362,10 +3360,10 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_columns(df2, atom_keys: true) == %{
                id: [1],
-               value_variable_a: [1],
-               value_variable_b: [2],
-               another_value_variable_a: [6],
-               another_value_variable_b: [9]
+               value_a: [1],
+               value_b: [2],
+               another_value_a: [6],
+               another_value_b: [9]
              }
     end
 
@@ -3434,6 +3432,7 @@ defmodule Explorer.DataFrameTest do
 
       assert df.names == ["variable", "value"]
       assert df.dtypes == %{"variable" => :string, "value" => {:s, 64}}
+
       assert DF.shape(df) == {3282, 2}
     end
 

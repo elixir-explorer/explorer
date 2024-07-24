@@ -4,16 +4,11 @@
 // or an expression and returns an expression that is
 // wrapped in an Elixir struct.
 
-use polars::error::PolarsError;
-
-use polars::prelude::{GetOutput, IntoSeries, Utf8JsonPathImpl};
-use polars::series::Series;
-
 use crate::datatypes::{
     ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExRankMethod,
     ExSeriesDtype, ExValidValue,
 };
-use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts};
+use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts_fixed_window};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 use polars::lazy::dsl;
 use polars::prelude::{
@@ -38,13 +33,13 @@ pub fn expr_nil() -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_integer(number: i64) -> ExExpr {
-    let expr = number.lit();
+    let expr = Expr::Literal(LiteralValue::Int64(number));
     ExExpr::new(expr)
 }
 
 #[rustler::nif]
 pub fn expr_float(number: f64) -> ExExpr {
-    let expr = number.lit();
+    let expr = Expr::Literal(LiteralValue::Float64(number));
     ExExpr::new(expr)
 }
 
@@ -657,8 +652,11 @@ macro_rules! init_window_expr_fun {
             min_periods: Option<usize>,
             center: bool,
         ) -> ExExpr {
-            let expr = data.clone_inner();
-            let opts = rolling_opts(window_size, weights, min_periods, center);
+            let expr = match weights.as_deref() {
+                Some([]) | None => data.clone_inner(),
+                _ => data.clone_inner().cast(DataType::Float64),
+            };
+            let opts = rolling_opts_fixed_window(window_size, weights, min_periods, center);
             ExExpr::new(expr.$fun(opts))
         }
     };
@@ -679,7 +677,7 @@ pub fn expr_window_standard_deviation(
     center: bool,
 ) -> ExExpr {
     let expr = data.clone_inner();
-    let opts = rolling_opts(window_size, weights, min_periods, center);
+    let opts = rolling_opts_fixed_window(window_size, weights, min_periods, center);
     ExExpr::new(expr.rolling_std(opts).cast(DataType::Float64))
 }
 
@@ -784,7 +782,7 @@ pub fn expr_sort(
         nulls_last,
     };
 
-    ExExpr::new(expr.sort_with(opts))
+    ExExpr::new(expr.sort(opts))
 }
 
 #[rustler::nif]
@@ -831,7 +829,10 @@ pub fn expr_unary_not(expr: ExExpr) -> ExExpr {
 pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
     let df = data.clone();
     let expressions = expr.clone_inner();
-    df.lazy().filter(expressions).describe_plan()
+    df.lazy()
+        .filter(expressions)
+        .describe_plan()
+        .expect("error")
 }
 
 #[rustler::nif]
@@ -1119,18 +1120,8 @@ pub fn expr_json_decode(expr: ExExpr, ex_dtype: ExSeriesDtype) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_json_path_match(expr: ExExpr, json_path: &str) -> ExExpr {
-    let p = json_path.to_owned();
-    let function = move |s: Series| {
-        let ca = s.str()?;
-        match ca.json_path_match(&p) {
-            Ok(ca) => Ok(Some(ca.into_series())),
-            Err(e) => Err(PolarsError::ComputeError(format!("{e:?}").into())),
-        }
-    };
-    let expr = expr
-        .clone_inner()
-        .map(function, GetOutput::from_type(DataType::String));
+pub fn expr_json_path_match(expr: ExExpr, json_path: String) -> ExExpr {
+    let expr = expr.clone_inner().str().json_path_match(json_path.lit());
     ExExpr::new(expr)
 }
 

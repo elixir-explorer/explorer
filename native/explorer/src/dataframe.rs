@@ -260,31 +260,17 @@ pub fn df_sort_by(
     nulls_last: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
+    let sort_options = SortMultipleOptions::new()
+        .with_maintain_order(maintain_order)
+        .with_multithreaded(multithreaded)
+        .with_nulls_last(nulls_last)
+        .with_order_descending_multi(reverse);
+
     let new_df = if groups.is_empty() {
-        // Note: we cannot use either df.sort or df.sort_with_options.
-        // df.sort does not allow a nulls_last option.
-        // df.sort_with_options only allows a single column.
-        let by_columns = df.select_series(by_columns)?;
-        df.sort_impl(
-            by_columns,
-            reverse,
-            nulls_last,
-            maintain_order,
-            None,
-            multithreaded,
-        )?
+        df.sort(by_columns, sort_options)?
     } else {
-        df.group_by_stable(groups)?.apply(|df| {
-            let by_columns = df.select_series(&by_columns)?;
-            df.sort_impl(
-                by_columns,
-                reverse.clone(),
-                nulls_last,
-                maintain_order,
-                None,
-                multithreaded,
-            )
-        })?
+        df.group_by_stable(groups)?
+            .apply(|df| df.sort(by_columns.clone(), sort_options.clone()))?
     };
 
     Ok(ExDataFrame::new(new_df))
@@ -296,20 +282,25 @@ pub fn df_sort_with(
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
     maintain_order: bool,
+    multithreaded: bool,
     nulls_last: bool,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let df = data.clone_inner();
     let exprs = ex_expr_to_exprs(expressions);
 
+    let sort_options = SortMultipleOptions::new()
+        .with_maintain_order(maintain_order)
+        .with_multithreaded(multithreaded)
+        .with_nulls_last(nulls_last)
+        .with_order_descending_multi(directions);
+
     let new_df = if groups.is_empty() {
-        df.lazy()
-            .sort_by_exprs(exprs, directions, nulls_last, maintain_order)
-            .collect()?
+        df.lazy().sort_by_exprs(exprs, sort_options).collect()?
     } else {
         df.group_by_stable(groups)?.apply(|df| {
             df.lazy()
-                .sort_by_exprs(&exprs, &directions, nulls_last, maintain_order)
+                .sort_by_exprs(&exprs, sort_options.clone())
                 .collect()
         })?
     };
@@ -415,8 +406,8 @@ pub fn df_pivot_wider(
 
     let mut new_df = pivot_stable(
         &df,
-        &temp_id_names,
         [pivot_column],
+        Some(temp_id_names),
         Some(values_column),
         false,
         Some(PivotAgg::First),

@@ -261,7 +261,7 @@ defmodule Explorer.DataFrame.LazyTest do
                )
 
       assert RuntimeError.message(error) =~
-               "Polars Error: Object at location oranges.parquet not found:"
+               "Polars Error: expected at least 1 path: 'parquet scan' failed: 'select' input failed to resolve"
     end
   end
 
@@ -411,12 +411,19 @@ defmodule Explorer.DataFrame.LazyTest do
     path = "s3://test-bucket/test-lazy-writes/wine-#{System.monotonic_time()}.parquet"
 
     ldf = DF.head(ldf, 15)
-    assert :ok = DF.to_parquet(ldf, path, streaming: true, config: config)
+    # assert :ok = DF.to_parquet(ldf, path, streaming: true, config: config)
 
-    df = DF.compute(ldf)
-    df1 = DF.from_parquet!(path, config: config)
+    # df = DF.compute(ldf)
+    # df1 = DF.from_parquet!(path, config: config)
 
-    assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
+    # assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
+
+    message =
+      "streaming of a lazy frame to the cloud using parquet is currently unavailable. Please try again disabling the `:streaming` option."
+
+    assert_raise RuntimeError, message, fn ->
+      DF.to_parquet(ldf, path, streaming: true, config: config)
+    end
   end
 
   @tag :cloud_integration

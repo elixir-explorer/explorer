@@ -24,7 +24,7 @@ pub fn lf_describe_plan(data: ExLazyFrame, optimized: bool) -> Result<String, Ex
     let lf = data.clone_inner();
     let plan = match optimized {
         true => lf.describe_optimized_plan()?,
-        false => lf.describe_plan(),
+        false => lf.describe_plan().expect("error"),
     };
     Ok(plan)
 }
@@ -63,7 +63,7 @@ pub fn lf_tail(
 
 #[rustler::nif]
 pub fn lf_names(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
-    let lf = data.clone_inner();
+    let mut lf = data.clone_inner();
     let names = lf
         .schema()?
         .iter_names()
@@ -146,9 +146,12 @@ pub fn lf_sort_with(
     nulls_last: bool,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let exprs = ex_expr_to_exprs(expressions);
-    let ldf = data
-        .clone_inner()
-        .sort_by_exprs(exprs, directions, nulls_last, maintain_order);
+    let sort_options = SortMultipleOptions::new()
+        .with_nulls_last(nulls_last)
+        .with_maintain_order(maintain_order)
+        .with_order_descending_multi(directions);
+
+    let ldf = data.clone_inner().sort_by_exprs(exprs, sort_options);
 
     Ok(ExLazyFrame::new(ldf))
 }
@@ -160,12 +163,13 @@ pub fn lf_grouped_sort_with(
     groups: Vec<ExExpr>,
     directions: Vec<bool>,
 ) -> Result<ExLazyFrame, ExplorerError> {
+    let sort_options = SortMultipleOptions::new().with_order_descending_multi(directions);
     // For grouped lazy frames, we need to use the `#sort_by` method that is
     // less powerful, but can be used with `over`.
     // See: https://docs.pola.rs/user-guide/expressions/window/#operations-per-group
     let ldf = data
         .clone_inner()
-        .with_columns([col("*").sort_by(expressions, directions).over(groups)]);
+        .with_columns([col("*").sort_by(expressions, sort_options).over(groups)]);
 
     Ok(ExLazyFrame::new(ldf))
 }
@@ -258,14 +262,14 @@ pub fn lf_pivot_longer(
     values_to: String,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
-    let melt_opts = MeltArgs {
-        id_vars: to_smart_strings(id_vars),
-        value_vars: to_smart_strings(value_vars),
+    let unpivot_opts = UnpivotArgs {
+        index: to_smart_strings(id_vars),
+        on: to_smart_strings(value_vars),
         variable_name: Some(names_to.into()),
         value_name: Some(values_to.into()),
         streamable: true,
     };
-    let new_df = ldf.melt(melt_opts);
+    let new_df = ldf.unpivot(unpivot_opts);
     Ok(ExLazyFrame::new(new_df))
 }
 
@@ -281,7 +285,7 @@ pub fn lf_join(
     let how = match how {
         "left" => JoinType::Left,
         "inner" => JoinType::Inner,
-        "outer" => JoinType::Outer { coalesce: false },
+        "outer" => JoinType::Full,
         "cross" => JoinType::Cross,
         _ => {
             return Err(ExplorerError::Other(format!(
@@ -293,14 +297,24 @@ pub fn lf_join(
     let ldf = data.clone_inner();
     let ldf1 = other.clone_inner();
 
-    let new_ldf = ldf
-        .join_builder()
-        .with(ldf1)
-        .how(how)
-        .left_on(ex_expr_to_exprs(left_on))
-        .right_on(ex_expr_to_exprs(right_on))
-        .suffix(suffix)
-        .finish();
+    let new_ldf = match how {
+        // Cross-joins no longer accept keys.
+        // https://github.com/pola-rs/polars/pull/17305
+        JoinType::Cross => ldf
+            .join_builder()
+            .with(ldf1)
+            .how(JoinType::Cross)
+            .suffix(suffix)
+            .finish(),
+        _ => ldf
+            .join_builder()
+            .with(ldf1)
+            .how(how)
+            .left_on(ex_expr_to_exprs(left_on))
+            .right_on(ex_expr_to_exprs(right_on))
+            .suffix(suffix)
+            .finish(),
+    };
 
     Ok(ExLazyFrame::new(new_ldf))
 }
@@ -322,7 +336,7 @@ pub fn lf_concat_columns(ldfs: Vec<ExLazyFrame>) -> Result<ExLazyFrame, Explorer
         .iter()
         .enumerate()
         .map(|(idx, ex_ldf)| {
-            let ldf = ex_ldf.clone_inner();
+            let mut ldf = ex_ldf.clone_inner();
             let names: Vec<String> = ldf
                 .schema()
                 .expect("should be able to get schema")
