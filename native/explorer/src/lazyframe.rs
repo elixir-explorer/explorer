@@ -163,8 +163,7 @@ pub fn lf_grouped_sort_with(
     groups: Vec<ExExpr>,
     directions: Vec<bool>,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    let sort_options = SortMultipleOptions::new()
-        .with_order_descending_multi(directions);
+    let sort_options = SortMultipleOptions::new().with_order_descending_multi(directions);
     // For grouped lazy frames, we need to use the `#sort_by` method that is
     // less powerful, but can be used with `over`.
     // See: https://docs.pola.rs/user-guide/expressions/window/#operations-per-group
