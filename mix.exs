@@ -46,12 +46,13 @@ defmodule Explorer.MixProject do
       {:rustler_precompiled, "~> 0.7"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 3.1.1 or ~> 4.0.0"},
-      {:castore, "~> 1.0", optional: true},
-      {:adbc, "~> 0.1", optional: true},
 
       ## Optional
-      {:rustler, "~> 0.32.0", optional: not (@dev? or @force_build?)},
+      {:flame, "~> 0.3", optional: true},
+      {:castore, "~> 1.0", optional: true},
+      {:adbc, "~> 0.1", optional: true},
       {:nx, "~> 0.4", optional: true},
+      {:rustler, "~> 0.32.0", optional: not (@dev? or @force_build?)},
 
       ## Test
       {:bypass, "~> 2.1", only: :test},

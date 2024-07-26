@@ -296,4 +296,43 @@ defmodule Explorer.RemoteTest do
              """
     end
   end
+
+  describe "with FLAME" do
+    setup config do
+      start_supervised!(
+        {FLAME.Pool,
+         name: config.test, min: 0, max: 2, max_concurrency: 2, idle_shutdown_after: 100}
+      )
+
+      :ok
+    end
+
+    test "automatically places", config do
+      # Since FLAME by default runs on the current node,
+      # we cannot assert on the result, we need to use tracing instead.
+
+      # First do a warmup to load the code:
+      %Explorer.Series{} =
+        FLAME.call(
+          config.test,
+          fn -> Explorer.Series.from_list([1, 2, 3]) end,
+          track_resources: true
+        )
+
+      # Now setup the tracer
+      :erlang.trace(:all, true, [:call, tracer: self()])
+      :erlang.trace_pattern({FLAME.Trackable.Explorer.Series, :_, :_}, [])
+
+      spawn_link(fn ->
+        %Explorer.Series{} =
+          FLAME.call(
+            config.test,
+            fn -> Explorer.Series.from_list([1, 2, 3]) end,
+            track_resources: true
+          )
+      end)
+
+      assert_receive {:trace, _, :call, {FLAME.Trackable.Explorer.Series, :track, _}}
+    end
+  end
 end
