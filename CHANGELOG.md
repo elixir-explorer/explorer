@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add initial support for SQL queries against dataframes.
+- Add initial support for SQL queries.
 
   The `Explorer.DataFrame.sql/3` is a function that accepts a dataframe and
   a SQL query. The SQL is not validated by Explorer, so the queries will be
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Stop inference of **dtypes** if the `:dtype` option is given by the user.
+- Stop inference of _dtypes_ if the `:dtype` option is given by the user.
   The main goal of this change is to improve performance. We are now delegating
   the job of decoding the terms as the given `:dtype` to the backend.
 
