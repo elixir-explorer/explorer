@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.9.0] - 2024-07-26
+
 ### Added
 
 - Add initial support for SQL queries.
@@ -1070,7 +1072,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.9.0...HEAD
+[v0.9.0]: https://github.com/elixir-explorer/explorer/compare/v0.8.3...v0.9.0
 [v0.8.3]: https://github.com/elixir-explorer/explorer/compare/v0.8.2...v0.8.3
 [v0.8.2]: https://github.com/elixir-explorer/explorer/compare/v0.8.1...v0.8.2
 [v0.8.1]: https://github.com/elixir-explorer/explorer/compare/v0.8.0...v0.8.1

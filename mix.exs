@@ -2,7 +2,7 @@ defmodule Explorer.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-nx/explorer"
-  @version "0.9.0-dev"
+  @version "0.9.0"
   @dev? String.ends_with?(@version, "-dev")
   @force_build? System.get_env("EXPLORER_BUILD") in ["1", "true"]
 
@@ -52,7 +52,7 @@ defmodule Explorer.MixProject do
       {:castore, "~> 1.0", optional: true},
       {:adbc, "~> 0.1", optional: true},
       {:nx, "~> 0.4", optional: true},
-      {:rustler, "~> 0.32.0", optional: not (@dev? or @force_build?)},
+      {:rustler, "~> 0.34.0", optional: not (@dev? or @force_build?)},
 
       ## Test
       {:bypass, "~> 2.1", only: :test},
