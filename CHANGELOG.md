@@ -7,7 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add initial support for SQL queries.
+
+  The `Explorer.DataFrame.sql/3` is a function that accepts a dataframe and
+  a SQL query. The SQL is not validated by Explorer, so the queries will be
+  backend dependent. Right now we have only Polars as the backend.
+
+- Add support for remote series and dataframes.
+
+  Automatically transfer data between nodes for remote series
+  and dataframes and perform distributed garbage collection.
+
+  The functions in `Explorer.DataFrame` and `Explorer.Series`
+  will automatically move operations on remote dataframes to
+  the nodes they belong to. The `Explorer.Remote` module provides
+  additional conveniences for manual placement.
+
+- Add FLAME integration, so we automatically track remote series and
+  dataframes returned from `FLAME` calls when the `:track_resources`
+  option is enabled.
+  See [FLAME](https://github.com/phoenixframework/flame) for more.
+
+- Add `Explorer.DataFrame.transform/3` that applies an Elixir function to
+  each row. This function is similar to `Explorer.Series.transform/2`, and
+  as such, it's considered an expensive operation. So it's recommended only if
+  there is no similar dataframe or series operation available.
+
+- Improve performance of `Explorer.Series.from_list/2` for most of the cases
+  where the `:dtype` option is given. This is specially true for when the
+  dtype is `:binary`.
+
 ### Changed
+
+- Stop inference of _dtypes_ if the `:dtype` option is given by the user.
+  The main goal of this change is to improve performance. We are now delegating
+  the job of decoding the terms as the given `:dtype` to the backend.
 
 - `Explorer.Series.pow/2` no longer casts to float when the exponent is a signed
   integer. We are following the way Polars works now, which is to try to execute
