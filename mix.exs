@@ -48,7 +48,7 @@ defmodule Explorer.MixProject do
       {:table_rex, "~> 3.1.1 or ~> 4.0.0"},
 
       ## Optional
-      {:flame, github: "phoenixframework/flame", branch: "jv-track-resources", optional: true},
+      {:flame, "~> 0.3", optional: true},
       {:castore, "~> 1.0", optional: true},
       {:adbc, "~> 0.1", optional: true},
       {:nx, "~> 0.4", optional: true},
