@@ -487,8 +487,8 @@ defmodule Explorer.DataFrame.LazyTest do
     DF.to_ipc!(df, path)
 
     assert_raise ArgumentError,
-                 "from_ipc failed: \"`columns` is not supported by Polars' lazy backend. " <>
-                   "Consider using `select/2` after reading the IPC file\"",
+                 "from_ipc failed: `columns` is not supported by Polars' lazy backend. " <>
+                   "Consider using `select/2` after reading the IPC file",
                  fn ->
                    DF.from_ipc!(path, lazy: true, columns: ["country", "year", "total"])
                  end

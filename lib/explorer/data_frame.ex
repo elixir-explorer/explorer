@@ -618,7 +618,7 @@ defmodule Explorer.DataFrame do
         df
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "from_csv failed: #{inspect(e.message)}"
+        raise module, "from_csv failed: #{e.message}"
 
       {:error, error} ->
         raise "from_csv failed: #{inspect(error)}"
@@ -673,7 +673,7 @@ defmodule Explorer.DataFrame do
         :ok
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "to_csv failed: #{inspect(e.message)}"
+        raise module, "to_csv failed: #{e.message}"
 
       {:error, error} ->
         raise "to_csv failed: #{inspect(error)}"
@@ -868,7 +868,7 @@ defmodule Explorer.DataFrame do
         df
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "from_parquet failed: #{inspect(e.message)}"
+        raise module, "from_parquet failed: #{e.message}"
 
       {:error, error} ->
         raise "from_parquet failed: #{inspect(error)}"
@@ -948,7 +948,7 @@ defmodule Explorer.DataFrame do
         :ok
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "to_parquet failed: #{inspect(e.message)}"
+        raise module, "to_parquet failed: #{e.message}"
 
       {:error, error} ->
         raise "to_parquet failed: #{inspect(error)}"
@@ -1077,7 +1077,7 @@ defmodule Explorer.DataFrame do
         df
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "from_ipc failed: #{inspect(e.message)}"
+        raise module, "from_ipc failed: #{e.message}"
 
       {:error, error} ->
         raise "from_ipc failed: #{inspect(error)}"
@@ -1142,7 +1142,7 @@ defmodule Explorer.DataFrame do
         :ok
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "to_ipc failed: #{inspect(e.message)}"
+        raise module, "to_ipc failed: #{e.message}"
 
       {:error, error} ->
         raise "to_ipc failed: #{inspect(error)}"
@@ -1277,7 +1277,7 @@ defmodule Explorer.DataFrame do
         df
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "from_ipc_stream failed: #{inspect(e.message)}"
+        raise module, "from_ipc_stream failed: #{e.message}"
 
       {:error, error} ->
         raise "from_ipc_stream failed: #{inspect(error)}"
@@ -1331,7 +1331,7 @@ defmodule Explorer.DataFrame do
         :ok
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "to_ipc_stream failed: #{inspect(e.message)}"
+        raise module, "to_ipc_stream failed: #{e.message}"
 
       {:error, error} ->
         raise "to_ipc_stream failed: #{inspect(error)}"
@@ -1464,7 +1464,7 @@ defmodule Explorer.DataFrame do
         df
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "from_ndjson failed: #{inspect(e.message)}"
+        raise module, "from_ndjson failed: #{e.message}"
 
       {:error, error} ->
         raise "from_ndjson failed: #{inspect(error)}"
@@ -1508,7 +1508,7 @@ defmodule Explorer.DataFrame do
         :ok
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "to_ndjson failed: #{inspect(e.message)}"
+        raise module, "to_ndjson failed: #{e.message}"
 
       {:error, error} ->
         raise "to_ndjson failed: #{inspect(error)}"
@@ -1590,7 +1590,7 @@ defmodule Explorer.DataFrame do
         df
 
       {:error, %module{} = e} when module in [ArgumentError, RuntimeError] ->
-        raise module, "load_ndjson failed: #{inspect(e.message)}"
+        raise module, "load_ndjson failed: #{e.message}"
 
       {:error, error} ->
         raise "load_ndjson failed: #{inspect(error)}"
