@@ -125,7 +125,7 @@ defmodule Explorer.MixProject do
         "LICENSE"
       ],
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url, "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md"},
+      links: %{"GitHub" => @source_url, "Changelog" => "#{@source_url}/blob/v#{@version}/CHANGELOG.md"},
       maintainers: ["Christopher Grainger", "Philip Sampaio", "José Valim"]
     ]
   end
