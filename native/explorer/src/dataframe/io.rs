@@ -47,13 +47,8 @@ pub fn df_from_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let read_options = if dtypes.is_empty() {
-        CsvReadOptions::default()
-    } else {
-        CsvReadOptions::default().with_schema_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
-    };
-
-    let dataframe = read_options
+    let dataframe = CsvReadOptions::default()
+        .with_schema_overwrite(schema_from_dtypes_pairs(dtypes)?)
         .with_infer_schema_length(infer_schema_length)
         .with_has_header(has_header)
         .with_n_rows(stop_after_n_rows)
@@ -79,13 +74,17 @@ pub fn df_from_csv(
 
 pub fn schema_from_dtypes_pairs(
     dtypes: Vec<(&str, ExSeriesDtype)>,
-) -> Result<Arc<Schema>, ExplorerError> {
+) -> Result<Option<Arc<Schema>>, ExplorerError> {
+    if dtypes.is_empty() {
+        return Ok(None);
+    }
+
     let mut schema = Schema::new();
     for (name, ex_dtype) in dtypes {
         let dtype = DataType::try_from(&ex_dtype)?;
         schema.with_column(name.into(), dtype);
     }
-    Ok(Arc::new(schema))
+    Ok(Some(Arc::new(schema)))
 }
 
 #[rustler::nif(schedule = "DirtyIo")]
@@ -170,13 +169,8 @@ pub fn df_load_csv(
 
     let cursor = Cursor::new(binary.as_slice());
 
-    let read_options = if dtypes.is_empty() {
-        CsvReadOptions::default()
-    } else {
-        CsvReadOptions::default().with_schema_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
-    };
-
-    let dataframe = read_options
+    let dataframe = CsvReadOptions::default()
+        .with_schema_overwrite(schema_from_dtypes_pairs(dtypes)?)
         .with_has_header(has_header)
         .with_infer_schema_length(infer_schema_length)
         .with_n_rows(stop_after_n_rows)
