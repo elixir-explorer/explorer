@@ -47,7 +47,13 @@ pub fn df_from_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let dataframe = CsvReadOptions::default()
+    let read_options = if dtypes.is_empty() {
+        CsvReadOptions::default()
+    } else {
+        CsvReadOptions::default().with_schema_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
+    };
+
+    let dataframe = read_options
         .with_infer_schema_length(infer_schema_length)
         .with_has_header(has_header)
         .with_n_rows(stop_after_n_rows)
@@ -56,7 +62,6 @@ pub fn df_from_csv(
         .with_projection(projection.map(Arc::new))
         .with_rechunk(do_rechunk)
         .with_columns(column_names.map(Arc::from))
-        .with_schema_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
         .with_parse_options(
             CsvParseOptions::default()
                 .with_encoding(encoding)
@@ -152,7 +157,7 @@ pub fn df_load_csv(
     delimiter_as_byte: u8,
     do_rechunk: bool,
     column_names: Option<Vec<String>>,
-    dtypes: Option<Vec<(&str, ExSeriesDtype)>>,
+    dtypes: Vec<(&str, ExSeriesDtype)>,
     encoding: &str,
     null_vals: Vec<String>,
     parse_dates: bool,
@@ -165,9 +170,10 @@ pub fn df_load_csv(
 
     let cursor = Cursor::new(binary.as_slice());
 
-    let read_options = match dtypes {
-        Some(val) => CsvReadOptions::default().with_schema(Some(schema_from_dtypes_pairs(val)?)),
-        None => CsvReadOptions::default(),
+    let read_options = if dtypes.is_empty() {
+        CsvReadOptions::default()
+    } else {
+        CsvReadOptions::default().with_schema_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
     };
 
     let dataframe = read_options
