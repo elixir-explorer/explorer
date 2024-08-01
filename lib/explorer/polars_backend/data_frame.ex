@@ -195,11 +195,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     {columns, with_projection} = column_names_or_projection(columns)
 
-    dtypes_list =
-      if not Enum.empty?(dtypes) do
-        Map.to_list(dtypes)
-      end
-
     df =
       Native.df_load_csv(
         contents,
@@ -212,7 +207,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         delimiter,
         true,
         columns,
-        dtypes_list,
+        Map.to_list(dtypes),
         encoding,
         nil_values,
         parse_dates,

@@ -78,6 +78,130 @@ defmodule Explorer.DataFrame.CSVTest do
     assert city[13] == "Aberdeen, Aberdeen City, UK"
   end
 
+  test "load_csv/2 dtypes - all as strings" do
+    csv =
+      """
+      id,first_name,last_name,email,gender,ip_address,salary,latitude,longitude
+      1,Torey,Geraghty,email@shutterfly.com,Male,119.110.38.172,14036.68,38.9187037,-76.9611991
+      2,Nevin,Mandrake,email@ovh.net,Male,161.2.124.233,32530.27,41.4176872,-8.7653155
+      3,Melisenda,Guiso,email@wp.com,Female,192.152.64.134,9177.8,21.3772424,110.2485736
+      4,Noble,Doggett,email@springer.com,Male,252.234.29.244,20328.76,37.268428,55.1487513
+      5,Janaya,Claypoole,email@infoseek.co.jp,Female,150.191.214.252,21442.93,15.3553417,120.5293228
+      6,Sarah,Hugk,email@bbb.org,Female,211.158.246.13,79709.16,28.168408,120.482198
+      7,Ulberto,Simenon,email@unblog.fr,Male,206.56.108.90,16248.98,48.4046776,-0.9746208
+      8,Kevon,Lingner,email@dyndns.org,Male,181.71.212.116,7497.64,-23.351784,-47.6931718
+      9,Sada,Garbert,email@flavors.me,Female,170.42.190.231,15969.95,30.3414125,114.1543243
+      10,Salmon,Shoulders,email@prweb.com,Male,68.138.106.143,19996.71,49.2152833,17.7687416
+      """
+
+    headers = ~w(id first_name last_name email gender ip_address salary latitude longitude)
+
+    # Out of order on purpose.
+    df = DF.load_csv!(csv, dtypes: for(l <- Enum.shuffle(headers), do: {l, :string}))
+
+    assert DF.names(df) == headers
+
+    assert DF.to_columns(df, atom_keys: true) == %{
+             email: [
+               "email@shutterfly.com",
+               "email@ovh.net",
+               "email@wp.com",
+               "email@springer.com",
+               "email@infoseek.co.jp",
+               "email@bbb.org",
+               "email@unblog.fr",
+               "email@dyndns.org",
+               "email@flavors.me",
+               "email@prweb.com"
+             ],
+             first_name: [
+               "Torey",
+               "Nevin",
+               "Melisenda",
+               "Noble",
+               "Janaya",
+               "Sarah",
+               "Ulberto",
+               "Kevon",
+               "Sada",
+               "Salmon"
+             ],
+             gender: [
+               "Male",
+               "Male",
+               "Female",
+               "Male",
+               "Female",
+               "Female",
+               "Male",
+               "Male",
+               "Female",
+               "Male"
+             ],
+             id: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+             ip_address: [
+               "119.110.38.172",
+               "161.2.124.233",
+               "192.152.64.134",
+               "252.234.29.244",
+               "150.191.214.252",
+               "211.158.246.13",
+               "206.56.108.90",
+               "181.71.212.116",
+               "170.42.190.231",
+               "68.138.106.143"
+             ],
+             last_name: [
+               "Geraghty",
+               "Mandrake",
+               "Guiso",
+               "Doggett",
+               "Claypoole",
+               "Hugk",
+               "Simenon",
+               "Lingner",
+               "Garbert",
+               "Shoulders"
+             ],
+             latitude: [
+               "38.9187037",
+               "41.4176872",
+               "21.3772424",
+               "37.268428",
+               "15.3553417",
+               "28.168408",
+               "48.4046776",
+               "-23.351784",
+               "30.3414125",
+               "49.2152833"
+             ],
+             longitude: [
+               "-76.9611991",
+               "-8.7653155",
+               "110.2485736",
+               "55.1487513",
+               "120.5293228",
+               "120.482198",
+               "-0.9746208",
+               "-47.6931718",
+               "114.1543243",
+               "17.7687416"
+             ],
+             salary: [
+               "14036.68",
+               "32530.27",
+               "9177.8",
+               "20328.76",
+               "21442.93",
+               "79709.16",
+               "16248.98",
+               "7497.64",
+               "15969.95",
+               "19996.71"
+             ]
+           }
+  end
+
   def assert_csv(type, csv_value, parsed_value, from_csv_options) do
     data = "column\n#{csv_value}\n"
     # parsing should work as expected
@@ -179,6 +303,131 @@ defmodule Explorer.DataFrame.CSVTest do
       assert DF.to_columns(df, atom_keys: true) == %{
                a: ["1", "3"],
                b: [2, 4]
+             }
+    end
+
+    @tag :tmp_dir
+    test "dtypes - all as strings", config do
+      csv =
+        tmp_csv(config.tmp_dir, """
+        id,first_name,last_name,email,gender,ip_address,salary,latitude,longitude
+        1,Torey,Geraghty,email@shutterfly.com,Male,119.110.38.172,14036.68,38.9187037,-76.9611991
+        2,Nevin,Mandrake,email@ovh.net,Male,161.2.124.233,32530.27,41.4176872,-8.7653155
+        3,Melisenda,Guiso,email@wp.com,Female,192.152.64.134,9177.8,21.3772424,110.2485736
+        4,Noble,Doggett,email@springer.com,Male,252.234.29.244,20328.76,37.268428,55.1487513
+        5,Janaya,Claypoole,email@infoseek.co.jp,Female,150.191.214.252,21442.93,15.3553417,120.5293228
+        6,Sarah,Hugk,email@bbb.org,Female,211.158.246.13,79709.16,28.168408,120.482198
+        7,Ulberto,Simenon,email@unblog.fr,Male,206.56.108.90,16248.98,48.4046776,-0.9746208
+        8,Kevon,Lingner,email@dyndns.org,Male,181.71.212.116,7497.64,-23.351784,-47.6931718
+        9,Sada,Garbert,email@flavors.me,Female,170.42.190.231,15969.95,30.3414125,114.1543243
+        10,Salmon,Shoulders,email@prweb.com,Male,68.138.106.143,19996.71,49.2152833,17.7687416
+        """)
+
+      headers = ~w(id first_name last_name email gender ip_address salary latitude longitude)
+
+      # Out of order on purpose.
+      df = DF.from_csv!(csv, dtypes: for(l <- Enum.shuffle(headers), do: {l, :string}))
+
+      assert DF.names(df) == headers
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               email: [
+                 "email@shutterfly.com",
+                 "email@ovh.net",
+                 "email@wp.com",
+                 "email@springer.com",
+                 "email@infoseek.co.jp",
+                 "email@bbb.org",
+                 "email@unblog.fr",
+                 "email@dyndns.org",
+                 "email@flavors.me",
+                 "email@prweb.com"
+               ],
+               first_name: [
+                 "Torey",
+                 "Nevin",
+                 "Melisenda",
+                 "Noble",
+                 "Janaya",
+                 "Sarah",
+                 "Ulberto",
+                 "Kevon",
+                 "Sada",
+                 "Salmon"
+               ],
+               gender: [
+                 "Male",
+                 "Male",
+                 "Female",
+                 "Male",
+                 "Female",
+                 "Female",
+                 "Male",
+                 "Male",
+                 "Female",
+                 "Male"
+               ],
+               id: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+               ip_address: [
+                 "119.110.38.172",
+                 "161.2.124.233",
+                 "192.152.64.134",
+                 "252.234.29.244",
+                 "150.191.214.252",
+                 "211.158.246.13",
+                 "206.56.108.90",
+                 "181.71.212.116",
+                 "170.42.190.231",
+                 "68.138.106.143"
+               ],
+               last_name: [
+                 "Geraghty",
+                 "Mandrake",
+                 "Guiso",
+                 "Doggett",
+                 "Claypoole",
+                 "Hugk",
+                 "Simenon",
+                 "Lingner",
+                 "Garbert",
+                 "Shoulders"
+               ],
+               latitude: [
+                 "38.9187037",
+                 "41.4176872",
+                 "21.3772424",
+                 "37.268428",
+                 "15.3553417",
+                 "28.168408",
+                 "48.4046776",
+                 "-23.351784",
+                 "30.3414125",
+                 "49.2152833"
+               ],
+               longitude: [
+                 "-76.9611991",
+                 "-8.7653155",
+                 "110.2485736",
+                 "55.1487513",
+                 "120.5293228",
+                 "120.482198",
+                 "-0.9746208",
+                 "-47.6931718",
+                 "114.1543243",
+                 "17.7687416"
+               ],
+               salary: [
+                 "14036.68",
+                 "32530.27",
+                 "9177.8",
+                 "20328.76",
+                 "21442.93",
+                 "79709.16",
+                 "16248.98",
+                 "7497.64",
+                 "15969.95",
+                 "19996.71"
+               ]
              }
     end
 

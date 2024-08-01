@@ -217,7 +217,7 @@ pub fn lf_from_csv(
         .with_skip_rows_after_header(skip_rows_after_header)
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
-        .with_dtype_overwrite(Some(schema_from_dtypes_pairs(dtypes)?))
+        .with_dtype_overwrite(schema_from_dtypes_pairs(dtypes)?)
         .with_null_values(Some(NullValues::AllColumns(null_vals)))
         .with_eol_char(eol_delimiter.unwrap_or(b'\n'))
         .finish()?;
