@@ -354,7 +354,7 @@ s = 1..11 |> Enum.to_list() |> Series.from_list()
 ```
 
 ```elixir
-s1 = 11..1 |> Enum.to_list() |> Series.from_list()
+s1 = 11..1//-1 |> Enum.to_list() |> Series.from_list()
 ```
 
 <!-- livebook:{"output":true} -->
@@ -964,7 +964,7 @@ series contents, but every operation will be optimized and run only once.
 Remember those helpful error messages?
 
 ```elixir
-DF.filter(df, cuontry == "BRAZIL")
+DF.filter(df, country == "BRAZIL")
 ```
 
 ### Mutate
