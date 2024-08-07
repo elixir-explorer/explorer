@@ -354,7 +354,7 @@ s = 1..11 |> Enum.to_list() |> Series.from_list()
 ```
 
 ```elixir
-s1 = 11..1 |> Enum.to_list() |> Series.from_list()
+s1 = 11..1//-1 |> Enum.to_list() |> Series.from_list()
 ```
 
 <!-- livebook:{"output":true} -->
