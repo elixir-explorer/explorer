@@ -83,7 +83,7 @@ pub fn lf_to_parquet(
             compression,
             statistics: StatisticsOptions::empty(),
             row_group_size: None,
-            data_pagesize_limit: None,
+            data_page_size: None,
             maintain_order: false,
         };
 
@@ -119,7 +119,7 @@ pub fn lf_to_parquet_cloud(
         compression,
         statistics: StatisticsOptions::empty(),
         row_group_size: None,
-        data_pagesize_limit: None,
+        data_page_size: None,
         maintain_order: false,
     };
 

@@ -327,7 +327,7 @@ pub fn s_from_list_of_series(name: &str, series_term: Term) -> NifResult<ExSerie
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_of_series_as_structs(name: &str, series_term: Term) -> NifResult<ExSeries> {
     let series_vec = series_term.decode::<Vec<ExSeries>>()?;
-    match StructChunked::new(
+    match StructChunked::from_series(
         name,
         series_vec
             .into_iter()

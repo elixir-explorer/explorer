@@ -207,7 +207,7 @@ pub fn df_from_parquet(
     let buf_reader = BufReader::new(file);
 
     let reader = ParquetReader::new(buf_reader)
-        .with_n_rows(stop_after_n_rows)
+        .with_slice(stop_after_n_rows.map(|max| (0, max)))
         .with_columns(column_names)
         .with_projection(projection)
         .set_rechunk(rechunk);
