@@ -38,8 +38,9 @@ object_store = { version = "0.10", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-git = "https://github.com/pola-rs/polars"
+# git = "https://github.com/pola-rs/polars"
 # version = "0.41.3"
+path = "/home/philip/sandbox/polars/crates/polars"
 default-features = false
 features = [
   "abs",
@@ -87,8 +88,9 @@ features = [
 ]
 
 [dependencies.polars-ops]
-git = "https://github.com/pola-rs/polars"
+# git = "https://github.com/pola-rs/polars"
 # version = "0.41.3"
+path = "/home/philip/sandbox/polars/crates/polars-ops"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]
