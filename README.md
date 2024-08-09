@@ -290,6 +290,9 @@ going to be read at compile time, enabling the legacy variants of artifacts.
 config :explorer, use_legacy_artifacts: true
 ```
 
+If you see the error message "Illegal instruction" after your project compiles, you need to
+enable the legacy artifacts.
+
 ### Features disabled
 
 Some of the features cannot be compiled to some targets, because one of the dependencies

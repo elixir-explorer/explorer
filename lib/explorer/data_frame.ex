@@ -1657,7 +1657,7 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Computes the lazy data frame into an eager one, exucting the query.
+  Computes the lazy data frame into an eager one, executing the query.
 
   It is the opposite of `lazy/1`. If it is not a lazy data frame,
   this is a noop.
