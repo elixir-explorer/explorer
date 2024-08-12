@@ -41,6 +41,7 @@ defmodule Explorer.Remote.Holder do
   def handle_info({:gc, ref, pid}, state) do
     refs = pop_from_list(state.refs, ref, pid)
     pids = pop_from_list(state.pids, pid, ref)
+    :erlang.garbage_collect()
     noreply_or_stop(%{state | pids: pids, refs: refs})
   end
 
@@ -53,6 +54,7 @@ defmodule Explorer.Remote.Holder do
   def handle_info({:DOWN, _, _, pid, _}, state) do
     {pid_refs, pids} = Map.pop(state.pids, pid, [])
     refs = Enum.reduce(pid_refs, state.refs, &pop_from_list(&2, &1, pid))
+    :erlang.garbage_collect()
     noreply_or_stop(%{state | pids: pids, refs: refs})
   end
 
