@@ -261,7 +261,7 @@ defmodule Explorer.DataFrame.LazyTest do
                )
 
       assert RuntimeError.message(error) =~
-               "Polars Error: expected at least 1 path: 'parquet scan' failed: 'select' input failed to resolve"
+               "Polars Error: Object at location oranges.parquet not found: Client error with status 404 Not Found: No Body: 'parquet scan' failed: 'select' input failed to resolve"
     end
   end
 
@@ -337,6 +337,7 @@ defmodule Explorer.DataFrame.LazyTest do
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
   end
 
+  @tag :cloud_integration
   test "to_ipc/3 - cloud with streaming enabled", %{ldf: ldf} do
     config = %FSS.S3.Config{
       access_key_id: "test",
@@ -348,9 +349,12 @@ defmodule Explorer.DataFrame.LazyTest do
     path = "s3://test-bucket/test-lazy-writes/wine-#{System.monotonic_time()}.ipc"
 
     ldf = DF.head(ldf, 15)
-    assert {:error, error} = DF.to_ipc(ldf, path, streaming: true, config: config)
+    assert :ok = DF.to_ipc(ldf, path, streaming: true, config: config)
 
-    assert error == ArgumentError.exception("streaming is not supported for writes to AWS S3")
+    df = DF.compute(ldf)
+    df1 = DF.from_ipc!(path, config: config)
+
+    assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
   end
 
   @tag :cloud_integration
@@ -411,19 +415,12 @@ defmodule Explorer.DataFrame.LazyTest do
     path = "s3://test-bucket/test-lazy-writes/wine-#{System.monotonic_time()}.parquet"
 
     ldf = DF.head(ldf, 15)
-    # assert :ok = DF.to_parquet(ldf, path, streaming: true, config: config)
+    assert :ok = DF.to_parquet(ldf, path, streaming: true, config: config)
 
-    # df = DF.compute(ldf)
-    # df1 = DF.from_parquet!(path, config: config)
+    df = DF.compute(ldf)
+    df1 = DF.from_parquet!(path, config: config)
 
-    # assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
-
-    message =
-      "streaming of a lazy frame to the cloud using parquet is currently unavailable. Please try again disabling the `:streaming` option."
-
-    assert_raise RuntimeError, message, fn ->
-      DF.to_parquet(ldf, path, streaming: true, config: config)
-    end
+    assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
   end
 
   @tag :cloud_integration

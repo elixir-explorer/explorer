@@ -669,7 +669,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([true, nil, false])
 
       assert_raise RuntimeError,
-                   "Polars Error: invalid operation: `mean` operation not supported for dtype `Boolean`",
+                   "Polars Error: `mean` operation not supported for dtype `Boolean`",
                    fn -> Series.fill_missing(s1, :mean) end
     end
 
@@ -2361,7 +2361,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list([1, -2, 3])
 
       message =
-        "Polars Error: invalid operation: invalid operation: conversion from `i64` to `u32` failed in column 'exponent' for 1 out of 3 values: [-2]\n\n" <>
+        "Polars Error: conversion from `i64` to `u32` failed in column 'exponent' for 1 out of 3 values: [-2]\n\n" <>
           "Hint: if you were trying to raise an integer to a negative integer power, please cast your base or exponent to float first."
 
       assert_raise RuntimeError, message, fn ->
@@ -2432,7 +2432,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 2, 3])
 
       message =
-        "Polars Error: invalid operation: invalid operation: conversion from `i64` to `u32` failed in column 'literal' for 1 out of 1 values: [-2]\n\n" <>
+        "Polars Error: conversion from `i64` to `u32` failed in column 'literal' for 1 out of 1 values: [-2]\n\n" <>
           "Hint: if you were trying to raise an integer to a negative integer power, please cast your base or exponent to float first."
 
       assert_raise RuntimeError, message, fn ->
@@ -2498,7 +2498,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, -2, 3])
 
       message =
-        "Polars Error: invalid operation: invalid operation: conversion from `i64` to `u32` failed in column 'exponent' for 1 out of 3 values: [-2]\n\n" <>
+        "Polars Error: conversion from `i64` to `u32` failed in column 'exponent' for 1 out of 3 values: [-2]\n\n" <>
           "Hint: if you were trying to raise an integer to a negative integer power, please cast your base or exponent to float first."
 
       assert_raise RuntimeError, message, fn ->
@@ -5466,7 +5466,7 @@ defmodule Explorer.SeriesTest do
                  %{"candidate" => "messi", "ref" => "python"},
                  %{"candidate" => "weghorst", "ref" => "polars"},
                  %{"candidate" => nil, "ref" => nil},
-                 %{"candidate" => nil, "ref" => nil}
+                 nil
                ]
     end
 
@@ -5488,7 +5488,7 @@ defmodule Explorer.SeriesTest do
                  %{"1" => "messi", "2" => "python"},
                  %{"1" => "weghorst", "2" => "polars"},
                  %{"1" => nil, "2" => nil},
-                 %{"1" => nil, "2" => nil}
+                 nil
                ]
     end
 

@@ -83,7 +83,7 @@ pub fn lf_to_parquet(
             compression,
             statistics: StatisticsOptions::empty(),
             row_group_size: None,
-            data_pagesize_limit: None,
+            data_page_size: None,
             maintain_order: false,
         };
 
@@ -119,7 +119,7 @@ pub fn lf_to_parquet_cloud(
         compression,
         statistics: StatisticsOptions::empty(),
         row_group_size: None,
-        data_pagesize_limit: None,
+        data_page_size: None,
         maintain_order: false,
     };
 
@@ -183,6 +183,35 @@ pub fn lf_to_ipc(
             .finish(&mut df)?;
         Ok(())
     }
+}
+
+#[cfg(feature = "aws")]
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn lf_to_ipc_cloud(
+    data: ExLazyFrame,
+    ex_entry: ExS3Entry,
+    compression: Option<&str>,
+) -> Result<(), ExplorerError> {
+    let lf = data.clone_inner();
+    let cloud_options = Some(ex_entry.config.to_cloud_options());
+    // Select the compression algorithm.
+    let compression = match compression {
+        Some("lz4") => Some(IpcCompression::LZ4),
+        Some("zstd") => Some(IpcCompression::ZSTD),
+        _ => None,
+    };
+
+    let options = IpcWriterOptions {
+        compression,
+        maintain_order: false,
+    };
+    lf.with_comm_subplan_elim(false).sink_ipc_cloud(
+        ex_entry.to_string(),
+        cloud_options,
+        options,
+    )?;
+
+    Ok(())
 }
 
 #[rustler::nif]

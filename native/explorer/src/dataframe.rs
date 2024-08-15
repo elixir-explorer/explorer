@@ -8,17 +8,12 @@ use crate::datatypes::ExSeriesDtype;
 use crate::ex_expr_to_exprs;
 use crate::{ExDataFrame, ExExpr, ExLazyFrame, ExSeries, ExplorerError};
 use either::Either;
-use smartstring::alias::String as SmartString;
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
 
 fn to_string_names(names: Vec<&str>) -> Vec<String> {
     names.into_iter().map(|s| s.to_string()).collect()
-}
-
-pub fn to_smart_strings(slices: Vec<&str>) -> Vec<SmartString> {
-    slices.into_iter().map(|s| s.into()).collect()
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

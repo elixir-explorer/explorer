@@ -213,7 +213,7 @@ pub fn s_cut(
 
     // Cut is going to return a Series of a Struct. We need to convert it to a DF.
     let cut_series = cut(&series, bins, labels, left_close, true)?;
-    let mut cut_df = DataFrame::from(cut_series.struct_()?.clone());
+    let mut cut_df = DataFrame::new(cut_series.struct_()?.fields_as_series())?;
 
     let cut_df = cut_df.insert_column(0, series)?;
 
@@ -247,7 +247,7 @@ pub fn s_qcut(
         true,
     )?;
 
-    let mut qcut_df = DataFrame::from(qcut_series.struct_()?.clone());
+    let mut qcut_df = DataFrame::new(qcut_series.struct_()?.fields_as_series())?;
     let qcut_df = qcut_df.insert_column(0, series)?;
 
     qcut_df.set_column_names(&[

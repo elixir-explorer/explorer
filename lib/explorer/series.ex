@@ -6031,7 +6031,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.re_named_captures(s, ~S/(b|d)/)
       #Explorer.Series<
         Polars[4]
-        struct[1] [%{"1" => "b"}, %{"1" => "d"}, %{"1" => "b"}, %{"1" => nil}]
+        struct[1] [%{"1" => "b"}, %{"1" => "d"}, %{"1" => "b"}, nil]
       >
 
       iex> s = Explorer.Series.from_list(["alice@service.com", "bob@example.com"])
