@@ -56,7 +56,7 @@ defmodule Explorer.MixProject do
 
       ## Test
       {:bypass, "~> 2.1", only: :test},
-      {:stream_data, "~> 0.6", only: :test},
+      {:stream_data, "~> 1.1", only: :test},
       {:tz, "~> 0.26", only: :test},
 
       ## Dev
