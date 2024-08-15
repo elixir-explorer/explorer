@@ -2072,7 +2072,7 @@ defmodule Explorer.DataFrameTest do
                b: [
                  %{"1" => "alice", "2" => "example.com"},
                  %{"1" => "bob", "2" => "example.com"},
-                 %{"1" => nil, "2" => nil}
+                 nil
                ]
              }
     end
@@ -2089,7 +2089,7 @@ defmodule Explorer.DataFrameTest do
                b: [
                  %{"account" => "alice", "host" => "example.com"},
                  %{"account" => "bob", "host" => "example.com"},
-                 %{"account" => nil, "host" => nil}
+                 nil
                ]
              }
     end

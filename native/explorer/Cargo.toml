@@ -19,7 +19,6 @@ rand = { version = "0.8", features = ["alloc"] }
 rand_pcg = "0.3"
 rustler = { version = "0.34.0" }
 thiserror = "1"
-smartstring = "1"
 either = "1"
 
 # Deps necessary for cloud features.
@@ -38,7 +37,7 @@ object_store = { version = "0.10", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.41.3"
+version = "0.42"
 default-features = false
 features = [
   "abs",
@@ -86,7 +85,7 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.41.3"
+version = "0.42"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]

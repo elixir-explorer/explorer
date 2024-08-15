@@ -364,8 +364,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = _ldf, %S3.Entry{} = _entry, {_compression, _level}, _streaming = true) do
-    raise "streaming of a lazy frame to the cloud using parquet is currently unavailable. Please try again disabling the `:streaming` option."
+  def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, {compression, level}, _streaming = true) do
+    case Native.lf_to_parquet_cloud(
+           ldf.data,
+           entry,
+           Shared.parquet_compression(compression, level)
+         ) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
   end
 
   @impl true
@@ -384,8 +391,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_ipc(_df, %S3.Entry{}, _compression, _streaming = true) do
-    {:error, ArgumentError.exception("streaming is not supported for writes to AWS S3")}
+  def to_ipc(%DF{} = ldf, %S3.Entry{} = entry, {compression, _level}, _streaming = true) do
+    case Native.lf_to_ipc_cloud(
+           ldf.data,
+           entry,
+           Atom.to_string(compression)
+         ) do
+      {:ok, _} -> :ok
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
   end
 
   @impl true

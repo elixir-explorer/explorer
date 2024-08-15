@@ -1,8 +1,8 @@
 use crate::{
-    dataframe::to_smart_strings, datatypes::ExSeriesDtype, expressions::ex_expr_to_exprs,
-    ExDataFrame, ExExpr, ExLazyFrame, ExplorerError,
+    datatypes::ExSeriesDtype, expressions::ex_expr_to_exprs, ExDataFrame, ExExpr, ExLazyFrame,
+    ExplorerError,
 };
-use polars::prelude::*;
+use polars::{lazy::dsl::Selector, prelude::*};
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
@@ -256,21 +256,27 @@ pub fn lf_drop_nils(
 #[rustler::nif]
 pub fn lf_pivot_longer(
     data: ExLazyFrame,
-    id_vars: Vec<&str>,
-    value_vars: Vec<&str>,
+    id_vars: Vec<String>,
+    value_vars: Vec<String>,
     names_to: String,
     values_to: String,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
-    let unpivot_opts = UnpivotArgs {
-        index: to_smart_strings(id_vars),
-        on: to_smart_strings(value_vars),
+    let unpivot_opts = polars::lazy::dsl::UnpivotArgsDSL {
+        index: to_lazy_selectors(id_vars),
+        on: to_lazy_selectors(value_vars),
         variable_name: Some(names_to.into()),
         value_name: Some(values_to.into()),
-        streamable: true,
     };
     let new_df = ldf.unpivot(unpivot_opts);
     Ok(ExLazyFrame::new(new_df))
+}
+
+fn to_lazy_selectors(values: Vec<String>) -> Vec<Selector> {
+    values
+        .into_iter()
+        .map(Selector::from)
+        .collect::<Vec<Selector>>()
 }
 
 #[rustler::nif]
