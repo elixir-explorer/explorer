@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.9.1] - 2024-08-15
+
+### Added
+
+- Add support for saving to the cloud using streaming and the IPC format.
+  This will enable saving a lazy frame to the cloud without loading it
+  entirely in memory. It only supports saves to S3-compatible storage services.
+
+### Changed
+
+- Force garbage collection on remote gc.
+
+### Fixed
+
+- Re-enable support for saving to the cloud using streaming and the Parquet format.
+  It's a fix from the release of `v0.9.0` that disabled this feature.
+
+- Fix overwrite of dtypes for `Explorer.DataFrame.load_csv/2`.
+  This was a regression introduced in `v0.9.0`.
+
 ## [v0.9.0] - 2024-07-26
 
 ### Added
@@ -1072,7 +1092,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.9.1...HEAD
+[v0.9.1]: https://github.com/elixir-explorer/explorer/compare/v0.9.0...v0.9.1
 [v0.9.0]: https://github.com/elixir-explorer/explorer/compare/v0.8.3...v0.9.0
 [v0.8.3]: https://github.com/elixir-explorer/explorer/compare/v0.8.2...v0.8.3
 [v0.8.2]: https://github.com/elixir-explorer/explorer/compare/v0.8.1...v0.8.2
