@@ -2661,12 +2661,12 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-  * `:keep` – Controls which columns from the input dataframe are retained
-    in the output.
-    Possible values are:
-    - `:all`: Retains all columns from the input dataframe (default).
-    - `:none`: Retains only the columns created by the mutation (and
-               grouping columns if operating on a grouped DataFrame).
+    * `keep` - Controls which columns should be kept in the resulting dataframe.
+      Supported options for keep are:
+
+      * `:all` - Retains all columns from the input dataframe (default).
+      * `:none` - Retains only the create columns created by the mutation (and
+                  grouping columns if operating on a grouped DataFrame).
 
   > #### Notice {: .notice}
   >
@@ -2809,12 +2809,14 @@ defmodule Explorer.DataFrame do
   values using the `Explorer.Series` API directly and then add
   it to the dataframe using `put/3`.
 
-  An optional `keep` argument can be passed to control which columns
-  should be kept in the resulting dataframe. The valid options
-  for keep are:
-  * `:all` - Retains all columns from the input dataframe (default).
-  * `:none` - Retains only the create columns created by the mutation (and
-              grouping columns if operating on a grouped DataFrame).
+  ## Options
+
+    * `keep` - Controls which columns should be kept in the resulting dataframe.
+      Supported options for keep are:
+
+      * `:all` - Retains all columns from the input dataframe (default).
+      * `:none` - Retains only the create columns created by the mutation (and
+                  grouping columns if operating on a grouped DataFrame).
 
   ## Examples
 
