@@ -2815,7 +2815,7 @@ defmodule Explorer.DataFrame do
       Supported options for keep are:
 
       * `:all` - Retains all columns from the input dataframe (default).
-      * `:none` - Retains only the create columns created by the mutation (and
+      * `:none` - Retains only the columns created by the mutation (and
                   grouping columns if operating on a grouped DataFrame).
 
   ## Examples
