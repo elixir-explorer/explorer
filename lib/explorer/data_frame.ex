@@ -2891,12 +2891,12 @@ defmodule Explorer.DataFrame do
 
   Using the `:keep` option to retain only new columns:
 
-        iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
-        iex> Explorer.DataFrame.mutate_with(df, &[c: Explorer.Series.add(&1["a"], &1["b"])], keep: :none)
-        #Explorer.DataFrame<
-          Polars[3 x 1]
-          c s64 [5, 7, 9]
-        >
+      iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, &[c: Explorer.Series.add(&1["a"], &1["b"])], keep: :none)
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        c s64 [5, 7, 9]
+      >
 
   When using `keep: :none` on a grouped DataFrame, the grouping
   columns are retained along with the newly created columns:
