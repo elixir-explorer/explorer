@@ -2654,10 +2654,24 @@ defmodule Explorer.DataFrame do
   may have different results than ungrouped ones, because the mutation
   is computed withing groups. See examples below.
 
-  See `mutate_with/2` for a callback version of this function without
+  See `mutate_with/3` for a callback version of this function without
   `Explorer.Query`. If your mutation cannot be expressed with queries,
   you may compute the values using the `Explorer.Series` API directly
   and then add it to the dataframe using `put/3`.
+
+  ## Options
+
+    * `keep` - Controls which columns should be kept in the resulting dataframe.
+      Supported options for keep are:
+
+      * `:all` - Retains all columns from the input dataframe (default).
+      * `:none` - Retains only the columns created by the mutation (and
+                  grouping columns if operating on a grouped DataFrame).
+
+  > #### Notice {: .notice}
+  >
+  > You will need to wrap your mutations in `[]` in order
+  > to use the `:keep` option.
 
   ## Examples
 
@@ -2713,6 +2727,15 @@ defmodule Explorer.DataFrame do
         c f64 [1.0, 2.0, 3.0]
       >
 
+  Using the `:keep` option to retain only new columns:
+
+      iex> df = Explorer.DataFrame.new(a: ["a", "b", "c"], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate(df, [c: b + 1], keep: :none)
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        c s64 [2, 3, 4]
+      >
+
   ## Grouped examples
 
   Mutations in grouped dataframes takes the context of the group.
@@ -2747,26 +2770,53 @@ defmodule Explorer.DataFrame do
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
         petal_length_avg f64 [1.464, 1.464, 1.464, 1.464, 1.464, ...]
       >
+
+  We can also use the `keep` option on grouped dataframes:
+
+      iex> df = Explorer.Datasets.iris()
+      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> Explorer.DataFrame.mutate(grouped, [petal_length_avg: mean(petal_length)], keep: :none)
+      #Explorer.DataFrame<
+        Polars[150 x 2]
+        Groups: ["species"]
+        species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
+        petal_length_avg f64 [1.464, 1.464, 1.464, 1.464, 1.464, ...]
+      >
   """
   @doc type: :single
-  defmacro mutate(df, mutations) do
+  defmacro mutate(df, mutations, opts \\ []) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.mutate_with(unquote(df), Explorer.Query.query(unquote(mutations)))
+
+      Explorer.DataFrame.mutate_with(
+        unquote(df),
+        Explorer.Query.query(unquote(mutations)),
+        unquote(opts)
+      )
     end
   end
 
   @doc """
-  Creates or modifies columns using a callback function.
+  Creates or modifies columns using a callback function and an
+  optional `keep` argument.
 
   The callback receives a lazy dataframe. A lazy dataframe doesn't
   hold any values, instead it stores all operations in order to
   execute all mutations performantly.
 
-  This is a callback version of `mutate/2`. If your mutation
+  This is a callback version of `mutate/3`. If your mutation
   cannot be expressed with lazy dataframes, you may compute the
   values using the `Explorer.Series` API directly and then add
   it to the dataframe using `put/3`.
+
+  ## Options
+
+    * `keep` - Controls which columns should be kept in the resulting dataframe.
+      Supported options for keep are:
+
+      * `:all` - Retains all columns from the input dataframe (default).
+      * `:none` - Retains only the columns created by the mutation (and
+                  grouping columns if operating on a grouped DataFrame).
 
   ## Examples
 
@@ -2823,13 +2873,62 @@ defmodule Explorer.DataFrame do
         count u32 [2, 2, 1]
       >
 
+  ## Examples with the `keep` option
+
+  Here is an example of a new column that sums the value of two
+  other columns:
+
+      iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, &[c: Explorer.Series.add(&1["a"], &1["b"])], keep: :all)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        a s64 [4, 5, 6]
+        b s64 [1, 2, 3]
+        c s64 [5, 7, 9]
+      >
+
+  Note that `keep: :all` is the default behavior.
+
+  Using the `:keep` option to retain only new columns:
+
+      iex> df = Explorer.DataFrame.new(a: [4, 5, 6], b: [1, 2, 3])
+      iex> Explorer.DataFrame.mutate_with(df, &[c: Explorer.Series.add(&1["a"], &1["b"])], keep: :none)
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        c s64 [5, 7, 9]
+      >
+
+  When using `keep: :none` on a grouped DataFrame, the grouping
+  columns are retained along with the newly created columns:
+
+      iex> df = Explorer.DataFrame.new(name: ["a", "a", "b", "b"], a: [1, 2, 3, 4], b: [5, 6, 7, 8])
+      iex> grouped = Explorer.DataFrame.group_by(df, :name)
+      iex> Explorer.DataFrame.mutate_with(grouped, &[ab_sum: Explorer.Series.sum(Explorer.Series.add(&1["a"], &1["b"]))], keep: :none)
+      #Explorer.DataFrame<
+        Polars[4 x 2]
+        Groups: ["name"]
+        name string ["a", "a", "b", "b"]
+        ab_sum s64 [14, 14, 22, 22]
+      >
+
+  Note that the `name` column is retained because it's the
+  grouping column, even though `keep: :none` is specified.
+  The `a` and `b` columns are dropped, and only the new `ab_sum`
+  column is added.
   """
   @doc type: :single
   @spec mutate_with(
           df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t())),
+          opts :: keyword()
         ) :: DataFrame.t()
-  def mutate_with(%DataFrame{} = df, fun) when is_function(fun) do
+  def mutate_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun) and is_list(opts) do
+    keep = Keyword.get(opts, :keep, :all)
+
+    unless keep in [:all, :none] do
+      raise ArgumentError, "Invalid value for :keep option. Allowed values are :all or :none."
+    end
+
     ldf = Explorer.Backend.LazyFrame.new(df)
 
     result = fun.(ldf)
@@ -2853,7 +2952,17 @@ defmodule Explorer.DataFrame do
         end
       end
 
-    Shared.apply_dataframe(df, :mutate_with, [out_df, column_pairs])
+    full_df = Shared.apply_dataframe(df, :mutate_with, [out_df, column_pairs])
+
+    case keep do
+      :all ->
+        full_df
+
+      :none ->
+        group_names = df.groups
+        selected_columns = group_names ++ (mut_names -- group_names)
+        Explorer.DataFrame.select(full_df, selected_columns)
+    end
   end
 
   defp query_to_series!(%Series{} = series), do: series
