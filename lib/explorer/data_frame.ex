@@ -2670,7 +2670,7 @@ defmodule Explorer.DataFrame do
 
   > #### Notice {: .notice}
   >
-  > You will need to use the `[]` to enclose your mutations in order
+  > You will need to wrap your mutations in `[]` in order
   > to use the `:keep` option.
 
   ## Examples
