@@ -5061,7 +5061,7 @@ defmodule Explorer.DataFrame do
 
       iex> left = Explorer.DataFrame.new(a: [1, 2, 3], b: ["a", "b", "c"])
       iex> right = Explorer.DataFrame.new(d: [1, 2, 2], c: ["d", "e", "f"])
-      iex> Explorer.DataFrame.join(left, right, on: [{"a", "d"}])
+      iex> Explorer.DataFrame.join(left, right, on: [a: :d])
       #Explorer.DataFrame<
         Polars[3 x 3]
         a s64 [1, 2, 2]
