@@ -540,7 +540,8 @@ defmodule Explorer.DataFrame do
     * `:columns` - A list of column names or indexes to keep.
       If present, only these columns are read into the dataframe. (default: `nil`)
 
-    * `:infer_schema_length` Maximum number of rows read for schema inference.
+    * `:infer_schema_length` - Maximum number of rows read for schema inference.
+      Set it to zero to disable inference and default all values to string.
       Setting this to nil will do a full table scan and will be slow (default: `1000`).
 
     * `:parse_dates` - Automatically try to parse dates/ datetimes and time.
