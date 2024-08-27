@@ -651,7 +651,7 @@ defmodule Explorer.Shared do
     {series_nodes, {impl, {_forced?, remote}, transfer?}} =
       Enum.map_reduce(series_or_scalars, {nil, {false, nil}, false}, fn
         # A lazy series without a resource is treated as a scalar
-        %{data: %Explorer.Backend.LazySeries{resource: nil}} = series,
+        %{data: %{__struct__: Explorer.Backend.LazySeries, resource: nil}} = series,
         {_acc_impl, acc_remote, acc_transfer?} ->
           {{series, nil}, {Explorer.Backend.LazySeries, acc_remote, acc_transfer?}}
 
