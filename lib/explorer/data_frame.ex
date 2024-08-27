@@ -629,6 +629,9 @@ defmodule Explorer.DataFrame do
   @doc """
   Writes a dataframe to a delimited file.
 
+  Note not all fields can be serialized to csv and it may require
+  explicitly casting to other formats. In such cases, an error is returned.
+
   Groups are ignored if the dataframe is using any.
 
   ## Options
