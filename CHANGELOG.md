@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.9.2] - 2024-08-27
+
+### Added
+
+- Add a new `:keep` option to the `mutate_with/3` function and `mutate/3` macro.
+  This option allows users to control which columns are retained in the output
+  dataframe after a mutation operation. You can use `:all` (the default) or `:none`.
+
+### Fixed
+
+- Fix handling of "LazySeries" with remote dataframes.
+- Fix typespecs of `Explorer.Series.cast/2` by adding a `dtype_alias()` type.
+
 ## [v0.9.1] - 2024-08-15
 
 ### Added
@@ -1092,7 +1105,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.9.2...HEAD
+[v0.9.2]: https://github.com/elixir-explorer/explorer/compare/v0.9.1...v0.9.2
 [v0.9.1]: https://github.com/elixir-explorer/explorer/compare/v0.9.0...v0.9.1
 [v0.9.0]: https://github.com/elixir-explorer/explorer/compare/v0.8.3...v0.9.0
 [v0.8.3]: https://github.com/elixir-explorer/explorer/compare/v0.8.2...v0.8.3
