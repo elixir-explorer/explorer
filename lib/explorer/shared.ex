@@ -648,13 +648,19 @@ defmodule Explorer.Shared do
   end
 
   defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback, place?) do
-    {series_nodes, {impl, remote, transfer?}} =
-      Enum.map_reduce(series_or_scalars, {nil, nil, false}, fn
+    {series_nodes, {impl, {_forced?, remote}, transfer?}} =
+      Enum.map_reduce(series_or_scalars, {nil, {false, nil}, false}, fn
+        # A lazy series without a resource is treated as a scalar
+        %{data: %Explorer.Backend.LazySeries{resource: nil}} = series,
+        {_acc_impl, acc_remote, acc_transfer?} ->
+          {{series, nil}, {Explorer.Backend.LazySeries, acc_remote, acc_transfer?}}
+
         %{data: %impl{}} = series, {acc_impl, acc_remote, acc_transfer?} ->
           {node, remote} = remote_info(series, impl)
 
           {{series, node},
-           pick_series(acc_impl, impl, acc_remote, remote, acc_transfer? or remote != nil)}
+           {pick_series_impl(acc_impl, impl), pick_series_remote(acc_remote, impl, remote),
+            acc_transfer? or remote != nil}}
 
         scalar, acc ->
           {{scalar, nil}, acc}
@@ -673,18 +679,20 @@ defmodule Explorer.Shared do
     end
   end
 
-  # The lazy series alwaus wins the remote, since we need to transfer
-  # it to the dataframe that started the lazy series.
-  defp pick_series(Explorer.Backend.LazySeries, _, acc_remote, _, transfer?),
-    do: {Explorer.Backend.LazySeries, acc_remote, transfer?}
+  # The lazy series always wins the remote if it has one,
+  # since we need to transfer it to the dataframe that started the lazy series.
+  defp pick_series_remote(_acc_remote, Explorer.Backend.LazySeries, remote),
+    do: {true, remote}
 
-  defp pick_series(_, Explorer.Backend.LazySeries, _, remote, transfer?),
-    do: {Explorer.Backend.LazySeries, remote, transfer?}
+  defp pick_series_remote({true, acc_remote}, _impl, _remote),
+    do: {true, acc_remote}
 
-  defp pick_series(acc_impl, impl, acc_remote, remote, transfer?),
-    do: {pick_series_impl(acc_impl, impl), pick_remote(acc_remote, remote), transfer?}
+  defp pick_series_remote({false, acc_remote}, _impl, remote),
+    do: {false, pick_remote(acc_remote, remote)}
 
   defp pick_series_impl(nil, impl), do: impl
+  defp pick_series_impl(Explorer.Backend.LazySeries, _impl), do: Explorer.Backend.LazySeries
+  defp pick_series_impl(_impl, Explorer.Backend.LazySeries), do: Explorer.Backend.LazySeries
   defp pick_series_impl(impl, impl), do: impl
 
   defp pick_series_impl(acc_impl, impl) do

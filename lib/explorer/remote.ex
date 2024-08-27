@@ -116,23 +116,22 @@ defmodule Explorer.Remote do
   end
 
   defp place_impl(impl, struct, acc, fun) do
-    with %{remote: {local_gc_ref, _, _}} <- struct,
-         true <-
-           is_reference(local_gc_ref) and node(local_gc_ref) == node() and
-             Explorer.Remote.LocalGC.alive?(local_gc_ref) do
-      {struct, acc}
+    with remote_ref when is_reference(remote_ref) and node(remote_ref) != node() <-
+           impl.owner_reference(struct),
+         false <- alive?(remote_ref, struct) do
+      {local_ref, remote_pid} = place_remote_ref(remote_ref, fun)
+      {%{struct | remote: {local_ref, remote_pid, remote_ref}}, [remote_pid | acc]}
     else
       _ ->
-        case impl.owner_reference(struct) do
-          remote_ref when is_reference(remote_ref) and node(remote_ref) != remote_ref ->
-            {local_ref, remote_pid} = place_remote_ref(remote_ref, fun)
-            {%{struct | remote: {local_ref, remote_pid, remote_ref}}, [remote_pid | acc]}
-
-          _ ->
-            {struct, acc}
-        end
+        {struct, acc}
     end
   end
+
+  defp alive?(remote_ref, %{remote: {local_gc_ref, _, remote_ref}})
+       when is_reference(local_gc_ref) and node(local_gc_ref) == node(),
+       do: Explorer.Remote.LocalGC.alive?(local_gc_ref)
+
+  defp alive?(_remote_ref, _struct), do: false
 
   defp place_remote_ref(remote_ref, fun) do
     local_gc = Explorer.Remote.LocalGC.whereis!()

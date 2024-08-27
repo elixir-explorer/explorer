@@ -199,7 +199,7 @@ defmodule Explorer.RemoteTest do
 
     test "with a placed remote dataframe" do
       df =
-        Explorer.DataFrame.load_csv!(
+        DF.load_csv!(
           """
           a
           1
@@ -226,6 +226,25 @@ defmodule Explorer.RemoteTest do
                "a2" => [-2, -1, 0],
                "a3" => [12, 15, 18]
              }
+    end
+
+    test "with a placed remote dataframe and filter" do
+      df =
+        DF.load_csv!(
+          """
+          a
+          1
+          2
+          3
+          """,
+          node: @node3
+        )
+
+      result_df = DF.filter(df, a >= 2)
+      assert DF.to_columns(result_df) == %{"a" => [2, 3]}
+
+      result_df = DF.filter(df, 1 < a)
+      assert DF.to_columns(result_df) == %{"a" => [2, 3]}
     end
   end
 

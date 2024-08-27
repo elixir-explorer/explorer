@@ -36,6 +36,10 @@ defmodule Explorer.Backend.LazyFrame do
     )
   end
 
+  # We don't implement owner reference here because no
+  # cross node operations happen at the lazy frame level.
+  # Instead, we store the resource and we delegate them
+  # to the underlying lazy series.
   @impl true
   def owner_reference(_), do: nil
 
