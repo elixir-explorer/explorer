@@ -114,7 +114,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         delimiter,
         true,
         columns,
-        Map.to_list(dtypes),
+        dtypes,
         encoding,
         nil_values,
         parse_dates,
@@ -207,7 +207,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         delimiter,
         true,
         columns,
-        Map.to_list(dtypes),
+        dtypes,
         encoding,
         nil_values,
         parse_dates,
@@ -514,7 +514,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def compute(df), do: df
 
   @impl true
-  def from_tabular(tabular, dtypes) do
+  def from_tabular(tabular, io_dtypes) do
+    dtypes = Map.new(io_dtypes)
     {_, %{columns: keys}, _} = reader = init_reader!(tabular)
     columns = Table.to_columns(reader)
 

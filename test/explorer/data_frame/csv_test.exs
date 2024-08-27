@@ -78,6 +78,28 @@ defmodule Explorer.DataFrame.CSVTest do
     assert city[13] == "Aberdeen, Aberdeen City, UK"
   end
 
+  test "load_csv/2 dtypes - mismatched names" do
+    text = """
+    first_name , last_name , dob
+    Alice , Ant , 01/02/1970
+    Billy , Bat , 03/04/1990
+    """
+
+    types = [
+      {"first_name", :string},
+      {"last_name", :string},
+      {"dob", :string}
+    ]
+
+    assert text
+           |> DF.load_csv!(dtypes: types)
+           |> DF.to_columns(atom_keys: true) == %{
+             dob: [" 01/02/1970", " 03/04/1990"],
+             first_name: ["Alice ", "Billy "],
+             last_name: [" Ant ", " Bat "]
+           }
+  end
+
   test "load_csv/2 dtypes - all as strings" do
     csv =
       """

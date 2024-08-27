@@ -162,7 +162,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         skip_rows_after_header,
         delimiter,
         true,
-        Map.to_list(dtypes),
+        dtypes,
         encoding,
         nil_values,
         parse_dates,

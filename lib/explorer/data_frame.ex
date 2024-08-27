@@ -340,7 +340,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp check_dtypes!(dtypes) do
-    Map.new(dtypes, fn
+    Enum.map(dtypes, fn
       {key, value} when is_atom(key) ->
         {Atom.to_string(key), check_dtype!(key, value)}
 
@@ -524,7 +524,8 @@ defmodule Explorer.DataFrame do
 
     * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
 
-    * `:dtypes` - A list/map of `{"column_name", dtype}` tuples. Any non-specified column has its type
+    * `:dtypes` - A list of shape `[column_name: dtype]`. The column names must match the ones in the
+      CSV header or the ones given in the `:columns` option. Any non-specified column has its type
       imputed from the first 1000 rows. (default: `[]`)
 
     * `:header` - Does the file have a header of column names as the first row or not? (default: `true`)
@@ -1827,6 +1828,7 @@ defmodule Explorer.DataFrame do
             backend.from_series(pairs)
 
           {:tensor, data} ->
+            dtypes = Map.new(dtypes)
             s_backend = df_backend_to_s_backend(backend)
 
             pairs =

@@ -20,6 +20,7 @@ defmodule Explorer.Backend.DataFrame do
   @type column_name :: String.t()
   @type dtype :: Explorer.Series.dtype()
   @type dtypes :: %{column_name() => dtype()}
+  @type io_dtypes :: [{column_name(), dtype()}]
 
   @type basic_types :: float() | integer() | String.t() | Date.t() | DateTime.t()
   @type mutate_value ::
@@ -46,7 +47,7 @@ defmodule Explorer.Backend.DataFrame do
   # IO: CSV
   @callback from_csv(
               entry :: fs_entry(),
-              dtypes,
+              io_dtypes,
               delimiter :: String.t(),
               nil_values :: list(String.t()),
               skip_rows :: integer(),
@@ -71,7 +72,7 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback load_csv(
               contents :: String.t(),
-              dtypes,
+              io_dtypes,
               delimiter :: String.t(),
               nil_values :: list(String.t()),
               skip_rows :: integer(),
@@ -153,7 +154,7 @@ defmodule Explorer.Backend.DataFrame do
   @callback lazy() :: module()
   @callback lazy(df) :: df
   @callback compute(df) :: df
-  @callback from_tabular(Table.Reader.t(), dtypes) :: df
+  @callback from_tabular(Table.Reader.t(), io_dtypes) :: df
   @callback from_series([{binary(), Series.t()}]) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
   @callback to_rows_stream(df, atom_keys? :: boolean(), chunk_size :: integer()) :: Enumerable.t()
