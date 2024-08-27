@@ -171,6 +171,7 @@ defmodule Explorer.Series do
   @type unsigned_integer_dtype :: {:u, 8} | {:u, 16} | {:u, 32} | {:u, 64}
   @type float_dtype :: {:f, 32} | {:f, 64}
 
+  @type dtype_alias :: integer_dtype_alias | float_dtype_alias
   @type float_dtype_alias :: :float | :f32 | :f64
   @type integer_dtype_alias :: :integer | :u8 | :u16 | :u32 | :u64 | :s8 | :s16 | :s32 | :s64
 
@@ -1047,7 +1048,7 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  @spec cast(series :: Series.t(), dtype :: dtype()) :: Series.t()
+  @spec cast(series :: Series.t(), dtype :: dtype() | dtype_alias()) :: Series.t()
   def cast(%Series{dtype: original_dtype} = series, dtype) do
     if normalised = Shared.normalise_dtype(dtype) do
       if normalised == original_dtype do
@@ -6591,7 +6592,7 @@ defmodule Explorer.Series do
   It raises an exception if the string is invalid JSON.
   """
   @doc type: :string_wise
-  @spec json_decode(Series.t(), dtype()) :: Series.t()
+  @spec json_decode(Series.t(), dtype() | dtype_alias()) :: Series.t()
   def json_decode(%Series{dtype: :string} = series, dtype) do
     dtype = Shared.normalise_dtype!(dtype)
 
