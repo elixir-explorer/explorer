@@ -2606,7 +2606,7 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec filter_with(
           df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> [Series.lazy_t()])
+          callback :: (Explorer.Backend.LazyFrame.t() -> Series.lazy_t() | [Series.lazy_t()])
         ) :: DataFrame.t()
   def filter_with(df, fun) when is_function(fun, 1) do
     ldf = Explorer.Backend.LazyFrame.new(df)
