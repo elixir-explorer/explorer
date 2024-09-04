@@ -739,6 +739,11 @@ defmodule Explorer.Query do
     end
   end
 
+  @doc """
+  Returns the dataframe scoped by this query.
+  """
+  defmacro df(), do: df_var()
+
   @doc false
   def __across__(df, selector) do
     df

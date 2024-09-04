@@ -5,6 +5,12 @@ defmodule Explorer.QueryTest do
   require Explorer.DataFrame, as: DF
   doctest Explorer.Query
 
+  test "allows accessing the dataframe" do
+    assert DF.new(a: [1, 2, 3])
+           |> DF.filter(df()["a"] < ^if(true, do: 3, else: 1))
+           |> DF.to_columns(atom_keys: true) == %{a: [1, 2]}
+  end
+
   test "allows Kernel operations within pin" do
     assert DF.new(a: [1, 2, 3])
            |> DF.filter(a < ^if(true, do: 3, else: 1))
