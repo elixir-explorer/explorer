@@ -22,12 +22,8 @@ thiserror = "1"
 either = "1"
 
 # Deps necessary for cloud features.
-tokio = { version = "1.35", default-features = false, features = [
+tokio = { version = "1.40", default-features = false, features = [
   "rt",
-], optional = true }
-tokio-util = { version = "0.7", default-features = false, features = [
-  "io",
-  "io-util",
 ], optional = true }
 object_store = { version = "0.10", default-features = false, optional = true }
 
@@ -94,7 +90,6 @@ default = ["ndjson", "cloud", "nif_version_2_15"]
 cloud = [
   "object_store",
   "tokio",
-  "tokio-util",
   "aws",
   "polars/cloud",
   "polars/cloud_write",

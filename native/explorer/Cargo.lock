@@ -533,7 +533,6 @@ dependencies = [
  "rustler",
  "thiserror",
  "tokio",
- "tokio-util",
 ]
 
 [[package]]
