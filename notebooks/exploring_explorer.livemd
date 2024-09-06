@@ -964,7 +964,7 @@ series contents, but every operation will be optimized and run only once.
 Remember those helpful error messages?
 
 ```elixir
-DF.filter(df, country == "BRAZIL")
+DF.filter(df, cuontry == "BRAZIL")
 ```
 
 ### Mutate
