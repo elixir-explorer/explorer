@@ -964,6 +964,7 @@ series contents, but every operation will be optimized and run only once.
 Remember those helpful error messages?
 
 ```elixir
+# Notice that the following typo is intentional here.
 DF.filter(df, cuontry == "BRAZIL")
 ```
 
