@@ -1,7 +1,10 @@
 use crate::atoms;
-use crate::datatypes::{ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExTime, ExTimeUnit};
+use crate::datatypes::{
+    ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExSeriesDtype, ExTime, ExTimeUnit,
+};
 use crate::{ExSeries, ExplorerError};
 
+use polars::datatypes::DataType;
 use polars::prelude::*;
 use rustler::{Binary, Error, ListIterator, NifResult, Term, TermType};
 use std::slice;
@@ -307,7 +310,13 @@ pub fn s_from_list_categories(name: &str, val: Term) -> NifResult<ExSeries> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_of_series(name: &str, series_term: Term) -> NifResult<ExSeries> {
+pub fn s_from_list_of_series(
+    name: &str,
+    series_term: Term,
+    maybe_ex_dtype: Option<ExSeriesDtype>,
+) -> NifResult<ExSeries> {
+    let maybe_dtype = maybe_ex_dtype.map(|ex_dtype| DataType::try_from(&ex_dtype).unwrap());
+
     series_term
         .decode::<Vec<Option<ExSeries>>>()
         .map(|series_vec| {
@@ -320,7 +329,12 @@ pub fn s_from_list_of_series(name: &str, series_term: Term) -> NifResult<ExSerie
                 })
                 .collect();
 
-            ExSeries::new(Series::new(name, lists))
+            let series = Series::new(name, lists);
+            let cast_series = match maybe_dtype {
+                None => series,
+                Some(dtype) => series.cast(&dtype).unwrap(),
+            };
+            ExSeries::new(cast_series)
         })
 }
 
