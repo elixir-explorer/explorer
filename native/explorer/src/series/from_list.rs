@@ -317,9 +317,9 @@ pub fn s_from_list_of_series(
 ) -> NifResult<ExSeries> {
     let dtype = DataType::try_from(&ex_dtype).unwrap();
 
-    match series_term
+    series_term
         .decode::<Vec<Option<ExSeries>>>()
-        .map(|series_vec| {
+        .and_then(|series_vec| {
             let lists: Vec<Option<Series>> = series_vec
                 .iter()
                 .map(|maybe_series| {
@@ -329,20 +329,12 @@ pub fn s_from_list_of_series(
                 })
                 .collect();
 
-            Series::new(name, lists)
-                .cast(&dtype)
-                .and_then(|series| Ok(ExSeries::new(series)))
-        }) {
-        Ok(Ok(ex_series)) => Ok(ex_series),
-        Ok(Err(err)) => {
-            let message = format!("from_list/2 cannot create series of lists: {err:?}");
-            Err(Error::RaiseTerm(Box::new(message)))
-        }
-        Err(err) => {
-            let message = format!("from_list/2 cannot create series of lists: {err:?}");
-            Err(Error::RaiseTerm(Box::new(message)))
-        }
-    }
+            Series::new(name, lists).cast(&dtype).map_err(|err| {
+                let message = format!("from_list/2 cannot create series of lists: {err:?}");
+                Error::RaiseTerm(Box::new(message))
+            })
+        })
+        .and_then(|series| Ok(ExSeries::new(series)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -354,7 +346,7 @@ pub fn s_from_list_of_series_as_structs(
     let dtype = DataType::try_from(&ex_dtype).unwrap();
     let series_vec = series_term.decode::<Vec<ExSeries>>()?;
 
-    match StructChunked::from_series(
+    StructChunked::from_series(
         name,
         series_vec
             .into_iter()
@@ -365,13 +357,10 @@ pub fn s_from_list_of_series_as_structs(
     .and_then(|struct_chunked| Ok(struct_chunked.into_series()))
     .and_then(|series| series.cast(&dtype))
     .and_then(|series| Ok(ExSeries::new(series)))
-    {
-        Ok(ex_series) => Ok(ex_series),
-        Err(err) => {
-            let message = format!("from_list/2 cannot create series of structs: {err:?}");
-            Err(Error::RaiseTerm(Box::new(message)))
-        }
-    }
+    .map_err(|err| {
+        let message = format!("from_list/2 cannot create series of structs: {err:?}");
+        Error::RaiseTerm(Box::new(message))
+    })
 }
 
 macro_rules! from_binary {
