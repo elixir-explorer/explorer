@@ -334,7 +334,7 @@ pub fn s_from_list_of_series(
                 Error::RaiseTerm(Box::new(message))
             })
         })
-        .and_then(|series| Ok(ExSeries::new(series)))
+        .map(ExSeries::new)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -354,13 +354,13 @@ pub fn s_from_list_of_series_as_structs(
             .collect::<Vec<_>>()
             .as_slice(),
     )
-    .and_then(|struct_chunked| Ok(struct_chunked.into_series()))
+    .map(|struct_chunked| struct_chunked.into_series())
     .and_then(|series| series.cast(&dtype))
-    .and_then(|series| Ok(ExSeries::new(series)))
     .map_err(|err| {
         let message = format!("from_list/2 cannot create series of structs: {err:?}");
         Error::RaiseTerm(Box::new(message))
     })
+    .map(ExSeries::new)
 }
 
 macro_rules! from_binary {
