@@ -313,9 +313,9 @@ pub fn s_from_list_categories(name: &str, val: Term) -> NifResult<ExSeries> {
 pub fn s_from_list_of_series(
     name: &str,
     series_term: Term,
-    maybe_ex_dtype: Option<ExSeriesDtype>,
+    ex_dtype: ExSeriesDtype,
 ) -> NifResult<ExSeries> {
-    let maybe_dtype = maybe_ex_dtype.map(|ex_dtype| DataType::try_from(&ex_dtype).unwrap());
+    let dtype = DataType::try_from(&ex_dtype).unwrap();
 
     series_term
         .decode::<Vec<Option<ExSeries>>>()
@@ -329,12 +329,11 @@ pub fn s_from_list_of_series(
                 })
                 .collect();
 
-            let series = Series::new(name, lists);
-            let cast_series = match maybe_dtype {
-                None => series,
-                Some(dtype) => series.cast(&dtype).unwrap(),
+            let series = match Series::new(name, lists).cast(&dtype) {
+                Ok(series) => series,
+                Err(err) => panic!("from_list/2 cannot create series of lists: {err:?}"),
             };
-            ExSeries::new(cast_series)
+            ExSeries::new(series)
         })
 }
 

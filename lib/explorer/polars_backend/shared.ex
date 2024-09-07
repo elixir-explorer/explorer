@@ -127,13 +127,7 @@ defmodule Explorer.PolarsBackend.Shared do
 
   def from_list(list, dtype), do: from_list(list, dtype, "")
 
-  def from_list([], {:list, _} = dtype, name) do
-    polars_series = Native.s_from_list_of_series(name, [], nil)
-    {:ok, casted} = Native.s_cast(polars_series, dtype)
-    casted
-  end
-
-  def from_list(list, {:list, inner_dtype} = dtype, name) when is_list(list) do
+  def from_list(list, {:list, inner_dtype} = dtype, name) do
     series =
       Enum.map(list, fn
         inner_list when is_list(inner_list) -> from_list(inner_list, inner_dtype, name)
