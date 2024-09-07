@@ -338,8 +338,14 @@ pub fn s_from_list_of_series(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_of_series_as_structs(name: &str, series_term: Term) -> NifResult<ExSeries> {
+pub fn s_from_list_of_series_as_structs(
+    name: &str,
+    series_term: Term,
+    ex_dtype: ExSeriesDtype,
+) -> NifResult<ExSeries> {
+    let dtype = DataType::try_from(&ex_dtype).unwrap();
     let series_vec = series_term.decode::<Vec<ExSeries>>()?;
+
     match StructChunked::from_series(
         name,
         series_vec
@@ -347,8 +353,12 @@ pub fn s_from_list_of_series_as_structs(name: &str, series_term: Term) -> NifRes
             .map(|s| s.clone_inner())
             .collect::<Vec<_>>()
             .as_slice(),
-    ) {
-        Ok(struct_chunked) => Ok(ExSeries::new(struct_chunked.into_series())),
+    )
+    .and_then(|struct_chunked| Ok(struct_chunked.into_series()))
+    .and_then(|series| series.cast(&dtype))
+    .and_then(|series| Ok(ExSeries::new(series)))
+    {
+        Ok(ex_series) => Ok(ex_series),
         Err(err) => {
             let message = format!("from_list/2 cannot create series of structs: {err:?}");
             Err(Error::RaiseTerm(Box::new(message)))

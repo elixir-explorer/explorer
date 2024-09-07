@@ -137,13 +137,7 @@ defmodule Explorer.PolarsBackend.Shared do
     Native.s_from_list_of_series(name, series, dtype)
   end
 
-  def from_list([], {:struct, _} = dtype, name) do
-    polars_series = Native.s_from_list_of_series_as_structs(name, [])
-    {:ok, casted} = Native.s_cast(polars_series, dtype)
-    casted
-  end
-
-  def from_list(list, {:struct, fields}, name) when is_list(list) do
+  def from_list(list, {:struct, fields} = dtype, name) when is_list(list) do
     columns = Map.new(fields, fn {k, _v} -> {k, []} end)
 
     columns =
@@ -167,7 +161,7 @@ defmodule Explorer.PolarsBackend.Shared do
         |> from_list(inner_dtype, field)
       end
 
-    Native.s_from_list_of_series_as_structs(name, series)
+    Native.s_from_list_of_series_as_structs(name, series, dtype)
   end
 
   def from_list(list, dtype, name) when is_list(list) do
