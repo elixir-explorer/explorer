@@ -317,7 +317,7 @@ pub fn s_from_list_of_series(
 ) -> NifResult<ExSeries> {
     let dtype = DataType::try_from(&ex_dtype).unwrap();
 
-    series_term
+    match series_term
         .decode::<Vec<Option<ExSeries>>>()
         .map(|series_vec| {
             let lists: Vec<Option<Series>> = series_vec
@@ -329,12 +329,20 @@ pub fn s_from_list_of_series(
                 })
                 .collect();
 
-            let series = match Series::new(name, lists).cast(&dtype) {
-                Ok(series) => series,
-                Err(err) => panic!("from_list/2 cannot create series of lists: {err:?}"),
-            };
-            ExSeries::new(series)
-        })
+            Series::new(name, lists)
+                .cast(&dtype)
+                .and_then(|series| Ok(ExSeries::new(series)))
+        }) {
+        Ok(Ok(ex_series)) => Ok(ex_series),
+        Ok(Err(err)) => {
+            let message = format!("from_list/2 cannot create series of lists: {err:?}");
+            Err(Error::RaiseTerm(Box::new(message)))
+        }
+        Err(err) => {
+            let message = format!("from_list/2 cannot create series of lists: {err:?}");
+            Err(Error::RaiseTerm(Box::new(message)))
+        }
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
