@@ -84,6 +84,12 @@ features = [
 version = "0.42"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
+# This dep is only needed to activate "timezones" feature
+# for the polars-json crate. We should remove when Polars fixes it.
+[dependencies.polars-json]
+version = "*"
+features = ["timezones", "chrono-tz"]
+
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
 
