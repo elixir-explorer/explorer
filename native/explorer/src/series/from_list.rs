@@ -1,7 +1,10 @@
 use crate::atoms;
-use crate::datatypes::{ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExTime, ExTimeUnit};
+use crate::datatypes::{
+    ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExSeriesDtype, ExTime, ExTimeUnit,
+};
 use crate::{ExSeries, ExplorerError};
 
+use polars::datatypes::DataType;
 use polars::prelude::*;
 use rustler::{Binary, Error, ListIterator, NifResult, Term, TermType};
 use std::slice;
@@ -307,10 +310,16 @@ pub fn s_from_list_categories(name: &str, val: Term) -> NifResult<ExSeries> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_of_series(name: &str, series_term: Term) -> NifResult<ExSeries> {
+pub fn s_from_list_of_series(
+    name: &str,
+    series_term: Term,
+    ex_dtype: ExSeriesDtype,
+) -> NifResult<ExSeries> {
+    let dtype = DataType::try_from(&ex_dtype).unwrap();
+
     series_term
         .decode::<Vec<Option<ExSeries>>>()
-        .map(|series_vec| {
+        .and_then(|series_vec| {
             let lists: Vec<Option<Series>> = series_vec
                 .iter()
                 .map(|maybe_series| {
@@ -320,27 +329,38 @@ pub fn s_from_list_of_series(name: &str, series_term: Term) -> NifResult<ExSerie
                 })
                 .collect();
 
-            ExSeries::new(Series::new(name, lists))
+            Series::new(name, lists).cast(&dtype).map_err(|err| {
+                let message = format!("from_list/2 cannot create series of lists: {err:?}");
+                Error::RaiseTerm(Box::new(message))
+            })
         })
+        .map(ExSeries::new)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_from_list_of_series_as_structs(name: &str, series_term: Term) -> NifResult<ExSeries> {
+pub fn s_from_list_of_series_as_structs(
+    name: &str,
+    series_term: Term,
+    ex_dtype: ExSeriesDtype,
+) -> NifResult<ExSeries> {
+    let dtype = DataType::try_from(&ex_dtype).unwrap();
     let series_vec = series_term.decode::<Vec<ExSeries>>()?;
-    match StructChunked::from_series(
+
+    StructChunked::from_series(
         name,
         series_vec
             .into_iter()
             .map(|s| s.clone_inner())
             .collect::<Vec<_>>()
             .as_slice(),
-    ) {
-        Ok(struct_chunked) => Ok(ExSeries::new(struct_chunked.into_series())),
-        Err(err) => {
-            let message = format!("from_list/2 cannot create series of structs: {err:?}");
-            Err(Error::RaiseTerm(Box::new(message)))
-        }
-    }
+    )
+    .map(|struct_chunked| struct_chunked.into_series())
+    .and_then(|series| series.cast(&dtype))
+    .map_err(|err| {
+        let message = format!("from_list/2 cannot create series of structs: {err:?}");
+        Error::RaiseTerm(Box::new(message))
+    })
+    .map(ExSeries::new)
 }
 
 macro_rules! from_binary {

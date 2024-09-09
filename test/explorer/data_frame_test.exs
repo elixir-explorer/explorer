@@ -261,6 +261,19 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.dtypes(df) == %{"dates" => :date}
     end
+
+    test "lists of structs of lists with nils (issue #976)" do
+      df =
+        Explorer.DataFrame.new(
+          [
+            %{a: [%{b: [""]}]},
+            %{a: [%{b: nil}]}
+          ],
+          dtypes: [{"a", {:list, {:struct, [{"b", {:list, :string}}]}}}]
+        )
+
+      assert DF.to_columns(df) == %{"a" => [[%{"b" => [""]}], [%{"b" => nil}]]}
+    end
   end
 
   describe "mask/2" do
