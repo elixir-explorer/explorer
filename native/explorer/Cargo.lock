@@ -527,6 +527,7 @@ dependencies = [
  "mimalloc",
  "object_store",
  "polars",
+ "polars-json",
  "polars-ops",
  "rand",
  "rand_pcg",
