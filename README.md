@@ -94,7 +94,7 @@ We have two ways to represent data with Explorer:
   permitted in series of any dtype.
 
 - using a dataframe, that is just a way to represent one or more series together,
-  and work with them as a whole. The only restriction is that all the series shares
+  and work with them as a whole. The only restriction is that all the series share
   the same size.
 
 A series can be created from a list:
@@ -197,7 +197,7 @@ DF.filter(mountains, elevation > mean(elevation))
 ```
 
 You can see that we can refer to the columns using their names, and use functions
-without define them. This is possible due the powerful `Explorer.Query` features,
+without defining them. This is possible due to the powerful `Explorer.Query` features,
 and it's the main reason we need to "require" the `Explorer.DataFrame` module.
 
 The result is going to look like this:
@@ -275,7 +275,7 @@ We support the following:
 - `x86_64-unknown-linux-musl` - Linux running on Intel/AMD 64 bits CPUs, compiled with Musl.
 - `x86_64-unknown-freebsd` - FreeBSD running on Intel/AMD 64 bits.
 
-This means that the Explorer is going to work without the need to compile it from source.
+This means that Explorer is going to work without the need to compile it from source.
 
 This currently **only works for Hex releases**. For more information on how it works, please
 check the [RustlerPrecompiled project](https://hexdocs.pm/rustler_precompiled).

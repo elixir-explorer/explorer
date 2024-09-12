@@ -35,7 +35,7 @@ defmodule Explorer.Remote do
   is garbage collected and if we attempt to read it later on,
   from the caller node, it will no longer exist. Therefore,
   we must explicitly place these resources in remote nodes
-  by spawning processes to hold these refernces. That's what
+  by spawning processes to hold these references. That's what
   the `place/2` function in this module does.
 
   We also need to guarantee these resources are not kept
