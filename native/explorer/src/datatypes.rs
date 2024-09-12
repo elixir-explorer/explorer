@@ -493,7 +493,7 @@ impl<'tz> Literal for ExDateTime<'tz> {
         Expr::Literal(LiteralValue::DateTime(
             ndt.and_utc().timestamp_micros(),
             TimeUnit::Microseconds,
-            Some(time_zone),
+            Some(time_zone.into()),
         ))
     }
 }

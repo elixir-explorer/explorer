@@ -7,9 +7,8 @@ use crate::{
 };
 
 use encoding::encode_naive_datetime;
-// use encoding::encode_datetime;
 
-use polars::prelude::*; //{lazy::dsl::Expr, };
+use polars::prelude::*;
 use polars_ops::chunked_array::cov::{cov, pearson_corr};
 use polars_ops::prelude::peaks::*;
 use rustler::{Binary, Encoder, Env, Term};
@@ -30,7 +29,7 @@ pub fn s_name(data: ExSeries) -> Result<String, ExplorerError> {
 #[rustler::nif]
 pub fn s_rename(data: ExSeries, name: &str) -> Result<ExSeries, ExplorerError> {
     let mut s = data.clone_inner();
-    s.rename(name);
+    s.rename(name.into());
     Ok(ExSeries::new(s))
 }
 
@@ -121,7 +120,7 @@ fn checked_div(data: ExSeries, other: ExSeries) -> Result<Series, ExplorerError>
         1 => {
             let num = data.i64()?.get(0).unwrap();
             Ok(Series::new(
-                data.name(),
+                data.name().clone(),
                 other.i64()?.apply(|v| v.and_then(|v| num.checked_div(v))),
             ))
         }
@@ -196,7 +195,7 @@ pub fn s_unordered_distinct(series: ExSeries) -> Result<ExSeries, ExplorerError>
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_frequencies(series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
-    let df = series.value_counts(true, true, "counts".to_string(), false)?;
+    let df = series.value_counts(true, true, "counts".into(), false)?;
     Ok(ExDataFrame::new(df))
 }
 
@@ -212,12 +211,18 @@ pub fn s_cut(
     let left_close = false;
 
     // Cut is going to return a Series of a Struct. We need to convert it to a DF.
-    let cut_series = cut(&series, bins, labels, left_close, true)?;
+    let cut_series = cut(
+        &series,
+        bins,
+        labels.map(|vec| vec.iter().map(|label| label.into()).collect()),
+        left_close,
+        true,
+    )?;
     let mut cut_df = DataFrame::new(cut_series.struct_()?.fields_as_series())?;
 
     let cut_df = cut_df.insert_column(0, series)?;
 
-    cut_df.set_column_names(&[
+    cut_df.set_column_names([
         "values",
         break_point_label.unwrap_or("break_point"),
         category_label.unwrap_or("category"),
@@ -241,7 +246,7 @@ pub fn s_qcut(
     let qcut_series: Series = qcut(
         &series,
         quantiles,
-        labels,
+        labels.map(|vec| vec.iter().map(|label| label.into()).collect()),
         left_close,
         allow_duplicates,
         true,
@@ -250,7 +255,7 @@ pub fn s_qcut(
     let mut qcut_df = DataFrame::new(qcut_series.struct_()?.fields_as_series())?;
     let qcut_df = qcut_df.insert_column(0, series)?;
 
-    qcut_df.set_column_names(&[
+    qcut_df.set_column_names([
         "values",
         break_point_label.unwrap_or("break_point"),
         category_label.unwrap_or("category"),
@@ -261,7 +266,7 @@ pub fn s_qcut(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_slice_by_indices(series: ExSeries, indices: Vec<u32>) -> Result<ExSeries, ExplorerError> {
-    let idx = UInt32Chunked::from_vec("idx", indices);
+    let idx = UInt32Chunked::from_vec("idx".into(), indices);
     let s1 = series.take(&idx)?;
     Ok(ExSeries::new(s1))
 }
@@ -410,7 +415,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
                         }
                     }
 
-                    let r_logical = Series::new("r_logical", r_ids);
+                    let r_logical = Series::new("r_logical".into(), r_ids);
 
                     is_in(&l_logical.clone().into_series(), &r_logical)?
                 }
@@ -593,7 +598,7 @@ pub fn s_window_median(
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(series.name()).rolling_median(opts)])
+        .select([col(series.name().clone()).rolling_median(opts)])
         .collect()?
         .column(series.name())?
         .clone();
@@ -845,7 +850,7 @@ pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
             .clone_inner()
             .into_frame()
             .lazy()
-            .select([col(s.name()).product()])
+            .select([col(s.name().clone()).product()])
             .collect()?
             .column(s.name())?
             .clone();
@@ -863,7 +868,7 @@ pub fn s_variance(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
             .clone_inner()
             .into_frame()
             .lazy()
-            .select([col(s.name()).var(ddof)])
+            .select([col(s.name().clone()).var(ddof)])
             .collect()?
             .column(s.name())?
             .clone();
@@ -881,7 +886,7 @@ pub fn s_standard_deviation(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerE
             .clone_inner()
             .into_frame()
             .lazy()
-            .select([col(s.name()).std(ddof)])
+            .select([col(s.name().clone()).std(ddof)])
             .collect()?
             .column(s.name())?
             .clone();
@@ -1012,7 +1017,7 @@ pub fn s_quantile<'a>(
         },
         _ => encoding::term_from_value(
             s.quantile_reduce(quantile, strategy)?
-                .into_series("quantile")
+                .into_series("quantile".into())
                 .cast(dtype)?
                 .get(0)?,
             env,
@@ -1103,7 +1108,7 @@ pub fn s_categories(s: ExSeries) -> Result<ExSeries, ExplorerError> {
         DataType::Categorical(Some(mapping), _) => {
             let size = mapping.len() as u32;
             let categories: Vec<&str> = (0..size).map(|id| mapping.get(id)).collect();
-            let series = Series::new("categories", &categories);
+            let series = Series::new("categories".into(), &categories);
             Ok(ExSeries::new(series))
         }
         _ => panic!("Cannot get categories from non categorical series"),
@@ -1355,7 +1360,7 @@ pub fn s_substring(
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s.name()).str().slice(offset.lit(), length)])
+        .select([col(s.name().clone()).str().slice(offset.lit(), length)])
         .collect()?
         .column(s.name())?
         .clone();
@@ -1366,7 +1371,7 @@ pub fn s_substring(
 pub fn s_split(s1: ExSeries, by: &str) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
         .str()?
-        .split(&ChunkedArray::new("a", &[by]))
+        .split(&ChunkedArray::new("a".into(), &[by]))
         .into_series();
 
     Ok(ExSeries::new(s2))
@@ -1378,12 +1383,12 @@ pub fn s_split_into(s1: ExSeries, by: &str, names: Vec<String>) -> Result<ExSeri
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s1.name())
+        .select([col(s1.name().clone())
             .str()
             .splitn(by.lit(), names.len())
             .struct_()
             .rename_fields(names)
-            .alias(s1.name())])
+            .alias(s1.name().clone())])
         .collect()?
         .column(s1.name())?
         .clone();
@@ -1502,8 +1507,8 @@ pub fn s_strftime(s: ExSeries, format_string: &str) -> Result<ExSeries, Explorer
 pub fn s_clip_integer(s: ExSeries, min: i64, max: i64) -> Result<ExSeries, ExplorerError> {
     let s1 = clip(
         &s,
-        &Series::new("min_clip", &[min]),
-        &Series::new("max_clip", &[max]),
+        &Series::new("min_clip".into(), &[min]),
+        &Series::new("max_clip".into(), &[max]),
     )?;
 
     Ok(ExSeries::new(s1))
@@ -1513,8 +1518,8 @@ pub fn s_clip_integer(s: ExSeries, min: i64, max: i64) -> Result<ExSeries, Explo
 pub fn s_clip_float(s: ExSeries, min: f64, max: f64) -> Result<ExSeries, ExplorerError> {
     let s1 = clip(
         &s,
-        &Series::new("min_clip", &[min]),
-        &Series::new("max_clip", &[max]),
+        &Series::new("min_clip".into(), &[min]),
+        &Series::new("max_clip".into(), &[max]),
     )?;
 
     Ok(ExSeries::new(s1))
@@ -1560,7 +1565,7 @@ pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_join(s1: ExSeries, separator: &str) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
         .list()?
-        .lst_join(&ChunkedArray::new("a", &[separator]), true)?
+        .lst_join(&ChunkedArray::new("a".into(), &[separator]), true)?
         .into_series();
 
     Ok(ExSeries::new(s2))
@@ -1586,7 +1591,7 @@ fn s_member(
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s.name()).list().contains(value_expr)])
+        .select([col(s.name().clone()).list().contains(value_expr)])
         .collect()?
         .column(s.name())?
         .clone();
@@ -1600,7 +1605,10 @@ pub fn s_field(s: ExSeries, name: &str) -> Result<ExSeries, ExplorerError> {
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s.name()).struct_().field_by_name(name).alias(name)])
+        .select([col(s.name().clone())
+            .struct_()
+            .field_by_name(name)
+            .alias(name)])
         .collect()?
         .column(name)?
         .clone();
@@ -1614,10 +1622,10 @@ pub fn s_json_decode(s: ExSeries, ex_dtype: ExSeriesDtype) -> Result<ExSeries, E
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s.name())
+        .select([col(s.name().clone())
             .str()
             .json_decode(Some(dtype), None)
-            .alias(s.name())])
+            .alias(s.name().clone())])
         .collect()?
         .column(s.name())?
         .clone();
@@ -1630,7 +1638,7 @@ pub fn s_json_path_match(s: ExSeries, json_path: String) -> Result<ExSeries, Exp
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s.name()).str().json_path_match(json_path.lit())])
+        .select([col(s.name().clone()).str().json_path_match(json_path.lit())])
         .collect()?
         .column(s.name())?
         .clone();
@@ -1641,7 +1649,7 @@ pub fn s_json_path_match(s: ExSeries, json_path: String) -> Result<ExSeries, Exp
 #[rustler::nif]
 pub fn s_row_index(series: ExSeries) -> Result<ExSeries, ExplorerError> {
     let len = u32::try_from(series.len())?;
-    let s = Series::new("row_index", 0..len);
+    let s = Series::new("row_index".into(), 0..len);
     Ok(ExSeries::new(s))
 }
 
@@ -1672,10 +1680,10 @@ pub fn s_re_named_captures(s1: ExSeries, pattern: &str) -> Result<ExSeries, Expl
         .into_frame()
         .lazy()
         .with_column(
-            col(s1.name())
+            col(s1.name().clone())
                 .str()
                 .extract_groups(pattern)?
-                .alias(s1.name()),
+                .alias(s1.name().clone()),
         )
         .collect()?
         .column(s1.name())?

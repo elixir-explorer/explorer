@@ -35,7 +35,7 @@ pub fn s_from_list_date(name: &str, val: Term) -> Result<ExSeries, ExplorerError
         })
         .collect::<Result<Vec<Option<i32>>, ExplorerError>>()?;
 
-    Series::new(name, values)
+    Series::new(name.into(), values)
         .cast(&DataType::Date)
         .map(ExSeries::new)
         .map_err(|error| {
@@ -76,7 +76,7 @@ pub fn s_from_list_naive_datetime(
         })
         .collect::<Result<Vec<Option<i64>>, ExplorerError>>()?;
 
-    Series::new(name, values)
+    Series::new(name.into(), values)
         .cast(&DataType::Datetime(timeunit, None))
         .map(ExSeries::new)
         .map_err(|error| {
@@ -119,8 +119,11 @@ pub fn s_from_list_datetime(
         })
         .collect::<Result<Vec<Option<i64>>, ExplorerError>>()?;
 
-    Series::new(name, values)
-        .cast(&DataType::Datetime(timeunit, time_zone))
+    Series::new(name.into(), values)
+        .cast(&DataType::Datetime(
+            timeunit,
+            time_zone.map(|value| value.into()),
+        ))
         .map(ExSeries::new)
         .map_err(|error| {
             ExplorerError::Other(format!(
@@ -160,7 +163,7 @@ pub fn s_from_list_duration(
         })
         .collect::<Result<Vec<Option<i64>>, ExplorerError>>()?;
 
-    Series::new(name, values)
+    Series::new(name.into(), values)
         .cast(&DataType::Duration(timeunit))
         .map(ExSeries::new)
         .map_err(|error| {
@@ -196,7 +199,7 @@ pub fn s_from_list_time(name: &str, val: Term) -> Result<ExSeries, ExplorerError
         })
         .collect::<Result<Vec<Option<i64>>, ExplorerError>>()?;
 
-    Series::new(name, values)
+    Series::new(name.into(), values)
         .cast(&DataType::Time)
         .map(ExSeries::new)
         .map_err(|error| {
@@ -208,8 +211,8 @@ pub fn s_from_list_time(name: &str, val: Term) -> Result<ExSeries, ExplorerError
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_null(name: &str, length: usize) -> ExSeries {
-    let s = Series::new_null(name, length);
-    ExSeries::new(Series::new(name, s))
+    let s = Series::new_null(name.into(), length);
+    ExSeries::new(Series::new(name.into(), s))
 }
 
 macro_rules! from_list {
@@ -217,7 +220,7 @@ macro_rules! from_list {
         #[rustler::nif(schedule = "DirtyCpu")]
         pub fn $name(name: &str, val: Term) -> NifResult<ExSeries> {
             val.decode::<Vec<Option<$type>>>()
-                .map(|values| ExSeries::new(Series::new(name, values.as_slice())))
+                .map(|values| ExSeries::new(Series::new(name.into(), values.as_slice())))
         }
     };
 }
@@ -274,7 +277,7 @@ macro_rules! from_list_float {
                 })
                 .collect::<NifResult<Vec<Option<$type>>>>()
                 .map(|values| {
-                    ExSeries::new(Series::new(name, values))
+                    ExSeries::new(Series::new(name.into(), values))
                 })
         }
     };
@@ -291,14 +294,14 @@ pub fn s_from_list_binary(name: &str, val: Term) -> NifResult<ExSeries> {
                 .map(|maybe_bin| maybe_bin.map(|bin| bin.as_slice()))
         })
         .collect::<NifResult<Vec<Option<&[u8]>>>>()
-        .map(|values| ExSeries::new(Series::new(name, values)))
+        .map(|values| ExSeries::new(Series::new(name.into(), values)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_categories(name: &str, val: Term) -> NifResult<ExSeries> {
     let decoded = val.decode::<Vec<Option<String>>>()?;
     Ok(ExSeries::new(
-        Series::new(name, decoded.as_slice())
+        Series::new(name.into(), decoded.as_slice())
             .cast(&DataType::Categorical(None, CategoricalOrdering::default()))
             .map_err(|err| {
                 let message = format!(
@@ -329,7 +332,7 @@ pub fn s_from_list_of_series(
                 })
                 .collect();
 
-            Series::new(name, lists).cast(&dtype).map_err(|err| {
+            Series::new(name.into(), lists).cast(&dtype).map_err(|err| {
                 let message = format!("from_list/2 cannot create series of lists: {err:?}");
                 Error::RaiseTerm(Box::new(message))
             })
@@ -347,7 +350,7 @@ pub fn s_from_list_of_series_as_structs(
     let series_vec = series_term.decode::<Vec<ExSeries>>()?;
 
     StructChunked::from_series(
-        name,
+        name.into(),
         series_vec
             .into_iter()
             .map(|s| s.clone_inner())
@@ -371,7 +374,7 @@ macro_rules! from_binary {
             let transmuted = unsafe {
                 slice::from_raw_parts(slice.as_ptr() as *const $type, slice.len() / $bytes)
             };
-            ExSeries::new(Series::new(name, transmuted))
+            ExSeries::new(Series::new(name.into(), transmuted))
         }
     };
 }

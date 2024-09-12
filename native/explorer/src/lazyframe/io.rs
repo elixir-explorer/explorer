@@ -19,7 +19,7 @@ pub fn lf_from_parquet(
     };
 
     let cols: Vec<Expr> = if let Some(cols) = columns {
-        cols.iter().map(|column| col(column)).collect()
+        cols.iter().map(col).collect()
     } else {
         vec![all()]
     };
@@ -43,7 +43,7 @@ pub fn lf_from_parquet_cloud(
         ..Default::default()
     };
     let cols: Vec<Expr> = if let Some(cols) = columns {
-        cols.iter().map(|column| col(column)).collect()
+        cols.iter().map(col).collect()
     } else {
         vec![all()]
     };
@@ -247,7 +247,9 @@ pub fn lf_from_csv(
         .with_rechunk(do_rechunk)
         .with_encoding(encoding)
         .with_dtype_overwrite(schema_from_dtypes_pairs(dtypes)?)
-        .with_null_values(Some(NullValues::AllColumns(null_vals)))
+        .with_null_values(Some(NullValues::AllColumns(
+            null_vals.iter().map(|x| x.into()).collect(),
+        )))
         .with_eol_char(eol_delimiter.unwrap_or(b'\n'))
         .finish()?;
 

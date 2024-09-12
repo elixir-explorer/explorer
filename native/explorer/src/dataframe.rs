@@ -29,7 +29,11 @@ pub fn df_transpose(
 
 #[rustler::nif]
 pub fn df_names(df: ExDataFrame) -> Result<Vec<String>, ExplorerError> {
-    let names = to_string_names(df.get_column_names());
+    let names = df
+        .get_column_names()
+        .iter()
+        .map(|name| name.to_string())
+        .collect();
     Ok(names)
 }
 
@@ -73,10 +77,10 @@ pub fn df_concat_columns(dfs: Vec<ExDataFrame>) -> Result<ExDataFrame, ExplorerE
                 .iter()
                 .map(|col| {
                     let name = col.name();
-                    if previous_names.contains(name) {
+                    if previous_names.contains(&name.clone().to_string()) {
                         let new_name = format!("{name}_{idx}");
                         previous_names.insert(new_name.clone());
-                        col.clone().rename(&new_name).to_owned()
+                        col.clone().rename(new_name.into()).to_owned()
                     } else {
                         previous_names.insert(name.to_string());
                         col.clone().to_owned()
@@ -125,7 +129,7 @@ pub fn df_slice_by_indices(
     indices: Vec<u32>,
     groups: Vec<&str>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let idx = UInt32Chunked::from_vec("idx", indices);
+    let idx = UInt32Chunked::from_vec("idx".into(), indices);
     let new_df = if groups.is_empty() {
         df.take(&idx)?
     } else {
@@ -167,7 +171,7 @@ pub fn df_sample_n(
     seed: Option<u64>,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let n_s = Series::new("n", &[n]);
+    let n_s = Series::new("n".into(), &[n]);
     let new_df = if groups.is_empty() {
         df.sample_n(&n_s, replace, shuffle, seed)?
     } else {
@@ -187,7 +191,7 @@ pub fn df_sample_frac(
     seed: Option<u64>,
     groups: Vec<String>,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let frac_s = Series::new("frac", &[frac]);
+    let frac_s = Series::new("frac".into(), &[frac]);
     let new_df = if groups.is_empty() {
         df.sample_frac(&frac_s, replace, shuffle, seed)?
     } else {
@@ -396,7 +400,7 @@ pub fn df_pivot_wider(
         .collect();
 
     for (id_name, new_name) in id_columns.iter().zip(&temp_id_names) {
-        df.rename(id_name, new_name)?;
+        df.rename(id_name, new_name.into())?;
     }
 
     let mut new_df = pivot_stable(
@@ -465,7 +469,7 @@ pub fn df_lazy(df: ExDataFrame) -> Result<ExLazyFrame, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_re_dtype(pattern: &str) -> Result<ExSeriesDtype, ExplorerError> {
-    let s = Series::new("dummy", [""])
+    let s = Series::new("dummy".into(), [""])
         .into_frame()
         .lazy()
         .with_column(col("dummy").str().extract_groups(pattern)?.alias("dummy"))
