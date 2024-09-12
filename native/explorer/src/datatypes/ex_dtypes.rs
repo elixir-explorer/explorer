@@ -107,8 +107,7 @@ impl TryFrom<&DataType> for ExSeriesDtype {
                 let mut struct_fields = Vec::new();
 
                 for field in fields {
-                    struct_fields
-                        .push((field.name().to_string(), Self::try_from(field.dtype())?));
+                    struct_fields.push((field.name().to_string(), Self::try_from(field.dtype())?));
                 }
 
                 Ok(ExSeriesDtype::Struct(struct_fields))
