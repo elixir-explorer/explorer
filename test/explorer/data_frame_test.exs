@@ -4167,6 +4167,21 @@ defmodule Explorer.DataFrameTest do
       assert b in [2, 3]
     end
 
+    test "product/1 without groups (see grouped_test for groups)" do
+      df = DF.new(petal_width: [1, 2, 2, 3, 3, 120])
+
+      df1 =
+        DF.summarise(df, petal_width_product: product(petal_width))
+
+      assert DF.dtypes(df1) == %{
+               "petal_width_product" => {:s, 64}
+             }
+
+      result = DF.to_columns(df1)
+
+      assert result["petal_width_product"] == [4320]
+    end
+
     test "argmax/1 and argmin/1" do
       df =
         DF.new(

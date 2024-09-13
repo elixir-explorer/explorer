@@ -2773,7 +2773,7 @@ defmodule Explorer.Series do
   @doc type: :aggregation
   @spec product(series :: Series.t()) :: float() | non_finite() | nil
   def product(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
-    do: at(apply_series(series, :product), 0)
+    do: apply_series(series, :product)
 
   def product(%Series{dtype: dtype}),
     do: dtype_error("product/1", dtype, @numeric_dtypes)

@@ -248,7 +248,7 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_quantile, [quantile, "nearest"])
 
   @impl true
-  def product(series), do: Shared.apply_series(series, :s_product)
+  def product(series), do: first(Shared.apply_series(series, :s_product))
 
   @impl true
   def skew(series, bias?),
