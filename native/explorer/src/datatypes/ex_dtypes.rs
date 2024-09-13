@@ -107,8 +107,7 @@ impl TryFrom<&DataType> for ExSeriesDtype {
                 let mut struct_fields = Vec::new();
 
                 for field in fields {
-                    struct_fields
-                        .push((field.name().to_string(), Self::try_from(field.data_type())?));
+                    struct_fields.push((field.name().to_string(), Self::try_from(field.dtype())?));
                 }
 
                 Ok(ExSeriesDtype::Struct(struct_fields))
@@ -160,7 +159,7 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             }
             ExSeriesDtype::Datetime(ex_timeunit, tz_option) => Ok(DataType::Datetime(
                 ex_timeunit.try_into()?,
-                Some(tz_option.clone()),
+                Some(tz_option.into()),
             )),
             ExSeriesDtype::Duration(ex_timeunit) => Ok(DataType::Duration(ex_timeunit.try_into()?)),
             ExSeriesDtype::List(inner) => {
@@ -169,7 +168,7 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             ExSeriesDtype::Struct(fields) => Ok(DataType::Struct(
                 fields
                     .iter()
-                    .map(|(k, v)| Ok(Field::new(k.as_str(), v.try_into()?)))
+                    .map(|(k, v)| Ok(Field::new(k.into(), v.try_into()?)))
                     .collect::<Result<Vec<Field>, Self::Error>>()?,
             )),
         }

@@ -56,7 +56,12 @@ pub fn df_from_csv(
         .with_skip_rows_after_header(skip_rows_after_header)
         .with_projection(projection.map(Arc::new))
         .with_rechunk(do_rechunk)
-        .with_columns(column_names.map(Arc::from))
+        .with_columns(column_names.map(|names| {
+            names
+                .iter()
+                .map(|name| PlSmallStr::from_string(name.clone()))
+                .collect()
+        }))
         .with_parse_options(
             CsvParseOptions::default()
                 .with_encoding(encoding)
@@ -64,7 +69,9 @@ pub fn df_from_csv(
                 .with_try_parse_dates(parse_dates)
                 .with_separator(delimiter_as_byte)
                 .with_eol_char(eol_delimiter.unwrap_or(b'\n'))
-                .with_null_values(Some(NullValues::AllColumns(null_vals))),
+                .with_null_values(Some(NullValues::AllColumns(
+                    null_vals.iter().map(|val| val.into()).collect(),
+                ))),
         )
         .try_into_reader_with_file_path(Some(filename.into()))?
         .finish();
@@ -79,7 +86,7 @@ pub fn schema_from_dtypes_pairs(
         return Ok(None);
     }
 
-    let mut schema = Schema::new();
+    let mut schema = Schema::with_capacity(dtypes.len());
     for (name, ex_dtype) in dtypes {
         let dtype = DataType::try_from(&ex_dtype)?;
         schema.with_column(name.into(), dtype);
@@ -174,7 +181,12 @@ pub fn df_load_csv(
         .with_has_header(has_header)
         .with_infer_schema_length(infer_schema_length)
         .with_n_rows(stop_after_n_rows)
-        .with_columns(column_names.map(Arc::from))
+        .with_columns(column_names.map(|names| {
+            names
+                .iter()
+                .map(|name| PlSmallStr::from_string(name.clone()))
+                .collect()
+        }))
         .with_skip_rows(skip_rows)
         .with_skip_rows_after_header(skip_rows_after_header)
         .with_projection(projection.map(Arc::new))
@@ -183,7 +195,9 @@ pub fn df_load_csv(
             CsvParseOptions::default()
                 .with_separator(delimiter_as_byte)
                 .with_encoding(encoding)
-                .with_null_values(Some(NullValues::AllColumns(null_vals)))
+                .with_null_values(Some(NullValues::AllColumns(
+                    null_vals.iter().map(|x| x.into()).collect(),
+                )))
                 .with_try_parse_dates(parse_dates)
                 .with_eol_char(eol_delimiter.unwrap_or(b'\n')),
         )

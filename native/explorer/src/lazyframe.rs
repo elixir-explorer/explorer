@@ -65,7 +65,7 @@ pub fn lf_tail(
 pub fn lf_names(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
     let mut lf = data.clone_inner();
     let names = lf
-        .schema()?
+        .collect_schema()?
         .iter_names()
         .map(|smart_string| smart_string.to_string())
         .collect();
@@ -76,9 +76,9 @@ pub fn lf_names(data: ExLazyFrame) -> Result<Vec<String>, ExplorerError> {
 #[rustler::nif]
 pub fn lf_dtypes(data: ExLazyFrame) -> Result<Vec<ExSeriesDtype>, ExplorerError> {
     let mut dtypes: Vec<ExSeriesDtype> = vec![];
-    let schema = data.clone_inner().schema()?;
+    let schema = data.clone_inner().collect_schema()?;
 
-    for dtype in schema.iter_dtypes() {
+    for (_name, dtype) in schema.iter_names_and_dtypes() {
         dtypes.push(ExSeriesDtype::try_from(dtype)?)
     }
 
@@ -108,7 +108,7 @@ pub fn lf_slice(
     let result_lf = if groups.is_empty() {
         lf.slice(offset, length)
     } else {
-        let groups_exprs: Vec<Expr> = groups.iter().map(|group| col(group)).collect();
+        let groups_exprs: Vec<Expr> = groups.iter().map(col).collect();
         lf.group_by_stable(groups_exprs)
             .agg([col("*").slice(offset, length)])
             .explode([col("*").exclude(groups)])
@@ -181,6 +181,7 @@ pub fn lf_distinct(
     columns_to_keep: Option<Vec<ExExpr>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let df = data.clone_inner();
+    let subset = subset.iter().map(|x| x.into()).collect::<Vec<PlSmallStr>>();
     let new_df = df.unique_stable(Some(subset), UniqueKeepStrategy::First);
 
     match columns_to_keep {
@@ -219,11 +220,9 @@ pub fn lf_summarise_with(
         // We do add a "shadow" column to be able to group by it.
         // This is going to force some aggregations like "mode" to be always inside
         // a "list".
-        let s = Series::new_null("__explorer_null_for_group__", 1);
-        ldf.with_column(s.lit())
-            .group_by_stable(["__explorer_null_for_group__"])
+        ldf.group_by_stable([1.lit().alias("__explorer_literal_for_group__")])
             .agg(aggs)
-            .select(&[col("*").exclude(["__explorer_null_for_group__"])])
+            .select(&[col("*").exclude(["__explorer_literal_for_group__"])])
     } else {
         ldf.group_by_stable(groups).agg(aggs)
     };
@@ -344,7 +343,7 @@ pub fn lf_concat_columns(ldfs: Vec<ExLazyFrame>) -> Result<ExLazyFrame, Explorer
         .map(|(idx, ex_ldf)| {
             let mut ldf = ex_ldf.clone_inner();
             let names: Vec<String> = ldf
-                .schema()
+                .collect_schema()
                 .expect("should be able to get schema")
                 .iter_names()
                 .map(|smart_string| smart_string.to_string())
