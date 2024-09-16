@@ -189,6 +189,7 @@ defmodule Explorer.PolarsBackend.Shared do
       {:duration, precision} -> apply(:s_from_list_duration, [name, list, precision])
       :binary -> Native.s_from_list_binary(name, list)
       :null -> Native.s_from_list_null(name, length(list))
+      {:decimal, precision, scale} -> Native.s_from_list_decimal(name, list, precision, scale)
     end
   end
 

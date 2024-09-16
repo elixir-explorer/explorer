@@ -565,6 +565,33 @@ impl Literal for ExTime {
     }
 }
 
+#[derive(NifStruct, Copy, Clone, Debug)]
+#[module = "Decimal"]
+pub struct ExDecimal {
+    pub sign: i8,
+    pub coef: u64,
+    pub exp: i64,
+}
+
+impl ExDecimal {
+    pub fn signed_coef(self) -> i128 {
+        self.sign as i128 * self.coef as i128
+    }
+}
+
+impl Literal for ExDecimal {
+    fn lit(self) -> Expr {
+        Expr::Literal(LiteralValue::Decimal(
+            if self.sign.is_positive() {
+                self.coef.into()
+            } else {
+                -(self.coef as i128)
+            },
+            usize::try_from(-(self.exp)).expect("exponent should fit an usize"),
+        ))
+    }
+}
+
 /// Represents valid Elixir types that can be used as literals in Polars.
 pub enum ExValidValue<'a> {
     I64(i64),
@@ -575,6 +602,7 @@ pub enum ExValidValue<'a> {
     Time(ExTime),
     DateTime(ExNaiveDateTime),
     Duration(ExDuration),
+    Decimal(ExDecimal),
 }
 
 impl<'a> ExValidValue<'a> {
@@ -598,6 +626,7 @@ impl<'a> Literal for &ExValidValue<'a> {
             ExValidValue::Time(v) => v.lit(),
             ExValidValue::DateTime(v) => v.lit(),
             ExValidValue::Duration(v) => v.lit(),
+            ExValidValue::Decimal(v) => v.lit(),
         }
     }
 }
@@ -620,6 +649,8 @@ impl<'a> rustler::Decoder<'a> for ExValidValue<'a> {
                     Ok(ExValidValue::DateTime(datetime))
                 } else if let Ok(duration) = term.decode::<ExDuration>() {
                     Ok(ExValidValue::Duration(duration))
+                } else if let Ok(decimal) = term.decode::<ExDecimal>() {
+                    Ok(ExValidValue::Decimal(decimal))
                 } else {
                     Err(rustler::Error::BadArg)
                 }

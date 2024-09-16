@@ -3899,6 +3899,42 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s3) == {:naive_datetime, :microsecond}
     end
 
+    test "integer series to decimal" do
+      s = Series.from_list([1, 2, 3])
+      s1 = Series.cast(s, {:decimal, nil, 0})
+      assert Series.to_list(s1) == [Decimal.new("1"), Decimal.new("2"), Decimal.new("3")]
+      # 38 is Polars' default for precision.
+      assert Series.dtype(s1) == {:decimal, 38, 0}
+
+      # increased scale
+      s2 = Series.cast(s, {:decimal, nil, 2})
+      assert Series.to_list(s2) == [Decimal.new("1.00"), Decimal.new("2.00"), Decimal.new("3.00")]
+      assert Series.dtype(s2) == {:decimal, 38, 2}
+    end
+
+    test "float series to decimal" do
+      s = Series.from_list([1.345, 2.561, 3.97212])
+      s1 = Series.cast(s, {:decimal, nil, 3})
+
+      assert Series.to_list(s1) == [
+               Decimal.new("1.345"),
+               Decimal.new("2.561"),
+               Decimal.new("3.972")
+             ]
+
+      assert Series.dtype(s1) == {:decimal, 38, 3}
+
+      s2 = Series.cast(s, {:decimal, nil, 4})
+
+      assert Series.to_list(s2) == [
+               Decimal.new("1.3450"),
+               Decimal.new("2.5610"),
+               Decimal.new("3.9721")
+             ]
+
+      assert Series.dtype(s2) == {:decimal, 38, 4}
+    end
+
     test "string series to category" do
       s = Series.from_list(["apple", "banana", "apple", "lemon"])
       s1 = Series.cast(s, :category)

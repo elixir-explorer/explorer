@@ -42,6 +42,7 @@ mod atoms {
         duration_module = "Elixir.Explorer.Duration",
         naive_datetime_module = "Elixir.NaiveDateTime",
         time_module = "Elixir.Time",
+        decimal_module = "Elixir.Decimal",
         hour,
         minute,
         second,
@@ -61,6 +62,9 @@ mod atoms {
         time_zone,
         utc_offset,
         zone_abbr,
+        coef,
+        exp,
+        sign,
     }
 }
 

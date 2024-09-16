@@ -215,6 +215,53 @@ pub fn s_from_list_null(name: &str, length: usize) -> ExSeries {
     ExSeries::new(Series::new(name.into(), s))
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_from_list_decimal(
+    _name: &str,
+    _val: Term,
+    _precision: Option<usize>,
+    _scale: Option<usize>,
+) -> Result<ExSeries, ExplorerError> {
+    Err(ExplorerError::Other(
+        "from_list/2 not yet implemented for decimal lists".into(),
+    ))
+    // let iterator = val
+    //     .decode::<ListIterator>()
+    //     .map_err(|err| ExplorerError::Other(format!("expecting list as term: {err:?}")))?;
+    // // let mut precision = precision;
+    // // let mut scale = scale;
+
+    // let values: Vec<Option<i128>> = iterator
+    //     .map(|item| match item.get_type() {
+    //         TermType::Integer => item.decode::<Option<i128>>().map_err(|err| {
+    //             ExplorerError::Other(format!("int number is too big for an i128: {err:?}"))
+    //         }),
+    //         TermType::Map => item
+    //             .decode::<ExDecimal>()
+    //             .map(|ex_decimal| Some(ex_decimal.signed_coef()))
+    //             .map_err(|error| {
+    //                 ExplorerError::Other(format!(
+    //                     "cannot decode a valid decimal from term. error: {error:?}"
+    //                 ))
+    //             }),
+    //         // TODO: handle float special cases
+    //         TermType::Atom => Ok(None),
+    //         term_type => Err(ExplorerError::Other(format!(
+    //             "from_list/2 for decimals not implemented for {term_type:?}"
+    //         ))),
+    //     })
+    //     .collect::<Result<Vec<Option<i128>>, ExplorerError>>()?;
+
+    // Series::new(name.into(), values)
+    //     .cast(&DataType::Decimal(precision, scale))
+    //     .map(ExSeries::new)
+    //     .map_err(|error| {
+    //         ExplorerError::Other(format!(
+    //             "from_list/2 cannot cast integer series to a valid decimal series: {error:?}"
+    //         ))
+    //     })
+}
+
 macro_rules! from_list {
     ($name:ident, $type:ty) => {
         #[rustler::nif(schedule = "DirtyCpu")]
