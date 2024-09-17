@@ -349,7 +349,7 @@ fn time_unit_to_atom(time_unit: TimeUnit) -> atom::Atom {
         TimeUnit::Nanoseconds => nanosecond(),
     }
 }
-
+// ######### Duration ##########
 macro_rules! unsafe_encode_duration {
     ($v: expr, $time_unit: expr, $duration_struct_keys: ident, $duration_module: ident, $env: ident) => {{
         let value = $v;
@@ -416,6 +416,75 @@ fn duration_series_to_list<'b>(
             .encode(env))
     ))
 }
+
+// ######### End of Duration ##########
+
+// ######### Decimal ##########
+macro_rules! unsafe_encode_decimal {
+    ($v: expr, $scale: expr, $decimal_struct_keys: ident, $decimal_module: ident, $env: ident) => {{
+        let coef = $v.abs();
+        let scale = -($scale as isize);
+        let sign = $v.signum();
+
+        unsafe {
+            Term::new(
+                $env,
+                map::make_map_from_arrays(
+                    $env.as_c_arg(),
+                    $decimal_struct_keys,
+                    &[
+                        $decimal_module,
+                        coef.encode($env).as_c_arg(),
+                        scale.encode($env).as_c_arg(),
+                        sign.encode($env).as_c_arg(),
+                    ],
+                )
+                .unwrap(),
+            )
+        }
+    }};
+}
+
+// Here we build the Decimal struct manually, as it's much faster than using NifStruct
+fn decimal_struct_keys(env: Env) -> [NIF_TERM; 4] {
+    return [
+        atom::__struct__().encode(env).as_c_arg(),
+        atoms::coef().encode(env).as_c_arg(),
+        atoms::exp().encode(env).as_c_arg(),
+        atoms::sign().encode(env).as_c_arg(),
+    ];
+}
+
+#[inline]
+pub fn encode_decimal(v: i128, scale: usize, env: Env) -> Result<Term, ExplorerError> {
+    let struct_keys = &decimal_struct_keys(env);
+    let module_atom = atoms::decimal_module().encode(env).as_c_arg();
+
+    Ok(unsafe_encode_decimal!(
+        v,
+        scale,
+        struct_keys,
+        module_atom,
+        env
+    ))
+}
+
+#[inline]
+fn decimal_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
+    let struct_keys = &decimal_struct_keys(env);
+    let module_atom = atoms::decimal_module().encode(env).as_c_arg();
+    let decimal_chunked = s.decimal()?;
+    let scale = decimal_chunked.scale();
+
+    Ok(unsafe_iterator_series_to_list!(
+        env,
+        decimal_chunked.into_iter().map(|option| option
+            .map(|v| { unsafe_encode_decimal!(v, scale, struct_keys, module_atom, env) })
+            .encode(env))
+    ))
+}
+
+// ######### End of Decimal ##########
 
 macro_rules! unsafe_encode_time {
     ($v: expr, $naive_time_struct_keys: ident, $calendar_iso_module: ident, $time_module: ident, $env: ident) => {{
@@ -710,6 +779,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
             .map(|(value, field)| Ok((field.name.as_str(), term_from_value(value, env)?)))
             .collect::<Result<HashMap<_, _>, ExplorerError>>()
             .map(|map| map.encode(env)),
+        AnyValue::Decimal(number, scale) => encode_decimal(number, scale, env),
         dt => panic!("cannot encode value {dt:?} to term"),
     }
 }
@@ -756,6 +826,7 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
             .map(|value| term_from_value(value, env))
             .collect::<Result<Vec<_>, ExplorerError>>()
             .map(|values| values.encode(env)),
+        DataType::Decimal(_precision, _scale) => decimal_series_to_list(&s, env),
         dt => panic!("to_list/1 not implemented for {dt:?}"),
     }
 }

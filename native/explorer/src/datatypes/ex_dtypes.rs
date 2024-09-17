@@ -67,6 +67,8 @@ pub enum ExSeriesDtype {
     Duration(ExTimeUnit),
     List(Box<ExSeriesDtype>),
     Struct(Vec<(String, ExSeriesDtype)>),
+    // Precision and scale.
+    Decimal(Option<usize>, Option<usize>),
 }
 
 impl TryFrom<&DataType> for ExSeriesDtype {
@@ -112,6 +114,8 @@ impl TryFrom<&DataType> for ExSeriesDtype {
 
                 Ok(ExSeriesDtype::Struct(struct_fields))
             }
+
+            DataType::Decimal(precision, scale) => Ok(ExSeriesDtype::Decimal(*precision, *scale)),
 
             _ => Err(ExplorerError::Other(format!(
                 "cannot cast to dtype: {value}"
@@ -171,6 +175,7 @@ impl TryFrom<&ExSeriesDtype> for DataType {
                     .map(|(k, v)| Ok(Field::new(k.into(), v.try_into()?)))
                     .collect::<Result<Vec<Field>, Self::Error>>()?,
             )),
+            ExSeriesDtype::Decimal(precision, scale) => Ok(DataType::Decimal(*precision, *scale)),
         }
     }
 }

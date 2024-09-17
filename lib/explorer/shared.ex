@@ -42,7 +42,7 @@ defmodule Explorer.Shared do
   within lists inside.
   """
   def dtypes do
-    @scalar_types ++ [{:list, :any}, {:struct, :any}]
+    @scalar_types ++ [{:list, :any}, {:struct, :any}, {:decimal, :any, :any}]
   end
 
   @doc """
@@ -98,6 +98,9 @@ defmodule Explorer.Shared do
 
     {:naive_datetime, precision}
   end
+
+  def normalise_dtype({:decimal, _precision, _scale} = dtype), do: dtype
+  def normalise_dtype(:decimal), do: {:decimal, nil, 2}
 
   def normalise_dtype(_dtype), do: nil
 
@@ -494,6 +497,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
   def dtype_to_string({:s, size}), do: "s" <> Integer.to_string(size)
   def dtype_to_string({:u, size}), do: "u" <> Integer.to_string(size)
+  def dtype_to_string({:decimal, precision, scale}), do: "decimal[#{precision}, #{scale}]"
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
 
   defp precision_string(:millisecond), do: "ms"

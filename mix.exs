@@ -46,6 +46,7 @@ defmodule Explorer.MixProject do
       {:rustler_precompiled, "~> 0.7"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 3.1.1 or ~> 4.0.0"},
+      {:decimal, "~> 2.1"},
 
       ## Optional
       {:flame, "~> 0.3", optional: true},
