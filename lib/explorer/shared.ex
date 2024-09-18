@@ -100,7 +100,7 @@ defmodule Explorer.Shared do
   end
 
   def normalise_dtype({:decimal, _precision, _scale} = dtype), do: dtype
-  def normalise_dtype(:decimal), do: {:decimal, nil, 2}
+  def normalise_dtype(:decimal), do: {:decimal, nil, nil}
 
   def normalise_dtype(_dtype), do: nil
 
@@ -287,6 +287,10 @@ defmodule Explorer.Shared do
   defp infer_type(item, :null), do: infer_type(item)
   defp infer_type(integer, {:f, 64}) when is_integer(integer), do: {:f, 64}
   defp infer_type(float, {:s, 64}) when is_float(float) or float in @non_finite, do: {:f, 64}
+
+  defp infer_type(integer, {:decimal, _, _} = decimal) when is_integer(integer), do: decimal
+  defp infer_type(float, {:decimal, _, _} = decimal) when is_float(float), do: decimal
+
   defp infer_type(list, {:list, type}) when is_list(list), do: infer_list(list, type)
   defp infer_type(%{} = map, {:struct, inner}), do: infer_struct(map, inner)
 
@@ -304,6 +308,10 @@ defmodule Explorer.Shared do
   defp infer_type(%DateTime{time_zone: tz} = _item), do: {:datetime, :microsecond, tz}
   defp infer_type(%NaiveDateTime{} = _item), do: {:naive_datetime, :microsecond}
   defp infer_type(%Explorer.Duration{precision: precision} = _item), do: {:duration, precision}
+  # We could pass the scale in the dtype, but it's complex to
+  # convert all decimals to the same scale at this point, so
+  # we delegate that to the backend.
+  defp infer_type(%Decimal{} = _item), do: {:decimal, nil, nil}
   defp infer_type(%_{} = item), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
   defp infer_type(item) when is_integer(item), do: {:s, 64}
   defp infer_type(item) when is_float(item) or item in @non_finite, do: {:f, 64}
@@ -366,6 +374,13 @@ defmodule Explorer.Shared do
   def merge_numeric_dtype({:f, left}, {:f, right}), do: {:f, max(left, right)}
   def merge_numeric_dtype({:f, _} = float, :null), do: float
   def merge_numeric_dtype(:null, {:f, _} = float), do: float
+
+  def merge_numeric_dtype({:decimal, _, _} = decimal, :null), do: decimal
+  def merge_numeric_dtype(:null, {:decimal, _, _} = decimal), do: decimal
+
+  def merge_numeric_dtype({:decimal, _, _} = decimal, {:f, _}), do: decimal
+  def merge_numeric_dtype({:f, _}, {:decimal, _, _} = decimal), do: decimal
+
   def merge_numeric_dtype(_, _), do: nil
 
   @doc """

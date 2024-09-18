@@ -1687,6 +1687,32 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
+    test "adds decimal series" do
+      df = DF.new(a: [1, 2, 4])
+
+      df1 =
+        DF.mutate(df,
+          b: from_list([Decimal.new(1), Decimal.new(2), nil]),
+          # Casting works, but the df will be different if we don't pass the precision,
+          # because it will take the default precision for decimals, which is "38".
+          # The second problem of not passing precision is that scale will be handled differently.
+          # This example would divide the integers by 10^2 without the precision.
+          c: cast(a, {:decimal, 10, 2})
+        )
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: [1, 2, 4],
+               b: [Decimal.new(1), Decimal.new(2), nil],
+               c: [Decimal.new("1.00"), Decimal.new("2.00"), Decimal.new("4.00")]
+             }
+
+      assert DF.dtypes(df1) == %{
+               "a" => {:s, 64},
+               "b" => {:decimal, nil, 0},
+               "c" => {:decimal, 10, 2}
+             }
+    end
+
     test "raises when adding eager series whose length does not match dataframe's length" do
       df = DF.new(a: [1, 2, 3])
       series = Series.from_list([4, 5, 6, 7])

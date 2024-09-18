@@ -577,6 +577,13 @@ impl ExDecimal {
     pub fn signed_coef(self) -> i128 {
         self.sign as i128 * self.coef as i128
     }
+
+    pub fn scale(self) -> usize {
+        self.exp
+            .abs()
+            .try_into()
+            .expect("cannot convert exponent (Elixir) to scale (Rust)")
+    }
 }
 
 impl Literal for ExDecimal {

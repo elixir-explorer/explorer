@@ -381,6 +381,87 @@ defmodule Explorer.SeriesTest do
       end
     end
 
+    test "with decimals" do
+      s =
+        Series.from_list([Decimal.new("0"), Decimal.new("0.42"), nil, Decimal.new("5.12467")],
+          dtype: :decimal
+        )
+
+      assert s[1] === Decimal.new("0.42000")
+      assert s[3] === Decimal.new("5.12467")
+
+      assert Series.to_list(s) === [
+               Decimal.new("0.00000"),
+               Decimal.new("0.42000"),
+               nil,
+               Decimal.new("5.12467")
+             ]
+
+      assert Series.dtype(s) == {:decimal, nil, 5}
+    end
+
+    test "with decimals without dtype option mixing with floats" do
+      s =
+        Series.from_list([
+          Decimal.new("0"),
+          Decimal.new("0.42"),
+          nil,
+          Decimal.new("5.12467"),
+          42.59
+        ])
+
+      assert s[1] === Decimal.new("0.42000")
+      assert s[4] === Decimal.new("42.59000")
+
+      assert Series.to_list(s) === [
+               Decimal.new("0.00000"),
+               Decimal.new("0.42000"),
+               nil,
+               Decimal.new("5.12467"),
+               Decimal.new("42.59000")
+             ]
+
+      assert Series.dtype(s) == {:decimal, nil, 5}
+    end
+
+    test "with floats as decimals" do
+      s =
+        Series.from_list([0.0, 0.42, nil, 5.12467],
+          dtype: :decimal
+        )
+
+      assert s[1] === Decimal.new("0.42000")
+      assert s[3] === Decimal.new("5.12467")
+
+      assert Series.to_list(s) === [
+               Decimal.new("0.00000"),
+               Decimal.new("0.42000"),
+               nil,
+               Decimal.new("5.12467")
+             ]
+
+      assert Series.dtype(s) == {:decimal, nil, 5}
+    end
+
+    test "with integers as decimals passing scale" do
+      s =
+        Series.from_list([0, 4237, nil, 550],
+          dtype: {:decimal, 0, 2}
+        )
+
+      assert s[1] === Decimal.new("42.37")
+      assert s[3] === Decimal.new("5.50")
+
+      assert Series.to_list(s) === [
+               Decimal.new("0.00"),
+               Decimal.new("42.37"),
+               nil,
+               Decimal.new("5.50")
+             ]
+
+      assert Series.dtype(s) == {:decimal, nil, 2}
+    end
+
     test "mixing dates and integers with `:date` dtype" do
       s = Series.from_list([1, nil, ~D[2024-06-13]], dtype: :date)
 
