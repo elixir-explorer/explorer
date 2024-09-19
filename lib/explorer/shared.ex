@@ -378,8 +378,8 @@ defmodule Explorer.Shared do
   def merge_numeric_dtype({:decimal, _, _} = decimal, :null), do: decimal
   def merge_numeric_dtype(:null, {:decimal, _, _} = decimal), do: decimal
 
-  def merge_numeric_dtype({:decimal, _, _} = decimal, {:f, _}), do: decimal
-  def merge_numeric_dtype({:f, _}, {:decimal, _, _} = decimal), do: decimal
+  def merge_numeric_dtype({:decimal, _, _}, {:f, _} = float), do: float
+  def merge_numeric_dtype({:f, _} = float, {:decimal, _, _}), do: float
 
   def merge_numeric_dtype(_, _), do: nil
 

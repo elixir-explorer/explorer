@@ -3395,7 +3395,17 @@ defmodule Explorer.Series do
   defp cast_to_add({:datetime, p, tz}, {:duration, p}), do: {:datetime, p, tz}
   defp cast_to_add({:duration, p}, {:datetime, p, tz}), do: {:datetime, p, tz}
   defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
+
+  defp cast_to_add({:decimal, p1, s1}, {:decimal, p2, s2}),
+    do: {:decimal, maybe_max(p1, p2), maybe_max(s1, s2)}
+
   defp cast_to_add(left, right), do: Shared.merge_numeric_dtype(left, right)
+
+  defp maybe_max(left, right) when K.and(is_integer(left), is_integer(right)),
+    do: K.max(left, right)
+
+  defp maybe_max(left, nil), do: left
+  defp maybe_max(nil, right), do: right
 
   @doc """
   Subtracts right from left, element-wise.
@@ -3463,6 +3473,10 @@ defmodule Explorer.Series do
   defp cast_to_subtract({:datetime, p, tz}, {:datetime, p, tz}), do: {:duration, p}
   defp cast_to_subtract({:datetime, p, tz}, {:duration, p}), do: {:datetime, p, tz}
   defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
+
+  defp cast_to_subtract({:decimal, p1, s1}, {:decimal, p2, s2}),
+    do: {:decimal, maybe_max(p1, p2), maybe_max(s1, s2)}
+
   defp cast_to_subtract(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
@@ -3478,6 +3492,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals - returning decimal series.
 
   ## Examples
 
@@ -3515,6 +3530,10 @@ defmodule Explorer.Series do
   defp cast_to_multiply({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_multiply({:f, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:f, _}), do: {:duration, p}
+
+  defp cast_to_multiply({:decimal, p1, s1}, {:decimal, p2, s2}),
+    do: {:decimal, maybe_max(p1, p2), maybe_max(s1, s2)}
+
   defp cast_to_multiply(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
@@ -3530,6 +3549,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals - returning f64 series.
 
   ## Examples
 
@@ -3590,6 +3610,8 @@ defmodule Explorer.Series do
   defp cast_to_divide({:f, left}, {:f, right}), do: {:f, max(left, right)}
   defp cast_to_divide({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_divide({:duration, p}, {:f, _}), do: {:duration, p}
+  # This is due limitations of Polars. Ideally it should be decimal here.
+  defp cast_to_divide({:decimal, _, _}, {:decimal, _, _}), do: {:f, 64}
   defp cast_to_divide(_, _), do: nil
 
   @doc """
@@ -3607,6 +3629,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals - returning f64 series.
 
   ## Examples
 
@@ -3663,6 +3686,9 @@ defmodule Explorer.Series do
   defp cast_to_pow({:f, l}, {n, _}) when K.in(n, [:u, :s]), do: {:f, l}
   defp cast_to_pow({n, _}, {:f, r}) when K.in(n, [:u, :s]), do: {:f, r}
   defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:s, 64}
+  # Due to a limitation in Polars, it's not possible to use decimals only here.
+  defp cast_to_pow({:decimal, _, _}, {:decimal, _, _}), do: {:f, 64}
+  defp cast_to_pow({:decimal, _, _}, {:s, _}), do: {:f, 64}
   defp cast_to_pow(_, _), do: nil
 
   @doc """
@@ -3675,6 +3701,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals.
 
   ## Examples
 
@@ -3699,6 +3726,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals.
 
   ## Examples
 
