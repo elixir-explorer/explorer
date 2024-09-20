@@ -574,6 +574,16 @@ pub struct ExDecimal {
 }
 
 impl ExDecimal {
+    pub fn new(signed_coef: i128, scale: usize) -> Self {
+        Self {
+            coef: signed_coef
+                .abs()
+                .try_into()
+                .expect("signed coef is too large for u64"),
+            sign: if signed_coef >= 0 { 1 } else { -1 },
+            exp: -(scale as i64),
+        }
+    }
     pub fn signed_coef(self) -> i128 {
         self.sign as i128 * self.coef as i128
     }

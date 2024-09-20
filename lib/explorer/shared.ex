@@ -378,6 +378,7 @@ defmodule Explorer.Shared do
   def merge_numeric_dtype({:decimal, _, _} = decimal, :null), do: decimal
   def merge_numeric_dtype(:null, {:decimal, _, _} = decimal), do: decimal
 
+  # For now, float has priority over decimals due to Polars.
   def merge_numeric_dtype({:decimal, _, _}, {:f, _} = float), do: float
   def merge_numeric_dtype({:f, _} = float, {:decimal, _, _}), do: float
 
@@ -512,7 +513,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
   def dtype_to_string({:s, size}), do: "s" <> Integer.to_string(size)
   def dtype_to_string({:u, size}), do: "u" <> Integer.to_string(size)
-  def dtype_to_string({:decimal, precision, scale}), do: "decimal[#{precision}, #{scale}]"
+  def dtype_to_string({:decimal, precision, scale}), do: "decimal[#{precision || "*"}, #{scale}]"
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
 
   defp precision_string(:millisecond), do: "ms"
