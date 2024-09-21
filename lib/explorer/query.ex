@@ -302,6 +302,8 @@ defmodule Explorer.Query do
   """
   defmacro query(df, expression) do
     quote do
+      # To prevent leaking imports, we wrap this operation in a function that we
+      # immediately execute.
       fun = fn ->
         unquote(traverse_root(expression, df))
       end
