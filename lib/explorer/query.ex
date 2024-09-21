@@ -269,8 +269,9 @@ defmodule Explorer.Query do
   This means that, whenever you want to generate queries programatically,
   you can fallback to the regular `_with` APIs.
   """
+  alias Kernel, as: K
 
-  kernel_all = Kernel.__info__(:functions) ++ Kernel.__info__(:macros)
+  kernel_all = K.__info__(:functions) ++ K.__info__(:macros)
 
   kernel_only = [
     @: 1,
@@ -310,7 +311,7 @@ defmodule Explorer.Query do
   end
 
   defp traverse_root({:for, meta, [_ | _] = args}, df) do
-    {args, [opts]} = Enum.split(args, Kernel.-(1))
+    {args, [opts]} = Enum.split(args, K.-(1))
 
     block =
       Keyword.get(opts, :do) || raise ArgumentError, "expected do-block in for-comprehension"
@@ -358,13 +359,11 @@ defmodule Explorer.Query do
   end
 
   defp traverse({:^, meta, [expr]}, vars, state) do
-    cond do
-      state.collect_pins_and_vars? ->
-        var = Macro.unique_var(:pin, __MODULE__)
-        {var, [{:=, meta, [var, expr]} | vars]}
-
-      true ->
-        {expr, vars}
+    K.if state.collect_pins_and_vars? do
+      var = Macro.unique_var(:pin, __MODULE__)
+      {var, [{:=, meta, [var, expr]} | vars]}
+    else
+      {expr, vars}
     end
   end
 
@@ -389,8 +388,7 @@ defmodule Explorer.Query do
     {body, vars}
   end
 
-  defp traverse({var, meta, ctx} = expr, vars, state)
-       when Kernel.and(is_atom(var), is_atom(ctx)) do
+  defp traverse({var, meta, ctx} = expr, vars, state) when K.and(is_atom(var), is_atom(ctx)) do
     cond do
       Map.has_key?(state.known_vars, {var, ctx}) ->
         {expr, vars}
@@ -404,18 +402,14 @@ defmodule Explorer.Query do
   end
 
   defp traverse({left, meta, right}, vars, state) do
-    cond do
-      Kernel.and(
-        Kernel.and(is_atom(left), is_list(right)),
-        special_form_defines_var?(left, right)
-      ) ->
-        raise ArgumentError,
-              "#{left}/#{length(right)} is not currently supported in Explorer.Query"
-
-      true ->
-        {left, vars} = traverse(left, vars, state)
-        {right, vars} = traverse(right, vars, state)
-        {{left, meta, right}, vars}
+    K.if is_atom(left)
+         |> K.and(is_list(right))
+         |> K.and(special_form_defines_var?(left, right)) do
+      raise ArgumentError, "#{left}/#{length(right)} is not currently supported in Explorer.Query"
+    else
+      {left, vars} = traverse(left, vars, state)
+      {right, vars} = traverse(right, vars, state)
+      {{left, meta, right}, vars}
     end
   end
 
@@ -461,7 +455,7 @@ defmodule Explorer.Query do
       {:_, _, context}, acc when is_atom(context) ->
         {:ok, acc}
 
-      {name, _meta, context}, acc when Kernel.and(is_atom(name), is_atom(context)) ->
+      {name, _meta, context}, acc when K.and(is_atom(name), is_atom(context)) ->
         {:ok, Map.put(acc, {name, context}, true)}
 
       node, acc ->
@@ -497,10 +491,10 @@ defmodule Explorer.Query do
 
   Works with numbers and series.
   """
-  def -number when is_number(number), do: Kernel.-(number)
+  def -number when is_number(number), do: K.-(number)
 
   def -series when is_struct(series, Explorer.Series),
-    do: Explorer.Series.multiply(series, Kernel.-(1))
+    do: Explorer.Series.multiply(series, K.-(1))
 
   @doc """
   Unary plus operator.
@@ -515,9 +509,7 @@ defmodule Explorer.Query do
 
   Works with boolean and series.
   """
-  def left and right when Kernel.and(is_boolean(left), is_boolean(right)),
-    do: Kernel.and(left, right)
-
+  def left and right when K.and(is_boolean(left), is_boolean(right)), do: K.and(left, right)
   def left and right, do: Explorer.Series.and(boolean!(left), boolean!(right))
 
   @doc """
@@ -525,9 +517,7 @@ defmodule Explorer.Query do
 
   Works with boolean and series.
   """
-  def left or right when Kernel.or(is_boolean(left), is_boolean(right)),
-    do: Kernel.or(left, right)
-
+  def left or right when K.or(is_boolean(left), is_boolean(right)), do: K.or(left, right)
   def left or right, do: Explorer.Series.or(boolean!(left), boolean!(right))
 
   @doc """
@@ -535,8 +525,7 @@ defmodule Explorer.Query do
 
   Works with boolean and series.
   """
-  def not value when is_boolean(value), do: Kernel.not(value)
-
+  def not value when is_boolean(value), do: K.not(value)
   def not value, do: Explorer.Series.not(boolean!(value))
 
   defp boolean!(%Explorer.Series{dtype: :boolean} = series), do: series
