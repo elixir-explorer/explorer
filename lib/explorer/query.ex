@@ -433,9 +433,8 @@ defmodule Explorer.Query do
   defp special_form_defines_var?(_, _), do: false
 
   defp traverse_for(expr, df, known_vars) do
-    {expr, []} =
-      traverse(expr, [], %{df: df, known_vars: known_vars, collect_pins_and_vars?: false})
-
+    state = %{df: df, known_vars: known_vars, collect_pins_and_vars?: false}
+    {expr, []} = traverse(expr, [], state)
     expr
   end
 
