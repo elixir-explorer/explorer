@@ -325,7 +325,7 @@ defmodule Explorer.Query do
           {traverse_for(other, df, acc), acc}
       end)
 
-    state = %{df: df, known_vars: known_vars, collect_pins_and_vars: true}
+    state = %{df: df, known_vars: known_vars, collect_pins_and_vars?: true}
     {query, vars} = traverse(block, [], state)
     block = unquote_query(query, vars)
 
@@ -338,7 +338,7 @@ defmodule Explorer.Query do
   end
 
   defp traverse_root(expression, df) do
-    state = %{df: df, known_vars: %{}, collect_pins_and_vars: true}
+    state = %{df: df, known_vars: %{}, collect_pins_and_vars?: true}
     {query, vars} = traverse(expression, [], state)
     unquote_query(query, vars)
   end
@@ -359,7 +359,7 @@ defmodule Explorer.Query do
 
   defp traverse({:^, meta, [expr]}, vars, state) do
     cond do
-      state.collect_pins_and_vars ->
+      state.collect_pins_and_vars? ->
         var = Macro.unique_var(:pin, __MODULE__)
         {var, [{:=, meta, [var, expr]} | vars]}
 
@@ -395,7 +395,7 @@ defmodule Explorer.Query do
       Map.has_key?(state.known_vars, {var, ctx}) ->
         {expr, vars}
 
-      state.collect_pins_and_vars ->
+      state.collect_pins_and_vars? ->
         {{{:., meta, [Explorer.DataFrame, :pull]}, meta, [state.df, var]}, vars}
 
       true ->
@@ -440,7 +440,7 @@ defmodule Explorer.Query do
 
   defp traverse_for(expr, df, known_vars) do
     {expr, []} =
-      traverse(expr, [], %{df: df, known_vars: known_vars, collect_pins_and_vars: false})
+      traverse(expr, [], %{df: df, known_vars: known_vars, collect_pins_and_vars?: false})
 
     expr
   end
