@@ -2607,12 +2607,13 @@ defmodule Explorer.DataFrame do
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
   """
-  @type lazy_series_or_list :: Series.lazy_t() | [Series.lazy_t()]
-  @type deprecated_filter_callback :: (Explorer.Backend.LazyFrame.t() -> lazy_series_or_list())
   @doc type: :single
   @spec filter_with(
           df :: DataFrame.t(),
-          callback_or_lazy_series_or_list :: deprecated_filter_callback() | lazy_series_or_list()
+          callback_or_lazy_series_or_list ::
+            (Explorer.Backend.LazyFrame.t() -> Series.lazy_t() | [Series.lazy_t()])
+            | Series.lazy_t()
+            | [Series.lazy_t()]
         ) :: DataFrame.t()
   def filter_with(df, fun) when is_function(fun, 1) do
     ldf = Explorer.Backend.LazyFrame.new(df)
@@ -2934,7 +2935,9 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec mutate_with(
           df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t())),
+          callback_or_column_pairs ::
+            (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+            | column_pairs(Series.lazy_t()),
           opts :: keyword()
         ) :: DataFrame.t()
   def mutate_with(df, query_or_fun, opts \\ [])
@@ -2944,14 +2947,14 @@ defmodule Explorer.DataFrame do
     mutate_with(df, fun.(ldf), opts)
   end
 
-  def mutate_with(%DataFrame{} = df, query, opts) when is_list(opts) do
+  def mutate_with(%DataFrame{} = df, column_pairs, opts) when is_list(opts) do
     keep = Keyword.get(opts, :keep, :all)
 
     unless keep in [:all, :none] do
       raise ArgumentError, "Invalid value for :keep option. Allowed values are :all or :none."
     end
 
-    column_pairs = to_column_pairs(df, query, &query_to_series!/1)
+    column_pairs = to_column_pairs(df, column_pairs, &query_to_series!/1)
 
     new_dtypes =
       for {column_name, series} <- column_pairs, into: %{} do
@@ -3434,10 +3437,12 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
+  @type sort_callback_result ::
+          Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}]
   @spec sort_with(
           df :: DataFrame.t(),
-          (Explorer.Backend.LazyFrame.t() ->
-             Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}]),
+          callback_or_result ::
+            (Explorer.Backend.LazyFrame.t() -> sort_callback_result()) | sort_callback_result(),
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
   def sort_with(df, fun, opts \\ [])
@@ -5694,16 +5699,18 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec summarise_with(
           df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+          callback_or_column_pairs ::
+            (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+            | column_pairs(Series.lazy_t())
         ) :: DataFrame.t()
   def summarise_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
     ldf = Explorer.Backend.LazyFrame.new(df)
     summarise_with(df, fun.(ldf))
   end
 
-  def summarise_with(%DataFrame{} = df, query) do
-    query =
-      Enum.map(query, fn
+  def summarise_with(%DataFrame{} = df, column_pairs) do
+    column_pairs =
+      Enum.map(column_pairs, fn
         {key, nil} ->
           lazy_s = LazySeries.unbacked(:lazy, [nil], :null)
           {key, Explorer.Backend.Series.new(lazy_s, :null)}
@@ -5713,7 +5720,7 @@ defmodule Explorer.DataFrame do
       end)
 
     column_pairs =
-      to_column_pairs(df, query, fn value ->
+      to_column_pairs(df, column_pairs, fn value ->
         case value do
           %Series{data: %LazySeries{op: :lazy, args: [nil], dtype: :null}} ->
             value
