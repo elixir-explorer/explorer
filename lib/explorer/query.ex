@@ -304,12 +304,12 @@ defmodule Explorer.Query do
 
     quote do
       fn unquote(df) ->
-        unquote(traverse(expression, df))
+        unquote(traverse_root(expression, df))
       end
     end
   end
 
-  defp traverse({:for, meta, [_ | _] = args}, df) do
+  defp traverse_root({:for, meta, [_ | _] = args}, df) do
     {args, [opts]} = Enum.split(args, Kernel.-(1))
 
     block =
@@ -325,17 +325,9 @@ defmodule Explorer.Query do
           {traverse_for(other, df, acc), acc}
       end)
 
-    {query, vars} =
-      traverse(block, [], %{df: df, known_vars: known_vars, collect_pins_and_vars: true})
-
-    block =
-      quote do
-        unquote_splicing(Enum.reverse(vars))
-        import Kernel, only: unquote(@kernel_only)
-        import Explorer.Query, except: [query: 1]
-        import Explorer.Series
-        unquote(query)
-      end
+    state = %{df: df, known_vars: known_vars, collect_pins_and_vars: true}
+    {query, vars} = traverse(block, [], state)
+    block = unquote_query(query, vars)
 
     for = {:for, meta, args ++ [Keyword.put(opts, :do, block)]}
 
@@ -345,10 +337,13 @@ defmodule Explorer.Query do
     end
   end
 
-  defp traverse(expression, df) do
-    {query, vars} =
-      traverse(expression, [], %{df: df, known_vars: %{}, collect_pins_and_vars: true})
+  defp traverse_root(expression, df) do
+    state = %{df: df, known_vars: %{}, collect_pins_and_vars: true}
+    {query, vars} = traverse(expression, [], state)
+    unquote_query(query, vars)
+  end
 
+  defp unquote_query(query, vars) do
     quote do
       unquote_splicing(Enum.reverse(vars))
       import Kernel, only: unquote(@kernel_only)
@@ -356,6 +351,10 @@ defmodule Explorer.Query do
       import Explorer.Series, except: [and: 2, or: 2, not: 1]
       unquote(query)
     end
+  end
+
+  defp traverse({:for, _meta, [_ | _]}, _vars, _state) do
+    raise ArgumentError, "for-comprehensions are only supported at the root of queries"
   end
 
   defp traverse({:^, meta, [expr]}, vars, state) do
@@ -367,10 +366,6 @@ defmodule Explorer.Query do
       true ->
         {expr, vars}
     end
-  end
-
-  defp traverse({:for, _meta, [_ | _]}, _vars, _state) do
-    raise ArgumentError, "for-comprehensions are only supported at the root of queries"
   end
 
   defp traverse({:"::", meta, [left, right]}, vars, state) do
