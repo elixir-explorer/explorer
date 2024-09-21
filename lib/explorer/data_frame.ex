@@ -2552,7 +2552,11 @@ defmodule Explorer.DataFrame do
   defmacro filter(df, query) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.filter_with(unquote(df), Explorer.Query.query(unquote(query)))
+
+      Explorer.DataFrame.filter_with(
+        unquote(df),
+        Explorer.Query.query(Explorer.Backend.LazyFrame.new(unquote(df)), unquote(query))
+      )
     end
   end
 
@@ -2603,15 +2607,20 @@ defmodule Explorer.DataFrame do
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
   """
+  @type lazy_series_or_list :: Series.lazy_t() | [Series.lazy_t()]
+  @type deprecated_filter_callback :: (Explorer.Backend.LazyFrame.t() -> lazy_series_or_list())
   @doc type: :single
   @spec filter_with(
           df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> Series.lazy_t() | [Series.lazy_t()])
+          callback_or_lazy_series_or_list :: deprecated_filter_callback() | lazy_series_or_list()
         ) :: DataFrame.t()
   def filter_with(df, fun) when is_function(fun, 1) do
     ldf = Explorer.Backend.LazyFrame.new(df)
+    filter_with(df, fun.(ldf))
+  end
 
-    case fun.(ldf) do
+  def filter_with(df, lazy_series_or_list) do
+    case lazy_series_or_list do
       %Series{dtype: :boolean, data: %LazySeries{} = data} ->
         Shared.apply_dataframe(df, :filter_with, [df, data])
 
@@ -2796,7 +2805,7 @@ defmodule Explorer.DataFrame do
 
       Explorer.DataFrame.mutate_with(
         unquote(df),
-        Explorer.Query.query(unquote(mutations)),
+        Explorer.Query.query(Explorer.Backend.LazyFrame.new(unquote(df)), unquote(mutations)),
         unquote(opts)
       )
     end
@@ -2928,18 +2937,21 @@ defmodule Explorer.DataFrame do
           callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t())),
           opts :: keyword()
         ) :: DataFrame.t()
-  def mutate_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun) and is_list(opts) do
+  def mutate_with(df, query_or_fun, opts \\ [])
+
+  def mutate_with(%DataFrame{} = df, fun, opts) when is_function(fun) and is_list(opts) do
+    ldf = Explorer.Backend.LazyFrame.new(df)
+    mutate_with(df, fun.(ldf), opts)
+  end
+
+  def mutate_with(%DataFrame{} = df, query, opts) when is_list(opts) do
     keep = Keyword.get(opts, :keep, :all)
 
     unless keep in [:all, :none] do
       raise ArgumentError, "Invalid value for :keep option. Allowed values are :all or :none."
     end
 
-    ldf = Explorer.Backend.LazyFrame.new(df)
-
-    result = fun.(ldf)
-
-    column_pairs = to_column_pairs(df, result, &query_to_series!/1)
+    column_pairs = to_column_pairs(df, query, &query_to_series!/1)
 
     new_dtypes =
       for {column_name, series} <- column_pairs, into: %{} do
@@ -3326,7 +3338,7 @@ defmodule Explorer.DataFrame do
 
       Explorer.DataFrame.sort_with(
         unquote(df),
-        Explorer.Query.query(unquote(query)),
+        Explorer.Query.query(Explorer.Backend.LazyFrame.new(unquote(df)), unquote(query)),
         unquote(opts)
       )
     end
@@ -3428,15 +3440,19 @@ defmodule Explorer.DataFrame do
              Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}]),
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
-  def sort_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
-    [_descending? | opts] = Shared.validate_sort_options!(opts)
+  def sort_with(df, fun, opts \\ [])
 
+  def sort_with(%DataFrame{} = df, fun, opts) when is_function(fun, 1) do
     ldf = Explorer.Backend.LazyFrame.new(df)
 
-    result = fun.(ldf)
+    sort_with(df, fun.(ldf), opts)
+  end
+
+  def sort_with(%DataFrame{} = df, column_pairs, opts) do
+    [_descending? | opts] = Shared.validate_sort_options!(opts)
 
     dir_and_lazy_series_pairs =
-      result
+      column_pairs
       |> List.wrap()
       |> Enum.map(fn
         {dir, %Series{data: %LazySeries{} = lazy_series}} when dir in [:asc, :desc] ->
@@ -5635,7 +5651,11 @@ defmodule Explorer.DataFrame do
   defmacro summarise(df, query) do
     quote do
       require Explorer.Query
-      Explorer.DataFrame.summarise_with(unquote(df), Explorer.Query.query(unquote(query)))
+
+      Explorer.DataFrame.summarise_with(
+        unquote(df),
+        Explorer.Query.query(Explorer.Backend.LazyFrame.new(unquote(df)), unquote(query))
+      )
     end
   end
 
@@ -5678,11 +5698,12 @@ defmodule Explorer.DataFrame do
         ) :: DataFrame.t()
   def summarise_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
     ldf = Explorer.Backend.LazyFrame.new(df)
+    summarise_with(df, fun.(ldf))
+  end
 
-    result = fun.(ldf)
-
-    result =
-      Enum.map(result, fn
+  def summarise_with(%DataFrame{} = df, query) do
+    query =
+      Enum.map(query, fn
         {key, nil} ->
           lazy_s = LazySeries.unbacked(:lazy, [nil], :null)
           {key, Explorer.Backend.Series.new(lazy_s, :null)}
@@ -5692,7 +5713,7 @@ defmodule Explorer.DataFrame do
       end)
 
     column_pairs =
-      to_column_pairs(df, result, fn value ->
+      to_column_pairs(df, query, fn value ->
         case value do
           %Series{data: %LazySeries{op: :lazy, args: [nil], dtype: :null}} ->
             value

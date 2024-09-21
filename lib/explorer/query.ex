@@ -300,13 +300,13 @@ defmodule Explorer.Query do
   and friends to convert queries into anonymous functions.
   See the moduledoc for more information.
   """
-  defmacro query(expression) do
-    df = df_var()
-
+  defmacro query(df, expression) do
     quote do
-      fn unquote(df) ->
+      fun = fn ->
         unquote(traverse_root(expression, df))
       end
+
+      fun.()
     end
   end
 
@@ -386,6 +386,21 @@ defmodule Explorer.Query do
       end
 
     {body, vars}
+  end
+
+  defp traverse({:across, _meta, []}, vars, state) do
+    across_ast = quote(do: Explorer.Query.__across__(^unquote(state.df), ..))
+    traverse(across_ast, vars, state)
+  end
+
+  defp traverse({:across, _meta, [selector]}, vars, state) do
+    across_ast = quote(do: Explorer.Query.__across__(^unquote(state.df), unquote(selector)))
+    traverse(across_ast, vars, state)
+  end
+
+  defp traverse({:col, _meta, [name]}, vars, state) do
+    col_ast = quote(do: Explorer.Query.__col__(^unquote(state.df), unquote(name)))
+    traverse(col_ast, vars, state)
   end
 
   defp traverse({var, meta, ctx} = expr, vars, state) when K.and(is_atom(var), is_atom(ctx)) do
@@ -693,8 +708,13 @@ defmodule Explorer.Query do
   see `across/0` and `across/1`.
   """
   defmacro col(name) do
-    quote do: Explorer.DataFrame.pull(unquote(df_var()), unquote(name))
+    quote do
+      Explorer.Query.__col__(unquote(df_var()), unquote(name))
+    end
   end
+
+  @doc false
+  def __col__(df, name), do: Explorer.DataFrame.pull(df, name)
 
   @doc """
   Accesses all columns in the dataframe.

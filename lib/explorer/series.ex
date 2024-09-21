@@ -1714,12 +1714,15 @@ defmodule Explorer.Series do
       >
   """
   @doc type: :element_wise
-  defmacro filter(series, query) do
+  defmacro filter(series, series_query) do
     quote do
       require Explorer.Query
 
-      Explorer.DataFrame.new(_: unquote(series))
-      |> Explorer.DataFrame.filter_with(Explorer.Query.query(unquote(query)))
+      df = Explorer.DataFrame.new(_: unquote(series))
+      df_query = Explorer.Query.query(Explorer.Backend.LazyFrame.new(df), unquote(series_query))
+
+      df
+      |> Explorer.DataFrame.filter_with(df_query)
       |> Explorer.DataFrame.pull(:_)
     end
   end
