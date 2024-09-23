@@ -293,6 +293,13 @@ defmodule Explorer.Query do
   @kernel_only kernel_only -- kernel_only -- kernel_all
 
   @doc """
+  Builds a frame that returns lazy series when accessed.
+  """
+  def new(%Explorer.DataFrame{} = df) do
+    Explorer.Backend.LazyFrame.new(df)
+  end
+
+  @doc """
   Builds an anonymous function from a query.
 
   This is the entry point used by `Explorer.DataFrame.filter/2`
