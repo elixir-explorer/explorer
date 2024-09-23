@@ -18,6 +18,8 @@ defmodule Explorer.Backend.LazyFrame do
           names: Backend.DataFrame.column_name(),
           resource: reference() | nil
         }
+
+  @behaviour Access
   @behaviour Backend.DataFrame
 
   @doc false
@@ -112,5 +114,26 @@ defmodule Explorer.Backend.LazyFrame do
       similar and they support only a limited subset of the Series API
       """
     end
+  end
+
+  @impl Access
+  def fetch(%__MODULE__{} = lazy_frame, name) do
+    case pull(lazy_frame, name) do
+      %Explorer.Series{data: %Explorer.Backend.LazySeries{}} = lazy_series ->
+        {:ok, lazy_series}
+
+      _other ->
+        :error
+    end
+  end
+
+  @impl Access
+  def get_and_update(%__MODULE__{}, _name, _callback) do
+    raise "cannot update an `Explorer.Backend.LazyFrame`"
+  end
+
+  @impl Access
+  def pop(%__MODULE__{}, _name) do
+    raise "cannot delete from an `Explorer.Backend.LazyFrame`"
   end
 end
