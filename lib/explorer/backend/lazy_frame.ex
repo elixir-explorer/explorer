@@ -42,16 +42,16 @@ defmodule Explorer.Backend.LazyFrame do
   # cross node operations happen at the lazy frame level.
   # Instead, we store the resource and we delegate them
   # to the underlying lazy series.
-  @impl true
+  @impl Backend.DataFrame
   def owner_reference(_), do: nil
 
-  @impl true
+  @impl Backend.DataFrame
   def lazy, do: __MODULE__
 
-  @impl true
+  @impl Backend.DataFrame
   def lazy(ldf), do: ldf
 
-  @impl true
+  @impl Backend.DataFrame
   def inspect(ldf, opts) do
     import Inspect.Algebra
 
@@ -88,7 +88,7 @@ defmodule Explorer.Backend.LazyFrame do
 
   defp groups_algebra([], _), do: ""
 
-  @impl true
+  @impl Backend.DataFrame
   def pull(%{data: data, dtypes: dtypes}, column) do
     dtype_for_column = dtypes[column]
 
@@ -105,7 +105,7 @@ defmodule Explorer.Backend.LazyFrame do
   for {fun, arity} <- funs do
     args = Macro.generate_arguments(arity, __MODULE__)
 
-    @impl true
+    @impl Backend.DataFrame
     def unquote(fun)(unquote_splicing(args)) do
       raise """
       cannot perform operation #{unquote(fun)} on Explorer.Backend.LazyFrame.
