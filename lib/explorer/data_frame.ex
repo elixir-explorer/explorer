@@ -842,6 +842,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp normalise_entry(%Local.Entry{} = entry, nil), do: {:ok, entry}
+  defp normalise_entry(%HTTP.Entry{} = entry, nil), do: {:ok, entry}
   defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: {:ok, entry}
 
   defp normalise_entry("s3://" <> _rest = entry, config) do
