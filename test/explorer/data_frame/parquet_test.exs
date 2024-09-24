@@ -125,7 +125,7 @@ defmodule Explorer.DataFrame.ParquetTest do
       assert DF.to_columns(df1) == DF.to_columns(df)
     end
 
-    test "reads a parquet file from an FFS entry", %{bypass: bypass, df: df_expected} do
+    test "reads a parquet file from an FSS entry", %{bypass: bypass, df: df_expected} do
       # Setup a `GET` expectation for `path` that returns the expected
       # DataFrame as a `parquet` binary.
       path = "/path/to/file.parquet"
