@@ -127,7 +127,7 @@ defmodule Explorer.DataFrame.ParquetTest do
 
     test "reads a parquet file from an FFS entry", %{bypass: bypass, df: df_expected} do
       # Setup a `GET` expectation for `path` that returns the expected
-      # DataFrame.
+      # DataFrame as a `parquet` binary.
       path = "/path/to/file.parquet"
       authorization = "Bearer my-token"
 
@@ -142,7 +142,7 @@ defmodule Explorer.DataFrame.ParquetTest do
       config = [headers: [{"authorization", authorization}]]
       {:ok, %FSS.HTTP.Entry{} = entry} = FSS.HTTP.parse(url, config: config)
 
-      # Assert that we can read from that entry.
+      # Assert that we can read the parquet binary from that entry.
       {:ok, df_actual} = DF.from_parquet(entry)
       assert DF.to_columns(df_expected) == DF.to_columns(df_actual)
     end
