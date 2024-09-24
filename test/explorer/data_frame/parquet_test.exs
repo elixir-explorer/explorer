@@ -125,6 +125,28 @@ defmodule Explorer.DataFrame.ParquetTest do
       assert DF.to_columns(df1) == DF.to_columns(df)
     end
 
+    test "reads a parquet file from an FFS entry", %{bypass: bypass, df: df_expected} do
+      # Setup a `GET` expectation for `path` that returns the expected
+      # DataFrame.
+      path = "/path/to/file.parquet"
+      authorization = "Bearer my-token"
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        assert [^authorization] = Plug.Conn.get_req_header(conn, "authorization")
+        bytes = Explorer.DataFrame.dump_parquet!(df_expected)
+        Plug.Conn.resp(conn, 200, bytes)
+      end)
+
+      # Build an `%FSS.HTTP.Entry{}` for `path` manually.
+      url = bypass |> http_endpoint() |> Path.join(path)
+      config = [headers: [{"authorization", authorization}]]
+      {:ok, %FSS.HTTP.Entry{} = entry} = FSS.HTTP.parse(url, config: config)
+
+      # Assert that we can read from that entry.
+      {:ok, df_actual} = DF.from_parquet(entry)
+      assert DF.to_columns(df_expected) == DF.to_columns(df_actual)
+    end
+
     test "cannot find a parquet file", %{bypass: bypass} do
       Bypass.expect(bypass, "GET", "/path/to/file.parquet", fn conn ->
         Plug.Conn.resp(conn, 404, "not found")
