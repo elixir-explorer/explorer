@@ -271,6 +271,7 @@ defmodule Explorer.DataFrame do
   defguardp is_column(column) when is_binary(column) or is_atom(column) or is_integer(column)
   defguardp is_column_name(column) when is_binary(column) or is_atom(column)
 
+  # TODO: Use is_non_struct_map when we require Elixir v1.18+
   defguardp is_column_pairs(columns)
             when is_list(columns) or (is_map(columns) and not is_struct(columns))
 
