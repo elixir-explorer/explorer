@@ -10,6 +10,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   alias FSS.Local
   alias FSS.S3
+  alias FSS.HTTP
 
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
 
@@ -204,6 +205,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
+  end
+
+  @impl true
+  def from_parquet(%HTTP.Entry{url: url}, max_rows, columns, _rechunk) do
+    case Native.lf_from_parquet(url, max_rows, columns) do
       {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
