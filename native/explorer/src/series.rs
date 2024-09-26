@@ -1015,7 +1015,8 @@ pub fn s_quantile<'a>(
                 .unwrap()
                 .encode(env)),
         },
-        _ => encoding::term_from_value(
+        _ => encoding::resource_term_from_value(
+            &s.resource,
             s.quantile_reduce(quantile, strategy)?
                 .into_series("quantile".into())
                 .cast(dtype)?

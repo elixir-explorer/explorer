@@ -725,7 +725,41 @@ pub fn resource_term_from_value<'b>(
         AnyValue::Binary(v) => unsafe {
             Ok(Some(resource.make_binary_unsafe(env, |_| v)).encode(env))
         },
-        _ => term_from_value(v, env),
+        AnyValue::Null => Ok(atom::nil().to_term(env)),
+        AnyValue::Boolean(v) => Ok(v.encode(env)),
+        AnyValue::String(v) => Ok(v.encode(env)),
+        AnyValue::Int8(v) => Ok(v.encode(env)),
+        AnyValue::Int16(v) => Ok(v.encode(env)),
+        AnyValue::Int32(v) => Ok(v.encode(env)),
+        AnyValue::Int64(v) => Ok(v.encode(env)),
+        AnyValue::UInt8(v) => Ok(v.encode(env)),
+        AnyValue::UInt16(v) => Ok(v.encode(env)),
+        AnyValue::UInt32(v) => Ok(v.encode(env)),
+        AnyValue::UInt64(v) => Ok(v.encode(env)),
+        AnyValue::Float32(v) => Ok(term_from_float32(v, env)),
+        AnyValue::Float64(v) => Ok(term_from_float64(v, env)),
+        AnyValue::Date(v) => encode_date(v, env),
+        AnyValue::Time(v) => encode_time(v, env),
+        AnyValue::Datetime(v, time_unit, None) => encode_naive_datetime(v, time_unit, env),
+        AnyValue::Datetime(v, time_unit, Some(time_zone)) => {
+            encode_datetime(v, time_unit, time_zone.to_string(), env)
+        }
+        AnyValue::Duration(v, time_unit) => encode_duration(v, time_unit, env),
+        AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
+        AnyValue::List(series) => list_from_series(ExSeries::new(series), env),
+        AnyValue::Struct(_, _, fields) => v
+            ._iter_struct_av()
+            .zip(fields)
+            .map(|(value, field)| {
+                Ok((
+                    field.name.as_str(),
+                    resource_term_from_value(resource, value, env)?,
+                ))
+            })
+            .collect::<Result<HashMap<_, _>, ExplorerError>>()
+            .map(|map| map.encode(env)),
+        AnyValue::Decimal(number, scale) => encode_decimal(number, scale, env),
+        dt => panic!("cannot encode value {dt:?} to term"),
     }
 }
 
@@ -748,41 +782,6 @@ macro_rules! term_from_float {
 
 term_from_float!(term_from_float64, f64);
 term_from_float!(term_from_float32, f32);
-
-pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
-    match v {
-        AnyValue::Null => Ok(None::<bool>.encode(env)),
-        AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
-        AnyValue::String(v) => Ok(Some(v).encode(env)),
-        AnyValue::Int8(v) => Ok(Some(v).encode(env)),
-        AnyValue::Int16(v) => Ok(Some(v).encode(env)),
-        AnyValue::Int32(v) => Ok(Some(v).encode(env)),
-        AnyValue::Int64(v) => Ok(Some(v).encode(env)),
-        AnyValue::UInt8(v) => Ok(Some(v).encode(env)),
-        AnyValue::UInt16(v) => Ok(Some(v).encode(env)),
-        AnyValue::UInt32(v) => Ok(Some(v).encode(env)),
-        AnyValue::UInt64(v) => Ok(Some(v).encode(env)),
-        AnyValue::Float32(v) => Ok(Some(term_from_float32(v, env)).encode(env)),
-        AnyValue::Float64(v) => Ok(Some(term_from_float64(v, env)).encode(env)),
-        AnyValue::Date(v) => encode_date(v, env),
-        AnyValue::Time(v) => encode_time(v, env),
-        AnyValue::Datetime(v, time_unit, None) => encode_naive_datetime(v, time_unit, env),
-        AnyValue::Datetime(v, time_unit, Some(time_zone)) => {
-            encode_datetime(v, time_unit, time_zone.to_string(), env)
-        }
-        AnyValue::Duration(v, time_unit) => encode_duration(v, time_unit, env),
-        AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
-        AnyValue::List(series) => list_from_series(ExSeries::new(series), env),
-        AnyValue::Struct(_, _, fields) => v
-            ._iter_struct_av()
-            .zip(fields)
-            .map(|(value, field)| Ok((field.name.as_str(), term_from_value(value, env)?)))
-            .collect::<Result<HashMap<_, _>, ExplorerError>>()
-            .map(|map| map.encode(env)),
-        AnyValue::Decimal(number, scale) => encode_decimal(number, scale, env),
-        dt => panic!("cannot encode value {dt:?} to term"),
-    }
-}
 
 pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
     match s.dtype() {
@@ -823,7 +822,7 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
             .map(|lists| lists.encode(env)),
         DataType::Struct(_fields) => s
             .iter()
-            .map(|value| term_from_value(value, env))
+            .map(|value| resource_term_from_value(&s.resource, value, env))
             .collect::<Result<Vec<_>, ExplorerError>>()
             .map(|values| values.encode(env)),
         DataType::Decimal(_precision, _scale) => decimal_series_to_list(&s, env),

@@ -74,7 +74,7 @@ defmodule Explorer.Series.StructTest do
              ]
     end
 
-    test "allows structs structs with special float values" do
+    test "allows structs with special float values" do
       series = Series.from_list([%{a: :nan, b: :infinity, c: :neg_infinity}])
 
       assert series.dtype == {:struct, [{"a", {:f, 64}}, {"b", {:f, 64}}, {"c", {:f, 64}}]}
@@ -124,6 +124,24 @@ defmodule Explorer.Series.StructTest do
         )
 
       assert series1.dtype == {:struct, [{"a", :string}, {"b", :string}]}
+    end
+
+    test "allow binaries inside structs" do
+      a1 = <<60, 15, 233, 144, 204, 179, 30, 148, 197, 140, 19, 96, 65, 131, 83, 195>>
+      a2 = <<176, 176, 30, 208, 242, 105, 50, 4, 26, 51, 170, 216, 121, 119, 214, 218>>
+      a3 = <<5, 77, 199, 172, 128, 195, 160, 241, 93, 61, 84, 116, 61, 141, 195, 130>>
+
+      s =
+        Series.from_list([%{a: a1}, %{a: a2}, %{a: a3}, %{a: nil}],
+          dtype: {:struct, [{"a", :binary}]}
+        )
+
+      assert s.dtype == {:struct, [{"a", :binary}]}
+
+      assert Series.to_list(s) == [%{"a" => a1}, %{"a" => a2}, %{"a" => a3}, %{"a" => nil}]
+
+      assert s[1] === %{"a" => a2}
+      assert s[3] === %{"a" => nil}
     end
 
     test "errors when structs have mismatched types" do
