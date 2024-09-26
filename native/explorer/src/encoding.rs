@@ -754,6 +754,7 @@ pub fn term_from_value<'b>(v: AnyValue, env: Env<'b>) -> Result<Term<'b>, Explor
         AnyValue::Null => Ok(None::<bool>.encode(env)),
         AnyValue::Boolean(v) => Ok(Some(v).encode(env)),
         AnyValue::String(v) => Ok(Some(v).encode(env)),
+        AnyValue::Binary(v) => Ok(Some(v).encode(env)),
         AnyValue::Int8(v) => Ok(Some(v).encode(env)),
         AnyValue::Int16(v) => Ok(Some(v).encode(env)),
         AnyValue::Int32(v) => Ok(Some(v).encode(env)),
