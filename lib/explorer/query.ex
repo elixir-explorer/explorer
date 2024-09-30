@@ -268,6 +268,36 @@ defmodule Explorer.Query do
 
   This means that, whenever you want to generate queries programatically,
   you can fallback to the regular `_with` APIs.
+
+  In the `_with` APIs, the callbacks receive an `Explorer.DataFrame` as an
+  input. That dataframe is backed by the special `Explorer.Backend.QueryFrame`
+  backend.
+
+      Explorer.DataFrame.filter_with(df, fn query_backed_frame ->
+        IO.inspect(query_backed_frame)
+        ...
+      end)
+      # #Explorer.DataFrame<
+      #   QueryFrame[??? x 1]
+      #   ...
+      # >
+
+  A "query-backed" dataframe cannot be manipulated. You may only access its
+  series. And when you do, you get back "lazy-backed" versions of those series:
+
+      Explorer.DataFrame.filter_with(df, fn query_backed_frame ->
+        IO.inspect(query_backed_frame["a"])
+        ...
+      end)
+      # #Explorer.Series<
+      #   LazySeries[???]
+      #   s64 (column("a"))
+      # >
+
+  "Lazy-backed" series are backed by the special `Explorer.Backend.LazySeries`
+  backend. All `Explorer.Series` functions work on lazy-backed series too. So
+  you can write your `_with` callbacks without ever referencing the fact that
+  the backend is the lazy one.
   """
 
   kernel_all = Kernel.__info__(:functions) ++ Kernel.__info__(:macros)
