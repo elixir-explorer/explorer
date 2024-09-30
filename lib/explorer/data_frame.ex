@@ -2610,7 +2610,7 @@ defmodule Explorer.DataFrame do
   @spec filter_with(
           df :: DataFrame.t(),
           callback_or_lazy_series_or_list ::
-            (Explorer.Backend.LazyFrame.t() -> Series.lazy_t() | [Series.lazy_t()])
+            (Explorer.Backend.QueryFrame.t() -> Series.lazy_t() | [Series.lazy_t()])
             | Series.lazy_t()
             | [Series.lazy_t()]
         ) :: DataFrame.t()
@@ -2939,7 +2939,7 @@ defmodule Explorer.DataFrame do
   @spec mutate_with(
           df :: DataFrame.t(),
           callback_or_column_pairs ::
-            (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+            (Explorer.Backend.QueryFrame.t() -> column_pairs(Series.lazy_t()))
             | column_pairs(Series.lazy_t()),
           opts :: keyword()
         ) :: DataFrame.t()
@@ -3450,7 +3450,7 @@ defmodule Explorer.DataFrame do
   @spec sort_with(
           df :: DataFrame.t(),
           callback_or_result ::
-            (Explorer.Backend.LazyFrame.t() -> sort_callback_result()) | sort_callback_result(),
+            (Explorer.Backend.QueryFrame.t() -> sort_callback_result()) | sort_callback_result(),
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
   def sort_with(df, fun, opts \\ [])
@@ -5707,7 +5707,7 @@ defmodule Explorer.DataFrame do
   @spec summarise_with(
           df :: DataFrame.t(),
           callback_or_column_pairs ::
-            (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+            (Explorer.Backend.QueryFrame.t() -> column_pairs(Series.lazy_t()))
             | column_pairs(Series.lazy_t())
         ) :: DataFrame.t()
   def summarise_with(%DataFrame{} = df, fun) when is_function(fun, 1) do

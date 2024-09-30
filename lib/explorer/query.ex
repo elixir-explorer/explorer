@@ -296,7 +296,7 @@ defmodule Explorer.Query do
   Builds a frame that returns lazy series when accessed.
   """
   def new(%Explorer.DataFrame{} = df) do
-    Explorer.Backend.LazyFrame.new(df)
+    Explorer.Backend.QueryFrame.new(df)
   end
 
   @doc """

@@ -1,8 +1,8 @@
-defmodule Explorer.Backend.LazyFrame do
+defmodule Explorer.Backend.QueryFrame do
   @moduledoc """
-  Represents a lazy dataframe for building query expressions.
+  A lazy data structure for building query expressions.
 
-  The LazyFrame is available inside `filter_with`, `mutate_with`, and
+  The QueryFrame is available inside `filter_with`, `mutate_with`, and
   similar. You cannot perform any operation on them except accessing
   its underlying series.
   """
@@ -70,7 +70,7 @@ defmodule Explorer.Backend.LazyFrame do
       end
 
     concat([
-      color("LazyFrame", :atom, opts),
+      color("QueryFrame", :atom, opts),
       open,
       "??? x #{length(cols_algebra)}",
       close,
@@ -108,9 +108,9 @@ defmodule Explorer.Backend.LazyFrame do
     @impl Backend.DataFrame
     def unquote(fun)(unquote_splicing(args)) do
       raise """
-      cannot perform operation #{unquote(fun)} on Explorer.Backend.LazyFrame.
+      cannot perform operation #{unquote(fun)} on Explorer.Backend.QueryFrame.
 
-      The LazyFrame is available inside filter_with, mutate_with, and \
+      The QueryFrame is available inside filter_with, mutate_with, and \
       similar and they support only a limited subset of the Series API
       """
     end
@@ -129,11 +129,11 @@ defmodule Explorer.Backend.LazyFrame do
 
   @impl Access
   def get_and_update(%__MODULE__{}, _name, _callback) do
-    raise "cannot update an `Explorer.Backend.LazyFrame`"
+    raise "cannot update an `Explorer.Backend.QueryFrame`"
   end
 
   @impl Access
   def pop(%__MODULE__{}, _name) do
-    raise "cannot delete from an `Explorer.Backend.LazyFrame`"
+    raise "cannot delete from an `Explorer.Backend.QueryFrame`"
   end
 end
