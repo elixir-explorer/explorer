@@ -323,11 +323,41 @@ defmodule Explorer.Query do
   @kernel_only kernel_only -- kernel_only -- kernel_all
 
   @doc """
-  Builds an `%Explorer.Backend.QueryFrame{}` that returns lazy versions of the
-  original `%Explorer.DataFrame{}`'s series when accessed.
+  Returns a "query-backed" `Explorer.DataFrame` for use in queries.
 
-  This function is used in with `*_with` callbacks. See "Implementation details"
-  in the `@moduledoc` for background.
+  This function is mostly an implementation detail for the `*_with` callbacks.
+  See the "Implementation details" section of the `@moduledoc` for details.
+
+  There are some limited instances where it's more convenient to work with
+  query-backed `DataFrame`s. For example, if you want to re-use a lazy series,
+  you can do so like this:
+
+      alias Explorer.{DataFrame, Query, Series}
+
+      df = DataFrame.new(a: [1, 2, 3])
+      qf = Query.new(df)
+
+      gt_1 = Series.greater(qf["a"], 1)
+      lt_3 = Series.less(qf["a"], 3)
+
+      df
+      |> DataFrame.filter_with(gt_1)
+      |> DataFrame.to_columns(atom_keys: true)
+      #=> %{a: [2, 3]}
+
+      df
+      |> DataFrame.filter_with(lt_3)
+      |> DataFrame.to_columns(atom_keys: true)
+      #=> %{a: [1, 2]}
+
+      df
+      |> DataFrame.filter_with(Series.and(gt_1, lt_3))
+      |> DataFrame.to_columns(atom_keys: true)
+      #=> %{a: [2]}
+
+  However, if you think you need `new/1`, first check that you can't accomplish
+  the same thing with `across/0` inside a macro. The latter is usually easier to
+  work with.
   """
   def new(%Explorer.DataFrame{} = df) do
     Explorer.Backend.QueryFrame.new(df)
