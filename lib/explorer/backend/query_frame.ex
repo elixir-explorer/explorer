@@ -1,6 +1,6 @@
 defmodule Explorer.Backend.QueryFrame do
   @moduledoc """
-  A lazy data structure for building query expressions.
+  Represents a lazy dataframe for building query expressions.
 
   The QueryFrame is available inside `filter_with`, `mutate_with`, and
   similar. You cannot perform any operation on them except accessing
