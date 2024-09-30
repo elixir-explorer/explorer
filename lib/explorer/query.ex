@@ -257,17 +257,120 @@ defmodule Explorer.Query do
 
   ## Implementation details
 
-  Queries simply become lazy dataframe operations at runtime.
-  For example, the following query
+  This section describes what's happening "under the hood" when working with the
+  `Explorer.Query` interface. You don't need to read this section to work with
+  the API as intended. But it may be helpful if you're trouble shooting or are
+  just curious.
 
-      Explorer.DataFrame.filter(df, nums > 2)
+  Macros like `Explorer.DataFrame.mutate` each have a `*_with` function
+  counterpart. When you write `Explorer.DataFrame.mutate(df, expression)`, the
+  compiler rewrites it as `Explorer.DataFrame.mutate_with(df,
+  callback_from_expression)`. This section describes the translation from
+  `expression` to `callback_from_expression` in a bit more detail.
 
-  is equivalent to
+  Let's start with an example.
 
-      Explorer.DataFrame.filter_with(df, fn df -> Explorer.Series.greater(df["nums"], 2) end)
+      df = Explorer.DataFrame.new(a: [1, 2, 3])
 
-  This means that, whenever you want to generate queries programatically,
-  you can fallback to the regular `_with` APIs.
+      # Macro
+      Explorer.DataFrame.mutate(df, b: a + 1)
+
+      # Callback equivalent
+      Explorer.DataFrame.mutate_with(df, fn query_frame ->
+        lazy_column_a = query_frame["a"]
+        lazy_column_b = Explorer.Series.add(lazy_column_a, 1)
+        [b: lazy_column_b]
+      end)
+
+  Although each verb expects a slightly different return value from their
+  callback, all expect a `%Explorer.Backend.QueryFrame{}` as the input. The
+  `%Explorer.Backend.QueryFrame{}` is a special struct which acts like an
+  `%Explorer.DataFrame{}` except that the `Access` behaviour is defined to
+  return _lazy_ versions of its columns.
+
+  To see this in action, we can work directly with an
+  `%Explorer.Backend.QueryFrame{}` since the `*_with` verbs are also designed to
+  accept the outputs of their callbacks:
+
+      # QueryFrame equivalent
+      df = Explorer.DataFrame.new(a: [1, 2, 3])
+      qf = Explorer.Query.new(df)
+      lazy_column_a = qf["a"]
+      lazy_column_b = Explorer.Series.add(lazy_column_a, 1)
+      Explorer.DataFrame.mutate_with(df, b: lazy_column_b)
+
+  You generally don't want to build a `%Explorer.Backend.QueryFrame{}` directly
+  like this because it's not convenient to work with. For one, the syntax is
+  verbose. For another, an individual `%Explorer.Backend.QueryFrame{}` can
+  become outdated:
+
+      # Callback chain
+      df = Explorer.DataFrame.new(a: [1, 2, 3])
+
+      df
+      |> Explorer.DataFrame.mutate(b: a + 1)
+      |> Explorer.DataFrame.mutate(c: b + 1)
+
+      # QueryFrame
+      df = Explorer.DataFrame.new(a: [1, 2, 3])
+      qf = Explorer.Query.new(df)
+
+      df
+      |> Explorer.DataFrame.mutate_with(b: Explorer.Series.add(qf["a"], 1))
+      # Work work! The original `qf` doesn't have a column `b`.
+      |> Explorer.DataFrame.mutate_with(c: Explorer.Series.add(qf["b"], 1))
+
+  When designing the `Explorer.Query` interface, we prioritized correctness.
+  E.g. we wanted to prevent users from attempting to access and/or manipulate
+  columns which didn't exist. So if you tried:
+
+      Explorer.DataFrame.new(a: [1, 2, 3])
+      |> Explorer.DataFrame.mutate_with(fn query_frame ->
+        not_a_column = query_frame["b"]
+        [c: Explorer.Series.add(not_a_column, 1)]
+      end)
+
+  You're immediately hit with an `ArgumentError`:
+
+      ** (ArgumentError) could not find column name "b". The available columns are: ["a"].
+      If you are attempting to interpolate a value, use ^b.
+
+  However, this meant that a new `%Explorer.Backend.QueryFrame{}` struct must be
+  built for every operation to ensure the columns and dtypes are valid. Hence
+  the callback interface: rather than forcing you to create a
+  `%Explorer.Backend.QueryFrame{}` every time, you write a callback instead that
+  accepts the fresh `%Explorer.Backend.QueryFrame{}` as input.
+
+  There are some limited instances where it's more convenient to work with
+  `Explorer.Backend.QueryFrame{}`s. If you want to re-use a lazy series, you can
+  do so like this:
+
+      alias Explorer.{DataFrame, Query, Series}
+
+      df = DataFrame.new(a: [1, 2, 3])
+      qf = Query.new(df)
+
+      gt_1 = Series.greater(qf["a"], 1)
+      lt_3 = Series.less(qf["a"], 3)
+
+      df
+      |> DataFrame.filter_with(gt_1)
+      |> DataFrame.to_columns(atom_keys: true)
+      #=> %{a: [2, 3]}
+
+      df
+      |> DataFrame.filter_with(lt_3)
+      |> DataFrame.to_columns(atom_keys: true)
+      #=> %{a: [1, 2]}
+
+      df
+      |> DataFrame.filter_with(Series.and(gt_1, lt_3))
+      |> DataFrame.to_columns(atom_keys: true)
+      #=> %{a: [2]}
+
+  However, if you think you need the `Explorer.Query.new`, first check that you
+  can't accomplish the same thing with `Explorer.Query.across` inside a macro.
+  The latter is usually easier to work with.
   """
 
   kernel_all = Kernel.__info__(:functions) ++ Kernel.__info__(:macros)
