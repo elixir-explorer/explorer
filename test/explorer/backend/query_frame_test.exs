@@ -4,9 +4,9 @@ defmodule Explorer.Backend.QueryFrameTest do
 
   test "inspect/2 prints the columns without data" do
     df = Explorer.DataFrame.new(a: [1, 2], b: [3.1, 4.5])
-    ldf = QueryFrame.new(df)
+    qf = QueryFrame.new(df)
 
-    assert inspect(ldf) ==
+    assert inspect(qf) ==
              """
              #Explorer.DataFrame<
                QueryFrame[??? x 2]
