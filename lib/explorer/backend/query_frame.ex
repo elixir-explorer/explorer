@@ -2,7 +2,7 @@ defmodule Explorer.Backend.QueryFrame do
   @moduledoc """
   Represents a lazy dataframe for building query expressions.
 
-  You may call `Explorer.Query.new` to create a query-backed dataframe,
+  You may call `Explorer.Query.new` to create a query-backed dataframe.
   The QueryFrame is available inside `filter_with`, `mutate_with`, and
   similar. You cannot perform any operation on them except accessing
   its underlying series.
