@@ -241,6 +241,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
+  def from_ndjson(%HTTP.Entry{url: url}, infer_schema_length, batch_size) do
+    case Native.lf_from_ndjson(url, infer_schema_length, batch_size) do
+      {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
+  end
+
+  @impl true
   def from_ipc(%S3.Entry{}, _) do
     {:error,
      ArgumentError.exception("reading IPC from AWS S3 is not supported for Lazy dataframes")}
