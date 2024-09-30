@@ -368,7 +368,7 @@ defmodule Explorer.Query do
       |> DataFrame.to_columns(atom_keys: true)
       #=> %{a: [2]}
 
-  However, if you think you need the `Explorer.Query.new`, first check that you
+  However, if you think you need `Explorer.Query.new`, first check that you
   can't accomplish the same thing with `Explorer.Query.across` inside a macro.
   The latter is usually easier to work with.
   """
@@ -396,7 +396,11 @@ defmodule Explorer.Query do
   @kernel_only kernel_only -- kernel_only -- kernel_all
 
   @doc """
-  Builds a frame that returns lazy series when accessed.
+  Builds an `%Explorer.Backend.QueryFrame{}` that returns lazy versions of the
+  original `%Explorer.DataFrame{}`'s series when accessed.
+
+  This function is used in with `*_with` callbacks. See "Implementation details"
+  in the `@moduledoc` for background.
   """
   def new(%Explorer.DataFrame{} = df) do
     Explorer.Backend.QueryFrame.new(df)
