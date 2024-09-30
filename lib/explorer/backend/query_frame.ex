@@ -1,8 +1,9 @@
-defmodule Explorer.Backend.LazyFrame do
+defmodule Explorer.Backend.QueryFrame do
   @moduledoc """
   Represents a lazy dataframe for building query expressions.
 
-  The LazyFrame is available inside `filter_with`, `mutate_with`, and
+  You may call `Explorer.Query.new` to create a query-backed dataframe.
+  The QueryFrame is available inside `filter_with`, `mutate_with`, and
   similar. You cannot perform any operation on them except accessing
   its underlying series.
   """
@@ -18,6 +19,8 @@ defmodule Explorer.Backend.LazyFrame do
           names: Backend.DataFrame.column_name(),
           resource: reference() | nil
         }
+
+  @behaviour Access
   @behaviour Backend.DataFrame
 
   @doc false
@@ -40,16 +43,16 @@ defmodule Explorer.Backend.LazyFrame do
   # cross node operations happen at the lazy frame level.
   # Instead, we store the resource and we delegate them
   # to the underlying lazy series.
-  @impl true
+  @impl Backend.DataFrame
   def owner_reference(_), do: nil
 
-  @impl true
+  @impl Backend.DataFrame
   def lazy, do: __MODULE__
 
-  @impl true
+  @impl Backend.DataFrame
   def lazy(ldf), do: ldf
 
-  @impl true
+  @impl Backend.DataFrame
   def inspect(ldf, opts) do
     import Inspect.Algebra
 
@@ -68,7 +71,7 @@ defmodule Explorer.Backend.LazyFrame do
       end
 
     concat([
-      color("LazyFrame", :atom, opts),
+      color("QueryFrame", :atom, opts),
       open,
       "??? x #{length(cols_algebra)}",
       close,
@@ -86,7 +89,7 @@ defmodule Explorer.Backend.LazyFrame do
 
   defp groups_algebra([], _), do: ""
 
-  @impl true
+  @impl Backend.DataFrame
   def pull(%{data: data, dtypes: dtypes}, column) do
     dtype_for_column = dtypes[column]
 
@@ -103,14 +106,35 @@ defmodule Explorer.Backend.LazyFrame do
   for {fun, arity} <- funs do
     args = Macro.generate_arguments(arity, __MODULE__)
 
-    @impl true
+    @impl Backend.DataFrame
     def unquote(fun)(unquote_splicing(args)) do
       raise """
-      cannot perform operation #{unquote(fun)} on Explorer.Backend.LazyFrame.
+      cannot perform operation #{unquote(fun)} on Explorer.Backend.QueryFrame.
 
-      The LazyFrame is available inside filter_with, mutate_with, and \
+      The QueryFrame is available inside filter_with, mutate_with, and \
       similar and they support only a limited subset of the Series API
       """
     end
+  end
+
+  @impl Access
+  def fetch(%__MODULE__{} = lazy_frame, name) do
+    case pull(lazy_frame, name) do
+      %Explorer.Series{data: %Explorer.Backend.LazySeries{}} = lazy_series ->
+        {:ok, lazy_series}
+
+      _other ->
+        :error
+    end
+  end
+
+  @impl Access
+  def get_and_update(%__MODULE__{}, _name, _callback) do
+    raise "cannot update an `Explorer.Backend.QueryFrame`"
+  end
+
+  @impl Access
+  def pop(%__MODULE__{}, _name) do
+    raise "cannot delete from an `Explorer.Backend.QueryFrame`"
   end
 end

@@ -270,7 +270,10 @@ defmodule Explorer.DataFrame do
 
   defguardp is_column(column) when is_binary(column) or is_atom(column) or is_integer(column)
   defguardp is_column_name(column) when is_binary(column) or is_atom(column)
-  defguardp is_column_pairs(columns) when is_list(columns) or is_map(columns)
+
+  # TODO: Use is_non_struct_map when we require Elixir v1.18+
+  defguardp is_column_pairs(columns)
+            when is_list(columns) or (is_map(columns) and not is_struct(columns))
 
   # Normalize a column name to string
   defp to_column_name(column) when is_binary(column), do: column
@@ -2607,12 +2610,22 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec filter_with(
           df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> Series.lazy_t() | [Series.lazy_t()])
+          callback_or_lazy_series_or_list ::
+            (Explorer.Backend.QueryFrame.t() -> Series.lazy_t() | [Series.lazy_t()])
+            | Series.lazy_t()
+            | [Series.lazy_t()]
         ) :: DataFrame.t()
   def filter_with(df, fun) when is_function(fun, 1) do
-    ldf = Explorer.Backend.LazyFrame.new(df)
+    filter =
+      df
+      |> Explorer.Query.new()
+      |> fun.()
 
-    case fun.(ldf) do
+    filter_with(df, filter)
+  end
+
+  def filter_with(df, filter) do
+    case filter do
       %Series{dtype: :boolean, data: %LazySeries{} = data} ->
         Shared.apply_dataframe(df, :filter_with, [df, data])
 
@@ -2926,21 +2939,31 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec mutate_with(
           df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t())),
+          callback_or_column_pairs ::
+            (Explorer.Backend.QueryFrame.t() -> column_pairs(Series.lazy_t()))
+            | column_pairs(Series.lazy_t()),
           opts :: keyword()
         ) :: DataFrame.t()
-  def mutate_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun) and is_list(opts) do
+  def mutate_with(df, query_or_fun, opts \\ [])
+
+  def mutate_with(%DataFrame{} = df, fun, opts) when is_function(fun, 1) and is_list(opts) do
+    column_pairs =
+      df
+      |> Explorer.Query.new()
+      |> fun.()
+
+    mutate_with(df, column_pairs, opts)
+  end
+
+  def mutate_with(%DataFrame{} = df, column_pairs, opts)
+      when is_column_pairs(column_pairs) and is_list(opts) do
     keep = Keyword.get(opts, :keep, :all)
 
     unless keep in [:all, :none] do
       raise ArgumentError, "Invalid value for :keep option. Allowed values are :all or :none."
     end
 
-    ldf = Explorer.Backend.LazyFrame.new(df)
-
-    result = fun.(ldf)
-
-    column_pairs = to_column_pairs(df, result, &query_to_series!/1)
+    column_pairs = to_column_pairs(df, column_pairs, &query_to_series!/1)
 
     new_dtypes =
       for {column_name, series} <- column_pairs, into: %{} do
@@ -3423,21 +3446,30 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
+  @type sort_callback_result ::
+          Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}]
   @spec sort_with(
           df :: DataFrame.t(),
-          (Explorer.Backend.LazyFrame.t() ->
-             Series.lazy_t() | [Series.lazy_t()] | [{:asc | :desc, Series.lazy_t()}]),
+          callback_or_result ::
+            (Explorer.Backend.QueryFrame.t() -> sort_callback_result()) | sort_callback_result(),
           opts :: [nils: :first | :last, stable: boolean()]
         ) :: DataFrame.t()
-  def sort_with(%DataFrame{} = df, fun, opts \\ []) when is_function(fun, 1) do
+  def sort_with(df, fun, opts \\ [])
+
+  def sort_with(%DataFrame{} = df, fun, opts) when is_function(fun, 1) do
+    sortable =
+      df
+      |> Explorer.Query.new()
+      |> fun.()
+
+    sort_with(df, sortable, opts)
+  end
+
+  def sort_with(%DataFrame{} = df, sortable, opts) do
     [_descending? | opts] = Shared.validate_sort_options!(opts)
 
-    ldf = Explorer.Backend.LazyFrame.new(df)
-
-    result = fun.(ldf)
-
     dir_and_lazy_series_pairs =
-      result
+      sortable
       |> List.wrap()
       |> Enum.map(fn
         {dir, %Series{data: %LazySeries{} = lazy_series}} when dir in [:asc, :desc] ->
@@ -5675,15 +5707,22 @@ defmodule Explorer.DataFrame do
   @doc type: :single
   @spec summarise_with(
           df :: DataFrame.t(),
-          callback :: (Explorer.Backend.LazyFrame.t() -> column_pairs(Series.lazy_t()))
+          callback_or_column_pairs ::
+            (Explorer.Backend.QueryFrame.t() -> column_pairs(Series.lazy_t()))
+            | column_pairs(Series.lazy_t())
         ) :: DataFrame.t()
   def summarise_with(%DataFrame{} = df, fun) when is_function(fun, 1) do
-    ldf = Explorer.Backend.LazyFrame.new(df)
+    column_pairs =
+      df
+      |> Explorer.Query.new()
+      |> fun.()
 
-    result = fun.(ldf)
+    summarise_with(df, column_pairs)
+  end
 
-    result =
-      Enum.map(result, fn
+  def summarise_with(%DataFrame{} = df, column_pairs) when is_column_pairs(column_pairs) do
+    column_pairs =
+      Enum.map(column_pairs, fn
         {key, nil} ->
           lazy_s = LazySeries.unbacked(:lazy, [nil], :null)
           {key, Explorer.Backend.Series.new(lazy_s, :null)}
@@ -5693,7 +5732,7 @@ defmodule Explorer.DataFrame do
       end)
 
     column_pairs =
-      to_column_pairs(df, result, fn value ->
+      to_column_pairs(df, column_pairs, fn value ->
         case value do
           %Series{data: %LazySeries{op: :lazy, args: [nil], dtype: :null}} ->
             value

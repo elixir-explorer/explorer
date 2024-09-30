@@ -29,7 +29,7 @@ defmodule Explorer.Backend.DataFrame do
           | [basic_types()]
           | (df() -> series() | basic_types() | [basic_types()])
 
-  @type lazy_frame :: Explorer.Backend.LazyFrame.t()
+  @type query_frame :: Explorer.Backend.QueryFrame.t()
   @type lazy_series :: Explorer.Backend.LazySeries.t()
 
   @type compression :: {algorithm :: option(atom()), level :: option(integer())}
