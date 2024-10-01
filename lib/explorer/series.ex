@@ -26,6 +26,8 @@ defmodule Explorer.Series do
     * `{:f, size}` - a 64-bit or 32-bit floating point number
     * `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit signed integer number.
     * `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer number.
+    * `{:decimal, precision, scale}` - a 128-bit signed integer number representing a decimal,
+      with a scale and precision. This unwraps to `Decimal`, using the `:decimal` package.
     * `:null` - `nil`s exclusively
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
@@ -38,10 +40,11 @@ defmodule Explorer.Series do
   When passing a dtype as argument, aliases are supported for convenience
   and compatibility with the Elixir ecosystem:
 
-    * All numeric dtypes (signed integer, unsigned integer, and floats) can
-      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and so on
+    * All numeric dtypes (signed integer, unsigned integer, floats and decimals) can
+      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and so on.
     * The atom `:float` as an alias for `{:f, 64}` to mirror Elixir's floats
     * The atom `:integer` as an alias for `{:s, 64}` to mirror Elixir's integers
+    * The atom `:decimal` as an alias for the `{:decimal, nil, nil}`.
 
   A series must consist of a single data type only. Series may have `nil` values in them.
   The series `dtype` can be retrieved via the `dtype/1` function or directly accessed as
@@ -140,7 +143,8 @@ defmodule Explorer.Series do
   @numeric_dtypes Explorer.Shared.numeric_types()
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
-  @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}, {:struct, :any}]
+  @io_dtypes Shared.dtypes() --
+               [:binary, :string, {:list, :any}, {:struct, :any}, {:decimal, :any, :any}]
 
   @type dtype ::
           :null
@@ -150,11 +154,12 @@ defmodule Explorer.Series do
           | :date
           | :time
           | :string
-          | naive_datetime_dtype
           | datetime_dtype
+          | decimal_dtype
           | duration_dtype
           | float_dtype
           | list_dtype
+          | naive_datetime_dtype
           | signed_integer_dtype
           | struct_dtype
           | unsigned_integer_dtype
@@ -170,10 +175,12 @@ defmodule Explorer.Series do
   @type signed_integer_dtype :: {:s, 8} | {:s, 16} | {:s, 32} | {:s, 64}
   @type unsigned_integer_dtype :: {:u, 8} | {:u, 16} | {:u, 32} | {:u, 64}
   @type float_dtype :: {:f, 32} | {:f, 64}
+  @type decimal_dtype :: {:decimal, nil | pos_integer(), nil | pos_integer()}
 
-  @type dtype_alias :: integer_dtype_alias | float_dtype_alias
+  @type dtype_alias :: integer_dtype_alias | float_dtype_alias | decimal_dtype_alias
   @type float_dtype_alias :: :float | :f32 | :f64
   @type integer_dtype_alias :: :integer | :u8 | :u16 | :u32 | :u64 | :s8 | :s16 | :s32 | :s64
+  @type decimal_dtype_alias :: :decimal
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
