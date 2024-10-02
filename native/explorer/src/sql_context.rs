@@ -35,20 +35,20 @@ impl ExSQLContext {
 #[rustler::nif]
 fn sql_context_new() -> ExSQLContext {
     let ctx = SQLContext::new();
-    return ExSQLContext::new(ctx);
+    ExSQLContext::new(ctx)
 }
 
 #[rustler::nif]
 fn sql_context_register(context: ExSQLContext, name: &str, df: ExDataFrame) {
     let mut ctx = context.lock_inner();
     let ldf = df.clone_inner().lazy();
-    ctx.register(name, ldf);
+    ctx.register(name, ldf)
 }
 
 #[rustler::nif]
 fn sql_context_unregister(context: ExSQLContext, name: &str) {
     let mut ctx = context.lock_inner();
-    ctx.unregister(name);
+    ctx.unregister(name)
 }
 
 #[rustler::nif]
@@ -66,5 +66,5 @@ fn sql_context_execute(context: ExSQLContext, query: &str) -> Result<ExLazyFrame
 #[rustler::nif]
 fn sql_context_get_tables(context: ExSQLContext) -> Vec<String> {
     let ctx = context.lock_inner();
-    return ctx.get_tables();
+    ctx.get_tables()
 }
