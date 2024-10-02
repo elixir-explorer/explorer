@@ -24,6 +24,7 @@ mod expressions;
 mod lazyframe;
 mod local_message;
 mod series;
+mod sql_context;
 
 pub use datatypes::{
     ExDataFrame, ExDataFrameRef, ExExpr, ExExprRef, ExLazyFrame, ExLazyFrameRef, ExSeries,
@@ -33,6 +34,7 @@ pub use datatypes::{
 pub use error::ExplorerError;
 use expressions::*;
 use series::*;
+pub use sql_context::*;
 
 mod atoms {
     rustler::atoms! {
