@@ -4506,6 +4506,8 @@ defmodule Explorer.Series do
   defp cast_to_ordered_series({:duration, _}, %Explorer.Duration{}),
     do: :duration
 
+  defp cast_to_ordered_series({:decimal, _precision, _scale} = decimal, %Decimal{}), do: decimal
+
   defp cast_to_ordered_series(_dtype, _value),
     do: nil
 

@@ -1,7 +1,7 @@
 use crate::{
     datatypes::{
-        ExCorrelationMethod, ExDate, ExNaiveDateTime, ExRankMethod, ExSeriesDtype, ExTime,
-        ExTimeUnit, ExValidValue,
+        ExCorrelationMethod, ExDate, ExDecimal, ExNaiveDateTime, ExRankMethod, ExSeriesDtype,
+        ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -557,6 +557,22 @@ pub fn s_fill_missing_with_boolean(
 ) -> Result<ExSeries, ExplorerError> {
     let s = series.bool()?.fill_null_with_values(boolean)?.into_series();
     Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_fill_missing_with_decimal(
+    _series: ExSeries,
+    _decimal: ExDecimal,
+) -> Result<ExSeries, ExplorerError> {
+    // We need to make sure that the series dtype is aligned with the decimal's scale.
+    // let s = series
+    //     .decimal()?
+    //     .fill_null_with_values(decimal.signed_coef())?
+    //     .into_series();
+    // Ok(ExSeries::new(s))
+    Err(ExplorerError::Other(
+        "fill_missing/2 with decimals is not supported yet by Polars".to_string(),
+    ))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
