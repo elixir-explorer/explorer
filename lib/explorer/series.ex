@@ -1267,6 +1267,7 @@ defmodule Explorer.Series do
   def iotype(%Series{dtype: dtype}) do
     case dtype do
       :category -> {:u, 32}
+      {:decimal, _, _} -> {:s, 128}
       other -> Shared.dtype_to_iotype(other)
     end
   end

@@ -897,6 +897,13 @@ defmodule Explorer.SeriesTest do
       assert Series.equal(s, "a") |> Series.to_list() == [true, false, false, nil, true]
     end
 
+    test "compare decimal series" do
+      s1 = Series.from_list([1, 0, 2], dtype: {:decimal, nil, 2})
+      s2 = Series.from_list([1, 0, 3], dtype: {:decimal, nil, 2})
+
+      assert s1 |> Series.equal(s2) |> Series.to_list() == [true, true, false]
+    end
+
     test "performs broadcasting" do
       s1 = Series.from_list([-1, 0, 1])
       s2 = Series.from_list([0])
@@ -967,6 +974,13 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, 0, 2])
 
       assert 2 |> Series.not_equal(s1) |> Series.to_list() == [true, true, false]
+    end
+
+    test "compare decimal series" do
+      s1 = Series.from_list([1, 0, 2], dtype: {:decimal, nil, 2})
+      s2 = Series.from_list([1, 0, 3], dtype: {:decimal, nil, 2})
+
+      assert s1 |> Series.not_equal(s2) |> Series.to_list() == [false, false, true]
     end
 
     test "compare float series with a float value on the left-hand side" do
@@ -1077,6 +1091,13 @@ defmodule Explorer.SeriesTest do
                [false, false, false, false, false]
     end
 
+    test "compare decimal series" do
+      s1 = Series.from_list([1, 0, 3], dtype: {:decimal, nil, 2})
+      s2 = Series.from_list([1, 0, 2], dtype: {:decimal, nil, 2})
+
+      assert s1 |> Series.greater(s2) |> Series.to_list() == [false, false, true]
+    end
+
     test "compares series of different sizes" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([3, 2, 1, 4])
@@ -1108,6 +1129,13 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list([~T[00:00:00.000000], ~T[12:30:00.000000], ~T[23:50:59.999999]])
 
       assert s1 |> Series.greater_equal(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "compare decimal series" do
+      s1 = Series.from_list([1, 0, 3, -1], dtype: {:decimal, nil, 2})
+      s2 = Series.from_list([1, 0, 2, 1], dtype: {:decimal, nil, 2})
+
+      assert s1 |> Series.greater_equal(s2) |> Series.to_list() == [true, true, true, false]
     end
 
     test "compare integer series with a scalar value on the right-hand side" do
@@ -1270,6 +1298,13 @@ defmodule Explorer.SeriesTest do
                [true, true, true, true, false]
     end
 
+    test "compare decimal series" do
+      s1 = Series.from_list([1, 0, 2], dtype: {:decimal, nil, 2})
+      s2 = Series.from_list([1, 0, 3], dtype: {:decimal, nil, 2})
+
+      assert s1 |> Series.less(s2) |> Series.to_list() == [false, false, true]
+    end
+
     test "raises on value mismatch" do
       assert_raise ArgumentError,
                    "cannot invoke Explorer.Series.less/2 with mismatched dtypes: {:f, 64} and nil",
@@ -1295,6 +1330,13 @@ defmodule Explorer.SeriesTest do
 
       assert s1 |> Series.less_equal(s2) |> Series.to_list() ==
                [true, true, true, true, true, true]
+    end
+
+    test "compare decimal series" do
+      s1 = Series.from_list([1, 0, 2], dtype: {:decimal, nil, 2})
+      s2 = Series.from_list([1, 0, 3], dtype: {:decimal, nil, 2})
+
+      assert s1 |> Series.less_equal(s2) |> Series.to_list() == [true, true, true]
     end
 
     test "compare time series" do
@@ -1384,6 +1426,13 @@ defmodule Explorer.SeriesTest do
     test "with signed integer series" do
       s1 = Series.from_list([1, 2, 3])
       s2 = Series.from_list([1, 0, 3])
+
+      assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
+    end
+
+    test "with decimal series" do
+      s1 = Series.from_list([1, 2, 3], dtype: {:decimal, nil, 2})
+      s2 = Series.from_list([1, 0, 3], dtype: {:decimal, nil, 2})
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end

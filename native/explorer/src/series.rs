@@ -394,6 +394,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         | DataType::Binary
         | DataType::Date
         | DataType::Time
+        | DataType::Decimal(_, _)
         | DataType::Datetime(_, _) => is_in(&s, &rhs)?,
         DataType::Categorical(Some(mapping), _) => {
             let l_logical = s.categorical()?.physical();
