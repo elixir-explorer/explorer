@@ -42,7 +42,8 @@ defmodule Explorer.Shared do
   within lists inside.
   """
   def dtypes do
-    @scalar_types ++ [{:list, :any}, {:struct, :any}, {:decimal, :any, :any}]
+    @scalar_types ++
+      [{:list, :any}, {:struct, :any}, {:decimal, :nil_or_pos_integer, :pos_integer}]
   end
 
   @doc """
@@ -99,7 +100,10 @@ defmodule Explorer.Shared do
     {:naive_datetime, precision}
   end
 
-  def normalise_dtype({:decimal, _precision, _scale} = dtype), do: dtype
+  def normalise_dtype({:decimal, precision, scale} = dtype)
+      when is_integer(scale) and (is_nil(precision) or is_integer(precision)),
+      do: dtype
+
   def normalise_dtype(:decimal), do: {:decimal, nil, 0}
   def normalise_dtype(:d0), do: {:decimal, nil, 0}
   def normalise_dtype(:d1), do: {:decimal, nil, 1}

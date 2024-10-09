@@ -144,7 +144,13 @@ defmodule Explorer.Series do
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
   @io_dtypes Shared.dtypes() --
-               [:binary, :string, {:list, :any}, {:struct, :any}, {:decimal, :any, :any}]
+               [
+                 :binary,
+                 :string,
+                 {:list, :any},
+                 {:struct, :any},
+                 {:decimal, :nil_or_pos_integer, :pos_integer}
+               ]
 
   @type dtype ::
           :null
@@ -175,12 +181,12 @@ defmodule Explorer.Series do
   @type signed_integer_dtype :: {:s, 8} | {:s, 16} | {:s, 32} | {:s, 64}
   @type unsigned_integer_dtype :: {:u, 8} | {:u, 16} | {:u, 32} | {:u, 64}
   @type float_dtype :: {:f, 32} | {:f, 64}
-  @type decimal_dtype :: {:decimal, nil | pos_integer(), nil | pos_integer()}
+  @type decimal_dtype :: {:decimal, nil | pos_integer(), pos_integer()}
 
   @type dtype_alias :: integer_dtype_alias | float_dtype_alias | decimal_dtype_alias
   @type float_dtype_alias :: :float | :f32 | :f64
   @type integer_dtype_alias :: :integer | :u8 | :u16 | :u32 | :u64 | :s8 | :s16 | :s32 | :s64
-  @type decimal_dtype_alias :: :decimal
+  @type decimal_dtype_alias :: :decimal | :d0 | :d1 | :d2 | :d3 | :d4 | :d5
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
@@ -204,14 +210,24 @@ defmodule Explorer.Series do
   @behaviour Access
   @compile {:no_warn_undefined, Nx}
 
-  defguardp is_numeric(n) when K.or(is_number(n), K.in(n, [:nan, :infinity, :neg_infinity]))
+  defguardp is_numeric(n)
+            when is_number(n)
+                 |> K.or(K.in(n, [:nan, :infinity, :neg_infinity]))
+                 |> K.or(is_struct(n, Decimal))
 
   defguardp is_io_dtype(dtype) when K.in(dtype, @io_dtypes)
 
-  defguardp is_numeric_dtype(dtype) when K.in(dtype, @numeric_dtypes)
+  defguardp is_decimal_dtype(dtype)
+            when is_tuple(dtype)
+                 |> K.and(tuple_size(dtype) == 3)
+                 |> K.and(elem(dtype, 0) == :decimal)
+                 |> K.and(elem(dtype, 2) |> K.is_integer())
+
+  defguardp is_numeric_dtype(dtype)
+            when K.or(K.in(dtype, @numeric_dtypes), is_decimal_dtype(dtype))
 
   defguardp is_numeric_or_bool_dtype(dtype)
-            when K.in(dtype, [:boolean | @numeric_dtypes])
+            when K.or(dtype == :boolean, is_numeric_dtype(dtype))
 
   defguardp is_precision(precision)
             when K.in(precision, [:millisecond, :microsecond, :nanosecond])
@@ -2585,6 +2601,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals. The result will be a float.
 
   ## Examples
 
@@ -2658,6 +2675,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals. The result will be a float.
 
   ## Examples
 
@@ -2727,6 +2745,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals. The result will be a float.
 
   ## Examples
 
@@ -2797,6 +2816,7 @@ defmodule Explorer.Series do
     * `:time`
     * `:datetime`
     * `:duration`
+    * `:decimal`
 
   ## Examples
 
@@ -2897,6 +2917,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals. The result will be a float.
 
   ## Examples
 
@@ -2928,6 +2949,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals. The result will be a float.
 
   ## Examples
 
