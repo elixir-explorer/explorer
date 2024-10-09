@@ -18,6 +18,7 @@ defmodule Explorer.Backend.Series do
           | Time.t()
           | NaiveDateTime.t()
           | Explorer.Duration.t()
+          | Decimal.t()
 
   @type non_finite :: Explorer.Series.non_finite()
   @type option(type) :: type | nil

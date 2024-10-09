@@ -22,6 +22,7 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def from_list(data, type) when is_list(data) do
     series = Shared.from_list(data, type)
+
     Explorer.Backend.Series.new(series, type)
   end
 
@@ -645,6 +646,8 @@ defmodule Explorer.PolarsBackend.Series do
         is_boolean(value) -> :s_fill_missing_with_boolean
         is_struct(value, Date) -> :s_fill_missing_with_date
         is_struct(value, NaiveDateTime) -> :s_fill_missing_with_datetime
+        is_struct(value, Decimal) -> :s_fill_missing_with_decimal
+        true -> raise "cannot fill missing with value: #{inspect(value)}"
       end
 
     Shared.apply_series(series, operation, [value])

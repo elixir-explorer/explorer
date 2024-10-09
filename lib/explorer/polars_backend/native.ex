@@ -319,6 +319,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_fill_missing_with_atom(_s, _value), do: err()
   def s_fill_missing_with_date(_s, _value), do: err()
   def s_fill_missing_with_datetime(_s, _value), do: err()
+  def s_fill_missing_with_decimal(_s, _value), do: err()
   def s_greater(_s, _rhs), do: err()
   def s_greater_equal(_s, _rhs), do: err()
   def s_head(_s, _length), do: err()

@@ -1,7 +1,7 @@
 use crate::{
     datatypes::{
-        ExCorrelationMethod, ExDate, ExNaiveDateTime, ExRankMethod, ExSeriesDtype, ExTime,
-        ExTimeUnit, ExValidValue,
+        ExCorrelationMethod, ExDate, ExDecimal, ExNaiveDateTime, ExRankMethod, ExSeriesDtype,
+        ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -394,6 +394,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         | DataType::Binary
         | DataType::Date
         | DataType::Time
+        | DataType::Decimal(_, _)
         | DataType::Datetime(_, _) => is_in(&s, &rhs)?,
         DataType::Categorical(Some(mapping), _) => {
             let l_logical = s.categorical()?.physical();
@@ -557,6 +558,22 @@ pub fn s_fill_missing_with_boolean(
 ) -> Result<ExSeries, ExplorerError> {
     let s = series.bool()?.fill_null_with_values(boolean)?.into_series();
     Ok(ExSeries::new(s))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_fill_missing_with_decimal(
+    _series: ExSeries,
+    _decimal: ExDecimal,
+) -> Result<ExSeries, ExplorerError> {
+    // We need to make sure that the series dtype is aligned with the decimal's scale.
+    // let s = series
+    //     .decimal()?
+    //     .fill_null_with_values(decimal.signed_coef())?
+    //     .into_series();
+    // Ok(ExSeries::new(s))
+    Err(ExplorerError::Other(
+        "fill_missing/2 with decimals is not supported yet by Polars".to_string(),
+    ))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -774,7 +791,9 @@ pub fn s_min(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
         DataType::UInt16 => Ok(s.min::<u16>()?.encode(env)),
         DataType::UInt32 => Ok(s.min::<u32>()?.encode(env)),
         DataType::UInt64 => Ok(s.min::<u64>()?.encode(env)),
-        DataType::Float32 | DataType::Float64 => Ok(term_from_optional_float(s.min::<f64>()?, env)),
+        DataType::Float32 | DataType::Float64 | DataType::Decimal(_, _) => {
+            Ok(term_from_optional_float(s.min::<f64>()?, env))
+        }
         DataType::Date => Ok(s.min::<i32>()?.map(ExDate::from).encode(env)),
         DataType::Time => Ok(s.min::<i64>()?.map(ExTime::from).encode(env)),
         DataType::Datetime(unit, _) => Ok(s
@@ -796,7 +815,9 @@ pub fn s_max(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
         DataType::UInt16 => Ok(s.max::<u16>()?.encode(env)),
         DataType::UInt32 => Ok(s.max::<u32>()?.encode(env)),
         DataType::UInt64 => Ok(s.max::<u64>()?.encode(env)),
-        DataType::Float32 | DataType::Float64 => Ok(term_from_optional_float(s.max::<f64>()?, env)),
+        DataType::Float32 | DataType::Float64 | DataType::Decimal(_, _) => {
+            Ok(term_from_optional_float(s.max::<f64>()?, env))
+        }
         DataType::Date => Ok(s.max::<i32>()?.map(ExDate::from).encode(env)),
         DataType::Time => Ok(s.max::<i64>()?.map(ExTime::from).encode(env)),
         DataType::Datetime(unit, _) => Ok(s
@@ -817,9 +838,13 @@ pub fn s_argmin(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
     Ok(s.arg_min().encode(env))
 }
 
+fn is_numeric(dtype: &DataType) -> bool {
+    dtype.is_numeric() || matches!(dtype, DataType::Decimal(_, _))
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_mean(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    if s.dtype().is_numeric() {
+    if is_numeric(s.dtype()) {
         Ok(term_from_optional_float(s.mean(), env))
     } else {
         panic!("mean/1 not implemented for {:?}", &s.dtype())
@@ -828,7 +853,7 @@ pub fn s_mean(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_median(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
-    if s.dtype().is_numeric() {
+    if is_numeric(s.dtype()) {
         Ok(term_from_optional_float(s.median(), env))
     } else {
         panic!("median/1 not implemented for {:?}", &s.dtype())
@@ -845,7 +870,7 @@ pub fn s_mode(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    if s.dtype().is_numeric() {
+    if is_numeric(s.dtype()) {
         let series = s
             .clone_inner()
             .into_frame()
@@ -863,7 +888,7 @@ pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_variance(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
-    if s.dtype().is_numeric() {
+    if is_numeric(s.dtype()) {
         let var_series = s
             .clone_inner()
             .into_frame()
@@ -881,7 +906,7 @@ pub fn s_variance(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_standard_deviation(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
-    if s.dtype().is_numeric() {
+    if is_numeric(s.dtype()) {
         let std_series = s
             .clone_inner()
             .into_frame()
@@ -899,7 +924,7 @@ pub fn s_standard_deviation(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerE
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_skew(env: Env, s: ExSeries, bias: bool) -> Result<Term, ExplorerError> {
-    if s.dtype().is_numeric() {
+    if is_numeric(s.dtype()) {
         Ok(term_from_optional_float(s.skew(bias)?, env))
     } else {
         panic!("skew/2 not implemented for {:?}", &s.dtype())
@@ -1041,6 +1066,7 @@ pub fn s_peak_max(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
         DataType::Float32 => peak_max(s.f32()?),
         DataType::Float64 => peak_max(s.f64()?),
+        DataType::Decimal(_, _) => peak_max(s.decimal()?),
 
         DataType::Date => peak_max(s.date()?),
         DataType::Time => peak_max(s.time()?),
@@ -1067,6 +1093,7 @@ pub fn s_peak_min(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 
         DataType::Float32 => peak_min(s.f32()?),
         DataType::Float64 => peak_min(s.f64()?),
+        DataType::Decimal(_, _) => peak_min(s.decimal()?),
 
         DataType::Date => peak_min(s.date()?),
         DataType::Time => peak_min(s.time()?),

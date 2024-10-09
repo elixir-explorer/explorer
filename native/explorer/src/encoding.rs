@@ -425,6 +425,8 @@ macro_rules! unsafe_encode_decimal {
         let coef = $v.abs();
         let scale = -($scale as isize);
         let sign = $v.signum();
+        // Elixir's Decimal has only 1 or -1. We need to treat positive zero as positive - 1.
+        let sign = if sign == 0 { 1 } else { sign };
 
         unsafe {
             Term::new(
