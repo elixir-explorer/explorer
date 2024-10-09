@@ -23,18 +23,7 @@ defmodule Explorer.PolarsBackend.Series do
   def from_list(data, type) when is_list(data) do
     series = Shared.from_list(data, type)
 
-    result = Explorer.Backend.Series.new(series, type)
-
-    # This is a special case for decimals, where
-    # scale is found by Polars. So we need to update it here.
-    type =
-      if match?({:decimal, _, _}, type) do
-        dtype(result)
-      else
-        type
-      end
-
-    %{result | dtype: type}
+    Explorer.Backend.Series.new(series, type)
   end
 
   @impl true

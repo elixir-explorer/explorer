@@ -262,11 +262,17 @@ pub fn s_from_list_decimal(
         })
         .collect::<Result<Vec<AnyValue>, ExplorerError>>()?;
 
-    Ok(ExSeries::new(Series::from_any_values(
-        name.into(),
-        &values,
-        true,
-    )?))
+    let mut series = Series::from_any_values(name.into(), &values, true)?;
+
+    if let Some(given_scale) = scale {
+        if let DataType::Decimal(precision, Some(result_scale)) = series.dtype() {
+            if given_scale != *result_scale {
+                series = series.cast(&DataType::Decimal(*precision, Some(given_scale)))?;
+            }
+        }
+    }
+
+    Ok(ExSeries::new(series))
 }
 
 fn native_float_to_decimal_parts(float: f64) -> Option<(i128, usize)> {

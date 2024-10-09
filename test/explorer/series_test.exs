@@ -381,11 +381,9 @@ defmodule Explorer.SeriesTest do
       end
     end
 
-    test "with decimals" do
+    test "with decimals without dtype given" do
       s =
-        Series.from_list([Decimal.new("0"), Decimal.new("0.42"), nil, Decimal.new("5.12467")],
-          dtype: :decimal
-        )
+        Series.from_list([Decimal.new("0"), Decimal.new("0.42"), nil, Decimal.new("5.12467")])
 
       assert s[1] === Decimal.new("0.42000")
       assert s[3] === Decimal.new("5.12467")
@@ -427,7 +425,7 @@ defmodule Explorer.SeriesTest do
     test "with floats as decimals" do
       s =
         Series.from_list([0.0, 0.42, nil, 5.12467],
-          dtype: :decimal
+          dtype: :d5
         )
 
       assert s[1] === Decimal.new("0.42000")
@@ -443,10 +441,29 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == {:decimal, nil, 5}
     end
 
+    test "with floats as decimals and lower scale" do
+      s =
+        Series.from_list([0.0, 0.42, nil, 5.12467],
+          dtype: :d2
+        )
+
+      assert s[1] === Decimal.new("0.42")
+      assert s[3] === Decimal.new("5.12")
+
+      assert Series.to_list(s) === [
+               Decimal.new("0.00"),
+               Decimal.new("0.42"),
+               nil,
+               Decimal.new("5.12")
+             ]
+
+      assert Series.dtype(s) == {:decimal, nil, 2}
+    end
+
     test "with integers as decimals passing scale" do
       s =
         Series.from_list([0, 4237, nil, 550],
-          dtype: {:decimal, 0, 2}
+          dtype: {:decimal, nil, 2}
         )
 
       assert s[1] === Decimal.new("42.37")

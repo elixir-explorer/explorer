@@ -100,7 +100,13 @@ defmodule Explorer.Shared do
   end
 
   def normalise_dtype({:decimal, _precision, _scale} = dtype), do: dtype
-  def normalise_dtype(:decimal), do: {:decimal, nil, nil}
+  def normalise_dtype(:decimal), do: {:decimal, nil, 0}
+  def normalise_dtype(:d0), do: {:decimal, nil, 0}
+  def normalise_dtype(:d1), do: {:decimal, nil, 1}
+  def normalise_dtype(:d2), do: {:decimal, nil, 2}
+  def normalise_dtype(:d3), do: {:decimal, nil, 3}
+  def normalise_dtype(:d4), do: {:decimal, nil, 4}
+  def normalise_dtype(:d5), do: {:decimal, nil, 5}
 
   def normalise_dtype(_dtype), do: nil
 
@@ -289,10 +295,16 @@ defmodule Explorer.Shared do
   defp infer_type(float, {:s, 64}) when is_float(float) or float in @non_finite, do: {:f, 64}
 
   defp infer_type(integer, {:decimal, _, _} = decimal) when is_integer(integer), do: decimal
-  defp infer_type(float, {:decimal, _, _} = decimal) when is_float(float), do: decimal
+
+  defp infer_type(float, {:decimal, _, _} = decimal) when is_float(float),
+    do: infer_type(Decimal.from_float(float), decimal)
 
   defp infer_type(list, {:list, type}) when is_list(list), do: infer_list(list, type)
   defp infer_type(%{} = map, {:struct, inner}), do: infer_struct(map, inner)
+
+  defp infer_type(%Decimal{} = item, {:decimal, precision, scale}) do
+    {:decimal, precision, max(Decimal.scale(item), scale)}
+  end
 
   defp infer_type(item, type) do
     if infer_type(item) == type do
@@ -308,10 +320,7 @@ defmodule Explorer.Shared do
   defp infer_type(%DateTime{time_zone: tz} = _item), do: {:datetime, :microsecond, tz}
   defp infer_type(%NaiveDateTime{} = _item), do: {:naive_datetime, :microsecond}
   defp infer_type(%Explorer.Duration{precision: precision} = _item), do: {:duration, precision}
-  # We could pass the scale in the dtype, but it's complex to
-  # convert all decimals to the same scale at this point, so
-  # we delegate that to the backend.
-  defp infer_type(%Decimal{} = _item), do: {:decimal, nil, nil}
+  defp infer_type(%Decimal{} = item), do: {:decimal, nil, Decimal.scale(item)}
   defp infer_type(%_{} = item), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
   defp infer_type(item) when is_integer(item), do: {:s, 64}
   defp infer_type(item) when is_float(item) or item in @non_finite, do: {:f, 64}
