@@ -1692,7 +1692,7 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          b: from_list([Decimal.new(1), Decimal.new(2), nil]),
+          b: from_list([Decimal.new("3.14159265359"), Decimal.new(2), nil]),
           # Casting works, but the df will be different if we don't pass the precision,
           # because it will take the default precision for decimals, which is "38".
           # The second problem of not passing precision is that scale will be handled differently.
@@ -1702,13 +1702,13 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 4],
-               b: [Decimal.new(1), Decimal.new(2), nil],
+               b: [Decimal.new("3.14159265359"), Decimal.new("2.00000000000"), nil],
                c: [Decimal.new("1.00"), Decimal.new("2.00"), Decimal.new("4.00")]
              }
 
       assert DF.dtypes(df1) == %{
                "a" => {:s, 64},
-               "b" => {:decimal, nil, 0},
+               "b" => {:decimal, nil, 11},
                "c" => {:decimal, 10, 2}
              }
     end
