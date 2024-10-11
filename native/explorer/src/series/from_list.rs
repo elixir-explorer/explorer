@@ -219,7 +219,7 @@ pub fn s_from_list_null(name: &str, length: usize) -> ExSeries {
 pub fn s_from_list_decimal(
     name: &str,
     val: Term,
-    _precision: Option<usize>,
+    precision: Option<usize>,
     scale: Option<usize>,
 ) -> Result<ExSeries, ExplorerError> {
     let iterator = val
@@ -264,11 +264,12 @@ pub fn s_from_list_decimal(
 
     let mut series = Series::from_any_values(name.into(), &values, true)?;
 
-    if let Some(given_scale) = scale {
-        if let DataType::Decimal(precision, Some(result_scale)) = series.dtype() {
-            if given_scale != *result_scale {
-                series = series.cast(&DataType::Decimal(*precision, Some(given_scale)))?;
-            }
+    if let DataType::Decimal(result_precision, result_scale) = series.dtype() {
+        let p: Option<usize> = Some(precision.unwrap_or(result_precision.unwrap_or(38)));
+        let s: Option<usize> = Some(scale.unwrap_or(result_scale.unwrap_or(0)));
+
+        if *result_precision != p || *result_scale != s {
+            series = series.cast(&DataType::Decimal(p, s))?;
         }
     }
 

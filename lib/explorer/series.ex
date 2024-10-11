@@ -44,7 +44,7 @@ defmodule Explorer.Series do
       be specified as an atom in the form of `:s32`, `:u8`, `:f32` and so on.
     * The atom `:float` as an alias for `{:f, 64}` to mirror Elixir's floats
     * The atom `:integer` as an alias for `{:s, 64}` to mirror Elixir's integers
-    * The atom `:decimal` as an alias for the `{:decimal, nil, nil}`.
+    * The atom `:decimal` as an alias for the `{:decimal, 38, 0}`.
 
   A series must consist of a single data type only. Series may have `nil` values in them.
   The series `dtype` can be retrieved via the `dtype/1` function or directly accessed as
@@ -2675,7 +2675,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
-    * `:decimal`. The result will be a float.
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -2745,7 +2745,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
-    * `:decimal`. The result will be a float.
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -2917,7 +2917,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
-    * `:decimal`. The result will be a float.
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -2949,7 +2949,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
-    * `:decimal`. The result will be a float.
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -3525,7 +3525,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
-    * `:decimal` - returning decimal series.
+    * decimals: the result will be a decimal series
 
   ## Examples
 
@@ -3582,7 +3582,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
-    * `:decimal` - returning f64 series.
+    * decimals: the result will be a float series
 
   ## Examples
 
@@ -3662,7 +3662,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
-    * `:decimal` - returning f64 series.
+    * decimals: the result will be a float series
 
   ## Examples
 

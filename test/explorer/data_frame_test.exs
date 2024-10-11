@@ -1687,30 +1687,77 @@ defmodule Explorer.DataFrameTest do
              }
     end
 
-    test "adds decimal series" do
+    test "adds and casts decimal series" do
       df = DF.new(a: [1, 2, 4])
 
       df1 =
         DF.mutate(df,
           b: from_list([Decimal.new("3.14159265359"), Decimal.new(2), nil]),
-          # Casting works, but the df will be different if we don't pass the precision,
-          # because it will take the default precision for decimals, which is "38".
-          # The second problem of not passing precision is that scale will be handled differently.
-          # This example would divide the integers by 10^2 without the precision.
-          c: cast(a, {:decimal, 10, 2})
+          c: cast(a, {:decimal, 10, 2}),
+          d: cast(a, {:decimal, 10, 0})
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 4],
                b: [Decimal.new("3.14159265359"), Decimal.new("2.00000000000"), nil],
-               c: [Decimal.new("1.00"), Decimal.new("2.00"), Decimal.new("4.00")]
+               c: [Decimal.new("1.00"), Decimal.new("2.00"), Decimal.new("4.00")],
+               d: [Decimal.new("1"), Decimal.new("2"), Decimal.new("4")]
              }
 
       assert DF.dtypes(df1) == %{
                "a" => {:s, 64},
-               "b" => {:decimal, nil, 11},
-               "c" => {:decimal, 10, 2}
+               "b" => {:decimal, 38, 11},
+               "c" => {:decimal, 10, 2},
+               "d" => {:decimal, 10, 0}
              }
+
+      # Downscale
+      df2 = DF.mutate(df1, e: cast(b, {:decimal, 10, 4}))
+      df2_e = df2[:e]
+
+      assert Explorer.Series.to_list(df2_e) == [
+               Decimal.new("3.1415"),
+               Decimal.new("2.0000"),
+               nil
+             ]
+
+      assert DF.dtypes(df2) == %{
+               "a" => {:s, 64},
+               "b" => {:decimal, 38, 11},
+               "c" => {:decimal, 10, 2},
+               "d" => {:decimal, 10, 0},
+               "e" => {:decimal, 10, 4}
+             }
+
+      # Upscale
+      df3 = DF.mutate(df2, f: cast(e, {:decimal, 10, 7}))
+      df3_f = df3[:f]
+
+      assert Explorer.Series.to_list(df3_f) == [
+               Decimal.new("3.1415000"),
+               Decimal.new("2.0000000"),
+               nil
+             ]
+
+      # Precision equals scale + 1
+      df4 = DF.mutate(df3, g: cast(e, {:decimal, 5, 4}))
+      df4_g = df4[:g]
+
+      assert Explorer.Series.to_list(df4_g) == [
+               Decimal.new("3.1415"),
+               Decimal.new("2.0000"),
+               nil
+             ]
+
+      # Precision equals scale
+      df5 = DF.mutate(df4, g: cast(e, {:decimal, 4, 4}))
+      df5_g = df5[:g]
+
+      assert Explorer.Series.to_list(df5_g) == [
+               nil,
+               nil,
+               nil
+             ]
     end
 
     test "raises when adding eager series whose length does not match dataframe's length" do

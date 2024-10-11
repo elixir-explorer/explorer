@@ -43,7 +43,7 @@ defmodule Explorer.Shared do
   """
   def dtypes do
     @scalar_types ++
-      [{:list, :any}, {:struct, :any}, {:decimal, :nil_or_pos_integer, :pos_integer}]
+      [{:list, :any}, {:struct, :any}, {:decimal, :pos_integer, :pos_integer}]
   end
 
   @doc """
@@ -103,14 +103,6 @@ defmodule Explorer.Shared do
   def normalise_dtype({:decimal, precision, scale} = dtype)
       when is_integer(scale) and (is_nil(precision) or is_integer(precision)),
       do: dtype
-
-  def normalise_dtype(:decimal), do: {:decimal, nil, 0}
-  def normalise_dtype(:d0), do: {:decimal, nil, 0}
-  def normalise_dtype(:d1), do: {:decimal, nil, 1}
-  def normalise_dtype(:d2), do: {:decimal, nil, 2}
-  def normalise_dtype(:d3), do: {:decimal, nil, 3}
-  def normalise_dtype(:d4), do: {:decimal, nil, 4}
-  def normalise_dtype(:d5), do: {:decimal, nil, 5}
 
   def normalise_dtype(_dtype), do: nil
 
@@ -324,7 +316,7 @@ defmodule Explorer.Shared do
   defp infer_type(%DateTime{time_zone: tz} = _item), do: {:datetime, :microsecond, tz}
   defp infer_type(%NaiveDateTime{} = _item), do: {:naive_datetime, :microsecond}
   defp infer_type(%Explorer.Duration{precision: precision} = _item), do: {:duration, precision}
-  defp infer_type(%Decimal{} = item), do: {:decimal, nil, Decimal.scale(item)}
+  defp infer_type(%Decimal{} = item), do: {:decimal, 38, Decimal.scale(item)}
   defp infer_type(%_{} = item), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
   defp infer_type(item) when is_integer(item), do: {:s, 64}
   defp infer_type(item) when is_float(item) or item in @non_finite, do: {:f, 64}
