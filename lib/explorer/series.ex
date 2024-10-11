@@ -390,13 +390,19 @@ defmodule Explorer.Series do
         date [0001-01-01, 1970-01-01, 1986-10-13]
       >
 
-  You can specify the desired `dtype` for a series with the `:dtype` option.
+  ## The `:dtype` option
+
+  You can specify the desired `dtype` for a series with the `:dtype` option,
+  as long as the list contains compatible representations of the `dtype`. For
+  example, a list of nils may represent integers:
 
       iex> Explorer.Series.from_list([nil, nil], dtype: :integer)
       #Explorer.Series<
         Polars[2]
         s64 [nil, nil]
       >
+
+  And integers can be representations of floating numbers (but not vice-versa):
 
       iex> Explorer.Series.from_list([1, 2], dtype: :f32)
       #Explorer.Series<
@@ -436,7 +442,8 @@ defmodule Explorer.Series do
         category ["EUA", "Brazil", "Poland"]
       >
 
-  It is possible to create a series of `:date` from a list of days since Unix Epoch.
+  If you need to create a series of dates, you can pass `Date` structs, but also
+  a series of integers representing days since Unix Epoch:
 
       iex> Explorer.Series.from_list([1, nil], dtype: :date)
       #Explorer.Series<
@@ -444,7 +451,7 @@ defmodule Explorer.Series do
         date [1970-01-02, nil]
       >
 
-  It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch.
+  It is possible to create a series of `:datetime` from a list of microseconds since Unix Epoch:
 
       iex> Explorer.Series.from_list([1649883642 * 1_000 * 1_000], dtype: {:naive_datetime, :microsecond})
       #Explorer.Series<
@@ -452,7 +459,7 @@ defmodule Explorer.Series do
         naive_datetime[μs] [2022-04-13 21:00:42.000000]
       >
 
-  It is possible to create a series of `:time` from a list of nanoseconds since midnight.
+  Or a series of `:time` from a list of nanoseconds since midnight:
 
       iex> Explorer.Series.from_list([123 * 1_000 * 1_000 * 1_000], dtype: :time)
       #Explorer.Series<
@@ -460,19 +467,26 @@ defmodule Explorer.Series do
         time [00:02:03.000000]
       >
 
-  Mixing non-numeric data types will raise an ArgumentError:
-
-      iex> Explorer.Series.from_list([1, "a"])
-      ** (ArgumentError) the value "a" does not match the inferred dtype {:s, 64}
-
-  But mixing integers and some of the types for `:date`, `:datetime`, `:time`, or `:duration`
-  will work if the desired dtype is given:
+  In such cases, you may even mix integers with their regular data structures,
+  as long as the desired dtype is given:
 
       iex> Explorer.Series.from_list([1, nil, ~D[2024-06-13]], dtype: :date)
       #Explorer.Series<
         Polars[3]
         date [1970-01-02, nil, 2024-06-13]
       >
+
+  Outside of these scenarios, mixing data types or giving an incompatible
+  `dtype` will raise `ArgumentError`:
+
+      iex> Explorer.Series.from_list([1, "a"])
+      ** (ArgumentError) the value "a" does not match the inferred dtype {:s, 64}
+
+  In particular, the `:dtype` option won't perform any parsing, as the goal of
+  this function is to load Elixir data as quickly as possible into the native
+  library. For instance, you can't pass a list of strings and convert them into
+  `:date`s via the `:dtype` option. Use either `cast/2` or custom functions
+  (in this particular case, `strptime/2`).
   """
   @doc type: :conversion
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
