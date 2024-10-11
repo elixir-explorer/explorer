@@ -2601,7 +2601,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
-    * `:decimal`. The result will be a float.
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -3454,7 +3454,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
-    * `:decimal`
+    * decimals
 
   ## Examples
 
