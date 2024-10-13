@@ -149,7 +149,7 @@ defmodule Explorer.Series do
                  :string,
                  {:list, :any},
                  {:struct, :any},
-                 {:decimal, :nil_or_pos_integer, :pos_integer}
+                 {:decimal, :pos_integer, :pos_integer}
                ]
 
   @type dtype ::
@@ -181,12 +181,12 @@ defmodule Explorer.Series do
   @type signed_integer_dtype :: {:s, 8} | {:s, 16} | {:s, 32} | {:s, 64}
   @type unsigned_integer_dtype :: {:u, 8} | {:u, 16} | {:u, 32} | {:u, 64}
   @type float_dtype :: {:f, 32} | {:f, 64}
-  @type decimal_dtype :: {:decimal, nil | pos_integer(), pos_integer()}
+  @type decimal_dtype :: {:decimal, pos_integer(), pos_integer()}
 
   @type dtype_alias :: integer_dtype_alias | float_dtype_alias | decimal_dtype_alias
   @type float_dtype_alias :: :float | :f32 | :f64
   @type integer_dtype_alias :: :integer | :u8 | :u16 | :u32 | :u64 | :s8 | :s16 | :s32 | :s64
-  @type decimal_dtype_alias :: :decimal | :d0 | :d1 | :d2 | :d3 | :d4 | :d5
+  @type decimal_dtype_alias :: :decimal
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}

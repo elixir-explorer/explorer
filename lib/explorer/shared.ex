@@ -518,7 +518,7 @@ defmodule Explorer.Shared do
   def dtype_to_string({:f, size}), do: "f" <> Integer.to_string(size)
   def dtype_to_string({:s, size}), do: "s" <> Integer.to_string(size)
   def dtype_to_string({:u, size}), do: "u" <> Integer.to_string(size)
-  def dtype_to_string({:decimal, precision, scale}), do: "decimal[#{precision || "*"}, #{scale}]"
+  def dtype_to_string({:decimal, precision, scale}), do: "decimal[#{precision}, #{scale}]"
   def dtype_to_string(other) when is_atom(other), do: Atom.to_string(other)
 
   defp precision_string(:millisecond), do: "ms"
