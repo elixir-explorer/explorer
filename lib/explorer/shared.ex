@@ -100,9 +100,16 @@ defmodule Explorer.Shared do
     {:naive_datetime, precision}
   end
 
+  # Not a valid option, but this is necessary because the backend
+  # may return a decimal dtype without precision. We should cast in these cases.
+  def normalise_dtype({:decimal, nil, scale}), do: normalise_dtype({:decimal, 38, scale})
+
   def normalise_dtype({:decimal, precision, scale} = dtype)
-      when is_integer(scale) and (is_nil(precision) or is_integer(precision)),
-      do: dtype
+      when is_integer(scale) and is_integer(precision) do
+    if precision in 0..38//1 and scale in 0..38//1 and scale <= precision do
+      dtype
+    end
+  end
 
   def normalise_dtype(_dtype), do: nil
 
@@ -383,9 +390,14 @@ defmodule Explorer.Shared do
   def merge_numeric_dtype({:decimal, _, _} = decimal, :null), do: decimal
   def merge_numeric_dtype(:null, {:decimal, _, _} = decimal), do: decimal
 
-  # For now, float has priority over decimals due to Polars.
   def merge_numeric_dtype({:decimal, _, _}, {:f, _} = float), do: float
   def merge_numeric_dtype({:f, _} = float, {:decimal, _, _}), do: float
+
+  def merge_numeric_dtype({:decimal, _, _} = decimal, {:s, _}), do: decimal
+  def merge_numeric_dtype({:s, _}, {:decimal, _, _} = decimal), do: decimal
+
+  def merge_numeric_dtype({:decimal, _, _} = decimal, {:u, _}), do: decimal
+  def merge_numeric_dtype({:u, _}, {:decimal, _, _} = decimal), do: decimal
 
   def merge_numeric_dtype(_, _), do: nil
 

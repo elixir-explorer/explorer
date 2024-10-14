@@ -300,14 +300,27 @@ defmodule Explorer.PolarsBackend.Series do
   # Arithmetic
 
   @impl true
-  def add(_out_dtype, left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
+  def add(out_dtype, left, right) do
+    result = Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
+
+    if match?({:decimal, _, _}, out_dtype) and out_dtype != dtype(result) do
+      cast(result, out_dtype)
+    else
+      result
+    end
+  end
 
   @impl true
-  def subtract(_out_dtype, left, right) do
+  def subtract(out_dtype, left, right) do
     left = matching_size!(left, right)
 
-    Shared.apply_series(left, :s_subtract, [right.data])
+    result = Shared.apply_series(left, :s_subtract, [right.data])
+
+    if match?({:decimal, _, _}, out_dtype) and out_dtype != dtype(result) do
+      cast(result, out_dtype)
+    else
+      result
+    end
   end
 
   @impl true
@@ -318,7 +331,8 @@ defmodule Explorer.PolarsBackend.Series do
     #   * `integer * duration -> duration` when `integer` is a scalar
     #   * `integer * duration ->  integer` when `integer` is a series
     # We need to return duration in these cases, so we need an additional cast.
-    if match?({:duration, _}, out_dtype) and out_dtype != dtype(result) do
+    if (match?({:duration, _}, out_dtype) or match?({:decimal, _, _}, out_dtype)) and
+         out_dtype != dtype(result) do
       cast(result, out_dtype)
     else
       result
@@ -333,7 +347,8 @@ defmodule Explorer.PolarsBackend.Series do
     #   * `duration / integer -> duration` when `integer` is a scalar
     #   * `duration / integer ->  integer` when `integer` is a series
     # We need to return duration in these cases, so we need an additional cast.
-    if match?({:duration, _}, out_dtype) and out_dtype != dtype(result) do
+    if (match?({:duration, _}, out_dtype) or match?({:decimal, _, _}, out_dtype)) and
+         out_dtype != dtype(result) do
       cast(result, out_dtype)
     else
       result

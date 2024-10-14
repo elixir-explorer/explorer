@@ -479,6 +479,30 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == {:decimal, 38, 2}
     end
 
+    test "with decimals without dtype option mixing with integers" do
+      s =
+        Series.from_list([
+          Decimal.new("0"),
+          Decimal.new("0.42"),
+          nil,
+          Decimal.new("5.12467"),
+          42
+        ])
+
+      assert s[1] === Decimal.new("0.42000")
+      assert s[4] === Decimal.new("0.00042")
+
+      assert Series.to_list(s) === [
+               Decimal.new("0.00000"),
+               Decimal.new("0.42000"),
+               nil,
+               Decimal.new("5.12467"),
+               Decimal.new("0.00042")
+             ]
+
+      assert Series.dtype(s) == {:decimal, 38, 5}
+    end
+
     test "mixing dates and integers with `:date` dtype" do
       s = Series.from_list([1, nil, ~D[2024-06-13]], dtype: :date)
 
@@ -1350,8 +1374,8 @@ defmodule Explorer.SeriesTest do
     end
 
     test "compare decimal series" do
-      s1 = Series.from_list([1, 0, 2], dtype: {:decimal, nil, 2})
-      s2 = Series.from_list([1, 0, 3], dtype: {:decimal, nil, 2})
+      s1 = Series.from_list([1, 0, 2], dtype: {:decimal, 38, 2})
+      s2 = Series.from_list([1, 0, 3], dtype: {:decimal, 38, 2})
 
       assert s1 |> Series.less_equal(s2) |> Series.to_list() == [true, true, true]
     end
@@ -1448,8 +1472,8 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with decimal series" do
-      s1 = Series.from_list([1, 2, 3], dtype: {:decimal, nil, 2})
-      s2 = Series.from_list([1, 0, 3], dtype: {:decimal, nil, 2})
+      s1 = Series.from_list([1, 2, 3], dtype: {:decimal, 38, 2})
+      s2 = Series.from_list([1, 0, 3], dtype: {:decimal, 38, 2})
 
       assert s1 |> Series.in(s2) |> Series.to_list() == [true, false, true]
     end
@@ -1895,12 +1919,12 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.add(s1, s2)
 
-      assert s3.dtype == {:decimal, nil, 1}
+      assert s3.dtype == {:decimal, 38, 1}
       assert Series.to_list(s3) == [Decimal.new("2.0"), Decimal.new("5.0"), Decimal.new("4.0")]
 
       s4 = Series.from_list([Decimal.new("0.8561"), Decimal.new("3.5"), Decimal.new("0.910")])
       s5 = Series.add(s1, s4)
-      assert s5.dtype == {:decimal, nil, 4}
+      assert s5.dtype == {:decimal, 38, 4}
 
       assert Series.to_list(s5) == [
                Decimal.new("2.0561"),
@@ -1917,6 +1941,26 @@ defmodule Explorer.SeriesTest do
 
       assert s3.dtype == {:f, 64}
       assert Series.to_list(s3) === [2.0, 5.0, 4.0]
+    end
+
+    test "adding decimal and signed integer series together" do
+      s1 = Series.from_list([Decimal.new("1.2"), Decimal.new("2.0"), Decimal.new("3.1")])
+      s2 = Series.from_list([1, 2, 3])
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == {:decimal, 38, 1}
+      assert Series.to_list(s3) === [Decimal.new("2.2"), Decimal.new("4.0"), Decimal.new("6.1")]
+    end
+
+    test "adding decimal and unsigned integer series together" do
+      s1 = Series.from_list([Decimal.new("1.2"), Decimal.new("2.0"), Decimal.new("3.1")])
+      s2 = Series.from_list([1, 2, 3], dtype: :u16)
+
+      s3 = Series.add(s1, s2)
+
+      assert s3.dtype == {:decimal, 38, 1}
+      assert Series.to_list(s3) === [Decimal.new("2.2"), Decimal.new("4.0"), Decimal.new("6.1")]
     end
   end
 
@@ -2076,7 +2120,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.subtract(s1, s2)
 
-      assert s3.dtype == {:decimal, nil, 0}
+      assert s3.dtype == {:decimal, 38, 0}
       assert Series.to_list(s3) == [Decimal.new("-3"), Decimal.new("-3"), Decimal.new("-3")]
     end
 
@@ -2228,7 +2272,7 @@ defmodule Explorer.SeriesTest do
 
       s3 = Series.multiply(s1, s2)
 
-      assert s3.dtype == {:decimal, nil, 0}
+      assert s3.dtype == {:decimal, 38, 0}
       assert Series.to_list(s3) === [Decimal.new("4"), Decimal.new("10"), Decimal.new("18")]
     end
 
@@ -4138,20 +4182,20 @@ defmodule Explorer.SeriesTest do
 
     test "integer series to decimal" do
       s = Series.from_list([1, 2, 3])
-      s1 = Series.cast(s, {:decimal, nil, 0})
+      s1 = Series.cast(s, {:decimal, 38, 0})
       assert Series.to_list(s1) == [Decimal.new("1"), Decimal.new("2"), Decimal.new("3")]
       # 38 is Polars' default for precision.
       assert Series.dtype(s1) == {:decimal, 38, 0}
 
       # increased scale
-      s2 = Series.cast(s, {:decimal, nil, 2})
+      s2 = Series.cast(s, {:decimal, 38, 2})
       assert Series.to_list(s2) == [Decimal.new("1.00"), Decimal.new("2.00"), Decimal.new("3.00")]
       assert Series.dtype(s2) == {:decimal, 38, 2}
     end
 
     test "float series to decimal" do
       s = Series.from_list([1.345, 2.561, 3.97212])
-      s1 = Series.cast(s, {:decimal, nil, 3})
+      s1 = Series.cast(s, {:decimal, 38, 3})
 
       assert Series.to_list(s1) == [
                Decimal.new("1.345"),
@@ -4161,7 +4205,7 @@ defmodule Explorer.SeriesTest do
 
       assert Series.dtype(s1) == {:decimal, 38, 3}
 
-      s2 = Series.cast(s, {:decimal, nil, 4})
+      s2 = Series.cast(s, {:decimal, 38, 4})
 
       assert Series.to_list(s2) == [
                Decimal.new("1.3450"),
