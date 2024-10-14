@@ -188,6 +188,17 @@ defmodule Explorer.DataFrame do
       iex> df["class"][3]
       1
 
+
+  When trying to access a column in the dataframe that does not exist, an `ArgumentError` is raised.
+
+      iex> df = Explorer.Datasets.wine()
+      iex> try do
+      ...>   {:ok, df["abcd"]}
+      ...> rescue
+      ...>   _ in ArgumentError -> :error
+      ...> end
+      :error
+
   """
 
   alias __MODULE__, as: DataFrame
