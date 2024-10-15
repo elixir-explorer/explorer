@@ -2048,7 +2048,7 @@ defmodule Explorer.DataFrame do
       %{"floats" => {:f, 64}, "ints" => {:s, 64}}
   """
   @doc type: :introspection
-  @spec dtypes(df :: DataFrame.t()) :: %{String.t() => atom()}
+  @spec dtypes(df :: DataFrame.t()) :: %{String.t() => Explorer.Series.dtype()}
   def dtypes(df), do: df.dtypes
 
   @doc """
