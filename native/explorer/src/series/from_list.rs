@@ -1,6 +1,6 @@
 use crate::atoms;
 use crate::datatypes::{
-    ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExSeriesDtype, ExTime, ExTimeUnit,
+    ExDate, ExDateTime, ExDecimal, ExDuration, ExNaiveDateTime, ExSeriesDtype, ExTime, ExTimeUnit,
 };
 use crate::{ExSeries, ExplorerError};
 
@@ -217,49 +217,83 @@ pub fn s_from_list_null(name: &str, length: usize) -> ExSeries {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_decimal(
-    _name: &str,
-    _val: Term,
-    _precision: Option<usize>,
-    _scale: Option<usize>,
+    name: &str,
+    val: Term,
+    precision: Option<usize>,
+    scale: Option<usize>,
 ) -> Result<ExSeries, ExplorerError> {
-    Err(ExplorerError::Other(
-        "from_list/2 not yet implemented for decimal lists".into(),
-    ))
-    // let iterator = val
-    //     .decode::<ListIterator>()
-    //     .map_err(|err| ExplorerError::Other(format!("expecting list as term: {err:?}")))?;
-    // // let mut precision = precision;
-    // // let mut scale = scale;
+    let iterator = val
+        .decode::<ListIterator>()
+        .map_err(|err| ExplorerError::Other(format!("expecting list as term: {err:?}")))?;
 
-    // let values: Vec<Option<i128>> = iterator
-    //     .map(|item| match item.get_type() {
-    //         TermType::Integer => item.decode::<Option<i128>>().map_err(|err| {
-    //             ExplorerError::Other(format!("int number is too big for an i128: {err:?}"))
-    //         }),
-    //         TermType::Map => item
-    //             .decode::<ExDecimal>()
-    //             .map(|ex_decimal| Some(ex_decimal.signed_coef()))
-    //             .map_err(|error| {
-    //                 ExplorerError::Other(format!(
-    //                     "cannot decode a valid decimal from term. error: {error:?}"
-    //                 ))
-    //             }),
-    //         // TODO: handle float special cases
-    //         TermType::Atom => Ok(None),
-    //         term_type => Err(ExplorerError::Other(format!(
-    //             "from_list/2 for decimals not implemented for {term_type:?}"
-    //         ))),
-    //     })
-    //     .collect::<Result<Vec<Option<i128>>, ExplorerError>>()?;
+    let values: Vec<AnyValue> = iterator
+        .map(|item| match item.get_type() {
+            TermType::Integer => {
+                let s = scale.unwrap_or(0);
+                item.decode::<i128>()
+                    .map(|num| AnyValue::Decimal(num, s))
+                    .map_err(|err| {
+                        ExplorerError::Other(format!("int number is too big for an i128: {err:?}"))
+                    })
+            }
 
-    // Series::new(name.into(), values)
-    //     .cast(&DataType::Decimal(precision, scale))
-    //     .map(ExSeries::new)
-    //     .map_err(|error| {
-    //         ExplorerError::Other(format!(
-    //             "from_list/2 cannot cast integer series to a valid decimal series: {error:?}"
-    //         ))
-    //     })
+            TermType::Map => item
+                .decode::<ExDecimal>()
+                .map(|ex_decimal| AnyValue::Decimal(ex_decimal.signed_coef(), ex_decimal.scale()))
+                .map_err(|error| {
+                    ExplorerError::Other(format!(
+                        "cannot decode a valid decimal from term. error: {error:?}"
+                    ))
+                }),
+            TermType::Atom => Ok(AnyValue::Null),
+
+            TermType::Float => item
+                .decode::<f64>()
+                .map(|num| match native_float_to_decimal_parts(num) {
+                    Some((integer, scale)) => AnyValue::Decimal(integer, scale),
+                    None => AnyValue::Null,
+                })
+                .map_err(|err| {
+                    ExplorerError::Other(format!("float number is too big f64: {err:?}"))
+                }),
+            term_type => Err(ExplorerError::Other(format!(
+                "from_list/2 for decimals not implemented for {term_type:?}"
+            ))),
+        })
+        .collect::<Result<Vec<AnyValue>, ExplorerError>>()?;
+
+    let mut series = Series::from_any_values(name.into(), &values, true)?;
+
+    if let DataType::Decimal(result_precision, result_scale) = series.dtype() {
+        let p: Option<usize> = Some(precision.unwrap_or(result_precision.unwrap_or(38)));
+        let s: Option<usize> = Some(scale.unwrap_or(result_scale.unwrap_or(0)));
+
+        if *result_precision != p || *result_scale != s {
+            series = series.cast(&DataType::Decimal(p, s))?;
+        }
+    }
+
+    Ok(ExSeries::new(series))
+}
+
+fn native_float_to_decimal_parts(float: f64) -> Option<(i128, usize)> {
+    let float_str = float.to_string();
+
+    match float_str.split_once(".") {
+        Some((integer_part, fraction_part)) => {
+            let new_str = integer_part.to_string() + fraction_part;
+            let coef: i128 = new_str.parse().expect("expecting a valid i128 number");
+            Some((coef, fraction_part.len()))
+        }
+
+        None => {
+            let res_coef = float_str.parse::<i128>();
+            match res_coef {
+                Ok(coef) => Some((coef, 0)),
+                Err(_) => None,
+            }
+        }
+    }
 }
 
 macro_rules! from_list {

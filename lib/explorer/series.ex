@@ -26,6 +26,8 @@ defmodule Explorer.Series do
     * `{:f, size}` - a 64-bit or 32-bit floating point number
     * `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit signed integer number.
     * `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer number.
+    * `{:decimal, precision, scale}` - a 128-bit signed integer number representing a decimal,
+      with a scale and precision. This unwraps to `Decimal`, using the `:decimal` package.
     * `:null` - `nil`s exclusively
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
@@ -38,10 +40,11 @@ defmodule Explorer.Series do
   When passing a dtype as argument, aliases are supported for convenience
   and compatibility with the Elixir ecosystem:
 
-    * All numeric dtypes (signed integer, unsigned integer, and floats) can
-      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and so on
+    * All numeric dtypes (signed integer, unsigned integer, floats and decimals) can
+      be specified as an atom in the form of `:s32`, `:u8`, `:f32` and so on.
     * The atom `:float` as an alias for `{:f, 64}` to mirror Elixir's floats
     * The atom `:integer` as an alias for `{:s, 64}` to mirror Elixir's integers
+    * The atom `:decimal` as an alias for the `{:decimal, 38, 0}`.
 
   A series must consist of a single data type only. Series may have `nil` values in them.
   The series `dtype` can be retrieved via the `dtype/1` function or directly accessed as
@@ -140,7 +143,14 @@ defmodule Explorer.Series do
   @numeric_dtypes Explorer.Shared.numeric_types()
   @numeric_or_temporal_dtypes @numeric_dtypes ++ @temporal_dtypes
 
-  @io_dtypes Shared.dtypes() -- [:binary, :string, {:list, :any}, {:struct, :any}]
+  @io_dtypes Shared.dtypes() --
+               [
+                 :binary,
+                 :string,
+                 {:list, :any},
+                 {:struct, :any},
+                 {:decimal, :pos_integer, :pos_integer}
+               ]
 
   @type dtype ::
           :null
@@ -150,11 +160,12 @@ defmodule Explorer.Series do
           | :date
           | :time
           | :string
-          | naive_datetime_dtype
           | datetime_dtype
+          | decimal_dtype
           | duration_dtype
           | float_dtype
           | list_dtype
+          | naive_datetime_dtype
           | signed_integer_dtype
           | struct_dtype
           | unsigned_integer_dtype
@@ -170,10 +181,12 @@ defmodule Explorer.Series do
   @type signed_integer_dtype :: {:s, 8} | {:s, 16} | {:s, 32} | {:s, 64}
   @type unsigned_integer_dtype :: {:u, 8} | {:u, 16} | {:u, 32} | {:u, 64}
   @type float_dtype :: {:f, 32} | {:f, 64}
+  @type decimal_dtype :: {:decimal, pos_integer(), pos_integer()}
 
-  @type dtype_alias :: integer_dtype_alias | float_dtype_alias
+  @type dtype_alias :: integer_dtype_alias | float_dtype_alias | decimal_dtype_alias
   @type float_dtype_alias :: :float | :f32 | :f64
   @type integer_dtype_alias :: :integer | :u8 | :u16 | :u32 | :u64 | :s8 | :s16 | :s32 | :s64
+  @type decimal_dtype_alias :: :decimal
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
   @type lazy_t :: %Series{data: Explorer.Backend.LazySeries.t(), dtype: dtype()}
@@ -197,14 +210,24 @@ defmodule Explorer.Series do
   @behaviour Access
   @compile {:no_warn_undefined, Nx}
 
-  defguardp is_numeric(n) when K.or(is_number(n), K.in(n, [:nan, :infinity, :neg_infinity]))
+  defguardp is_numeric(n)
+            when is_number(n)
+                 |> K.or(K.in(n, [:nan, :infinity, :neg_infinity]))
+                 |> K.or(is_struct(n, Decimal))
 
   defguardp is_io_dtype(dtype) when K.in(dtype, @io_dtypes)
 
-  defguardp is_numeric_dtype(dtype) when K.in(dtype, @numeric_dtypes)
+  defguardp is_decimal_dtype(dtype)
+            when is_tuple(dtype)
+                 |> K.and(tuple_size(dtype) == 3)
+                 |> K.and(elem(dtype, 0) == :decimal)
+                 |> K.and(elem(dtype, 2) |> K.is_integer())
+
+  defguardp is_numeric_dtype(dtype)
+            when K.or(K.in(dtype, @numeric_dtypes), is_decimal_dtype(dtype))
 
   defguardp is_numeric_or_bool_dtype(dtype)
-            when K.in(dtype, [:boolean | @numeric_dtypes])
+            when K.or(dtype == :boolean, is_numeric_dtype(dtype))
 
   defguardp is_precision(precision)
             when K.in(precision, [:millisecond, :microsecond, :nanosecond])
@@ -1274,6 +1297,7 @@ defmodule Explorer.Series do
   def iotype(%Series{dtype: dtype}) do
     case dtype do
       :category -> {:u, 32}
+      {:decimal, _, _} -> {:s, 128}
       other -> Shared.dtype_to_iotype(other)
     end
   end
@@ -2591,6 +2615,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -2664,6 +2689,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -2733,6 +2759,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -2803,6 +2830,7 @@ defmodule Explorer.Series do
     * `:time`
     * `:datetime`
     * `:duration`
+    * `:decimal`
 
   ## Examples
 
@@ -2903,6 +2931,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -2934,6 +2963,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals: the result will be a float
 
   ## Examples
 
@@ -3276,6 +3306,7 @@ defmodule Explorer.Series do
     * `:time`
     * `:datetime`
     * `:duration`
+    * `:decimal`
 
   ## Examples
 
@@ -3358,6 +3389,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * `:decimal`
 
   ## Examples
 
@@ -3409,7 +3441,17 @@ defmodule Explorer.Series do
   defp cast_to_add({:datetime, p, tz}, {:duration, p}), do: {:datetime, p, tz}
   defp cast_to_add({:duration, p}, {:datetime, p, tz}), do: {:datetime, p, tz}
   defp cast_to_add({:duration, p}, {:duration, p}), do: {:duration, p}
+
+  defp cast_to_add({:decimal, p1, s1}, {:decimal, p2, s2}),
+    do: {:decimal, maybe_max(p1, p2), maybe_max(s1, s2)}
+
   defp cast_to_add(left, right), do: Shared.merge_numeric_dtype(left, right)
+
+  defp maybe_max(left, right) when K.and(is_integer(left), is_integer(right)),
+    do: K.max(left, right)
+
+  defp maybe_max(left, nil), do: left
+  defp maybe_max(nil, right), do: right
 
   @doc """
   Subtracts right from left, element-wise.
@@ -3426,6 +3468,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals
 
   ## Examples
 
@@ -3477,6 +3520,10 @@ defmodule Explorer.Series do
   defp cast_to_subtract({:datetime, p, tz}, {:datetime, p, tz}), do: {:duration, p}
   defp cast_to_subtract({:datetime, p, tz}, {:duration, p}), do: {:datetime, p, tz}
   defp cast_to_subtract({:duration, p}, {:duration, p}), do: {:duration, p}
+
+  defp cast_to_subtract({:decimal, p1, s1}, {:decimal, p2, s2}),
+    do: {:decimal, maybe_max(p1, p2), maybe_max(s1, s2)}
+
   defp cast_to_subtract(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
@@ -3492,6 +3539,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals: the result will be a decimal series
 
   ## Examples
 
@@ -3529,6 +3577,10 @@ defmodule Explorer.Series do
   defp cast_to_multiply({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_multiply({:f, _}, {:duration, p}), do: {:duration, p}
   defp cast_to_multiply({:duration, p}, {:f, _}), do: {:duration, p}
+
+  defp cast_to_multiply({:decimal, p1, s1}, {:decimal, p2, s2}),
+    do: {:decimal, maybe_max(p1, p2), maybe_max(s1, s2)}
+
   defp cast_to_multiply(left, right), do: Shared.merge_numeric_dtype(left, right)
 
   @doc """
@@ -3544,6 +3596,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals: the result will be a float series
 
   ## Examples
 
@@ -3604,6 +3657,8 @@ defmodule Explorer.Series do
   defp cast_to_divide({:f, left}, {:f, right}), do: {:f, max(left, right)}
   defp cast_to_divide({:duration, p}, {:s, _}), do: {:duration, p}
   defp cast_to_divide({:duration, p}, {:f, _}), do: {:duration, p}
+  # This is due limitations of Polars. Ideally it should be decimal here.
+  defp cast_to_divide({:decimal, _, _}, {:decimal, _, _}), do: {:f, 64}
   defp cast_to_divide(_, _), do: nil
 
   @doc """
@@ -3621,6 +3676,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * decimals: the result will be a float series
 
   ## Examples
 
@@ -3677,6 +3733,9 @@ defmodule Explorer.Series do
   defp cast_to_pow({:f, l}, {n, _}) when K.in(n, [:u, :s]), do: {:f, l}
   defp cast_to_pow({n, _}, {:f, r}) when K.in(n, [:u, :s]), do: {:f, r}
   defp cast_to_pow({n, _}, {:s, _}) when K.in(n, [:u, :s]), do: {:s, 64}
+  # Due to a limitation in Polars, it's not possible to use decimals only here.
+  defp cast_to_pow({:decimal, _, _}, {:decimal, _, _}), do: {:f, 64}
+  defp cast_to_pow({:decimal, _, _}, {:s, _}), do: {:f, 64}
   defp cast_to_pow(_, _), do: nil
 
   @doc """
@@ -3689,6 +3748,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * `:decimal` - returns f64 series.
 
   ## Examples
 
@@ -3713,6 +3773,7 @@ defmodule Explorer.Series do
 
     * floats: #{Shared.inspect_dtypes(@float_dtypes, backsticks: true)}
     * integers: #{Shared.inspect_dtypes(@integer_types, backsticks: true)}
+    * `:decimal`.
 
   ## Examples
 
@@ -4196,6 +4257,7 @@ defmodule Explorer.Series do
     * `:time`
     * `:datetime`
     * `:duration`
+    * `:decimal`
 
   ## Examples
 
@@ -4235,6 +4297,7 @@ defmodule Explorer.Series do
     * `:time`
     * `:datetime`
     * `:duration`
+    * `:decimal`
 
   ## Examples
 
@@ -4274,6 +4337,7 @@ defmodule Explorer.Series do
     * `:time`
     * `:datetime`
     * `:duration`
+    * `:decimal`
 
   ## Examples
 
@@ -4313,6 +4377,7 @@ defmodule Explorer.Series do
     * `:time`
     * `:datetime`
     * `:duration`
+    * `:decimal`
 
   ## Examples
 
@@ -4481,6 +4546,8 @@ defmodule Explorer.Series do
 
   defp cast_to_ordered_series({:duration, _}, %Explorer.Duration{}),
     do: :duration
+
+  defp cast_to_ordered_series({:decimal, _precision, _scale} = decimal, %Decimal{}), do: decimal
 
   defp cast_to_ordered_series(_dtype, _value),
     do: nil

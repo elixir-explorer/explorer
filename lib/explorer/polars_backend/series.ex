@@ -22,6 +22,7 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def from_list(data, type) when is_list(data) do
     series = Shared.from_list(data, type)
+
     Explorer.Backend.Series.new(series, type)
   end
 
@@ -299,14 +300,27 @@ defmodule Explorer.PolarsBackend.Series do
   # Arithmetic
 
   @impl true
-  def add(_out_dtype, left, right),
-    do: Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
+  def add(out_dtype, left, right) do
+    result = Shared.apply_series(matching_size!(left, right), :s_add, [right.data])
+
+    if match?({:decimal, _, _}, out_dtype) and out_dtype != dtype(result) do
+      cast(result, out_dtype)
+    else
+      result
+    end
+  end
 
   @impl true
-  def subtract(_out_dtype, left, right) do
+  def subtract(out_dtype, left, right) do
     left = matching_size!(left, right)
 
-    Shared.apply_series(left, :s_subtract, [right.data])
+    result = Shared.apply_series(left, :s_subtract, [right.data])
+
+    if match?({:decimal, _, _}, out_dtype) and out_dtype != dtype(result) do
+      cast(result, out_dtype)
+    else
+      result
+    end
   end
 
   @impl true
@@ -317,7 +331,8 @@ defmodule Explorer.PolarsBackend.Series do
     #   * `integer * duration -> duration` when `integer` is a scalar
     #   * `integer * duration ->  integer` when `integer` is a series
     # We need to return duration in these cases, so we need an additional cast.
-    if match?({:duration, _}, out_dtype) and out_dtype != dtype(result) do
+    if (match?({:duration, _}, out_dtype) or match?({:decimal, _, _}, out_dtype)) and
+         out_dtype != dtype(result) do
       cast(result, out_dtype)
     else
       result
@@ -332,7 +347,8 @@ defmodule Explorer.PolarsBackend.Series do
     #   * `duration / integer -> duration` when `integer` is a scalar
     #   * `duration / integer ->  integer` when `integer` is a series
     # We need to return duration in these cases, so we need an additional cast.
-    if match?({:duration, _}, out_dtype) and out_dtype != dtype(result) do
+    if (match?({:duration, _}, out_dtype) or match?({:decimal, _, _}, out_dtype)) and
+         out_dtype != dtype(result) do
       cast(result, out_dtype)
     else
       result
@@ -645,6 +661,8 @@ defmodule Explorer.PolarsBackend.Series do
         is_boolean(value) -> :s_fill_missing_with_boolean
         is_struct(value, Date) -> :s_fill_missing_with_date
         is_struct(value, NaiveDateTime) -> :s_fill_missing_with_datetime
+        is_struct(value, Decimal) -> :s_fill_missing_with_decimal
+        true -> raise "cannot fill missing with value: #{inspect(value)}"
       end
 
     Shared.apply_series(series, operation, [value])

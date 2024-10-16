@@ -42,7 +42,8 @@ defmodule Explorer.Shared do
   within lists inside.
   """
   def dtypes do
-    @scalar_types ++ [{:list, :any}, {:struct, :any}, {:decimal, :any, :any}]
+    @scalar_types ++
+      [{:list, :any}, {:struct, :any}, {:decimal, :pos_integer, :pos_integer}]
   end
 
   @doc """
@@ -99,8 +100,16 @@ defmodule Explorer.Shared do
     {:naive_datetime, precision}
   end
 
-  def normalise_dtype({:decimal, _precision, _scale} = dtype), do: dtype
-  def normalise_dtype(:decimal), do: {:decimal, nil, 2}
+  # Not a valid option, but this is necessary because the backend
+  # may return a decimal dtype without precision. We should cast in these cases.
+  def normalise_dtype({:decimal, nil, scale}), do: normalise_dtype({:decimal, 38, scale})
+
+  def normalise_dtype({:decimal, precision, scale} = dtype)
+      when is_integer(scale) and is_integer(precision) do
+    if precision in 0..38//1 and scale in 0..38//1 and scale <= precision do
+      dtype
+    end
+  end
 
   def normalise_dtype(_dtype), do: nil
 
@@ -287,8 +296,18 @@ defmodule Explorer.Shared do
   defp infer_type(item, :null), do: infer_type(item)
   defp infer_type(integer, {:f, 64}) when is_integer(integer), do: {:f, 64}
   defp infer_type(float, {:s, 64}) when is_float(float) or float in @non_finite, do: {:f, 64}
+
+  defp infer_type(integer, {:decimal, _, _} = decimal) when is_integer(integer), do: decimal
+
+  defp infer_type(float, {:decimal, _, _} = decimal) when is_float(float),
+    do: infer_type(Decimal.from_float(float), decimal)
+
   defp infer_type(list, {:list, type}) when is_list(list), do: infer_list(list, type)
   defp infer_type(%{} = map, {:struct, inner}), do: infer_struct(map, inner)
+
+  defp infer_type(%Decimal{} = item, {:decimal, precision, scale}) do
+    {:decimal, precision, max(Decimal.scale(item), scale)}
+  end
 
   defp infer_type(item, type) do
     if infer_type(item) == type do
@@ -304,6 +323,7 @@ defmodule Explorer.Shared do
   defp infer_type(%DateTime{time_zone: tz} = _item), do: {:datetime, :microsecond, tz}
   defp infer_type(%NaiveDateTime{} = _item), do: {:naive_datetime, :microsecond}
   defp infer_type(%Explorer.Duration{precision: precision} = _item), do: {:duration, precision}
+  defp infer_type(%Decimal{} = item), do: {:decimal, 38, Decimal.scale(item)}
   defp infer_type(%_{} = item), do: raise(ArgumentError, "unsupported datatype: #{inspect(item)}")
   defp infer_type(item) when is_integer(item), do: {:s, 64}
   defp infer_type(item) when is_float(item) or item in @non_finite, do: {:f, 64}
@@ -366,6 +386,19 @@ defmodule Explorer.Shared do
   def merge_numeric_dtype({:f, left}, {:f, right}), do: {:f, max(left, right)}
   def merge_numeric_dtype({:f, _} = float, :null), do: float
   def merge_numeric_dtype(:null, {:f, _} = float), do: float
+
+  def merge_numeric_dtype({:decimal, _, _} = decimal, :null), do: decimal
+  def merge_numeric_dtype(:null, {:decimal, _, _} = decimal), do: decimal
+
+  def merge_numeric_dtype({:decimal, _, _}, {:f, _} = float), do: float
+  def merge_numeric_dtype({:f, _} = float, {:decimal, _, _}), do: float
+
+  def merge_numeric_dtype({:decimal, _, _} = decimal, {:s, _}), do: decimal
+  def merge_numeric_dtype({:s, _}, {:decimal, _, _} = decimal), do: decimal
+
+  def merge_numeric_dtype({:decimal, _, _} = decimal, {:u, _}), do: decimal
+  def merge_numeric_dtype({:u, _}, {:decimal, _, _} = decimal), do: decimal
+
   def merge_numeric_dtype(_, _), do: nil
 
   @doc """
