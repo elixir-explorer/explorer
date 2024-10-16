@@ -439,10 +439,10 @@ defmodule Explorer.Shared do
   Helper to inspect dtypes in a sentence.
   """
   def inspect_dtypes(dtypes, opts \\ []) do
-    opts = Keyword.validate!(opts, with_prefix: false, backsticks: false)
+    opts = Keyword.validate!(opts, with_prefix: false, backticks: false)
 
     inspect_fun =
-      if opts[:backsticks] do
+      if opts[:backticks] do
         fn item -> "`" <> inspect(item) <> "`" end
       else
         &Kernel.inspect/1
