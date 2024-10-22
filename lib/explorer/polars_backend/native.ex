@@ -423,8 +423,17 @@ defmodule Explorer.PolarsBackend.Native do
   def s_split(_s, _by), do: err()
   def s_split_into(_s, _by, _num_fields), do: err()
 
-  def s_qcut(_s, _quantiles, _labels, _break_point_label, _category_label),
-    do: err()
+  def s_qcut(
+        _s,
+        _quantiles,
+        _labels,
+        _break_point_label,
+        _category_label,
+        _allow_duplicates,
+        _left_close,
+        _include_breaks
+      ),
+      do: err()
 
   def s_variance(_s, _ddof), do: err()
   def s_window_max(_s, _window_size, _weight, _ignore_null, _min_periods), do: err()

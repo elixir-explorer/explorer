@@ -1246,7 +1246,7 @@ defmodule Explorer.Backend.LazySeries do
     categorise: 2,
     cut: 5,
     frequencies: 1,
-    qcut: 5,
+    qcut: 8,
     mask: 2,
     owner_import: 1,
     owner_export: 1,

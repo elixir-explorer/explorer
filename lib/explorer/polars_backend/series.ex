@@ -561,13 +561,25 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def qcut(series, quantiles, labels, break_point_label, category_label) do
+  def qcut(
+        series,
+        quantiles,
+        labels,
+        break_point_label,
+        category_label,
+        allow_duplicates,
+        left_close,
+        include_breaks
+      ) do
     Shared.apply(:s_qcut, [
       series.data,
       quantiles,
       labels,
       break_point_label,
-      category_label
+      category_label,
+      allow_duplicates,
+      left_close,
+      include_breaks
     ])
     |> Shared.create_dataframe!()
   end

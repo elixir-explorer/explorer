@@ -192,7 +192,16 @@ defmodule Explorer.Backend.Series do
 
   @callback cut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) ::
               df
-  @callback qcut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) ::
+  @callback qcut(
+              s,
+              quantiles :: [float()],
+              labels :: option([String.t()]),
+              break_point_label :: option(String.t()),
+              category_label :: option(String.t()),
+              allow_duplicates :: boolean(),
+              left_close :: boolean(),
+              include_breaks :: boolean()
+            ) ::
               df
 
   # Rolling
