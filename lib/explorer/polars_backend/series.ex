@@ -541,13 +541,15 @@ defmodule Explorer.PolarsBackend.Series do
   # Categorisation
 
   @impl true
-  def cut(series, bins, labels, break_point_label, category_label) do
+  def cut(series, bins, labels, break_point_label, category_label, left_close, include_breaks) do
     case Explorer.PolarsBackend.Native.s_cut(
            series.data,
            bins,
            labels,
            break_point_label,
-           category_label
+           category_label,
+           left_close,
+           include_breaks
          ) do
       {:ok, polars_df} ->
         Shared.create_dataframe!(polars_df)

@@ -1244,7 +1244,7 @@ defmodule Explorer.Backend.LazySeries do
     at_every: 2,
     categories: 1,
     categorise: 2,
-    cut: 5,
+    cut: 7,
     frequencies: 1,
     qcut: 8,
     mask: 2,

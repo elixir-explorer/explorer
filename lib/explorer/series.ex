@@ -4842,11 +4842,22 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   def cut(series, bins, opts \\ []) do
+    opts =
+      Keyword.validate!(opts,
+        labels: nil,
+        break_point_label: nil,
+        category_label: nil,
+        left_close: false,
+        include_breaks: true
+      )
+
     apply_series(series, :cut, [
       Enum.map(bins, &(&1 / 1.0)),
-      Keyword.get(opts, :labels),
-      Keyword.get(opts, :break_point_label),
-      Keyword.get(opts, :category_label)
+      opts[:labels],
+      opts[:break_point_label],
+      opts[:category_label],
+      opts[:left_close],
+      opts[:include_breaks]
     ])
   end
 
