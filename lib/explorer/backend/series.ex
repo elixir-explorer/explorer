@@ -190,9 +190,26 @@ defmodule Explorer.Backend.Series do
 
   # Categorisation
 
-  @callback cut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) ::
+  @callback cut(
+              s,
+              bins :: [float()],
+              labels :: option([String.t()]),
+              break_point_label :: option(String.t()),
+              category_label :: option(String.t()),
+              left_close :: boolean(),
+              include_breaks :: boolean()
+            ) ::
               df
-  @callback qcut(s, [float()], [String.t()] | nil, String.t() | nil, String.t() | nil) ::
+  @callback qcut(
+              s,
+              quantiles :: [float()],
+              labels :: option([String.t()]),
+              break_point_label :: option(String.t()),
+              category_label :: option(String.t()),
+              allow_duplicates :: boolean(),
+              left_close :: boolean(),
+              include_breaks :: boolean()
+            ) ::
               df
 
   # Rolling

@@ -206,9 +206,10 @@ pub fn s_cut(
     labels: Option<Vec<String>>,
     break_point_label: Option<&str>,
     category_label: Option<&str>,
+    left_close: bool,
+    include_breaks: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let series = series.clone_inner();
-    let left_close = false;
 
     // Cut is going to return a Series of a Struct. We need to convert it to a DF.
     let cut_series = cut(
@@ -216,7 +217,7 @@ pub fn s_cut(
         bins,
         labels.map(|vec| vec.iter().map(|label| label.into()).collect()),
         left_close,
-        true,
+        include_breaks,
     )?;
     let mut cut_df = DataFrame::new(cut_series.struct_()?.fields_as_series())?;
 
@@ -231,6 +232,7 @@ pub fn s_cut(
     Ok(ExDataFrame::new(cut_df.clone()))
 }
 
+#[allow(clippy::too_many_arguments)]
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_qcut(
     series: ExSeries,
@@ -238,10 +240,11 @@ pub fn s_qcut(
     labels: Option<Vec<String>>,
     break_point_label: Option<&str>,
     category_label: Option<&str>,
+    allow_duplicates: bool,
+    left_close: bool,
+    include_breaks: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let series = series.clone_inner();
-    let left_close = false;
-    let allow_duplicates = false;
 
     let qcut_series: Series = qcut(
         &series,
@@ -249,7 +252,7 @@ pub fn s_qcut(
         labels.map(|vec| vec.iter().map(|label| label.into()).collect()),
         left_close,
         allow_duplicates,
-        true,
+        include_breaks,
     )?;
 
     let mut qcut_df = DataFrame::new(qcut_series.struct_()?.fields_as_series())?;

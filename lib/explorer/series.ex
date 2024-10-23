@@ -4842,11 +4842,22 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   def cut(series, bins, opts \\ []) do
+    opts =
+      Keyword.validate!(opts,
+        labels: nil,
+        break_point_label: nil,
+        category_label: nil,
+        left_close: false,
+        include_breaks: true
+      )
+
     apply_series(series, :cut, [
       Enum.map(bins, &(&1 / 1.0)),
-      Keyword.get(opts, :labels),
-      Keyword.get(opts, :break_point_label),
-      Keyword.get(opts, :category_label)
+      opts[:labels],
+      opts[:break_point_label],
+      opts[:category_label],
+      opts[:left_close],
+      opts[:include_breaks]
     ])
   end
 
@@ -4868,6 +4879,9 @@ defmodule Explorer.Series do
     * `:category_label` - The name given to the category column.
       Defaults to `category`.
 
+    * `:allow_duplicates` - If quantiles can have duplicated values.
+      Defaults to `false`.
+
   ## Examples
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0, 4.0, 5.0])
@@ -4881,11 +4895,24 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   def qcut(series, quantiles, opts \\ []) do
+    opts =
+      Keyword.validate!(opts,
+        labels: nil,
+        break_point_label: nil,
+        category_label: nil,
+        allow_duplicates: false,
+        left_close: false,
+        include_breaks: true
+      )
+
     apply_series(series, :qcut, [
       Enum.map(quantiles, &(&1 / 1.0)),
-      Keyword.get(opts, :labels),
-      Keyword.get(opts, :break_point_label),
-      Keyword.get(opts, :category_label)
+      opts[:labels],
+      opts[:break_point_label],
+      opts[:category_label],
+      opts[:allow_duplicates],
+      opts[:left_close],
+      opts[:include_breaks]
     ])
   end
 
