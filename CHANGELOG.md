@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.0] - 2024-10-23
+
+### Added
+
+- Add support for the decimals data type.
+
+  Decimals dtypes are represented by the `{:decimal, precision, scale}` tuple,
+  where precision can be a positive integer from 0 to 38, and is the maximum number
+  of digits that can be represented by the decimal. The scale is the number of
+  digits after the decimal point.
+
+  With this addition, we also added the `:decimal` package as a new dependency.
+  The `Explorer.Series.from_list/2` function accepts decimal numbers from that
+  package as values - `%Decimal{}`.
+
+  This version has a small number of operations, but is a good foundation.
+
+- Allow the usage of queries and lazy series outside callbacks and macros.
+  This is an improvement to functions that were originally designed to accept callbacks.
+  With this change you can now reuse lazy series across different "queries".
+  See the `Explorer.Query` docs for details.
+
+  The affected functions are:
+
+  * `Explorer.DataFrame.filter_with/2`
+  * `Explorer.DataFrame.mutate_with/2`
+  * `Explorer.DataFrame.sort_with/2`
+  * `Explorer.DataFrame.summarise_with/2`
+
+- Allow accessing the dataframe inside query.
+
+- Add "lazy read" support for Parquet and NDJSON from HTTP(s).
+
+- Expose more options for `Explorer.Series.cut/3` and `Explorer.Series.qcut/3`.
+  These options were available in Polars, but not in our APIs.
+
+### Fixed
+
+- Fix creation of series where a `nil` value inside a list - for a `{:list, any()}` dtype -
+  could result in an incompatible dtype. This fix will prevent panics for list of lists with
+  `nil` entries.
+
+- Fix `Explorer.DataFrame.dump_ndjson/2` when date time is in use.
+
+- Fix `Explorer.Series.product/1` for lazy series.
+
+- Accept `%FSS.HTTP.Entry{}` structs in functions like `Explorer.DataFrame.from_parquet/2`.
+
+- Fix encode of binaries to terms from series of the `{:struct, any()}` dtype.
+  In case the inner fields of the struct had any binary (`:binary` dtype), it was
+  causing a panic.
+
+### Changed
+
+- Change the defaults of the functions `Explorer.Series.cut/3` and `Explorer.Series.qcut/3`
+  to not have "break points" column in the resultant dataframe.
+  So the `:include_breaks` is now `false` by default.
+
 ## [v0.9.2] - 2024-08-27
 
 ### Added
@@ -1105,7 +1163,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.10.0...HEAD
+[v0.10.0]: https://github.com/elixir-explorer/explorer/compare/v0.9.2...v0.10.0
 [v0.9.2]: https://github.com/elixir-explorer/explorer/compare/v0.9.1...v0.9.2
 [v0.9.1]: https://github.com/elixir-explorer/explorer/compare/v0.9.0...v0.9.1
 [v0.9.0]: https://github.com/elixir-explorer/explorer/compare/v0.8.3...v0.9.0
