@@ -4824,19 +4824,35 @@ defmodule Explorer.Series do
       bounds (e.g. `(-inf -1.0]`, `(-1.0, 1.0]`, `(1.0, inf]`)
 
     * `:break_point_label` - The name given to the breakpoint column.
+      This is only relevant if `:include_breaks` is `true`.
       Defaults to `break_point`.
 
     * `:category_label` - The name given to the category column.
       Defaults to `category`.
 
+    * `:left_closed` - Set the intervals to be left-closed instead
+      of right-closed. Defaults to `false`.
+
+    * `:include_breaks` - Include a column with the right endpoint
+      of the bin that each observation falls in.
+      Defaults to `false`.
+
   ## Examples
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0])
-      iex> Explorer.Series.cut(s, [1.5, 2.5])
+      iex> Explorer.Series.cut(s, [1.5, 2.5], include_breaks: true)
       #Explorer.DataFrame<
         Polars[3 x 3]
         values f64 [1.0, 2.0, 3.0]
         break_point f64 [1.5, 2.5, Inf]
+        category category ["(-inf, 1.5]", "(1.5, 2.5]", "(2.5, inf]"]
+      >
+
+      iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0])
+      iex> Explorer.Series.cut(s, [1.5, 2.5])
+      #Explorer.DataFrame<
+        Polars[3 x 2]
+        values f64 [1.0, 2.0, 3.0]
         category category ["(-inf, 1.5]", "(1.5, 2.5]", "(2.5, inf]"]
       >
   """
@@ -4848,7 +4864,7 @@ defmodule Explorer.Series do
         break_point_label: nil,
         category_label: nil,
         left_close: false,
-        include_breaks: true
+        include_breaks: false
       )
 
     apply_series(series, :cut, [
@@ -4874,6 +4890,7 @@ defmodule Explorer.Series do
       bounds (e.g. `(-inf -1.0]`, `(-1.0, 1.0]`, `(1.0, inf]`)
 
     * `:break_point_label` - The name given to the breakpoint column.
+      This is only relevant if `:include_breaks` is `true`.
       Defaults to `break_point`.
 
     * `:category_label` - The name given to the category column.
@@ -4882,14 +4899,20 @@ defmodule Explorer.Series do
     * `:allow_duplicates` - If quantiles can have duplicated values.
       Defaults to `false`.
 
+    * `:left_closed` - Set the intervals to be left-closed instead
+      of right-closed. Defaults to `false`.
+
+    * `:include_breaks` - Include a column with the right endpoint
+      of the bin that each observation falls in.
+      Defaults to `false`.
+
   ## Examples
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0, 4.0, 5.0])
       iex> Explorer.Series.qcut(s, [0.25, 0.75])
       #Explorer.DataFrame<
-        Polars[5 x 3]
+        Polars[5 x 2]
         values f64 [1.0, 2.0, 3.0, 4.0, 5.0]
-        break_point f64 [2.0, 2.0, 4.0, 4.0, Inf]
         category category ["(-inf, 2]", "(-inf, 2]", "(2, 4]", "(2, 4]", "(4, inf]"]
       >
   """
@@ -4902,7 +4925,7 @@ defmodule Explorer.Series do
         category_label: nil,
         allow_duplicates: false,
         left_close: false,
-        include_breaks: true
+        include_breaks: false
       )
 
     apply_series(series, :qcut, [
