@@ -5950,7 +5950,7 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "categorisation functions" do
-    test "cut/6 with no nils" do
+    test "cut/3 with no nils" do
       series = -30..30//5 |> Enum.map(&(&1 / 10)) |> Enum.to_list() |> Series.from_list()
       df = Series.cut(series, [-1, 1])
       freqs = Series.frequencies(df[:category])
@@ -5958,13 +5958,13 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(freqs[:counts]) == [5, 4, 4]
     end
 
-    test "cut/6 with nils" do
+    test "cut/3 with nils" do
       series = Series.from_list([1, 2, 3, nil, nil])
       df = Series.cut(series, [2])
       assert [_, _, _, nil, nil] = Series.to_list(df[:category])
     end
 
-    test "cut/6 options" do
+    test "cut/3 options" do
       series = Series.from_list([1, 2, 3])
 
       assert_raise ArgumentError,
@@ -5979,6 +5979,16 @@ defmodule Explorer.SeriesTest do
         )
 
       assert Explorer.DataFrame.names(df) == ["values", "bp", "cat"]
+    end
+
+    test "cut/3 without include breaks" do
+      series = Series.from_list([1.0, 2.0, 3.0])
+      df = Series.cut(series, [1.5, 2.5], include_breaks: false)
+
+      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+               category: ["(-inf, 1.5]", "(1.5, 2.5]", "(2.5, inf]"],
+               values: [1.0, 2.0, 3.0]
+             }
     end
 
     test "qcut/3" do
@@ -6008,6 +6018,26 @@ defmodule Explorer.SeriesTest do
              ]
 
       assert Series.to_list(freqs[:counts]) == [3, 2, 1]
+    end
+
+    test "qcut/3 without include breaks" do
+      series = Enum.to_list(-5..3) |> Series.from_list()
+      df = Series.qcut(series, [0.0, 0.25, 0.75], include_breaks: false)
+
+      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+               category: [
+                 "(-inf, -5]",
+                 "(-5, -3]",
+                 "(-5, -3]",
+                 "(-3, 1]",
+                 "(-3, 1]",
+                 "(-3, 1]",
+                 "(-3, 1]",
+                 "(1, inf]",
+                 "(1, inf]"
+               ],
+               values: [-5, -4, -3, -2, -1, 0, 1, 2, 3]
+             }
     end
   end
 

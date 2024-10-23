@@ -219,17 +219,25 @@ pub fn s_cut(
         left_close,
         include_breaks,
     )?;
-    let mut cut_df = DataFrame::new(cut_series.struct_()?.fields_as_series())?;
 
-    let cut_df = cut_df.insert_column(0, series)?;
+    if include_breaks {
+        let mut cut_df = DataFrame::new(cut_series.struct_()?.fields_as_series())?;
 
-    cut_df.set_column_names([
-        "values",
-        break_point_label.unwrap_or("break_point"),
-        category_label.unwrap_or("category"),
-    ])?;
+        let cut_df = cut_df.insert_column(0, series)?;
 
-    Ok(ExDataFrame::new(cut_df.clone()))
+        cut_df.set_column_names([
+            "values",
+            break_point_label.unwrap_or("break_point"),
+            category_label.unwrap_or("category"),
+        ])?;
+
+        Ok(ExDataFrame::new(cut_df.clone()))
+    } else {
+        let mut cut_df = DataFrame::new(vec![series, cut_series])?;
+        cut_df.set_column_names(["values", category_label.unwrap_or("category")])?;
+
+        Ok(ExDataFrame::new(cut_df.clone()))
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -255,16 +263,23 @@ pub fn s_qcut(
         include_breaks,
     )?;
 
-    let mut qcut_df = DataFrame::new(qcut_series.struct_()?.fields_as_series())?;
-    let qcut_df = qcut_df.insert_column(0, series)?;
+    if include_breaks {
+        let mut qcut_df = DataFrame::new(qcut_series.struct_()?.fields_as_series())?;
+        let qcut_df = qcut_df.insert_column(0, series)?;
 
-    qcut_df.set_column_names([
-        "values",
-        break_point_label.unwrap_or("break_point"),
-        category_label.unwrap_or("category"),
-    ])?;
+        qcut_df.set_column_names([
+            "values",
+            break_point_label.unwrap_or("break_point"),
+            category_label.unwrap_or("category"),
+        ])?;
 
-    Ok(ExDataFrame::new(qcut_df.clone()))
+        Ok(ExDataFrame::new(qcut_df.clone()))
+    } else {
+        let mut qcut_df = DataFrame::new(vec![series, qcut_series])?;
+        qcut_df.set_column_names(["values", category_label.unwrap_or("category")])?;
+
+        Ok(ExDataFrame::new(qcut_df.clone()))
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
