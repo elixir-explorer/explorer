@@ -4835,12 +4835,12 @@ defmodule Explorer.Series do
 
     * `:include_breaks` - Include a column with the right endpoint
       of the bin that each observation falls in.
-      Defaults to `true`.
+      Defaults to `false`.
 
   ## Examples
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0])
-      iex> Explorer.Series.cut(s, [1.5, 2.5])
+      iex> Explorer.Series.cut(s, [1.5, 2.5], include_breaks: true)
       #Explorer.DataFrame<
         Polars[3 x 3]
         values f64 [1.0, 2.0, 3.0]
@@ -4849,7 +4849,7 @@ defmodule Explorer.Series do
       >
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0])
-      iex> Explorer.Series.cut(s, [1.5, 2.5], include_breaks: false)
+      iex> Explorer.Series.cut(s, [1.5, 2.5])
       #Explorer.DataFrame<
         Polars[3 x 2]
         values f64 [1.0, 2.0, 3.0]
@@ -4864,7 +4864,7 @@ defmodule Explorer.Series do
         break_point_label: nil,
         category_label: nil,
         left_close: false,
-        include_breaks: true
+        include_breaks: false
       )
 
     apply_series(series, :cut, [
@@ -4904,16 +4904,15 @@ defmodule Explorer.Series do
 
     * `:include_breaks` - Include a column with the right endpoint
       of the bin that each observation falls in.
-      Defaults to `true`.
+      Defaults to `false`.
 
   ## Examples
 
       iex> s = Explorer.Series.from_list([1.0, 2.0, 3.0, 4.0, 5.0])
       iex> Explorer.Series.qcut(s, [0.25, 0.75])
       #Explorer.DataFrame<
-        Polars[5 x 3]
+        Polars[5 x 2]
         values f64 [1.0, 2.0, 3.0, 4.0, 5.0]
-        break_point f64 [2.0, 2.0, 4.0, 4.0, Inf]
         category category ["(-inf, 2]", "(-inf, 2]", "(2, 4]", "(2, 4]", "(4, inf]"]
       >
   """
@@ -4926,7 +4925,7 @@ defmodule Explorer.Series do
         category_label: nil,
         allow_duplicates: false,
         left_close: false,
-        include_breaks: true
+        include_breaks: false
       )
 
     apply_series(series, :qcut, [

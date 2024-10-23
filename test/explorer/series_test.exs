@@ -5973,6 +5973,7 @@ defmodule Explorer.SeriesTest do
 
       df =
         Series.cut(series, [2],
+          include_breaks: true,
           labels: ["x", "y"],
           break_point_label: "bp",
           category_label: "cat"
@@ -5981,12 +5982,13 @@ defmodule Explorer.SeriesTest do
       assert Explorer.DataFrame.names(df) == ["values", "bp", "cat"]
     end
 
-    test "cut/3 without include breaks" do
+    test "cut/3 with include breaks" do
       series = Series.from_list([1.0, 2.0, 3.0])
-      df = Series.cut(series, [1.5, 2.5], include_breaks: false)
+      df = Series.cut(series, [1.5, 2.5], include_breaks: true)
 
       assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
                category: ["(-inf, 1.5]", "(1.5, 2.5]", "(2.5, inf]"],
+               break_point: [1.5, 2.5, :infinity],
                values: [1.0, 2.0, 3.0]
              }
     end
