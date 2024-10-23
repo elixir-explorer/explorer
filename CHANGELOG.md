@@ -59,6 +59,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   In case the inner fields of the struct had any binary (`:binary` dtype), it was
   causing a panic.
 
+### Changed
+
+- Change the defaults of the functions `Explorer.Series.cut/3` and `Explorer.Series.qcut/3`
+  to not have "break points" column in the resultant dataframe.
+  So the `:include_breaks` is now `false` by default.
+
 ## [v0.9.2] - 2024-08-27
 
 ### Added
