@@ -265,7 +265,7 @@ defmodule Explorer.Shared do
             List.to_string(
               [
                 "could not find column name \"#{name}\"" | did_you_mean(name, df.names)
-              ] ++ ["\nIf you are attempting to interpolate a value, use ^#{name}.\n"]
+              ] ++ ["\nIf you are attempting to interpolate a value, use ^#{name}."]
             )
     end
   end
