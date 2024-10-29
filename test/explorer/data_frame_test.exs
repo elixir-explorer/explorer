@@ -1,5 +1,6 @@
 defmodule Explorer.DataFrameTest do
   use ExUnit.Case, async: true
+  use ExUnitProperties
 
   # Tests for most IO operations are in the data_frame folder
   # Tests for summarise, group, ungroup are available in grouped_test.exs
@@ -4707,6 +4708,17 @@ defmodule Explorer.DataFrameTest do
                b: [2, 4, 6],
                id: [1000, 1001, 1002]
              }
+    end
+  end
+
+  property "should be able to create a DataFrame from any valid data / dtype combination" do
+    check all(
+            dtypes <- Explorer.Generator.dtypes(),
+            row <- list_of(Explorer.Generator.row(dtypes)),
+            max_run_time: 60_000,
+            max_runs: 10_000
+          ) do
+      assert %DF{} = DF.new(row, dtypes: dtypes)
     end
   end
 end
