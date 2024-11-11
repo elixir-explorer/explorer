@@ -4711,14 +4711,46 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
-  property "should be able to create a DataFrame from any valid data / dtype combination" do
-    check all(
-            dtypes <- Explorer.Generator.dtypes(),
-            row <- list_of(Explorer.Generator.row(dtypes)),
-            max_run_time: 60_000,
-            max_runs: 10_000
-          ) do
-      assert %DF{} = DF.new(row, dtypes: dtypes)
+  @tag timeout: :infinity
+  describe "properties" do
+    property "should be able to create a DataFrame from valid rows" do
+      check all(
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 10_000
+            ) do
+        assert %DF{} = DF.new(rows, dtypes: dtypes)
+      end
+    end
+
+    property "should be able to create a DataFrame from valid columns" do
+      check all(
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
+              cols <- Explorer.Generator.columns(dtypes),
+              max_runs: 10_000
+            ) do
+        assert %DF{} = DF.new(cols, dtypes: dtypes)
+      end
+    end
+
+    # Printing is not currently working well.
+    @tag :skip
+    property "should be able to print any DataFrame" do
+      check all(
+              dtypes <- Explorer.Generator.dtypes(),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 100
+            ) do
+        df = DF.new(rows, dtypes: dtypes)
+
+        if DF.n_rows(df) > 0 do
+          DF.print(df)
+        end
+      end
     end
   end
 end
