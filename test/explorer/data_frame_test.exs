@@ -4711,6 +4711,20 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  # These property tests are a work in progress. They currently aim to cover
+  # creation and serialization (including printing). Serialization in particular
+  # is causing lots of panics. The plan is to keep the properties that don't
+  # pass but with `@tag :skip` until we can fix them.
+  #
+  # Notes:
+  #
+  #   * `max_runs: 1_000` is being used for all properties. This is an
+  #     essentially arbitrary choice to ensure relatively quick runs. Future
+  #     devs should feel free to change individual search parameters as needed.
+  #   * `@tag timeout: :infinity` is insurance against timeouts from extra long
+  #     searches. Future devs should feel free to remove this if it's no longer
+  #     deemed necessary.
+  #   * For local development, remember to run tests with `--include property`.
   @tag timeout: :infinity
   describe "properties" do
     property "should be able to create a DataFrame from valid rows" do
