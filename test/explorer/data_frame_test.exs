@@ -4725,7 +4725,7 @@ defmodule Explorer.DataFrameTest do
   #     searches. Future devs should feel free to remove this if it's no longer
   #     deemed necessary.
   #   * For local development, remember to include property tests with the tag
-  #     `--include test_type:property`.
+  #     `--include property`.
   @tag timeout: :infinity
   describe "properties" do
     property "should be able to create a DataFrame from valid rows" do
