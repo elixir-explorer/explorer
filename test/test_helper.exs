@@ -30,4 +30,4 @@ exclude =
   end
 
 Calendar.put_time_zone_database(Tz.TimeZoneDatabase)
-ExUnit.start(exclude: [:cloud_integration, :property | exclude])
+ExUnit.start(exclude: [cloud_integration: true, test_type: :property] ++ exclude)

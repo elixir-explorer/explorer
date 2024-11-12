@@ -4724,7 +4724,8 @@ defmodule Explorer.DataFrameTest do
   #   * `@tag timeout: :infinity` is insurance against timeouts from extra long
   #     searches. Future devs should feel free to remove this if it's no longer
   #     deemed necessary.
-  #   * For local development, remember to run tests with `--include property`.
+  #   * For local development, remember to include property tests with the tag
+  #     `--include test_type:property`.
   @tag timeout: :infinity
   describe "properties" do
     property "should be able to create a DataFrame from valid rows" do
