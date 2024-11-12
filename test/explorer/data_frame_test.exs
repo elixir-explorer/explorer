@@ -4785,9 +4785,9 @@ defmodule Explorer.DataFrameTest do
     @tag :skip
     property "can dump any DataFrame to NDJSON" do
       check all(
-              # TODO: remove `:decimal` once we fix whatever bug(s) this is
-              # finding.
-              dtypes <- Explorer.Generator.dtypes(exclude: [:decimal, :duration]),
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
             ) do
