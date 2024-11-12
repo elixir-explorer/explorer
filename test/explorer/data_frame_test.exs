@@ -4752,5 +4752,65 @@ defmodule Explorer.DataFrameTest do
         end
       end
     end
+
+    @tag :skip
+    property "can dump any DataFrame (without duration) to CSV" do
+      check all(
+              # TODO: remove `:decimal` once we fix whatever bug(s) this is
+              # finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: [:decimal, :duration]),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        rows
+        |> DF.new(dtypes: dtypes)
+        |> DF.dump_csv!()
+      end
+    end
+
+    @tag :skip
+    property "can dump any DataFrame to IPC" do
+      check all(
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        rows
+        |> DF.new(dtypes: dtypes)
+        |> DF.dump_ipc!()
+      end
+    end
+
+    @tag :skip
+    property "can dump any DataFrame to NDJSON" do
+      check all(
+              # TODO: remove `:decimal` once we fix whatever bug(s) this is
+              # finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: [:decimal, :duration]),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        rows
+        |> DF.new(dtypes: dtypes)
+        |> DF.dump_ndjson!()
+      end
+    end
+
+    @tag :skip
+    property "can dump any DataFrame to PARQUET" do
+      check all(
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        rows
+        |> DF.new(dtypes: dtypes)
+        |> DF.dump_parquet!()
+      end
+    end
   end
 end
