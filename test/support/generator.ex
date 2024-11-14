@@ -295,8 +295,8 @@ defmodule Explorer.Generator do
         date: constant(:date),
         datetime: tuple({constant(:datetime), time_unit(), constant("Etc/UTC")}),
         decimal:
-          bind(integer(0..19), fn scale ->
-            bind(integer((scale + 1)..20), fn precision ->
+          bind(integer(0..37), fn scale ->
+            bind(integer((scale + 1)..38), fn precision ->
               tuple({constant(:decimal), constant(precision), constant(scale)})
             end)
           end),
@@ -397,7 +397,7 @@ defmodule Explorer.Generator do
     |> map(&elem(&1, 1))
   end
 
-  @max_u64 2 ** 64 - 1
+  @max_i128 2 ** 127 - 1
   @spec datetime(pos_integer(), pos_integer()) :: gen(Decimal.t())
   defp decimal(precision, scale) do
     # Smallest integer with `(scale + 1)` digits.
@@ -407,7 +407,7 @@ defmodule Explorer.Generator do
 
     tuple({
       one_of([constant("-"), constant("+")]),
-      integer(min_scale..min(max_precision, @max_u64))
+      integer(min_scale..min(max_precision, @max_i128))
     })
     |> map(fn {sign, coef} ->
       # By construction, we are guaranteed that precision > scale.
