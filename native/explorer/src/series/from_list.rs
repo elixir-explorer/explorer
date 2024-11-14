@@ -242,7 +242,7 @@ pub fn s_from_list_decimal(
                 .map(|ex_decimal| AnyValue::Decimal(ex_decimal.signed_coef(), ex_decimal.scale()))
                 .map_err(|error| {
                     ExplorerError::Other(format!(
-                        "cannot decode a valid decimal from term. error: {error:?}"
+                        "cannot decode a valid decimal from term; check that `coef` fits into an `i128`. error: {error:?}"
                     ))
                 }),
             TermType::Atom => Ok(AnyValue::Null),
@@ -264,13 +264,22 @@ pub fn s_from_list_decimal(
 
     let mut series = Series::from_any_values(name.into(), &values, true)?;
 
-    if let DataType::Decimal(result_precision, result_scale) = series.dtype() {
-        let p: Option<usize> = Some(precision.unwrap_or(result_precision.unwrap_or(38)));
-        let s: Option<usize> = Some(scale.unwrap_or(result_scale.unwrap_or(0)));
+    match series.dtype() {
+        DataType::Decimal(result_precision, result_scale) => {
+            let p: Option<usize> = Some(precision.unwrap_or(result_precision.unwrap_or(38)));
+            let s: Option<usize> = Some(scale.unwrap_or(result_scale.unwrap_or(0)));
 
-        if *result_precision != p || *result_scale != s {
+            if *result_precision != p || *result_scale != s {
+                series = series.cast(&DataType::Decimal(p, s))?;
+            }
+        }
+        // An empty list will result in the `Null` dtype.
+        DataType::Null => {
+            let p = Some(precision.unwrap_or(38));
+            let s = Some(scale.unwrap_or(0));
             series = series.cast(&DataType::Decimal(p, s))?;
         }
+        other_dtype => panic!("expected dtype to be Decimal. found: {other_dtype:?}"),
     }
 
     Ok(ExSeries::new(series))

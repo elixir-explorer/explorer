@@ -295,8 +295,8 @@ defmodule Explorer.Generator do
         date: constant(:date),
         datetime: tuple({constant(:datetime), time_unit(), constant("Etc/UTC")}),
         decimal:
-          bind(integer(0..37), fn scale ->
-            bind(integer((scale + 1)..38), fn precision ->
+          bind(integer(0..19), fn scale ->
+            bind(integer((scale + 1)..20), fn precision ->
               tuple({constant(:decimal), constant(precision), constant(scale)})
             end)
           end),
@@ -397,14 +397,23 @@ defmodule Explorer.Generator do
     |> map(&elem(&1, 1))
   end
 
+  @max_u64 2 ** 64 - 1
   @spec datetime(pos_integer(), pos_integer()) :: gen(Decimal.t())
   defp decimal(precision, scale) do
+    # Smallest integer with `(scale + 1)` digits.
+    min_scale = 10 ** scale
+    # Largest integer with `precision` digits.
+    max_precision = 10 ** precision - 1
+
     tuple({
       one_of([constant("-"), constant("+")]),
-      string(?0..?9, min_length: precision - scale, max_length: precision - scale),
-      string(?0..?9, min_length: scale, max_length: scale)
+      integer(min_scale..min(max_precision, @max_u64))
     })
-    |> map(fn {sign, integer_part, fractional_part} ->
+    |> map(fn {sign, coef} ->
+      # By construction, we are guaranteed that precision > scale.
+      {integer_part, fractional_part} =
+        coef |> Integer.to_string() |> String.split_at(precision - scale)
+
       Decimal.new(sign <> integer_part <> "." <> fractional_part)
     end)
   end
