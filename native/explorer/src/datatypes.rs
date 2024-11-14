@@ -572,9 +572,7 @@ pub struct ExDecimal {
     // `coef` is a positive, arbitrary precision integer on the Elixir side.
     // It's convenient to represent it here as a signed `i128` because that's
     // what the Decimal dtype expects. While you could technically create an
-    // `ExDecimal` struct with a negative `coef`, it's not a practical concern
-    // because these structs are exclusively built from Elixir `Decimal`s which
-    // are presumed valid; i.e. with positive `coef`s.
+    // `ExDecimal` struct with a negative `coef`, it's not a practical concern.
     pub coef: i128,
     pub exp: i64,
 }
