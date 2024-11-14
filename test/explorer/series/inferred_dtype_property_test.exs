@@ -2,17 +2,9 @@ defmodule Explorer.Series.InferredDtypePropertyTest do
   @moduledoc """
   Property tests for checking the inferred dtype logic when the dtype isn't
   specified in `Explorer.Series.from_list/1`.
-
-  ## Notes
-
-    * A maximum of 3 used quite a bit. This is intentional. Usually issues stem
-      from empty lists, not really long lists. By keeping lists small, we can
-      iterate much quicker through the input space.
   """
   use ExUnit.Case, async: true
   use ExUnitProperties
-
-  import StreamData
 
   alias Explorer.Series
 
@@ -20,54 +12,13 @@ defmodule Explorer.Series.InferredDtypePropertyTest do
 
   property "inferred dtype should always be a sub-dtype" do
     check all(
-            dtype <- dtype_generator(),
-            series <- series_of_dtype_generator(dtype),
+            dtype <- Explorer.Generator.dtype(scalar: constant({:s, 64})),
+            list_of_dtype <- Explorer.Generator.column(dtype, as: :list),
             max_run_time: 60_000,
             max_runs: 10_000
           ) do
-      assert series |> Series.dtype() |> sub_dtype_of?(dtype)
+      assert list_of_dtype |> Series.from_list() |> Series.dtype() |> sub_dtype_of?(dtype)
     end
-  end
-
-  defp dtype_generator do
-    scalar_dtype_generator = constant({:s, 64})
-
-    # We don't need complicated keys: single letter strings should suffice.
-    key_generator = string(?a..?z, min_length: 1, max_length: 1)
-
-    dtype_generator =
-      tree(scalar_dtype_generator, fn generator ->
-        # Building the keyword list from a map ensures unique keys.
-        keyword_generator =
-          map(nonempty(map_of(key_generator, generator, max_length: 3)), &Enum.to_list/1)
-
-        one_of([
-          tuple({constant(:list), generator}),
-          tuple({constant(:struct), keyword_generator})
-        ])
-      end)
-
-    dtype_generator
-  end
-
-  defp series_of_dtype_generator(dtype) do
-    series_value_generator = build_series_value_generator(dtype)
-
-    bind(list_of(series_value_generator, max_length: 3), fn series_values ->
-      constant(Explorer.Series.from_list(series_values))
-    end)
-  end
-
-  defp build_series_value_generator({:s, 64}),
-    do: integer()
-
-  defp build_series_value_generator({:list, dtype}),
-    do: list_of(build_series_value_generator(dtype), max_length: 3)
-
-  defp build_series_value_generator({:struct, keyword_of_dtypes}) do
-    keyword_of_dtypes
-    |> Map.new(fn {key, dtype} -> {key, build_series_value_generator(dtype)} end)
-    |> fixed_map()
   end
 
   # The idea behind a "sub" dtype is that in the dtype tree, you can replace

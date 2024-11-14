@@ -1,5 +1,6 @@
 defmodule Explorer.DataFrameTest do
   use ExUnit.Case, async: true
+  use ExUnitProperties
 
   # Tests for most IO operations are in the data_frame folder
   # Tests for summarise, group, ungroup are available in grouped_test.exs
@@ -4707,6 +4708,123 @@ defmodule Explorer.DataFrameTest do
                b: [2, 4, 6],
                id: [1000, 1001, 1002]
              }
+    end
+  end
+
+  # These property tests are a work in progress. They currently aim to cover
+  # creation and serialization (including printing). Serialization in particular
+  # is causing lots of panics. The plan is to keep the properties that don't
+  # pass but with `@tag :skip` until we can fix them.
+  #
+  # Notes:
+  #
+  #   * `max_runs: 1_000` is being used for all properties. This is an
+  #     essentially arbitrary choice to ensure relatively quick runs. Future
+  #     devs should feel free to change individual search parameters as needed.
+  #   * `@tag timeout: :infinity` is insurance against timeouts from extra long
+  #     searches. Future devs should feel free to remove this if it's no longer
+  #     deemed necessary.
+  #   * For local development, remember to include property tests with the tag
+  #     `--include property`.
+  @tag timeout: :infinity
+  describe "properties" do
+    property "should be able to create a DataFrame from valid rows" do
+      check all(
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        assert %DF{} = DF.new(rows, dtypes: dtypes)
+      end
+    end
+
+    property "should be able to create a DataFrame from valid columns" do
+      check all(
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
+              cols <- Explorer.Generator.columns(dtypes),
+              max_runs: 1_000
+            ) do
+        assert %DF{} = DF.new(cols, dtypes: dtypes)
+      end
+    end
+
+    @tag :skip
+    property "should be able to print any DataFrame" do
+      check all(
+              dtypes <- Explorer.Generator.dtypes(),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        df = DF.new(rows, dtypes: dtypes)
+
+        if DF.n_rows(df) > 0 do
+          DF.print(df)
+        end
+      end
+    end
+
+    @tag :skip
+    property "can dump any DataFrame (without duration) to CSV" do
+      check all(
+              # TODO: remove `:decimal` once we fix whatever bug(s) this is
+              # finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: [:decimal, :duration]),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        rows
+        |> DF.new(dtypes: dtypes)
+        |> DF.dump_csv!()
+      end
+    end
+
+    @tag :skip
+    property "can dump any DataFrame to IPC" do
+      check all(
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        rows
+        |> DF.new(dtypes: dtypes)
+        |> DF.dump_ipc!()
+      end
+    end
+
+    @tag :skip
+    property "can dump any DataFrame to NDJSON" do
+      check all(
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        rows
+        |> DF.new(dtypes: dtypes)
+        |> DF.dump_ndjson!()
+      end
+    end
+
+    @tag :skip
+    property "can dump any DataFrame to PARQUET" do
+      check all(
+              # TODO: remove `exclude: :decimal` once we fix whatever bug(s)
+              # this is finding.
+              dtypes <- Explorer.Generator.dtypes(exclude: :decimal),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
+        rows
+        |> DF.new(dtypes: dtypes)
+        |> DF.dump_parquet!()
+      end
     end
   end
 end
