@@ -503,6 +503,10 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(s) == {:decimal, 38, 5}
     end
 
+    test "{:list, {:decimal, _, _}} works with empty lists" do
+      Series.from_list([[Decimal.new("3.21")], []], dtype: {:list, {:decimal, 3, 2}})
+    end
+
     test "mixing dates and integers with `:date` dtype" do
       s = Series.from_list([1, nil, ~D[2024-06-13]], dtype: :date)
 
