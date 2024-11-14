@@ -507,6 +507,23 @@ defmodule Explorer.SeriesTest do
       Series.from_list([[Decimal.new("3.21")], []], dtype: {:list, {:decimal, 3, 2}})
     end
 
+    test "decimal precision boundary" do
+      # Biggest number representable by an i128.
+      max_i128 = 2 ** 127 - 1
+      biggest = Decimal.new(max_i128)
+      too_big = Decimal.new(max_i128 + 1)
+
+      # Can make a series using the biggest allowed decimal.
+      s1 = Series.from_list([biggest])
+      assert [^biggest] = Series.to_list(s1)
+
+      # Can't make a series using a number bigger than the biggest allowed decimal.
+      assert_raise RuntimeError,
+                   "Generic Error: cannot decode a valid decimal from term;" <>
+                     " check that `coef` fits into an `i128`. error: throw(<term>)",
+                   fn -> Series.from_list([too_big]) end
+    end
+
     test "mixing dates and integers with `:date` dtype" do
       s = Series.from_list([1, nil, ~D[2024-06-13]], dtype: :date)
 
