@@ -602,7 +602,7 @@ impl Literal for ExDecimal {
     fn lit(self) -> Expr {
         Expr::Literal(LiteralValue::Decimal(
             if self.sign.is_positive() {
-                self.coef.into()
+                self.coef
             } else {
                 -self.coef
             },
