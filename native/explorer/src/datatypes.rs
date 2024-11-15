@@ -569,23 +569,25 @@ impl Literal for ExTime {
 #[module = "Decimal"]
 pub struct ExDecimal {
     pub sign: i8,
-    pub coef: u64,
+    // `coef` is a positive, arbitrary precision integer on the Elixir side.
+    // It's convenient to represent it here as a signed `i128` because that's
+    // what the Decimal dtype expects. While you could technically create an
+    // `ExDecimal` struct with a negative `coef`, it's not a practical concern.
+    pub coef: i128,
     pub exp: i64,
 }
 
 impl ExDecimal {
     pub fn new(signed_coef: i128, scale: usize) -> Self {
         Self {
-            coef: signed_coef
-                .abs()
-                .try_into()
-                .expect("signed coef is too large for u64"),
+            coef: signed_coef.abs(),
             sign: if signed_coef >= 0 { 1 } else { -1 },
             exp: -(scale as i64),
         }
     }
+
     pub fn signed_coef(self) -> i128 {
-        self.sign as i128 * self.coef as i128
+        self.sign as i128 * self.coef
     }
 
     pub fn scale(self) -> usize {
@@ -600,9 +602,9 @@ impl Literal for ExDecimal {
     fn lit(self) -> Expr {
         Expr::Literal(LiteralValue::Decimal(
             if self.sign.is_positive() {
-                self.coef.into()
+                self.coef
             } else {
-                -(self.coef as i128)
+                -self.coef
             },
             usize::try_from(-(self.exp)).expect("exponent should fit an usize"),
         ))
