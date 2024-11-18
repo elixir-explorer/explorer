@@ -2638,6 +2638,17 @@ defmodule Explorer.DataFrameTest do
              """
     end
 
+    test "works with empty DataFrame" do
+      empty_df = DF.new([])
+
+      assert capture_io(fn -> DF.print(empty_df) end) == """
+             +-------------------------------------------+
+             | Explorer DataFrame: [rows: 0, columns: 0] |
+             +-------------------------------------------+
+
+             """
+    end
+
     test "works with structs" do
       df = DF.new([%{n: %{a: 1}, m: 2}, %{n: %{a: 2}, m: 3}])
 
