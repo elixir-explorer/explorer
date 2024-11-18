@@ -5924,6 +5924,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Prints the DataFrame in a tabular fashion.
 
+  ## Options
+
+    * `:limit` (non_neg_integer() | :infinity) - number of rows to print.
+
   ## Examples
 
       df = Explorer.Datasets.iris()
@@ -5934,6 +5938,23 @@ defmodule Explorer.DataFrame do
   @doc type: :introspection
   @spec print(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
   def print(df, opts \\ []) do
+    string =
+      if n_columns(df) == 0 do
+        empty_table_string()
+      else
+        non_empty_table_string(df, opts)
+      end
+
+    IO.puts(string)
+  end
+
+  defp empty_table_string() do
+    TableRex.Table.new()
+    |> TableRex.Table.add_rows([["Explorer DataFrame: [rows: 0, columns: 0]"]])
+    |> TableRex.Table.render!()
+  end
+
+  defp non_empty_table_string(df, opts) do
     {rows, columns} =
       if lazy?(df) do
         {"???", n_columns(df)}
@@ -5977,7 +5998,6 @@ defmodule Explorer.DataFrame do
       header_separator_symbol: "=",
       horizontal_style: :all
     )
-    |> IO.puts()
   end
 
   @doc """
