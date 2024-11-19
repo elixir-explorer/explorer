@@ -26,6 +26,8 @@ pub enum ExplorerError {
     Internal(String),
     #[error("Generic Error: {0}")]
     Other(String),
+    #[error("Timestamp Conversion Error: {0}")]
+    TimestampConversion(String),
     #[error(transparent)]
     TryFromInt(#[from] std::num::TryFromIntError),
     #[error(transparent)]

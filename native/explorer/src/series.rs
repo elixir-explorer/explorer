@@ -1,7 +1,7 @@
 use crate::{
     datatypes::{
-        ExCorrelationMethod, ExDate, ExDecimal, ExNaiveDateTime, ExRankMethod, ExSeriesDtype,
-        ExTime, ExTimeUnit, ExValidValue,
+        ex_naive_datetime_to_timestamp_res, ExCorrelationMethod, ExDate, ExDecimal,
+        ExNaiveDateTime, ExRankMethod, ExSeriesDtype, ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -559,14 +559,22 @@ pub fn s_fill_missing_with_date(series: ExSeries, date: ExDate) -> Result<ExSeri
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_fill_missing_with_datetime(
     series: ExSeries,
-    datetime: ExNaiveDateTime,
+    ex_naive_datetime: ExNaiveDateTime,
 ) -> Result<ExSeries, ExplorerError> {
-    let s = series
-        .datetime()?
-        .fill_null_with_values(datetime.into())?
-        .cast(series.dtype())?
-        .into_series();
-    Ok(ExSeries::new(s))
+    let time_unit = match series._dtype() {
+        DataType::Datetime(time_unit, _) => time_unit.clone(),
+        _ => TimeUnit::Microseconds,
+    };
+
+    ex_naive_datetime_to_timestamp_res(ex_naive_datetime, time_unit).and_then(|value| {
+        Ok(ExSeries::new(
+            series
+                .datetime()?
+                .fill_null_with_values(value)?
+                .cast(series.dtype())?
+                .into_series(),
+        ))
+    })
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
