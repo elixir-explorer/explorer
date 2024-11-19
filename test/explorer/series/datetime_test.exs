@@ -1,5 +1,6 @@
 defmodule Explorer.Series.DateTimeTest do
   use ExUnit.Case, async: true
+  use ExUnitProperties
 
   alias Explorer.Series
 
@@ -93,6 +94,48 @@ defmodule Explorer.Series.DateTimeTest do
         "the value #DateTime<2024-01-01 08:00:00.000000-05:00 EST America/New_York> does not match the inferred dtype {:datetime, :microsecond, \"Etc/UTC\"}",
         fn -> Series.from_list(datetimes_in) end
       )
+    end
+  end
+
+  property "naive datetimes survive encoding" do
+    check all(
+            time_unit <- Explorer.Generator.time_unit(),
+            timestamp <- Explorer.Generator.naive_datetime(time_unit),
+            max_runs: 10_000
+          ) do
+      [timestamp_after] =
+        [timestamp]
+        |> Explorer.Series.from_list(dtype: {:naive_datetime, time_unit})
+        |> Explorer.Series.to_list()
+
+      timestamp_trunc =
+        case time_unit do
+          :nanosecond -> timestamp
+          _ -> NaiveDateTime.truncate(timestamp, time_unit)
+        end
+
+      assert NaiveDateTime.compare(timestamp_trunc, timestamp_after) == :eq
+    end
+  end
+
+  property "datetimes survive encoding" do
+    check all(
+            time_unit <- Explorer.Generator.time_unit(),
+            timestamp <- Explorer.Generator.datetime(time_unit, "Etc/UTC"),
+            max_runs: 10_000
+          ) do
+      [timestamp_after] =
+        [timestamp]
+        |> Explorer.Series.from_list(dtype: {:datetime, time_unit, "Etc/UTC"})
+        |> Explorer.Series.to_list()
+
+      timestamp_trunc =
+        case time_unit do
+          :nanosecond -> timestamp
+          _ -> NaiveDateTime.truncate(timestamp, time_unit)
+        end
+
+      assert NaiveDateTime.compare(timestamp_trunc, timestamp_after) == :eq
     end
   end
 end
