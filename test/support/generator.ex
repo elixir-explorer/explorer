@@ -362,13 +362,28 @@ defmodule Explorer.Generator do
   defp non_nil_value({:struct, fields}), do: struct_of(fields)
 
   @spec date() :: gen(Date.t())
-  defp date do
-    {integer(1..9999), integer(1..12), integer(1..31)}
+  defp date(), do: date(:microsecond)
+
+  @spec date(time_unit()) :: gen(Date.t())
+  defp date(time_unit) do
+    {year(time_unit), integer(1..12), integer(1..31)}
     |> tuple()
     |> map(fn {year, month, day} -> Date.new(year, month, day) end)
     |> filter(&match?({:ok, _date}, &1))
     |> map(&elem(&1, 1))
   end
+
+  # An i64 with nanosecond precision can span a range of ~584 years. The dates
+  # that can be represented as nanoseconds are between:
+  #
+  #   * 1677-09-21T00:12:43.145224192
+  #   * 2262-04-11T23:47:16.854775807
+  #
+  # We enforce this by picking the first/last years entirely in this interval.
+  defp year(:nanosecond), do: integer(1678..2261)
+  # Microseconds go up to the year 294,247 and milliseconds up to the year
+  # 292,278,994. There isn't much point covering these whole ranges.
+  defp year(_), do: integer(1..9999)
 
   @spec time() :: gen(Time.t())
   defp time do
@@ -380,8 +395,8 @@ defmodule Explorer.Generator do
   end
 
   @spec naive_datetime(time_unit()) :: gen(NaiveDateTime.t())
-  defp naive_datetime(_time_unit) do
-    {date(), time()}
+  def naive_datetime(time_unit) do
+    {date(time_unit), time()}
     |> tuple()
     |> map(fn {date, time} -> NaiveDateTime.new(date, time) end)
     |> filter(&match?({:ok, _naive_datetime}, &1))
@@ -389,7 +404,7 @@ defmodule Explorer.Generator do
   end
 
   @spec datetime(time_unit(), String.t()) :: gen(DateTime.t())
-  defp datetime(time_unit, timezone) do
+  def datetime(time_unit, timezone) do
     time_unit
     |> naive_datetime()
     |> map(fn naive_datetime -> DateTime.from_naive(naive_datetime, timezone) end)
