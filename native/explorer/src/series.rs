@@ -562,7 +562,7 @@ pub fn s_fill_missing_with_datetime(
     ex_naive_datetime: ExNaiveDateTime,
 ) -> Result<ExSeries, ExplorerError> {
     let time_unit = match series._dtype() {
-        DataType::Datetime(time_unit, _) => time_unit.clone(),
+        DataType::Datetime(time_unit, _) => *time_unit,
         _ => TimeUnit::Microseconds,
     };
 

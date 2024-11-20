@@ -188,7 +188,7 @@ fn naive_datetime_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
     let time_unit = match s.dtype() {
-        DataType::Datetime(time_unit, None) => time_unit.clone(),
+        DataType::Datetime(time_unit, None) => *time_unit,
         _ => panic!("should only use this function for naive datetimes"),
     };
 
@@ -304,7 +304,7 @@ fn datetime_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Exp
     let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
     let datetime_module = atoms::datetime_module().encode(env).as_c_arg();
     let time_unit = match s.dtype() {
-        DataType::Datetime(time_unit, Some(_)) => time_unit.clone(),
+        DataType::Datetime(time_unit, Some(_)) => *time_unit,
         _ => panic!("datetime_series_to_list called on series with wrong type"),
     };
     let time_zone = match s.dtype() {

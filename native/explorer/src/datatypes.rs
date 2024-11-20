@@ -341,11 +341,10 @@ pub fn ex_naive_datetime_to_timestamp_res(
     match time_unit {
         TimeUnit::Milliseconds => Ok(naive_datetime.and_utc().timestamp_millis()),
         TimeUnit::Microseconds => Ok(naive_datetime.and_utc().timestamp_micros()),
-        TimeUnit::Nanoseconds => naive_datetime.and_utc().timestamp_nanos_opt().map_or(
-            Err(ExplorerError::TimestampConversion(format!(
-                "cannot represent naive datetime(ns) with `i64`"
-            ))),
-            |timestamp| Ok(timestamp),
+        TimeUnit::Nanoseconds => naive_datetime.and_utc().timestamp_nanos_opt().ok_or(
+            ExplorerError::TimestampConversion(
+                "cannot represent naive datetime(ns) with `i64`".to_string(),
+            ),
         ),
     }
 }
@@ -427,12 +426,13 @@ pub fn ex_datetime_to_timestamp_res(
     match time_unit {
         TimeUnit::Milliseconds => Ok(datetime.timestamp_millis()),
         TimeUnit::Microseconds => Ok(datetime.timestamp_micros()),
-        TimeUnit::Nanoseconds => datetime.timestamp_nanos_opt().map_or(
-            Err(ExplorerError::TimestampConversion(format!(
-                "cannot represent datetime(ns) with `i64`"
-            ))),
-            |timestamp| Ok(timestamp),
-        ),
+        TimeUnit::Nanoseconds => {
+            datetime
+                .timestamp_nanos_opt()
+                .ok_or(ExplorerError::TimestampConversion(
+                    "cannot represent datetime(ns) with `i64`".to_string(),
+                ))
+        }
     }
 }
 
