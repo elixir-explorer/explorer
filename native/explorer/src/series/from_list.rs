@@ -1,7 +1,7 @@
 use crate::atoms;
 use crate::datatypes::{
-    ex_datetime_to_timestamp_res, ex_naive_datetime_to_timestamp_res, ExDate, ExDateTime,
-    ExDecimal, ExDuration, ExNaiveDateTime, ExSeriesDtype, ExTime, ExTimeUnit,
+    ex_datetime_to_timestamp, ex_naive_datetime_to_timestamp, ExDate, ExDateTime, ExDecimal,
+    ExDuration, ExNaiveDateTime, ExSeriesDtype, ExTime, ExTimeUnit,
 };
 use crate::{ExSeries, ExplorerError};
 
@@ -70,7 +70,7 @@ pub fn s_from_list_naive_datetime(
                     ))
                 })
                 .and_then(|ex_naive_datetime| {
-                    ex_naive_datetime_to_timestamp_res(ex_naive_datetime, timeunit).map(Some)
+                    ex_naive_datetime_to_timestamp(ex_naive_datetime, timeunit).map(Some)
                 }),
             TermType::Atom => Ok(None),
             term_type => Err(ExplorerError::Other(format!(
@@ -114,9 +114,7 @@ pub fn s_from_list_datetime(
                         "cannot decode a valid datetime from term. error: {error:?}"
                     ))
                 })
-                .and_then(|ex_datetime| {
-                    ex_datetime_to_timestamp_res(ex_datetime, timeunit).map(Some)
-                }),
+                .and_then(|ex_datetime| ex_datetime_to_timestamp(ex_datetime, timeunit).map(Some)),
             TermType::Atom => Ok(None),
             term_type => Err(ExplorerError::Other(format!(
                 "from_list/2 for datetimes not implemented for {term_type:?}"

@@ -1,7 +1,7 @@
 use crate::{
     datatypes::{
-        ex_naive_datetime_to_timestamp_res, ExCorrelationMethod, ExDate, ExDecimal,
-        ExNaiveDateTime, ExRankMethod, ExSeriesDtype, ExTime, ExTimeUnit, ExValidValue,
+        ex_naive_datetime_to_timestamp, ExCorrelationMethod, ExDate, ExDecimal, ExNaiveDateTime,
+        ExRankMethod, ExSeriesDtype, ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -566,15 +566,14 @@ pub fn s_fill_missing_with_datetime(
         _ => TimeUnit::Microseconds,
     };
 
-    ex_naive_datetime_to_timestamp_res(ex_naive_datetime, time_unit).and_then(|value| {
-        Ok(ExSeries::new(
-            series
-                .datetime()?
-                .fill_null_with_values(value)?
-                .cast(series.dtype())?
-                .into_series(),
-        ))
-    })
+    let timestamp = ex_naive_datetime_to_timestamp(ex_naive_datetime, time_unit)?;
+
+    let s = series
+        .datetime()?
+        .fill_null_with_values(timestamp)?
+        .cast(series.dtype())?
+        .into_series();
+    Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

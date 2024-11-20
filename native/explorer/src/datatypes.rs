@@ -332,7 +332,7 @@ pub fn microseconds_six_digits(microseconds: u32) -> u32 {
     }
 }
 
-pub fn ex_naive_datetime_to_timestamp_res(
+pub fn ex_naive_datetime_to_timestamp(
     ex_naive_datetime: ExNaiveDateTime,
     time_unit: TimeUnit,
 ) -> Result<i64, ExplorerError> {
@@ -417,7 +417,7 @@ pub struct ExDateTime<'a> {
     pub zone_abbr: &'a str,
 }
 
-pub fn ex_datetime_to_timestamp_res(
+pub fn ex_datetime_to_timestamp(
     ex_datetime: ExDateTime,
     time_unit: TimeUnit,
 ) -> Result<i64, ExplorerError> {
