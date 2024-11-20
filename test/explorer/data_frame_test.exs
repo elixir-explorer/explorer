@@ -309,6 +309,11 @@ defmodule Explorer.DataFrameTest do
       assert DF.to_columns(df5, atom_keys: true) == %{a: [2], b: [2.0]}
     end
 
+    test "filtering with an empty list is a no-op", %{df: df1} do
+      df2 = DF.filter_with(df1, [])
+      assert df1 == df2
+    end
+
     test "raise an error if the last operation is an arithmetic operation" do
       df = DF.new(a: [1, 2, 3, 4, 5, 6, 5], b: [9, 8, 7, 6, 5, 4, 3])
 
