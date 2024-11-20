@@ -151,10 +151,10 @@ defmodule Explorer.Series.DateTimeTest do
       timestamp_trunc =
         case time_unit do
           :nanosecond -> timestamp
-          _ -> NaiveDateTime.truncate(timestamp, time_unit)
+          _ -> DateTime.truncate(timestamp, time_unit)
         end
 
-      assert NaiveDateTime.compare(timestamp_trunc, timestamp_after) == :eq
+      assert DateTime.compare(timestamp_trunc, timestamp_after) == :eq
     end
   end
 end
