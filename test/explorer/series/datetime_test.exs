@@ -97,6 +97,25 @@ defmodule Explorer.Series.DateTimeTest do
     end
   end
 
+  test "can't encode (naive) datetimes with nanosecond precision outside representable range" do
+    # i64 datetimes with nanosecond precision can span a range from
+    # 1677-09-21T00:12:43.145224192 to 2262-04-11T23:47:16.854775807.
+    below_min_ndt = ~N[1666-01-01 00:00:00]
+    below_min_utc = ~U[1666-01-01 00:00:00Z]
+
+    assert_raise(
+      RuntimeError,
+      "Timestamp Conversion Error: cannot represent naive datetime(ns) with `i64`",
+      fn -> Series.from_list([below_min_ndt], dtype: {:naive_datetime, :nanosecond}) end
+    )
+
+    assert_raise(
+      RuntimeError,
+      "Timestamp Conversion Error: cannot represent datetime(ns) with `i64`",
+      fn -> Series.from_list([below_min_utc], dtype: {:datetime, :nanosecond, "Etc/UTC"}) end
+    )
+  end
+
   property "naive datetimes survive encoding" do
     check all(
             time_unit <- Explorer.Generator.time_unit(),
