@@ -6536,7 +6536,7 @@ defmodule Explorer.Series do
     do: super_dtype_error("week_of_year/1", dtype, [:date, :datetime, :naive_datetime])
 
   @deprecated "Use cast(:date) instead"
-  @doc type: :deprecated
+  @doc false
   def to_date(%Series{dtype: dtype} = series) when is_datetime_like_dtype(dtype),
     do: cast(series, :date)
 
@@ -6544,7 +6544,7 @@ defmodule Explorer.Series do
     do: super_dtype_error("to_date/1", dtype, [:date, :datetime, :naive_datetime])
 
   @deprecated "Use cast(:time) instead"
-  @doc type: :deprecated
+  @doc false
   def to_time(%Series{dtype: dtype} = series) when is_datetime_like_dtype(dtype),
     do: cast(series, :time)
 
