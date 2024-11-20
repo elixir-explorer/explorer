@@ -2641,6 +2641,9 @@ defmodule Explorer.DataFrame do
                 "but instead it returned a LazySeries of type " <>
                 inspect(dtype)
 
+      [] ->
+        df
+
       [%Series{dtype: :boolean, data: %LazySeries{}} | _rest] = lazy_series ->
         first_non_boolean =
           Enum.find(lazy_series, &(!match?(%Series{dtype: :boolean, data: %LazySeries{}}, &1)))
