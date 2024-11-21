@@ -321,14 +321,55 @@ fn convert_to_arrow_time_unit(time_unit: TimeUnit) -> ArrowTimeUnit {
     }
 }
 
-// Limit the number of digits in the microsecond part of a timestamp to 6.
-// This is necessary because the microsecond part of Elixir is only 6 digits.
-#[inline]
-pub fn microseconds_six_digits(microseconds: u32) -> u32 {
-    if microseconds > 999_999 {
-        999_999
-    } else {
-        microseconds
+/// Trait for the fractional part of seconds for Elixir's time-related structs.
+pub trait ExMicrosecondTuple {
+    /// Get the sub-second part.
+    fn subsec_micros(&self) -> u32;
+
+    /// Round the sub-second part to a max of 6 digits.
+    fn subsec_micros_limited(&self) -> u32 {
+        // In the event of a leap second, `subsec_micros()` may exceed 999,999.
+        self.subsec_micros().min(999_999_u32)
+    }
+
+    /// Default representation.
+    fn microsecond_tuple(&self) -> (u32, u32) {
+        (self.subsec_micros_limited(), 6)
+    }
+
+    /// Representation rounded for specific time-units.
+    fn microsecond_tuple_tu(&self, time_unit: TimeUnit) -> (u32, u32) {
+        let us = self.subsec_micros_limited();
+
+        match time_unit {
+            // If Polars implements `TimeUnit::Seconds`, we'd return `(0, 0)`.
+            TimeUnit::Microseconds | TimeUnit::Nanoseconds => (us, 6),
+            TimeUnit::Milliseconds => (((us / 1_000) * 1_000), 3),
+        }
+    }
+}
+
+impl ExMicrosecondTuple for NaiveTime {
+    fn subsec_micros(&self) -> u32 {
+        self.nanosecond() / 1_000
+    }
+}
+
+impl ExMicrosecondTuple for NaiveDateTime {
+    fn subsec_micros(&self) -> u32 {
+        self.and_utc().timestamp_subsec_micros()
+    }
+}
+
+impl ExMicrosecondTuple for DateTime<Utc> {
+    fn subsec_micros(&self) -> u32 {
+        self.timestamp_subsec_micros()
+    }
+}
+
+impl ExMicrosecondTuple for DateTime<Tz> {
+    fn subsec_micros(&self) -> u32 {
+        self.timestamp_subsec_micros()
     }
 }
 
@@ -374,10 +415,7 @@ impl From<NaiveDateTime> for ExNaiveDateTime {
             hour: dt.hour(),
             minute: dt.minute(),
             second: dt.second(),
-            microsecond: (
-                microseconds_six_digits(dt.and_utc().timestamp_subsec_micros()),
-                6,
-            ),
+            microsecond: dt.microsecond_tuple(),
         }
     }
 }
@@ -445,7 +483,7 @@ impl<'a> From<&'a DateTime<Tz>> for ExDateTime<'a> {
             calendar: atoms::calendar_iso_module(),
             day: dt_tz.day(),
             hour: dt_tz.hour(),
-            microsecond: (microseconds_six_digits(dt_tz.timestamp_subsec_micros()), 6),
+            microsecond: dt_tz.microsecond_tuple(),
             minute: dt_tz.minute(),
             month: dt_tz.month(),
             second: dt_tz.second(),
@@ -544,20 +582,12 @@ impl From<ExTime> for NaiveTime {
 
 impl From<NaiveTime> for ExTime {
     fn from(t: NaiveTime) -> Self {
-        let microseconds = t.nanosecond() / 1_000;
-
-        let ex_microseconds = if microseconds > 0 {
-            (microseconds_six_digits(microseconds), 6)
-        } else {
-            (0, 0)
-        };
-
         ExTime {
             calendar: atoms::calendar_iso_module(),
             hour: t.hour(),
             minute: t.minute(),
             second: t.second(),
-            microsecond: ex_microseconds,
+            microsecond: t.microsecond_tuple(),
         }
     }
 }
