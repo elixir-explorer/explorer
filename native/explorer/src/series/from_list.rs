@@ -1,6 +1,7 @@
 use crate::atoms;
 use crate::datatypes::{
-    ExDate, ExDateTime, ExDecimal, ExDuration, ExNaiveDateTime, ExSeriesDtype, ExTime, ExTimeUnit,
+    ex_datetime_to_timestamp, ex_naive_datetime_to_timestamp, ExDate, ExDateTime, ExDecimal,
+    ExDuration, ExNaiveDateTime, ExSeriesDtype, ExTime, ExTimeUnit,
 };
 use crate::{ExSeries, ExplorerError};
 
@@ -63,11 +64,13 @@ pub fn s_from_list_naive_datetime(
             }),
             TermType::Map => item
                 .decode::<ExNaiveDateTime>()
-                .map(|ex_naive_datetime| Some(i64::from(ex_naive_datetime)))
                 .map_err(|error| {
                     ExplorerError::Other(format!(
                         "cannot decode a valid naive datetime from term. error: {error:?}"
                     ))
+                })
+                .and_then(|ex_naive_datetime| {
+                    ex_naive_datetime_to_timestamp(ex_naive_datetime, timeunit).map(Some)
                 }),
             TermType::Atom => Ok(None),
             term_type => Err(ExplorerError::Other(format!(
@@ -106,12 +109,12 @@ pub fn s_from_list_datetime(
             }),
             TermType::Map => item
                 .decode::<ExDateTime>()
-                .map(|ex_datetime| Some(i64::from(ex_datetime)))
                 .map_err(|error| {
                     ExplorerError::Other(format!(
                         "cannot decode a valid datetime from term. error: {error:?}"
                     ))
-                }),
+                })
+                .and_then(|ex_datetime| ex_datetime_to_timestamp(ex_datetime, timeunit).map(Some)),
             TermType::Atom => Ok(None),
             term_type => Err(ExplorerError::Other(format!(
                 "from_list/2 for datetimes not implemented for {term_type:?}"

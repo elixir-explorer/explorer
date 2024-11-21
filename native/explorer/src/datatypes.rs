@@ -19,6 +19,15 @@ use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
 use chrono_tz::{OffsetComponents, OffsetName, Tz};
 
+pub use polars::export::arrow::datatypes::TimeUnit as ArrowTimeUnit;
+
+pub use polars::export::arrow::temporal_conversions::{
+    date32_to_date as days_to_date, timestamp_ms_to_datetime as timestamp_ms_to_naive_datetime,
+    timestamp_ns_to_datetime as timestamp_ns_to_naive_datetime,
+    timestamp_to_datetime as arrow_timestamp_to_datetime,
+    timestamp_us_to_datetime as timestamp_us_to_naive_datetime,
+};
+
 pub use ex_dtypes::*;
 
 pub struct ExDataFrameRef(pub DataFrame);
@@ -285,33 +294,37 @@ pub struct ExNaiveDateTime {
     pub year: i32,
 }
 
-pub use polars::export::arrow::temporal_conversions::date32_to_date as days_to_date;
-
-pub fn timestamp_to_datetime_utc(microseconds: i64) -> DateTime<Utc> {
-    let sign = microseconds.signum();
-    let seconds = match sign {
-        -1 => microseconds / 1_000_000 - 1,
-        _ => microseconds / 1_000_000,
-    };
-    let remainder = match sign {
-        -1 => 1_000_000 + microseconds % 1_000_000,
-        _ => microseconds % 1_000_000,
-    };
-    let nanoseconds = remainder.abs() * 1_000;
-    DateTime::<Utc>::from_timestamp(seconds, nanoseconds.try_into().unwrap())
-        .expect("construct a UTC")
+pub fn timestamp_to_datetime(
+    timestamp: i64,
+    time_unit: TimeUnit,
+    time_zone: Tz,
+) -> chrono::DateTime<Tz> {
+    let arrow_time_unit = convert_to_arrow_time_unit(time_unit);
+    arrow_timestamp_to_datetime(timestamp, arrow_time_unit, &time_zone)
 }
 
-/// Converts a microsecond i64 to a `NaiveDateTime`.
-/// This is because when getting a timestamp, it might have negative values.
-pub fn timestamp_to_datetime(microseconds: i64) -> NaiveDateTime {
-    timestamp_to_datetime_utc(microseconds).naive_utc()
+// Note: arrow has a native datetime analog to `timestamp_to_datetime` but it's
+// private, so we're adapting its internals here.
+pub fn timestamp_to_naive_datetime(timestamp: i64, time_unit: TimeUnit) -> NaiveDateTime {
+    match time_unit {
+        TimeUnit::Milliseconds => timestamp_ms_to_naive_datetime(timestamp),
+        TimeUnit::Microseconds => timestamp_us_to_naive_datetime(timestamp),
+        TimeUnit::Nanoseconds => timestamp_ns_to_naive_datetime(timestamp),
+    }
+}
+
+fn convert_to_arrow_time_unit(time_unit: TimeUnit) -> ArrowTimeUnit {
+    match time_unit {
+        TimeUnit::Milliseconds => ArrowTimeUnit::Millisecond,
+        TimeUnit::Microseconds => ArrowTimeUnit::Microsecond,
+        TimeUnit::Nanoseconds => ArrowTimeUnit::Nanosecond,
+    }
 }
 
 // Limit the number of digits in the microsecond part of a timestamp to 6.
 // This is necessary because the microsecond part of Elixir is only 6 digits.
 #[inline]
-fn microseconds_six_digits(microseconds: u32) -> u32 {
+pub fn microseconds_six_digits(microseconds: u32) -> u32 {
     if microseconds > 999_999 {
         999_999
     } else {
@@ -319,29 +332,26 @@ fn microseconds_six_digits(microseconds: u32) -> u32 {
     }
 }
 
-impl From<i64> for ExNaiveDateTime {
-    fn from(microseconds: i64) -> Self {
-        timestamp_to_datetime(microseconds).into()
+pub fn ex_naive_datetime_to_timestamp(
+    ex_naive_datetime: ExNaiveDateTime,
+    time_unit: TimeUnit,
+) -> Result<i64, ExplorerError> {
+    let naive_datetime = NaiveDateTime::from(ex_naive_datetime);
+
+    match time_unit {
+        TimeUnit::Milliseconds => Ok(naive_datetime.and_utc().timestamp_millis()),
+        TimeUnit::Microseconds => Ok(naive_datetime.and_utc().timestamp_micros()),
+        TimeUnit::Nanoseconds => naive_datetime.and_utc().timestamp_nanos_opt().ok_or(
+            ExplorerError::TimestampConversion(
+                "cannot represent naive datetime(ns) with `i64`".to_string(),
+            ),
+        ),
     }
 }
 
-impl From<ExNaiveDateTime> for i64 {
-    fn from(dt: ExNaiveDateTime) -> i64 {
-        let duration = NaiveDate::from_ymd_opt(dt.year, dt.month, dt.day)
-            .unwrap()
-            .and_hms_micro_opt(dt.hour, dt.minute, dt.second, dt.microsecond.0)
-            .unwrap()
-            .signed_duration_since(
-                NaiveDate::from_ymd_opt(1970, 1, 1)
-                    .unwrap()
-                    .and_hms_opt(0, 0, 0)
-                    .unwrap(),
-            );
-
-        match duration.num_microseconds() {
-            Some(us) => us,
-            None => duration.num_milliseconds() * 1_000,
-        }
+impl From<i64> for ExNaiveDateTime {
+    fn from(timestamp: i64) -> Self {
+        timestamp_to_naive_datetime(timestamp, TimeUnit::Microseconds).into()
     }
 }
 
@@ -407,28 +417,21 @@ pub struct ExDateTime<'a> {
     pub zone_abbr: &'a str,
 }
 
-// impl From<i64> for ExDateTime<'_> {
-//     fn from(microseconds: i64) -> Self {
-//         timestamp_to_datetime_utc(microseconds).into()
-//     }
-// }
+pub fn ex_datetime_to_timestamp(
+    ex_datetime: ExDateTime,
+    time_unit: TimeUnit,
+) -> Result<i64, ExplorerError> {
+    let datetime = DateTime::from(ex_datetime);
 
-impl From<ExDateTime<'_>> for i64 {
-    fn from(dt: ExDateTime<'_>) -> i64 {
-        let duration = NaiveDate::from_ymd_opt(dt.year, dt.month, dt.day)
-            .unwrap()
-            .and_hms_micro_opt(dt.hour, dt.minute, dt.second, dt.microsecond.0)
-            .unwrap()
-            .signed_duration_since(
-                NaiveDate::from_ymd_opt(1970, 1, 1)
-                    .unwrap()
-                    .and_hms_opt(0, 0, 0)
-                    .unwrap(),
-            );
-
-        match duration.num_microseconds() {
-            Some(us) => us,
-            None => duration.num_milliseconds() * 1_000,
+    match time_unit {
+        TimeUnit::Milliseconds => Ok(datetime.timestamp_millis()),
+        TimeUnit::Microseconds => Ok(datetime.timestamp_micros()),
+        TimeUnit::Nanoseconds => {
+            datetime
+                .timestamp_nanos_opt()
+                .ok_or(ExplorerError::TimestampConversion(
+                    "cannot represent datetime(ns) with `i64`".to_string(),
+                ))
         }
     }
 }
