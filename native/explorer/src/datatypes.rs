@@ -353,14 +353,6 @@ impl ExMicrosecondTuple for NaiveTime {
     fn subsec_micros(&self) -> u32 {
         self.nanosecond() / 1_000
     }
-    // fn microsecond_tuple(&self) -> (u32, u32) {
-    //     let us = self.subsec_micros_limited();
-    //     if us == 0 {
-    //         (0, 0)
-    //     } else {
-    //         (self.subsec_micros_limited(), 6)
-    //     }
-    // }
 }
 
 impl ExMicrosecondTuple for NaiveDateTime {
