@@ -13,8 +13,8 @@ use crate::atoms::{
     neg_infinity, precision, second, std_offset, time_zone, utc_offset, value, year, zone_abbr,
 };
 use crate::datatypes::{
-    days_to_date, microseconds_six_digits, time64ns_to_time, timestamp_to_datetime,
-    timestamp_to_naive_datetime, ExSeries, ExSeriesRef,
+    days_to_date, time64ns_to_time, timestamp_to_datetime, timestamp_to_naive_datetime,
+    ExMicrosecondTuple, ExSeries, ExSeriesRef,
 };
 use crate::ExplorerError;
 
@@ -118,8 +118,6 @@ macro_rules! unsafe_encode_naive_datetime {
         $env: ident
     ) => {{
         let ndt = timestamp_to_naive_datetime($timestamp, $time_unit);
-        let microseconds = ndt.and_utc().timestamp_subsec_micros();
-        let limited_microseconds = microseconds_six_digits(microseconds);
 
         unsafe {
             Term::new(
@@ -136,7 +134,7 @@ macro_rules! unsafe_encode_naive_datetime {
                         ndt.hour().encode($env).as_c_arg(),
                         ndt.minute().encode($env).as_c_arg(),
                         ndt.second().encode($env).as_c_arg(),
-                        (limited_microseconds, 6).encode($env).as_c_arg(),
+                        ndt.microsecond_tuple_tu($time_unit).encode($env).as_c_arg(),
                     ],
                 )
                 .unwrap(),
@@ -221,7 +219,6 @@ macro_rules! unsafe_encode_datetime {
     ) => {{
         let dt_tz = timestamp_to_datetime($timestamp, $time_unit, $time_zone);
         let tz_offset = dt_tz.offset();
-        let limited_microseconds = microseconds_six_digits(dt_tz.timestamp_subsec_micros());
 
         unsafe {
             Term::new(
@@ -234,7 +231,10 @@ macro_rules! unsafe_encode_datetime {
                         $calendar_iso_module,
                         dt_tz.day().encode($env).as_c_arg(),
                         dt_tz.hour().encode($env).as_c_arg(),
-                        (limited_microseconds, 6).encode($env).as_c_arg(),
+                        dt_tz
+                            .microsecond_tuple_tu($time_unit)
+                            .encode($env)
+                            .as_c_arg(),
                         dt_tz.minute().encode($env).as_c_arg(),
                         dt_tz.month().encode($env).as_c_arg(),
                         dt_tz.second().encode($env).as_c_arg(),

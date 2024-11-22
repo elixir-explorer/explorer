@@ -2852,7 +2852,7 @@ defmodule Explorer.Series do
 
       iex> s = Explorer.Series.from_list([~T[01:55:00], ~T[15:35:00], ~T[23:00:00]])
       iex> Explorer.Series.quantile(s, 0.5)
-      ~T[15:35:00]
+      ~T[15:35:00.000000]
 
       iex> s = Explorer.Series.from_list([true, false, true])
       iex> Explorer.Series.quantile(s, 0.5)
