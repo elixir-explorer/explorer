@@ -5979,15 +5979,7 @@ defmodule Explorer.DataFrame do
 
     values =
       headers
-      |> Enum.map(fn n ->
-        s = df[n]
-        list = Series.to_list(s)
-
-        case s.dtype do
-          {:struct, _} -> Enum.map(list, &inspect/1)
-          _ -> list
-        end
-      end)
+      |> Enum.map(&format_column(df[&1]))
       |> Enum.zip_with(& &1)
 
     name_type = Enum.zip_with(headers, types, fn x, y -> x <> y end)
@@ -6001,6 +5993,56 @@ defmodule Explorer.DataFrame do
       header_separator_symbol: "=",
       horizontal_style: :all
     )
+  end
+
+  defp format_column(%Series{} = series) do
+    series
+    |> Series.to_list()
+    |> format_column(0)
+  end
+
+  defp format_column(list, 0) when is_list(list) do
+    Enum.map(list, &format_column(&1, 1))
+  end
+
+  defp format_column(list, depth) when is_list(list) do
+    list
+    |> Enum.map(&format_column(&1, depth + 1))
+    |> multiline(depth, "[", "]")
+  end
+
+  # TODO: Use is_non_struct_map when we require Elixir v1.17+
+  defp format_column(map, depth) when is_map(map) and not is_struct(map) do
+    map
+    |> Enum.sort_by(fn {k, _} -> k end)
+    |> Enum.map(fn {k, v} -> "#{k}: #{format_column(v, depth + 1)}" end)
+    |> multiline(depth, "{", "}")
+  end
+
+  defp format_column(value, depth) do
+    cond do
+      is_nil(value) ->
+        "nil"
+
+      is_binary(value) and not String.valid?(value) ->
+        value
+        |> String.codepoints()
+        |> Enum.map(fn <<x>> -> to_string(x) end)
+        |> multiline(depth, "<<", ">>")
+
+      true ->
+        to_string(value)
+    end
+  end
+
+  defp multiline(contents, depth, left, right) do
+    indent = String.duplicate(" ", max(depth - 1, 0))
+
+    if length(contents) > 1 or Enum.any?(contents, &String.contains?(&1, "\n")) do
+      "#{left}\n #{indent}#{Enum.join(contents, "\n " <> indent)}\n#{indent}#{right}"
+    else
+      "#{left}#{contents}#{right}"
+    end
   end
 
   @doc """
