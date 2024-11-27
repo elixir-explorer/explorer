@@ -6006,39 +6006,43 @@ defmodule Explorer.DataFrame do
   end
 
   defp format_column(list, depth) when is_list(list) do
-    indent = String.duplicate(" ", depth - 1)
-
-    contents = Enum.map(list, &format_column(&1, depth + 1))
-
-    if length(contents) > 1 or Enum.any?(contents, &String.contains?(&1, "\n")) do
-      "[\n #{indent}#{Enum.join(contents, "\n " <> indent)}\n#{indent}]"
-    else
-      "[#{contents}]"
-    end
+    list
+    |> Enum.map(&format_column(&1, depth + 1))
+    |> multiline(depth, "[", "]")
   end
 
   # TODO: Use is_non_struct_map when we require Elixir v1.17+
   defp format_column(map, depth) when is_map(map) and not is_struct(map) do
-    indent = String.duplicate(" ", max(depth - 1, 0))
+    map
+    |> Enum.sort_by(fn {k, _} -> k end)
+    |> Enum.map(fn {k, v} -> "#{k}: #{format_column(v, depth + 1)}" end)
+    |> multiline(depth, "{", "}")
+  end
 
-    contents =
-      map
-      |> Enum.sort_by(fn {k, _} -> k end)
-      |> Enum.map(fn {k, v} -> "#{k}: #{format_column(v, depth + 1)}" end)
+  defp format_column(value, depth) do
+    cond do
+      is_nil(value) ->
+        "nil"
 
-    if length(contents) > 1 or Enum.any?(contents, &String.contains?(&1, "\n")) do
-      "{\n #{indent}#{Enum.join(contents, "\n " <> indent)}\n#{indent}}"
-    else
-      "{#{contents}}"
+      is_binary(value) and not String.valid?(value) ->
+        value
+        |> String.codepoints()
+        |> Enum.map(fn <<x>> -> to_string(x) end)
+        |> multiline(depth, "<<", ">>")
+
+      true ->
+        to_string(value)
     end
   end
 
-  defp format_column(nil, _depth) do
-    "nil"
-  end
+  defp multiline(contents, depth, left, right) do
+    indent = String.duplicate(" ", max(depth - 1, 0))
 
-  defp format_column(value, _depth) do
-    to_string(value)
+    if length(contents) > 1 or Enum.any?(contents, &String.contains?(&1, "\n")) do
+      "#{left}\n #{indent}#{Enum.join(contents, "\n " <> indent)}\n#{indent}#{right}"
+    else
+      "#{left}#{contents}#{right}"
+    end
   end
 
   @doc """

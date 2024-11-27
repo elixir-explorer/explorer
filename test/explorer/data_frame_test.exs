@@ -4766,7 +4766,7 @@ defmodule Explorer.DataFrameTest do
 
     property "should be able to print any DataFrame" do
       check all(
-              dtypes <- Explorer.Generator.dtypes(exclude: [:binary, :category]),
+              dtypes <- Explorer.Generator.dtypes(exclude: :category),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
             ) do
