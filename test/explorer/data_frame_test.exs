@@ -4742,8 +4742,9 @@ defmodule Explorer.DataFrameTest do
   #     deemed necessary.
   #   * For local development, remember to include property tests with the tag
   #     `--include property`.
-  @tag timeout: :infinity
   describe "properties" do
+    @describetag timeout: :infinity
+
     property "should be able to create a DataFrame from valid rows" do
       check all(
               dtypes <- Explorer.Generator.dtypes(),
