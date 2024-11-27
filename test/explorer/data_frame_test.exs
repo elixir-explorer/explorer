@@ -4764,18 +4764,15 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
-    @tag :skip
     property "should be able to print any DataFrame" do
       check all(
-              dtypes <- Explorer.Generator.dtypes(),
+              dtypes <- Explorer.Generator.dtypes(exclude: [:binary, :category]),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
             ) do
         df = DF.new(rows, dtypes: dtypes)
-
-        if DF.n_rows(df) > 0 do
-          DF.print(df)
-        end
+        printed = capture_io(fn -> DF.print(df) end)
+        assert is_binary(printed)
       end
     end
 
