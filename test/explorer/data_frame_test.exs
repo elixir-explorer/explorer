@@ -4766,6 +4766,7 @@ defmodule Explorer.DataFrameTest do
 
     property "should be able to print any DataFrame" do
       check all(
+              # TODO: Remove `exclude: :category` after #1011 is resolved.
               dtypes <- Explorer.Generator.dtypes(exclude: :category),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
@@ -4827,5 +4828,27 @@ defmodule Explorer.DataFrameTest do
         |> DF.dump_parquet!()
       end
     end
+  end
+
+  test "x" do
+    dtypes = [
+      {"col_d", {:struct, [{"w", {:s, 64}}, {"q", {:naive_datetime, :microsecond}}]}},
+      {"col_j", {:list, {:list, {:f, 32}}}}
+    ]
+
+    rows = [
+      [
+        {"col_d", %{"q" => ~N[2901-09-24 22:53:38.923913], "w" => 3_470_490_443_432_017_527}},
+        {"col_j", [[1.1, 2.2]]}
+      ],
+      [{"col_d", nil}, {"col_j", [[3.3]]}],
+      [
+        {"col_d", %{"q" => nil, "w" => 3_594_148_901_191_965_499}},
+        {"col_j", [nil, [nil], []]}
+      ]
+    ]
+
+    df = DF.new(rows, dtypes: dtypes)
+    DF.print(df)
   end
 end
