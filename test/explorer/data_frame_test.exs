@@ -4729,8 +4729,7 @@ defmodule Explorer.DataFrameTest do
 
   # These property tests are a work in progress. They currently aim to cover
   # creation and serialization (including printing). Serialization in particular
-  # is causing lots of panics. The plan is to keep the properties that don't
-  # pass but with `@tag :skip` until we can fix them.
+  # is causing lots of panics. Issue #1011 currently blocks a few.
   #
   # Notes:
   #
@@ -4778,10 +4777,14 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
-    @tag :skip
-    property "can dump any DataFrame (without duration) to CSV" do
+    property "can dump non-composite, non-binary, non-duration DataFrame to CSV" do
+      not_yet_implemented = [:binary, :duration]
+
       check all(
-              dtypes <- Explorer.Generator.dtypes(exclude: :duration),
+              dtypes <-
+                Explorer.Generator.dtypes(
+                  dtype: Explorer.Generator.scalar_dtype(exclude: not_yet_implemented)
+                ),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
             ) do
@@ -4791,10 +4794,10 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
-    @tag :skip
     property "can dump any DataFrame to IPC" do
       check all(
-              dtypes <- Explorer.Generator.dtypes(),
+              # TODO: Remove `exclude: :category` after #1011 is resolved.
+              dtypes <- Explorer.Generator.dtypes(exclude: :category),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
             ) do
@@ -4804,10 +4807,12 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
-    @tag :skip
-    property "can dump any DataFrame to NDJSON" do
+    property "can dump any non-binary, non-time DataFrame to NDJSON" do
+      not_yet_implemented = [:binary, :time]
+
       check all(
-              dtypes <- Explorer.Generator.dtypes(),
+              # TODO: Remove `exclude: :category` after #1011 is resolved.
+              dtypes <- Explorer.Generator.dtypes(exclude: [:category | not_yet_implemented]),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
             ) do
@@ -4817,10 +4822,10 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
-    @tag :skip
     property "can dump any DataFrame to PARQUET" do
       check all(
-              dtypes <- Explorer.Generator.dtypes(),
+              # TODO: Remove `exclude: :category` after #1011 is resolved.
+              dtypes <- Explorer.Generator.dtypes(exclude: :category),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
             ) do
