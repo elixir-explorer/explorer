@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.10.1] - 2024-11-28
+
+### Fixed
+
+- Fix creation of series of  `{:list, {:decimal, ...}}` containing empty lists.
+
+- Use `i128` for `:coef` field in the Rust code.
+
+  This field is a positive, arbitrary precision integer on the Elixir side.
+  It's convenient to represent it as a signed `i128` because that's
+  what the Decimal dtype expects. While you could technically create an
+  `ExDecimal` struct with a negative `coef`, it's not a practical concern.
+
+- Fix `Explorer.DataFrame.print/1` for empty dataframes.
+
+- Fix datetime encoding overflow.
+
+  Before we were always converting first to a microsecond-based representation
+  then to the final representation. The intermediate conversion is unecessary
+  and risks overflows when trying to convert to a different time unit later.
+  This approach converts directly to `i64` from the Elixir struct and time unit.
+
+- Encode millisecond precision for time and datetime series.
+
+- Fix list struct print bug.
+
+  Fixes an issue where we can't print columns with a dtype like `{:list, {:struct, ...}}`
+  where the root of the tree isn't a `:struct` but it contains a `:struct`.
+
+### Deprecated
+
+- Remove documentation for deprecated functions `to_date/1` and `to_time/1`.
+  They are functions from the `Explorer.Series` that soon will be removed.
+
 ## [v0.10.0] - 2024-10-23
 
 ### Added
@@ -1163,7 +1197,8 @@ properly compare floats.
 
 First release.
 
-[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/elixir-explorer/explorer/compare/v0.10.1...HEAD
+[v0.10.1]: https://github.com/elixir-explorer/explorer/compare/v0.10.0...v0.10.1
 [v0.10.0]: https://github.com/elixir-explorer/explorer/compare/v0.9.2...v0.10.0
 [v0.9.2]: https://github.com/elixir-explorer/explorer/compare/v0.9.1...v0.9.2
 [v0.9.1]: https://github.com/elixir-explorer/explorer/compare/v0.9.0...v0.9.1
