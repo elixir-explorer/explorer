@@ -190,13 +190,15 @@ defmodule Explorer.Generator do
   def dtypes(opts \\ []) do
     {list_of_opts, dtype_opts} = Keyword.split(opts, [:min_length, :max_length, :length])
 
+    dtypes = dtype_opts[:dtype] || dtype(Keyword.delete(dtype_opts, :dtype))
+
     list_of_opts =
       list_of_opts
       |> Keyword.put_new(:min_length, 1)
       |> Keyword.put_new(:max_length, 2)
       |> Keyword.put(:uniq_fun, &elem(&1, 0))
 
-    uniq_list_of(tuple({column_name(), dtype(dtype_opts)}), list_of_opts)
+    uniq_list_of(tuple({column_name(), dtypes}), list_of_opts)
   end
 
   # For clarity, column names and field names are built from different halves of
@@ -286,7 +288,7 @@ defmodule Explorer.Generator do
   end
 
   @spec scalar_dtype(keyword()) :: gen(dtype())
-  defp scalar_dtype(opts) do
+  def scalar_dtype(opts) do
     scalars_by_alias =
       %{
         binary: constant(:binary),
