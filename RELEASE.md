@@ -16,6 +16,11 @@ is a bit more involved than it would be otherwise.
    usually takes around 40-60 minutes.
 4. While the NIFs are compiling, ensure you have the latest version of `main` and don't have any
    intermediate builds by running `rm -rf native/explorer/target`.
-5. Once the NIFs are built, use `mix rustler_precompiled.download Explorer.PolarsBackend.Native --all --print` to download generate the checksum file.
-6. Run `mix hex.publish`.
+5. Once the NIFs are built, use:
+
+        EXPLORER_BUILD=true mix rustler_precompiled.download Explorer.PolarsBackend.Native --all --print
+
+   to download all the artifacts and generate the checksum file.
+6. Paste the SHA 256 contents into the release description on GitHub.
+6. Run `mix hex.publish` - please double check the dependencies and files, and confirm.
 7. Bump the version in the `mix.exs` and add the `-dev` flag to it.
