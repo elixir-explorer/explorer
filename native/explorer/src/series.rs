@@ -221,7 +221,7 @@ pub fn s_cut(
     )?;
 
     if include_breaks {
-        let mut cut_df = DataFrame::new(cut_series.struct_()?.fields_as_series())?;
+        let mut cut_df = cut_series.struct_()?.clone().unnest();
 
         let cut_df = cut_df.insert_column(0, series)?;
 
@@ -233,7 +233,7 @@ pub fn s_cut(
 
         Ok(ExDataFrame::new(cut_df.clone()))
     } else {
-        let mut cut_df = DataFrame::new(vec![series, cut_series])?;
+        let mut cut_df = DataFrame::new(vec![Column::from(series), Column::from(cut_series)])?;
         cut_df.set_column_names(["values", category_label.unwrap_or("category")])?;
 
         Ok(ExDataFrame::new(cut_df.clone()))
@@ -264,7 +264,7 @@ pub fn s_qcut(
     )?;
 
     if include_breaks {
-        let mut qcut_df = DataFrame::new(qcut_series.struct_()?.fields_as_series())?;
+        let mut qcut_df = qcut_series.struct_()?.clone().unnest();
         let qcut_df = qcut_df.insert_column(0, series)?;
 
         qcut_df.set_column_names([
@@ -275,7 +275,7 @@ pub fn s_qcut(
 
         Ok(ExDataFrame::new(qcut_df.clone()))
     } else {
-        let mut qcut_df = DataFrame::new(vec![series, qcut_series])?;
+        let mut qcut_df = DataFrame::new(vec![Column::from(series), Column::from(qcut_series)])?;
         qcut_df.set_column_names(["values", category_label.unwrap_or("category")])?;
 
         Ok(ExDataFrame::new(qcut_df.clone()))
@@ -643,7 +643,9 @@ pub fn s_window_median(
         .select([col(series.name().clone()).rolling_median(opts)])
         .collect()?
         .column(series.name())?
+        .as_materialized_series()
         .clone();
+
     Ok(ExSeries::new(s1))
 }
 
@@ -903,6 +905,7 @@ pub fn s_product(s: ExSeries) -> Result<ExSeries, ExplorerError> {
             .select([col(s.name().clone()).product()])
             .collect()?
             .column(s.name())?
+            .as_materialized_series()
             .clone();
 
         Ok(ExSeries::new(series))
@@ -921,6 +924,7 @@ pub fn s_variance(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerError> {
             .select([col(s.name().clone()).var(ddof)])
             .collect()?
             .column(s.name())?
+            .as_materialized_series()
             .clone();
 
         Ok(ExSeries::new(var_series))
@@ -939,6 +943,7 @@ pub fn s_standard_deviation(s: ExSeries, ddof: u8) -> Result<ExSeries, ExplorerE
             .select([col(s.name().clone()).std(ddof)])
             .collect()?
             .column(s.name())?
+            .as_materialized_series()
             .clone();
 
         Ok(ExSeries::new(std_series))
@@ -1275,14 +1280,14 @@ pub fn parse_rank_method_options(strategy: ExRankMethod, descending: bool) -> Ra
     }
 }
 
-pub fn parse_quantile_interpol_options(strategy: &str) -> QuantileInterpolOptions {
+pub fn parse_quantile_interpol_options(strategy: &str) -> QuantileMethod {
     match strategy {
-        "nearest" => QuantileInterpolOptions::Nearest,
-        "lower" => QuantileInterpolOptions::Lower,
-        "higher" => QuantileInterpolOptions::Higher,
-        "midpoint" => QuantileInterpolOptions::Midpoint,
-        "linear" => QuantileInterpolOptions::Linear,
-        _ => QuantileInterpolOptions::Nearest,
+        "nearest" => QuantileMethod::Nearest,
+        "lower" => QuantileMethod::Lower,
+        "higher" => QuantileMethod::Higher,
+        "midpoint" => QuantileMethod::Midpoint,
+        "linear" => QuantileMethod::Linear,
+        _ => QuantileMethod::Nearest,
     }
 }
 
@@ -1416,6 +1421,7 @@ pub fn s_substring(
         .select([col(s.name().clone()).str().slice(offset.lit(), length)])
         .collect()?
         .column(s.name())?
+        .as_materialized_series()
         .clone();
     Ok(ExSeries::new(s2))
 }
@@ -1444,6 +1450,7 @@ pub fn s_split_into(s1: ExSeries, by: &str, names: Vec<String>) -> Result<ExSeri
             .alias(s1.name().clone())])
         .collect()?
         .column(s1.name())?
+        .as_materialized_series()
         .clone();
 
     Ok(ExSeries::new(s2))
@@ -1647,6 +1654,7 @@ fn s_member(
         .select([col(s.name().clone()).list().contains(value_expr)])
         .collect()?
         .column(s.name())?
+        .as_materialized_series()
         .clone();
 
     Ok(ExSeries::new(s2))
@@ -1664,6 +1672,7 @@ pub fn s_field(s: ExSeries, name: &str) -> Result<ExSeries, ExplorerError> {
             .alias(name)])
         .collect()?
         .column(name)?
+        .as_materialized_series()
         .clone();
     Ok(ExSeries::new(s2))
 }
@@ -1681,7 +1690,9 @@ pub fn s_json_decode(s: ExSeries, ex_dtype: ExSeriesDtype) -> Result<ExSeries, E
             .alias(s.name().clone())])
         .collect()?
         .column(s.name())?
+        .as_materialized_series()
         .clone();
+
     Ok(ExSeries::new(s2))
 }
 
@@ -1694,6 +1705,7 @@ pub fn s_json_path_match(s: ExSeries, json_path: String) -> Result<ExSeries, Exp
         .select([col(s.name().clone()).str().json_path_match(json_path.lit())])
         .collect()?
         .column(s.name())?
+        .as_materialized_series()
         .clone();
 
     Ok(ExSeries::new(var_series))
@@ -1740,6 +1752,8 @@ pub fn s_re_named_captures(s1: ExSeries, pattern: &str) -> Result<ExSeries, Expl
         )
         .collect()?
         .column(s1.name())?
+        .as_materialized_series()
         .clone();
+
     Ok(ExSeries::new(s2))
 }
