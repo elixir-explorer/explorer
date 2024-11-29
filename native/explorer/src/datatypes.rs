@@ -517,7 +517,7 @@ impl From<ExDateTime<'_>> for DateTime<Tz> {
     }
 }
 
-impl<'tz> From<ExDateTime<'tz>> for NaiveDateTime {
+impl From<ExDateTime<'_>> for NaiveDateTime {
     fn from(dt: ExDateTime) -> NaiveDateTime {
         NaiveDate::from_ymd_opt(dt.year, dt.month, dt.day)
             .unwrap()
@@ -526,7 +526,7 @@ impl<'tz> From<ExDateTime<'tz>> for NaiveDateTime {
     }
 }
 
-impl<'tz> Literal for ExDateTime<'tz> {
+impl Literal for ExDateTime<'_> {
     fn lit(self) -> Expr {
         let ndt = NaiveDateTime::from(self);
         let time_zone = self.time_zone.to_string();
@@ -657,7 +657,7 @@ pub enum ExValidValue<'a> {
     Decimal(ExDecimal),
 }
 
-impl<'a> ExValidValue<'a> {
+impl ExValidValue<'_> {
     pub fn lit_with_matching_precision(self, data_type: &DataType) -> Expr {
         match data_type {
             DataType::Datetime(time_unit, _) => self.lit().dt().cast_time_unit(*time_unit),
@@ -667,7 +667,7 @@ impl<'a> ExValidValue<'a> {
     }
 }
 
-impl<'a> Literal for &ExValidValue<'a> {
+impl Literal for &ExValidValue<'_> {
     fn lit(self) -> Expr {
         match self {
             ExValidValue::I64(v) => v.lit(),
