@@ -444,11 +444,13 @@ pub fn s_from_list_of_series_as_structs(
 
     StructChunked::from_series(
         name.into(),
+        series_vec.len(),
+        // TODO: check if it's possible to avoid collexting here.
         series_vec
-            .into_iter()
+            .iter()
             .map(|s| s.clone_inner())
-            .collect::<Vec<_>>()
-            .as_slice(),
+            .collect::<Vec<Series>>()
+            .iter(),
     )
     .map(|struct_chunked| struct_chunked.into_series())
     .and_then(|series| series.cast(&dtype))
