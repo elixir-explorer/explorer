@@ -62,7 +62,7 @@ defimpl Explorer.FSS, for: FSS.S3.Entry do
     :aws_signature.sign_v4(
       entry.config.access_key_id,
       entry.config.secret_access_key,
-      entry.config.region,
+      entry.config.region || "",
       "s3",
       now,
       Atom.to_string(method),
