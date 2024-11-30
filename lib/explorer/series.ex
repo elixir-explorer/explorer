@@ -186,6 +186,14 @@ defmodule Explorer.Series do
   @type dtype_alias :: integer_dtype_alias | float_dtype_alias | decimal_dtype_alias
   @type float_dtype_alias :: :float | :f32 | :f64
   @type integer_dtype_alias :: :integer | :u8 | :u16 | :u32 | :u64 | :s8 | :s16 | :s32 | :s64
+  @typedoc """
+  Dtype for a fixed-point decimal represented internally as an integer.
+
+  > #### Warning: Unstable {: .warning}
+  >
+  > This functionality is considered unstable. It is a work-in-progress feature
+  > and may not always work as expected. It may be changed at any point.
+  """
   @type decimal_dtype_alias :: :decimal
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
