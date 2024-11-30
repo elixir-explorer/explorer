@@ -646,6 +646,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     dump_parquet: 2,
     mask: 2,
     n_rows: 1,
+    estimated_size: 1,
     pivot_wider: 5,
     pull: 2,
     put: 4,
