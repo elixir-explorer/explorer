@@ -63,6 +63,11 @@ pub fn df_width(df: ExDataFrame) -> Result<usize, ExplorerError> {
     Ok(df.width())
 }
 
+#[rustler::nif]
+pub fn df_estimated_size(df: ExDataFrame) -> Result<usize, ExplorerError> {
+    Ok(df.estimated_size())
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_concat_columns(dfs: Vec<ExDataFrame>) -> Result<ExDataFrame, ExplorerError> {
     let mut previous_names = PlHashSet::new();
