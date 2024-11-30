@@ -2104,6 +2104,10 @@ defmodule Explorer.DataFrame do
   @spec n_columns(df :: DataFrame.t()) :: integer()
   def n_columns(df), do: map_size(df.dtypes)
 
+  @doc type: :introspection
+  @spec estimated_size(df :: DataFrame.t()) :: integer()
+  def estimated_size(df), do: Shared.apply_dataframe(df, :estimated_size)
+
   @doc """
   Returns the groups of a dataframe.
 
