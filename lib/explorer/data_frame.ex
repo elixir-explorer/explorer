@@ -2105,6 +2105,19 @@ defmodule Explorer.DataFrame do
   def n_columns(df), do: map_size(df.dtypes)
 
   @doc """
+  Returns an estimation of the total (heap) allocated byte size of the DataFrame.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(%{integers: 0..255}, dtypes: [{:integers, {:s, 8}}])
+      iex> Explorer.DataFrame.estimated_size(df)
+      256
+  """
+  @doc type: :introspection
+  @spec estimated_size(df :: DataFrame.t()) :: integer()
+  def estimated_size(df), do: Shared.apply_dataframe(df, :estimated_size)
+
+  @doc """
   Returns the groups of a dataframe.
 
   ## Examples
