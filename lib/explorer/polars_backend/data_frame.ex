@@ -614,6 +614,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def n_rows(df), do: Shared.apply_dataframe(df, :df_n_rows)
 
+  @impl true
+  def estimated_size(df), do: Shared.apply_dataframe(df, :df_estimated_size)
+
   # Single table verbs
 
   @impl true
