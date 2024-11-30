@@ -28,6 +28,10 @@ defmodule Explorer.Series do
     * `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer number.
     * `{:decimal, precision, scale}` - a 128-bit signed integer number representing a decimal,
       with a scale and precision. This unwraps to `Decimal`, using the `:decimal` package.
+      > #### Warning: Unstable {: .warning}
+      >
+      > This functionality is considered unstable. It is a work-in-progress feature
+      > and may not always work as expected. It may be changed at any point.
     * `:null` - `nil`s exclusively
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
@@ -186,14 +190,6 @@ defmodule Explorer.Series do
   @type dtype_alias :: integer_dtype_alias | float_dtype_alias | decimal_dtype_alias
   @type float_dtype_alias :: :float | :f32 | :f64
   @type integer_dtype_alias :: :integer | :u8 | :u16 | :u32 | :u64 | :s8 | :s16 | :s32 | :s64
-  @typedoc """
-  Dtype for a fixed-point decimal represented internally as an integer.
-
-  > #### Warning: Unstable {: .warning}
-  >
-  > This functionality is considered unstable. It is a work-in-progress feature
-  > and may not always work as expected. It may be changed at any point.
-  """
   @type decimal_dtype_alias :: :decimal
 
   @type t :: %Series{data: Explorer.Backend.Series.t(), dtype: dtype()}
