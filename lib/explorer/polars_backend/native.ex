@@ -169,6 +169,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_to_parquet(_df, _filename, _compression), do: err()
   def df_to_parquet_cloud(_df, _ex_entry, _compression), do: err()
   def df_width(_df), do: err()
+  def df_estimated_size(_df), do: err()
   def df_nil_count(_df), do: err()
   def df_re_dtype(_pattern), do: err()
 
