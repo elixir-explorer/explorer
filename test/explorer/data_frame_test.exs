@@ -29,6 +29,12 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  test "estimated_size/1" do
+    df = DF.new(%{integers: 0..255}, dtypes: [{:integers, {:s, 8}}])
+    assert DF.dtypes(df) == %{"integers" => {:s, 8}}
+    assert DF.estimated_size(df) == 256
+  end
+
   describe "from_query/3" do
     alias Adbc.{Database, Connection}
 
