@@ -440,25 +440,22 @@ pub fn s_from_list_of_series_as_structs(
     ex_dtype: ExSeriesDtype,
 ) -> NifResult<ExSeries> {
     let dtype = DataType::try_from(&ex_dtype).unwrap();
-    let series_vec = series_term.decode::<Vec<ExSeries>>()?;
+    let columns = series_term
+        .decode::<Vec<ExSeries>>()?
+        .into_iter()
+        .map(|c| Column::from(c.clone_inner()))
+        .collect();
 
-    StructChunked::from_series(
-        name.into(),
-        series_vec.len(),
-        // TODO: check if it's possible to avoid collexting here.
-        series_vec
-            .iter()
-            .map(|s| s.clone_inner())
-            .collect::<Vec<Series>>()
-            .iter(),
-    )
-    .map(|struct_chunked| struct_chunked.into_series())
-    .and_then(|series| series.cast(&dtype))
-    .map_err(|err| {
-        let message = format!("from_list/2 cannot create series of structs: {err:?}");
-        Error::RaiseTerm(Box::new(message))
-    })
-    .map(ExSeries::new)
+    let df = DataFrame::new(columns).unwrap();
+
+    df.into_struct(name.into())
+        .into_series()
+        .cast(&dtype)
+        .map_err(|err| {
+            let message = format!("from_list/2 cannot create series of structs: {err:?}");
+            Error::RaiseTerm(Box::new(message))
+        })
+        .map(ExSeries::new)
 }
 
 macro_rules! from_binary {
