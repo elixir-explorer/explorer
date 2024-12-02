@@ -6714,7 +6714,6 @@ defmodule Explorer.Series do
 
   If the decoded value does not match the given `dtype`,
   an error is raised:
-  nil is returned for the given entry:
 
       iex> s = Series.from_list(["\\"1\\""])
       iex> Series.json_decode(s, {:s, 64})
