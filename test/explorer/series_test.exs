@@ -5393,12 +5393,12 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([], dtype: {:f, 64})
       s2 = Series.from_list([], dtype: {:f, 64})
       assert Series.correlation(s1, s2) == :nan
-      assert Series.covariance(s1, s2) == -0.0
+      assert Series.covariance(s1, s2) == nil
 
       s1 = Series.from_list([1.0])
       s2 = Series.from_list([2.0])
       assert Series.correlation(s1, s2) == :nan
-      assert Series.covariance(s1, s2) == :nan
+      assert Series.covariance(s1, s2) == nil
 
       s1 = Series.from_list([1.0, 2.0])
       s2 = Series.from_list([2.0, 3.0, 4.0])
@@ -6578,9 +6578,14 @@ defmodule Explorer.SeriesTest do
 
     test "extracts primitive from json and nil for mismatch" do
       s = Series.from_list(["1", "\"a\""])
-      sj = Series.json_decode(s, {:s, 64})
-      assert sj.dtype == {:s, 64}
-      assert Series.to_list(sj) == [1, nil]
+
+      message =
+        "Polars Error: error deserializing JSON: error deserializing value \"String(\"a\")\" as numeric. " <>
+          "\\\n            Try increasing `infer_schema_length` or specifying a schema.\n            "
+
+      assert_raise RuntimeError, message, fn ->
+        Series.json_decode(s, {:s, 64})
+      end
     end
 
     test "extracts struct from json with dtype" do
