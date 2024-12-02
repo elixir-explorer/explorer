@@ -491,7 +491,7 @@ impl<'a> From<&'a DateTime<Tz>> for ExDateTime<'a> {
             time_zone,
             utc_offset: dt_tz.offset().base_utc_offset().num_seconds(),
             year: dt_tz.year(),
-            zone_abbr,
+            zone_abbr: zone_abbr.expect("expecting a valid zone abbr"),
         }
     }
 }
