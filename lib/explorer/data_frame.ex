@@ -6232,8 +6232,8 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 3]
         names string ["dogs", "cats"]
-        dogs f64 [1.0000000000000002, 0.5447047794019219]
-        cats f64 [0.5447047794019219, 1.0]
+        dogs f64 [1.0, 0.5447047794019223]
+        cats f64 [0.5447047794019223, 1.0]
       >
   """
   @doc type: :single

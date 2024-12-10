@@ -261,7 +261,7 @@ defmodule Explorer.DataFrame.LazyTest do
                )
 
       assert RuntimeError.message(error) =~
-               "Polars Error: Object at location oranges.parquet not found: Client error with status 404 Not Found: No Body: 'parquet scan' failed: 'select' input failed to resolve"
+               "Polars Error: Object at location oranges.parquet not found: Client error with status 404 Not Found: No Body: 'parquet scan': 'select'"
     end
   end
 
