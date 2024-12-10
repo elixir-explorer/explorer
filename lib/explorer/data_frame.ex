@@ -239,6 +239,7 @@ defmodule Explorer.DataFrame do
   @type columns ::
           [column]
           | Range.t()
+          | Regex.t()
           | (String.t() -> boolean())
           | (String.t(), Explorer.Series.dtype() -> boolean())
 
