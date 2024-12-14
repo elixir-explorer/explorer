@@ -5558,8 +5558,10 @@ defmodule Explorer.DataFrame do
   @doc """
   Removes grouping variables.
 
-  Accepts a list of group names. If groups is not specified, then all groups are
-  removed.
+  Accepts a list of group names or a single group name.
+  If groups is not specified, then all groups are removed.
+
+  Lists, ranges, regexes, and functions are also accepted in column names, as in `select/2`.
 
   ## Examples
 
@@ -5585,8 +5587,8 @@ defmodule Explorer.DataFrame do
   Ungrouping a single column:
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> df = Explorer.DataFrame.group_by(df, ["country", "year"])
-      iex> Explorer.DataFrame.ungroup(df, "country")
+      iex> df = Explorer.DataFrame.group_by(df, [:country, :year])
+      iex> Explorer.DataFrame.ungroup(df, :country)
       #Explorer.DataFrame<
         Polars[1094 x 10]
         Groups: ["year"]
@@ -5602,10 +5604,9 @@ defmodule Explorer.DataFrame do
         bunker_fuels s64 [9, 7, 663, 0, 321, ...]
       >
 
-  Lists, ranges, regexes, and functions are also accepted in column names, as in `select/2`.
   """
   @doc type: :single
-  @spec ungroup(df :: DataFrame.t(), groups_or_group :: column_names() | column_name() | :all) ::
+  @spec ungroup(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
           DataFrame.t()
   def ungroup(df, groups \\ ..)
 
