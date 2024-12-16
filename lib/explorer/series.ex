@@ -2632,7 +2632,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.mean/1 not implemented for dtype :date. Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
-  @spec mean(series :: Series.t()) :: float() | non_finite() | nil
+  @spec mean(series :: Series.t()) :: float() | non_finite() | lazy_t() | nil
   def mean(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: apply_series(series, :mean)
 
@@ -2706,7 +2706,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.median/1 not implemented for dtype :date. Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
-  @spec median(series :: Series.t()) :: float() | non_finite() | nil
+  @spec median(series :: Series.t()) :: float() | non_finite() | lazy_t() | nil
   def median(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: apply_series(series, :median)
 
@@ -2740,7 +2740,8 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.variance/1 not implemented for dtype {:naive_datetime, :microsecond}. Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
-  @spec variance(series :: Series.t(), ddof :: non_neg_integer()) :: float() | non_finite() | nil
+  @spec variance(series :: Series.t(), ddof :: non_neg_integer()) ::
+          float() | non_finite() | lazy_t() | nil
   def variance(series, ddof \\ 1)
 
   def variance(%Series{dtype: dtype} = series, ddof) when is_numeric_dtype(dtype),
@@ -2777,7 +2778,7 @@ defmodule Explorer.Series do
   """
   @doc type: :aggregation
   @spec standard_deviation(series :: Series.t(), ddof :: non_neg_integer()) ::
-          float() | non_finite() | nil
+          float() | non_finite() | lazy_t() | nil
   def standard_deviation(series, ddof \\ 1)
 
   def standard_deviation(%Series{dtype: dtype} = series, ddof) when is_numeric_dtype(dtype),
@@ -2812,7 +2813,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.product/1 not implemented for dtype :boolean. Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
-  @spec product(series :: Series.t()) :: float() | non_finite() | nil
+  @spec product(series :: Series.t()) :: float() | non_finite() | lazy_t() | nil
   def product(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
     do: apply_series(series, :product)
 
@@ -2906,7 +2907,7 @@ defmodule Explorer.Series do
       ** (ArgumentError) Explorer.Series.skew/2 not implemented for dtype :boolean. Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
   """
   @doc type: :aggregation
-  @spec skew(series :: Series.t(), opts :: Keyword.t()) :: float() | non_finite() | nil
+  @spec skew(series :: Series.t(), opts :: Keyword.t()) :: float() | non_finite() | lazy_t() | nil
   def skew(series, opts \\ [])
 
   def skew(%Series{dtype: dtype} = series, opts) when is_numeric_dtype(dtype) do
@@ -2946,7 +2947,7 @@ defmodule Explorer.Series do
           right :: Series.t() | number(),
           opts :: Keyword.t()
         ) ::
-          float() | non_finite() | nil
+          float() | non_finite() | lazy_t() | nil
   def correlation(left, right, opts \\ []) do
     opts = Keyword.validate!(opts, ddof: 1, method: :pearson)
 
@@ -2978,7 +2979,7 @@ defmodule Explorer.Series do
           right :: Series.t() | number(),
           ddof :: non_neg_integer()
         ) ::
-          float() | non_finite() | nil
+          float() | non_finite() | lazy_t() | nil
   def covariance(left, right, ddof \\ 1) do
     basic_numeric_operation(:covariance, left, right, [ddof])
   end
