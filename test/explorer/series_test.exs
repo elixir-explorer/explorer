@@ -6576,7 +6576,7 @@ defmodule Explorer.SeriesTest do
                    end
     end
 
-    test "extracts primitive from json and nil for mismatch" do
+    test "raises when value cannot be deserialized with given dtype" do
       s = Series.from_list(["1", "\"a\""])
 
       message =
@@ -6586,6 +6586,13 @@ defmodule Explorer.SeriesTest do
       assert_raise RuntimeError, message, fn ->
         Series.json_decode(s, {:s, 64})
       end
+    end
+
+    test "extract series of strings" do
+      s = Series.from_list(["1", "\"a\""])
+      s1 = Series.json_decode(s, :string)
+
+      assert Series.all_equal(s1, s1)
     end
 
     test "extracts struct from json with dtype" do
