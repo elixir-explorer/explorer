@@ -238,7 +238,7 @@ pub fn lf_rename_columns(
     let df = data.clone_inner();
     let (existing, new): (Vec<_>, Vec<_>) = renames.iter().cloned().unzip();
 
-    Ok(ExLazyFrame::new(df.rename(existing, new)))
+    Ok(ExLazyFrame::new(df.rename(existing, new, true)))
 }
 
 #[rustler::nif]
@@ -366,7 +366,7 @@ pub fn lf_concat_columns(ldfs: Vec<ExLazyFrame>) -> Result<ExLazyFrame, Explorer
             } else {
                 let (existing, new): (Vec<String>, Vec<String>) =
                     substitutions.iter().cloned().unzip();
-                ldf.rename(existing, new)
+                ldf.rename(existing, new, true)
             }
         })
         .collect();

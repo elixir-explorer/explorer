@@ -85,15 +85,17 @@ pub fn df_concat_columns(dfs: Vec<ExDataFrame>) -> Result<ExDataFrame, ExplorerE
                     if previous_names.contains(&name.clone().to_string()) {
                         let new_name = format!("{name}_{idx}");
                         previous_names.insert(new_name.clone());
-                        col.clone().rename(new_name.into()).to_owned()
+                        let mut new_col = col.clone();
+                        new_col.rename(new_name.into());
+                        new_col
                     } else {
                         previous_names.insert(name.to_string());
-                        col.clone().to_owned()
+                        col.clone()
                     }
                 })
-                .collect::<Vec<Series>>()
+                .collect::<Vec<Column>>()
         })
-        .collect::<Vec<Series>>();
+        .collect::<Vec<Column>>();
 
     let out_df = DataFrame::new(cols)?;
 
@@ -108,13 +110,17 @@ pub fn df_drop(df: ExDataFrame, name: &str) -> Result<ExDataFrame, ExplorerError
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_select_at_idx(df: ExDataFrame, idx: usize) -> Result<Option<ExSeries>, ExplorerError> {
-    let result = df.select_at_idx(idx).map(|s| ExSeries::new(s.clone()));
+    let result = df
+        .select_at_idx(idx)
+        .map(|s| ExSeries::new(s.as_materialized_series().clone()));
     Ok(result)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_pull(df: ExDataFrame, name: &str) -> Result<ExSeries, ExplorerError> {
-    let series = df.column(name).map(|s| ExSeries::new(s.clone()))?;
+    let series = df
+        .column(name)
+        .map(|s| ExSeries::new(s.as_materialized_series().clone()))?;
     Ok(series)
 }
 
@@ -355,7 +361,10 @@ pub fn df_nil_count(df: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
 
 #[rustler::nif]
 pub fn df_from_series(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
-    let columns = columns.into_iter().map(|c| c.clone_inner()).collect();
+    let columns = columns
+        .into_iter()
+        .map(|c| Column::from(c.clone_inner()))
+        .collect();
 
     let df = DataFrame::new(columns)?;
 

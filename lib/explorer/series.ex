@@ -2939,7 +2939,7 @@ defmodule Explorer.Series do
       iex> s1 = Series.from_list([1, 8, 3])
       iex> s2 = Series.from_list([4, 5, 2])
       iex> Series.correlation(s1, s2)
-      0.5447047794019219
+      0.5447047794019223
   """
   @doc type: :aggregation
   @spec correlation(
@@ -2959,6 +2959,8 @@ defmodule Explorer.Series do
 
   @doc """
   Compute the covariance between two series.
+
+  It may return `nil` in case covariance cannot be computed.
 
   ## Supported dtypes
 
@@ -6712,14 +6714,11 @@ defmodule Explorer.Series do
       >
 
   If the decoded value does not match the given `dtype`,
-  nil is returned for the given entry:
+  an error is raised:
 
       iex> s = Series.from_list(["\\"1\\""])
       iex> Series.json_decode(s, {:s, 64})
-      #Explorer.Series<
-        Polars[1]
-        s64 [nil]
-      >
+      ** (RuntimeError) Polars Error: error deserializing JSON: error deserializing value \"String(\"1\")\" as numeric. \\\n                Try increasing `infer_schema_length` or specifying a schema.\n                
 
   It raises an exception if the string is invalid JSON.
   """

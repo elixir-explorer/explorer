@@ -65,13 +65,13 @@ macro_rules! unsafe_encode_date {
 // so we can build the struct directly.
 #[inline]
 fn date_struct_keys(env: Env) -> [NIF_TERM; 5] {
-    return [
+    [
         atom::__struct__().encode(env).as_c_arg(),
         calendar().encode(env).as_c_arg(),
         day().encode(env).as_c_arg(),
         month().encode(env).as_c_arg(),
         year().encode(env).as_c_arg(),
-    ];
+    ]
 }
 
 #[inline]
@@ -147,7 +147,7 @@ macro_rules! unsafe_encode_naive_datetime {
 // This is because we already have the keys (we know this at compile time), and the types,
 // so we can build the struct directly.
 fn naive_datetime_struct_keys(env: Env) -> [NIF_TERM; 9] {
-    return [
+    [
         atom::__struct__().encode(env).as_c_arg(),
         calendar().encode(env).as_c_arg(),
         day().encode(env).as_c_arg(),
@@ -157,7 +157,7 @@ fn naive_datetime_struct_keys(env: Env) -> [NIF_TERM; 9] {
         minute().encode(env).as_c_arg(),
         second().encode(env).as_c_arg(),
         microsecond().encode(env).as_c_arg(),
-    ];
+    ]
 }
 
 #[inline]
@@ -259,7 +259,7 @@ macro_rules! unsafe_encode_datetime {
 // This is because we already have the keys (we know this at compile time), and the types,
 // so we can build the struct directly.
 fn datetime_struct_keys(env: Env) -> [NIF_TERM; 13] {
-    return [
+    [
         atom::__struct__().encode(env).as_c_arg(),
         calendar().encode(env).as_c_arg(),
         day().encode(env).as_c_arg(),
@@ -273,7 +273,7 @@ fn datetime_struct_keys(env: Env) -> [NIF_TERM; 13] {
         utc_offset().encode(env).as_c_arg(),
         year().encode(env).as_c_arg(),
         zone_abbr().encode(env).as_c_arg(),
-    ];
+    ]
 }
 
 #[inline]
@@ -365,11 +365,11 @@ macro_rules! unsafe_encode_duration {
 // This is because we already have the keys (we know this at compile time), and the types,
 // so we can build the struct directly.
 fn duration_struct_keys(env: Env) -> [NIF_TERM; 3] {
-    return [
+    [
         atom::__struct__().encode(env).as_c_arg(),
         value().encode(env).as_c_arg(),
         precision().encode(env).as_c_arg(),
-    ];
+    ]
 }
 
 #[inline]
@@ -437,12 +437,12 @@ macro_rules! unsafe_encode_decimal {
 
 // Here we build the Decimal struct manually, as it's much faster than using NifStruct
 fn decimal_struct_keys(env: Env) -> [NIF_TERM; 4] {
-    return [
+    [
         atom::__struct__().encode(env).as_c_arg(),
         atoms::coef().encode(env).as_c_arg(),
         atoms::exp().encode(env).as_c_arg(),
         atoms::sign().encode(env).as_c_arg(),
-    ];
+    ]
 }
 
 #[inline]
@@ -514,14 +514,14 @@ macro_rules! unsafe_encode_time {
 // This is because we already have the keys (we know this at compile time), and the types,
 // so we can build the struct directly.
 fn naive_time_struct_keys(env: Env) -> [NIF_TERM; 6] {
-    return [
+    [
         atom::__struct__().encode(env).as_c_arg(),
         calendar().encode(env).as_c_arg(),
         hour().encode(env).as_c_arg(),
         minute().encode(env).as_c_arg(),
         second().encode(env).as_c_arg(),
         microsecond().encode(env).as_c_arg(),
-    ];
+    ]
 }
 
 #[inline]
