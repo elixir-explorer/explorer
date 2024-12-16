@@ -484,6 +484,8 @@ s1 = Series.from_list(["a", "b", "c"])
 Series.add(s, s1)
 ```
 
+> cannot invoke Explorer.Series.add/2 with mismatched dtypes: {:s, 64} and :string
+
 You can flip them around.
 
 ```elixir
@@ -967,6 +969,8 @@ Remember those helpful error messages?
 # Notice that the following typo is intentional here.
 DF.filter(df, cuontry == "BRAZIL")
 ```
+
+> could not find column name "cuontry". Did you mean: "country"
 
 ### Mutate
 
@@ -1525,6 +1529,8 @@ Trying for those helpful error messages again.
 ```elixir
 DF.sample(df, 10000)
 ```
+
+> in order to sample more rows than are in the dataframe (1094), sampling `replace` must be true
 
 ```elixir
 DF.sample(df, 10000, replace: true)
