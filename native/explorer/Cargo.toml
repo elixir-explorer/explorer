@@ -18,7 +18,7 @@ chrono-tz = "0.10"
 rand = { version = "0.8", features = ["alloc"] }
 rand_pcg = "0.3"
 rustler = { version = "0.34.0" }
-thiserror = "1"
+thiserror = "2"
 either = "1"
 
 # Deps necessary for cloud features.
