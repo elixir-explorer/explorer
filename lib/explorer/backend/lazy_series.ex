@@ -119,7 +119,7 @@ defmodule Explorer.Backend.LazySeries do
     nil_count: 1,
     size: 1,
     skew: 2,
-    correlation: 4,
+    correlation: 3,
     covariance: 3,
     all: 1,
     any: 1,
@@ -578,8 +578,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def correlation(%Series{} = left, %Series{} = right, ddof, method) do
-    args = [series_or_lazy_series!(left), series_or_lazy_series!(right), ddof, method]
+  def correlation(%Series{} = left, %Series{} = right, method) do
+    args = [series_or_lazy_series!(left), series_or_lazy_series!(right), method]
     data = new(:correlation, args, {:f, 64}, true)
 
     Backend.Series.new(data, {:f, 64})

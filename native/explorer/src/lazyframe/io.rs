@@ -88,7 +88,7 @@ pub fn lf_to_parquet(
         };
 
         lf.with_comm_subplan_elim(false)
-            .sink_parquet(filename, options)?;
+            .sink_parquet(&filename, options, None)?;
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -123,11 +123,8 @@ pub fn lf_to_parquet_cloud(
         maintain_order: false,
     };
 
-    lf.with_comm_subplan_elim(false).sink_parquet_cloud(
-        ex_entry.to_string(),
-        cloud_options,
-        options,
-    )?;
+    lf.with_comm_subplan_elim(false)
+        .sink_parquet(&ex_entry.to_string(), options, cloud_options)?;
     Ok(())
 }
 
@@ -172,7 +169,7 @@ pub fn lf_to_ipc(
             maintain_order: false,
         };
         lf.with_comm_subplan_elim(false)
-            .sink_ipc(filename, options)?;
+            .sink_ipc(filename, options, None)?;
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -205,11 +202,8 @@ pub fn lf_to_ipc_cloud(
         compression,
         maintain_order: false,
     };
-    lf.with_comm_subplan_elim(false).sink_ipc_cloud(
-        ex_entry.to_string(),
-        cloud_options,
-        options,
-    )?;
+    lf.with_comm_subplan_elim(false)
+        .sink_ipc(ex_entry.to_string(), options, cloud_options)?;
 
     Ok(())
 }
@@ -279,7 +273,7 @@ pub fn lf_to_csv(
         };
 
         lf.with_comm_subplan_elim(false)
-            .sink_csv(filename, options)?;
+            .sink_csv(filename, options, None)?;
         Ok(())
     } else {
         let df = lf.collect()?;

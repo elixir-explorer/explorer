@@ -159,6 +159,7 @@ pub fn s_sort(
         maintain_order,
         multithreaded,
         nulls_last,
+        limit: None,
     };
     Ok(ExSeries::new(series.sort_with(opts)?))
 }
@@ -176,6 +177,7 @@ pub fn s_argsort(
         maintain_order,
         multithreaded,
         nulls_last,
+        limit: None,
     };
     let indices = series.arg_sort(opts).into_series();
     Ok(ExSeries::new(indices))
@@ -966,18 +968,17 @@ pub fn s_correlation(
     env: Env,
     s1: ExSeries,
     s2: ExSeries,
-    ddof: u8,
     method: ExCorrelationMethod,
 ) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;
     let s2 = s2.clone_inner().cast(&DataType::Float64)?;
 
     let corr = match method {
-        ExCorrelationMethod::Pearson => pearson_corr(s1.f64()?, s2.f64()?, ddof),
+        ExCorrelationMethod::Pearson => pearson_corr(s1.f64()?, s2.f64()?),
         ExCorrelationMethod::Spearman => {
             let df = df!("s1" => s1, "s2" => s2)?
                 .lazy()
-                .with_column(spearman_rank_corr(col("s1"), col("s2"), ddof, true).alias("corr"))
+                .with_column(spearman_rank_corr(col("s1"), col("s2"), true).alias("corr"))
                 .collect()?;
             match df.column("corr")?.get(0)? {
                 AnyValue::Float64(x) => Some(x),

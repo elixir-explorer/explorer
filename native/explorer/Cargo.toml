@@ -18,14 +18,14 @@ chrono-tz = "0.10"
 rand = { version = "0.8", features = ["alloc"] }
 rand_pcg = "0.3"
 rustler = { version = "0.34.0" }
-thiserror = "1"
+thiserror = "2"
 either = "1"
 
 # Deps necessary for cloud features.
 tokio = { version = "1.40", default-features = false, features = [
   "rt",
 ], optional = true }
-object_store = { version = "0.10", default-features = false, optional = true }
+object_store = { version = "0.11", default-features = false, optional = true }
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
@@ -33,7 +33,7 @@ object_store = { version = "0.10", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.44"
+version = "0.45"
 default-features = false
 features = [
   "abs",
@@ -81,7 +81,7 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.44"
+version = "0.45"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]
@@ -92,7 +92,6 @@ cloud = [
   "tokio",
   "aws",
   "polars/cloud",
-  "polars/cloud_write",
 ]
 ndjson = ["polars/json"]
 aws = ["object_store/aws", "polars/async", "polars/aws"]

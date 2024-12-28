@@ -5415,7 +5415,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list(["a", "b"])
 
       assert_raise ArgumentError,
-                   "cannot invoke Explorer.Series.correlation/4 with mismatched dtypes: {:f, 64} and :string",
+                   "cannot invoke Explorer.Series.correlation/3 with mismatched dtypes: {:f, 64} and :string",
                    fn -> Series.correlation(s1, s2) end
 
       assert_raise ArgumentError,
@@ -5496,13 +5496,13 @@ defmodule Explorer.SeriesTest do
     test "window standard deviation of an integer series" do
       s = Series.from_list([1, 2, nil, 3])
       ws = Series.window_standard_deviation(s, 2)
-      assert Series.to_list(ws) === [0.0, 0.7071067811865476, 0.0, 0.0]
+      assert Series.to_list(ws) === [nil, 0.7071067811865476, nil, nil]
     end
 
     test "window standard deviation of a float series" do
       s = Series.from_list([1.0, 2.0, nil, 3.0])
       ws = Series.window_standard_deviation(s, 2)
-      assert Series.to_list(ws) === [0.0, 0.7071067811865476, 0.0, 0.0]
+      assert Series.to_list(ws) === [nil, 0.7071067811865476, nil, nil]
     end
 
     test "window standard deviation of a float series with a nan" do
@@ -5510,11 +5510,11 @@ defmodule Explorer.SeriesTest do
       ws = Series.window_standard_deviation(s, 2)
 
       assert Series.to_list(ws) === [
-               0.0,
+               nil,
                3.0405591591021546,
                0.7778174593052014,
-               0.0,
-               0.0,
+               nil,
+               nil,
                7.212489168102784,
                :nan,
                :nan
@@ -5526,11 +5526,11 @@ defmodule Explorer.SeriesTest do
       ws = Series.window_standard_deviation(s, 2)
 
       assert Series.to_list(ws) === [
-               0.0,
+               nil,
                3.0405591591021546,
                0.7778174593052014,
-               0.0,
-               0.0,
+               nil,
+               nil,
                7.212489168102784,
                :nan,
                :nan
@@ -5542,11 +5542,11 @@ defmodule Explorer.SeriesTest do
       ws = Series.window_standard_deviation(s, 2)
 
       assert Series.to_list(ws) === [
-               0.0,
+               nil,
                3.0405591591021546,
                0.7778174593052014,
-               0.0,
-               0.0,
+               nil,
+               nil,
                7.212489168102784,
                :nan,
                :nan

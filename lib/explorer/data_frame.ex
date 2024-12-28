@@ -6220,8 +6220,6 @@ defmodule Explorer.DataFrame do
 
   * `:columns` - the selection of columns to calculate. Defaults to all numeric columns.
   * `:column_name` - the name of the column with column names. Defaults to "names".
-  * `:ddof` - the 'delta degrees of freedom' - the divisor used in the correlation
-    calculation. Defaults to 1.
   * `:method` refers to the correlation method. The following methods are available:
     - `:pearson` : Standard correlation coefficient. (default)
     - `:spearman` : Spearman rank correlation.
@@ -6244,12 +6242,11 @@ defmodule Explorer.DataFrame do
       Keyword.validate!(opts,
         column_name: "names",
         columns: names(df),
-        ddof: 1,
         method: :pearson
       )
 
     out_df = pairwise_df(df, opts)
-    Shared.apply_dataframe(df, :correlation, [out_df, opts[:ddof], opts[:method]])
+    Shared.apply_dataframe(df, :correlation, [out_df, opts[:method]])
   end
 
   @doc """
