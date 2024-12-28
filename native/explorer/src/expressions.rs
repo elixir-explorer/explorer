@@ -513,12 +513,7 @@ pub fn expr_skew(data: ExExpr, bias: bool) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_correlation(
-    left: ExExpr,
-    right: ExExpr,
-    _ddof: u8,
-    method: ExCorrelationMethod,
-) -> ExExpr {
+pub fn expr_correlation(left: ExExpr, right: ExExpr, method: ExCorrelationMethod) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
 

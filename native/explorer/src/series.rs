@@ -968,7 +968,6 @@ pub fn s_correlation(
     env: Env,
     s1: ExSeries,
     s2: ExSeries,
-    _ddof: u8,
     method: ExCorrelationMethod,
 ) -> Result<Term, ExplorerError> {
     let s1 = s1.clone_inner().cast(&DataType::Float64)?;

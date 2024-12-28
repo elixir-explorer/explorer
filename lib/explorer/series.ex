@@ -2921,9 +2921,6 @@ defmodule Explorer.Series do
   @doc """
   Compute the correlation between two series.
 
-  The parameter `ddof` refers to the 'delta degrees of freedom' - the divisor
-  used in the correlation calculation. Defaults to 1.
-
   The parameter `:method` refers to the correlation method. The following methods are available:
     - `:pearson` : Standard correlation coefficient. (default)
     - `:spearman` : Spearman rank correlation.
@@ -2949,12 +2946,12 @@ defmodule Explorer.Series do
         ) ::
           float() | non_finite() | lazy_t() | nil
   def correlation(left, right, opts \\ []) do
-    opts = Keyword.validate!(opts, ddof: 1, method: :pearson)
+    opts = Keyword.validate!(opts, method: :pearson)
 
     if K.not(K.in(opts[:method], [:pearson, :spearman])),
       do: raise(ArgumentError, "unsupported correlation method #{inspect(opts[:method])}")
 
-    basic_numeric_operation(:correlation, left, right, [opts[:ddof], opts[:method]])
+    basic_numeric_operation(:correlation, left, right, [opts[:method]])
   end
 
   @doc """

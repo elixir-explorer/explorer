@@ -5415,7 +5415,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.from_list(["a", "b"])
 
       assert_raise ArgumentError,
-                   "cannot invoke Explorer.Series.correlation/4 with mismatched dtypes: {:f, 64} and :string",
+                   "cannot invoke Explorer.Series.correlation/3 with mismatched dtypes: {:f, 64} and :string",
                    fn -> Series.correlation(s1, s2) end
 
       assert_raise ArgumentError,

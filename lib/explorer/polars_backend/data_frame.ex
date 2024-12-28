@@ -841,9 +841,9 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def correlation(df, out_df, ddof, method) do
+  def correlation(df, out_df, method) do
     pairwise(df, out_df, fn left, right ->
-      PolarsSeries.correlation(left, right, ddof, method)
+      PolarsSeries.correlation(left, right, method)
     end)
   end
 

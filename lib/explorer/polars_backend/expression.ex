@@ -171,7 +171,7 @@ defmodule Explorer.PolarsBackend.Expression do
     row_index: 1,
     concat: 1,
     column: 1,
-    correlation: 4,
+    correlation: 3,
     covariance: 3
   ]
 
@@ -221,8 +221,8 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_concat(expr_list)
   end
 
-  def to_expr(%LazySeries{op: :correlation, args: [series1, series2, ddof, method]}) do
-    Native.expr_correlation(to_expr(series1), to_expr(series2), ddof, method)
+  def to_expr(%LazySeries{op: :correlation, args: [series1, series2, method]}) do
+    Native.expr_correlation(to_expr(series1), to_expr(series2), method)
   end
 
   def to_expr(%LazySeries{op: :covariance, args: [series1, series2, ddof]}) do
