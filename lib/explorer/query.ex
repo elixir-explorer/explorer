@@ -320,7 +320,7 @@ defmodule Explorer.Query do
     then: 2
   ]
 
-  @kernel_only kernel_only -- (kernel_only -- kernel_all)
+  @kernel_only kernel_only -- kernel_only -- kernel_all
 
   @doc """
   Returns a "query-backed" `Explorer.DataFrame` for use in queries.
