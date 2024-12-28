@@ -33,7 +33,7 @@ object_store = { version = "0.10", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.44"
+version = "0.45"
 default-features = false
 features = [
   "abs",
@@ -81,7 +81,7 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.44"
+version = "0.45"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]
@@ -92,7 +92,6 @@ cloud = [
   "tokio",
   "aws",
   "polars/cloud",
-  "polars/cloud_write",
 ]
 ndjson = ["polars/json"]
 aws = ["object_store/aws", "polars/async", "polars/aws"]

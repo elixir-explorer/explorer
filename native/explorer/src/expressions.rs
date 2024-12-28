@@ -516,16 +516,16 @@ pub fn expr_skew(data: ExExpr, bias: bool) -> ExExpr {
 pub fn expr_correlation(
     left: ExExpr,
     right: ExExpr,
-    ddof: u8,
+    _ddof: u8,
     method: ExCorrelationMethod,
 ) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
 
     match method {
-        ExCorrelationMethod::Pearson => ExExpr::new(pearson_corr(left_expr, right_expr, ddof)),
+        ExCorrelationMethod::Pearson => ExExpr::new(pearson_corr(left_expr, right_expr)),
         ExCorrelationMethod::Spearman => {
-            ExExpr::new(spearman_rank_corr(left_expr, right_expr, ddof, true))
+            ExExpr::new(spearman_rank_corr(left_expr, right_expr, true))
         }
     }
 }
@@ -780,6 +780,7 @@ pub fn expr_sort(
         maintain_order,
         multithreaded,
         nulls_last,
+        limit: None,
     };
 
     ExExpr::new(expr.sort(opts))
@@ -800,6 +801,7 @@ pub fn expr_argsort(
         maintain_order,
         multithreaded,
         nulls_last,
+        limit: None,
     };
 
     ExExpr::new(expr.arg_sort(opts))
