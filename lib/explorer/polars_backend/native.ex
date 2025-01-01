@@ -475,6 +475,8 @@ defmodule Explorer.PolarsBackend.Native do
   def s_asin(_s), do: err()
   def s_acos(_s), do: err()
   def s_atan(_s), do: err()
+  def s_degrees(_s), do: err()
+  def s_radians(_s), do: err()
 
   def s_join(_s, _separator), do: err()
   def s_lengths(_s), do: err()

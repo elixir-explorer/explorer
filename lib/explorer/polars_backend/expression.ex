@@ -73,6 +73,8 @@ defmodule Explorer.PolarsBackend.Expression do
     asin: 1,
     acos: 1,
     atan: 1,
+    degrees: 1,
+    radians: 1,
     standard_deviation: 2,
     subtract: 2,
     sum: 1,
@@ -104,6 +106,8 @@ defmodule Explorer.PolarsBackend.Expression do
     asin: 1,
     atan: 1,
     cos: 1,
+    degrees: 1,
+    radians: 1,
     sin: 1,
     tan: 1,
 

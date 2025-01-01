@@ -65,6 +65,8 @@ defmodule Explorer.Backend.LazySeries do
     asin: 1,
     atan: 1,
     cos: 1,
+    degrees: 1,
+    radians: 1,
     sin: 1,
     tan: 1,
 
@@ -955,6 +957,20 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def atan(%Series{} = series) do
     data = new(:atan, [lazy_series!(series)], {:f, 64})
+
+    Backend.Series.new(data, {:f, 64})
+  end
+
+  @impl true
+  def degrees(%Series{} = series) do
+    data = new(:degrees, [lazy_series!(series)], {:f, 64})
+
+    Backend.Series.new(data, {:f, 64})
+  end
+
+  @impl true
+  def radians(%Series{} = series) do
+    data = new(:radians, [lazy_series!(series)], {:f, 64})
 
     Backend.Series.new(data, {:f, 64})
   end

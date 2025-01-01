@@ -975,6 +975,20 @@ pub fn expr_atan(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_degrees(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.degrees())
+}
+
+#[rustler::nif]
+pub fn expr_radians(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.radians())
+}
+
+#[rustler::nif]
 pub fn expr_strptime(expr: ExExpr, format_string: &str) -> ExExpr {
     let options = StrptimeOptions {
         format: Some(format_string.into()),
