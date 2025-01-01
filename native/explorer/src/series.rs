@@ -1623,6 +1623,18 @@ pub fn s_atan(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_degrees(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.f64()?.apply_values(|o| o.to_degrees()).into();
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_radians(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.f64()?.apply_values(|o| o.to_radians()).into();
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_join(s1: ExSeries, separator: &str) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
         .list()?

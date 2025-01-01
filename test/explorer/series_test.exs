@@ -3263,6 +3263,28 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "degrees/1" do
+    test "converts the given series of radians to degrees" do
+      pi = :math.pi()
+      s = Explorer.Series.from_list([-2 * pi, -pi, -pi / 2, 0, pi / 2, pi, 2 * pi])
+
+      series = Series.degrees(s)
+
+      assert Series.to_list(series) == [-360.0, -180.0, -90.0, 0.0, 90.0, 180.0, 360.0]
+    end
+  end
+
+  describe "radians/1" do
+    test "converts the given series of degrees to radians" do
+      pi = :math.pi()
+      s = Explorer.Series.from_list([-360.0, -180.0, -90.0, 0.0, 90.0, 180.0, 360.0])
+
+      series = Series.radians(s)
+
+      assert Series.to_list(series) == [-2 * pi, -pi, -pi / 2, 0, pi / 2, pi, 2 * pi]
+    end
+  end
+
   describe "format/1" do
     test "with two string series" do
       s1 = Series.from_list(["a", "b"])

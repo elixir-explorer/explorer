@@ -431,6 +431,12 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def atan(%Series{} = s), do: Shared.apply_series(s, :s_atan, [])
 
+  @impl true
+  def degrees(%Series{} = s), do: Shared.apply_series(s, :s_degrees, [])
+
+  @impl true
+  def radians(%Series{} = s), do: Shared.apply_series(s, :s_radians, [])
+
   # Comparisons
 
   @impl true
