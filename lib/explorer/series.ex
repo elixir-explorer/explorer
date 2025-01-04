@@ -4068,6 +4068,58 @@ defmodule Explorer.Series do
   def atan(%Series{dtype: dtype}),
     do: dtype_error("atan/1", dtype, [{:f, 32}, {:f, 64}])
 
+  @doc """
+  Converts given radians to degrees.
+  The resultant series is going to be of dtype `{:f, 64}`.
+
+  ## Supported dtype
+
+    * `{:f, 32}`
+    * `{:f, 64}`
+
+  ## Examples
+
+      iex> s = [-12.566370614359172, -9.42477796076938, -6.283185307179586, -3.141592653589793, 0.0, 3.141592653589793, 6.283185307179586, 9.42477796076938, 12.566370614359172] |> Explorer.Series.from_list()
+      iex> Explorer.Series.degrees(s)
+      #Explorer.Series<
+        Polars[9]
+        f64 [-720.0, -540.0, -360.0, -180.0, 0.0, 180.0, 360.0, 540.0, 720.0]
+      >
+  """
+  @doc type: :float_wise
+  @spec degrees(series :: Series.t()) :: Series.t()
+  def degrees(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
+    do: apply_series(series, :degrees)
+
+  def degrees(%Series{dtype: dtype}),
+    do: dtype_error("degrees/1", dtype, [{:f, 32}, {:f, 64}])
+
+  @doc """
+  Converts given degrees to radians.
+  The resultant series is going to be of dtype `{:f, 64}`.
+
+  ## Supported dtype
+
+    * `{:f, 32}`
+    * `{:f, 64}`
+
+  ## Examples
+
+      iex> s = [-720.0, -540.0, -360.0, -180.0, 0.0, 180.0, 360.0, 540.0, 720.0] |> Explorer.Series.from_list()
+      iex> Explorer.Series.radians(s)
+      #Explorer.Series<
+        Polars[9]
+        f64 [-12.566370614359172, -9.42477796076938, -6.283185307179586, -3.141592653589793, 0.0, 3.141592653589793, 6.283185307179586, 9.42477796076938, 12.566370614359172]
+      >
+  """
+  @doc type: :float_wise
+  @spec radians(series :: Series.t()) :: Series.t()
+  def radians(%Series{dtype: dtype} = series) when K.in(dtype, @float_dtypes),
+    do: apply_series(series, :radians)
+
+  def radians(%Series{dtype: dtype}),
+    do: dtype_error("radians/1", dtype, [{:f, 32}, {:f, 64}])
+
   defp basic_numeric_operation(operation, %Series{} = left, right, args) when is_numeric(right),
     do: basic_numeric_operation(operation, left, from_same_value(left, right), args)
 

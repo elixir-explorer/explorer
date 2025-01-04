@@ -133,6 +133,8 @@ defmodule Explorer.Backend.Series do
   @callback asin(s) :: s
   @callback atan(s) :: s
   @callback cos(s) :: s
+  @callback degrees(s) :: s
+  @callback radians(s) :: s
   @callback sin(s) :: s
   @callback tan(s) :: s
 
