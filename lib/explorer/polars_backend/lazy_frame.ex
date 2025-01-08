@@ -351,20 +351,20 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_csv(%DF{} = ldf, %Local.Entry{} = entry, header?, delimiter, streaming) do
+  def to_csv(%DF{} = ldf, %Local.Entry{} = entry, header?, delimiter, quote_style, streaming) do
     <<delimiter::utf8>> = delimiter
 
-    case Native.lf_to_csv(ldf.data, entry.path, header?, delimiter, streaming) do
+    case Native.lf_to_csv(ldf.data, entry.path, header?, delimiter, quote_style, streaming) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_csv(%DF{} = ldf, %S3.Entry{} = entry, header?, delimiter, _streaming) do
+  def to_csv(%DF{} = ldf, %S3.Entry{} = entry, header?, delimiter, quote_style, _streaming) do
     eager_df = compute(ldf)
 
-    Eager.to_csv(eager_df, entry, header?, delimiter, false)
+    Eager.to_csv(eager_df, entry, header?, delimiter, quote_style, false)
   end
 
   @impl true
@@ -639,7 +639,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     covariance: 3,
     nil_count: 1,
     dummies: 3,
-    dump_csv: 3,
+    dump_csv: 4,
     dump_ipc: 2,
     dump_ipc_stream: 2,
     dump_ndjson: 1,

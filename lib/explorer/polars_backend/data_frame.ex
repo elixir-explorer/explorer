@@ -145,28 +145,42 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_csv(%DataFrame{data: df}, %Local.Entry{} = entry, header?, delimiter, _streaming) do
+  def to_csv(
+        %DataFrame{data: df},
+        %Local.Entry{} = entry,
+        header?,
+        delimiter,
+        quote_style,
+        _streaming
+      ) do
     <<delimiter::utf8>> = delimiter
 
-    case Native.df_to_csv(df, entry.path, header?, delimiter) do
+    case Native.df_to_csv(df, entry.path, header?, delimiter, quote_style) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_csv(%DataFrame{data: df}, %S3.Entry{} = entry, header?, delimiter, _streaming) do
+  def to_csv(
+        %DataFrame{data: df},
+        %S3.Entry{} = entry,
+        header?,
+        delimiter,
+        quote_style,
+        _streaming
+      ) do
     <<delimiter::utf8>> = delimiter
 
-    case Native.df_to_csv_cloud(df, entry, header?, delimiter) do
+    case Native.df_to_csv_cloud(df, entry, header?, delimiter, quote_style) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def dump_csv(%DataFrame{} = df, header?, <<delimiter::utf8>>) do
-    case Native.df_dump_csv(df.data, header?, delimiter) do
+  def dump_csv(%DataFrame{} = df, header?, <<delimiter::utf8>>, quote_style) do
+    case Native.df_dump_csv(df.data, header?, delimiter, quote_style) do
       {:ok, string} -> {:ok, string}
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end

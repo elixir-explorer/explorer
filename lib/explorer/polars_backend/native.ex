@@ -76,7 +76,7 @@ defmodule Explorer.PolarsBackend.Native do
   def df_concat_columns(_dfs), do: err()
   def df_drop(_df, _name), do: err()
   def df_dtypes(_df), do: err()
-  def df_dump_csv(_df, _has_headers, _delimiter), do: err()
+  def df_dump_csv(_df, _has_headers, _delimiter, _quote_style), do: err()
   def df_dump_ndjson(_df), do: err()
   def df_dump_parquet(_df, _compression), do: err()
   def df_dump_ipc(_df, _compression), do: err()
@@ -156,8 +156,8 @@ defmodule Explorer.PolarsBackend.Native do
   def df_slice_by_indices(_df, _indices, _groups), do: err()
   def df_slice_by_series(_df, _series, _groups), do: err()
   def df_transpose(_df, _keep_names_as, _new_col_names), do: err()
-  def df_to_csv(_df, _filename, _has_headers, _delimiter), do: err()
-  def df_to_csv_cloud(_df, _ex_entry, _has_headers, _delimiter), do: err()
+  def df_to_csv(_df, _filename, _has_headers, _delimiter, _quote_style), do: err()
+  def df_to_csv_cloud(_df, _ex_entry, _has_headers, _delimiter, _quote_style), do: err()
   def df_to_dummies(_df, _columns), do: err()
   def df_to_ipc(_df, _filename, _compression), do: err()
   def df_to_ipc_cloud(_df, _ex_entry, _compression), do: err()
@@ -274,7 +274,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_to_parquet_cloud(_df, _filename, _compression), do: err()
   def lf_to_ipc(_df, _filename, _compression, _streaming), do: err()
   def lf_to_ipc_cloud(_df, _cloud_entry, _compression), do: err()
-  def lf_to_csv(_df, _filename, _header, _delimiter, _streaming), do: err()
+  def lf_to_csv(_df, _filename, _header, _delimiter, _quote_style, _streaming), do: err()
   def lf_sql(_df, _sql_string, _table_name), do: err()
 
   # Series
