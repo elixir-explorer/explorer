@@ -651,6 +651,9 @@ defmodule Explorer.DataFrame do
 
     * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
 
+    * `:quote_style` - The quoting style to use. Possible values are `:necessary`, `:always`, `:non_numeric`, and `:never`.
+      (default: `:necessary`)
+
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
@@ -710,6 +713,8 @@ defmodule Explorer.DataFrame do
 
     * `:header` - Should the column names be written as the first line of the file? (default: `true`)
     * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+    * `:quote_style` - The quoting style to use. Possible values are `:necessary`, `:always`, `:non_numeric`, and `:never`.
+      (default: `:necessary`)
 
   ## Examples
 
