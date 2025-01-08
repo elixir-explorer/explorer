@@ -4,22 +4,6 @@ use polars::datatypes::DataType;
 use polars::datatypes::Field;
 use polars::datatypes::TimeUnit;
 use rustler::NifTaggedEnum;
-use std::ops::Deref;
-
-impl rustler::Encoder for Box<ExSeriesDtype> {
-    fn encode<'a>(&self, env: rustler::Env<'a>) -> rustler::Term<'a> {
-        let dtype: &ExSeriesDtype = self.deref();
-
-        dtype.encode(env)
-    }
-}
-
-impl<'a> rustler::Decoder<'a> for Box<ExSeriesDtype> {
-    fn decode(term: rustler::Term<'a>) -> rustler::NifResult<Self> {
-        let dtype: ExSeriesDtype = term.decode()?;
-        Ok(Box::new(dtype))
-    }
-}
 
 #[derive(NifTaggedEnum)]
 pub enum ExTimeUnit {
