@@ -17,7 +17,7 @@ chrono = "0.4"
 chrono-tz = "0.10"
 rand = { version = "0.8", features = ["alloc"] }
 rand_pcg = "0.3"
-rustler = { version = "0.34.0" }
+rustler = { version = "0.35.1" }
 thiserror = "2"
 either = "1"
 

@@ -39,3 +39,5 @@ impl Encoder for ExplorerError {
         format!("{self}").encode(env)
     }
 }
+
+impl std::panic::RefUnwindSafe for ExplorerError {}

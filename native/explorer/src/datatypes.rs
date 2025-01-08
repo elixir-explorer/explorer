@@ -65,11 +65,15 @@ pub struct ExDataFrame {
     pub resource: ResourceArc<ExDataFrameRef>,
 }
 
+impl std::panic::RefUnwindSafe for ExDataFrame {}
+
 #[derive(NifStruct, Clone)]
 #[module = "Explorer.PolarsBackend.Expression"]
 pub struct ExExpr {
     pub resource: ResourceArc<ExExprRef>,
 }
+
+impl std::panic::RefUnwindSafe for ExExpr {}
 
 #[derive(NifStruct)]
 #[module = "Explorer.PolarsBackend.LazyFrame"]
@@ -77,11 +81,15 @@ pub struct ExLazyFrame {
     pub resource: ResourceArc<ExLazyFrameRef>,
 }
 
+impl std::panic::RefUnwindSafe for ExLazyFrame {}
+
 #[derive(NifStruct)]
 #[module = "Explorer.PolarsBackend.Series"]
 pub struct ExSeries {
     pub resource: ResourceArc<ExSeriesRef>,
 }
+
+impl std::panic::RefUnwindSafe for ExSeries {}
 
 impl ExDataFrameRef {
     pub fn new(df: DataFrame) -> Self {
