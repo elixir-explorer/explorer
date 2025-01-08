@@ -15,7 +15,7 @@ use rustler::{Binary, Env, NewBinary};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Cursor};
 
-use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
+use crate::datatypes::{ExParquetCompression, ExQuoteStyle, ExS3Entry, ExSeriesDtype};
 use crate::{ExDataFrame, ExplorerError};
 
 #[cfg(feature = "cloud")]
@@ -100,12 +100,14 @@ pub fn df_to_csv(
     filename: &str,
     include_headers: bool,
     delimiter: u8,
+    quote_style: ExQuoteStyle,
 ) -> Result<(), ExplorerError> {
     let file = File::create(filename)?;
     let mut buf_writer = BufWriter::new(file);
     CsvWriter::new(&mut buf_writer)
         .include_header(include_headers)
         .with_separator(delimiter)
+        .with_quote_style(quote_style.into())
         .finish(&mut data.clone())?;
     Ok(())
 }
@@ -117,12 +119,14 @@ pub fn df_to_csv_cloud(
     ex_entry: ExS3Entry,
     include_headers: bool,
     delimiter: u8,
+    quote_style: ExQuoteStyle,
 ) -> Result<(), ExplorerError> {
     let mut cloud_writer = build_aws_s3_cloud_writer(ex_entry)?;
 
     CsvWriter::new(&mut cloud_writer)
         .include_header(include_headers)
         .with_separator(delimiter)
+        .with_quote_style(quote_style.into())
         .finish(&mut data.clone())?;
 
     let _ = cloud_writer.finish()?;
@@ -136,12 +140,14 @@ pub fn df_dump_csv(
     data: ExDataFrame,
     include_headers: bool,
     delimiter: u8,
+    quote_style: ExQuoteStyle,
 ) -> Result<Binary, ExplorerError> {
     let mut buf = vec![];
 
     CsvWriter::new(&mut buf)
         .include_header(include_headers)
         .with_separator(delimiter)
+        .with_quote_style(quote_style.into())
         .finish(&mut data.clone())?;
 
     let mut values_binary = NewBinary::new(env, buf.len());
@@ -675,6 +681,7 @@ pub fn df_to_csv_cloud(
     _ex_entry: ExS3Entry,
     _has_headers: bool,
     _delimiter: u8,
+    _quote_style: ExQuoteStyle,
 ) -> Result<(), ExplorerError> {
     Err(ExplorerError::Other("Explorer was compiled without the \"aws\" feature enabled. \
         This is mostly due to this feature being incompatible with your computer's architecture. \
