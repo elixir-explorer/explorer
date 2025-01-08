@@ -18,8 +18,8 @@ jobs:
           - otp_version: 25.3
             elixir_version: 1.14
 
-          - otp_version: "26.2.1"
-            elixir_version: 1.16
+          - otp_version: "27.2"
+            elixir_version: 1.18
 
     runs-on: ubuntu-latest
     name: test
@@ -64,6 +64,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "26.2.1"
-          elixir-version: 1.16
+          otp-version: "27.2"
+          elixir-version: 1.18
       - run: mix format --check-formatted
