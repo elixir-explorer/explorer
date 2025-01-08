@@ -916,4 +916,79 @@ defmodule Explorer.DataFrame.CSVTest do
   end
 
   defp http_endpoint(bypass), do: "http://localhost:#{bypass.port}"
+
+  describe "quote_style option" do
+    @tag :tmp_dir
+    test "necessary quote_style", %{tmp_dir: tmp_dir} do
+      df = DF.new(a: ["a,b", "c", "d,e"], b: [1, 2, 3])
+      path = tmp_csv(tmp_dir, "")
+
+      :ok = DF.to_csv!(df, path, quote_style: :necessary)
+      contents = File.read!(path)
+
+      assert contents == """
+             a,b
+             "a,b",1
+             c,2
+             "d,e",3
+             """
+    end
+
+    @tag :tmp_dir
+    test "always quote_style", %{tmp_dir: tmp_dir} do
+      df = DF.new(a: ["a", "b"], b: [1, 2])
+      path = tmp_csv(tmp_dir, "")
+
+      :ok = DF.to_csv!(df, path, quote_style: :always)
+      contents = File.read!(path)
+
+      assert contents == """
+             "a","b"
+             "a","1"
+             "b","2"
+             """
+    end
+
+    @tag :tmp_dir
+    test "non_numeric quote_style", %{tmp_dir: tmp_dir} do
+      df = DF.new(a: ["abc", "def"], b: [1, 2])
+      path = tmp_csv(tmp_dir, "")
+
+      :ok = DF.to_csv!(df, path, quote_style: :non_numeric)
+      contents = File.read!(path)
+
+      assert contents == """
+             "a","b"
+             "abc",1
+             "def",2
+             """
+    end
+
+    @tag :tmp_dir
+    test "never quote_style", %{tmp_dir: tmp_dir} do
+      df = DF.new(a: ["a,b", "c"], b: [1, 2])
+      path = tmp_csv(tmp_dir, "")
+
+      :ok = DF.to_csv!(df, path, quote_style: :never)
+      contents = File.read!(path)
+
+      assert contents == """
+             a,b
+             a,b,1
+             c,2
+             """
+    end
+
+    @tag :tmp_dir
+    test "invalid quote_style", %{tmp_dir: tmp_dir} do
+      df = DF.new(a: ["a"], b: [1])
+      path = tmp_csv(tmp_dir, "")
+
+      assert_raise ErlangError,
+                   "Erlang error: :invalid_variant",
+                   fn ->
+                     DF.to_csv!(df, path, quote_style: :invalid)
+                   end
+    end
+  end
 end
