@@ -664,13 +664,21 @@ defmodule Explorer.DataFrame do
   @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
           :ok | {:error, Exception.t()}
   def to_csv(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: true, config: nil)
+    opts =
+      Keyword.validate!(opts,
+        header: true,
+        delimiter: ",",
+        quote_style: :necessary,
+        streaming: true,
+        config: nil
+      )
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
       Shared.apply_dataframe(df, :to_csv, [
         entry,
         opts[:header],
         opts[:delimiter],
+        opts[:quote_style],
         opts[:streaming]
       ])
     end
@@ -713,8 +721,14 @@ defmodule Explorer.DataFrame do
   @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) ::
           {:ok, String.t()} | {:error, Exception.t()}
   def dump_csv(df, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    Shared.apply_dataframe(df, :dump_csv, [opts[:header], opts[:delimiter]], false)
+    opts = Keyword.validate!(opts, header: true, delimiter: ",", quote_style: :necessary)
+
+    Shared.apply_dataframe(
+      df,
+      :dump_csv,
+      [opts[:header], opts[:delimiter], opts[:quote_style]],
+      false
+    )
   end
 
   @doc """
