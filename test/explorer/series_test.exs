@@ -3204,6 +3204,22 @@ defmodule Explorer.SeriesTest do
 
       assert Series.to_list(series) == [0.0, 1.0, 1.2246467991473532e-16, -2.4492935982947064e-16]
     end
+
+    test "calculates the sine of all elements in the series for f32 input and outputs f64" do
+      pi = :math.pi()
+      s = Explorer.Series.from_list([0, pi / 2, pi, 2 * pi], dtype: :f32)
+
+      series = Series.sin(s)
+
+      assert Series.to_list(series) == [
+               0.0,
+               0.999999999999999,
+               -8.742278000372475e-8,
+               1.7484556000744883e-7
+             ]
+
+      assert Series.dtype(series) == {:f, 64}
+    end
   end
 
   describe "cos/1" do
@@ -3214,6 +3230,22 @@ defmodule Explorer.SeriesTest do
       series = Series.cos(s)
 
       assert Series.to_list(series) == [1.0, 6.123233995736766e-17, -1.0, 1.0]
+    end
+
+    test "calculates the cosine of all elements in the series for f32 input and outputs f64" do
+      pi = :math.pi()
+      s = Explorer.Series.from_list([0, pi / 2, pi, 2 * pi], dtype: :f32)
+
+      series = Series.cos(s)
+
+      assert Series.to_list(series) == [
+               1.0,
+               -4.371139000186241e-8,
+               -0.9999999999999962,
+               0.9999999999999847
+             ]
+
+      assert Series.dtype(series) == {:f, 64}
     end
   end
 
@@ -3231,6 +3263,22 @@ defmodule Explorer.SeriesTest do
                -2.4492935982947064e-16
              ]
     end
+
+    test "calculates the tangent of all elements in the series for f32 input and outputs f64" do
+      pi = :math.pi()
+      s = Explorer.Series.from_list([0, pi / 2, pi, 2 * pi], dtype: :f32)
+
+      series = Series.tan(s)
+
+      assert Series.to_list(series) == [
+               0.0,
+               -22_877_332.42885646,
+               8.742278000372508e-8,
+               1.7484556000745148e-7
+             ]
+
+      assert Series.dtype(series) == {:f, 64}
+    end
   end
 
   describe "asin/1" do
@@ -3240,6 +3288,15 @@ defmodule Explorer.SeriesTest do
       series = Series.asin(s)
 
       assert Series.to_list(series) == [0.0, 1.5707963267948966]
+    end
+
+    test "calculates the arcsine of all elements in the series for f32 input and outputs f64" do
+      s = Explorer.Series.from_list([0.0, 1.0], dtype: :f32)
+
+      series = Series.asin(s)
+
+      assert Series.to_list(series) == [0.0, 1.5707963267948966]
+      assert Series.dtype(series) == {:f, 64}
     end
   end
 
@@ -3251,6 +3308,15 @@ defmodule Explorer.SeriesTest do
 
       assert Series.to_list(series) == [1.5707963267948966, 0.0]
     end
+
+    test "calculates the arccosine of all elements in the series for f32 input and outputs f64" do
+      s = Explorer.Series.from_list([0.0, 1.0], dtype: :f32)
+
+      series = Series.acos(s)
+
+      assert Series.to_list(series) == [1.5707963267948966, 0.0]
+      assert Series.dtype(series) == {:f, 64}
+    end
   end
 
   describe "atan/1" do
@@ -3260,6 +3326,15 @@ defmodule Explorer.SeriesTest do
       series = Series.atan(s)
 
       assert Series.to_list(series) == [0.0, 0.7853981633974483]
+    end
+
+    test "calculates the arctangent of all elements in the series for f32 input and outputs f64" do
+      s = Explorer.Series.from_list([0.0, 1.0], dtype: :f32)
+
+      series = Series.atan(s)
+
+      assert Series.to_list(series) == [0.0, 0.7853981633974483]
+      assert Series.dtype(series) == {:f, 64}
     end
   end
 
@@ -3272,6 +3347,25 @@ defmodule Explorer.SeriesTest do
 
       assert Series.to_list(series) == [-360.0, -180.0, -90.0, 0.0, 90.0, 180.0, 360.0]
     end
+
+    test "converts the given series of radians to degrees for f32 input and outputs f64" do
+      pi = :math.pi()
+      s = Explorer.Series.from_list([-2 * pi, -pi, -pi / 2, 0, pi / 2, pi, 2 * pi], dtype: :f32)
+
+      series = Series.degrees(s)
+
+      assert Series.to_list(series) == [
+               -360.00001001791264,
+               -180.00000500895632,
+               -90.00000250447816,
+               0.0,
+               90.00000250447816,
+               180.00000500895632,
+               360.00001001791264
+             ]
+
+      assert Series.dtype(series) == {:f, 64}
+    end
   end
 
   describe "radians/1" do
@@ -3282,6 +3376,16 @@ defmodule Explorer.SeriesTest do
       series = Series.radians(s)
 
       assert Series.to_list(series) == [-2 * pi, -pi, -pi / 2, 0, pi / 2, pi, 2 * pi]
+    end
+
+    test "converts the given series of degrees to radians for f32 input and outputs f64" do
+      pi = :math.pi()
+      s = Explorer.Series.from_list([-360.0, -180.0, -90.0, 0.0, 90.0, 180.0, 360.0], dtype: :f32)
+
+      series = Series.radians(s)
+
+      assert Series.to_list(series) == [-2 * pi, -pi, -pi / 2, 0, pi / 2, pi, 2 * pi]
+      assert Series.dtype(series) == {:f, 64}
     end
   end
 
