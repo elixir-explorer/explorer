@@ -58,8 +58,8 @@ defmodule Explorer.TensorFrameTest do
 
     test "handles deftransform functions" do
       tf = put_column(tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"]))
-      assert tf[:a] == Nx.tensor([1, 2, 3])
-      assert tf["a"] == Nx.tensor([1, 2, 3])
+      assert tf[:a] == Nx.tensor([1, 2, 3], type: :s64)
+      assert tf["a"] == Nx.tensor([1, 2, 3], type: :s64)
       assert tf[:b] == Nx.tensor([4.0, 5.0, 6.0], type: :f64)
       assert tf["b"] == Nx.tensor([4.0, 5.0, 6.0], type: :f64)
       assert tf[:d] == Nx.tensor([5.0, 7.0, 9.0], type: :f64)
@@ -73,13 +73,13 @@ defmodule Explorer.TensorFrameTest do
       i = 1
       f = Nx.tensor([1.0], type: :f64)
       tf = tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])
-      assert TF.put(tf, :a, i)[:a] == Nx.tensor([1, 1, 1])
+      assert TF.put(tf, :a, i)[:a] == Nx.tensor([1, 1, 1], type: :s32)
       assert TF.put(tf, :a, f)[:a] == Nx.tensor([1.0, 1.0, 1.0], type: :f64)
 
-      assert TF.put(tf, :c, i)[:c] == Nx.tensor([1, 1, 1])
+      assert TF.put(tf, :c, i)[:c] == Nx.tensor([1, 1, 1], type: :s32)
       assert TF.put(tf, :c, f)[:c] == Nx.tensor([1.0, 1.0, 1.0], type: :f64)
 
-      assert TF.put(tf, :d, i)[:d] == Nx.tensor([1, 1, 1])
+      assert TF.put(tf, :d, i)[:d] == Nx.tensor([1, 1, 1], type: :s32)
       assert TF.put(tf, :d, f)[:d] == Nx.tensor([1.0, 1.0, 1.0], type: :f64)
     end
   end
@@ -105,8 +105,8 @@ defmodule Explorer.TensorFrameTest do
   describe "access" do
     test "get" do
       tf = tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])
-      assert tf[:a] == Nx.tensor([1, 2, 3])
-      assert tf["a"] == Nx.tensor([1, 2, 3])
+      assert tf[:a] == Nx.tensor([1, 2, 3], type: :s64)
+      assert tf["a"] == Nx.tensor([1, 2, 3], type: :s64)
       assert tf[:b] == Nx.tensor([4.0, 5.0, 6.0], type: :f64)
       assert tf["b"] == Nx.tensor([4.0, 5.0, 6.0], type: :f64)
 
@@ -122,12 +122,12 @@ defmodule Explorer.TensorFrameTest do
     test "get_and_update" do
       tf = tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])
       {get, update} = Access.get_and_update(tf, :a, fn a -> {a, Nx.multiply(a, 2)} end)
-      assert get == Nx.tensor([1, 2, 3])
-      assert update[:a] == Nx.tensor([2, 4, 6])
+      assert get == Nx.tensor([1, 2, 3], type: :s64)
+      assert update[:a] == Nx.tensor([2, 4, 6], type: :s64)
 
       {get, update} = Access.get_and_update(tf, :a, fn a -> {a, 123} end)
-      assert get == Nx.tensor([1, 2, 3])
-      assert update[:a] == Nx.tensor([123, 123, 123])
+      assert get == Nx.tensor([1, 2, 3], type: :s64)
+      assert update[:a] == Nx.tensor([123, 123, 123], type: :s32)
 
       assert_raise ArgumentError,
                    ~r"cannot add tensor that does not match the frame size. Expected a tensor of shape \{3\}",
@@ -139,7 +139,7 @@ defmodule Explorer.TensorFrameTest do
     test "pop" do
       tf = tf(a: [1, 2, 3], b: [4.0, 5.0, 6.0], c: ["a", "b", "c"])
       {tensor, popped} = Access.pop(tf, :a)
-      assert tensor == Nx.tensor([1, 2, 3])
+      assert tensor == Nx.tensor([1, 2, 3], type: :s64)
       assert popped.data[:a] == nil
     end
   end

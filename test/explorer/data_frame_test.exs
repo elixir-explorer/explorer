@@ -3868,10 +3868,14 @@ defmodule Explorer.DataFrameTest do
 
       df =
         DF.new(
-          a: [1, 2, 3],
-          b: [4.0, 5.0, 6.0],
-          c: ["a", "b", "c"],
-          d: [~D[1970-01-01], ~D[1980-01-01], ~D[1990-01-01]]
+          %{
+            a: [1, 2, 3],
+            b: [4.0, 5.0, 6.0],
+            c: ["a", "b", "c"],
+            d: [~D[1970-01-01], ~D[1980-01-01], ~D[1990-01-01]]
+          },
+          # The dtype of `a` must match the default dtype of integer tensors, which is s32.
+          dtypes: [a: :s32]
         )
 
       assert DF.put(df, :a, i)[:a] |> Series.to_list() == [1, 1, 1]
@@ -3883,7 +3887,7 @@ defmodule Explorer.DataFrameTest do
                ~D[1970-01-02]
              ]
 
-      assert DF.put(df, :c, i, dtype: :integer)[:c] |> Series.to_list() == [1, 1, 1]
+      assert DF.put(df, :c, i, dtype: :s32)[:c] |> Series.to_list() == [1, 1, 1]
       assert DF.put(df, :c, f, dtype: {:f, 64})[:c] |> Series.to_list() == [1.0, 1.0, 1.0]
 
       assert DF.put(df, :c, d, dtype: :date)[:c] |> Series.to_list() == [
@@ -3892,7 +3896,7 @@ defmodule Explorer.DataFrameTest do
                ~D[1970-01-02]
              ]
 
-      assert DF.put(df, :d, i, dtype: :integer)[:d] |> Series.to_list() == [1, 1, 1]
+      assert DF.put(df, :d, i, dtype: :s32)[:d] |> Series.to_list() == [1, 1, 1]
       assert DF.put(df, :d, f, dtype: {:f, 64})[:d] |> Series.to_list() == [1.0, 1.0, 1.0]
 
       assert DF.put(df, :d, d)[:d] |> Series.to_list() == [
