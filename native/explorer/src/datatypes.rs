@@ -785,6 +785,14 @@ impl TryFrom<ExParquetCompression> for ParquetCompression {
     }
 }
 
+#[derive(NifTaggedEnum)]
+pub enum QuoteStyle {
+    Necessary,
+    Always,
+    NonNumeric,
+    Never,
+}
+
 // =========================
 // ====== FSS Structs ======
 // =========================
@@ -847,5 +855,37 @@ impl ExS3Config {
 impl From<ExExpr> for Expr {
     fn from(ex_expr: ExExpr) -> Self {
         ex_expr.clone_inner()
+    }
+}
+
+use polars::prelude::QuoteStyle as PolarsQuoteStyle;
+
+#[derive(NifTaggedEnum)]
+pub enum ExQuoteStyle {
+    Necessary,
+    Always,
+    NonNumeric,
+    Never,
+}
+
+impl From<ExQuoteStyle> for PolarsQuoteStyle {
+    fn from(style: ExQuoteStyle) -> Self {
+        match style {
+            ExQuoteStyle::Necessary => PolarsQuoteStyle::Necessary,
+            ExQuoteStyle::Always => PolarsQuoteStyle::Always,
+            ExQuoteStyle::NonNumeric => PolarsQuoteStyle::NonNumeric,
+            ExQuoteStyle::Never => PolarsQuoteStyle::Never,
+        }
+    }
+}
+
+impl From<PolarsQuoteStyle> for ExQuoteStyle {
+    fn from(style: PolarsQuoteStyle) -> Self {
+        match style {
+            PolarsQuoteStyle::Necessary => ExQuoteStyle::Necessary,
+            PolarsQuoteStyle::Always => ExQuoteStyle::Always,
+            PolarsQuoteStyle::NonNumeric => ExQuoteStyle::NonNumeric,
+            PolarsQuoteStyle::Never => ExQuoteStyle::Never,
+        }
     }
 }

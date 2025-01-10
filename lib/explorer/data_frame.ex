@@ -651,6 +651,9 @@ defmodule Explorer.DataFrame do
 
     * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
 
+    * `:quote_style` - The quoting style to use. Possible values are `:necessary`, `:always`, `:non_numeric`, and `:never`.
+      (default: `:necessary`)
+
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
 
@@ -664,13 +667,21 @@ defmodule Explorer.DataFrame do
   @spec to_csv(df :: DataFrame.t(), filename :: fs_entry() | String.t(), opts :: Keyword.t()) ::
           :ok | {:error, Exception.t()}
   def to_csv(df, filename, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",", streaming: true, config: nil)
+    opts =
+      Keyword.validate!(opts,
+        header: true,
+        delimiter: ",",
+        quote_style: :necessary,
+        streaming: true,
+        config: nil
+      )
 
     with {:ok, entry} <- normalise_entry(filename, opts[:config]) do
       Shared.apply_dataframe(df, :to_csv, [
         entry,
         opts[:header],
         opts[:delimiter],
+        opts[:quote_style],
         opts[:streaming]
       ])
     end
@@ -702,6 +713,8 @@ defmodule Explorer.DataFrame do
 
     * `:header` - Should the column names be written as the first line of the file? (default: `true`)
     * `:delimiter` - A single character used to separate fields within a record. (default: `","`)
+    * `:quote_style` - The quoting style to use. Possible values are `:necessary`, `:always`, `:non_numeric`, and `:never`.
+      (default: `:necessary`)
 
   ## Examples
 
@@ -713,8 +726,14 @@ defmodule Explorer.DataFrame do
   @spec dump_csv(df :: DataFrame.t(), opts :: Keyword.t()) ::
           {:ok, String.t()} | {:error, Exception.t()}
   def dump_csv(df, opts \\ []) do
-    opts = Keyword.validate!(opts, header: true, delimiter: ",")
-    Shared.apply_dataframe(df, :dump_csv, [opts[:header], opts[:delimiter]], false)
+    opts = Keyword.validate!(opts, header: true, delimiter: ",", quote_style: :necessary)
+
+    Shared.apply_dataframe(
+      df,
+      :dump_csv,
+      [opts[:header], opts[:delimiter], opts[:quote_style]],
+      false
+    )
   end
 
   @doc """

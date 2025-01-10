@@ -13,6 +13,7 @@ defmodule Explorer.Backend.DataFrame do
   @type ok_result() :: :ok | {:error, Exception.t()}
   @type io_result(t) :: {:ok, t} | {:error, Exception.t()}
 
+  @type quote_style :: :necessary | :always | :non_numeric | :never
   # Generic result
   @type result(t) :: {:ok, t} | {:error, term()}
 
@@ -65,10 +66,16 @@ defmodule Explorer.Backend.DataFrame do
               entry :: fs_entry(),
               header? :: boolean(),
               delimiter :: String.t(),
+              quote_style :: quote_style,
               streaming :: boolean()
             ) ::
               ok_result()
-  @callback dump_csv(df, header? :: boolean(), delimiter :: String.t()) :: io_result(binary())
+  @callback dump_csv(
+              df,
+              header? :: boolean(),
+              delimiter :: String.t(),
+              quote_style :: quote_style
+            ) :: io_result(binary())
 
   @callback load_csv(
               contents :: String.t(),

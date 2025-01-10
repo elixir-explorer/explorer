@@ -4,7 +4,7 @@ use std::io::BufWriter;
 use std::num::NonZeroUsize;
 
 use crate::dataframe::io::schema_from_dtypes_pairs;
-use crate::datatypes::{ExParquetCompression, ExS3Entry, ExSeriesDtype};
+use crate::datatypes::{ExParquetCompression, ExQuoteStyle, ExS3Entry, ExSeriesDtype};
 use crate::{ExLazyFrame, ExplorerError};
 
 #[rustler::nif]
@@ -256,6 +256,7 @@ pub fn lf_to_csv(
     filename: &str,
     include_headers: bool,
     delimiter: u8,
+    quote_style: ExQuoteStyle,
     streaming: bool,
 ) -> Result<(), ExplorerError> {
     let lf = data.clone_inner();
@@ -283,6 +284,7 @@ pub fn lf_to_csv(
         CsvWriter::new(&mut buf_writer)
             .include_header(include_headers)
             .with_separator(delimiter)
+            .with_quote_style(quote_style.into())
             .finish(&mut df.clone())?;
         Ok(())
     }
