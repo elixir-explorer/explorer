@@ -1747,9 +1747,9 @@ defmodule Explorer.DataFrame do
       ...> ]))
       #Explorer.DataFrame<
         Polars[2 x 3]
-        x1 s64 [1, 4]
-        x2 s64 [2, 5]
-        x3 s64 [3, 6]
+        x1 s32 [1, 4]
+        x2 s32 [2, 5]
+        x3 s32 [3, 6]
       >
 
   Explorer expects tensors to have certain types, so you may need to cast
@@ -1764,14 +1764,14 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[2 x 2]
         floats f64 [1.0, 2.0]
-        ints s64 [3, 4]
+        ints s32 [3, 4]
       >
 
   Use dtypes to force a particular representation:
 
       iex> Explorer.DataFrame.new([
       ...>   floats: Nx.tensor([1.0, 2.0], type: :f64),
-      ...>   times: Nx.tensor([3_000, 4_000])
+      ...>   times: Nx.tensor([3_000, 4_000], type: :s64)
       ...> ], dtypes: [times: :time])
       #Explorer.DataFrame<
         Polars[2 x 2]
@@ -3158,7 +3158,7 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]))
       #Explorer.DataFrame<
         Polars[3 x 1]
-        a s64 [1, 2, 3]
+        a s32 [1, 2, 3]
       >
 
   You can specify which dtype the tensor represents.
@@ -3167,7 +3167,7 @@ defmodule Explorer.DataFrame do
   in microseconds from the Unix epoch:
 
       iex> df = Explorer.DataFrame.new([])
-      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3]), dtype: {:naive_datetime, :microsecond})
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([1, 2, 3], type: :s64), dtype: {:naive_datetime, :microsecond})
       #Explorer.DataFrame<
         Polars[3 x 1]
         a naive_datetime[μs] [1970-01-01 00:00:00.000001, 1970-01-01 00:00:00.000002, 1970-01-01 00:00:00.000003]
@@ -3179,7 +3179,7 @@ defmodule Explorer.DataFrame do
   straight-forward:
 
       iex> df = Explorer.DataFrame.new(a: [~N[1970-01-01 00:00:00]])
-      iex> Explorer.DataFrame.put(df, :a, Nx.tensor(529550625987654))
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor(529550625987654, type: :s64))
       #Explorer.DataFrame<
         Polars[1 x 1]
         a naive_datetime[μs] [1986-10-13 01:23:45.987654]
@@ -3189,7 +3189,7 @@ defmodule Explorer.DataFrame do
 
       iex> cat = Explorer.Series.from_list(["foo", "bar", "baz"], dtype: :category)
       iex> df = Explorer.DataFrame.new(a: cat)
-      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([2, 1, 0]))
+      iex> Explorer.DataFrame.put(df, :a, Nx.tensor([2, 1, 0], type: :s64))
       #Explorer.DataFrame<
         Polars[3 x 1]
         a category ["baz", "bar", "foo"]

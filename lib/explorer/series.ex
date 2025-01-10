@@ -655,7 +655,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.from_tensor(tensor)
       #Explorer.Series<
         Polars[3]
-        s64 [1, 2, 3]
+        s32 [1, 2, 3]
       >
 
       iex> tensor = Nx.tensor([1.0, 2.0, 3.0], type: :f64)
@@ -672,11 +672,11 @@ defmodule Explorer.Series do
         u8 [1, 0, 1]
       >
 
-      iex> tensor = Nx.tensor([-719162, 0, 6129], type: :s32)
+      iex> tensor = Nx.tensor([-719162, 0, 6129], type: :s64)
       iex> Explorer.Series.from_tensor(tensor)
       #Explorer.Series<
         Polars[3]
-        s32 [-719162, 0, 6129]
+        s64 [-719162, 0, 6129]
       >
 
   Booleans can be read from a tensor of `{:u, 8}` type if the dtype is explicitly given:
@@ -691,7 +691,7 @@ defmodule Explorer.Series do
   Times are signed 64-bit representing nanoseconds from midnight and
   therefore must have their dtype explicitly given:
 
-      iex> tensor = Nx.tensor([0, 86399999999000])
+      iex> tensor = Nx.tensor([0, 86399999999000], type: :s64)
       iex> Explorer.Series.from_tensor(tensor, dtype: :time)
       #Explorer.Series<
         Polars[2]
@@ -700,7 +700,7 @@ defmodule Explorer.Series do
 
   Datetimes are signed 64-bit and therefore must have their dtype explicitly given:
 
-      iex> tensor = Nx.tensor([0, 529550625987654])
+      iex> tensor = Nx.tensor([0, 529550625987654], type: :s64)
       iex> Explorer.Series.from_tensor(tensor, dtype: {:naive_datetime, :microsecond})
       #Explorer.Series<
         Polars[2]
@@ -736,7 +736,7 @@ defmodule Explorer.Series do
   ## Tensor examples
 
       iex> s = Explorer.Series.from_list([0, 1, 2])
-      iex> Explorer.Series.replace(s, Nx.tensor([1, 2, 3]))
+      iex> Explorer.Series.replace(s, Nx.tensor([1, 2, 3], type: :s64))
       #Explorer.Series<
         Polars[3]
         s64 [1, 2, 3]
@@ -745,7 +745,7 @@ defmodule Explorer.Series do
   This is particularly useful for categorical columns:
 
       iex> s = Explorer.Series.from_list(["foo", "bar", "baz"], dtype: :category)
-      iex> Explorer.Series.replace(s, Nx.tensor([2, 1, 0]))
+      iex> Explorer.Series.replace(s, Nx.tensor([2, 1, 0], type: :s64))
       #Explorer.Series<
         Polars[3]
         category ["baz", "bar", "foo"]
