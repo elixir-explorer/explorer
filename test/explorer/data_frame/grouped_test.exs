@@ -66,6 +66,17 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert DF.groups(df2) == []
     end
 
+    test "ungroup by range", %{df: df} do
+      df1 = DF.group_by(df, ["country", "year"])
+      df2 = DF.ungroup(df1, 1..1)
+
+      # Note: the range selected the column at index 1 of `df.names` to ungroup,
+      # not `df.groups`.
+      assert Enum.take(df.names, 2) == ["year", "country"]
+      assert df2.groups == ["year"]
+      assert DF.groups(df2) == ["year"]
+    end
+
     test "raise error for unknown groups", %{df: df} do
       df1 = DF.group_by(df, ["country", "year"])
 
