@@ -5625,7 +5625,10 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :single
-  @spec ungroup(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
+  @spec ungroup(
+          df :: DataFrame.t(),
+          groups_or_group :: column_names() | column_name() | Range.t() | fun()
+        ) ::
           DataFrame.t()
   def ungroup(df, groups \\ ..)
 
