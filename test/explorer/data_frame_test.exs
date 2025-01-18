@@ -2910,7 +2910,7 @@ defmodule Explorer.DataFrameTest do
 
                    * dataframe 1, column y has dtype:
 
-                       nil
+                       {:s, 64}
 
                    these types are incompatible
                    """,
