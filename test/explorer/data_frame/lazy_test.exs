@@ -1517,7 +1517,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       assert_raise ArgumentError,
                    """
-                   columns dtypes must be compatible for all dataframes
+                   column dtypes must be compatible for all dataframes
 
                    * dataframe 0, column y has dtype:
 

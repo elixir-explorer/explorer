@@ -5517,7 +5517,7 @@ defmodule Explorer.DataFrame do
         else
           message =
             """
-            columns dtypes must be compatible for all dataframes
+            column dtypes must be compatible for all dataframes
 
             * dataframe 0, column #{name} has dtype:
 
