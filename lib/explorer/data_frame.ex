@@ -5460,10 +5460,11 @@ defmodule Explorer.DataFrame do
   end
 
   defp ensure_column_names_match([head | tail]) do
+    df_0_cols = head |> names() |> MapSet.new()
+
     tail
     |> Enum.with_index(1)
     |> Enum.reduce_while(:ok, fn {df, index}, :ok ->
-      df_0_cols = head |> names() |> MapSet.new()
       df_i_cols = df |> names() |> MapSet.new()
 
       if MapSet.equal?(df_0_cols, df_i_cols) do
