@@ -5437,107 +5437,99 @@ defmodule Explorer.DataFrame do
   @doc type: :multi
   @spec concat_rows([DataFrame.t()]) :: DataFrame.t()
   def concat_rows([%DataFrame{} = head | _tail] = dfs) do
-    with :ok <- ensure_column_names_match(dfs),
-         {:ok, changed_types} <- compute_changed_types_concat_rows(dfs) do
-      out_df = out_df(head, head.names, Map.merge(head.dtypes, changed_types))
+    changed_types = compute_changed_types_concat_rows(dfs)
+    out_df = out_df(head, head.names, Map.merge(head.dtypes, changed_types))
 
-      dfs =
-        if changed_types == %{} do
-          dfs
-        else
-          for df <- dfs do
-            mutate_with(ungroup(df), fn ldf ->
-              for {column, target_type} <- changed_types,
-                  do: {column, Series.cast(ldf[column], target_type)}
-            end)
-          end
-        end
-
-      Shared.apply_dataframe(dfs, :concat_rows, [out_df])
-    else
-      {:error, message} -> raise ArgumentError, message
-    end
-  end
-
-  defp ensure_column_names_match([head | tail]) do
-    df_0_cols = head |> names() |> MapSet.new()
-
-    tail
-    |> Enum.with_index(1)
-    |> Enum.reduce_while(:ok, fn {df, index}, :ok ->
-      df_i_cols = df |> names() |> MapSet.new()
-
-      if MapSet.equal?(df_0_cols, df_i_cols) do
-        {:cont, :ok}
+    dfs =
+      if changed_types == %{} do
+        dfs
       else
-        mismatched_cols = MapSet.symmetric_difference(df_0_cols, df_i_cols)
-        in_0_only = df_0_cols |> MapSet.intersection(mismatched_cols) |> Enum.sort()
-        in_i_only = df_i_cols |> MapSet.intersection(mismatched_cols) |> Enum.sort()
-
-        message_0 =
-          if in_0_only == [] do
-            ""
-          else
-            """
-
-            * dataframe 0 has these columns not present in dataframe #{index}:
-
-                #{inspect(in_0_only)}
-            """
-          end
-
-        message_i =
-          if in_i_only == [] do
-            ""
-          else
-            """
-
-            * dataframe #{index} has these columns not present in dataframe 0:
-
-                #{inspect(in_i_only)}
-            """
-          end
-
-        message = "dataframes must have the same columns\n#{message_0}#{message_i}"
-        {:halt, {:error, message}}
+        for df <- dfs do
+          mutate_with(ungroup(df), fn ldf ->
+            for {column, target_type} <- changed_types,
+                do: {column, Series.cast(ldf[column], target_type)}
+          end)
+        end
       end
-    end)
+
+    Shared.apply_dataframe(dfs, :concat_rows, [out_df])
   end
 
   defp compute_changed_types_concat_rows([head | tail]) do
+    types = head.dtypes
+
     tail
     |> Enum.with_index(1)
-    |> Enum.reduce_while({:ok, %{}}, fn {df, index}, {:ok, changed_types} ->
-      Enum.reduce_while(df.dtypes, changed_types, fn {name, type}, changed_types ->
-        # This runs after `ensure_column_names_match`, so we can `fetch!` here.
-        current_type = Map.fetch!(head.dtypes, name)
+    |> Enum.reduce(%{}, fn {df, index}, changed_types ->
+      if n_columns(df) != map_size(types) do
+        raise ArgumentError, concat_rows_mismatched_columns_message(head, df, index)
+      end
 
-        if dtype = Shared.merge_dtype(Map.get(changed_types, name, current_type), type) do
-          {:cont, Map.put(changed_types, name, dtype)}
-        else
-          message =
-            """
-            column dtypes must be compatible for all dataframes
+      Enum.reduce(df.dtypes, changed_types, fn {name, type}, changed_types ->
+        case types do
+          %{^name => current_type} ->
+            if dtype = Shared.merge_dtype(Map.get(changed_types, name, current_type), type) do
+              Map.put(changed_types, name, dtype)
+            else
+              raise ArgumentError,
+                    concat_rows_incompatible_dtypes_message(name, current_type, type, index)
+            end
 
-            * dataframe 0, column #{name} has dtype:
-
-                #{inspect(current_type)}
-
-            * dataframe #{index}, column #{name} has dtype:
-
-                #{inspect(dtype)}
-
-            these types are incompatible
-            """
-
-          {:halt, {:error, message}}
+          %{} ->
+            raise ArgumentError, concat_rows_mismatched_columns_message(head, df, index)
         end
       end)
-      |> case do
-        {:error, message} -> {:halt, {:error, message}}
-        %{} = changed_types -> {:cont, {:ok, changed_types}}
-      end
     end)
+  end
+
+  defp concat_rows_mismatched_columns_message(df_0, df_i, i) do
+    df_0_cols = df_0 |> names() |> MapSet.new()
+    df_i_cols = df_i |> names() |> MapSet.new()
+    mismatched_cols = MapSet.symmetric_difference(df_0_cols, df_i_cols)
+    in_0_only = df_0_cols |> MapSet.intersection(mismatched_cols) |> Enum.sort()
+    in_i_only = df_i_cols |> MapSet.intersection(mismatched_cols) |> Enum.sort()
+
+    message_0 =
+      if in_0_only == [] do
+        ""
+      else
+        """
+
+        * dataframe 0 has these columns not present in dataframe #{i}:
+
+            #{inspect(in_0_only)}
+        """
+      end
+
+    message_i =
+      if in_i_only == [] do
+        ""
+      else
+        """
+
+        * dataframe #{i} has these columns not present in dataframe 0:
+
+            #{inspect(in_i_only)}
+        """
+      end
+
+    "dataframes must have the same columns\n#{message_0}#{message_i}"
+  end
+
+  defp concat_rows_incompatible_dtypes_message(column_name, df_0_dtype, df_i_dtype, i) do
+    """
+    column dtypes must be compatible for all dataframes
+
+    * dataframe 0, column #{column_name} has dtype:
+
+        #{inspect(df_0_dtype)}
+
+    * dataframe #{i}, column #{column_name} has dtype:
+
+        #{inspect(df_i_dtype)}
+
+    these types are incompatible
+    """
   end
 
   @doc """
