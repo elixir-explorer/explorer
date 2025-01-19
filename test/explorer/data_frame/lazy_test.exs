@@ -1519,11 +1519,11 @@ defmodule Explorer.DataFrame.LazyTest do
                    """
                    column dtypes must be compatible for all dataframes
 
-                   * dataframe 0, column y has dtype:
+                   * dataframe 0, column \"y\" has dtype:
 
                        :string
 
-                   * dataframe 1, column y has dtype:
+                   * dataframe 1, column \"y\" has dtype:
 
                        {:s, 64}
 

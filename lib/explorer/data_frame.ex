@@ -5520,11 +5520,11 @@ defmodule Explorer.DataFrame do
     """
     column dtypes must be compatible for all dataframes
 
-    * dataframe 0, column #{column_name} has dtype:
+    * dataframe 0, column #{inspect(column_name)} has dtype:
 
         #{inspect(df_0_dtype)}
 
-    * dataframe #{i}, column #{column_name} has dtype:
+    * dataframe #{i}, column #{inspect(column_name)} has dtype:
 
         #{inspect(df_i_dtype)}
 
