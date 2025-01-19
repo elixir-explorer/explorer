@@ -5458,10 +5458,11 @@ defmodule Explorer.DataFrame do
   defp compute_changed_types_concat_rows([head | tail]) do
     types = head.dtypes
 
-    Enum.reduce(tail, %{}, fn df, changed_types ->
+    tail
+    |> Enum.with_index(1)
+    |> Enum.reduce(%{}, fn {df, index}, changed_types ->
       if n_columns(df) != map_size(types) do
-        raise ArgumentError,
-              "dataframes must have the same columns"
+        raise ArgumentError, concat_rows_mismatched_columns_message(head, df, index)
       end
 
       Enum.reduce(df.dtypes, changed_types, fn {name, type}, changed_types ->
@@ -5471,14 +5472,64 @@ defmodule Explorer.DataFrame do
               Map.put(changed_types, name, dtype)
             else
               raise ArgumentError,
-                    "columns and dtypes must be identical for all dataframes"
+                    concat_rows_incompatible_dtypes_message(name, current_type, type, index)
             end
 
           %{} ->
-            raise ArgumentError, "dataframes must have the same columns"
+            raise ArgumentError, concat_rows_mismatched_columns_message(head, df, index)
         end
       end)
     end)
+  end
+
+  defp concat_rows_mismatched_columns_message(df_0, df_i, i) do
+    df_0_cols = df_0 |> names() |> MapSet.new()
+    df_i_cols = df_i |> names() |> MapSet.new()
+    mismatched_cols = MapSet.symmetric_difference(df_0_cols, df_i_cols)
+    in_0_only = df_0_cols |> MapSet.intersection(mismatched_cols) |> Enum.sort()
+    in_i_only = df_i_cols |> MapSet.intersection(mismatched_cols) |> Enum.sort()
+
+    message_0 =
+      if in_0_only == [] do
+        ""
+      else
+        """
+
+        * dataframe 0 has these columns not present in dataframe #{i}:
+
+            #{inspect(in_0_only)}
+        """
+      end
+
+    message_i =
+      if in_i_only == [] do
+        ""
+      else
+        """
+
+        * dataframe #{i} has these columns not present in dataframe 0:
+
+            #{inspect(in_i_only)}
+        """
+      end
+
+    "dataframes must have the same columns\n#{message_0}#{message_i}"
+  end
+
+  defp concat_rows_incompatible_dtypes_message(column_name, df_0_dtype, df_i_dtype, i) do
+    """
+    column dtypes must be compatible for all dataframes
+
+    * dataframe 0, column #{inspect(column_name)} has dtype:
+
+        #{inspect(df_0_dtype)}
+
+    * dataframe #{i}, column #{inspect(column_name)} has dtype:
+
+        #{inspect(df_i_dtype)}
+
+    these types are incompatible
+    """
   end
 
   @doc """

@@ -2883,7 +2883,17 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
 
       assert_raise ArgumentError,
-                   "dataframes must have the same columns",
+                   """
+                   dataframes must have the same columns
+
+                   * dataframe 0 has these columns not present in dataframe 1:
+
+                       [\"x\", \"y\"]
+
+                   * dataframe 1 has these columns not present in dataframe 0:
+
+                       [\"z\"]
+                   """,
                    fn -> DF.concat_rows(df1, DF.new(z: [7, 8, 9])) end
     end
 
@@ -2891,7 +2901,19 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.new(x: [1, 2, 3], y: ["a", "b", "c"])
 
       assert_raise ArgumentError,
-                   "columns and dtypes must be identical for all dataframes",
+                   """
+                   column dtypes must be compatible for all dataframes
+
+                   * dataframe 0, column \"y\" has dtype:
+
+                       :string
+
+                   * dataframe 1, column \"y\" has dtype:
+
+                       {:s, 64}
+
+                   these types are incompatible
+                   """,
                    fn -> DF.concat_rows(df1, DF.new(x: [7, 8, 9], y: [10, 11, 12])) end
     end
 

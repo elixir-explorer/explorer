@@ -1476,15 +1476,59 @@ defmodule Explorer.DataFrame.LazyTest do
       df1 = DF.new([x: [7, 8, 9], y: ["g", "h", nil]], lazy: true)
 
       assert_raise ArgumentError,
-                   "dataframes must have the same columns",
+                   """
+                   dataframes must have the same columns
+
+                   * dataframe 0 has these columns not present in dataframe 1:
+
+                       [\"x\", \"y\"]
+
+                   * dataframe 1 has these columns not present in dataframe 0:
+
+                       [\"z\"]
+                   """,
                    fn -> DF.concat_rows(df1, DF.new([z: [7, 8, 9]], lazy: true)) end
 
       assert_raise ArgumentError,
-                   "dataframes must have the same columns",
+                   """
+                   dataframes must have the same columns
+
+                   * dataframe 0 has these columns not present in dataframe 1:
+
+                       [\"y\"]
+
+                   * dataframe 1 has these columns not present in dataframe 0:
+
+                       [\"z\"]
+                   """,
                    fn -> DF.concat_rows(df1, DF.new([x: [7, 8, 9], z: [7, 8, 9]], lazy: true)) end
 
       assert_raise ArgumentError,
-                   "columns and dtypes must be identical for all dataframes",
+                   """
+                   dataframes must have the same columns
+
+                   * dataframe 1 has these columns not present in dataframe 0:
+
+                       [\"z\"]
+                   """,
+                   fn ->
+                     DF.concat_rows(df1, DF.new([x: [7], y: [8], z: [9]], lazy: true))
+                   end
+
+      assert_raise ArgumentError,
+                   """
+                   column dtypes must be compatible for all dataframes
+
+                   * dataframe 0, column \"y\" has dtype:
+
+                       :string
+
+                   * dataframe 1, column \"y\" has dtype:
+
+                       {:s, 64}
+
+                   these types are incompatible
+                   """,
                    fn ->
                      DF.concat_rows(df1, DF.new([x: [7, 8, 9], y: [10, 11, 12]], lazy: true))
                    end
