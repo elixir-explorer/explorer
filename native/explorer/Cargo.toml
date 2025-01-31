@@ -33,7 +33,7 @@ object_store = { version = "0.11", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.45"
+version = "0.46"
 default-features = false
 features = [
   "abs",
@@ -44,7 +44,7 @@ features = [
   "csv",
   "cum_agg",
   "cutqcut",
-  "decompress-fast",
+  "decompress",
   "describe",
   "dtype-full",
   "ewma",
@@ -81,8 +81,11 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.45"
+version = "0.46"
 features = ["abs", "ewma", "cum_agg", "cov"]
+
+[dependencies.polars-arrow]
+version = "0.46"
 
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]

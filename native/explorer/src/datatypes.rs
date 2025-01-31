@@ -19,10 +19,13 @@ use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
 use chrono_tz::{OffsetComponents, OffsetName, Tz};
 
-pub use polars::export::arrow::datatypes::TimeUnit as ArrowTimeUnit;
+use polars_arrow as arrow;
 
-pub use polars::export::arrow::temporal_conversions::{
-    date32_to_date as days_to_date, timestamp_ms_to_datetime as timestamp_ms_to_naive_datetime,
+pub(crate) use arrow::datatypes::TimeUnit as ArrowTimeUnit;
+
+pub(crate) use arrow::temporal_conversions::{
+    date32_to_date as days_to_date, time64ns_to_time,
+    timestamp_ms_to_datetime as timestamp_ms_to_naive_datetime,
     timestamp_ns_to_datetime as timestamp_ns_to_naive_datetime,
     timestamp_to_datetime as arrow_timestamp_to_datetime,
     timestamp_us_to_datetime as timestamp_us_to_naive_datetime,
@@ -556,8 +559,6 @@ pub struct ExTime {
     pub second: u32,
     pub microsecond: (u32, u32),
 }
-
-pub use polars::export::arrow::temporal_conversions::time64ns_to_time;
 
 impl From<i64> for ExTime {
     fn from(nanoseconds: i64) -> Self {

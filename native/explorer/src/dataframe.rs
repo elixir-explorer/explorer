@@ -1,7 +1,8 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
-use polars::export::{arrow, arrow::ffi};
+use polars_arrow as arrow;
+use polars_arrow::ffi;
 use std::collections::HashMap;
 
 use crate::datatypes::ExSeriesDtype;
