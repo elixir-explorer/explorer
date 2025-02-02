@@ -2716,11 +2716,11 @@ defmodule Explorer.DataFrameTest do
                  fn -> df[:class] end
 
     assert_raise ArgumentError,
-                 ~r"range 0..3 is out of bounds for a dataframe with 3 columns",
+                 "range 0..3 is out of bounds for a dataframe with 3 column(s)",
                  fn -> DF.to_columns(df[0..3]) end
 
     assert_raise ArgumentError,
-                 ~r"range 0..-4//1 is out of bounds for a dataframe with 3 columns",
+                 "range 0..-4//1 is out of bounds for a dataframe with 3 column(s)",
                  fn -> DF.to_columns(df[0..-4//1]) end
   end
 
@@ -2968,7 +2968,7 @@ defmodule Explorer.DataFrameTest do
       assert DF.names(df3) == DF.names(df)
 
       assert_raise ArgumentError,
-                   ~r"range 100..200 is out of bounds for a dataframe with 10 columns",
+                   "range 100..200 is out of bounds for a dataframe with 10 column(s)",
                    fn -> DF.drop_nil(df, 100..200) end
     end
   end
@@ -2992,7 +2992,7 @@ defmodule Explorer.DataFrameTest do
 
     # It takes the slice of columns in the range
     assert_raise ArgumentError,
-                 ~r"range 0..200 is out of bounds for a dataframe with 2 columns",
+                 "range 0..200 is out of bounds for a dataframe with 2 column(s)",
                  fn -> DF.drop_nil(df, 0..200) end
   end
 
