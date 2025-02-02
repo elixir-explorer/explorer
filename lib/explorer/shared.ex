@@ -207,7 +207,17 @@ defmodule Explorer.Shared do
     names
   end
 
-  def to_existing_columns(%{names: names}, %Range{} = columns, _raise?) do
+  def to_existing_columns(%{names: names} = df, %Range{} = columns, raise?) do
+    if raise? do
+      n_cols = Explorer.DataFrame.n_columns(df)
+      existing_columns = 0..(n_cols - 1)
+
+      if Enum.any?(columns, &(&1 not in existing_columns)) do
+        raise ArgumentError,
+              "range #{inspect(columns)} is out of bounds for a dataframe with #{n_cols} columns"
+      end
+    end
+
     Enum.slice(names, columns)
   end
 
