@@ -207,15 +207,17 @@ defmodule Explorer.Shared do
     names
   end
 
-  def to_existing_columns(%{names: names} = df, %Range{} = columns, raise?) do
+  def to_existing_columns(%{names: names} = df, first..last//step = columns, raise?) do
     if raise? do
       n_cols = Explorer.DataFrame.n_columns(df)
 
       # With `Enum.slice/2`, negative indices are counted from the end.
-      [slice_min, slice_max] =
-        [columns.first, columns.last]
+      [slice_min, slice_pseudo_max] =
+        [first, last]
         |> Enum.map(&if(&1 < 0, do: n_cols + &1, else: &1))
         |> Enum.sort()
+
+      slice_max = slice_min + step * (Range.size(slice_min..slice_pseudo_max//step) - 1)
 
       if slice_min < 0 or slice_max >= n_cols do
         raise ArgumentError,

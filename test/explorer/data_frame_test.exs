@@ -2690,6 +2690,7 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df[[:a, :c]]) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
     assert DF.to_columns(df[0..-2//1]) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
     assert DF.to_columns(df[-3..-1]) == DF.to_columns(df)
+    assert DF.to_columns(df[1..3//3]) == %{"b" => ["a", "b", "c"]}
     assert DF.to_columns(df[..]) == DF.to_columns(df)
 
     assert %Series{} = s1 = df[0]
