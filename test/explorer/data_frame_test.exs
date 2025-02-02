@@ -2689,8 +2689,6 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df[["a"]]) == %{"a" => [1, 2, 3]}
     assert DF.to_columns(df[[:a, :c]]) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
     assert DF.to_columns(df[0..-2//1]) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
-    assert DF.to_columns(df[-3..-1]) == DF.to_columns(df)
-    assert DF.to_columns(df[1..3//3]) == %{"b" => ["a", "b", "c"]}
     assert DF.to_columns(df[..]) == DF.to_columns(df)
 
     assert %Series{} = s1 = df[0]
@@ -2723,6 +2721,17 @@ defmodule Explorer.DataFrameTest do
     assert_raise ArgumentError,
                  "range 0..-4//1 is out of bounds for a dataframe with 3 column(s)",
                  fn -> DF.to_columns(df[0..-4//1]) end
+
+    assert_raise ArgumentError,
+                 "range -3..-1 is out of bounds for a dataframe with 3 column(s)",
+                 fn -> DF.to_columns(df[-3..-1]) end
+
+    # Note: Even though `Enum.to_list(1..3//3) == [1]`, we still classify this
+    # range as out of bounds because we define in bounds as both limits of the
+    # range being in bounds.
+    assert_raise ArgumentError,
+                 "range 1..3//3 is out of bounds for a dataframe with 3 column(s)",
+                 fn -> DF.to_columns(df[1..3//3]) end
   end
 
   test "pop/2" do

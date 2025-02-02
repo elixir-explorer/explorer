@@ -207,19 +207,15 @@ defmodule Explorer.Shared do
     names
   end
 
-  def to_existing_columns(%{names: names} = df, first..last//step = columns, raise?) do
+  def to_existing_columns(%{names: names} = df, first..last//_ = columns, raise?) do
     if raise? do
+      # We say a range is in bounds when both limits are valid column indices.
+      # In certain instances this will reject a valid input to `Enum.slice/2`,
+      # but there were some ambiguous cases we needed to cover. See
+      # https://github.com/elixir-explorer/explorer/pull/1061 for a discussion.
       n_cols = Explorer.DataFrame.n_columns(df)
 
-      # With `Enum.slice/2`, negative indices are counted from the end.
-      [slice_min, slice_pseudo_max] =
-        [first, last]
-        |> Enum.map(&if(&1 < 0, do: n_cols + &1, else: &1))
-        |> Enum.sort()
-
-      slice_max = slice_min + abs(step) * (Range.size(slice_min..slice_pseudo_max//abs(step)) - 1)
-
-      if slice_min < 0 or slice_max >= n_cols do
+      if max(abs(first), abs(last)) >= n_cols do
         raise ArgumentError,
               "range #{inspect(columns)} is out of bounds for a dataframe with #{n_cols} column(s)"
       end
