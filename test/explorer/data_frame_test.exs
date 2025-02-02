@@ -2716,8 +2716,12 @@ defmodule Explorer.DataFrameTest do
                  fn -> df[:class] end
 
     assert_raise ArgumentError,
-                 ~r"range 0..100 is out of bounds for a dataframe with 3 columns",
-                 fn -> DF.to_columns(df[0..100]) end
+                 ~r"range 0..3 is out of bounds for a dataframe with 3 columns",
+                 fn -> DF.to_columns(df[0..3]) end
+
+    assert_raise ArgumentError,
+                 ~r"range 0..-4//1 is out of bounds for a dataframe with 3 columns",
+                 fn -> DF.to_columns(df[0..-4//1]) end
   end
 
   test "pop/2" do
@@ -2963,7 +2967,9 @@ defmodule Explorer.DataFrameTest do
       df3 = DF.distinct(df, ..)
       assert DF.names(df3) == DF.names(df)
 
-      assert df == DF.distinct(df, 100..200)
+      assert_raise ArgumentError,
+                   ~r"range 100..200 is out of bounds for a dataframe with 10 columns",
+                   fn -> DF.drop_nil(df, 100..200) end
     end
   end
 
@@ -2985,8 +2991,9 @@ defmodule Explorer.DataFrameTest do
                  fn -> DF.drop_nil(df, [3, 4, 5]) end
 
     # It takes the slice of columns in the range
-    df4 = DF.drop_nil(df, 0..200)
-    assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
+    assert_raise ArgumentError,
+                 ~r"range 0..200 is out of bounds for a dataframe with 2 columns",
+                 fn -> DF.drop_nil(df, 0..200) end
   end
 
   describe "relocate/3" do

@@ -210,9 +210,14 @@ defmodule Explorer.Shared do
   def to_existing_columns(%{names: names} = df, %Range{} = columns, raise?) do
     if raise? do
       n_cols = Explorer.DataFrame.n_columns(df)
-      existing_columns = 0..(n_cols - 1)
 
-      if Enum.any?(columns, &(&1 not in existing_columns)) do
+      # With `Enum.slice/2`, negative indexes are counted from the end.
+      [slice_min, slice_max] =
+        [columns.first, columns.last]
+        |> Enum.map(&if(&1 < 0, do: n_cols + &1, else: &1))
+        |> Enum.sort()
+
+      if slice_min < 0 or slice_max >= n_cols do
         raise ArgumentError,
               "range #{inspect(columns)} is out of bounds for a dataframe with #{n_cols} columns"
       end
