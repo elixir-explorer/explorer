@@ -217,7 +217,7 @@ defmodule Explorer.Shared do
         |> Enum.map(&if(&1 < 0, do: n_cols + &1, else: &1))
         |> Enum.sort()
 
-      slice_max = slice_min + step * (Range.size(slice_min..slice_pseudo_max//step) - 1)
+      slice_max = slice_min + abs(step) * (Range.size(slice_min..slice_pseudo_max//abs(step)) - 1)
 
       if slice_min < 0 or slice_max >= n_cols do
         raise ArgumentError,
