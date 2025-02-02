@@ -2715,7 +2715,9 @@ defmodule Explorer.DataFrameTest do
                  ~r"could not find column name \"class\"",
                  fn -> df[:class] end
 
-    assert DF.to_columns(df[0..100]) == DF.to_columns(df)
+    assert_raise ArgumentError,
+                 ~r"range 0..100 is out of bounds for a dataframe with 3 columns",
+                 fn -> DF.to_columns(df[0..100]) end
   end
 
   test "pop/2" do
