@@ -901,7 +901,9 @@ defmodule Explorer.DataFrame.LazyTest do
       df3 = DF.distinct(df, ..)
       assert DF.names(df3) == DF.names(df)
 
-      assert df == DF.distinct(df, 100..200)
+      assert_raise ArgumentError,
+                   "range 100..200 is out of bounds for a dataframe with 10 column(s)",
+                   fn -> DF.distinct(df, 100..200) end
     end
   end
 

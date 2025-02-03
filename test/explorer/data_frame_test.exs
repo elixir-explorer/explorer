@@ -2689,7 +2689,6 @@ defmodule Explorer.DataFrameTest do
     assert DF.to_columns(df[["a"]]) == %{"a" => [1, 2, 3]}
     assert DF.to_columns(df[[:a, :c]]) == %{"a" => [1, 2, 3], "c" => [4.0, 5.1, 6.2]}
     assert DF.to_columns(df[0..-2//1]) == %{"a" => [1, 2, 3], "b" => ["a", "b", "c"]}
-    assert DF.to_columns(df[-3..-1]) == DF.to_columns(df)
     assert DF.to_columns(df[..]) == DF.to_columns(df)
 
     assert %Series{} = s1 = df[0]
@@ -2715,7 +2714,24 @@ defmodule Explorer.DataFrameTest do
                  ~r"could not find column name \"class\"",
                  fn -> df[:class] end
 
-    assert DF.to_columns(df[0..100]) == DF.to_columns(df)
+    assert_raise ArgumentError,
+                 "range 0..3 is out of bounds for a dataframe with 3 column(s)",
+                 fn -> DF.to_columns(df[0..3]) end
+
+    assert_raise ArgumentError,
+                 "range 0..-4//1 is out of bounds for a dataframe with 3 column(s)",
+                 fn -> DF.to_columns(df[0..-4//1]) end
+
+    assert_raise ArgumentError,
+                 "range -3..-1 is out of bounds for a dataframe with 3 column(s)",
+                 fn -> DF.to_columns(df[-3..-1]) end
+
+    # Note: Even though `Enum.to_list(1..3//3) == [1]`, we still classify this
+    # range as out of bounds because we define in bounds as both limits of the
+    # range being in bounds.
+    assert_raise ArgumentError,
+                 "range 1..3//3 is out of bounds for a dataframe with 3 column(s)",
+                 fn -> DF.to_columns(df[1..3//3]) end
   end
 
   test "pop/2" do
@@ -2961,7 +2977,9 @@ defmodule Explorer.DataFrameTest do
       df3 = DF.distinct(df, ..)
       assert DF.names(df3) == DF.names(df)
 
-      assert df == DF.distinct(df, 100..200)
+      assert_raise ArgumentError,
+                   "range 100..200 is out of bounds for a dataframe with 10 column(s)",
+                   fn -> DF.drop_nil(df, 100..200) end
     end
   end
 
@@ -2983,8 +3001,9 @@ defmodule Explorer.DataFrameTest do
                  fn -> DF.drop_nil(df, [3, 4, 5]) end
 
     # It takes the slice of columns in the range
-    df4 = DF.drop_nil(df, 0..200)
-    assert DF.to_columns(df4) == %{"a" => [1], "b" => [1]}
+    assert_raise ArgumentError,
+                 "range 0..200 is out of bounds for a dataframe with 2 column(s)",
+                 fn -> DF.drop_nil(df, 0..200) end
   end
 
   describe "relocate/3" do
