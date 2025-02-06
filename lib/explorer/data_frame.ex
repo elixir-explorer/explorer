@@ -6017,7 +6017,7 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:limit` (non_neg_integer() | :infinity) - number of rows to print.
+    * `:limit` (non_neg_integer() | :infinity) - number of rows to print. Defaults to 5.
 
   ## Examples
 
