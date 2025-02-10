@@ -6094,25 +6094,25 @@ defmodule Explorer.DataFrame do
   Row separators are included by default when the DataFrame has struct or list
   dtype columns since they tend to require multiple rows to print:
 
-      iex> data = [a: [1, 2], b: [%{"key1" => [4], "key2" => [5]}, %{"key1" => [6], "key2" => [7]}]]
+      iex> data = [col: [%{"key1" => [3], "key2" => [4]}, %{"key1" => [5], "key2" => [6]}]]
       iex> data |> Explorer.DataFrame.new() |> Explorer.DataFrame.table_string()
       \"\"\"
       +-------------------------------------------+
-      | Explorer DataFrame: [rows: 2, columns: 2] |
-      +------------------+------------------------+
-      |        a         |           b            |
-      |      <s64>       |      <struct[2]>       |
-      +==================+========================+
-      | 1                | {                      |
-      |                  |  key1: [4]             |
-      |                  |  key2: [5]             |
-      |                  | }                      |
-      +------------------+------------------------+
-      | 2                | {                      |
-      |                  |  key1: [6]             |
-      |                  |  key2: [7]             |
-      |                  | }                      |
-      +------------------+------------------------+
+      | Explorer DataFrame: [rows: 2, columns: 1] |
+      +-------------------------------------------+
+      |                    col                    |
+      |                <struct[2]>                |
+      +===========================================+
+      | {                                         |
+      |  key1: [3]                                |
+      |  key2: [4]                                |
+      | }                                         |
+      +-------------------------------------------+
+      | {                                         |
+      |  key1: [5]                                |
+      |  key2: [6]                                |
+      | }                                         |
+      +-------------------------------------------+
       \"\"\"
 
   This behavior can be overriden with the `:horizontal_style` option to
