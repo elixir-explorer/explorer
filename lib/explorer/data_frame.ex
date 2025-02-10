@@ -6017,7 +6017,17 @@ defmodule Explorer.DataFrame do
 
   ## Options
 
-    * `:limit` (non_neg_integer() | :infinity) - number of rows to print. Defaults to 5.
+    * `:limit` (`non_neg_integer()` | `:infinity`) - number of rows to print.
+      Defaults to 5.
+
+    * `:limit_dots` (`:bottom` | `:split`) - where to put the row of `…` when
+      the number of rows exceeds the print limit. For `:bottom`, we print
+      `:limit` rows followed by a row of `…`. For `:split`, we print half of
+      `:limit` rows above the `…` and half below. The top half comes from the
+      head of the dataframe and the bottom from the tail. Defaults to `:split`.
+
+  Also, any valid option to `TableRex.render!/2` will be accepted and will
+  override the defaults.
 
   ## Examples
 
@@ -6029,6 +6039,38 @@ defmodule Explorer.DataFrame do
   @doc type: :introspection
   @spec print(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
   def print(df, opts \\ []) do
+    limit =
+      case opts[:limit] do
+        :infinity ->
+          :infinity
+
+        nil ->
+          @default_sample_nrows
+
+        limit when is_integer(limit) and limit >= 0 ->
+          limit
+
+        _ ->
+          raise ArgumentError,
+                "expected `:limit` to be a non-negative integer or `:infinity`, got: #{inspect(opts[:limit])}"
+      end
+
+    limit_dots =
+      case opts[:limit_dots] do
+        valid when valid in [:split, :bottom] ->
+          valid
+
+        nil ->
+          :split
+
+        _ ->
+          raise ArgumentError,
+                "expected `:limit_dots` to be `:split` or `:bottom`, got: #{inspect(opts[:limit_dots])}"
+      end
+
+    opts = Keyword.put(opts, :limit, limit)
+    opts = Keyword.put(opts, :limit_dots, limit_dots)
+
     string =
       if n_columns(df) == 0 do
         empty_table_string()
@@ -6055,32 +6097,51 @@ defmodule Explorer.DataFrame do
 
     headers = df.names
 
-    df =
-      case opts[:limit] do
-        :infinity -> df
-        nrow when is_integer(nrow) and nrow >= 0 -> slice(df, 0, nrow)
-        _ -> slice(df, 0, @default_sample_nrows)
-      end
-      |> collect()
+    values_list =
+      if opts[:limit] == :infinity do
+        [collect(df)]
+      else
+        limit_plus_1 = df |> slice(0, opts[:limit] + 1) |> collect()
+        dots = headers |> Map.new(&{&1, "…"}) |> List.wrap() |> new()
 
-    types = Enum.map(df.names, &"\n<#{Shared.dtype_to_string(df.dtypes[&1])}>")
+        cond do
+          n_rows(limit_plus_1) <= opts[:limit] ->
+            [limit_plus_1]
+
+          opts[:limit_dots] == :split and opts[:limit] >= 2 ->
+            bottom_limit = div(opts[:limit], 2)
+            # For odd limits, the extra row goes on top.
+            top_limit = opts[:limit] - bottom_limit
+            top = slice(limit_plus_1, 0, top_limit)
+            bottom = slice(df, rows - bottom_limit, bottom_limit)
+            [top, dots, collect(bottom)]
+
+          true ->
+            top = slice(limit_plus_1, 0, opts[:limit])
+            [top, dots]
+        end
+      end
 
     values =
-      headers
-      |> Enum.map(&format_column(df[&1]))
-      |> Enum.zip_with(& &1)
+      Enum.flat_map(values_list, fn values ->
+        headers
+        |> Enum.map(&format_column(values[&1]))
+        |> Enum.zip_with(& &1)
+      end)
 
+    types = Enum.map(df.names, &"\n<#{Shared.dtype_to_string(df.dtypes[&1])}>")
     name_type = Enum.zip_with(headers, types, fn x, y -> x <> y end)
+    composite_dtype? = &(match?({_, {:list, _}}, &1) or match?({_, {:struct, _}}, &1))
+    horizontal_style = if Enum.any?(df.dtypes, composite_dtype?), do: :all, else: :header
+    default_render_opts = [header_separator_symbol: "=", horizontal_style: horizontal_style]
+    render_opts = Keyword.drop(opts, [:limit, :limit_dots])
 
     TableRex.Table.new()
     |> TableRex.Table.put_title("Explorer DataFrame: [rows: #{rows}, columns: #{columns}]")
     |> TableRex.Table.put_header(name_type)
     |> TableRex.Table.put_header_meta(0..columns, align: :center)
     |> TableRex.Table.add_rows(values)
-    |> TableRex.Table.render!(
-      header_separator_symbol: "=",
-      horizontal_style: :all
-    )
+    |> TableRex.Table.render!(Keyword.merge(default_render_opts, render_opts))
   end
 
   defp format_column(%Series{} = series) do
