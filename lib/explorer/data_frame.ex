@@ -6039,7 +6039,7 @@ defmodule Explorer.DataFrame do
       `:limit` rows above the `…` and half below. The top half comes from the
       head of the dataframe and the bottom from the tail. Defaults to `:split`.
 
-  Also, any valid option to `TableRex.render!/2` will be accepted and will
+  Also, any valid option to `TableRex.Table.render!/2` will be accepted and will
   override the defaults.
 
   ## Examples
@@ -6116,7 +6116,7 @@ defmodule Explorer.DataFrame do
       \"\"\"
 
   This behavior can be overriden with the `:horizontal_style` option to
-  `TableRex.render!/2`.
+  `TableRex.Table.render!/2`.
   """
   @doc type: :introspection
   @spec table_string(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
