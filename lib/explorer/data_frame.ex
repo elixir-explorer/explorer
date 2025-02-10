@@ -6117,6 +6117,12 @@ defmodule Explorer.DataFrame do
 
   This behavior can be overriden with the `:horizontal_style` option to
   `TableRex.Table.render!/2`.
+
+  > #### Warning: Formatting subject to change {: .warning}
+  >
+  > The style that DataFrames are formatted into strings is subject to change.
+  > Please try not to rely on the exact strings returned by this function for
+  > anything critical.
   """
   @doc type: :introspection
   @spec to_table_string(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
