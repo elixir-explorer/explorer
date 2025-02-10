@@ -6015,13 +6015,13 @@ defmodule Explorer.DataFrame do
   @doc """
   Prints the DataFrame as a table.
 
-  See `table_string/2` for options and examples.
+  See `to_table_string/2` for options and examples.
   """
   @doc type: :introspection
   @spec print(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
   def print(df, opts \\ []) do
     df
-    |> table_string(opts)
+    |> to_table_string(opts)
     |> IO.puts()
   end
 
@@ -6045,7 +6045,7 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> df = Explorer.Datasets.iris()
-      iex> Explorer.DataFrame.table_string(df)
+      iex> Explorer.DataFrame.to_table_string(df)
       \"\"\"
       +--------------------------------------------------------------------------+
       |               Explorer DataFrame: [rows: 150, columns: 5]                |
@@ -6061,7 +6061,7 @@ defmodule Explorer.DataFrame do
       | 5.9          | 3.0         | 5.1          | 1.8         | Iris-virginica |
       +--------------+-------------+--------------+-------------+----------------+
       \"\"\"
-      iex> Explorer.DataFrame.table_string(df, limit: 2)
+      iex> Explorer.DataFrame.to_table_string(df, limit: 2)
       \"\"\"
       +--------------------------------------------------------------------------+
       |               Explorer DataFrame: [rows: 150, columns: 5]                |
@@ -6074,7 +6074,7 @@ defmodule Explorer.DataFrame do
       | 5.9          | 3.0         | 5.1          | 1.8         | Iris-virginica |
       +--------------+-------------+--------------+-------------+----------------+
       \"\"\"
-      iex> Explorer.DataFrame.table_string(df, limit_dots: :bottom)
+      iex> Explorer.DataFrame.to_table_string(df, limit_dots: :bottom)
       \"\"\"
       +-----------------------------------------------------------------------+
       |              Explorer DataFrame: [rows: 150, columns: 5]              |
@@ -6095,7 +6095,7 @@ defmodule Explorer.DataFrame do
   dtype columns since they tend to require multiple rows to print:
 
       iex> data = [col: [%{"key1" => [3], "key2" => [4]}, %{"key1" => [5], "key2" => [6]}]]
-      iex> data |> Explorer.DataFrame.new() |> Explorer.DataFrame.table_string()
+      iex> data |> Explorer.DataFrame.new() |> Explorer.DataFrame.to_table_string()
       \"\"\"
       +-------------------------------------------+
       | Explorer DataFrame: [rows: 2, columns: 1] |
@@ -6119,8 +6119,8 @@ defmodule Explorer.DataFrame do
   `TableRex.Table.render!/2`.
   """
   @doc type: :introspection
-  @spec table_string(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
-  def table_string(df, opts \\ []) do
+  @spec to_table_string(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  def to_table_string(df, opts \\ []) do
     limit =
       case opts[:limit] do
         :infinity ->
