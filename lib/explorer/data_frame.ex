@@ -6013,7 +6013,20 @@ defmodule Explorer.DataFrame do
   end
 
   @doc """
-  Prints the DataFrame in a tabular fashion.
+  Prints the DataFrame as a table.
+
+  See `to_table_string/2` for options and examples.
+  """
+  @doc type: :introspection
+  @spec print(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
+  def print(df, opts \\ []) do
+    df
+    |> to_table_string(opts)
+    |> IO.puts()
+  end
+
+  @doc """
+  Formats the DataFrame as a table string.
 
   ## Options
 
@@ -6026,19 +6039,94 @@ defmodule Explorer.DataFrame do
       `:limit` rows above the `…` and half below. The top half comes from the
       head of the dataframe and the bottom from the tail. Defaults to `:split`.
 
-  Also, any valid option to `TableRex.render!/2` will be accepted and will
+  Also, any valid option to `TableRex.Table.render!/2` will be accepted and will
   override the defaults.
 
   ## Examples
 
-      df = Explorer.Datasets.iris()
-      Explorer.DataFrame.print(df)
-      Explorer.DataFrame.print(df, limit: 1)
-      Explorer.DataFrame.print(df, limit: :infinity)
+      iex> df = Explorer.Datasets.iris()
+      iex> Explorer.DataFrame.to_table_string(df)
+      \"\"\"
+      +--------------------------------------------------------------------------+
+      |               Explorer DataFrame: [rows: 150, columns: 5]                |
+      +--------------+-------------+--------------+-------------+----------------+
+      | sepal_length | sepal_width | petal_length | petal_width |    species     |
+      |    <f64>     |    <f64>    |    <f64>     |    <f64>    |    <string>    |
+      +==============+=============+==============+=============+================+
+      | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa    |
+      | 4.9          | 3.0         | 1.4          | 0.2         | Iris-setosa    |
+      | 4.7          | 3.2         | 1.3          | 0.2         | Iris-setosa    |
+      | …            | …           | …            | …           | …              |
+      | 6.2          | 3.4         | 5.4          | 2.3         | Iris-virginica |
+      | 5.9          | 3.0         | 5.1          | 1.8         | Iris-virginica |
+      +--------------+-------------+--------------+-------------+----------------+
+      \"\"\"
+      iex> Explorer.DataFrame.to_table_string(df, limit: 2)
+      \"\"\"
+      +--------------------------------------------------------------------------+
+      |               Explorer DataFrame: [rows: 150, columns: 5]                |
+      +--------------+-------------+--------------+-------------+----------------+
+      | sepal_length | sepal_width | petal_length | petal_width |    species     |
+      |    <f64>     |    <f64>    |    <f64>     |    <f64>    |    <string>    |
+      +==============+=============+==============+=============+================+
+      | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa    |
+      | …            | …           | …            | …           | …              |
+      | 5.9          | 3.0         | 5.1          | 1.8         | Iris-virginica |
+      +--------------+-------------+--------------+-------------+----------------+
+      \"\"\"
+      iex> Explorer.DataFrame.to_table_string(df, limit_dots: :bottom)
+      \"\"\"
+      +-----------------------------------------------------------------------+
+      |              Explorer DataFrame: [rows: 150, columns: 5]              |
+      +--------------+-------------+--------------+-------------+-------------+
+      | sepal_length | sepal_width | petal_length | petal_width |   species   |
+      |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
+      +==============+=============+==============+=============+=============+
+      | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
+      | 4.9          | 3.0         | 1.4          | 0.2         | Iris-setosa |
+      | 4.7          | 3.2         | 1.3          | 0.2         | Iris-setosa |
+      | 4.6          | 3.1         | 1.5          | 0.2         | Iris-setosa |
+      | 5.0          | 3.6         | 1.4          | 0.2         | Iris-setosa |
+      | …            | …           | …            | …           | …           |
+      +--------------+-------------+--------------+-------------+-------------+
+      \"\"\"
+
+  Row separators are included by default when the DataFrame has struct or list
+  dtype columns since they tend to require multiple lines to print:
+
+      iex> data = [col: [%{"key1" => [3], "key2" => [4]}, %{"key1" => [5], "key2" => [6]}]]
+      iex> data |> Explorer.DataFrame.new() |> Explorer.DataFrame.to_table_string()
+      \"\"\"
+      +-------------------------------------------+
+      | Explorer DataFrame: [rows: 2, columns: 1] |
+      +-------------------------------------------+
+      |                    col                    |
+      |                <struct[2]>                |
+      +===========================================+
+      | {                                         |
+      |  key1: [3]                                |
+      |  key2: [4]                                |
+      | }                                         |
+      +-------------------------------------------+
+      | {                                         |
+      |  key1: [5]                                |
+      |  key2: [6]                                |
+      | }                                         |
+      +-------------------------------------------+
+      \"\"\"
+
+  This behavior can be overriden with the `:horizontal_style` option to
+  `TableRex.Table.render!/2`.
+
+  > #### Warning: Formatting subject to change {: .warning}
+  >
+  > The style that DataFrames are formatted into strings is subject to change.
+  > Please try not to rely on the exact strings returned by this function for
+  > anything critical.
   """
   @doc type: :introspection
-  @spec print(df :: DataFrame.t(), opts :: Keyword.t()) :: :ok
-  def print(df, opts \\ []) do
+  @spec to_table_string(df :: DataFrame.t(), opts :: Keyword.t()) :: String.t()
+  def to_table_string(df, opts \\ []) do
     limit =
       case opts[:limit] do
         :infinity ->
@@ -6071,14 +6159,11 @@ defmodule Explorer.DataFrame do
     opts = Keyword.put(opts, :limit, limit)
     opts = Keyword.put(opts, :limit_dots, limit_dots)
 
-    string =
-      if n_columns(df) == 0 do
-        empty_table_string()
-      else
-        non_empty_table_string(df, opts)
-      end
-
-    IO.puts(string)
+    if n_columns(df) == 0 do
+      empty_table_string()
+    else
+      non_empty_table_string(df, opts)
+    end
   end
 
   defp empty_table_string() do
