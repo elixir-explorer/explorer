@@ -6092,7 +6092,7 @@ defmodule Explorer.DataFrame do
       \"\"\"
 
   Row separators are included by default when the DataFrame has struct or list
-  dtype columns since they tend to require multiple rows to print:
+  dtype columns since they tend to require multiple lines to print:
 
       iex> data = [col: [%{"key1" => [3], "key2" => [4]}, %{"key1" => [5], "key2" => [6]}]]
       iex> data |> Explorer.DataFrame.new() |> Explorer.DataFrame.to_table_string()
