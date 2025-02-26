@@ -30,7 +30,7 @@
             act
             clang
             elixir
-            erlangR26
+            erlang_27
             libiconv
             openssl
             pkg-config
