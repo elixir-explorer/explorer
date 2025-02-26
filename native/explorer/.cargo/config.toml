@@ -1,3 +1,12 @@
+# https://github.com/elixir-nx/ortex/blob/main/native/ortex/.cargo/config.toml
+[target.'cfg(target_os = "macos")']
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+    "-C", "link-arg=-fapple-link-rtlib",
+    "-C", "link-args=-Wl,-rpath,@loader_path",
+]
+
 # See https://github.com/rust-lang/rust/issues/59302
 [target.x86_64-unknown-linux-musl]
 rustflags = [
