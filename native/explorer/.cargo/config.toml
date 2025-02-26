@@ -1,4 +1,4 @@
-# https://github.com/elixir-nx/ortex/blob/main/native/ortex/.cargo/config.toml
+# Working config: https://github.com/elixir-nx/ortex/blob/main/native/ortex/.cargo/config.toml
 [target.'cfg(target_os = "macos")']
 rustflags = [
     "-C", "link-arg=-undefined",
