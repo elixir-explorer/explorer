@@ -167,49 +167,8 @@ defmodule Explorer.FSS.Utils do
       depth: 3,
       customize_hostname_check: [
         match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
-      ]
-    ] ++ cacerts_opts()
-  end
-
-  defp cacerts_opts do
-    cond do
-      certs = otp_cacerts() ->
-        [cacerts: certs]
-
-      Application.spec(:castore, :vsn) ->
-        [cacertfile: Application.app_dir(:castore, "priv/cacerts.pem")]
-
-      true ->
-        IO.warn("""
-        No certificate trust store was found.
-
-        A certificate trust store is required in
-        order to download locales for your configuration.
-        Since elixir_make could not detect a system
-        installed certificate trust store one of the
-        following actions may be taken:
-
-        1. Use OTP 25+ on an OS that has built-in certificate
-           trust store.
-
-        2. Install the hex package `castore`. It will
-           be automatically detected after recompilation.
-
-        """)
-
-        []
-    end
-  end
-
-  defp otp_cacerts do
-    if System.otp_release() >= "25" do
-      # cacerts_get/0 raises if no certs found
-      try do
-        :public_key.cacerts_get()
-      rescue
-        _ ->
-          nil
-      end
-    end
+      ],
+      cacerts: :public_key.cacerts_get()
+    ]
   end
 end
