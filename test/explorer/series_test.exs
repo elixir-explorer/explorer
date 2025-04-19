@@ -610,6 +610,9 @@ defmodule Explorer.SeriesTest do
     test "with integer" do
       s1 = Series.from_list([1, 2, nil, 4])
       assert Series.fill_missing(s1, 3) |> Series.to_list() == [1, 2, 3, 4]
+
+      s2 = Series.cast(s1, {:u, 32})
+      assert Series.fill_missing(s2, 3) |> Series.to_list() == [1, 2, 3, 4]
     end
 
     test "with float" do
