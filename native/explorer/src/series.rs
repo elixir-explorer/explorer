@@ -515,15 +515,15 @@ pub fn s_fill_missing_with_int(
     let filled_series = match ex_series.dtype() {
         DataType::Int8 => ex_series
             .i8()?
-            .fill_null_with_values(integer.try_into().unwrap())?
+            .fill_null_with_values(integer.try_into()?)?
             .into_series(),
         DataType::Int16 => ex_series
             .i16()?
-            .fill_null_with_values(integer.try_into().unwrap())?
+            .fill_null_with_values(integer.try_into()?)?
             .into_series(),
         DataType::Int32 => ex_series
             .i32()?
-            .fill_null_with_values(integer.try_into().unwrap())?
+            .fill_null_with_values(integer.try_into()?)?
             .into_series(),
         DataType::Int64 => ex_series
             .i64()?
@@ -531,19 +531,19 @@ pub fn s_fill_missing_with_int(
             .into_series(),
         DataType::UInt8 => ex_series
             .u8()?
-            .fill_null_with_values(integer.try_into().unwrap())?
+            .fill_null_with_values(integer.try_into()?)?
             .into_series(),
         DataType::UInt16 => ex_series
             .u16()?
-            .fill_null_with_values(integer.try_into().unwrap())?
+            .fill_null_with_values(integer.try_into()?)?
             .into_series(),
         DataType::UInt32 => ex_series
             .u32()?
-            .fill_null_with_values(integer.try_into().unwrap())?
+            .fill_null_with_values(integer.try_into()?)?
             .into_series(),
         DataType::UInt64 => ex_series
             .u64()?
-            .fill_null_with_values(integer.try_into().unwrap())?
+            .fill_null_with_values(integer.try_into()?)?
             .into_series(),
         other => panic!("fill_missing/2 implemented for integer types, found: {other:?}"),
     };

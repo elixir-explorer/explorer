@@ -859,6 +859,14 @@ defmodule Explorer.SeriesTest do
                    "fill_missing with :neg_infinity values require a float series, got {:s, 64}",
                    fn -> Series.fill_missing(s1, :neg_infinity) end
     end
+
+    test "with integer beyond accepted precision" do
+      s1 = Series.from_list([1, 2, nil, 4], dtype: :s8)
+
+      assert_raise RuntimeError,
+                   "out of range integral type conversion attempted",
+                   fn -> Series.fill_missing(s1, 1_000) end
+    end
   end
 
   describe "equal/2" do
