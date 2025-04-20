@@ -608,8 +608,10 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with integer" do
-      s1 = Series.from_list([1, 2, nil, 4])
-      assert Series.fill_missing(s1, 3) |> Series.to_list() == [1, 2, 3, 4]
+      for integer_dtype <- Explorer.Shared.integer_types() do
+        series = Series.from_list([1, 2, nil, 4], dtype: integer_dtype)
+        assert Series.fill_missing(series, 3) |> Series.to_list() == [1, 2, 3, 4]
+      end
     end
 
     test "with float" do
@@ -855,6 +857,14 @@ defmodule Explorer.SeriesTest do
       assert_raise ArgumentError,
                    "fill_missing with :neg_infinity values require a float series, got {:s, 64}",
                    fn -> Series.fill_missing(s1, :neg_infinity) end
+    end
+
+    test "with integer beyond accepted precision" do
+      s1 = Series.from_list([1, 2, nil, 4], dtype: :s8)
+
+      assert_raise RuntimeError,
+                   "out of range integral type conversion attempted",
+                   fn -> Series.fill_missing(s1, 1_000) end
     end
   end
 

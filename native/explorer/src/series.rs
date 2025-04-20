@@ -508,9 +508,51 @@ pub fn s_fill_missing_with_atom(series: ExSeries, atom: &str) -> Result<ExSeries
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_int(series: ExSeries, integer: i64) -> Result<ExSeries, ExplorerError> {
-    let s = series.i64()?.fill_null_with_values(integer)?.into_series();
-    Ok(ExSeries::new(s))
+pub fn s_fill_missing_with_int(
+    ex_series: ExSeries,
+    integer: i64,
+) -> Result<ExSeries, ExplorerError> {
+    let filled_series = match ex_series.dtype() {
+        DataType::Int8 => ex_series
+            .i8()?
+            .fill_null_with_values(integer.try_into()?)?
+            .into_series(),
+        DataType::Int16 => ex_series
+            .i16()?
+            .fill_null_with_values(integer.try_into()?)?
+            .into_series(),
+        DataType::Int32 => ex_series
+            .i32()?
+            .fill_null_with_values(integer.try_into()?)?
+            .into_series(),
+        DataType::Int64 => ex_series
+            .i64()?
+            .fill_null_with_values(integer)?
+            .into_series(),
+        DataType::UInt8 => ex_series
+            .u8()?
+            .fill_null_with_values(integer.try_into()?)?
+            .into_series(),
+        DataType::UInt16 => ex_series
+            .u16()?
+            .fill_null_with_values(integer.try_into()?)?
+            .into_series(),
+        DataType::UInt32 => ex_series
+            .u32()?
+            .fill_null_with_values(integer.try_into()?)?
+            .into_series(),
+        DataType::UInt64 => ex_series
+            .u64()?
+            .fill_null_with_values(integer.try_into()?)?
+            .into_series(),
+        // We shouldn't ever call `Native.s_fill_missing_with_int/2` from the
+        // Elixir side with a non-integer series.
+        other => {
+            panic!("s_fill_missing_with_int/2 implemented for integer types, found: {other:?}")
+        }
+    };
+
+    Ok(ExSeries::new(filled_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
