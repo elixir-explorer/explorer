@@ -545,7 +545,11 @@ pub fn s_fill_missing_with_int(
             .u64()?
             .fill_null_with_values(integer.try_into()?)?
             .into_series(),
-        other => panic!("fill_missing/2 implemented for integer types, found: {other:?}"),
+        // We shouldn't ever call `Native.s_fill_missing_with_int/2` from the
+        // Elixir side with a non-integer series.
+        other => {
+            panic!("s_fill_missing_with_int/2 implemented for integer types, found: {other:?}")
+        }
     };
 
     Ok(ExSeries::new(filled_series))
