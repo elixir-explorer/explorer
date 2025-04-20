@@ -608,11 +608,10 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with integer" do
-      s1 = Series.from_list([1, 2, nil, 4])
-      assert Series.fill_missing(s1, 3) |> Series.to_list() == [1, 2, 3, 4]
-
-      s2 = Series.cast(s1, {:u, 32})
-      assert Series.fill_missing(s2, 3) |> Series.to_list() == [1, 2, 3, 4]
+      for integer_dtype <- Explorer.Shared.integer_types() do
+        series = Series.from_list([1, 2, nil, 4], dtype: integer_dtype)
+        assert Series.fill_missing(series, 3) |> Series.to_list() == [1, 2, 3, 4]
+      end
     end
 
     test "with float" do
