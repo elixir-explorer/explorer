@@ -23,7 +23,7 @@ either = "1"
 
 # Deps necessary for cloud features.
 tokio = { version = "1.40", default-features = false, features = [
-  "rt",
+    "rt",
 ], optional = true }
 object_store = { version = "0.11", default-features = false, optional = true }
 
@@ -36,48 +36,49 @@ mimalloc = { version = "*", default-features = false }
 version = "0.45"
 default-features = false
 features = [
-  "abs",
-  "checked_arithmetic",
-  "concat_str",
-  "cov",
-  "cross_join",
-  "csv",
-  "cum_agg",
-  "cutqcut",
-  "decompress-fast",
-  "describe",
-  "dtype-full",
-  "ewma",
-  "extract_groups",
-  "extract_jsonpath",
-  "ipc_streaming",
-  "ipc",
-  "is_in",
-  "lazy",
-  "log",
-  "mode",
-  "moment",
-  "parquet",
-  "peaks",
-  "performant",
-  "pivot",
-  "product",
-  "propagate_nans",
-  "random",
-  "range",
-  "rank",
-  "regex",
-  "rolling_window",
-  "round_series",
-  "rows",
-  "simd",
-  "sql",
-  "streaming",
-  "strings",
-  "temporal",
-  "timezones",
-  "to_dummies",
-  "trigonometry",
+    "abs",
+    "asof_join",
+    "checked_arithmetic",
+    "concat_str",
+    "cov",
+    "cross_join",
+    "csv",
+    "cum_agg",
+    "cutqcut",
+    "decompress-fast",
+    "describe",
+    "dtype-full",
+    "ewma",
+    "extract_groups",
+    "extract_jsonpath",
+    "ipc_streaming",
+    "ipc",
+    "is_in",
+    "lazy",
+    "log",
+    "mode",
+    "moment",
+    "parquet",
+    "peaks",
+    "performant",
+    "pivot",
+    "product",
+    "propagate_nans",
+    "random",
+    "range",
+    "rank",
+    "regex",
+    "rolling_window",
+    "round_series",
+    "rows",
+    "simd",
+    "sql",
+    "streaming",
+    "strings",
+    "temporal",
+    "timezones",
+    "to_dummies",
+    "trigonometry",
 ]
 
 [dependencies.polars-ops]
@@ -87,12 +88,7 @@ features = ["abs", "ewma", "cum_agg", "cov"]
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
 
-cloud = [
-  "object_store",
-  "tokio",
-  "aws",
-  "polars/cloud",
-]
+cloud = ["object_store", "tokio", "aws", "polars/cloud"]
 ndjson = ["polars/json"]
 aws = ["object_store/aws", "polars/async", "polars/aws"]
 
