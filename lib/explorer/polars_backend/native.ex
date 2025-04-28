@@ -489,5 +489,11 @@ defmodule Explorer.PolarsBackend.Native do
   def message_on_gc(_pid, _payload), do: err()
   def is_message_on_gc(_term), do: err()
 
+  def sql_context_new(), do: err()
+  def sql_context_register(_ctx, _name, _df), do: err()
+  def sql_context_unregister(_ctx, _name), do: err()
+  def sql_context_execute(_ctx, _query), do: err()
+  def sql_context_get_tables(_ctx), do: err()
+
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end
