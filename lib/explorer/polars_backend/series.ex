@@ -15,7 +15,6 @@ defmodule Explorer.PolarsBackend.Series do
   defguardp is_numeric(n) when is_number(n) or is_non_finite(n)
 
   @integer_types Explorer.Shared.integer_types()
-  @numeric_types Explorer.Shared.numeric_types()
 
   # Conversion
 
