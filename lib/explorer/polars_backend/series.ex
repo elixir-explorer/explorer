@@ -531,12 +531,6 @@ defmodule Explorer.PolarsBackend.Series do
   def n_distinct(series), do: Shared.apply_series(series, :s_n_distinct)
 
   @impl true
-  def frequencies(%Series{dtype: {:list, inner_dtype} = dtype})
-      when inner_dtype not in @numeric_types do
-    raise ArgumentError,
-          "frequencies/1 only works with series of lists of numeric types, but #{Explorer.Shared.dtype_to_string(dtype)} was given"
-  end
-
   def frequencies(%Series{} = series) do
     Shared.apply(:s_frequencies, [series.data])
     |> Shared.create_dataframe!()

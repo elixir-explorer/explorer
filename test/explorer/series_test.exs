@@ -6669,11 +6669,15 @@ defmodule Explorer.SeriesTest do
     test "list of list of string" do
       s = Series.from_list([["a"], ["a", "b"], ["c"], ["c"], ["c"]])
 
-      assert_raise ArgumentError,
-                   "frequencies/1 only works with series of lists of numeric types, but list[string] was given",
-                   fn ->
-                     Series.frequencies(s)
-                   end
+      df = Series.frequencies(s)
+
+      assert Series.dtype(df[:values]) == {:list, :string}
+      assert Series.dtype(df[:counts]) == {:u, 32}
+
+      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+               values: [["c"], ["a"], ["a", "b"]],
+               counts: [3, 1, 1]
+             }
     end
   end
 
