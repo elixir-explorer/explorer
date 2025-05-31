@@ -6666,7 +6666,7 @@ defmodule Explorer.SeriesTest do
              }
     end
 
-    test "list of list of string" do
+    test "list of string" do
       s = Series.from_list([["a"], ["a", "b"], ["c"], ["c"], ["c"]])
 
       df = Series.frequencies(s)
