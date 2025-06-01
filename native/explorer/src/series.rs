@@ -600,7 +600,6 @@ pub fn s_fill_missing_with_float(
 // TryFrom is not implemented for f64 -> f32. This is a work around.
 // Adapted from: https://stackoverflow.com/a/72247742/5932228
 fn f64_to_f32(float64: f64) -> f32 {
-    dbg!(float64);
     let float32 = float64 as f32;
     assert_eq!(
         float64.is_finite(),
