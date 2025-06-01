@@ -615,8 +615,10 @@ defmodule Explorer.SeriesTest do
     end
 
     test "with float" do
-      s1 = Series.from_list([1.0, 2.0, nil, 4.0])
-      assert Series.fill_missing(s1, 3.5) |> Series.to_list() == [1.0, 2.0, 3.5, 4.0]
+      for float_dtype <- Explorer.Shared.float_types() do
+        series = Series.from_list([1.0, 2.0, nil, 4.0], dtype: float_dtype)
+        assert Series.fill_missing(series, 3.5) |> Series.to_list() == [1.0, 2.0, 3.5, 4.0]
+      end
     end
 
     test "with binary" do
