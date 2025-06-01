@@ -556,9 +556,39 @@ pub fn s_fill_missing_with_int(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_float(series: ExSeries, float: f64) -> Result<ExSeries, ExplorerError> {
-    let s = series.f64()?.fill_null_with_values(float)?.into_series();
-    Ok(ExSeries::new(s))
+pub fn s_fill_missing_with_float(
+    ex_series: ExSeries,
+    float64: f64,
+) -> Result<ExSeries, ExplorerError> {
+    let filled_series = match ex_series.dtype() {
+        DataType::Float32 => ex_series
+            .f32()?
+            .fill_null_with_values(f64_to_f32(float64))?
+            .into_series(),
+        DataType::Float64 => ex_series
+            .f64()?
+            .fill_null_with_values(float64)?
+            .into_series(),
+        // We shouldn't ever call `Native.s_fill_missing_with_float/2` from the
+        // Elixir side with a non-float series.
+        other => {
+            panic!("s_fill_missing_with_float/2 implemented for float types, found: {other:?}")
+        }
+    };
+
+    Ok(ExSeries::new(filled_series))
+}
+
+// TryFrom is not implemented for f64 -> f32. This is a work around.
+// Adapted from: https://stackoverflow.com/a/72247742/5932228
+fn f64_to_f32(float64: f64) -> f32 {
+    let float32 = float64 as f32;
+    assert_eq!(
+        float64.is_finite(),
+        float32.is_finite(),
+        "f32 overflow during conversion"
+    );
+    float32
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
