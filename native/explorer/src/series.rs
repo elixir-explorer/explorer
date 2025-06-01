@@ -500,11 +500,29 @@ pub fn s_fill_missing_with_strategy(
     Ok(ExSeries::new(series.fill_null(strat)?))
 }
 
+// Used for the non-finite atoms: [`:nan`, `:infinity`, `:neg_infinity`].
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_atom(series: ExSeries, atom: &str) -> Result<ExSeries, ExplorerError> {
-    let value = cast_str_to_f64(atom);
-    let s = series.f64()?.fill_null_with_values(value)?.into_series();
-    Ok(ExSeries::new(s))
+pub fn s_fill_missing_with_atom(
+    ex_series: ExSeries,
+    atom: &str,
+) -> Result<ExSeries, ExplorerError> {
+    let filled_series = match ex_series.dtype() {
+        DataType::Float32 => ex_series
+            .f32()?
+            .fill_null_with_values(cast_str_to_f32(atom))?
+            .into_series(),
+        DataType::Float64 => ex_series
+            .f64()?
+            .fill_null_with_values(cast_str_to_f64(atom))?
+            .into_series(),
+        // We shouldn't ever call `Native.s_fill_missing_with_atom/2` from the
+        // Elixir side with a non-float series.
+        other => {
+            panic!("s_fill_missing_with_atom/2 implemented for float types, found: {other:?}")
+        }
+    };
+
+    Ok(ExSeries::new(filled_series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -556,9 +574,40 @@ pub fn s_fill_missing_with_int(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_fill_missing_with_float(series: ExSeries, float: f64) -> Result<ExSeries, ExplorerError> {
-    let s = series.f64()?.fill_null_with_values(float)?.into_series();
-    Ok(ExSeries::new(s))
+pub fn s_fill_missing_with_float(
+    ex_series: ExSeries,
+    float64: f64,
+) -> Result<ExSeries, ExplorerError> {
+    let filled_series = match ex_series.dtype() {
+        DataType::Float32 => ex_series
+            .f32()?
+            .fill_null_with_values(f64_to_f32(float64))?
+            .into_series(),
+        DataType::Float64 => ex_series
+            .f64()?
+            .fill_null_with_values(float64)?
+            .into_series(),
+        // We shouldn't ever call `Native.s_fill_missing_with_float/2` from the
+        // Elixir side with a non-float series.
+        other => {
+            panic!("s_fill_missing_with_float/2 implemented for float types, found: {other:?}")
+        }
+    };
+
+    Ok(ExSeries::new(filled_series))
+}
+
+// TryFrom is not implemented for f64 -> f32. This is a work around.
+// Adapted from: https://stackoverflow.com/a/72247742/5932228
+fn f64_to_f32(float64: f64) -> f32 {
+    dbg!(float64);
+    let float32 = float64 as f32;
+    assert_eq!(
+        float64.is_finite(),
+        float32.is_finite(),
+        "f32 overflow during conversion"
+    );
+    float32
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1192,6 +1241,15 @@ pub fn s_n_distinct(s: ExSeries) -> Result<usize, ExplorerError> {
 pub fn s_cast(s: ExSeries, to_type: ExSeriesDtype) -> Result<ExSeries, ExplorerError> {
     let dtype = DataType::try_from(&to_type)?;
     Ok(ExSeries::new(s.cast(&dtype)?))
+}
+
+pub fn cast_str_to_f32(atom: &str) -> f32 {
+    match atom {
+        "nan" => f32::NAN,
+        "infinity" => f32::INFINITY,
+        "neg_infinity" => f32::NEG_INFINITY,
+        _ => panic!("unknown literal {atom:?}"),
+    }
 }
 
 pub fn cast_str_to_f64(atom: &str) -> f64 {
