@@ -820,8 +820,13 @@ defmodule Explorer.SeriesTest do
                    fn -> Series.fill_missing(s1, :mean) end
     end
 
-    test "with nan" do
+    test "with nan for f64" do
       s1 = Series.from_list([1.0, 2.0, nil, 4.5])
+      assert Series.fill_missing(s1, :nan) |> Series.to_list() == [1.0, 2.0, :nan, 4.5]
+    end
+
+    test "with nan for f32" do
+      s1 = Series.from_list([1.0, 2.0, nil, 4.5], dtype: :f32)
       assert Series.fill_missing(s1, :nan) |> Series.to_list() == [1.0, 2.0, :nan, 4.5]
     end
 
