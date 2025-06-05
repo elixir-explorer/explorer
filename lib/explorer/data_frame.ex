@@ -74,6 +74,7 @@ defmodule Explorer.DataFrame do
   Multiple table verbs are used for combining tables. These are:
 
   - `join/3` for performing SQL-like joins
+  - `join_asof/3` for performing joins with as-of semantics
   - `concat_columns/1` for horizontally "stacking" dataframes
   - `concat_rows/1` for vertically "stacking" dataframes
 
@@ -5310,6 +5311,7 @@ defmodule Explorer.DataFrame do
     pairs = dtypes_pairs_for_common_join(left, right, right_on)
 
     {new_names, _} = Enum.unzip(pairs)
+
     out_df(left, new_names, Map.new(pairs))
   end
 
@@ -5325,6 +5327,167 @@ defmodule Explorer.DataFrame do
 
         {name, right.dtypes[right_name]}
       end)
+  end
+
+  @valid_strategy_types [:backward, :forward, :nearest]
+  @doc """
+  Perform an asof join.
+
+  This is similar to a left-join except that we match on nearest key rather than equal keys.
+
+  Both DataFrames must be sorted by the asof_join key.
+
+  For each row in the left DataFrame:
+    A “backward” search .
+    A “forward” search selects the first row in the right DataFrame whose ‘on’ key is greater than or equal to the left’s key.
+    A “nearest” search selects the last row in the right DataFrame whose value is nearest to the left’s key. String keys are not currently supported for a nearest search.
+
+
+  ## Join types
+
+    * `:backward` - Selects the last row in the right DataFrame whose ‘on’ key is less than or equal to the left’s key.
+    * `:forward` - Selects the first row in the right DataFrame whose ‘on’ key is greater than or equal to the left’s key.
+    * `:nearest` -  Selects the last row in the right DataFrame whose value is nearest to the left’s key. String keys are not currently supported for a nearest search.
+
+  ## Options
+
+    * `:on` - The column(s) to join on. Defaults to overlapping columns.
+    * `:by` - The column(s) to join on before doing asof join. Defaults to overlapping columns.
+    * `:strategy` - One of the join types (as an atom) described above. Defaults to `:backward`.
+
+  ## Examples
+
+  A Backwards join_asof:
+
+      iex> gdp = Explorer.DataFrame.new(date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]], gdp: [4164, 4411, 4566, 4696, 4827])
+      iex> population = Explorer.DataFrame.new(date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]], population: [82.19, 82.66, 83.12])
+      iex> Explorer.DataFrame.join_asof(population, gdp, on: :date)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        date date [2016-03-01, 2018-08-01, 2019-01-01]
+        population f64 [82.19, 82.66, 83.12]
+        gdp s64 [4164, 4566, 4696]
+      >
+
+  A Forward join_asof:
+
+      iex> gdp = Explorer.DataFrame.new(date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]], gdp: [4164, 4411, 4566, 4696, 4827])
+      iex> population = Explorer.DataFrame.new(date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]], population: [82.19, 82.66, 83.12])
+      iex> Explorer.DataFrame.join_asof(population, gdp, strategy: :forward)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        date date [2016-03-01, 2018-08-01, 2019-01-01]
+        population f64 [82.19, 82.66, 83.12]
+        gdp s64 [4411, 4696, 4696]
+      >
+
+  A Nearest join_asof:
+
+      iex> gdp = Explorer.DataFrame.new(date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]], gdp: [4164, 4411, 4566, 4696, 4827])
+      iex> population = Explorer.DataFrame.new(date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]], population: [82.19, 82.66, 83.12])
+      iex> Explorer.DataFrame.join_asof(population, gdp, strategy: :nearest)
+      #Explorer.DataFrame<
+        Polars[3 x 3]
+        date date [2016-03-01, 2018-08-01, 2019-01-01]
+        population f64 [82.19, 82.66, 83.12]
+        gdp s64 [4164, 4696, 4696]
+      >
+
+  They `by` argument allows joining on another column first, before the asof join. In this example we join by country first, then asof join by date, as above.
+
+      iex> gdp = Explorer.DataFrame.new(date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01], ~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01] ], country: ["Germany", "Germany", "Germany", "Germany", "Netherlands", "Netherlands", "Netherlands", "Netherlands"], gdp: [4164, 4411, 4566, 4696, 784, 833, 914, 1000])
+      iex> population = Explorer.DataFrame.new(date: [ ~D[2016-03-01], ~D[2018-08-01], ~D[2016-03-01], ~D[2018-08-01]], country: ["Germany", "Germany", "Netherlands", "Netherlands"], population: [82.19, 82.66, 17.08, 17.18])
+      iex> Explorer.DataFrame.join_asof(population, gdp, by: :country, on: :date, strategy: :nearest)
+      #Explorer.DataFrame<
+        Polars[4 x 4]
+        date date [2016-03-01, 2018-08-01, 2016-03-01, 2018-08-01]
+        country string ["Germany", "Germany", "Netherlands", "Netherlands"]
+        population f64 [82.19, 82.66, 17.08, 17.18]
+        gdp s64 [4164, 4696, 784, 1000]
+      >
+
+  """
+  @doc type: :multi
+  @spec join_asof(left :: DataFrame.t(), right :: DataFrame.t(), opts :: Keyword.t()) ::
+          DataFrame.t()
+  def join_asof(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
+    left_columns = left.names
+    right_columns = right.names
+
+    opts =
+      Keyword.validate!(opts,
+        on: find_overlapping_columns(left_columns, right_columns),
+        by: [],
+        strategy: :backward
+      )
+
+    unless opts[:strategy] in @valid_strategy_types do
+      raise ArgumentError,
+            "join type is not valid: #{inspect(opts[:strategy])}. " <>
+              "Valid options are: #{Enum.map_join(@valid_strategy_types, ", ", &inspect/1)}"
+    end
+
+    strategy = opts[:strategy]
+
+    on =
+      case List.wrap(opts[:on]) do
+        [] ->
+          raise(ArgumentError, "could not find any overlapping columns for :on")
+
+        [_ | _] = on ->
+          Enum.map(on, fn
+            {l_name, r_name} ->
+              [l_column] = to_existing_columns(left, [l_name])
+              [r_column] = to_existing_columns(right, [r_name])
+              {l_column, r_column}
+
+            name ->
+              [l_column] = to_existing_columns(left, [name])
+              [r_column] = to_existing_columns(right, [name])
+
+              # This is an edge case for when an index is passed as column selection
+              if l_column != r_column do
+                raise ArgumentError,
+                      "the column given to option `:on` is not the same for both dataframes"
+              end
+
+              {l_column, r_column}
+          end)
+      end
+
+    by =
+      case List.wrap(opts[:by]) do
+        [] ->
+          []
+
+        [_ | _] = on ->
+          Enum.map(on, fn
+            {l_name, r_name} ->
+              [l_column] = to_existing_columns(left, [l_name])
+              [r_column] = to_existing_columns(right, [r_name])
+              {l_column, r_column}
+
+            name ->
+              [l_column] = to_existing_columns(left, [name])
+              [r_column] = to_existing_columns(right, [name])
+
+              # This is an edge case for when an index is passed as column selection
+              if l_column != r_column do
+                raise ArgumentError,
+                      "the column given to option `:by` is not the same for both dataframes"
+              end
+
+              {l_column, r_column}
+          end)
+      end
+
+    {_left_by, right_by} = Enum.unzip(by)
+    {_left_on, right_on} = Enum.unzip(on)
+
+    pairs = dtypes_pairs_for_common_join(left, right, right_on ++ right_by)
+    {new_names, _} = Enum.unzip(pairs)
+    out_df = out_df(left, new_names, Map.new(pairs))
+    Shared.apply_dataframe([left, right], :join_asof, [out_df, on, by, strategy])
   end
 
   @doc """
