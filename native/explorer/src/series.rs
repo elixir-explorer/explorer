@@ -958,7 +958,7 @@ pub fn s_argmin(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 }
 
 fn is_numeric(dtype: &DataType) -> bool {
-    dtype.is_numeric() || matches!(dtype, DataType::Decimal(_, _))
+    dtype.is_primitive_numeric() || matches!(dtype, DataType::Decimal(_, _))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

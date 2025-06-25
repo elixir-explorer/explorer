@@ -26,6 +26,7 @@ tokio = { version = "1.40", default-features = false, features = [
   "rt",
 ], optional = true }
 object_store = { version = "0.11", default-features = false, optional = true }
+polars-arrow = "0.46"
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
@@ -33,7 +34,7 @@ object_store = { version = "0.11", default-features = false, optional = true }
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.45"
+version = "0.46"
 default-features = false
 features = [
   "abs",
@@ -44,7 +45,7 @@ features = [
   "csv",
   "cum_agg",
   "cutqcut",
-  "decompress-fast",
+  "decompress",
   "describe",
   "dtype-full",
   "ewma",
@@ -81,7 +82,7 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.45"
+version = "0.46"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]
