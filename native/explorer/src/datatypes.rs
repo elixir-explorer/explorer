@@ -785,14 +785,6 @@ impl TryFrom<ExParquetCompression> for ParquetCompression {
     }
 }
 
-#[derive(NifTaggedEnum)]
-pub enum QuoteStyle {
-    Necessary,
-    Always,
-    NonNumeric,
-    Never,
-}
-
 // =========================
 // ====== FSS Structs ======
 // =========================
