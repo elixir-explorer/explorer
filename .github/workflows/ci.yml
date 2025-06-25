@@ -43,13 +43,14 @@ jobs:
           otp-version: ${{ matrix.otp_version }}
           elixir-version: ${{ matrix.elixir_version }}
 
-      - run: mix deps.get
-      - run: mix deps.compile
+      - name: Install deps
+        run: mix deps.get
+      - name: Compile deps
+        run: mix deps.compile
       - name: Run tests
         run: mix test --warnings-as-errors
       - name: Run property tests
-        run: |
-          mix test --only property --warnings-as-errors
+        run: mix test --only property --warnings-as-errors
       - name: Compile once again but without optional deps
         run: mix compile --force --warnings-as-errors --no-optional-deps
       - name: Run cloud integration tests
