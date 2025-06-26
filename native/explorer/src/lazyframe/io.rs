@@ -49,7 +49,7 @@ pub fn lf_from_parquet_cloud(
     };
     let lf = LazyFrame::scan_parquet(ex_entry.to_string(), options)?
         .with_comm_subplan_elim(false)
-        .with_streaming(true)
+        .with_new_streaming(true)
         .select(cols);
 
     Ok(ExLazyFrame::new(lf))

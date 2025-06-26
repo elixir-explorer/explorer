@@ -26,7 +26,7 @@ tokio = { version = "1.40", default-features = false, features = [
   "rt",
 ], optional = true }
 object_store = { version = "0.11", default-features = false, optional = true }
-polars-arrow = "0.48"
+polars-arrow = "0.49"
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
@@ -34,7 +34,7 @@ polars-arrow = "0.48"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.48"
+version = "0.49"
 default-features = false
 features = [
   "abs",
@@ -73,7 +73,6 @@ features = [
   "rows",
   "simd",
   "sql",
-  "streaming",
   "strings",
   "temporal",
   "timezones",
@@ -82,7 +81,7 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.48"
+version = "0.49"
 features = ["abs", "ewma", "cum_agg", "cov"]
 
 [features]
