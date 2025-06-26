@@ -97,7 +97,7 @@ pub fn s_from_list_datetime(
     time_zone_str: Option<&str>,
 ) -> Result<ExSeries, ExplorerError> {
     let timeunit = TimeUnit::try_from(&precision)?;
-    let time_zone = time_zone_str.map(|s| s.to_string());
+    // let time_zone = time_zone_str.map(|s| s.to_string());
     let iterator = val
         .decode::<ListIterator>()
         .map_err(|err| ExplorerError::Other(format!("expecting list as term: {err:?}")))?;
@@ -125,7 +125,7 @@ pub fn s_from_list_datetime(
     Series::new(name.into(), values)
         .cast(&DataType::Datetime(
             timeunit,
-            time_zone.map(|value| value.into()),
+            TimeZone::opt_try_new(time_zone_str)?,
         ))
         .map(ExSeries::new)
         .map_err(|error| {

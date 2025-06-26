@@ -84,6 +84,7 @@ pub fn lf_to_parquet(
             statistics: StatisticsOptions::empty(),
             row_group_size: None,
             data_page_size: None,
+            ..Default::default()
         };
         let target = std::path::PathBuf::from(filename);
         let sink_options = SinkOptions {
@@ -126,6 +127,7 @@ pub fn lf_to_parquet_cloud(
         statistics: StatisticsOptions::empty(),
         row_group_size: None,
         data_page_size: None,
+        ..Default::default()
     };
     let target = std::path::PathBuf::from(ex_entry.to_string());
     let sink_options = SinkOptions {

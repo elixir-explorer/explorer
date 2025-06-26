@@ -1126,7 +1126,7 @@ pub fn expr_member(expr: ExExpr, value: ExValidValue, inner_dtype: ExSeriesDtype
 
     ExExpr::new(
         expr.list()
-            .contains(value.lit_with_matching_precision(&inner_dtype)),
+            .contains(value.lit_with_matching_precision(&inner_dtype), false),
     )
 }
 

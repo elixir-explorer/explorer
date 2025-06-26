@@ -1894,7 +1894,7 @@ fn s_member(
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s.name().clone()).list().contains(value_expr)])
+        .select([col(s.name().clone()).list().contains(value_expr, false)])
         .collect()?
         .column(s.name())?
         .as_materialized_series()

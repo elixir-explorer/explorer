@@ -537,12 +537,11 @@ impl From<ExDateTime<'_>> for NaiveDateTime {
 impl Literal for ExDateTime<'_> {
     fn lit(self) -> Expr {
         let ndt = NaiveDateTime::from(self);
-        let time_zone = self.time_zone.to_string();
 
         Expr::Literal(LiteralValue::Scalar(Scalar::new_datetime(
             ndt.and_utc().timestamp_micros(),
             TimeUnit::Microseconds,
-            Some(time_zone.into()),
+            polars::prelude::TimeZone::opt_try_new(Some(self.time_zone)).unwrap(),
         )))
     }
 }

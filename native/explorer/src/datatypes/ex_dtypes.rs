@@ -147,7 +147,7 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             }
             ExSeriesDtype::Datetime(ex_timeunit, tz_option) => Ok(DataType::Datetime(
                 ex_timeunit.try_into()?,
-                Some(tz_option.into()),
+                polars::prelude::TimeZone::opt_try_new(Some(tz_option)).unwrap(),
             )),
             ExSeriesDtype::Duration(ex_timeunit) => Ok(DataType::Duration(ex_timeunit.try_into()?)),
             ExSeriesDtype::List(inner) => {
