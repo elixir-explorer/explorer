@@ -3,7 +3,6 @@ use crate::{
     ExplorerError,
 };
 use polars::{lazy::dsl::Selector, prelude::*};
-
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
 
@@ -320,6 +319,61 @@ pub fn lf_join(
             .suffix(suffix)
             .finish(),
     };
+
+    Ok(ExLazyFrame::new(new_ldf))
+}
+
+#[allow(clippy::too_many_arguments)]
+#[rustler::nif]
+pub fn lf_join_asof(
+    data: ExLazyFrame,
+    other: ExLazyFrame,
+    left_on: Vec<ExExpr>,
+    right_on: Vec<ExExpr>,
+    by_left: Vec<&str>,
+    by_right: Vec<&str>,
+    strategy: &str,
+    suffix: &str,
+) -> Result<ExLazyFrame, ExplorerError> {
+    let strategy = match strategy {
+        "backward" => AsofStrategy::Backward,
+        "forward" => AsofStrategy::Forward,
+        "nearest" => AsofStrategy::Nearest,
+        _ => {
+            return Err(ExplorerError::Other(format!(
+                "AsOfJoin method {strategy} not supported"
+            )))
+        }
+    };
+
+    let left_by = match by_left.is_empty() {
+        true => None,
+        false => Some(by_left.iter().map(|l| PlSmallStr::from_str(l)).collect()),
+    };
+
+    let right_by = match by_right.is_empty() {
+        true => None,
+        false => Some(by_left.iter().map(|l| PlSmallStr::from_str(l)).collect()),
+    };
+
+    let ldf = data.clone_inner();
+    let ldf1 = other.clone_inner();
+
+    let new_ldf = ldf
+        .join_builder()
+        .with(ldf1)
+        .coalesce(JoinCoalesce::CoalesceColumns)
+        .how(JoinType::AsOf(AsOfOptions {
+            strategy,
+            tolerance: None,
+            tolerance_str: None,
+            left_by: left_by,
+            right_by: right_by,
+        }))
+        .left_on(ex_expr_to_exprs(left_on))
+        .right_on(ex_expr_to_exprs(right_on))
+        .suffix(suffix)
+        .finish();
 
     Ok(ExLazyFrame::new(new_ldf))
 }
