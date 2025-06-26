@@ -269,10 +269,10 @@ impl Literal for ExDuration {
     fn lit(self) -> Expr {
         // Note: it's tempting to use `.lit()` on a `chrono::Duration` struct in this function, but
         // doing so will lose precision information as `chrono::Duration`s have no time units.
-        Expr::Literal(LiteralValue::Duration(
+        Expr::Literal(LiteralValue::Scalar(Scalar::new_duration(
             self.value,
             time_unit_of_ex_duration(&self),
-        ))
+        )))
     }
 }
 
@@ -438,11 +438,11 @@ impl Literal for ExNaiveDateTime {
         //
         // See here for details:
         // polars-time-0.38.3/src/date_range.rs::in_nanoseconds_window
-        Expr::Literal(LiteralValue::DateTime(
+        Expr::Literal(LiteralValue::Scalar(Scalar::new_datetime(
             ndt.and_utc().timestamp_micros(),
             TimeUnit::Microseconds,
             None,
-        ))
+        )))
     }
 }
 
@@ -539,11 +539,11 @@ impl Literal for ExDateTime<'_> {
         let ndt = NaiveDateTime::from(self);
         let time_zone = self.time_zone.to_string();
 
-        Expr::Literal(LiteralValue::DateTime(
+        Expr::Literal(LiteralValue::Scalar(Scalar::new_datetime(
             ndt.and_utc().timestamp_micros(),
             TimeUnit::Microseconds,
             Some(time_zone.into()),
-        ))
+        )))
     }
 }
 
@@ -602,7 +602,10 @@ impl From<NaiveTime> for ExTime {
 
 impl Literal for ExTime {
     fn lit(self) -> Expr {
-        Expr::Literal(LiteralValue::Time(self.into()))
+        Expr::Literal(LiteralValue::Scalar(Scalar::new(
+            DataType::Time,
+            AnyValue::Time(self.into()),
+        )))
     }
 }
 
@@ -641,14 +644,18 @@ impl ExDecimal {
 
 impl Literal for ExDecimal {
     fn lit(self) -> Expr {
-        Expr::Literal(LiteralValue::Decimal(
-            if self.sign.is_positive() {
-                self.coef
-            } else {
-                -self.coef
-            },
-            usize::try_from(-(self.exp)).expect("exponent should fit an usize"),
-        ))
+        let size = usize::try_from(-(self.exp)).expect("exponent should fit an usize");
+        Expr::Literal(LiteralValue::Scalar(Scalar::new(
+            DataType::Decimal(Some(size), Some(size)),
+            AnyValue::Decimal(
+                if self.sign.is_positive() {
+                    self.coef
+                } else {
+                    -self.coef
+                },
+                size,
+            ),
+        )))
     }
 }
 

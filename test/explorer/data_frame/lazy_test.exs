@@ -272,6 +272,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     assert :ok = DF.to_csv(ldf, path)
 
+    File.ls!(tmp_dir)
     df = DF.compute(ldf)
     df1 = DF.from_csv!(path)
 

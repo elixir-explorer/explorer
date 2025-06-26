@@ -336,7 +336,7 @@ pub fn s_is_nan(series: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_at_every(series: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(series.gather_every(n, 0)))
+    Ok(ExSeries::new(series.gather_every(n, 0)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -415,7 +415,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         | DataType::Date
         | DataType::Time
         | DataType::Decimal(_, _)
-        | DataType::Datetime(_, _) => is_in(&s, &rhs)?,
+        | DataType::Datetime(_, _) => is_in(&s, &rhs, true)?,
         DataType::Categorical(Some(mapping), _) => {
             let l_logical = s.categorical()?.physical();
 
@@ -438,7 +438,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 
                     let r_logical = Series::new("r_logical".into(), r_ids);
 
-                    is_in(&l_logical.clone().into_series(), &r_logical)?
+                    is_in(&l_logical.clone().into_series(), &r_logical, false)?
                 }
                 DataType::Categorical(Some(rhs_mapping), _) => {
                     if !mapping.same_src(rhs_mapping) {
@@ -449,7 +449,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 
                     let r_logical = rhs.categorical()?.physical().clone().into_series();
 
-                    is_in(&l_logical.clone().into_series(), &r_logical)?
+                    is_in(&l_logical.clone().into_series(), &r_logical, false)?
                 }
 
                 dt => panic!("in/2 does not work for categorical and {dt:?} pairs"),
@@ -1512,7 +1512,7 @@ pub fn s_substring(
 ) -> Result<ExSeries, ExplorerError> {
     let length = match length {
         Some(l) => l.lit(),
-        None => Expr::Literal(LiteralValue::Null),
+        None => Expr::Literal(LiteralValue::Scalar(Scalar::null(DataType::Null))),
     };
     let s2 = s
         .clone_inner()
@@ -1530,7 +1530,7 @@ pub fn s_substring(
 pub fn s_split(s1: ExSeries, by: &str) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
         .str()?
-        .split(&ChunkedArray::new("a".into(), &[by]))
+        .split(&ChunkedArray::new("a".into(), &[by]))?
         .into_series();
 
     Ok(ExSeries::new(s2))
@@ -1558,7 +1558,10 @@ pub fn s_split_into(s1: ExSeries, by: &str, names: Vec<String>) -> Result<ExSeri
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_round(s: ExSeries, decimals: u32) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s.round(decimals)?.into_series()))
+    Ok(ExSeries::new(
+        s.round(decimals, RoundMode::HalfAwayFromZero)?
+            .into_series(),
+    ))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

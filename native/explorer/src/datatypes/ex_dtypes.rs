@@ -5,7 +5,7 @@ use polars::datatypes::Field;
 use polars::datatypes::TimeUnit;
 use rustler::NifTaggedEnum;
 
-#[derive(NifTaggedEnum)]
+#[derive(NifTaggedEnum, Debug)]
 pub enum ExTimeUnit {
     Millisecond,
     Microsecond,
@@ -34,7 +34,7 @@ impl From<&TimeUnit> for ExTimeUnit {
     }
 }
 
-#[derive(NifTaggedEnum)]
+#[derive(NifTaggedEnum, Debug)]
 pub enum ExSeriesDtype {
     Null,
     Binary,

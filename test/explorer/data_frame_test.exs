@@ -4827,8 +4827,7 @@ defmodule Explorer.DataFrameTest do
 
     property "should be able to print any DataFrame" do
       check all(
-              # TODO: Remove `exclude: :category` after #1011 is resolved.
-              dtypes <- Explorer.Generator.dtypes(exclude: :category),
+              dtypes <- Explorer.Generator.dtypes(),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
             ) do
@@ -4855,13 +4854,18 @@ defmodule Explorer.DataFrameTest do
       end
     end
 
+    property "can create any dataframe" do
+      check all dtypes <- Explorer.Generator.dtypes(),
+                rows <- Explorer.Generator.rows(dtypes),
+                max_runs: 1_000 do
+        assert %DF{} = DF.new(rows, dtypes: dtypes)
+      end
+    end
+
     property "can dump any DataFrame to IPC" do
-      check all(
-              # TODO: Remove `exclude: :category` after #1011 is resolved.
-              dtypes <- Explorer.Generator.dtypes(exclude: :category),
-              rows <- Explorer.Generator.rows(dtypes),
-              max_runs: 1_000
-            ) do
+      check all dtypes <- Explorer.Generator.dtypes(),
+                rows <- Explorer.Generator.rows(dtypes),
+                max_runs: 1_000 do
         rows
         |> DF.new(dtypes: dtypes)
         |> DF.dump_ipc!()

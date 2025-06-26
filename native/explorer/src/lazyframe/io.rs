@@ -84,11 +84,17 @@ pub fn lf_to_parquet(
             statistics: StatisticsOptions::empty(),
             row_group_size: None,
             data_page_size: None,
+        };
+        let target = std::path::PathBuf::from(filename);
+        let sink_options = SinkOptions {
             maintain_order: false,
+            ..Default::default()
         };
 
-        lf.with_comm_subplan_elim(false)
-            .sink_parquet(&filename, options, None)?;
+        let _ = lf
+            .with_comm_subplan_elim(false)
+            .sink_parquet(SinkTarget::Path(target.into()), options, None, sink_options)?
+            .collect();
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -120,11 +126,22 @@ pub fn lf_to_parquet_cloud(
         statistics: StatisticsOptions::empty(),
         row_group_size: None,
         data_page_size: None,
+    };
+    let target = std::path::PathBuf::from(ex_entry.to_string());
+    let sink_options = SinkOptions {
         maintain_order: false,
+        ..Default::default()
     };
 
-    lf.with_comm_subplan_elim(false)
-        .sink_parquet(&ex_entry.to_string(), options, cloud_options)?;
+    let _ = lf
+        .with_comm_subplan_elim(false)
+        .sink_parquet(
+            SinkTarget::Path(target.into()),
+            options,
+            cloud_options,
+            sink_options,
+        )?
+        .collect();
     Ok(())
 }
 
@@ -166,10 +183,17 @@ pub fn lf_to_ipc(
     if streaming {
         let options = IpcWriterOptions {
             compression,
-            maintain_order: false,
+            ..Default::default()
         };
-        lf.with_comm_subplan_elim(false)
-            .sink_ipc(filename, options, None)?;
+        let target = std::path::PathBuf::from(filename);
+        let sink_options = SinkOptions {
+            maintain_order: false,
+            ..Default::default()
+        };
+        let _ = lf
+            .with_comm_subplan_elim(false)
+            .sink_ipc(SinkTarget::Path(target.into()), options, None, sink_options)?
+            .collect();
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -200,10 +224,22 @@ pub fn lf_to_ipc_cloud(
 
     let options = IpcWriterOptions {
         compression,
-        maintain_order: false,
+        ..Default::default()
     };
-    lf.with_comm_subplan_elim(false)
-        .sink_ipc(ex_entry.to_string(), options, cloud_options)?;
+    let target = std::path::PathBuf::from(ex_entry.to_string());
+    let sink_options = SinkOptions {
+        maintain_order: false,
+        ..Default::default()
+    };
+    let _ = lf
+        .with_comm_subplan_elim(false)
+        .sink_ipc(
+            SinkTarget::Path(target.into()),
+            options,
+            cloud_options,
+            sink_options,
+        )?
+        .collect();
 
     Ok(())
 }
@@ -268,13 +304,21 @@ pub fn lf_to_csv(
 
         let options = CsvWriterOptions {
             include_header: include_headers,
-            maintain_order: true,
             serialize_options,
             ..Default::default()
         };
+        let target = std::path::PathBuf::from(filename);
+        let sink_options = SinkOptions {
+            maintain_order: true,
+            mkdir: true,
+            sync_on_close: sync_on_close::SyncOnCloseType::None,
+        };
 
-        lf.with_comm_subplan_elim(false)
-            .sink_csv(filename, options, None)?;
+        let _ = lf
+            .with_comm_subplan_elim(false)
+            .sink_csv(SinkTarget::Path(target.into()), options, None, sink_options)?
+            .collect();
+
         Ok(())
     } else {
         let df = lf.collect()?;
