@@ -1763,11 +1763,8 @@ defmodule Explorer.SeriesTest do
       s = Series.from_list(["a", "b", "c", "a", nil], dtype: :category)
       s1 = Series.from_list(["z"], dtype: :category)
 
-      assert_raise RuntimeError,
-                   ~s/Generic Error: cannot compare categories from different sources. See Explorer.Series.categorise\/2/,
-                   fn ->
-                     Series.in(s, s1)
-                   end
+      assert Series.in(s, s1) |> Series.to_list() ==
+               [false, false, false, false, nil]
     end
   end
 
