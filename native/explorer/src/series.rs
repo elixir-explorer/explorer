@@ -415,7 +415,7 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
         | DataType::Date
         | DataType::Time
         | DataType::Decimal(_, _)
-        | DataType::Datetime(_, _) => is_in(&s, &rhs, true)?,
+        | DataType::Datetime(_, _) => is_in(&s, &rhs.implode()?.into(), false)?,
         DataType::Categorical(Some(mapping), _) => {
             let l_logical = s.categorical()?.physical();
 
@@ -438,7 +438,11 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 
                     let r_logical = Series::new("r_logical".into(), r_ids);
 
-                    is_in(&l_logical.clone().into_series(), &r_logical, false)?
+                    is_in(
+                        &l_logical.clone().into_series(),
+                        &r_logical.implode()?.into(),
+                        false,
+                    )?
                 }
                 DataType::Categorical(Some(rhs_mapping), _) => {
                     if !mapping.same_src(rhs_mapping) {
@@ -449,7 +453,11 @@ pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
 
                     let r_logical = rhs.categorical()?.physical().clone().into_series();
 
-                    is_in(&l_logical.clone().into_series(), &r_logical, false)?
+                    is_in(
+                        &l_logical.clone().into_series(),
+                        &r_logical.implode()?.into(),
+                        false,
+                    )?
                 }
 
                 dt => panic!("in/2 does not work for categorical and {dt:?} pairs"),

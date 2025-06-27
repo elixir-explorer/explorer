@@ -178,9 +178,7 @@ pub fn expr_binary_in(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr = left.clone_inner();
     let right_expr = right.clone_inner();
 
-    dbg!(&left_expr);
-
-    ExExpr::new(left_expr.is_in(right_expr, false))
+    ExExpr::new(left_expr.is_in(right_expr.implode(), false))
 }
 
 #[rustler::nif]
