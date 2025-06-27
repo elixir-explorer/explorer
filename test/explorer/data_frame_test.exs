@@ -4855,17 +4855,21 @@ defmodule Explorer.DataFrameTest do
     end
 
     property "can create any dataframe" do
-      check all dtypes <- Explorer.Generator.dtypes(),
-                rows <- Explorer.Generator.rows(dtypes),
-                max_runs: 1_000 do
+      check all(
+              dtypes <- Explorer.Generator.dtypes(),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
         assert %DF{} = DF.new(rows, dtypes: dtypes)
       end
     end
 
     property "can dump any DataFrame to IPC" do
-      check all dtypes <- Explorer.Generator.dtypes(),
-                rows <- Explorer.Generator.rows(dtypes),
-                max_runs: 1_000 do
+      check all(
+              dtypes <- Explorer.Generator.dtypes(),
+              rows <- Explorer.Generator.rows(dtypes),
+              max_runs: 1_000
+            ) do
         rows
         |> DF.new(dtypes: dtypes)
         |> DF.dump_ipc!()
