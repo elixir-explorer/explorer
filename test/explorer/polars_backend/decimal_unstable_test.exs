@@ -23,29 +23,14 @@ defmodule Explorer.PolarsBackend.DecimalUnstableTest do
   end
 
   test "mean returns decimal instead of float", %{df: df} do
-    assert_raise(
-      RuntimeError,
-      """
-      DataFrame mismatch.
-
-      expected:
-
-          names: ["a"]
-          dtypes: %{"a" => {:f, 64}}
-
-      got:
-
-          names: ["a"]
-          dtypes: %{"a" => {:decimal, 38, 1}}
-      """,
-      fn -> DF.summarise(df, a: mean(a)) end
-    )
+    # shoudl return decimal, instead returns float
+    assert [1.5] == df |> DF.summarise(a: mean(a)) |> DF.pull(:a) |> Explorer.Series.to_list()
   end
 
-  test "unchecked mean returns nil", %{df: df} do
+  test "unchecked mean returns float", %{df: df} do
     # Here we recreate the internals of `DF.summarise(df, a: mean(a))` to avoid
     # the invalid dtype expectation. What we should get is a decimal that
-    # represents the mean, but what we do get is `nil`.
+    # represents the mean, but what we do get is a float.
     qf = Explorer.Query.new(df)
     ldf = PolarsBackend.DataFrame.lazy(df)
     lazy_mean_a = Explorer.Series.mean(qf["a"])
@@ -60,6 +45,6 @@ defmodule Explorer.PolarsBackend.DecimalUnstableTest do
            {:ok, pdf2} <- PolarsBackend.Native.lf_compute(pdf1),
            do: PolarsBackend.Shared.create_dataframe!(pdf2)
 
-    assert Explorer.Series.to_list(df["a"]) == [nil]
+    assert Explorer.Series.to_list(df["a"]) == [1.5]
   end
 end
