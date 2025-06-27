@@ -5679,10 +5679,10 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(ws) === [
                nil,
                3.0405591591021546,
-               0.7778174593052014,
+               0.7778174593052035,
                nil,
                nil,
-               7.212489168102784,
+               7.212489168102785,
                :nan,
                :nan
              ]
@@ -5695,10 +5695,10 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(ws) === [
                nil,
                3.0405591591021546,
-               0.7778174593052014,
+               0.7778174593052035,
                nil,
                nil,
-               7.212489168102784,
+               7.212489168102785,
                :nan,
                :nan
              ]
@@ -5711,10 +5711,10 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(ws) === [
                nil,
                3.0405591591021546,
-               0.7778174593052014,
+               0.7778174593052035,
                nil,
                nil,
-               7.212489168102784,
+               7.212489168102785,
                :nan,
                :nan
              ]
