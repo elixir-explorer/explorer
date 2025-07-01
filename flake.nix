@@ -45,6 +45,7 @@
             rustPkg
             rust-analyzer-nightly
             cmake
+            awscli2
           ]
           ++ lib.optionals stdenv.isDarwin [
             darwin.apple_sdk.frameworks.Security
