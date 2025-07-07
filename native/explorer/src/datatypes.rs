@@ -19,9 +19,9 @@ use polars::prelude::cloud::AmazonS3ConfigKey as S3Key;
 
 use chrono_tz::{OffsetComponents, OffsetName, Tz};
 
-pub use polars::export::arrow::datatypes::TimeUnit as ArrowTimeUnit;
+pub use polars_arrow::datatypes::TimeUnit as ArrowTimeUnit;
 
-pub use polars::export::arrow::temporal_conversions::{
+pub use polars_arrow::temporal_conversions::{
     date32_to_date as days_to_date, timestamp_ms_to_datetime as timestamp_ms_to_naive_datetime,
     timestamp_ns_to_datetime as timestamp_ns_to_naive_datetime,
     timestamp_to_datetime as arrow_timestamp_to_datetime,
@@ -269,10 +269,10 @@ impl Literal for ExDuration {
     fn lit(self) -> Expr {
         // Note: it's tempting to use `.lit()` on a `chrono::Duration` struct in this function, but
         // doing so will lose precision information as `chrono::Duration`s have no time units.
-        Expr::Literal(LiteralValue::Duration(
+        Expr::Literal(LiteralValue::Scalar(Scalar::new_duration(
             self.value,
             time_unit_of_ex_duration(&self),
-        ))
+        )))
     }
 }
 
@@ -438,11 +438,11 @@ impl Literal for ExNaiveDateTime {
         //
         // See here for details:
         // polars-time-0.38.3/src/date_range.rs::in_nanoseconds_window
-        Expr::Literal(LiteralValue::DateTime(
+        Expr::Literal(LiteralValue::Scalar(Scalar::new_datetime(
             ndt.and_utc().timestamp_micros(),
             TimeUnit::Microseconds,
             None,
-        ))
+        )))
     }
 }
 
@@ -537,13 +537,12 @@ impl From<ExDateTime<'_>> for NaiveDateTime {
 impl Literal for ExDateTime<'_> {
     fn lit(self) -> Expr {
         let ndt = NaiveDateTime::from(self);
-        let time_zone = self.time_zone.to_string();
 
-        Expr::Literal(LiteralValue::DateTime(
+        Expr::Literal(LiteralValue::Scalar(Scalar::new_datetime(
             ndt.and_utc().timestamp_micros(),
             TimeUnit::Microseconds,
-            Some(time_zone.into()),
-        ))
+            polars::prelude::TimeZone::opt_try_new(Some(self.time_zone)).unwrap(),
+        )))
     }
 }
 
@@ -557,7 +556,7 @@ pub struct ExTime {
     pub microsecond: (u32, u32),
 }
 
-pub use polars::export::arrow::temporal_conversions::time64ns_to_time;
+pub use polars_arrow::temporal_conversions::time64ns_to_time;
 
 impl From<i64> for ExTime {
     fn from(nanoseconds: i64) -> Self {
@@ -602,7 +601,10 @@ impl From<NaiveTime> for ExTime {
 
 impl Literal for ExTime {
     fn lit(self) -> Expr {
-        Expr::Literal(LiteralValue::Time(self.into()))
+        Expr::Literal(LiteralValue::Scalar(Scalar::new(
+            DataType::Time,
+            AnyValue::Time(self.into()),
+        )))
     }
 }
 
@@ -641,14 +643,18 @@ impl ExDecimal {
 
 impl Literal for ExDecimal {
     fn lit(self) -> Expr {
-        Expr::Literal(LiteralValue::Decimal(
-            if self.sign.is_positive() {
-                self.coef
-            } else {
-                -self.coef
-            },
-            usize::try_from(-(self.exp)).expect("exponent should fit an usize"),
-        ))
+        let size = usize::try_from(-(self.exp)).expect("exponent should fit an usize");
+        Expr::Literal(LiteralValue::Scalar(Scalar::new(
+            DataType::Decimal(Some(size), Some(size)),
+            AnyValue::Decimal(
+                if self.sign.is_positive() {
+                    self.coef
+                } else {
+                    -self.coef
+                },
+                size,
+            ),
+        )))
     }
 }
 

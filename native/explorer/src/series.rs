@@ -336,7 +336,7 @@ pub fn s_is_nan(series: ExSeries) -> Result<ExSeries, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_at_every(series: ExSeries, n: usize) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(series.gather_every(n, 0)))
+    Ok(ExSeries::new(series.gather_every(n, 0)?))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -399,63 +399,8 @@ pub fn s_less_equal(data: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerE
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_in(s: ExSeries, rhs: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s = match s.dtype() {
-        DataType::Boolean
-        | DataType::Int8
-        | DataType::Int16
-        | DataType::Int32
-        | DataType::Int64
-        | DataType::UInt8
-        | DataType::UInt16
-        | DataType::UInt32
-        | DataType::UInt64
-        | DataType::Float32
-        | DataType::Float64
-        | DataType::String
-        | DataType::Binary
-        | DataType::Date
-        | DataType::Time
-        | DataType::Decimal(_, _)
-        | DataType::Datetime(_, _) => is_in(&s, &rhs)?,
-        DataType::Categorical(Some(mapping), _) => {
-            let l_logical = s.categorical()?.physical();
-
-            match rhs.dtype() {
-                DataType::String => {
-                    let mut r_ids: Vec<Option<u32>> = vec![];
-
-                    // In case the right-hand is a series of strings, we only care
-                    // about members in the category on the left, or if it's None.
-                    for opt in rhs.unique()?.str()?.into_iter() {
-                        match opt {
-                            Some(slice) => {
-                                if let Some(id) = mapping.find(slice) {
-                                    r_ids.push(Some(id));
-                                }
-                            }
-                            None => r_ids.push(None),
-                        }
-                    }
-
-                    let r_logical = Series::new("r_logical".into(), r_ids);
-
-                    is_in(&l_logical.clone().into_series(), &r_logical)?
-                }
-                DataType::Categorical(Some(rhs_mapping), _) => {
-                    if !mapping.same_src(rhs_mapping) {
-                        return Err(ExplorerError::Other(
-                            "cannot compare categories from different sources. See Explorer.Series.categorise/2".into(),
-                        ));
-                    }
-
-                    let r_logical = rhs.categorical()?.physical().clone().into_series();
-
-                    is_in(&l_logical.clone().into_series(), &r_logical)?
-                }
-
-                dt => panic!("in/2 does not work for categorical and {dt:?} pairs"),
-            }
-        }
-        dt => panic!("in/2 not implemented for {dt:?}"),
+        DataType::Categorical(_, _) => is_in(&s, &rhs.implode()?.into(), false)?,
+        _ => is_in(&s, &rhs.cast(s.dtype())?.implode()?.into(), false)?,
     };
 
     Ok(ExSeries::new(s.into_series()))
@@ -958,7 +903,7 @@ pub fn s_argmin(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 }
 
 fn is_numeric(dtype: &DataType) -> bool {
-    dtype.is_numeric() || matches!(dtype, DataType::Decimal(_, _))
+    dtype.is_primitive_numeric() || matches!(dtype, DataType::Decimal(_, _))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1512,7 +1457,7 @@ pub fn s_substring(
 ) -> Result<ExSeries, ExplorerError> {
     let length = match length {
         Some(l) => l.lit(),
-        None => Expr::Literal(LiteralValue::Null),
+        None => Expr::Literal(LiteralValue::Scalar(Scalar::null(DataType::Null))),
     };
     let s2 = s
         .clone_inner()
@@ -1530,7 +1475,7 @@ pub fn s_substring(
 pub fn s_split(s1: ExSeries, by: &str) -> Result<ExSeries, ExplorerError> {
     let s2 = s1
         .str()?
-        .split(&ChunkedArray::new("a".into(), &[by]))
+        .split(&ChunkedArray::new("a".into(), &[by]))?
         .into_series();
 
     Ok(ExSeries::new(s2))
@@ -1558,7 +1503,10 @@ pub fn s_split_into(s1: ExSeries, by: &str, names: Vec<String>) -> Result<ExSeri
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_round(s: ExSeries, decimals: u32) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s.round(decimals)?.into_series()))
+    Ok(ExSeries::new(
+        s.round(decimals, RoundMode::HalfAwayFromZero)?
+            .into_series(),
+    ))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1891,7 +1839,7 @@ fn s_member(
         .clone_inner()
         .into_frame()
         .lazy()
-        .select([col(s.name().clone()).list().contains(value_expr)])
+        .select([col(s.name().clone()).list().contains(value_expr, false)])
         .collect()?
         .column(s.name())?
         .as_materialized_series()

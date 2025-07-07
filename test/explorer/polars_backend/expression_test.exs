@@ -18,8 +18,9 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
 
       assert Expression.describe_filter_plan(df, expr) ==
                String.trim("""
-               FILTER [(col("col_a")) == (5)] FROM
-                 DF ["col_a", "col_b"]; PROJECT */2 COLUMNS; SELECTION: None
+               FILTER [(col("col_a")) == (5)]
+               FROM
+                 DF ["col_a", "col_b"]; PROJECT */2 COLUMNS
                """)
     end
 
@@ -93,8 +94,9 @@ defmodule Explorer.PolarsBackend.ExpressionTest do
 
       assert Expression.describe_filter_plan(df, expr) ==
                String.trim("""
-               FILTER [(col("col_a").cast(Float64)) == (col("col_b"))] FROM
-                 DF ["col_a", "col_b"]; PROJECT */2 COLUMNS; SELECTION: None
+               FILTER [(col("col_a").cast(Float64)) == (col("col_b"))]
+               FROM
+                 DF ["col_a", "col_b"]; PROJECT */2 COLUMNS
                """)
     end
   end

@@ -3176,7 +3176,7 @@ defmodule Explorer.DataFrameTest do
     test "with string column names and a target that is duplicated" do
       df = DF.new(a: [1, 2, 3], b: ["a", "b", "c"])
 
-      assert_raise RuntimeError, ~r"column with name 'first' has more than one occurrence", fn ->
+      assert_raise RuntimeError, ~r"column 'first' is duplicate", fn ->
         DF.rename(df, [{"a", "first"}, {"b", "first"}])
       end
     end

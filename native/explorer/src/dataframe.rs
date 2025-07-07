@@ -1,7 +1,7 @@
 use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
-use polars::export::{arrow, arrow::ffi};
+use polars_arrow::ffi;
 use std::collections::HashMap;
 
 use crate::datatypes::ExSeriesDtype;
@@ -241,13 +241,13 @@ fn df_from_arrow_stream_pointer(stream_ptr: u64) -> Result<ExDataFrame, Explorer
 }
 
 fn array_to_dataframe(
-    stream_chunk: PolarsResult<Box<dyn arrow::array::Array>>,
+    stream_chunk: PolarsResult<Box<dyn polars_arrow::array::Array>>,
 ) -> Result<DataFrame, ExplorerError> {
     let dyn_array = stream_chunk.map_err(arrow_to_explorer_error)?;
 
     let struct_array = dyn_array
         .as_any()
-        .downcast_ref::<crate::dataframe::arrow::array::StructArray>()
+        .downcast_ref::<polars_arrow::array::StructArray>()
         .ok_or(ExplorerError::Other(
             "Unable to downcast to StructArray in ArrowArrayStreamReader chunk".into(),
         ))?

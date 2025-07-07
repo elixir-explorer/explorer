@@ -11,6 +11,7 @@ use crate::datatypes::{
 use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts_fixed_window};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 use polars::lazy::dsl;
+use polars::prelude::*;
 use polars::prelude::{
     col, concat_str, cov, pearson_corr, spearman_rank_corr, when, IntoLazy, LiteralValue,
     SortOptions,
@@ -27,19 +28,25 @@ pub fn ex_expr_to_exprs(ex_exprs: Vec<ExExpr>) -> Vec<Expr> {
 
 #[rustler::nif]
 pub fn expr_nil() -> ExExpr {
-    let expr = Expr::Literal(LiteralValue::Null);
+    let expr = Expr::Literal(LiteralValue::Scalar(Scalar::null(DataType::Null)));
     ExExpr::new(expr)
 }
 
 #[rustler::nif]
 pub fn expr_integer(number: i64) -> ExExpr {
-    let expr = Expr::Literal(LiteralValue::Int64(number));
+    let expr = Expr::Literal(LiteralValue::Scalar(Scalar::new(
+        DataType::Int64,
+        AnyValue::Int64(number),
+    )));
     ExExpr::new(expr)
 }
 
 #[rustler::nif]
 pub fn expr_float(number: f64) -> ExExpr {
-    let expr = Expr::Literal(LiteralValue::Float64(number));
+    let expr = Expr::Literal(LiteralValue::Scalar(Scalar::new(
+        DataType::Float64,
+        AnyValue::Float64(number),
+    )));
     ExExpr::new(expr)
 }
 
@@ -171,7 +178,7 @@ pub fn expr_binary_in(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr = left.clone_inner();
     let right_expr = right.clone_inner();
 
-    ExExpr::new(left_expr.is_in(right_expr))
+    ExExpr::new(left_expr.is_in(right_expr.implode(), false))
 }
 
 #[rustler::nif]
@@ -308,8 +315,8 @@ pub fn expr_peaks(data: ExExpr, min_or_max: &str) -> ExExpr {
 pub fn expr_fill_missing_with_strategy(data: ExExpr, strategy: &str) -> ExExpr {
     let expr = data.clone_inner();
     let result_expr = match strategy {
-        "backward" => expr.backward_fill(None),
-        "forward" => expr.forward_fill(None),
+        "backward" => expr.fill_null_with_strategy(FillNullStrategy::Backward(None)),
+        "forward" => expr.fill_null_with_strategy(FillNullStrategy::Forward(None)),
         "min" => expr.clone().fill_null(expr.min()),
         "max" => expr.clone().fill_null(expr.max()),
         "mean" => expr.clone().fill_null(expr.mean()),
@@ -356,7 +363,9 @@ pub fn expr_quotient(left: ExExpr, right: ExExpr) -> ExExpr {
 
     let quotient = left_expr
         / when(right_expr.clone().eq(0))
-            .then(Expr::Literal(LiteralValue::Null))
+            .then(Expr::Literal(LiteralValue::Scalar(Scalar::null(
+                DataType::Null,
+            ))))
             .otherwise(right_expr);
 
     ExExpr::new(quotient)
@@ -369,7 +378,9 @@ pub fn expr_remainder(left: ExExpr, right: ExExpr) -> ExExpr {
 
     let quotient = left_expr.clone()
         / when(right_expr.clone().eq(0))
-            .then(Expr::Literal(LiteralValue::Null))
+            .then(Expr::Literal(LiteralValue::Scalar(Scalar::null(
+                DataType::Null,
+            ))))
             .otherwise(right_expr.clone());
 
     let mult = right_expr * quotient;
@@ -861,7 +872,7 @@ pub fn expr_strip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
     let matches_expr = match string {
         Some(string) => string.lit(),
-        None => Expr::Literal(LiteralValue::Null),
+        None => Expr::Literal(LiteralValue::Scalar(Scalar::null(DataType::Null))),
     };
     ExExpr::new(expr.str().strip_chars(matches_expr))
 }
@@ -871,7 +882,7 @@ pub fn expr_lstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
     let matches_expr = match string {
         Some(string) => string.lit(),
-        None => Expr::Literal(LiteralValue::Null),
+        None => Expr::Literal(LiteralValue::Scalar(Scalar::null(DataType::Null))),
     };
     ExExpr::new(expr.str().strip_chars_start(matches_expr))
 }
@@ -881,7 +892,7 @@ pub fn expr_rstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
     let expr = expr.clone_inner();
     let matches_expr = match string {
         Some(string) => string.lit(),
-        None => Expr::Literal(LiteralValue::Null),
+        None => Expr::Literal(LiteralValue::Scalar(Scalar::null(DataType::Null))),
     };
     ExExpr::new(expr.str().strip_chars_end(matches_expr))
 }
@@ -890,7 +901,7 @@ pub fn expr_rstrip(expr: ExExpr, string: Option<String>) -> ExExpr {
 pub fn expr_substring(expr: ExExpr, offset: i64, length: Option<u64>) -> ExExpr {
     let length = match length {
         Some(l) => l.lit(),
-        None => Expr::Literal(LiteralValue::Null),
+        None => Expr::Literal(LiteralValue::Scalar(Scalar::null(DataType::Null))),
     };
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().slice(offset.lit(), length))
@@ -917,7 +928,7 @@ pub fn expr_re_replace(expr: ExExpr, pat: String, value: String) -> ExExpr {
 #[rustler::nif]
 pub fn expr_round(expr: ExExpr, decimals: u32) -> ExExpr {
     let expr = expr.clone_inner();
-    ExExpr::new(expr.round(decimals))
+    ExExpr::new(expr.round(decimals, RoundMode::HalfAwayFromZero))
 }
 
 #[rustler::nif]
@@ -1113,7 +1124,7 @@ pub fn expr_member(expr: ExExpr, value: ExValidValue, inner_dtype: ExSeriesDtype
 
     ExExpr::new(
         expr.list()
-            .contains(value.lit_with_matching_precision(&inner_dtype)),
+            .contains(value.lit_with_matching_precision(&inner_dtype), false),
     )
 }
 
