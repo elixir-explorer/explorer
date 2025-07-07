@@ -9,7 +9,12 @@ pub mod io;
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn lf_compute(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {
-    let df = data.clone_inner().collect()?;
+    let lf = data.clone_inner();
+
+    // FIXME: for some reason, without calling this line, it crashes when connecting to S3
+    let _ = lf.clone().to_alp();
+
+    let df = lf.collect()?;
 
     Ok(ExDataFrame::new(df))
 }

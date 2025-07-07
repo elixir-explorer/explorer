@@ -192,7 +192,7 @@ defmodule Explorer.DataFrame.IPCTest do
 
       assert message =~ "cannot read information from file, which means the upload failed."
       assert message =~ "Object at location test-writes/wine"
-      assert message =~ "Client error with status 404 Not Found: No Body"
+      assert message =~ "Server returned non-2xx status code: 404 Not Found: "
     end
   end
 
