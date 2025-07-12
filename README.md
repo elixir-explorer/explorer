@@ -229,13 +229,13 @@ Rust is going to be installed in the first compilation of the project. Otherwise
 install the correct version:
 
 ```sh
-rustup toolchain install nightly-2024-07-26
+rustup toolchain install nightly-2025-06-23
 ```
 
 You can also use [asdf](https://asdf-vm.com/):
 
 ```sh
-asdf install rust nightly-2024-07-26
+asdf install rust nightly-2025-06-23
 ```
 
 It's possible that you may need to install [`CMake`](https://cmake.org/) in order to build the project,
