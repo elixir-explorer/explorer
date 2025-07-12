@@ -1222,14 +1222,25 @@ pub fn s_categories(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerError> {
     match cat.dtype() {
         DataType::Categorical(Some(mapping), _) => {
-            let chunks = if s.dtype() == &DataType::String {
-                let ids: ChunkedArray<UInt32Type> = s
-                    .str()?
-                    .into_iter()
-                    .map(|opt_str| opt_str.and_then(|slice| mapping.find(slice)))
-                    .collect();
+            let categories = mapping.get_categories();
+            let m = categories.len();
 
-                ids
+            let chunks: ChunkedArray<UInt32Type> = if s.dtype() == &DataType::String {
+                let ca = s.str()?;
+                if m >= 10 {
+                    let hash_map: std::collections::HashMap<&str, u32> = categories
+                        .values_iter()
+                        .enumerate()
+                        .map(|(i, v)| (v, i as u32))
+                        .collect();
+                    ca.into_iter()
+                        .map(|opt| opt.and_then(|slice| hash_map.get(slice).copied()))
+                        .collect()
+                } else {
+                    ca.into_iter()
+                        .map(|opt| opt.and_then(|slice| mapping.find(slice)))
+                        .collect()
+                }
             } else {
                 s.cast(&DataType::UInt32)?.u32()?.clone()
             };
