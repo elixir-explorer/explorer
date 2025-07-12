@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fix formatting of `Explorer.DataFrame.mutate_with/2` options
   - `Explorer.Series.fill_missing/2` now works for all integer and float dtypes
   - `Explorer.Series.frequencies/1` now works for `{:list, _}` dtype
+  - Fix inefficiency with categorization
   - Fix typespecs
     * `Explorer.DataFrame.select/2`
     * `Explorer.DataFrame.ungroup/1`
