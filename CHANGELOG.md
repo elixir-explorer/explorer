@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.11.0] - 2025-07-12
+
+### Added
+
+  - `Explorer.DataFrame.estimated_size/1` - Estimates memory size of a DataFrame
+  - `Explorer.DataFrame.to_table_string/2` - Represents a DataFrame as a string
+    for printing
+  - `Explorer.Series.degrees/1` - Converts radians to degrees
+  - `Explorer.Series.radians/1` - Converts degrees to radians
+  - `:quote_style` option to CSV functions
+
+### Fixed
+
+  - Fix bug where `:region` was incorrectly required in `%FSS.S3.Entry{}`
+  - Fix trigonometric functions to not raise on f32
+  - Fix warning from `:table_rex` dependency when printing
+  - Fix formatting of `Explorer.DataFrame.mutate_with/2` options
+  - `Explorer.Series.fill_missing/2` now works for all integer and float dtypes
+  - `Explorer.Series.frequencies/1` now works for `{:list, _}` dtype
+  - Fix typespecs
+    * `Explorer.DataFrame.select/2`
+    * `Explorer.DataFrame.ungroup/1`
+    * `Explorer.Series` functions that may return lazy series
+
+### Changed
+
+  - Printing a DataFrame looks different
+    * Adds a row of `…` to indicate there are hidden rows. Includes a new option
+      `limit_dots: :bottom | :split` to specify how to do this.
+    * Drops the row separators except when composite dtypes are present.
+    * Allows you to pass through valid options to `TableRex.render!/2`. This
+      gives you a little more flexibility in case you don't like the defaults.
+  - `Explorer.DataFrame.print/1` now documents its default `:limit` of 5 rows
+  - `Explorer.DataFrame.concat_rows/1` has improved error messages
+  - Accessing a DataFrame with a range now raises if the range is out of bounds
+
+### New Contributors
+
+  - @szajbus made their first contribution in
+    https://github.com/elixir-explorer/explorer/pull/1030
+  - @viniciussbs made their first contribution in
+    https://github.com/elixir-explorer/explorer/pull/1037
+  - @pejrich made their first contribution in
+    https://github.com/elixir-explorer/explorer/pull/1040
+  - @jdbarillas made their first contribution in
+    https://github.com/elixir-explorer/explorer/pull/1049
+  - @petrkozorezov made their first contribution in
+    https://github.com/elixir-explorer/explorer/pull/1083
+
+### Full Changelog
+
+https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
+
 ## [v0.10.1] - 2024-11-28
 
 ### Fixed
