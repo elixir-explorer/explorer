@@ -206,7 +206,7 @@ defmodule Explorer.DataFrame do
   alias FSS.S3
 
   @enforce_keys [:data, :groups, :names, :dtypes]
-  defstruct [:data, :groups, :names, :dtypes, :remote]
+  defstruct [:data, :groups, :stable_groups?, :names, :dtypes, :remote]
 
   @typedoc """
   Represents a column name as atom or string.
@@ -265,6 +265,7 @@ defmodule Explorer.DataFrame do
   @type t :: %DataFrame{
           data: Explorer.Backend.DataFrame.t(),
           groups: [String.t()],
+          stable_groups?: boolean(),
           names: [String.t()],
           dtypes: %{String.t() => Explorer.Series.dtype()}
         }
@@ -5553,6 +5554,11 @@ defmodule Explorer.DataFrame do
   When the dataframe has grouping variables, operations are performed per group.
   `Explorer.DataFrame.ungroup/2` removes grouping.
 
+  ## Options
+
+    * `:stable` (`boolean`) — when `true`, preserve the order of the groups exactly as they appear in the original dataframe.
+      Groups may be reordered (for example, sorted) for performance. By default `false`.
+
   ## Examples
 
   You can group by a single variable:
@@ -5615,14 +5621,49 @@ defmodule Explorer.DataFrame do
   Regexes and functions are also accepted in column names, as in `select/2`.
   """
   @doc type: :single
-  @spec group_by(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
+  @spec group_by(
+          df :: DataFrame.t(),
+          groups_or_group :: column_names() | column_name(),
+          opts :: [stable: boolean()]
+        ) ::
           DataFrame.t()
-  def group_by(df, group) when is_column(group), do: group_by(df, [group])
+  def group_by(df, group, opts \\ [])
+  def group_by(df, group, opts) when is_column(group), do: group_by(df, [group], opts)
 
-  def group_by(df, groups) do
+  def group_by(df, groups, opts) do
+    opts = Keyword.validate!(opts, [:stable])
+
     groups = to_existing_columns(df, groups)
     all_groups = Enum.uniq(df.groups ++ groups)
-    %{df | groups: all_groups}
+
+    stable_opt =
+      case Keyword.fetch(opts, :stable) do
+        :error ->
+          nil
+
+        {:ok, value} when is_boolean(value) ->
+          value
+
+        {:ok, value} ->
+          raise ArgumentError, "`:stable` must be `true` or `false`, found: #{inspect(value)}."
+      end
+
+    stable_groups? =
+      case {df.groups, stable_opt} do
+        {[], nil} ->
+          true
+
+        {[], value} ->
+          value
+
+        {_, nil} ->
+          df.stable_groups?
+
+        {_, _} ->
+          raise ArgumentError, "`:stable` flag can't be changed after the first `group_by`"
+      end
+
+    %{df | groups: all_groups, stable_groups?: stable_groups?}
   end
 
   @doc """

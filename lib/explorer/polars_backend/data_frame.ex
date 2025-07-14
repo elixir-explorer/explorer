@@ -713,7 +713,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         maintain_order?,
         multithreaded?,
         nulls_last?,
-        df.groups
+        df.groups,
+        df.stable_groups?
       ])
     else
       {directions, expressions} =
@@ -727,7 +728,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         maintain_order?,
         multithreaded?,
         nulls_last?,
-        df.groups
+        df.groups,
+        df.stable_groups?
       ])
     end
   end
@@ -754,7 +756,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def sample(df, n, replacement, shuffle, seed) when is_integer(n) do
-    Shared.apply_dataframe(df, df, :df_sample_n, [n, replacement, shuffle, seed, df.groups])
+    Shared.apply_dataframe(df, df, :df_sample_n, [
+      n,
+      replacement,
+      shuffle,
+      seed,
+      df.groups,
+      df.stable_groups?
+    ])
   end
 
   @impl true
@@ -762,7 +771,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
     # Avoid grouping if the sample is of the entire DF.
     groups = if frac == 1.0, do: [], else: df.groups
 
-    Shared.apply_dataframe(df, df, :df_sample_frac, [frac, replacement, shuffle, seed, groups])
+    Shared.apply_dataframe(df, df, :df_sample_frac, [
+      frac,
+      replacement,
+      shuffle,
+      seed,
+      groups,
+      df.stable_groups?
+    ])
   end
 
   @impl true
@@ -770,12 +786,20 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def slice(%DataFrame{} = df, row_indices) when is_list(row_indices) do
-    Shared.apply_dataframe(df, df, :df_slice_by_indices, [row_indices, df.groups])
+    Shared.apply_dataframe(df, df, :df_slice_by_indices, [
+      row_indices,
+      df.groups,
+      df.stable_groups?
+    ])
   end
 
   @impl true
   def slice(%DataFrame{} = df, %Series{} = row_indices) do
-    Shared.apply_dataframe(df, df, :df_slice_by_series, [row_indices.data, df.groups])
+    Shared.apply_dataframe(df, df, :df_slice_by_series, [
+      row_indices.data,
+      df.groups,
+      df.stable_groups?
+    ])
   end
 
   # TODO: If we expose group_indices at the Explorer.DataFrame level,
@@ -795,13 +819,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     {:ok, idx} = Native.s_concat(idx)
 
-    Shared.apply_dataframe(df, df, :df_slice_by_series, [idx, []])
+    Shared.apply_dataframe(df, df, :df_slice_by_series, [idx, [], df.stable_groups?])
   end
 
   @impl true
   def slice(%DataFrame{} = df, offset, length)
       when is_integer(offset) and is_integer(length),
-      do: Shared.apply_dataframe(df, df, :df_slice, [offset, length, df.groups])
+      do:
+        Shared.apply_dataframe(df, df, :df_slice, [offset, length, df.groups, df.stable_groups?])
 
   @impl true
   def drop_nil(df, columns) do

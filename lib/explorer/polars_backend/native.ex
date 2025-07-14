@@ -59,8 +59,17 @@ defmodule Explorer.PolarsBackend.Native do
 
   def df_from_arrow_stream_pointer(_stream_ptr), do: err()
 
-  def df_sort_by(_df, _by, _reverse, _maintain_order?, _multithreaded?, _nulls_last?, _groups),
-    do: err()
+  def df_sort_by(
+        _df,
+        _by,
+        _reverse,
+        _maintain_order?,
+        _multithreaded?,
+        _nulls_last?,
+        _groups,
+        _stable_groups?
+      ),
+      do: err()
 
   def df_sort_with(
         _df,
@@ -69,7 +78,8 @@ defmodule Explorer.PolarsBackend.Native do
         _maintain_order?,
         _multithreaded?,
         _nulls_last?,
-        _groups
+        _groups,
+        _stable_groups?
       ),
       do: err()
 
@@ -148,13 +158,18 @@ defmodule Explorer.PolarsBackend.Native do
   def df_pivot_wider(_df, _id_columns, _pivot_column, _values_column, _names_prefix), do: err()
   def df_pull(_df, _name), do: err()
   def df_put_column(_df, _series), do: err()
-  def df_sample_frac(_df, _frac, _with_replacement, _shuffle, _seed, _groups), do: err()
-  def df_sample_n(_df, _n, _with_replacement, _shuffle, _seed, _groups), do: err()
+
+  def df_sample_frac(_df, _frac, _with_replacement, _shuffle, _seed, _groups, _stable_groups?),
+    do: err()
+
+  def df_sample_n(_df, _n, _with_replacement, _shuffle, _seed, _groups, _stable_groups?),
+    do: err()
+
   def df_select_at_idx(_df, _idx), do: err()
   def df_shape(_df), do: err()
-  def df_slice(_df, _offset, _length, _groups), do: err()
-  def df_slice_by_indices(_df, _indices, _groups), do: err()
-  def df_slice_by_series(_df, _series, _groups), do: err()
+  def df_slice(_df, _offset, _length, _groups, _stable_groups?), do: err()
+  def df_slice_by_indices(_df, _indices, _groups, _stable_groups?), do: err()
+  def df_slice_by_series(_df, _series, _groups, _stable_groups?), do: err()
   def df_transpose(_df, _keep_names_as, _new_col_names), do: err()
   def df_to_csv(_df, _filename, _has_headers, _delimiter, _quote_style), do: err()
   def df_to_csv_cloud(_df, _ex_entry, _has_headers, _delimiter, _quote_style), do: err()
@@ -213,11 +228,11 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_drop(_df, _columns), do: err()
   def lf_dtypes(_df), do: err()
   def lf_fetch(_df, _n_rows), do: err()
-  def lf_head(_df, _n_rows, _groups), do: err()
+  def lf_head(_df, _n_rows, _groups, _stable_groups?), do: err()
   def lf_names(_df), do: err()
   def lf_select(_df, _columns), do: err()
-  def lf_tail(_df, _n_rows, _groups), do: err()
-  def lf_slice(_df, _offset, _length, _groups), do: err()
+  def lf_tail(_df, _n_rows, _groups, _stable_groups?), do: err()
+  def lf_slice(_df, _offset, _length, _groups, _stable_groups?), do: err()
   def lf_explode(_df, _columns), do: err()
   def lf_unnest(_df, _columns), do: err()
   def lf_from_ipc(_filename), do: err()
@@ -263,7 +278,7 @@ defmodule Explorer.PolarsBackend.Native do
 
   def lf_distinct(_df, _subset, _selection), do: err()
   def lf_mutate_with(_df, _exprs), do: err()
-  def lf_summarise_with(_df, _groups, _aggs), do: err()
+  def lf_summarise_with(_df, _groups, _stable_groups?, _aggs), do: err()
   def lf_rename_columns(_df, _column_pairs), do: err()
   def lf_drop_nils(_df, _column_pairs), do: err()
   def lf_pivot_longer(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()

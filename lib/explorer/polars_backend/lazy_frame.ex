@@ -87,18 +87,29 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def head(ldf, rows),
-    do: Shared.apply_dataframe(ldf, ldf, :lf_head, [rows, groups_exprs(ldf.groups)])
+    do:
+      Shared.apply_dataframe(ldf, ldf, :lf_head, [
+        rows,
+        groups_exprs(ldf.groups),
+        ldf.stable_groups?
+      ])
 
   @impl true
   def tail(ldf, rows),
-    do: Shared.apply_dataframe(ldf, ldf, :lf_tail, [rows, groups_exprs(ldf.groups)])
+    do:
+      Shared.apply_dataframe(ldf, ldf, :lf_tail, [
+        rows,
+        groups_exprs(ldf.groups),
+        ldf.stable_groups?
+      ])
 
   @impl true
   def select(ldf, out_ldf), do: Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
 
   @impl true
   def slice(ldf, offset, length),
-    do: Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length, ldf.groups])
+    do:
+      Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length, ldf.groups, ldf.stable_groups?])
 
   defp groups_exprs(groups), do: Enum.map(groups, &Native.expr_column/1)
 
@@ -557,7 +568,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
     groups_exprs = for group <- groups, do: Native.expr_column(group)
 
-    Shared.apply_dataframe(df, out_df, :lf_summarise_with, [groups_exprs, exprs])
+    Shared.apply_dataframe(df, out_df, :lf_summarise_with, [
+      groups_exprs,
+      df.stable_groups?,
+      exprs
+    ])
   end
 
   # Two or more tables
