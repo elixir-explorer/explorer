@@ -6440,10 +6440,15 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates a new dataframe with unique rows and the frequencies of each.
 
+  ## Options
+
+    * `:stable` (`boolean`) — when `true`, every operations under the hood is stable and maintain original ordering.
+      By default (`false`) groups may be reordered for performance.
+
   ## Examples
 
       iex> df = Explorer.DataFrame.new(a: ["a", "a", "b"], b: [1, 1, nil])
-      iex> Explorer.DataFrame.frequencies(df, [:a, :b])
+      iex> Explorer.DataFrame.frequencies(df, [:a, :b], stable: true)
       #Explorer.DataFrame<
         Polars[2 x 3]
         a string ["a", "b"]
@@ -6452,15 +6457,20 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec frequencies(df :: DataFrame.t(), columns :: column_names()) :: DataFrame.t()
-  def frequencies(%DataFrame{} = df, [col | _] = columns) do
+  @spec frequencies(df :: DataFrame.t(), columns :: column_names(), opts: [stable: boolean()]) ::
+          DataFrame.t()
+  def frequencies(df, columns, opts \\ [])
+
+  def frequencies(%DataFrame{} = df, [col | _] = columns, opts) do
+    opts = Keyword.validate!(opts, stable: false)
+
     df
-    |> group_by(columns)
+    |> group_by(columns, opts)
     |> summarise_with(&[counts: Series.count(&1[col])])
-    |> sort_with(&[desc: &1[:counts]])
+    |> sort_with(&[desc: &1[:counts]], opts)
   end
 
-  def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")
+  def frequencies(_df, [], _), do: raise(ArgumentError, "columns cannot be empty")
 
   @doc """
   Calculates the pairwise correlation of numeric columns.
