@@ -271,7 +271,7 @@ defmodule Explorer.Backend.DataFrame do
   end
 
   def new(data, names, dtypes) when is_list(names) and is_map(dtypes) do
-    %DataFrame{data: data, names: names, dtypes: dtypes, groups: [], stable_groups?: false}
+    %DataFrame{data: data, names: names, dtypes: dtypes, groups: %{columns: [], stable?: false}}
   end
 
   @default_limit 5
@@ -296,7 +296,7 @@ defmodule Explorer.Backend.DataFrame do
       open,
       df_info,
       close,
-      groups_algebra(df.groups, inspect_opts) | cols_algebra
+      groups_algebra(df.groups.columns, inspect_opts) | cols_algebra
     ])
   end
 

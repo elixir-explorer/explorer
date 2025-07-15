@@ -206,7 +206,7 @@ defmodule Explorer.DataFrame do
   alias FSS.S3
 
   @enforce_keys [:data, :groups, :names, :dtypes]
-  defstruct [:data, :groups, :stable_groups?, :names, :dtypes, :remote]
+  defstruct [:data, :groups, :names, :dtypes, :remote]
 
   @typedoc """
   Represents a column name as atom or string.
@@ -264,8 +264,7 @@ defmodule Explorer.DataFrame do
   """
   @type t :: %DataFrame{
           data: Explorer.Backend.DataFrame.t(),
-          groups: [String.t()],
-          stable_groups?: boolean(),
+          groups: %{columns: [String.t()], stable?: boolean()},
           names: [String.t()],
           dtypes: %{String.t() => Explorer.Series.dtype()}
         }
@@ -2154,7 +2153,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec groups(df :: DataFrame.t()) :: list(String.t())
-  def groups(%DataFrame{groups: groups}), do: groups
+  def groups(%DataFrame{groups: %{columns: groups}}), do: groups
 
   # Single table verbs
 
@@ -2385,7 +2384,7 @@ defmodule Explorer.DataFrame do
 
   def select(df, columns) do
     columns = to_existing_columns(df, columns)
-    columns_to_keep = Enum.uniq(columns ++ df.groups)
+    columns_to_keep = Enum.uniq(columns ++ df.groups.columns)
 
     out_df = out_df(df, columns_to_keep, Map.take(df.dtypes, columns_to_keep))
     Shared.apply_dataframe(df, :select, [out_df])
@@ -2442,7 +2441,7 @@ defmodule Explorer.DataFrame do
   end
 
   def discard(df, columns) do
-    columns = to_existing_columns(df, columns, false) -- df.groups
+    columns = to_existing_columns(df, columns, false) -- df.groups.columns
     columns_to_keep = df.names -- columns
 
     out_df = out_df(df, columns_to_keep, Map.take(df.dtypes, columns_to_keep))
@@ -3032,8 +3031,8 @@ defmodule Explorer.DataFrame do
         full_df
 
       :none ->
-        group_names = df.groups
-        selected_columns = group_names ++ (mut_names -- group_names)
+        group_columns = df.groups.columns
+        selected_columns = group_columns ++ (mut_names -- group_columns)
         Explorer.DataFrame.select(full_df, selected_columns)
     end
   end
@@ -3616,7 +3615,7 @@ defmodule Explorer.DataFrame do
         if opts[:keep_all] do
           df
         else
-          groups = df.groups
+          groups = df.groups.columns
           keep = if groups == [], do: columns, else: Enum.uniq(groups ++ columns)
           out_df(df, keep, Map.take(df.dtypes, keep))
         end
@@ -3864,11 +3863,11 @@ defmodule Explorer.DataFrame do
         new_names = Enum.map(new_dtypes, &elem(&1, 0))
 
         new_groups =
-          for group <- df.groups do
+          for group <- df.groups.columns do
             Map.get(pairs_map, group, group)
           end
 
-        out_df = out_df(%{df | groups: new_groups}, new_names, Map.new(new_dtypes))
+        out_df = out_df(put_in(df.groups.columns, new_groups), new_names, Map.new(new_dtypes))
         Shared.apply_dataframe(df, :rename, [out_df, pairs])
     end
   end
@@ -4028,7 +4027,7 @@ defmodule Explorer.DataFrame do
 
     out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:u, 8}}
 
-    out_df = out_df(%{df | groups: []}, out_columns, out_dtypes)
+    out_df = out_df(put_in(df.groups.columns, []), out_columns, out_dtypes)
     Shared.apply_dataframe(df, :dummies, [out_df, columns])
   end
 
@@ -4252,7 +4251,7 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :rows
-  def slice(%DataFrame{groups: []} = df, row_indices) when is_list(row_indices) do
+  def slice(%DataFrame{groups: %{columns: []}} = df, row_indices) when is_list(row_indices) do
     n_rows = n_rows(df)
 
     Enum.each(row_indices, fn idx ->
@@ -4272,7 +4271,7 @@ defmodule Explorer.DataFrame do
     Shared.apply_dataframe(df, :slice, [indices])
   end
 
-  def slice(%DataFrame{groups: []} = df, first..last//1) do
+  def slice(%DataFrame{groups: %{columns: []}} = df, first..last//1) do
     first = if first < 0, do: first + n_rows(df), else: first
     last = if last < 0, do: last + n_rows(df), else: last
     size = last - first + 1
@@ -4284,14 +4283,14 @@ defmodule Explorer.DataFrame do
     end
   end
 
-  def slice(%DataFrame{groups: []} = df, %Range{} = range) do
+  def slice(%DataFrame{groups: %{columns: []}} = df, %Range{} = range) do
     slice(df, Enum.slice(0..(n_rows(df) - 1)//1, range))
   end
 
-  def slice(%DataFrame{groups: [_ | _]} = df, row_indices) when is_list(row_indices),
+  def slice(%DataFrame{groups: %{columns: [_ | _]}} = df, row_indices) when is_list(row_indices),
     do: Shared.apply_dataframe(df, :slice, [row_indices])
 
-  def slice(%DataFrame{groups: [_ | _]} = df, %Range{} = range),
+  def slice(%DataFrame{groups: %{columns: [_ | _]}} = df, %Range{} = range),
     do: Shared.apply_dataframe(df, :slice, [range])
 
   @doc """
@@ -4796,7 +4795,7 @@ defmodule Explorer.DataFrame do
 
     out_df =
       out_df(
-        %{df | groups: df.groups -- columns_to_pivot},
+        update_in(df.groups.columns, &(&1 -- columns_to_pivot)),
         columns_to_keep ++ [names_to, values_to],
         new_dtypes
       )
@@ -5051,7 +5050,7 @@ defmodule Explorer.DataFrame do
         opts[:names_prefix]
       ])
 
-    %{out_df | groups: Enum.filter(df.groups, &(&1 in id_columns))}
+    put_in(out_df.groups.columns, Enum.filter(df.groups.columns, &(&1 in id_columns)))
   end
 
   # Two table verbs
@@ -5634,8 +5633,9 @@ defmodule Explorer.DataFrame do
     opts = Keyword.validate!(opts, [:stable])
 
     groups = to_existing_columns(df, groups)
-    all_groups = Enum.uniq(df.groups ++ groups)
+    all_groups = Enum.uniq(df.groups.columns ++ groups)
 
+    # TODO rewrite
     stable_opt =
       case Keyword.fetch(opts, :stable) do
         :error ->
@@ -5648,8 +5648,8 @@ defmodule Explorer.DataFrame do
           raise ArgumentError, "`:stable` must be `true` or `false`, found: #{inspect(value)}."
       end
 
-    stable_groups? =
-      case {df.groups, stable_opt} do
+    stable? =
+      case {df.groups.columns, stable_opt} do
         {[], nil} ->
           false
 
@@ -5657,13 +5657,13 @@ defmodule Explorer.DataFrame do
           value
 
         {_, nil} ->
-          df.stable_groups?
+          df.groups.stable?
 
         {_, _} ->
           raise ArgumentError, "`:stable` flag can't be changed after the first `group_by`"
       end
 
-    %{df | groups: all_groups, stable_groups?: stable_groups?}
+    %{df | groups: %{columns: all_groups, stable?: stable?}}
   end
 
   @doc """
@@ -5724,7 +5724,7 @@ defmodule Explorer.DataFrame do
           DataFrame.t()
   def ungroup(df, groups \\ ..)
 
-  def ungroup(df, ..), do: %{df | groups: []}
+  def ungroup(df, ..), do: put_in(df.groups.columns, [])
 
   def ungroup(df, group) when is_column(group), do: ungroup(df, [group])
 
@@ -5739,7 +5739,7 @@ defmodule Explorer.DataFrame do
       end
     end)
 
-    %{df | groups: current_groups -- groups}
+    put_in(df.groups.columns, current_groups -- groups)
   end
 
   @doc """
@@ -5892,7 +5892,7 @@ defmodule Explorer.DataFrame do
 
     new_dtypes = names_with_dtypes_for_column_pairs(df, column_pairs)
     new_names = for {name, _} <- new_dtypes, do: name
-    out_df = out_df(%{df | groups: []}, new_names, Map.new(new_dtypes))
+    out_df = out_df(put_in(df.groups.columns, []), new_names, Map.new(new_dtypes))
 
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
@@ -5900,7 +5900,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp names_with_dtypes_for_column_pairs(df, column_pairs) do
-    groups = for group <- df.groups, do: {group, df.dtypes[group]}
+    groups = for group <- groups(df), do: {group, df.dtypes[group]}
 
     names_with_dtypes =
       for {column_name, series} <- column_pairs do

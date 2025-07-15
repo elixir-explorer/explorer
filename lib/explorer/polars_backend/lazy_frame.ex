@@ -86,30 +86,30 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Single table verbs
 
   @impl true
-  def head(ldf, rows),
+  def head(%DF{groups: groups} = ldf, rows),
     do:
       Shared.apply_dataframe(ldf, ldf, :lf_head, [
         rows,
-        groups_exprs(ldf.groups),
-        ldf.stable_groups?
+        groups_exprs(groups.columns),
+        groups.stable?
       ])
 
   @impl true
-  def tail(ldf, rows),
+  def tail(%DF{groups: groups} = ldf, rows),
     do:
       Shared.apply_dataframe(ldf, ldf, :lf_tail, [
         rows,
-        groups_exprs(ldf.groups),
-        ldf.stable_groups?
+        groups_exprs(groups.columns),
+        groups.stable?
       ])
 
   @impl true
   def select(ldf, out_ldf), do: Shared.apply_dataframe(ldf, out_ldf, :lf_select, [out_ldf.names])
 
   @impl true
-  def slice(ldf, offset, length),
+  def slice(%DF{groups: groups} = ldf, offset, length),
     do:
-      Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length, ldf.groups, ldf.stable_groups?])
+      Shared.apply_dataframe(ldf, ldf, :lf_slice, [offset, length, groups.columns, groups.stable?])
 
   defp groups_exprs(groups), do: Enum.map(groups, &Native.expr_column/1)
 
@@ -440,12 +440,12 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def filter_with(df, out_df, %LazySeries{} = lseries) do
     expression =
-      if df.groups == [] do
+      if df.groups.columns == [] do
         to_expr(lseries)
       else
         lseries
         |> to_expr()
-        |> Native.expr_over(groups_exprs(df.groups))
+        |> Native.expr_over(groups_exprs(df.groups.columns))
       end
 
     Shared.apply_dataframe(df, out_df, :lf_filter_with, [expression])
@@ -467,7 +467,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       |> Enum.map(fn {direction, lazy_series} -> {direction == :desc, to_expr(lazy_series)} end)
       |> Enum.unzip()
 
-    if df.groups == [] do
+    if df.groups.columns == [] do
       Shared.apply_dataframe(
         df,
         out_df,
@@ -488,7 +488,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         :lf_grouped_sort_with,
         [
           expressions,
-          groups_exprs(df.groups),
+          groups_exprs(df.groups.columns),
           directions
         ]
       )
@@ -506,10 +506,10 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   @impl true
   def mutate_with(%DF{} = df, %DF{} = out_df, column_pairs) do
     maybe_over_groups_fun =
-      if df.groups == [] do
+      if df.groups.columns == [] do
         &Function.identity/1
       else
-        fn expr -> Native.expr_over(expr, groups_exprs(df.groups)) end
+        fn expr -> Native.expr_over(expr, groups_exprs(df.groups.columns)) end
       end
 
     exprs =
@@ -559,7 +559,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Groups
 
   @impl true
-  def summarise_with(%DF{groups: groups} = df, %DF{} = out_df, column_pairs) do
+  def summarise_with(
+        %DF{groups: %{columns: groups, stable?: stable?}} = df,
+        %DF{} = out_df,
+        column_pairs
+      ) do
     exprs =
       for {name, lazy_series} <- column_pairs do
         original_expr = to_expr(lazy_series)
@@ -570,7 +574,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
     Shared.apply_dataframe(df, out_df, :lf_summarise_with, [
       groups_exprs,
-      df.stable_groups?,
+      stable?,
       exprs
     ])
   end

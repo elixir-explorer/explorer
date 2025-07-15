@@ -12,17 +12,17 @@ defmodule Explorer.DataFrame.GroupedTest do
 
   describe "group_by/2" do
     test "groups a dataframe by one column", %{df: df} do
-      assert df.groups == []
+      assert df.groups.columns == []
       df1 = DF.group_by(df, "country")
 
-      assert df1.groups == ["country"]
+      assert df1.groups.columns == ["country"]
       assert DF.groups(df1) == ["country"]
     end
 
     test "groups a dataframe by two columns", %{df: df} do
       df1 = DF.group_by(df, ["country", "year"])
 
-      assert df1.groups == ["country", "year"]
+      assert df1.groups.columns == ["country", "year"]
       assert DF.groups(df1) == ["country", "year"]
     end
 
@@ -30,7 +30,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 = DF.group_by(df, ["country"])
       df2 = DF.group_by(df1, "year")
 
-      assert df2.groups == ["country", "year"]
+      assert df2.groups.columns == ["country", "year"]
       assert DF.groups(df2) == ["country", "year"]
     end
 
@@ -46,7 +46,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 = DF.group_by(df, "country")
       df2 = DF.ungroup(df1, "country")
 
-      assert df2.groups == []
+      assert df2.groups.columns == []
       assert DF.groups(df2) == []
     end
 
@@ -54,7 +54,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 = DF.group_by(df, ["country", "year"])
       df2 = DF.ungroup(df1, "country")
 
-      assert df2.groups == ["year"]
+      assert df2.groups.columns == ["year"]
       assert DF.groups(df2) == ["year"]
     end
 
@@ -62,7 +62,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 = DF.group_by(df, ["country", "year"])
       df2 = DF.ungroup(df1, ["year", "country"])
 
-      assert df2.groups == []
+      assert df2.groups.columns == []
       assert DF.groups(df2) == []
     end
 
@@ -73,7 +73,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       # Note: the range selected the column at index 1 of `df.names` to ungroup,
       # not `df.groups`.
       assert Enum.take(df.names, 2) == ["year", "country"]
-      assert df2.groups == ["year"]
+      assert df2.groups.columns == ["year"]
       assert DF.groups(df2) == ["year"]
     end
 
@@ -526,7 +526,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert df2.names == ["a", "b", "c", "d"]
       assert df2.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:f, 64}}
-      assert df2.groups == ["c"]
+      assert df2.groups.columns == ["c"]
     end
 
     test "adds a new column with aggregation when there is a group" do
@@ -544,7 +544,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
       assert df2.names == ["a", "b", "c", "d"]
       assert df2.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:f, 64}}
-      assert df2.groups == ["c"]
+      assert df2.groups.columns == ["c"]
     end
   end
 
@@ -577,7 +577,7 @@ defmodule Explorer.DataFrame.GroupedTest do
                "e" => {:u, 32}
              }
 
-      assert df2.groups == ["c"]
+      assert df2.groups.columns == ["c"]
     end
 
     test "adds new columns with window functions" do
@@ -1333,7 +1333,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
   test "lazy/1", %{df: df} do
     grouped = DF.group_by(df, ["country", "year"])
-    assert ["country", "year"] = DF.lazy(grouped).groups
+    assert ["country", "year"] = DF.lazy(grouped).groups.columns
   end
 
   describe "put/3" do

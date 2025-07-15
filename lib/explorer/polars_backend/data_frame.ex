@@ -692,7 +692,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def sort_with(
-        %DataFrame{} = df,
+        %DataFrame{groups: groups} = df,
         out_df,
         column_pairs,
         maintain_order?,
@@ -713,8 +713,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         maintain_order?,
         multithreaded?,
         nulls_last?,
-        df.groups,
-        df.stable_groups?
+        groups.columns,
+        groups.stable?
       ])
     else
       {directions, expressions} =
@@ -728,8 +728,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         maintain_order?,
         multithreaded?,
         nulls_last?,
-        df.groups,
-        df.stable_groups?
+        groups.columns,
+        groups.stable?
       ])
     end
   end
@@ -755,29 +755,30 @@ defmodule Explorer.PolarsBackend.DataFrame do
     do: Shared.apply_dataframe(df, out_df, :df_to_dummies, [names])
 
   @impl true
-  def sample(df, n, replacement, shuffle, seed) when is_integer(n) do
+  def sample(%DataFrame{groups: groups} = df, n, replacement, shuffle, seed) when is_integer(n) do
     Shared.apply_dataframe(df, df, :df_sample_n, [
       n,
       replacement,
       shuffle,
       seed,
-      df.groups,
-      df.stable_groups?
+      groups.columns,
+      groups.stable?
     ])
   end
 
   @impl true
-  def sample(df, frac, replacement, shuffle, seed) when is_float(frac) do
+  def sample(%DataFrame{groups: groups} = df, frac, replacement, shuffle, seed)
+      when is_float(frac) do
     # Avoid grouping if the sample is of the entire DF.
-    groups = if frac == 1.0, do: [], else: df.groups
+    groups_columns = if frac == 1.0, do: [], else: groups.columns
 
     Shared.apply_dataframe(df, df, :df_sample_frac, [
       frac,
       replacement,
       shuffle,
       seed,
-      groups,
-      df.stable_groups?
+      groups_columns,
+      groups.stable?
     ])
   end
 
@@ -785,28 +786,28 @@ defmodule Explorer.PolarsBackend.DataFrame do
   def pull(df, column), do: Shared.apply_dataframe(df, :df_pull, [column])
 
   @impl true
-  def slice(%DataFrame{} = df, row_indices) when is_list(row_indices) do
+  def slice(%DataFrame{groups: groups} = df, row_indices) when is_list(row_indices) do
     Shared.apply_dataframe(df, df, :df_slice_by_indices, [
       row_indices,
-      df.groups,
-      df.stable_groups?
+      groups.columns,
+      groups.stable?
     ])
   end
 
   @impl true
-  def slice(%DataFrame{} = df, %Series{} = row_indices) do
+  def slice(%DataFrame{groups: groups} = df, %Series{} = row_indices) do
     Shared.apply_dataframe(df, df, :df_slice_by_series, [
       row_indices.data,
-      df.groups,
-      df.stable_groups?
+      groups.columns,
+      groups.stable?
     ])
   end
 
   # TODO: If we expose group_indices at the Explorer.DataFrame level,
   # then we can implement this in pure Elixir.
   @impl true
-  def slice(%DataFrame{groups: [_ | _]} = df, %Range{} = range) do
-    {:ok, group_indices} = Native.df_group_indices(df.data, df.groups)
+  def slice(%DataFrame{groups: %{columns: group_columns = [_ | _]}} = df, %Range{} = range) do
+    {:ok, group_indices} = Native.df_group_indices(df.data, group_columns)
 
     idx =
       Enum.map(group_indices, fn series ->
@@ -819,14 +820,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     {:ok, idx} = Native.s_concat(idx)
 
-    Shared.apply_dataframe(df, df, :df_slice_by_series, [idx, [], df.stable_groups?])
+    Shared.apply_dataframe(df, df, :df_slice_by_series, [idx, [], df.groups.stable?])
   end
 
   @impl true
-  def slice(%DataFrame{} = df, offset, length)
+  def slice(%DataFrame{groups: groups} = df, offset, length)
       when is_integer(offset) and is_integer(length),
       do:
-        Shared.apply_dataframe(df, df, :df_slice, [offset, length, df.groups, df.stable_groups?])
+        Shared.apply_dataframe(df, df, :df_slice, [offset, length, groups.columns, groups.stable?])
 
   @impl true
   def drop_nil(df, columns) do
