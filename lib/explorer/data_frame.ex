@@ -2206,7 +2206,7 @@ defmodule Explorer.DataFrame do
   Here is an example using the Iris dataset, and returning two rows from each group:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.head(grouped, 2)
       #Explorer.DataFrame<
         Polars[6 x 5]
@@ -2271,7 +2271,7 @@ defmodule Explorer.DataFrame do
   Here is an example using the Iris dataset, and returning two rows from each group:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.tail(grouped, 2)
       #Explorer.DataFrame<
         Polars[6 x 5]
@@ -3374,7 +3374,7 @@ defmodule Explorer.DataFrame do
   because "species" is a group.
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.sort_by(grouped, desc: species, asc: sepal_width)
       #Explorer.DataFrame<
         Polars[150 x 5]
@@ -3476,7 +3476,7 @@ defmodule Explorer.DataFrame do
   ## Grouped examples
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.sort_with(grouped, &[desc: &1["species"], asc: &1["sepal_width"]])
       #Explorer.DataFrame<
         Polars[150 x 5]
@@ -4128,7 +4128,7 @@ defmodule Explorer.DataFrame do
   We want to take the first 3 rows of each group. We need the offset 0 and the length 3:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.slice(grouped, 0, 3)
       #Explorer.DataFrame<
         Polars[9 x 5]
@@ -4143,7 +4143,7 @@ defmodule Explorer.DataFrame do
   We can also pass a negative offset:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.slice(grouped, -6, 3)
       #Explorer.DataFrame<
         Polars[9 x 5]
@@ -4222,7 +4222,7 @@ defmodule Explorer.DataFrame do
   0 and 2:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.slice(grouped, [0, 2])
       #Explorer.DataFrame<
         Polars[6 x 5]
@@ -4238,7 +4238,7 @@ defmodule Explorer.DataFrame do
   This is going to work with the range `0..2`:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.slice(grouped, 0..2)
       #Explorer.DataFrame<
         Polars[9 x 5]
@@ -4363,7 +4363,7 @@ defmodule Explorer.DataFrame do
   resultant dataframe is going to have six rows (2 * 3).
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.sample(grouped, 2, seed: 100)
       #Explorer.DataFrame<
         Polars[6 x 5]
@@ -4379,7 +4379,7 @@ defmodule Explorer.DataFrame do
   difference is that each group can have more or less rows, depending on its size.
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.sample(grouped, 0.1, seed: 100)
       #Explorer.DataFrame<
         Polars[15 x 5]
@@ -5557,7 +5557,7 @@ defmodule Explorer.DataFrame do
   ## Options
 
     * `:stable` (`boolean`) — when `true`, preserve the order of the groups exactly as they appear in the original dataframe.
-      Groups may be reordered (for example, sorted) for performance. By default `false`.
+      By default (`false`) groups may be reordered (for example, sorted) for performance.
 
   ## Examples
 
@@ -5651,7 +5651,7 @@ defmodule Explorer.DataFrame do
     stable_groups? =
       case {df.groups, stable_opt} do
         {[], nil} ->
-          true
+          false
 
         {[], value} ->
           value
@@ -5761,7 +5761,7 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> df = Explorer.DataFrame.new(letters: ~w(a b c d e), is_vowel: [true, false, false, false, true])
-      iex> grouped_df = Explorer.DataFrame.group_by(df, :is_vowel)
+      iex> grouped_df = Explorer.DataFrame.group_by(df, :is_vowel, stable: true)
       iex> Explorer.DataFrame.summarise(grouped_df, letters: letters)
       #Explorer.DataFrame<
         Polars[2 x 2]
@@ -5770,7 +5770,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> grouped_df = Explorer.DataFrame.group_by(df, "year")
+      iex> grouped_df = Explorer.DataFrame.group_by(df, "year", stable: true)
       iex> Explorer.DataFrame.summarise(grouped_df, total_max: max(total), total_min: min(total))
       #Explorer.DataFrame<
         Polars[5 x 3]
@@ -5783,7 +5783,7 @@ defmodule Explorer.DataFrame do
   like this:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped_df = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped_df = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.summarise(grouped_df, mean_sepal_width: round(mean(sepal_width), 3))
       #Explorer.DataFrame<
         Polars[3 x 2]
@@ -5823,7 +5823,7 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> alias Explorer.{DataFrame, Series}
-      iex> df = Explorer.Datasets.fossil_fuels() |> DataFrame.group_by("year")
+      iex> df = Explorer.Datasets.fossil_fuels() |> DataFrame.group_by("year", stable: true)
       iex> DataFrame.summarise_with(df, &[total_max: Series.max(&1["total"]), countries: Series.n_distinct(&1["country"])])
       #Explorer.DataFrame<
         Polars[5 x 3]
@@ -5938,7 +5938,7 @@ defmodule Explorer.DataFrame do
   aggregating the elements the exploded columns into lists:
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3, 4], b: [5, 6, 7, 8], c: ["a", "a", "b", "b"])
-      iex> df = df |> Explorer.DataFrame.group_by(:c) |> Explorer.DataFrame.summarise(a: a, b: b)
+      iex> df = df |> Explorer.DataFrame.group_by(:c, stable: true) |> Explorer.DataFrame.summarise(a: a, b: b)
       #Explorer.DataFrame<
         Polars[2 x 3]
         c string ["a", "b"]

@@ -88,7 +88,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
   describe "summarise/2" do
     test "with one group and one column with aggregation", %{df: df} do
-      df1 = df |> DF.group_by("year") |> DF.summarise(total: count(total))
+      df1 = df |> DF.group_by("year", stable: true) |> DF.summarise(total: count(total))
 
       assert DF.names(df1) == ["year", "total"]
 
@@ -109,7 +109,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 =
         df
         |> DF.head(5)
-        |> DF.group_by(["country", "year"])
+        |> DF.group_by(["country", "year"], stable: true)
         |> DF.summarise(total_max: max(total), total_min: min(total))
 
       assert DF.names(df1) == ["country", "year", "total_max", "total_min"]
@@ -142,7 +142,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df2 =
         df
         |> DF.pivot_wider("names", "val")
-        |> DF.group_by("team")
+        |> DF.group_by("team", stable: true)
         |> DF.summarise(%{"adv" => max(adv), "cou" => max(cou), "spo" => max(spo)})
 
       assert DF.names(df2) == ["team", "adv", "cou", "spo"]
@@ -168,7 +168,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 =
         df
         |> DF.mask(masks)
-        |> DF.group_by(["country", "year"])
+        |> DF.group_by(["country", "year"], stable: true)
         |> DF.summarise(
           total_max: max(total),
           total_min: min(total),
@@ -278,7 +278,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "using mode" do
       df =
         Datasets.iris()
-        |> DF.group_by(:species)
+        |> DF.group_by(:species, stable: true)
         |> DF.summarise(petal_width_mode: mode(petal_width))
 
       assert DF.dtypes(df) == %{
@@ -297,7 +297,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "with one group and one column with aggregations", %{df: df} do
       df1 =
         df
-        |> DF.group_by("year")
+        |> DF.group_by("year", stable: true)
         |> DF.summarise_with(fn ldf ->
           total = ldf["total"]
 
@@ -314,7 +314,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "with one group and two columns with aggregations", %{df: df} do
       df1 =
         df
-        |> DF.group_by("year")
+        |> DF.group_by("year", stable: true)
         |> DF.summarise_with(fn ldf ->
           total = ldf["total"]
           liquid_fuel = ldf["liquid_fuel"]
@@ -337,7 +337,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "with one group and aggregations with addition and subtraction", %{df: df} do
       df1 =
         df
-        |> DF.group_by("year")
+        |> DF.group_by("year", stable: true)
         |> DF.summarise_with(fn ldf ->
           total = ldf["total"]
           liquid_fuel = ldf["liquid_fuel"]
@@ -359,7 +359,7 @@ defmodule Explorer.DataFrame.GroupedTest do
       df1 =
         df
         |> DF.head(5)
-        |> DF.group_by(["country", "year"])
+        |> DF.group_by(["country", "year"], stable: true)
         |> DF.summarise_with(fn ldf ->
           total = ldf["total"]
 
@@ -377,7 +377,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "with one group and some aggregations", %{df: df} do
       df1 =
         df
-        |> DF.group_by(["year"])
+        |> DF.group_by(["year"], stable: true)
         |> DF.summarise_with(fn ldf ->
           [
             count: Series.count(ldf["country"]),
@@ -426,7 +426,7 @@ defmodule Explorer.DataFrame.GroupedTest do
     test "with one group, one aggregation with a window function inside", %{df: df} do
       df1 =
         df
-        |> DF.group_by(["year"])
+        |> DF.group_by(["year"], stable: true)
         |> DF.summarise_with(fn ldf ->
           [
             count: Series.count(ldf["country"]),
@@ -486,7 +486,7 @@ defmodule Explorer.DataFrame.GroupedTest do
           data: [1, 0.5, nil, 0.7, 1, 0.9, 0.2, 0.2, 0.3]
         })
 
-      grouped = DF.group_by(with_nil, :id)
+      grouped = DF.group_by(with_nil, :id, stable: true)
 
       assert grouped |> DF.sort_by(data, nils: :last) |> DF.to_columns(atom_keys: true) == %{
                data: [0.5, 1.0, nil, 0.7, 0.9, 1.0, 0.2, 0.2, 0.3],
@@ -786,7 +786,7 @@ defmodule Explorer.DataFrame.GroupedTest do
           c: [1, :nan, 3],
           group: [1, 1, 2]
         )
-        |> DF.group_by(:group)
+        |> DF.group_by(:group, stable: true)
 
       assert df
              |> DF.summarise(
@@ -913,7 +913,7 @@ defmodule Explorer.DataFrame.GroupedTest do
   describe "slice/2" do
     test "take two by indices of each group" do
       df = Datasets.iris()
-      grouped = DF.group_by(df, "species")
+      grouped = DF.group_by(df, "species", stable: true)
       grouped1 = DF.slice(grouped, [0, 2])
 
       assert DF.n_rows(grouped1) == 6
@@ -932,7 +932,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
     test "take two by series of indices of each group" do
       df = Datasets.iris()
-      grouped = DF.group_by(df, "species")
+      grouped = DF.group_by(df, "species", stable: true)
       grouped1 = DF.slice(grouped, Series.from_list([0, 2]))
 
       assert DF.n_rows(grouped1) == 6
@@ -975,7 +975,7 @@ defmodule Explorer.DataFrame.GroupedTest do
   describe "slice/3" do
     test "take first two of each group" do
       df = Datasets.iris()
-      grouped = DF.group_by(df, "species")
+      grouped = DF.group_by(df, "species", stable: true)
       grouped1 = DF.slice(grouped, 0, 2)
 
       assert DF.n_rows(grouped1) == 6
@@ -994,7 +994,7 @@ defmodule Explorer.DataFrame.GroupedTest do
 
     test "take two of each group starting with negative index" do
       df = Datasets.iris()
-      grouped = DF.group_by(df, "species")
+      grouped = DF.group_by(df, "species", stable: true)
       grouped1 = DF.slice(grouped, -6, 2)
 
       assert DF.n_rows(grouped1) == 6

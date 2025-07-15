@@ -271,7 +271,7 @@ defmodule Explorer.Backend.DataFrame do
   end
 
   def new(data, names, dtypes) when is_list(names) and is_map(dtypes) do
-    %DataFrame{data: data, names: names, dtypes: dtypes, groups: [], stable_groups?: true}
+    %DataFrame{data: data, names: names, dtypes: dtypes, groups: [], stable_groups?: false}
   end
 
   @default_limit 5
