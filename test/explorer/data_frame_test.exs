@@ -4078,10 +4078,10 @@ defmodule Explorer.DataFrameTest do
           c: ["a", nil, "a", nil, "a", nil]
         )
 
-      assert DF.frequencies(df, [:a, :b]) |> DF.to_columns(atom_keys: true) ==
+      assert DF.frequencies(df, [:a, :b], stable: true) |> DF.to_columns(atom_keys: true) ==
                %{a: [1, 3, 2], b: [true, false, false], counts: [3, 2, 1]}
 
-      assert DF.frequencies(df, [:a, :c]) |> DF.to_columns(atom_keys: true) ==
+      assert DF.frequencies(df, [:a, :c], stable: true) |> DF.to_columns(atom_keys: true) ==
                %{a: [1, 1, 2, 3, 3], c: ["a", nil, nil, "a", nil], counts: [2, 1, 1, 1, 1]}
     end
 
@@ -4269,7 +4269,7 @@ defmodule Explorer.DataFrameTest do
           letters: ~w(a b c d e f g h i j),
           is_vowel: [true, false, false, false, true, false, false, false, true, false]
         )
-        |> DF.group_by(:is_vowel)
+        |> DF.group_by(:is_vowel, stable: true)
         |> DF.summarise(letters: letters)
 
       assert DF.to_columns(df, atom_keys: true) == %{
