@@ -5635,7 +5635,6 @@ defmodule Explorer.DataFrame do
     groups = to_existing_columns(df, groups)
     all_groups = Enum.uniq(df.groups.columns ++ groups)
 
-    # TODO rewrite
     stable_opt =
       case Keyword.fetch(opts, :stable) do
         :error ->
