@@ -63,6 +63,47 @@ defmodule Explorer.DataFrame.IPCTest do
     assert DF.to_columns(df) == DF.to_columns(df1)
   end
 
+  test "dump_ipc_schema/2 without compact level" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, ipc_schema} = DF.dump_ipc_schema(df)
+
+    assert is_binary(ipc_schema)
+  end
+
+  test "dump_ipc_schema/2 with compact level" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, ipc_schema} = DF.dump_ipc_schema(df, compact_level: :newest)
+
+    assert is_binary(ipc_schema)
+  end
+
+  test "dump_ipc_record_batch/2 without params" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, ipc_schema} = DF.dump_ipc_record_batch(df)
+
+    assert is_list(ipc_schema)
+    assert [record] = ipc_schema
+    assert is_binary(record)
+  end
+
+  test "dump_ipc_record_batch/2 with params" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, ipc_schema} =
+             DF.dump_ipc_record_batch(df,
+               max_chunk_size: nil,
+               compression: :lz4,
+               compact_level: :newest
+             )
+
+    assert is_list(ipc_schema)
+    assert [record] = ipc_schema
+    assert is_binary(record)
+  end
+
   def assert_ipc(type, value, parsed_value) do
     assert_from_with_correct_type(type, value, parsed_value, fn df ->
       assert {:ok, df} = DF.from_ipc(tmp_ipc_file!(df))

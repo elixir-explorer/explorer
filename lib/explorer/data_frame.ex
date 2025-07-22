@@ -1221,6 +1221,43 @@ defmodule Explorer.DataFrame do
     end
   end
 
+  @spec dump_ipc_schema(df :: DataFrame.t(), opts :: Keyword.t()) ::
+          {:ok, binary()} | {:error, Exception.t()}
+  def dump_ipc_schema(df, opts \\ []) do
+    opts = Keyword.validate!(opts, compact_level: nil)
+    compact_level = ipc_compact_level(opts[:compact_level])
+
+    Shared.apply_dataframe(df, :dump_ipc_schema, [compact_level], false)
+  end
+
+  @spec dump_ipc_record_batch(df :: DataFrame.t(), opts :: Keyword.t()) ::
+          {:ok, list(binary())} | {:error, Exception.t()}
+  def dump_ipc_record_batch(df, opts \\ []) do
+    opts = Keyword.validate!(opts, max_chunk_size: nil, compression: nil, compact_level: nil)
+    max_chunck_size = ipc_max_chunk_size(opts[:max_chunk_size])
+    compression = ipc_compression(opts[:compression])
+    compact_level = ipc_compact_level(opts[:compact_level])
+
+    Shared.apply_dataframe(
+      df,
+      :dump_ipc_record_batch,
+      [max_chunck_size, compression, compact_level],
+      false
+    )
+  end
+
+  defp ipc_max_chunk_size(nil), do: nil
+  defp ipc_max_chunk_size(byte_size) when is_integer(byte_size), do: {byte_size, nil}
+
+  defp ipc_max_chunk_size(other),
+    do: raise(ArgumentError, "unsupported :max_chunk_size #{inspect(other)}")
+
+  defp ipc_compact_level(nil), do: nil
+  defp ipc_compact_level(level) when level in ~w(oldest newest)a, do: level
+
+  defp ipc_compact_level(other),
+    do: raise(ArgumentError, "unsupported :compact_level #{inspect(other)}")
+
   @doc """
   Reads a binary representing an IPC file into a dataframe.
 
