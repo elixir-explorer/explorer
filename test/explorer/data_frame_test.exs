@@ -2623,6 +2623,27 @@ defmodule Explorer.DataFrameTest do
              """
     end
 
+    test "works with lazy and default limit value" do
+      df = Datasets.iris() |> DF.lazy()
+
+      assert capture_io(fn -> DF.print(df) end) |> tap(&IO.puts/1) == """
+             +-----------------------------------------------------------------------+
+             |              Explorer DataFrame: [rows: ???, columns: 5]              |
+             +--------------+-------------+--------------+-------------+-------------+
+             | sepal_length | sepal_width | petal_length | petal_width |   species   |
+             |    <f64>     |    <f64>    |    <f64>     |    <f64>    |  <string>   |
+             +==============+=============+==============+=============+=============+
+             | 5.1          | 3.5         | 1.4          | 0.2         | Iris-setosa |
+             | 4.9          | 3.0         | 1.4          | 0.2         | Iris-setosa |
+             | 4.7          | 3.2         | 1.3          | 0.2         | Iris-setosa |
+             | 4.6          | 3.1         | 1.5          | 0.2         | Iris-setosa |
+             | 5.0          | 3.6         | 1.4          | 0.2         | Iris-setosa |
+             | …            | …           | …            | …           | …           |
+             +--------------+-------------+--------------+-------------+-------------+
+
+             """
+    end
+
     test "works with tuple dtypes" do
       df =
         [datetime1: [~N[2023-09-14 00:00:00]], datetime2: [~N[2023-09-14 01:00:00]]]
