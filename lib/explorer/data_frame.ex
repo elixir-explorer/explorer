@@ -1221,6 +1221,21 @@ defmodule Explorer.DataFrame do
     end
   end
 
+  @doc """
+  Writes a dataframe schema to a binary representation of an IPC schema message.
+
+  ## Options
+
+    * `:compact_level` - The compact level used by the backend.
+      For the Polars backend it indicates to use view types on newest
+      or use non-view types on oldest.
+      Supported options are:
+
+        * `nil` (oldest, default)
+        * `:oldest`
+        * `:newest`.
+
+  """
   @spec dump_ipc_schema(df :: DataFrame.t(), opts :: Keyword.t()) ::
           {:ok, binary()} | {:error, Exception.t()}
   def dump_ipc_schema(df, opts \\ []) do
@@ -1230,6 +1245,33 @@ defmodule Explorer.DataFrame do
     Shared.apply_dataframe(df, :dump_ipc_schema, [compact_level], false)
   end
 
+  @doc """
+  Writes a dataframe to a list of binary, each binary is a representation of a chunked record batch.
+
+  ## Options
+    * `:max_chunk_size` - The max size of each binary.
+      Supported options are:
+
+        * `nil` (10mb, default)
+        * a value in bytes
+
+    * `:compression` - The compression algorithm to use when writing files.
+      Supported options are:
+
+        * `nil` (uncompressed, default)
+        * `:zstd`
+        * `:lz4`.
+
+    * `:compact_level` - The compact level used by the backend.
+      For the Polars backend it indicates to use view types on newest
+      or use non-view types on oldest.
+      Supported options are:
+
+        * `nil` (oldest, default)
+        * `:oldest`
+        * `:newest`.
+
+  """
   @spec dump_ipc_record_batch(df :: DataFrame.t(), opts :: Keyword.t()) ::
           {:ok, list(binary())} | {:error, Exception.t()}
   def dump_ipc_record_batch(df, opts \\ []) do

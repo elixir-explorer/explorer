@@ -517,15 +517,13 @@ pub fn df_dump_ipc_record_batch<'a>(
         Some(algo) => Some(decode_ipc_compression(algo)?.into()),
         None => None,
     };
-    let options = WriteOptions {
-        compression: compression,
-    };
+    let options = WriteOptions { compression };
 
     let mut result = Vec::new();
 
     for batch in iter {
         let mut encoded_message = Default::default();
-        let _ = encode_record_batch(&batch, &options, &mut encoded_message);
+        encode_record_batch(&batch, &options, &mut encoded_message);
         let encoded_message = std::mem::take(&mut encoded_message);
 
         let mut buf = vec![];
