@@ -6193,7 +6193,7 @@ defmodule Explorer.DataFrame do
           n_rows(limit_plus_1) <= opts[:limit] ->
             [limit_plus_1]
 
-          opts[:limit_dots] == :split and opts[:limit] >= 2 ->
+          not lazy?(df) and opts[:limit_dots] == :split and opts[:limit] >= 2 ->
             bottom_limit = div(opts[:limit], 2)
             # For odd limits, the extra row goes on top.
             top_limit = opts[:limit] - bottom_limit
