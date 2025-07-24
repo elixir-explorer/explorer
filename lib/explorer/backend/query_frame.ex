@@ -74,7 +74,7 @@ defmodule Explorer.Backend.QueryFrame do
       open,
       "??? x #{length(cols_algebra)}",
       close,
-      groups_algebra(ldf.groups, opts) | cols_algebra
+      groups_algebra(ldf.groups.columns, opts) | cols_algebra
     ])
   end
 

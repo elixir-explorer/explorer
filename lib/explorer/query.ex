@@ -203,7 +203,7 @@ defmodule Explorer.Query do
   the mean per species, you could write:
 
       iex> Explorer.Datasets.iris()
-      ...> |> DF.group_by("species")
+      ...> |> DF.group_by("species", stable: true)
       ...> |> DF.summarise(
       ...>   for col <- across(), col.dtype == {:f, 64} do
       ...>     {"#{col.name}_mean", round(mean(col), 3)}
