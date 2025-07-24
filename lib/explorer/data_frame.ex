@@ -1236,6 +1236,7 @@ defmodule Explorer.DataFrame do
         * `:newest`.
 
   """
+  @doc type: :io
   @spec dump_ipc_schema(df :: DataFrame.t(), opts :: Keyword.t()) ::
           {:ok, binary()} | {:error, Exception.t()}
   def dump_ipc_schema(df, opts \\ []) do
@@ -1272,6 +1273,7 @@ defmodule Explorer.DataFrame do
         * `:newest`.
 
   """
+  @doc type: :io
   @spec dump_ipc_record_batch(df :: DataFrame.t(), opts :: Keyword.t()) ::
           {:ok, list(binary())} | {:error, Exception.t()}
   def dump_ipc_record_batch(df, opts \\ []) do
