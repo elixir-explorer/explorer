@@ -8,12 +8,18 @@
 //
 // Today we have the following formats: CSV, NDJSON, Parquet, Apache Arrow and Apache Arrow Stream.
 //
+use polars::frame::chunk_df_for_writing;
 use polars::prelude::*;
+use polars::{io::schema_to_arrow_checked, prelude::CompatLevel};
+use polars_arrow::io::ipc::write::{
+    default_ipc_fields, encode_record_batch, schema_to_bytes, EncodedData, WriteOptions,
+};
 use std::num::NonZeroUsize;
 
 use rustler::{Binary, Env, NewBinary};
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Cursor};
+use std::io::{BufReader, BufWriter, Cursor, Write};
+use std::sync::Arc;
 
 use crate::datatypes::{ExParquetCompression, ExQuoteStyle, ExS3Entry, ExSeriesDtype};
 use crate::{ExDataFrame, ExplorerError};
@@ -441,6 +447,160 @@ fn decode_ipc_compression(compression: &str) -> Result<IpcCompression, ExplorerE
             "the algorithm {other} is not supported for IPC compression"
         ))),
     }
+}
+
+fn decode_compact_level(compact_level: &str) -> Result<CompatLevel, ExplorerError> {
+    match compact_level {
+        "oldest" => Ok(CompatLevel::oldest()),
+        "newest" => Ok(CompatLevel::newest()),
+        other => Err(ExplorerError::Other(format!(
+            "the compact level {other} is not supported"
+        ))),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_dump_ipc_schema<'a>(
+    env: Env<'a>,
+    df: ExDataFrame,
+    compact_level: Option<&str>,
+) -> Result<Binary<'a>, ExplorerError> {
+    let compact_level = match compact_level {
+        Some(level) => decode_compact_level(level)?,
+        None => CompatLevel::oldest(),
+    };
+    let schema = schema_to_arrow_checked(df.schema(), compact_level, "ipc")?;
+    let ipc_fields = default_ipc_fields(schema.iter_values());
+    let schema_bytes = schema_to_bytes(&schema, &ipc_fields, None);
+    let encoded_message = EncodedData {
+        ipc_message: schema_bytes,
+        arrow_data: Vec::new(),
+    };
+
+    let mut buf = vec![];
+    write_message(&mut buf, &encoded_message)?;
+
+    let mut values_binary = NewBinary::new(env, buf.len());
+    values_binary.copy_from_slice(&buf);
+
+    Ok(values_binary.into())
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_dump_ipc_record_batch<'a>(
+    env: Env<'a>,
+    df: ExDataFrame,
+    max_chunk_size: Option<usize>,
+    compression: Option<&str>,
+    compact_level: Option<&str>,
+) -> Result<Vec<Binary<'a>>, ExplorerError> {
+    let data = &mut df.clone();
+
+    let max_request_bytes = if let Some(max_chunk_size) = max_chunk_size {
+        max_chunk_size
+    } else {
+        let base: usize = 2;
+        10 * base.pow(20) // 10 MB
+    };
+    let chunk_num = data.estimated_size() / max_request_bytes + 1;
+    let chunk_size = data.fields().len() / chunk_num;
+
+    chunk_df_for_writing(data, chunk_size)?;
+
+    let compact_level = match compact_level {
+        Some(level) => decode_compact_level(level)?,
+        None => CompatLevel::oldest(),
+    };
+    let iter = data.iter_chunks(compact_level, true);
+
+    let compression = match compression {
+        Some(algo) => Some(decode_ipc_compression(algo)?.into()),
+        None => None,
+    };
+    let options = WriteOptions { compression };
+
+    let mut result = Vec::new();
+
+    for batch in iter {
+        let mut encoded_message = Default::default();
+        encode_record_batch(&batch, &options, &mut encoded_message);
+        let encoded_message = std::mem::take(&mut encoded_message);
+
+        let mut buf = vec![];
+        write_message(&mut buf, &encoded_message)?;
+        let mut values_binary = NewBinary::new(env, buf.len());
+        values_binary.copy_from_slice(&buf);
+
+        result.push(values_binary.into());
+    }
+
+    Ok(result)
+}
+
+/// Write a message's IPC data and buffers, returning metadata and buffer data lengths written
+/// code from https://github.com/pola-rs/polars/blob/main/crates/polars-arrow/src/io/ipc/write/common_sync.rs
+/// the original code is not public for external crates to use it
+pub fn write_message<W: Write>(
+    writer: &mut W,
+    encoded: &EncodedData,
+) -> PolarsResult<(usize, usize)> {
+    let arrow_data_len = encoded.arrow_data.len();
+
+    let a = 8 - 1;
+    let buffer = &encoded.ipc_message;
+    let flatbuf_size = buffer.len();
+    let prefix_size = 8;
+    let aligned_size = (flatbuf_size + prefix_size + a) & !a;
+    let padding_bytes = aligned_size - flatbuf_size - prefix_size;
+
+    write_continuation(writer, (aligned_size - prefix_size) as i32)?;
+
+    // write the flatbuf
+    if flatbuf_size > 0 {
+        writer.write_all(buffer)?;
+    }
+    // write padding
+    // aligned to a 8 byte boundary, so maximum is [u8;8]
+    const PADDING_MAX: [u8; 8] = [0u8; 8];
+    writer.write_all(&PADDING_MAX[..padding_bytes])?;
+
+    // write arrow data
+    let body_len = if arrow_data_len > 0 {
+        write_body_buffers(writer, &encoded.arrow_data)?
+    } else {
+        0
+    };
+
+    Ok((aligned_size, body_len))
+}
+
+fn write_body_buffers<W: Write>(mut writer: W, data: &[u8]) -> PolarsResult<usize> {
+    let len = data.len();
+    let pad_len = pad_to_64(data.len());
+    let total_len = len + pad_len;
+
+    // write body buffer
+    writer.write_all(data)?;
+    if pad_len > 0 {
+        writer.write_all(&vec![0u8; pad_len][..])?;
+    }
+
+    Ok(total_len)
+}
+
+/// Write a record batch to the writer, writing the message size before the message
+/// if the record batch is being written to a stream
+fn write_continuation<W: Write>(writer: &mut W, total_len: i32) -> PolarsResult<usize> {
+    const CONTINUATION_MARKER: [u8; 4] = [0xff; 4];
+    writer.write_all(&CONTINUATION_MARKER)?;
+    writer.write_all(&total_len.to_le_bytes()[..])?;
+    Ok(8)
+}
+
+/// Calculate an 8-byte boundary and return the number of bytes needed to pad to 8 bytes
+#[inline]
+fn pad_to_64(len: usize) -> usize {
+    ((len + 63) & !63) - len
 }
 
 // ============ IPC Streaming ============ //

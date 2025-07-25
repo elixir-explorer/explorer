@@ -642,6 +642,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
     dump_csv: 4,
     dump_ipc: 2,
     dump_ipc_stream: 2,
+    dump_ipc_schema: 2,
+    dump_ipc_record_batch: 4,
     dump_ndjson: 1,
     dump_parquet: 2,
     mask: 2,

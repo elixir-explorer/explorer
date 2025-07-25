@@ -33,6 +33,7 @@ defmodule Explorer.Backend.DataFrame do
   @type query_frame :: Explorer.Backend.QueryFrame.t()
   @type lazy_series :: Explorer.Backend.LazySeries.t()
 
+  @type compact_level :: option(:oldest | :newest)
   @type compression :: {algorithm :: option(atom()), level :: option(integer())}
   @type columns_for_io :: list(column_name()) | list(pos_integer()) | nil
 
@@ -122,6 +123,9 @@ defmodule Explorer.Backend.DataFrame do
               contents :: binary(),
               columns :: columns_for_io()
             ) :: io_result(df)
+  @callback dump_ipc_schema(df, compact_level()) :: io_result(binary())
+  @callback dump_ipc_record_batch(df, integer(), compression(), compact_level()) ::
+              io_result(list(binary()))
 
   # IO: IPC Stream
   @callback from_ipc_stream(

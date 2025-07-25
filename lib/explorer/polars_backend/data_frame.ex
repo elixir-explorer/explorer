@@ -448,6 +448,32 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def dump_ipc_schema(%DataFrame{data: df}, compact_level) do
+    case Native.df_dump_ipc_schema(df, maybe_atom_to_string(compact_level)) do
+      {:ok, string} -> {:ok, string}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
+  end
+
+  @impl true
+  def dump_ipc_record_batch(
+        %DataFrame{data: df},
+        max_chunk_size,
+        {compression, _level},
+        compact_level
+      ) do
+    case Native.df_dump_ipc_record_batch(
+           df,
+           max_chunk_size,
+           maybe_atom_to_string(compression),
+           maybe_atom_to_string(compact_level)
+         ) do
+      {:ok, list} -> {:ok, list}
+      {:error, error} -> {:error, RuntimeError.exception(error)}
+    end
+  end
+
+  @impl true
   def from_ipc_stream(%module{} = entry, columns) when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
 
