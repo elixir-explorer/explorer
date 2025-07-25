@@ -82,25 +82,53 @@ defmodule Explorer.DataFrame.IPCTest do
   test "dump_ipc_record_batch/2 without params" do
     df = Explorer.Datasets.iris() |> DF.slice(0, 10)
 
-    assert {:ok, ipc_schema} = DF.dump_ipc_record_batch(df)
-
-    assert is_list(ipc_schema)
-    assert [record] = ipc_schema
+    assert {:ok, [record]} = DF.dump_ipc_record_batch(df)
     assert is_binary(record)
   end
 
   test "dump_ipc_record_batch/2 with params" do
     df = Explorer.Datasets.iris() |> DF.slice(0, 10)
 
-    assert {:ok, ipc_schema} =
+    assert {:ok, [record]} =
              DF.dump_ipc_record_batch(df,
-               max_chunk_size: nil,
+               max_chunk_size: 100_000,
                compression: :lz4,
                compact_level: :newest
              )
 
-    assert is_list(ipc_schema)
-    assert [record] = ipc_schema
+    assert is_binary(record)
+  end
+
+  test "dump_ipc_record_batch/2 with max_chunk_size" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, [record]} =
+             DF.dump_ipc_record_batch(df,
+               max_chunk_size: 500
+             )
+
+    assert is_binary(record)
+  end
+
+  test "dump_ipc_record_batch/2 with compression" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, [record]} =
+             DF.dump_ipc_record_batch(df,
+               compression: :zstd
+             )
+
+    assert is_binary(record)
+  end
+
+  test "dump_ipc_record_batch/2 with compact_level" do
+    df = Explorer.Datasets.iris() |> DF.slice(0, 10)
+
+    assert {:ok, [record]} =
+             DF.dump_ipc_record_batch(df,
+               compact_level: :newest
+             )
+
     assert is_binary(record)
   end
 

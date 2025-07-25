@@ -269,6 +269,35 @@ defmodule Explorer.DataFrame do
           dtypes: %{String.t() => Explorer.Series.dtype()}
         }
 
+  @typedoc """
+  Represents the max chunk size for a given batch record.
+  """
+  @type max_chunk_size :: nil | integer()
+
+  @typedoc """
+  Represents the compression algorithm to use when writing files.
+  """
+  @type compression :: nil | :zstd | :lz4
+
+  @typedoc """
+  Represents the compact level used by the backend.
+  """
+  @type compact_level :: nil | :oldest | :newest
+
+  @typedoc """
+  Represents function keyword options
+  """
+  @type dump_ipc_schema_options :: [compact_level: compact_level()]
+
+  @typedoc """
+  Represents function keyword options
+  """
+  @type dump_ipc_record_batch_options :: [
+          max_chunk_size: max_chunk_size(),
+          compression: compression(),
+          compact_level: compact_level()
+        ]
+
   @default_infer_schema_length 1000
   @default_sample_nrows 5
   @integer_types Explorer.Shared.integer_types()
@@ -1237,7 +1266,7 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :io
-  @spec dump_ipc_schema(df :: DataFrame.t(), opts :: Keyword.t()) ::
+  @spec dump_ipc_schema(df :: DataFrame.t(), opts :: dump_ipc_schema_options()) ::
           {:ok, binary()} | {:error, Exception.t()}
   def dump_ipc_schema(df, opts \\ []) do
     opts = Keyword.validate!(opts, compact_level: nil)
@@ -1274,7 +1303,7 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :io
-  @spec dump_ipc_record_batch(df :: DataFrame.t(), opts :: Keyword.t()) ::
+  @spec dump_ipc_record_batch(df :: DataFrame.t(), opts :: dump_ipc_record_batch_options()) ::
           {:ok, list(binary())} | {:error, Exception.t()}
   def dump_ipc_record_batch(df, opts \\ []) do
     opts = Keyword.validate!(opts, max_chunk_size: nil, compression: nil, compact_level: nil)
@@ -1291,7 +1320,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp ipc_max_chunk_size(nil), do: nil
-  defp ipc_max_chunk_size(byte_size) when is_integer(byte_size), do: {byte_size, nil}
+  defp ipc_max_chunk_size(byte_size) when is_integer(byte_size), do: byte_size
 
   defp ipc_max_chunk_size(other),
     do: raise(ArgumentError, "unsupported :max_chunk_size #{inspect(other)}")
