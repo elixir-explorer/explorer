@@ -2626,7 +2626,7 @@ defmodule Explorer.DataFrameTest do
     test "works with lazy and default limit value" do
       df = Datasets.iris() |> DF.lazy()
 
-      assert capture_io(fn -> DF.print(df) end) |> tap(&IO.puts/1) == """
+      assert capture_io(fn -> DF.print(df) end) == """
              +-----------------------------------------------------------------------+
              |              Explorer DataFrame: [rows: ???, columns: 5]              |
              +--------------+-------------+--------------+-------------+-------------+
