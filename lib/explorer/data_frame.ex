@@ -264,7 +264,7 @@ defmodule Explorer.DataFrame do
   """
   @type t :: %DataFrame{
           data: Explorer.Backend.DataFrame.t(),
-          groups: [String.t()],
+          groups: %{columns: [String.t()], stable?: boolean()},
           names: [String.t()],
           dtypes: %{String.t() => Explorer.Series.dtype()}
         }
@@ -2263,7 +2263,7 @@ defmodule Explorer.DataFrame do
   """
   @doc type: :introspection
   @spec groups(df :: DataFrame.t()) :: list(String.t())
-  def groups(%DataFrame{groups: groups}), do: groups
+  def groups(%DataFrame{groups: %{columns: groups}}), do: groups
 
   # Single table verbs
 
@@ -2315,7 +2315,7 @@ defmodule Explorer.DataFrame do
   Here is an example using the Iris dataset, and returning two rows from each group:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.head(grouped, 2)
       #Explorer.DataFrame<
         Polars[6 x 5]
@@ -2380,7 +2380,7 @@ defmodule Explorer.DataFrame do
   Here is an example using the Iris dataset, and returning two rows from each group:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.tail(grouped, 2)
       #Explorer.DataFrame<
         Polars[6 x 5]
@@ -2494,7 +2494,7 @@ defmodule Explorer.DataFrame do
 
   def select(df, columns) do
     columns = to_existing_columns(df, columns)
-    columns_to_keep = Enum.uniq(columns ++ df.groups)
+    columns_to_keep = Enum.uniq(columns ++ df.groups.columns)
 
     out_df = out_df(df, columns_to_keep, Map.take(df.dtypes, columns_to_keep))
     Shared.apply_dataframe(df, :select, [out_df])
@@ -2551,7 +2551,7 @@ defmodule Explorer.DataFrame do
   end
 
   def discard(df, columns) do
-    columns = to_existing_columns(df, columns, false) -- df.groups
+    columns = to_existing_columns(df, columns, false) -- df.groups.columns
     columns_to_keep = df.names -- columns
 
     out_df = out_df(df, columns_to_keep, Map.take(df.dtypes, columns_to_keep))
@@ -3141,8 +3141,8 @@ defmodule Explorer.DataFrame do
         full_df
 
       :none ->
-        group_names = df.groups
-        selected_columns = group_names ++ (mut_names -- group_names)
+        group_columns = df.groups.columns
+        selected_columns = group_columns ++ (mut_names -- group_columns)
         Explorer.DataFrame.select(full_df, selected_columns)
     end
   end
@@ -3483,7 +3483,7 @@ defmodule Explorer.DataFrame do
   because "species" is a group.
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.sort_by(grouped, desc: species, asc: sepal_width)
       #Explorer.DataFrame<
         Polars[150 x 5]
@@ -3585,7 +3585,7 @@ defmodule Explorer.DataFrame do
   ## Grouped examples
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.sort_with(grouped, &[desc: &1["species"], asc: &1["sepal_width"]])
       #Explorer.DataFrame<
         Polars[150 x 5]
@@ -3725,7 +3725,7 @@ defmodule Explorer.DataFrame do
         if opts[:keep_all] do
           df
         else
-          groups = df.groups
+          groups = df.groups.columns
           keep = if groups == [], do: columns, else: Enum.uniq(groups ++ columns)
           out_df(df, keep, Map.take(df.dtypes, keep))
         end
@@ -3973,11 +3973,11 @@ defmodule Explorer.DataFrame do
         new_names = Enum.map(new_dtypes, &elem(&1, 0))
 
         new_groups =
-          for group <- df.groups do
+          for group <- df.groups.columns do
             Map.get(pairs_map, group, group)
           end
 
-        out_df = out_df(%{df | groups: new_groups}, new_names, Map.new(new_dtypes))
+        out_df = out_df(put_in(df.groups.columns, new_groups), new_names, Map.new(new_dtypes))
         Shared.apply_dataframe(df, :rename, [out_df, pairs])
     end
   end
@@ -4137,7 +4137,7 @@ defmodule Explorer.DataFrame do
 
     out_dtypes = for new_column <- out_columns, into: %{}, do: {new_column, {:u, 8}}
 
-    out_df = out_df(%{df | groups: []}, out_columns, out_dtypes)
+    out_df = out_df(put_in(df.groups.columns, []), out_columns, out_dtypes)
     Shared.apply_dataframe(df, :dummies, [out_df, columns])
   end
 
@@ -4237,7 +4237,7 @@ defmodule Explorer.DataFrame do
   We want to take the first 3 rows of each group. We need the offset 0 and the length 3:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.slice(grouped, 0, 3)
       #Explorer.DataFrame<
         Polars[9 x 5]
@@ -4252,7 +4252,7 @@ defmodule Explorer.DataFrame do
   We can also pass a negative offset:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.slice(grouped, -6, 3)
       #Explorer.DataFrame<
         Polars[9 x 5]
@@ -4331,7 +4331,7 @@ defmodule Explorer.DataFrame do
   0 and 2:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.slice(grouped, [0, 2])
       #Explorer.DataFrame<
         Polars[6 x 5]
@@ -4347,7 +4347,7 @@ defmodule Explorer.DataFrame do
   This is going to work with the range `0..2`:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.slice(grouped, 0..2)
       #Explorer.DataFrame<
         Polars[9 x 5]
@@ -4361,7 +4361,7 @@ defmodule Explorer.DataFrame do
 
   """
   @doc type: :rows
-  def slice(%DataFrame{groups: []} = df, row_indices) when is_list(row_indices) do
+  def slice(%DataFrame{groups: %{columns: []}} = df, row_indices) when is_list(row_indices) do
     n_rows = n_rows(df)
 
     Enum.each(row_indices, fn idx ->
@@ -4381,7 +4381,7 @@ defmodule Explorer.DataFrame do
     Shared.apply_dataframe(df, :slice, [indices])
   end
 
-  def slice(%DataFrame{groups: []} = df, first..last//1) do
+  def slice(%DataFrame{groups: %{columns: []}} = df, first..last//1) do
     first = if first < 0, do: first + n_rows(df), else: first
     last = if last < 0, do: last + n_rows(df), else: last
     size = last - first + 1
@@ -4393,14 +4393,14 @@ defmodule Explorer.DataFrame do
     end
   end
 
-  def slice(%DataFrame{groups: []} = df, %Range{} = range) do
+  def slice(%DataFrame{groups: %{columns: []}} = df, %Range{} = range) do
     slice(df, Enum.slice(0..(n_rows(df) - 1)//1, range))
   end
 
-  def slice(%DataFrame{groups: [_ | _]} = df, row_indices) when is_list(row_indices),
+  def slice(%DataFrame{groups: %{columns: [_ | _]}} = df, row_indices) when is_list(row_indices),
     do: Shared.apply_dataframe(df, :slice, [row_indices])
 
-  def slice(%DataFrame{groups: [_ | _]} = df, %Range{} = range),
+  def slice(%DataFrame{groups: %{columns: [_ | _]}} = df, %Range{} = range),
     do: Shared.apply_dataframe(df, :slice, [range])
 
   @doc """
@@ -4472,7 +4472,7 @@ defmodule Explorer.DataFrame do
   resultant dataframe is going to have six rows (2 * 3).
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.sample(grouped, 2, seed: 100)
       #Explorer.DataFrame<
         Polars[6 x 5]
@@ -4488,7 +4488,7 @@ defmodule Explorer.DataFrame do
   difference is that each group can have more or less rows, depending on its size.
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.sample(grouped, 0.1, seed: 100)
       #Explorer.DataFrame<
         Polars[15 x 5]
@@ -4905,7 +4905,7 @@ defmodule Explorer.DataFrame do
 
     out_df =
       out_df(
-        %{df | groups: df.groups -- columns_to_pivot},
+        update_in(df.groups.columns, &(&1 -- columns_to_pivot)),
         columns_to_keep ++ [names_to, values_to],
         new_dtypes
       )
@@ -5160,7 +5160,7 @@ defmodule Explorer.DataFrame do
         opts[:names_prefix]
       ])
 
-    %{out_df | groups: Enum.filter(df.groups, &(&1 in id_columns))}
+    put_in(out_df.groups.columns, Enum.filter(df.groups.columns, &(&1 in id_columns)))
   end
 
   # Two table verbs
@@ -5663,6 +5663,11 @@ defmodule Explorer.DataFrame do
   When the dataframe has grouping variables, operations are performed per group.
   `Explorer.DataFrame.ungroup/2` removes grouping.
 
+  ## Options
+
+    * `:stable` (`boolean`) — when `true`, preserve the order of the groups exactly as they appear in the original dataframe.
+      By default (`false`) groups may be reordered (for example, sorted) for performance.
+
   ## Examples
 
   You can group by a single variable:
@@ -5725,14 +5730,49 @@ defmodule Explorer.DataFrame do
   Regexes and functions are also accepted in column names, as in `select/2`.
   """
   @doc type: :single
-  @spec group_by(df :: DataFrame.t(), groups_or_group :: column_names() | column_name()) ::
+  @spec group_by(
+          df :: DataFrame.t(),
+          groups_or_group :: column_names() | column_name(),
+          opts :: [stable: boolean()]
+        ) ::
           DataFrame.t()
-  def group_by(df, group) when is_column(group), do: group_by(df, [group])
+  def group_by(df, group, opts \\ [])
+  def group_by(df, group, opts) when is_column(group), do: group_by(df, [group], opts)
 
-  def group_by(df, groups) do
+  def group_by(df, groups, opts) do
+    opts = Keyword.validate!(opts, [:stable])
+
     groups = to_existing_columns(df, groups)
-    all_groups = Enum.uniq(df.groups ++ groups)
-    %{df | groups: all_groups}
+    all_groups = Enum.uniq(df.groups.columns ++ groups)
+
+    stable_opt =
+      case Keyword.fetch(opts, :stable) do
+        :error ->
+          nil
+
+        {:ok, value} when is_boolean(value) ->
+          value
+
+        {:ok, value} ->
+          raise ArgumentError, "`:stable` must be `true` or `false`, found: #{inspect(value)}."
+      end
+
+    stable? =
+      case {df.groups.columns, stable_opt} do
+        {[], nil} ->
+          false
+
+        {[], value} ->
+          value
+
+        {_, nil} ->
+          df.groups.stable?
+
+        {_, _} ->
+          raise ArgumentError, "`:stable` flag can't be changed after the first `group_by`"
+      end
+
+    %{df | groups: %{columns: all_groups, stable?: stable?}}
   end
 
   @doc """
@@ -5793,7 +5833,7 @@ defmodule Explorer.DataFrame do
           DataFrame.t()
   def ungroup(df, groups \\ ..)
 
-  def ungroup(df, ..), do: %{df | groups: []}
+  def ungroup(df, ..), do: put_in(df.groups.columns, [])
 
   def ungroup(df, group) when is_column(group), do: ungroup(df, [group])
 
@@ -5808,7 +5848,7 @@ defmodule Explorer.DataFrame do
       end
     end)
 
-    %{df | groups: current_groups -- groups}
+    put_in(df.groups.columns, current_groups -- groups)
   end
 
   @doc """
@@ -5830,7 +5870,7 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> df = Explorer.DataFrame.new(letters: ~w(a b c d e), is_vowel: [true, false, false, false, true])
-      iex> grouped_df = Explorer.DataFrame.group_by(df, :is_vowel)
+      iex> grouped_df = Explorer.DataFrame.group_by(df, :is_vowel, stable: true)
       iex> Explorer.DataFrame.summarise(grouped_df, letters: letters)
       #Explorer.DataFrame<
         Polars[2 x 2]
@@ -5839,7 +5879,7 @@ defmodule Explorer.DataFrame do
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
-      iex> grouped_df = Explorer.DataFrame.group_by(df, "year")
+      iex> grouped_df = Explorer.DataFrame.group_by(df, "year", stable: true)
       iex> Explorer.DataFrame.summarise(grouped_df, total_max: max(total), total_min: min(total))
       #Explorer.DataFrame<
         Polars[5 x 3]
@@ -5852,7 +5892,7 @@ defmodule Explorer.DataFrame do
   like this:
 
       iex> df = Explorer.Datasets.iris()
-      iex> grouped_df = Explorer.DataFrame.group_by(df, "species")
+      iex> grouped_df = Explorer.DataFrame.group_by(df, "species", stable: true)
       iex> Explorer.DataFrame.summarise(grouped_df, mean_sepal_width: round(mean(sepal_width), 3))
       #Explorer.DataFrame<
         Polars[3 x 2]
@@ -5892,7 +5932,7 @@ defmodule Explorer.DataFrame do
   ## Examples
 
       iex> alias Explorer.{DataFrame, Series}
-      iex> df = Explorer.Datasets.fossil_fuels() |> DataFrame.group_by("year")
+      iex> df = Explorer.Datasets.fossil_fuels() |> DataFrame.group_by("year", stable: true)
       iex> DataFrame.summarise_with(df, &[total_max: Series.max(&1["total"]), countries: Series.n_distinct(&1["country"])])
       #Explorer.DataFrame<
         Polars[5 x 3]
@@ -5961,7 +6001,7 @@ defmodule Explorer.DataFrame do
 
     new_dtypes = names_with_dtypes_for_column_pairs(df, column_pairs)
     new_names = for {name, _} <- new_dtypes, do: name
-    out_df = out_df(%{df | groups: []}, new_names, Map.new(new_dtypes))
+    out_df = out_df(put_in(df.groups.columns, []), new_names, Map.new(new_dtypes))
 
     column_pairs = for {name, %Series{data: lazy_series}} <- column_pairs, do: {name, lazy_series}
 
@@ -5969,7 +6009,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp names_with_dtypes_for_column_pairs(df, column_pairs) do
-    groups = for group <- df.groups, do: {group, df.dtypes[group]}
+    groups = for group <- groups(df), do: {group, df.dtypes[group]}
 
     names_with_dtypes =
       for {column_name, series} <- column_pairs do
@@ -6007,7 +6047,7 @@ defmodule Explorer.DataFrame do
   aggregating the elements the exploded columns into lists:
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3, 4], b: [5, 6, 7, 8], c: ["a", "a", "b", "b"])
-      iex> df = df |> Explorer.DataFrame.group_by(:c) |> Explorer.DataFrame.summarise(a: a, b: b)
+      iex> df = df |> Explorer.DataFrame.group_by(:c, stable: true) |> Explorer.DataFrame.summarise(a: a, b: b)
       #Explorer.DataFrame<
         Polars[2 x 3]
         c string ["a", "b"]
@@ -6509,10 +6549,15 @@ defmodule Explorer.DataFrame do
   @doc """
   Creates a new dataframe with unique rows and the frequencies of each.
 
+  ## Options
+
+    * `:stable` (`boolean`) — when `true`, every operations under the hood is stable and maintain original ordering.
+      By default (`false`) groups may be reordered for performance.
+
   ## Examples
 
       iex> df = Explorer.DataFrame.new(a: ["a", "a", "b"], b: [1, 1, nil])
-      iex> Explorer.DataFrame.frequencies(df, [:a, :b])
+      iex> Explorer.DataFrame.frequencies(df, [:a, :b], stable: true)
       #Explorer.DataFrame<
         Polars[2 x 3]
         a string ["a", "b"]
@@ -6521,15 +6566,20 @@ defmodule Explorer.DataFrame do
       >
   """
   @doc type: :single
-  @spec frequencies(df :: DataFrame.t(), columns :: column_names()) :: DataFrame.t()
-  def frequencies(%DataFrame{} = df, [col | _] = columns) do
+  @spec frequencies(df :: DataFrame.t(), columns :: column_names(), opts: [stable: boolean()]) ::
+          DataFrame.t()
+  def frequencies(df, columns, opts \\ [])
+
+  def frequencies(%DataFrame{} = df, [col | _] = columns, opts) do
+    opts = Keyword.validate!(opts, stable: false)
+
     df
-    |> group_by(columns)
+    |> group_by(columns, opts)
     |> summarise_with(&[counts: Series.count(&1[col])])
-    |> sort_with(&[desc: &1[:counts]])
+    |> sort_with(&[desc: &1[:counts]], opts)
   end
 
-  def frequencies(_df, []), do: raise(ArgumentError, "columns cannot be empty")
+  def frequencies(_df, [], _), do: raise(ArgumentError, "columns cannot be empty")
 
   @doc """
   Calculates the pairwise correlation of numeric columns.

@@ -16,6 +16,28 @@ fn to_string_names(names: Vec<&str>) -> Vec<String> {
     names.into_iter().map(|s| s.to_string()).collect()
 }
 
+pub trait GroupByOptOrder {
+    fn group_by_opt_order(
+        &self,
+        groups: Vec<&str>,
+        stable_groups: bool,
+    ) -> Result<GroupBy<'_>, PolarsError>;
+}
+
+impl GroupByOptOrder for ExDataFrame {
+    fn group_by_opt_order(
+        &self,
+        groups: Vec<&str>,
+        stable_groups: bool,
+    ) -> Result<GroupBy<'_>, PolarsError> {
+        if stable_groups {
+            self.group_by_stable(groups)
+        } else {
+            self.group_by(groups)
+        }
+    }
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_transpose(
     df: ExDataFrame,
@@ -139,12 +161,14 @@ pub fn df_slice_by_indices(
     df: ExDataFrame,
     indices: Vec<u32>,
     groups: Vec<&str>,
+    stable_groups: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let idx = UInt32Chunked::from_vec("idx".into(), indices);
     let new_df = if groups.is_empty() {
         df.take(&idx)?
     } else {
-        df.group_by_stable(groups)?.apply(|df| df.take(&idx))?
+        df.group_by_opt_order(groups, stable_groups)?
+            .apply(|df| df.take(&idx))?
     };
     Ok(ExDataFrame::new(new_df))
 }
@@ -154,6 +178,7 @@ pub fn df_slice_by_series(
     df: ExDataFrame,
     series: ExSeries,
     groups: Vec<&str>,
+    stable_groups: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     match series.strict_cast(&DataType::UInt32) {
         Ok(casted) => {
@@ -162,7 +187,8 @@ pub fn df_slice_by_series(
             let new_df = if groups.is_empty() {
                 df.take(idx)?
             } else {
-                df.group_by_stable(groups)?.apply(|df| df.take(idx))?
+                df.group_by_opt_order(groups, stable_groups)?
+                    .apply(|df| df.take(idx))?
             };
 
             Ok(ExDataFrame::new(new_df))
@@ -180,13 +206,14 @@ pub fn df_sample_n(
     replace: bool,
     shuffle: bool,
     seed: Option<u64>,
-    groups: Vec<String>,
+    groups: Vec<&str>,
+    stable_groups: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let n_s = Series::new("n".into(), &[n]);
     let new_df = if groups.is_empty() {
         df.sample_n(&n_s, replace, shuffle, seed)?
     } else {
-        df.group_by_stable(groups)?
+        df.group_by_opt_order(groups, stable_groups)?
             .apply(|df| df.sample_n(&n_s, replace, shuffle, seed))?
     };
 
@@ -200,13 +227,14 @@ pub fn df_sample_frac(
     replace: bool,
     shuffle: bool,
     seed: Option<u64>,
-    groups: Vec<String>,
+    groups: Vec<&str>,
+    stable_groups: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let frac_s = Series::new("frac".into(), &[frac]);
     let new_df = if groups.is_empty() {
         df.sample_frac(&frac_s, replace, shuffle, seed)?
     } else {
-        df.group_by_stable(groups)?
+        df.group_by_opt_order(groups, stable_groups)?
             .apply(|df| df.sample_frac(&frac_s, replace, shuffle, seed))?
     };
 
@@ -261,6 +289,7 @@ fn arrow_to_explorer_error(error: impl std::fmt::Debug) -> ExplorerError {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+#[allow(clippy::too_many_arguments)]
 pub fn df_sort_by(
     df: ExDataFrame,
     by_columns: Vec<String>,
@@ -268,7 +297,8 @@ pub fn df_sort_by(
     maintain_order: bool,
     multithreaded: bool,
     nulls_last: bool,
-    groups: Vec<String>,
+    groups: Vec<&str>,
+    stable_groups: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let sort_options = SortMultipleOptions::new()
         .with_maintain_order(maintain_order)
@@ -279,7 +309,7 @@ pub fn df_sort_by(
     let new_df = if groups.is_empty() {
         df.sort(by_columns, sort_options)?
     } else {
-        df.group_by_stable(groups)?
+        df.group_by_opt_order(groups, stable_groups)?
             .apply(|df| df.sort(by_columns.clone(), sort_options.clone()))?
     };
 
@@ -287,16 +317,17 @@ pub fn df_sort_by(
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+#[allow(clippy::too_many_arguments)]
 pub fn df_sort_with(
-    data: ExDataFrame,
+    df: ExDataFrame,
     expressions: Vec<ExExpr>,
     directions: Vec<bool>,
     maintain_order: bool,
     multithreaded: bool,
     nulls_last: bool,
-    groups: Vec<String>,
+    groups: Vec<&str>,
+    stable_groups: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
-    let df = data.clone_inner();
     let exprs = ex_expr_to_exprs(expressions);
 
     let sort_options = SortMultipleOptions::new()
@@ -306,9 +337,12 @@ pub fn df_sort_with(
         .with_order_descending_multi(directions);
 
     let new_df = if groups.is_empty() {
-        df.lazy().sort_by_exprs(exprs, sort_options).collect()?
+        df.clone_inner()
+            .lazy()
+            .sort_by_exprs(exprs, sort_options)
+            .collect()?
     } else {
-        df.group_by_stable(groups)?.apply(|df| {
+        df.group_by_opt_order(groups, stable_groups)?.apply(|df| {
             df.lazy()
                 .sort_by_exprs(&exprs, sort_options.clone())
                 .collect()
@@ -324,11 +358,12 @@ pub fn df_slice(
     offset: i64,
     length: usize,
     groups: Vec<&str>,
+    stable_groups: bool,
 ) -> Result<ExDataFrame, ExplorerError> {
     let new_df = if groups.is_empty() {
         df.slice(offset, length)
     } else {
-        df.group_by_stable(groups)?
+        df.group_by_opt_order(groups, stable_groups)?
             .apply(|df| Ok(df.slice(offset, length)))?
     };
     Ok(ExDataFrame::new(new_df))
@@ -384,7 +419,7 @@ pub fn df_group_indices(
     groups: Vec<&str>,
 ) -> Result<Vec<ExSeries>, ExplorerError> {
     let series = df
-        .group_by_stable(groups)?
+        .group_by_with_series(df.select_columns(groups)?, true, true)?
         .groups()?
         .column("groups")?
         .list()?

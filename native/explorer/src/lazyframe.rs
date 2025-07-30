@@ -7,6 +7,27 @@ use polars::{lazy::dsl::Selector, prelude::*};
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
 
+pub trait GroupByOptOrder {
+    fn group_by_opt_order<G, IE>(self, groups: G, stable_groups: bool) -> LazyGroupBy
+    where
+        G: AsRef<[IE]>,
+        IE: Into<Expr> + Clone;
+}
+
+impl GroupByOptOrder for LazyFrame {
+    fn group_by_opt_order<G, IE>(self, groups: G, stable_groups: bool) -> LazyGroupBy
+    where
+        G: AsRef<[IE]>,
+        IE: Into<Expr> + Clone,
+    {
+        if stable_groups {
+            self.group_by_stable(groups.as_ref())
+        } else {
+            self.group_by(groups.as_ref())
+        }
+    }
+}
+
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn lf_compute(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {
     let lf = data.clone_inner();
@@ -39,12 +60,14 @@ pub fn lf_head(
     data: ExLazyFrame,
     length: u32,
     groups: Vec<ExExpr>,
+    stable_groups: bool,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
     let result_lf = if groups.is_empty() {
         lf.limit(length)
     } else {
-        lf.group_by_stable(groups).head(Some(length.try_into()?))
+        lf.group_by_opt_order(groups, stable_groups)
+            .head(Some(length.try_into()?))
     };
 
     Ok(ExLazyFrame::new(result_lf))
@@ -55,12 +78,14 @@ pub fn lf_tail(
     data: ExLazyFrame,
     length: u32,
     groups: Vec<ExExpr>,
+    stable_groups: bool,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
     let result_lf = if groups.is_empty() {
         lf.tail(length)
     } else {
-        lf.group_by_stable(groups).tail(Some(length.try_into()?))
+        lf.group_by_opt_order(groups, stable_groups)
+            .tail(Some(length.try_into()?))
     };
 
     Ok(ExLazyFrame::new(result_lf))
@@ -108,13 +133,14 @@ pub fn lf_slice(
     offset: i64,
     length: u32,
     groups: Vec<String>,
+    stable_groups: bool,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let lf = data.clone_inner();
     let result_lf = if groups.is_empty() {
         lf.slice(offset, length)
     } else {
         let groups_exprs: Vec<Expr> = groups.iter().map(col).collect();
-        lf.group_by_stable(groups_exprs)
+        lf.group_by_opt_order(groups_exprs, stable_groups)
             .agg([col("*").slice(offset, length)])
             .explode([col("*").exclude(groups)])
     };
@@ -215,6 +241,7 @@ pub fn lf_mutate_with(
 pub fn lf_summarise_with(
     data: ExLazyFrame,
     groups: Vec<ExExpr>,
+    stable_groups: bool,
     aggs: Vec<ExExpr>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
@@ -225,11 +252,14 @@ pub fn lf_summarise_with(
         // We do add a "shadow" column to be able to group by it.
         // This is going to force some aggregations like "mode" to be always inside
         // a "list".
-        ldf.group_by_stable([1.lit().alias("__explorer_literal_for_group__")])
-            .agg(aggs)
-            .select(&[col("*").exclude(["__explorer_literal_for_group__"])])
+        ldf.group_by_opt_order(
+            [1.lit().alias("__explorer_literal_for_group__")],
+            stable_groups,
+        )
+        .agg(aggs)
+        .select(&[col("*").exclude(["__explorer_literal_for_group__"])])
     } else {
-        ldf.group_by_stable(groups).agg(aggs)
+        ldf.group_by_opt_order(groups, stable_groups).agg(aggs)
     };
 
     Ok(ExLazyFrame::new(new_lf))

@@ -997,7 +997,7 @@ defmodule Explorer.DataFrame.LazyTest do
     test "with one group and one column with aggregations", %{ldf: ldf} do
       ldf1 =
         ldf
-        |> DF.group_by("year")
+        |> DF.group_by("year", stable: true)
         |> DF.summarise_with(fn ldf ->
           total = ldf["total"]
 
@@ -1016,7 +1016,7 @@ defmodule Explorer.DataFrame.LazyTest do
     test "with one group and two columns with aggregations", %{ldf: ldf} do
       ldf1 =
         ldf
-        |> DF.group_by("year")
+        |> DF.group_by("year", stable: true)
         |> DF.summarise_with(fn ldf ->
           total = ldf["total"]
           liquid_fuel = ldf["liquid_fuel"]
