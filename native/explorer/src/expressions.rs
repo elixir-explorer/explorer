@@ -706,6 +706,12 @@ pub fn expr_cumulative_sum(data: ExExpr, reverse: bool) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_cumulative_count(data: ExExpr, reverse: bool) -> ExExpr {
+    let expr = data.clone_inner();
+    ExExpr::new(expr.cum_count(reverse))
+}
+
+#[rustler::nif]
 pub fn expr_cumulative_product(data: ExExpr, reverse: bool) -> ExExpr {
     let expr = data.clone_inner();
     ExExpr::new(expr.cum_prod(reverse))

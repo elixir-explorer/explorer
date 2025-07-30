@@ -286,6 +286,10 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_cumulative_sum, [reverse?])
 
   @impl true
+  def cumulative_count(series, reverse?),
+    do: Shared.apply_series(series, :s_cumulative_count, [reverse?])
+
+  @impl true
   def cumulative_product(series, reverse?),
     do: Shared.apply_series(series, :s_cumulative_product, [reverse?])
 

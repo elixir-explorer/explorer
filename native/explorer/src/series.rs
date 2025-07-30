@@ -1065,6 +1065,12 @@ pub fn s_cumulative_sum(series: ExSeries, reverse: bool) -> Result<ExSeries, Exp
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_cumulative_count(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
+    let new_series = polars_ops::prelude::cum_count(&series, reverse)?;
+    Ok(ExSeries::new(new_series))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_cumulative_max(series: ExSeries, reverse: bool) -> Result<ExSeries, ExplorerError> {
     let new_series = polars_ops::prelude::cum_max(&series, reverse)?;
     Ok(ExSeries::new(new_series))

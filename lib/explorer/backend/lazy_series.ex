@@ -74,6 +74,7 @@ defmodule Explorer.Backend.LazySeries do
     cumulative_max: 2,
     cumulative_min: 2,
     cumulative_sum: 2,
+    cumulative_count: 2,
     cumulative_product: 2,
     window_max: 5,
     window_mean: 5,
@@ -522,6 +523,17 @@ defmodule Explorer.Backend.LazySeries do
 
       Backend.Series.new(data, series.dtype)
     end
+  end
+
+  @impl true
+  def cumulative_count(%Series{} = series, reverse) do
+    args = [lazy_series!(series), reverse]
+
+    if aggregations?(args), do: raise_agg_inside_window(:cumulative_count)
+
+    data = new(:cumulative_count, args, {:u, 32}, false)
+
+    Backend.Series.new(data, {:u, 32})
   end
 
   for predicate <- @float_predicates do
