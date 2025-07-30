@@ -115,6 +115,7 @@ defmodule Explorer.PolarsBackend.Expression do
     cumulative_max: 2,
     cumulative_min: 2,
     cumulative_sum: 2,
+    cumulative_count: 2,
     cumulative_product: 2,
     window_max: 5,
     window_mean: 5,

@@ -106,6 +106,7 @@ defmodule Explorer.Backend.Series do
   @callback cumulative_max(s, reverse? :: boolean()) :: s
   @callback cumulative_min(s, reverse? :: boolean()) :: s
   @callback cumulative_sum(s, reverse? :: boolean()) :: s
+  @callback cumulative_count(s, reverse? :: boolean()) :: s
   @callback cumulative_product(s, reverse? :: boolean()) :: s
 
   # Local minima/maxima

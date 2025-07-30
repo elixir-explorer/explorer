@@ -3257,6 +3257,42 @@ defmodule Explorer.Series do
     do: dtype_error("cumulative_sum/2", dtype, @numeric_dtypes)
 
   @doc """
+  Calculates the cumulative count of the series.
+
+  Optionally, can count in reverse.
+
+  Does not count nil values. See `fill_missing/2`.
+
+  ## Supported dtypes
+
+  Should support all types, as the accumulated value is not based on the series itself.
+
+  ## Examples
+
+      iex> s = ["alice", "bob", "carol", "dave"] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cumulative_count(s)
+      #Explorer.Series<
+        Polars[4]
+        u32 [1, 2, 3, 4]
+      >
+
+      iex> s = ["alice", "bob", nil, "dave"] |> Explorer.Series.from_list()
+      iex> Explorer.Series.cumulative_count(s)
+      #Explorer.Series<
+        Polars[4]
+        u32 [1, 2, 2, 3]
+      >
+  """
+  @doc type: :window
+  @spec cumulative_count(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  def cumulative_count(series, opts \\ [])
+
+  def cumulative_count(%Series{} = series, opts) do
+    opts = Keyword.validate!(opts, reverse: false)
+    apply_series(series, :cumulative_count, [opts[:reverse]])
+  end
+
+  @doc """
   Calculates the cumulative product of the series.
 
   Optionally, can accumulate in reverse.

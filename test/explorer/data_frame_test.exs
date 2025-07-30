@@ -1362,7 +1362,8 @@ defmodule Explorer.DataFrameTest do
           r: cumulative_sum(a),
           s: cumulative_max(a, reverse: true),
           t: cumulative_product(a),
-          z: abs(a)
+          z: abs(a),
+          zz: cumulative_count(a)
         )
 
       assert df1.dtypes == %{
@@ -1379,7 +1380,8 @@ defmodule Explorer.DataFrameTest do
                "r" => {:s, 64},
                "s" => {:s, 64},
                "t" => {:s, 64},
-               "z" => {:s, 64}
+               "z" => {:s, 64},
+               "zz" => {:u, 32}
              }
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -1418,7 +1420,28 @@ defmodule Explorer.DataFrameTest do
                r: [1, 3, 6, 10, 15, 21, 28, 36, 45, 55],
                s: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
                t: [1, 2, 6, 24, 120, 720, 5040, 40320, 362_880, 3_628_800],
-               z: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+               z: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+               zz: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+             }
+    end
+
+    test "cumulative_count" do
+      a = ["10", "9", "8", nil, "6", "5", "4", "3", "2", "1"]
+      df = DF.new(a: a)
+
+      df1 =
+        DF.mutate(df,
+          b: cumulative_count(a)
+        )
+
+      assert df1.dtypes == %{
+               "a" => :string,
+               "b" => {:u, 32}
+             }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               a: a,
+               b: [1, 2, 3, 3, 4, 5, 6, 7, 8, 9]
              }
     end
 
