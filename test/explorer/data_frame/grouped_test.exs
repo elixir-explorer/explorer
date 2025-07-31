@@ -39,6 +39,22 @@ defmodule Explorer.DataFrame.GroupedTest do
         DF.group_by(df, "something_else")
       end
     end
+
+    test "groups with the same stable flag", %{df: df} do
+      df
+      |> DF.group_by(["country"], stable: true)
+      |> DF.group_by(["year"], stable: true)
+    end
+
+    test "groups with different stable flag raise error", %{df: df} do
+      assert_raise ArgumentError,
+                   ~r"`:stable` flag can't be changed after the first `group_by`",
+                   fn ->
+                     df
+                     |> DF.group_by(["country"], stable: true)
+                     |> DF.group_by(["year"], stable: false)
+                   end
+    end
   end
 
   describe "ungroup/2" do
