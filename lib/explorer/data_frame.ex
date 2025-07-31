@@ -2838,7 +2838,7 @@ defmodule Explorer.DataFrame do
 
       * `:all` - Retains all columns from the input dataframe (default).
       * `:none` - Retains only the columns created by the mutation (and
-                  grouping columns if operating on a grouped DataFrame).
+        grouping columns if operating on a grouped DataFrame).
 
   > #### Notice {: .notice}
   >
