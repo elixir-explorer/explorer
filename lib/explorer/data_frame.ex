@@ -5765,7 +5765,7 @@ defmodule Explorer.DataFrame do
         {[], value} ->
           value
 
-        {_, nil} ->
+        {_, stable?} when stable? in [nil, df.groups.stable?] ->
           df.groups.stable?
 
         {_, _} ->
