@@ -145,7 +145,7 @@ You can pass either series or lists to it:
 mountains = Explorer.DataFrame.new(name: ["Everest", "K2", "Aconcagua"], elevation: [8848, 8611, 6962])
 ```
 
-Even a list of maps:
+Even a map of lists:
 
 ```elixir
 mountains = Explorer.DataFrame.new(%{"name" => ["Everest", "K2", "Aconcagua"], "elevation" => [8848, 8611, 6962]})
