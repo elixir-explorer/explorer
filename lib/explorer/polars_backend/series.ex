@@ -850,6 +850,10 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_re_named_captures, [pattern])
   end
 
+  @impl true
+  def index_of(series, value),
+    do: Shared.apply_series(series, :s_index_of, [value])
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)
