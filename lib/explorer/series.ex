@@ -6849,6 +6849,23 @@ defmodule Explorer.Series do
     apply_series(series, :json_path_match, [json_path])
   end
 
+  @doc """
+  Finds the index of the first value in a series.
+
+  ## Examples
+
+      iex> s = Series.from_list([1, 2, 3])
+      iex> Series.index_of(s, 2)
+      1
+
+  """
+
+  @doc type: :shape
+  @spec index_of(series :: Series.t(), value :: Explorer.Backend.Series.valid_types()) :: any()
+  def index_of(series, value) do
+    apply_series(series, :index_of, [value])
+  end
+
   # Helpers
 
   defp backend_from_options!(opts) do

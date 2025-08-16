@@ -6771,6 +6771,104 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "index_of/2" do
+    test "gets index of element in series" do
+      series = Series.from_list([1, 2])
+      assert series |> Series.index_of(1) == 0
+      assert series |> Series.index_of(2) == 1
+      assert series |> Series.index_of(3) == nil
+    end
+
+    test "works with floats" do
+      series = Series.from_list([1.0, 2.0])
+      assert series |> Series.index_of(1.0) == 0
+      assert series |> Series.index_of(2.0) == 1
+      assert series |> Series.index_of(3.0) == nil
+    end
+
+    test "works with booleans" do
+      series = Series.from_list([false, true])
+      assert series |> Series.index_of(false) == 0
+      assert series |> Series.index_of(true) == 1
+
+      series = Series.from_list([false])
+      assert series |> Series.index_of(true) == nil
+    end
+
+    test "works with strings" do
+      series = Series.from_list(["a", "b"])
+      assert series |> Series.index_of("a") == 0
+      assert series |> Series.index_of("b") == 1
+      assert series |> Series.index_of("c") == nil
+    end
+
+    test "works with dates" do
+      series = Series.from_list([~D[2021-01-01], ~D[2021-01-02]])
+      assert series |> Series.index_of(~D[2021-01-01]) == 0
+      assert series |> Series.index_of(~D[2021-01-02]) == 1
+      assert series |> Series.index_of(~D[2021-01-03]) == nil
+    end
+
+    test "works with times" do
+      series = Series.from_list([~T[00:00:00.000001], ~T[00:00:01.000001]])
+      assert series |> Series.index_of(~T[00:00:00.000001]) == 0
+      assert series |> Series.index_of(~T[00:00:01.000001]) == 1
+      assert series |> Series.index_of(~T[00:00:02]) == nil
+    end
+
+    test "works with datetimes" do
+      series = Series.from_list([~N[2021-01-01 00:00:00.000001], ~N[2021-01-02 00:00:00.000001]])
+      assert series |> Series.index_of(~N[2021-01-01 00:00:00.000001]) == 0
+      assert series |> Series.index_of(~N[2021-01-02 00:00:00.000001]) == 1
+      assert series |> Series.index_of(~N[2021-01-03 00:00:00]) == nil
+    end
+
+    test "works with durations" do
+      series = Series.from_list([1, 2], dtype: {:duration, :millisecond})
+      one = %Explorer.Duration{value: 1000, precision: :microsecond}
+      two = %Explorer.Duration{value: 2, precision: :millisecond}
+      three = %Explorer.Duration{value: 3, precision: :millisecond}
+
+      assert series |> Series.index_of(one) == 0
+      assert series |> Series.index_of(two) == 1
+      assert series |> Series.index_of(three) == nil
+    end
+
+    test "works with decimal" do
+      series = Series.from_list([Decimal.new("1"), Decimal.new("2")])
+
+      assert series |> Series.index_of(Decimal.new("1")) == 0
+      assert series |> Series.index_of(Decimal.new("2")) == 1
+      assert series |> Series.index_of(Decimal.new("3")) == nil
+    end
+
+    test "duplicate values" do
+      series = Series.from_list([0, 0])
+
+      assert series |> Series.index_of(0) == 0
+    end
+
+    test "raises on value mismatch" do
+      assert_raise RuntimeError,
+                   "Polars Error: Cannot perform index_of with mismatching datatypes: Int64 and String",
+                   fn -> Series.index_of(Series.from_list([0]), "a") end
+
+      assert_raise RuntimeError,
+                   "Polars Error: Cannot cast `ExDecimal` to `Scalar` with dtype=i64",
+                   fn -> Series.index_of(Series.from_list([0]), Decimal.new("0")) end
+
+      assert_raise RuntimeError,
+                   "Polars Error: Cannot cast `ExNaiveDateTime` to `Scalar` with dtype=i64",
+                   fn -> Series.index_of(Series.from_list([0]), ~N[2021-01-03 00:00:00]) end
+
+      one = %Explorer.Duration{value: 1, precision: :microsecond}
+
+      assert_raise RuntimeError,
+                   "Polars Error: Cannot cast `ExDuration` to `Scalar` with dtype=i64",
+                   fn -> Series.index_of(Series.from_list([0]), one) end
+    end
+  end
+
   defp all_close?(a, b, tol \\ 1.0e-8) do
     Series.subtract(a, b)
     |> Series.abs()
