@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.11.1] - 2025-08-16
+
+### Added
+
+  * `Explorer.DataFrame.dump_ipc_schema`
+  * `Explorer.DataFrame.dump_ipc_record_batch`
+  * `Explorer.Series.cumulative_count`
+  * `:stable` option for `Explorer.DataFrame.group_by`
+
+### Fixed
+
+  * Fix printing lazy data frame with new default print options (as of v0.11.0)
+  * Remove print from dataframe test
+  * Fix mutate docs formatting
+
+### New Contributors
+
+  * @WolfDan made their first contribution in https://github.com/elixir-explorer/explorer/pull/1103
+
+### Full Changelog
+
+https://github.com/elixir-explorer/explorer/compare/v0.11.0...v0.11.1
+
 ## [v0.11.0] - 2025-07-12
 
 ### Added
