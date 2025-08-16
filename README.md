@@ -62,7 +62,7 @@ Inside an Elixir script or [Livebook](https://livebook.dev):
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.11.0"}
+  {:explorer, "~> 0.11.1"}
 ])
 ```
 
@@ -71,7 +71,7 @@ Or in the `mix.exs` file of your application:
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.11.0"}
+    {:explorer, "~> 0.11.1"}
   ]
 end
 ```
@@ -79,7 +79,7 @@ end
 Explorer will download a precompiled version of its native code upon installation. You can force a local build by setting the environment variable `EXPLORER_BUILD=1` and including `:rustler` as a dependency:
 
 ```elixir
-  {:explorer, "~> 0.11.0", system_env: %{"EXPLORER_BUILD" => "1"}},
+  {:explorer, "~> 0.11.1", system_env: %{"EXPLORER_BUILD" => "1"}},
   {:rustler, ">= 0.0.0"}
 ```
 
