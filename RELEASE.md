@@ -7,6 +7,7 @@ releasing is a bit more involved than it would be otherwise.
 1. Pick the new release `version`.
 
     * We follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+    * Should be the current version in `mix.exs` with `-dev` removed.
 
 1. Begin drafting a new release.
 
@@ -20,7 +21,7 @@ releasing is a bit more involved than it would be otherwise.
 1. Open a PR with any changes needed for the release. Must include:
 
     * Updating the `version` in `mix.exs`
-    * Updating the `version` any other files that reference it, like
+    * Updating the `version` in any other files that reference it, like
         * `README.md` (multiple places)
         * `notebooks/exploring_explorer.livemd`
     * Updating the `CHANGELOG.md` to reflect the release
