@@ -269,7 +269,7 @@ defmodule Explorer.PolarsBackend.Shared do
   Builds and returns a path for a new file.
 
   It saves in a directory called "elixir-explorer-datasets" inside
-  the `System.tmp_dir()`.
+  the `System.tmp_dir()`, the file name contains a random component to avoid collisions.
   """
   def build_path_for_entry(%FSS.S3.Entry{} = entry) do
     bucket = entry.config.bucket || "default-explorer-bucket"
@@ -278,15 +278,18 @@ defmodule Explorer.PolarsBackend.Shared do
       :crypto.hash(:sha256, entry.config.endpoint <> "/" <> bucket <> "/" <> entry.key)
       |> Base.url_encode64(padding: false)
 
-    id = "s3-file-#{hash}"
+    rand = Base.url_encode64(:crypto.strong_rand_bytes(8), padding: false)
+
+    id = "s3-file-#{hash}-#{rand}"
 
     build_tmp_path(id)
   end
 
   def build_path_for_entry(%FSS.HTTP.Entry{} = entry) do
     hash = :crypto.hash(:sha256, entry.url) |> Base.url_encode64(padding: false)
+    rand = Base.url_encode64(:crypto.strong_rand_bytes(8), padding: false)
 
-    id = "http-file-#{hash}"
+    id = "http-file-#{hash}-#{rand}"
 
     build_tmp_path(id)
   end
