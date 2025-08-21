@@ -1279,7 +1279,8 @@ defmodule Explorer.Backend.LazySeries do
     owner_import: 1,
     owner_export: 1,
     to_iovec: 1,
-    to_list: 1
+    to_list: 1,
+    index_of: 2
   ]
 
   for {fun, arity} <- @remaining_non_lazy_operations do

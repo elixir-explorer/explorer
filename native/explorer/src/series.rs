@@ -1962,3 +1962,19 @@ pub fn s_re_named_captures(s1: ExSeries, pattern: &str) -> Result<ExSeries, Expl
 
     Ok(ExSeries::new(s2))
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_index_of<'a>(
+    env: Env<'a>,
+    series: ExSeries,
+    value: ExValidValue<'a>,
+) -> Result<Term<'a>, ExplorerError> {
+    let dtype = series.dtype().clone();
+    let needle = value.into_scalar(dtype)?;
+    let idx_value = match index_of(&series, needle)? {
+        None => AnyValue::Null,
+        Some(idx) => AnyValue::UInt64(idx as u64),
+    };
+
+    encoding::resource_term_from_value(&series.resource, idx_value, env)
+}
