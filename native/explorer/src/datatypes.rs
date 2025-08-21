@@ -750,9 +750,6 @@ impl Literal for &ExValidValue<'_> {
 impl<'a> IntoScalar for ExValidValue<'a> {
     fn into_scalar(self: ExValidValue<'a>, dtype: DataType) -> PolarsResult<Scalar> {
         match self {
-            ExValidValue::I64(v) => v.into_scalar(dtype),
-            ExValidValue::F64(v) => v.into_scalar(dtype),
-            ExValidValue::Bool(v) => v.into_scalar(dtype),
             ExValidValue::Str(v) => Ok(Scalar::new(
                 DataType::String,
                 AnyValue::StringOwned(v.into()),
@@ -772,6 +769,24 @@ impl<'a> IntoScalar for ExValidValue<'a> {
             ExValidValue::DateTime(v) => v.into_scalar(dtype),
             ExValidValue::Duration(v) => v.into_scalar(dtype),
             ExValidValue::Decimal(v) => v.into_scalar(dtype),
+            // ExValidValue::I64(v) => v.into_scalar(dtype),
+            // ExValidValue::F64(v) => v.into_scalar(dtype),
+            // ExValidValue::Bool(v) => v.into_scalar(dtype),
+            // ExValidValue::I64(v) => Ok(Scalar::new(DataType::Int64, v.into())),
+            // ExValidValue::F64(v) => Ok(Scalar::new(DataType::Float64, v.into())),
+            // ExValidValue::Bool(v) => Ok(Scalar::new(DataType::Boolean, v.into())),
+            // ExValidValue::I64(v) => Ok(Scalar::new(dtype, v.into())),
+            // ExValidValue::F64(v) => Ok(Scalar::new(dtype, v.into())),
+            // ExValidValue::Bool(v) => Ok(Scalar::new(dtype, v.into())),
+            ExValidValue::I64(v) => v
+                .into_scalar(DataType::Int64)?
+                .cast_with_options(&dtype, polars::chunked_array::cast::CastOptions::Strict),
+            ExValidValue::F64(v) => v
+                .into_scalar(DataType::Float64)?
+                .cast_with_options(&dtype, polars::chunked_array::cast::CastOptions::Strict),
+            ExValidValue::Bool(v) => v
+                .into_scalar(DataType::Boolean)?
+                .cast_with_options(&dtype, polars::chunked_array::cast::CastOptions::Strict),
         }
     }
 }
