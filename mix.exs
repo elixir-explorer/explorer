@@ -52,7 +52,7 @@ defmodule Explorer.MixProject do
       {:flame, "~> 0.3", optional: true},
       {:adbc, "~> 0.1", optional: true},
       {:nx, "~> 0.4", optional: true},
-      {:rustler, "~> 0.36.0", optional: not (@dev? or @force_build?)},
+      {:rustler, "~> 0.37", optional: not (@dev? or @force_build?)},
 
       ## Test
       {:bypass, "~> 2.1", only: :test},
