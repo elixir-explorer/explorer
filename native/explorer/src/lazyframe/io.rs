@@ -262,6 +262,7 @@ pub fn lf_from_csv(
     null_vals: Vec<String>,
     parse_dates: bool,
     eol_delimiter: Option<u8>,
+    quote_char: Option<u8>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
@@ -283,6 +284,7 @@ pub fn lf_from_csv(
             null_vals.iter().map(|x| x.into()).collect(),
         )))
         .with_eol_char(eol_delimiter.unwrap_or(b'\n'))
+        .with_quote_char(quote_char)
         .finish()?;
 
     Ok(ExLazyFrame::new(df))
