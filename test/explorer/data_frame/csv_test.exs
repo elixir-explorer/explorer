@@ -224,7 +224,7 @@ defmodule Explorer.DataFrame.CSVTest do
            }
   end
 
-  test "load_csv/2 quote_char - different quote char" do
+  test "load_csv/2 quote_delimiter - different quote char" do
     data = """
     city,lat,lng
     'Elgin, Scotland, the UK',57.653484,-3.335724
@@ -232,7 +232,7 @@ defmodule Explorer.DataFrame.CSVTest do
     'Solihull, Birmingham, UK',52.412811,-1.778197
     """
 
-    frame = DF.load_csv!(data, quote_char: "'")
+    frame = DF.load_csv!(data, quote_delimiter: "'")
 
     assert DF.n_rows(frame) == 3
     assert DF.n_columns(frame) == 3
@@ -241,7 +241,7 @@ defmodule Explorer.DataFrame.CSVTest do
     assert frame["city"][2] == "Solihull, Birmingham, UK"
   end
 
-  test "load_csv/2 quote_char - no quote char" do
+  test "load_csv/2 quote_delimiter - no quote char" do
     data = """
     city;nickname;lat;lng
     Elgin, Scotland, the UK;"Little Ireland";57.653484;-3.335724
@@ -249,7 +249,7 @@ defmodule Explorer.DataFrame.CSVTest do
     Solihull, Birmingham, UK;nil;52.412811;-1.778197
     """
 
-    frame = DF.load_csv!(data, quote_char: nil, delimiter: ";", nil_values: ["nil"])
+    frame = DF.load_csv!(data, quote_delimiter: nil, delimiter: ";", nil_values: ["nil"])
 
     assert DF.n_rows(frame) == 3
     assert DF.n_columns(frame) == 4

@@ -50,7 +50,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         infer_schema_length,
         parse_dates,
         eol_delimiter,
-        quote_char
+        quote_delimiter
       )
       when module in [S3.Entry, HTTP.Entry] do
     path = Shared.build_path_for_entry(entry)
@@ -73,7 +73,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
           infer_schema_length,
           parse_dates,
           eol_delimiter,
-          quote_char
+          quote_delimiter
         )
 
       File.rm(path)
@@ -96,7 +96,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         infer_schema_length,
         parse_dates,
         eol_delimiter,
-        quote_char
+        quote_delimiter
       ) do
     infer_schema_length =
       if infer_schema_length == nil,
@@ -122,7 +122,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         nil_values,
         parse_dates,
         char_byte(eol_delimiter),
-        char_byte(quote_char)
+        char_byte(quote_delimiter)
       )
 
     case df do
@@ -205,7 +205,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         infer_schema_length,
         parse_dates,
         eol_delimiter,
-        quote_char
+        quote_delimiter
       ) do
     infer_schema_length =
       if infer_schema_length == nil,
@@ -231,7 +231,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
         nil_values,
         parse_dates,
         char_byte(eol_delimiter),
-        char_byte(quote_char)
+        char_byte(quote_delimiter)
       )
 
     case df do

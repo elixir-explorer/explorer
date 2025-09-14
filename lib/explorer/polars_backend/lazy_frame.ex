@@ -158,7 +158,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         infer_schema_length,
         parse_dates,
         eol_delimiter,
-        quote_char
+        quote_delimiter
       )
       when is_nil(columns) do
     infer_schema_length =
@@ -181,7 +181,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         nil_values,
         parse_dates,
         char_byte(eol_delimiter),
-        char_byte(quote_char)
+        char_byte(quote_delimiter)
       )
 
     case result do
@@ -316,7 +316,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         infer_schema_length,
         parse_dates,
         eol_delimiter,
-        quote_char
+        quote_delimiter
       ) do
     with {:ok, df} <-
            Eager.load_csv(
@@ -333,7 +333,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
              infer_schema_length,
              parse_dates,
              eol_delimiter,
-             quote_char
+             quote_delimiter
            ) do
       {:ok, Eager.lazy(df)}
     end
