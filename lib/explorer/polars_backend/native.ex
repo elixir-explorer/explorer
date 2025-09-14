@@ -285,6 +285,19 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_drop_nils(_df, _column_pairs), do: err()
   def lf_pivot_longer(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()
   def lf_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
+
+  def lf_join_asof(
+        _df,
+        _other,
+        _left_on,
+        _right_on,
+        _left_by,
+        _right_by,
+        _strategy,
+        _suffix
+      ),
+      do: err()
+
   def lf_concat_rows(_dfs), do: err()
   def lf_concat_columns(_ldfs), do: err()
   def lf_to_parquet(_df, _filename, _compression, _streaming), do: err()
