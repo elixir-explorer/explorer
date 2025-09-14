@@ -5445,33 +5445,38 @@ defmodule Explorer.DataFrame do
 
   This is similar to a left-join except that we match on nearest key rather than equal keys.
 
-  Both DataFrames must be sorted by the asof_join key.
-
-  For each row in the left DataFrame:
-    A “backward” search .
-    A “forward” search selects the first row in the right DataFrame whose ‘on’ key is greater than or equal to the left’s key.
-    A “nearest” search selects the last row in the right DataFrame whose value is nearest to the left’s key. String keys are not currently supported for a nearest search.
-
-
-  ## Join types
-
-    * `:backward` - Selects the last row in the right DataFrame whose ‘on’ key is less than or equal to the left’s key.
-    * `:forward` - Selects the first row in the right DataFrame whose ‘on’ key is greater than or equal to the left’s key.
-    * `:nearest` -  Selects the last row in the right DataFrame whose value is nearest to the left’s key. String keys are not currently supported for a nearest search.
+  Both DataFrames must be sorted by the `on` key (within each `by` group, if specified).
 
   ## Options
 
-    * `:on` - The column(s) to join on. Defaults to overlapping columns.
-    * `:by` - The column(s) to join on before doing asof join. Defaults to overlapping columns.
-    * `:strategy` - One of the join types (as an atom) described above. Defaults to `:backward`.
+  * `:on` - The column to join on. Defaults to the only overlapping column, and throws if there is none
+    or multiple of them.
+  * `:by` - The column(s) to join on before doing asof join.
+  * `:strategy` - One of the join types (as an atom) described below. Defaults to `:backward`.
+
+  ## Strategies
+
+  For each row in the left DataFrame:
+
+  * `:backward` - Selects the last row in the right DataFrame whose `on` key is less than or equal to the left’s key.
+  * `:forward` - Selects the first row in the right DataFrame whose `on` key is greater than or equal to the left’s key.
+  * `:nearest` -  Selects the last row in the right DataFrame whose value is nearest to the left’s key. String keys are not currently supported for a nearest search.
 
   ## Examples
 
-  A Backwards join_asof:
+  Note how the dates in `gdp` and `population` don’t quite match. If we join them using
+  `join_asof` and `strategy: :backward`, then each date from `population` which doesn’t have an
+  exact match is matched with the closest earlier date from `gdp`:
 
-      iex> gdp = Explorer.DataFrame.new(date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]], gdp: [4164, 4411, 4566, 4696, 4827])
-      iex> population = Explorer.DataFrame.new(date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]], population: [82.19, 82.66, 83.12])
-      iex> Explorer.DataFrame.join_asof(population, gdp, on: :date)
+      iex> gdp = Explorer.DataFrame.new(
+      ...>   date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]],
+      ...>   gdp: [4164, 4411, 4566, 4696, 4827]
+      ...> )
+      iex> population = Explorer.DataFrame.new(
+      ...>   date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]],
+      ...>   population: [82.19, 82.66, 83.12]
+      ...> )
+      iex> Explorer.DataFrame.join_asof(population, gdp, strategy: :backward)
       #Explorer.DataFrame<
         Polars[3 x 3]
         date date [2016-03-01, 2018-08-01, 2019-01-01]
@@ -5479,10 +5484,22 @@ defmodule Explorer.DataFrame do
         gdp s64 [4164, 4566, 4696]
       >
 
-  A Forward join_asof:
+  Note how:
 
-      iex> gdp = Explorer.DataFrame.new(date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]], gdp: [4164, 4411, 4566, 4696, 4827])
-      iex> population = Explorer.DataFrame.new(date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]], population: [82.19, 82.66, 83.12])
+  * date `2016-03-01` from `population` is matched with `2016-01-01` from `gdp`;
+  * date `2018-08-01` from `population` is matched with `2018-01-01` from `gdp`.
+
+  If we instead use `strategy: :forward`, then each date from `population` which doesn’t have an
+  exact match is matched with the closest later date from `gdp`:
+
+      iex> gdp = Explorer.DataFrame.new(
+      ...>   date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]],
+      ...>   gdp: [4164, 4411, 4566, 4696, 4827]
+      ...> )
+      iex> population = Explorer.DataFrame.new(
+      ...>   date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]],
+      ...>   population: [82.19, 82.66, 83.12]
+      ...> )
       iex> Explorer.DataFrame.join_asof(population, gdp, strategy: :forward)
       #Explorer.DataFrame<
         Polars[3 x 3]
@@ -5491,10 +5508,23 @@ defmodule Explorer.DataFrame do
         gdp s64 [4411, 4696, 4696]
       >
 
-  A Nearest join_asof:
+  Note how:
 
-      iex> gdp = Explorer.DataFrame.new(date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]], gdp: [4164, 4411, 4566, 4696, 4827])
-      iex> population = Explorer.DataFrame.new(date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]], population: [82.19, 82.66, 83.12])
+  * date `2016-03-01` from `population` is matched with `2017-01-01` from `gdp`;
+  * date `2018-08-01` from `population` is matched with `2019-01-01` from `gdp`.
+
+  Finally, `strategy: :nearest` gives us a mix of the two results above, as each date from
+  `population` which doesn’t have an exact match is matched with the closest date from `gdp`,
+  regardless of whether it’s earlier or later:
+
+      iex> gdp = Explorer.DataFrame.new(
+      ...>   date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]],
+      ...>   gdp: [4164, 4411, 4566, 4696, 4827]
+      ...> )
+      iex> population = Explorer.DataFrame.new(
+      ...>   date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]],
+      ...>   population: [82.19, 82.66, 83.12]
+      ...> )
       iex> Explorer.DataFrame.join_asof(population, gdp, strategy: :nearest)
       #Explorer.DataFrame<
         Polars[3 x 3]
@@ -5503,10 +5533,18 @@ defmodule Explorer.DataFrame do
         gdp s64 [4164, 4696, 4696]
       >
 
-  They `by` argument allows joining on another column first, before the asof join. In this example we join by country first, then asof join by date, as above.
+  The `by` argument allows joining on another column first, before the asof join. In this example we join by `country` first, then asof join by date, as above.
 
-      iex> gdp = Explorer.DataFrame.new(date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01], ~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01] ], country: ["Germany", "Germany", "Germany", "Germany", "Netherlands", "Netherlands", "Netherlands", "Netherlands"], gdp: [4164, 4411, 4566, 4696, 784, 833, 914, 1000])
-      iex> population = Explorer.DataFrame.new(date: [ ~D[2016-03-01], ~D[2018-08-01], ~D[2016-03-01], ~D[2018-08-01]], country: ["Germany", "Germany", "Netherlands", "Netherlands"], population: [82.19, 82.66, 17.08, 17.18])
+      iex> gdp = Explorer.DataFrame.new(
+      ...>   date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01], ~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01]],
+      ...>   country: ["Germany", "Germany", "Germany", "Germany", "Netherlands", "Netherlands", "Netherlands", "Netherlands"],
+      ...>   gdp: [4164, 4411, 4566, 4696, 784, 833, 914, 1000]
+      ...> )
+      iex> population = Explorer.DataFrame.new(
+      ...>   date: [~D[2016-03-01], ~D[2018-08-01], ~D[2016-03-01], ~D[2018-08-01]],
+      ...>   country: ["Germany", "Germany", "Netherlands", "Netherlands"],
+      ...>   population: [82.19, 82.66, 17.08, 17.18]
+      ...> )
       iex> Explorer.DataFrame.join_asof(population, gdp, by: :country, on: :date, strategy: :nearest)
       #Explorer.DataFrame<
         Polars[4 x 4]
