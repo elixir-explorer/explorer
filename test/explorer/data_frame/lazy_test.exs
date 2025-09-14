@@ -1442,6 +1442,16 @@ defmodule Explorer.DataFrame.LazyTest do
                    end
     end
 
+    test "raises if multiple overlapping columns" do
+      assert_raise ArgumentError,
+                   ~r"multiple columns for option `:on` is not supported for join_asof",
+                   fn ->
+                     left = DF.new([a: [1, 2, 3], b: [1, 2, 3]], lazy: true)
+                     right = DF.new([a: [1, 2, 3], b: [1, 2, 3]], lazy: true)
+                     DF.join_asof(left, right)
+                   end
+    end
+
     test "with a custom 'on'" do
       left =
         DF.new(

@@ -5374,24 +5374,15 @@ defmodule Explorer.DataFrame do
 
         {[_ | _] = on, how} ->
           normalized_on =
-            Enum.map(on, fn
-              {l_name, r_name} ->
-                [l_column] = to_existing_columns(left, [l_name])
-                [r_column] = to_existing_columns(right, [r_name])
-                {l_column, r_column}
+            normalize_common_columns(left, right, on)
+            |> case do
+              {:ok, cols} ->
+                cols
 
-              name ->
-                [l_column] = to_existing_columns(left, [name])
-                [r_column] = to_existing_columns(right, [name])
-
-                # This is an edge case for when an index is passed as column selection
-                if l_column != r_column do
-                  raise ArgumentError,
-                        "the column given to option `:on` is not the same for both dataframes"
-                end
-
-                {l_column, r_column}
-            end)
+              :error ->
+                raise ArgumentError,
+                      "the column given to option `:on` is not the same for both dataframes"
+            end
 
           {normalized_on, how}
       end
@@ -5583,24 +5574,19 @@ defmodule Explorer.DataFrame do
           raise(ArgumentError, "could not find any overlapping columns for :on")
 
         [_ | _] = on ->
-          Enum.map(on, fn
-            {l_name, r_name} ->
-              [l_column] = to_existing_columns(left, [l_name])
-              [r_column] = to_existing_columns(right, [r_name])
-              {l_column, r_column}
+          normalize_common_columns(left, right, on)
+          |> case do
+            {:ok, [_] = cols} ->
+              cols
 
-            name ->
-              [l_column] = to_existing_columns(left, [name])
-              [r_column] = to_existing_columns(right, [name])
+            {:ok, _multiple} ->
+              raise ArgumentError,
+                    "multiple columns for option `:on` is not supported for join_asof, please set a single one"
 
-              # This is an edge case for when an index is passed as column selection
-              if l_column != r_column do
-                raise ArgumentError,
-                      "the column given to option `:on` is not the same for both dataframes"
-              end
-
-              {l_column, r_column}
-          end)
+            :error ->
+              raise ArgumentError,
+                    "the column given to option `:on` is not the same for both dataframes"
+          end
       end
 
     by =
@@ -5608,25 +5594,16 @@ defmodule Explorer.DataFrame do
         [] ->
           []
 
-        [_ | _] = on ->
-          Enum.map(on, fn
-            {l_name, r_name} ->
-              [l_column] = to_existing_columns(left, [l_name])
-              [r_column] = to_existing_columns(right, [r_name])
-              {l_column, r_column}
+        by ->
+          normalize_common_columns(left, right, by)
+          |> case do
+            {:ok, cols} ->
+              cols
 
-            name ->
-              [l_column] = to_existing_columns(left, [name])
-              [r_column] = to_existing_columns(right, [name])
-
-              # This is an edge case for when an index is passed as column selection
-              if l_column != r_column do
-                raise ArgumentError,
-                      "the column given to option `:by` is not the same for both dataframes"
-              end
-
-              {l_column, r_column}
-          end)
+            :error ->
+              raise ArgumentError,
+                    "the column given to option `:by` is not the same for both dataframes"
+          end
       end
 
     {_left_by, right_by} = Enum.unzip(by)
@@ -5636,6 +5613,27 @@ defmodule Explorer.DataFrame do
     {new_names, _} = Enum.unzip(pairs)
     out_df = out_df(left, new_names, Map.new(pairs))
     Shared.apply_dataframe([left, right], :join_asof, [out_df, on, by, strategy])
+  end
+
+  defp normalize_common_columns(left, right, names) do
+    names
+    |> Enum.reduce_while({:ok, []}, fn
+      {l_name, r_name}, {:ok, acc} ->
+        [l_column] = to_existing_columns(left, [l_name])
+        [r_column] = to_existing_columns(right, [r_name])
+        {:cont, {:ok, [{l_column, r_column} | acc]}}
+
+      name, {:ok, acc} ->
+        [l_column] = to_existing_columns(left, [name])
+        [r_column] = to_existing_columns(right, [name])
+
+        # This is an edge case for when an index is passed as column selection
+        if l_column != r_column do
+          {:halt, :error}
+        else
+          {:cont, {:ok, [{l_column, r_column} | acc]}}
+        end
+    end)
   end
 
   @doc """

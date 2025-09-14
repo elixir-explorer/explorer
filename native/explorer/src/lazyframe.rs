@@ -366,30 +366,28 @@ pub fn lf_join_asof(
     other: ExLazyFrame,
     left_on: Vec<ExExpr>,
     right_on: Vec<ExExpr>,
-    by_left: Vec<&str>,
-    by_right: Vec<&str>,
+    left_by: Vec<&str>,
+    right_by: Vec<&str>,
     strategy: &str,
     suffix: &str,
 ) -> Result<ExLazyFrame, ExplorerError> {
+    fn map_by(by: &Vec<&str>) -> Option<Vec<PlSmallStr>> {
+        if by.is_empty() {
+            None
+        } else {
+            Some(by.iter().map(|l| PlSmallStr::from_str(l)).collect())
+        }
+    }
+
     let strategy = match strategy {
         "backward" => AsofStrategy::Backward,
         "forward" => AsofStrategy::Forward,
         "nearest" => AsofStrategy::Nearest,
         _ => {
             return Err(ExplorerError::Other(format!(
-                "AsOfJoin method {strategy} not supported"
+                "AsofJoin method {strategy} not supported"
             )))
         }
-    };
-
-    let left_by = match by_left.is_empty() {
-        true => None,
-        false => Some(by_left.iter().map(|l| PlSmallStr::from_str(l)).collect()),
-    };
-
-    let right_by = match by_right.is_empty() {
-        true => None,
-        false => Some(by_left.iter().map(|l| PlSmallStr::from_str(l)).collect()),
     };
 
     let ldf = data.clone_inner();
@@ -402,11 +400,15 @@ pub fn lf_join_asof(
         .how(JoinType::AsOf(AsOfOptions {
             strategy,
             tolerance: None,
+            // TODO: provide option
             tolerance_str: None,
-            left_by: left_by,
-            right_by: right_by,
+            left_by: map_by(&left_by),
+            right_by: map_by(&right_by),
+            // TODO: provide option
             allow_eq: true,
-            check_sortedness: true,
+            // TODO: add a check? Note that Polars prints a warning if check is true when `by` is
+            // provided
+            check_sortedness: false,
         }))
         .left_on(ex_expr_to_exprs(left_on))
         .right_on(ex_expr_to_exprs(right_on))
