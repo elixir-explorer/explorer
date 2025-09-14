@@ -406,8 +406,7 @@ pub fn lf_join_asof(
             right_by: map_by(&right_by),
             // TODO: provide option
             allow_eq: true,
-            // TODO: add a check? Note that Polars prints a warning if check is true when `by` is
-            // provided
+            // TODO: add a check? Note that Polars prints a warning if `check_sortedness=true` when `by` is provided
             check_sortedness: false,
         }))
         .left_on(ex_expr_to_exprs(left_on))
