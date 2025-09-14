@@ -405,6 +405,8 @@ pub fn lf_join_asof(
             tolerance_str: None,
             left_by: left_by,
             right_by: right_by,
+            allow_eq: true,
+            check_sortedness: true,
         }))
         .left_on(ex_expr_to_exprs(left_on))
         .right_on(ex_expr_to_exprs(right_on))
