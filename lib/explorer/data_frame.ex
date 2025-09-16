@@ -5524,7 +5524,9 @@ defmodule Explorer.DataFrame do
         gdp s64 [4164, 4696, 4696]
       >
 
-  The `by` argument allows joining on another column first, before the asof join. In this example we join by `country` first, then asof join by date, as above.
+  The `by` argument allows left-joining on another column (or columns) first,
+  before the asof join. In this example we left-join by `country` first, then
+  asof join by `date`, as above.
 
       iex> gdp = Explorer.DataFrame.new(
       ...>   date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01], ~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01]],
