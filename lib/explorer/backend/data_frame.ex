@@ -60,7 +60,8 @@ defmodule Explorer.Backend.DataFrame do
               columns :: columns_for_io(),
               infer_schema_length :: option(integer()),
               parse_dates :: boolean(),
-              eol_delimiter :: option(String.t())
+              eol_delimiter :: option(String.t()),
+              quote_delimiter :: option(String.t())
             ) :: io_result(df)
   @callback to_csv(
               df,
@@ -91,7 +92,8 @@ defmodule Explorer.Backend.DataFrame do
               columns :: columns_for_io(),
               infer_schema_length :: option(integer()),
               parse_dates :: boolean(),
-              eol_delimiter :: option(String.t())
+              eol_delimiter :: option(String.t()),
+              quote_delimiter :: option(String.t())
             ) :: io_result(df)
 
   # IO: Parquet

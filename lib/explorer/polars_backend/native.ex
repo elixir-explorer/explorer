@@ -109,7 +109,8 @@ defmodule Explorer.PolarsBackend.Native do
         _encoding,
         _nil_vals,
         _parse_dates,
-        _eol_delimiter
+        _eol_delimiter,
+        _quote_delimiter
       ),
       do: err()
 
@@ -145,7 +146,8 @@ defmodule Explorer.PolarsBackend.Native do
         _encoding,
         _nil_vals,
         _parse_dates,
-        _eol_delimiter
+        _eol_delimiter,
+        _quote_delimiter
       ),
       do: err()
 
@@ -255,7 +257,8 @@ defmodule Explorer.PolarsBackend.Native do
         _encoding,
         _nil_vals,
         _parse_dates,
-        _eol_delimiter
+        _eol_delimiter,
+        _quote_delimiter
       ),
       do: err()
 

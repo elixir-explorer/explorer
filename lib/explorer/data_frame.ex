@@ -602,6 +602,9 @@ defmodule Explorer.DataFrame do
     * `:encoding` - Encoding to use when reading the file. For now, the only possible values are `utf8` and `utf8-lossy`.
       The utf8-lossy option means that invalid utf8 values are replaced with � characters. (default: `"utf8"`)
 
+    * `:quote_delimiter` - A single character used for csv quoting. Set to `nil` to turn off special handling and escaping
+      of quotes. (default: `"\""`)
+
   """
   @doc type: :io
   @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
@@ -623,7 +626,8 @@ defmodule Explorer.DataFrame do
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
         parse_dates: false,
-        eol_delimiter: nil
+        eol_delimiter: nil,
+        quote_delimiter: "\""
       )
 
     backend = backend_from_options!(backend_opts)
@@ -642,7 +646,8 @@ defmodule Explorer.DataFrame do
         to_columns_for_io(opts[:columns]),
         opts[:infer_schema_length],
         opts[:parse_dates],
-        opts[:eol_delimiter]
+        opts[:eol_delimiter],
+        opts[:quote_delimiter]
       ]
 
       Shared.apply_init(backend, :from_csv, args, backend_opts)
@@ -804,7 +809,8 @@ defmodule Explorer.DataFrame do
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
         parse_dates: false,
-        eol_delimiter: nil
+        eol_delimiter: nil,
+        quote_delimiter: "\""
       )
 
     backend = backend_from_options!(backend_opts)
@@ -822,7 +828,8 @@ defmodule Explorer.DataFrame do
       to_columns_for_io(opts[:columns]),
       opts[:infer_schema_length],
       opts[:parse_dates],
-      opts[:eol_delimiter]
+      opts[:eol_delimiter],
+      opts[:quote_delimiter]
     ]
 
     Shared.apply_init(backend, :load_csv, args, backend_opts)
