@@ -74,6 +74,7 @@ defmodule Explorer.DataFrame do
   Multiple table verbs are used for combining tables. These are:
 
   - `join/3` for performing SQL-like joins
+  - `join_asof/3` for performing joins with as-of semantics
   - `concat_columns/1` for horizontally "stacking" dataframes
   - `concat_rows/1` for vertically "stacking" dataframes
 
@@ -5373,24 +5374,15 @@ defmodule Explorer.DataFrame do
 
         {[_ | _] = on, how} ->
           normalized_on =
-            Enum.map(on, fn
-              {l_name, r_name} ->
-                [l_column] = to_existing_columns(left, [l_name])
-                [r_column] = to_existing_columns(right, [r_name])
-                {l_column, r_column}
+            normalize_common_columns(left, right, on)
+            |> case do
+              {:ok, cols} ->
+                cols
 
-              name ->
-                [l_column] = to_existing_columns(left, [name])
-                [r_column] = to_existing_columns(right, [name])
-
-                # This is an edge case for when an index is passed as column selection
-                if l_column != r_column do
-                  raise ArgumentError,
-                        "the column given to option `:on` is not the same for both dataframes"
-                end
-
-                {l_column, r_column}
-            end)
+              :error ->
+                raise ArgumentError,
+                      "the column given to option `:on` is not the same for both dataframes"
+            end
 
           {normalized_on, how}
       end
@@ -5420,6 +5412,7 @@ defmodule Explorer.DataFrame do
     pairs = dtypes_pairs_for_common_join(left, right, right_on)
 
     {new_names, _} = Enum.unzip(pairs)
+
     out_df(left, new_names, Map.new(pairs))
   end
 
@@ -5435,6 +5428,243 @@ defmodule Explorer.DataFrame do
 
         {name, right.dtypes[right_name]}
       end)
+  end
+
+  @valid_strategy_types [:backward, :forward, :nearest]
+  @doc """
+  Perform an asof join.
+
+  This is similar to a left-join except that we match on nearest key rather than equal keys.
+
+  Both DataFrames must be sorted by the `on` key (within each `by` group, if specified).
+
+  ## Options
+
+  * `:on` - The column to join on. Defaults to the only overlapping column, and throws if there is none
+    or multiple of them.
+  * `:by` - The column(s) to join on before doing asof join.
+  * `:strategy` - One of the join types (as an atom) described below. Defaults to `:backward`.
+
+  ## Strategies
+
+  For each row in the left DataFrame:
+
+  * `:backward` - Selects the last row in the right DataFrame whose `on` key is less than or equal to the left’s key.
+  * `:forward` - Selects the first row in the right DataFrame whose `on` key is greater than or equal to the left’s key.
+  * `:nearest` -  Selects the last row in the right DataFrame whose value is nearest to the left’s key. String keys are not currently supported for a nearest search.
+
+  ## Examples
+
+  As a reminder, let's start with an example of a `:left` join:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs = DF.new(number: [10, 20],     lower: ["x", "y"])
+      iex> lhs |> DF.join(rhs, on: "number", how: :left) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | x             |
+      | 20          | B             | y             |
+      | 30          | C             | nil           |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  Even though `rhs` has no corresponding row where `rhs["number"] == 30`, the
+  resulting join preserves that row from `lhs` because, per the definition of a
+  `:left` join, all rows from `lhs` must remain after the join.
+
+  The `:asof` join works in a similar way. All rows of `lhs` will be preserved,
+  but the matching criteria for the `:on` column is more flexible than checking
+  for strict equality. For example:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs  = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs2 = DF.new(number: [ 1, 11, 21], lower: ["x", "y", "z"])
+      iex> lhs |> DF.join_asof(rhs2, strategy: :backward) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | x             |
+      | 20          | B             | y             |
+      | 30          | C             | z             |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  Here we've used `strategy: :backward`. This indicates that the matching
+  criteria is, for each row in `lhs`, to look for the first row in `rhs2` such
+  that `lhs["number"] <= rhs["number"]`.
+
+  `strategy: :forward` works similarly except the criteria is `>=`:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs  = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs2 = DF.new(number: [ 1, 11, 21], lower: ["x", "y", "z"])
+      iex> lhs |> DF.join_asof(rhs2, strategy: :forward) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | y             |
+      | 20          | B             | z             |
+      | 30          | C             | nil           |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  Again, all rows from `lhs` were preserved despite there being no row in `rhs2`
+  such that `lhs["number"] >= rhs2["number"]`.
+
+  The last strategy `:nearest` combines `:backward` and `:forward` by doing both
+  then picking whichever's match was closer:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs  = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs2 = DF.new(number: [ 1, 11, 21], lower: ["x", "y", "z"])
+      iex> lhs |> DF.join_asof(rhs2, strategy: :nearest) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | y             |
+      | 20          | B             | z             |
+      | 30          | C             | z             |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  Notice how the row `%{"number" => 21, "lower" => "z"}` from `rhs2` was matched
+  on twice since it was the nearest for both `%{"number" => 20, ...}` and
+  `%{"number" => 30, ...}`.
+
+  The `:by` option allows for additional matching criteria by also requiring
+  that matching rows from both DataFrames are strictly equal in the `:by`
+  column(s):
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs_color = DF.new(number: [10, 20, 30], color: ["red", "blue", "blue"])
+      iex> rhs_blue  = DF.new(number: [ 1, 11, 21], color: ["blue", "blue", "blue"], lower: ["x", "y", "z"])
+      iex> lhs_color |> DF.join_asof(rhs_blue, on: "number", by: "color") |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     color     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | red           | nil           |
+      | 20          | blue          | y             |
+      | 30          | blue          | z             |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  This is somewhat like grouping the DataFrames by the `:by` column(s) first,
+  then checking for an "asof" match within each group only. In the example, rows
+  `%{"number" => 20, ...}` and `%{"number" => 30, ...}` in `lhs_color` match as
+  before because all rows in `rhs_blue` have `%{color: "blue", ...}`. But the
+  row `%{"number" => 10, ...}` gets no match because the `%{color: "red", ...}`
+  "group" has no rows in `rhs_blue`.
+  """
+  @doc type: :multi
+  @spec join_asof(left :: DataFrame.t(), right :: DataFrame.t(), opts :: Keyword.t()) ::
+          DataFrame.t()
+  def join_asof(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
+    left_columns = left.names
+    right_columns = right.names
+
+    opts =
+      Keyword.validate!(opts,
+        on: find_overlapping_columns(left_columns, right_columns),
+        by: [],
+        strategy: :backward
+      )
+
+    unless opts[:strategy] in @valid_strategy_types do
+      raise ArgumentError,
+            "join type is not valid: #{inspect(opts[:strategy])}. " <>
+              "Valid options are: #{Enum.map_join(@valid_strategy_types, ", ", &inspect/1)}"
+    end
+
+    strategy = opts[:strategy]
+
+    on =
+      case List.wrap(opts[:on]) do
+        [] ->
+          raise(ArgumentError, "could not find any overlapping columns for :on")
+
+        [_ | _] = on ->
+          normalize_common_columns(left, right, on)
+          |> case do
+            {:ok, [_] = cols} ->
+              cols
+
+            {:ok, _multiple} ->
+              raise ArgumentError,
+                    "multiple columns for option `:on` is not supported for join_asof, please set a single one"
+
+            :error ->
+              raise ArgumentError,
+                    "the column given to option `:on` is not the same for both dataframes"
+          end
+      end
+
+    by =
+      case List.wrap(opts[:by]) do
+        [] ->
+          []
+
+        by ->
+          normalize_common_columns(left, right, by)
+          |> case do
+            {:ok, cols} ->
+              cols
+
+            :error ->
+              raise ArgumentError,
+                    "the column given to option `:by` is not the same for both dataframes"
+          end
+      end
+
+    {_left_by, right_by} = Enum.unzip(by)
+    {_left_on, right_on} = Enum.unzip(on)
+
+    pairs = dtypes_pairs_for_common_join(left, right, right_on ++ right_by)
+    {new_names, _} = Enum.unzip(pairs)
+    out_df = out_df(left, new_names, Map.new(pairs))
+    Shared.apply_dataframe([left, right], :join_asof, [out_df, on, by, strategy])
+  end
+
+  defp normalize_common_columns(left, right, names) do
+    names
+    |> Enum.reduce_while({:ok, []}, fn
+      {l_name, r_name}, {:ok, acc} ->
+        [l_column] = to_existing_columns(left, [l_name])
+        [r_column] = to_existing_columns(right, [r_name])
+        {:cont, {:ok, [{l_column, r_column} | acc]}}
+
+      name, {:ok, acc} ->
+        [l_column] = to_existing_columns(left, [name])
+        [r_column] = to_existing_columns(right, [name])
+
+        # This is an edge case for when an index is passed as column selection
+        if l_column != r_column do
+          {:halt, :error}
+        else
+          {:cont, {:ok, [{l_column, r_column} | acc]}}
+        end
+    end)
   end
 
   @doc """

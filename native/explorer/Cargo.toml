@@ -39,6 +39,7 @@ version = "0.49"
 default-features = false
 features = [
   "abs",
+  "asof_join",
   "checked_arithmetic",
   "concat_str",
   "cov",

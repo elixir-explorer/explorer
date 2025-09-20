@@ -930,6 +930,15 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def join_asof([left, right], out_df, on, by, strategy) do
+    left = lazy(left)
+    right = lazy(right)
+
+    ldf = LazyFrame.join_asof([left, right], out_df, on, by, strategy)
+    LazyFrame.compute(ldf)
+  end
+
+  @impl true
   def concat_rows([_head | _tail] = dfs, out_df) do
     lazy_dfs = Enum.map(dfs, &lazy/1)
 

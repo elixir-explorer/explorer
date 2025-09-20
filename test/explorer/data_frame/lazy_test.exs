@@ -1431,6 +1431,57 @@ defmodule Explorer.DataFrame.LazyTest do
     end
   end
 
+  describe "join_asof/3" do
+    test "raises if no overlapping columns" do
+      assert_raise ArgumentError,
+                   ~r"could not find any overlapping columns",
+                   fn ->
+                     left = DF.new([a: [1, 2, 3]], lazy: true)
+                     right = DF.new([b: [1, 2, 3]], lazy: true)
+                     DF.join_asof(left, right)
+                   end
+    end
+
+    test "raises if multiple overlapping columns" do
+      assert_raise ArgumentError,
+                   ~r"multiple columns for option `:on` is not supported for join_asof",
+                   fn ->
+                     left = DF.new([a: [1, 2, 3], b: [1, 2, 3]], lazy: true)
+                     right = DF.new([a: [1, 2, 3], b: [1, 2, 3]], lazy: true)
+                     DF.join_asof(left, right)
+                   end
+    end
+
+    test "with a custom 'on'" do
+      left =
+        DF.new(
+          [
+            id: [1, 2, 3],
+            time: [0.9, 2.1, 2.8]
+          ],
+          lazy: true
+        )
+
+      right =
+        DF.new(
+          [
+            time: [2.0],
+            value: [100]
+          ],
+          lazy: true
+        )
+
+      ldf = DF.join_asof(left, right, on: :time, strategy: :nearest)
+      df = DF.compute(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               id: [1, 2, 3],
+               time: [0.9, 2.1, 2.8],
+               value: [100, 100, 100]
+             }
+    end
+  end
+
   describe "concat_rows/2" do
     test "two simple DFs of the same dtypes" do
       ldf1 = DF.new([x: [1, 2, 3], y: ["a", "b", "c"]], lazy: true)

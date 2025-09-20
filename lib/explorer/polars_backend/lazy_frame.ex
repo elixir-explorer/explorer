@@ -624,6 +624,26 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
+  def join_asof([%DF{} = left, %DF{} = right], %DF{} = out_df, on, by, strategy)
+      when is_list(on) and is_list(by) do
+    strategy = Atom.to_string(strategy)
+
+    {left_on, right_on} =
+      on
+      |> Enum.map(fn {left, right} -> {Native.expr_column(left), Native.expr_column(right)} end)
+      |> Enum.unzip()
+
+    {left_by, right_by} = Enum.unzip(by)
+
+    Shared.apply_dataframe(
+      left,
+      out_df,
+      :lf_join_asof,
+      [right.data, left_on, right_on, left_by, right_by, strategy, "_right"]
+    )
+  end
+
+  @impl true
   def concat_rows([%DF{} | _tail] = dfs, %DF{} = out_df) do
     polars_dfs = Enum.map(dfs, fn df -> select(df, out_df).data end)
     %__MODULE__{} = polars_df = Shared.apply(:lf_concat_rows, [polars_dfs])

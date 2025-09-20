@@ -250,6 +250,14 @@ defmodule Explorer.Backend.DataFrame do
               how :: :left | :inner | :outer | :right | :cross
             ) :: df
 
+  @callback join_asof(
+              [df()],
+              out_df :: df(),
+              on :: list({column_name(), column_name()}),
+              by :: list({column_name(), column_name()}),
+              strategy :: :backward | :forward | :nearest
+            ) :: df
+
   @callback concat_columns([df], out_df :: df()) :: df
   @callback concat_rows([df], out_df :: df()) :: df
 
