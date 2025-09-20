@@ -519,6 +519,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_field(_s, _name), do: err()
   def s_json_decode(_s, _dtype), do: err()
   def s_json_path_match(_s, _json_path), do: err()
+  def s_index_of(_s, _v), do: err()
 
   def message_on_gc(_pid, _payload), do: err()
   def is_message_on_gc(_term), do: err()
