@@ -5455,98 +5455,127 @@ defmodule Explorer.DataFrame do
 
   ## Examples
 
-  Note how the dates in `gdp` and `population` don’t quite match. If we join them using
-  `join_asof` and `strategy: :backward`, then each date from `population` which doesn’t have an
-  exact match is matched with the closest earlier date from `gdp`:
+  As a reminder, let's start with an example of a `:left` join:
 
-      iex> gdp = Explorer.DataFrame.new(
-      ...>   date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]],
-      ...>   gdp: [4164, 4411, 4566, 4696, 4827]
-      ...> )
-      iex> population = Explorer.DataFrame.new(
-      ...>   date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]],
-      ...>   population: [82.19, 82.66, 83.12]
-      ...> )
-      iex> Explorer.DataFrame.join_asof(population, gdp, strategy: :backward)
-      #Explorer.DataFrame<
-        Polars[3 x 3]
-        date date [2016-03-01, 2018-08-01, 2019-01-01]
-        population f64 [82.19, 82.66, 83.12]
-        gdp s64 [4164, 4566, 4696]
-      >
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs = DF.new(number: [10, 20],     lower: ["x", "y"])
+      iex> lhs |> DF.join(rhs, on: "number", how: :left) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | x             |
+      | 20          | B             | y             |
+      | 30          | C             | nil           |
+      +-------------+---------------+---------------+
+      \"\"\"
 
-  Note how:
+  Even though `rhs` has no corresponding row where `rhs["number"] == 30`, the
+  resulting join preserves that row from `lhs` because, per the definition of a
+  `:left` join, all rows from `lhs` must remain after the join.
 
-  * date `2016-03-01` from `population` is matched with `2016-01-01` from `gdp`;
-  * date `2018-08-01` from `population` is matched with `2018-01-01` from `gdp`.
+  The `:asof` join works in a similar way. All rows of `lhs` will be preserved,
+  but the matching criteria for the `:on` column is more flexible than checking
+  for strict equality. For example:
 
-  If we instead use `strategy: :forward`, then each date from `population` which doesn’t have an
-  exact match is matched with the closest later date from `gdp`:
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs  = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs2 = DF.new(number: [ 1, 11, 21], lower: ["x", "y", "z"])
+      iex> lhs |> DF.join_asof(rhs2, strategy: :backward) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | x             |
+      | 20          | B             | y             |
+      | 30          | C             | z             |
+      +-------------+---------------+---------------+
+      \"\"\"
 
-      iex> gdp = Explorer.DataFrame.new(
-      ...>   date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]],
-      ...>   gdp: [4164, 4411, 4566, 4696, 4827]
-      ...> )
-      iex> population = Explorer.DataFrame.new(
-      ...>   date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]],
-      ...>   population: [82.19, 82.66, 83.12]
-      ...> )
-      iex> Explorer.DataFrame.join_asof(population, gdp, strategy: :forward)
-      #Explorer.DataFrame<
-        Polars[3 x 3]
-        date date [2016-03-01, 2018-08-01, 2019-01-01]
-        population f64 [82.19, 82.66, 83.12]
-        gdp s64 [4411, 4696, 4696]
-      >
+  Here we've used `strategy: :backward`. This indicates that the matching
+  criteria is, for each row in `lhs`, to look for the first row in `rhs2` such
+  that `lhs["number"] <= rhs["number"]`.
 
-  Note how:
+  `strategy: :forward` works similarly except the criteria is `>=`:
 
-  * date `2016-03-01` from `population` is matched with `2017-01-01` from `gdp`;
-  * date `2018-08-01` from `population` is matched with `2019-01-01` from `gdp`.
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs  = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs2 = DF.new(number: [ 1, 11, 21], lower: ["x", "y", "z"])
+      iex> lhs |> DF.join_asof(rhs2, strategy: :forward) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | y             |
+      | 20          | B             | z             |
+      | 30          | C             | nil           |
+      +-------------+---------------+---------------+
+      \"\"\"
 
-  Finally, `strategy: :nearest` gives us a mix of the two results above, as each date from
-  `population` which doesn’t have an exact match is matched with the closest date from `gdp`,
-  regardless of whether it’s earlier or later:
+  Again, all rows from `lhs` were preserved despite there being no row in `rhs2`
+  such that `lhs["number"] >= rhs2["number"]`.
 
-      iex> gdp = Explorer.DataFrame.new(
-      ...>   date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01],~D[2020-01-01]],
-      ...>   gdp: [4164, 4411, 4566, 4696, 4827]
-      ...> )
-      iex> population = Explorer.DataFrame.new(
-      ...>   date: [~D[2016-03-01], ~D[2018-08-01], ~D[2019-01-01]],
-      ...>   population: [82.19, 82.66, 83.12]
-      ...> )
-      iex> Explorer.DataFrame.join_asof(population, gdp, strategy: :nearest)
-      #Explorer.DataFrame<
-        Polars[3 x 3]
-        date date [2016-03-01, 2018-08-01, 2019-01-01]
-        population f64 [82.19, 82.66, 83.12]
-        gdp s64 [4164, 4696, 4696]
-      >
+  The last strategy `:nearest` combines `:backward` and `:forward` by doing both
+  then picking whichever's match was closer:
 
-  The `by` argument allows left-joining on another column (or columns) first,
-  before the asof join. In this example we left-join by `country` first, then
-  asof join by `date`, as above.
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs  = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs2 = DF.new(number: [ 1, 11, 21], lower: ["x", "y", "z"])
+      iex> lhs |> DF.join_asof(rhs2, strategy: :nearest) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | y             |
+      | 20          | B             | z             |
+      | 30          | C             | z             |
+      +-------------+---------------+---------------+
+      \"\"\"
 
-      iex> gdp = Explorer.DataFrame.new(
-      ...>   date: [~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01], ~D[2016-01-01], ~D[2017-01-01], ~D[2018-01-01], ~D[2019-01-01]],
-      ...>   country: ["Germany", "Germany", "Germany", "Germany", "Netherlands", "Netherlands", "Netherlands", "Netherlands"],
-      ...>   gdp: [4164, 4411, 4566, 4696, 784, 833, 914, 1000]
-      ...> )
-      iex> population = Explorer.DataFrame.new(
-      ...>   date: [~D[2016-03-01], ~D[2018-08-01], ~D[2016-03-01], ~D[2018-08-01]],
-      ...>   country: ["Germany", "Germany", "Netherlands", "Netherlands"],
-      ...>   population: [82.19, 82.66, 17.08, 17.18]
-      ...> )
-      iex> Explorer.DataFrame.join_asof(population, gdp, by: :country, on: :date, strategy: :nearest)
-      #Explorer.DataFrame<
-        Polars[4 x 4]
-        date date [2016-03-01, 2018-08-01, 2016-03-01, 2018-08-01]
-        country string ["Germany", "Germany", "Netherlands", "Netherlands"]
-        population f64 [82.19, 82.66, 17.08, 17.18]
-        gdp s64 [4164, 4696, 784, 1000]
-      >
+  Notice how the row `%{"number" => 21, "lower" => "z"}` from `rhs2` was matched
+  on twice since it was the nearest for both `%{"number" => 20, ...}` and
+  `%{"number" => 30, ...}`.
 
+  The `:by` option allows for additional matching criteria by also requiring
+  that matching rows from both DataFrames are strictly equal in the `:by`
+  column(s):
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs_color = DF.new(number: [10, 20, 30], color: ["red", "blue", "blue"])
+      iex> rhs_blue  = DF.new(number: [ 1, 11, 21], color: ["blue", "blue", "blue"], lower: ["x", "y", "z"])
+      iex> lhs_color |> DF.join_asof(rhs_blue, on: "number", by: "color") |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     color     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | red           | nil           |
+      | 20          | blue          | y             |
+      | 30          | blue          | z             |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  This is somewhat like grouping the DataFrames by the `:by` column(s) first,
+  then checking for an "asof" match within each group only. In the example, rows
+  `%{"number" => 20, ...}` and `%{"number" => 30, ...}` in `lhs_color` match as
+  before because all rows in `rhs_blue` have `%{color: "blue", ...}`. But the
+  row `%{"number" => 10, ...}` gets no match because the `%{color: "red", ...}`
+  "group" has no rows in `rhs_blue`.
   """
   @doc type: :multi
   @spec join_asof(left :: DataFrame.t(), right :: DataFrame.t(), opts :: Keyword.t()) ::
