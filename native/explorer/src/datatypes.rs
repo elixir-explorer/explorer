@@ -276,20 +276,6 @@ impl Literal for ExDuration {
     }
 }
 
-impl IntoScalar for ExDuration {
-    fn into_scalar(self, dtype: DataType) -> PolarsResult<Scalar> {
-        match dtype {
-            DataType::Duration(_) => {
-                Scalar::new_duration(self.value, time_unit_of_ex_duration(&self))
-                    .cast_with_options(&dtype, polars::chunked_array::cast::CastOptions::Strict)
-            }
-            _ => {
-                polars_bail!(InvalidOperation: "Cannot cast `ExDuration` to `Scalar` with dtype={dtype}")
-            }
-        }
-    }
-}
-
 fn time_unit_of_ex_duration(duration: &ExDuration) -> TimeUnit {
     let precision = duration.precision;
     if precision == atoms::millisecond() {
@@ -444,15 +430,6 @@ impl From<NaiveDateTime> for ExNaiveDateTime {
 
 impl Literal for ExNaiveDateTime {
     fn lit(self) -> Expr {
-        Expr::Literal(LiteralValue::Scalar(
-            self.into_scalar(DataType::Datetime(TimeUnit::Microseconds, None))
-                .unwrap(),
-        ))
-    }
-}
-
-impl IntoScalar for ExNaiveDateTime {
-    fn into_scalar(self, dtype: DataType) -> PolarsResult<Scalar> {
         let ndt = NaiveDateTime::from(self);
         // We can't call `ndt.lit()` because Polars defaults to nanoseconds
         // for all years between 1386 and 2554, but Elixir only represents
@@ -461,16 +438,11 @@ impl IntoScalar for ExNaiveDateTime {
         //
         // See here for details:
         // polars-time-0.38.3/src/date_range.rs::in_nanoseconds_window
-        match dtype {
-            DataType::Datetime(TimeUnit::Microseconds, None) => Ok(Scalar::new_datetime(
-                ndt.and_utc().timestamp_micros(),
-                TimeUnit::Microseconds,
-                None,
-            )),
-            _ => {
-                polars_bail!(InvalidOperation: "Cannot cast `ExNaiveDateTime` to `Scalar` with dtype={dtype}")
-            }
-        }
+        Expr::Literal(LiteralValue::Scalar(Scalar::new_datetime(
+            ndt.and_utc().timestamp_micros(),
+            TimeUnit::Microseconds,
+            None,
+        )))
     }
 }
 
@@ -686,28 +658,6 @@ impl Literal for ExDecimal {
     }
 }
 
-impl IntoScalar for ExDecimal {
-    fn into_scalar(self, dtype: DataType) -> PolarsResult<Scalar> {
-        let size = usize::try_from(-(self.exp)).expect("exponent should fit an usize");
-        match dtype {
-            DataType::Decimal(precision, scale) => Ok(Scalar::new(
-                DataType::Decimal(precision, scale),
-                AnyValue::Decimal(
-                    if self.sign.is_positive() {
-                        self.coef
-                    } else {
-                        -self.coef
-                    },
-                    size,
-                ),
-            )),
-            _ => {
-                polars_bail!(InvalidOperation: "Cannot cast `ExDecimal` to `Scalar` with dtype={dtype}")
-            }
-        }
-    }
-}
-
 /// Represents valid Elixir types that can be used as literals in Polars.
 pub enum ExValidValue<'a> {
     I64(i64),
@@ -743,50 +693,6 @@ impl Literal for &ExValidValue<'_> {
             ExValidValue::DateTime(v) => v.lit(),
             ExValidValue::Duration(v) => v.lit(),
             ExValidValue::Decimal(v) => v.lit(),
-        }
-    }
-}
-
-impl<'a> IntoScalar for ExValidValue<'a> {
-    fn into_scalar(self: ExValidValue<'a>, dtype: DataType) -> PolarsResult<Scalar> {
-        match self {
-            ExValidValue::Str(v) => Ok(Scalar::new(
-                DataType::String,
-                AnyValue::StringOwned(v.into()),
-            )),
-            ExValidValue::Date(v) => i32::from(v)
-                .into_scalar(DataType::Int32)?
-                .cast_with_options(
-                    &DataType::Date,
-                    polars::chunked_array::cast::CastOptions::Strict,
-                ),
-            ExValidValue::Time(v) => i64::from(v)
-                .into_scalar(DataType::Int64)?
-                .cast_with_options(
-                    &DataType::Time,
-                    polars::chunked_array::cast::CastOptions::Strict,
-                ),
-            ExValidValue::DateTime(v) => v.into_scalar(dtype),
-            ExValidValue::Duration(v) => v.into_scalar(dtype),
-            ExValidValue::Decimal(v) => v.into_scalar(dtype),
-            // ExValidValue::I64(v) => v.into_scalar(dtype),
-            // ExValidValue::F64(v) => v.into_scalar(dtype),
-            // ExValidValue::Bool(v) => v.into_scalar(dtype),
-            // ExValidValue::I64(v) => Ok(Scalar::new(DataType::Int64, v.into())),
-            // ExValidValue::F64(v) => Ok(Scalar::new(DataType::Float64, v.into())),
-            // ExValidValue::Bool(v) => Ok(Scalar::new(DataType::Boolean, v.into())),
-            // ExValidValue::I64(v) => Ok(Scalar::new(dtype, v.into())),
-            // ExValidValue::F64(v) => Ok(Scalar::new(dtype, v.into())),
-            // ExValidValue::Bool(v) => Ok(Scalar::new(dtype, v.into())),
-            ExValidValue::I64(v) => v
-                .into_scalar(DataType::Int64)?
-                .cast_with_options(&dtype, polars::chunked_array::cast::CastOptions::Strict),
-            ExValidValue::F64(v) => v
-                .into_scalar(DataType::Float64)?
-                .cast_with_options(&dtype, polars::chunked_array::cast::CastOptions::Strict),
-            ExValidValue::Bool(v) => v
-                .into_scalar(DataType::Boolean)?
-                .cast_with_options(&dtype, polars::chunked_array::cast::CastOptions::Strict),
         }
     }
 }
