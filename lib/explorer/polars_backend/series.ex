@@ -851,8 +851,17 @@ defmodule Explorer.PolarsBackend.Series do
   end
 
   @impl true
-  def index_of(series, value),
-    do: Shared.apply_series(series, :s_index_of, [value])
+  def index_of(series, value) do
+    value_series =
+      try do
+        Series.from_list([value], dtype: series.dtype)
+      rescue
+        _ ->
+          raise ArgumentError, "unable to cast value to series type: #{inspect(series.dtype)}"
+      end
+
+    Shared.apply_series(series, :s_index_of, [value_series.data])
+  end
 
   # Polars specific functions
 

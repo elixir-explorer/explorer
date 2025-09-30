@@ -6849,22 +6849,22 @@ defmodule Explorer.SeriesTest do
     end
 
     test "raises on value mismatch" do
-      assert_raise RuntimeError,
-                   "Polars Error: Cannot perform index_of with mismatching datatypes: Int64 and String",
+      assert_raise ArgumentError,
+                   "unable to cast value to series type: {:s, 64}",
                    fn -> Series.index_of(Series.from_list([0]), "a") end
 
-      assert_raise RuntimeError,
-                   "Polars Error: Cannot cast `ExDecimal` to `Scalar` with dtype=i64",
+      assert_raise ArgumentError,
+                   "unable to cast value to series type: {:s, 64}",
                    fn -> Series.index_of(Series.from_list([0]), Decimal.new("0")) end
 
-      assert_raise RuntimeError,
-                   "Polars Error: Cannot cast `ExNaiveDateTime` to `Scalar` with dtype=i64",
+      assert_raise ArgumentError,
+                   "unable to cast value to series type: {:s, 64}",
                    fn -> Series.index_of(Series.from_list([0]), ~N[2021-01-03 00:00:00]) end
 
       one = %Explorer.Duration{value: 1, precision: :microsecond}
 
-      assert_raise RuntimeError,
-                   "Polars Error: Cannot cast `ExDuration` to `Scalar` with dtype=i64",
+      assert_raise ArgumentError,
+                   "unable to cast value to series type: {:s, 64}",
                    fn -> Series.index_of(Series.from_list([0]), one) end
     end
   end
