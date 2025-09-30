@@ -6858,6 +6858,10 @@ defmodule Explorer.Series do
       iex> Series.index_of(s, 2)
       1
 
+      iex> s = Series.from_list([1, 2, 3])
+      iex> Series.index_of(s, 4)
+      nil
+
   """
 
   @doc type: :shape
