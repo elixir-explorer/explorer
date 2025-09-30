@@ -6869,8 +6869,8 @@ defmodule Explorer.Series do
       iex> Explorer.Series.index_of(s, "a")
       ** (ArgumentError) unable to get index of value: "a" in series of type: {:s, 64}
 
-  It will cast `value` when it is a `Explorer.Duration` structs and the type of `series` is
-  duration to allow for comparison of different precisions.
+  It will cast `value` when it is an `Explorer.Duration` struct to the same precision as `series`
+  when it's dtype is a duration.
 
       iex> s = Explorer.Series.from_list([1, 2, 3], dtype: {:duration, :millisecond})
       iex> Explorer.Series.index_of(s, %Explorer.Duration{value: 1000, precision: :microsecond})
