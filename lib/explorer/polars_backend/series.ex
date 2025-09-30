@@ -855,6 +855,8 @@ defmodule Explorer.PolarsBackend.Series do
     value_series =
       try do
         case {series.dtype, value} do
+          # cast value to duration of same type as series to ensure durations are correctly
+          # compared at the same precision
           {{:duration, precision}, %Explorer.Duration{}} ->
             Series.from_list([value]) |> cast({:duration, precision})
 
