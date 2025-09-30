@@ -6854,13 +6854,27 @@ defmodule Explorer.Series do
 
   ## Examples
 
-      iex> s = Series.from_list([1, 2, 3])
-      iex> Series.index_of(s, 2)
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.index_of(s, 2)
       1
 
-      iex> s = Series.from_list([1, 2, 3])
-      iex> Series.index_of(s, 4)
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.index_of(s, 4)
       nil
+
+  This operation raises an `ArgumentError` when `value` is not compatible with the
+  series.
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.index_of(s, "a")
+      ** (ArgumentError) unable to get index of value: "a" in series of type: {:s, 64}
+
+  It will cast `value` when it is a `Explorer.Duration` structs and the type of `series` is
+  duration to allow for comparison of different precisions.
+
+      iex> s = Explorer.Series.from_list([1, 2, 3], dtype: {:duration, :millisecond})
+      iex> Explorer.Series.index_of(s, %Explorer.Duration{value: 1000, precision: :microsecond})
+      0
 
   """
 

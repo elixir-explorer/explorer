@@ -854,10 +854,21 @@ defmodule Explorer.PolarsBackend.Series do
   def index_of(series, value) do
     value_series =
       try do
-        Series.from_list([value], dtype: series.dtype)
+        case {series.dtype, value} do
+          {{:duration, precision}, %Explorer.Duration{}} ->
+            Series.from_list([value]) |> cast({:duration, precision})
+
+          {{:duration, _}, _} ->
+            raise ArgumentError,
+                  "unable to get index of value: #{inspect(value)} in series of type: #{inspect(series.dtype)}"
+
+          {dtype, _} ->
+            Series.from_list([value], dtype: dtype)
+        end
       rescue
         _ ->
-          raise ArgumentError, "unable to cast value to series type: #{inspect(series.dtype)}"
+          raise ArgumentError,
+                "unable to get index of value: #{inspect(value)} in series of type: #{inspect(series.dtype)}"
       end
 
     Shared.apply_series(series, :s_index_of, [value_series.data])

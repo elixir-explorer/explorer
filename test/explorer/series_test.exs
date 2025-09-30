@@ -6848,24 +6848,28 @@ defmodule Explorer.SeriesTest do
       assert series |> Series.index_of(0) == 0
     end
 
-    test "raises on value mismatch" do
+    test "raises on type mismatch" do
       assert_raise ArgumentError,
-                   "unable to cast value to series type: {:s, 64}",
+                   "unable to get index of value: \"a\" in series of type: {:s, 64}",
                    fn -> Series.index_of(Series.from_list([0]), "a") end
 
       assert_raise ArgumentError,
-                   "unable to cast value to series type: {:s, 64}",
+                   "unable to get index of value: Decimal.new(\"0\") in series of type: {:s, 64}",
                    fn -> Series.index_of(Series.from_list([0]), Decimal.new("0")) end
 
       assert_raise ArgumentError,
-                   "unable to cast value to series type: {:s, 64}",
+                   "unable to get index of value: ~N[2021-01-03 00:00:00] in series of type: {:s, 64}",
                    fn -> Series.index_of(Series.from_list([0]), ~N[2021-01-03 00:00:00]) end
 
       one = %Explorer.Duration{value: 1, precision: :microsecond}
 
       assert_raise ArgumentError,
-                   "unable to cast value to series type: {:s, 64}",
-                   fn -> Series.index_of(Series.from_list([0]), one) end
+                   "unable to get index of value: #Explorer.Duration[1us] in series of type: {:s, 64}",
+                   fn -> Series.index_of(Series.from_list([1]), one) end
+
+      assert_raise ArgumentError,
+                   "unable to get index of value: 1 in series of type: {:duration, :microsecond}",
+                   fn -> Series.index_of(Series.from_list([one]), 1) end
     end
   end
 
