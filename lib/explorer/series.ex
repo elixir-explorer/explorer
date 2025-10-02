@@ -6849,6 +6849,41 @@ defmodule Explorer.Series do
     apply_series(series, :json_path_match, [json_path])
   end
 
+  @doc """
+  Finds the index of the first value in a series.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.index_of(s, 2)
+      1
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.index_of(s, 4)
+      nil
+
+  This operation raises an `ArgumentError` when `value` is not compatible with the
+  series.
+
+      iex> s = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.index_of(s, "a")
+      ** (ArgumentError) unable to get index of value: "a" in series of type: {:s, 64}
+
+  It will cast `value` when it is an `Explorer.Duration` struct to the same precision as `series`
+  when it's dtype is a duration.
+
+      iex> s = Explorer.Series.from_list([1, 2, 3], dtype: {:duration, :millisecond})
+      iex> Explorer.Series.index_of(s, %Explorer.Duration{value: 1000, precision: :microsecond})
+      0
+
+  """
+
+  @doc type: :shape
+  @spec index_of(series :: Series.t(), value :: Explorer.Backend.Series.valid_types()) :: any()
+  def index_of(series, value) do
+    apply_series(series, :index_of, [value])
+  end
+
   # Helpers
 
   defp backend_from_options!(opts) do

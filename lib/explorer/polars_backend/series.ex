@@ -850,6 +850,32 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_re_named_captures, [pattern])
   end
 
+  @impl true
+  def index_of(series, value) do
+    value_series =
+      try do
+        case {series.dtype, value} do
+          # cast value to duration of same type as series to ensure durations are correctly
+          # compared at the same precision
+          {{:duration, precision}, %Explorer.Duration{}} ->
+            Series.from_list([value]) |> cast({:duration, precision})
+
+          {{:duration, _}, _} ->
+            raise ArgumentError,
+                  "unable to get index of value: #{inspect(value)} in series of type: #{inspect(series.dtype)}"
+
+          {dtype, _} ->
+            Series.from_list([value], dtype: dtype)
+        end
+      rescue
+        _ ->
+          raise ArgumentError,
+                "unable to get index of value: #{inspect(value)} in series of type: #{inspect(series.dtype)}"
+      end
+
+    Shared.apply_series(series, :s_index_of, [value_series.data])
+  end
+
   # Polars specific functions
 
   def name(series), do: Shared.apply_series(series, :s_name)
