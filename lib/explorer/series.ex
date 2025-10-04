@@ -32,6 +32,11 @@ defmodule Explorer.Series do
       >
       > This functionality is considered unstable. It is a work-in-progress feature
       > and may not always work as expected. It may be changed at any point.
+      >
+      > Note: The underlying Polars decimal type is a fixed point decimal with optional
+      > precision and non-negative scale, backed by a signed 128-bit integer which allows
+      > for up to 38 significant digits (max precision is 38). Elixir's `Decimal` can handle
+      > higher precision, which may cause errors when converting very large decimal values.
     * `:null` - `nil`s exclusively
     * `:string` - UTF-8 encoded binary
     * `:time` - Time type that unwraps to `Elixir.Time`
