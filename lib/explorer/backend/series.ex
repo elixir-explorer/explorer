@@ -344,7 +344,7 @@ defmodule Explorer.Backend.Series do
   # Struct
   @callback field(s, String.t()) :: s
 
-  @callback index_of(s, valid_types()) :: integer()
+  @callback index_of(s, valid_types()) :: integer() | nil
 
   # Functions
 
