@@ -629,13 +629,17 @@ impl ExDecimal {
         }
     }
 
-    pub fn signed_coef(self) -> i128 {
+    pub fn signed_coef(self) -> Result<i128, ExplorerError> {
         let base = self.sign as i128 * self.coef;
         if self.exp > 0 {
             base.checked_mul(10_i128.pow(self.exp as u32))
-                .expect("coefficient overflow")
+                .ok_or_else(|| {
+                    ExplorerError::Other(
+                        "cannot decode a valid decimal from term; check that `coef` fits into an `i128`. error: throw(<term>)".to_string()
+                    )
+                })
         } else {
-            base
+            Ok(base)
         }
     }
 
@@ -653,7 +657,7 @@ impl ExDecimal {
 
 impl Literal for ExDecimal {
     fn lit(self) -> Expr {
-        let coef = self.signed_coef();
+        let coef = self.signed_coef().unwrap();
         let scale = self.scale();
 
         Expr::Literal(LiteralValue::Scalar(Scalar::new(
@@ -721,6 +725,7 @@ impl<'a> rustler::Decoder<'a> for ExValidValue<'a> {
                 } else if let Ok(duration) = term.decode::<ExDuration>() {
                     Ok(ExValidValue::Duration(duration))
                 } else if let Ok(decimal) = term.decode::<ExDecimal>() {
+                    decimal.signed_coef().map_err(|_| rustler::Error::BadArg)?;
                     Ok(ExValidValue::Decimal(decimal))
                 } else {
                     Err(rustler::Error::BadArg)
