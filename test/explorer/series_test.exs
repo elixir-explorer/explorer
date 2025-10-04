@@ -2011,7 +2011,9 @@ defmodule Explorer.SeriesTest do
       assert Decimal.eq?(v3, Decimal.new("4.0e10"))
 
       # Test negative values with positive exponents
-      s4 = Series.from_list([Decimal.new("-2.1e10"), Decimal.new("-3.5e10"), Decimal.new("-1.0e10")])
+      s4 =
+        Series.from_list([Decimal.new("-2.1e10"), Decimal.new("-3.5e10"), Decimal.new("-1.0e10")])
+
       s5 = Series.from_list([Decimal.new("1.0e10"), Decimal.new("2.0e10"), Decimal.new("3.0e10")])
 
       s6 = Series.add(s4, s5)
@@ -2022,8 +2024,11 @@ defmodule Explorer.SeriesTest do
       assert Decimal.eq?(v6, Decimal.new("2.0e10"))
 
       # Test mixed negative and positive values
-      s7 = Series.from_list([Decimal.new("-2.1e10"), Decimal.new("3.5e10"), Decimal.new("-1.0e10")])
-      s8 = Series.from_list([Decimal.new("-1.0e10"), Decimal.new("-2.0e10"), Decimal.new("3.0e10")])
+      s7 =
+        Series.from_list([Decimal.new("-2.1e10"), Decimal.new("3.5e10"), Decimal.new("-1.0e10")])
+
+      s8 =
+        Series.from_list([Decimal.new("-1.0e10"), Decimal.new("-2.0e10"), Decimal.new("3.0e10")])
 
       s9 = Series.add(s7, s8)
       [v7, v8, v9] = Series.to_list(s9)

@@ -653,11 +653,8 @@ impl ExDecimal {
 
 impl Literal for ExDecimal {
     fn lit(self) -> Expr {
-        let (coef, scale) = if self.exp > 0 {
-            (self.signed_coef(), 0)
-        } else {
-            (self.signed_coef(), self.scale())
-        };
+        let coef = self.signed_coef();
+        let scale = self.scale();
 
         Expr::Literal(LiteralValue::Scalar(Scalar::new(
             DataType::Decimal(Some(scale), Some(scale)),
