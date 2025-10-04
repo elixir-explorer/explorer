@@ -630,30 +630,38 @@ impl ExDecimal {
     }
 
     pub fn signed_coef(self) -> i128 {
-        self.sign as i128 * self.coef
+        let base = self.sign as i128 * self.coef;
+        if self.exp > 0 {
+            base.checked_mul(10_i128.pow(self.exp as u32))
+                .expect("coefficient overflow")
+        } else {
+            base
+        }
     }
 
     pub fn scale(self) -> usize {
-        self.exp
-            .abs()
-            .try_into()
-            .expect("cannot convert exponent (Elixir) to scale (Rust)")
+        if self.exp > 0 {
+            0
+        } else {
+            self.exp
+                .abs()
+                .try_into()
+                .expect("cannot convert exponent (Elixir) to scale (Rust)")
+        }
     }
 }
 
 impl Literal for ExDecimal {
     fn lit(self) -> Expr {
-        let size = usize::try_from(-(self.exp)).expect("exponent should fit an usize");
+        let (coef, scale) = if self.exp > 0 {
+            (self.signed_coef(), 0)
+        } else {
+            (self.signed_coef(), self.scale())
+        };
+
         Expr::Literal(LiteralValue::Scalar(Scalar::new(
-            DataType::Decimal(Some(size), Some(size)),
-            AnyValue::Decimal(
-                if self.sign.is_positive() {
-                    self.coef
-                } else {
-                    -self.coef
-                },
-                size,
-            ),
+            DataType::Decimal(Some(scale), Some(scale)),
+            AnyValue::Decimal(coef, scale),
         )))
     }
 }

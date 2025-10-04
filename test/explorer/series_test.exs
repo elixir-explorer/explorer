@@ -1997,6 +1997,61 @@ defmodule Explorer.SeriesTest do
       assert s3.dtype == {:decimal, 38, 1}
       assert Series.to_list(s3) === [Decimal.new("2.2"), Decimal.new("4.0"), Decimal.new("6.1")]
     end
+
+    test "adding decimal series with scientific notation" do
+      # Test positive values with positive exponents
+      s1 = Series.from_list([Decimal.new("2.1e10"), Decimal.new("3.5e10"), Decimal.new("1.0e10")])
+      s2 = Series.from_list([Decimal.new("1.0e10"), Decimal.new("2.0e10"), Decimal.new("3.0e10")])
+
+      s3 = Series.add(s1, s2)
+      [v1, v2, v3] = Series.to_list(s3)
+
+      assert Decimal.eq?(v1, Decimal.new("3.1e10"))
+      assert Decimal.eq?(v2, Decimal.new("5.5e10"))
+      assert Decimal.eq?(v3, Decimal.new("4.0e10"))
+
+      # Test negative values with positive exponents
+      s4 = Series.from_list([Decimal.new("-2.1e10"), Decimal.new("-3.5e10"), Decimal.new("-1.0e10")])
+      s5 = Series.from_list([Decimal.new("1.0e10"), Decimal.new("2.0e10"), Decimal.new("3.0e10")])
+
+      s6 = Series.add(s4, s5)
+      [v4, v5, v6] = Series.to_list(s6)
+
+      assert Decimal.eq?(v4, Decimal.new("-1.1e10"))
+      assert Decimal.eq?(v5, Decimal.new("-1.5e10"))
+      assert Decimal.eq?(v6, Decimal.new("2.0e10"))
+
+      # Test mixed negative and positive values
+      s7 = Series.from_list([Decimal.new("-2.1e10"), Decimal.new("3.5e10"), Decimal.new("-1.0e10")])
+      s8 = Series.from_list([Decimal.new("-1.0e10"), Decimal.new("-2.0e10"), Decimal.new("3.0e10")])
+
+      s9 = Series.add(s7, s8)
+      [v7, v8, v9] = Series.to_list(s9)
+
+      assert Decimal.eq?(v7, Decimal.new("-3.1e10"))
+      assert Decimal.eq?(v8, Decimal.new("1.5e10"))
+      assert Decimal.eq?(v9, Decimal.new("2.0e10"))
+    end
+
+    test "adding decimal series with maximum safe values" do
+      # Test maximum safe values in both scientific and normal notation
+      # Max safe is around 1e27 for i128 (< 2^127 ≈ 1.7e38)
+      s1 = Series.from_list([Decimal.new("1.0e27"), Decimal.new("1000000000000000000000000000")])
+      s2 = Series.from_list([Decimal.new("2.0e27"), Decimal.new("2000000000000000000000000000")])
+
+      s3 = Series.add(s1, s2)
+      [v1, v2] = Series.to_list(s3)
+
+      assert Decimal.eq?(v1, Decimal.new("3.0e27"))
+      assert Decimal.eq?(v2, Decimal.new("3000000000000000000000000000"))
+    end
+
+    test "overflow with values exceeding i128 limits" do
+      # This should fail: 3.4e38 exceeds i128 max (2^127 - 1 ≈ 1.7e38)
+      assert_raise ErlangError, fn ->
+        Series.from_list([Decimal.new("3.4e38")])
+      end
+    end
   end
 
   describe "subtract/2" do
