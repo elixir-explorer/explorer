@@ -2026,8 +2026,7 @@ defmodule Explorer.SeriesTest do
 
     test "overflow with values exceeding i128 limits" do
       assert_raise RuntimeError,
-                   "Generic Error: cannot decode a valid decimal from term;" <>
-                     " check that `coef` fits into an `i128`. error: throw(<term>)",
+                   "Generic Error: decimal coefficient overflow: value exceeds i128 limits",
                    fn -> Series.from_list([Decimal.new("3.4e38")]) end
     end
   end

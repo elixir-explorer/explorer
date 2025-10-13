@@ -240,16 +240,17 @@ pub fn s_from_list_decimal(
                     })
             }
 
-            TermType::Map => item
-                .decode::<ExDecimal>()
-                .map_err(|error| {
-                    ExplorerError::Other(format!(
-                        "cannot decode a valid decimal from term; check that `coef` fits into an `i128`. error: {error:?}"
-                    ))
-                })
-                .and_then(|ex_decimal| {
-                    ex_decimal.signed_coef().map(|coef| AnyValue::Decimal(coef, ex_decimal.scale()))
-                }),
+            TermType::Map => {
+                let ex_decimal = item
+                    .decode::<ExDecimal>()
+                    .map_err(|error| {
+                        ExplorerError::Other(format!(
+                            "cannot decode a valid decimal from term; check that `coef` fits into an `i128`. error: {error:?}"
+                        ))
+                    })?;
+                let coef = ex_decimal.signed_coef()?;
+                Ok(AnyValue::Decimal(coef, ex_decimal.scale()))
+            },
 
             TermType::Atom => Ok(AnyValue::Null),
 
