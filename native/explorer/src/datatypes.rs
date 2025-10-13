@@ -644,6 +644,8 @@ impl ExDecimal {
     }
 
     pub fn scale(self) -> usize {
+        // A positive `exp` represents an integer. Polars requires `scale == 0`
+        // for integers. The case where `exp > 0` is handled by `.signed_coef`.
         if self.exp > 0 {
             0
         } else {
