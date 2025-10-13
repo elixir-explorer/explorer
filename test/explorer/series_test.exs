@@ -1997,6 +1997,38 @@ defmodule Explorer.SeriesTest do
       assert s3.dtype == {:decimal, 38, 1}
       assert Series.to_list(s3) === [Decimal.new("2.2"), Decimal.new("4.0"), Decimal.new("6.1")]
     end
+
+    test "adding decimal series with positive and negative exponents" do
+      s1 =
+        Series.from_list([
+          Decimal.new("2.1e20"),
+          Decimal.new("-3.5e10"),
+          Decimal.new("1.5e-15"),
+          Decimal.new("1.0e2")
+        ])
+
+      s2 =
+        Series.from_list([
+          Decimal.new("1.0e20"),
+          Decimal.new("2.0e10"),
+          Decimal.new("2.5e-15"),
+          Decimal.new("5.0e-2")
+        ])
+
+      s3 = Series.add(s1, s2)
+      [v1, v2, v3, v4] = Series.to_list(s3)
+
+      assert Decimal.eq?(v1, Decimal.new("3.1e20"))
+      assert Decimal.eq?(v2, Decimal.new("-1.5e10"))
+      assert Decimal.eq?(v3, Decimal.new("4.0e-15"))
+      assert Decimal.eq?(v4, Decimal.new("100.05"))
+    end
+
+    test "overflow with values exceeding i128 limits" do
+      assert_raise RuntimeError,
+                   "Generic Error: decimal coefficient overflow: value exceeds i128 limits",
+                   fn -> Series.from_list([Decimal.new("3.4e38")]) end
+    end
   end
 
   describe "subtract/2" do

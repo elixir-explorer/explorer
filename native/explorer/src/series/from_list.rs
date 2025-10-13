@@ -242,12 +242,13 @@ pub fn s_from_list_decimal(
 
             TermType::Map => item
                 .decode::<ExDecimal>()
-                .map(|ex_decimal| AnyValue::Decimal(ex_decimal.signed_coef(), ex_decimal.scale()))
-                .map_err(|error| {
+                .map_err(|err| {
                     ExplorerError::Other(format!(
-                        "cannot decode a valid decimal from term; check that `coef` fits into an `i128`. error: {error:?}"
+                        "cannot decode a valid decimal from term; check that `coef` fits into an `i128`. error: {err:?}"
                     ))
-                }),
+                })
+                .and_then(|ex_decimal| Ok(AnyValue::Decimal(ex_decimal.signed_coef()?, ex_decimal.scale()))),
+
             TermType::Atom => Ok(AnyValue::Null),
 
             TermType::Float => item
