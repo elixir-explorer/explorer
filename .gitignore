@@ -47,3 +47,6 @@ explorer-*.tar
 .nix-mix
 .nix-hex
 .direnv
+
+# Rust
+/target/
