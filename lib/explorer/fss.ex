@@ -70,9 +70,7 @@ defmodule Explorer.FSS do
 
       _ ->
         {:error,
-         ArgumentError.exception(
-           "expected s3://<bucket>/<key> URL, got: " <> URI.to_string(uri)
-         )}
+         ArgumentError.exception("expected s3://<bucket>/<key> URL, got: " <> URI.to_string(uri))}
     end
   end
 

@@ -202,7 +202,6 @@ defmodule Explorer.DataFrame do
   alias Explorer.Shared
   alias Explorer.Backend.LazySeries
 
-
   @enforce_keys [:data, :groups, :names, :dtypes]
   defstruct [:data, :groups, :names, :dtypes]
 

@@ -54,7 +54,6 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_strftime, [format_string])
   end
 
-
   # Introspection
 
   defp dtype(series), do: Shared.apply_series(series, :s_dtype)

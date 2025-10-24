@@ -38,7 +38,6 @@ defmodule Explorer.Backend.QueryFrame do
     )
   end
 
-
   @impl Backend.DataFrame
   def lazy, do: __MODULE__
 

@@ -8,7 +8,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series, as: Series
 
-
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1]
 
   defstruct resource: nil
@@ -424,7 +423,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def to_ipc(%DataFrame{data: df}, {:s3, _key, _config} = entry, {compression, _level}, _streaming) do
+  def to_ipc(
+        %DataFrame{data: df},
+        {:s3, _key, _config} = entry,
+        {compression, _level},
+        _streaming
+      ) do
     case Native.df_to_ipc_cloud(df, entry, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}

@@ -8,7 +8,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.PolarsBackend.DataFrame, as: Eager
 
-
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
 
   # This resource is going to be a "ResourceArc" on Rust side.
@@ -357,7 +356,14 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_csv(%DF{} = ldf, {:s3, _key, _config} = entry, header?, delimiter, quote_style, _streaming) do
+  def to_csv(
+        %DF{} = ldf,
+        {:s3, _key, _config} = entry,
+        header?,
+        delimiter,
+        quote_style,
+        _streaming
+      ) do
     eager_df = collect(ldf)
 
     Eager.to_csv(eager_df, entry, header?, delimiter, quote_style, false)
@@ -377,7 +383,12 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = ldf, {:s3, _key, _config} = entry, {compression, level}, _streaming = true) do
+  def to_parquet(
+        %DF{} = ldf,
+        {:s3, _key, _config} = entry,
+        {compression, level},
+        _streaming = true
+      ) do
     case Native.lf_to_parquet_cloud(
            ldf.data,
            entry,

@@ -89,7 +89,11 @@ defmodule Explorer.FSSTest do
       assert {:ok, {:s3, "my-file.png", parsed_config}} =
                FSS.parse_s3("s3:///my-file.png",
                  config:
-                   Map.put(config, :endpoint, "https://my-custom-endpoint.example.com/my-custom-bucket")
+                   Map.put(
+                     config,
+                     :endpoint,
+                     "https://my-custom-endpoint.example.com/my-custom-bucket"
+                   )
                )
 
       assert parsed_config.endpoint == "https://my-custom-endpoint.example.com/my-custom-bucket"
