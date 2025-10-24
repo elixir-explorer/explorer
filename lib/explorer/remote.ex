@@ -75,7 +75,7 @@ defmodule Explorer.Remote do
   end
 
   defp place(list, acc, fun) when is_list(list) do
-    Enum.map_reduce(list, acc, &place(&1, &2, fun))
+    place_list(list, acc, [], fun)
   end
 
   defp place(%Explorer.Backend.LazySeries{args: args} = lazy_series, acc, fun) do
@@ -113,6 +113,20 @@ defmodule Explorer.Remote do
 
   defp place(other, acc, _fun) do
     {other, acc}
+  end
+
+  defp place_list([head | tail], acc, rev, fun) do
+    {head, acc} = place(head, acc, fun)
+    place_list(tail, acc, [head | rev], fun)
+  end
+
+  defp place_list([], acc, rev, _fun) do
+    {Enum.reverse(rev), acc}
+  end
+
+  defp place_list(tail, acc, rev, fun) do
+    {tail, acc} = place(tail, acc, fun)
+    {:lists.reverse(rev, tail), acc}
   end
 
   defp place_impl(impl, struct, acc, fun) do
