@@ -249,13 +249,6 @@ defmodule Explorer.Backend.LazySeries do
   def operations, do: @operations
 
   @impl true
-  # When performing lazy operations, we should only have a single
-  # LazySeries with a resource, it is not possible to operate on
-  # different lazy series from different nodes, and
-  # Explorer.Shared.apply_series was written such that a LazySeries
-  # always wins. This means LazySeries can have references, but
-
-  @impl true
   def cast(%Series{} = s, dtype) do
     args = [lazy_series!(s), dtype]
     data = new(:cast, args, dtype, aggregations?(args))
