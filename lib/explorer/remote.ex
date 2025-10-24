@@ -222,7 +222,8 @@ defmodule Explorer.Remote do
 end
 
 if Code.ensure_loaded?(FLAME.Trackable) do
-  defimpl FLAME.Trackable, for: [Explorer.DataFrame, Explorer.Series, Explorer.Backend.LazySeries] do
+  defimpl FLAME.Trackable,
+    for: [Explorer.DataFrame, Explorer.Series, Explorer.Backend.LazySeries] do
     def track(data, acc, _node) do
       Explorer.Remote.place(data, acc)
     end

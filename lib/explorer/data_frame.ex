@@ -902,7 +902,7 @@ defmodule Explorer.DataFrame do
 
   defp normalise_entry(%_{} = entry, config) when config != nil do
     {:error,
-     ArgumentError.message(
+     ArgumentError.exception(
        ":config key is only supported when the argument is a string, got #{inspect(entry)} with config #{inspect(config)}"
      )}
   end
