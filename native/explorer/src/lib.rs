@@ -64,6 +64,7 @@ mod atoms {
         coef,
         exp,
         sign,
+        s3,
     }
 }
 

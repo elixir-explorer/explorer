@@ -5,12 +5,34 @@ defmodule Explorer.FSS do
   # Public APIs accept URIs like "s3://bucket/key", and this module
   # parses them into triplets {:backend, path, config} for internal use.
 
+  defmodule S3Config do
+    @moduledoc false
+    @derive {Inspect, only: [:bucket, :region, :endpoint]}
+    defstruct [
+      :access_key_id,
+      :secret_access_key,
+      :region,
+      :endpoint,
+      :bucket,
+      :token
+    ]
+
+    @type t :: %__MODULE__{
+            access_key_id: String.t(),
+            secret_access_key: String.t(),
+            region: String.t(),
+            endpoint: String.t(),
+            bucket: String.t() | nil,
+            token: String.t() | nil
+          }
+  end
+
   @doc """
   Parses an S3 URL in the format `s3://bucket/key` and returns a triplet.
 
   ## Options
 
-    * `:config` - A map with S3 configuration keys, or `nil` to read from env vars:
+    * `:config` - A map/keyword list with S3 configuration keys, or `nil` to read from env vars:
       - `AWS_ACCESS_KEY_ID`
       - `AWS_SECRET_ACCESS_KEY`
       - `AWS_REGION` or `AWS_DEFAULT_REGION`
@@ -18,7 +40,7 @@ defmodule Explorer.FSS do
 
   ## Returns
 
-  `{:ok, {:s3, key, config}}` where config is a map with:
+  `{:ok, {:s3, key, %S3Config{}}}` where config is a struct with:
     - `:access_key_id`
     - `:secret_access_key`
     - `:endpoint`
@@ -27,7 +49,7 @@ defmodule Explorer.FSS do
     - `:token` (optional)
   """
   @spec parse_s3(String.t(), Keyword.t()) ::
-          {:ok, {:s3, String.t(), map()}} | {:error, Exception.t()}
+          {:ok, {:s3, String.t(), S3Config.t()}} | {:error, Exception.t()}
   def parse_s3(url, opts \\ []) do
     opts = Keyword.validate!(opts, config: nil)
 
@@ -84,12 +106,14 @@ defmodule Explorer.FSS do
 
   defp normalize_s3_config!(nil), do: s3_config_from_env()
 
+  defp normalize_s3_config!(%S3Config{} = config), do: config
+
   defp normalize_s3_config!(config) when is_map(config) do
-    Map.merge(s3_config_from_env(), config)
+    struct!(s3_config_from_env(), config)
   end
 
   defp normalize_s3_config!(config) when is_list(config) do
-    Map.merge(s3_config_from_env(), Map.new(config))
+    struct!(s3_config_from_env(), config)
   end
 
   defp normalize_s3_config!(other) do
@@ -105,7 +129,7 @@ defmodule Explorer.FSS do
   end
 
   defp s3_config_from_env do
-    %{
+    %S3Config{
       access_key_id: System.get_env("AWS_ACCESS_KEY_ID"),
       secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY"),
       region: System.get_env("AWS_REGION", System.get_env("AWS_DEFAULT_REGION")),
