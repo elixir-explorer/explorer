@@ -847,7 +847,7 @@ defmodule Explorer.DataFrame.CSVTest do
 
   describe "cloud reads and writes" do
     setup do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566",
@@ -877,7 +877,7 @@ defmodule Explorer.DataFrame.CSVTest do
 
     @tag :cloud_integration
     test "writes a CSV file to endpoint ignoring bucket name", %{df: df} do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566/test-bucket",
@@ -885,14 +885,11 @@ defmodule Explorer.DataFrame.CSVTest do
         region: "us-east-1"
       }
 
-      entry = %FSS.S3.Entry{
-        key: "wine-yolo-#{System.monotonic_time()}.csv",
-        config: config
-      }
+      path = "s3://test-bucket/wine-yolo-#{System.monotonic_time()}.csv"
 
-      assert :ok = DF.to_csv(df, entry)
+      assert :ok = DF.to_csv(df, path, config: config)
 
-      saved_df = DF.from_csv!(entry)
+      saved_df = DF.from_csv!(path, config: config)
       assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
     end
   end

@@ -74,7 +74,7 @@ defmodule Explorer.DataFrame.ParquetTest do
   describe "from_parquet/2 - from S3" do
     @tag :cloud_integration
     test "reads a parquet file from S3" do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566",
@@ -137,13 +137,12 @@ defmodule Explorer.DataFrame.ParquetTest do
         Plug.Conn.resp(conn, 200, bytes)
       end)
 
-      # Build an `%FSS.HTTP.Entry{}` for `path` manually.
+      # Read parquet from HTTP URL with custom headers.
       url = bypass |> http_endpoint() |> Path.join(path)
       config = [headers: [{"authorization", authorization}]]
-      {:ok, %FSS.HTTP.Entry{} = entry} = FSS.HTTP.parse(url, config: config)
 
-      # Assert that we can read the parquet binary from that entry.
-      {:ok, df_actual} = DF.from_parquet(entry)
+      # Assert that we can read the parquet binary from that URL.
+      {:ok, df_actual} = DF.from_parquet(url, config: config)
       assert DF.to_columns(df_expected) == DF.to_columns(df_actual)
     end
 
@@ -331,7 +330,7 @@ defmodule Explorer.DataFrame.ParquetTest do
 
     @tag :cloud_integration
     test "writes a parquet file to S3", %{df: df} do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566",

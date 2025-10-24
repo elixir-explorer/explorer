@@ -202,9 +202,6 @@ defmodule Explorer.DataFrame do
   alias Explorer.Shared
   alias Explorer.Backend.LazySeries
 
-  alias FSS.HTTP
-  alias FSS.Local
-  alias FSS.S3
 
   @enforce_keys [:data, :groups, :names, :dtypes]
   defstruct [:data, :groups, :names, :dtypes, :remote]
@@ -900,33 +897,24 @@ defmodule Explorer.DataFrame do
     end
   end
 
-  defp normalise_entry(%_{} = entry, config) when config != nil do
-    {:error,
-     ArgumentError.exception(
-       ":config key is only supported when the argument is a string, got #{inspect(entry)} with config #{inspect(config)}"
-     )}
-  end
-
-  defp normalise_entry(%Local.Entry{} = entry, nil), do: {:ok, entry}
-  defp normalise_entry(%HTTP.Entry{} = entry, nil), do: {:ok, entry}
-  defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: {:ok, entry}
-
   defp normalise_entry("s3://" <> _rest = entry, config) do
-    S3.parse(entry, config: config)
+    Explorer.FSS.parse_s3(entry, config: config)
   end
 
-  defp normalise_entry("file://" <> path, _config), do: {:ok, Local.from_path(path)}
+  defp normalise_entry("file://" <> path, _config) do
+    Explorer.FSS.parse_local(path)
+  end
 
   defp normalise_entry("http://" <> _rest = url, config) do
-    HTTP.parse(url, config: config)
+    Explorer.FSS.parse_http(url, config: config)
   end
 
   defp normalise_entry("https://" <> _rest = url, config) do
-    HTTP.parse(url, config: config)
+    Explorer.FSS.parse_http(url, config: config)
   end
 
   defp normalise_entry(filepath, _config) when is_binary(filepath) do
-    {:ok, Local.from_path(filepath)}
+    Explorer.FSS.parse_local(filepath)
   end
 
   @doc """

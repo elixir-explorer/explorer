@@ -42,7 +42,6 @@ defmodule Explorer.MixProject do
   defp deps do
     [
       {:aws_signature, "~> 0.3"},
-      {:fss, "~> 0.1"},
       {:rustler_precompiled, "~> 0.7"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 4.1"},

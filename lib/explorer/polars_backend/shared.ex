@@ -271,11 +271,12 @@ defmodule Explorer.PolarsBackend.Shared do
   It saves in a directory called "elixir-explorer-datasets" inside
   the `System.tmp_dir()`, the file name contains a random component to avoid collisions.
   """
-  def build_path_for_entry(%FSS.S3.Entry{} = entry) do
-    bucket = entry.config.bucket || "default-explorer-bucket"
+  def build_path_for_entry({:s3, key, config}) do
+    bucket = Map.get(config, :bucket, "default-explorer-bucket")
+    endpoint = Map.fetch!(config, :endpoint)
 
     hash =
-      :crypto.hash(:sha256, entry.config.endpoint <> "/" <> bucket <> "/" <> entry.key)
+      :crypto.hash(:sha256, endpoint <> "/" <> bucket <> "/" <> key)
       |> Base.url_encode64(padding: false)
 
     rand = Base.url_encode64(:crypto.strong_rand_bytes(8), padding: false)
@@ -285,8 +286,8 @@ defmodule Explorer.PolarsBackend.Shared do
     build_tmp_path(id)
   end
 
-  def build_path_for_entry(%FSS.HTTP.Entry{} = entry) do
-    hash = :crypto.hash(:sha256, entry.url) |> Base.url_encode64(padding: false)
+  def build_path_for_entry({:http, url, _config}) do
+    hash = :crypto.hash(:sha256, url) |> Base.url_encode64(padding: false)
     rand = Base.url_encode64(:crypto.strong_rand_bytes(8), padding: false)
 
     id = "http-file-#{hash}-#{rand}"

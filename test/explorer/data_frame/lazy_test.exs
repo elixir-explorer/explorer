@@ -216,7 +216,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   describe "from_parquet/2 - from S3" do
     setup do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566",
@@ -296,7 +296,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_csv/3 - cloud with streaming enabled - ignores streaming option", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -342,7 +342,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_ipc/3 - cloud with streaming enabled", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -362,7 +362,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_ipc/2 - cloud with streaming disabled", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -408,7 +408,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_parquet/2 - cloud with streaming enabled", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -428,7 +428,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_parquet/2 - cloud with streaming disabled", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -582,7 +582,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   describe "readers that are not cloud supported" do
     setup do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566",

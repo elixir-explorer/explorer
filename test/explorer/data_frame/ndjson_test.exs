@@ -264,7 +264,7 @@ defmodule Explorer.DataFrame.NDJSONTest do
 
   describe "cloud reads and writes" do
     setup do
-      s3_config = %FSS.S3.Config{
+      s3_config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566",
