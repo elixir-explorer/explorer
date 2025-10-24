@@ -214,7 +214,7 @@ defmodule Explorer.Series do
 
   @doc false
   @enforce_keys [:data, :dtype]
-  defstruct [:data, :dtype, :name, :remote]
+  defstruct [:data, :dtype, :name]
 
   @behaviour Access
   @compile {:no_warn_undefined, Nx}
@@ -338,7 +338,6 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
-    * `:node` - The Erlang node to allocate the series on.
     * `:dtype` - Create a series of a given `:dtype`. By default this is `nil`, which means
       that Explorer will infer the type from the values in the list.
       See the module docs for the list of valid dtypes and aliases.
@@ -523,7 +522,7 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_list(list :: list(), opts :: Keyword.t()) :: Series.t()
   def from_list(list, opts \\ []) do
-    opts = Keyword.validate!(opts, [:dtype, :backend, :node])
+    opts = Keyword.validate!(opts, [:dtype, :backend])
     backend = backend_from_options!(opts)
 
     normalised_dtype = if opts[:dtype], do: Shared.normalise_dtype!(opts[:dtype])
@@ -548,7 +547,6 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
-    * `:node` - The Erlang node to allocate the series on.
 
   ## Examples
 
@@ -619,7 +617,7 @@ defmodule Explorer.Series do
         ) ::
           Series.t()
   def from_binary(binary, dtype, opts \\ []) when K.and(is_binary(binary), is_list(opts)) do
-    opts = Keyword.validate!(opts, [:backend, :node])
+    opts = Keyword.validate!(opts, [:backend])
     dtype = Shared.normalise_dtype!(dtype)
 
     {_type, alignment} = dtype |> Shared.dtype_to_iotype!()
@@ -643,7 +641,6 @@ defmodule Explorer.Series do
   ## Options
 
     * `:backend` - The backend to allocate the series on.
-    * `:node` - The Erlang node to allocate the series on.
     * `:dtype` - The dtype of the series that must match the underlying tensor type.
 
       The series can have a different dtype if the tensor is compatible with it.
@@ -719,7 +716,7 @@ defmodule Explorer.Series do
   @doc type: :conversion
   @spec from_tensor(tensor :: Nx.Tensor.t(), opts :: Keyword.t()) :: Series.t()
   def from_tensor(tensor, opts \\ []) when is_struct(tensor, Nx.Tensor) do
-    opts = Keyword.validate!(opts, [:dtype, :backend, :node])
+    opts = Keyword.validate!(opts, [:dtype, :backend])
     type = Nx.type(tensor)
     {dtype, opts} = Keyword.pop_lazy(opts, :dtype, fn -> Shared.iotype_to_dtype!(type) end)
 
@@ -802,31 +799,22 @@ defmodule Explorer.Series do
   end
 
   @doc """
-  Collects a series to the current node.
-
-  If the series is already in the current node, it works as a no-op.
+  Returns the series as-is. This is a no-op function.
 
   ## Examples
 
-      series = Explorer.Series.from_list([1, 2, 3], node: :some@node)
-      Explorer.Series.collect(series)
+      iex> series = Explorer.Series.from_list([1, 2, 3])
+      iex> Explorer.Series.collect(series)
+      #Explorer.Series<
+        Polars[3]
+        s64 [1, 2, 3]
+      >
 
   """
   @doc type: :conversion
   @spec collect(series :: Series.t()) :: Series.t()
-  def collect(%Series{data: %impl{}} = series) do
-    case impl.owner_reference(series) do
-      ref when K.and(is_reference(ref), node(ref) != node()) ->
-        with {:ok, exported} <- :erpc.call(node(ref), impl, :owner_export, [series]),
-             {:ok, imported} <- impl.owner_import(exported) do
-          imported
-        else
-          {:error, exception} -> raise exception
-        end
-
-      _ ->
-        series
-    end
+  def collect(%Series{} = series) do
+    series
   end
 
   @doc """
@@ -6963,25 +6951,12 @@ defmodule Explorer.Series do
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(%Explorer.Series{data: %struct{}} = series, opts) do
-      remote_ref =
-        case series.remote do
-          {_local_gc, _remote_pid, remote_ref} -> remote_ref
-          _ -> struct.owner_reference(series)
-        end
-
-      remote =
-        if Kernel.and(is_reference(remote_ref), node(remote_ref) != node()) do
-          concat(line(), Atom.to_string(node(remote_ref)))
-        else
-          empty()
-        end
-
+    def inspect(%Explorer.Series{} = series, opts) do
       force_unfit(
         concat([
           color("#Explorer.Series<", :map, opts),
           nest(
-            concat([remote, line(), apply_series(series, :inspect, [opts])]),
+            concat([line(), apply_series(series, :inspect, [opts])]),
             2
           ),
           line(),

@@ -204,7 +204,7 @@ defmodule Explorer.DataFrame do
 
 
   @enforce_keys [:data, :groups, :names, :dtypes]
-  defstruct [:data, :groups, :names, :dtypes, :remote]
+  defstruct [:data, :groups, :names, :dtypes]
 
   @typedoc """
   Represents a column name as atom or string.
@@ -594,7 +594,6 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
 
     * `:encoding` - Encoding to use when reading the file. For now, the only possible values are `utf8` and `utf8-lossy`.
       The utf8-lossy option means that invalid utf8 values are replaced with � characters. (default: `"utf8"`)
@@ -607,7 +606,7 @@ defmodule Explorer.DataFrame do
   @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_csv(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -791,7 +790,7 @@ defmodule Explorer.DataFrame do
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_csv(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -867,13 +866,12 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
   """
   @doc type: :io
   @spec from_parquet(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_parquet(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -1065,7 +1063,7 @@ defmodule Explorer.DataFrame do
   @spec load_parquet(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_parquet(contents, opts \\ []) do
-    opts = Keyword.validate!(opts, [:backend, :lazy, :node])
+    opts = Keyword.validate!(opts, [:backend, :lazy])
     backend = backend_from_options!(opts)
     Shared.apply_init(backend, :load_parquet, [contents], opts)
   end
@@ -1100,13 +1098,12 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -1336,7 +1333,7 @@ defmodule Explorer.DataFrame do
   @spec load_ipc(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -1381,7 +1378,6 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
 
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
@@ -1391,7 +1387,7 @@ defmodule Explorer.DataFrame do
   @spec from_ipc_stream(filename :: String.t() | fs_entry()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc_stream(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts = Keyword.validate!(opts, columns: nil, config: nil)
     backend = backend_from_options!(backend_opts)
@@ -1525,7 +1521,7 @@ defmodule Explorer.DataFrame do
   @spec load_ipc_stream(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc_stream(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
     opts = Keyword.validate!(opts, columns: nil)
 
     backend = backend_from_options!(backend_opts)
@@ -1566,7 +1562,6 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
 
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
@@ -1576,7 +1571,7 @@ defmodule Explorer.DataFrame do
   @spec from_ndjson(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ndjson(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -1695,7 +1690,7 @@ defmodule Explorer.DataFrame do
   @spec load_ndjson(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ndjson(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -1767,47 +1762,26 @@ defmodule Explorer.DataFrame do
   def to_lazy(df), do: Shared.apply_dataframe(df, :lazy)
 
   @doc """
-  Computes and collects a data frame to the current node.
+  Collects a lazy data frame into an eager one, executing the query.
 
-  If the data frame is already in the current node, it is computed
-  but no transfer happens.
+  It is the opposite of `lazy/1`. If the data frame is already eager,
+  it returns the data frame as-is.
+
+  Collecting a grouped dataframe should return a grouped dataframe.
 
   ## Examples
 
-      series = Explorer.Series.from_list([1, 2, 3], node: :some@node)
-      Explorer.Series.collect(series)
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.collect(df)
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        a s64 [1, 2, 3]
+      >
 
   """
   @doc type: :conversion
   @spec collect(df :: DataFrame.t()) :: DataFrame.t()
-  def collect(df) do
-    %DataFrame{data: %impl{}} = df = compute(df)
-
-    case impl.owner_reference(df) do
-      ref when is_reference(ref) and node(ref) != node() ->
-        with {:ok, exported} <- :erpc.call(node(ref), impl, :owner_export, [df]),
-             {:ok, imported} <- impl.owner_import(exported) do
-          imported
-        else
-          {:error, exception} -> raise exception
-        end
-
-      _ ->
-        df
-    end
-  end
-
-  @doc """
-  Computes the lazy data frame into an eager one, executing the query.
-
-  It is the opposite of `lazy/1`. If it is not a lazy data frame,
-  this is a noop.
-
-  Collecting a grouped dataframe should return a grouped dataframe.
-  """
-  @doc type: :conversion
-  @spec compute(df :: DataFrame.t()) :: DataFrame.t()
-  def compute(df), do: Shared.apply_dataframe(df, :compute)
+  def collect(df), do: Shared.apply_dataframe(df, :collect)
 
   @doc """
   Creates a new dataframe.
@@ -6956,7 +6930,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp out_df(df, names, dtypes) do
-    %{df | names: names, dtypes: dtypes, remote: nil}
+    %{df | names: names, dtypes: dtypes}
   end
 
   defp pairwise_df(df, opts) do
@@ -6975,24 +6949,11 @@ defmodule Explorer.DataFrame do
     import Inspect.Algebra
 
     def inspect(df, opts) do
-      remote_ref =
-        case df.remote do
-          {_local_gc, _remote_pid, remote_ref} -> remote_ref
-          _ -> df.data.__struct__.owner_reference(df)
-        end
-
-      remote =
-        if is_reference(remote_ref) and node(remote_ref) != node() do
-          concat(line(), Atom.to_string(node(remote_ref)))
-        else
-          empty()
-        end
-
       force_unfit(
         concat([
           color("#Explorer.DataFrame<", :map, opts),
           nest(
-            concat([remote, line(), Shared.apply_dataframe(df, :inspect, [opts])]),
+            concat([line(), Shared.apply_dataframe(df, :inspect, [opts])]),
             2
           ),
           line(),

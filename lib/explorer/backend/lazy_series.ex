@@ -254,9 +254,6 @@ defmodule Explorer.Backend.LazySeries do
   # different lazy series from different nodes, and
   # Explorer.Shared.apply_series was written such that a LazySeries
   # always wins. This means LazySeries can have references, but
-  # operations will always run on the node with the LazySeries,
-  # so they never have to be imported/exported.
-  def owner_reference(s), do: s.data.resource
 
   @impl true
   def cast(%Series{} = s, dtype) do
@@ -1276,8 +1273,6 @@ defmodule Explorer.Backend.LazySeries do
     frequencies: 1,
     qcut: 8,
     mask: 2,
-    owner_import: 1,
-    owner_export: 1,
     to_iovec: 1,
     to_list: 1,
     index_of: 2

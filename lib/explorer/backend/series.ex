@@ -35,12 +35,6 @@ defmodule Explorer.Backend.Series do
   @callback strptime(s, String.t()) :: s
   @callback strftime(s, String.t()) :: s
 
-  # Ownership
-
-  @callback owner_reference(s) :: reference() | nil
-  @callback owner_import(term()) :: io_result(s)
-  @callback owner_export(s) :: io_result(term())
-
   # Introspection
 
   @callback size(s) :: non_neg_integer() | lazy_s()

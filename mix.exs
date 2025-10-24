@@ -31,7 +31,6 @@ defmodule Explorer.MixProject do
   def application do
     [
       extra_applications: [:logger, :inets, :ssl],
-      mod: {Explorer.Application, []},
       env: [default_backend: Explorer.PolarsBackend]
     ]
   end
@@ -48,7 +47,6 @@ defmodule Explorer.MixProject do
       {:decimal, "~> 2.1"},
 
       ## Optional
-      {:flame, "~> 0.3", optional: true},
       {:adbc, "~> 0.1", optional: true},
       {:nx, "~> 0.4", optional: true},
       {:rustler, "~> 0.36.0", optional: not (@dev? or @force_build?)},

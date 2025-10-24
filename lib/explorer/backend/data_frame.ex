@@ -166,17 +166,11 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback lazy() :: module()
   @callback lazy(df) :: df
-  @callback compute(df) :: df
+  @callback collect(df) :: df
   @callback from_tabular(Table.Reader.t(), io_dtypes) :: df
   @callback from_series([{binary(), Series.t()}]) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
   @callback to_rows_stream(df, atom_keys? :: boolean(), chunk_size :: integer()) :: Enumerable.t()
-
-  # Ownership
-
-  @callback owner_reference(df) :: reference() | nil
-  @callback owner_import(term()) :: io_result(df)
-  @callback owner_export(df) :: io_result(term())
 
   # Introspection
 
