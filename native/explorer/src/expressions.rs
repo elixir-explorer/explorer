@@ -1044,10 +1044,24 @@ pub fn expr_clip_float(expr: ExExpr, min: f64, max: f64) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_day_of_week(expr: ExExpr) -> ExExpr {
+pub fn expr_year(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().weekday())
+    ExExpr::new(expr.dt().year())
+}
+
+#[rustler::nif]
+pub fn expr_month(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().month())
+}
+
+#[rustler::nif]
+pub fn expr_day_of_month(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().day())
 }
 
 #[rustler::nif]
@@ -1065,24 +1079,10 @@ pub fn expr_week_of_year(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_month(expr: ExExpr) -> ExExpr {
+pub fn expr_day_of_week(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().month())
-}
-
-#[rustler::nif]
-pub fn expr_year(expr: ExExpr) -> ExExpr {
-    let expr = expr.clone_inner();
-
-    ExExpr::new(expr.dt().year())
-}
-
-#[rustler::nif]
-pub fn expr_day_of_month(expr: ExExpr) -> ExExpr {
-    let expr = expr.clone_inner();
-
-    ExExpr::new(expr.dt().day())
+    ExExpr::new(expr.dt().weekday())
 }
 
 #[rustler::nif]

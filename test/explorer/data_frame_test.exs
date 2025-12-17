@@ -2014,21 +2014,21 @@ defmodule Explorer.DataFrameTest do
 
       df1 =
         DF.mutate(df,
-          c: day_of_week(a),
-          d: day_of_week(b),
+          c: year(a),
+          d: year(b),
           e: month(a),
           f: month(b),
-          g: year(a),
-          h: year(b),
-          p: day_of_month(a),
-          q: day_of_month(b),
-          i: hour(b),
-          j: minute(b),
-          k: second(b),
-          l: day_of_year(a),
-          m: day_of_year(b),
-          n: week_of_year(a),
-          o: week_of_year(b)
+          g: day_of_month(a),
+          h: day_of_month(b),
+          i: day_of_year(a),
+          j: day_of_year(b),
+          k: week_of_year(a),
+          l: week_of_year(b),
+          m: day_of_week(a),
+          n: day_of_week(b),
+          o: hour(b),
+          p: minute(b),
+          q: second(b)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -2039,41 +2039,41 @@ defmodule Explorer.DataFrameTest do
                  ~N[2021-03-20 03:03:03.003030],
                  nil
                ],
-               c: [7, 3, 6, nil],
-               d: [7, 3, 6, nil],
+               c: [2023, 2022, 2021, nil],
+               d: [2023, 2022, 2021, nil],
                e: [1, 2, 3, nil],
                f: [1, 2, 3, nil],
-               g: [2023, 2022, 2021, nil],
-               h: [2023, 2022, 2021, nil],
-               p: [15, 16, 20, nil],
-               q: [15, 16, 20, nil],
-               i: [1, 2, 3, nil],
-               j: [1, 2, 3, nil],
-               k: [1, 2, 3, nil],
-               l: [15, 47, 79, nil],
-               m: [15, 47, 79, nil],
-               n: [2, 7, 11, nil],
-               o: [2, 7, 11, nil]
+               g: [15, 16, 20, nil],
+               h: [15, 16, 20, nil],
+               i: [15, 47, 79, nil],
+               j: [15, 47, 79, nil],
+               k: [2, 7, 11, nil],
+               l: [2, 7, 11, nil],
+               m: [7, 3, 6, nil],
+               n: [7, 3, 6, nil],
+               o: [1, 2, 3, nil],
+               p: [1, 2, 3, nil],
+               q: [1, 2, 3, nil]
              }
 
       assert df1.dtypes == %{
                "a" => :date,
                "b" => {:naive_datetime, :microsecond},
-               "c" => {:s, 8},
-               "d" => {:s, 8},
+               "c" => {:s, 32},
+               "d" => {:s, 32},
                "e" => {:s, 8},
                "f" => {:s, 8},
-               "g" => {:s, 32},
-               "h" => {:s, 32},
-               "p" => {:s, 8},
-               "q" => {:s, 8},
-               "i" => {:s, 8},
-               "j" => {:s, 8},
+               "g" => {:s, 8},
+               "h" => {:s, 8},
+               "i" => {:s, 16},
+               "j" => {:s, 16},
                "k" => {:s, 8},
-               "l" => {:s, 16},
-               "m" => {:s, 16},
+               "l" => {:s, 8},
+               "m" => {:s, 8},
                "n" => {:s, 8},
-               "o" => {:s, 8}
+               "o" => {:s, 8},
+               "p" => {:s, 8},
+               "q" => {:s, 8}
              }
     end
 

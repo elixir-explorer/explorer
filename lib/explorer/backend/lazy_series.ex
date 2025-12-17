@@ -151,12 +151,12 @@ defmodule Explorer.Backend.LazySeries do
     floor: 1,
     ceil: 1,
     # Date functions
-    day_of_week: 1,
+    year: 1,
+    month: 1,
+    day_of_month: 1,
     day_of_year: 1,
     week_of_year: 1,
-    month: 1,
-    year: 1,
-    day_of_month: 1,
+    day_of_week: 1,
     hour: 1,
     minute: 1,
     second: 1,
@@ -686,8 +686,22 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def day_of_week(%Series{} = s) do
-    data = new(:day_of_week, [lazy_series!(s)], {:s, 8})
+  def year(%Series{} = s) do
+    data = new(:year, [lazy_series!(s)], {:s, 32})
+
+    Backend.Series.new(data, {:s, 32})
+  end
+
+  @impl true
+  def month(%Series{} = s) do
+    data = new(:month, [lazy_series!(s)], {:s, 8})
+
+    Backend.Series.new(data, {:s, 8})
+  end
+
+  @impl true
+  def day_of_month(%Series{} = s) do
+    data = new(:day_of_month, [lazy_series!(s)], {:s, 8})
 
     Backend.Series.new(data, {:s, 8})
   end
@@ -707,22 +721,8 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def month(%Series{} = s) do
-    data = new(:month, [lazy_series!(s)], {:s, 8})
-
-    Backend.Series.new(data, {:s, 8})
-  end
-
-  @impl true
-  def year(%Series{} = s) do
-    data = new(:year, [lazy_series!(s)], {:s, 32})
-
-    Backend.Series.new(data, {:s, 32})
-  end
-
-  @impl true
-  def day_of_month(%Series{} = s) do
-    data = new(:day_of_month, [lazy_series!(s)], {:s, 8})
+  def day_of_week(%Series{} = s) do
+    data = new(:day_of_week, [lazy_series!(s)], {:s, 8})
 
     Backend.Series.new(data, {:s, 8})
   end

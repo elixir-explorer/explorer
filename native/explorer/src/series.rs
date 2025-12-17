@@ -1542,8 +1542,22 @@ pub fn s_abs(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_day_of_week(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.weekday()?.into_series();
+pub fn s_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.year()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.month()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_day_of_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.day()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
@@ -1563,22 +1577,8 @@ pub fn s_week_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.month()?.into_series();
-
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.year()?.into_series();
-
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_day_of_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.day()?.into_series();
+pub fn s_day_of_week(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.weekday()?.into_series();
 
     Ok(ExSeries::new(s1))
 }

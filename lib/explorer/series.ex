@@ -6404,35 +6404,6 @@ defmodule Explorer.Series do
   # Date / DateTime
 
   @doc """
-  Returns the month number starting from 1. The return value ranges from 1 to 12.
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil])
-      iex> Explorer.Series.month(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [1, 2, 3, nil]
-      >
-
-  It can also be called on a datetime series.
-
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-02-16 23:59:59.999999], ~N[2023-03-20 12:00:00], nil])
-      iex> Explorer.Series.month(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [1, 2, 3, nil]
-      >
-  """
-  @doc type: :datetime_wise
-  @spec month(Series.t()) :: Series.t()
-  def month(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series(series, :month)
-
-  def month(%Series{dtype: dtype}),
-    do: super_dtype_error("month/1", dtype, [:date, :datetime, :naive_datetime])
-
-  @doc """
   Returns the year number in the calendar date.
 
   ## Examples
@@ -6462,6 +6433,35 @@ defmodule Explorer.Series do
     do: super_dtype_error("year/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
+  Returns the month number starting from 1. The return value ranges from 1 to 12.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil])
+      iex> Explorer.Series.month(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [1, 2, 3, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-02-16 23:59:59.999999], ~N[2023-03-20 12:00:00], nil])
+      iex> Explorer.Series.month(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [1, 2, 3, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec month(Series.t()) :: Series.t()
+  def month(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series(series, :month)
+
+  def month(%Series{dtype: dtype}),
+    do: super_dtype_error("month/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
   Returns the day of the month as a number starting from 1. The return value ranges from 1 to 31.
 
   ## Examples
@@ -6489,96 +6489,6 @@ defmodule Explorer.Series do
 
   def day_of_month(%Series{dtype: dtype}),
     do: super_dtype_error("day_of_month/1", dtype, [:date, :datetime, :naive_datetime])
-
-  @doc """
-  Returns the hour number from 0 to 23.
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
-      iex> Explorer.Series.hour(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [0, 23, 12, nil]
-      >
-  """
-  @doc type: :datetime_wise
-  @spec hour(Series.t()) :: Series.t()
-  def hour(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
-    do: apply_series(series, :hour)
-
-  def hour(%Series{dtype: dtype}),
-    do: super_dtype_error("hour/1", dtype, [:time, :datetime, :naive_datetime])
-
-  @doc """
-  Returns the minute number from 0 to 59.
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
-      iex> Explorer.Series.minute(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [0, 59, 0, nil]
-      >
-  """
-  @doc type: :datetime_wise
-  @spec minute(Series.t()) :: Series.t()
-  def minute(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
-    do: apply_series(series, :minute)
-
-  def minute(%Series{dtype: dtype}),
-    do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
-
-  @doc """
-  Returns the second number from 0 to 59.
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
-      iex> Explorer.Series.second(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [0, 59, 0, nil]
-      >
-  """
-  @doc type: :datetime_wise
-  @spec second(Series.t()) :: Series.t()
-  def second(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
-    do: apply_series(series, :second)
-
-  def second(%Series{dtype: dtype}),
-    do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
-
-  @doc """
-  Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-01-16], ~D[2023-01-20], nil])
-      iex> Explorer.Series.day_of_week(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [7, 1, 5, nil]
-      >
-
-  It can also be called on a datetime series.
-
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-01-16 23:59:59.999999], ~N[2023-01-20 12:00:00], nil])
-      iex> Explorer.Series.day_of_week(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [7, 1, 5, nil]
-      >
-  """
-
-  @doc type: :datetime_wise
-  @spec day_of_week(Series.t()) :: Series.t()
-  def day_of_week(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series(series, :day_of_week)
-
-  def day_of_week(%Series{dtype: dtype}),
-    do: super_dtype_error("day_of_week/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
   Returns the day-of-year number starting from 1.
@@ -6648,6 +6558,96 @@ defmodule Explorer.Series do
 
   def week_of_year(%Series{dtype: dtype}),
     do: super_dtype_error("week_of_year/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
+  Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-01-16], ~D[2023-01-20], nil])
+      iex> Explorer.Series.day_of_week(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [7, 1, 5, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-01-16 23:59:59.999999], ~N[2023-01-20 12:00:00], nil])
+      iex> Explorer.Series.day_of_week(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [7, 1, 5, nil]
+      >
+  """
+
+  @doc type: :datetime_wise
+  @spec day_of_week(Series.t()) :: Series.t()
+  def day_of_week(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series(series, :day_of_week)
+
+  def day_of_week(%Series{dtype: dtype}),
+    do: super_dtype_error("day_of_week/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
+  Returns the hour number from 0 to 23.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.hour(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [0, 23, 12, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec hour(Series.t()) :: Series.t()
+  def hour(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
+    do: apply_series(series, :hour)
+
+  def hour(%Series{dtype: dtype}),
+    do: super_dtype_error("hour/1", dtype, [:time, :datetime, :naive_datetime])
+
+  @doc """
+  Returns the minute number from 0 to 59.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.minute(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [0, 59, 0, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec minute(Series.t()) :: Series.t()
+  def minute(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
+    do: apply_series(series, :minute)
+
+  def minute(%Series{dtype: dtype}),
+    do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
+
+  @doc """
+  Returns the second number from 0 to 59.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.second(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [0, 59, 0, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec second(Series.t()) :: Series.t()
+  def second(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
+    do: apply_series(series, :second)
+
+  def second(%Series{dtype: dtype}),
+    do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
 
   @deprecated "Use cast(:date) instead"
   @doc false
