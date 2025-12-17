@@ -6,7 +6,13 @@ defmodule Explorer.Series.DateTimeTest do
 
   describe "ns" do
     setup do
-      # This is a dataframe with a single column called datetime with 3 values [~N[2023-04-20 16:14:35.474487],~N[2023-04-19 16:14:35.474487], ~N[2023-04-21 16:14:35.474487]] with datetime[ns] precession
+      # This is a dataframe with a single column called datetime with 4 values with datetime[ns] precision
+      # [
+      #   ~N[2023-04-20 16:14:35.474487],
+      #   ~N[2023-04-19 16:14:35.474487],
+      #   ~N[2023-04-21 16:14:35.474487],
+      #   nil
+      # ]
       df = Explorer.DataFrame.from_parquet!("test/support/datetime_with_ns_res.parquet")
       series = Explorer.DataFrame.to_series(df)
       [series: series["datetime"]]
@@ -25,39 +31,39 @@ defmodule Explorer.Series.DateTimeTest do
     end
 
     test "year", %{series: series} do
-      assert Series.year(series) |> Series.to_list() == [2023, 2023, 2023]
+      assert Series.year(series) |> Series.to_list() == [2023, 2023, 2023, nil]
     end
 
     test "month", %{series: series} do
-      assert Series.month(series) |> Series.to_list() == [4, 4, 4]
+      assert Series.month(series) |> Series.to_list() == [4, 4, 4, nil]
     end
 
     test "day_of_month", %{series: series} do
-      assert Series.day_of_month(series) |> Series.to_list() == [20, 19, 21]
+      assert Series.day_of_month(series) |> Series.to_list() == [20, 19, 21, nil]
     end
 
     test "day_of_year", %{series: series} do
-      assert Series.day_of_year(series) |> Series.to_list() == [110, 109, 111]
+      assert Series.day_of_year(series) |> Series.to_list() == [110, 109, 111, nil]
     end
 
     test "week_of_year", %{series: series} do
-      assert Series.week_of_year(series) |> Series.to_list() == [16, 16, 16]
+      assert Series.week_of_year(series) |> Series.to_list() == [16, 16, 16, nil]
     end
 
     test "day_of_week", %{series: series} do
-      assert Series.day_of_week(series) |> Series.to_list() == [4, 3, 5]
+      assert Series.day_of_week(series) |> Series.to_list() == [4, 3, 5, nil]
     end
 
     test "hour", %{series: series} do
-      assert Series.hour(series) |> Series.to_list() == [16, 16, 16]
+      assert Series.hour(series) |> Series.to_list() == [16, 16, 16, nil]
     end
 
     test "minute", %{series: series} do
-      assert Series.minute(series) |> Series.to_list() == [14, 14, 14]
+      assert Series.minute(series) |> Series.to_list() == [14, 14, 14, nil]
     end
 
     test "second", %{series: series} do
-      assert Series.second(series) |> Series.to_list() == [35, 35, 35]
+      assert Series.second(series) |> Series.to_list() == [35, 35, 35, nil]
     end
   end
 
