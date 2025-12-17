@@ -326,7 +326,6 @@ defmodule Explorer.Backend.Series do
   @callback day_of_month(s) :: s
   @callback is_leap_year(s) :: s
   @callback quarter_of_year(s) :: s
-  @callback days_in_month(s) :: s
   @callback day_of_year(s) :: s
   @callback iso_year(s) :: s
   @callback week_of_year(s) :: s

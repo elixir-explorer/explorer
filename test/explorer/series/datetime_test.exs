@@ -50,10 +50,6 @@ defmodule Explorer.Series.DateTimeTest do
       assert Series.quarter_of_year(series) |> Series.to_list() == [2, 2, 2, nil]
     end
 
-    test "days_in_month", %{series: series} do
-      assert Series.year(series) |> Series.to_list() == [30, 30, 30, nil]
-    end
-
     test "day_of_year", %{series: series} do
       assert Series.day_of_year(series) |> Series.to_list() == [110, 109, 111, nil]
     end

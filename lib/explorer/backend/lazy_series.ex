@@ -726,13 +726,6 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
-  def days_in_month(%Series{} = s) do
-    data = new(:days_in_month, [lazy_series!(s)], {:s, 8})
-
-    Backend.Series.new(data, {:s, 8})
-  end
-
-  @impl true
   def day_of_year(%Series{} = s) do
     data = new(:day_of_year, [lazy_series!(s)], {:s, 16})
 

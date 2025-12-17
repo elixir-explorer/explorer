@@ -1079,13 +1079,6 @@ pub fn expr_quarter_of_year(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_days_in_month(expr: ExExpr) -> ExExpr {
-    let expr = expr.clone_inner();
-
-    ExExpr::new(expr.dt().days_in_month())
-}
-
-#[rustler::nif]
 pub fn expr_day_of_year(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 

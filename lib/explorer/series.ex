@@ -6551,35 +6551,6 @@ defmodule Explorer.Series do
     do: super_dtype_error("quarter_of_year/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
-  Returns the number of days in the current calendar month. Returns a number between 28 and 31.
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil])
-      iex> Explorer.Series.days_in_month(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [30, 30, 30, nil]
-      >
-
-  It can also be called on a datetime series.
-
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
-      iex> Explorer.Series.days_in_month(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [30, 30, 30, nil]
-      >
-  """
-  @doc type: :datetime_wise
-  @spec days_in_month(Series.t()) :: Series.t()
-  def days_in_month(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series(series, :days_in_month)
-
-  def days_in_month(%Series{dtype: dtype}),
-    do: super_dtype_error("days_in_month/1", dtype, [:date, :datetime, :naive_datetime])
-
-  @doc """
   Returns the day-of-year number starting from 1.
 
   The return value ranges from 1 to 366 (the last day of year differs by years).

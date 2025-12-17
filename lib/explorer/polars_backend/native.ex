@@ -500,7 +500,6 @@ defmodule Explorer.PolarsBackend.Native do
   def s_day_of_month(_s), do: err()
   def s_is_leap_year(_s), do: err()
   def s_quarter_of_year(_s), do: err()
-  def s_days_in_month(_s), do: err()
   def s_day_of_year(_s), do: err()
   def s_iso_year(_s), do: err()
   def s_week_of_year(_s), do: err()

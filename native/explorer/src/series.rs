@@ -1577,13 +1577,6 @@ pub fn s_quarter_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_days_in_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.days_in_month()?.into_series();
-
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_day_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.ordinal_day()?.into_series();
 
