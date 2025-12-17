@@ -6736,7 +6736,7 @@ defmodule Explorer.Series do
     do: apply_series(series, :second)
 
   def second(%Series{dtype: dtype}),
-    do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
+    do: super_dtype_error("second/1", dtype, [:time, :datetime, :naive_datetime])
 
   @doc """
   Returns the nanosecond number from 0 to 999999999.
