@@ -6,7 +6,7 @@ defmodule Explorer.Series.DateTimeTest do
 
   describe "ns" do
     setup do
-      # This is a dataframe with a single column called datetime with 3 values [~N[2023-04-19 16:14:35.474487],~N[2023-04-20 16:14:35.474487], ~N[2023-04-21 16:14:35.474487]] with datetime[ns] precession
+      # This is a dataframe with a single column called datetime with 3 values [~N[2023-04-20 16:14:35.474487],~N[2023-04-19 16:14:35.474487], ~N[2023-04-21 16:14:35.474487]] with datetime[ns] precession
       df = Explorer.DataFrame.from_parquet!("test/support/datetime_with_ns_res.parquet")
       series = Explorer.DataFrame.to_series(df)
       [series: series["datetime"]]
@@ -34,6 +34,10 @@ defmodule Explorer.Series.DateTimeTest do
 
     test "year", %{series: series} do
       assert Series.year(series) |> Series.to_list() == [2023, 2023, 2023]
+    end
+
+    test "day_of_month", %{series: series} do
+      assert Series.day_of_month(series) |> Series.to_list() == [20, 19, 21]
     end
 
     test "hour", %{series: series} do

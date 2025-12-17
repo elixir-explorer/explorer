@@ -156,6 +156,7 @@ defmodule Explorer.Backend.LazySeries do
     week_of_year: 1,
     month: 1,
     year: 1,
+    day_of_month: 1,
     hour: 1,
     minute: 1,
     second: 1,
@@ -717,6 +718,13 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:year, [lazy_series!(s)], {:s, 32})
 
     Backend.Series.new(data, {:s, 32})
+  end
+
+  @impl true
+  def day_of_month(%Series{} = s) do
+    data = new(:day_of_month, [lazy_series!(s)], {:s, 8})
+
+    Backend.Series.new(data, {:s, 8})
   end
 
   @impl true

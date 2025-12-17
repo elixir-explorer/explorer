@@ -30,6 +30,7 @@ defmodule Explorer.PolarsBackend.Expression do
     week_of_year: 1,
     month: 1,
     year: 1,
+    day_of_month: 1,
     hour: 1,
     minute: 1,
     second: 1,

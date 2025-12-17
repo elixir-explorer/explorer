@@ -775,6 +775,10 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_year)
 
   @impl true
+  def day_of_month(series),
+    do: Shared.apply_series(series, :s_day_of_month)
+
+  @impl true
   def hour(series),
     do: Shared.apply_series(series, :s_hour)
 

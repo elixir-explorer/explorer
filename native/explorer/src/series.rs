@@ -1577,6 +1577,13 @@ pub fn s_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_day_of_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.day()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_hour(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.hour()?.into_series();
 

@@ -500,6 +500,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_week_of_year(_s), do: err()
   def s_month(_s), do: err()
   def s_year(_s), do: err()
+  def s_day_of_month(_s), do: err()
   def s_hour(_s), do: err()
   def s_minute(_s), do: err()
   def s_second(_s), do: err()

@@ -6462,6 +6462,35 @@ defmodule Explorer.Series do
     do: super_dtype_error("year/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
+  Returns the day of the month as a number starting from 1. The return value ranges from 1 to 31.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil])
+      iex> Explorer.Series.day_of_month(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [15, 16, 20, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-02-16 23:59:59.999999], ~N[2023-03-20 12:00:00], nil])
+      iex> Explorer.Series.day_of_month(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [15, 16, 20, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec day_of_month(Series.t()) :: Series.t()
+  def day_of_month(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series(series, :day_of_month)
+
+  def day_of_month(%Series{dtype: dtype}),
+    do: super_dtype_error("day_of_month/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
   Returns the hour number from 0 to 23.
 
   ## Examples

@@ -1079,6 +1079,13 @@ pub fn expr_year(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_day_of_month(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().day())
+}
+
+#[rustler::nif]
 pub fn expr_hour(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
