@@ -42,8 +42,24 @@ defmodule Explorer.Series.DateTimeTest do
       assert Series.day_of_month(series) |> Series.to_list() == [20, 19, 21, nil]
     end
 
+    test "is_leap_year", %{series: series} do
+      assert Series.is_leap_year(series) |> Series.to_list() == [false, false, false, nil]
+    end
+
+    test "quarter_of_year", %{series: series} do
+      assert Series.quarter_of_year(series) |> Series.to_list() == [2, 2, 2, nil]
+    end
+
+    test "days_in_month", %{series: series} do
+      assert Series.year(series) |> Series.to_list() == [30, 30, 30, nil]
+    end
+
     test "day_of_year", %{series: series} do
       assert Series.day_of_year(series) |> Series.to_list() == [110, 109, 111, nil]
+    end
+
+    test "iso_year", %{series: series} do
+      assert Series.iso_year(series) |> Series.to_list() == [2023, 2023, 2023, nil]
     end
 
     test "week_of_year", %{series: series} do
@@ -64,6 +80,15 @@ defmodule Explorer.Series.DateTimeTest do
 
     test "second", %{series: series} do
       assert Series.second(series) |> Series.to_list() == [35, 35, 35, nil]
+    end
+
+    test "nanosecond", %{series: series} do
+      assert Series.nanosecond(series) |> Series.to_list() == [
+               474_487_000,
+               474_487_000,
+               474_487_000,
+               nil
+             ]
     end
   end
 

@@ -154,12 +154,17 @@ defmodule Explorer.Backend.LazySeries do
     year: 1,
     month: 1,
     day_of_month: 1,
+    is_leap_year: 1,
+    quarter_of_year: 1,
+    days_of_month: 1,
     day_of_year: 1,
+    iso_year: 1,
     week_of_year: 1,
     day_of_week: 1,
     hour: 1,
     minute: 1,
     second: 1,
+    nanosecond: 1,
     # List functions
     join: 2,
     lengths: 1,
@@ -707,10 +712,38 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def is_leap_year(%Series{} = s) do
+    data = new(:is_leap_year, [lazy_series!(s)], :boolean)
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def quarter_of_year(%Series{} = s) do
+    data = new(:quarter_of_year, [lazy_series!(s)], {:s, 8})
+
+    Backend.Series.new(data, {:s, 8})
+  end
+
+  @impl true
+  def days_in_month(%Series{} = s) do
+    data = new(:days_in_month, [lazy_series!(s)], {:s, 8})
+
+    Backend.Series.new(data, {:s, 8})
+  end
+
+  @impl true
   def day_of_year(%Series{} = s) do
     data = new(:day_of_year, [lazy_series!(s)], {:s, 16})
 
     Backend.Series.new(data, {:s, 16})
+  end
+
+  @impl true
+  def iso_year(%Series{} = s) do
+    data = new(:iso_year, [lazy_series!(s)], {:s, 32})
+
+    Backend.Series.new(data, {:s, 32})
   end
 
   @impl true
@@ -746,6 +779,13 @@ defmodule Explorer.Backend.LazySeries do
     data = new(:second, [lazy_series!(s)], {:s, 8})
 
     Backend.Series.new(data, {:s, 8})
+  end
+
+  @impl true
+  def nanosecond(%Series{} = s) do
+    data = new(:nanosecond, [lazy_series!(s)], {:s, 32})
+
+    Backend.Series.new(data, {:s, 32})
   end
 
   @impl true

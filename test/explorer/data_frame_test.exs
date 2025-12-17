@@ -2020,15 +2020,18 @@ defmodule Explorer.DataFrameTest do
           f: month(b),
           g: day_of_month(a),
           h: day_of_month(b),
-          i: day_of_year(a),
-          j: day_of_year(b),
-          k: week_of_year(a),
-          l: week_of_year(b),
-          m: day_of_week(a),
-          n: day_of_week(b),
-          o: hour(b),
-          p: minute(b),
-          q: second(b)
+          i: is_leap_year(a),
+          j: is_leap_year(b),
+          k: day_of_year(a),
+          l: day_of_year(b),
+          m: week_of_year(a),
+          n: week_of_year(b),
+          o: day_of_week(a),
+          p: day_of_week(b),
+          q: hour(b),
+          r: minute(b),
+          s: second(b),
+          t: nanosecond(b)
         )
 
       assert DF.to_columns(df1, atom_keys: true) == %{
@@ -2045,15 +2048,18 @@ defmodule Explorer.DataFrameTest do
                f: [1, 2, 3, nil],
                g: [15, 16, 20, nil],
                h: [15, 16, 20, nil],
-               i: [15, 47, 79, nil],
-               j: [15, 47, 79, nil],
-               k: [2, 7, 11, nil],
-               l: [2, 7, 11, nil],
-               m: [7, 3, 6, nil],
-               n: [7, 3, 6, nil],
-               o: [1, 2, 3, nil],
-               p: [1, 2, 3, nil],
-               q: [1, 2, 3, nil]
+               i: [false, false, false, nil],
+               j: [false, false, false, nil],
+               k: [15, 47, 79, nil],
+               l: [15, 47, 79, nil],
+               m: [2, 7, 11, nil],
+               n: [2, 7, 11, nil],
+               o: [7, 3, 6, nil],
+               p: [7, 3, 6, nil],
+               q: [1, 2, 3, nil],
+               r: [1, 2, 3, nil],
+               s: [1, 2, 3, nil],
+               t: [0, 0, 3_030_000, nil]
              }
 
       assert df1.dtypes == %{
@@ -2065,15 +2071,18 @@ defmodule Explorer.DataFrameTest do
                "f" => {:s, 8},
                "g" => {:s, 8},
                "h" => {:s, 8},
-               "i" => {:s, 16},
-               "j" => {:s, 16},
-               "k" => {:s, 8},
-               "l" => {:s, 8},
+               "i" => :boolean,
+               "j" => :boolean,
+               "k" => {:s, 16},
+               "l" => {:s, 16},
                "m" => {:s, 8},
                "n" => {:s, 8},
                "o" => {:s, 8},
                "p" => {:s, 8},
-               "q" => {:s, 8}
+               "q" => {:s, 8},
+               "r" => {:s, 8},
+               "s" => {:s, 8},
+               "t" => {:s, 32}
              }
     end
 
