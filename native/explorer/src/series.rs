@@ -1542,22 +1542,8 @@ pub fn s_abs(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_day_of_week(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.weekday()?.into_series();
-
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_day_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.ordinal_day()?.into_series();
-
-    Ok(ExSeries::new(s1))
-}
-
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_week_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.week()?.into_series();
+pub fn s_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.year()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
@@ -1570,8 +1556,50 @@ pub fn s_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s1 = s.year()?.into_series();
+pub fn s_day_of_month(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.day()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_is_leap_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.is_leap_year()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_quarter_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.quarter()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_day_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.ordinal_day()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_iso_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.iso_year()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_week_of_year(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.week()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_day_of_week(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.weekday()?.into_series();
 
     Ok(ExSeries::new(s1))
 }
@@ -1593,6 +1621,13 @@ pub fn s_minute(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_second(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let s1 = s.second()?.into_series();
+
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_nanosecond(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let s1 = s.nanosecond()?.into_series();
 
     Ok(ExSeries::new(s1))
 }

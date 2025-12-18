@@ -6404,6 +6404,35 @@ defmodule Explorer.Series do
   # Date / DateTime
 
   @doc """
+  Returns the year number in the calendar date.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil])
+      iex> Explorer.Series.year(s)
+      #Explorer.Series<
+        Polars[4]
+        s32 [2023, 2022, 2021, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.year(s)
+      #Explorer.Series<
+        Polars[4]
+        s32 [2023, 2022, 2021, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec year(Series.t()) :: Series.t()
+  def year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series(series, :year)
+
+  def year(%Series{dtype: dtype}),
+    do: super_dtype_error("year/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
   Returns the month number starting from 1. The return value ranges from 1 to 12.
 
   ## Examples
@@ -6433,33 +6462,221 @@ defmodule Explorer.Series do
     do: super_dtype_error("month/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
-  Returns the year number in the calendar date.
+  Returns the day of the month as a number starting from 1. The return value ranges from 1 to 31.
 
   ## Examples
 
-      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2022-02-16], ~D[2021-03-20], nil])
-      iex> Explorer.Series.year(s)
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-02-16], ~D[2023-03-20], nil])
+      iex> Explorer.Series.day_of_month(s)
       #Explorer.Series<
         Polars[4]
-        s32 [2023, 2022, 2021, nil]
+        s8 [15, 16, 20, nil]
       >
 
   It can also be called on a datetime series.
 
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
-      iex> Explorer.Series.year(s)
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-02-16 23:59:59.999999], ~N[2023-03-20 12:00:00], nil])
+      iex> Explorer.Series.day_of_month(s)
       #Explorer.Series<
         Polars[4]
-        s32 [2023, 2022, 2021, nil]
+        s8 [15, 16, 20, nil]
       >
   """
   @doc type: :datetime_wise
-  @spec year(Series.t()) :: Series.t()
-  def year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series(series, :year)
+  @spec day_of_month(Series.t()) :: Series.t()
+  def day_of_month(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series(series, :day_of_month)
 
-  def year(%Series{dtype: dtype}),
-    do: super_dtype_error("year/1", dtype, [:date, :datetime, :naive_datetime])
+  def day_of_month(%Series{dtype: dtype}),
+    do: super_dtype_error("day_of_month/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
+  Returns a boolean for whether the current calendar year is a leap year.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2020-03-20], nil])
+      iex> Explorer.Series.is_leap_year(s)
+      #Explorer.Series<
+        Polars[3]
+        boolean [false, true, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2020-03-20 12:00:00], nil])
+      iex> Explorer.Series.is_leap_year(s)
+      #Explorer.Series<
+        Polars[3]
+        boolean [false, true, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec is_leap_year(Series.t()) :: Series.t()
+  def is_leap_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series(series, :is_leap_year)
+
+  def is_leap_year(%Series{dtype: dtype}),
+    do: super_dtype_error("is_leap_year/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
+  Returns the quarter of the calendar year, as a number between 1 and 4.
+
+  Quarter 1 is the months Jan, Feb, Mar. Quarter 2 is Apr, May, Jun. Quarter 3 is Jul, Aug, Sep. Quarter 4 is Oct, Nov, Dec.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2021-04-20], nil])
+      iex> Explorer.Series.quarter_of_year(s)
+      #Explorer.Series<
+        Polars[3]
+        s8 [1, 2, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2021-04-20 12:00:00], nil])
+      iex> Explorer.Series.quarter_of_year(s)
+      #Explorer.Series<
+        Polars[3]
+        s8 [1, 2, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec quarter_of_year(Series.t()) :: Series.t()
+  def quarter_of_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series(series, :quarter_of_year)
+
+  def quarter_of_year(%Series{dtype: dtype}),
+    do: super_dtype_error("quarter_of_year/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
+  Returns the day-of-year number starting from 1.
+
+  The return value ranges from 1 to 366 (the last day of year differs by years).
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-01], ~D[2023-01-02], ~D[2023-02-01], nil])
+      iex> Explorer.Series.day_of_year(s)
+      #Explorer.Series<
+        Polars[4]
+        s16 [1, 2, 32, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list(
+      ...>   [~N[2023-01-01 00:00:00], ~N[2023-01-02 00:00:00], ~N[2023-02-01 23:59:59], nil]
+      ...> )
+      iex> Explorer.Series.day_of_year(s)
+      #Explorer.Series<
+        Polars[4]
+        s16 [1, 2, 32, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec day_of_year(Series.t()) :: Series.t()
+  def day_of_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series_list(:day_of_year, [series])
+
+  def day_of_year(%Series{dtype: dtype}),
+    do: super_dtype_error("day_of_year/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
+  Returns the year number according to the ISO week calendar, which may not match the calendar year.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-01], ~D[2021-03-20], nil])
+      iex> Explorer.Series.iso_year(s)
+      #Explorer.Series<
+        Polars[3]
+        s32 [2022, 2021, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-01 00:00:00], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.iso_year(s)
+      #Explorer.Series<
+        Polars[3]
+        s32 [2022, 2021, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec iso_year(Series.t()) :: Series.t()
+  def iso_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series(series, :iso_year)
+
+  def iso_year(%Series{dtype: dtype}),
+    do: super_dtype_error("iso_year/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
+  Returns the week-of-year number.
+
+  The return value ranges from 1 to 53 (the last week of year differs by years).
+
+  Weeks start on Monday and end on Sunday. If the final week of a year does not end on Sunday, the
+  first days of the following year will have a week number of 52 (or 53 for a leap year).
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-01], ~D[2023-01-02], ~D[2023-02-01], nil])
+      iex> Explorer.Series.week_of_year(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [52, 1, 5, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list(
+      ...>   [~N[2023-01-01 00:00:00], ~N[2023-01-02 00:00:00], ~N[2023-02-01 23:59:59], nil]
+      ...> )
+      iex> Explorer.Series.week_of_year(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [52, 1, 5, nil]
+      >
+  """
+  @doc type: :datetime_wise
+  @spec week_of_year(Series.t()) :: Series.t()
+  def week_of_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series_list(:week_of_year, [series])
+
+  def week_of_year(%Series{dtype: dtype}),
+    do: super_dtype_error("week_of_year/1", dtype, [:date, :datetime, :naive_datetime])
+
+  @doc """
+  Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-01-16], ~D[2023-01-20], nil])
+      iex> Explorer.Series.day_of_week(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [7, 1, 5, nil]
+      >
+
+  It can also be called on a datetime series.
+
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-01-16 23:59:59.999999], ~N[2023-01-20 12:00:00], nil])
+      iex> Explorer.Series.day_of_week(s)
+      #Explorer.Series<
+        Polars[4]
+        s8 [7, 1, 5, nil]
+      >
+  """
+
+  @doc type: :datetime_wise
+  @spec day_of_week(Series.t()) :: Series.t()
+  def day_of_week(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
+    do: apply_series(series, :day_of_week)
+
+  def day_of_week(%Series{dtype: dtype}),
+    do: super_dtype_error("day_of_week/1", dtype, [:date, :datetime, :naive_datetime])
 
   @doc """
   Returns the hour number from 0 to 23.
@@ -6519,106 +6736,27 @@ defmodule Explorer.Series do
     do: apply_series(series, :second)
 
   def second(%Series{dtype: dtype}),
-    do: super_dtype_error("minute/1", dtype, [:time, :datetime, :naive_datetime])
+    do: super_dtype_error("second/1", dtype, [:time, :datetime, :naive_datetime])
 
   @doc """
-  Returns a day-of-week number starting from Monday = 1. (ISO 8601 weekday number)
+  Returns the nanosecond number from 0 to 999999999.
 
   ## Examples
 
-      iex> s = Explorer.Series.from_list([~D[2023-01-15], ~D[2023-01-16], ~D[2023-01-20], nil])
-      iex> Explorer.Series.day_of_week(s)
+      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2022-02-16 23:59:59.999999], ~N[2021-03-20 12:00:00], nil])
+      iex> Explorer.Series.nanosecond(s)
       #Explorer.Series<
         Polars[4]
-        s8 [7, 1, 5, nil]
-      >
-
-  It can also be called on a datetime series.
-
-      iex> s = Explorer.Series.from_list([~N[2023-01-15 00:00:00], ~N[2023-01-16 23:59:59.999999], ~N[2023-01-20 12:00:00], nil])
-      iex> Explorer.Series.day_of_week(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [7, 1, 5, nil]
-      >
-  """
-
-  @doc type: :datetime_wise
-  @spec day_of_week(Series.t()) :: Series.t()
-  def day_of_week(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series(series, :day_of_week)
-
-  def day_of_week(%Series{dtype: dtype}),
-    do: super_dtype_error("day_of_week/1", dtype, [:date, :datetime, :naive_datetime])
-
-  @doc """
-  Returns the day-of-year number starting from 1.
-
-  The return value ranges from 1 to 366 (the last day of year differs by years).
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~D[2023-01-01], ~D[2023-01-02], ~D[2023-02-01], nil])
-      iex> Explorer.Series.day_of_year(s)
-      #Explorer.Series<
-        Polars[4]
-        s16 [1, 2, 32, nil]
-      >
-
-  It can also be called on a datetime series.
-
-      iex> s = Explorer.Series.from_list(
-      ...>   [~N[2023-01-01 00:00:00], ~N[2023-01-02 00:00:00], ~N[2023-02-01 23:59:59], nil]
-      ...> )
-      iex> Explorer.Series.day_of_year(s)
-      #Explorer.Series<
-        Polars[4]
-        s16 [1, 2, 32, nil]
+        s32 [0, 999999000, 0, nil]
       >
   """
   @doc type: :datetime_wise
-  @spec day_of_year(Series.t()) :: Series.t()
-  def day_of_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:day_of_year, [series])
+  @spec nanosecond(Series.t()) :: Series.t()
+  def nanosecond(%Series{dtype: dtype} = series) when is_time_like_dtype(dtype),
+    do: apply_series(series, :nanosecond)
 
-  def day_of_year(%Series{dtype: dtype}),
-    do: super_dtype_error("day_of_year/1", dtype, [:date, :datetime, :naive_datetime])
-
-  @doc """
-  Returns the week-of-year number.
-
-  The return value ranges from 1 to 53 (the last week of year differs by years).
-
-  Weeks start on Monday and end on Sunday. If the final week of a year does not end on Sunday, the
-  first days of the following year will have a week number of 52 (or 53 for a leap year).
-
-  ## Examples
-
-      iex> s = Explorer.Series.from_list([~D[2023-01-01], ~D[2023-01-02], ~D[2023-02-01], nil])
-      iex> Explorer.Series.week_of_year(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [52, 1, 5, nil]
-      >
-
-  It can also be called on a datetime series.
-
-      iex> s = Explorer.Series.from_list(
-      ...>   [~N[2023-01-01 00:00:00], ~N[2023-01-02 00:00:00], ~N[2023-02-01 23:59:59], nil]
-      ...> )
-      iex> Explorer.Series.week_of_year(s)
-      #Explorer.Series<
-        Polars[4]
-        s8 [52, 1, 5, nil]
-      >
-  """
-  @doc type: :datetime_wise
-  @spec week_of_year(Series.t()) :: Series.t()
-  def week_of_year(%Series{dtype: dtype} = series) when is_date_like_dtype(dtype),
-    do: apply_series_list(:week_of_year, [series])
-
-  def week_of_year(%Series{dtype: dtype}),
-    do: super_dtype_error("week_of_year/1", dtype, [:date, :datetime, :naive_datetime])
+  def nanosecond(%Series{dtype: dtype}),
+    do: super_dtype_error("nanosecond/1", dtype, [:time, :datetime, :naive_datetime])
 
   @deprecated "Use cast(:date) instead"
   @doc false

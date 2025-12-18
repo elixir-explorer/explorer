@@ -755,24 +755,40 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Date / DateTime
   @impl true
-  def day_of_week(series),
-    do: Shared.apply_series(series, :s_day_of_week)
-
-  @impl true
-  def day_of_year(series),
-    do: Shared.apply_series(series, :s_day_of_year)
-
-  @impl true
-  def week_of_year(series),
-    do: Shared.apply_series(series, :s_week_of_year)
+  def year(series),
+    do: Shared.apply_series(series, :s_year)
 
   @impl true
   def month(series),
     do: Shared.apply_series(series, :s_month)
 
   @impl true
-  def year(series),
-    do: Shared.apply_series(series, :s_year)
+  def day_of_month(series),
+    do: Shared.apply_series(series, :s_day_of_month)
+
+  @impl true
+  def is_leap_year(series),
+    do: Shared.apply_series(series, :s_is_leap_year)
+
+  @impl true
+  def quarter_of_year(series),
+    do: Shared.apply_series(series, :s_quarter_of_year)
+
+  @impl true
+  def day_of_year(series),
+    do: Shared.apply_series(series, :s_day_of_year)
+
+  @impl true
+  def iso_year(series),
+    do: Shared.apply_series(series, :s_iso_year)
+
+  @impl true
+  def week_of_year(series),
+    do: Shared.apply_series(series, :s_week_of_year)
+
+  @impl true
+  def day_of_week(series),
+    do: Shared.apply_series(series, :s_day_of_week)
 
   @impl true
   def hour(series),
@@ -785,6 +801,10 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def second(series),
     do: Shared.apply_series(series, :s_second)
+
+  @impl true
+  def nanosecond(series),
+    do: Shared.apply_series(series, :s_nanosecond)
 
   # Lists
 
