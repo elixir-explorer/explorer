@@ -18,7 +18,6 @@ defmodule Explorer.MixProject do
       package: package(),
       deps: deps(),
       docs: docs(),
-      preferred_cli_env: [ci: :test, "localstack.setup": :test],
       aliases: [
         "rust.lint": ["cmd cargo clippy --manifest-path=native/explorer/Cargo.toml -- -Dwarnings"],
         "rust.fmt": ["cmd cargo fmt --manifest-path=native/explorer/Cargo.toml --all"],
@@ -33,6 +32,10 @@ defmodule Explorer.MixProject do
       extra_applications: [:logger, :inets, :ssl],
       env: [default_backend: Explorer.PolarsBackend]
     ]
+  end
+
+  def cli do
+    [preferred_cli_env: [ci: :test, "localstack.setup": :test]]
   end
 
   defp elixirc_paths(:test), do: ~w(lib test/support)
