@@ -1429,6 +1429,43 @@ defmodule Explorer.DataFrame.LazyTest do
                d_left: [5, 6, 6]
              }
     end
+
+    test "nulls_equal: false is the default (SQL semantics)" do
+      left = DF.new([a: [1, nil], b: ["x", "y"]], lazy: true)
+      right = DF.new([a: [1, nil], c: ["p", "q"]], lazy: true)
+
+      # Default behavior: nil != nil
+      ldf = DF.join(left, right)
+      df = DF.collect(ldf)
+      assert DF.n_rows(df) == 1
+      assert DF.to_columns(df, atom_keys: true) == %{a: [1], b: ["x"], c: ["p"]}
+    end
+
+    test "nulls_equal: true matches nil values in inner join" do
+      left = DF.new([a: [1, 2, nil], b: ["a", "b", "c"]], lazy: true)
+      right = DF.new([a: [1, nil, 4], c: ["d", "e", "f"]], lazy: true)
+
+      ldf = DF.join(left, right, nulls_equal: true)
+      df = DF.collect(ldf)
+      assert DF.n_rows(df) == 2
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               a: [1, nil],
+               b: ["a", "c"],
+               c: ["d", "e"]
+             }
+    end
+
+    test "nulls_equal: true with right join" do
+      left = DF.new([a: [1, nil], b: ["a", "b"]], lazy: true)
+      right = DF.new([a: [nil, 2, 3], c: ["d", "e", "f"]], lazy: true)
+
+      ldf = DF.join(left, right, how: :right, nulls_equal: true)
+      df = DF.collect(ldf)
+      assert DF.n_rows(df) == 3
+      # Right join keeps right table order
+      assert DF.to_columns(df, atom_keys: true).c == ["d", "e", "f"]
+    end
   end
 
   describe "join_asof/3" do

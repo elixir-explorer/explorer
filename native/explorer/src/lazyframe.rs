@@ -3,6 +3,13 @@ use crate::{
     ExplorerError,
 };
 use polars::{lazy::dsl::Selector, prelude::*};
+use rustler::NifMap;
+
+#[derive(NifMap)]
+pub struct ExJoinOptions {
+    pub suffix: String,
+    pub nulls_equal: bool,
+}
 
 // Loads the IO functions for read/writing CSV, NDJSON, Parquet, etc.
 pub mod io;
@@ -320,7 +327,7 @@ pub fn lf_join(
     left_on: Vec<ExExpr>,
     right_on: Vec<ExExpr>,
     how: &str,
-    suffix: &str,
+    opts: ExJoinOptions,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let how = match how {
         "left" => JoinType::Left,
@@ -344,7 +351,8 @@ pub fn lf_join(
             .join_builder()
             .with(ldf1)
             .how(JoinType::Cross)
-            .suffix(suffix)
+            .suffix(&opts.suffix)
+            .join_nulls(opts.nulls_equal)
             .finish(),
         _ => ldf
             .join_builder()
@@ -352,7 +360,8 @@ pub fn lf_join(
             .how(how)
             .left_on(ex_expr_to_exprs(left_on))
             .right_on(ex_expr_to_exprs(right_on))
-            .suffix(suffix)
+            .suffix(&opts.suffix)
+            .join_nulls(opts.nulls_equal)
             .finish(),
     };
 

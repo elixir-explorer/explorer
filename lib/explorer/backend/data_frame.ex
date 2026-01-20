@@ -243,7 +243,8 @@ defmodule Explorer.Backend.DataFrame do
               [df()],
               out_df :: df(),
               on :: list({column_name(), column_name()}),
-              how :: :left | :inner | :outer | :right | :cross
+              how :: :left | :inner | :outer | :right | :cross,
+              nulls_equal :: boolean()
             ) :: df
 
   @callback join_asof(
