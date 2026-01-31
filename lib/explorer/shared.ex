@@ -634,34 +634,24 @@ defmodule Explorer.Shared do
   ## Apply
 
   @doc """
-  Initializes a series or a dataframe with node placement.
+  Initializes a series or a dataframe.
   """
-  def apply_init(impl, fun, args, opts) do
-    if node = opts[:node] do
-      Explorer.Remote.apply(node, impl, fun, [], fn _ -> args end, true)
-    else
-      apply(impl, fun, args)
-    end
+  def apply_init(impl, fun, args, _opts) do
+    apply(impl, fun, args)
   end
 
   @doc """
   Applies a function with args using the implementation of a dataframe or series.
   """
-  def apply_dataframe(dfs_or_df, fun, args \\ [], place? \\ true) do
-    {df_nodes, {impl, remote}} =
+  def apply_dataframe(dfs_or_df, fun, args \\ [], _place? \\ true) do
+    impl =
       dfs_or_df
       |> List.wrap()
-      |> Enum.map_reduce({nil, nil}, fn %{data: %impl{}} = df, {acc_impl, acc_remote} ->
-        {node, remote} = remote_info(df, impl)
-        {{df, node}, {pick_df_impl(acc_impl, impl), pick_remote(acc_remote, remote)}}
+      |> Enum.reduce(nil, fn %{data: %impl{}}, acc_impl ->
+        pick_df_impl(acc_impl, impl)
       end)
 
-    if remote do
-      callback = if is_list(dfs_or_df), do: &[&1 | args], else: &[hd(&1) | args]
-      Explorer.Remote.apply(remote, impl, fun, df_nodes, callback, place?)
-    else
-      apply(impl, fun, [dfs_or_df | args])
-    end
+    apply(impl, fun, [dfs_or_df | args])
   end
 
   defp pick_df_impl(nil, struct), do: struct
@@ -675,8 +665,8 @@ defmodule Explorer.Shared do
   @doc """
   Applies a function to a series.
   """
-  def apply_series(series, fun, args \\ [], place? \\ true) do
-    apply_series_impl!([series], fun, &(&1 ++ args), place?)
+  def apply_series(series, fun, args \\ [], _place? \\ true) do
+    apply_series_impl!([series], fun, &(&1 ++ args))
   end
 
   @doc """
@@ -685,7 +675,7 @@ defmodule Explorer.Shared do
   The list is typically static and it is passed as arguments.
   """
   def apply_series_list(fun, series_or_scalars) when is_list(series_or_scalars) do
-    apply_series_impl!(series_or_scalars, fun, & &1, true)
+    apply_series_impl!(series_or_scalars, fun, & &1)
   end
 
   @doc """
@@ -694,26 +684,21 @@ defmodule Explorer.Shared do
   The list is passed as a varargs to the backend.
   """
   def apply_series_varargs(fun, series_or_scalars) when is_list(series_or_scalars) do
-    apply_series_impl!(series_or_scalars, fun, &[&1], true)
+    apply_series_impl!(series_or_scalars, fun, &[&1])
   end
 
-  defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback, place?) do
-    {series_nodes, {impl, {_forced?, remote}, transfer?}} =
-      Enum.map_reduce(series_or_scalars, {nil, {false, nil}, false}, fn
+  defp apply_series_impl!([_ | _] = series_or_scalars, fun, args_callback) do
+    impl =
+      Enum.reduce(series_or_scalars, nil, fn
         # A lazy series without a resource is treated as a scalar
-        %{data: %{__struct__: Explorer.Backend.LazySeries, resource: nil}} = series,
-        {_acc_impl, acc_remote, acc_transfer?} ->
-          {{series, nil}, {Explorer.Backend.LazySeries, acc_remote, acc_transfer?}}
+        %{data: %{__struct__: Explorer.Backend.LazySeries, resource: nil}}, _acc_impl ->
+          Explorer.Backend.LazySeries
 
-        %{data: %impl{}} = series, {acc_impl, acc_remote, acc_transfer?} ->
-          {node, remote} = remote_info(series, impl)
+        %{data: %impl{}}, acc_impl ->
+          pick_series_impl(acc_impl, impl)
 
-          {{series, node},
-           {pick_series_impl(acc_impl, impl), pick_series_remote(acc_remote, impl, remote),
-            acc_transfer? or remote != nil}}
-
-        scalar, acc ->
-          {{scalar, nil}, acc}
+        _scalar, acc_impl ->
+          acc_impl
       end)
 
     if is_nil(impl) do
@@ -722,23 +707,8 @@ defmodule Explorer.Shared do
               maybe_bad_column_hint(series_or_scalars)
     end
 
-    if transfer? do
-      Explorer.Remote.apply(remote || node(), impl, fun, series_nodes, args_callback, place?)
-    else
-      apply(impl, fun, args_callback.(series_or_scalars))
-    end
+    apply(impl, fun, args_callback.(series_or_scalars))
   end
-
-  # The lazy series always wins the remote if it has one,
-  # since we need to transfer it to the dataframe that started the lazy series.
-  defp pick_series_remote(_acc_remote, Explorer.Backend.LazySeries, remote),
-    do: {true, remote}
-
-  defp pick_series_remote({true, acc_remote}, _impl, _remote),
-    do: {true, acc_remote}
-
-  defp pick_series_remote({false, acc_remote}, _impl, remote),
-    do: {false, pick_remote(acc_remote, remote)}
 
   defp pick_series_impl(nil, impl), do: impl
   defp pick_series_impl(Explorer.Backend.LazySeries, _impl), do: Explorer.Backend.LazySeries
@@ -764,32 +734,4 @@ defmodule Explorer.Shared do
       ""
     end
   end
-
-  # There is remote information and it is GCed by the current node.
-  # Which means that it resides on the remote node given by remote_pid.
-  defp remote_info(%{remote: {local_gc, remote_pid, _remote_ref}}, _impl)
-       when node(local_gc) == node(),
-       do: {node(remote_pid), remote_pid}
-
-  # There is remote information but it is actually local. Treat it as one.
-  defp remote_info(%{remote: {_local_gc, remote_pid, _remote_ref}}, _impl)
-       when node(remote_pid) == node(),
-       do: {node(), nil}
-
-  # We don't know the remote information, let's ask the backend
-  defp remote_info(df_or_series, impl) do
-    case impl.owner_reference(df_or_series) do
-      remote_ref when is_reference(remote_ref) and node(remote_ref) != node() ->
-        {node(remote_ref), node(remote_ref)}
-
-      _ ->
-        {node(), nil}
-    end
-  end
-
-  # We need to pick a remote, which one does not matter.
-  # The important is to keep the PID reference around, if there is one.
-  defp pick_remote(acc_remote, _remote) when is_pid(acc_remote), do: acc_remote
-  defp pick_remote(acc_remote, nil), do: acc_remote
-  defp pick_remote(_acc_remote, remote), do: remote
 end

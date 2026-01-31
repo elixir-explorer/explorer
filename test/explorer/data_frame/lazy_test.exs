@@ -69,7 +69,7 @@ defmodule Explorer.DataFrame.LazyTest do
     new_ldf = ldf |> DF.slice(0, 5)
     assert new_ldf |> DF.names() == DF.names(ldf)
 
-    df = DF.compute(new_ldf)
+    df = DF.collect(new_ldf)
 
     assert DF.n_rows(df) == 5
   end
@@ -78,7 +78,7 @@ defmodule Explorer.DataFrame.LazyTest do
     new_ldf = ldf |> DF.group_by("country") |> DF.slice(0, 2)
     assert new_ldf |> DF.names() == DF.names(ldf)
 
-    df = DF.compute(new_ldf)
+    df = DF.collect(new_ldf)
 
     # Just like the head with 2 items per group.
     assert DF.n_rows(df) == 444
@@ -98,7 +98,7 @@ defmodule Explorer.DataFrame.LazyTest do
   end
 
   test "collect/1", %{ldf: ldf, df: df} do
-    assert ldf |> DF.compute() |> DF.to_columns() == DF.to_columns(df)
+    assert ldf |> DF.collect() |> DF.to_columns() == DF.to_columns(df)
   end
 
   test "lazy/1 is no-op", %{ldf: ldf} do
@@ -154,7 +154,7 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
@@ -184,7 +184,7 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
@@ -197,7 +197,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       ldf = DF.from_parquet!(path, lazy: true, max_rows: 1)
 
-      df1 = DF.compute(ldf)
+      df1 = DF.collect(ldf)
 
       assert DF.n_rows(df1) == 1
     end
@@ -216,7 +216,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   describe "from_parquet/2 - from S3" do
     setup do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566",
@@ -234,7 +234,7 @@ defmodule Explorer.DataFrame.LazyTest do
                  lazy: true
                )
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df) == DF.to_columns(Explorer.Datasets.wine())
     end
@@ -247,7 +247,7 @@ defmodule Explorer.DataFrame.LazyTest do
                  lazy: true
                )
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df) == DF.to_columns(Explorer.Datasets.wine())
     end
@@ -275,7 +275,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     assert :ok = DF.to_csv(ldf, path)
 
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
     df1 = DF.from_csv!(path)
 
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
@@ -288,7 +288,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     assert :ok = DF.to_csv(ldf, path, streaming: false)
 
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
     df1 = DF.from_csv!(path)
 
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
@@ -296,7 +296,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_csv/3 - cloud with streaming enabled - ignores streaming option", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -308,7 +308,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     assert :ok = DF.to_csv(ldf, path, streaming: true, config: config)
 
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
     df1 = DF.from_csv!(path, config: config)
 
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
@@ -321,7 +321,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     DF.to_ipc!(ldf, path)
 
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
     df1 = DF.from_ipc!(path)
 
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
@@ -334,7 +334,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     DF.to_ipc!(ldf, path, streaming: false)
 
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
     df1 = DF.from_ipc!(path)
 
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
@@ -342,7 +342,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_ipc/3 - cloud with streaming enabled", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -354,7 +354,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     assert :ok = DF.to_ipc(ldf, path, streaming: true, config: config)
 
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
     df1 = DF.from_ipc!(path, config: config)
 
     assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
@@ -362,7 +362,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_ipc/2 - cloud with streaming disabled", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -375,7 +375,7 @@ defmodule Explorer.DataFrame.LazyTest do
     assert :ok = DF.to_ipc(ldf, path, streaming: false, config: config)
 
     saved_df = DF.from_ipc!(path, config: config)
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
 
     assert DF.to_columns(df) == DF.to_columns(saved_df)
   end
@@ -387,7 +387,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     DF.to_parquet!(ldf, path)
 
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
     df1 = DF.from_parquet!(path)
 
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
@@ -400,7 +400,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     DF.to_parquet!(ldf, path, streaming: false)
 
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
     df1 = DF.from_parquet!(path)
 
     assert DF.to_rows(df1) |> Enum.sort() == DF.to_rows(df) |> Enum.sort()
@@ -408,7 +408,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_parquet/2 - cloud with streaming enabled", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -420,7 +420,7 @@ defmodule Explorer.DataFrame.LazyTest do
     ldf = DF.head(ldf, 15)
     assert :ok = DF.to_parquet(ldf, path, streaming: true, config: config)
 
-    df = DF.compute(ldf)
+    df = DF.collect(ldf)
     df1 = DF.from_parquet!(path, config: config)
 
     assert DF.to_rows(df) |> Enum.sort() == DF.to_rows(df1) |> Enum.sort()
@@ -428,7 +428,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
   @tag :cloud_integration
   test "to_parquet/2 - cloud with streaming disabled", %{ldf: ldf} do
-    config = %FSS.S3.Config{
+    config = %{
       access_key_id: "test",
       secret_access_key: "test",
       endpoint: "http://localhost:4566",
@@ -442,8 +442,8 @@ defmodule Explorer.DataFrame.LazyTest do
 
     saved_ldf = DF.from_parquet!(path, config: config)
 
-    df = DF.compute(ldf)
-    saved_df = DF.compute(saved_ldf)
+    df = DF.collect(ldf)
+    saved_df = DF.collect(saved_ldf)
 
     assert DF.to_columns(df) == DF.to_columns(saved_df)
   end
@@ -459,7 +459,7 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
@@ -475,7 +475,7 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
@@ -505,7 +505,7 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
@@ -519,7 +519,7 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
@@ -533,7 +533,7 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
@@ -547,7 +547,7 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
@@ -561,7 +561,7 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
@@ -575,14 +575,14 @@ defmodule Explorer.DataFrame.LazyTest do
     # no-op
     assert DF.lazy(ldf) == ldf
 
-    df1 = DF.compute(ldf)
+    df1 = DF.collect(ldf)
 
     assert DF.to_columns(df1) == DF.to_columns(df)
   end
 
   describe "readers that are not cloud supported" do
     setup do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566",
@@ -642,7 +642,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.new([a: [1, 2, 3, 4], b: [150, 50, 250, 0]], lazy: true)
 
       ldf1 = DF.filter_with(ldf, fn ldf -> Series.greater(ldf["a"], 2) end)
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [3, 4],
@@ -663,7 +663,7 @@ defmodule Explorer.DataFrame.LazyTest do
           Series.greater(ldf["col2"], 2)
         end)
 
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                col1: ["a", "b"],
@@ -692,7 +692,7 @@ defmodule Explorer.DataFrame.LazyTest do
           Series.greater(ldf["col2"], Series.mean(ldf["col2"]))
         end)
 
-      df1 = DF.compute(ldf_grouped1)
+      df1 = DF.collect(ldf_grouped1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                col1: ["a", "b"],
@@ -709,7 +709,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
       ldf1 = DF.sort_with(ldf, fn ldf -> [asc: ldf["a"]] end)
 
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],
@@ -721,7 +721,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
       ldf1 = DF.sort_with(ldf, fn ldf -> ldf["a"] end)
 
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],
@@ -733,7 +733,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
       ldf1 = DF.sort_with(ldf, fn ldf -> [desc: ldf["a"]] end)
 
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [6, 5, 4, 3, 2, 1],
@@ -745,7 +745,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
       ldf1 = DF.sort_with(ldf, fn ldf -> [ldf["a"]] end)
 
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6],
@@ -757,7 +757,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.new([a: [1, 2, 2, 3, 6, 5], b: [1.1, 2.5, 2.2, 3.3, 4.0, 5.1]], lazy: true)
       ldf1 = DF.sort_with(ldf, fn ldf -> [asc: ldf["a"], asc: ldf["b"]] end)
 
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 2, 3, 5, 6],
@@ -769,7 +769,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.new([a: [1, 2, 4, 3, 6, 5], b: ["a", "b", "d", "c", "f", "e"]], lazy: true)
       ldf1 = DF.sort_with(ldf, fn ldf -> [desc: Series.window_mean(ldf["a"], 2)] end)
 
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [5, 6, 3, 4, 2, 1],
@@ -801,7 +801,7 @@ defmodule Explorer.DataFrame.LazyTest do
       # How to warn about them? (nils_last and maintain_order)
       sorted_ldf = DF.sort_with(grouped_ldf, fn ldf -> [desc: ldf["speed"]] end)
 
-      df = DF.compute(sorted_ldf)
+      df = DF.collect(sorted_ldf)
 
       assert DF.to_rows(df, atom_keys: true) == [
                %{name: "Starmie", speed: 115, "type 1": "Water"},
@@ -818,14 +818,14 @@ defmodule Explorer.DataFrame.LazyTest do
   describe "head/2" do
     test "selects the first 5 rows by default", %{ldf: ldf} do
       ldf1 = DF.head(ldf)
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.shape(df) == {5, 10}
     end
 
     test "selects the first 2 rows", %{ldf: ldf} do
       ldf1 = DF.head(ldf, 2)
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.shape(df) == {2, 10}
     end
@@ -836,7 +836,7 @@ defmodule Explorer.DataFrame.LazyTest do
         |> DF.group_by("country")
         |> DF.head(2)
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.shape(df) == {444, 10}
     end
@@ -845,14 +845,14 @@ defmodule Explorer.DataFrame.LazyTest do
   describe "tail/2" do
     test "selects the last 5 rows by default", %{ldf: ldf} do
       ldf1 = DF.tail(ldf)
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.shape(df) == {5, 10}
     end
 
     test "selects the last 2 rows", %{ldf: ldf} do
       ldf1 = DF.tail(ldf, 2)
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.shape(df) == {2, 10}
     end
@@ -863,7 +863,7 @@ defmodule Explorer.DataFrame.LazyTest do
         |> DF.group_by("country")
         |> DF.tail(2)
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.shape(df) == {444, 10}
     end
@@ -877,7 +877,7 @@ defmodule Explorer.DataFrame.LazyTest do
       assert DF.n_columns(ldf1) == 2
 
       ldf2 = DF.head(ldf1, 1)
-      df = DF.compute(ldf2)
+      df = DF.collect(ldf2)
 
       assert DF.to_columns(df, atom_keys: true) == %{country: ["AFGHANISTAN"], year: [2010]}
     end
@@ -922,7 +922,7 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf1.names == ["a", "b", "c", "d"]
       assert ldf1.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:s, 64}}
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 2, 3],
@@ -942,7 +942,7 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf1.names == ["d", "a", "b", "c"]
       assert ldf1.dtypes == %{"a" => {:s, 64}, "b" => {:f, 64}, "c" => :boolean, "d" => :string}
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 1, 1],
@@ -966,7 +966,7 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf1.names == ["a", "b"]
       assert ldf1.dtypes == %{"a" => {:f, 64}, "b" => :string}
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1.0, 2.0, 3.0],
@@ -983,7 +983,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       ldf2 = DF.mutate_with(ldf1, fn ldf -> [c: Series.mean(ldf["a"])] end)
 
-      df = DF.compute(ldf2)
+      df = DF.collect(ldf2)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 16, 2, 3],
@@ -1004,7 +1004,7 @@ defmodule Explorer.DataFrame.LazyTest do
           [total_min: Series.min(total), total_max: Series.max(total)]
         end)
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                year: [2010, 2011, 2012, 2013, 2014],
@@ -1028,7 +1028,7 @@ defmodule Explorer.DataFrame.LazyTest do
           ]
         end)
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                year: [2010, 2011, 2012, 2013, 2014],
@@ -1046,7 +1046,7 @@ defmodule Explorer.DataFrame.LazyTest do
           [total_min: Series.min(total), total_max: Series.max(total)]
         end)
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                total_min: [1],
@@ -1071,7 +1071,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf1 = DF.relocate(ldf, ["third", "second"], before: "first")
       assert ldf1.names == ["third", "second", "first", "last"]
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
       assert DF.dump_csv(df) == {:ok, "third,second,first,last\n2.2,x,a,1\n3.3,y,b,3\n,z,a,1\n"}
     end
   end
@@ -1085,7 +1085,7 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf1.names == ["ids", "b"]
       assert ldf1.dtypes == %{"ids" => {:s, 64}, "b" => :string}
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                ids: [1, 2, 3],
@@ -1103,7 +1103,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       ldf1 = DF.drop_nil(ldf)
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
       assert DF.to_columns(df) == %{"a" => [1], "b" => [1]}
     end
 
@@ -1112,7 +1112,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       ldf1 = DF.drop_nil(ldf, :a)
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
       assert DF.to_columns(df) == %{"a" => [1, 2], "b" => [1, nil]}
     end
 
@@ -1121,7 +1121,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       ldf1 = DF.drop_nil(ldf, [])
 
-      df = DF.compute(ldf1)
+      df = DF.collect(ldf1)
       assert DF.to_columns(df) == %{"a" => [1, 2, nil], "b" => [1, nil, 3]}
     end
   end
@@ -1133,7 +1133,7 @@ defmodule Explorer.DataFrame.LazyTest do
       assert ldf.names == ["variable", "value"]
       assert ldf.dtypes == %{"variable" => :string, "value" => {:s, 64}}
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
       assert DF.shape(df) == {3282, 2}
       assert ldf.names == df.names
       assert ldf.dtypes == df.dtypes
@@ -1151,7 +1151,7 @@ defmodule Explorer.DataFrame.LazyTest do
                "value" => {:s, 64}
              }
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.shape(df) == {3282, 4}
       assert ldf.names == df.names
@@ -1172,7 +1172,7 @@ defmodule Explorer.DataFrame.LazyTest do
                "value"
              ]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.shape(df) == {4376, 8}
       assert ldf.names == df.names
@@ -1194,7 +1194,7 @@ defmodule Explorer.DataFrame.LazyTest do
                "value"
              ]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert ldf.names == df.names
       assert ldf.dtypes == df.dtypes
@@ -1213,7 +1213,7 @@ defmodule Explorer.DataFrame.LazyTest do
                "value"
              ]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert ldf.names == df.names
       assert ldf.dtypes == df.dtypes
@@ -1247,7 +1247,7 @@ defmodule Explorer.DataFrame.LazyTest do
       right = DF.new([d: [1, 2, 2], c: ["d", "e", "f"]], lazy: true)
 
       ldf = DF.join(left, right, on: [{"a", "d"}])
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 2, 2],
@@ -1263,7 +1263,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, on: [{"a", "d"}])
       assert ldf.names == ["a", "b", "c", "a_right"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 2, 2],
@@ -1280,7 +1280,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, on: [{"a", "d"}], how: :left)
 
       assert ldf.names == ["a", "b", "c", "a_right"]
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 2, 2, 3],
@@ -1297,7 +1297,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, on: [{"a", "d"}], how: :outer)
       assert ldf.names == ["a", "b", "d", "c", "a_right"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 2, 2, 3],
@@ -1315,7 +1315,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, how: :cross)
       assert ldf.names == ["a", "b", "d", "c", "a_right"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
@@ -1333,7 +1333,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, on: [{"a", "d"}], how: :right)
       assert ldf.names == ["d", "c", "a", "b"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [5, 6, 7],
@@ -1350,7 +1350,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, on: [{"a", "d"}])
       assert ldf.names == ["a", "b", "d", "c"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 2, 2],
@@ -1367,7 +1367,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, on: [{"a", "d"}], how: :left)
       assert ldf.names == ["a", "b", "d", "c"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 2, 2, 3],
@@ -1384,7 +1384,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, on: [{"a", "d"}], how: :outer)
       assert ldf.names == ["a", "b", "d", "d_right", "c"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 2, 2, 3],
@@ -1402,7 +1402,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, how: :cross)
       assert ldf.names == ["a", "b", "d", "d_right", "c"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                a: [1, 1, 1, 2, 2, 2, 3, 3, 3],
@@ -1420,13 +1420,64 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.join(left, right, on: [{"a", "d"}], how: :right)
       assert ldf.names == ["d", "c", "b", "d_left"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                d: [1, 2, 2],
                c: ["d", "e", "f"],
                b: ["a", "b", "b"],
                d_left: [5, 6, 6]
+             }
+    end
+  end
+
+  describe "join_asof/3" do
+    test "raises if no overlapping columns" do
+      assert_raise ArgumentError,
+                   ~r"could not find any overlapping columns",
+                   fn ->
+                     left = DF.new([a: [1, 2, 3]], lazy: true)
+                     right = DF.new([b: [1, 2, 3]], lazy: true)
+                     DF.join_asof(left, right)
+                   end
+    end
+
+    test "raises if multiple overlapping columns" do
+      assert_raise ArgumentError,
+                   ~r"multiple columns for option `:on` is not supported for join_asof",
+                   fn ->
+                     left = DF.new([a: [1, 2, 3], b: [1, 2, 3]], lazy: true)
+                     right = DF.new([a: [1, 2, 3], b: [1, 2, 3]], lazy: true)
+                     DF.join_asof(left, right)
+                   end
+    end
+
+    test "with a custom 'on'" do
+      left =
+        DF.new(
+          [
+            id: [1, 2, 3],
+            time: [0.9, 2.1, 2.8]
+          ],
+          lazy: true
+        )
+
+      right =
+        DF.new(
+          [
+            time: [2.0],
+            value: [100]
+          ],
+          lazy: true
+        )
+
+      ldf = DF.join_asof(left, right, on: :time, strategy: :nearest)
+      df = DF.collect(ldf)
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               id: [1, 2, 3],
+               time: [0.9, 2.1, 2.8],
+               value: [100, 100, 100]
              }
     end
   end
@@ -1440,7 +1491,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       assert ldf3.names == ["x", "y"]
 
-      df = DF.compute(ldf3)
+      df = DF.collect(ldf3)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                x: [1, 2, 3, 4, 5, 6],
@@ -1456,7 +1507,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       assert ldf3.names == ["x", "y"]
 
-      df = DF.compute(ldf3)
+      df = DF.collect(ldf3)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                x: [1, 2, 4, 5, 6],
@@ -1469,7 +1520,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf2 = DF.new([x: [4.1, 5.2, 6.3, nil], y: ["d", "e", "f", "g"]], lazy: true)
       ldf3 = DF.concat_rows(ldf1, ldf2)
 
-      df = DF.compute(ldf3)
+      df = DF.collect(ldf3)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                x: [1.0, 2.0, 3.0, 4.1, 5.2, 6.3, nil],
@@ -1549,7 +1600,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       assert ldf.names == ["x", "y", "z", "a"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                x: [1, 2, 3],
@@ -1567,7 +1618,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       assert ldf.names == ["x", "y", "x_1", "a"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                x: [1, 2, 3],
@@ -1585,7 +1636,7 @@ defmodule Explorer.DataFrame.LazyTest do
 
       assert ldf.names == ["x", "y", "z", "a"]
 
-      df = DF.compute(ldf)
+      df = DF.collect(ldf)
 
       assert DF.to_columns(df, atom_keys: true) == %{
                x: [1, 2, 3, nil],
@@ -1625,7 +1676,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.new([letters: [~w(a e), ~w(b c d)], is_vowel: [true, false]], lazy: true)
 
       ldf1 = DF.explode(ldf, :letters)
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                letters: ["a", "e", "b", "c", "d"],
@@ -1639,7 +1690,7 @@ defmodule Explorer.DataFrame.LazyTest do
       ldf = DF.new([data: [%{x: 1, y: 2}, %{x: 3, y: 4}]], lazy: true)
 
       ldf1 = DF.unnest(ldf, :data)
-      df1 = DF.compute(ldf1)
+      df1 = DF.collect(ldf1)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                x: [1, 3],

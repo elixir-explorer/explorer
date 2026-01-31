@@ -8,10 +8,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.Series, as: Series
 
-  alias FSS.HTTP
-  alias FSS.Local
-  alias FSS.S3
-
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1]
 
   defstruct resource: nil
@@ -37,7 +33,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_csv(
-        %module{} = entry,
+        {backend, _path, _config} = entry,
         dtypes,
         delimiter,
         nil_values,
@@ -49,17 +45,18 @@ defmodule Explorer.PolarsBackend.DataFrame do
         columns,
         infer_schema_length,
         parse_dates,
-        eol_delimiter
+        eol_delimiter,
+        quote_delimiter
       )
-      when module in [S3.Entry, HTTP.Entry] do
+      when backend in [:s3, :http] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = Local.from_path(path)
+      local_entry = {:local, path, %{}}
 
       result =
         from_csv(
-          entry,
+          local_entry,
           dtypes,
           delimiter,
           nil_values,
@@ -71,7 +68,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
           columns,
           infer_schema_length,
           parse_dates,
-          eol_delimiter
+          eol_delimiter,
+          quote_delimiter
         )
 
       File.rm(path)
@@ -81,7 +79,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def from_csv(
-        %Local.Entry{} = entry,
+        {:local, path, _config},
         dtypes,
         <<delimiter::utf8>>,
         nil_values,
@@ -93,7 +91,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         columns,
         infer_schema_length,
         parse_dates,
-        eol_delimiter
+        eol_delimiter,
+        quote_delimiter
       ) do
     infer_schema_length =
       if infer_schema_length == nil,
@@ -104,7 +103,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     df =
       Native.df_from_csv(
-        entry.path,
+        path,
         infer_schema_length,
         header?,
         max_rows,
@@ -118,7 +117,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         encoding,
         nil_values,
         parse_dates,
-        char_byte(eol_delimiter)
+        char_byte(eol_delimiter),
+        char_byte(quote_delimiter)
       )
 
     case df do
@@ -147,7 +147,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def to_csv(
         %DataFrame{data: df},
-        %Local.Entry{} = entry,
+        {:local, path, _config},
         header?,
         delimiter,
         quote_style,
@@ -155,7 +155,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
       ) do
     <<delimiter::utf8>> = delimiter
 
-    case Native.df_to_csv(df, entry.path, header?, delimiter, quote_style) do
+    case Native.df_to_csv(df, path, header?, delimiter, quote_style) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
@@ -164,7 +164,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def to_csv(
         %DataFrame{data: df},
-        %S3.Entry{} = entry,
+        {:s3, _key, _config} = entry,
         header?,
         delimiter,
         quote_style,
@@ -200,7 +200,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         columns,
         infer_schema_length,
         parse_dates,
-        eol_delimiter
+        eol_delimiter,
+        quote_delimiter
       ) do
     infer_schema_length =
       if infer_schema_length == nil,
@@ -225,7 +226,8 @@ defmodule Explorer.PolarsBackend.DataFrame do
         encoding,
         nil_values,
         parse_dates,
-        char_byte(eol_delimiter)
+        char_byte(eol_delimiter),
+        char_byte(quote_delimiter)
       )
 
     case df do
@@ -238,15 +240,14 @@ defmodule Explorer.PolarsBackend.DataFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-
-  def from_ndjson(%module{} = entry, infer_schema_length, batch_size)
-      when module in [S3.Entry, HTTP.Entry] do
+  def from_ndjson({backend, _path, _config} = entry, infer_schema_length, batch_size)
+      when backend in [:s3, :http] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = Local.from_path(path)
+      local_entry = {:local, path, %{}}
 
-      result = from_ndjson(entry, infer_schema_length, batch_size)
+      result = from_ndjson(local_entry, infer_schema_length, batch_size)
 
       File.rm(path)
       result
@@ -254,23 +255,23 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
-    case Native.df_from_ndjson(entry.path, infer_schema_length, batch_size) do
+  def from_ndjson({:local, path, _config}, infer_schema_length, batch_size) do
+    case Native.df_from_ndjson(path, infer_schema_length, batch_size) do
       {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_ndjson(%DataFrame{data: df}, %Local.Entry{} = entry) do
-    case Native.df_to_ndjson(df, entry.path) do
+  def to_ndjson(%DataFrame{data: df}, {:local, path, _config}) do
+    case Native.df_to_ndjson(df, path) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_ndjson(%DataFrame{data: df}, %S3.Entry{} = entry) do
+  def to_ndjson(%DataFrame{data: df}, {:s3, _key, _config} = entry) do
     case Native.df_to_ndjson_cloud(df, entry) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -294,7 +295,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
+  def from_parquet({:s3, _key, _config} = entry, max_rows, columns, _rechunk) do
     # We first read using a lazy dataframe, then we collect.
     with {:ok, ldf} <- Native.lf_from_parquet_cloud(entry, max_rows, columns),
          {:ok, df} <- Native.lf_compute(ldf) do
@@ -303,13 +304,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(%HTTP.Entry{} = entry, max_rows, columns, rechunk) do
+  def from_parquet({:http, _url, _config} = entry, max_rows, columns, rechunk) do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = Local.from_path(path)
+      local_entry = {:local, path, %{}}
 
-      result = from_parquet(entry, max_rows, columns, rechunk)
+      result = from_parquet(local_entry, max_rows, columns, rechunk)
 
       File.rm(path)
       result
@@ -317,12 +318,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_parquet(%Local.Entry{} = entry, max_rows, columns, rechunk) do
+  def from_parquet({:local, path, _config}, max_rows, columns, rechunk) do
     {columns, with_projection} = column_names_or_projection(columns)
 
     df =
       Native.df_from_parquet(
-        entry.path,
+        path,
         max_rows,
         columns,
         with_projection,
@@ -338,11 +339,11 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def to_parquet(
         %DataFrame{data: df},
-        %Local.Entry{} = entry,
+        {:local, path, _config},
         {compression, compression_level},
         _streaming
       ) do
-    case Native.df_to_parquet(df, entry.path, parquet_compression(compression, compression_level)) do
+    case Native.df_to_parquet(df, path, parquet_compression(compression, compression_level)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
@@ -351,7 +352,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def to_parquet(
         %DataFrame{data: df},
-        %S3.Entry{} = entry,
+        {:s3, _key, _config} = entry,
         {compression, compression_level},
         _streaming
       ) do
@@ -390,13 +391,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc(%module{} = entry, columns) when module in [S3.Entry, HTTP.Entry] do
+  def from_ipc({backend, _path, _config} = entry, columns) when backend in [:s3, :http] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = Local.from_path(path)
+      local_entry = {:local, path, %{}}
 
-      result = from_ipc(entry, columns)
+      result = from_ipc(local_entry, columns)
 
       File.rm(path)
       result
@@ -404,25 +405,30 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc(%Local.Entry{} = entry, columns) do
+  def from_ipc({:local, path, _config}, columns) do
     {columns, projection} = column_names_or_projection(columns)
 
-    case Native.df_from_ipc(entry.path, columns, projection) do
+    case Native.df_from_ipc(path, columns, projection) do
       {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_ipc(%DataFrame{data: df}, %Local.Entry{} = entry, {compression, _level}, _streaming) do
-    case Native.df_to_ipc(df, entry.path, maybe_atom_to_string(compression)) do
+  def to_ipc(%DataFrame{data: df}, {:local, path, _config}, {compression, _level}, _streaming) do
+    case Native.df_to_ipc(df, path, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_ipc(%DataFrame{data: df}, %S3.Entry{} = entry, {compression, _level}, _streaming) do
+  def to_ipc(
+        %DataFrame{data: df},
+        {:s3, _key, _config} = entry,
+        {compression, _level},
+        _streaming
+      ) do
     case Native.df_to_ipc_cloud(df, entry, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -474,13 +480,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc_stream(%module{} = entry, columns) when module in [S3.Entry, HTTP.Entry] do
+  def from_ipc_stream({backend, _path, _config} = entry, columns) when backend in [:s3, :http] do
     path = Shared.build_path_for_entry(entry)
 
     with :ok <- Explorer.FSS.download(entry, path) do
-      entry = Local.from_path(path)
+      local_entry = {:local, path, %{}}
 
-      result = from_ipc_stream(entry, columns)
+      result = from_ipc_stream(local_entry, columns)
 
       File.rm(path)
       result
@@ -488,25 +494,25 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def from_ipc_stream(%Local.Entry{} = entry, columns) do
+  def from_ipc_stream({:local, path, _config}, columns) do
     {columns, projection} = column_names_or_projection(columns)
 
-    case Native.df_from_ipc_stream(entry.path, columns, projection) do
+    case Native.df_from_ipc_stream(path, columns, projection) do
       {:ok, df} -> Shared.create_dataframe(df)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_ipc_stream(%DataFrame{data: df}, %Local.Entry{} = entry, {compression, _level}) do
-    case Native.df_to_ipc_stream(df, entry.path, maybe_atom_to_string(compression)) do
+  def to_ipc_stream(%DataFrame{data: df}, {:local, path, _config}, {compression, _level}) do
+    case Native.df_to_ipc_stream(df, path, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_ipc_stream(%DataFrame{data: df}, %S3.Entry{} = entry, {compression, _level}) do
+  def to_ipc_stream(%DataFrame{data: df}, {:s3, _key, _config} = entry, {compression, _level}) do
     case Native.df_to_ipc_stream_cloud(df, entry, maybe_atom_to_string(compression)) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -551,7 +557,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
-  def compute(df), do: df
+  def collect(df), do: df
 
   @impl true
   def from_tabular(tabular, io_dtypes) do
@@ -638,17 +644,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
     |> Stream.flat_map(&to_rows(&1, atom_keys?))
   end
 
-  # Ownership
-
-  @impl true
-  def owner_reference(df), do: df.data.resource
-
-  @impl true
-  def owner_export(df), do: dump_ipc(df, {nil, nil})
-
-  @impl true
-  def owner_import(term), do: load_ipc(term, nil)
-
   # Introspection
 
   @impl true
@@ -664,7 +659,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.head(rows)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -672,7 +667,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.tail(rows)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -680,7 +675,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.select(out_df)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -692,7 +687,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.filter_with(out_df, lseries)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -700,7 +695,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.mutate_with(out_df, column_pairs)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -765,7 +760,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.distinct(out_df, columns)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -773,7 +768,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.rename(out_df, pairs)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -860,7 +855,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.drop_nil(columns)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -868,7 +863,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.pivot_longer(out_df, cols_to_pivot, cols_to_keep, names_to, values_to)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -895,7 +890,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.explode(out_df, columns)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -903,7 +898,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.unnest(out_df, columns)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -926,7 +921,16 @@ defmodule Explorer.PolarsBackend.DataFrame do
     right = lazy(right)
 
     ldf = LazyFrame.join([left, right], out_df, on, how)
-    LazyFrame.compute(ldf)
+    LazyFrame.collect(ldf)
+  end
+
+  @impl true
+  def join_asof([left, right], out_df, on, by, strategy) do
+    left = lazy(left)
+    right = lazy(right)
+
+    ldf = LazyFrame.join_asof([left, right], out_df, on, by, strategy)
+    LazyFrame.collect(ldf)
   end
 
   @impl true
@@ -935,7 +939,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
     lazy_dfs
     |> LazyFrame.concat_rows(out_df)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true
@@ -962,7 +966,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.summarise_with(out_df, column_pairs)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   # Inspect
@@ -979,7 +983,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
     df
     |> lazy()
     |> LazyFrame.sql(sql_string, table_name)
-    |> LazyFrame.compute()
+    |> LazyFrame.collect()
   end
 
   @impl true

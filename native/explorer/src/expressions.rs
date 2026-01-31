@@ -1038,24 +1038,10 @@ pub fn expr_clip_float(expr: ExExpr, min: f64, max: f64) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_day_of_week(expr: ExExpr) -> ExExpr {
+pub fn expr_year(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().weekday())
-}
-
-#[rustler::nif]
-pub fn expr_day_of_year(expr: ExExpr) -> ExExpr {
-    let expr = expr.clone_inner();
-
-    ExExpr::new(expr.dt().ordinal_day())
-}
-
-#[rustler::nif]
-pub fn expr_week_of_year(expr: ExExpr) -> ExExpr {
-    let expr = expr.clone_inner();
-
-    ExExpr::new(expr.dt().week())
+    ExExpr::new(expr.dt().year())
 }
 
 #[rustler::nif]
@@ -1066,10 +1052,52 @@ pub fn expr_month(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
-pub fn expr_year(expr: ExExpr) -> ExExpr {
+pub fn expr_day_of_month(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.dt().year())
+    ExExpr::new(expr.dt().day())
+}
+
+#[rustler::nif]
+pub fn expr_is_leap_year(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().is_leap_year())
+}
+
+#[rustler::nif]
+pub fn expr_quarter_of_year(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().quarter())
+}
+
+#[rustler::nif]
+pub fn expr_day_of_year(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().ordinal_day())
+}
+
+#[rustler::nif]
+pub fn expr_iso_year(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().iso_year())
+}
+
+#[rustler::nif]
+pub fn expr_week_of_year(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().week())
+}
+
+#[rustler::nif]
+pub fn expr_day_of_week(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().weekday())
 }
 
 #[rustler::nif]
@@ -1091,6 +1119,13 @@ pub fn expr_second(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
     ExExpr::new(expr.dt().second())
+}
+
+#[rustler::nif]
+pub fn expr_nanosecond(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.dt().nanosecond())
 }
 
 #[rustler::nif]

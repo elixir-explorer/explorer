@@ -109,7 +109,8 @@ defmodule Explorer.PolarsBackend.Native do
         _encoding,
         _nil_vals,
         _parse_dates,
-        _eol_delimiter
+        _eol_delimiter,
+        _quote_delimiter
       ),
       do: err()
 
@@ -145,7 +146,8 @@ defmodule Explorer.PolarsBackend.Native do
         _encoding,
         _nil_vals,
         _parse_dates,
-        _eol_delimiter
+        _eol_delimiter,
+        _quote_delimiter
       ),
       do: err()
 
@@ -255,7 +257,8 @@ defmodule Explorer.PolarsBackend.Native do
         _encoding,
         _nil_vals,
         _parse_dates,
-        _eol_delimiter
+        _eol_delimiter,
+        _quote_delimiter
       ),
       do: err()
 
@@ -285,6 +288,19 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_drop_nils(_df, _columns), do: err()
   def lf_pivot_longer(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()
   def lf_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
+
+  def lf_join_asof(
+        _df,
+        _other,
+        _left_on,
+        _right_on,
+        _left_by,
+        _right_by,
+        _strategy,
+        _suffix
+      ),
+      do: err()
+
   def lf_concat_rows(_dfs), do: err()
   def lf_concat_columns(_ldfs), do: err()
   def lf_to_parquet(_df, _filename, _compression, _streaming), do: err()
@@ -479,14 +495,19 @@ defmodule Explorer.PolarsBackend.Native do
   def s_ewm_standard_deviation(_s, _alpha, _adjust, _bias, _min_periods, _ignore_nils), do: err()
   def s_ewm_variance(_s, _alpha, _adjust, _bias, _min_periods, _ignore_nils), do: err()
   def s_in(_s, _other), do: err()
-  def s_day_of_week(_s), do: err()
-  def s_day_of_year(_s), do: err()
-  def s_week_of_year(_s), do: err()
-  def s_month(_s), do: err()
   def s_year(_s), do: err()
+  def s_month(_s), do: err()
+  def s_day_of_month(_s), do: err()
+  def s_is_leap_year(_s), do: err()
+  def s_quarter_of_year(_s), do: err()
+  def s_day_of_year(_s), do: err()
+  def s_iso_year(_s), do: err()
+  def s_week_of_year(_s), do: err()
+  def s_day_of_week(_s), do: err()
   def s_hour(_s), do: err()
   def s_minute(_s), do: err()
   def s_second(_s), do: err()
+  def s_nanosecond(_s), do: err()
   def s_sin(_s), do: err()
   def s_cos(_s), do: err()
   def s_tan(_s), do: err()
@@ -503,9 +524,7 @@ defmodule Explorer.PolarsBackend.Native do
   def s_field(_s, _name), do: err()
   def s_json_decode(_s, _dtype), do: err()
   def s_json_path_match(_s, _json_path), do: err()
-
-  def message_on_gc(_pid, _payload), do: err()
-  def is_message_on_gc(_term), do: err()
+  def s_index_of(_s, _v), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

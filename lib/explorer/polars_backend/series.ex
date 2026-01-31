@@ -54,24 +54,6 @@ defmodule Explorer.PolarsBackend.Series do
     Shared.apply_series(series, :s_strftime, [format_string])
   end
 
-  # Ownership
-
-  @impl true
-  def owner_reference(series), do: series.data.resource
-
-  @impl true
-  def owner_export(series) do
-    Explorer.DataFrame.new(series: series)
-    |> Explorer.DataFrame.dump_ipc()
-  end
-
-  @impl true
-  def owner_import(dumped) do
-    with {:ok, df} <- Explorer.DataFrame.load_ipc(dumped) do
-      {:ok, df[:series]}
-    end
-  end
-
   # Introspection
 
   defp dtype(series), do: Shared.apply_series(series, :s_dtype)
@@ -773,24 +755,40 @@ defmodule Explorer.PolarsBackend.Series do
 
   # Date / DateTime
   @impl true
-  def day_of_week(series),
-    do: Shared.apply_series(series, :s_day_of_week)
-
-  @impl true
-  def day_of_year(series),
-    do: Shared.apply_series(series, :s_day_of_year)
-
-  @impl true
-  def week_of_year(series),
-    do: Shared.apply_series(series, :s_week_of_year)
+  def year(series),
+    do: Shared.apply_series(series, :s_year)
 
   @impl true
   def month(series),
     do: Shared.apply_series(series, :s_month)
 
   @impl true
-  def year(series),
-    do: Shared.apply_series(series, :s_year)
+  def day_of_month(series),
+    do: Shared.apply_series(series, :s_day_of_month)
+
+  @impl true
+  def is_leap_year(series),
+    do: Shared.apply_series(series, :s_is_leap_year)
+
+  @impl true
+  def quarter_of_year(series),
+    do: Shared.apply_series(series, :s_quarter_of_year)
+
+  @impl true
+  def day_of_year(series),
+    do: Shared.apply_series(series, :s_day_of_year)
+
+  @impl true
+  def iso_year(series),
+    do: Shared.apply_series(series, :s_iso_year)
+
+  @impl true
+  def week_of_year(series),
+    do: Shared.apply_series(series, :s_week_of_year)
+
+  @impl true
+  def day_of_week(series),
+    do: Shared.apply_series(series, :s_day_of_week)
 
   @impl true
   def hour(series),
@@ -803,6 +801,10 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def second(series),
     do: Shared.apply_series(series, :s_second)
+
+  @impl true
+  def nanosecond(series),
+    do: Shared.apply_series(series, :s_nanosecond)
 
   # Lists
 
@@ -848,6 +850,32 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def re_named_captures(series, pattern) do
     Shared.apply_series(series, :s_re_named_captures, [pattern])
+  end
+
+  @impl true
+  def index_of(series, value) do
+    value_series =
+      try do
+        case {series.dtype, value} do
+          # cast value to duration of same type as series to ensure durations are correctly
+          # compared at the same precision
+          {{:duration, precision}, %Explorer.Duration{}} ->
+            Series.from_list([value]) |> cast({:duration, precision})
+
+          {{:duration, _}, _} ->
+            raise ArgumentError,
+                  "unable to get index of value: #{inspect(value)} in series of type: #{inspect(series.dtype)}"
+
+          {dtype, _} ->
+            Series.from_list([value], dtype: dtype)
+        end
+      rescue
+        _ ->
+          raise ArgumentError,
+                "unable to get index of value: #{inspect(value)} in series of type: #{inspect(series.dtype)}"
+      end
+
+    Shared.apply_series(series, :s_index_of, [value_series.data])
   end
 
   # Polars specific functions

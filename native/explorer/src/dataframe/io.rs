@@ -47,6 +47,7 @@ pub fn df_from_csv(
     null_vals: Vec<String>,
     parse_dates: bool,
     eol_delimiter: Option<u8>,
+    quote_delimiter: Option<u8>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
@@ -71,6 +72,7 @@ pub fn df_from_csv(
         .with_parse_options(
             CsvParseOptions::default()
                 .with_encoding(encoding)
+                .with_quote_char(quote_delimiter)
                 .with_truncate_ragged_lines(true)
                 .with_try_parse_dates(parse_dates)
                 .with_separator(delimiter_as_byte)
@@ -180,6 +182,7 @@ pub fn df_load_csv(
     null_vals: Vec<String>,
     parse_dates: bool,
     eol_delimiter: Option<u8>,
+    quote_delimiter: Option<u8>,
 ) -> Result<ExDataFrame, ExplorerError> {
     let encoding = match encoding {
         "utf8-lossy" => CsvEncoding::LossyUtf8,
@@ -211,6 +214,7 @@ pub fn df_load_csv(
                     null_vals.iter().map(|x| x.into()).collect(),
                 )))
                 .with_try_parse_dates(parse_dates)
+                .with_quote_char(quote_delimiter)
                 .with_eol_char(eol_delimiter.unwrap_or(b'\n')),
         )
         .into_reader_with_file_handle(cursor)

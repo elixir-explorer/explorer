@@ -22,7 +22,6 @@ mod encoding;
 mod error;
 mod expressions;
 mod lazyframe;
-mod local_message;
 mod series;
 
 pub use datatypes::{
@@ -65,6 +64,7 @@ mod atoms {
         coef,
         exp,
         sign,
+        s3,
     }
 }
 

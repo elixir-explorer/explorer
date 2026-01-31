@@ -31,19 +31,12 @@ defmodule Explorer.Backend.QueryFrame do
         names: df.names,
         dtypes: df.dtypes,
         backend: module,
-        resource: module.owner_reference(df)
+        resource: nil
       },
       df.names,
       df.dtypes
     )
   end
-
-  # We don't implement owner reference here because no
-  # cross node operations happen at the lazy frame level.
-  # Instead, we store the resource and we delegate them
-  # to the underlying lazy series.
-  @impl Backend.DataFrame
-  def owner_reference(_), do: nil
 
   @impl Backend.DataFrame
   def lazy, do: __MODULE__

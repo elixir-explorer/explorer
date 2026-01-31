@@ -357,6 +357,64 @@ pub fn lf_join(
     Ok(ExLazyFrame::new(new_ldf))
 }
 
+#[allow(clippy::too_many_arguments)]
+#[rustler::nif]
+pub fn lf_join_asof(
+    data: ExLazyFrame,
+    other: ExLazyFrame,
+    left_on: Vec<ExExpr>,
+    right_on: Vec<ExExpr>,
+    left_by: Vec<&str>,
+    right_by: Vec<&str>,
+    strategy: &str,
+    suffix: &str,
+) -> Result<ExLazyFrame, ExplorerError> {
+    fn map_by(by: &Vec<&str>) -> Option<Vec<PlSmallStr>> {
+        if by.is_empty() {
+            None
+        } else {
+            Some(by.iter().map(|l| PlSmallStr::from_str(l)).collect())
+        }
+    }
+
+    let strategy = match strategy {
+        "backward" => AsofStrategy::Backward,
+        "forward" => AsofStrategy::Forward,
+        "nearest" => AsofStrategy::Nearest,
+        _ => {
+            return Err(ExplorerError::Other(format!(
+                "AsofJoin method {strategy} not supported"
+            )))
+        }
+    };
+
+    let ldf = data.clone_inner();
+    let ldf1 = other.clone_inner();
+
+    let new_ldf = ldf
+        .join_builder()
+        .with(ldf1)
+        .coalesce(JoinCoalesce::CoalesceColumns)
+        .how(JoinType::AsOf(AsOfOptions {
+            strategy,
+            tolerance: None,
+            // TODO: provide option
+            tolerance_str: None,
+            left_by: map_by(&left_by),
+            right_by: map_by(&right_by),
+            // TODO: provide option
+            allow_eq: true,
+            // TODO: add a check? Note that Polars prints a warning if `check_sortedness=true` when `by` is provided
+            check_sortedness: false,
+        }))
+        .left_on(ex_expr_to_exprs(left_on))
+        .right_on(ex_expr_to_exprs(right_on))
+        .suffix(suffix)
+        .finish();
+
+    Ok(ExLazyFrame::new(new_ldf))
+}
+
 #[rustler::nif]
 pub fn lf_concat_rows(lazy_frames: Vec<ExLazyFrame>) -> Result<ExLazyFrame, ExplorerError> {
     let inputs: Vec<LazyFrame> = lazy_frames.iter().map(|lf| lf.clone_inner()).collect();

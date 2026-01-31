@@ -224,6 +224,43 @@ defmodule Explorer.DataFrame.CSVTest do
            }
   end
 
+  test "load_csv/2 quote_delimiter - different quote char" do
+    data = """
+    city,lat,lng
+    'Elgin, Scotland, the UK',57.653484,-3.335724
+    'Stoke-on-Trent, Staffordshire, the UK',53.002666,-2.179404
+    'Solihull, Birmingham, UK',52.412811,-1.778197
+    """
+
+    frame = DF.load_csv!(data, quote_delimiter: "'")
+
+    assert DF.n_rows(frame) == 3
+    assert DF.n_columns(frame) == 3
+
+    assert frame["city"][0] == "Elgin, Scotland, the UK"
+    assert frame["city"][2] == "Solihull, Birmingham, UK"
+  end
+
+  test "load_csv/2 quote_delimiter - no quote char" do
+    data = """
+    city;nickname;lat;lng
+    Elgin, Scotland, the UK;"Little Ireland";57.653484;-3.335724
+    Stoke-on-Trent, Staffordshire, the UK;nil;53.002666;-2.179404
+    Solihull, Birmingham, UK;nil;52.412811;-1.778197
+    """
+
+    frame = DF.load_csv!(data, quote_delimiter: nil, delimiter: ";", nil_values: ["nil"])
+
+    assert DF.n_rows(frame) == 3
+    assert DF.n_columns(frame) == 4
+
+    assert frame["city"][0] == "Elgin, Scotland, the UK"
+    assert frame["city"][2] == "Solihull, Birmingham, UK"
+
+    assert frame["nickname"][0] == "\"Little Ireland\""
+    assert frame["nickname"][1] == nil
+  end
+
   def assert_csv(type, csv_value, parsed_value, from_csv_options) do
     data = "column\n#{csv_value}\n"
     # parsing should work as expected
@@ -810,7 +847,7 @@ defmodule Explorer.DataFrame.CSVTest do
 
   describe "cloud reads and writes" do
     setup do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566",
@@ -840,7 +877,7 @@ defmodule Explorer.DataFrame.CSVTest do
 
     @tag :cloud_integration
     test "writes a CSV file to endpoint ignoring bucket name", %{df: df} do
-      config = %FSS.S3.Config{
+      config = %{
         access_key_id: "test",
         secret_access_key: "test",
         endpoint: "http://localhost:4566/test-bucket",
@@ -848,14 +885,11 @@ defmodule Explorer.DataFrame.CSVTest do
         region: "us-east-1"
       }
 
-      entry = %FSS.S3.Entry{
-        key: "wine-yolo-#{System.monotonic_time()}.csv",
-        config: config
-      }
+      path = "s3://test-bucket/wine-yolo-#{System.monotonic_time()}.csv"
 
-      assert :ok = DF.to_csv(df, entry)
+      assert :ok = DF.to_csv(df, path, config: config)
 
-      saved_df = DF.from_csv!(entry)
+      saved_df = DF.from_csv!(path, config: config)
       assert DF.to_columns(saved_df) == DF.to_columns(Explorer.Datasets.wine())
     end
   end

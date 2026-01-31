@@ -1996,6 +1996,38 @@ defmodule Explorer.SeriesTest do
       assert s3.dtype == {:decimal, 38, 1}
       assert Series.to_list(s3) === [Decimal.new("2.2"), Decimal.new("4.0"), Decimal.new("6.1")]
     end
+
+    test "adding decimal series with positive and negative exponents" do
+      s1 =
+        Series.from_list([
+          Decimal.new("2.1e20"),
+          Decimal.new("-3.5e10"),
+          Decimal.new("1.5e-15"),
+          Decimal.new("1.0e2")
+        ])
+
+      s2 =
+        Series.from_list([
+          Decimal.new("1.0e20"),
+          Decimal.new("2.0e10"),
+          Decimal.new("2.5e-15"),
+          Decimal.new("5.0e-2")
+        ])
+
+      s3 = Series.add(s1, s2)
+      [v1, v2, v3, v4] = Series.to_list(s3)
+
+      assert Decimal.eq?(v1, Decimal.new("3.1e20"))
+      assert Decimal.eq?(v2, Decimal.new("-1.5e10"))
+      assert Decimal.eq?(v3, Decimal.new("4.0e-15"))
+      assert Decimal.eq?(v4, Decimal.new("100.05"))
+    end
+
+    test "overflow with values exceeding i128 limits" do
+      assert_raise RuntimeError,
+                   "Generic Error: decimal coefficient overflow: value exceeds i128 limits",
+                   fn -> Series.from_list([Decimal.new("3.4e38")]) end
+    end
   end
 
   describe "subtract/2" do
@@ -6770,6 +6802,108 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "index_of/2" do
+    test "gets index of element in series" do
+      series = Series.from_list([1, 2])
+      assert series |> Series.index_of(1) == 0
+      assert series |> Series.index_of(2) == 1
+      assert series |> Series.index_of(3) == nil
+    end
+
+    test "works with floats" do
+      series = Series.from_list([1.0, 2.0])
+      assert series |> Series.index_of(1.0) == 0
+      assert series |> Series.index_of(2.0) == 1
+      assert series |> Series.index_of(3.0) == nil
+    end
+
+    test "works with booleans" do
+      series = Series.from_list([false, true])
+      assert series |> Series.index_of(false) == 0
+      assert series |> Series.index_of(true) == 1
+
+      series = Series.from_list([false])
+      assert series |> Series.index_of(true) == nil
+    end
+
+    test "works with strings" do
+      series = Series.from_list(["a", "b"])
+      assert series |> Series.index_of("a") == 0
+      assert series |> Series.index_of("b") == 1
+      assert series |> Series.index_of("c") == nil
+    end
+
+    test "works with dates" do
+      series = Series.from_list([~D[2021-01-01], ~D[2021-01-02]])
+      assert series |> Series.index_of(~D[2021-01-01]) == 0
+      assert series |> Series.index_of(~D[2021-01-02]) == 1
+      assert series |> Series.index_of(~D[2021-01-03]) == nil
+    end
+
+    test "works with times" do
+      series = Series.from_list([~T[00:00:00.000001], ~T[00:00:01.000001]])
+      assert series |> Series.index_of(~T[00:00:00.000001]) == 0
+      assert series |> Series.index_of(~T[00:00:01.000001]) == 1
+      assert series |> Series.index_of(~T[00:00:02]) == nil
+    end
+
+    test "works with datetimes" do
+      series = Series.from_list([~N[2021-01-01 00:00:00.000001], ~N[2021-01-02 00:00:00.000001]])
+      assert series |> Series.index_of(~N[2021-01-01 00:00:00.000001]) == 0
+      assert series |> Series.index_of(~N[2021-01-02 00:00:00.000001]) == 1
+      assert series |> Series.index_of(~N[2021-01-03 00:00:00]) == nil
+    end
+
+    test "works with durations" do
+      series = Series.from_list([1, 2], dtype: {:duration, :millisecond})
+      one = %Explorer.Duration{value: 1000, precision: :microsecond}
+      two = %Explorer.Duration{value: 2, precision: :millisecond}
+      three = %Explorer.Duration{value: 3, precision: :millisecond}
+
+      assert series |> Series.index_of(one) == 0
+      assert series |> Series.index_of(two) == 1
+      assert series |> Series.index_of(three) == nil
+    end
+
+    test "works with decimal" do
+      series = Series.from_list([Decimal.new("1"), Decimal.new("2")])
+
+      assert series |> Series.index_of(Decimal.new("1")) == 0
+      assert series |> Series.index_of(Decimal.new("2")) == 1
+      assert series |> Series.index_of(Decimal.new("3")) == nil
+    end
+
+    test "duplicate values" do
+      series = Series.from_list([0, 0])
+
+      assert series |> Series.index_of(0) == 0
+    end
+
+    test "raises on type mismatch" do
+      assert_raise ArgumentError,
+                   "unable to get index of value: \"a\" in series of type: {:s, 64}",
+                   fn -> Series.index_of(Series.from_list([0]), "a") end
+
+      assert_raise ArgumentError,
+                   "unable to get index of value: Decimal.new(\"0\") in series of type: {:s, 64}",
+                   fn -> Series.index_of(Series.from_list([0]), Decimal.new("0")) end
+
+      assert_raise ArgumentError,
+                   "unable to get index of value: ~N[2021-01-03 00:00:00] in series of type: {:s, 64}",
+                   fn -> Series.index_of(Series.from_list([0]), ~N[2021-01-03 00:00:00]) end
+
+      one = %Explorer.Duration{value: 1, precision: :microsecond}
+
+      assert_raise ArgumentError,
+                   "unable to get index of value: #Explorer.Duration[1us] in series of type: {:s, 64}",
+                   fn -> Series.index_of(Series.from_list([1]), one) end
+
+      assert_raise ArgumentError,
+                   "unable to get index of value: 1 in series of type: {:duration, :microsecond}",
+                   fn -> Series.index_of(Series.from_list([one]), 1) end
+    end
+  end
+
   defp all_close?(a, b, tol \\ 1.0e-8)
 
   defp all_close?(%Series{} = a, %Series{} = b, tol) do
@@ -6787,7 +6921,4 @@ defmodule Explorer.SeriesTest do
       |> Series.all?()
     end
   end
-
-  defp all_close?(a, b, tol) when is_list(a), do: all_close?(Series.from_list(a), b, tol)
-  defp all_close?(a, b, tol) when is_list(b), do: all_close?(a, Series.from_list(b), tol)
 end

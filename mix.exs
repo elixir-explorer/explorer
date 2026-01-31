@@ -2,7 +2,7 @@ defmodule Explorer.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/elixir-nx/explorer"
-  @version "0.11.2-dev"
+  @version "0.12.0-dev"
   @dev? String.ends_with?(@version, "-dev")
   @force_build? System.get_env("EXPLORER_BUILD") in ["1", "true"]
 
@@ -31,7 +31,6 @@ defmodule Explorer.MixProject do
   def application do
     [
       extra_applications: [:logger, :inets, :ssl],
-      mod: {Explorer.Application, []},
       env: [default_backend: Explorer.PolarsBackend]
     ]
   end
@@ -42,14 +41,12 @@ defmodule Explorer.MixProject do
   defp deps do
     [
       {:aws_signature, "~> 0.3"},
-      {:fss, "~> 0.1"},
       {:rustler_precompiled, "~> 0.7"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 4.1"},
       {:decimal, "~> 2.1"},
 
       ## Optional
-      {:flame, "~> 0.3", optional: true},
       {:adbc, "~> 0.1", optional: true},
       {:nx, "~> 0.4", optional: true},
       {:rustler, "~> 0.36.0", optional: not (@dev? or @force_build?)},

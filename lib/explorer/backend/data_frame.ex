@@ -60,7 +60,8 @@ defmodule Explorer.Backend.DataFrame do
               columns :: columns_for_io(),
               infer_schema_length :: option(integer()),
               parse_dates :: boolean(),
-              eol_delimiter :: option(String.t())
+              eol_delimiter :: option(String.t()),
+              quote_delimiter :: option(String.t())
             ) :: io_result(df)
   @callback to_csv(
               df,
@@ -91,7 +92,8 @@ defmodule Explorer.Backend.DataFrame do
               columns :: columns_for_io(),
               infer_schema_length :: option(integer()),
               parse_dates :: boolean(),
-              eol_delimiter :: option(String.t())
+              eol_delimiter :: option(String.t()),
+              quote_delimiter :: option(String.t())
             ) :: io_result(df)
 
   # IO: Parquet
@@ -164,17 +166,11 @@ defmodule Explorer.Backend.DataFrame do
 
   @callback lazy() :: module()
   @callback lazy(df) :: df
-  @callback compute(df) :: df
+  @callback collect(df) :: df
   @callback from_tabular(Table.Reader.t(), io_dtypes) :: df
   @callback from_series([{binary(), Series.t()}]) :: df
   @callback to_rows(df, atom_keys? :: boolean()) :: [map()]
   @callback to_rows_stream(df, atom_keys? :: boolean(), chunk_size :: integer()) :: Enumerable.t()
-
-  # Ownership
-
-  @callback owner_reference(df) :: reference() | nil
-  @callback owner_import(term()) :: io_result(df)
-  @callback owner_export(df) :: io_result(term())
 
   # Introspection
 
@@ -248,6 +244,14 @@ defmodule Explorer.Backend.DataFrame do
               out_df :: df(),
               on :: list({column_name(), column_name()}),
               how :: :left | :inner | :outer | :right | :cross
+            ) :: df
+
+  @callback join_asof(
+              [df()],
+              out_df :: df(),
+              on :: list({column_name(), column_name()}),
+              by :: list({column_name(), column_name()}),
+              strategy :: :backward | :forward | :nearest
             ) :: df
 
   @callback concat_columns([df], out_df :: df()) :: df

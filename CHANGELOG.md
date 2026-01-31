@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Backwards incompatible changes
+
+  * Support for transparent transfers with `FLAME` is removed, instead use `load_ipc`/`dump_ipc` to explicitly transfer dataframe across nodes
+  * Support for the `FSS` library is deprecated, instead pass `s3://` URLs with credentials
+
 ## [v0.11.1] - 2025-08-17
 
 ### Added

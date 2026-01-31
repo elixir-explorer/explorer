@@ -74,6 +74,7 @@ defmodule Explorer.DataFrame do
   Multiple table verbs are used for combining tables. These are:
 
   - `join/3` for performing SQL-like joins
+  - `join_asof/3` for performing joins with as-of semantics
   - `concat_columns/1` for horizontally "stacking" dataframes
   - `concat_rows/1` for vertically "stacking" dataframes
 
@@ -201,12 +202,8 @@ defmodule Explorer.DataFrame do
   alias Explorer.Shared
   alias Explorer.Backend.LazySeries
 
-  alias FSS.HTTP
-  alias FSS.Local
-  alias FSS.S3
-
   @enforce_keys [:data, :groups, :names, :dtypes]
-  defstruct [:data, :groups, :names, :dtypes, :remote]
+  defstruct [:data, :groups, :names, :dtypes]
 
   @typedoc """
   Represents a column name as atom or string.
@@ -596,17 +593,19 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
 
     * `:encoding` - Encoding to use when reading the file. For now, the only possible values are `utf8` and `utf8-lossy`.
       The utf8-lossy option means that invalid utf8 values are replaced with � characters. (default: `"utf8"`)
+
+    * `:quote_delimiter` - A single character used for csv quoting. Set to `nil` to turn off special handling and escaping
+      of quotes. (default: `"\""`)
 
   """
   @doc type: :io
   @spec from_csv(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_csv(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -622,7 +621,8 @@ defmodule Explorer.DataFrame do
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
         parse_dates: false,
-        eol_delimiter: nil
+        eol_delimiter: nil,
+        quote_delimiter: "\""
       )
 
     backend = backend_from_options!(backend_opts)
@@ -641,7 +641,8 @@ defmodule Explorer.DataFrame do
         to_columns_for_io(opts[:columns]),
         opts[:infer_schema_length],
         opts[:parse_dates],
-        opts[:eol_delimiter]
+        opts[:eol_delimiter],
+        opts[:quote_delimiter]
       ]
 
       Shared.apply_init(backend, :from_csv, args, backend_opts)
@@ -788,7 +789,7 @@ defmodule Explorer.DataFrame do
   @spec load_csv(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_csv(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -803,7 +804,8 @@ defmodule Explorer.DataFrame do
         columns: nil,
         infer_schema_length: @default_infer_schema_length,
         parse_dates: false,
-        eol_delimiter: nil
+        eol_delimiter: nil,
+        quote_delimiter: "\""
       )
 
     backend = backend_from_options!(backend_opts)
@@ -821,7 +823,8 @@ defmodule Explorer.DataFrame do
       to_columns_for_io(opts[:columns]),
       opts[:infer_schema_length],
       opts[:parse_dates],
-      opts[:eol_delimiter]
+      opts[:eol_delimiter],
+      opts[:quote_delimiter]
     ]
 
     Shared.apply_init(backend, :load_csv, args, backend_opts)
@@ -862,13 +865,12 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
   """
   @doc type: :io
   @spec from_parquet(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_parquet(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -892,33 +894,24 @@ defmodule Explorer.DataFrame do
     end
   end
 
-  defp normalise_entry(%_{} = entry, config) when config != nil do
-    {:error,
-     ArgumentError.message(
-       ":config key is only supported when the argument is a string, got #{inspect(entry)} with config #{inspect(config)}"
-     )}
-  end
-
-  defp normalise_entry(%Local.Entry{} = entry, nil), do: {:ok, entry}
-  defp normalise_entry(%HTTP.Entry{} = entry, nil), do: {:ok, entry}
-  defp normalise_entry(%S3.Entry{config: %S3.Config{}} = entry, nil), do: {:ok, entry}
-
   defp normalise_entry("s3://" <> _rest = entry, config) do
-    S3.parse(entry, config: config)
+    Explorer.FSS.parse_s3(entry, config: config)
   end
 
-  defp normalise_entry("file://" <> path, _config), do: {:ok, Local.from_path(path)}
+  defp normalise_entry("file://" <> path, _config) do
+    Explorer.FSS.parse_local(path)
+  end
 
   defp normalise_entry("http://" <> _rest = url, config) do
-    HTTP.parse(url, config: config)
+    Explorer.FSS.parse_http(url, config: config)
   end
 
   defp normalise_entry("https://" <> _rest = url, config) do
-    HTTP.parse(url, config: config)
+    Explorer.FSS.parse_http(url, config: config)
   end
 
   defp normalise_entry(filepath, _config) when is_binary(filepath) do
-    {:ok, Local.from_path(filepath)}
+    Explorer.FSS.parse_local(filepath)
   end
 
   @doc """
@@ -1069,7 +1062,7 @@ defmodule Explorer.DataFrame do
   @spec load_parquet(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_parquet(contents, opts \\ []) do
-    opts = Keyword.validate!(opts, [:backend, :lazy, :node])
+    opts = Keyword.validate!(opts, [:backend, :lazy])
     backend = backend_from_options!(opts)
     Shared.apply_init(backend, :load_parquet, [contents], opts)
   end
@@ -1104,13 +1097,12 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
   """
   @doc type: :io
   @spec from_ipc(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -1340,7 +1332,7 @@ defmodule Explorer.DataFrame do
   @spec load_ipc(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -1385,7 +1377,6 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
 
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
@@ -1395,7 +1386,7 @@ defmodule Explorer.DataFrame do
   @spec from_ipc_stream(filename :: String.t() | fs_entry()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ipc_stream(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts = Keyword.validate!(opts, columns: nil, config: nil)
     backend = backend_from_options!(backend_opts)
@@ -1529,7 +1520,7 @@ defmodule Explorer.DataFrame do
   @spec load_ipc_stream(contents :: binary(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ipc_stream(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
     opts = Keyword.validate!(opts, columns: nil)
 
     backend = backend_from_options!(backend_opts)
@@ -1570,7 +1561,6 @@ defmodule Explorer.DataFrame do
 
     * `:lazy` - force the results into the lazy version of the current backend.
 
-    * `:node` - The Erlang node to allocate the data frame on.
 
     * `:config` - An optional struct, keyword list or map, normally associated with remote
       file systems. See [IO section](#module-io-operations) for more details. (default: `nil`)
@@ -1580,7 +1570,7 @@ defmodule Explorer.DataFrame do
   @spec from_ndjson(filename :: String.t() | fs_entry(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def from_ndjson(filename, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -1699,7 +1689,7 @@ defmodule Explorer.DataFrame do
   @spec load_ndjson(contents :: String.t(), opts :: Keyword.t()) ::
           {:ok, DataFrame.t()} | {:error, Exception.t()}
   def load_ndjson(contents, opts \\ []) do
-    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy, :node])
+    {backend_opts, opts} = Keyword.split(opts, [:backend, :lazy])
 
     opts =
       Keyword.validate!(opts,
@@ -1771,47 +1761,26 @@ defmodule Explorer.DataFrame do
   def to_lazy(df), do: Shared.apply_dataframe(df, :lazy)
 
   @doc """
-  Computes and collects a data frame to the current node.
+  Collects a lazy data frame into an eager one, executing the query.
 
-  If the data frame is already in the current node, it is computed
-  but no transfer happens.
+  It is the opposite of `lazy/1`. If the data frame is already eager,
+  it returns the data frame as-is.
+
+  Collecting a grouped dataframe should return a grouped dataframe.
 
   ## Examples
 
-      series = Explorer.Series.from_list([1, 2, 3], node: :some@node)
-      Explorer.Series.collect(series)
+      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
+      iex> Explorer.DataFrame.collect(df)
+      #Explorer.DataFrame<
+        Polars[3 x 1]
+        a s64 [1, 2, 3]
+      >
 
   """
   @doc type: :conversion
   @spec collect(df :: DataFrame.t()) :: DataFrame.t()
-  def collect(df) do
-    %DataFrame{data: %impl{}} = df = compute(df)
-
-    case impl.owner_reference(df) do
-      ref when is_reference(ref) and node(ref) != node() ->
-        with {:ok, exported} <- :erpc.call(node(ref), impl, :owner_export, [df]),
-             {:ok, imported} <- impl.owner_import(exported) do
-          imported
-        else
-          {:error, exception} -> raise exception
-        end
-
-      _ ->
-        df
-    end
-  end
-
-  @doc """
-  Computes the lazy data frame into an eager one, executing the query.
-
-  It is the opposite of `lazy/1`. If it is not a lazy data frame,
-  this is a noop.
-
-  Collecting a grouped dataframe should return a grouped dataframe.
-  """
-  @doc type: :conversion
-  @spec compute(df :: DataFrame.t()) :: DataFrame.t()
-  def compute(df), do: Shared.apply_dataframe(df, :compute)
+  def collect(df), do: Shared.apply_dataframe(df, :collect)
 
   @doc """
   Creates a new dataframe.
@@ -5373,24 +5342,15 @@ defmodule Explorer.DataFrame do
 
         {[_ | _] = on, how} ->
           normalized_on =
-            Enum.map(on, fn
-              {l_name, r_name} ->
-                [l_column] = to_existing_columns(left, [l_name])
-                [r_column] = to_existing_columns(right, [r_name])
-                {l_column, r_column}
+            normalize_common_columns(left, right, on)
+            |> case do
+              {:ok, cols} ->
+                cols
 
-              name ->
-                [l_column] = to_existing_columns(left, [name])
-                [r_column] = to_existing_columns(right, [name])
-
-                # This is an edge case for when an index is passed as column selection
-                if l_column != r_column do
-                  raise ArgumentError,
-                        "the column given to option `:on` is not the same for both dataframes"
-                end
-
-                {l_column, r_column}
-            end)
+              :error ->
+                raise ArgumentError,
+                      "the column given to option `:on` is not the same for both dataframes"
+            end
 
           {normalized_on, how}
       end
@@ -5420,6 +5380,7 @@ defmodule Explorer.DataFrame do
     pairs = dtypes_pairs_for_common_join(left, right, right_on)
 
     {new_names, _} = Enum.unzip(pairs)
+
     out_df(left, new_names, Map.new(pairs))
   end
 
@@ -5435,6 +5396,243 @@ defmodule Explorer.DataFrame do
 
         {name, right.dtypes[right_name]}
       end)
+  end
+
+  @valid_strategy_types [:backward, :forward, :nearest]
+  @doc """
+  Perform an asof join.
+
+  This is similar to a left-join except that we match on nearest key rather than equal keys.
+
+  Both DataFrames must be sorted by the `on` key (within each `by` group, if specified).
+
+  ## Options
+
+  * `:on` - The column to join on. Defaults to the only overlapping column, and throws if there is none
+    or multiple of them.
+  * `:by` - The column(s) to join on before doing asof join.
+  * `:strategy` - One of the join types (as an atom) described below. Defaults to `:backward`.
+
+  ## Strategies
+
+  For each row in the left DataFrame:
+
+  * `:backward` - Selects the last row in the right DataFrame whose `on` key is less than or equal to the left’s key.
+  * `:forward` - Selects the first row in the right DataFrame whose `on` key is greater than or equal to the left’s key.
+  * `:nearest` -  Selects the last row in the right DataFrame whose value is nearest to the left’s key. String keys are not currently supported for a nearest search.
+
+  ## Examples
+
+  As a reminder, let's start with an example of a `:left` join:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs = DF.new(number: [10, 20],     lower: ["x", "y"])
+      iex> lhs |> DF.join(rhs, on: "number", how: :left) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | x             |
+      | 20          | B             | y             |
+      | 30          | C             | nil           |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  Even though `rhs` has no corresponding row where `rhs["number"] == 30`, the
+  resulting join preserves that row from `lhs` because, per the definition of a
+  `:left` join, all rows from `lhs` must remain after the join.
+
+  The `:asof` join works in a similar way. All rows of `lhs` will be preserved,
+  but the matching criteria for the `:on` column is more flexible than checking
+  for strict equality. For example:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs  = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs2 = DF.new(number: [ 1, 11, 21], lower: ["x", "y", "z"])
+      iex> lhs |> DF.join_asof(rhs2, strategy: :backward) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | x             |
+      | 20          | B             | y             |
+      | 30          | C             | z             |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  Here we've used `strategy: :backward`. This indicates that the matching
+  criteria is, for each row in `lhs`, to look for the first row in `rhs2` such
+  that `lhs["number"] <= rhs["number"]`.
+
+  `strategy: :forward` works similarly except the criteria is `>=`:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs  = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs2 = DF.new(number: [ 1, 11, 21], lower: ["x", "y", "z"])
+      iex> lhs |> DF.join_asof(rhs2, strategy: :forward) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | y             |
+      | 20          | B             | z             |
+      | 30          | C             | nil           |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  Again, all rows from `lhs` were preserved despite there being no row in `rhs2`
+  such that `lhs["number"] >= rhs2["number"]`.
+
+  The last strategy `:nearest` combines `:backward` and `:forward` by doing both
+  then picking whichever's match was closer:
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs  = DF.new(number: [10, 20, 30], upper: ["A", "B", "C"])
+      iex> rhs2 = DF.new(number: [ 1, 11, 21], lower: ["x", "y", "z"])
+      iex> lhs |> DF.join_asof(rhs2, strategy: :nearest) |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     upper     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | A             | y             |
+      | 20          | B             | z             |
+      | 30          | C             | z             |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  Notice how the row `%{"number" => 21, "lower" => "z"}` from `rhs2` was matched
+  on twice since it was the nearest for both `%{"number" => 20, ...}` and
+  `%{"number" => 30, ...}`.
+
+  The `:by` option allows for additional matching criteria by also requiring
+  that matching rows from both DataFrames are strictly equal in the `:by`
+  column(s):
+
+      iex> alias Explorer.DataFrame, as: DF
+      iex> lhs_color = DF.new(number: [10, 20, 30], color: ["red", "blue", "blue"])
+      iex> rhs_blue  = DF.new(number: [ 1, 11, 21], color: ["blue", "blue", "blue"], lower: ["x", "y", "z"])
+      iex> lhs_color |> DF.join_asof(rhs_blue, on: "number", by: "color") |> DF.to_table_string()
+      \"\"\"
+      +---------------------------------------------+
+      |  Explorer DataFrame: [rows: 3, columns: 3]  |
+      +-------------+---------------+---------------+
+      |   number    |     color     |     lower     |
+      |    <s64>    |   <string>    |   <string>    |
+      +=============+===============+===============+
+      | 10          | red           | nil           |
+      | 20          | blue          | y             |
+      | 30          | blue          | z             |
+      +-------------+---------------+---------------+
+      \"\"\"
+
+  This is somewhat like grouping the DataFrames by the `:by` column(s) first,
+  then checking for an "asof" match within each group only. In the example, rows
+  `%{"number" => 20, ...}` and `%{"number" => 30, ...}` in `lhs_color` match as
+  before because all rows in `rhs_blue` have `%{color: "blue", ...}`. But the
+  row `%{"number" => 10, ...}` gets no match because the `%{color: "red", ...}`
+  "group" has no rows in `rhs_blue`.
+  """
+  @doc type: :multi
+  @spec join_asof(left :: DataFrame.t(), right :: DataFrame.t(), opts :: Keyword.t()) ::
+          DataFrame.t()
+  def join_asof(%DataFrame{} = left, %DataFrame{} = right, opts \\ []) do
+    left_columns = left.names
+    right_columns = right.names
+
+    opts =
+      Keyword.validate!(opts,
+        on: find_overlapping_columns(left_columns, right_columns),
+        by: [],
+        strategy: :backward
+      )
+
+    unless opts[:strategy] in @valid_strategy_types do
+      raise ArgumentError,
+            "join type is not valid: #{inspect(opts[:strategy])}. " <>
+              "Valid options are: #{Enum.map_join(@valid_strategy_types, ", ", &inspect/1)}"
+    end
+
+    strategy = opts[:strategy]
+
+    on =
+      case List.wrap(opts[:on]) do
+        [] ->
+          raise(ArgumentError, "could not find any overlapping columns for :on")
+
+        [_ | _] = on ->
+          normalize_common_columns(left, right, on)
+          |> case do
+            {:ok, [_] = cols} ->
+              cols
+
+            {:ok, _multiple} ->
+              raise ArgumentError,
+                    "multiple columns for option `:on` is not supported for join_asof, please set a single one"
+
+            :error ->
+              raise ArgumentError,
+                    "the column given to option `:on` is not the same for both dataframes"
+          end
+      end
+
+    by =
+      case List.wrap(opts[:by]) do
+        [] ->
+          []
+
+        by ->
+          normalize_common_columns(left, right, by)
+          |> case do
+            {:ok, cols} ->
+              cols
+
+            :error ->
+              raise ArgumentError,
+                    "the column given to option `:by` is not the same for both dataframes"
+          end
+      end
+
+    {_left_by, right_by} = Enum.unzip(by)
+    {_left_on, right_on} = Enum.unzip(on)
+
+    pairs = dtypes_pairs_for_common_join(left, right, right_on ++ right_by)
+    {new_names, _} = Enum.unzip(pairs)
+    out_df = out_df(left, new_names, Map.new(pairs))
+    Shared.apply_dataframe([left, right], :join_asof, [out_df, on, by, strategy])
+  end
+
+  defp normalize_common_columns(left, right, names) do
+    names
+    |> Enum.reduce_while({:ok, []}, fn
+      {l_name, r_name}, {:ok, acc} ->
+        [l_column] = to_existing_columns(left, [l_name])
+        [r_column] = to_existing_columns(right, [r_name])
+        {:cont, {:ok, [{l_column, r_column} | acc]}}
+
+      name, {:ok, acc} ->
+        [l_column] = to_existing_columns(left, [name])
+        [r_column] = to_existing_columns(right, [name])
+
+        # This is an edge case for when an index is passed as column selection
+        if l_column != r_column do
+          {:halt, :error}
+        else
+          {:cont, {:ok, [{l_column, r_column} | acc]}}
+        end
+    end)
   end
 
   @doc """
@@ -6731,7 +6929,7 @@ defmodule Explorer.DataFrame do
   end
 
   defp out_df(df, names, dtypes) do
-    %{df | names: names, dtypes: dtypes, remote: nil}
+    %{df | names: names, dtypes: dtypes}
   end
 
   defp pairwise_df(df, opts) do
@@ -6750,24 +6948,11 @@ defmodule Explorer.DataFrame do
     import Inspect.Algebra
 
     def inspect(df, opts) do
-      remote_ref =
-        case df.remote do
-          {_local_gc, _remote_pid, remote_ref} -> remote_ref
-          _ -> df.data.__struct__.owner_reference(df)
-        end
-
-      remote =
-        if is_reference(remote_ref) and node(remote_ref) != node() do
-          concat(line(), Atom.to_string(node(remote_ref)))
-        else
-          empty()
-        end
-
       force_unfit(
         concat([
           color("#Explorer.DataFrame<", :map, opts),
           nest(
-            concat([remote, line(), Shared.apply_dataframe(df, :inspect, [opts])]),
+            concat([line(), Shared.apply_dataframe(df, :inspect, [opts])]),
             2
           ),
           line(),

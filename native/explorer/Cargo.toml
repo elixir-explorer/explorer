@@ -40,6 +40,7 @@ version = "0.52"
 default-features = false
 features = [
   "abs",
+  "asof_join",
   "checked_arithmetic",
   "concat_str",
   "cov",
@@ -80,11 +81,14 @@ features = [
   "timezones",
   "to_dummies",
   "trigonometry",
+  "object",
+  "index_of",
+  "search_sorted",
 ]
 
 [dependencies.polars-ops]
 version = "0.52"
-features = ["abs", "ewma", "cum_agg", "cov"]
+features = ["abs", "ewma", "cum_agg", "cov", "index_of"]
 
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]

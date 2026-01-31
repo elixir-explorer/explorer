@@ -629,15 +629,31 @@ impl ExDecimal {
         }
     }
 
-    pub fn signed_coef(self) -> i128 {
-        self.sign as i128 * self.coef
+    pub fn signed_coef(self) -> Result<i128, ExplorerError> {
+        let base = self.sign as i128 * self.coef;
+        if self.exp > 0 {
+            base.checked_mul(10_i128.pow(self.exp as u32))
+                .ok_or_else(|| {
+                    ExplorerError::Other(
+                        "decimal coefficient overflow: value exceeds i128 limits".to_string(),
+                    )
+                })
+        } else {
+            Ok(base)
+        }
     }
 
     pub fn scale(self) -> usize {
-        self.exp
-            .abs()
-            .try_into()
-            .expect("cannot convert exponent (Elixir) to scale (Rust)")
+        // A positive `exp` represents an integer. Polars requires `scale == 0`
+        // for integers. The case where `exp > 0` is handled by `.signed_coef`.
+        if self.exp > 0 {
+            0
+        } else {
+            self.exp
+                .abs()
+                .try_into()
+                .expect("cannot convert exponent (Elixir) to scale (Rust)")
+        }
     }
 
     pub fn default_precision() -> usize {
@@ -793,11 +809,12 @@ impl TryFrom<ExParquetCompression> for ParquetCompression {
 }
 
 // =========================
-// ====== FSS Structs ======
+// ====== S3 Entry ======
 // =========================
 
+// Represents Explorer.FSS.S3Config struct from Elixir
 #[derive(NifStruct, Clone, Debug)]
-#[module = "FSS.S3.Config"]
+#[module = "Explorer.FSS.S3Config"]
 pub struct ExS3Config {
     pub access_key_id: String,
     pub secret_access_key: String,
@@ -807,11 +824,29 @@ pub struct ExS3Config {
     pub token: Option<String>,
 }
 
-#[derive(NifStruct, Clone, Debug)]
-#[module = "FSS.S3.Entry"]
+// Represents {:s3, key, config} triplet from Elixir
+#[derive(Clone, Debug)]
 pub struct ExS3Entry {
     pub key: String,
     pub config: ExS3Config,
+}
+
+impl<'a> rustler::Decoder<'a> for ExS3Entry {
+    fn decode(term: rustler::Term<'a>) -> rustler::NifResult<Self> {
+        use rustler::*;
+
+        // Expecting a tuple {:s3, key, %S3Config{}}
+        let tuple: (Atom, String, ExS3Config) = term.decode()?;
+
+        if tuple.0 != atoms::s3() {
+            return Err(rustler::Error::BadArg);
+        }
+
+        Ok(ExS3Entry {
+            key: tuple.1,
+            config: tuple.2,
+        })
+    }
 }
 
 impl fmt::Display for ExS3Entry {

@@ -8,10 +8,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   alias Explorer.PolarsBackend.Shared
   alias Explorer.PolarsBackend.DataFrame, as: Eager
 
-  alias FSS.Local
-  alias FSS.S3
-  alias FSS.HTTP
-
   import Explorer.PolarsBackend.Expression, only: [to_expr: 1, alias_expr: 2]
 
   # This resource is going to be a "ResourceArc" on Rust side.
@@ -30,7 +26,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def lazy(ldf), do: ldf
 
   @impl true
-  def compute(ldf), do: Shared.apply_dataframe(ldf, ldf, :lf_compute, [])
+  def collect(ldf), do: Shared.apply_dataframe(ldf, ldf, :lf_compute, [])
 
   @impl true
   def from_tabular(tabular, dtypes),
@@ -40,24 +36,6 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   def from_series(pairs), do: Eager.from_series(pairs) |> Eager.lazy()
 
   # Introspection
-
-  @impl true
-  def owner_reference(df), do: df.data.resource
-
-  @impl true
-  def owner_export(df) do
-    raise """
-    it is not possible to transfer a lazy data frame between nodes. \
-    You must collect the operands to the same node between continuing, got:
-
-    #{inspect(df)}
-    """
-  end
-
-  @impl true
-  def owner_import(_exported) do
-    raise "not implemented"
-  end
 
   @impl true
   def inspect(ldf, opts) when node(ldf.data.resource) != node() do
@@ -124,7 +102,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_csv(
-        %S3.Entry{},
+        {:s3, _key, _config},
+        _,
         _,
         _,
         _,
@@ -144,7 +123,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_csv(
-        %Local.Entry{} = entry,
+        {:local, path, _config},
         dtypes,
         <<delimiter::utf8>>,
         nil_values,
@@ -156,7 +135,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         columns,
         infer_schema_length,
         parse_dates,
-        eol_delimiter
+        eol_delimiter,
+        quote_delimiter
       )
       when is_nil(columns) do
     infer_schema_length =
@@ -166,7 +146,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
     result =
       Native.lf_from_csv(
-        entry.path,
+        path,
         infer_schema_length,
         header?,
         max_rows,
@@ -178,7 +158,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         encoding,
         nil_values,
         parse_dates,
-        char_byte(eol_delimiter)
+        char_byte(eol_delimiter),
+        char_byte(quote_delimiter)
       )
 
     case result do
@@ -189,7 +170,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def from_csv(
-        %Local.Entry{},
+        {:local, _path, _config},
+        _,
         _,
         _,
         _,
@@ -214,7 +196,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   defp char_byte(<<char::utf8>>), do: char
 
   @impl true
-  def from_parquet(%S3.Entry{} = entry, max_rows, columns, _rechunk) do
+  def from_parquet({:s3, _key, _config} = entry, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet_cloud(entry, max_rows, columns) do
       {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -222,7 +204,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_parquet(%HTTP.Entry{url: url}, max_rows, columns, _rechunk) do
+  def from_parquet({:http, url, _config}, max_rows, columns, _rechunk) do
     case Native.lf_from_parquet(url, max_rows, columns) do
       {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -230,29 +212,29 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_parquet(%Local.Entry{} = entry, max_rows, columns, _rechunk) do
-    case Native.lf_from_parquet(entry.path, max_rows, columns) do
+  def from_parquet({:local, path, _config}, max_rows, columns, _rechunk) do
+    case Native.lf_from_parquet(path, max_rows, columns) do
       {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def from_ndjson(%S3.Entry{}, _, _) do
+  def from_ndjson({:s3, _key, _config}, _, _) do
     {:error,
      ArgumentError.exception("reading NDJSON from AWS S3 is not supported for Lazy dataframes")}
   end
 
   @impl true
-  def from_ndjson(%Local.Entry{} = entry, infer_schema_length, batch_size) do
-    case Native.lf_from_ndjson(entry.path, infer_schema_length, batch_size) do
+  def from_ndjson({:local, path, _config}, infer_schema_length, batch_size) do
+    case Native.lf_from_ndjson(path, infer_schema_length, batch_size) do
       {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def from_ndjson(%HTTP.Entry{url: url}, infer_schema_length, batch_size) do
+  def from_ndjson({:http, url, _config}, infer_schema_length, batch_size) do
     case Native.lf_from_ndjson(url, infer_schema_length, batch_size) do
       {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
@@ -260,21 +242,21 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_ipc(%S3.Entry{}, _) do
+  def from_ipc({:s3, _key, _config}, _) do
     {:error,
      ArgumentError.exception("reading IPC from AWS S3 is not supported for Lazy dataframes")}
   end
 
   @impl true
-  def from_ipc(%Local.Entry{} = entry, columns) when is_nil(columns) do
-    case Native.lf_from_ipc(entry.path) do
+  def from_ipc({:local, path, _config}, columns) when is_nil(columns) do
+    case Native.lf_from_ipc(path) do
       {:ok, polars_ldf} -> Shared.create_dataframe(polars_ldf)
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def from_ipc(%Local.Entry{}, _columns) do
+  def from_ipc({:local, _path, _config}, _columns) do
     {:error,
      ArgumentError.exception(
        "`columns` is not supported by Polars' lazy backend. " <>
@@ -283,7 +265,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_ipc_stream(%S3.Entry{}, _) do
+  def from_ipc_stream({:s3, _key, _config}, _) do
     {:error,
      ArgumentError.exception(
        "reading IPC Stream from AWS S3 is not supported for Lazy dataframes"
@@ -291,7 +273,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def from_ipc_stream(%Local.Entry{} = fs_entry, columns) do
+  def from_ipc_stream({:local, _path, _config} = fs_entry, columns) do
     with {:ok, df} <- Eager.from_ipc_stream(fs_entry, columns) do
       {:ok, Eager.lazy(df)}
     end
@@ -311,7 +293,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         columns,
         infer_schema_length,
         parse_dates,
-        eol_delimiter
+        eol_delimiter,
+        quote_delimiter
       ) do
     with {:ok, df} <-
            Eager.load_csv(
@@ -327,7 +310,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
              columns,
              infer_schema_length,
              parse_dates,
-             eol_delimiter
+             eol_delimiter,
+             quote_delimiter
            ) do
       {:ok, Eager.lazy(df)}
     end
@@ -362,27 +346,34 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_csv(%DF{} = ldf, %Local.Entry{} = entry, header?, delimiter, quote_style, streaming) do
+  def to_csv(%DF{} = ldf, {:local, path, _config}, header?, delimiter, quote_style, streaming) do
     <<delimiter::utf8>> = delimiter
 
-    case Native.lf_to_csv(ldf.data, entry.path, header?, delimiter, quote_style, streaming) do
+    case Native.lf_to_csv(ldf.data, path, header?, delimiter, quote_style, streaming) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_csv(%DF{} = ldf, %S3.Entry{} = entry, header?, delimiter, quote_style, _streaming) do
-    eager_df = compute(ldf)
+  def to_csv(
+        %DF{} = ldf,
+        {:s3, _key, _config} = entry,
+        header?,
+        delimiter,
+        quote_style,
+        _streaming
+      ) do
+    eager_df = collect(ldf)
 
     Eager.to_csv(eager_df, entry, header?, delimiter, quote_style, false)
   end
 
   @impl true
-  def to_parquet(%DF{} = ldf, %Local.Entry{} = entry, {compression, level}, streaming) do
+  def to_parquet(%DF{} = ldf, {:local, path, _config}, {compression, level}, streaming) do
     case Native.lf_to_parquet(
            ldf.data,
-           entry.path,
+           path,
            Shared.parquet_compression(compression, level),
            streaming
          ) do
@@ -392,7 +383,12 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, {compression, level}, _streaming = true) do
+  def to_parquet(
+        %DF{} = ldf,
+        {:s3, _key, _config} = entry,
+        {compression, level},
+        _streaming = true
+      ) do
     case Native.lf_to_parquet_cloud(
            ldf.data,
            entry,
@@ -404,22 +400,22 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_parquet(%DF{} = ldf, %S3.Entry{} = entry, compression, _streaming = false) do
-    eager_df = compute(ldf)
+  def to_parquet(%DF{} = ldf, {:s3, _key, _config} = entry, compression, _streaming = false) do
+    eager_df = collect(ldf)
 
     Eager.to_parquet(eager_df, entry, compression, false)
   end
 
   @impl true
-  def to_ipc(%DF{} = ldf, %Local.Entry{} = entry, {compression, _level}, streaming) do
-    case Native.lf_to_ipc(ldf.data, entry.path, Atom.to_string(compression), streaming) do
+  def to_ipc(%DF{} = ldf, {:local, path, _config}, {compression, _level}, streaming) do
+    case Native.lf_to_ipc(ldf.data, path, Atom.to_string(compression), streaming) do
       {:ok, _} -> :ok
       {:error, error} -> {:error, RuntimeError.exception(error)}
     end
   end
 
   @impl true
-  def to_ipc(%DF{} = ldf, %S3.Entry{} = entry, {compression, _level}, _streaming = true) do
+  def to_ipc(%DF{} = ldf, {:s3, _key, _config} = entry, {compression, _level}, _streaming = true) do
     case Native.lf_to_ipc_cloud(
            ldf.data,
            entry,
@@ -431,8 +427,8 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
-  def to_ipc(%DF{} = ldf, %S3.Entry{} = entry, compression, _streaming = false) do
-    eager_df = compute(ldf)
+  def to_ipc(%DF{} = ldf, {:s3, _key, _config} = entry, compression, _streaming = false) do
+    eager_df = collect(ldf)
 
     Eager.to_ipc(eager_df, entry, compression, false)
   end
@@ -619,6 +615,26 @@ defmodule Explorer.PolarsBackend.LazyFrame do
         "left",
         "_left"
       ]
+    )
+  end
+
+  @impl true
+  def join_asof([%DF{} = left, %DF{} = right], %DF{} = out_df, on, by, strategy)
+      when is_list(on) and is_list(by) do
+    strategy = Atom.to_string(strategy)
+
+    {left_on, right_on} =
+      on
+      |> Enum.map(fn {left, right} -> {Native.expr_column(left), Native.expr_column(right)} end)
+      |> Enum.unzip()
+
+    {left_by, right_by} = Enum.unzip(by)
+
+    Shared.apply_dataframe(
+      left,
+      out_df,
+      :lf_join_asof,
+      [right.data, left_on, right_on, left_by, right_by, strategy, "_right"]
     )
   end
 
