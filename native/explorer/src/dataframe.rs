@@ -1,4 +1,5 @@
 use polars::prelude::*;
+use polars_lazy::frame::pivot::PivotExpr;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
 use polars_arrow::ffi;
@@ -372,9 +373,10 @@ pub fn df_slice(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_to_dummies(df: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFrame, ExplorerError> {
     let drop_first = false;
+    let drop_nulls = false;
     let dummies = df
         .select(selection)
-        .and_then(|df| df.to_dummies(None, drop_first))?;
+        .and_then(|df| df.to_dummies(None, drop_first, drop_nulls))?;
 
     Ok(ExDataFrame::new(dummies))
 }
@@ -458,7 +460,7 @@ pub fn df_pivot_wider(
         Some(temp_id_names),
         Some(values_column),
         false,
-        Some(PivotAgg::First),
+        Some(PivotAgg(Arc::new(PivotExpr::from_expr(col("").first())))),
         None,
     )?;
 

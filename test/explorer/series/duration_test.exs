@@ -10,7 +10,7 @@ defmodule Explorer.Series.DurationTest do
   @one_hour_us 3600 * 1_000_000
   @one_hour_duration_ms %Duration{value: @one_hour_ms, precision: :millisecond}
   @one_hour_duration_us %Duration{value: @one_hour_us, precision: :microsecond}
-  @one_day_duration_ms %Duration{value: 24 * @one_hour_ms, precision: :millisecond}
+  @one_day_duration_us %Duration{value: 24 * @one_hour_us, precision: :microsecond}
 
   describe "list" do
     test "from a list of integers" do
@@ -410,24 +410,24 @@ defmodule Explorer.Series.DurationTest do
       aug_21_s = Series.from_list([@aug_21])
       diff_s = Series.subtract(aug_21_s, aug_20_s)
 
-      assert diff_s.dtype == {:duration, :millisecond}
-      assert Series.to_list(diff_s) == [@one_day_duration_ms]
+      assert diff_s.dtype == {:duration, :microsecond}
+      assert Series.to_list(diff_s) == [@one_day_duration_us]
     end
 
     test "Date - date" do
       aug_20_s = Series.from_list([@aug_20])
       diff_s = Series.subtract(@aug_21, aug_20_s)
 
-      assert diff_s.dtype == {:duration, :millisecond}
-      assert Series.to_list(diff_s) == [@one_day_duration_ms]
+      assert diff_s.dtype == {:duration, :microsecond}
+      assert Series.to_list(diff_s) == [@one_day_duration_us]
     end
 
     test "date - Date" do
       aug_21_s = Series.from_list([@aug_21])
       diff_s = Series.subtract(aug_21_s, @aug_20)
 
-      assert diff_s.dtype == {:duration, :millisecond}
-      assert Series.to_list(diff_s) == [@one_day_duration_ms]
+      assert diff_s.dtype == {:duration, :microsecond}
+      assert Series.to_list(diff_s) == [@one_day_duration_us]
     end
 
     test "Date - Date raises ArgumentError" do
@@ -446,8 +446,8 @@ defmodule Explorer.Series.DurationTest do
       assert diff_s.dtype == :date
       assert Series.to_list(diff_s) == [@aug_20]
 
-      # Subtracting a duration at least a day results in the previous date.
-      one_day_s = Series.from_list([@one_day_duration_ms])
+      # Subtracting a duration of at least a day results in the previous date.
+      one_day_s = Series.from_list([@one_day_duration_us])
       diff_s = Series.subtract(aug_21_s, one_day_s)
 
       assert diff_s.dtype == :date

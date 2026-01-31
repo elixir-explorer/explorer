@@ -1,7 +1,9 @@
 use crate::ExplorerError;
-use polars::datatypes::CategoricalOrdering;
+use polars::datatypes::CategoricalPhysical;
+use polars::datatypes::Categories;
 use polars::datatypes::DataType;
 use polars::datatypes::Field;
+use polars::datatypes::PlSmallStr;
 use polars::datatypes::TimeUnit;
 use rustler::NifTaggedEnum;
 
@@ -99,7 +101,9 @@ impl TryFrom<&DataType> for ExSeriesDtype {
                 Ok(ExSeriesDtype::Struct(struct_fields))
             }
 
-            DataType::Decimal(precision, scale) => Ok(ExSeriesDtype::Decimal(*precision, *scale)),
+            DataType::Decimal(precision, scale) => {
+                Ok(ExSeriesDtype::Decimal(Some(*precision), Some(*scale)))
+            }
 
             _ => Err(ExplorerError::Other(format!(
                 "cannot cast to dtype: {value}"
@@ -117,7 +121,12 @@ impl TryFrom<&ExSeriesDtype> for DataType {
             ExSeriesDtype::Binary => Ok(DataType::Binary),
             ExSeriesDtype::Boolean => Ok(DataType::Boolean),
             ExSeriesDtype::Category => {
-                Ok(DataType::Categorical(None, CategoricalOrdering::default()))
+                let cats = Categories::new(
+                    PlSmallStr::EMPTY,
+                    PlSmallStr::EMPTY,
+                    CategoricalPhysical::U32,
+                );
+                Ok(DataType::from_categories(cats.clone()))
             }
             ExSeriesDtype::Date => Ok(DataType::Date),
             ExSeriesDtype::F(64) => Ok(DataType::Float64),
@@ -159,7 +168,12 @@ impl TryFrom<&ExSeriesDtype> for DataType {
                     .map(|(k, v)| Ok(Field::new(k.into(), v.try_into()?)))
                     .collect::<Result<Vec<Field>, Self::Error>>()?,
             )),
-            ExSeriesDtype::Decimal(precision, scale) => Ok(DataType::Decimal(*precision, *scale)),
+            ExSeriesDtype::Decimal(Some(precision), Some(scale)) => {
+                Ok(DataType::Decimal(*precision, *scale))
+            }
+            ExSeriesDtype::Decimal(_, _) => Err(ExplorerError::Other(
+                "Decimal type must have both precision and scale".to_string(),
+            )),
         }
     }
 }

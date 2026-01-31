@@ -27,7 +27,8 @@ tokio = { version = "1.40", default-features = false, features = [
   "rt",
 ], optional = true }
 object_store = { version = "0.12", default-features = false, optional = true }
-polars-arrow = "0.49"
+polars-arrow = "0.52"
+polars-lazy = "0.52"
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
@@ -35,7 +36,7 @@ polars-arrow = "0.49"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.49"
+version = "0.52"
 default-features = false
 features = [
   "abs",
@@ -86,18 +87,13 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.49"
+version = "0.52"
 features = ["abs", "ewma", "cum_agg", "cov", "index_of"]
 
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
 
-cloud = [
-  "object_store",
-  "tokio",
-  "aws",
-  "polars/cloud",
-]
+cloud = ["object_store", "tokio", "aws", "polars/cloud"]
 ndjson = ["polars/json"]
 aws = ["object_store/aws", "polars/async", "polars/aws"]
 

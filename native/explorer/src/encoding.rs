@@ -1,6 +1,6 @@
 use chrono::prelude::*;
 use polars::prelude::*;
-use rustler::{Encoder, Env, NewBinary, OwnedBinary, ResourceArc, Term};
+use rustler::{Encoder, Env, OwnedBinary, ResourceArc, Term};
 use std::collections::HashMap;
 use std::{mem, slice};
 
@@ -33,6 +33,15 @@ macro_rules! unsafe_iterator_series_to_list {
         });
 
         unsafe { Term::new($env, list) }
+    }};
+}
+
+macro_rules! encode_chunked_array {
+    ($chunked_array: expr, $env: ident, $encode_fun: expr) => {{
+        $chunked_array.physical().downcast_iter().flat_map(|iter| {
+            iter.into_iter()
+                .map(|opt_v| opt_v.copied().map($encode_fun).encode($env))
+        })
     }};
 }
 
@@ -96,15 +105,13 @@ fn date_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Explore
 
     Ok(unsafe_iterator_series_to_list!(
         env,
-        s.date()?.into_iter().map(|option| option
-            .map(|v| unsafe_encode_date!(
-                v,
-                date_struct_keys,
-                calendar_iso_module,
-                date_module,
-                env
-            ))
-            .encode(env))
+        encode_chunked_array!(s.date()?, env, |date| unsafe_encode_date!(
+            date,
+            date_struct_keys,
+            calendar_iso_module,
+            date_module,
+            env
+        ))
     ))
 }
 
@@ -192,18 +199,18 @@ fn naive_datetime_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b
 
     Ok(unsafe_iterator_series_to_list!(
         env,
-        s.datetime()?.into_iter().map(|opt_timestamp| opt_timestamp
-            .map(|timestamp| {
-                unsafe_encode_naive_datetime!(
-                    timestamp,
-                    time_unit,
-                    naive_datetime_struct_keys,
-                    calendar_iso_module,
-                    naive_datetime_module,
-                    env
-                )
-            })
-            .encode(env))
+        encode_chunked_array!(
+            s.datetime()?,
+            env,
+            |timestamp| unsafe_encode_naive_datetime!(
+                timestamp,
+                time_unit,
+                naive_datetime_struct_keys,
+                calendar_iso_module,
+                naive_datetime_module,
+                env
+            )
+        )
     ))
 }
 
@@ -314,19 +321,15 @@ fn datetime_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Exp
 
     Ok(unsafe_iterator_series_to_list!(
         env,
-        s.datetime()?.into_iter().map(|opt_timestamp| opt_timestamp
-            .map(|timestamp| {
-                unsafe_encode_datetime!(
-                    timestamp,
-                    time_unit,
-                    time_zone,
-                    datetime_struct_keys,
-                    calendar_iso_module,
-                    datetime_module,
-                    env
-                )
-            })
-            .encode(env))
+        encode_chunked_array!(s.datetime()?, env, |timestamp| unsafe_encode_datetime!(
+            timestamp,
+            time_unit,
+            time_zone,
+            datetime_struct_keys,
+            calendar_iso_module,
+            datetime_module,
+            env
+        ))
     ))
 }
 
@@ -397,11 +400,13 @@ fn duration_series_to_list<'b>(
 
     Ok(unsafe_iterator_series_to_list!(
         env,
-        s.duration()?.into_iter().map(|option| option
-            .map(|v| {
-                unsafe_encode_duration!(v, time_unit, duration_struct_keys, duration_module, env)
-            })
-            .encode(env))
+        encode_chunked_array!(s.duration()?, env, |duration| unsafe_encode_duration!(
+            duration,
+            time_unit,
+            duration_struct_keys,
+            duration_module,
+            env
+        ))
     ))
 }
 
@@ -468,9 +473,13 @@ fn decimal_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Expl
 
     Ok(unsafe_iterator_series_to_list!(
         env,
-        decimal_chunked.into_iter().map(|option| option
-            .map(|v| { unsafe_encode_decimal!(v, scale, struct_keys, module_atom, env) })
-            .encode(env))
+        encode_chunked_array!(decimal_chunked, env, |decimal| unsafe_encode_decimal!(
+            decimal,
+            scale,
+            struct_keys,
+            module_atom,
+            env
+        ))
     ))
 }
 
@@ -547,17 +556,13 @@ fn time_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Explore
 
     Ok(unsafe_iterator_series_to_list!(
         env,
-        s.time()?.into_iter().map(|option| option
-            .map(|v| {
-                unsafe_encode_time!(
-                    v,
-                    naive_time_struct_keys,
-                    calendar_iso_module,
-                    time_module,
-                    env
-                )
-            })
-            .encode(env))
+        encode_chunked_array!(s.time()?, env, |time| unsafe_encode_time!(
+            time,
+            naive_time_struct_keys,
+            calendar_iso_module,
+            time_module,
+            env
+        ))
     ))
 }
 
@@ -590,40 +595,9 @@ fn generic_binary_series_to_list<'b>(
     Ok(unsafe { Term::new(env, list) })
 }
 
-fn categorical_series_to_list<'b>(
-    s: &Series,
-    env: Env<'b>,
-    mapping: &Arc<RevMapping>,
-) -> Result<Term<'b>, ExplorerError> {
-    let env_as_c_arg = env.as_c_arg();
-    let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
-    let mut list = unsafe { list::make_list(env_as_c_arg, &[]) };
-
-    let logical = s.categorical()?.physical();
-    let cat_size = mapping.len();
-    let mut terms: Vec<NIF_TERM> = vec![nil_as_c_arg; cat_size];
-
-    for (index, term) in terms.iter_mut().enumerate() {
-        if let Some(existing_str) = mapping.get_optional(index as u32) {
-            let mut binary = NewBinary::new(env, existing_str.len());
-            binary.copy_from_slice(existing_str.as_bytes());
-
-            let binary_term: Term = binary.into();
-
-            *term = binary_term.as_c_arg();
-        }
-    }
-
-    for maybe_index in &logical.reverse() {
-        let term_ref = match maybe_index {
-            Some(index) if index < (cat_size as u32) => terms[index as usize],
-            _ => nil_as_c_arg,
-        };
-
-        list = unsafe { list::make_list_cell(env_as_c_arg, term_ref, list) }
-    }
-
-    Ok(unsafe { Term::new(env, list) })
+// HELP WANTED: Make this more efficient.
+fn categorical_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
+    generic_string_series_to_list(&s.cast(&DataType::String).unwrap(), env)
 }
 
 // Convert f32 and f64 series taking into account NaN and Infinity floats (they are encoded as atoms).
@@ -685,10 +659,10 @@ fn null_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Explore
 }
 
 macro_rules! series_to_iovec {
-    ($resource:ident, $s:ident, $env:ident, $convert_function:ident, $in_type:ty) => {{
+    ($resource:ident, $v:expr, $env:ident, $in_type:ty) => {{
         Ok(unsafe_iterator_series_to_list!(
             $env,
-            $s.$convert_function()?.downcast_iter().map(|array| {
+            $v.downcast_iter().map(|array| {
                 let slice: &[$in_type] = array.values().as_slice();
 
                 let aligned_slice = unsafe {
@@ -735,7 +709,7 @@ pub fn resource_term_from_value<'b>(
             encode_datetime(v, time_unit, time_zone.parse::<Tz>().unwrap(), env)
         }
         AnyValue::Duration(v, time_unit) => encode_duration(v, time_unit, env),
-        AnyValue::Categorical(idx, mapping, _) => Ok(mapping.get(idx).encode(env)),
+        AnyValue::Categorical(idx, mapping) => Ok(mapping.cat_to_str(idx).encode(env)),
         AnyValue::List(series) => list_from_series(ExSeries::new(series), env),
         AnyValue::Struct(_, _, fields) => v
             ._iter_struct_av()
@@ -748,7 +722,7 @@ pub fn resource_term_from_value<'b>(
             })
             .collect::<Result<HashMap<_, _>, ExplorerError>>()
             .map(|map| map.encode(env)),
-        AnyValue::Decimal(number, scale) => encode_decimal(number, scale, env),
+        AnyValue::Decimal(value, _precision, scale) => encode_decimal(value, scale, env),
         dt => panic!("cannot encode value {dt:?} to term"),
     }
 }
@@ -799,7 +773,7 @@ pub fn list_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
 
         DataType::Binary => generic_binary_series_to_list(&s.resource, &s, env),
         DataType::String => generic_string_series_to_list(&s, env),
-        DataType::Categorical(Some(mapping), _) => categorical_series_to_list(&s, env, mapping),
+        DataType::Categorical(_, _) => categorical_series_to_list(&s, env),
 
         DataType::List(_inner_dtype) => s
             .list()?
@@ -833,28 +807,26 @@ pub fn iovec_from_series(s: ExSeries, env: Env) -> Result<Term, ExplorerError> {
             }
             Ok([bin.release(env)].encode(env))
         }
-        DataType::Int8 => series_to_iovec!(resource, s, env, i8, i8),
-        DataType::Int16 => series_to_iovec!(resource, s, env, i16, i16),
-        DataType::Int32 => series_to_iovec!(resource, s, env, i32, i32),
-        DataType::Int64 => series_to_iovec!(resource, s, env, i64, i64),
-        DataType::UInt8 => series_to_iovec!(resource, s, env, u8, u8),
-        DataType::UInt16 => series_to_iovec!(resource, s, env, u16, u16),
-        DataType::UInt32 => series_to_iovec!(resource, s, env, u32, u32),
-        DataType::UInt64 => series_to_iovec!(resource, s, env, u64, u64),
-        DataType::Float32 => series_to_iovec!(resource, s, env, f32, f32),
-        DataType::Float64 => series_to_iovec!(resource, s, env, f64, f64),
-        DataType::Date => series_to_iovec!(resource, s, env, date, i32),
-        DataType::Time => series_to_iovec!(resource, s, env, time, i64),
+        DataType::Int8 => series_to_iovec!(resource, s.i8()?, env, i8),
+        DataType::Int16 => series_to_iovec!(resource, s.i16()?, env, i16),
+        DataType::Int32 => series_to_iovec!(resource, s.i32()?, env, i32),
+        DataType::Int64 => series_to_iovec!(resource, s.i64()?, env, i64),
+        DataType::UInt8 => series_to_iovec!(resource, s.u8()?, env, u8),
+        DataType::UInt16 => series_to_iovec!(resource, s.u16()?, env, u16),
+        DataType::UInt32 => series_to_iovec!(resource, s.u32()?, env, u32),
+        DataType::UInt64 => series_to_iovec!(resource, s.u64()?, env, u64),
+        DataType::Float32 => series_to_iovec!(resource, s.f32()?, env, f32),
+        DataType::Float64 => series_to_iovec!(resource, s.f64()?, env, f64),
+        DataType::Date => series_to_iovec!(resource, s.date()?.physical(), env, i32),
+        DataType::Time => series_to_iovec!(resource, s.time()?.physical(), env, i64),
         DataType::Datetime(_, None) => {
-            series_to_iovec!(resource, s, env, datetime, i64)
+            series_to_iovec!(resource, s.datetime()?.physical(), env, i64)
         }
         DataType::Duration(_) => {
-            series_to_iovec!(resource, s, env, duration, i64)
+            series_to_iovec!(resource, s.duration()?.physical(), env, i64)
         }
-        DataType::Categorical(Some(_), _) => {
-            let cat_series = s.cast(&DataType::UInt32)?;
-
-            series_to_iovec!(resource, cat_series, env, u32, u32)
+        DataType::Categorical(_, _) => {
+            series_to_iovec!(resource, s.cast(&DataType::UInt32)?.u32()?, env, u32)
         }
         dt => panic!("to_iovec/1 not implemented for {dt:?}"),
     }

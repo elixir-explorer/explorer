@@ -446,7 +446,8 @@ pub fn df_load_ipc(
 fn decode_ipc_compression(compression: &str) -> Result<IpcCompression, ExplorerError> {
     match compression {
         "lz4" => Ok(IpcCompression::LZ4),
-        "zstd" => Ok(IpcCompression::ZSTD),
+        // ZSTD with a compression level of 3 is the default.
+        "zstd" => Ok(IpcCompression::default()),
         other => Err(ExplorerError::Other(format!(
             "the algorithm {other} is not supported for IPC compression"
         ))),
