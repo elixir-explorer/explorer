@@ -587,6 +587,7 @@ pub fn s_fill_missing_with_bin(
 pub fn s_fill_missing_with_date(series: ExSeries, date: ExDate) -> Result<ExSeries, ExplorerError> {
     let s = series
         .date()?
+        .physical()
         .fill_null_with_values(date.into())?
         .cast(&DataType::Date)?
         .into_series();
@@ -607,6 +608,7 @@ pub fn s_fill_missing_with_datetime(
 
     let s = series
         .datetime()?
+        .physical()
         .fill_null_with_values(timestamp)?
         .cast(series.dtype())?
         .into_series();
@@ -1098,20 +1100,22 @@ pub fn s_quantile<'a>(
     let dtype = s.dtype();
     let strategy = parse_quantile_interpol_options(strategy);
     match dtype {
-        DataType::Date => match s.date()?.quantile(quantile, strategy)? {
+        DataType::Date => match s.date()?.physical().quantile(quantile, strategy)? {
             None => Ok(None::<ExDate>.encode(env)),
             Some(days) => Ok(ExDate::from(days as i32).encode(env)),
         },
-        DataType::Time => match s.time()?.quantile(quantile, strategy)? {
+        DataType::Time => match s.time()?.physical().quantile(quantile, strategy)? {
             None => Ok(None::<ExTime>.encode(env)),
             Some(microseconds) => Ok(ExTime::from(microseconds as i64).encode(env)),
         },
-        DataType::Datetime(unit, None) => match s.datetime()?.quantile(quantile, strategy)? {
-            None => Ok(None::<ExNaiveDateTime>.encode(env)),
-            Some(time) => Ok(encode_naive_datetime(time as i64, *unit, env)
-                .unwrap()
-                .encode(env)),
-        },
+        DataType::Datetime(unit, None) => {
+            match s.datetime()?.physical().quantile(quantile, strategy)? {
+                None => Ok(None::<ExNaiveDateTime>.encode(env)),
+                Some(time) => Ok(encode_naive_datetime(time as i64, *unit, env)
+                    .unwrap()
+                    .encode(env)),
+            }
+        }
         _ => encoding::resource_term_from_value(
             &s.resource,
             s.quantile_reduce(quantile, strategy)?
@@ -1126,24 +1130,33 @@ pub fn s_quantile<'a>(
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_peak_max(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let ca = match s.dtype() {
-        DataType::Int8 => peak_max(s.i8()?),
-        DataType::Int16 => peak_max(s.i16()?),
-        DataType::Int32 => peak_max(s.i32()?),
-        DataType::Int64 => peak_max(s.i64()?),
+        DataType::Int8 => peak_max_with_start_end(s.i8()?, Some(0i8), Some(0i8)),
+        DataType::Int16 => peak_max_with_start_end(s.i16()?, Some(0i16), Some(0i16)),
+        DataType::Int32 => peak_max_with_start_end(s.i32()?, Some(0i32), Some(0i32)),
+        DataType::Int64 => peak_max_with_start_end(s.i64()?, Some(0i64), Some(0i64)),
 
-        DataType::UInt8 => peak_max(s.u8()?),
-        DataType::UInt16 => peak_max(s.u16()?),
-        DataType::UInt32 => peak_max(s.u32()?),
-        DataType::UInt64 => peak_max(s.u64()?),
+        DataType::UInt8 => peak_max_with_start_end(s.u8()?, Some(0u8), Some(0u8)),
+        DataType::UInt16 => peak_max_with_start_end(s.u16()?, Some(0u16), Some(0u16)),
+        DataType::UInt32 => peak_max_with_start_end(s.u32()?, Some(0u32), Some(0u32)),
+        DataType::UInt64 => peak_max_with_start_end(s.u64()?, Some(0u64), Some(0u64)),
 
-        DataType::Float32 => peak_max(s.f32()?),
-        DataType::Float64 => peak_max(s.f64()?),
-        DataType::Decimal(_, _) => peak_max(s.decimal()?),
+        DataType::Float32 => peak_max_with_start_end(s.f32()?, Some(0f32), Some(0f32)),
+        DataType::Float64 => peak_max_with_start_end(s.f64()?, Some(0f64), Some(0f64)),
 
-        DataType::Date => peak_max(s.date()?),
-        DataType::Time => peak_max(s.time()?),
-        DataType::Datetime(_unit, None) => peak_max(s.datetime()?),
-        DataType::Duration(_unit) => peak_max(s.duration()?),
+        DataType::Decimal(_, _) => {
+            peak_max_with_start_end(s.decimal()?.physical(), Some(0.into()), Some(0.into()))
+        }
+        DataType::Date => peak_max_with_start_end(s.date()?.physical(), Some(0), Some(0)),
+        DataType::Time => {
+            peak_max_with_start_end(s.time()?.physical(), Some(0.into()), Some(0.into()))
+        }
+        DataType::Datetime(_unit, None) => {
+            peak_max_with_start_end(s.datetime()?.physical(), Some(0.into()), Some(0.into()))
+        }
+        DataType::Duration(_unit) => {
+            peak_max_with_start_end(s.duration()?.physical(), Some(0.into()), Some(0.into()))
+        }
+
         dt => panic!("peak_max/1 not implemented for {dt:?}"),
     };
 
@@ -1153,24 +1166,31 @@ pub fn s_peak_max(s: ExSeries) -> Result<ExSeries, ExplorerError> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_peak_min(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     let ca = match s.dtype() {
-        DataType::Int8 => peak_min(s.i8()?),
-        DataType::Int16 => peak_min(s.i16()?),
-        DataType::Int32 => peak_min(s.i32()?),
-        DataType::Int64 => peak_min(s.i64()?),
+        DataType::Int8 => peak_min_with_start_end(s.i8()?, Some(0i8), Some(0i8)),
+        DataType::Int16 => peak_min_with_start_end(s.i16()?, Some(0i16), Some(0i16)),
+        DataType::Int32 => peak_min_with_start_end(s.i32()?, Some(0i32), Some(0i32)),
+        DataType::Int64 => peak_min_with_start_end(s.i64()?, Some(0i64), Some(0i64)),
 
-        DataType::UInt8 => peak_min(s.u8()?),
-        DataType::UInt16 => peak_min(s.u16()?),
-        DataType::UInt32 => peak_min(s.u32()?),
-        DataType::UInt64 => peak_min(s.u64()?),
+        DataType::UInt8 => peak_min_with_start_end(s.u8()?, Some(0u8), Some(0u8)),
+        DataType::UInt16 => peak_min_with_start_end(s.u16()?, Some(0u16), Some(0u16)),
+        DataType::UInt32 => peak_min_with_start_end(s.u32()?, Some(0u32), Some(0u32)),
+        DataType::UInt64 => peak_min_with_start_end(s.u64()?, Some(0u64), Some(0u64)),
 
-        DataType::Float32 => peak_min(s.f32()?),
-        DataType::Float64 => peak_min(s.f64()?),
-        DataType::Decimal(_, _) => peak_min(s.decimal()?),
+        DataType::Float32 => peak_min_with_start_end(s.f32()?, Some(0f32), Some(0f32)),
+        DataType::Float64 => peak_min_with_start_end(s.f64()?, Some(0f64), Some(0f64)),
 
-        DataType::Date => peak_min(s.date()?),
-        DataType::Time => peak_min(s.time()?),
-        DataType::Datetime(_unit, None) => peak_min(s.datetime()?),
-        DataType::Duration(_unit) => peak_min(s.duration()?),
+        DataType::Decimal(_, _) => {
+            peak_min_with_start_end(s.decimal()?.physical(), Some(0.into()), Some(0.into()))
+        }
+        DataType::Date => peak_min_with_start_end(s.date()?.physical(), Some(0), Some(0)),
+        DataType::Time => peak_min_with_start_end(s.time()?.physical(), Some(0), Some(0)),
+        DataType::Datetime(_unit, None) => {
+            peak_min_with_start_end(s.datetime()?.physical(), Some(0.into()), Some(0.into()))
+        }
+        DataType::Duration(_unit) => {
+            peak_min_with_start_end(s.duration()?.physical(), Some(0.into()), Some(0.into()))
+        }
+
         dt => panic!("peak_min/1 not implemented for {dt:?}"),
     };
 
@@ -1214,52 +1234,42 @@ pub fn cast_str_to_f64(atom: &str) -> f64 {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_categories(s: ExSeries) -> Result<ExSeries, ExplorerError> {
     match s.dtype() {
-        DataType::Categorical(Some(mapping), _) => {
-            let size = mapping.len() as u32;
-            let categories: Vec<&str> = (0..size).map(|id| mapping.get(id)).collect();
-            let series = Series::new("categories".into(), &categories);
-            Ok(ExSeries::new(series))
+        DataType::Categorical(_, arc_mapping) => {
+            // https://github.com/narwhals-dev/narwhals/issues/3097
+            let mapping = arc_mapping.as_ref();
+            let categories = (0..mapping.num_cats_upper_bound())
+                .flat_map(|i| mapping.cat_to_str(i as CatSize))
+                .collect();
+            Ok(ExSeries::new(categories))
         }
         _ => panic!("Cannot get categories from non categorical series"),
     }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_categorise(s: ExSeries, cat: ExSeries) -> Result<ExSeries, ExplorerError> {
-    match cat.dtype() {
-        DataType::Categorical(Some(mapping), _) => {
-            let categories = mapping.get_categories();
-            let m = categories.len();
+pub fn s_categorise(
+    to_categorise: ExSeries,
+    categories: ExSeries,
+) -> Result<ExSeries, ExplorerError> {
+    let cat_dtype = categories.dtype();
 
-            let chunks: ChunkedArray<UInt32Type> = if s.dtype() == &DataType::String {
-                let ca = s.str()?;
-                if m >= 10 {
-                    let hash_map: std::collections::HashMap<&str, u32> = categories
-                        .values_iter()
-                        .enumerate()
-                        .map(|(i, v)| (v, i as u32))
-                        .collect();
-                    ca.into_iter()
-                        .map(|opt| opt.and_then(|slice| hash_map.get(slice).copied()))
-                        .collect()
-                } else {
-                    ca.into_iter()
-                        .map(|opt| opt.and_then(|slice| mapping.find(slice)))
-                        .collect()
-                }
-            } else {
-                s.cast(&DataType::UInt32)?.u32()?.clone()
-            };
+    match cat_dtype {
+        DataType::Categorical(_, arc_mapping) => {
+            // https://github.com/narwhals-dev/narwhals/issues/3097
+            let mapping = arc_mapping.as_ref();
+            let categories: Vec<&str> = (0..mapping.num_cats_upper_bound())
+                .flat_map(|i| mapping.cat_to_str(i as CatSize))
+                .collect();
 
-            let categorical_chunks = unsafe {
-                CategoricalChunked::from_cats_and_rev_map_unchecked(
-                    chunks,
-                    mapping.clone(),
-                    false,
-                    CategoricalOrdering::default(),
-                )
-            };
-            Ok(ExSeries::new(categorical_chunks.into_series()))
+            // Build an analogous `Enum` dtype. As `Enum`s are static, this will ensure that any
+            // elements in `to_categorise` which don't belong to a category from `categories` get
+            // mapped to `null` instead of adding new category.
+            let fcat = FrozenCategories::new(categories)?;
+            let fmap = fcat.mapping();
+            let enum_dtype = DataType::Enum(fcat.clone(), fmap.clone());
+
+            let categorised = to_categorise.cast(&enum_dtype)?.cast(cat_dtype)?;
+            Ok(ExSeries::new(categorised))
         }
         _ => panic!("Cannot get categories from non categorical or string series"),
     }
@@ -1891,7 +1901,7 @@ pub fn s_json_decode(s: ExSeries, ex_dtype: ExSeriesDtype) -> Result<ExSeries, E
         .lazy()
         .select([col(s.name().clone())
             .str()
-            .json_decode(Some(dtype), None)
+            .json_decode(dtype)
             .alias(s.name().clone())])
         .collect()?
         .column(s.name())?

@@ -639,21 +639,22 @@ impl ExDecimal {
             .try_into()
             .expect("cannot convert exponent (Elixir) to scale (Rust)")
     }
+
+    pub fn default_precision() -> usize {
+        // https://docs.pola.rs/api/python/stable/reference/api/polars.datatypes.Decimal.html
+        // > If set to None (default), the precision is set to 38 (the maximum
+        // > supported by Polars).
+        38
+    }
 }
 
 impl Literal for ExDecimal {
     fn lit(self) -> Expr {
-        let size = usize::try_from(-(self.exp)).expect("exponent should fit an usize");
+        let precision = ExDecimal::default_precision();
+        let scale = self.scale();
         Expr::Literal(LiteralValue::Scalar(Scalar::new(
-            DataType::Decimal(Some(size), Some(size)),
-            AnyValue::Decimal(
-                if self.sign.is_positive() {
-                    self.coef
-                } else {
-                    -self.coef
-                },
-                size,
-            ),
+            DataType::Decimal(precision, scale),
+            AnyValue::Decimal(self.signed_coef(), precision, scale),
         )))
     }
 }

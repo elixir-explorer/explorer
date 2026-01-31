@@ -282,7 +282,7 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_mutate_with(_df, _exprs), do: err()
   def lf_summarise_with(_df, _groups, _stable_groups?, _aggs), do: err()
   def lf_rename_columns(_df, _column_pairs), do: err()
-  def lf_drop_nils(_df, _column_pairs), do: err()
+  def lf_drop_nils(_df, _columns), do: err()
   def lf_pivot_longer(_df, _id_vars, _value_vars, _names_to, _values_to), do: err()
   def lf_join(_df, _other, _left_on, _right_on, _how, _suffix), do: err()
   def lf_concat_rows(_dfs), do: err()

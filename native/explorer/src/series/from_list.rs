@@ -4,6 +4,7 @@ use crate::datatypes::{
     ExDuration, ExNaiveDateTime, ExSeriesDtype, ExTime, ExTimeUnit,
 };
 use crate::{ExSeries, ExplorerError};
+use std::cmp;
 
 use polars::datatypes::DataType;
 use polars::prelude::*;
@@ -222,8 +223,8 @@ pub fn s_from_list_null(name: &str, length: usize) -> ExSeries {
 pub fn s_from_list_decimal(
     name: &str,
     val: Term,
-    precision: Option<usize>,
-    scale: Option<usize>,
+    precision: usize,
+    scale: usize,
 ) -> Result<ExSeries, ExplorerError> {
     let iterator = val
         .decode::<ListIterator>()
@@ -232,9 +233,8 @@ pub fn s_from_list_decimal(
     let values: Vec<AnyValue> = iterator
         .map(|item| match item.get_type() {
             TermType::Integer => {
-                let s = scale.unwrap_or(0);
                 item.decode::<i128>()
-                    .map(|num| AnyValue::Decimal(num, s))
+                    .map(|num| AnyValue::Decimal(num, precision, scale))
                     .map_err(|err| {
                         ExplorerError::Other(format!("int number is too big for an i128: {err:?}"))
                     })
@@ -242,18 +242,25 @@ pub fn s_from_list_decimal(
 
             TermType::Map => item
                 .decode::<ExDecimal>()
-                .map(|ex_decimal| AnyValue::Decimal(ex_decimal.signed_coef(), ex_decimal.scale()))
+                .map(|ex_decimal| {
+                    let integer = decimal_integer(ex_decimal.signed_coef(), ex_decimal.scale(), scale);
+                    AnyValue::Decimal(integer, precision, scale)
+                })
                 .map_err(|error| {
                     ExplorerError::Other(format!(
                         "cannot decode a valid decimal from term; check that `coef` fits into an `i128`. error: {error:?}"
                     ))
                 }),
+
             TermType::Atom => Ok(AnyValue::Null),
 
             TermType::Float => item
                 .decode::<f64>()
                 .map(|num| match native_float_to_decimal_parts(num) {
-                    Some((integer, scale)) => AnyValue::Decimal(integer, scale),
+                    Some((inferred_integer, inferred_scale)) =>{
+                        let integer = decimal_integer(inferred_integer, inferred_scale, scale);
+                        AnyValue::Decimal(integer, precision, scale)
+                    },
                     None => AnyValue::Null,
                 })
                 .map_err(|err| {
@@ -267,25 +274,27 @@ pub fn s_from_list_decimal(
 
     let mut series = Series::from_any_values(name.into(), &values, true)?;
 
-    match series.dtype() {
-        DataType::Decimal(result_precision, result_scale) => {
-            let p: Option<usize> = Some(precision.unwrap_or(result_precision.unwrap_or(38)));
-            let s: Option<usize> = Some(scale.unwrap_or(result_scale.unwrap_or(0)));
-
-            if *result_precision != p || *result_scale != s {
-                series = series.cast(&DataType::Decimal(p, s))?;
-            }
-        }
+    series = match series.dtype() {
+        DataType::Decimal(_precision, _scale) => series,
         // An empty list will result in the `Null` dtype.
-        DataType::Null => {
-            let p = Some(precision.unwrap_or(38));
-            let s = Some(scale.unwrap_or(0));
-            series = series.cast(&DataType::Decimal(p, s))?;
-        }
+        DataType::Null => series.cast(&DataType::Decimal(precision, scale))?,
         other_dtype => panic!("expected dtype to be Decimal. found: {other_dtype:?}"),
-    }
+    };
 
     Ok(ExSeries::new(series))
+}
+
+// Move the decimal point to match the required scale.
+fn decimal_integer(integer: i128, integer_scale: usize, required_scale: usize) -> i128 {
+    match integer_scale.cmp(&required_scale) {
+        cmp::Ordering::Less => {
+            integer * 10i128.pow((required_scale as u32) - (integer_scale as u32))
+        }
+        cmp::Ordering::Greater => {
+            integer / 10i128.pow((integer_scale as u32) - (required_scale as u32))
+        }
+        cmp::Ordering::Equal => integer,
+    }
 }
 
 fn native_float_to_decimal_parts(float: f64) -> Option<(i128, usize)> {
@@ -393,9 +402,14 @@ pub fn s_from_list_binary(name: &str, val: Term) -> NifResult<ExSeries> {
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_from_list_categories(name: &str, val: Term) -> NifResult<ExSeries> {
     let decoded = val.decode::<Vec<Option<String>>>()?;
+    let categories = Categories::new(
+        PlSmallStr::EMPTY,
+        PlSmallStr::EMPTY,
+        CategoricalPhysical::U32,
+    );
     Ok(ExSeries::new(
         Series::new(name.into(), decoded.as_slice())
-            .cast(&DataType::Categorical(None, CategoricalOrdering::default()))
+            .cast(&DataType::from_categories(categories))
             .map_err(|err| {
                 let message = format!(
                     "from_list/2 cannot cast a string series to categories series: {err:?}"

@@ -30,13 +30,15 @@ pub fn s_log(s: ExSeries, base: Term) -> Result<ExSeries, ExplorerError> {
         }
     };
 
-    let s = s.log(float);
+    let float_series = Series::new("".into(), [float]);
+    let s = s.log(&float_series);
     Ok(ExSeries::new(s))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_log_natural(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    Ok(ExSeries::new(s.log(E)))
+    let e = Series::new("".into(), [E]);
+    Ok(ExSeries::new(s.log(&e)))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

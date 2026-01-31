@@ -4435,16 +4435,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sample(df, 3, seed: 100)
       #Explorer.DataFrame<
         Polars[3 x 10]
-        year s64 [2012, 2013, 2014]
-        country string ["SYRIAN ARAB REPUBLIC", "EGYPT", "AFGHANISTAN"]
-        total s64 [12198, 58198, 2675]
-        solid_fuel s64 [1, 224, 1194]
-        liquid_fuel s64 [7909, 26501, 1393]
-        gas_fuel s64 [3265, 24672, 74]
-        cement s64 [816, 6800, 14]
-        gas_flaring s64 [208, 0, 0]
-        per_capita f64 [0.61, 0.66, 0.08]
-        bunker_fuels s64 [437, 694, 9]
+        year s64 [2014, 2014, 2014]
+        country string ["GUYANA", "MALDIVES", "CAYMAN ISLANDS"]
+        total s64 [548, 364, 148]
+        solid_fuel s64 [0, 0, 0]
+        liquid_fuel s64 [548, 364, 148]
+        gas_fuel s64 [0, 0, 0]
+        cement s64 [0, 0, 0]
+        gas_flaring s64 [0, 0, 0]
+        per_capita f64 [0.72, 1.02, 2.5]
+        bunker_fuels s64 [8, 204, 9]
       >
 
   Or you can sample a proportion of rows:
@@ -4453,16 +4453,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.sample(df, 0.03, seed: 100)
       #Explorer.DataFrame<
         Polars[32 x 10]
-        year s64 [2013, 2012, 2014, 2011, 2011, ...]
-        country string ["BRITISH VIRGIN ISLANDS", "TAJIKISTAN", "AFGHANISTAN", "ICELAND", "SINGAPORE", ...]
-        total s64 [48, 800, 2675, 513, 12332, ...]
-        solid_fuel s64 [0, 192, 1194, 94, 7, ...]
-        liquid_fuel s64 [48, 501, 1393, 400, 7774, ...]
-        gas_fuel s64 [0, 74, 74, 0, 4551, ...]
-        cement s64 [0, 34, 14, 19, 0, ...]
-        gas_flaring s64 [0, 0, 0, 0, 0, ...]
-        per_capita f64 [1.64, 0.1, 0.08, 1.6, 2.38, ...]
-        bunker_fuels s64 [0, 28, 9, 168, 41786, ...]
+        year s64 [2014, 2014, 2014, 2011, 2014, ...]
+        country string ["HAITI", "MALI", "CENTRAL AFRICAN REPUBLIC", "RUSSIAN FEDERATION", "HONG KONG SPECIAL ADMINSTRATIVE REGION OF CHINA", ...]
+        total s64 [780, 385, 82, 480885, 12605, ...]
+        solid_fuel s64 [0, 0, 0, 109218, 8420, ...]
+        liquid_fuel s64 [739, 385, 82, 108312, 2659, ...]
+        gas_fuel s64 [0, 0, 0, 247327, 1268, ...]
+        cement s64 [41, 0, 0, 7643, 258, ...]
+        gas_flaring s64 [0, 0, 0, 8385, 0, ...]
+        per_capita f64 [0.07, 0.02, 0.02, 3.36, 1.74, ...]
+        bunker_fuels s64 [29, 20, 29, 7962, 12769, ...]
       >
 
   ## Grouped examples
@@ -4477,10 +4477,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[6 x 5]
         Groups: ["species"]
-        sepal_length f64 [4.8, 5.0, 5.5, 6.5, 7.4, ...]
-        sepal_width f64 [3.1, 3.6, 2.4, 2.8, 2.8, ...]
-        petal_length f64 [1.6, 1.4, 3.8, 4.6, 6.1, ...]
-        petal_width f64 [0.2, 0.2, 1.1, 1.5, 1.9, ...]
+        sepal_length f64 [5.0, 4.8, 5.0, 5.7, 6.8, ...]
+        sepal_width f64 [3.5, 3.0, 2.3, 3.0, 3.2, ...]
+        petal_length f64 [1.6, 1.4, 3.3, 4.2, 5.9, ...]
+        petal_width f64 [0.6, 0.3, 1.0, 1.2, 2.3, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-versicolor", "Iris-versicolor", "Iris-virginica", ...]
       >
 
@@ -4493,10 +4493,10 @@ defmodule Explorer.DataFrame do
       #Explorer.DataFrame<
         Polars[15 x 5]
         Groups: ["species"]
-        sepal_length f64 [5.2, 5.0, 5.2, 5.0, 5.0, ...]
-        sepal_width f64 [3.4, 3.6, 3.5, 3.0, 3.4, ...]
-        petal_length f64 [1.4, 1.4, 1.5, 1.6, 1.6, ...]
-        petal_width f64 [0.2, 0.2, 0.2, 0.2, 0.4, ...]
+        sepal_length f64 [5.0, 4.4, 5.1, 5.4, 5.0, ...]
+        sepal_width f64 [3.5, 3.2, 3.4, 3.9, 3.5, ...]
+        petal_length f64 [1.3, 1.3, 1.5, 1.3, 1.6, ...]
+        petal_width f64 [0.3, 0.2, 0.2, 0.4, 0.6, ...]
         species string ["Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", "Iris-setosa", ...]
       >
 
@@ -4538,16 +4538,16 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.shuffle(df, seed: 100)
       #Explorer.DataFrame<
         Polars[1094 x 10]
-        year s64 [2014, 2014, 2014, 2012, 2010, ...]
-        country string ["ISRAEL", "ARGENTINA", "NETHERLANDS", "YEMEN", "GRENADA", ...]
-        total s64 [17617, 55638, 45624, 5091, 71, ...]
-        solid_fuel s64 [6775, 1588, 9070, 129, 0, ...]
-        liquid_fuel s64 [6013, 25685, 18272, 4173, 71, ...]
-        gas_fuel s64 [3930, 26368, 18010, 414, 0, ...]
-        cement s64 [898, 1551, 272, 375, 0, ...]
-        gas_flaring s64 [0, 446, 0, 0, 0, ...]
-        per_capita f64 [2.22, 1.29, 2.7, 0.2, 0.68, ...]
-        bunker_fuels s64 [1011, 2079, 14210, 111, 4, ...]
+        year s64 [2011, 2011, 2014, 2013, 2010, ...]
+        country string ["MARTINIQUE", "PARAGUAY", "HONDURAS", "GERMANY", "GERMANY", ...]
+        total s64 [605, 1451, 2583, 206521, 206943, ...]
+        solid_fuel s64 [0, 1, 145, 86226, 83574, ...]
+        liquid_fuel s64 [585, 1362, 2207, 70373, 71983, ...]
+        gas_fuel s64 [0, 0, 0, 45658, 47408, ...]
+        cement s64 [20, 88, 231, 4258, 3972, ...]
+        gas_flaring s64 [0, 0, 0, 5, 6, ...]
+        per_capita f64 [1.53, 0.23, 0.32, 2.56, 2.57, ...]
+        bunker_fuels s64 [120, 22, 57, 8982, 9078, ...]
       >
 
   """

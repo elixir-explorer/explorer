@@ -21,10 +21,11 @@ pub fn lf_from_parquet(
     let cols: Vec<Expr> = if let Some(cols) = columns {
         cols.iter().map(col).collect()
     } else {
-        vec![all()]
+        vec![all().as_expr()]
     };
 
-    let lf = LazyFrame::scan_parquet(filename, options)?.select(cols);
+    let path = PlPath::from_str(filename);
+    let lf = LazyFrame::scan_parquet(path, options)?.select(cols);
 
     Ok(ExLazyFrame::new(lf))
 }
@@ -45,9 +46,11 @@ pub fn lf_from_parquet_cloud(
     let cols: Vec<Expr> = if let Some(cols) = columns {
         cols.iter().map(col).collect()
     } else {
-        vec![all()]
+        vec![all().as_expr()]
     };
-    let lf = LazyFrame::scan_parquet(ex_entry.to_string(), options)?
+
+    let path = PlPath::from_string(ex_entry.to_string());
+    let lf = LazyFrame::scan_parquet(path, options)?
         .with_comm_subplan_elim(false)
         .with_new_streaming(true)
         .select(cols);
@@ -79,14 +82,16 @@ pub fn lf_to_parquet(
     let lf = data.clone_inner();
 
     if streaming {
-        let options = ParquetWriteOptions {
+        let parquet_write_options = ParquetWriteOptions {
             compression,
             statistics: StatisticsOptions::empty(),
             row_group_size: None,
             data_page_size: None,
             ..Default::default()
         };
-        let target = std::path::PathBuf::from(filename);
+
+        let sink_target = SinkTarget::Path(PlPath::from_str(filename));
+
         let sink_options = SinkOptions {
             maintain_order: false,
             ..Default::default()
@@ -94,7 +99,7 @@ pub fn lf_to_parquet(
 
         let _ = lf
             .with_comm_subplan_elim(false)
-            .sink_parquet(SinkTarget::Path(target.into()), options, None, sink_options)?
+            .sink_parquet(sink_target, parquet_write_options, None, sink_options)?
             .collect();
         Ok(())
     } else {
@@ -129,7 +134,8 @@ pub fn lf_to_parquet_cloud(
         data_page_size: None,
         ..Default::default()
     };
-    let target = std::path::PathBuf::from(ex_entry.to_string());
+    let sink_target = SinkTarget::Path(PlPath::from_string(ex_entry.to_string()));
+
     let sink_options = SinkOptions {
         maintain_order: false,
         ..Default::default()
@@ -137,12 +143,7 @@ pub fn lf_to_parquet_cloud(
 
     let _ = lf
         .with_comm_subplan_elim(false)
-        .sink_parquet(
-            SinkTarget::Path(target.into()),
-            options,
-            cloud_options,
-            sink_options,
-        )?
+        .sink_parquet(sink_target, options, cloud_options, sink_options)?
         .collect();
     Ok(())
 }
@@ -161,7 +162,8 @@ pub fn lf_to_parquet_cloud(
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn lf_from_ipc(filename: &str) -> Result<ExLazyFrame, ExplorerError> {
-    let lf = LazyFrame::scan_ipc(filename, Default::default())?;
+    let sink_target = PlPath::from_str(filename);
+    let lf = LazyFrame::scan_ipc(sink_target, Default::default(), Default::default())?;
 
     Ok(ExLazyFrame::new(lf))
 }
@@ -176,7 +178,8 @@ pub fn lf_to_ipc(
     // Select the compression algorithm.
     let compression = match compression {
         Some("lz4") => Some(IpcCompression::LZ4),
-        Some("zstd") => Some(IpcCompression::ZSTD),
+        // ZSTD with a compression level of 3 is the default.
+        Some("zstd") => Some(IpcCompression::default()),
         _ => None,
     };
 
@@ -187,14 +190,14 @@ pub fn lf_to_ipc(
             compression,
             ..Default::default()
         };
-        let target = std::path::PathBuf::from(filename);
+        let sink_target = SinkTarget::Path(PlPath::from_str(filename));
         let sink_options = SinkOptions {
             maintain_order: false,
             ..Default::default()
         };
         let _ = lf
             .with_comm_subplan_elim(false)
-            .sink_ipc(SinkTarget::Path(target.into()), options, None, sink_options)?
+            .sink_ipc(sink_target, options, None, sink_options)?
             .collect();
         Ok(())
     } else {
@@ -220,7 +223,8 @@ pub fn lf_to_ipc_cloud(
     // Select the compression algorithm.
     let compression = match compression {
         Some("lz4") => Some(IpcCompression::LZ4),
-        Some("zstd") => Some(IpcCompression::ZSTD),
+        // ZSTD with a compression level of 3 is the default.
+        Some("zstd") => Some(IpcCompression::default()),
         _ => None,
     };
 
@@ -228,19 +232,14 @@ pub fn lf_to_ipc_cloud(
         compression,
         ..Default::default()
     };
-    let target = std::path::PathBuf::from(ex_entry.to_string());
+    let sink_target = SinkTarget::Path(PlPath::from_string(ex_entry.to_string()));
     let sink_options = SinkOptions {
         maintain_order: false,
         ..Default::default()
     };
     let _ = lf
         .with_comm_subplan_elim(false)
-        .sink_ipc(
-            SinkTarget::Path(target.into()),
-            options,
-            cloud_options,
-            sink_options,
-        )?
+        .sink_ipc(sink_target, options, cloud_options, sink_options)?
         .collect();
 
     Ok(())
@@ -268,7 +267,9 @@ pub fn lf_from_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let df = LazyCsvReader::new(filename)
+    let path = PlPath::from_str(filename);
+
+    let df = LazyCsvReader::new(path)
         .with_infer_schema_length(infer_schema_length)
         .with_has_header(has_header)
         .with_try_parse_dates(parse_dates)
@@ -309,7 +310,7 @@ pub fn lf_to_csv(
             serialize_options,
             ..Default::default()
         };
-        let target = std::path::PathBuf::from(filename);
+        let sink_target = SinkTarget::Path(PlPath::from_str(filename));
         let sink_options = SinkOptions {
             maintain_order: true,
             mkdir: true,
@@ -318,7 +319,7 @@ pub fn lf_to_csv(
 
         let _ = lf
             .with_comm_subplan_elim(false)
-            .sink_csv(SinkTarget::Path(target.into()), options, None, sink_options)?
+            .sink_csv(sink_target, options, None, sink_options)?
             .collect();
 
         Ok(())
@@ -346,7 +347,10 @@ pub fn lf_from_ndjson(
     let batch_size = NonZeroUsize::new(batch_size).ok_or(ExplorerError::Other(
         "\"batch_size\" expected to be non zero.".to_string(),
     ))?;
-    let lf = LazyJsonLineReader::new(filename)
+
+    let path = PlPath::from_str(&filename);
+
+    let lf = LazyJsonLineReader::new(path)
         .with_infer_schema_length(infer_schema_length.and_then(NonZeroUsize::new))
         .with_batch_size(Some(batch_size))
         .finish()?;

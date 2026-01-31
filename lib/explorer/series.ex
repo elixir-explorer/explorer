@@ -5351,7 +5351,25 @@ defmodule Explorer.Series do
   def ewm_mean(series, opts \\ []) do
     opts = Keyword.validate!(opts, alpha: 0.5, adjust: true, min_periods: 1, ignore_nils: true)
 
-    apply_series(series, :ewm_mean, [
+    float_series =
+      case dtype(series) do
+        :f32 ->
+          series
+
+        :f64 ->
+          series
+
+        _ ->
+          try do
+            cast(series, :f64)
+          rescue
+            _ ->
+              raise ArgumentError,
+                    "must pass float-compatible series, found dtype #{series.dtype}"
+          end
+      end
+
+    apply_series(float_series, :ewm_mean, [
       opts[:alpha],
       opts[:adjust],
       opts[:min_periods],
@@ -6807,7 +6825,7 @@ defmodule Explorer.Series do
 
       iex> s = Series.from_list(["\\"1\\""])
       iex> Series.json_decode(s, {:s, 64})
-      ** (RuntimeError) Polars Error: error deserializing JSON: error deserializing value \"String(\"1\")\" as numeric. \\\n                Try increasing `infer_schema_length` or specifying a schema.\n                
+      ** (RuntimeError) Polars Error: error deserializing JSON: error deserializing value \"String(\"1\")\" as numeric. \\\n                Try increasing `infer_schema_length` or specifying a schema.\n
 
   It raises an exception if the string is invalid JSON.
   """
