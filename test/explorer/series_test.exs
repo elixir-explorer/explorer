@@ -6921,4 +6921,7 @@ defmodule Explorer.SeriesTest do
       |> Series.all?()
     end
   end
+
+  defp all_close?(a, b, tol) when is_list(a), do: all_close?(Series.from_list(a), b, tol)
+  defp all_close?(a, b, tol) when is_list(b), do: all_close?(a, Series.from_list(b), tol)
 end

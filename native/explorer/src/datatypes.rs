@@ -666,11 +666,12 @@ impl ExDecimal {
 
 impl Literal for ExDecimal {
     fn lit(self) -> Expr {
+        let integer = self.signed_coef().expect("decimal coefficient overflow");
         let precision = ExDecimal::default_precision();
         let scale = self.scale();
         Expr::Literal(LiteralValue::Scalar(Scalar::new(
             DataType::Decimal(precision, scale),
-            AnyValue::Decimal(self.signed_coef(), precision, scale),
+            AnyValue::Decimal(integer, precision, scale),
         )))
     }
 }

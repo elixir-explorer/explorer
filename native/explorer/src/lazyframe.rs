@@ -395,7 +395,7 @@ pub fn lf_join_asof(
         .join_builder()
         .with(ldf1)
         .coalesce(JoinCoalesce::CoalesceColumns)
-        .how(JoinType::AsOf(AsOfOptions {
+        .how(JoinType::AsOf(Box::new(AsOfOptions {
             strategy,
             tolerance: None,
             // TODO: provide option
@@ -406,7 +406,7 @@ pub fn lf_join_asof(
             allow_eq: true,
             // TODO: add a check? Note that Polars prints a warning if `check_sortedness=true` when `by` is provided
             check_sortedness: false,
-        }))
+        })))
         .left_on(ex_expr_to_exprs(left_on))
         .right_on(ex_expr_to_exprs(right_on))
         .suffix(suffix)

@@ -232,24 +232,24 @@ pub fn s_from_list_decimal(
 
     let values: Vec<AnyValue> = iterator
         .map(|item| match item.get_type() {
-            TermType::Integer => {
-                item.decode::<i128>()
-                    .map(|num| AnyValue::Decimal(num, precision, scale))
-                    .map_err(|err| {
-                        ExplorerError::Other(format!("int number is too big for an i128: {err:?}"))
-                    })
-            }
+            TermType::Integer => item
+                .decode::<i128>()
+                .map(|num| AnyValue::Decimal(num, precision, scale))
+                .map_err(|err| {
+                    ExplorerError::Other(format!("int number is too big for an i128: {err:?}"))
+                }),
 
             TermType::Map => item
                 .decode::<ExDecimal>()
-                .map(|ex_decimal| {
-                    let integer = decimal_integer(ex_decimal.signed_coef(), ex_decimal.scale(), scale);
-                    AnyValue::Decimal(integer, precision, scale)
-                })
                 .map_err(|error| {
                     ExplorerError::Other(format!(
-                        "cannot decode a valid decimal from term; check that `coef` fits into an `i128`. error: {error:?}"
+                        "cannot decode a valid decimal from term. error: {error:?}"
                     ))
+                })
+                .and_then(|ex_decimal| {
+                    let coef = ex_decimal.signed_coef()?;
+                    let integer = decimal_integer(coef, ex_decimal.scale(), scale);
+                    Ok(AnyValue::Decimal(integer, precision, scale))
                 }),
 
             TermType::Atom => Ok(AnyValue::Null),
@@ -257,15 +257,16 @@ pub fn s_from_list_decimal(
             TermType::Float => item
                 .decode::<f64>()
                 .map(|num| match native_float_to_decimal_parts(num) {
-                    Some((inferred_integer, inferred_scale)) =>{
+                    Some((inferred_integer, inferred_scale)) => {
                         let integer = decimal_integer(inferred_integer, inferred_scale, scale);
                         AnyValue::Decimal(integer, precision, scale)
-                    },
+                    }
                     None => AnyValue::Null,
                 })
                 .map_err(|err| {
                     ExplorerError::Other(format!("float number is too big f64: {err:?}"))
                 }),
+
             term_type => Err(ExplorerError::Other(format!(
                 "from_list/2 for decimals not implemented for {term_type:?}"
             ))),

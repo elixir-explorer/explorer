@@ -1577,28 +1577,28 @@ defmodule Explorer.Series do
       iex> Explorer.Series.sample(s, 10, seed: 100)
       #Explorer.Series<
         Polars[10]
-        s64 [57, 9, 54, 62, 50, 77, 35, 88, 1, 69]
+        s64 [80, 95, 78, 33, 84, 100, 23, 58, 21, 30]
       >
 
       iex> s = 1..100 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 0.05, seed: 100)
       #Explorer.Series<
         Polars[5]
-        s64 [9, 56, 79, 28, 54]
+        s64 [85, 89, 82, 35, 88]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 7, seed: 100, replace: true)
       #Explorer.Series<
         Polars[7]
-        s64 [4, 1, 3, 4, 3, 4, 2]
+        s64 [5, 5, 5, 2, 5, 2, 2]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.sample(s, 1.2, seed: 100, replace: true)
       #Explorer.Series<
         Polars[6]
-        s64 [4, 1, 3, 4, 3, 4]
+        s64 [5, 5, 5, 2, 5, 2]
       >
 
       iex> s = 0..9 |> Enum.to_list() |> Explorer.Series.from_list()
@@ -1612,7 +1612,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.sample(s, 1.0, seed: 100, shuffle: true)
       #Explorer.Series<
         Polars[10]
-        s64 [7, 9, 2, 0, 4, 1, 3, 8, 5, 6]
+        s64 [3, 7, 8, 0, 5, 1, 2, 6, 4, 9]
       >
 
   """
@@ -1655,7 +1655,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.shuffle(s, seed: 100)
       #Explorer.Series<
         Polars[10]
-        s64 [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+        s64 [4, 8, 9, 1, 6, 2, 3, 7, 5, 10]
       >
 
   """
@@ -2055,7 +2055,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.rank(s, method: :random, seed: 42)
       #Explorer.Series<
         Polars[5]
-        s64 [3, 4, 2, 1, 5]
+        s64 [3, 5, 1, 2, 4]
       >
   """
   @doc type: :element_wise
@@ -5116,7 +5116,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_sum(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         Polars[10]
-        f64 [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
+        f64 [2.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0]
       >
   """
   @doc type: :window
@@ -5149,7 +5149,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_mean(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[10]
-        f64 [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
+        f64 [1.0, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75]
       >
 
       iex> s = 1..10 |> Enum.to_list() |> Explorer.Series.from_list()
@@ -5229,7 +5229,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_min(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         Polars[10]
-        f64 [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+        f64 [2.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
       >
   """
   @doc type: :window
@@ -5262,7 +5262,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_max(s, 2, weights: [1.0, 2.0])
       #Explorer.Series<
         Polars[10]
-        f64 [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
+        f64 [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0]
       >
   """
   @doc type: :window
@@ -5295,7 +5295,7 @@ defmodule Explorer.Series do
       iex> Explorer.Series.window_standard_deviation(s, 2, weights: [0.25, 0.75])
       #Explorer.Series<
         Polars[6]
-        f64 [0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193]
+        f64 [0.0, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193, 0.4330127018922193]
       >
   """
   @doc type: :window
@@ -5330,14 +5330,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.ewm_mean(s)
       #Explorer.Series<
         Polars[5]
-        f64 [1.0, 1.6666666666666667, 2.4285714285714284, 3.2666666666666666, 4.161290322580645]
+        f64 [1.0, 1.6666666666666665, 2.4285714285714284, 3.2666666666666666, 4.161290322580645]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.ewm_mean(s, alpha: 0.1)
       #Explorer.Series<
         Polars[5]
-        f64 [1.0, 1.5263157894736843, 2.070110701107011, 2.6312881651642916, 3.2097140484969833]
+        f64 [1.0, 1.526315789473684, 2.0701107011070112, 2.631288165164292, 3.209714048496984]
       >
   """
   @doc type: :window
@@ -5395,14 +5395,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.ewm_standard_deviation(s)
       #Explorer.Series<
         Polars[5]
-        f64 [0.0, 0.7071067811865476, 0.9636241116594314, 1.1771636613972951, 1.3452425132127066]
+        f64 [0.0, 0.7071067811865476, 0.9636241116594315, 1.1771636613972953, 1.3452425132127066]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.ewm_standard_deviation(s, alpha: 0.1)
       #Explorer.Series<
         Polars[5]
-        f64 [0.0, 0.7071067811865476, 0.9990770648702808, 1.2879021599718157, 1.5741638698820746]
+        f64 [0.0, 0.7071067811865476, 0.999077064870281, 1.2879021599718157, 1.5741638698820741]
       >
   """
   @doc type: :window
@@ -5450,14 +5450,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.ewm_variance(s)
       #Explorer.Series<
         Polars[5]
-        f64 [0.0, 0.5, 0.9285714285714284, 1.385714285714286, 1.8096774193548393]
+        f64 [0.0, 0.5, 0.9285714285714286, 1.3857142857142861, 1.8096774193548393]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.ewm_variance(s, alpha: 0.1)
       #Explorer.Series<
         Polars[5]
-        f64 [0.0, 0.5, 0.9981549815498153, 1.6586919736600685, 2.4779918892421087]
+        f64 [0.0, 0.5000000000000001, 0.9981549815498157, 1.658691973660068, 2.477991889242108]
       >
   """
   @doc type: :window
@@ -6950,15 +6950,6 @@ defmodule Explorer.Series do
         Polars[1]
         struct[1] [%{"a" => 1}]
       >
-
-  If the decoded value does not match the given `dtype`,
-  an error is raised:
-
-      iex> s = Series.from_list(["\\"1\\""])
-      iex> Series.json_decode(s, {:s, 64})
-      ** (RuntimeError) Polars Error: error deserializing JSON: error deserializing value \"String(\"1\")\" as numeric. \\\n                Try increasing `infer_schema_length` or specifying a schema.\n
-
-  It raises an exception if the string is invalid JSON.
   """
   @doc type: :string_wise
   @spec json_decode(Series.t(), dtype() | dtype_alias()) :: Series.t()

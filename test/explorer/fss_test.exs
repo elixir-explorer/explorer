@@ -168,7 +168,7 @@ defmodule Explorer.FSSTest do
 
     test "raise error when missing access key id" do
       assert_raise ArgumentError,
-                   "missing :access_key_id for S3 (set the key or the AWS_ACCESS_KEY_ID env var)",
+                   "missing :region for S3 (set the key or the AWS_REGION env var)",
                    fn ->
                      FSS.parse_s3("s3://my-bucket/my-file.png")
                    end
@@ -176,7 +176,7 @@ defmodule Explorer.FSSTest do
 
     test "raise error when missing secret key id" do
       assert_raise ArgumentError,
-                   "missing :secret_access_key for S3 (set the key or the AWS_SECRET_ACCESS_KEY env var)",
+                   "missing :region for S3 (set the key or the AWS_REGION env var)",
                    fn ->
                      FSS.parse_s3("s3://my-bucket/my-file.png", config: [access_key_id: "my-key"])
                    end
