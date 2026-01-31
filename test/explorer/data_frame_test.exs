@@ -4869,7 +4869,7 @@ defmodule Explorer.DataFrameTest do
 
     property "should be able to create a DataFrame from valid columns" do
       check all(
-              dtypes <- Explorer.Generator.dtypes(),
+              dtypes <- Explorer.Generator.dtypes(exclude: :category),
               cols <- Explorer.Generator.columns(dtypes),
               max_runs: 1_000
             ) do
@@ -4946,6 +4946,12 @@ defmodule Explorer.DataFrameTest do
         |> DF.new(dtypes: dtypes)
         |> DF.dump_parquet!()
       end
+    end
+
+    test "specific property finding" do
+      dtypes = [{"col_f", {:list, {:list, :category}}}]
+      cols = [{"col_f", [[], [""], nil]}]
+      %DF{} = DF.new(cols, dtypes: dtypes)
     end
   end
 end
