@@ -578,7 +578,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # Two or more tables
 
   @impl true
-  def join([%DF{} = left, %DF{} = right], %DF{} = out_df, on, how)
+  def join([%DF{} = left, %DF{} = right], %DF{} = out_df, on, how, nulls_equal)
       when is_list(on) and how in [:left, :inner, :cross, :outer] do
     how = Atom.to_string(how)
 
@@ -587,16 +587,18 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       |> Enum.map(fn {left, right} -> {Native.expr_column(left), Native.expr_column(right)} end)
       |> Enum.unzip()
 
+    opts = %{suffix: "_right", nulls_equal: nulls_equal}
+
     Shared.apply_dataframe(
       left,
       out_df,
       :lf_join,
-      [right.data, left_on, right_on, how, "_right"]
+      [right.data, left_on, right_on, how, opts]
     )
   end
 
   @impl true
-  def join([%DF{} = left, %DF{} = right], %DF{} = out_df, on, :right)
+  def join([%DF{} = left, %DF{} = right], %DF{} = out_df, on, :right, nulls_equal)
       when is_list(on) do
     # Right join is the opposite of left join. So we swap the "on" keys, and swap the DFs
     # in the join.
@@ -605,17 +607,13 @@ defmodule Explorer.PolarsBackend.LazyFrame do
       |> Enum.map(fn {left, right} -> {Native.expr_column(right), Native.expr_column(left)} end)
       |> Enum.unzip()
 
+    opts = %{suffix: "_left", nulls_equal: nulls_equal}
+
     Shared.apply_dataframe(
       right,
       out_df,
       :lf_join,
-      [
-        left.data,
-        left_on,
-        right_on,
-        "left",
-        "_left"
-      ]
+      [left.data, left_on, right_on, "left", opts]
     )
   end
 

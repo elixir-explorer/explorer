@@ -5151,6 +5151,8 @@ defmodule Explorer.DataFrame do
 
     * `:on` - The column(s) to join on. Defaults to overlapping columns. Does not apply to cross join.
     * `:how` - One of the join types (as an atom) described above. Defaults to `:inner`.
+    * `:nulls_equal` - If `true`, `nil` values are considered equal for matching.
+      Defaults to `false` (standard SQL semantics where `nil != nil`).
 
   ## Examples
 
@@ -5215,6 +5217,18 @@ defmodule Explorer.DataFrame do
         b string ["a", "a", "a", "b", "b", ...]
         a_right s64 [1, 2, 4, 1, 2, ...]
         c string ["d", "e", "f", "d", "e", ...]
+      >
+
+  Join with nulls equal:
+
+      iex> left = Explorer.DataFrame.new(a: [1, nil], b: ["a", "b"])
+      iex> right = Explorer.DataFrame.new(a: [1, nil], c: ["d", "e"])
+      iex> Explorer.DataFrame.join(left, right, nulls_equal: true)
+      #Explorer.DataFrame<
+        Polars[2 x 3]
+        a s64 [1, nil]
+        b string ["a", "b"]
+        c string ["d", "e"]
       >
 
   Inner join with different names:
@@ -5323,7 +5337,8 @@ defmodule Explorer.DataFrame do
     opts =
       Keyword.validate!(opts,
         on: find_overlapping_columns(left_columns, right_columns),
-        how: :inner
+        how: :inner,
+        nulls_equal: false
       )
 
     unless opts[:how] in @valid_join_types do
@@ -5357,7 +5372,7 @@ defmodule Explorer.DataFrame do
 
     out_df = out_df_for_join(how, left, right, on)
 
-    Shared.apply_dataframe([left, right], :join, [out_df, on, how])
+    Shared.apply_dataframe([left, right], :join, [out_df, on, how, opts[:nulls_equal]])
   end
 
   defp find_overlapping_columns(left_columns, right_columns) do
