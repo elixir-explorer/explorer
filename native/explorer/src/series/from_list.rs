@@ -241,9 +241,9 @@ pub fn s_from_list_decimal(
 
             TermType::Map => item
                 .decode::<ExDecimal>()
-                .map_err(|error| {
+                .map_err(|err| {
                     ExplorerError::Other(format!(
-                        "cannot decode a valid decimal from term. error: {error:?}"
+                        "cannot decode a valid decimal from term. error: {err:?}"
                     ))
                 })
                 .and_then(|ex_decimal| {
