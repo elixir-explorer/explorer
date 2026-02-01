@@ -2,4 +2,4 @@
 channel = "stable"
 components = ["rustfmt", "clippy"]
 profile = "minimal"
-version = 1.92.0
+version = 1.92
