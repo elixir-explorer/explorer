@@ -63,9 +63,6 @@ jobs:
           echo "RUSTFLAGS=${{ matrix.job.rustflags }}" >> $GITHUB_ENV
         if: ${{ matrix.job.rustflags }}
 
-      - name: Ensure latest Rust toolchain
-        run: rustup update stable && rustup default stable
-
       - name: Add target
         shell: bash
         run: |
