@@ -6778,13 +6778,13 @@ defmodule Explorer.SeriesTest do
     test "raises when value cannot be deserialized with given dtype" do
       s = Series.from_list(["1", "\"a\""])
 
-      message =
-        "Polars Error: error deserializing JSON: error deserializing value \"String(\"a\")\" as numeric. " <>
-          "\\\n            Try increasing `infer_schema_length` or specifying a schema.\n            "
-
-      assert_raise RuntimeError, message, fn ->
-        Series.json_decode(s, {:s, 64})
-      end
+      assert_raise RuntimeError,
+                   ~s"""
+                   Polars Error: error deserializing JSON: error deserializing value "String("a")" as numeric. \\
+                               Try increasing `infer_schema_length` or specifying a schema.
+                               \
+                   """,
+                   fn -> Series.json_decode(s, {:s, 64}) end
     end
 
     test "extract series of strings" do
