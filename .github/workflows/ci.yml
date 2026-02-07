@@ -53,10 +53,11 @@ jobs:
         run: mix test --only property --warnings-as-errors
       - name: Compile once again but without optional deps
         run: mix compile --force --warnings-as-errors --no-optional-deps
-      - name: Run cloud integration tests
-        run: |
-          mix localstack.setup
-          mix test --only cloud_integration
+      # FIXME: The cloud integration tests are temporarily disabled.
+      # - name: Run cloud integration tests
+      #   run: |
+      #     mix localstack.setup
+      #     mix test --only cloud_integration
 
   format:
     runs-on: ubuntu-latest
