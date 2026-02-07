@@ -541,10 +541,16 @@ defmodule Explorer.DataFrame do
           opts :: Keyword.t()
         ) ::
           DataFrame.t()
-  def from_query!(conn, query, params, opts \\ []) do
-    case from_query(conn, query, params, opts) do
-      {:ok, df} -> df
-      {:error, error} -> raise error
+  if Code.ensure_loaded?(Adbc) do
+    def from_query!(conn, query, params, opts \\ []) do
+      case from_query(conn, query, params, opts) do
+        {:ok, df} -> df
+        {:error, error} -> raise error
+      end
+    end
+  else
+    def from_query!(_conn, _query, _params, _opts) do
+      raise "you must install :adbc as a dependency in order to use from_query!/3"
     end
   end
 
