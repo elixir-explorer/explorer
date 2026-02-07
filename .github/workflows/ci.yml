@@ -54,6 +54,7 @@ jobs:
       - name: Compile once again but without optional deps
         run: mix compile --force --warnings-as-errors --no-optional-deps
       # FIXME: The cloud integration tests are temporarily disabled.
+      #        https://github.com/elixir-explorer/explorer/issues/1141
       # - name: Run cloud integration tests
       #   run: |
       #     mix localstack.setup
