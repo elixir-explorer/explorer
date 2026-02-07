@@ -33,6 +33,8 @@ jobs:
       matrix:
         nif: ["2.15"]
         job:
+          # https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/...
+          # choose-the-runner-for-a-job#standard-github-hosted-runners-for-public-repositories
           - { target: aarch64-apple-darwin, os: macos-15 }
           - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04, use-cross: true }
           - { target: aarch64-unknown-linux-musl, os: ubuntu-22.04, use-cross: true }
