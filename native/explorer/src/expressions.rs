@@ -317,8 +317,8 @@ pub fn expr_fill_missing_with_strategy(data: ExExpr, strategy: &str) -> ExExpr {
     let result_expr = match strategy {
         "backward" => expr.fill_null_with_strategy(FillNullStrategy::Backward(None)),
         "forward" => expr.fill_null_with_strategy(FillNullStrategy::Forward(None)),
-        "min" => expr.clone().fill_null(expr.min()),
-        "max" => expr.clone().fill_null(expr.max()),
+        "min" => expr.fill_null_with_strategy(FillNullStrategy::Min),
+        "max" => expr.fill_null_with_strategy(FillNullStrategy::Max),
         "mean" => expr.clone().fill_null(expr.mean()),
         _other => panic!("unknown strategy {strategy:?}"),
     };
@@ -408,15 +408,17 @@ pub fn expr_pow(left: ExExpr, right: ExExpr) -> ExExpr {
 #[rustler::nif]
 pub fn expr_log(left: ExExpr, base: f64) -> ExExpr {
     let left_expr = left.clone_inner();
+    let base_expr = base.lit();
 
-    ExExpr::new(left_expr.log(base))
+    ExExpr::new(left_expr.log(base_expr))
 }
 
 #[rustler::nif]
 pub fn expr_log_natural(left: ExExpr) -> ExExpr {
     let left_expr = left.clone_inner();
+    let base_expr = std::f64::consts::E.lit();
 
-    ExExpr::new(left_expr.log(std::f64::consts::E))
+    ExExpr::new(left_expr.log(base_expr))
 }
 
 #[rustler::nif]
@@ -802,21 +804,13 @@ pub fn expr_sort(
 pub fn expr_argsort(
     expr: ExExpr,
     descending: bool,
-    maintain_order: bool,
-    multithreaded: bool,
+    _maintain_order: bool,
+    _multithreaded: bool,
     nulls_last: bool,
 ) -> ExExpr {
     let expr = expr.clone_inner();
 
-    let opts = SortOptions {
-        descending,
-        maintain_order,
-        multithreaded,
-        nulls_last,
-        limit: None,
-    };
-
-    ExExpr::new(expr.arg_sort(opts))
+    ExExpr::new(expr.arg_sort(descending, nulls_last))
 }
 
 #[rustler::nif]
@@ -1178,7 +1172,7 @@ pub fn expr_field(expr: ExExpr, name: &str) -> ExExpr {
 #[rustler::nif]
 pub fn expr_json_decode(expr: ExExpr, ex_dtype: ExSeriesDtype) -> ExExpr {
     let dtype = DataType::try_from(&ex_dtype).unwrap();
-    let expr = expr.clone_inner().str().json_decode(Some(dtype), None);
+    let expr = expr.clone_inner().str().json_decode(dtype);
     ExExpr::new(expr)
 }
 

@@ -655,16 +655,23 @@ impl ExDecimal {
                 .expect("cannot convert exponent (Elixir) to scale (Rust)")
         }
     }
+
+    pub fn default_precision() -> usize {
+        // https://docs.pola.rs/api/python/stable/reference/api/polars.datatypes.Decimal.html
+        // > If set to None (default), the precision is set to 38 (the maximum
+        // > supported by Polars).
+        38
+    }
 }
 
 impl Literal for ExDecimal {
     fn lit(self) -> Expr {
-        let coef = self.signed_coef().expect("decimal coefficient overflow");
+        let integer = self.signed_coef().expect("decimal coefficient overflow");
+        let precision = ExDecimal::default_precision();
         let scale = self.scale();
-
         Expr::Literal(LiteralValue::Scalar(Scalar::new(
-            DataType::Decimal(Some(scale), Some(scale)),
-            AnyValue::Decimal(coef, scale),
+            DataType::Decimal(precision, scale),
+            AnyValue::Decimal(integer, precision, scale),
         )))
     }
 }

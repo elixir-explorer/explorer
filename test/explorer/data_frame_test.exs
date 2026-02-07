@@ -1386,11 +1386,11 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-               b: [1.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
-               c: [0.25, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75],
+               b: [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0],
+               c: [1.0, 1.75, 2.75, 3.75, 4.75, 5.75, 6.75, 7.75, 8.75, 9.75],
                d: [1.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5],
-               e: [1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
-               f: [1.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0],
+               e: [2.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0],
+               f: [2.0, 5.0, 8.0, 11.0, 14.0, 17.0, 20.0, 23.0, 26.0, 29.0],
                g: [
                  nil,
                  0.7071067811865476,
@@ -1405,7 +1405,7 @@ defmodule Explorer.DataFrameTest do
                ],
                h: [
                  1.0,
-                 1.6666666666666667,
+                 1.6666666666666665,
                  2.4285714285714284,
                  3.2666666666666666,
                  4.161290322580645,
@@ -1558,9 +1558,9 @@ defmodule Explorer.DataFrameTest do
 
       assert DF.to_columns(df1, atom_keys: true) == %{
                a: [1, 2, 3, 4, 5],
-               b: [5, 3, 2, 1, 4],
-               c: [1, 3, 2, 4, 5],
-               d: [4, 2, 5, 0, 0]
+               b: [4, 3, 5, 1, 2],
+               c: [1, 2, 4, 5, 3],
+               d: [4, 5, 2, 0, 0]
              }
 
       assert df1.dtypes == %{
@@ -1753,7 +1753,7 @@ defmodule Explorer.DataFrameTest do
       df2_e = df2[:e]
 
       assert Explorer.Series.to_list(df2_e) == [
-               Decimal.new("3.1415"),
+               Decimal.new("3.1416"),
                Decimal.new("2.0000"),
                nil
              ]
@@ -1771,7 +1771,7 @@ defmodule Explorer.DataFrameTest do
       df3_f = df3[:f]
 
       assert Explorer.Series.to_list(df3_f) == [
-               Decimal.new("3.1415000"),
+               Decimal.new("3.1416000"),
                Decimal.new("2.0000000"),
                nil
              ]
@@ -1781,7 +1781,7 @@ defmodule Explorer.DataFrameTest do
       df4_g = df4[:g]
 
       assert Explorer.Series.to_list(df4_g) == [
-               Decimal.new("3.1415"),
+               Decimal.new("3.1416"),
                Decimal.new("2.0000"),
                nil
              ]
@@ -4243,8 +4243,8 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.sample(df, 3, seed: 100)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               letters: ["j", "f", "h"],
-               numbers: [10, 6, 8]
+               letters: ["h", "j", "i"],
+               numbers: [8, 10, 9]
              }
     end
 
@@ -4253,10 +4253,7 @@ defmodule Explorer.DataFrameTest do
 
       df1 = DF.sample(df, 0.2, seed: 100)
 
-      assert DF.to_columns(df1, atom_keys: true) == %{
-               letters: ["f", "g"],
-               numbers: [6, 7]
-             }
+      assert DF.to_columns(df1, atom_keys: true) == %{letters: ["h", "j"], numbers: [8, 10]}
     end
 
     test "sampling by integer with same size of the dataframe" do
@@ -4277,8 +4274,8 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.sample(df, 10, seed: 100, shuffle: true)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
-               numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+               letters: ["d", "h", "i", "a", "f", "b", "c", "g", "e", "j"],
+               numbers: [4, 8, 9, 1, 6, 2, 3, 7, 5, 10]
              }
     end
 
@@ -4300,8 +4297,8 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.sample(df, 1.0, seed: 100, shuffle: true)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
-               numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+               letters: ["d", "h", "i", "a", "f", "b", "c", "g", "e", "j"],
+               numbers: [4, 8, 9, 1, 6, 2, 3, 7, 5, 10]
              }
     end
   end
@@ -4313,8 +4310,8 @@ defmodule Explorer.DataFrameTest do
       df1 = DF.shuffle(df, seed: 100)
 
       assert DF.to_columns(df1, atom_keys: true) == %{
-               letters: ["h", "j", "c", "a", "e", "b", "d", "i", "f", "g"],
-               numbers: [8, 10, 3, 1, 5, 2, 4, 9, 6, 7]
+               letters: ["d", "h", "i", "a", "f", "b", "c", "g", "e", "j"],
+               numbers: [4, 8, 9, 1, 6, 2, 3, 7, 5, 10]
              }
     end
   end
@@ -4896,7 +4893,8 @@ defmodule Explorer.DataFrameTest do
 
     property "should be able to create a DataFrame from valid rows" do
       check all(
-              dtypes <- Explorer.Generator.dtypes(),
+              # TODO: Remove `exclude: :category` after #1011 is resolved.
+              dtypes <- Explorer.Generator.dtypes(exclude: :category),
               rows <- Explorer.Generator.rows(dtypes),
               max_runs: 1_000
             ) do
@@ -4906,7 +4904,8 @@ defmodule Explorer.DataFrameTest do
 
     property "should be able to create a DataFrame from valid columns" do
       check all(
-              dtypes <- Explorer.Generator.dtypes(),
+              # TODO: Remove `exclude: :category` after #1011 is resolved.
+              dtypes <- Explorer.Generator.dtypes(exclude: :category),
               cols <- Explorer.Generator.columns(dtypes),
               max_runs: 1_000
             ) do

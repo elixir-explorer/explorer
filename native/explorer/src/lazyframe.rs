@@ -49,7 +49,9 @@ pub fn lf_compute(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn lf_fetch(data: ExLazyFrame, n_rows: usize) -> Result<ExDataFrame, ExplorerError> {
-    Ok(ExDataFrame::new(data.clone_inner().fetch(n_rows)?))
+    Ok(ExDataFrame::new(
+        data.clone_inner().slice(0, n_rows as u32).collect()?,
+    ))
 }
 
 #[rustler::nif]
@@ -124,13 +126,15 @@ pub fn lf_dtypes(data: ExLazyFrame) -> Result<Vec<ExSeriesDtype>, ExplorerError>
 
 #[rustler::nif]
 pub fn lf_select(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
-    let lf = data.clone_inner().select(&[cols(columns)]);
+    let lf = data.clone_inner().select([cols(columns).as_expr()]);
     Ok(ExLazyFrame::new(lf))
 }
 
 #[rustler::nif]
 pub fn lf_drop(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
-    let lf = data.clone_inner().select(&[col("*").exclude(columns)]);
+    let lf = data
+        .clone_inner()
+        .select([all().exclude_cols(columns).as_expr()]);
     Ok(ExLazyFrame::new(lf))
 }
 
@@ -149,7 +153,7 @@ pub fn lf_slice(
         let groups_exprs: Vec<Expr> = groups.iter().map(col).collect();
         lf.group_by_opt_order(groups_exprs, stable_groups)
             .agg([col("*").slice(offset, length)])
-            .explode([col("*").exclude(groups)])
+            .explode(all().exclude_cols(groups))
     };
 
     Ok(ExLazyFrame::new(result_lf))
@@ -157,13 +161,13 @@ pub fn lf_slice(
 
 #[rustler::nif]
 pub fn lf_explode(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
-    let lf = data.clone_inner().explode(columns);
+    let lf = data.clone_inner().explode(cols(columns));
     Ok(ExLazyFrame::new(lf))
 }
 
 #[rustler::nif]
 pub fn lf_unnest(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
-    let lf = data.clone_inner().unnest(columns);
+    let lf = data.clone_inner().unnest(cols(columns), None);
     Ok(ExLazyFrame::new(lf))
 }
 
@@ -219,8 +223,7 @@ pub fn lf_distinct(
     columns_to_keep: Option<Vec<ExExpr>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let df = data.clone_inner();
-    let subset = subset.iter().map(|x| x.into()).collect::<Vec<PlSmallStr>>();
-    let new_df = df.unique_stable(Some(subset), UniqueKeepStrategy::First);
+    let new_df = df.unique_stable(Some(cols(subset)), UniqueKeepStrategy::First);
 
     match columns_to_keep {
         Some(columns) => Ok(ExLazyFrame::new(new_df.select(ex_expr_to_exprs(columns)))),
@@ -264,7 +267,9 @@ pub fn lf_summarise_with(
             stable_groups,
         )
         .agg(aggs)
-        .select(&[col("*").exclude(["__explorer_literal_for_group__"])])
+        .select(&[all()
+            .exclude_cols(["__explorer_literal_for_group__"])
+            .as_expr()])
     } else {
         ldf.group_by_opt_order(groups, stable_groups).agg(aggs)
     };
@@ -286,10 +291,10 @@ pub fn lf_rename_columns(
 #[rustler::nif]
 pub fn lf_drop_nils(
     data: ExLazyFrame,
-    subset: Option<Vec<ExExpr>>,
+    subset: Option<Vec<String>>,
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
-    let columns = subset.map(ex_expr_to_exprs);
+    let columns: Option<Selector> = subset.map(cols);
 
     Ok(ExLazyFrame::new(ldf.drop_nulls(columns)))
 }
@@ -304,20 +309,13 @@ pub fn lf_pivot_longer(
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
     let unpivot_opts = polars::lazy::dsl::UnpivotArgsDSL {
-        index: to_lazy_selectors(id_vars),
-        on: to_lazy_selectors(value_vars),
+        index: by_name(id_vars, true),
+        on: by_name(value_vars, true),
         variable_name: Some(names_to.into()),
         value_name: Some(values_to.into()),
     };
     let new_df = ldf.unpivot(unpivot_opts);
     Ok(ExLazyFrame::new(new_df))
-}
-
-fn to_lazy_selectors(values: Vec<String>) -> Vec<Selector> {
-    values
-        .into_iter()
-        .map(Selector::from)
-        .collect::<Vec<Selector>>()
 }
 
 #[rustler::nif]
@@ -406,7 +404,7 @@ pub fn lf_join_asof(
         .join_builder()
         .with(ldf1)
         .coalesce(JoinCoalesce::CoalesceColumns)
-        .how(JoinType::AsOf(AsOfOptions {
+        .how(JoinType::AsOf(Box::new(AsOfOptions {
             strategy,
             tolerance: None,
             // TODO: provide option
@@ -417,7 +415,7 @@ pub fn lf_join_asof(
             allow_eq: true,
             // TODO: add a check? Note that Polars prints a warning if `check_sortedness=true` when `by` is provided
             check_sortedness: false,
-        }))
+        })))
         .left_on(ex_expr_to_exprs(left_on))
         .right_on(ex_expr_to_exprs(right_on))
         .suffix(suffix)

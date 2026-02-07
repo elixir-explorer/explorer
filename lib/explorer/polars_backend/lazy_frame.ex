@@ -525,8 +525,7 @@ defmodule Explorer.PolarsBackend.LazyFrame do
 
   @impl true
   def drop_nil(%DF{} = df, columns) do
-    exprs = for col <- columns, do: Native.expr_column(col)
-    Shared.apply_dataframe(df, df, :lf_drop_nils, [exprs])
+    Shared.apply_dataframe(df, df, :lf_drop_nils, [columns])
   end
 
   @impl true

@@ -508,10 +508,10 @@ defmodule Explorer.SeriesTest do
     end
 
     test "decimal precision boundary" do
-      # Biggest number representable by an i128.
-      max_i128 = 2 ** 127 - 1
-      biggest = Decimal.new(max_i128)
-      too_big = Decimal.new(max_i128 + 1)
+      # Biggest number with 38 digits
+      biggest = Decimal.new(10 ** 38 - 1)
+      # Smallest number with 39 digits
+      too_big = Decimal.new(10 ** 38)
 
       # Can make a series using the biggest allowed decimal.
       s1 = Series.from_list([biggest])
@@ -519,8 +519,7 @@ defmodule Explorer.SeriesTest do
 
       # Can't make a series using a number bigger than the biggest allowed decimal.
       assert_raise RuntimeError,
-                   "Generic Error: cannot decode a valid decimal from term;" <>
-                     " check that `coef` fits into an `i128`. error: throw(<term>)",
+                   "Polars Error: decimal precision 38 can't fit values with 39 digits",
                    fn -> Series.from_list([too_big]) end
     end
 
@@ -3826,7 +3825,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 10, seed: 100)
 
       assert Series.size(result) == 10
-      assert Series.to_list(result) == [57, 9, 54, 62, 50, 77, 35, 88, 1, 69]
+      assert Series.to_list(result) == [80, 95, 78, 33, 84, 100, 23, 58, 21, 30]
     end
 
     test "sample taking 5% of elements" do
@@ -3835,7 +3834,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 0.05, seed: 100)
 
       assert Series.size(result) == 5
-      assert Series.to_list(result) == [9, 56, 79, 28, 54]
+      assert Series.to_list(result) == [85, 89, 82, 35, 88]
     end
 
     test "sample taking more than elements without replace" do
@@ -3864,7 +3863,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 15, replace: true, seed: 100)
 
       assert Series.size(result) == 15
-      assert Series.to_list(result) == [7, 1, 6, 7, 6, 8, 3, 6, 4, 9, 1, 7, 1, 1, 9]
+      assert Series.to_list(result) == [9, 10, 9, 4, 9, 4, 3, 6, 3, 3, 8, 5, 10, 8, 8]
     end
 
     test "sample taking more than elements with fraction and replace" do
@@ -3873,7 +3872,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 1.2, replace: true, seed: 100)
 
       assert Series.size(result) == 12
-      assert Series.to_list(result) == [7, 1, 6, 7, 6, 8, 3, 6, 4, 9, 1, 7]
+      assert Series.to_list(result) == [9, 10, 9, 4, 9, 4, 3, 6, 3, 3, 8, 5]
     end
 
     test "sample with the exact amount of elements, but shuffle off" do
@@ -3891,7 +3890,7 @@ defmodule Explorer.SeriesTest do
       result = Series.sample(s, 1.0, seed: 100, shuffle: true)
 
       assert Series.size(result) == 10
-      assert Series.to_list(result) == [7, 9, 2, 0, 4, 1, 3, 8, 5, 6]
+      assert Series.to_list(result) == [3, 7, 8, 0, 5, 1, 2, 6, 4, 9]
     end
   end
 
@@ -3902,7 +3901,7 @@ defmodule Explorer.SeriesTest do
       result = Series.shuffle(s, seed: 100)
 
       assert Series.size(result) == 10
-      assert Series.to_list(result) == [7, 9, 2, 0, 4, 1, 3, 8, 5, 6]
+      assert Series.to_list(result) == [3, 7, 8, 0, 5, 1, 2, 6, 4, 9]
     end
   end
 
@@ -4663,7 +4662,7 @@ defmodule Explorer.SeriesTest do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_mean(s1)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                1.0,
                1.6666666666666667,
                2.4285714285714284,
@@ -4674,14 +4673,14 @@ defmodule Explorer.SeriesTest do
                7.031372549019608,
                8.017612524461839,
                9.009775171065494
-             ]
+             ])
     end
 
     test "returns calculated ewma with differernt smoothing factor if different alpha is passed" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_mean(s1, alpha: 0.8)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                1.0,
                1.8333333333333335,
                2.7741935483870965,
@@ -4692,14 +4691,14 @@ defmodule Explorer.SeriesTest do
                7.750020480052428,
                8.75000460800236,
                9.750001024000106
-             ]
+             ])
     end
 
     test "returns calculated ewma with nils for index less than min period size, if min_periods is set" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_mean(s1, min_periods: 5)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                nil,
                nil,
                nil,
@@ -4710,14 +4709,14 @@ defmodule Explorer.SeriesTest do
                7.031372549019608,
                8.017612524461839,
                9.009775171065494
-             ]
+             ])
     end
 
     test "ignores nil by default and calculates ewma" do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_mean(s1, ignore_nils: true)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                1.0,
                nil,
                1.6666666666666667,
@@ -4728,7 +4727,7 @@ defmodule Explorer.SeriesTest do
                5.095238095238095,
                6.05511811023622,
                7.031372549019608
-             ]
+             ])
     end
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewma" do
@@ -4737,7 +4736,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_mean(s1, ignore_nils: false)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                1.0,
                nil,
                1.8,
@@ -4748,14 +4747,14 @@ defmodule Explorer.SeriesTest do
                5.1959183673469385,
                6.1177644710578845,
                7.069101678183613
-             ]
+             ])
     end
 
     test "returns calculated ewma without adjustment if adjust option is set to false" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_mean(s1, adjust: false)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                1.0,
                1.5,
                2.25,
@@ -4766,7 +4765,7 @@ defmodule Explorer.SeriesTest do
                7.0078125,
                8.00390625,
                9.001953125
-             ]
+             ])
     end
   end
 
@@ -4775,7 +4774,7 @@ defmodule Explorer.SeriesTest do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_standard_deviation(s1)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                0.7071067811865476,
                0.9636241116594314,
@@ -4786,14 +4785,14 @@ defmodule Explorer.SeriesTest do
                1.6224598916602895,
                1.6634845490537977,
                1.689976601128564
-             ]
+             ])
     end
 
     test "returns calculated ewm std with different smoothing factor if different alpha is passed" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_standard_deviation(s1, alpha: 0.8)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                0.7071067811865476,
                0.8613567692141088,
@@ -4804,14 +4803,14 @@ defmodule Explorer.SeriesTest do
                0.9679969383076764,
                0.9681825776281606,
                0.9682301709724406
-             ]
+             ])
     end
 
     test "returns calculated ewm std with nils for index less than min period size, if min_periods is set" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_standard_deviation(s1, min_periods: 5)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                nil,
                nil,
                nil,
@@ -4822,7 +4821,7 @@ defmodule Explorer.SeriesTest do
                1.6224598916602895,
                1.6634845490537977,
                1.689976601128564
-             ]
+             ])
     end
 
     test "ignores nil by default and calculates ewm std" do
@@ -4831,7 +4830,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_standard_deviation(s1, ignore_nils: true)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                nil,
                0.7071067811865476,
@@ -4842,7 +4841,7 @@ defmodule Explorer.SeriesTest do
                1.4709162008918397,
                1.5607315639222439,
                1.6224598916602895
-             ]
+             ])
     end
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewm std" do
@@ -4851,7 +4850,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_standard_deviation(s1, ignore_nils: false)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                nil,
                0.7071067811865476,
@@ -4862,14 +4861,14 @@ defmodule Explorer.SeriesTest do
                1.3067888637766594,
                1.4363395171897309,
                1.5336045526865307
-             ]
+             ])
     end
 
     test "returns calculated ewm std without adjustment if adjust option is set to false" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_standard_deviation(s1, adjust: false)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                0.7071067811865476,
                1.0488088481701516,
@@ -4880,14 +4879,14 @@ defmodule Explorer.SeriesTest do
                1.6805652557493016,
                1.7030595977801866,
                1.7159083446458816
-             ]
+             ])
     end
 
     test "returns calculated ewm std with bias if bias option is set to true" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_standard_deviation(s1, bias: true)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                0.4714045207910317,
                0.7284313590846835,
@@ -4898,7 +4897,7 @@ defmodule Explorer.SeriesTest do
                1.3221328870469677,
                1.3568998042691014,
                1.3791855333404945
-             ]
+             ])
     end
   end
 
@@ -4907,7 +4906,7 @@ defmodule Explorer.SeriesTest do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_variance(s1)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                0.5,
                0.9285714285714284,
@@ -4918,14 +4917,14 @@ defmodule Explorer.SeriesTest do
                2.632376100046318,
                2.7671808449407167,
                2.8560209123620535
-             ]
+             ])
     end
 
     test "returns calculated ewm var with different smoothing factor if different alpha is passed" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_variance(s1, alpha: 0.8)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                0.5,
                0.7419354838709674,
@@ -4936,14 +4935,14 @@ defmodule Explorer.SeriesTest do
                0.9370180725730355,
                0.9373775036227093,
                0.9374696639813216
-             ]
+             ])
     end
 
     test "returns calculated ewm var with nils for index less than min period size, if min_periods is set" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_variance(s1, min_periods: 5)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                nil,
                nil,
                nil,
@@ -4954,7 +4953,7 @@ defmodule Explorer.SeriesTest do
                2.632376100046318,
                2.7671808449407167,
                2.8560209123620535
-             ]
+             ])
     end
 
     test "ignores nil by default and calculates ewm var" do
@@ -4963,7 +4962,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_variance(s1, ignore_nils: true)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                nil,
                0.5,
@@ -4974,7 +4973,7 @@ defmodule Explorer.SeriesTest do
                2.163594470046083,
                2.435883014623173,
                2.632376100046318
-             ]
+             ])
     end
 
     test "does not ignore nil if set ignore_nils option to false and calculates ewm var" do
@@ -4983,7 +4982,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1, nil, 2, nil, 3, 4, 5, 6, 7, 8])
       s2 = Series.ewm_variance(s1, ignore_nils: false)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                nil,
                0.5,
@@ -4994,14 +4993,14 @@ defmodule Explorer.SeriesTest do
                1.7076971344906926,
                2.0630712086408294,
                2.3519429240208543
-             ]
+             ])
     end
 
     test "returns calculated ewm var without adjustment if adjust option is set to false" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_variance(s1, adjust: false)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                0.5,
                1.1,
@@ -5012,14 +5011,14 @@ defmodule Explorer.SeriesTest do
                2.824299578831716,
                2.9004119935912107,
                2.9443414472253693
-             ]
+             ])
     end
 
     test "returns calculated ewm var with bias if bias option is set to true" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
       s2 = Series.ewm_variance(s1, bias: true)
 
-      assert Series.to_list(s2) == [
+      assert all_close?(s2, [
                0.0,
                0.2222222222222222,
                0.5306122448979591,
@@ -5030,7 +5029,7 @@ defmodule Explorer.SeriesTest do
                1.7480353710111498,
                1.8411770788255257,
                1.9021527353757046
-             ]
+             ])
     end
   end
 
@@ -5437,7 +5436,7 @@ defmodule Explorer.SeriesTest do
     test "rank of a series of floats (method: random)" do
       s = Series.from_list([3.5, 3.0, 3.2, 3.1, 3.6, 3.9, 3.4, 3.4, 2.9, 3.1])
       r = Series.rank(s, method: :random, seed: 4242)
-      assert Series.to_list(r) === [8, 2, 5, 4, 9, 10, 7, 6, 1, 3]
+      assert Series.to_list(r) === [8, 2, 5, 3, 9, 10, 7, 6, 1, 4]
     end
 
     test "rank of a float series with a nan" do
@@ -6779,13 +6778,13 @@ defmodule Explorer.SeriesTest do
     test "raises when value cannot be deserialized with given dtype" do
       s = Series.from_list(["1", "\"a\""])
 
-      message =
-        "Polars Error: error deserializing JSON: error deserializing value \"String(\"a\")\" as numeric. " <>
-          "\\\n            Try increasing `infer_schema_length` or specifying a schema.\n            "
-
-      assert_raise RuntimeError, message, fn ->
-        Series.json_decode(s, {:s, 64})
-      end
+      assert_raise RuntimeError,
+                   ~s"""
+                   Polars Error: error deserializing JSON: error deserializing value "String("a")" as numeric. \\
+                               Try increasing `infer_schema_length` or specifying a schema.
+                               \
+                   """,
+                   fn -> Series.json_decode(s, {:s, 64}) end
     end
 
     test "extract series of strings" do
@@ -6905,10 +6904,24 @@ defmodule Explorer.SeriesTest do
     end
   end
 
-  defp all_close?(a, b, tol \\ 1.0e-8) do
-    Series.subtract(a, b)
-    |> Series.abs()
-    |> Series.less_equal(tol)
-    |> Series.all?()
+  defp all_close?(a, b, tol \\ 1.0e-8)
+
+  defp all_close?(%Series{} = a, %Series{} = b, tol) do
+    if Series.size(a) != Series.size(b) do
+      false
+    else
+      # Needs to be a value that doesn't appear in any series.
+      dummy_value = max(Series.max(a), Series.max(b)) + 1
+      a = Series.fill_missing(a, dummy_value)
+      b = Series.fill_missing(b, dummy_value)
+
+      Series.subtract(a, b)
+      |> Series.abs()
+      |> Series.less_equal(tol)
+      |> Series.all?()
+    end
   end
+
+  defp all_close?(a, b, tol) when is_list(a), do: all_close?(Series.from_list(a), b, tol)
+  defp all_close?(a, b, tol) when is_list(b), do: all_close?(a, Series.from_list(b), tol)
 end
