@@ -16,7 +16,7 @@ jobs:
       matrix:
         include:
           - otp_version: 25.3
-            elixir_version: 1.15
+            elixir_version: 1.14
 
           - otp_version: "27.2"
             elixir_version: 1.18
