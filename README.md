@@ -1,3 +1,9 @@
+> [!CAUTION]
+> This project is no longer actively maintained.
+
+> [!NOTE]
+> The successor project can be found here: https://github.com/elixir-dux/dux
+
 <h1><img src="explorer.png" alt="Explorer"></h1>
 
 ![CI](https://github.com/elixir-nx/explorer/actions/workflows/ci.yml/badge.svg)
