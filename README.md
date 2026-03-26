@@ -1,9 +1,3 @@
-> [!CAUTION]
-> This project is no longer actively maintained.
-
-> [!NOTE]
-> The successor project can be found here: https://github.com/elixir-dux/dux
-
 <h1><img src="explorer.png" alt="Explorer"></h1>
 
 ![CI](https://github.com/elixir-nx/explorer/actions/workflows/ci.yml/badge.svg)
@@ -38,16 +32,20 @@ Explorer high-level features are:
 - The first (and default) backend is based on NIF bindings to the blazing-fast
   [polars](https://docs.rs/polars) library.
 
+> #### Alternative dataframe library {: .info}
+>
+> If you would prefer to have a dataframe API that is backed by
+> [DuckDB](https://duckdb.org/docs/stable/) instead of [Polars](https://docs.rs/polars), be
+> sure to checkout out the [Dux](https://github.com/elixir-dux/dux) project.
+
 The API is heavily influenced by [Tidy Data](https://vita.had.co.nz/papers/tidy-data.pdf)
 and borrows much of its design from [dplyr](https://dplyr.tidyverse.org). The philosophy
 is heavily influenced by this passage from `dplyr`'s documentation:
 
 > - By constraining your options, it helps you think about your data manipulation
 >   challenges.
->
 > - It provides simple “verbs”, functions that correspond to the most common data
 >   manipulation tasks, to help you translate your thoughts into code.
->
 > - It uses efficient backends, so you spend less time waiting for the computer.
 
 The aim here isn't to have the fastest dataframe library around (though it certainly
@@ -96,7 +94,7 @@ If necessary, clean up before rebuilding with `mix deps.clean explorer`.
 We have two ways to represent data with Explorer:
 
 - using a series, that is similar to a list, but is guaranteed to contain items
-  of one data type only - or one *dtype* for short. Notice that nil values are
+  of one data type only - or one _dtype_ for short. Notice that nil values are
   permitted in series of any dtype.
 
 - using a dataframe, that is just a way to represent one or more series together,
