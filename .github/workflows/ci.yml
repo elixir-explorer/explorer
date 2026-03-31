@@ -30,12 +30,6 @@ jobs:
         ports:
           - 4566:4566
 
-    env:
-      AWS_ENDPOINT: http://localhost:4566
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AWS_DEFAULT_REGION: us-east-1
-
     steps:
       - uses: actions/checkout@v4
 
@@ -67,6 +61,11 @@ jobs:
       - name: Compile once again but without optional deps
         run: mix compile --force --warnings-as-errors --no-optional-deps
       - name: Run cloud integration tests
+        env:
+          AWS_ENDPOINT: http://localhost:4566
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
         run: |
           mix localstack.setup
           mix test --only cloud_integration
