@@ -25,13 +25,10 @@ jobs:
     name: test
 
     services:
-      localstack:
-        image: localstack/localstack:s3-latest
+      floci:
+        image: hectorvent/floci:latest
         ports:
           - 4566:4566
-        env:
-          SERVICES: s3
-        # Wait for LocalStack to be up and running
         options: >-
           --health-cmd "curl -f http://localhost:4566/_localstack/health || exit 1"
           --health-interval 10s
@@ -39,10 +36,10 @@ jobs:
           --health-retries 5
 
     env:
+      AWS_ENDPOINT: http://localhost:4566
       AWS_ACCESS_KEY_ID: test
       AWS_SECRET_ACCESS_KEY: test
       AWS_DEFAULT_REGION: us-east-1
-      AWS_ENDPOINT_URL: http://localhost:4566
 
     steps:
       - uses: actions/checkout@v4
