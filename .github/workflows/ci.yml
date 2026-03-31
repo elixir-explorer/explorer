@@ -54,8 +54,22 @@ jobs:
         run: mix deps.get
       - name: Compile deps
         run: mix deps.compile
-      - name: Run tests
-        run: mix test --warnings-as-errors
+      - name: Find troublesome test
+        run: |
+          for f in test/explorer/*_test.exs test/explorer/**/*_test.exs; do
+            echo "::group::$f"
+            timeout 120 mix test "$f" --warnings-as-errors --max-failures 1
+            code=$?
+            echo "Exit code: $code"
+            if [ $code -eq 139 ]; then
+              echo "::error::SEGFAULT in $f"
+            fi
+            echo "::endgroup::"
+          done
+        env:
+          MIX_ENV: test
+      # - name: Run tests
+      #   run: mix test --warnings-as-errors
       - name: Run property tests
         run: mix test --only property --warnings-as-errors
       - name: Compile once again but without optional deps

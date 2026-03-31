@@ -74,7 +74,7 @@ features = [
   "rolling_window",
   "round_series",
   "rows",
-  # "simd",
+  "simd",
   "sql",
   "strings",
   "temporal",
