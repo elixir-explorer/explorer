@@ -55,10 +55,8 @@ jobs:
       - name: Compile deps
         run: mix deps.compile
       - name: Compile native code ahead of time
-        run: |
-          cd native/explorer
-          cargo build --release
-      - name: Find troublesome test
+        run: mix compile
+      - name: Find SEGFAULT test
         run: |
           for f in test/explorer/*_test.exs test/explorer/**/*_test.exs; do
             echo "::group::$f"
