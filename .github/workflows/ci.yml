@@ -23,6 +23,7 @@ jobs:
 
     runs-on: ubuntu-latest
     name: test
+
     steps:
       - uses: actions/checkout@v4
 
@@ -53,6 +54,12 @@ jobs:
         run: mix test --only property --warnings-as-errors
       - name: Compile once again but without optional deps
         run: mix compile --force --warnings-as-errors --no-optional-deps
+
+      - name: Start LocalStack
+        uses: LocalStack/setup-localstack@v0.2.3
+        with:
+          image-tag: "s3-latest"
+
       - name: Run cloud integration tests
         run: |
           mix localstack.setup
