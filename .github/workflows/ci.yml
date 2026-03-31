@@ -58,15 +58,13 @@ jobs:
         run: mix compile
       - name: Find SEGFAULT test
         run: |
-          for f in test/explorer/*_test.exs test/explorer/**/*_test.exs; do
-            echo "::group::$f"
-            timeout 120 mix test "$f" --warnings-as-errors --max-failures 1
+          grep -n "test \"" test/explorer/data_frame_test.exs | head -80 | while IFS=: read line rest; do
+            echo "=== Line $line: $rest ==="
+            timeout 30 mix test test/explorer/data_frame_test.exs:$line --max-failures 1 2>&1 | tail -3
             code=$?
-            echo "Exit code: $code"
-            if [ $code -eq 139 ]; then
-              echo "::error::SEGFAULT in $f"
+            if [ $code -eq 124 ] || [ $code -eq 139 ]; then
+              echo "::error::CRASH at line $line (exit $code)"
             fi
-            echo "::endgroup::"
           done
         env:
           MIX_ENV: test
