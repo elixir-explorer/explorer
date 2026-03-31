@@ -29,11 +29,6 @@ jobs:
         image: hectorvent/floci:latest
         ports:
           - 4566:4566
-        options: >-
-          --health-cmd "curl -f http://localhost:4566/_localstack/health || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     env:
       AWS_ENDPOINT: http://localhost:4566
