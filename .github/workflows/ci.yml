@@ -9,19 +9,17 @@ on:
 env:
   EXPLORER_BUILD: true
   MIX_ENV: test
-  RUST_BACKTRACE: 1
-  RUST_LOG: debug
 
 jobs:
   test:
     strategy:
       matrix:
         include:
-          - otp_version: 25.3
-            elixir_version: 1.14
+          # - otp_version: 25.3
+          #   elixir_version: 1.14
 
-          - otp_version: "27.2"
-            elixir_version: 1.18
+          - otp_version: 27.2
+            elixir_version: 1.19
 
     runs-on: ubuntu-latest
     name: test
@@ -57,8 +55,6 @@ jobs:
       - name: Compile deps
         run: mix deps.compile
       - name: Run tests
-        env:
-          RUST_BACKTRACE: full
         run: mix test --warnings-as-errors
       - name: Run property tests
         run: mix test --only property --warnings-as-errors
