@@ -622,7 +622,6 @@ dependencies = [
  "polars-arrow",
  "polars-lazy",
  "polars-ops",
- "polars-parquet",
  "rand 0.8.5",
  "rand_pcg",
  "reqwest",

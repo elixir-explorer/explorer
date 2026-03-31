@@ -4,10 +4,10 @@ use crate::atoms;
 use crate::ExplorerError;
 use chrono::prelude::*;
 
+use polars::polars_utils::compression::{BrotliLevel, GzipLevel, ZstdLevel};
 #[cfg(feature = "cloud")]
 use polars::prelude::cloud::CloudOptions;
 use polars::prelude::*;
-use polars_parquet::write::{BrotliLevel, GzipLevel, ZstdLevel};
 use rustler::{Atom, NifStruct, NifTaggedEnum, Resource, ResourceArc};
 use std::fmt;
 use std::ops::Deref;

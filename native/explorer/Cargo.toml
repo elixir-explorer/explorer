@@ -90,9 +90,6 @@ features = [
 version = "0.53"
 features = ["abs", "ewma", "cum_agg", "cov", "index_of"]
 
-[dependencies.polars-parquet]
-version = "0.53"
-
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
 

@@ -50,7 +50,7 @@ pub fn lf_from_parquet_cloud(
         vec![all().as_expr()]
     };
 
-    let path = PlRefPath::new(&ex_entry.to_string());
+    let path = PlRefPath::new(ex_entry.to_string());
     let lf = LazyFrame::scan_parquet(path, options)?
         .with_comm_subplan_elim(false)
         .with_new_streaming(true)
@@ -143,7 +143,7 @@ pub fn lf_to_parquet_cloud(
         ..Default::default()
     };
     let sink_dest = SinkDestination::File {
-        target: SinkTarget::Path(PlRefPath::new(&ex_entry.to_string())),
+        target: SinkTarget::Path(PlRefPath::new(ex_entry.to_string())),
     };
 
     let unified_args = UnifiedSinkArgs {
@@ -251,7 +251,7 @@ pub fn lf_to_ipc_cloud(
         ..Default::default()
     };
     let sink_dest = SinkDestination::File {
-        target: SinkTarget::Path(PlRefPath::new(&ex_entry.to_string())),
+        target: SinkTarget::Path(PlRefPath::new(ex_entry.to_string())),
     };
     let unified_args = UnifiedSinkArgs {
         maintain_order: false,
