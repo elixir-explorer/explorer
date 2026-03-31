@@ -26,9 +26,9 @@ reqwest = { version = "0.12", default-features = false }
 tokio = { version = "1.40", default-features = false, features = [
   "rt",
 ], optional = true }
-object_store = { version = "0.12", default-features = false, optional = true }
-polars-arrow = "0.52"
-polars-lazy = "0.52"
+object_store = { version = "0.13", default-features = false, optional = true }
+polars-arrow = "0.53"
+polars-lazy = "0.53"
 
 # MiMalloc won´t compile on Windows with the GCC compiler.
 # On Linux with Musl it won´t load correctly.
@@ -36,7 +36,7 @@ polars-lazy = "0.52"
 mimalloc = { version = "*", default-features = false }
 
 [dependencies.polars]
-version = "0.52"
+version = "0.53"
 default-features = false
 features = [
   "abs",
@@ -87,8 +87,11 @@ features = [
 ]
 
 [dependencies.polars-ops]
-version = "0.52"
+version = "0.53"
 features = ["abs", "ewma", "cum_agg", "cov", "index_of"]
+
+[dependencies.polars-parquet]
+version = "0.53"
 
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]

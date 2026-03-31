@@ -153,7 +153,13 @@ pub fn lf_slice(
         let groups_exprs: Vec<Expr> = groups.iter().map(col).collect();
         lf.group_by_opt_order(groups_exprs, stable_groups)
             .agg([col("*").slice(offset, length)])
-            .explode(all().exclude_cols(groups))
+            .explode(
+                all().exclude_cols(groups),
+                ExplodeOptions {
+                    empty_as_null: false,
+                    keep_nulls: false,
+                },
+            )
     };
 
     Ok(ExLazyFrame::new(result_lf))
@@ -161,7 +167,13 @@ pub fn lf_slice(
 
 #[rustler::nif]
 pub fn lf_explode(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
-    let lf = data.clone_inner().explode(cols(columns));
+    let lf = data.clone_inner().explode(
+        cols(columns),
+        ExplodeOptions {
+            empty_as_null: false,
+            keep_nulls: false,
+        },
+    );
     Ok(ExLazyFrame::new(lf))
 }
 
@@ -309,8 +321,8 @@ pub fn lf_pivot_longer(
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
     let unpivot_opts = polars::lazy::dsl::UnpivotArgsDSL {
-        index: by_name(id_vars, true),
-        on: by_name(value_vars, true),
+        index: by_name(id_vars, true, false),
+        on: Some(by_name(value_vars, true, false)),
         variable_name: Some(names_to.into()),
         value_name: Some(values_to.into()),
     };
@@ -471,7 +483,7 @@ pub fn lf_concat_columns(ldfs: Vec<ExLazyFrame>) -> Result<ExLazyFrame, Explorer
         })
         .collect();
 
-    let out_ldf = concat_lf_horizontal(renamed_ldfs, UnionArgs::default())?;
+    let out_ldf = concat_lf_horizontal(renamed_ldfs, HConcatOptions::default())?;
 
     Ok(ExLazyFrame::new(out_ldf))
 }

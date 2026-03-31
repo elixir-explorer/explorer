@@ -1,9 +1,8 @@
 use polars::prelude::*;
-use polars_lazy::frame::pivot::PivotExpr;
-use polars_ops::pivot::{pivot_stable, PivotAgg};
 
 use polars_arrow::ffi;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::datatypes::ExSeriesDtype;
 use crate::ex_expr_to_exprs;
@@ -101,7 +100,7 @@ pub fn df_concat_columns(dfs: Vec<ExDataFrame>) -> Result<ExDataFrame, ExplorerE
         .flat_map(|(idx, ex_df)| {
             let df = ex_df.clone_inner();
 
-            df.get_columns()
+            df.columns()
                 .iter()
                 .map(|col| {
                     let name = col.name();
@@ -120,7 +119,7 @@ pub fn df_concat_columns(dfs: Vec<ExDataFrame>) -> Result<ExDataFrame, ExplorerE
         })
         .collect::<Vec<Column>>();
 
-    let out_df = DataFrame::new(cols)?;
+    let out_df = DataFrame::new_infer_height(cols)?;
 
     Ok(ExDataFrame::new(out_df))
 }
@@ -385,7 +384,7 @@ pub fn df_to_dummies(df: ExDataFrame, selection: Vec<&str>) -> Result<ExDataFram
 pub fn df_put_column(df: ExDataFrame, series: ExSeries) -> Result<ExDataFrame, ExplorerError> {
     let mut df = df.clone();
     let s = series.clone_inner();
-    let new_df = df.with_column(s)?.clone();
+    let new_df = df.with_column(s.into())?.clone();
 
     Ok(ExDataFrame::new(new_df))
 }
@@ -398,12 +397,12 @@ pub fn df_nil_count(df: ExDataFrame) -> Result<ExDataFrame, ExplorerError> {
 
 #[rustler::nif]
 pub fn df_from_series(columns: Vec<ExSeries>) -> Result<ExDataFrame, ExplorerError> {
-    let columns = columns
+    let columns: Vec<Column> = columns
         .into_iter()
         .map(|c| Column::from(c.clone_inner()))
         .collect();
 
-    let df = DataFrame::new(columns)?;
+    let df = DataFrame::new_infer_height(columns)?;
 
     Ok(ExDataFrame::new(df))
 }
@@ -421,7 +420,7 @@ pub fn df_group_indices(
     groups: Vec<&str>,
 ) -> Result<Vec<ExSeries>, ExplorerError> {
     let series = df
-        .group_by_with_series(df.select_columns(groups)?, true, true)?
+        .group_by_with_series(df.select(groups)?.into_columns(), true, true)?
         .groups()?
         .column("groups")?
         .list()?
@@ -454,15 +453,86 @@ pub fn df_pivot_wider(
         df.rename(id_name, new_name.into())?;
     }
 
-    let mut new_df = pivot_stable(
-        &df,
-        [pivot_column],
-        Some(temp_id_names),
-        Some(values_column),
-        false,
-        Some(PivotAgg(Arc::new(PivotExpr::from_expr(col("").first())))),
-        None,
-    )?;
+    // Extract the unique values of the pivot column into a DataFrame.
+    // LazyFrame::pivot requires knowing the output column values upfront
+    // so that the schema can be determined statically.
+    //
+    // We also need to handle null values: the old pivot_stable created a "null"
+    // column for null pivot values, but the new LazyFrame::pivot uses SQL null
+    // semantics (null != null). So we cast to string and fill nulls with "null"
+    // before extracting unique values and pivoting. The name-cleaning code
+    // below already renames "null" → "nil" for Explorer compatibility.
+    let pivot_series = df.column(pivot_column)?.as_materialized_series().clone();
+    let has_nulls = pivot_series.has_nulls();
+
+    let on_columns_series = if has_nulls {
+        let str_ca = pivot_series.cast(&DataType::String)?;
+        let filled: StringChunked = str_ca
+            .str()
+            .unwrap()
+            .into_iter()
+            .map(|opt| Some(opt.unwrap_or("null")))
+            .collect();
+        filled.into_series().unique_stable()?
+    } else {
+        pivot_series.unique_stable()?
+    };
+    let on_columns_df = DataFrame::new_infer_height(vec![Column::from(on_columns_series)])?;
+
+    // If the pivot column has nulls, cast it to string and fill with "null"
+    // so the pivot can match these rows.
+    let lf = if has_nulls {
+        df.lazy().with_column(
+            col(pivot_column)
+                .cast(DataType::String)
+                .fill_null(lit("null")),
+        )
+    } else {
+        df.lazy()
+    };
+
+    // Build Selector::ByName for the "on" column (the column being pivoted).
+    let on_selector = Selector::ByName {
+        names: Arc::from([PlSmallStr::from(pivot_column)]),
+        strict: true,
+    };
+
+    // Build Selector::ByName for the index columns (what stays as rows).
+    let index_selector = Selector::ByName {
+        names: Arc::from(
+            temp_id_names
+                .iter()
+                .map(|s| PlSmallStr::from(s.as_str()))
+                .collect::<Vec<_>>(),
+        ),
+        strict: true,
+    };
+
+    // Build Selector::ByName for the value columns (what gets aggregated).
+    let values_selector = Selector::ByName {
+        names: Arc::from(
+            values_column
+                .iter()
+                .map(|s| PlSmallStr::from(*s))
+                .collect::<Vec<_>>(),
+        ),
+        strict: true,
+    };
+
+    // Use LazyFrame::pivot with maintain_order=true (replaces the old pivot_stable).
+    // The aggregation expr is `col("").first()` which takes the first value
+    // per group, matching the old PivotExpr::from_expr(col("").first()) behavior.
+    let mut new_df = lf
+        .pivot(
+            on_selector,
+            Arc::new(on_columns_df),
+            index_selector,
+            values_selector,
+            element().first(),
+            true, // maintain_order (equivalent to the old pivot_stable)
+            PlSmallStr::from("_"),
+        )
+        .collect()?;
 
     // Instead of using the names from the pivoted DF, we go back
     // and restore the original ID column names, so we can use our
