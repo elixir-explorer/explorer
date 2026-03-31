@@ -9,6 +9,8 @@ on:
 env:
   EXPLORER_BUILD: true
   MIX_ENV: test
+  RUST_BACKTRACE: 1
+  RUST_LOG: debug
 
 jobs:
   test:
