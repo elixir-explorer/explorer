@@ -24,6 +24,26 @@ jobs:
     runs-on: ubuntu-latest
     name: test
 
+    services:
+      localstack:
+        image: localstack/localstack:s3-latest
+        ports:
+          - 4566:4566
+        env:
+          SERVICES: s3
+        # Wait for LocalStack to be up and running
+        options: >-
+          --health-cmd "curl -f http://localhost:4566/_localstack/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://localhost:4566
+
     steps:
       - uses: actions/checkout@v4
 
@@ -54,12 +74,6 @@ jobs:
         run: mix test --only property --warnings-as-errors
       - name: Compile once again but without optional deps
         run: mix compile --force --warnings-as-errors --no-optional-deps
-
-      - name: Start LocalStack
-        uses: LocalStack/setup-localstack@v0.2.3
-        with:
-          image-tag: "s3-latest"
-
       - name: Run cloud integration tests
         run: |
           mix localstack.setup
