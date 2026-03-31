@@ -57,6 +57,8 @@ jobs:
       - name: Compile deps
         run: mix deps.compile
       - name: Run tests
+        env:
+          RUST_BACKTRACE: full
         run: mix test --warnings-as-errors
       - name: Run property tests
         run: mix test --only property --warnings-as-errors
