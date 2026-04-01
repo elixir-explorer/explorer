@@ -54,22 +54,10 @@ jobs:
         run: mix deps.get
       - name: Compile deps
         run: mix deps.compile
-      - name: Compile native code ahead of time
+      - name: Compile native code
         run: mix compile
-      - name: Find SEGFAULT test
-        run: |
-          grep -n "test \"" test/explorer/data_frame_test.exs | head -80 | while IFS=: read line rest; do
-            echo "=== Line $line: $rest ==="
-            timeout 30 mix test test/explorer/data_frame_test.exs:$line --max-failures 1 2>&1 | tail -3
-            code=$?
-            if [ $code -eq 124 ] || [ $code -eq 139 ]; then
-              echo "::error::CRASH at line $line (exit $code)"
-            fi
-          done
-        env:
-          MIX_ENV: test
-      # - name: Run tests
-      #   run: mix test --warnings-as-errors
+      - name: Run tests
+        run: mix test --warnings-as-errors
       - name: Run property tests
         run: mix test --only property --warnings-as-errors
       - name: Compile once again but without optional deps
