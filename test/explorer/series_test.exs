@@ -6780,9 +6780,9 @@ defmodule Explorer.SeriesTest do
 
       assert_raise RuntimeError,
                    ~s"""
-                   Polars Error: error deserializing JSON: error deserializing value "String("a")" as numeric. \\
-                               Try increasing `infer_schema_length` or specifying a schema.
-                               \
+                   Polars Error: error deserializing JSON: error deserializing value \"String(\"a\")\" as numeric.
+
+                   Try increasing `infer_schema_length` or specifying a schema.\
                    """,
                    fn -> Series.json_decode(s, {:s, 64}) end
     end

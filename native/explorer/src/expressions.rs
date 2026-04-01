@@ -481,7 +481,7 @@ pub fn expr_median(expr: ExExpr) -> ExExpr {
 pub fn expr_mode(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.mode())
+    ExExpr::new(expr.mode(false))
 }
 
 #[rustler::nif]

@@ -84,7 +84,20 @@ pub fn df_from_csv(
         .try_into_reader_with_file_path(Some(filename.into()))?
         .finish();
 
-    Ok(ExDataFrame::new(dataframe?))
+    let mut df = dataframe?;
+
+    // Polars 0.53 no longer trims whitespace from CSV column headers.
+    // Trim them to preserve backward compatibility.
+    if has_header {
+        let trimmed: Vec<String> = df
+            .get_column_names()
+            .iter()
+            .map(|n| n.trim().to_string())
+            .collect();
+        df.set_column_names(&trimmed)?;
+    }
+
+    Ok(ExDataFrame::new(df))
 }
 
 pub fn schema_from_dtypes_pairs(
@@ -220,7 +233,20 @@ pub fn df_load_csv(
         .into_reader_with_file_handle(cursor)
         .finish();
 
-    Ok(ExDataFrame::new(dataframe?))
+    let mut df = dataframe?;
+
+    // Polars 0.53 no longer trims whitespace from CSV column headers.
+    // Trim them to preserve backward compatibility.
+    if has_header {
+        let trimmed: Vec<String> = df
+            .get_column_names()
+            .iter()
+            .map(|n| n.trim().to_string())
+            .collect();
+        df.set_column_names(&trimmed)?;
+    }
+
+    Ok(ExDataFrame::new(df))
 }
 
 // ============ Parquet ============ //
