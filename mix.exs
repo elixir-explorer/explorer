@@ -44,7 +44,7 @@ defmodule Explorer.MixProject do
       {:rustler_precompiled, "~> 0.7"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 4.1"},
-      {:decimal, "~> 2.1"},
+      {:decimal, "~> 3.0"},
 
       ## Optional
       {:adbc, "~> 0.1", optional: true},
@@ -58,7 +58,8 @@ defmodule Explorer.MixProject do
 
       ## Dev
       {:ex_doc, "~> 0.24", only: :dev},
-      {:benchee, "~> 1.1", only: :dev}
+      {:benchee, "~> 1.1", only: :dev},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}
     ]
   end
 
