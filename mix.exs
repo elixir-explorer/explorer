@@ -44,7 +44,7 @@ defmodule Explorer.MixProject do
       {:rustler_precompiled, "~> 0.7"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 4.1"},
-      {:decimal, "~> 2.1"},
+      {:decimal, "~> 2.1 or ~> 3.1"},
 
       ## Optional
       {:adbc, "~> 0.1", optional: true},
