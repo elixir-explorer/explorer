@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Updated
+
+  * Updated `Decimal` dependency requirement to mitigate [CVE-2026-32686](https://www.cve.org/CVERecord?id=CVE-2026-32686) DoS. Versions [2.4.0](https://github.com/ericmj/decimal/blob/main/CHANGELOG.md#v240-2026-05-07) and [3.1.0](https://github.com/ericmj/decimal/blob/main/CHANGELOG.md#v310-2026-05-08) both contain the fix.
+
 ### Backwards incompatible changes
 
   * Support for transparent transfers with `FLAME` is removed, instead use `load_ipc`/`dump_ipc` to explicitly transfer dataframe across nodes
