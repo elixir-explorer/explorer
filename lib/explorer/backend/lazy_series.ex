@@ -822,7 +822,6 @@ defmodule Explorer.Backend.LazySeries do
        when op in [:first, :last, :sum, :min, :max, :product],
        do: series.dtype
 
-  defp dtype_for_agg_operation(op, _) when op in [:all?, :any?], do: :boolean
   defp dtype_for_agg_operation(:mode, series), do: {:list, series.dtype}
 
   defp dtype_for_agg_operation(_, _), do: {:f, 64}
