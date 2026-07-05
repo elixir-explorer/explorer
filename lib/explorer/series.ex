@@ -1143,7 +1143,7 @@ defmodule Explorer.Series do
     do: apply_series(series, :strftime, [format_string])
 
   def strftime(%Series{dtype: dtype}, _format_string),
-    do: dtype_error("strftime/2", dtype, :datetime_like)
+    do: dtype_error("strftime/2", dtype, [:datetime_like])
 
   @doc """
   Clip (or clamp) the values in a series.
