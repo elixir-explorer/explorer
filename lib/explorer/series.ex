@@ -3483,9 +3483,6 @@ defmodule Explorer.Series do
   defp maybe_max(left, right) when K.and(is_integer(left), is_integer(right)),
     do: K.max(left, right)
 
-  defp maybe_max(left, nil), do: left
-  defp maybe_max(nil, right), do: right
-
   @doc """
   Subtracts right from left, element-wise.
 
