@@ -113,7 +113,7 @@ defmodule Explorer.MixProject do
     ]
   end
 
-    defp copy_files(_) do
+  defp copy_files(_) do
     # Set up directory structure
     File.mkdir_p!("./doc/images")
 
