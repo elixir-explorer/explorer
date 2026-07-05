@@ -5346,15 +5346,15 @@ defmodule Explorer.Series do
 
     float_series =
       case dtype(series) do
-        :f32 ->
+        {:f, 32} ->
           series
 
-        :f64 ->
+        {:f, 64} ->
           series
 
         _ ->
           try do
-            cast(series, :f64)
+            cast(series, {:f, 64})
           rescue
             _ ->
               raise ArgumentError,
