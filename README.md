@@ -1,7 +1,7 @@
-<h1><img src="explorer.png" alt="Explorer"></h1>
+<img src="/images/explorer.png" alt="Explorer">
 
 ![CI](https://github.com/elixir-nx/explorer/actions/workflows/ci.yml/badge.svg)
-[![Documentation](http://img.shields.io/badge/hex.pm-docs-green.svg?style=flat)](https://hexdocs.pm/explorer)
+[![Documentation](https://img.shields.io/badge/hex.pm-docs-green.svg?style=flat)](https://explorer.hexdocs.pm/)
 [![Package](https://img.shields.io/hexpm/v/explorer.svg)](https://hex.pm/packages/explorer)
 
 <!-- MDOC -->
@@ -66,7 +66,7 @@ Inside an Elixir script or [Livebook](https://livebook.dev):
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.11.1"}
+  {:explorer, "~> 0.12.0"}
 ])
 ```
 
@@ -75,7 +75,7 @@ Or in the `mix.exs` file of your application:
 ```elixir
 def deps do
   [
-    {:explorer, "~> 0.11.1"}
+    {:explorer, "~> 0.12.0"}
   ]
 end
 ```
@@ -83,7 +83,7 @@ end
 Explorer will download a precompiled version of its native code upon installation. You can force a local build by setting the environment variable `EXPLORER_BUILD=1` and including `:rustler` as a dependency:
 
 ```elixir
-  {:explorer, "~> 0.11.1", system_env: %{"EXPLORER_BUILD" => "1"}},
+  {:explorer, "~> 0.12.0", system_env: %{"EXPLORER_BUILD" => "1"}},
   {:rustler, ">= 0.0.0"}
 ```
 
@@ -306,4 +306,4 @@ of `ObjectStore` does not compile on it.
 
 ## Sponsors
 
-<a href="https://amplified.ai"><img src="sponsors/amplified.png" width=100 alt="Amplified"></a>
+<a href="https://amplified.ai"><img src="images/amplified.png" width=100 alt="Amplified"></a>
