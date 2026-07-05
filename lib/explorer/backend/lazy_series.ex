@@ -1077,13 +1077,6 @@ defmodule Explorer.Backend.LazySeries do
   defp to_elixir_ast(other), do: other
 
   @impl true
-  def size(series) do
-    data = new(:size, [lazy_series!(series)], {:u, 32})
-
-    Backend.Series.new(data, {:u, 32})
-  end
-
-  @impl true
   def transform(_series, _fun) do
     raise """
     #{unsupported(:transform, 2)}
