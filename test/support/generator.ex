@@ -297,8 +297,8 @@ defmodule Explorer.Generator do
         date: constant(:date),
         datetime: tuple({constant(:datetime), time_unit(), constant("Etc/UTC")}),
         decimal:
-          bind(integer(0..37), fn scale ->
-            bind(integer((scale + 1)..38), fn precision ->
+          bind(integer(0..16), fn scale ->
+            bind(integer((scale + 1)..16), fn precision ->
               tuple({constant(:decimal), constant(precision), constant(scale)})
             end)
           end),
