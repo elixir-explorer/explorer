@@ -129,7 +129,11 @@ defmodule Explorer.MixProject do
     [
       files: [
         "lib",
-        "native",
+        "native/explorer/.cargo",
+        "native/explorer/src",
+        "native/explorer/Cargo.*",
+        "native/explorer/Cross.toml",
+        "native/explorer/rust-toolchain.toml",
         "datasets",
         "checksum-*.exs",
         "mix.exs",

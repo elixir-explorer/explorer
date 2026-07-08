@@ -4,8 +4,8 @@
 
 ```elixir
 Mix.install([
-  {:explorer, "~> 0.11.1"},
-  {:kino, "~> 0.16.1"}
+  {:explorer, "~> 0.12.0"},
+  {:kino, "~> 0.19.0"}
 ])
 ```
 
@@ -14,7 +14,7 @@ Mix.install([
 Explorer is a dataframe library for Elixir. A dataframe is a common data structure used in data analysis. It is a two-dimensional table composed of columns and rows similar to a SQL table or a spreadsheet.
 
 Explorer's aim is to provide a simple and powerful API for manipulating dataframes. It takes influences mainly
- from the [`tidyverse`](https://www.tidyverse.org), but if you've used other dataframe libraries like `pandas` you shouldn't have too much trouble working with Explorer.
+from the [`tidyverse`](https://www.tidyverse.org), but if you've used other dataframe libraries like `pandas` you shouldn't have too much trouble working with Explorer.
 
 This document is meant to give you a crash course in using Explorer. More in-depth documentation can be found in the relevant sections of the docs.
 
@@ -26,14 +26,14 @@ Data can be read from delimited files (like CSV), NDJSON, Parquet, and the Arrow
 
 For CSV, your 'usual suspects' of options are available:
 
-* `delimiter` - A single character used to separate fields within a record. (default: `","`)
-* `dtypes` - A keyword list of `[column_name: dtype]`. If a type is not specified for a column, it is imputed from the first 1000 rows. (default: `[]`)
-* `header` - Does the file have a header of column names as the first row or not? (default: `true`)
-* `max_rows` - Maximum number of lines to read. (default: `nil`)
-* `nil_values` - A list of strings that should be interpreted as a nil values. (default: `[]`)
-* `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
-* `skip_rows_after_header` - The number of lines to skip at the after the header row. (default: `0`)
-* `columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
+- `delimiter` - A single character used to separate fields within a record. (default: `","`)
+- `dtypes` - A keyword list of `[column_name: dtype]`. If a type is not specified for a column, it is imputed from the first 1000 rows. (default: `[]`)
+- `header` - Does the file have a header of column names as the first row or not? (default: `true`)
+- `max_rows` - Maximum number of lines to read. (default: `nil`)
+- `nil_values` - A list of strings that should be interpreted as a nil values. (default: `[]`)
+- `skip_rows` - The number of lines to skip at the beginning of the file. (default: `0`)
+- `skip_rows_after_header` - The number of lines to skip at the after the header row. (default: `0`)
+- `columns` - A list of column names to keep. If present, only these columns are read into the dataframe. (default: `nil`)
 
 `Explorer` also has multiple example datasets built in, which you can load from the `Explorer.Datasets` module like so:
 
@@ -67,8 +67,8 @@ If you'd like to see a table with your data, take a look at [Kino Explorer](http
 
 Writing files is very similar to reading them. The options are a little more limited:
 
-* `header` - Should the column names be written as the first line of the file? (default: `true`)
-* `delimiter` - A single character used to separate fields within a record. (default: `","`)
+- `header` - Should the column names be written as the first line of the file? (default: `true`)
+- `delimiter` - A single character used to separate fields within a record. (default: `","`)
 
 First, let's add some useful aliases:
 
@@ -106,20 +106,20 @@ DataFrame.to_csv(df, filename)
 
 `Explorer` supports the following `Series` `dtypes`:
 
-* `:null` - Null
-* `:binary` - Binaries (sequences of bytes)
-* `:boolean` - Boolean
-* `:category` - Strings but represented internally as integers
-* `:date` - Date type that unwraps to `Elixir.Date`
-* `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
-* `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
-* `{:f, size}` - a 32-bit or 64-bit floating point number
-* `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit signed integer
-* `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer
-* `:string` - UTF-8 encoded binary
-* `:time` - Time type that unwraps to `Elixir.Time`
-* `:list` - a nested data type like `Elixir.List`. It is a sequence of values having the same data type.
-* `:struct` - a nested data type like a `Elixir.Map`, but with the same keys and matching data types.
+- `:null` - Null
+- `:binary` - Binaries (sequences of bytes)
+- `:boolean` - Boolean
+- `:category` - Strings but represented internally as integers
+- `:date` - Date type that unwraps to `Elixir.Date`
+- `{:datetime, precision}` - DateTime type with millisecond/microsecond/nanosecond precision that unwraps to `Elixir.NaiveDateTime`
+- `{:duration, precision}` - Duration type with millisecond/microsecond/nanosecond precision that unwraps to `Explorer.Duration`
+- `{:f, size}` - a 32-bit or 64-bit floating point number
+- `{:s, size}` - a 8-bit or 16-bit or 32-bit or 64-bit signed integer
+- `{:u, size}` - a 8-bit or 16-bit or 32-bit or 64-bit unsigned integer
+- `:string` - UTF-8 encoded binary
+- `:time` - Time type that unwraps to `Elixir.Time`
+- `:list` - a nested data type like `Elixir.List`. It is a sequence of values having the same data type.
+- `:struct` - a nested data type like a `Elixir.Map`, but with the same keys and matching data types.
 
 `Series` can be constructed from Elixir basic types. For example:
 
@@ -218,11 +218,11 @@ s = Series.from_list([1.0, 2.0, nil, nil, 5.0])
 
 And you can fill in those missing values using one of the following strategies:
 
-* `:forward` - replace nil with the previous value
-* `:backward` - replace nil with the next value
-* `:max` - replace nil with the series maximum
-* `:min` - replace nil with the series minimum
-* `:mean` - replace nil with the series mean
+- `:forward` - replace nil with the previous value
+- `:backward` - replace nil with the next value
+- `:max` - replace nil with the series maximum
+- `:min` - replace nil with the series minimum
+- `:mean` - replace nil with the series mean
 
 ```elixir
 Series.fill_missing(s, :forward)
@@ -258,7 +258,7 @@ In all other cases, `Series` must all be of the same `dtype` or else you'll get 
 Series.from_list([1, 2, 3, "a"])
 ```
 
-One of the goals of `Explorer` is *useful error messages*. If you look at the error above, you get:
+One of the goals of `Explorer` is _useful error messages_. If you look at the error above, you get:
 
 > the value "a" does not match the inferred dtype {:s, 64}
 
@@ -794,11 +794,11 @@ DataFrame.tail(df, 10)
 
 In `Explorer`, like in `dplyr`, we have five main verbs to work with dataframes:
 
-* select
-* filter
-* mutate
-* sort
-* summarise
+- select
+- filter
+- mutate
+- sort
+- summarise
 
 We are going to explore then in this notebook, but first we need to "require"
 the `Explorer.DataFrame` module in order to load the macros needed for these verbs.
@@ -2190,7 +2190,7 @@ df
 
 ### Joins
 
-Joining is *fast* and easy. You can specify the columns to join on and how to join. Polars even supports cartesian (cross) joins, so `Explorer` does too.
+Joining is _fast_ and easy. You can specify the columns to join on and how to join. Polars even supports cartesian (cross) joins, so `Explorer` does too.
 
 ```elixir
 df1 = DF.select(df, ["year", "country", "total"])
@@ -2231,7 +2231,7 @@ DF.join(df1, df3, how: :left)
 
 ### Grouping
 
-`Explorer` supports *groupby* operations. They're limited based on what's possible in Polars, but they do most of what you need to do.
+`Explorer` supports _groupby_ operations. They're limited based on what's possible in Polars, but they do most of what you need to do.
 
 ```elixir
 grouped = DF.group_by(df, ["country"])
@@ -2314,15 +2314,15 @@ Qatar it is.
 
 You may noticed that we are using `max/1` inside the `summarise` macro. This is possible because we expose all functions from the `Series` module. You can use the following aggregations inside summarise:
 
-* `min/1` - Take the minimum value within the group. See `Explorer.Series.min/1`.
-* `max/1` - Take the maximum value within the group. See `Explorer.Series.max/1`.
-* `sum/1` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
-* `mean/1` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
-* `median/1` - Take the median of the series within the group. See `Explorer.Series.median/1`.
-* `first/1` - Take the first value within the group. See `Explorer.Series.first/1`.
-* `last/1` - Take the last value within the group. See `Explorer.Series.last/1`.
-* `count/1` - Count the number of rows per group.
-* `n_unique/1` - Count the number of unique rows per group.
+- `min/1` - Take the minimum value within the group. See `Explorer.Series.min/1`.
+- `max/1` - Take the maximum value within the group. See `Explorer.Series.max/1`.
+- `sum/1` - Take the sum of the series within the group. See `Explorer.Series.sum/1`.
+- `mean/1` - Take the mean of the series within the group. See `Explorer.Series.mean/1`.
+- `median/1` - Take the median of the series within the group. See `Explorer.Series.median/1`.
+- `first/1` - Take the first value within the group. See `Explorer.Series.first/1`.
+- `last/1` - Take the last value within the group. See `Explorer.Series.last/1`.
+- `count/1` - Count the number of rows per group.
+- `n_unique/1` - Count the number of unique rows per group.
 
 The API is similar to `mutate`: you can use keyword args or a map and specify aggregations to use.
 
