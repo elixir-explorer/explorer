@@ -800,7 +800,7 @@ In `Explorer`, like in `dplyr`, we have five main verbs to work with dataframes:
 - sort
 - summarise
 
-We are going to explore then in this notebook, but first we need to "require"
+We are going to explore them in this notebook, but first we need to "require"
 the `Explorer.DataFrame` module in order to load the macros needed for these verbs.
 
 I want to take the opportunity to create a shorter alias for the `DataFrame` module,
