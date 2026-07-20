@@ -822,9 +822,7 @@ defmodule Explorer.Backend.LazySeries do
        when op in [:first, :last, :sum, :min, :max, :product],
        do: series.dtype
 
-  defp dtype_for_agg_operation(op, _) when op in [:all?, :any?], do: :boolean
   defp dtype_for_agg_operation(:mode, series), do: {:list, series.dtype}
-
   defp dtype_for_agg_operation(_, _), do: {:f, 64}
 
   defp resolve_numeric_dtype(items) do
@@ -1076,13 +1074,6 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   defp to_elixir_ast(other), do: other
-
-  @impl true
-  def size(series) do
-    data = new(:size, [lazy_series!(series)], {:u, 32})
-
-    Backend.Series.new(data, {:u, 32})
-  end
 
   @impl true
   def transform(_series, _fun) do

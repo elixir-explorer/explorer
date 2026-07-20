@@ -1143,7 +1143,7 @@ defmodule Explorer.Series do
     do: apply_series(series, :strftime, [format_string])
 
   def strftime(%Series{dtype: dtype}, _format_string),
-    do: dtype_error("strftime/2", dtype, :datetime_like)
+    do: dtype_error("strftime/2", dtype, [:datetime_like])
 
   @doc """
   Clip (or clamp) the values in a series.
@@ -5346,15 +5346,15 @@ defmodule Explorer.Series do
 
     float_series =
       case dtype(series) do
-        :f32 ->
+        {:f, 32} ->
           series
 
-        :f64 ->
+        {:f, 64} ->
           series
 
         _ ->
           try do
-            cast(series, :f64)
+            cast(series, {:f, 64})
           rescue
             _ ->
               raise ArgumentError,
