@@ -13,7 +13,7 @@ defmodule Explorer.MixProject do
       description:
         "Series (one-dimensional) and dataframes (two-dimensional) for fast data exploration in Elixir",
       version: @version,
-      elixir: "~> 1.14",
+      elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       package: package(),
       deps: deps(),
@@ -22,7 +22,8 @@ defmodule Explorer.MixProject do
         "rust.lint": ["cmd cargo clippy --manifest-path=native/explorer/Cargo.toml -- -Dwarnings"],
         "rust.fmt": ["cmd cargo fmt --manifest-path=native/explorer/Cargo.toml --all"],
         "localstack.setup": ["cmd ./test/support/setup-localstack.sh"],
-        ci: ["format", "rust.fmt", "rust.lint", "test"]
+        ci: ["format", "rust.fmt", "rust.lint", "test"],
+        docs: ["docs", &copy_files/1]
       ]
     ]
   end
@@ -47,12 +48,12 @@ defmodule Explorer.MixProject do
       {:rustler_precompiled, "~> 0.7"},
       {:table, "~> 0.1.2"},
       {:table_rex, "~> 4.1"},
-      {:decimal, "~> 2.1"},
+      {:decimal, "~> 3.1"},
 
       ## Optional
-      {:adbc, "~> 0.1", optional: true},
+      {:adbc, "~> 0.12", optional: true},
       {:nx, "~> 0.4", optional: true},
-      {:rustler, "~> 0.36.0", optional: not (@dev? or @force_build?)},
+      {:rustler, "~> 0.38", optional: not (@dev? or @force_build?)},
 
       ## Test
       {:bypass, "~> 2.1", only: :test},
@@ -60,15 +61,15 @@ defmodule Explorer.MixProject do
       {:tz, "~> 0.26", only: :test},
 
       ## Dev
-      {:ex_doc, "~> 0.24", only: :dev},
-      {:benchee, "~> 1.1", only: :dev}
+      {:ex_doc, "~> 0.40", only: :dev},
+      {:benchee, "~> 1.5", only: :dev}
     ]
   end
 
   defp docs do
     [
-      main: "Explorer",
-      logo: "explorer-exdoc.png",
+      main: "readme",
+      logo: "images/explorer-exdoc.png",
       source_ref: "v#{@version}",
       source_url: @source_url,
       groups_for_modules: [
@@ -107,29 +108,46 @@ defmodule Explorer.MixProject do
         "Functions: Shape": &(&1[:type] == :shape),
         "Functions: Window": &(&1[:type] == :window)
       ],
-      extras: ["notebooks/exploring_explorer.livemd", "CHANGELOG.md"],
+      extras: ["README.md", "notebooks/exploring_explorer.livemd", "CHANGELOG.md"],
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
     ]
+  end
+
+  defp copy_files(_) do
+    # Set up directory structure
+    File.mkdir_p!("./doc/images")
+
+    # Copy over image files
+    "./images/"
+    |> File.ls!()
+    |> Enum.each(fn image_file ->
+      File.cp!("./images/#{image_file}", "./doc/images/#{image_file}")
+    end)
   end
 
   defp package do
     [
       files: [
         "lib",
-        "native",
+        "native/explorer/.cargo",
+        "native/explorer/src",
+        "native/explorer/Cargo.*",
+        "native/explorer/Cross.toml",
+        "native/explorer/rust-toolchain.toml",
         "datasets",
         "checksum-*.exs",
         "mix.exs",
         "CHANGELOG.md",
         "README.md",
-        "LICENSE"
+        "LICENSE",
+        "images"
       ],
       licenses: ["MIT"],
       links: %{
         "GitHub" => @source_url,
         "Changelog" => "#{@source_url}/blob/v#{@version}/CHANGELOG.md"
       },
-      maintainers: ["Christopher Grainger", "Philip Sampaio", "José Valim"]
+      maintainers: ["Christopher Grainger", "Philip Sampaio", "José Valim", "Alexander Koutmos"]
     ]
   end
 end

@@ -7,29 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.12.0] - 2026-07-05
+
+### Updated
+
+- Updated `Decimal` dependency requirement to `~> 3.1` to mitigate [CVE-2026-32686](https://www.cve.org/CVERecord?id=CVE-2026-32686) DoS.
+- Updated `Rustler` dependency requirement to `~> 0.38` to mitigate `Req` and `Mint` vulnerabilities:
+  - [EEF-CVE-2026-49753](https://osv.dev/vulnerability/EEF-CVE-2026-49753)
+  - [EEF-CVE-2026-48861](https://osv.dev/vulnerability/EEF-CVE-2026-48861)
+  - [EEF-CVE-2026-48862](https://osv.dev/vulnerability/EEF-CVE-2026-48862)
+  - [EEF-CVE-2026-49754](https://osv.dev/vulnerability/EEF-CVE-2026-49754)
+  - [EEF-CVE-2026-49756](https://osv.dev/vulnerability/EEF-CVE-2026-49756)
+  - [EEF-CVE-2026-49755](https://osv.dev/vulnerability/EEF-CVE-2026-49755)
+
 ### Backwards incompatible changes
 
-  * Support for transparent transfers with `FLAME` is removed, instead use `load_ipc`/`dump_ipc` to explicitly transfer dataframe across nodes
-  * Support for the `FSS` library is deprecated, instead pass `s3://` URLs with credentials
+- Support for transparent transfers with `FLAME` is removed, instead use `load_ipc`/`dump_ipc` to explicitly transfer dataframe across nodes
+- Support for the `FSS` library is deprecated, instead pass `s3://` URLs with credentials
 
 ## [v0.11.1] - 2025-08-17
 
 ### Added
 
-  * `Explorer.DataFrame.dump_ipc_schema`
-  * `Explorer.DataFrame.dump_ipc_record_batch`
-  * `Explorer.Series.cumulative_count`
-  * `:stable` option for `Explorer.DataFrame.group_by`
+- `Explorer.DataFrame.dump_ipc_schema`
+- `Explorer.DataFrame.dump_ipc_record_batch`
+- `Explorer.Series.cumulative_count`
+- `:stable` option for `Explorer.DataFrame.group_by`
 
 ### Fixed
 
-  * Fix printing lazy data frame with new default print options (as of v0.11.0)
-  * Remove print from dataframe test
-  * Fix mutate docs formatting
+- Fix printing lazy data frame with new default print options (as of v0.11.0)
+- Remove print from dataframe test
+- Fix mutate docs formatting
 
 ### New Contributors
 
-  * @WolfDan made their first contribution in https://github.com/elixir-explorer/explorer/pull/1103
+- @WolfDan made their first contribution in https://github.com/elixir-explorer/explorer/pull/1103
 
 ### Full Changelog
 
@@ -39,51 +52,51 @@ https://github.com/elixir-explorer/explorer/compare/v0.11.0...v0.11.1
 
 ### Added
 
-  - `Explorer.DataFrame.estimated_size/1` - Estimates memory size of a DataFrame
-  - `Explorer.DataFrame.to_table_string/2` - Represents a DataFrame as a string
-    for printing
-  - `Explorer.Series.degrees/1` - Converts radians to degrees
-  - `Explorer.Series.radians/1` - Converts degrees to radians
-  - `:quote_style` option to CSV functions
+- `Explorer.DataFrame.estimated_size/1` - Estimates memory size of a DataFrame
+- `Explorer.DataFrame.to_table_string/2` - Represents a DataFrame as a string
+  for printing
+- `Explorer.Series.degrees/1` - Converts radians to degrees
+- `Explorer.Series.radians/1` - Converts degrees to radians
+- `:quote_style` option to CSV functions
 
 ### Fixed
 
-  - Fix bug where `:region` was incorrectly required in `%FSS.S3.Entry{}`
-  - Fix trigonometric functions to not raise on f32
-  - Fix warning from `:table_rex` dependency when printing
-  - Fix formatting of `Explorer.DataFrame.mutate_with/2` options
-  - `Explorer.Series.fill_missing/2` now works for all integer and float dtypes
-  - `Explorer.Series.frequencies/1` now works for `{:list, _}` dtype
-  - Fix inefficiency with categorization
-  - Fix typespecs
-    * `Explorer.DataFrame.select/2`
-    * `Explorer.DataFrame.ungroup/1`
-    * `Explorer.Series` functions that may return lazy series
+- Fix bug where `:region` was incorrectly required in `%FSS.S3.Entry{}`
+- Fix trigonometric functions to not raise on f32
+- Fix warning from `:table_rex` dependency when printing
+- Fix formatting of `Explorer.DataFrame.mutate_with/2` options
+- `Explorer.Series.fill_missing/2` now works for all integer and float dtypes
+- `Explorer.Series.frequencies/1` now works for `{:list, _}` dtype
+- Fix inefficiency with categorization
+- Fix typespecs
+  - `Explorer.DataFrame.select/2`
+  - `Explorer.DataFrame.ungroup/1`
+  - `Explorer.Series` functions that may return lazy series
 
 ### Changed
 
-  - Printing a DataFrame looks different
-    * Adds a row of `…` to indicate there are hidden rows. Includes a new option
-      `limit_dots: :bottom | :split` to specify how to do this.
-    * Drops the row separators except when composite dtypes are present.
-    * Allows you to pass through valid options to `TableRex.render!/2`. This
-      gives you a little more flexibility in case you don't like the defaults.
-  - `Explorer.DataFrame.print/1` now documents its default `:limit` of 5 rows
-  - `Explorer.DataFrame.concat_rows/1` has improved error messages
-  - Accessing a DataFrame with a range now raises if the range is out of bounds
+- Printing a DataFrame looks different
+  - Adds a row of `…` to indicate there are hidden rows. Includes a new option
+    `limit_dots: :bottom | :split` to specify how to do this.
+  - Drops the row separators except when composite dtypes are present.
+  - Allows you to pass through valid options to `TableRex.render!/2`. This
+    gives you a little more flexibility in case you don't like the defaults.
+- `Explorer.DataFrame.print/1` now documents its default `:limit` of 5 rows
+- `Explorer.DataFrame.concat_rows/1` has improved error messages
+- Accessing a DataFrame with a range now raises if the range is out of bounds
 
 ### New Contributors
 
-  - @szajbus made their first contribution in
-    https://github.com/elixir-explorer/explorer/pull/1030
-  - @viniciussbs made their first contribution in
-    https://github.com/elixir-explorer/explorer/pull/1037
-  - @pejrich made their first contribution in
-    https://github.com/elixir-explorer/explorer/pull/1040
-  - @jdbarillas made their first contribution in
-    https://github.com/elixir-explorer/explorer/pull/1049
-  - @petrkozorezov made their first contribution in
-    https://github.com/elixir-explorer/explorer/pull/1083
+- @szajbus made their first contribution in
+  https://github.com/elixir-explorer/explorer/pull/1030
+- @viniciussbs made their first contribution in
+  https://github.com/elixir-explorer/explorer/pull/1037
+- @pejrich made their first contribution in
+  https://github.com/elixir-explorer/explorer/pull/1040
+- @jdbarillas made their first contribution in
+  https://github.com/elixir-explorer/explorer/pull/1049
+- @petrkozorezov made their first contribution in
+  https://github.com/elixir-explorer/explorer/pull/1083
 
 ### Full Changelog
 
@@ -93,7 +106,7 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 
 ### Fixed
 
-- Fix creation of series of  `{:list, {:decimal, ...}}` containing empty lists.
+- Fix creation of series of `{:list, {:decimal, ...}}` containing empty lists.
 
 - Use `i128` for `:coef` field in the Rust code.
 
@@ -147,10 +160,10 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 
   The affected functions are:
 
-  * `Explorer.DataFrame.filter_with/2`
-  * `Explorer.DataFrame.mutate_with/2`
-  * `Explorer.DataFrame.sort_with/2`
-  * `Explorer.DataFrame.summarise_with/2`
+  - `Explorer.DataFrame.filter_with/2`
+  - `Explorer.DataFrame.mutate_with/2`
+  - `Explorer.DataFrame.sort_with/2`
+  - `Explorer.DataFrame.summarise_with/2`
 
 - Allow accessing the dataframe inside query.
 
@@ -307,7 +320,7 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 
 - Add functions to work with strings and regexes.
 
-  Some of the functions have the prefix "re_", because they accept a string that
+  Some of the functions have the prefix "re\_", because they accept a string that
   represents a regular expression.
 
   There is an important detail: we do not accept Elixir regexes, because we cannot
@@ -457,6 +470,7 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 
 - Add support for more integer dtypes. This change introduces new signed and
   unsigned integer dtypes:
+
   - `{:s, 8}`, `{:s, 16}`, `{:s, 32}`
   - `{:u, 8}`, `{:u, 16}`, `{:u, 32}`, `{:u, 64}`.
 
@@ -607,16 +621,16 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 
   The following operations are possible now:
 
-  * `date - date`
-  * `date + duration`
-  * `date - duration`
-  * `duration + date`
-  * `duration * integer`
-  * `duration * float`
-  * `duration / integer`
-  * `duration / float`
-  * `integer * duration`
-  * `float * duration`
+  - `date - date`
+  - `date + duration`
+  - `date - duration`
+  - `duration + date`
+  - `duration * integer`
+  - `duration * float`
+  - `duration / integer`
+  - `duration / float`
+  - `integer * duration`
+  - `float * duration`
 
 - Support lazy dataframes on `Explorer.DataFrame.print/2`.
 
@@ -704,10 +718,12 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
   and helped to build this feature!
 
 - Add the following functions to `Explorer.Series`:
+
   - [`window_median/3`](https://hexdocs.pm/explorer/Explorer.Series.html#window_median/3)
   - [`substring/3`](https://hexdocs.pm/explorer/Explorer.Series.html#substring/3)
 
 - Add duration dtypes. This is adds the following dtypes:
+
   - `{:duration, :nanosecond}`
   - `{:duration, :microsecond}`
   - `{:duration, :millisecond}`
@@ -735,11 +751,13 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 
 - Change `:datetime` dtype to be `{:datetime, time_unit}`, where time unit can be
   the following:
+
   - `:millisecond`
   - `:microsecond`
   - `:nanosecond`
 
 - Rename the following `Series` functions:
+
   - `trim/1` to `strip/2`
   - `trim_leading/1` to `lstrip/2`
   - `trim_trailing/1` to `rstrip/2`
@@ -805,7 +823,6 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 
 - Fix the `:infer_schema_length` option of `Explorer.DataFrame.from_csv/2` when passing `nil`.
   Now it's possible to take into account the entire file to infer the schema.
-
 
 ### Deprecated
 
@@ -1000,6 +1017,7 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 - Add `Series.day_of_week/1`.
 
 - Allow `Series.fill_missing/2` to:
+
   - receive `:infinity` and `:neg_infinity` values.
   - receive date and datetime values.
   - receive binary values.
@@ -1014,6 +1032,7 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 - Add support for Nx's serialize and deserialize.
 
 - Add the following function implementations for the Polars' Lazy dataframe backend:
+
   - `arrange_with`
   - `concat_columns`
   - `concat_rows`
@@ -1114,6 +1133,7 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
   are implemented as macros.
 
   The following new macros were added:
+
   - `filter/2`
   - `mutate/2`
   - `summarise/2`
@@ -1201,7 +1221,7 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 - Add compression as an option to write parquet files.
 - Add count metadata to `DataFrame` table reader.
 - Add `DataFrame.filter_with/2`, `DataFrame.summarise_with/2`, `DataFrame.mutate_with/2` and
-`DataFrame.arrange_with/2`. They all accept a `DataFrame` and a function, and they all work with
+  `DataFrame.arrange_with/2`. They all accept a `DataFrame` and a function, and they all work with
   a new concept called "lazy series".
 
   Lazy Series is an opaque representation of a series that can be
@@ -1214,12 +1234,12 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 
 - Bump version requirement of the `table` dependency to `~> 0.1.2`, and raise for non-tabular values.
 - Normalize how columns are handled. This changes some functions to accept one column or
-a list of columns, ranges, indexes and callbacks selecting columns.
+  a list of columns, ranges, indexes and callbacks selecting columns.
 - Rename `DataFrame.filter/2` to `DataFrame.mask/2`.
 - Rename `Series.filter/2` to `Series.mask/2`.
 - Rename `take/2` from both `Series` and `DataFrame` to `slice/2`. `slice/2` now they accept ranges as well.
 - Raise an error if `DataFrame.pivot_wider/4` has float columns as IDs. This is because we can´t
-properly compare floats.
+  properly compare floats.
 - Change `DataFrame.distinct/2` to accept columns as argument instead of receiving it as option.
 
 ### Fixed
