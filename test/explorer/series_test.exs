@@ -4658,8 +4658,26 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "ewm_mean/2" do
-    test "returns calculated ewm values with default options used for calculation" do
+    test "returns calculated ewm values with default options used for integer calculation" do
       s1 = 1..10 |> Enum.to_list() |> Series.from_list()
+      s2 = Series.ewm_mean(s1)
+
+      assert all_close?(s2, [
+               1.0,
+               1.6666666666666667,
+               2.4285714285714284,
+               3.2666666666666666,
+               4.161290322580645,
+               5.095238095238095,
+               6.05511811023622,
+               7.031372549019608,
+               8.017612524461839,
+               9.009775171065494
+             ])
+    end
+
+    test "returns calculated ewm values with default options used for f64 calculation" do
+      s1 = Series.from_list([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0])
       s2 = Series.ewm_mean(s1)
 
       assert all_close?(s2, [

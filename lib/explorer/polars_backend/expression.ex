@@ -322,7 +322,7 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_int_range(to_expr(0), size_expr, 1, {:u, 32})
   end
 
-  for {op, arity} <- @all_expressions do
+  for {op, arity} <- @all_expressions -- @first_only_expressions do
     args = Macro.generate_arguments(arity, __MODULE__)
 
     updates =
