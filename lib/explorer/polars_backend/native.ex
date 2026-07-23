@@ -8,12 +8,15 @@ defmodule Explorer.PolarsBackend.Native do
   # We want "debug" in dev and test because it's faster to compile.
   mode = if Mix.env() in [:dev, :test], do: :debug, else: :release
 
-  use_legacy =
+  use_legacy = (
+    env = System.get_env("EXPLORER_USE_LEGACY_ARTIFACTS")
+
     Application.compile_env(
       :explorer,
       :use_legacy_artifacts,
-      System.get_env("EXPLORER_USE_LEGACY_ARTIFACTS") in ["true", "1"]
+      (if is_nil(env), do: nil, else: env in ["true", "1"])
     )
+  )
 
   variants_for_linux = [
     legacy_cpu: fn ->
@@ -21,9 +24,11 @@ defmodule Explorer.PolarsBackend.Native do
       # See the meaning in: https://unix.stackexchange.com/a/43540
       needed_caps = ~w[fxsr sse sse2 ssse3 sse4_1 sse4_2 popcnt avx fma]
 
-      use_legacy or
-        (is_nil(use_legacy) and
-           not Explorer.ComptimeUtils.cpu_with_all_caps?(needed_caps))
+      if is_nil(use_legacy) do
+        not Explorer.ComptimeUtils.cpu_with_all_caps?(needed_caps)
+      else
+        use_legacy
+      end
     end
   ]
 
