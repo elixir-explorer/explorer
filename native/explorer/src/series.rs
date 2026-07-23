@@ -225,9 +225,9 @@ pub fn s_cut(
     if include_breaks {
         let mut cut_df = cut_series.struct_()?.clone().unnest();
 
-        let cut_df = cut_df.insert_column(0, series)?;
+        let cut_df = cut_df.insert_column(0, series.into())?;
 
-        cut_df.set_column_names([
+        cut_df.set_column_names(&[
             "values",
             break_point_label.unwrap_or("break_point"),
             category_label.unwrap_or("category"),
@@ -235,8 +235,9 @@ pub fn s_cut(
 
         Ok(ExDataFrame::new(cut_df.clone()))
     } else {
-        let mut cut_df = DataFrame::new(vec![Column::from(series), Column::from(cut_series)])?;
-        cut_df.set_column_names(["values", category_label.unwrap_or("category")])?;
+        let mut cut_df =
+            DataFrame::new_infer_height(vec![Column::from(series), Column::from(cut_series)])?;
+        cut_df.set_column_names(&["values", category_label.unwrap_or("category")])?;
 
         Ok(ExDataFrame::new(cut_df.clone()))
     }
@@ -267,9 +268,9 @@ pub fn s_qcut(
 
     if include_breaks {
         let mut qcut_df = qcut_series.struct_()?.clone().unnest();
-        let qcut_df = qcut_df.insert_column(0, series)?;
+        let qcut_df = qcut_df.insert_column(0, series.into())?;
 
-        qcut_df.set_column_names([
+        qcut_df.set_column_names(&[
             "values",
             break_point_label.unwrap_or("break_point"),
             category_label.unwrap_or("category"),
@@ -277,8 +278,9 @@ pub fn s_qcut(
 
         Ok(ExDataFrame::new(qcut_df.clone()))
     } else {
-        let mut qcut_df = DataFrame::new(vec![Column::from(series), Column::from(qcut_series)])?;
-        qcut_df.set_column_names(["values", category_label.unwrap_or("category")])?;
+        let mut qcut_df =
+            DataFrame::new_infer_height(vec![Column::from(series), Column::from(qcut_series)])?;
+        qcut_df.set_column_names(&["values", category_label.unwrap_or("category")])?;
 
         Ok(ExDataFrame::new(qcut_df.clone()))
     }
@@ -928,7 +930,7 @@ pub fn s_median(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_mode(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    match mode::mode(&s) {
+    match mode::mode(&s, false) {
         Ok(s) => Ok(ExSeries::new(s)),
         Err(e) => Err(e.into()),
     }

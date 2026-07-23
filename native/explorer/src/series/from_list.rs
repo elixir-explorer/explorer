@@ -455,13 +455,13 @@ pub fn s_from_list_of_series_as_structs(
     ex_dtype: ExSeriesDtype,
 ) -> NifResult<ExSeries> {
     let dtype = DataType::try_from(&ex_dtype).unwrap();
-    let columns = series_term
+    let columns: Vec<Column> = series_term
         .decode::<Vec<ExSeries>>()?
         .into_iter()
         .map(|c| Column::from(c.clone_inner()))
         .collect();
 
-    let df = DataFrame::new(columns).unwrap();
+    let df = DataFrame::new_infer_height(columns).unwrap();
 
     df.into_struct(name.into())
         .into_series()
