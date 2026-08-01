@@ -258,14 +258,17 @@ defmodule Explorer.Backend.DataFrame do
   @callback concat_columns([df], out_df :: df()) :: df
   @callback concat_rows([df], out_df :: df()) :: df
 
+  # SQL
+
+  @callback sql_execute(
+              tables :: [{binary(), df}],
+              sql_string :: binary()
+            ) :: df
+
   # Groups
 
   @callback summarise_with(df, out_df :: df(), aggregations :: [{column_name(), lazy_series()}]) ::
               df
-
-  # SQL
-
-  @callback sql(df, sql_string :: binary(), table_name :: binary()) :: df()
 
   # Functions
   alias Explorer.{DataFrame, Series}

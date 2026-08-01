@@ -22,7 +22,7 @@ defmodule Explorer.DataFrame do
       iex> df["sepal_length"]
       #Explorer.Series<
         Polars[150]
-        f64 [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9, 5.4, 4.8, 4.8, 4.3, 5.8, 5.7, 5.4, 5.1, 5.7, 5.1, 5.4, 5.1, 4.6, 5.1, 4.8, 5.0, 5.0, 5.2, 5.2, 4.7, 4.8, 5.4, 5.2, 5.5, 4.9, 5.0, 5.5, 4.9, 4.4, 5.1, 5.0, 4.5, 4.4, 5.0, 5.1, 4.8, 5.1, 4.6, 5.3, 5.0, ...]
+        f64 [5.1, 4.9, 4.7, 4.6, 5.0, 5.4, 4.6, 5.0, 4.4, 4.9, 5.4, 4.8, 4.8, 4.3, 5.8, 5.7, 5.4, 5.1, 5.7, 5.1, 5.4, 5.1, 4.6, 5.1, 4.8, 5.0, 5.0, 5.2, 5.2, 4.7, 4.8, 5.4, 5.2, 5.5, 4.9, 5.0, 5.5, 4.9, 4.4, 5.1, 5.0, 4.5, 4.4, 5.0, 5.1, 4.8, 5.1, 4.6, 5.3, 5.0, 7.0, 6.4, 6.9, 5.5, 6.5, 5.7, 6.3, 4.9, 6.6, 5.2, 5.0, 5.9, 6.0, 6.1, 5.6, 6.7, 5.6, 5.8, 6.2, 5.6, 5.9, 6.1, 6.3, 6.1, 6.4, 6.6, 6.8, 6.7, 6.0, 5.7, 5.5, 5.5, 5.8, 6.0, 5.4, 6.0, 6.7, 6.3, 5.6, 5.5, 5.5, 6.1, 5.8, 5.0, 5.6, 5.7, 5.7, 6.2, 5.1, 5.7, ...]
       >
 
   ## Creating dataframes
@@ -137,7 +137,7 @@ defmodule Explorer.DataFrame do
       iex> df["class"]
       #Explorer.Series<
         Polars[178]
-        s64 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
+        s64 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, ...]
       >
 
   Accessing the dataframe with a column name either as a string or an atom, will return
@@ -147,7 +147,7 @@ defmodule Explorer.DataFrame do
       iex> df[0]
       #Explorer.Series<
         Polars[178]
-        s64 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...]
+        s64 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, ...]
       >
 
   You can also pass a list, a range, or a regex to return a dataframe matching
@@ -4122,14 +4122,14 @@ defmodule Explorer.DataFrame do
       iex> Explorer.DataFrame.pull(df, "total")
       #Explorer.Series<
         Polars[1094]
-        s64 [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
+        s64 [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, 551, 12719, 141, 38, 5733, 9943, 55281, 1761, 1276, 140, 4938, 1796, 172, 15, 31, 333, 16930, 96273, 174, 234, 1312, 118, 1722, 206943, 2715, 127, 22868, 181, 71, 627, 3181, 710, 65, 469, 580, 2175, 11093, 13696, 535, 468964, 116924, 30596, 10923, 156267, 18784, 110543, 1990, 319505, 5776, 67780, ...]
       >
 
       iex> df = Explorer.Datasets.fossil_fuels()
       iex> Explorer.DataFrame.pull(df, 2)
       #Explorer.Series<
         Polars[1094]
-        s64 [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, ...]
+        s64 [2308, 1254, 32500, 141, 7924, 41, 143, 51246, 1150, 684, 106589, 18408, 8366, 451, 7981, 16345, 403, 17192, 30222, 147, 1388, 166, 133, 5802, 1278, 114468, 47, 2237, 12030, 535, 58, 1367, 145806, 152, 152, 72, 141, 19703, 2393248, 20773, 44, 540, 19, 2064, 1900, 5501, 10465, 2102, 30428, 18122, 551, 12719, 141, 38, 5733, 9943, 55281, 1761, 1276, 140, 4938, 1796, 172, 15, 31, 333, 16930, 96273, 174, 234, 1312, 118, 1722, 206943, 2715, 127, 22868, 181, 71, 627, 3181, 710, 65, 469, 580, 2175, 11093, 13696, 535, 468964, 116924, 30596, 10923, 156267, 18784, 110543, 1990, 319505, 5776, 67780, ...]
       >
   """
   @doc type: :single
@@ -6884,7 +6884,10 @@ defmodule Explorer.DataFrame do
   # SQL
 
   @doc """
-  Create a dataframe from the result of a SQL query on an existing dataframe.
+  Execute a SQL query on one or more DataFrames.
+
+  Pass a map of table names to DataFrames and a SQL query string.
+  Each DataFrame is registered as a table with its corresponding name.
 
   > ### SQL Query is Unvalidated {: .warning}
   >
@@ -6892,39 +6895,51 @@ defmodule Explorer.DataFrame do
   > it directly to the backend. As such, the SQL dialect will be backend
   > dependent and any errors will come directly from the backend.
 
-  ## `from` Clause
-
-  The `from` clause of the SQL query should reference a chosen table name. The
-  default name is `"df"`. See the examples for a custom table name.
-
   ## Examples
 
-  Basic example:
+  Single DataFrame:
 
       iex> df = Explorer.DataFrame.new(a: [1, 2, 3], b: ["x", "y", "y"])
-      iex> Explorer.DataFrame.sql(df, "select ARRAY_AGG(a), b from df group by b order by b")
+      iex> Explorer.DataFrame.sql(%{df: df}, "select ARRAY_AGG(a), b from df group by b order by b")
       #Explorer.DataFrame<
         Polars[2 x 2]
         a list[s64] [[1], [2, 3]]
         b string ["x", "y"]
       >
 
-  Custom table name:
+  Multiple DataFrames:
 
-      iex> df = Explorer.DataFrame.new(a: [1, 2, 3])
-      iex> Explorer.DataFrame.sql(df, "select a + 1 from my_table", table_name: "my_table")
+      iex> df1 = Explorer.DataFrame.new(id: [1, 2, 3], name: ["Alice", "Bob", "Charlie"])
+      iex> df2 = Explorer.DataFrame.new(id: [1, 2, 4], age: [25, 30, 35])
+      iex> Explorer.DataFrame.sql(%{users: df1, ages: df2}, "SELECT users.name, ages.age FROM users JOIN ages ON users.id = ages.id") |> Explorer.DataFrame.collect()
       #Explorer.DataFrame<
-        Polars[3 x 1]
-        a s64 [2, 3, 4]
+        Polars[2 x 2]
+        name string ["Alice", "Bob"]
+        age s64 [25, 30]
       >
   """
   @doc type: :single
-  @spec sql(df :: DataFrame.t(), sql_string :: binary(), opts :: Keyword.t()) ::
+  @spec sql(tables :: %{required(atom() | binary()) => DataFrame.t()}, sql_string :: binary()) ::
           df :: DataFrame.t()
-  def sql(%__MODULE__{} = df, sql_string, opts \\ [])
-      when is_binary(sql_string) and is_list(opts) do
-    [table_name: table_name] = Keyword.validate!(opts, table_name: "df")
-    Shared.apply_dataframe(df, :sql, [sql_string, table_name])
+  def sql(tables, sql_string)
+      when is_map(tables) and not is_struct(tables) and is_binary(sql_string) do
+    tables_list =
+      tables
+      |> Enum.map(fn {name, %__MODULE__{} = df} ->
+        {to_string(name), df}
+      end)
+
+    impl =
+      case tables_list do
+        [] ->
+          backend = Explorer.Backend.get()
+          :"#{backend}.DataFrame"
+
+        [{_, %__MODULE__{data: %impl_mod{}}} | _] ->
+          impl_mod
+      end
+
+    apply(impl, :sql_execute, [tables_list, sql_string])
   end
 
   # Helpers

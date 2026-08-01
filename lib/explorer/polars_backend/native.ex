@@ -308,8 +308,6 @@ defmodule Explorer.PolarsBackend.Native do
   def lf_to_ipc(_df, _filename, _compression, _streaming), do: err()
   def lf_to_ipc_cloud(_df, _cloud_entry, _compression), do: err()
   def lf_to_csv(_df, _filename, _header, _delimiter, _quote_style, _streaming), do: err()
-  def lf_sql(_df, _sql_string, _table_name), do: err()
-
   # Series
   def s_as_str(_s), do: err()
   def s_add(_s, _other), do: err()
@@ -520,11 +518,13 @@ defmodule Explorer.PolarsBackend.Native do
   def s_join(_s, _separator), do: err()
   def s_lengths(_s), do: err()
   def s_member(_s, _value, _inner_dtype), do: err()
-
   def s_field(_s, _name), do: err()
   def s_json_decode(_s, _dtype), do: err()
   def s_json_path_match(_s, _json_path), do: err()
   def s_index_of(_s, _v), do: err()
+
+  # SQL
+  def sql_execute(_tables, _query), do: err()
 
   defp err, do: :erlang.nif_error(:nif_not_loaded)
 end

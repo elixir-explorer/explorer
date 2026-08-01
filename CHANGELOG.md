@@ -233,9 +233,9 @@ https://github.com/elixir-explorer/explorer/compare/v0.10.1...v0.11.0
 
 - Add initial support for SQL queries.
 
-  The `Explorer.DataFrame.sql/3` is a function that accepts a dataframe and
-  a SQL query. The SQL is not validated by Explorer, so the queries will be
-  backend dependent. Right now we have only Polars as the backend.
+  The `Explorer.DataFrame.sql/2` is a function that accepts a map of table names
+  to DataFrames and a SQL query. The SQL is not validated by Explorer, so the
+  queries will be backend dependent. Right now we have only Polars as the backend.
 
 - Add support for remote series and dataframes.
 
