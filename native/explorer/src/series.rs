@@ -1969,6 +1969,21 @@ pub fn s_row_index(series: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_rle_id(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let var_series = s
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s.name().clone()).rle_id()])
+        .collect()?
+        .column(s.name())?
+        .as_materialized_series()
+        .clone();
+
+    Ok(ExSeries::new(var_series))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_count_matches(
     s1: ExSeries,
     pattern: &str,

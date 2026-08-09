@@ -3101,6 +3101,61 @@ defmodule Explorer.Series do
   @spec row_index(Series.t()) :: Series.t()
   def row_index(%Series{} = series), do: apply_series(series, :row_index)
 
+  @doc """
+  Returns a run-length encoding ID for each element in the series.
+
+  The ID starts at 0 and is incremented every time the value changes
+  from one row to the next. All elements belonging to the same run
+  of consecutive equal values share the same ID. `nil` is treated as its
+  own value.
+
+  Because this function depends on the present orientation of rows, it may be
+  necessary to sort your data frame prior to running this function to get the
+  results that you desire. When used inside `Explorer.DataFrame.mutate/2` on
+  a grouped data frame, the IDs restart at 0 for each group.
+
+  ## Supported dtypes
+
+  All except `:list` and `:struct`.
+
+  ## Examples
+
+      iex> s = Series.from_list(["a", "a", "b", "b", "b", "a"])
+      iex> Series.rle_id(s)
+      #Explorer.Series<
+        Polars[6]
+        u32 [0, 0, 1, 1, 1, 2]
+      >
+
+  `nil`s break a run and form their own run:
+
+      iex> s = Series.from_list([1, 1, nil, nil, 1])
+      iex> Series.rle_id(s)
+      #Explorer.Series<
+        Polars[5]
+        u32 [0, 0, 1, 1, 2]
+      >
+
+  This is useful to group consecutive observations together, for example
+  to label each contiguous stretch of a sensor reading:
+
+      iex> require Explorer.DataFrame, as: DF
+      iex> df = DF.new(state: ["on", "on", "off", "on"])
+      iex> DF.mutate(df, run: rle_id(state))
+      #Explorer.DataFrame<
+        Polars[4 x 2]
+        state string ["on", "on", "off", "on"]
+        run u32 [0, 0, 1, 2]
+      >
+  """
+  @doc type: :window
+  @spec rle_id(series :: Series.t()) :: Series.t()
+  def rle_id(%Series{dtype: {composite, _} = dtype}) when K.in(composite, [:list, :struct]),
+    do: dtype_error("rle_id/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
+
+  def rle_id(%Series{} = series),
+    do: apply_series(series, :rle_id)
+
   # Cumulative
 
   @doc """

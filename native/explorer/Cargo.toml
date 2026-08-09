@@ -71,6 +71,7 @@ features = [
   "range",
   "rank",
   "regex",
+  "rle",
   "rolling_window",
   "round_series",
   "rows",

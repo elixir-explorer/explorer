@@ -94,6 +94,7 @@ defmodule Explorer.Backend.Series do
   @callback all?(s) :: boolean() | lazy_s()
   @callback any?(s) :: boolean() | lazy_s()
   @callback row_index(s) :: s | lazy_s()
+  @callback rle_id(s) :: s | lazy_s()
 
   # Cumulative
 

@@ -4853,6 +4853,53 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "rle_id/1" do
+    test "should assign an id to each run of consecutive equal values" do
+      df =
+        %{
+          state: ["on", "on", "off", "on"]
+        }
+        |> DF.new()
+        |> DF.mutate(run: rle_id(state))
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               state: ["on", "on", "off", "on"],
+               run: [0, 0, 1, 2]
+             }
+
+      assert df.dtypes["run"] == {:u, 32}
+    end
+
+    test "should restart at zero for each group" do
+      df =
+        %{
+          sensor: ["a", "a", "a", "b", "b", "a", "b"],
+          state: ["on", "off", "off", "on", "on", "on", "off"]
+        }
+        |> DF.new()
+        |> DF.group_by("sensor")
+        |> DF.mutate(run: rle_id(state))
+        |> DF.ungroup()
+
+      assert DF.to_columns(df, atom_keys: true) == %{
+               sensor: ["a", "a", "a", "b", "b", "a", "b"],
+               state: ["on", "off", "off", "on", "on", "on", "off"],
+               run: [0, 1, 1, 0, 0, 2, 1]
+             }
+    end
+
+    test "should work when combined with other expressions" do
+      df =
+        %{
+          a: [1, 1, 2]
+        }
+        |> DF.new()
+        |> DF.mutate(run: rle_id(a) + 1)
+
+      assert DF.to_columns(df, atom_keys: true) == %{a: [1, 1, 2], run: [1, 1, 2]}
+    end
+  end
+
   describe "row_index/1" do
     test "works as row_count(), including offset" do
       df = DF.new(a: [1, 3, 5], b: [2, 4, 6])

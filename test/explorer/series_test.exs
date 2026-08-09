@@ -6734,6 +6734,52 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "rle_id/1" do
+    test "should work with strings" do
+      s = Series.from_list(["a", "a", "b", "b", "b", "a"])
+      ids = Series.rle_id(s)
+
+      assert Series.dtype(ids) == {:u, 32}
+      assert Series.to_list(ids) == [0, 0, 1, 1, 1, 2]
+    end
+
+    test "should work with integers" do
+      s = Series.from_list([1, 1, 2, 3, 3])
+      ids = Series.rle_id(s)
+
+      assert Series.dtype(ids) == {:u, 32}
+      assert Series.to_list(ids) == [0, 0, 1, 2, 2]
+    end
+
+    test "should work with booleans" do
+      s = Series.from_list([true, true, false, true])
+
+      assert Series.to_list(Series.rle_id(s)) == [0, 0, 1, 2]
+    end
+
+    test "should treat nil as its own value" do
+      s = Series.from_list([1, 1, nil, nil, 1])
+
+      assert Series.to_list(Series.rle_id(s)) == [0, 0, 1, 1, 2]
+    end
+
+    test "should work with an empty series" do
+      s = Series.from_list([], dtype: :integer)
+      ids = Series.rle_id(s)
+
+      assert Series.dtype(ids) == {:u, 32}
+      assert Series.to_list(ids) == []
+    end
+
+    test "should raise for unsupported dtypes" do
+      s = Series.from_list([[1, 2], [3]])
+
+      assert_raise ArgumentError,
+                   ~r/Explorer\.Series\.rle_id\/1 not implemented for dtype \{:list, \{:s, 64\}\}/,
+                   fn -> Series.rle_id(s) end
+    end
+  end
+
   describe "peaks/1" do
     test "max with signed integers" do
       s = Series.from_list([1, 2, 4, 1, 4])

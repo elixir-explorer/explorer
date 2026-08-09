@@ -70,6 +70,7 @@ defmodule Explorer.PolarsBackend.Expression do
     quotient: 2,
     remainder: 2,
     reverse: 1,
+    rle_id: 1,
     floor: 1,
     ceil: 1,
     select: 3,

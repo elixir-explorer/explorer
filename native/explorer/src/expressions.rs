@@ -780,6 +780,13 @@ pub fn expr_reverse(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_rle_id(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.rle_id())
+}
+
+#[rustler::nif]
 pub fn expr_sort(
     expr: ExExpr,
     descending: bool,
