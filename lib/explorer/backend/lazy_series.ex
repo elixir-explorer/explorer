@@ -1254,7 +1254,11 @@ defmodule Explorer.Backend.LazySeries do
 
   @impl true
   def rle_id(series) do
-    data = new(:rle_id, [lazy_series!(series)], {:u, 32})
+    args = [lazy_series!(series)]
+
+    if aggregations?(args), do: raise_agg_inside_window(:rle_id)
+
+    data = new(:rle_id, args, {:u, 32}, false)
 
     Backend.Series.new(data, {:u, 32})
   end

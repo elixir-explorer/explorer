@@ -3109,7 +3109,7 @@ defmodule Explorer.Series do
   of consecutive equal values share the same ID. `nil` is treated as its
   own value.
 
-  Because this function depends on the present orientation of rows, it may be
+  Because this function depends on the order of the rows, it may be
   necessary to sort your data frame prior to running this function to get the
   results that you desire. When used inside `Explorer.DataFrame.mutate/2` on
   a grouped data frame, the IDs restart at 0 for each group.

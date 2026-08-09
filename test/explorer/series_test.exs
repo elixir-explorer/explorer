@@ -3,9 +3,10 @@ defmodule Explorer.SeriesTest do
 
   # Note that for the `{:list, _}` and `{:struct, _}` dtypes, we have a separated file for the tests.
 
-  alias Explorer.Series
-
   import ExUnit.CaptureLog
+
+  alias Explorer.DataFrame
+  alias Explorer.Series
 
   doctest Explorer.Series
 
@@ -6213,14 +6214,14 @@ defmodule Explorer.SeriesTest do
           category_label: "cat"
         )
 
-      assert Explorer.DataFrame.names(df) == ["values", "bp", "cat"]
+      assert DataFrame.names(df) == ["values", "bp", "cat"]
     end
 
     test "cut/3 with include breaks" do
       series = Series.from_list([1.0, 2.0, 3.0])
       df = Series.cut(series, [1.5, 2.5], include_breaks: true)
 
-      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+      assert DataFrame.to_columns(df, atom_keys: true) == %{
                category: ["(-inf, 1.5]", "(1.5, 2.5]", "(2.5, inf]"],
                break_point: [1.5, 2.5, :infinity],
                values: [1.0, 2.0, 3.0]
@@ -6260,7 +6261,7 @@ defmodule Explorer.SeriesTest do
       series = Enum.to_list(-5..3) |> Series.from_list()
       df = Series.qcut(series, [0.0, 0.25, 0.75], include_breaks: false)
 
-      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+      assert DataFrame.to_columns(df, atom_keys: true) == %{
                category: [
                  "(-inf, -5]",
                  "(-5, -3]",
@@ -6685,7 +6686,7 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(df[:values]) == {:s, 64}
       assert Series.dtype(df[:counts]) == {:u, 32}
 
-      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+      assert DataFrame.to_columns(df, atom_keys: true) == %{
                values: [1, 2, 3, 4, 5, 6],
                counts: [4, 2, 2, 1, 1, 1]
              }
@@ -6699,7 +6700,7 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(df[:values]) == :string
       assert Series.dtype(df[:counts]) == {:u, 32}
 
-      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+      assert DataFrame.to_columns(df, atom_keys: true) == %{
                values: ["c", "a", "b"],
                counts: [3, 2, 1]
              }
@@ -6713,7 +6714,7 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(df[:values]) == {:list, {:s, 64}}
       assert Series.dtype(df[:counts]) == {:u, 32}
 
-      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+      assert DataFrame.to_columns(df, atom_keys: true) == %{
                values: [[1, 2], [4, 1], [3, 1, 3], [5, 6]],
                counts: [2, 2, 1, 1]
              }
@@ -6727,7 +6728,7 @@ defmodule Explorer.SeriesTest do
       assert Series.dtype(df[:values]) == {:list, :string}
       assert Series.dtype(df[:counts]) == {:u, 32}
 
-      assert Explorer.DataFrame.to_columns(df, atom_keys: true) == %{
+      assert DataFrame.to_columns(df, atom_keys: true) == %{
                values: [["c"], ["a"], ["a", "b"]],
                counts: [3, 1, 1]
              }
@@ -6777,6 +6778,22 @@ defmodule Explorer.SeriesTest do
       assert_raise ArgumentError,
                    ~r/Explorer\.Series\.rle_id\/1 not implemented for dtype \{:list, \{:s, 64\}\}/,
                    fn -> Series.rle_id(s) end
+    end
+
+    test "should raise when given an aggregation" do
+      message =
+        "it's not possible to have an aggregation operation inside :rle_id, " <>
+          "which is a window function"
+
+      assert_raise RuntimeError, message, fn ->
+        %{
+          a: [1, 1, 2]
+        }
+        |> DataFrame.new()
+        |> DataFrame.summarise_with(fn ldf ->
+          [run: Series.rle_id(Series.max(ldf["a"]))]
+        end)
+      end
     end
   end
 
