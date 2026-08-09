@@ -6736,26 +6736,41 @@ defmodule Explorer.SeriesTest do
   end
 
   describe "rle_id/1" do
-    test "should work with strings" do
-      s = Series.from_list(["a", "a", "b", "b", "b", "a"])
-      ids = Series.rle_id(s)
+    test "should work with basic data types" do
+      data_types = [
+        {:string, ["a", "a", "b", "b", "b", "a"], [0, 0, 1, 1, 1, 2]},
+        {:integer, [1, 1, 2, 3, 3], [0, 0, 1, 2, 2]},
+        {:boolean, [true, true, false, true], [0, 0, 1, 2]},
+        {:date,
+         [
+           ~D[2024-01-01],
+           ~D[2024-01-01],
+           ~D[2024-06-13],
+           ~D[2024-01-01],
+           ~D[2024-01-01],
+           ~D[2024-01-01],
+           ~D[2025-01-01]
+         ], [0, 0, 1, 2, 2, 2, 3]},
+        {{:naive_datetime, :millisecond},
+         [
+           ~N[2024-01-01 00:00:00.0],
+           ~N[2024-01-01 00:00:00.0],
+           ~N[2024-01-01 12:30:00.0],
+           ~N[2024-01-01 12:30:00.0],
+           ~N[2024-01-01 00:00:00.0]
+         ], [0, 0, 1, 1, 2]},
+        {:category, ["a", "a", "b", nil, nil, "a"], [0, 0, 1, 2, 2, 3]},
+        {{:decimal, 38, 2}, [1, 1, 2, 2, 1], [0, 0, 1, 1, 2]},
+        {:u8, [1, 1, 2, 3, 3], [0, 0, 1, 2, 2]}
+      ]
 
-      assert Series.dtype(ids) == {:u, 32}
-      assert Series.to_list(ids) == [0, 0, 1, 1, 1, 2]
-    end
+      Enum.each(data_types, fn {dtype, input, expected_output} ->
+        s = Series.from_list(input, dtype: dtype)
+        ids = Series.rle_id(s)
 
-    test "should work with integers" do
-      s = Series.from_list([1, 1, 2, 3, 3])
-      ids = Series.rle_id(s)
-
-      assert Series.dtype(ids) == {:u, 32}
-      assert Series.to_list(ids) == [0, 0, 1, 2, 2]
-    end
-
-    test "should work with booleans" do
-      s = Series.from_list([true, true, false, true])
-
-      assert Series.to_list(Series.rle_id(s)) == [0, 0, 1, 2]
+        assert Series.dtype(ids) == {:u, 32}
+        assert Series.to_list(ids) == expected_output
+      end)
     end
 
     test "should treat nil as its own value" do
