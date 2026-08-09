@@ -1969,18 +1969,9 @@ pub fn s_row_index(series: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn s_rle_id(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let var_series = s
-        .clone_inner()
-        .into_frame()
-        .lazy()
-        .select([col(s.name().clone()).rle_id()])
-        .collect()?
-        .column(s.name())?
-        .as_materialized_series()
-        .clone();
-
-    Ok(ExSeries::new(var_series))
+pub fn s_rle_id(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let column = polars_ops::prelude::rle_id(&series.clone_inner().into_column())?;
+    Ok(ExSeries::new(column.take_materialized_series()))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

@@ -89,7 +89,7 @@ features = [
 
 [dependencies.polars-ops]
 version = "0.52"
-features = ["abs", "ewma", "cum_agg", "cov", "index_of"]
+features = ["abs", "ewma", "cum_agg", "cov", "index_of", "rle"]
 
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
