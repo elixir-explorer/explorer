@@ -127,6 +127,7 @@ defmodule Explorer.Backend.LazySeries do
     all: 1,
     any: 1,
     row_index: 1,
+    rle_id: 1,
     # Strings
     contains: 2,
     re_contains: 2,
@@ -1247,6 +1248,17 @@ defmodule Explorer.Backend.LazySeries do
   @impl true
   def row_index(series) do
     data = new(:row_index, [lazy_series!(series)], {:u, 32})
+
+    Backend.Series.new(data, {:u, 32})
+  end
+
+  @impl true
+  def rle_id(series) do
+    args = [lazy_series!(series)]
+
+    if aggregations?(args), do: raise_agg_inside_window(:rle_id)
+
+    data = new(:rle_id, args, {:u, 32}, false)
 
     Backend.Series.new(data, {:u, 32})
   end

@@ -253,6 +253,9 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def row_index(series), do: Shared.apply_series(series, :s_row_index)
 
+  @impl true
+  def rle_id(series), do: Shared.apply_series(series, :s_rle_id)
+
   # Cumulative
 
   @impl true

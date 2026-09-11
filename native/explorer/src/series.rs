@@ -1969,6 +1969,12 @@ pub fn s_row_index(series: ExSeries) -> Result<ExSeries, ExplorerError> {
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_rle_id(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let column = polars_ops::prelude::rle_id(&series.clone_inner().into_column())?;
+    Ok(ExSeries::new(column.take_materialized_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_count_matches(
     s1: ExSeries,
     pattern: &str,
