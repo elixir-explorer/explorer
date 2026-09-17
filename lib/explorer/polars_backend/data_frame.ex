@@ -756,6 +756,13 @@ defmodule Explorer.PolarsBackend.DataFrame do
   end
 
   @impl true
+  def partition_by(%DataFrame{} = df, columns) do
+    df
+    |> Shared.apply_dataframe(:df_partition_by, [columns])
+    |> Enum.map(&Shared.create_dataframe!/1)
+  end
+
+  @impl true
   def distinct(%DataFrame{} = df, %DataFrame{} = out_df, columns) do
     df
     |> lazy()

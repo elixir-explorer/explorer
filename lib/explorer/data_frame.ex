@@ -3617,6 +3617,38 @@ defmodule Explorer.DataFrame do
   def arrange_with(df, fun, opts \\ []), do: sort_with(df, fun, opts)
 
   @doc """
+  Splits the dataframe into one dataframe per distinct combination of `columns`.
+
+  Every dataframe in the result keeps all the columns, including the ones it
+  was split on, and the list follows the order in which each combination
+  first appears. A lazy dataframe is collected first. Groups on the dataframe
+  are ignored.
+
+  ## Examples
+
+      iex> df = Explorer.DataFrame.new(id: ["b", "a", "b"], x: [1, 2, 3])
+      iex> [b, a] = Explorer.DataFrame.partition_by(df, "id")
+      iex> Explorer.DataFrame.to_columns(b, atom_keys: true)
+      %{id: ["b", "b"], x: [1, 3]}
+      iex> Explorer.DataFrame.to_columns(a, atom_keys: true)
+      %{id: ["a"], x: [2]}
+
+  """
+  @doc type: :single
+  @spec partition_by(df :: DataFrame.t(), columns :: column_names() | column_name()) ::
+          [DataFrame.t()]
+  def partition_by(df, columns) do
+    columns = if is_column(columns), do: [columns], else: columns
+    columns = to_existing_columns(df, columns)
+
+    if columns == [] do
+      raise ArgumentError, "partition_by/2 needs at least one column to split on"
+    end
+
+    Shared.apply_dataframe(ungroup(df), :partition_by, [columns])
+  end
+
+  @doc """
   Takes distinct rows by a selection of columns.
 
   Distinct is not affected by groups, although groups are kept in the

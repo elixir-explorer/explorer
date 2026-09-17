@@ -62,6 +62,7 @@ features = [
   "mode",
   "moment",
   "parquet",
+  "partition_by",
   "peaks",
   "performant",
   "pivot",
