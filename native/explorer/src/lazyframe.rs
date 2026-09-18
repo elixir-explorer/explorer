@@ -477,18 +477,22 @@ pub fn lf_concat_columns(ldfs: Vec<ExLazyFrame>) -> Result<ExLazyFrame, Explorer
 }
 
 #[rustler::nif]
-pub fn lf_sql(
-    lf: ExLazyFrame,
-    sql_string: &str,
-    table_name: &str,
+pub fn sql_execute(
+    tables: Vec<(String, ExDataFrame)>,
+    query: String,
 ) -> Result<ExLazyFrame, ExplorerError> {
-    let mut ctx = polars::sql::SQLContext::new();
+    use polars::prelude::IntoLazy;
+    use polars::sql::SQLContext;
 
-    let lf = lf.clone_inner();
-    ctx.register(table_name, lf);
+    let mut ctx = SQLContext::new();
 
-    match ctx.execute(sql_string) {
-        Ok(lf_sql) => Ok(ExLazyFrame::new(lf_sql)),
+    for (name, df) in tables {
+        let ldf = df.clone_inner().lazy();
+        ctx.register(&name, ldf);
+    }
+
+    match ctx.execute(&query) {
+        Ok(lazy_frame) => Ok(ExLazyFrame::new(lazy_frame)),
         Err(polars_error) => Err(ExplorerError::Polars(polars_error)),
     }
 }

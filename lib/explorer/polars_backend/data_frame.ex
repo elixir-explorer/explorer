@@ -959,6 +959,23 @@ defmodule Explorer.PolarsBackend.DataFrame do
     %{out_df | data: out_data}
   end
 
+  # SQL
+
+  @impl true
+  def sql_execute(tables, sql_string) do
+    tables_with_df =
+      Enum.map(tables, fn {name, df} ->
+        {name, df.data}
+      end)
+
+    with {:ok, polars_ldf} <- Native.sql_execute(tables_with_df, sql_string),
+         {:ok, polars_df} <- Native.lf_compute(polars_ldf) do
+      Shared.create_dataframe!(polars_df)
+    else
+      {:error, error} -> raise error
+    end
+  end
+
   # Groups
 
   @impl true
@@ -974,16 +991,6 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def inspect(df, opts) do
     Explorer.Backend.DataFrame.inspect(df, "Polars", n_rows(df), opts)
-  end
-
-  # SQL
-
-  @impl true
-  def sql(%DataFrame{} = df, sql_string, table_name) do
-    df
-    |> lazy()
-    |> LazyFrame.sql(sql_string, table_name)
-    |> LazyFrame.collect()
   end
 
   @impl true
