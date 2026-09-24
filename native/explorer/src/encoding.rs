@@ -19,20 +19,14 @@ use crate::datatypes::{
 use crate::ExplorerError;
 
 use rustler::types::atom;
-use rustler::wrapper::{list, map, NIF_TERM};
 
 // Encoding helpers
 
-macro_rules! unsafe_iterator_series_to_list {
+macro_rules! iterator_series_to_list {
     ($env: ident, $iterator: expr) => {{
-        let env_as_c_arg = $env.as_c_arg();
-        let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
-
-        let list = $iterator.rfold(acc, |acc, term| unsafe {
-            list::make_list_cell(env_as_c_arg, term.as_c_arg(), acc)
-        });
-
-        unsafe { Term::new($env, list) }
+        $iterator.rfold(Term::list_new_empty($env), |acc, term| {
+            acc.list_prepend(term)
+        })
     }};
 }
 
@@ -45,27 +39,22 @@ macro_rules! encode_chunked_array {
     }};
 }
 
-macro_rules! unsafe_encode_date {
+macro_rules! encode_date_struct {
     ($v: ident, $date_struct_keys: ident, $calendar_iso_module: ident, $date_module: ident, $env: ident) => {{
         let dt = days_to_date($v);
 
-        unsafe {
-            Term::new(
-                $env,
-                map::make_map_from_arrays(
-                    $env.as_c_arg(),
-                    $date_struct_keys,
-                    &[
-                        $date_module,
-                        $calendar_iso_module,
-                        dt.day().encode($env).as_c_arg(),
-                        dt.month().encode($env).as_c_arg(),
-                        dt.year().encode($env).as_c_arg(),
-                    ],
-                )
-                .unwrap(),
-            )
-        }
+        Term::map_from_term_arrays(
+            $env,
+            $date_struct_keys,
+            &[
+                $date_module,
+                $calendar_iso_module,
+                dt.day().encode($env),
+                dt.month().encode($env),
+                dt.year().encode($env),
+            ],
+        )
+        .unwrap()
     }};
 }
 
@@ -73,22 +62,22 @@ macro_rules! unsafe_encode_date {
 // This is because we already have the keys (we know this at compile time), and the types,
 // so we can build the struct directly.
 #[inline]
-fn date_struct_keys(env: Env) -> [NIF_TERM; 5] {
+fn date_struct_keys<'a>(env: Env<'a>) -> [Term<'a>; 5] {
     [
-        atom::__struct__().encode(env).as_c_arg(),
-        calendar().encode(env).as_c_arg(),
-        day().encode(env).as_c_arg(),
-        month().encode(env).as_c_arg(),
-        year().encode(env).as_c_arg(),
+        atom::__struct__().encode(env),
+        calendar().encode(env),
+        day().encode(env),
+        month().encode(env),
+        year().encode(env),
     ]
 }
 
 #[inline]
 fn encode_date(v: i32, env: Env) -> Result<Term, ExplorerError> {
     let date_struct_keys = &date_struct_keys(env);
-    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
-    let date_module = atoms::date_module().encode(env).as_c_arg();
-    Ok(unsafe_encode_date!(
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env);
+    let date_module = atoms::date_module().encode(env);
+    Ok(encode_date_struct!(
         v,
         date_struct_keys,
         calendar_iso_module,
@@ -100,12 +89,12 @@ fn encode_date(v: i32, env: Env) -> Result<Term, ExplorerError> {
 #[inline]
 fn date_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     let date_struct_keys = &date_struct_keys(env);
-    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
-    let date_module = atoms::date_module().encode(env).as_c_arg();
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env);
+    let date_module = atoms::date_module().encode(env);
 
-    Ok(unsafe_iterator_series_to_list!(
+    Ok(iterator_series_to_list!(
         env,
-        encode_chunked_array!(s.date()?, env, |date| unsafe_encode_date!(
+        encode_chunked_array!(s.date()?, env, |date| encode_date_struct!(
             date,
             date_struct_keys,
             calendar_iso_module,
@@ -115,7 +104,7 @@ fn date_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Explore
     ))
 }
 
-macro_rules! unsafe_encode_naive_datetime {
+macro_rules! encode_naive_datetime_struct {
     (
         $timestamp: expr,
         $time_unit: expr,
@@ -126,44 +115,39 @@ macro_rules! unsafe_encode_naive_datetime {
     ) => {{
         let ndt = timestamp_to_naive_datetime($timestamp, $time_unit);
 
-        unsafe {
-            Term::new(
-                $env,
-                map::make_map_from_arrays(
-                    $env.as_c_arg(),
-                    $naive_datetime_struct_keys,
-                    &[
-                        $naive_datetime_module,
-                        $calendar_iso_module,
-                        ndt.day().encode($env).as_c_arg(),
-                        ndt.month().encode($env).as_c_arg(),
-                        ndt.year().encode($env).as_c_arg(),
-                        ndt.hour().encode($env).as_c_arg(),
-                        ndt.minute().encode($env).as_c_arg(),
-                        ndt.second().encode($env).as_c_arg(),
-                        ndt.microsecond_tuple_tu($time_unit).encode($env).as_c_arg(),
-                    ],
-                )
-                .unwrap(),
-            )
-        }
+        Term::map_from_term_arrays(
+            $env,
+            $naive_datetime_struct_keys,
+            &[
+                $naive_datetime_module,
+                $calendar_iso_module,
+                ndt.day().encode($env),
+                ndt.month().encode($env),
+                ndt.year().encode($env),
+                ndt.hour().encode($env),
+                ndt.minute().encode($env),
+                ndt.second().encode($env),
+                ndt.microsecond_tuple_tu($time_unit).encode($env),
+            ],
+        )
+        .unwrap()
     }};
 }
 
 // Here we build the NaiveDateTime struct manually, as it's much faster than using NifStruct
 // This is because we already have the keys (we know this at compile time), and the types,
 // so we can build the struct directly.
-fn naive_datetime_struct_keys(env: Env) -> [NIF_TERM; 9] {
+fn naive_datetime_struct_keys<'a>(env: Env<'a>) -> [Term<'a>; 9] {
     [
-        atom::__struct__().encode(env).as_c_arg(),
-        calendar().encode(env).as_c_arg(),
-        day().encode(env).as_c_arg(),
-        month().encode(env).as_c_arg(),
-        year().encode(env).as_c_arg(),
-        hour().encode(env).as_c_arg(),
-        minute().encode(env).as_c_arg(),
-        second().encode(env).as_c_arg(),
-        microsecond().encode(env).as_c_arg(),
+        atom::__struct__().encode(env),
+        calendar().encode(env),
+        day().encode(env),
+        month().encode(env),
+        year().encode(env),
+        hour().encode(env),
+        minute().encode(env),
+        second().encode(env),
+        microsecond().encode(env),
     ]
 }
 
@@ -174,10 +158,10 @@ pub fn encode_naive_datetime(
     env: Env,
 ) -> Result<Term, ExplorerError> {
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
-    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
-    let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env);
+    let naive_datetime_module = atoms::naive_datetime_module().encode(env);
 
-    Ok(unsafe_encode_naive_datetime!(
+    Ok(encode_naive_datetime_struct!(
         timestamp,
         time_unit,
         naive_datetime_struct_keys,
@@ -190,19 +174,19 @@ pub fn encode_naive_datetime(
 #[inline]
 fn naive_datetime_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     let naive_datetime_struct_keys = &naive_datetime_struct_keys(env);
-    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
-    let naive_datetime_module = atoms::naive_datetime_module().encode(env).as_c_arg();
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env);
+    let naive_datetime_module = atoms::naive_datetime_module().encode(env);
     let time_unit = match s.dtype() {
         DataType::Datetime(time_unit, None) => *time_unit,
         _ => panic!("should only use this function for naive datetimes"),
     };
 
-    Ok(unsafe_iterator_series_to_list!(
+    Ok(iterator_series_to_list!(
         env,
         encode_chunked_array!(
             s.datetime()?,
             env,
-            |timestamp| unsafe_encode_naive_datetime!(
+            |timestamp| encode_naive_datetime_struct!(
                 timestamp,
                 time_unit,
                 naive_datetime_struct_keys,
@@ -214,7 +198,7 @@ fn naive_datetime_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b
     ))
 }
 
-macro_rules! unsafe_encode_datetime {
+macro_rules! encode_datetime_struct {
     (
         $timestamp: expr,
         $time_unit: expr,
@@ -227,59 +211,47 @@ macro_rules! unsafe_encode_datetime {
         let dt_tz = timestamp_to_datetime($timestamp, $time_unit, $time_zone);
         let tz_offset = dt_tz.offset();
 
-        unsafe {
-            Term::new(
-                $env,
-                map::make_map_from_arrays(
-                    $env.as_c_arg(),
-                    $datetime_struct_keys,
-                    &[
-                        $datetime_module,
-                        $calendar_iso_module,
-                        dt_tz.day().encode($env).as_c_arg(),
-                        dt_tz.hour().encode($env).as_c_arg(),
-                        dt_tz
-                            .microsecond_tuple_tu($time_unit)
-                            .encode($env)
-                            .as_c_arg(),
-                        dt_tz.minute().encode($env).as_c_arg(),
-                        dt_tz.month().encode($env).as_c_arg(),
-                        dt_tz.second().encode($env).as_c_arg(),
-                        tz_offset.dst_offset().num_seconds().encode($env).as_c_arg(),
-                        $time_zone.to_string().encode($env).as_c_arg(),
-                        tz_offset
-                            .base_utc_offset()
-                            .num_seconds()
-                            .encode($env)
-                            .as_c_arg(),
-                        dt_tz.year().encode($env).as_c_arg(),
-                        tz_offset.abbreviation().encode($env).as_c_arg(),
-                    ],
-                )
-                .unwrap(),
-            )
-        }
+        Term::map_from_term_arrays(
+            $env,
+            $datetime_struct_keys,
+            &[
+                $datetime_module,
+                $calendar_iso_module,
+                dt_tz.day().encode($env),
+                dt_tz.hour().encode($env),
+                dt_tz.microsecond_tuple_tu($time_unit).encode($env),
+                dt_tz.minute().encode($env),
+                dt_tz.month().encode($env),
+                dt_tz.second().encode($env),
+                tz_offset.dst_offset().num_seconds().encode($env),
+                $time_zone.to_string().encode($env),
+                tz_offset.base_utc_offset().num_seconds().encode($env),
+                dt_tz.year().encode($env),
+                tz_offset.abbreviation().encode($env),
+            ],
+        )
+        .unwrap()
     }};
 }
 
 // Here we build the DateTime struct manually, as it's much faster than using NifStruct
 // This is because we already have the keys (we know this at compile time), and the types,
 // so we can build the struct directly.
-fn datetime_struct_keys(env: Env) -> [NIF_TERM; 13] {
+fn datetime_struct_keys<'a>(env: Env<'a>) -> [Term<'a>; 13] {
     [
-        atom::__struct__().encode(env).as_c_arg(),
-        calendar().encode(env).as_c_arg(),
-        day().encode(env).as_c_arg(),
-        hour().encode(env).as_c_arg(),
-        microsecond().encode(env).as_c_arg(),
-        minute().encode(env).as_c_arg(),
-        month().encode(env).as_c_arg(),
-        second().encode(env).as_c_arg(),
-        std_offset().encode(env).as_c_arg(),
-        time_zone().encode(env).as_c_arg(),
-        utc_offset().encode(env).as_c_arg(),
-        year().encode(env).as_c_arg(),
-        zone_abbr().encode(env).as_c_arg(),
+        atom::__struct__().encode(env),
+        calendar().encode(env),
+        day().encode(env),
+        hour().encode(env),
+        microsecond().encode(env),
+        minute().encode(env),
+        month().encode(env),
+        second().encode(env),
+        std_offset().encode(env),
+        time_zone().encode(env),
+        utc_offset().encode(env),
+        year().encode(env),
+        zone_abbr().encode(env),
     ]
 }
 
@@ -291,10 +263,10 @@ pub fn encode_datetime(
     env: Env,
 ) -> Result<Term, ExplorerError> {
     let datetime_struct_keys = &datetime_struct_keys(env);
-    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
-    let datetime_module = atoms::datetime_module().encode(env).as_c_arg();
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env);
+    let datetime_module = atoms::datetime_module().encode(env);
 
-    Ok(unsafe_encode_datetime!(
+    Ok(encode_datetime_struct!(
         timestamp,
         time_unit,
         time_zone,
@@ -308,8 +280,8 @@ pub fn encode_datetime(
 #[inline]
 fn datetime_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     let datetime_struct_keys = &datetime_struct_keys(env);
-    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
-    let datetime_module = atoms::datetime_module().encode(env).as_c_arg();
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env);
+    let datetime_module = atoms::datetime_module().encode(env);
     let time_unit = match s.dtype() {
         DataType::Datetime(time_unit, Some(_)) => *time_unit,
         _ => panic!("datetime_series_to_list called on series with wrong type"),
@@ -319,9 +291,9 @@ fn datetime_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Exp
         _ => panic!("datetime_series_to_list called on series with wrong type"),
     };
 
-    Ok(unsafe_iterator_series_to_list!(
+    Ok(iterator_series_to_list!(
         env,
-        encode_chunked_array!(s.datetime()?, env, |timestamp| unsafe_encode_datetime!(
+        encode_chunked_array!(s.datetime()?, env, |timestamp| encode_datetime_struct!(
             timestamp,
             time_unit,
             time_zone,
@@ -341,46 +313,37 @@ fn time_unit_to_atom(time_unit: TimeUnit) -> atom::Atom {
     }
 }
 // ######### Duration ##########
-macro_rules! unsafe_encode_duration {
+macro_rules! encode_duration_struct {
     ($v: expr, $time_unit: expr, $duration_struct_keys: ident, $duration_module: ident, $env: ident) => {{
         let value = $v;
         let precision = time_unit_to_atom($time_unit);
 
-        unsafe {
-            Term::new(
-                $env,
-                map::make_map_from_arrays(
-                    $env.as_c_arg(),
-                    $duration_struct_keys,
-                    &[
-                        $duration_module,
-                        value.encode($env).as_c_arg(),
-                        precision.encode($env).as_c_arg(),
-                    ],
-                )
-                .unwrap(),
-            )
-        }
+        Term::map_from_term_arrays(
+            $env,
+            $duration_struct_keys,
+            &[$duration_module, value.encode($env), precision.encode($env)],
+        )
+        .unwrap()
     }};
 }
 
 // Here we build the Explorer.Duration struct manually, as it's much faster than using NifStruct
 // This is because we already have the keys (we know this at compile time), and the types,
 // so we can build the struct directly.
-fn duration_struct_keys(env: Env) -> [NIF_TERM; 3] {
+fn duration_struct_keys<'a>(env: Env<'a>) -> [Term<'a>; 3] {
     [
-        atom::__struct__().encode(env).as_c_arg(),
-        value().encode(env).as_c_arg(),
-        precision().encode(env).as_c_arg(),
+        atom::__struct__().encode(env),
+        value().encode(env),
+        precision().encode(env),
     ]
 }
 
 #[inline]
 pub fn encode_duration(v: i64, time_unit: TimeUnit, env: Env) -> Result<Term, ExplorerError> {
     let duration_struct_keys = &duration_struct_keys(env);
-    let duration_module = atoms::duration_module().encode(env).as_c_arg();
+    let duration_module = atoms::duration_module().encode(env);
 
-    Ok(unsafe_encode_duration!(
+    Ok(encode_duration_struct!(
         v,
         time_unit,
         duration_struct_keys,
@@ -396,11 +359,11 @@ fn duration_series_to_list<'b>(
     env: Env<'b>,
 ) -> Result<Term<'b>, ExplorerError> {
     let duration_struct_keys = &duration_struct_keys(env);
-    let duration_module = atoms::duration_module().encode(env).as_c_arg();
+    let duration_module = atoms::duration_module().encode(env);
 
-    Ok(unsafe_iterator_series_to_list!(
+    Ok(iterator_series_to_list!(
         env,
-        encode_chunked_array!(s.duration()?, env, |duration| unsafe_encode_duration!(
+        encode_chunked_array!(s.duration()?, env, |duration| encode_duration_struct!(
             duration,
             time_unit,
             duration_struct_keys,
@@ -413,7 +376,7 @@ fn duration_series_to_list<'b>(
 // ######### End of Duration ##########
 
 // ######### Decimal ##########
-macro_rules! unsafe_encode_decimal {
+macro_rules! encode_decimal_struct {
     ($v: expr, $scale: expr, $decimal_struct_keys: ident, $decimal_module: ident, $env: ident) => {{
         let coef = $v.abs();
         let scale = -($scale as isize);
@@ -421,41 +384,36 @@ macro_rules! unsafe_encode_decimal {
         // Elixir's Decimal has only 1 or -1. We need to treat positive zero as positive - 1.
         let sign = if sign == 0 { 1 } else { sign };
 
-        unsafe {
-            Term::new(
-                $env,
-                map::make_map_from_arrays(
-                    $env.as_c_arg(),
-                    $decimal_struct_keys,
-                    &[
-                        $decimal_module,
-                        coef.encode($env).as_c_arg(),
-                        scale.encode($env).as_c_arg(),
-                        sign.encode($env).as_c_arg(),
-                    ],
-                )
-                .unwrap(),
-            )
-        }
+        Term::map_from_term_arrays(
+            $env,
+            $decimal_struct_keys,
+            &[
+                $decimal_module,
+                coef.encode($env),
+                scale.encode($env),
+                sign.encode($env),
+            ],
+        )
+        .unwrap()
     }};
 }
 
 // Here we build the Decimal struct manually, as it's much faster than using NifStruct
-fn decimal_struct_keys(env: Env) -> [NIF_TERM; 4] {
+fn decimal_struct_keys<'a>(env: Env<'a>) -> [Term<'a>; 4] {
     [
-        atom::__struct__().encode(env).as_c_arg(),
-        atoms::coef().encode(env).as_c_arg(),
-        atoms::exp().encode(env).as_c_arg(),
-        atoms::sign().encode(env).as_c_arg(),
+        atom::__struct__().encode(env),
+        atoms::coef().encode(env),
+        atoms::exp().encode(env),
+        atoms::sign().encode(env),
     ]
 }
 
 #[inline]
 pub fn encode_decimal(v: i128, scale: usize, env: Env) -> Result<Term, ExplorerError> {
     let struct_keys = &decimal_struct_keys(env);
-    let module_atom = atoms::decimal_module().encode(env).as_c_arg();
+    let module_atom = atoms::decimal_module().encode(env);
 
-    Ok(unsafe_encode_decimal!(
+    Ok(encode_decimal_struct!(
         v,
         scale,
         struct_keys,
@@ -467,13 +425,13 @@ pub fn encode_decimal(v: i128, scale: usize, env: Env) -> Result<Term, ExplorerE
 #[inline]
 fn decimal_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     let struct_keys = &decimal_struct_keys(env);
-    let module_atom = atoms::decimal_module().encode(env).as_c_arg();
+    let module_atom = atoms::decimal_module().encode(env);
     let decimal_chunked = s.decimal()?;
     let scale = decimal_chunked.scale();
 
-    Ok(unsafe_iterator_series_to_list!(
+    Ok(iterator_series_to_list!(
         env,
-        encode_chunked_array!(decimal_chunked, env, |decimal| unsafe_encode_decimal!(
+        encode_chunked_array!(decimal_chunked, env, |decimal| encode_decimal_struct!(
             decimal,
             scale,
             struct_keys,
@@ -485,7 +443,7 @@ fn decimal_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Expl
 
 // ######### End of Decimal ##########
 
-macro_rules! unsafe_encode_time {
+macro_rules! encode_time_struct {
     ($v: expr, $naive_time_struct_keys: ident, $calendar_iso_module: ident, $time_module: ident, $env: ident) => {{
         let t = time64ns_to_time($v);
         let microseconds = t.nanosecond() / 1_000;
@@ -498,48 +456,43 @@ macro_rules! unsafe_encode_time {
             microseconds
         };
 
-        unsafe {
-            Term::new(
-                $env,
-                map::make_map_from_arrays(
-                    $env.as_c_arg(),
-                    $naive_time_struct_keys,
-                    &[
-                        $time_module,
-                        $calendar_iso_module,
-                        t.hour().encode($env).as_c_arg(),
-                        t.minute().encode($env).as_c_arg(),
-                        t.second().encode($env).as_c_arg(),
-                        (limited_ms, 6).encode($env).as_c_arg(),
-                    ],
-                )
-                .unwrap(),
-            )
-        }
+        Term::map_from_term_arrays(
+            $env,
+            $naive_time_struct_keys,
+            &[
+                $time_module,
+                $calendar_iso_module,
+                t.hour().encode($env),
+                t.minute().encode($env),
+                t.second().encode($env),
+                (limited_ms, 6).encode($env),
+            ],
+        )
+        .unwrap()
     }};
 }
 
 // Here we build the NaiveTime struct manually, as it's much faster than using NifStruct
 // This is because we already have the keys (we know this at compile time), and the types,
 // so we can build the struct directly.
-fn naive_time_struct_keys(env: Env) -> [NIF_TERM; 6] {
+fn naive_time_struct_keys<'a>(env: Env<'a>) -> [Term<'a>; 6] {
     [
-        atom::__struct__().encode(env).as_c_arg(),
-        calendar().encode(env).as_c_arg(),
-        hour().encode(env).as_c_arg(),
-        minute().encode(env).as_c_arg(),
-        second().encode(env).as_c_arg(),
-        microsecond().encode(env).as_c_arg(),
+        atom::__struct__().encode(env),
+        calendar().encode(env),
+        hour().encode(env),
+        minute().encode(env),
+        second().encode(env),
+        microsecond().encode(env),
     ]
 }
 
 #[inline]
 fn encode_time(v: i64, env: Env) -> Result<Term, ExplorerError> {
     let naive_time_struct_keys = &naive_time_struct_keys(env);
-    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
-    let time_module = atoms::time_module().encode(env).as_c_arg();
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env);
+    let time_module = atoms::time_module().encode(env);
 
-    Ok(unsafe_encode_time!(
+    Ok(encode_time_struct!(
         v,
         naive_time_struct_keys,
         calendar_iso_module,
@@ -551,12 +504,12 @@ fn encode_time(v: i64, env: Env) -> Result<Term, ExplorerError> {
 #[inline]
 fn time_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
     let naive_time_struct_keys = &naive_time_struct_keys(env);
-    let calendar_iso_module = atoms::calendar_iso_module().encode(env).as_c_arg();
-    let time_module = atoms::time_module().encode(env).as_c_arg();
+    let calendar_iso_module = atoms::calendar_iso_module().encode(env);
+    let time_module = atoms::time_module().encode(env);
 
-    Ok(unsafe_iterator_series_to_list!(
+    Ok(iterator_series_to_list!(
         env,
-        encode_chunked_array!(s.time()?, env, |time| unsafe_encode_time!(
+        encode_chunked_array!(s.time()?, env, |time| encode_time_struct!(
             time,
             naive_time_struct_keys,
             calendar_iso_module,
@@ -567,7 +520,7 @@ fn time_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, Explore
 }
 
 fn generic_string_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
-    Ok(unsafe_iterator_series_to_list!(
+    Ok(iterator_series_to_list!(
         env,
         s.str()?.into_iter().map(|option| option.encode(env))
     ))
@@ -578,21 +531,20 @@ fn generic_binary_series_to_list<'b>(
     s: &Series,
     env: Env<'b>,
 ) -> Result<Term<'b>, ExplorerError> {
-    let env_as_c_arg = env.as_c_arg();
-    let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
-    let acc = unsafe { list::make_list(env_as_c_arg, &[]) };
+    let nil = atom::nil().to_term(env);
+    let acc = Term::list_new_empty(env);
     let list = s.binary()?.downcast_iter().rfold(acc, |acc, array| {
         array.iter().rfold(acc, |acc, v| {
-            let term_as_c_arg = match v {
-                Some(values) => unsafe { resource.make_binary_unsafe(env, |_| values) }
-                    .to_term(env)
-                    .as_c_arg(),
-                None => nil_as_c_arg,
+            let term = match v {
+                Some(values) => {
+                    unsafe { resource.make_binary_unsafe(env, |_| values) }.to_term(env)
+                }
+                None => nil,
             };
-            unsafe { list::make_list_cell(env_as_c_arg, term_as_c_arg, acc) }
+            acc.list_prepend(term)
         })
     });
-    Ok(unsafe { Term::new(env, list) })
+    Ok(list)
 }
 
 // HELP WANTED: Make this more efficient.
@@ -610,7 +562,7 @@ macro_rules! float_series_to_list {
             let infinity_atom = infinity().encode(env);
             let nil_atom = atom::nil().encode(env);
 
-            Ok(unsafe_iterator_series_to_list!(
+            Ok(iterator_series_to_list!(
                 env,
                 s.$convert_function()?.into_iter().map(|option| {
                     match option {
@@ -638,7 +590,7 @@ float_series_to_list!(float32_series_to_list, f32);
 
 macro_rules! series_to_list {
     ($s:ident, $env:ident, $convert_function:ident) => {
-        Ok(unsafe_iterator_series_to_list!(
+        Ok(iterator_series_to_list!(
             $env,
             $s.$convert_function()?
                 .into_iter()
@@ -649,18 +601,17 @@ macro_rules! series_to_list {
 
 #[inline]
 fn null_series_to_list<'b>(s: &Series, env: Env<'b>) -> Result<Term<'b>, ExplorerError> {
-    let nil_as_c_arg = atom::nil().to_term(env).as_c_arg();
-    let env_as_c_arg = env.as_c_arg();
-    let mut list = unsafe { list::make_list(env_as_c_arg, &[]) };
+    let nil = atom::nil().to_term(env);
+    let mut list = Term::list_new_empty(env);
     for _n in 0..s.len() {
-        list = unsafe { list::make_list_cell(env_as_c_arg, nil_as_c_arg, list) }
+        list = list.list_prepend(nil);
     }
-    Ok(unsafe { Term::new(env, list) })
+    Ok(list)
 }
 
 macro_rules! series_to_iovec {
     ($resource:ident, $v:expr, $env:ident, $in_type:ty) => {{
-        Ok(unsafe_iterator_series_to_list!(
+        Ok(iterator_series_to_list!(
             $env,
             $v.downcast_iter().map(|array| {
                 let slice: &[$in_type] = array.values().as_slice();
