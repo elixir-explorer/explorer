@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `Explorer.Series.rle_id/1`, which assigns a run-length encoding (RLE) ID
   to each row, incrementing every time the value changes from one row to the next.
+- Support for Nx 1.0 [#1161](https://github.com/elixir-explorer/explorer/pull/1161)
+- Removed many of the `unsafe` calls on the Rust side of Explorer and also dropped calls
+  to `rustler::wrapper` for [Rustler changes](https://github.com/rusterlium/rustler/pull/768).
 
 ## [v0.12.0] - 2026-07-05
 
