@@ -5450,14 +5450,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.ewm_standard_deviation(s)
       #Explorer.Series<
         Polars[5]
-        f64 [0.0, 0.7071067811865476, 0.9636241116594315, 1.1771636613972953, 1.3452425132127066]
+        f64 [nil, 0.7071067811865476, 0.9636241116594315, 1.1771636613972953, 1.3452425132127066]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.ewm_standard_deviation(s, alpha: 0.1)
       #Explorer.Series<
         Polars[5]
-        f64 [0.0, 0.7071067811865476, 0.999077064870281, 1.2879021599718157, 1.5741638698820741]
+        f64 [nil, 0.7071067811865476, 0.999077064870281, 1.2879021599718157, 1.5741638698820741]
       >
   """
   @doc type: :window
@@ -5505,14 +5505,14 @@ defmodule Explorer.Series do
       iex> Explorer.Series.ewm_variance(s)
       #Explorer.Series<
         Polars[5]
-        f64 [0.0, 0.5, 0.9285714285714286, 1.3857142857142861, 1.8096774193548393]
+        f64 [nil, 0.5, 0.9285714285714286, 1.3857142857142861, 1.8096774193548393]
       >
 
       iex> s = 1..5 |> Enum.to_list() |> Explorer.Series.from_list()
       iex> Explorer.Series.ewm_variance(s, alpha: 0.1)
       #Explorer.Series<
         Polars[5]
-        f64 [0.0, 0.5000000000000001, 0.9981549815498157, 1.658691973660068, 2.477991889242108]
+        f64 [nil, 0.5000000000000001, 0.9981549815498157, 1.658691973660068, 2.477991889242108]
       >
   """
   @doc type: :window

@@ -15,6 +15,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed many of the `unsafe` calls on the Rust side of Explorer and also dropped calls
   to `rustler::wrapper` for [Rustler changes](https://github.com/rusterlium/rustler/pull/768).
 
+### Updated
+
+- Updated Polars to [v0.55.2](https://github.com/pola-rs/polars/releases/tag/rs-0.55.2)
+  and the Rust toolchain to `nightly-2026-04-01`.
+
+### Backwards incompatible changes
+
+- `Explorer.Series.ewm_standard_deviation/2` and `Explorer.Series.ewm_variance/2` return
+  `nil` instead of `0.0` for the first value when `bias: false` (the default).
+- `Explorer.Series.covariance/2` returns `0.0` instead of `nil` for series with a single element.
+- The `:dtypes` option of the CSV readers is only applied by column name. Previously, when
+  all columns were given, names that didn't match the header were applied by position and
+  renamed the columns.
+
 ## [v0.12.0] - 2026-07-05
 
 ### Updated
