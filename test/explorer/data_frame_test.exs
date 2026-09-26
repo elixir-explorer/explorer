@@ -3028,6 +3028,33 @@ defmodule Explorer.DataFrameTest do
     end
   end
 
+  describe "partition_by/2" do
+    test "one dataframe per distinct combination, in first-seen order" do
+      df = DF.new(id: ["b", "a", "b", "a"], k: [1, 1, 2, 1], x: [1.0, 2.0, 3.0, 4.0])
+
+      assert [b, a] = DF.partition_by(df, "id")
+      assert DF.to_columns(b, atom_keys: true) == %{id: ["b", "b"], k: [1, 2], x: [1.0, 3.0]}
+      assert DF.to_columns(a, atom_keys: true) == %{id: ["a", "a"], k: [1, 1], x: [2.0, 4.0]}
+
+      assert [b1, a1, b2] = DF.partition_by(df, [:id, :k])
+      assert DF.to_columns(b1, atom_keys: true) == %{id: ["b"], k: [1], x: [1.0]}
+      assert DF.to_columns(a1, atom_keys: true) == %{id: ["a", "a"], k: [1, 1], x: [2.0, 4.0]}
+      assert DF.to_columns(b2, atom_keys: true) == %{id: ["b"], k: [2], x: [3.0]}
+
+      assert_raise ArgumentError, ~r/at least one column/, fn -> DF.partition_by(df, []) end
+    end
+
+    test "collects a lazy dataframe and ignores groups" do
+      df = DF.new(id: ["b", "a", "b"], x: [1, 2, 3])
+
+      assert [b, a] = df |> DF.lazy() |> DF.partition_by("id")
+      assert DF.to_columns(b, atom_keys: true) == %{id: ["b", "b"], x: [1, 3]}
+      assert DF.to_columns(a, atom_keys: true) == %{id: ["a"], x: [2]}
+
+      assert [_, _] = df |> DF.group_by("x") |> DF.partition_by("id")
+    end
+  end
+
   describe "distinct/2" do
     test "with lists", %{df: df} do
       df1 = DF.distinct(df, [:year, :country])

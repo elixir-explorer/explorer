@@ -492,6 +492,11 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   end
 
   @impl true
+  def partition_by(%DF{} = ldf, columns) do
+    ldf |> collect() |> Eager.partition_by(columns)
+  end
+
+  @impl true
   def distinct(%DF{} = df, %DF{} = out_df, columns) do
     maybe_columns_to_keep =
       if df.names != out_df.names, do: Enum.map(out_df.names, &Native.expr_column/1)

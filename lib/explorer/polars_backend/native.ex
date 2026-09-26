@@ -158,6 +158,7 @@ defmodule Explorer.PolarsBackend.Native do
 
   def df_mask(_df, _mask), do: err()
   def df_n_rows(_df), do: err()
+  def df_partition_by(_df, _groups), do: err()
   def df_names(_df), do: err()
   def df_pivot_wider(_df, _id_columns, _pivot_column, _values_column, _names_prefix), do: err()
   def df_pull(_df, _name), do: err()

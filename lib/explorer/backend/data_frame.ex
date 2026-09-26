@@ -196,6 +196,7 @@ defmodule Explorer.Backend.DataFrame do
               nulls_last? :: boolean()
             ) :: df
   @callback distinct(df, out_df :: df(), columns :: [column_name()]) :: df
+  @callback partition_by(df, columns :: [column_name()]) :: [df]
   @callback rename(df, out_df :: df(), [{old :: column_name(), new :: column_name()}]) :: df
   @callback dummies(df, out_df :: df(), columns :: [column_name()]) :: df
   @callback sample(

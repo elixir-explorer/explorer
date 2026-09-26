@@ -81,6 +81,15 @@ pub fn df_n_rows(df: ExDataFrame) -> Result<usize, ExplorerError> {
     Ok(df.height())
 }
 
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_partition_by(
+    df: ExDataFrame,
+    groups: Vec<String>,
+) -> Result<Vec<ExDataFrame>, ExplorerError> {
+    let dfs = df.partition_by_stable(groups, true)?;
+    Ok(dfs.into_iter().map(ExDataFrame::new).collect())
+}
+
 #[rustler::nif]
 pub fn df_width(df: ExDataFrame) -> Result<usize, ExplorerError> {
     Ok(df.width())
