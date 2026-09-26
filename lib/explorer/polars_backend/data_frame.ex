@@ -21,10 +21,17 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @compile {:no_warn_undefined, Adbc.Connection}
   @impl true
   def from_query(conn, query, params) do
+    # query_pointer/5 callback should be 1-arity, the 2-arity version is deprecated in adbc >= 0.9
     adbc_result =
-      Adbc.Connection.query_pointer(conn, query, params, fn pointer, _num_rows ->
-        Explorer.PolarsBackend.Native.df_from_arrow_stream_pointer(pointer)
-      end)
+      if Code.ensure_loaded?(Adbc.StreamResult) do
+        Adbc.Connection.query_pointer(conn, query, params, fn stream_result ->
+          Explorer.PolarsBackend.Native.df_from_arrow_stream_pointer(stream_result.pointer)
+        end)
+      else
+        Adbc.Connection.query_pointer(conn, query, params, fn pointer, _num_rows ->
+          Explorer.PolarsBackend.Native.df_from_arrow_stream_pointer(pointer)
+        end)
+      end
 
     with {:ok, df_result} <- adbc_result,
          {:ok, df} <- df_result,
