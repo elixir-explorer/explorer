@@ -4794,7 +4794,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_standard_deviation(s1)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                0.7071067811865476,
                0.9636241116594314,
                1.1771636613972951,
@@ -4812,7 +4812,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_standard_deviation(s1, alpha: 0.8)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                0.7071067811865476,
                0.8613567692141088,
                0.930593876392466,
@@ -4850,7 +4850,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_standard_deviation(s1, ignore_nils: true)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                nil,
                0.7071067811865476,
                nil,
@@ -4870,7 +4870,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_standard_deviation(s1, ignore_nils: false)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                nil,
                0.7071067811865476,
                nil,
@@ -4888,7 +4888,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_standard_deviation(s1, adjust: false)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                0.7071067811865476,
                1.0488088481701516,
                1.300183137283433,
@@ -4926,7 +4926,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_variance(s1)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                0.5,
                0.9285714285714284,
                1.385714285714286,
@@ -4944,7 +4944,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_variance(s1, alpha: 0.8)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                0.5,
                0.7419354838709674,
                0.8660049627791564,
@@ -4982,7 +4982,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_variance(s1, ignore_nils: true)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                nil,
                0.5,
                nil,
@@ -5002,7 +5002,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_variance(s1, ignore_nils: false)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                nil,
                0.5,
                nil,
@@ -5020,7 +5020,7 @@ defmodule Explorer.SeriesTest do
       s2 = Series.ewm_variance(s1, adjust: false)
 
       assert all_close?(s2, [
-               0.0,
+               nil,
                0.5,
                1.1,
                1.6904761904761905,
@@ -5612,7 +5612,7 @@ defmodule Explorer.SeriesTest do
       s1 = Series.from_list([1.0])
       s2 = Series.from_list([2.0])
       assert Series.correlation(s1, s2) == :nan
-      assert Series.covariance(s1, s2) == nil
+      assert Series.covariance(s1, s2) == 0.0
 
       s1 = Series.from_list([1.0, 2.0])
       s2 = Series.from_list([2.0, 3.0, 4.0])
@@ -5726,7 +5726,7 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(ws) === [
                nil,
                3.0405591591021546,
-               0.7778174593052035,
+               0.7778174593052023,
                nil,
                nil,
                7.212489168102785,
@@ -5742,7 +5742,7 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(ws) === [
                nil,
                3.0405591591021546,
-               0.7778174593052035,
+               0.7778174593052023,
                nil,
                nil,
                7.212489168102785,
@@ -5758,7 +5758,7 @@ defmodule Explorer.SeriesTest do
       assert Series.to_list(ws) === [
                nil,
                3.0405591591021546,
-               0.7778174593052035,
+               0.7778174593052023,
                nil,
                nil,
                7.212489168102785,
@@ -6876,9 +6876,9 @@ defmodule Explorer.SeriesTest do
 
       assert_raise RuntimeError,
                    ~s"""
-                   Polars Error: error deserializing JSON: error deserializing value "String("a")" as numeric. \\
-                               Try increasing `infer_schema_length` or specifying a schema.
-                               \
+                   Polars Error: error deserializing JSON: error deserializing value "String("a")" as numeric.
+
+                   Try increasing `infer_schema_length` or specifying a schema.\
                    """,
                    fn -> Series.json_decode(s, {:s, 64}) end
     end

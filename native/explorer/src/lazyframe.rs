@@ -35,6 +35,13 @@ impl GroupByOptOrder for LazyFrame {
     }
 }
 
+// Keep the behaviour of exploding empty lists into nulls and keeping nulls,
+// which were the defaults before Polars made these options explicit.
+const EXPLODE_OPTIONS: ExplodeOptions = ExplodeOptions {
+    empty_as_null: true,
+    keep_nulls: true,
+};
+
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn lf_compute(data: ExLazyFrame) -> Result<ExDataFrame, ExplorerError> {
     let lf = data.clone_inner();
@@ -153,7 +160,7 @@ pub fn lf_slice(
         let groups_exprs: Vec<Expr> = groups.iter().map(col).collect();
         lf.group_by_opt_order(groups_exprs, stable_groups)
             .agg([col("*").slice(offset, length)])
-            .explode(all().exclude_cols(groups))
+            .explode(all().exclude_cols(groups), EXPLODE_OPTIONS)
     };
 
     Ok(ExLazyFrame::new(result_lf))
@@ -161,7 +168,7 @@ pub fn lf_slice(
 
 #[rustler::nif]
 pub fn lf_explode(data: ExLazyFrame, columns: Vec<&str>) -> Result<ExLazyFrame, ExplorerError> {
-    let lf = data.clone_inner().explode(cols(columns));
+    let lf = data.clone_inner().explode(cols(columns), EXPLODE_OPTIONS);
     Ok(ExLazyFrame::new(lf))
 }
 
@@ -211,7 +218,7 @@ pub fn lf_grouped_sort_with(
     // See: https://docs.pola.rs/user-guide/expressions/window/#operations-per-group
     let ldf = data
         .clone_inner()
-        .with_columns([col("*").sort_by(expressions, sort_options).over(groups)]);
+        .with_columns([col("*").sort_by(expressions, sort_options).over(groups)?]);
 
     Ok(ExLazyFrame::new(ldf))
 }
@@ -309,8 +316,8 @@ pub fn lf_pivot_longer(
 ) -> Result<ExLazyFrame, ExplorerError> {
     let ldf = data.clone_inner();
     let unpivot_opts = polars::lazy::dsl::UnpivotArgsDSL {
-        index: by_name(id_vars, true),
-        on: by_name(value_vars, true),
+        index: by_name(id_vars, true, true),
+        on: Some(by_name(value_vars, true, true)),
         variable_name: Some(names_to.into()),
         value_name: Some(values_to.into()),
     };
@@ -471,7 +478,7 @@ pub fn lf_concat_columns(ldfs: Vec<ExLazyFrame>) -> Result<ExLazyFrame, Explorer
         })
         .collect();
 
-    let out_ldf = concat_lf_horizontal(renamed_ldfs, UnionArgs::default())?;
+    let out_ldf = concat_lf_horizontal(renamed_ldfs, HConcatOptions::default())?;
 
     Ok(ExLazyFrame::new(out_ldf))
 }

@@ -222,12 +222,19 @@ pub fn s_cut(
         include_breaks,
     )?;
 
+    // Polars returns the categories of `cut` as an `Enum`, which Explorer
+    // doesn't support, so we convert them to a categorical.
+    let category_dtype = DataType::try_from(&ExSeriesDtype::Category)?;
+
     if include_breaks {
         let mut cut_df = cut_series.struct_()?.clone().unnest();
 
-        let cut_df = cut_df.insert_column(0, series)?;
+        let categories = cut_df.column("category")?.cast(&category_dtype)?;
+        cut_df.with_column(categories)?;
 
-        cut_df.set_column_names([
+        let cut_df = cut_df.insert_column(0, series.into_column())?;
+
+        cut_df.set_column_names(&[
             "values",
             break_point_label.unwrap_or("break_point"),
             category_label.unwrap_or("category"),
@@ -235,8 +242,10 @@ pub fn s_cut(
 
         Ok(ExDataFrame::new(cut_df.clone()))
     } else {
-        let mut cut_df = DataFrame::new(vec![Column::from(series), Column::from(cut_series)])?;
-        cut_df.set_column_names(["values", category_label.unwrap_or("category")])?;
+        let categories = cut_series.cast(&category_dtype)?;
+        let mut cut_df =
+            DataFrame::new_infer_height(vec![Column::from(series), Column::from(categories)])?;
+        cut_df.set_column_names(&["values", category_label.unwrap_or("category")])?;
 
         Ok(ExDataFrame::new(cut_df.clone()))
     }
@@ -267,9 +276,9 @@ pub fn s_qcut(
 
     if include_breaks {
         let mut qcut_df = qcut_series.struct_()?.clone().unnest();
-        let qcut_df = qcut_df.insert_column(0, series)?;
+        let qcut_df = qcut_df.insert_column(0, series.into_column())?;
 
-        qcut_df.set_column_names([
+        qcut_df.set_column_names(&[
             "values",
             break_point_label.unwrap_or("break_point"),
             category_label.unwrap_or("category"),
@@ -277,8 +286,9 @@ pub fn s_qcut(
 
         Ok(ExDataFrame::new(qcut_df.clone()))
     } else {
-        let mut qcut_df = DataFrame::new(vec![Column::from(series), Column::from(qcut_series)])?;
-        qcut_df.set_column_names(["values", category_label.unwrap_or("category")])?;
+        let mut qcut_df =
+            DataFrame::new_infer_height(vec![Column::from(series), Column::from(qcut_series)])?;
+        qcut_df.set_column_names(&["values", category_label.unwrap_or("category")])?;
 
         Ok(ExDataFrame::new(qcut_df.clone()))
     }
@@ -928,7 +938,7 @@ pub fn s_median(env: Env, s: ExSeries) -> Result<Term, ExplorerError> {
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_mode(s: ExSeries) -> Result<ExSeries, ExplorerError> {
-    match mode::mode(&s) {
+    match mode::mode(&s, false) {
         Ok(s) => Ok(ExSeries::new(s)),
         Err(e) => Err(e.into()),
     }
@@ -1268,11 +1278,28 @@ pub fn s_categorise(
             let fmap = fcat.mapping();
             let enum_dtype = DataType::Enum(fcat.clone(), fmap.clone());
 
-            let categorised = to_categorise.cast(&enum_dtype)?.cast(cat_dtype)?;
-            Ok(ExSeries::new(categorised))
+            let categorised = if to_categorise.dtype().is_integer() {
+                // Casting integers to an `Enum` is deprecated in Polars, so we build
+                // it from the physical representation. Invalid indexes become `null`.
+                let physical = to_categorise.cast(&fcat.physical().dtype())?;
+                Series::from_cats_and_dtype(&physical, &enum_dtype, false)?
+            } else {
+                to_categorise.cast(&enum_dtype)?
+            };
+
+            Ok(ExSeries::new(categorised.cast(cat_dtype)?))
         }
         _ => panic!("Cannot get categories from non categorical or string series"),
     }
+}
+
+/// Maps Explorer's `shuffle` option to the one expected by Polars.
+///
+/// `shuffle: false` means that a full sample keeps the original order, while
+/// partial samples are returned in random order. In Polars this is `None`,
+/// since `Some(false)` would sort partial samples.
+pub(crate) fn shuffle_option(shuffle: bool) -> Option<bool> {
+    shuffle.then_some(true)
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1283,7 +1310,7 @@ pub fn s_sample_n(
     shuffle: bool,
     seed: Option<u64>,
 ) -> Result<ExSeries, ExplorerError> {
-    let new_s = series.sample_n(n, replace, shuffle, seed)?;
+    let new_s = series.sample_n(n, replace, shuffle_option(shuffle), seed)?;
 
     Ok(ExSeries::new(new_s))
 }
@@ -1296,7 +1323,7 @@ pub fn s_sample_frac(
     shuffle: bool,
     seed: Option<u64>,
 ) -> Result<ExSeries, ExplorerError> {
-    let new_s = series.sample_frac(frac, replace, shuffle, seed)?;
+    let new_s = series.sample_frac(frac, replace, shuffle_option(shuffle), seed)?;
 
     Ok(ExSeries::new(new_s))
 }
@@ -1389,11 +1416,7 @@ pub fn s_select(
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_not(s1: ExSeries) -> Result<ExSeries, ExplorerError> {
-    let s2 = s1
-        .bool()?
-        .into_iter()
-        .map(|opt_v| opt_v.map(|v| !v))
-        .collect();
+    let s2 = s1.bool()?.iter().map(|opt_v| opt_v.map(|v| !v)).collect();
 
     Ok(ExSeries::new(s2))
 }
