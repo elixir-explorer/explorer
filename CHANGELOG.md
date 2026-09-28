@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added `Explorer.DataFrame.partition_by/2`, which splits a dataframe
+  into one dataframe per distinct combination of values in the
+  given columns [#1163](https://github.com/elixir-explorer/explorer/pull/1163)
 - Added `Explorer.Series.rle_id/1`, which assigns a run-length encoding (RLE) ID
   to each row, incrementing every time the value changes from one row to the next.
 - Support for Nx 1.0 [#1161](https://github.com/elixir-explorer/explorer/pull/1161)
