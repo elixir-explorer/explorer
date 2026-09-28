@@ -18,17 +18,22 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   # IO
 
-  @compile {:no_warn_undefined, Adbc.Connection}
   @impl true
-  def from_query(conn, query, params) do
-    adbc_result =
-      Adbc.Connection.query_pointer(conn, query, params, fn %Adbc.StreamResult{pointer: pointer} ->
-        Explorer.PolarsBackend.Native.df_from_arrow_stream_pointer(pointer)
-      end)
+  if Code.ensure_loaded?(Adbc) do
+    def from_query(conn, query, params) do
+      adbc_result =
+        Adbc.Connection.query_pointer(conn, query, params, fn %Adbc.StreamResult{pointer: pointer} ->
+          Explorer.PolarsBackend.Native.df_from_arrow_stream_pointer(pointer)
+        end)
 
-    with {:ok, df_result} <- adbc_result,
-         {:ok, df} <- df_result,
-         do: Shared.create_dataframe(df)
+      with {:ok, df_result} <- adbc_result,
+           {:ok, df} <- df_result,
+           do: Shared.create_dataframe(df)
+    end
+  else
+    def from_query(_conn, _query, _params) do
+      raise "you must install :adbc as a dependency in order to use from_query/3"
+    end
   end
 
   @impl true
