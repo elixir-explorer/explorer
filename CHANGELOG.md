@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.13.0] - 2026-09-28
+
 ### Added
 
 - Added `Explorer.DataFrame.partition_by/2`, which splits a dataframe
