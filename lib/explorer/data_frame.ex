@@ -541,10 +541,16 @@ defmodule Explorer.DataFrame do
           opts :: Keyword.t()
         ) ::
           DataFrame.t()
-  def from_query!(conn, query, params, opts \\ []) do
-    case from_query(conn, query, params, opts) do
-      {:ok, df} -> df
-      {:error, error} -> raise error
+  if Code.ensure_loaded?(Adbc) do
+    def from_query!(conn, query, params, opts \\ []) do
+      case from_query(conn, query, params, opts) do
+        {:ok, df} -> df
+        {:error, error} -> raise error
+      end
+    end
+  else
+    def from_query!(_conn, _query, _params, _opts) do
+      raise "you must install :adbc as a dependency in order to use from_query!/3"
     end
   end
 
@@ -3617,35 +3623,61 @@ defmodule Explorer.DataFrame do
   def arrange_with(df, fun, opts \\ []), do: sort_with(df, fun, opts)
 
   @doc """
-  Splits the dataframe into one dataframe per distinct combination of `columns`.
+  Splits the dataframe into a list of dataframes, one for each distinct
+  combination of values in the given columns.
 
-  Every dataframe in the result keeps all the columns, including the ones it
-  was split on, and the list follows the order in which each combination
-  first appears. A lazy dataframe is collected first. Groups on the dataframe
-  are ignored.
+  Every row goes to exactly one dataframe, with `nil` treated like any
+  other value. The dataframes are returned in the order in which each
+  combination first appears, and each of them keeps all the columns,
+  including the ones used for partitioning.
+
+  Groups are ignored and the resulting dataframes are ungrouped.
 
   ## Examples
 
       iex> df = Explorer.DataFrame.new(id: ["b", "a", "b"], x: [1, 2, 3])
       iex> [b, a] = Explorer.DataFrame.partition_by(df, "id")
-      iex> Explorer.DataFrame.to_columns(b, atom_keys: true)
-      %{id: ["b", "b"], x: [1, 3]}
-      iex> Explorer.DataFrame.to_columns(a, atom_keys: true)
-      %{id: ["a"], x: [2]}
+      iex> b
+      #Explorer.DataFrame<
+        Polars[2 x 2]
+        id string ["b", "b"]
+        x s64 [1, 3]
+      >
+      iex> a
+      #Explorer.DataFrame<
+        Polars[1 x 2]
+        id string ["a"]
+        x s64 [2]
+      >
+
+  When partitioning by multiple columns, there is one dataframe for each
+  combination of their values:
+
+      iex> df = Explorer.DataFrame.new(id: ["b", "a", "b", "a"], k: [1, 1, 2, 1], x: [1, 2, 3, 4])
+      iex> dfs = Explorer.DataFrame.partition_by(df, ["id", "k"])
+      iex> Enum.map(dfs, &Explorer.DataFrame.to_columns(&1, atom_keys: true))
+      [
+        %{id: ["b"], k: [1], x: [1]},
+        %{id: ["a", "a"], k: [1, 1], x: [2, 4]},
+        %{id: ["b"], k: [2], x: [3]}
+      ]
 
   """
   @doc type: :single
-  @spec partition_by(df :: DataFrame.t(), columns :: column_names() | column_name()) ::
-          [DataFrame.t()]
+  @spec partition_by(df :: DataFrame.t(), column() | columns()) :: [DataFrame.t()]
+  def partition_by(df, column) when is_column(column) do
+    partition_by(df, [column])
+  end
+
   def partition_by(df, columns) do
-    columns = if is_column(columns), do: [columns], else: columns
-    columns = to_existing_columns(df, columns)
+    case to_existing_columns(df, columns) do
+      [] ->
+        raise ArgumentError,
+              "partition_by/2 expects at least one column, but #{inspect(columns)} selects none"
 
-    if columns == [] do
-      raise ArgumentError, "partition_by/2 needs at least one column to split on"
+      partition_columns ->
+        Shared.apply_dataframe(ungroup(df), :partition_by, [partition_columns])
     end
-
-    Shared.apply_dataframe(ungroup(df), :partition_by, [columns])
   end
 
   @doc """

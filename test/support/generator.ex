@@ -11,7 +11,7 @@ defmodule Explorer.Generator do
   """
 
   import Bitwise, only: [<<<: 2]
-  import StreamData
+  import StreamData, except: [date: 0, date: 1]
 
   @type gen(a) :: StreamData.t(a)
 

@@ -22,7 +22,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def from_query(conn, query, params) do
     adbc_result =
-      Adbc.Connection.query_pointer(conn, query, params, fn pointer, _num_rows ->
+      Adbc.Connection.query_pointer(conn, query, params, fn %Adbc.StreamResult{pointer: pointer} ->
         Explorer.PolarsBackend.Native.df_from_arrow_stream_pointer(pointer)
       end)
 
@@ -757,9 +757,12 @@ defmodule Explorer.PolarsBackend.DataFrame do
 
   @impl true
   def partition_by(%DataFrame{} = df, columns) do
+    # Partitions keep all columns, so they share the names and dtypes of `df`.
     df
     |> Shared.apply_dataframe(:df_partition_by, [columns])
-    |> Enum.map(&Shared.create_dataframe!/1)
+    |> Enum.map(fn out_df ->
+      Map.put(df, :data, out_df)
+    end)
   end
 
   @impl true

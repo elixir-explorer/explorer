@@ -3029,29 +3029,89 @@ defmodule Explorer.DataFrameTest do
   end
 
   describe "partition_by/2" do
-    test "one dataframe per distinct combination, in first-seen order" do
+    test "returns one dataframe per value, in the order they first appear" do
       df = DF.new(id: ["b", "a", "b", "a"], k: [1, 1, 2, 1], x: [1.0, 2.0, 3.0, 4.0])
 
       assert [b, a] = DF.partition_by(df, "id")
       assert DF.to_columns(b, atom_keys: true) == %{id: ["b", "b"], k: [1, 2], x: [1.0, 3.0]}
       assert DF.to_columns(a, atom_keys: true) == %{id: ["a", "a"], k: [1, 1], x: [2.0, 4.0]}
+      assert DF.dtypes(b) == DF.dtypes(df)
+      assert DF.dtypes(a) == DF.dtypes(df)
+    end
+
+    test "returns one dataframe per combination of values" do
+      df = DF.new(id: ["b", "a", "b", "a"], k: [1, 1, 2, 1], x: [1.0, 2.0, 3.0, 4.0])
 
       assert [b1, a1, b2] = DF.partition_by(df, [:id, :k])
       assert DF.to_columns(b1, atom_keys: true) == %{id: ["b"], k: [1], x: [1.0]}
       assert DF.to_columns(a1, atom_keys: true) == %{id: ["a", "a"], k: [1, 1], x: [2.0, 4.0]}
       assert DF.to_columns(b2, atom_keys: true) == %{id: ["b"], k: [2], x: [3.0]}
-
-      assert_raise ArgumentError, ~r/at least one column/, fn -> DF.partition_by(df, []) end
     end
 
-    test "collects a lazy dataframe and ignores groups" do
+    test "accepts any column selection" do
       df = DF.new(id: ["b", "a", "b"], x: [1, 2, 3])
 
-      assert [b, a] = df |> DF.lazy() |> DF.partition_by("id")
+      expected =
+        df
+        |> DF.partition_by("id")
+        |> Enum.map(&DF.to_columns/1)
+
+      for columns <- [:id, 0, [0], 0..0, ~r/^id$/, &(&1 == "id")] do
+        regex_partitioned =
+          df
+          |> DF.partition_by(columns)
+          |> Enum.map(&DF.to_columns/1)
+
+        assert regex_partitioned == expected
+      end
+    end
+
+    test "keeps nil values in their own dataframe" do
+      df = DF.new(id: ["a", nil, "a", nil], x: [1, 2, 3, 4])
+
+      assert [a, nils] = DF.partition_by(df, "id")
+      assert DF.to_columns(a, atom_keys: true) == %{id: ["a", "a"], x: [1, 3]}
+      assert DF.to_columns(nils, atom_keys: true) == %{id: [nil, nil], x: [2, 4]}
+    end
+
+    test "returns an empty list for an empty dataframe" do
+      df = DF.new([id: [], x: []], dtypes: [id: :string, x: {:s, 64}])
+
+      assert DF.partition_by(df, "id") == []
+    end
+
+    test "ignores groups" do
+      df = DF.new(id: ["b", "a", "b"], x: [1, 2, 3])
+
+      assert [b, a] = df |> DF.group_by("x") |> DF.partition_by("id")
       assert DF.to_columns(b, atom_keys: true) == %{id: ["b", "b"], x: [1, 3]}
       assert DF.to_columns(a, atom_keys: true) == %{id: ["a"], x: [2]}
+      assert DF.groups(b) == []
+      assert DF.groups(a) == []
+    end
 
-      assert [_, _] = df |> DF.group_by("x") |> DF.partition_by("id")
+    test "raises for empty or unknown column selections" do
+      df = DF.new(id: ["b", "a", "b"], x: [1, 2, 3])
+
+      assert_raise ArgumentError,
+                   "partition_by/2 expects at least one column, but [] selects none",
+                   fn -> DF.partition_by(df, []) end
+
+      assert_raise ArgumentError,
+                   "partition_by/2 expects at least one column, but ~r/y/ selects none",
+                   fn -> DF.partition_by(df, ~r/y/) end
+
+      assert_raise ArgumentError, ~r/could not find column name "y"/, fn ->
+        DF.partition_by(df, "y")
+      end
+    end
+
+    test "is not available for lazy dataframes" do
+      ldf = DF.new(id: ["b", "a", "b"], x: [1, 2, 3]) |> DF.lazy()
+
+      assert_raise RuntimeError, ~r/`partition_by\/2` is not available/, fn ->
+        DF.partition_by(ldf, "id")
+      end
     end
   end
 
