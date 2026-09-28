@@ -8,7 +8,7 @@ use crate::datatypes::{
     ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExRankMethod,
     ExSeriesDtype, ExValidValue,
 };
-use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts_fixed_window};
+use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts_fixed_window, shuffle_option};
 use crate::{ExDataFrame, ExExpr, ExSeries};
 use polars::lazy::dsl;
 use polars::prelude::*;
@@ -178,7 +178,7 @@ pub fn expr_binary_in(left: ExExpr, right: ExExpr) -> ExExpr {
     let left_expr = left.clone_inner();
     let right_expr = right.clone_inner();
 
-    ExExpr::new(left_expr.is_in(right_expr.implode(), false))
+    ExExpr::new(left_expr.is_in(right_expr.implode(true), false))
 }
 
 #[rustler::nif]
@@ -236,7 +236,7 @@ pub fn expr_slice(expr: ExExpr, offset: i64, length: u32) -> ExExpr {
 pub fn expr_slice_by_indices(expr: ExExpr, indices_expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.gather(indices_expr.clone_inner()))
+    ExExpr::new(expr.gather(indices_expr.clone_inner(), false))
 }
 
 #[rustler::nif]
@@ -270,7 +270,7 @@ pub fn expr_sample_n(
 ) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.sample_n(n.lit(), with_replacement, shuffle, seed))
+    ExExpr::new(expr.sample_n(n.lit(), with_replacement, shuffle_option(shuffle), seed))
 }
 
 #[rustler::nif]
@@ -283,7 +283,7 @@ pub fn expr_sample_frac(
 ) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.sample_frac(frac.lit(), with_replacement, shuffle, seed))
+    ExExpr::new(expr.sample_frac(frac.lit(), with_replacement, shuffle_option(shuffle), seed))
 }
 
 #[rustler::nif]
@@ -481,7 +481,7 @@ pub fn expr_median(expr: ExExpr) -> ExExpr {
 pub fn expr_mode(expr: ExExpr) -> ExExpr {
     let expr = expr.clone_inner();
 
-    ExExpr::new(expr.mode())
+    ExExpr::new(expr.mode(false))
 }
 
 #[rustler::nif]
@@ -1211,7 +1211,11 @@ pub fn expr_struct(ex_exprs: Vec<ExExpr>) -> ExExpr {
 
 #[rustler::nif]
 pub fn expr_over(left: ExExpr, groups: Vec<ExExpr>) -> ExExpr {
-    let expr = left.clone_inner().over(groups);
+    // `Expr::over` only fails when no partition is given, which is never the case here.
+    let expr = left
+        .clone_inner()
+        .over(groups)
+        .expect("partition_by is always given");
     ExExpr::new(expr)
 }
 

@@ -93,10 +93,18 @@ defmodule Explorer.DataFrame.CSVTest do
 
     assert text
            |> DF.load_csv!(dtypes: types)
+           |> DF.to_columns() == %{
+             " dob" => [" 01/02/1970", " 03/04/1990"],
+             "first_name " => ["Alice ", "Billy "],
+             " last_name " => [" Ant ", " Bat "]
+           }
+
+    assert text
+           |> DF.load_csv!(dtypes: types)
            |> DF.to_columns(atom_keys: true) == %{
-             dob: [" 01/02/1970", " 03/04/1990"],
-             first_name: ["Alice ", "Billy "],
-             last_name: [" Ant ", " Bat "]
+             " dob": [" 01/02/1970", " 03/04/1990"],
+             "first_name ": ["Alice ", "Billy "],
+             " last_name ": [" Ant ", " Bat "]
            }
   end
 

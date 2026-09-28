@@ -461,7 +461,7 @@ pub fn s_from_list_of_series_as_structs(
         .map(|c| Column::from(c.clone_inner()))
         .collect();
 
-    let df = DataFrame::new(columns).unwrap();
+    let df = DataFrame::new_infer_height(columns).unwrap();
 
     df.into_struct(name.into())
         .into_series()

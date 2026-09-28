@@ -24,7 +24,7 @@ pub fn lf_from_parquet(
         vec![all().as_expr()]
     };
 
-    let path = PlPath::from_str(filename);
+    let path = PlRefPath::new(filename);
     let lf = LazyFrame::scan_parquet(path, options)?.select(cols);
 
     Ok(ExLazyFrame::new(lf))
@@ -49,10 +49,10 @@ pub fn lf_from_parquet_cloud(
         vec![all().as_expr()]
     };
 
-    let path = PlPath::from_string(ex_entry.to_string());
+    let path = PlRefPath::new(ex_entry.to_string());
     let lf = LazyFrame::scan_parquet(path, options)?
         .with_comm_subplan_elim(false)
-        .with_new_streaming(true)
+        .with_streaming(true)
         .select(cols);
 
     Ok(ExLazyFrame::new(lf))
@@ -90,17 +90,23 @@ pub fn lf_to_parquet(
             ..Default::default()
         };
 
-        let sink_target = SinkTarget::Path(PlPath::from_str(filename));
+        let sink_target = SinkTarget::Path(PlRefPath::new(filename));
 
-        let sink_options = SinkOptions {
+        let sink_args = UnifiedSinkArgs {
             maintain_order: false,
             ..Default::default()
         };
 
         let _ = lf
             .with_comm_subplan_elim(false)
-            .sink_parquet(sink_target, parquet_write_options, None, sink_options)?
-            .collect();
+            .sink(
+                SinkDestination::File {
+                    target: sink_target,
+                },
+                FileWriteFormat::Parquet(Arc::new(parquet_write_options)),
+                sink_args,
+            )?
+            .collect_with_engine(Engine::Streaming);
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -124,7 +130,7 @@ pub fn lf_to_parquet_cloud(
     ex_compression: ExParquetCompression,
 ) -> Result<(), ExplorerError> {
     let lf = data.clone_inner();
-    let cloud_options = Some(ex_entry.config.to_cloud_options());
+    let cloud_options = Some(Arc::new(ex_entry.config.to_cloud_options()));
     let compression = ParquetCompression::try_from(ex_compression)?;
 
     let options = ParquetWriteOptions {
@@ -134,17 +140,24 @@ pub fn lf_to_parquet_cloud(
         data_page_size: None,
         ..Default::default()
     };
-    let sink_target = SinkTarget::Path(PlPath::from_string(ex_entry.to_string()));
+    let sink_target = SinkTarget::Path(PlRefPath::new(ex_entry.to_string()));
 
-    let sink_options = SinkOptions {
+    let sink_args = UnifiedSinkArgs {
         maintain_order: false,
+        cloud_options,
         ..Default::default()
     };
 
     let _ = lf
         .with_comm_subplan_elim(false)
-        .sink_parquet(sink_target, options, cloud_options, sink_options)?
-        .collect();
+        .sink(
+            SinkDestination::File {
+                target: sink_target,
+            },
+            FileWriteFormat::Parquet(Arc::new(options)),
+            sink_args,
+        )?
+        .collect_with_engine(Engine::Streaming);
     Ok(())
 }
 
@@ -162,7 +175,7 @@ pub fn lf_to_parquet_cloud(
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn lf_from_ipc(filename: &str) -> Result<ExLazyFrame, ExplorerError> {
-    let sink_target = PlPath::from_str(filename);
+    let sink_target = PlRefPath::new(filename);
     let lf = LazyFrame::scan_ipc(sink_target, Default::default(), Default::default())?;
 
     Ok(ExLazyFrame::new(lf))
@@ -190,15 +203,21 @@ pub fn lf_to_ipc(
             compression,
             ..Default::default()
         };
-        let sink_target = SinkTarget::Path(PlPath::from_str(filename));
-        let sink_options = SinkOptions {
+        let sink_target = SinkTarget::Path(PlRefPath::new(filename));
+        let sink_args = UnifiedSinkArgs {
             maintain_order: false,
             ..Default::default()
         };
         let _ = lf
             .with_comm_subplan_elim(false)
-            .sink_ipc(sink_target, options, None, sink_options)?
-            .collect();
+            .sink(
+                SinkDestination::File {
+                    target: sink_target,
+                },
+                FileWriteFormat::Ipc(options),
+                sink_args,
+            )?
+            .collect_with_engine(Engine::Streaming);
         Ok(())
     } else {
         let mut df = lf.collect()?;
@@ -219,7 +238,7 @@ pub fn lf_to_ipc_cloud(
     compression: Option<&str>,
 ) -> Result<(), ExplorerError> {
     let lf = data.clone_inner();
-    let cloud_options = Some(ex_entry.config.to_cloud_options());
+    let cloud_options = Some(Arc::new(ex_entry.config.to_cloud_options()));
     // Select the compression algorithm.
     let compression = match compression {
         Some("lz4") => Some(IpcCompression::LZ4),
@@ -232,15 +251,22 @@ pub fn lf_to_ipc_cloud(
         compression,
         ..Default::default()
     };
-    let sink_target = SinkTarget::Path(PlPath::from_string(ex_entry.to_string()));
-    let sink_options = SinkOptions {
+    let sink_target = SinkTarget::Path(PlRefPath::new(ex_entry.to_string()));
+    let sink_args = UnifiedSinkArgs {
         maintain_order: false,
+        cloud_options,
         ..Default::default()
     };
     let _ = lf
         .with_comm_subplan_elim(false)
-        .sink_ipc(sink_target, options, cloud_options, sink_options)?
-        .collect();
+        .sink(
+            SinkDestination::File {
+                target: sink_target,
+            },
+            FileWriteFormat::Ipc(options),
+            sink_args,
+        )?
+        .collect_with_engine(Engine::Streaming);
 
     Ok(())
 }
@@ -268,7 +294,7 @@ pub fn lf_from_csv(
         _ => CsvEncoding::Utf8,
     };
 
-    let path = PlPath::from_str(filename);
+    let path = PlRefPath::new(filename);
 
     let df = LazyCsvReader::new(path)
         .with_infer_schema_length(infer_schema_length)
@@ -309,20 +335,29 @@ pub fn lf_to_csv(
 
         let options = CsvWriterOptions {
             include_header: include_headers,
-            serialize_options,
+            // We don't validate the file extension against the compression.
+            check_extension: false,
+            serialize_options: Arc::new(serialize_options),
             ..Default::default()
         };
-        let sink_target = SinkTarget::Path(PlPath::from_str(filename));
-        let sink_options = SinkOptions {
+        let sink_target = SinkTarget::Path(PlRefPath::new(filename));
+        let sink_args = UnifiedSinkArgs {
             maintain_order: true,
             mkdir: true,
             sync_on_close: sync_on_close::SyncOnCloseType::None,
+            ..Default::default()
         };
 
         let _ = lf
             .with_comm_subplan_elim(false)
-            .sink_csv(sink_target, options, None, sink_options)?
-            .collect();
+            .sink(
+                SinkDestination::File {
+                    target: sink_target,
+                },
+                FileWriteFormat::Csv(options),
+                sink_args,
+            )?
+            .collect_with_engine(Engine::Streaming);
 
         Ok(())
     } else {
@@ -350,7 +385,7 @@ pub fn lf_from_ndjson(
         "\"batch_size\" expected to be non zero.".to_string(),
     ))?;
 
-    let path = PlPath::from_str(&filename);
+    let path = PlRefPath::new(filename);
 
     let lf = LazyJsonLineReader::new(path)
         .with_infer_schema_length(infer_schema_length.and_then(NonZeroUsize::new))

@@ -1,6 +1,6 @@
 use crate::ExplorerError;
 use object_store::path::Path;
-use object_store::{ObjectMeta, ObjectStore};
+use object_store::{ObjectMeta, ObjectStore, ObjectStoreExt};
 use std::sync::Arc;
 
 use object_store::buffered::BufWriter as OSBufWriter;

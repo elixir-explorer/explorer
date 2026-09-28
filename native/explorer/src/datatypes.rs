@@ -3,7 +3,10 @@ mod ex_dtypes;
 use crate::atoms;
 use crate::ExplorerError;
 use chrono::prelude::*;
+// Both preludes export a `TimeZone`, so we import Chrono's trait explicitly.
+use chrono::TimeZone;
 
+use polars::polars_utils::compression::{BrotliLevel, GzipLevel, ZstdLevel};
 #[cfg(feature = "cloud")]
 use polars::prelude::cloud::CloudOptions;
 use polars::prelude::*;
