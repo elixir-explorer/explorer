@@ -22,7 +22,7 @@ defmodule Explorer.PolarsBackend.DataFrame do
   @impl true
   def from_query(conn, query, params) do
     adbc_result =
-      Adbc.Connection.query_pointer(conn, query, params, fn pointer ->
+      Adbc.Connection.query_pointer(conn, query, params, fn %Adbc.StreamResult{pointer: pointer} ->
         Explorer.PolarsBackend.Native.df_from_arrow_stream_pointer(pointer)
       end)
 
