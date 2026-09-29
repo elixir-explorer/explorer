@@ -205,6 +205,11 @@ defmodule Explorer.PolarsBackend.Expression do
     Native.expr_fill_missing_with_strategy(expr, Atom.to_string(strategy))
   end
 
+  # A series of size 1 is how Explorer passes a plain value, such as the `1` in `a + 1`.
+  def to_expr(%LazySeries{op: :from_list, args: [[value], dtype]}) do
+    scalar_expr(value, dtype)
+  end
+
   def to_expr(%LazySeries{op: :from_list, args: [list, dtype]}) do
     series = Explorer.PolarsBackend.Shared.from_list(list, dtype)
     Native.expr_series(series)
@@ -351,8 +356,12 @@ defmodule Explorer.PolarsBackend.Expression do
   def to_expr(%DateTime{} = datetime), do: Native.expr_datetime(datetime)
   def to_expr(%Explorer.Duration{} = duration), do: Native.expr_duration(duration)
 
-  def to_expr(%Explorer.Series{data: %PolarsSeries{} = polars_series}),
-    do: Native.expr_series(polars_series)
+  def to_expr(%Explorer.Series{data: %PolarsSeries{} = polars_series, dtype: dtype} = series) do
+    case Explorer.Series.size(series) do
+      1 -> series |> Explorer.Series.at(0) |> scalar_expr(dtype)
+      _size -> Native.expr_series(polars_series)
+    end
+  end
 
   def to_expr(%_{} = struct),
     do: raise("unsupported struct in expression: #{inspect(struct)}")
@@ -378,4 +387,36 @@ defmodule Explorer.PolarsBackend.Expression do
 
   defp dtype(%LazySeries{dtype: dtype}), do: dtype
   defp dtype(%Explorer.Series{dtype: dtype}), do: dtype
+
+  # Polars broadcasts a literal over the groups of a grouped dataframe, as one value
+  # per group, only when the literal is a scalar. A series literal is not a scalar,
+  # even when its size is 1. Values that have no scalar literal are lowered as the
+  # first value of a series literal, which Polars also takes as one value per group.
+  defp scalar_expr(value, dtype) do
+    if scalar_literal?(value) do
+      expr = to_expr(value)
+
+      if Explorer.Shared.dtype_from_list!([value]) == dtype,
+        do: expr,
+        else: Native.expr_cast(expr, dtype)
+    else
+      [value]
+      |> Explorer.PolarsBackend.Shared.from_list(dtype)
+      |> Native.expr_series()
+      |> Native.expr_first()
+    end
+  end
+
+  @min_s64 -Bitwise.bsl(1, 63)
+  @max_s64 Bitwise.bsl(1, 63) - 1
+
+  defp scalar_literal?(value) when is_integer(value), do: value in @min_s64..@max_s64
+  defp scalar_literal?(value) when is_float(value), do: true
+  defp scalar_literal?(value) when is_binary(value), do: true
+  defp scalar_literal?(value) when is_atom(value), do: true
+  defp scalar_literal?(%Date{}), do: true
+  defp scalar_literal?(%NaiveDateTime{}), do: true
+  defp scalar_literal?(%DateTime{}), do: true
+  defp scalar_literal?(%Explorer.Duration{}), do: true
+  defp scalar_literal?(_value), do: false
 end
