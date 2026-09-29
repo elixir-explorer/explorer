@@ -309,6 +309,60 @@ defmodule Explorer.DataFrame.GroupedTest do
     end
   end
 
+  describe "summarise/2 with plain values" do
+    test "returns a scalar per group for arithmetic and comparisons with plain values" do
+      df = DF.new(a: [1, 2, 4], b: ["x", "y", "z"], c: [1, 1, 2])
+
+      df1 =
+        df
+        |> DF.group_by(:c, stable: true)
+        |> DF.summarise(
+          plus: sum(a) + 1,
+          times: mean(a) * 2,
+          greater: sum(a) > 3,
+          equal: first(b) == "x"
+        )
+
+      assert DF.dtypes(df1) == %{
+               "c" => {:s, 64},
+               "plus" => {:s, 64},
+               "times" => {:f, 64},
+               "greater" => :boolean,
+               "equal" => :boolean
+             }
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               c: [1, 2],
+               plus: [4, 5],
+               times: [3.0, 8.0],
+               greater: [false, true],
+               equal: [true, false]
+             }
+    end
+  end
+
+  describe "summarise/2 with if/2" do
+    test "returns a scalar per group when the branches are aggregations and scalars" do
+      df = DF.new(a: [1, 2, 3], w: [1, 0, 0], c: [1, 1, 2])
+
+      df1 =
+        df
+        |> DF.group_by(:c, stable: true)
+        |> DF.summarise(
+          total: if(sum(w) == 0, do: nil, else: sum(w)),
+          weighted: sum(a * w) / if(sum(w) == 0, do: nil, else: sum(w))
+        )
+
+      assert DF.dtypes(df1) == %{"c" => {:s, 64}, "total" => {:s, 64}, "weighted" => {:f, 64}}
+
+      assert DF.to_columns(df1, atom_keys: true) == %{
+               c: [1, 2],
+               total: [1, nil],
+               weighted: [1.0, nil]
+             }
+    end
+  end
+
   describe "summarise_with/2" do
     test "with one group and one column with aggregations", %{df: df} do
       df1 =
@@ -561,6 +615,42 @@ defmodule Explorer.DataFrame.GroupedTest do
       assert df2.names == ["a", "b", "c", "d"]
       assert df2.dtypes == %{"a" => {:s, 64}, "b" => :string, "c" => {:s, 64}, "d" => {:f, 64}}
       assert df2.groups.columns == ["c"]
+    end
+
+    test "broadcasts scalar branches of if/2 when there is a group" do
+      df = DF.new(a: [1, 2, 4], c: [1, 1, 2])
+
+      df1 = DF.group_by(df, :c)
+
+      df2 =
+        DF.mutate(df1,
+          d: if(a > 1, do: 1, else: 0),
+          e: if(a > 1, do: "big", else: "small"),
+          f: if(sum(a) > 3, do: sum(a), else: nil)
+        )
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 4],
+               c: [1, 1, 2],
+               d: [0, 1, 1],
+               e: ["small", "big", "big"],
+               f: [nil, nil, 4]
+             }
+
+      assert df2.groups.columns == ["c"]
+    end
+
+    test "broadcasts a series of size 1 given to coalesce/2 when there is a group" do
+      df = DF.new(a: [1, 2, 3], c: [1, 1, 2])
+
+      df1 = DF.group_by(df, :c)
+      df2 = DF.mutate(df1, d: coalesce(shift(a, 1), Series.from_list([0])))
+
+      assert DF.to_columns(df2, atom_keys: true) == %{
+               a: [1, 2, 3],
+               c: [1, 1, 2],
+               d: [0, 1, 0]
+             }
     end
   end
 

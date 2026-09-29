@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Plain values in expressions on grouped dataframes, such as the branches of `if`
+  or the `1` in `sum(a) + 1`, are broadcast to every group again. Since v0.12.0 they were
+  given to Polars as series literals of size 1, which Polars does not broadcast over groups,
+  so `mutate/2` raised on mismatched lengths and `summarise/2` returned lists.
+
 ## [v0.13.0] - 2026-09-28
 
 ### Added
