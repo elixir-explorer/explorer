@@ -242,7 +242,7 @@ pub fn df_sample_frac(
     Ok(ExDataFrame::new(new_df))
 }
 
-#[rustler::nif]
+#[rustler::nif(schedule = "DirtyIo")]
 fn df_from_arrow_stream_pointer(stream_ptr: u64) -> Result<ExDataFrame, ExplorerError> {
     let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
     let stream_ref = unsafe { stream_ptr.as_mut() }
