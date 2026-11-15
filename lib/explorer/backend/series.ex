@@ -365,6 +365,7 @@ defmodule Explorer.Backend.Series do
     %Explorer.Series{data: data, dtype: dtype}
   end
 
+  @default_limit 50
   alias Inspect.Algebra, as: A
   alias Explorer.Series
 
@@ -374,6 +375,7 @@ defmodule Explorer.Backend.Series do
   def inspect(series, backend, n_rows, inspect_opts, opts \\ [])
       when is_binary(backend) and (is_integer(n_rows) or is_nil(n_rows) or is_binary(n_rows)) and
              is_list(opts) do
+    inspect_opts = %{inspect_opts | limit: @default_limit}
     open = A.color("[", :list, inspect_opts)
     close = A.color("]", :list, inspect_opts)
 
