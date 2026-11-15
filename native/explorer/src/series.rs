@@ -1,7 +1,7 @@
 use crate::{
     datatypes::{
         ex_naive_datetime_to_timestamp, ExCorrelationMethod, ExDate, ExDecimal, ExNaiveDateTime,
-        ExRankMethod, ExSeriesDtype, ExTime, ExTimeUnit, ExValidValue,
+        ExNullBehavior, ExRankMethod, ExSeriesDtype, ExTime, ExTimeUnit, ExValidValue,
     },
     encoding, ExDataFrame, ExSeries, ExplorerError,
 };
@@ -1011,6 +1011,15 @@ pub fn s_skew(env: Env, s: ExSeries, bias: bool) -> Result<Term, ExplorerError> 
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_kurtosis(env: Env, s: ExSeries, fisher: bool, bias: bool) -> Result<Term, ExplorerError> {
+    if is_numeric(s.dtype()) {
+        Ok(term_from_optional_float(s.kurtosis(fisher, bias)?, env))
+    } else {
+        panic!("kurtosis/2 not implemented for {:?}", &s.dtype())
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn s_correlation(
     env: Env,
     s1: ExSeries,
@@ -1429,6 +1438,36 @@ pub fn s_contains(s1: ExSeries, pattern: &str, literal: bool) -> Result<ExSeries
         s1.str()?.contains(pattern, true)?
     };
     Ok(ExSeries::new(chunked_array.into()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_starts_with(s: ExSeries, prefix: &str) -> Result<ExSeries, ExplorerError> {
+    let series = s
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s.name().clone()).str().starts_with(prefix.lit())])
+        .collect()?
+        .column(s.name())?
+        .as_materialized_series()
+        .clone();
+
+    Ok(ExSeries::new(series))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_ends_with(s: ExSeries, suffix: &str) -> Result<ExSeries, ExplorerError> {
+    let series = s
+        .clone_inner()
+        .into_frame()
+        .lazy()
+        .select([col(s.name().clone()).str().ends_with(suffix.lit())])
+        .collect()?
+        .column(s.name())?
+        .as_materialized_series()
+        .clone();
+
+    Ok(ExSeries::new(series))
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
@@ -1995,6 +2034,47 @@ pub fn s_row_index(series: ExSeries) -> Result<ExSeries, ExplorerError> {
 pub fn s_rle_id(series: ExSeries) -> Result<ExSeries, ExplorerError> {
     let column = polars_ops::prelude::rle_id(&series.clone_inner().into_column())?;
     Ok(ExSeries::new(column.take_materialized_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_is_unique(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let unique = polars_ops::prelude::is_unique(&series.clone_inner())?;
+    Ok(ExSeries::new(unique.into_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_is_duplicated(series: ExSeries) -> Result<ExSeries, ExplorerError> {
+    let duplicated = polars_ops::prelude::is_duplicated(&series.clone_inner())?;
+    Ok(ExSeries::new(duplicated.into_series()))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_diff(
+    series: ExSeries,
+    n: i64,
+    null_behavior: ExNullBehavior,
+) -> Result<ExSeries, ExplorerError> {
+    let diffed = polars_ops::prelude::diff(&series.clone_inner(), n, null_behavior.into())?;
+    Ok(ExSeries::new(diffed))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_sign(s: ExSeries) -> Result<ExSeries, ExplorerError> {
+    if is_numeric(s.dtype()) {
+        let series = s
+            .clone_inner()
+            .into_frame()
+            .lazy()
+            .select([col(s.name().clone()).sign()])
+            .collect()?
+            .column(s.name())?
+            .as_materialized_series()
+            .clone();
+
+        Ok(ExSeries::new(series))
+    } else {
+        panic!("sign/1 not implemented for {:?}", &s.dtype())
+    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]

@@ -94,9 +94,15 @@ defmodule Explorer.PolarsBackend.LazyFrame do
   # IO
 
   @impl true
-  def from_query(conn, query, params) do
-    with {:ok, df} <- Eager.from_query(conn, query, params) do
-      {:ok, Eager.lazy(df)}
+  if Code.ensure_loaded?(Adbc) do
+    def from_query(conn, query, params) do
+      with {:ok, df} <- Eager.from_query(conn, query, params) do
+        {:ok, Eager.lazy(df)}
+      end
+    end
+  else
+    def from_query(_conn, _query, _params) do
+      raise "you must install :adbc as a dependency in order to use from_query/3"
     end
   end
 

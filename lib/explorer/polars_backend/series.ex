@@ -237,6 +237,10 @@ defmodule Explorer.PolarsBackend.Series do
     do: Shared.apply_series(series, :s_skew, [bias?])
 
   @impl true
+  def kurtosis(series, fisher?, bias?),
+    do: Shared.apply_series(series, :s_kurtosis, [fisher?, bias?])
+
+  @impl true
   def correlation(left, right, method),
     do: Shared.apply_series(matching_size!(left, right), :s_correlation, [right.data, method])
 
@@ -255,6 +259,16 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def rle_id(series), do: Shared.apply_series(series, :s_rle_id)
+
+  @impl true
+  def is_unique(series), do: Shared.apply_series(series, :s_is_unique)
+
+  @impl true
+  def is_duplicated(series), do: Shared.apply_series(series, :s_is_duplicated)
+
+  @impl true
+  def diff(series, n, null_behavior),
+    do: Shared.apply_series(series, :s_diff, [n, null_behavior])
 
   # Cumulative
 
@@ -390,6 +404,9 @@ defmodule Explorer.PolarsBackend.Series do
 
   @impl true
   def abs(%Series{} = s), do: Shared.apply_series(s, :s_abs, [])
+
+  @impl true
+  def sign(%Series{} = s), do: Shared.apply_series(s, :s_sign, [])
 
   @impl true
   def clip(%Series{dtype: dtype} = s, min, max)
@@ -698,6 +715,14 @@ defmodule Explorer.PolarsBackend.Series do
   @impl true
   def contains(series, substring),
     do: Shared.apply_series(series, :s_contains, [substring, true])
+
+  @impl true
+  def starts_with(series, prefix),
+    do: Shared.apply_series(series, :s_starts_with, [prefix])
+
+  @impl true
+  def ends_with(series, suffix),
+    do: Shared.apply_series(series, :s_ends_with, [suffix])
 
   @impl true
   def re_contains(series, pattern),

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added `Explorer.Series.starts_with/2` and `Explorer.Series.ends_with/2`, which
+  detect literal prefixes and suffixes without needing a regular expression.
+- Added `Explorer.Series.is_unique/1` and `Explorer.Series.is_duplicated/1`, which
+  return a boolean mask marking the values that appear exactly once or more than once.
+- Added `Explorer.Series.diff/2`, which calculates the difference between
+  consecutive values, with `:n` and `:null_behavior` options.
+- Added `Explorer.Series.kurtosis/2`, which computes the sample kurtosis of a
+  series, with `:fisher` and `:bias` options.
+- Added `Explorer.Series.sign/1`, which returns the sign of each value in a series.
+
 ## [v0.13.0] - 2026-09-28
 
 ### Added

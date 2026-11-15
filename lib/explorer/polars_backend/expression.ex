@@ -43,6 +43,9 @@ defmodule Explorer.PolarsBackend.Expression do
     equal: 2,
     exp: 1,
     abs: 1,
+    sign: 1,
+    is_unique: 1,
+    is_duplicated: 1,
     fill_missing_with_value: 2,
     first: 1,
     format: 1,
@@ -102,6 +105,8 @@ defmodule Explorer.PolarsBackend.Expression do
     sample_frac: 5,
     exp: 1,
     skew: 2,
+    kurtosis: 3,
+    diff: 3,
     round: 2,
     clip_float: 3,
     clip_integer: 3,
@@ -140,6 +145,8 @@ defmodule Explorer.PolarsBackend.Expression do
 
     # Strings
     contains: 2,
+    starts_with: 2,
+    ends_with: 2,
     re_contains: 2,
     replace: 3,
     re_replace: 3,

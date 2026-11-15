@@ -2916,6 +2916,62 @@ defmodule Explorer.Series do
     do: dtype_error("skew/2", dtype, @numeric_dtypes)
 
   @doc """
+  Compute the sample kurtosis of a series.
+
+  Kurtosis measures how much of the distribution's variance comes from
+  infrequent, extreme deviations rather than frequent, modest ones.
+
+  ## Options
+
+    * `:fisher` - If `true` (the default), Fisher's definition is used, which
+      subtracts 3 so that a normal distribution has a kurtosis of `0.0`. If
+      `false`, Pearson's definition is used and a normal distribution has a
+      kurtosis of `3.0`.
+
+    * `:bias` - If `false`, the calculation is corrected for statistical bias.
+      Defaults to `true`.
+
+  ## Supported dtypes
+
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backticks: true)}
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5, 23])
+      iex> Explorer.Series.kurtosis(s)
+      0.9945668771797536
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5, 23])
+      iex> Explorer.Series.kurtosis(s, fisher: false)
+      3.9945668771797536
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, 4, 5, 23])
+      iex> Explorer.Series.kurtosis(s, bias: false)
+      5.400820058440949
+
+      iex> s = Explorer.Series.from_list([1, 2, 3, nil, 1])
+      iex> Explorer.Series.kurtosis(s)
+      -1.371900826446281
+
+      iex> s = Explorer.Series.from_list([true, false, true])
+      iex> Explorer.Series.kurtosis(s)
+      ** (ArgumentError) Explorer.Series.kurtosis/2 not implemented for dtype :boolean. Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
+  """
+  @doc type: :aggregation
+  @spec kurtosis(series :: Series.t(), opts :: Keyword.t()) ::
+          float() | non_finite() | lazy_t() | nil
+  def kurtosis(series, opts \\ [])
+
+  def kurtosis(%Series{dtype: dtype} = series, opts) when is_numeric_dtype(dtype) do
+    opts = Keyword.validate!(opts, fisher: true, bias: true)
+    apply_series(series, :kurtosis, [opts[:fisher], opts[:bias]])
+  end
+
+  def kurtosis(%Series{dtype: dtype}, _),
+    do: dtype_error("kurtosis/2", dtype, @numeric_dtypes)
+
+  @doc """
   Compute the correlation between two series.
 
   The parameter `:method` refers to the correlation method. The following methods are available:
@@ -3155,6 +3211,168 @@ defmodule Explorer.Series do
 
   def rle_id(%Series{} = series),
     do: apply_series(series, :rle_id)
+
+  @doc """
+  Returns a boolean mask marking the values that appear exactly once.
+
+  See `is_duplicated/1` for the inverse, and `distinct/1` if you want the
+  distinct values themselves rather than a mask.
+
+  ## Supported dtypes
+
+  All except `:list` and `:struct`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 2, 3])
+      iex> Explorer.Series.is_unique(s)
+      #Explorer.Series<
+        Polars[4]
+        boolean [true, false, false, true]
+      >
+
+  `nil` is treated as a value, so repeated `nil`s are not unique:
+
+      iex> s = Explorer.Series.from_list(["a", nil, "b", nil])
+      iex> Explorer.Series.is_unique(s)
+      #Explorer.Series<
+        Polars[4]
+        boolean [true, false, true, false]
+      >
+  """
+  @doc type: :element_wise
+  @spec is_unique(series :: Series.t()) :: Series.t()
+  def is_unique(%Series{dtype: {composite, _} = dtype}) when K.in(composite, [:list, :struct]),
+    do: dtype_error("is_unique/1", dtype, Shared.dtypes() -- [{:list, :any}, {:struct, :any}])
+
+  def is_unique(%Series{} = series),
+    do: apply_series(series, :is_unique)
+
+  @doc """
+  Returns a boolean mask marking the values that appear more than once.
+
+  This is the inverse of `is_unique/1`, and is useful for inspecting the
+  duplicated rows that `distinct/1` would collapse.
+
+  ## Supported dtypes
+
+  All except `:list` and `:struct`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 2, 2, 3])
+      iex> Explorer.Series.is_duplicated(s)
+      #Explorer.Series<
+        Polars[4]
+        boolean [false, true, true, false]
+      >
+
+  Combined with `Explorer.DataFrame.filter_with/2`, this keeps only the rows
+  whose key occurs more than once:
+
+      iex> require Explorer.DataFrame, as: DF
+      iex> df = DF.new(id: ["a", "b", "a", "c"])
+      iex> DF.filter(df, is_duplicated(id))
+      #Explorer.DataFrame<
+        Polars[2 x 1]
+        id string ["a", "a"]
+      >
+  """
+  @doc type: :element_wise
+  @spec is_duplicated(series :: Series.t()) :: Series.t()
+  def is_duplicated(%Series{dtype: {composite, _} = dtype})
+      when K.in(composite, [:list, :struct]),
+      do:
+        dtype_error(
+          "is_duplicated/1",
+          dtype,
+          Shared.dtypes() -- [{:list, :any}, {:struct, :any}]
+        )
+
+  def is_duplicated(%Series{} = series),
+    do: apply_series(series, :is_duplicated)
+
+  @doc """
+  Calculates the difference between consecutive values.
+
+  Because this function depends on the order of the rows, it may be necessary
+  to sort your data frame prior to running this function to get the results
+  that you desire. When used inside `Explorer.DataFrame.mutate/2` on a grouped
+  data frame, the difference is calculated within each group.
+
+  Subtracting temporal values yields a duration: `:date` becomes
+  `{:duration, :microsecond}`, `:time` becomes `{:duration, :nanosecond}`, and
+  datetimes become a duration of the same precision. Unsigned integers are
+  widened to a signed integer so that negative differences are representable.
+
+  ## Options
+
+    * `:n` - The number of rows to look back. Defaults to `1`. A negative
+      value looks forward instead.
+
+    * `:null_behavior` - What to do with the `n` values that have no
+      predecessor. `:ignore` (the default) leaves them as `nil`, keeping the
+      series the same length. `:drop` removes them, which makes the series
+      shorter and therefore cannot be used inside `Explorer.DataFrame.mutate/2`.
+
+  ## Supported dtypes
+
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backticks: true)}
+    * `:date`
+    * `:time`
+    * `:datetime`
+    * `:duration`
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([1, 3, 6, 10])
+      iex> Explorer.Series.diff(s)
+      #Explorer.Series<
+        Polars[4]
+        s64 [nil, 2, 3, 4]
+      >
+
+  Look back further with `:n`:
+
+      iex> s = Explorer.Series.from_list([1, 3, 6, 10])
+      iex> Explorer.Series.diff(s, n: 2)
+      #Explorer.Series<
+        Polars[4]
+        s64 [nil, nil, 5, 7]
+      >
+
+  Drop the leading `nil`s instead of keeping them:
+
+      iex> s = Explorer.Series.from_list([1, 3, 6, 10])
+      iex> Explorer.Series.diff(s, null_behavior: :drop)
+      #Explorer.Series<
+        Polars[3]
+        s64 [2, 3, 4]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.diff(s)
+      ** (ArgumentError) Explorer.Series.diff/2 not implemented for dtype :string. Valid dtypes are :date, :time, {:duration, :microsecond}, {:duration, :millisecond}, {:duration, :nanosecond}, {:f, 32}, {:f, 64}, {:naive_datetime, :microsecond}, {:naive_datetime, :millisecond}, {:naive_datetime, :nanosecond}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
+  """
+  @doc type: :window
+  @spec diff(series :: Series.t(), opts :: Keyword.t()) :: Series.t()
+  def diff(series, opts \\ [])
+
+  def diff(%Series{dtype: dtype} = series, opts) when is_numeric_or_temporal_dtype(dtype) do
+    opts = Keyword.validate!(opts, n: 1, null_behavior: :ignore)
+
+    if K.in(opts[:null_behavior], [:ignore, :drop]) do
+      apply_series(series, :diff, [opts[:n], opts[:null_behavior]])
+    else
+      raise ArgumentError,
+            "expected :null_behavior to be :ignore or :drop, " <>
+              "got: #{inspect(opts[:null_behavior])}"
+    end
+  end
+
+  def diff(%Series{dtype: dtype}, _),
+    do: dtype_error("diff/2", dtype, @numeric_or_temporal_dtypes)
 
   # Cumulative
 
@@ -5743,6 +5961,46 @@ defmodule Explorer.Series do
   def abs(%Series{dtype: dtype}),
     do: dtype_error("abs/1", dtype, @numeric_dtypes)
 
+  @doc """
+  Returns the sign of each value in the series.
+
+  The sign is `-1` for negative values, `0` for zero and `1` for positive
+  values. `nil` values are preserved, and the result keeps the dtype of the
+  input series.
+
+  ## Supported dtypes
+
+    * floats: #{Shared.inspect_dtypes(@float_dtypes, backticks: true)}
+    * integers: #{Shared.inspect_dtypes(@integer_types, backticks: true)}
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list([-3, 0, 4])
+      iex> Explorer.Series.sign(s)
+      #Explorer.Series<
+        Polars[3]
+        s64 [-1, 0, 1]
+      >
+
+      iex> s = Explorer.Series.from_list([-3.0, 0.0, 4.5, nil])
+      iex> Explorer.Series.sign(s)
+      #Explorer.Series<
+        Polars[4]
+        f64 [-1.0, 0.0, 1.0, nil]
+      >
+
+      iex> s = Explorer.Series.from_list(["a", "b", "c"])
+      iex> Explorer.Series.sign(s)
+      ** (ArgumentError) Explorer.Series.sign/1 not implemented for dtype :string. Valid dtypes are {:f, 32}, {:f, 64}, {:s, 8}, {:s, 16}, {:s, 32}, {:s, 64}, {:u, 8}, {:u, 16}, {:u, 32} and {:u, 64}
+  """
+  @doc type: :element_wise
+  @spec sign(series :: Series.t()) :: Series.t()
+  def sign(%Series{dtype: dtype} = series) when is_numeric_dtype(dtype),
+    do: apply_series(series, :sign)
+
+  def sign(%Series{dtype: dtype}),
+    do: dtype_error("sign/1", dtype, @numeric_dtypes)
+
   # Strings
 
   @doc """
@@ -5768,6 +6026,68 @@ defmodule Explorer.Series do
       do: apply_series(series, :contains, [substring])
 
   def contains(%Series{dtype: dtype}, _), do: dtype_error("contains/2", dtype, [:string])
+
+  @doc """
+  Detects whether a string starts with a prefix.
+
+  > ### Notice {: .warning}
+  >
+  > This function detects only literal strings. For regular expressions, see `re_contains/2`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def", "bcd"])
+      iex> Explorer.Series.starts_with(s, "a")
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, false, false]
+      >
+
+      iex> s = Explorer.Series.from_list(["abc", nil, "bcd"])
+      iex> Explorer.Series.starts_with(s, "bc")
+      #Explorer.Series<
+        Polars[3]
+        boolean [false, nil, true]
+      >
+  """
+  @doc type: :string_wise
+  @spec starts_with(Series.t(), String.t()) :: Series.t()
+  def starts_with(%Series{dtype: :string} = series, prefix)
+      when K.is_binary(prefix),
+      do: apply_series(series, :starts_with, [prefix])
+
+  def starts_with(%Series{dtype: dtype}, _), do: dtype_error("starts_with/2", dtype, [:string])
+
+  @doc """
+  Detects whether a string ends with a suffix.
+
+  > ### Notice {: .warning}
+  >
+  > This function detects only literal strings. For regular expressions, see `re_contains/2`.
+
+  ## Examples
+
+      iex> s = Explorer.Series.from_list(["abc", "def", "bcd"])
+      iex> Explorer.Series.ends_with(s, "d")
+      #Explorer.Series<
+        Polars[3]
+        boolean [false, false, true]
+      >
+
+      iex> s = Explorer.Series.from_list(["abc", nil, "bcd"])
+      iex> Explorer.Series.ends_with(s, "bc")
+      #Explorer.Series<
+        Polars[3]
+        boolean [true, nil, false]
+      >
+  """
+  @doc type: :string_wise
+  @spec ends_with(Series.t(), String.t()) :: Series.t()
+  def ends_with(%Series{dtype: :string} = series, suffix)
+      when K.is_binary(suffix),
+      do: apply_series(series, :ends_with, [suffix])
+
+  def ends_with(%Series{dtype: dtype}, _), do: dtype_error("ends_with/2", dtype, [:string])
 
   @doc """
   Detects whether a string matches a pattern.

@@ -10,6 +10,7 @@ use polars::polars_utils::compression::{BrotliLevel, GzipLevel, ZstdLevel};
 #[cfg(feature = "cloud")]
 use polars::prelude::cloud::CloudOptions;
 use polars::prelude::*;
+use polars::series::ops::NullBehavior;
 use rustler::{Atom, NifStruct, NifTaggedEnum, Resource, ResourceArc};
 use std::fmt;
 use std::ops::Deref;
@@ -764,6 +765,21 @@ pub enum ExParquetCompression {
 pub enum ExCorrelationMethod {
     Pearson,
     Spearman,
+}
+
+#[derive(NifTaggedEnum)]
+pub enum ExNullBehavior {
+    Ignore,
+    Drop,
+}
+
+impl From<ExNullBehavior> for NullBehavior {
+    fn from(value: ExNullBehavior) -> Self {
+        match value {
+            ExNullBehavior::Ignore => NullBehavior::Ignore,
+            ExNullBehavior::Drop => NullBehavior::Drop,
+        }
+    }
 }
 
 #[derive(NifTaggedEnum)]
