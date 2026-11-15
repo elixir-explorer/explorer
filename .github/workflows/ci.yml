@@ -15,11 +15,13 @@ jobs:
     strategy:
       matrix:
         include:
-          - otp_version: 25.3
-            elixir_version: 1.15
+          - otp_version: "27.3"
+            elixir_version: "1.18"
+            runner: ubuntu-latest
 
-          - otp_version: "27.2"
-            elixir_version: 1.18
+          - otp_version: "29.1"
+            elixir_version: "1.20"
+            runner: ubuntu-latest
 
     runs-on: ubuntu-latest
     name: test
