@@ -89,12 +89,17 @@ defmodule Explorer.Backend.Series do
   @callback nil_count(s) :: number() | lazy_s()
   @callback product(s) :: float() | non_finite() | lazy_s() | nil
   @callback skew(s, bias? :: boolean()) :: float() | non_finite() | lazy_s() | nil
+  @callback kurtosis(s, fisher? :: boolean(), bias? :: boolean()) ::
+              float() | non_finite() | lazy_s() | nil
   @callback correlation(s, s, method :: atom()) :: float() | non_finite() | lazy_s() | nil
   @callback covariance(s, s, ddof :: non_neg_integer()) :: float() | non_finite() | lazy_s() | nil
   @callback all?(s) :: boolean() | lazy_s()
   @callback any?(s) :: boolean() | lazy_s()
   @callback row_index(s) :: s | lazy_s()
   @callback rle_id(s) :: s | lazy_s()
+  @callback is_unique(s) :: s | lazy_s()
+  @callback is_duplicated(s) :: s | lazy_s()
+  @callback diff(s, n :: integer(), null_behavior :: :ignore | :drop) :: s | lazy_s()
 
   # Cumulative
 
@@ -121,6 +126,7 @@ defmodule Explorer.Backend.Series do
   @callback log(argument :: s, base :: float()) :: s
   @callback exp(s) :: s
   @callback abs(s) :: s
+  @callback sign(s) :: s
   @callback clip(s, number(), number()) :: s
 
   # Trigonometry
@@ -300,6 +306,8 @@ defmodule Explorer.Backend.Series do
   # Strings
 
   @callback contains(s, String.t()) :: s
+  @callback starts_with(s, String.t()) :: s
+  @callback ends_with(s, String.t()) :: s
   @callback upcase(s) :: s
   @callback downcase(s) :: s
   @callback replace(s, String.t(), String.t()) :: s

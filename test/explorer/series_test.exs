@@ -6812,6 +6812,265 @@ defmodule Explorer.SeriesTest do
     end
   end
 
+  describe "is_unique/1 and is_duplicated/1" do
+    test "should work with basic data types" do
+      data_types = [
+        {:string, ["a", "b", "b", "c"], [true, false, false, true]},
+        {:integer, [1, 2, 2, 3], [true, false, false, true]},
+        {:boolean, [true, true, false], [false, false, true]},
+        {:date, [~D[2024-01-01], ~D[2024-01-01], ~D[2025-01-01]], [false, false, true]},
+        {:category, ["a", "a", "b"], [false, false, true]},
+        {:u8, [1, 2, 2, 3], [true, false, false, true]}
+      ]
+
+      Enum.each(data_types, fn {dtype, input, expected_output} ->
+        s = Series.from_list(input, dtype: dtype)
+
+        unique = Series.is_unique(s)
+        assert Series.dtype(unique) == :boolean
+        assert Series.to_list(unique) == expected_output
+
+        duplicated = Series.is_duplicated(s)
+        assert Series.dtype(duplicated) == :boolean
+        assert Series.to_list(duplicated) == Enum.map(expected_output, &Kernel.not(&1))
+      end)
+    end
+
+    test "should treat nil as a value" do
+      s = Series.from_list(["a", nil, "b", nil])
+
+      assert Series.to_list(Series.is_unique(s)) == [true, false, true, false]
+      assert Series.to_list(Series.is_duplicated(s)) == [false, true, false, true]
+    end
+
+    test "should work with an empty series" do
+      s = Series.from_list([], dtype: :integer)
+
+      assert Series.to_list(Series.is_unique(s)) == []
+      assert Series.to_list(Series.is_duplicated(s)) == []
+    end
+
+    test "should work inside a filter" do
+      df = DataFrame.new(id: ["a", "b", "a", "c"])
+
+      assert DataFrame.filter_with(df, fn ldf -> Series.is_duplicated(ldf["id"]) end)
+             |> DataFrame.to_columns(atom_keys: true) == %{id: ["a", "a"]}
+    end
+
+    test "should raise for unsupported dtypes" do
+      s = Series.from_list([[1, 2], [3]])
+
+      assert_raise ArgumentError,
+                   ~r/Explorer\.Series\.is_unique\/1 not implemented/,
+                   fn -> Series.is_unique(s) end
+
+      assert_raise ArgumentError,
+                   ~r/Explorer\.Series\.is_duplicated\/1 not implemented/,
+                   fn -> Series.is_duplicated(s) end
+    end
+  end
+
+  describe "sign/1" do
+    test "with signed integers" do
+      s = Series.from_list([-3, 0, 4])
+      signs = Series.sign(s)
+
+      assert Series.dtype(signs) == {:s, 64}
+      assert Series.to_list(signs) == [-1, 0, 1]
+    end
+
+    test "with floats and nil" do
+      s = Series.from_list([-3.0, 0.0, 4.5, nil])
+      signs = Series.sign(s)
+
+      assert Series.dtype(signs) == {:f, 64}
+      assert Series.to_list(signs) == [-1.0, 0.0, 1.0, nil]
+    end
+
+    test "keeps the dtype of the input series" do
+      s = Series.from_list([0, 5], dtype: :u8)
+      signs = Series.sign(s)
+
+      assert Series.dtype(signs) == {:u, 8}
+      assert Series.to_list(signs) == [0, 1]
+    end
+
+    test "should raise for unsupported dtypes" do
+      s = Series.from_list(["a", "b"])
+
+      assert_raise ArgumentError,
+                   ~r/Explorer\.Series\.sign\/1 not implemented for dtype :string/,
+                   fn -> Series.sign(s) end
+    end
+  end
+
+  describe "diff/2" do
+    test "with the default options" do
+      s = Series.from_list([1, 3, 6, 10])
+      diffed = Series.diff(s)
+
+      assert Series.dtype(diffed) == {:s, 64}
+      assert Series.to_list(diffed) == [nil, 2, 3, 4]
+    end
+
+    test "with a custom :n" do
+      s = Series.from_list([1, 3, 6, 10])
+
+      assert Series.to_list(Series.diff(s, n: 2)) == [nil, nil, 5, 7]
+    end
+
+    test "with a negative :n looks forward" do
+      s = Series.from_list([1, 3, 6, 10])
+
+      assert Series.to_list(Series.diff(s, n: -1)) == [-2, -3, -4, nil]
+    end
+
+    test "with null_behavior: :drop" do
+      s = Series.from_list([1, 3, 6, 10])
+      diffed = Series.diff(s, null_behavior: :drop)
+
+      assert Series.size(diffed) == 3
+      assert Series.to_list(diffed) == [2, 3, 4]
+    end
+
+    test "widens unsigned integers to signed integers" do
+      for {dtype, expected_dtype} <- [
+            {:u8, {:s, 16}},
+            {:u16, {:s, 32}},
+            {:u32, {:s, 64}},
+            {:u64, {:s, 64}}
+          ] do
+        s = Series.from_list([1, 3, 6], dtype: dtype)
+        diffed = Series.diff(s)
+
+        assert Series.dtype(diffed) == expected_dtype
+        assert Series.to_list(diffed) == [nil, 2, 3]
+      end
+    end
+
+    test "returns a duration for temporal dtypes" do
+      dates = Series.from_list([~D[2024-01-01], ~D[2024-01-03]])
+      assert Series.dtype(Series.diff(dates)) == {:duration, :microsecond}
+
+      times = Series.from_list([~T[00:00:00.000000], ~T[00:00:01.000000]])
+      assert Series.dtype(Series.diff(times)) == {:duration, :nanosecond}
+
+      datetimes =
+        Series.from_list(
+          [~N[2024-01-01 00:00:00.0], ~N[2024-01-01 00:00:01.0]],
+          dtype: {:naive_datetime, :millisecond}
+        )
+
+      assert Series.dtype(Series.diff(datetimes)) == {:duration, :millisecond}
+    end
+
+    test "should work inside a mutation" do
+      df = DataFrame.new(a: [1, 3, 6, 10])
+
+      assert DataFrame.mutate_with(df, fn ldf -> [delta: Series.diff(ldf["a"])] end)
+             |> DataFrame.to_columns(atom_keys: true) == %{
+               a: [1, 3, 6, 10],
+               delta: [nil, 2, 3, 4]
+             }
+    end
+
+    test "should raise for an invalid :null_behavior" do
+      s = Series.from_list([1, 2, 3])
+
+      assert_raise ArgumentError,
+                   "expected :null_behavior to be :ignore or :drop, got: :boom",
+                   fn -> Series.diff(s, null_behavior: :boom) end
+    end
+
+    test "should raise for unsupported dtypes" do
+      s = Series.from_list(["a", "b"])
+
+      assert_raise ArgumentError,
+                   ~r/Explorer\.Series\.diff\/2 not implemented for dtype :string/,
+                   fn -> Series.diff(s) end
+    end
+  end
+
+  describe "kurtosis/2" do
+    test "with the default options" do
+      s = Series.from_list([1, 2, 3, 4, 5, 23])
+
+      assert Series.kurtosis(s) == 0.9945668771797536
+    end
+
+    test "with fisher: false" do
+      s = Series.from_list([1, 2, 3, 4, 5, 23])
+
+      assert Series.kurtosis(s, fisher: false) == 3.9945668771797536
+    end
+
+    test "with bias: false" do
+      s = Series.from_list([1, 2, 3, 4, 5, 23])
+
+      assert Series.kurtosis(s, bias: false) == 5.400820058440949
+    end
+
+    test "ignores nil values" do
+      s = Series.from_list([1, 2, 3, nil, 1])
+
+      assert Series.kurtosis(s) == -1.371900826446281
+    end
+
+    test "should raise for unsupported dtypes" do
+      s = Series.from_list(["a", "b"])
+
+      assert_raise ArgumentError,
+                   ~r/Explorer\.Series\.kurtosis\/2 not implemented for dtype :string/,
+                   fn -> Series.kurtosis(s) end
+    end
+  end
+
+  describe "starts_with/2 and ends_with/2" do
+    test "detects literal prefixes and suffixes" do
+      s = Series.from_list(["abc", "def", "bcd"])
+
+      assert Series.to_list(Series.starts_with(s, "a")) == [true, false, false]
+      assert Series.to_list(Series.starts_with(s, "bc")) == [false, false, true]
+      assert Series.to_list(Series.ends_with(s, "d")) == [false, false, true]
+      assert Series.to_list(Series.ends_with(s, "bc")) == [true, false, false]
+    end
+
+    test "propagates nil" do
+      s = Series.from_list(["abc", nil, "bcd"])
+
+      assert Series.to_list(Series.starts_with(s, "bc")) == [false, nil, true]
+      assert Series.to_list(Series.ends_with(s, "bc")) == [true, nil, false]
+    end
+
+    test "treats the argument as a literal, not a pattern" do
+      s = Series.from_list(["a.c", "abc"])
+
+      assert Series.to_list(Series.starts_with(s, "a.")) == [true, false]
+    end
+
+    test "should work inside a mutation" do
+      df = DataFrame.new(a: ["apple", "banana"])
+
+      assert DataFrame.mutate_with(df, fn ldf -> [flag: Series.starts_with(ldf["a"], "a")] end)
+             |> DataFrame.to_columns(atom_keys: true) == %{
+               a: ["apple", "banana"],
+               flag: [true, false]
+             }
+    end
+
+    test "should raise for unsupported dtypes" do
+      s = Series.from_list([1, 2])
+
+      assert_raise ArgumentError,
+                   ~r/Explorer\.Series\.starts_with\/2 not implemented for dtype \{:s, 64\}/,
+                   fn -> Series.starts_with(s, "a") end
+
+      assert_raise ArgumentError,
+                   ~r/Explorer\.Series\.ends_with\/2 not implemented for dtype \{:s, 64\}/,
+                   fn -> Series.ends_with(s, "a") end
+    end
+  end
+
   describe "peaks/1" do
     test "max with signed integers" do
       s = Series.from_list([1, 2, 4, 1, 4])

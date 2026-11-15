@@ -55,6 +55,10 @@ defmodule Explorer.Backend.LazySeries do
     cast: 2,
     select: 3,
     abs: 1,
+    sign: 1,
+    is_unique: 1,
+    is_duplicated: 1,
+    diff: 3,
     strptime: 2,
     strftime: 2,
     clip_float: 3,
@@ -122,6 +126,7 @@ defmodule Explorer.Backend.LazySeries do
     nil_count: 1,
     size: 1,
     skew: 2,
+    kurtosis: 3,
     correlation: 3,
     covariance: 3,
     all: 1,
@@ -130,6 +135,8 @@ defmodule Explorer.Backend.LazySeries do
     rle_id: 1,
     # Strings
     contains: 2,
+    starts_with: 2,
+    ends_with: 2,
     re_contains: 2,
     replace: 3,
     re_replace: 3,
@@ -589,6 +596,14 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def kurtosis(%Series{} = series, fisher, bias) do
+    args = [series_or_lazy_series!(series), fisher, bias]
+    data = new(:kurtosis, args, {:f, 64}, true)
+
+    Backend.Series.new(data, {:f, 64})
+  end
+
+  @impl true
   def correlation(%Series{} = left, %Series{} = right, method) do
     args = [series_or_lazy_series!(left), series_or_lazy_series!(right), method]
     data = new(:correlation, args, {:f, 64}, true)
@@ -932,6 +947,13 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def sign(%Series{} = series) do
+    data = new(:sign, [lazy_series!(series)], series.dtype)
+
+    Backend.Series.new(data, series.dtype)
+  end
+
+  @impl true
   def strptime(%Series{} = series, format_string) do
     dtype = {:naive_datetime, :microsecond}
     data = new(:strptime, [lazy_series!(series), format_string], dtype)
@@ -1103,6 +1125,20 @@ defmodule Explorer.Backend.LazySeries do
   end
 
   @impl true
+  def starts_with(series, prefix) do
+    data = new(:starts_with, [lazy_series!(series), prefix], :boolean)
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def ends_with(series, suffix) do
+    data = new(:ends_with, [lazy_series!(series), suffix], :boolean)
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
   def re_contains(series, pattern) do
     data = new(:re_contains, [lazy_series!(series), pattern], :boolean)
 
@@ -1262,6 +1298,52 @@ defmodule Explorer.Backend.LazySeries do
 
     Backend.Series.new(data, {:u, 32})
   end
+
+  @impl true
+  def is_unique(series) do
+    args = [lazy_series!(series)]
+
+    if aggregations?(args), do: raise_agg_inside_window(:is_unique)
+
+    data = new(:is_unique, args, :boolean, false)
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def is_duplicated(series) do
+    args = [lazy_series!(series)]
+
+    if aggregations?(args), do: raise_agg_inside_window(:is_duplicated)
+
+    data = new(:is_duplicated, args, :boolean, false)
+
+    Backend.Series.new(data, :boolean)
+  end
+
+  @impl true
+  def diff(series, n, null_behavior) do
+    args = [lazy_series!(series), n, null_behavior]
+
+    if aggregations?(args), do: raise_agg_inside_window(:diff)
+
+    dtype = diff_dtype(series.dtype)
+    data = new(:diff, args, dtype, false)
+
+    Backend.Series.new(data, dtype)
+  end
+
+  # Mirrors the output dtype that Polars computes for `diff`.
+  defp diff_dtype({:datetime, precision, _time_zone}), do: {:duration, precision}
+  defp diff_dtype({:naive_datetime, precision}), do: {:duration, precision}
+  defp diff_dtype(:date), do: {:duration, :microsecond}
+  defp diff_dtype(:time), do: {:duration, :nanosecond}
+  defp diff_dtype({:u, 64}), do: {:s, 64}
+  defp diff_dtype({:u, 32}), do: {:s, 64}
+  defp diff_dtype({:u, 16}), do: {:s, 32}
+  defp diff_dtype({:u, 8}), do: {:s, 16}
+  defp diff_dtype({:decimal, _precision, scale}), do: {:decimal, 38, scale}
+  defp diff_dtype(dtype), do: dtype
 
   @impl true
   def count_matches(series, substring) do

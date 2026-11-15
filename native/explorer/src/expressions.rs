@@ -5,8 +5,8 @@
 // wrapped in an Elixir struct.
 
 use crate::datatypes::{
-    ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExRankMethod,
-    ExSeriesDtype, ExValidValue,
+    ExCorrelationMethod, ExDate, ExDateTime, ExDuration, ExNaiveDateTime, ExNullBehavior,
+    ExRankMethod, ExSeriesDtype, ExValidValue,
 };
 use crate::series::{cast_str_to_f64, ewm_opts, rolling_opts_fixed_window, shuffle_option};
 use crate::{ExDataFrame, ExExpr, ExSeries};
@@ -526,6 +526,12 @@ pub fn expr_skew(data: ExExpr, bias: bool) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_kurtosis(data: ExExpr, fisher: bool, bias: bool) -> ExExpr {
+    let expr = data.clone_inner();
+    ExExpr::new(expr.kurtosis(fisher, bias))
+}
+
+#[rustler::nif]
 pub fn expr_correlation(left: ExExpr, right: ExExpr, method: ExCorrelationMethod) -> ExExpr {
     let left_expr = left.clone_inner().cast(DataType::Float64);
     let right_expr = right.clone_inner().cast(DataType::Float64);
@@ -787,6 +793,34 @@ pub fn expr_rle_id(expr: ExExpr) -> ExExpr {
 }
 
 #[rustler::nif]
+pub fn expr_sign(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.sign())
+}
+
+#[rustler::nif]
+pub fn expr_is_unique(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.is_unique())
+}
+
+#[rustler::nif]
+pub fn expr_is_duplicated(expr: ExExpr) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.is_duplicated())
+}
+
+#[rustler::nif]
+pub fn expr_diff(expr: ExExpr, n: i64, null_behavior: ExNullBehavior) -> ExExpr {
+    let expr = expr.clone_inner();
+
+    ExExpr::new(expr.diff(lit(n), null_behavior.into()))
+}
+
+#[rustler::nif]
 pub fn expr_sort(
     expr: ExExpr,
     descending: bool,
@@ -854,6 +888,18 @@ pub fn expr_describe_filter_plan(data: ExDataFrame, expr: ExExpr) -> String {
 pub fn expr_contains(expr: ExExpr, pattern: &str) -> ExExpr {
     let expr = expr.clone_inner();
     ExExpr::new(expr.str().contains_literal(pattern.lit()))
+}
+
+#[rustler::nif]
+pub fn expr_starts_with(expr: ExExpr, prefix: &str) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().starts_with(prefix.lit()))
+}
+
+#[rustler::nif]
+pub fn expr_ends_with(expr: ExExpr, suffix: &str) -> ExExpr {
+    let expr = expr.clone_inner();
+    ExExpr::new(expr.str().ends_with(suffix.lit()))
 }
 
 #[rustler::nif]

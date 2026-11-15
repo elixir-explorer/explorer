@@ -50,6 +50,7 @@ features = [
   "cutqcut",
   "decompress",
   "describe",
+  "diff",
   "dtype-full",
   "ewma",
   "extract_groups",
@@ -57,6 +58,7 @@ features = [
   "ipc_streaming",
   "ipc",
   "is_in",
+  "is_unique",
   "lazy",
   "log",
   "mode",
@@ -76,6 +78,7 @@ features = [
   "rolling_window",
   "round_series",
   "rows",
+  "sign",
   "simd",
   "sql",
   "strings",
@@ -90,7 +93,17 @@ features = [
 
 [dependencies.polars-ops]
 version = "0.55"
-features = ["abs", "ewma", "cum_agg", "cov", "index_of", "rle"]
+features = [
+  "abs",
+  "ewma",
+  "cum_agg",
+  "cov",
+  "diff",
+  "index_of",
+  "is_unique",
+  "moment",
+  "rle",
+]
 
 [features]
 default = ["ndjson", "cloud", "nif_version_2_15"]
