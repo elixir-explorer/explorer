@@ -2,6 +2,7 @@ use polars::frame::PivotColumnNaming;
 use polars::prelude::*;
 
 use polars_arrow::ffi;
+use rustler::Env;
 use std::collections::HashMap;
 
 use crate::datatypes::ExSeriesDtype;
@@ -242,21 +243,44 @@ pub fn df_sample_frac(
     Ok(ExDataFrame::new(new_df))
 }
 
+type ArrowStreamReader = ffi::ArrowArrayStreamReader<Box<ffi::ArrowArrayStream>>;
+
+// This NIF runs on a dirty scheduler because reading the stream can take
+// a non trivial amount of time (e.g. an ADBC driver fetching result chunks
+// over the network for example).
+//
+// On a dirty scheduler the calling process can be killed while we are still
+// reading: its links and monitors fire right away, even though this NIF keeps
+// running until it returns. `Adbc.Connection` monitors the caller and, on
+// `:DOWN`, releases the stream and hands the connection to the next queued
+// query. Two things keep that safe:
+//
+//   * The Rust side takes ownership of the stream up front, so ADBC's release
+//     is a no-op instead of freeing the stream while we use it.
+//   * The Rust side stops pulling batches once the caller is gone, so it doesn't
+//     keep using the connection after ADBC has handed it to another process.
 #[rustler::nif(schedule = "DirtyIo")]
-fn df_from_arrow_stream_pointer(stream_ptr: u64) -> Result<ExDataFrame, ExplorerError> {
-    let stream_ptr = stream_ptr as *mut ffi::ArrowArrayStream;
-    let stream_ref = unsafe { stream_ptr.as_mut() }
-        .ok_or(ExplorerError::Other("Incorrect stream pointer".into()))?;
+fn df_from_arrow_stream_pointer(env: Env, stream_ptr: u64) -> Result<ExDataFrame, ExplorerError> {
+    let source = stream_ptr as *mut ffi::ArrowArrayStream;
 
-    let mut res = unsafe { ffi::ArrowArrayStreamReader::try_new(stream_ref) }
-        .map_err(arrow_to_explorer_error)?;
+    if source.is_null() {
+        return Err(ExplorerError::Other("Incorrect stream pointer".into()));
+    }
 
-    let df = match unsafe { res.next() } {
+    // The Arrow C stream interface allows moving a stream by bitwise copy,
+    // leaving a released (empty) stream behind in the producer's struct.
+    // The Rust copy is released exactly once, when `res` is dropped.
+    let owned = Box::new(unsafe { std::ptr::replace(source, ffi::ArrowArrayStream::empty()) });
+
+    let mut res =
+        unsafe { ffi::ArrowArrayStreamReader::try_new(owned) }.map_err(arrow_to_explorer_error)?;
+
+    let df = match next_chunk(env, &mut res)? {
         None => DataFrame::empty(),
         Some(maybe) => {
             let mut acc = array_to_dataframe(maybe)?;
 
-            while let Some(maybe) = unsafe { res.next() } {
+            while let Some(maybe) = next_chunk(env, &mut res)? {
                 let df = array_to_dataframe(maybe)?;
                 acc.vstack_mut(&df)?;
             }
@@ -267,6 +291,20 @@ fn df_from_arrow_stream_pointer(stream_ptr: u64) -> Result<ExDataFrame, Explorer
     };
 
     Ok(ExDataFrame::new(df))
+}
+
+// Pull the next chunk from the stream while the calling process is still alive.
+fn next_chunk(
+    env: Env,
+    res: &mut ArrowStreamReader,
+) -> Result<Option<PolarsResult<Box<dyn polars_arrow::array::Array>>>, ExplorerError> {
+    if unsafe { rustler::sys::enif_is_current_process_alive(env.as_c_arg()) } == 0 {
+        return Err(ExplorerError::Other(
+            "calling process exited while reading the Arrow stream".into(),
+        ));
+    }
+
+    Ok(unsafe { res.next() })
 }
 
 fn array_to_dataframe(
