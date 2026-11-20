@@ -78,6 +78,23 @@ defmodule Explorer.DataFrameTest do
       assert DF.dtypes(df) == %{"floats" => {:f, 64}, "integers" => {:s, 64}}
     end
 
+    test "from empty rows with declared dtypes" do
+      dtypes = [product_family: :category, price: :f64]
+
+      expected =
+        DF.new(for {name, dtype} <- dtypes, do: {name, Series.from_list([], dtype: dtype)})
+
+      for lazy <- [false, true] do
+        df = DF.new([], dtypes: dtypes, lazy: lazy) |> DF.collect()
+        assert DF.names(df) == DF.names(expected)
+        assert DF.dtypes(df) == DF.dtypes(expected)
+        assert DF.shape(df) == {0, 2}
+      end
+
+      assert DF.shape(DF.new([])) == {0, 0}
+      assert_raise ArgumentError, fn -> DF.new([], dtypes: [price: :invalid]) end
+    end
+
     test "from columnar data" do
       df = DF.new(%{floats: [1.0, 2.0], integers: [1, nil]})
 
