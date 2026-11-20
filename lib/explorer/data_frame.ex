@@ -1927,6 +1927,16 @@ defmodule Explorer.DataFrame do
       %DataFrame{data: %^backend{}} ->
         data
 
+      [] when dtypes != [] ->
+        s_backend = df_backend_to_s_backend(backend)
+
+        pairs =
+          for {name, dtype} <- dtypes do
+            {name, Series.from_list([], dtype: dtype, backend: s_backend)}
+          end
+
+        backend.from_series(pairs)
+
       data ->
         case classify_data(data) do
           {:series, data} ->
